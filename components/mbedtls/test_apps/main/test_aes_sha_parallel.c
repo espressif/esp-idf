@@ -1,13 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include <stdbool.h>
 #include <esp_system.h>
-#include "mbedtls/aes.h"
-#include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
@@ -15,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "psa/crypto.h"
 
 #if CONFIG_MBEDTLS_HARDWARE_AES || CONFIG_MBEDTLS_HARDWARE_SHA
 
@@ -29,18 +28,20 @@ static const uint8_t sha256_thousand_bs[32] = {
 
 static void tskRunSHA256Test(void *pvParameters)
 {
-    mbedtls_sha256_context sha256_ctx;
     unsigned char sha256[32];
-
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+    psa_status_t status;
+    size_t hash_length = 0;
     for (int i = 0; i < 1000; i++) {
-
-        mbedtls_sha256_init(&sha256_ctx);
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
+        status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         for (int j = 0; j < 10; j++) {
-            TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, (unsigned char *)one_hundred_bs, 100));
+            status = psa_hash_update(&operation, (unsigned char *)one_hundred_bs, 100);
+            TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         }
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
-        mbedtls_sha256_free(&sha256_ctx);
+        status = psa_hash_finish(&operation, sha256, sizeof(sha256), &hash_length);
+        operation = psa_hash_operation_init();
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_bs, sha256, 32, "SHA256 calculation");
     }
     xSemaphoreGive(done_sem);
@@ -62,10 +63,20 @@ static void tskRunAES256Test(void *pvParameters)
         0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
     };
 
+    psa_key_id_t key_id;
+    psa_algorithm_t alg = PSA_ALG_CBC_NO_PADDING;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, sizeof(key_256) * 8);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key_256, sizeof(key_256), &key_id));
+    psa_reset_key_attributes(&attributes);
+
     for (int i = 0; i <1000; i++)
     {
         const unsigned SZ = 1600;
-        mbedtls_aes_context ctx;
+        psa_cipher_operation_t ctx = PSA_CIPHER_OPERATION_INIT;
         uint8_t nonce[16];
 
         const uint8_t expected_cipher_end[] = {
@@ -86,24 +97,28 @@ static void tskRunAES256Test(void *pvParameters)
         TEST_ASSERT_NOT_NULL(plaintext);
         TEST_ASSERT_NOT_NULL(decryptedtext);
 
-        mbedtls_aes_init(&ctx);
-        mbedtls_aes_setkey_enc(&ctx, key_256, 256);
+        psa_cipher_encrypt_setup(&ctx, key_id, PSA_ALG_CBC_NO_PADDING);
+        psa_cipher_set_iv(&ctx, nonce, sizeof(nonce));
 
         memset(plaintext, 0x3A, SZ);
         memset(decryptedtext, 0x0, SZ);
 
         // Encrypt
-        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+        size_t enc_len = 0;
+        psa_cipher_update(&ctx, plaintext, SZ, ciphertext, SZ, &enc_len);
+        psa_cipher_finish(&ctx, ciphertext + enc_len, SZ - enc_len, &enc_len);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
         // Decrypt
         memcpy(nonce, iv, 16);
-        mbedtls_aes_setkey_dec(&ctx, key_256, 256);
-        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, ciphertext, decryptedtext);
+        psa_cipher_decrypt_setup(&ctx, key_id, PSA_ALG_CBC_NO_PADDING);
+        psa_cipher_set_iv(&ctx, nonce, sizeof(nonce));
+        psa_cipher_update(&ctx, ciphertext, SZ, decryptedtext, SZ, &enc_len);
+        psa_cipher_finish(&ctx, decryptedtext + enc_len, SZ - enc_len, &enc_len);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
-        mbedtls_aes_free(&ctx);
+        psa_cipher_abort(&ctx);
         free(plaintext);
         free(ciphertext);
         free(decryptedtext);

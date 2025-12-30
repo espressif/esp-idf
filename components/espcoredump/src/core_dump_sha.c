@@ -27,10 +27,6 @@ static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 
 static void core_dump_sha256_update(core_dump_sha_ctx_t *sha_ctx, const void *data, size_t data_len)
 {
-    // set software mode of SHA calculation
-#if CONFIG_MBEDTLS_HARDWARE_SHA
-    sha_ctx->ctx.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
-#endif
     mbedtls_sha256_update(&sha_ctx->ctx, data, data_len);
 }
 

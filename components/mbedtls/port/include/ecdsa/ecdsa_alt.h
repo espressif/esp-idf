@@ -110,6 +110,20 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
 
 #endif // CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || __DOXYGEN__
 
+/**
+ * @brief Free the PK context initialized with hardware ECDSA key.
+ *        This function properly cleans up the manually allocated mbedtls_ecp_keypair
+ *        structure and then frees the PK context.
+ *
+ *        Note: In mbedtls v4.0, ECDSA keys are managed through PSA, so the standard
+ *        mbedtls_pk_free() does not deallocate the manually created keypair structure.
+ *        Always use this function instead of mbedtls_pk_free() for contexts initialized
+ *        with esp_ecdsa_set_pk_context().
+ *
+ * @param key_ctx The PK context to free (initialized with esp_ecdsa_set_pk_context)
+ */
+void esp_ecdsa_free_pk_context(mbedtls_pk_context *key_ctx);
+
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN || __DOXYGEN__
 
 /**

@@ -9,12 +9,12 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <esp_log.h>
-
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecdh.h>
-#include <mbedtls/ecdsa.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include <mbedtls/private/ecdh.h>
+#include <mbedtls/private/ecdsa.h>
+#include <mbedtls/private/pk_private.h>
 #include <mbedtls/error.h>
+#include "psa/crypto.h"
 
 #include "hal/efuse_ll.h"
 #include "esp_efuse.h"
@@ -194,6 +194,31 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), pub_y, plen));
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 1));
 
+    psa_key_id_t key_id;
+    psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+    if (id != MBEDTLS_ECP_DP_SECP192R1) {
+        psa_key_type_t curve_family = PSA_ECC_FAMILY_SECP_R1;
+        psa_set_key_type(&key_attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(curve_family));
+        if (id == MBEDTLS_ECP_DP_SECP256R1) {
+            psa_set_key_bits(&key_attr, 256);
+        }
+    #if SOC_ECDSA_SUPPORT_CURVE_P384
+        else if (id == MBEDTLS_ECP_DP_SECP384R1) {
+            psa_set_key_bits(&key_attr, 384);
+        }
+    #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+        psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_VERIFY_HASH);
+        psa_set_key_algorithm(&key_attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+
+        uint8_t psa_key[2 * plen + 1];
+        psa_key[0] = 0x04; // Uncompressed point indicator
+        memcpy(&psa_key[1], pub_x, plen);
+        memcpy(&psa_key[1 + plen], pub_y, plen);
+
+        psa_status_t status = psa_import_key(&key_attr, psa_key, sizeof(psa_key), &key_id);
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    }
+
     if (id == MBEDTLS_ECP_DP_SECP192R1 || id == MBEDTLS_ECP_DP_SECP256R1) {
         hash_len = HASH_LEN;
     }
@@ -217,6 +242,31 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
         TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P384_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
     }
 #endif
+
+    if (id != MBEDTLS_ECP_DP_SECP192R1) {
+        uint8_t signature[2 * plen];
+        TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&r, signature, plen));
+        TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&s, signature + plen, plen));
+
+        ccomp_timer_start();
+        psa_status_t status = psa_verify_hash(key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), hash, hash_len,
+                                signature, sizeof(signature));
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+        elapsed_time = ccomp_timer_stop();
+
+        if (id == MBEDTLS_ECP_DP_SECP192R1) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P192_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        }
+    #if SOC_ECDSA_SUPPORT_CURVE_P384
+        else if (id == MBEDTLS_ECP_DP_SECP384R1) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P384_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        }
+    #endif
+        psa_destroy_key(key_id);
+        psa_reset_key_attributes(&key_attr);
+    }
 
     mbedtls_mpi_free(&r);
     mbedtls_mpi_free(&s);
@@ -553,8 +603,8 @@ void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, con
     TEST_ASSERT_EQUAL_HEX8_ARRAY(pub_x, export_pub_x, len);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(pub_y, export_pub_y, len);
 
-    mbedtls_ecdsa_free(keypair);
-    mbedtls_pk_free(&key_ctx);
+    /* Use esp_ecdsa_free_pk_context instead of manual cleanup to avoid memory leak */
+    esp_ecdsa_free_pk_context(&key_ctx);
 }
 
 TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][efuse_key]")

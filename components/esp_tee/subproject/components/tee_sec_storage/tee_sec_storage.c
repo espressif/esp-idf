@@ -15,15 +15,11 @@
 #include "spi_flash_mmap.h"
 #if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
-#include "esp_hmac_pbkdf2.h"
-#else
-#include "mbedtls/md.h"
 #endif
-
-#include "mbedtls/aes.h"
-#include "mbedtls/gcm.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/ecdsa.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "esp_hmac_pbkdf2.h"
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
 
 #include "esp_rom_sys.h"
 #include "nvs.h"
@@ -139,12 +135,6 @@ static int buffer_hexdump(const char *label, const void *buffer, size_t length)
     (void) length;
 #endif
 
-    return 0;
-}
-
-static int rand_func(void *rng_state, unsigned char *output, size_t len)
-{
-    esp_fill_random(output, len);
     return 0;
 }
 
@@ -314,10 +304,10 @@ esp_err_t esp_tee_sec_storage_clear_key(const char *key_id)
     return err;
 }
 
-static esp_err_t get_ecdsa_curve_info(esp_tee_sec_storage_type_t type, sec_stg_key_t *ctx, mbedtls_ecp_group_id *curve,
-                                      size_t *key_len, uint8_t **priv_key, uint8_t **pub_key)
+static esp_err_t get_ecdsa_curve_info(esp_tee_sec_storage_type_t type, sec_stg_key_t *ctx,
+                                      uint8_t **priv_key, size_t *priv_key_len, uint8_t **pub_key, size_t *pub_key_len)
 {
-    if (!ctx || !curve || !key_len || !priv_key || !pub_key) {
+    if (!ctx || !priv_key || !priv_key_len || !pub_key || !pub_key_len) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -325,26 +315,26 @@ static esp_err_t get_ecdsa_curve_info(esp_tee_sec_storage_type_t type, sec_stg_k
 
     switch (type) {
     case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
-        *curve = MBEDTLS_ECP_DP_SECP256R1;
-        *key_len = ECDSA_SECP256R1_KEY_LEN;
+        *priv_key_len = ECDSA_SECP256R1_KEY_LEN;
         *priv_key = ctx->ecdsa_secp256r1.priv_key;
+        *pub_key_len = sizeof(ctx->ecdsa_secp256r1.pub_key);
         *pub_key  = ctx->ecdsa_secp256r1.pub_key;
         err = ESP_OK;
         break;
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
     case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
-        *curve = MBEDTLS_ECP_DP_SECP192R1;
-        *key_len = ECDSA_SECP192R1_KEY_LEN;
+        *priv_key_len = ECDSA_SECP192R1_KEY_LEN;
         *priv_key = ctx->ecdsa_secp192r1.priv_key;
+        *pub_key_len = sizeof(ctx->ecdsa_secp192r1.pub_key);
         *pub_key  = ctx->ecdsa_secp192r1.pub_key;
         err = ESP_OK;
         break;
 #endif
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
     case ESP_SEC_STG_KEY_ECDSA_SECP384R1:
-        *curve = MBEDTLS_ECP_DP_SECP384R1;
-        *key_len = ECDSA_SECP384R1_KEY_LEN;
+        *priv_key_len = ECDSA_SECP384R1_KEY_LEN;
         *priv_key = ctx->ecdsa_secp384r1.priv_key;
+        *pub_key_len = sizeof(ctx->ecdsa_secp384r1.pub_key);
         *pub_key  = ctx->ecdsa_secp384r1.pub_key;
         err = ESP_OK;
         break;
@@ -364,46 +354,70 @@ static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t 
         return -1;
     }
 
-    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_NONE;
-    size_t key_len = 0;
-    uint8_t *priv_key = NULL;
-    uint8_t *pub_key = NULL;
-
-    if (get_ecdsa_curve_info(key_type, keyctx, &curve_id, &key_len, &priv_key, &pub_key) != ESP_OK) {
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    uint8_t *priv_key_buf = NULL;
+    size_t priv_key_buf_size = 0;
+    uint8_t *pub_key_buf = NULL;
+    size_t pub_key_buf_size = 0;
+    esp_err_t err = get_ecdsa_curve_info(key_type, keyctx, &priv_key_buf, &priv_key_buf_size, &pub_key_buf, &pub_key_buf_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get ECDSA curve info: %d", err);
         return -1;
     }
+    psa_set_key_bits(&key_attributes, priv_key_buf_size * 8);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
-    ESP_LOGD(TAG, "Generating ECDSA key for curve %d...", curve_id);
-
-    mbedtls_ecdsa_context ctxECDSA;
-    mbedtls_ecdsa_init(&ctxECDSA);
-
-    int ret = mbedtls_ecdsa_genkey(&ctxECDSA, curve_id, rand_func, NULL);
-    if (ret != 0) {
+    psa_status_t status = psa_generate_key(&key_attributes, &key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to generate ECDSA key: %ld", status);
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), pub_key, key_len);
-    if (ret != 0) {
+    size_t priv_key_len = 0;
+    size_t pub_key_len = 0;
+
+    status = psa_export_key(key_id, priv_key_buf, priv_key_buf_size, &priv_key_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to export ECDSA private key: %ld", status);
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), pub_key + key_len, key_len);
-    if (ret != 0) {
+    /* PSA exports public key with 0x04 prefix (65 bytes for secp256r1, 49 bytes for secp192r1)
+     * We need to strip the prefix and store only X and Y coordinates (64 bytes for secp256r1, 48 bytes for secp192r1)
+     * Use fixed-size array to avoid VLA issues with goto statements
+     */
+    uint8_t pub_key_with_prefix[(2 * ECDSA_SECP384R1_KEY_LEN) + 1];  /* Max size: 65 bytes for secp256r1 */
+    size_t pub_key_len_with_prefix = 0;
+    size_t expected_pub_key_len_with_prefix = pub_key_buf_size + 1;
+
+    status = psa_export_public_key(key_id, pub_key_with_prefix, sizeof(pub_key_with_prefix), &pub_key_len_with_prefix);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to export ECDSA public key: %ld", status);
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), priv_key, key_len);
-    if (ret != 0) {
-        goto exit;
+    /* Strip the 0x04 prefix if present */
+    if (pub_key_len_with_prefix == expected_pub_key_len_with_prefix && pub_key_with_prefix[0] == 0x04) {
+        memcpy(pub_key_buf, pub_key_with_prefix + 1, pub_key_buf_size);
+        pub_key_len = pub_key_buf_size;
+    } else {
+        /* Fallback: copy directly if format is unexpected (should not happen with PSA) */
+        ESP_LOGW(TAG, "Unexpected public key format, copying directly");
+        size_t copy_len = (pub_key_len_with_prefix < pub_key_buf_size) ? pub_key_len_with_prefix : pub_key_buf_size;
+        memcpy(pub_key_buf, pub_key_with_prefix, copy_len);
+        pub_key_len = copy_len;
     }
 
-    buffer_hexdump("Private key", priv_key, key_len);
-    buffer_hexdump("Public key", pub_key, key_len * 2);
+    buffer_hexdump("Private key", priv_key_buf, priv_key_len);
+    buffer_hexdump("Public key", pub_key_buf, pub_key_len);
 
 exit:
-    mbedtls_ecdsa_free(&ctxECDSA);
-    return ret;
+    psa_destroy_key(key_id);
+    psa_reset_key_attributes(&key_attributes);
+    return status == PSA_SUCCESS ? 0 : -1;
 }
 
 static int generate_aes256_key(sec_stg_key_t *keyctx)
@@ -500,66 +514,53 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
         return ESP_ERR_INVALID_STATE;
     }
 
-    mbedtls_mpi r, s;
-    mbedtls_ecp_keypair keypair_ctx;
-    mbedtls_ecdsa_context sign_ctx;
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
-    mbedtls_ecp_keypair_init(&keypair_ctx);
-    mbedtls_ecdsa_init(&sign_ctx);
-
-    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_NONE;
-    size_t key_len = 0;
     uint8_t *priv_key = NULL;
-    uint8_t *pub_key = NULL;
-
-    err = get_ecdsa_curve_info(keyctx.type, &keyctx, &curve_id, &key_len, &priv_key, &pub_key);
-    if (err != ESP_OK) {
-        return ESP_ERR_INVALID_ARG;
+    size_t priv_key_len = 0;
+    if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) {
+        psa_set_key_bits(&key_attributes, ECDSA_SECP256R1_KEY_LEN * 8);
+        priv_key = keyctx.ecdsa_secp256r1.priv_key;
+        priv_key_len = sizeof(keyctx.ecdsa_secp256r1.priv_key);
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    } else if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+        psa_set_key_bits(&key_attributes, ECDSA_SECP192R1_KEY_LEN * 8);
+        priv_key = keyctx.ecdsa_secp192r1.priv_key;
+        priv_key_len = sizeof(keyctx.ecdsa_secp192r1.priv_key);
+#endif
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    } else if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP384R1) {
+        psa_set_key_bits(&key_attributes, ECDSA_SECP384R1_KEY_LEN * 8);
+        priv_key = keyctx.ecdsa_secp384r1.priv_key;
+        priv_key_len = sizeof(keyctx.ecdsa_secp384r1.priv_key);
+#endif
     }
 
-    int ret = mbedtls_ecp_read_key(curve_id, &keypair_ctx, priv_key, key_len);
-    if (ret != 0) {
-        err = ESP_FAIL;
-        goto exit;
-    }
-
-    ret = mbedtls_ecdsa_from_keypair(&sign_ctx, &keypair_ctx);
-    if (ret != 0) {
-        err = ESP_FAIL;
+    psa_status_t status = psa_import_key(&key_attributes, priv_key, priv_key_len, &key_id);
+    if (status != PSA_SUCCESS) {
+        err = ESP_ERR_INVALID_ARG;
+        ESP_LOGE(TAG, "Failed to import ECDSA private key: %ld", status);
         goto exit;
     }
 
     ESP_LOGD(TAG, "Generating ECDSA signature...");
-
-    ret = mbedtls_ecdsa_sign(&sign_ctx.MBEDTLS_PRIVATE(grp), &r, &s, &sign_ctx.MBEDTLS_PRIVATE(d), hash, hlen,
-                             rand_func, NULL);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error generating signature: %d", ret);
+    size_t signature_len = 0;
+    status = psa_sign_hash(key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), hash, hlen, out_sign->signature, sizeof(out_sign->signature), &signature_len);
+    if (status != PSA_SUCCESS) {
         err = ESP_FAIL;
-        goto exit;
-    }
-
-    memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
-    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
-    if (ret == 0) {
-        ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
-    }
-
-    if (ret != 0) {
-        memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
-        err = ESP_FAIL;
+        ESP_LOGE(TAG, "Failed to generate ECDSA signature: %ld", status);
         goto exit;
     }
 
     err = ESP_OK;
 
 exit:
-    mbedtls_ecdsa_free(&sign_ctx);
-    mbedtls_ecp_keypair_free(&keypair_ctx);
-    mbedtls_mpi_free(&s);
-    mbedtls_mpi_free(&r);
+    psa_destroy_key(key_id);
+    psa_reset_key_attributes(&key_attributes);
 
     return err;
 }
@@ -579,6 +580,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
     sec_stg_key_t keyctx;
     size_t keyctx_len = sizeof(keyctx);
 
+    /* Read key from storage first before accessing its fields */
     err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read key from secure storage");
@@ -590,18 +592,34 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
         return ESP_ERR_INVALID_STATE;
     }
 
-    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_NONE;
-    size_t key_len = 0;
-    uint8_t *priv_key = NULL;
-    uint8_t *pub_key = NULL;
+    /* Now determine the public key source and length based on key type */
+    uint8_t *pub_key_src = NULL;
+    size_t pub_key_len = 0;
 
-    err = get_ecdsa_curve_info(keyctx.type, &keyctx, &curve_id, &key_len, &priv_key, &pub_key);
-    if (err != ESP_OK) {
-        return err;
+    switch (cfg->type) {
+    case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
+        pub_key_src = keyctx.ecdsa_secp256r1.pub_key;
+        pub_key_len = ECDSA_SECP256R1_KEY_LEN;
+        break;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
+        pub_key_src = keyctx.ecdsa_secp192r1.pub_key;
+        pub_key_len = ECDSA_SECP192R1_KEY_LEN;
+        break;
+#endif
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP384R1:
+        pub_key_src = keyctx.ecdsa_secp384r1.pub_key;
+        pub_key_len = ECDSA_SECP384R1_KEY_LEN;
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unsupported key-type");
+        return ESP_ERR_INVALID_ARG;
     }
 
-    memcpy(out_pubkey->pub_x, pub_key, key_len);
-    memcpy(out_pubkey->pub_y, pub_key + key_len, key_len);
+    memcpy(out_pubkey->pub_x, pub_key_src, pub_key_len);
+    memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len, pub_key_len);
 
     return ESP_OK;
 }
@@ -771,7 +789,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
         goto exit;
     }
 
-    ret = mbedtls_ecp_keypair_calc_public(&keypair, rand_func, NULL);
+    ret = mbedtls_ecp_keypair_calc_public(&keypair, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
     if (ret != 0) {
         err = ESP_FAIL;
         goto exit;
@@ -779,16 +797,16 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
 
     ret = mbedtls_ecdsa_sign(&keypair.MBEDTLS_PRIVATE(grp), &r, &s,
                              &keypair.MBEDTLS_PRIVATE(d), hash, hlen,
-                             rand_func, NULL);
+                             mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
     if (ret != 0) {
         err = ESP_FAIL;
         goto exit;
     }
 
     memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
-    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
+    ret = mbedtls_mpi_write_binary(&r, out_sign->signature, key_len);
     if (ret == 0) {
-        ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
+        ret = mbedtls_mpi_write_binary(&s, out_sign->signature + key_len, key_len);
     }
 
     if (ret != 0) {

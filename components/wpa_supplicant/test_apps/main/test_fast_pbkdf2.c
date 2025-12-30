@@ -7,7 +7,7 @@
 #include <inttypes.h>
 #include "unity.h"
 #include "utils/common.h"
-#include "mbedtls/pkcs5.h"
+#include "mbedtls/private/pkcs5.h"
 #include "crypto/sha1.h"
 #include "test_wpa_supplicant_common.h"
 

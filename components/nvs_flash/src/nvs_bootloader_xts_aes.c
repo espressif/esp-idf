@@ -257,7 +257,8 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
 
 #endif /* CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB */
 #else /* BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER */
-#include "mbedtls/aes.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/aes.h"
 
 static mbedtls_aes_xts_context ctx_xts;
 
@@ -291,7 +292,6 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
                                 unsigned char *output)
 {
     (void) ctx;
-
     int mbedtls_aes_mode = mode == AES_ENC ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT;
     return mbedtls_aes_crypt_xts(&ctx_xts, mbedtls_aes_mode, length, data_unit, input, output);
 }

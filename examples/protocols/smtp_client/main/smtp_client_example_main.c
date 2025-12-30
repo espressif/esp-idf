@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <string.h>
 #include <stdlib.h>
@@ -23,8 +23,6 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include <mbedtls/base64.h>
 #include <sys/param.h>
@@ -246,8 +244,6 @@ static void smtp_client_task(void *pvParameters)
     int ret, len;
     size_t base64_len;
 
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_x509_crt cacert;
     mbedtls_ssl_config conf;
@@ -255,17 +251,9 @@ static void smtp_client_task(void *pvParameters)
 
     mbedtls_ssl_init(&ssl);
     mbedtls_x509_crt_init(&cacert);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
     ESP_LOGI(TAG, "Seeding the random number generator");
 
     mbedtls_ssl_config_init(&conf);
-
-    mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                     NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
-        goto exit;
-    }
 
     ESP_LOGI(TAG, "Loading the CA root certificate...");
 
@@ -297,7 +285,6 @@ static void smtp_client_task(void *pvParameters)
 
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
-    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 #ifdef CONFIG_MBEDTLS_DEBUG
     mbedtls_esp_enable_debug_log(&conf, 4);
 #endif
@@ -476,8 +463,6 @@ exit:
     mbedtls_x509_crt_free(&cacert);
     mbedtls_ssl_free(&ssl);
     mbedtls_ssl_config_free(&conf);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
 
     if (ret != 0) {
         mbedtls_strerror(ret, buf, 100);

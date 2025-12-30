@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "hal/efuse_hal.h"
-
-#include "mbedtls/sha256.h"
-
+#include "psa/crypto.h"
 #include "esp_attestation.h"
 #include "esp_attestation_utils.h"
 
@@ -63,33 +61,28 @@ static esp_err_t fetch_device_id(uint8_t *devid_buf)
         goto exit;
     }
 
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-
-    int ret = mbedtls_sha256_starts(&ctx, false);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)mac_addr, sizeof(mac_addr));
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    status = psa_hash_update(&hash_op, mac_addr, sizeof(mac_addr));
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    uint8_t digest[SHA256_DIGEST_SZ] = {0};
-    ret = mbedtls_sha256_finish(&ctx, digest);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    size_t digest_len = 0;
+    status = psa_hash_finish(&hash_op, devid_buf, SHA256_DIGEST_SZ, &digest_len);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    memcpy(devid_buf, digest, SHA256_DIGEST_SZ);
-    mbedtls_sha256_free(&ctx);
+    if (digest_len != SHA256_DIGEST_SZ) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    return ESP_OK;
 
 exit:
     return err;
@@ -211,12 +204,9 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
 
     memset(token_buf, 0x00, token_buf_size);
 
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-
-    int ret = mbedtls_sha256_starts(&ctx, false);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
         return ESP_FAIL;
     }
 
@@ -236,9 +226,9 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
     json_gen_push_object_str(&jstr, "header", hdr_json);
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)hdr_json, hdr_len - 1);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    status = psa_hash_update(&hash_op, (const unsigned char *)hdr_json, hdr_len - 1);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
     free(hdr_json);
@@ -253,9 +243,9 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
     json_gen_push_object_str(&jstr, "eat", eat_json);
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)eat_json, eat_len - 1);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    status = psa_hash_update(&hash_op, (const unsigned char *)eat_json, eat_len - 1);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
     free(eat_json);
@@ -269,20 +259,20 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
     json_gen_push_object_str(&jstr, "public_key", pubkey_json);
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)pubkey_json, pubkey_len - 1);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    status = psa_hash_update(&hash_op, (const unsigned char *)pubkey_json, pubkey_len - 1);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
     free(pubkey_json);
 
     uint8_t digest[SHA256_DIGEST_SZ] = {0};
-    ret = mbedtls_sha256_finish(&ctx, digest);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    size_t digest_len = 0;
+    status = psa_hash_finish(&hash_op, digest, sizeof(digest), &digest_len);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
-    mbedtls_sha256_free(&ctx);
 
     char *sign_json = NULL;
     int sign_len = -1;

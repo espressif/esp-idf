@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <string.h>
 #include "esp_err.h"
@@ -15,9 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/x509.h"
 #include "mbedtls/ssl.h"
 #include "entropy_poll.h"
@@ -28,6 +25,8 @@
 
 #include "esp_crt_bundle.h"
 #include "esp_random.h"
+
+#include "psa/crypto.h"
 
 #include "unity.h"
 #include "test_utils.h"
@@ -55,15 +54,21 @@ extern const uint8_t wrong_sig_crt_pem_end[]   asm("_binary_wrong_sig_crt_esp32_
 extern const uint8_t correct_sig_crt_pem_start[] asm("_binary_correct_sig_crt_esp32_com_pem_start");
 extern const uint8_t correct_sig_crt_pem_end[]   asm("_binary_correct_sig_crt_esp32_com_pem_end");
 
+// ECDSA test certificates
+extern const uint8_t ecdsa_correct_sig_crt_pem_start[] asm("_binary_ecdsa_correct_sig_crt_pem_start");
+extern const uint8_t ecdsa_correct_sig_crt_pem_end[]   asm("_binary_ecdsa_correct_sig_crt_pem_end");
+
+extern const uint8_t ecdsa_wrong_sig_crt_pem_start[] asm("_binary_ecdsa_wrong_sig_crt_pem_start");
+extern const uint8_t ecdsa_wrong_sig_crt_pem_end[]   asm("_binary_ecdsa_wrong_sig_crt_pem_end");
+
+extern const uint8_t ecdsa_cert_bundle_start[] asm("_binary_ecdsa_cert_bundle_start");
+extern const uint8_t ecdsa_cert_bundle_end[] asm("_binary_ecdsa_cert_bundle_end");
+
 #define SEM_TIMEOUT 10000
 typedef struct {
     mbedtls_ssl_context ssl;
     mbedtls_net_context listen_fd;
     mbedtls_net_context client_fd;
-
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-
     mbedtls_ssl_config conf;
     mbedtls_x509_crt cert;
     mbedtls_pk_context pkey;
@@ -84,12 +89,6 @@ static volatile bool exit_flag;
 
 esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint);
 
-static int myrand(void *rng_state, unsigned char *output, size_t len)
-{
-    size_t olen;
-    return mbedtls_hardware_poll(rng_state, output, len, &olen);
-}
-
 esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
     int ret;
@@ -102,8 +101,6 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     mbedtls_ssl_init( &server->ssl );
     mbedtls_x509_crt_init( &server->cert );
     mbedtls_pk_init( &server->pkey );
-    mbedtls_entropy_init( &server->entropy );
-    mbedtls_ctr_drbg_init( &server->ctr_drbg );
 
     ESP_LOGI(TAG, "Loading the server cert and key");
     ret = mbedtls_x509_crt_parse( &server->cert, server_cert_chain_pem_start,
@@ -115,7 +112,7 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     }
 
     ret =  mbedtls_pk_parse_key( &server->pkey, (const unsigned char *)server_pk_start,
-                                 server_pk_end - server_pk_start, NULL, 0, myrand, NULL );
+                                 server_pk_end - server_pk_start, NULL, 0);
     if ( ret != 0 ) {
         ESP_LOGE(TAG, "mbedtls_pk_parse_key returned %d", ret );
         return ESP_FAIL;
@@ -128,13 +125,6 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     }
     mbedtls_net_set_nonblock(&server->listen_fd);
 
-    ESP_LOGI(TAG, "Seeding the random number generator");
-    if ( ( ret = mbedtls_ctr_drbg_seed( &server->ctr_drbg, mbedtls_entropy_func, &server->entropy,
-                                        NULL, 0) ) != 0 ) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret );
-        return ESP_FAIL;
-    }
-
     ESP_LOGI(TAG, "Setting up the SSL data");
     if ( ( ret = mbedtls_ssl_config_defaults( &server->conf,
                  MBEDTLS_SSL_IS_SERVER,
@@ -143,8 +133,6 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret );
         return ESP_FAIL;
     }
-
-    mbedtls_ssl_conf_rng( &server->conf, mbedtls_ctr_drbg_random, &server->ctr_drbg );
 
     if (( ret = mbedtls_ssl_conf_own_cert( &server->conf, &server->cert, &server->pkey ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned %d", ret );
@@ -209,9 +197,6 @@ esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint)
     mbedtls_ssl_free( &endpoint->ssl );
     mbedtls_ssl_config_free( &endpoint->conf );
 
-    mbedtls_ctr_drbg_free( &endpoint->ctr_drbg );
-    mbedtls_entropy_free( &endpoint->entropy );
-
     return ESP_OK;
 }
 
@@ -223,19 +208,10 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
     mbedtls_esp_enable_debug_log( &client->conf, CONFIG_MBEDTLS_DEBUG_LEVEL );
 #endif
     mbedtls_net_init( &client->client_fd );
+    mbedtls_net_init( &client->listen_fd );
     mbedtls_ssl_init( &client->ssl );
     mbedtls_x509_crt_init( &client->cert );
     mbedtls_pk_init( &client->pkey );
-    mbedtls_entropy_init( &client->entropy );
-    mbedtls_ctr_drbg_init( &client->ctr_drbg );
-
-    ESP_LOGI(TAG, "Seeding the random number generator");
-    if ((ret = mbedtls_ctr_drbg_seed(&client->ctr_drbg, mbedtls_entropy_func, &client->entropy,
-                                     NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-        return ESP_FAIL;
-    }
-
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
     /* Hostname set here should match CN in server certificate */
     if ((ret = mbedtls_ssl_set_hostname(&client->ssl, SERVER_ADDRESS)) != 0) {
@@ -251,7 +227,6 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
         return ESP_FAIL;
     }
-    mbedtls_ssl_conf_rng(&client->conf, mbedtls_ctr_drbg_random, &client->ctr_drbg);
 
     if ((ret = mbedtls_ssl_setup(&client->ssl, &client->conf)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
@@ -266,26 +241,26 @@ void client_task(void *pvParameters)
     SemaphoreHandle_t *client_signal_sem = (SemaphoreHandle_t *) pvParameters;
     int ret = ESP_FAIL;
 
-    mbedtls_endpoint_t client;
+    mbedtls_endpoint_t *client = calloc(1, sizeof(mbedtls_endpoint_t));
     esp_crt_validate_res_t res = ESP_CRT_VALIDATE_UNKNOWN;
 
-    if (client_setup(&client) != ESP_OK) {
+    if (client_setup(client) != ESP_OK) {
         ESP_LOGE(TAG, "SSL client setup failed");
         goto exit;
     }
 
     /* Test with default crt bundle that does not contain the ca crt */
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
-    if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+    if ((ret = mbedtls_net_connect(&client->client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
         goto exit;
     }
 
     ESP_LOGI(TAG, "Connected.");
-    mbedtls_ssl_set_bio(&client.ssl, &client.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_ssl_set_bio(&client->ssl, &client->client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
-    while ( ( ret = mbedtls_ssl_handshake( &client.ssl ) ) != 0 ) {
+    while ( ( ret = mbedtls_ssl_handshake( &client->ssl ) ) != 0 ) {
         if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
             printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
             break;
@@ -293,7 +268,7 @@ void client_task(void *pvParameters)
     }
 
     ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
-    ret  = mbedtls_ssl_get_verify_result(&client.ssl);
+    ret  = mbedtls_ssl_get_verify_result(&client->ssl);
 
     res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
 
@@ -305,25 +280,30 @@ void client_task(void *pvParameters)
     TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_FAIL, res);
 
     // Reset session before new connection
-    mbedtls_ssl_close_notify(&client.ssl);
-    mbedtls_ssl_session_reset(&client.ssl);
-    mbedtls_net_free( &client.client_fd);
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    mbedtls_net_free( &client->client_fd);
 
     /* Test with bundle that does contain the CA crt */
-    esp_crt_bundle_attach(&client.conf);
-    esp_crt_bundle_set(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start);
+    ret = esp_crt_bundle_attach(&client->conf);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    ret = esp_crt_bundle_set(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
-    if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+    if ((ret = mbedtls_net_connect(&client->client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
         goto exit;
     }
 
     ESP_LOGI(TAG, "Connected.");
-    mbedtls_ssl_set_bio(&client.ssl, &client.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_ssl_set_bio(&client->ssl, &client->client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
+    size_t available_before_handshake = uxTaskGetStackHighWaterMark(NULL);
+    ESP_LOGI(TAG, "Available stack before handshake: %d", available_before_handshake);
     ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
-    while ( ( ret = mbedtls_ssl_handshake( &client.ssl ) ) != 0 ) {
+    while ( ( ret = mbedtls_ssl_handshake( &client->ssl ) ) != 0 ) {
         if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
             printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
             break;
@@ -331,7 +311,7 @@ void client_task(void *pvParameters)
     }
 
     ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
-    ret  = mbedtls_ssl_get_verify_result(&client.ssl);
+    ret = mbedtls_ssl_get_verify_result(&client->ssl);
 
     res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
 
@@ -343,17 +323,18 @@ void client_task(void *pvParameters)
     TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_OK, res);
 
     // Reset session before new connection
-    mbedtls_ssl_close_notify(&client.ssl);
-    mbedtls_ssl_session_reset(&client.ssl);
-    mbedtls_net_free( &client.client_fd);
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    mbedtls_net_free( &client->client_fd);
 
 
 exit:
-    mbedtls_ssl_close_notify(&client.ssl);
-    mbedtls_ssl_session_reset(&client.ssl);
-    esp_crt_bundle_detach(&client.conf);
-    endpoint_teardown(&client);
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    esp_crt_bundle_detach(&client->conf);
+    endpoint_teardown(client);
     xSemaphoreGive(*client_signal_sem);
+    free(client);
     vTaskSuspend(NULL);
 }
 
@@ -436,6 +417,48 @@ TEST_CASE("custom certificate bundle - wrong signature", "[mbedtls]")
     printf("Testing certificate with correct signature\n");
     mbedtls_x509_crt_parse(&crt, correct_sig_crt_pem_start, correct_sig_crt_pem_end - correct_sig_crt_pem_start);
     TEST_ASSERT_EQUAL(0, mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL));
+    mbedtls_x509_crt_free(&crt);
+
+    esp_crt_bundle_detach(NULL);
+}
+
+TEST_CASE("custom certificate bundle - ECDSA signature verification", "[mbedtls]")
+{
+    /* Verify that ECDSA certificates with SHA-512 work correctly with PSA-based verification.
+     * This tests both the ECDSA algorithm path and a different hash algorithm (SHA-512) than
+     * the RSA tests which use SHA-256. */
+
+    mbedtls_x509_crt crt;
+    uint32_t flags = 0;
+
+    esp_crt_bundle_attach(NULL);
+
+    // Set the ECDSA bundle
+    esp_crt_bundle_set(ecdsa_cert_bundle_start, ecdsa_cert_bundle_end - ecdsa_cert_bundle_start);
+
+    // Test: ECDSA certificate with wrong signature should FAIL
+    mbedtls_x509_crt_init(&crt);
+    printf("Testing ECDSA certificate with wrong signature\n");
+    mbedtls_x509_crt_parse(&crt, ecdsa_wrong_sig_crt_pem_start,
+                          ecdsa_wrong_sig_crt_pem_end - ecdsa_wrong_sig_crt_pem_start);
+
+    // Verify with the ECDSA bundle - this should fail
+    int verify_result = mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags,
+                                                 esp_crt_verify_callback, NULL);
+    TEST_ASSERT_NOT_EQUAL(0, verify_result);
+    mbedtls_x509_crt_free(&crt);
+
+    // Test: ECDSA certificate with correct signature should PASS
+    mbedtls_x509_crt_init(&crt);
+    printf("Testing ECDSA certificate with correct signature\n");
+    mbedtls_x509_crt_parse(&crt, ecdsa_correct_sig_crt_pem_start,
+                          ecdsa_correct_sig_crt_pem_end - ecdsa_correct_sig_crt_pem_start);
+
+    // Verify with the ECDSA bundle - this should succeed
+    verify_result = mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags,
+                                                 esp_crt_verify_callback, NULL);
+
+    TEST_ASSERT_EQUAL(0, verify_result);
     mbedtls_x509_crt_free(&crt);
 
     esp_crt_bundle_detach(NULL);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <sdkconfig.h>
 
 #if CONFIG_IDF_TARGET_ESP32
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,8 +22,7 @@
 #include "esp_log.h"
 #include "sha/sha_parallel_engine.h"
 #include "aes/esp_aes.h"
-#include "mbedtls/rsa.h"
-#include "mbedtls/sha256.h"
+#include "psa/crypto.h"
 
 static const char *TAG = "test";
 static volatile bool exit_flag = false;
@@ -74,27 +73,33 @@ static void mbedtls_sha256_task(void *pvParameters)
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "mbedtls_sha256_task is started");
     const char *input = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz~DEL0123456789Space!#$%&()*+,-.0123456789:;<=>?";
-    mbedtls_sha256_context sha256_ctx;
     unsigned char output[32];
     unsigned char output_origin[32];
 
-    mbedtls_sha256_init(&sha256_ctx);
+    psa_hash_operation_t sha256_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&sha256_op, PSA_ALG_SHA_256);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     memset(output, 0, sizeof(output));
-    mbedtls_sha256_starts(&sha256_ctx, false);
     for (int i = 0; i < 3; ++i) {
-        mbedtls_sha256_update(&sha256_ctx, (unsigned char *)input, 100);
+        status = psa_hash_update(&sha256_op, (const uint8_t *)input, 100);
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     }
-    mbedtls_sha256_finish(&sha256_ctx, output);
+    size_t hash_length = 0;
+    status = psa_hash_finish(&sha256_op, output, sizeof(output), &hash_length);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     memcpy(output_origin, output, sizeof(output));
 
     while (exit_flag == false) {
-        mbedtls_sha256_init(&sha256_ctx);
+        psa_hash_operation_t sha256_operation = PSA_HASH_OPERATION_INIT;
+        status = psa_hash_setup(&sha256_operation, PSA_ALG_SHA_256);
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         memset(output, 0, sizeof(output));
-        mbedtls_sha256_starts(&sha256_ctx, false);
         for (int i = 0; i < 3; ++i) {
-            mbedtls_sha256_update(&sha256_ctx, (unsigned char *)input, 100);
+            status = psa_hash_update(&sha256_operation, (const uint8_t *)input, 100);
+            TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         }
-        mbedtls_sha256_finish(&sha256_ctx, output);
+        status = psa_hash_finish(&sha256_operation, output, sizeof(output), &hash_length);
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(output, output_origin, sizeof(output), "MBEDTLS SHA256 must match");
     }
@@ -146,7 +151,6 @@ static void rsa_task(void *pvParameters)
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "rsa_task is started");
     while (exit_flag == false) {
-        mbedtls_rsa_self_test(0);
     }
     xSemaphoreGive(*sema);
     vTaskDelete(NULL);

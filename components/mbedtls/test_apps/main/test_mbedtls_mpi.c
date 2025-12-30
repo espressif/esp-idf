@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <sys/param.h>
 #include <esp_system.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/bignum.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

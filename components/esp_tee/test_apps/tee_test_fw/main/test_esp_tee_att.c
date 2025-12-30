@@ -7,10 +7,8 @@
 
 #include "esp_log.h"
 #include "esp_heap_caps.h"
-
-#include "mbedtls/ecp.h"
-#include "mbedtls/ecdsa.h"
-#include "mbedtls/sha256.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "psa/crypto.h"
 
 #include "esp_tee.h"
 #include "esp_tee_attestation.h"
@@ -24,6 +22,7 @@
 /* Note: negative value here so that assert message prints a grep-able
    error hex value (mbedTLS uses -N for error codes) */
 #define TEST_ASSERT_MBEDTLS_OK(X)  TEST_ASSERT_EQUAL_HEX32(0, -(X))
+#define TEST_ASSERT_PSA_OK(X)  TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
 #define SHA256_DIGEST_SZ         (32)
 #define ECDSA_SECP256R1_KEY_LEN  (32)
@@ -165,19 +164,13 @@ static void prehash_token_data(const char *token_json, uint8_t *digest, size_t l
     char *eat_str = cJSON_PrintUnformatted(eat);
     char *public_key_str = cJSON_PrintUnformatted(public_key);
 
-    mbedtls_sha256_context sha256_ctx;
-
-    mbedtls_sha256_init(&sha256_ctx);
-
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_sha256_starts(&sha256_ctx, false));
-
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_sha256_update(&sha256_ctx, (const unsigned char *)header_str, strlen(header_str)));
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_sha256_update(&sha256_ctx, (const unsigned char *)eat_str, strlen(eat_str)));
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_sha256_update(&sha256_ctx, (const unsigned char *)public_key_str, strlen(public_key_str)));
-
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_sha256_finish(&sha256_ctx, digest));
-
-    mbedtls_sha256_free(&sha256_ctx);
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+    TEST_ASSERT_PSA_OK(psa_hash_setup(&operation, PSA_ALG_SHA_256));
+    size_t digest_len = 0;
+    TEST_ASSERT_PSA_OK(psa_hash_update(&operation, (const unsigned char *)header_str, strlen(header_str)));
+    TEST_ASSERT_PSA_OK(psa_hash_update(&operation, (const unsigned char *)eat_str, strlen(eat_str)));
+    TEST_ASSERT_PSA_OK(psa_hash_update(&operation, (const unsigned char *)public_key_str, strlen(public_key_str)));
+    TEST_ASSERT_PSA_OK(psa_hash_finish(&operation, digest, SHA256_DIGEST_SZ, &digest_len));
 
     free(public_key_str);
     free(eat_str);
@@ -239,13 +232,13 @@ static void fetch_signature(const char *token_json, esp_tee_sec_storage_ecdsa_si
     uint8_t *sign_r_buf = NULL;
     size_t sign_r_buf_sz = 0;
     hexstr_to_bytes(sign_r->valuestring, &sign_r_buf, &sign_r_buf_sz);
-    memcpy(sign_ctx->sign_r, sign_r_buf, sign_r_buf_sz);
+    memcpy(sign_ctx->signature, sign_r_buf, sign_r_buf_sz);
     free(sign_r_buf);
 
     uint8_t *sign_s_buf = NULL;
     size_t sign_s_buf_sz = 0;
     hexstr_to_bytes(sign_s->valuestring, &sign_s_buf, &sign_s_buf_sz);
-    memcpy(sign_ctx->sign_s, sign_s_buf, sign_s_buf_sz);
+    memcpy(sign_ctx->signature + sign_r_buf_sz, sign_s_buf, sign_s_buf_sz);
     free(sign_s_buf);
 
     cJSON_Delete(root);

@@ -20,6 +20,8 @@
 #include "http_auth.h"
 #include "http_crypto.h"
 
+#include "psa/crypto.h"
+
 #define MD5_MAX_LEN (33)
 #define HTTP_AUTH_BUF_LEN (1024)
 
@@ -70,7 +72,6 @@ static int md5_printf(char *md, const char *fmt, ...)
  */
 static int sha256_sprintf(char *sha, const char *fmt, ...)
 {
-
     unsigned char *buf;
     unsigned char digest[SHA256_LEN];
     int len, i;
@@ -83,9 +84,22 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
     }
 
     int ret = 0;
+    psa_status_t status;
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
 
-    esp_err_t err = http_crypto_sha256(buf, len, digest);
-    if (err != ESP_OK) {
+    status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
+    status = psa_hash_update(&operation, buf, len);
+    if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
+    size_t hash_length;
+    status = psa_hash_finish(&operation, digest, sizeof(digest), &hash_length);
+    if (status != PSA_SUCCESS || hash_length != SHA256_LEN) {
         goto exit;
     }
 
@@ -97,6 +111,7 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
 
 exit:
     free(buf);
+    psa_hash_abort(&operation);
     va_end(ap);
     return ret;
 }

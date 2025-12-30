@@ -17,7 +17,7 @@
 #include "example_service.h"
 
 #define EXAMPLE_BUF_SZ        (32)
-#define AES256_GCM_TAG_LEN    (12)
+#define AES256_GCM_TAG_LEN    (16)
 #define AES256_GCM_AAD_LEN    (16)
 
 static const char *TAG = "example_tee_basic";

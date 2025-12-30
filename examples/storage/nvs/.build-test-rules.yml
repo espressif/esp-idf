@@ -8,6 +8,9 @@ examples/storage/nvs/nvs_bootloader:
     - if: CONFIG_NAME == "nvs_enc_flash_enc" and (SOC_AES_SUPPORTED != 1 and ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB != 1)
     - if: CONFIG_NAME == "nvs_enc_hmac" and (SOC_HMAC_SUPPORTED != 1 or (SOC_HMAC_SUPPORTED == 1 and (SOC_AES_SUPPORTED != 1 and ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB != 1)))
       reason: As of now in such cases, we do not have any way to perform AES operations in the bootloader build
+      # TODO: IDF-15012
+    - if: IDF_TARGET in ["esp32c2"] and CONFIG_NAME in ["nvs_enc_flash_enc", "nvs_enc_hmac", "default"]
+      reason: PSA is not yet available for ESP32-C2
 
 examples/storage/nvs/nvs_console:
   depends_components:

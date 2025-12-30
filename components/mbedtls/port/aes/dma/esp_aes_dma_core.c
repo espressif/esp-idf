@@ -24,7 +24,7 @@
 #include "esp_aes_internal.h"
 #include "esp_crypto_dma.h"
 
-#include "mbedtls/aes.h"
+#include "psa/crypto.h"
 #include "mbedtls/platform_util.h"
 
 #if !ESP_TEE_BUILD
@@ -36,6 +36,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #endif
+
+#define MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH            -0x0022  /**< Invalid data input length. */
 
 #if SOC_AES_SUPPORT_GCM
 #include "aes/esp_aes_gcm.h"

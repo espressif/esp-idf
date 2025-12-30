@@ -15,22 +15,22 @@
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
 
-#include "mbedtls/ecp.h"
-#include "mbedtls/ecdsa.h"
-#include "mbedtls/sha256.h"
+#include "psa/crypto.h"
 
 #include "esp_tee_sec_storage.h"
 #include "example_tee_srv.h"
 
 #define SHA256_DIGEST_SZ         (32)
-#if SOC_ECDSA_SUPPORT_CURVE_P384
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
 #define MAX_ECDSA_KEY_LEN        (48)
 #else
 #define MAX_ECDSA_KEY_LEN        (32)
-#endif
+#endif /* CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN */
 
 #define AES256_GCM_TAG_LEN       (16)
 #define MAX_AES_PLAINTEXT_LEN    (256)
+
+#define ECDSA_SECP256R1_KEY_LEN  (32)
 
 static const char *TAG = "tee_sec_stg";
 
@@ -96,57 +96,34 @@ static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, 
 
     esp_err_t err = ESP_FAIL;
 
-    mbedtls_mpi r, s;
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
-    mbedtls_ecdsa_context ecdsa_context;
-    mbedtls_ecdsa_init(&ecdsa_context);
+    uint8_t pub_key[2 * ECDSA_SECP256R1_KEY_LEN + 1];
+    pub_key[0] = 0x04;
+    memcpy(pub_key + 1, pubkey->pub_x, ECDSA_SECP256R1_KEY_LEN);
+    memcpy(pub_key + 1 + ECDSA_SECP256R1_KEY_LEN, pubkey->pub_y, ECDSA_SECP256R1_KEY_LEN);
 
-    int ret = mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
-    if (ret != 0) {
+    psa_status_t status = psa_import_key(&key_attributes, pub_key, sizeof(pub_key), &key_id);
+    if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    size_t plen = mbedtls_mpi_size(&ecdsa_context.MBEDTLS_PRIVATE(grp).P);
-
-    ret = mbedtls_mpi_read_binary(&r, sign->sign_r, plen);
-    if (ret != 0) {
+    status = psa_verify_hash(key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), digest, len, sign->signature, 2 * ECDSA_SECP256R1_KEY_LEN);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to verify hash: %ld", status);
         goto exit;
     }
-
-    ret = mbedtls_mpi_read_binary(&s, sign->sign_s, plen);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X), pubkey->pub_x, plen);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), pubkey->pub_y, plen);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_lset(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 1);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_ecdsa_verify(&ecdsa_context.MBEDTLS_PRIVATE(grp), digest, len, &ecdsa_context.MBEDTLS_PRIVATE(Q), &r, &s);
-    if (ret != 0) {
-        goto exit;
-    }
-
     err = ESP_OK;
 
 exit:
-    mbedtls_mpi_free(&r);
-    mbedtls_mpi_free(&s);
-    mbedtls_ecdsa_free(&ecdsa_context);
-
+    if (key_id) {
+        psa_destroy_key(key_id);
+    }
+    psa_reset_key_attributes(&key_attributes);
     return err;
 }
 
@@ -166,8 +143,10 @@ static int get_msg_sha256(int argc, char **argv)
     const char *msg = (const char *)cmd_get_msg_sha256_args.msg->sval[0];
 
     uint8_t msg_digest[SHA256_DIGEST_SZ];
-    int ret = mbedtls_sha256((const unsigned char *)msg, strlen(msg), msg_digest, false);
-    if (ret != 0) {
+    size_t msg_len = strlen(msg);
+    size_t digest_len = 0;
+    psa_status_t status = psa_hash_compute(PSA_ALG_SHA_256, (const uint8_t *)msg, msg_len, msg_digest, sizeof(msg_digest), &digest_len);
+    if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to calculate message hash!");
         return ESP_FAIL;
     }

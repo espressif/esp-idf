@@ -14,11 +14,7 @@
 #include "bootloader_sha.h"
 #include "esp_tee_sec_storage.h"
 #endif
-
 #include "esp_random.h"
-#include "mbedtls/ecdh.h"
-#include "mbedtls/ecdsa.h"
-#include "mbedtls/sha256.h"
 
 #include "json_generator.h"
 #include "esp_attestation_utils.h"

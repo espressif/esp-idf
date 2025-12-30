@@ -25,10 +25,11 @@
 #if defined(__GNUC__)
 #include <endian.h>
 #endif
-
-#include <mbedtls/sha1.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/esp_config.h"
 #include "utils/wpa_debug.h"
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_sha.h"
 
 /* --- MSVC doesn't support C99 --- */
 #ifdef _MSC_VER
@@ -233,9 +234,9 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
     }                                                                         \
   }
 
-static inline void sha1_extract(mbedtls_sha1_context *restrict ctx, uint8_t *restrict out)
+static inline void sha1_extract(esp_sha1_context *restrict ctx, uint8_t *restrict out)
 {
-#if defined(MBEDTLS_SHA1_ALT)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
 #if CONFIG_IDF_TARGET_ESP32
     /* ESP32 stores internal SHA state in BE format similar to software */
     write32_be(ctx->state[0], out);
@@ -259,9 +260,9 @@ static inline void sha1_extract(mbedtls_sha1_context *restrict ctx, uint8_t *res
 #endif
 }
 
-static inline void sha1_cpy(mbedtls_sha1_context *restrict out, const mbedtls_sha1_context *restrict in)
+static inline void sha1_cpy(esp_sha1_context *restrict out, const esp_sha1_context *restrict in)
 {
-#if defined(MBEDTLS_SHA1_ALT)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
     out->state[0] = in->state[0];
     out->state[1] = in->state[1];
     out->state[2] = in->state[2];
@@ -276,9 +277,9 @@ static inline void sha1_cpy(mbedtls_sha1_context *restrict out, const mbedtls_sh
 #endif
 }
 
-static inline void sha1_xor(mbedtls_sha1_context *restrict out, const mbedtls_sha1_context *restrict in)
+static inline void sha1_xor(esp_sha1_context *restrict out, const esp_sha1_context *restrict in)
 {
-#if defined(MBEDTLS_SHA1_ALT)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
     out->state[0] ^= in->state[0];
     out->state[1] ^= in->state[1];
     out->state[2] ^= in->state[2];
@@ -293,19 +294,18 @@ static inline void sha1_xor(mbedtls_sha1_context *restrict out, const mbedtls_sh
 #endif
 }
 
-static int mbedtls_sha1_init_start(mbedtls_sha1_context *ctx)
+static int esp_sha1_init_start(esp_sha1_context *ctx)
 {
-    mbedtls_sha1_init(ctx);
-    mbedtls_sha1_starts(ctx);
-#if defined(CONFIG_IDF_TARGET_ESP32) && defined(MBEDTLS_SHA1_ALT)
+    esp_sha1_starts(ctx);
+#if defined(CONFIG_IDF_TARGET_ESP32) && defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
     /* Use software mode for esp32 since hardware can't give output more than 20 */
-    esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
+    ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
 #endif
     return 0;
 }
 
-#ifndef MBEDTLS_SHA1_ALT
-static int sha1_finish(mbedtls_sha1_context *ctx,
+#ifndef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+static int sha1_finish(esp_sha1_context *ctx,
                        unsigned char output[20])
 {
     int ret = -1;
@@ -326,7 +326,7 @@ static int sha1_finish(mbedtls_sha1_context *ctx,
         /* We'll need an extra block */
         memset(ctx->MBEDTLS_PRIVATE(buffer) + used, 0, 64 - used);
 
-        if ((ret = mbedtls_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
+        if ((ret = esp_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
             goto exit;
         }
 
@@ -343,7 +343,7 @@ static int sha1_finish(mbedtls_sha1_context *ctx,
     write32_be(high, ctx->MBEDTLS_PRIVATE(buffer) + 56);
     write32_be(low, ctx->MBEDTLS_PRIVATE(buffer) + 60);
 
-    if ((ret = mbedtls_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
+    if ((ret = esp_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
         goto exit;
     }
 
@@ -366,12 +366,12 @@ exit:
 DECL_PBKDF2(sha1,                           // _name
             64,                             // _blocksz
             20,                             // _hashsz
-            mbedtls_sha1_context,           // _ctx
-            mbedtls_sha1_init_start,        // _init
-            mbedtls_sha1_update,            // _update
-            mbedtls_internal_sha1_process,  // _xform
-#if defined(MBEDTLS_SHA1_ALT)
-            mbedtls_sha1_finish,            // _final
+            esp_sha1_context,           // _ctx
+            esp_sha1_init_start,        // _init
+            esp_sha1_update,            // _update
+            esp_internal_sha1_process,  // _xform
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
+            esp_sha1_finish,            // _final
 #else
             sha1_finish,                   // _final
 #endif

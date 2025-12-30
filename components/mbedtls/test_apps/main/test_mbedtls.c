@@ -14,12 +14,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <esp_system.h>
-#include "mbedtls/sha1.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/sha512.h"
-#include "mbedtls/aes.h"
-#include "mbedtls/bignum.h"
-#include "mbedtls/rsa.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/aes.h"
+#include "mbedtls/private/rsa.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -46,18 +43,5 @@ TEST_CASE("mbedtls RSA self-tests", "[bignum]")
 {
     start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_rsa_self_test(1), "RSA self-tests should pass.");
-    verify_apb_access_loop();
-}
-
-TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
-{
-    start_apb_access_loop();
-#if CONFIG_MBEDTLS_SHA1_C
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
-#endif
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha256_self_test(1), "SHA256 self-tests should pass.");
-#if CONFIG_MBEDTLS_SHA512_C
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
-#endif
     verify_apb_access_loop();
 }

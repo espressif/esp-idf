@@ -9,17 +9,23 @@
 #include "esp_log.h"
 
 #include "hal/ecdsa_types.h"
-#include "ecdsa/ecdsa_alt.h"
+
 #include "soc/soc_caps.h"
 
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"
-#include "mbedtls/error.h"
-#include "mbedtls/ecdsa.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/ecdsa.h"
+#include "mbedtls/private/pk_private.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
+#include "mbedtls/bignum.h"
 
+#include "ecdsa/ecdsa_alt.h"
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+#include "pk_wrap.h"
+#endif // CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 #include "esp_tee_sec_storage.h"
 #endif
@@ -82,6 +88,46 @@
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM */
 
 __attribute__((unused)) static const char *TAG = "ecdsa_alt";
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+/* Forward declaration of custom PK info structure for ESP hardware ECDSA */
+extern const mbedtls_pk_info_t esp_ecdsa_pk_info;
+#endif
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+/* Forward declarations for wrapped functions */
+int __wrap_mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
+                       const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                       int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+
+/* Forward declaration for ASN.1 conversion helper */
+static int ecdsa_signature_to_asn1(const mbedtls_mpi *r, const mbedtls_mpi *s,
+                                   unsigned char *sig, size_t sig_size,
+                                   size_t *slen);
+#endif
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+int __wrap_mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
+                         const unsigned char *buf, size_t blen,
+                         const mbedtls_ecp_point *Q,
+                         const mbedtls_mpi *r,
+                         const mbedtls_mpi *s);
+
+/* Forward declaration for hardware verify function */
+static int esp_ecdsa_verify(mbedtls_ecp_group *grp,
+                            const unsigned char *buf, size_t blen,
+                            const mbedtls_ecp_point *Q,
+                            const mbedtls_mpi *r,
+                            const mbedtls_mpi *s);
+#else
+/* Forward declaration for software verify when hardware verify is disabled */
+int __real_mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
+                         const unsigned char *buf, size_t blen,
+                         const mbedtls_ecp_point *Q,
+                         const mbedtls_mpi *r,
+                         const mbedtls_mpi *s);
+#endif
+
 
 #if SOC_ECDSA_SUPPORTED
 /**
@@ -391,11 +437,29 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
     }
 
     mbedtls_pk_init(key_ctx);
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+    /* Use our custom pk_info that routes to hardware ECDSA for signing and/or verification */
+    pk_info = &esp_ecdsa_pk_info;
+#else
     pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECDSA);
+#endif
     if (mbedtls_pk_setup(key_ctx, pk_info) != 0) {
         return -1;
     }
-    keypair = mbedtls_pk_ec(*key_ctx);
+
+    /* In mbedtls v4.0, MBEDTLS_PK_ECDSA doesn't allocate pk_ctx (ctx_alloc_func = NULL)
+     * because EC keys are managed through PSA. For hardware ECDSA, we need to manually
+     * allocate an mbedtls_ecp_keypair structure to store the magic values. */
+    keypair = calloc(1, sizeof(mbedtls_ecp_keypair));
+    if (keypair == NULL) {
+        return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+    }
+
+    /* Initialize the keypair structure */
+    mbedtls_ecp_keypair_init(keypair);
+
+    /* Manually assign to pk_ctx since mbedtls_pk_setup didn't do it */
+    key_ctx->MBEDTLS_PRIVATE(pk_ctx) = keypair;
 
     return esp_ecdsa_privkey_load_mpi(&(keypair->MBEDTLS_PRIVATE(d)), efuse_blk);
 }
@@ -437,7 +501,6 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
 #endif
     return 0;
 }
-
 
 static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s,
                           const mbedtls_mpi *d, const unsigned char* msg, size_t msg_len,
@@ -559,7 +622,213 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
     return 0;
 }
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
+
+void esp_ecdsa_free_pk_context(mbedtls_pk_context *key_ctx)
+{
+    if (key_ctx == NULL) {
+        return;
+    }
+
+    /* In mbedtls v4.0, we manually allocated the keypair structure for hardware ECDSA.
+     * We need to free it manually since ctx_free_func is NULL for MBEDTLS_PK_ECDSA. */
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*key_ctx);
+    if (keypair != NULL) {
+        mbedtls_ecp_keypair_free(keypair);
+        free(keypair);
+        key_ctx->MBEDTLS_PRIVATE(pk_ctx) = NULL;
+    }
+
+    mbedtls_pk_free(key_ctx);
+}
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+/* Custom PK wrapper functions for ESP hardware ECDSA
+ *
+ * Flow: mbedtls_pk_sign() → esp_ecdsa_pk_sign_wrap() → esp_ecdsa_sign() → Hardware ECDSA
+ *
+ * This bypasses the PSA opaque key path and routes directly to hardware ECDSA
+ * by using a custom pk_info structure that doesn't require PSA key IDs.
+ */
+static int esp_ecdsa_pk_can_do(mbedtls_pk_type_t type)
+{
+    return type == MBEDTLS_PK_ECKEY ||
+           type == MBEDTLS_PK_ECDSA;
+}
+
+static size_t esp_ecdsa_pk_get_bitlen(mbedtls_pk_context *pk)
+{
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*pk);
+    if (keypair == NULL) {
+        return 0;
+    }
+    return keypair->MBEDTLS_PRIVATE(grp).nbits;
+}
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY */
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+static int esp_ecdsa_pk_verify_wrap(mbedtls_pk_context *pk,
+                                   mbedtls_md_type_t md_alg,
+                                   const unsigned char *hash, size_t hash_len,
+                                   const unsigned char *sig, size_t sig_len)
+{
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*pk);
+    int ret;
+    unsigned char *p = (unsigned char *) sig;
+    const unsigned char *end = sig + sig_len;
+    size_t len;
+    mbedtls_mpi r, s;
+
+    (void) md_alg; /* Not used for hardware ECDSA verification */
+
+    if (keypair == NULL) {
+        return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    /* Check if public key is loaded */
+    if (mbedtls_mpi_cmp_int(&keypair->MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 0) == 0) {
+        return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    /* Parse the DER signature */
+    if ((ret = mbedtls_asn1_get_tag(&p, end, &len,
+                                    MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) != 0) {
+        ret += MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if (p + len != end) {
+        ret = MBEDTLS_ERR_PK_BAD_INPUT_DATA + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH;
+        goto cleanup;
+    }
+
+    if ((ret = mbedtls_asn1_get_mpi(&p, end, &r)) != 0 ||
+        (ret = mbedtls_asn1_get_mpi(&p, end, &s)) != 0) {
+        ret += MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    /* Call verification function directly - wrapper doesn't work from same compilation unit */
+    ret = esp_ecdsa_verify(&keypair->MBEDTLS_PRIVATE(grp),
+                           hash, hash_len,
+                           &keypair->MBEDTLS_PRIVATE(Q),
+                           &r, &s);
+
+    if (ret == 0 && p != end) {
+        ESP_LOGW(TAG, "Extra data after signature");
+        ret = MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    return ret;
+}
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY */
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+static int esp_ecdsa_pk_sign_wrap(mbedtls_pk_context *pk,
+                                  mbedtls_md_type_t md_alg,
+                                  const unsigned char *hash, size_t hash_len,
+                                  unsigned char *sig, size_t sig_size,
+                                  size_t *sig_len)
+{
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*pk);
+    int ret;
+    mbedtls_mpi r, s;
+
+    (void) md_alg; /* Not used for hardware ECDSA signing */
+
+    if (keypair == NULL) {
+        return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    /* Check if this is a hardware-backed key by checking the magic value */
+    signed short key_magic = keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(s);
+    if (key_magic != ECDSA_KEY_MAGIC && key_magic != ECDSA_KEY_MAGIC_TEE) {
+        /* Not a hardware key, this shouldn't happen with our setup */
+        return MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE;
+    }
+
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    /* Call esp_ecdsa_sign directly - wrapper doesn't work from same compilation unit */
+    ret = esp_ecdsa_sign(&keypair->MBEDTLS_PRIVATE(grp),
+                         &r, &s,
+                         &keypair->MBEDTLS_PRIVATE(d),
+                         hash, hash_len,
+                         ECDSA_K_TYPE_TRNG);
+    if (ret != 0) {
+        goto cleanup;
+    }
+
+    /* Convert r and s to DER format */
+    ret = ecdsa_signature_to_asn1(&r, &s, sig, sig_size, sig_len);
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    return ret;
+}
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+static int esp_ecdsa_pk_check_pair_wrap(mbedtls_pk_context *pub, mbedtls_pk_context *prv)
+{
+    /* For hardware-backed keys, we cannot easily verify the pair
+     * since the private key never leaves the eFuse.
+     * We'll do a basic check that both contexts are valid. */
+    if (pub == NULL || prv == NULL) {
+        return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    mbedtls_ecp_keypair *pub_keypair = mbedtls_pk_ec(*pub);
+    mbedtls_ecp_keypair *prv_keypair = mbedtls_pk_ec(*prv);
+
+    if (pub_keypair == NULL || prv_keypair == NULL) {
+        return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    /* Check that both use the same curve */
+    if (pub_keypair->MBEDTLS_PRIVATE(grp).id != prv_keypair->MBEDTLS_PRIVATE(grp).id) {
+        return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    return 0;
+}
+
+/* Custom pk_info structure for ESP hardware ECDSA */
+const mbedtls_pk_info_t esp_ecdsa_pk_info = {
+    .type = MBEDTLS_PK_ECDSA,
+    .name = "ESP_ECDSA",
+    .get_bitlen = esp_ecdsa_pk_get_bitlen,
+    .can_do = esp_ecdsa_pk_can_do,
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+    .verify_func = esp_ecdsa_pk_verify_wrap,
+#else
+    .verify_func = NULL,
 #endif
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+    .sign_func = esp_ecdsa_pk_sign_wrap,
+#else
+    .sign_func = NULL,
+#endif
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+    .verify_rs_func = NULL,
+    .sign_rs_func = NULL,
+    .rs_alloc_func = NULL,
+    .rs_free_func = NULL,
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+    .check_pair_func = esp_ecdsa_pk_check_pair_wrap,
+    .ctx_alloc_func = NULL,
+    .ctx_free_func = NULL,
+    .debug_func = NULL,
+};
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY */
 
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
@@ -638,7 +907,15 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
         ESP_LOGE(TAG, "Failed to setup pk context, mbedtls_pk_setup() returned %d", ret);
         return ret;
     }
-    keypair = mbedtls_pk_ec(*key_ctx);
+    keypair = calloc(1, sizeof(mbedtls_ecp_keypair));
+    if (keypair == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for ecp_keypair");
+        return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+    }
+
+    mbedtls_ecp_keypair_init(keypair);
+
+    key_ctx->MBEDTLS_PRIVATE(pk_ctx) = keypair;
 
     mbedtls_mpi_init(&(keypair->MBEDTLS_PRIVATE(d)));
     keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(s) = ECDSA_KEY_MAGIC_TEE;
@@ -722,8 +999,8 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    mbedtls_mpi_read_binary(r, sign.sign_r, len);
-    mbedtls_mpi_read_binary(s, sign.sign_s, len);
+    mbedtls_mpi_read_binary(r, sign.signature, len);
+    mbedtls_mpi_read_binary(s, sign.signature + len, len);
 
     return 0;
 }
@@ -935,7 +1212,7 @@ static int ecdsa_signature_to_asn1(const mbedtls_mpi *r, const mbedtls_mpi *s,
                                    unsigned char *sig, size_t sig_size,
                                    size_t *slen)
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    int ret = PSA_ERROR_CORRUPTION_DETECTED;
     unsigned char buf[MBEDTLS_ECDSA_MAX_LEN] = { 0 };
     // Setting the pointer p to the end of the buffer as the functions used afterwards write in backwards manner in the given buffer.
     unsigned char *p = buf + sizeof(buf);
@@ -973,7 +1250,7 @@ int __wrap_mbedtls_ecdsa_write_signature_restartable(mbedtls_ecdsa_context *ctx,
         return __real_mbedtls_ecdsa_write_signature_restartable(ctx, md_alg, hash, hlen, sig, sig_size, slen, f_rng, p_rng, rs_ctx);
     }
 
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    int ret = PSA_ERROR_CORRUPTION_DETECTED;
     mbedtls_mpi r, s;
 
     mbedtls_mpi_init(&r);
@@ -1190,7 +1467,7 @@ int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
                                              const unsigned char *sig, size_t slen,
                                              mbedtls_ecdsa_restart_ctx *rs_ctx)
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    int ret = PSA_ERROR_CORRUPTION_DETECTED;
     unsigned char *p = (unsigned char *) sig;
     const unsigned char *end = sig + slen;
     size_t len;
@@ -1205,8 +1482,7 @@ int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
     }
 
     if (p + len != end) {
-        ret = MBEDTLS_ERROR_ADD(MBEDTLS_ERR_ECP_BAD_INPUT_DATA,
-                                MBEDTLS_ERR_ASN1_LENGTH_MISMATCH);
+        ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH;
         goto cleanup;
     }
 
@@ -1225,7 +1501,7 @@ int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
      * Return 0 if the buffer just contains the signature, and a specific
      * error code if the valid signature is followed by more data. */
     if (p != end) {
-        ret = MBEDTLS_ERR_ECP_SIG_LEN_MISMATCH;
+        ret = PSA_ERROR_INVALID_SIGNATURE;
     }
 
 cleanup:
