@@ -80,28 +80,28 @@ menu "Roles and Profiles"
         depends on BT_NIMBLE_ENABLED
         default y
         help
-            Enables central role
+            Enables BLE Central role
 
     config BT_NIMBLE_ROLE_PERIPHERAL
         bool "Enable BLE Peripheral role"
         depends on BT_NIMBLE_ENABLED
         default y
         help
-            Enable peripheral role
+            Enable BLE Peripheral role
 
     config BT_NIMBLE_ROLE_BROADCASTER
         bool "Enable BLE Broadcaster role"
         depends on BT_NIMBLE_ENABLED
         default y
         help
-            Enables broadcaster role
+            Enables BLE broadcaster role
 
     config BT_NIMBLE_ROLE_OBSERVER
         bool "Enable BLE Observer role"
         depends on BT_NIMBLE_ENABLED
         default y
         help
-            Enables observer role
+            Enables BLE Observer role
 
     config BT_NIMBLE_GATT_CLIENT
         bool "Enable BLE GATT Client support"
@@ -127,57 +127,84 @@ menu "Security (SMP)"
         help
             Enable BLE sm feature
 
-    config BT_NIMBLE_SM_LEGACY
-        bool "Security manager legacy pairing"
-        depends on BT_NIMBLE_SECURITY_ENABLE
-        default y
-        help
-            Enable security manager legacy pairing
+    if BT_NIMBLE_SECURITY_ENABLE
+        config BT_NIMBLE_SM_LEGACY
+            bool "Security manager legacy pairing"
+            default y
+            help
+                Enable security manager legacy pairing
 
-    config BT_NIMBLE_SM_SC
-        bool "Security manager secure connections (4.2)"
-        depends on BT_NIMBLE_SECURITY_ENABLE
-        default y
-        help
-            Enable security manager secure connections
+        config BT_NIMBLE_SM_SC
+            bool "Security manager secure connections (4.2)"
+            default y
+            help
+                Enable security manager secure connections
 
-    config BT_NIMBLE_SM_SC_DEBUG_KEYS
-        bool "Use predefined public-private key pair"
-        default n
-        depends on BT_NIMBLE_SECURITY_ENABLE && BT_NIMBLE_SM_SC
-        help
-            If this option is enabled, SM uses predefined DH key pair as described
-            in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
-            decrypt air traffic easily and thus should only be used for debugging.
+        config BT_NIMBLE_SM_SC_DEBUG_KEYS
+            bool "Use predefined public-private key pair"
+            default n
+            depends on BT_NIMBLE_SM_SC
+            help
+                If this option is enabled, SM uses predefined DH key pair as described
+                in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
+                decrypt air traffic easily and thus should only be used for debugging.
 
-    config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
-        bool "Enable LE encryption"
-        depends on BT_NIMBLE_SECURITY_ENABLE && BT_NIMBLE_ENABLED
-        default y
-        help
-            Enable encryption connection
+        config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
+            bool "Enable LE encryption"
+            default y
+            help
+                Enable encryption connection
 
-    config BT_NIMBLE_SM_LVL
-        int "Security level"
-        depends on BT_NIMBLE_SECURITY_ENABLE
-        default 0
-        help
-            LE Security Mode 1 Levels:
-            1. No Security
-            2. Unauthenticated pairing with encryption
-            3. Authenticated pairing with encryption
-            4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
+        config BT_NIMBLE_SM_LVL
+            int "Security level"
+            default 0
+            help
+                LE Security Mode 1 Levels:
+                1. No Security
+                2. Unauthenticated pairing with encryption
+                3. Authenticated pairing with encryption
+                4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
 
-    config BT_NIMBLE_SM_SC_ONLY
-        int "Enable Secure Connections Only Mode"
-        depends on BT_NIMBLE_SECURITY_ENABLE
-        default 0
-        help
-            Enable Secure Connections Only Mode
+        config BT_NIMBLE_SM_SC_ONLY
+            int "Enable Secure Connections Only Mode"
+            default 0
+            help
+                Enable Secure Connections Only Mode
 
+        config BT_NIMBLE_SMP_ID_RESET
+            bool "Reset device identity when all bonding records are deleted"
+            default n
+            help
+                There are tracking risks associated with using a fixed or static IRK.
+                If enabled this option, NimBLE will assign a new randomly-generated IRK
+                when all pairing and bonding records are deleted. This would decrease the ability
+                of a previously paired peer to be used to determine whether a device
+                with which it previously shared an IRK is within range.
+
+        config BT_NIMBLE_NVS_PERSIST
+            bool "Persist the BLE Bonding keys in NVS"
+            default n
+            help
+                Enable this flag to make bonding persistent across device reboots
+
+        config BT_NIMBLE_MAX_BONDS
+            int "Maximum number of bonds to save across reboots"
+            default 3
+            help
+                Defines maximum number of bonds to save for peer security and our security
+
+        config BT_NIMBLE_HANDLE_REPEAT_PAIRING_DELETION
+            bool "Enable stack handling of repeat pairing"
+            default n
+            help
+                Use this option to let stack internally handle the request for repeat pairing.
+                Enabling this option will delete the pairing of the device and stack will NOT post any event
+                to application. If this option is disabled, application will get BLE_GAP_EVENT_REPEAT_PAIRING
+                event.
+    endif
 endmenu #SMP
 
-menu "GAP / GATT / Device Settings"
+menu "GAP"
     config BT_NIMBLE_RPA_TIMEOUT
         int "RPA timeout in seconds"
         range 1 41400
@@ -193,15 +220,15 @@ menu "GAP / GATT / Device Settings"
         range 1 15
         default 12
         help
-            BLE list size
+            BLE Whitelist size
 
     config BT_NIMBLE_ENABLE_CONN_REATTEMPT
         bool "Enable connection reattempts on connection establishment error"
         default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || SOC_ESP_NIMBLE_CONTROLLER)
         default n if IDF_TARGET_ESP32
         help
-            Enable to make the NimBLE host to reattempt GAP connection on connection
-            establishment failure.
+            Enable to make the NimBLE host to reattempt GAP connection attempt in case of
+            connection establishment failure due to reason 0x3E.
 
     config BT_NIMBLE_MAX_CONN_REATTEMPT
         int "Maximum number connection reattempts"
@@ -211,23 +238,23 @@ menu "GAP / GATT / Device Settings"
         help
             Defines maximum number of connection reattempts.
 
-    config BT_NIMBLE_HANDLE_REPEAT_PAIRING_DELETION
-        bool "Enable stack handling of repeat pairing"
-        default n
+    config BT_NIMBLE_HS_PVCY
+        bool "Enable privacy related APIs"
+        default y
         depends on BT_NIMBLE_ENABLED
         help
-            Use this option to let stack internally handle the request for repeat pairing.
-            Enabling this option will delete the pairing of the device and stack will NOT post any event
-            to application. If this option is disabled, application will get BLE_GAP_EVENT_REPEAT_PAIRING
-            event.
+            Enable this option to include host-side APIs related to BLE privacy.
+            Disable it if your application does not require privacy features (such as
+            RPA generation, resolving, or privacy-based pairing). Disabling this option
+            excludes privacy-related code from the host to reduce memory usage.
 
     config BT_NIMBLE_HOST_BASED_PRIVACY
         bool "Enable host based privacy for random address."
         default n
-        depends on BT_NIMBLE_ENABLED && IDF_TARGET_ESP32
+        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_HS_PVCY && IDF_TARGET_ESP32
         help
             Use this option to do host based Random Private Address resolution.
-            If this option is disabled then controller based privacy is used.
+            This option is valid only for ESP32
 
     config BT_NIMBLE_HOST_ALLOW_CONNECT_WITH_SCAN
         bool "Allow Connections with scanning in progress"
@@ -246,6 +273,7 @@ menu "GAP / GATT / Device Settings"
 
     config BT_NIMBLE_MAX_CONNECTIONS
         int "Maximum number of concurrent connections"
+        depends on BT_NIMBLE_ROLE_CENTRAL || BT_NIMBLE_ROLE_PERIPHERAL
         range 1 2 if IDF_TARGET_ESP32C2
         range 1 70 if SOC_ESP_NIMBLE_CONTROLLER
         range 1 9
@@ -259,59 +287,12 @@ menu "GAP / GATT / Device Settings"
             configure BT_CTRL_BLE_MAX_ACT from controller menu.
             For ESP32C2, ESP32C6 and ESP32H2, each connection will take about 1k DRAM.
 
-    config BT_NIMBLE_MAX_BONDS
-        int "Maximum number of bonds to save across reboots"
-        default 3
-        depends on BT_NIMBLE_ENABLED
-        help
-            Defines maximum number of bonds to save for peer security and our security
-
     config BT_NIMBLE_MAX_CCCDS
         int "Maximum number of CCC descriptors to save across reboots"
         default 8
-        depends on BT_NIMBLE_ENABLED
+        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_NVS_PERSIST
         help
             Defines maximum number of CCC descriptors to save
-
-
-    config BT_NIMBLE_NVS_PERSIST
-        bool "Persist the BLE Bonding keys in NVS"
-        depends on BT_NIMBLE_ENABLED
-        default n
-        help
-            Enable this flag to make bonding persistent across device reboots
-
-    config BT_NIMBLE_SMP_ID_RESET
-        bool "Reset device identity when all bonding records are deleted"
-        default n
-        help
-            There are tracking risks associated with using a fixed or static IRK.
-            If enabled this option, NimBLE will assign a new randomly-generated IRK
-            when all pairing and bonding records are deleted. This would decrease the ability
-            of a previously paired peer to be used to determine whether a device
-            with which it previously shared an IRK is within range.
-
-    config BT_NIMBLE_ATT_PREFERRED_MTU
-        int "Preferred MTU size in octets"
-        depends on BT_NIMBLE_ENABLED
-        default 256
-        help
-            This is the default value of ATT MTU indicated by the device during an ATT MTU exchange.
-            This value can be changed using API ble_att_set_preferred_mtu()
-
-    config BT_NIMBLE_ATT_MAX_PREP_ENTRIES
-        int "Max Prepare write entries"
-        depends on BT_NIMBLE_ENABLED
-        default 64
-        help
-            This is the default value of ATT Maximum prepare entries
-
-    config BT_NIMBLE_GATT_MAX_PROCS
-        int "Maximum number of GATT client procedures"
-        depends on BT_NIMBLE_ENABLED
-        default 4
-        help
-            Maximum number of GATT client procedures that can be executed.
 
     config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
         bool "Override TinyCrypt with mbedTLS for crypto computations"
@@ -329,18 +310,11 @@ menu "GAP / GATT / Device Settings"
         help
             BLE Host stop procedure timeout in milliseconds.
 
-
     config BT_NIMBLE_USE_ESP_TIMER
         bool "Enable Esp Timer for Nimble"
         default y
         help
             Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer
-
-    config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
-        bool "Blob transfer"
-        help
-            This option is used when data to be sent is more than 512 bytes. For peripheral role,
-            BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
 
     config BT_NIMBLE_HS_FLOW_CTRL
         bool "Enable Host Flow control"
@@ -376,6 +350,113 @@ menu "GAP / GATT / Device Settings"
 
 endmenu #GAP
 
+menu "GATT / ATT"
+    config BT_NIMBLE_ATT_PREFERRED_MTU
+        int "Preferred MTU size in octets"
+        depends on BT_NIMBLE_GATT_CLIENT || BT_NIMBLE_GATT_SERVER
+        default 256
+        help
+            This is the default value of ATT MTU indicated by the device during an ATT MTU exchange.
+            This value can be changed using API ble_att_set_preferred_mtu()
+
+    config BT_NIMBLE_ATT_MAX_PREP_ENTRIES
+        int "Max Prepare write entries"
+        depends on BT_NIMBLE_GATT_CLIENT || BT_NIMBLE_GATT_SERVER
+        default 64
+        help
+            This is the default value of ATT Maximum prepare entries
+
+    config BT_NIMBLE_GATT_MAX_PROCS
+        int "Maximum number of GATT client procedures"
+        depends on BT_NIMBLE_GATT_CLIENT || BT_NIMBLE_GATT_SERVER
+        default 4
+        help
+            Maximum number of GATT client procedures that can be executed.
+
+    config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
+        bool "Blob transfer"
+        depends on BT_NIMBLE_GATT_CLIENT || BT_NIMBLE_GATT_SERVER
+        help
+            This option is used when data to be sent is more than 512 bytes. For peripheral role,
+            BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
+
+
+    menuconfig BT_NIMBLE_GATT_CACHING
+        bool "Enable GATT caching"
+        depends on BT_NIMBLE_ENABLED
+        select BT_NIMBLE_DYNAMIC_SERVICE
+        help
+            Enable GATT caching
+
+    config BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+        bool "Include services in GATT caching"
+        depends on BT_NIMBLE_GATT_CACHING
+        default n
+        help
+            Enable this option to include *included services* (e.g., services referenced by other services)
+            in the GATT database cache. Disabling this will skip caching of included service entries.
+
+    config BT_NIMBLE_INCL_SVC_DISCOVERY
+        bool
+        default y if BT_NIMBLE_GATT_CACHING && BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+        default n if BT_NIMBLE_GATT_CACHING && !BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
+        default n if !BT_NIMBLE_GATT_CACHING
+        prompt "Enable Included service discovery" if !BT_NIMBLE_GATT_CACHING
+        help
+            Enable this option to start discovery for included service.
+
+    config BT_NIMBLE_GATT_CACHING_MAX_CONNS
+        int "Maximum connections to be cached"
+        depends on BT_NIMBLE_GATT_CACHING
+        default BT_NIMBLE_MAX_CONNECTIONS
+        help
+            Set this option to set the upper limit on number of connections to be cached.
+
+    config BT_NIMBLE_GATT_CACHING_MAX_SVCS
+        int "Maximum number of services per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of services per connection to be cached.
+
+    config BT_NIMBLE_GATT_CACHING_MAX_INCL_SVCS
+        int "Maximum number of included services per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of included services per connection to be cached.
+
+    config BT_NIMBLE_GATT_CACHING_MAX_CHRS
+        int "Maximum number of characteristics per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of characteristics per connection to be cached.
+
+    config BT_NIMBLE_GATT_CACHING_MAX_DSCS
+        int "Maximum number of descriptors per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of descriptors per connection to be cached.
+
+    config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
+        bool "Do not start discovery procedure automatically upon receiving Out of Sync"
+        depends on BT_NIMBLE_GATT_CACHING
+        default n
+        help
+            When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
+            to correct the invalid cache.
+
+    config BT_NIMBLE_GATT_CACHING_ASSOC_ENABLE
+        bool "Enable association-based GATT caching"
+        depends on BT_NIMBLE_GATT_CACHING
+        default n
+        help
+            Enable this option to use associated address caching instead of performing service discovery.
+
+endmenu #GATT/ATT
+
 menu "L2CAP"
     config BT_NIMBLE_L2CAP_COC_MAX_NUM
         int "Maximum number of connection oriented channels"
@@ -388,7 +469,7 @@ menu "L2CAP"
     config BT_NIMBLE_L2CAP_ENHANCED_COC
         bool "L2CAP Enhanced Connection Oriented Channel"
         depends on BT_NIMBLE_ENABLED && (BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1)
-        default 0
+        default n
         help
             Enable Enhanced Credit Based Flow Control Mode
 
@@ -416,7 +497,7 @@ menu "Memory Settings"
         int    "MSYS_2 Block Count"
         default 24
         help
-            Dynamic memory count
+            Dynamic memory count for block 2
 
     config BT_NIMBLE_MSYS_2_BLOCK_SIZE
         int    "MSYS_2 Block Size"
@@ -735,7 +816,7 @@ menu "BLE 6.x Features"
         depends on BT_NIMBLE_ENABLED && (SOC_BLE_60_SUPPORTED || BT_CONTROLLER_DISABLED)
         default n
         help
-            Enable BLE 6 feature
+            Enable BLE 6.x feature support
 
     if BT_NIMBLE_60_FEATURE_SUPPORT
         config BT_NIMBLE_CHANNEL_SOUNDING
@@ -1124,80 +1205,6 @@ menu "Extra Features"
         help
             This enables user to add/remove Gatt services at runtime
 
-    menuconfig BT_NIMBLE_GATT_CACHING
-        bool "Enable GATT caching"
-        depends on BT_NIMBLE_ENABLED
-        select BT_NIMBLE_DYNAMIC_SERVICE
-        help
-            Enable GATT caching
-
-    config BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
-        bool "Include services in GATT caching"
-        depends on BT_NIMBLE_GATT_CACHING
-        default n
-        help
-            Enable this option to include *included services* (e.g., services referenced by other services)
-            in the GATT database cache. Disabling this will skip caching of included service entries.
-
-    config BT_NIMBLE_INCL_SVC_DISCOVERY
-        bool
-        default y if BT_NIMBLE_GATT_CACHING && BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
-        default n if BT_NIMBLE_GATT_CACHING && !BT_NIMBLE_GATT_CACHING_INCLUDE_SERVICES
-        default n if !BT_NIMBLE_GATT_CACHING
-        prompt "Enable Included service discovery" if !BT_NIMBLE_GATT_CACHING
-        help
-            Enable this option to start discovery for included service.
-
-    config BT_NIMBLE_GATT_CACHING_MAX_CONNS
-        int "Maximum connections to be cached"
-        depends on BT_NIMBLE_GATT_CACHING
-        default BT_NIMBLE_MAX_CONNECTIONS
-        help
-            Set this option to set the upper limit on number of connections to be cached.
-
-    config BT_NIMBLE_GATT_CACHING_MAX_SVCS
-        int "Maximum number of services per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of services per connection to be cached.
-
-    config BT_NIMBLE_GATT_CACHING_MAX_INCL_SVCS
-        int "Maximum number of included services per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of included services per connection to be cached.
-
-    config BT_NIMBLE_GATT_CACHING_MAX_CHRS
-        int "Maximum number of characteristics per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of characteristics per connection to be cached.
-
-    config BT_NIMBLE_GATT_CACHING_MAX_DSCS
-        int "Maximum number of descriptors per connection"
-        depends on BT_NIMBLE_GATT_CACHING
-        default 64
-        help
-            Set this option to set the upper limit on number of descriptors per connection to be cached.
-
-    config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
-        bool "Do not start discovery procedure automatically upon receiving Out of Sync"
-        depends on BT_NIMBLE_GATT_CACHING
-        default n
-        help
-            When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
-            to correct the invalid cache.
-
-    config BT_NIMBLE_GATT_CACHING_ASSOC_ENABLE
-        bool "Enable association-based GATT caching"
-        depends on BT_NIMBLE_GATT_CACHING
-        default n
-        help
-            Enable this option to use associated address caching instead of performing service discovery.
-
     config BT_NIMBLE_BLUFI_ENABLE
         bool "Enable blufi functionality"
         depends on BT_NIMBLE_ENABLED
@@ -1235,7 +1242,6 @@ menu "Extra Features"
             error suggests insufficient security, then the central will initiate pairing and retry
             the service request.
 
-
     config BT_NIMBLE_EATT_CHAN_NUM
         int "Maximum number of EATT channels"
         default 0
@@ -1256,6 +1262,59 @@ menu "Extra Features"
         depends on BT_NIMBLE_ENABLED && BT_NIMBLE_SECURITY_ENABLE
         help
             Enable support for user defined static passkey for SMP
+
+    config BT_NIMBLE_DTM_MODE_TEST
+        bool "Enable DTM related test procedure support"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable DTM related test procedure support
+
+    config BT_NIMBLE_MEM_OPTIMIZATION
+        bool "Enable memory optimization"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        help
+            This option enables memory optimizations in the NimBLE stack.
+
+    config BT_NIMBLE_STATIC_TO_DYNAMIC
+        bool "Use Dynamic Memory allocations instead of static"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        help
+            This option enables use of dynamic memory allocation instead of static
+            allocation for variable global / local variable. This helps in improving
+            memory footprint
+
+    config BT_NIMBLE_SM_SIGN_CNT
+        bool "Enable Sign counter operations"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable Sign counter operations
+
+    config BT_NIMBLE_CPFD_CAFD
+        bool "Enable CPFD/CAPD support"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable CPFD and CAPD gatt descriptors support
+
+    config BT_NIMBLE_RECONFIG_MTU
+        bool "Reconfig L2CAP MTU support"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable Support to reconfigure L2CAP MTU / MPS
+
+    config BT_NIMBLE_LOW_SPEED_MODE
+        bool "Reduce DRAM/IRAM usage by moving GATT/GAP/NPL functions to FLASH"
+        default n
+        help
+            Disabling IRAM-optimized paths will place functions in FLASH (.irom.text)
+            instead of DRAM (.iram.text/.text in internal RAM). Suitable for low-speed
+            GAP/GATT operations to reduce RAM usage.
+
 endmenu
 
 menu "NimBLE Mesh"
@@ -1475,6 +1534,16 @@ menu "Host-controller Transport"
 endmenu #Transport
 
 menu "Debugging/Testing"
+    config BT_NIMBLE_MEM_DEBUG
+        bool "NimBLE memory debug"
+        depends on BT_NIMBLE_ENABLED && !BT_NIMBLE_ISO
+        default n
+        help
+            Enable NimBLE memory debug to track memory allocations and deallocations.
+            This feature records the function name, line number, and size of each allocation,
+            and provides APIs to display memory usage statistics, find memory leaks, and
+            monitor peak memory usage.
+
     choice BT_NIMBLE_LOG_LEVEL
         prompt "NimBLE Host log verbosity"
         depends on BT_NIMBLE_ENABLED
@@ -1553,3 +1622,28 @@ menu "Vendor / Optimization"
         help
             This enable BLE high duty advertising interval feature
 endmenu #Vendor
+
+menu "Helper Utils"
+    config BT_NIMBLE_CHK_HOST_STATUS
+        bool "Enable host status query support"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable support to query host status
+
+    config BT_NIMBLE_UTIL_API
+        bool "Enable helper APIs"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable support for misc APIs like set data addr change, read local resolv addr
+            and set host feature
+
+    config BT_NIMBLE_EXTRA_ADV_FIELDS
+        bool "Enable extra Adv report fields parsing"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enable support for parsing of more adv fields as per spec
+
+endmenu
