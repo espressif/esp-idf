@@ -731,6 +731,15 @@ void esp32c5_eco3_rom_ptr_init(void)
 #endif
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C61
+#if CONFIG_ESP32C61_REV_MIN_FULL <= 100
+void esp32c61_eco4_rom_ptr_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32C2
 #if CONFIG_ESP32C2_REV_MIN_FULL < 200
 void esp32c2_eco4_rom_ptr_init(void)
