@@ -19,6 +19,15 @@ BLE_LOG_STATIC TaskHandle_t rt_task_handle = NULL;
 BLE_LOG_STATIC QueueHandle_t rt_queue_handle = NULL;
 #if CONFIG_BLE_LOG_TS_ENABLED
 BLE_LOG_STATIC bool rt_ts_enabled = false;
+#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
+BLE_LOG_STATIC esp_timer_handle_t rt_ts_timer = NULL;
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
+#endif /* CONFIG_BLE_LOG_TS_ENABLED */
+
+/* PRIVATE FUNCTION DECLARATION */
+#if CONFIG_BLE_LOG_TS_ENABLED
+BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters);
+BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* PRIVATE FUNCTION */
@@ -56,21 +65,30 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         };
         ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&ble_log_info, sizeof(ble_log_info_t));
 
-#if CONFIG_BLE_LOG_TS_ENABLED
-        if (rt_ts_enabled) {
-            ble_log_ts_info_t *ts_info = NULL;
-            ble_log_ts_info_update(&ts_info);
-            if (ts_info) {
-                ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)ts_info, sizeof(ble_log_ts_info_t));
-            }
-        }
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
+#if CONFIG_BLE_LOG_TS_TRIGGER_TASK_EVENT
+        ble_log_rt_ts_trigger(NULL);
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_TASK_EVENT */
 
 #if CONFIG_BLE_LOG_ENH_STAT_ENABLED
         ble_log_write_enh_stat();
 #endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
     }
 }
+
+#if CONFIG_BLE_LOG_TS_ENABLED
+BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
+{
+    (void)arg;
+    if (!rt_inited || !rt_ts_enabled) {
+        return;
+    }
+    ble_log_ts_info_t *ts_info = NULL;
+    ble_log_ts_info_update(&ts_info);
+    if (ts_info) {
+        ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)ts_info, sizeof(ble_log_ts_info_t));
+    }
+}
+#endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* INTERFACE */
 bool ble_log_rt_init(void)
@@ -92,10 +110,26 @@ bool ble_log_rt_init(void)
         goto exit;
     }
 
-    rt_inited = true;
 #if CONFIG_BLE_LOG_TS_ENABLED
     rt_ts_enabled = false;
+#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
+    /* Initialize ESP Timer Trigger */
+    esp_timer_create_args_t ts_timer_args = {
+        .callback = ble_log_rt_ts_trigger,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "ble_log_ts_timer",
+    };
+    if (esp_timer_create(&ts_timer_args, &rt_ts_timer) != ESP_OK) {
+        goto exit;
+    }
+    if (esp_timer_start_periodic(rt_ts_timer, BLE_LOG_TS_TRIGGER_TIMEOUT_US) != ESP_OK) {
+        goto exit;
+    }
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
+
+    rt_inited = true;
     return true;
 
 exit:
@@ -108,6 +142,13 @@ void ble_log_rt_deinit(void)
     rt_inited = false;
 #if CONFIG_BLE_LOG_TS_ENABLED
     rt_ts_enabled = false;
+#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
+    if (rt_ts_timer) {
+        esp_timer_stop(rt_ts_timer);
+        esp_timer_delete(rt_ts_timer);
+        rt_ts_timer = NULL;
+    }
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
     /* CRITICAL:

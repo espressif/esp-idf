@@ -110,12 +110,38 @@ if BLE_LOG_ENABLED
         help
             Enable BLE Log TS with external logging module
 
-    config BLE_LOG_SYNC_IO_NUM
-        int "GPIO number for Timestamp Synchronization (TS) toggle output"
-        depends on BLE_LOG_TS_ENABLED
-        default 0
-        help
-            GPIO number for TS toggle output
+    if BLE_LOG_TS_ENABLED
+        config BLE_LOG_SYNC_IO_NUM
+            int "GPIO number for Timestamp Synchronization (TS) toggle output"
+            depends on BLE_LOG_TS_ENABLED
+            default 0
+            help
+                GPIO number for TS toggle output
+
+        config BLE_LOG_TS_TRIGGER_TIMEOUT_MS
+            int "Timeout (ms) for Timestamp Synchronization toggle"
+            default 1000
+            help
+                Timeout (ms) for Timestamp Synchronization toggle
+
+        choice BLE_LOG_TS_TRIGGER_CHOICE
+            prompt "BLE Log Timestamp Synchronization trigger choice"
+            default BLE_LOG_TS_TRIGGER_TASK_EVENT
+            help
+                Choose BLE Log Timestamp Synchronization trigger
+
+            config BLE_LOG_TS_TRIGGER_ESP_TIMER
+                bool "BLE Log Timestamp Synchronization trigger - ESP Timer"
+                select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+                help
+                    ESP Timer based periodic TS trigger
+
+            config BLE_LOG_TS_TRIGGER_TASK_EVENT
+                bool "BLE Log Timestamp Synchronization trigger - Task Event"
+                help
+                    Task Event based TS trigger (Light Sleep Test Compatibility)
+        endchoice
+    endif
 
     choice BLE_LOG_PRPH_CHOICE
         prompt "BLE Log peripheral choice"
