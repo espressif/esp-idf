@@ -710,6 +710,11 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     UINT16          cmd_len;
     UINT16          min_interval, max_interval, latency, timeout;
 
+    if (pkt_len < L2CAP_CMD_OVERHEAD) {
+        L2CAP_TRACE_WARNING ("L2CAP - LE - pkt too short: %d", pkt_len);
+        return;
+    }
+
     p_pkt_end = p + pkt_len;
 
     STREAM_TO_UINT8  (cmd_code, p);
@@ -726,6 +731,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     case L2CAP_CMD_REJECT:
     case L2CAP_CMD_ECHO_RSP:
     case L2CAP_CMD_INFO_RSP:
+        if (cmd_len < 2) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         p += 2;
         break;
     case L2CAP_CMD_ECHO_REQ:
@@ -734,6 +743,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
 
     case L2CAP_CMD_BLE_UPDATE_REQ:
+        if (cmd_len < 8) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         STREAM_TO_UINT16 (min_interval, p); /* 0x0006 - 0x0C80 */
         STREAM_TO_UINT16 (max_interval, p); /* 0x0006 - 0x0C80 */
         STREAM_TO_UINT16 (latency, p);  /* 0x0000 - 0x03E8 */
@@ -776,6 +789,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
 
     case L2CAP_CMD_BLE_UPDATE_RSP: {
+        if (cmd_len < 2) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         UINT16 result = 0;
         STREAM_TO_UINT16(result, p); //result = 0 connection param accepted, result = 1 connection param rejected.
         UINT8 status = (result == 0) ? HCI_SUCCESS : HCI_ERR_PARAM_OUT_OF_RANGE;
@@ -788,6 +805,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
     }
     case L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ: {
+        if (cmd_len < 10) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         tL2C_CCB *p_ccb = NULL;
         tL2C_RCB *p_rcb = NULL;
         UINT16 spsm;
@@ -836,6 +857,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
     }
     case L2CAP_CMD_DISC_REQ: {
+        if (cmd_len < 4) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         tL2C_CCB *p_ccb = NULL;
         UINT16 lcid;
         UINT16 rcid;
