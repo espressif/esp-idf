@@ -76,6 +76,9 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
 }
 
 #if CONFIG_BLE_LOG_TS_ENABLED
+#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
+BLE_LOG_IRAM_ATTR
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD */
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 {
     (void)arg;
@@ -117,7 +120,9 @@ bool ble_log_rt_init(void)
     esp_timer_create_args_t ts_timer_args = {
         .callback = ble_log_rt_ts_trigger,
         .arg = NULL,
+#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
         .dispatch_method = ESP_TIMER_ISR,
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD */
         .name = "ble_log_ts_timer",
     };
     if (esp_timer_create(&ts_timer_args, &rt_ts_timer) != ESP_OK) {
