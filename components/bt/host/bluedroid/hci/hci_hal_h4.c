@@ -45,6 +45,9 @@
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
@@ -605,6 +608,9 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_write_hex(BLE_LOG_SRC_HCI, data, len);
+#endif /* CONFIG_BLE_LOG_ENABLED */
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
 #if (BLE_42_SCAN_EN == TRUE)
