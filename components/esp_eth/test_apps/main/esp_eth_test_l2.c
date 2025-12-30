@@ -220,6 +220,15 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 
     TEST_ESP_OK(esp_eth_update_input_path(eth_handle, l2_packet_txrx_test_cb, &s_recv_info));
 
+    TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
+
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    // if DUT is connected in network with switch: even if link is indicated up, it may take some time the switch
+    // starts switching the associated port (e.g. it runs RSTP at first)
+    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
+
     // ---------------------------------------
     printf("Enable receive all multicast\n");
     // ---------------------------------------
@@ -231,18 +240,9 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     s_recv_info.brdcast_rx_cnt = 0;
     bool all_multicast = true;
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_ALL_MULTICAST, &all_multicast));
-
-    TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
-
-    EventBits_t bits = 0;
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
-    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
-    // if DUT is connected in network with switch: even if link is indicated up, it may take some time the switch
-    // starts switching the associated port (e.g. it runs RSTP at first)
-    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
-
     bits = 0;
     xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    printf("Filter configured\n");
     bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
                                true, true, pdMS_TO_TICKS(1000));
     printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
@@ -270,11 +270,9 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     s_recv_info.brdcast_rx_cnt = 0;
     all_multicast = false;
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_ALL_MULTICAST, &all_multicast));
-    // send POKE to indicate that the DUT reconfigured the filter
-    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
-
     bits = 0;
     xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    printf("Filter configured\n");
     bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
                                true, true, pdMS_TO_TICKS(1000));
     printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
@@ -297,10 +295,9 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, multicast_addr_ip4));
     uint8_t multicast_addr_ip6[ETH_ADDR_LEN] = {0x33, 0x33, 0x00, 0x00, 0x00, 0x00};
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, multicast_addr_ip6));
-    // send POKE to indicate that the DUT reconfigured the filter
-    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
     bits = 0;
     xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    printf("Filter configured\n");
     bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
                                true, true, pdMS_TO_TICKS(1000));
     printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
@@ -319,10 +316,9 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     s_recv_info.multicast_rx_cnt = 0;
     s_recv_info.brdcast_rx_cnt = 0;
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip4));
-    // send POKE to indicate that the DUT reconfigured the filter
-    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
     bits = 0;
     xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    printf("Filter configured\n");
     bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
                                true, true, pdMS_TO_TICKS(1000));
     printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
@@ -355,10 +351,9 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 #else
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip6));
 #endif
-    // send POKE to indicate that the DUT reconfigured the filter
-    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
     bits = 0;
     xEventGroupClearBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT);
+    printf("Filter configured\n");
     bits = xEventGroupWaitBits(eth_event_rx_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
                                true, true, pdMS_TO_TICKS(1000));
     printf("bits = 0x%" PRIu32 "\n", (uint32_t)bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
