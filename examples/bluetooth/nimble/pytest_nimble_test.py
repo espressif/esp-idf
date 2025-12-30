@@ -1,22 +1,24 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-import os.path
+from pathlib import Path
 from typing import Tuple
 
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+
+CUR_DIR = Path(__file__).parent.resolve()
+
+
 # Case 1: BLE power save test
-
-
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "power_save")}|{os.path.join(os.path.dirname(__file__), "blecent")}',
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
         ),
     ],
     indirect=True,
@@ -39,7 +41,7 @@ def test_power_save_conn(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, count, app_path, baud',
@@ -47,7 +49,7 @@ def test_power_save_conn(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
         (
             'esp32c2_xtal26m',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "power_save")}|{os.path.join(os.path.dirname(__file__), "blecent")}',
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
             '74880',
         ),
     ],
@@ -69,7 +71,7 @@ def test_power_save_conn_esp32c2_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C2ECO4
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.esp32c2eco4
 @pytest.mark.parametrize(
@@ -78,7 +80,7 @@ def test_power_save_conn_esp32c2_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
         (
             'esp32c2eco4_xtal26m',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "power_save")}|{os.path.join(os.path.dirname(__file__), "blecent")}',
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
             '74880',
         ),
     ],
@@ -100,7 +102,7 @@ def test_power_save_conn_esp32c2eco4(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C3ECO7
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.esp32c3eco7
 @pytest.mark.parametrize(
     'config, count, app_path',
@@ -108,7 +110,7 @@ def test_power_save_conn_esp32c2eco4(dut: Tuple[IdfDut, IdfDut]) -> None:
         (
             'esp32c3eco7',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "power_save")}|{os.path.join(os.path.dirname(__file__), "blecent")}',
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
         ),
     ],
     indirect=True,
