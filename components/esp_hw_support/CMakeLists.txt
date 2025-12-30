@@ -68,6 +68,7 @@ if(NOT non_os_build)
             )
         if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
             list(APPEND srcs "sleep_system_peripheral.c")
+            list(APPEND srcs "port/${target}/peripheral_domain_pd.c")
         endif()
     endif()
 
@@ -75,7 +76,6 @@ if(NOT non_os_build)
     list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
                               esp_timer
                               esp_hal_touch_sens # for touch sensor wakeup (introduced in sleep_modes.c)
-                              esp_hal_i2s  # required by `sleep_system_peripheral.c`
                               esp_pm)
 
     list(APPEND priv_requires esp_mm
@@ -240,6 +240,10 @@ add_subdirectory(lowpower)
 
 if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")
+endif()
+
+if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u sleep_system_peripheral_dummy")
 endif()
 
 if(NOT non_os_build)
