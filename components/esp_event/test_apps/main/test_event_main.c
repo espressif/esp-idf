@@ -27,26 +27,32 @@ void setUp(void)
     unity_utils_set_leak_level(0);
     unity_utils_record_free_mem();
 
+#if SOC_WDT_SUPPORTED
     esp_task_wdt_add(NULL);
     esp_task_wdt_reset();
+#endif
 
 }
 
 void tearDown(void)
 {
-#ifdef CONFIG_HEAP_TRACING
-    heap_trace_stop();
-    heap_trace_dump();
+
+#if SOC_WDT_SUPPORTED
+    esp_task_wdt_reset();
+    esp_task_wdt_delete(NULL);
 #endif
 
     unity_utils_evaluate_leaks();
 
-    esp_task_wdt_reset();
-    esp_task_wdt_delete(NULL);
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_stop();
+    heap_trace_dump();
+#endif
 }
 
 void app_main(void)
 {
+#if SOC_WDT_SUPPORTED
     // Configure the task watchdog timer to catch any tests that hang
     esp_task_wdt_config_t config = {
         .timeout_ms = 25 * 1000, // 25 seconds, smaller than the default pytest timeout
@@ -55,6 +61,7 @@ void app_main(void)
     };
 
     esp_task_wdt_init(&config);
+#endif // SOC_WDT_SUPPORTED
 
     ESP_LOGI(TAG, "Running esp-event test app");
     // rand() seems to do a one-time allocation. Call it here so that the memory it allocates

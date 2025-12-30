@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -236,7 +236,7 @@ TEST_CASE("can exit running loop at approximately the set amount of time", "[eve
 TEST_CASE("can register/unregister handlers simultaneously", "[event]")
 {
     /* this test aims to verify that the event handlers list remains consistent despite
-     * simultaneous access by differenct tasks */
+     * simultaneous access by different tasks */
 
     const char* base = "base";
     int32_t id = 0;
@@ -358,7 +358,7 @@ TEST_CASE("can post and run events simultaneously", "[event]")
 {
     /* this test aims to verify that:
      *  - multiple tasks can post to the queue simultaneously
-     *  - handlers recieve the appropriate handler arg and associated event data */
+     *  - handlers receive the appropriate handler arg and associated event data */
 
     esp_event_loop_handle_t loop;
 
@@ -433,7 +433,7 @@ TEST_CASE("can post and run events simultaneously with instances", "[event]")
 {
     /* this test aims to verify that:
      *  - multiple tasks can post to the queue simultaneously
-     *  - handlers recieve the appropriate handler arg and associated event data */
+     *  - handlers receive the appropriate handler arg and associated event data */
 
     esp_event_loop_handle_t loop;
 
@@ -685,7 +685,7 @@ TEST_CASE("data posted from ISR is correctly set internally", "[event][intr]")
     TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(loop_def->queue, &post, portMAX_DELAY));
     TEST_ASSERT_EQUAL(true, post.data_set);
     TEST_ASSERT_EQUAL(false, post.data_allocated);
-    TEST_ASSERT_EQUAL(false, post.data.val);
+    TEST_ASSERT_EQUAL(0, *(int*)post.data.val);
 
     TEST_ESP_OK(esp_event_loop_delete(loop));
 
