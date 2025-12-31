@@ -685,6 +685,32 @@ esp_err_t httpd_register_err_handler(httpd_handle_t handle,
                                      httpd_err_code_t error,
                                      httpd_err_handler_func_t handler_fn);
 
+/**
+ * @brief   For handling HTTP errors by invoking registered
+ *          error handler function
+ *
+ * This function can be called from within a URI handler to manually
+ * trigger error handling. It will invoke the registered error handler
+ * for the specified error code if one exists, otherwise it will send
+ * the default HTTP error response.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - If a custom error handler is registered and returns ESP_OK,
+ *    the socket will remain open. If it returns ESP_FAIL or no
+ *    handler is registered, the socket will be closed.
+ *  - For HTTPD_500_INTERNAL_SERVER_ERROR, the API returns ESP_FAIL
+ *
+ * @param[in] req     Pointer to the HTTP request for which error occurred
+ * @param[in] error   Error type
+ *
+ * @return
+ *  - ESP_OK    : error handled successfully (socket may remain open)
+ *  - ESP_FAIL  : failure indicates that the underlying socket needs to be closed
+ */
+esp_err_t httpd_req_handle_err(httpd_req_t *req, httpd_err_code_t error);
+
 /** End of HTTP Error
  * @}
  */
