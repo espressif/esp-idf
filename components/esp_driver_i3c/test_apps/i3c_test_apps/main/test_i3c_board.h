@@ -18,7 +18,7 @@ extern "C" {
 #define I3C_MASTER_SDA_IO    GPIO_NUM_33     /*!< gpio number for I3C master data  */
 
 #define TEST_STATIC_ADDRESS  0x6a
-#define TEST_DYNAMIC_ADDRESS 0x06
+#define TEST_DYNAMIC_ADDRESS 0x09
 
 #define DATA_LENGTH     16
 

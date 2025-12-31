@@ -28,7 +28,20 @@ TEST_CASE("I3C bus install-uninstall test", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .trans_queue_depth = 30,
         .intr_priority = 0,
-        .flags = {0}
+        .i3c_scl_freq_hz_od = 0,
+        .i3c_scl_freq_hz_pp = 0,
+        .i3c_scl_pp_duty_cycle = 0.5,
+        .i3c_scl_od_duty_cycle = 0.5,
+        .i3c_sda_od_hold_time_ns = 25,
+        .i3c_sda_pp_hold_time_ns = 0,
+        .entdaa_device_num = 5,
+        .internal_pullup_resistor_val = I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K,
+        .flags = {
+            .enable_async_trans = 0,
+            .ibi_rstart_trans_en = 0,
+            .ibi_silent_sir_rejected = 0,
+            .ibi_no_auto_disable = 0,
+        }
     };
     i3c_master_bus_handle_t bus_handle;
 
@@ -52,7 +65,20 @@ TEST_CASE("I3C driver memory leaking check", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .trans_queue_depth = 30,
         .intr_priority = 0,
-        .flags = {0}
+        .i3c_scl_freq_hz_od = 0,
+        .i3c_scl_freq_hz_pp = 0,
+        .i3c_scl_pp_duty_cycle = 0.5,
+        .i3c_scl_od_duty_cycle = 0.5,
+        .i3c_sda_od_hold_time_ns = 25,  // 1 clock cycle at 40MHz XTAL
+        .i3c_sda_pp_hold_time_ns = 0,
+        .entdaa_device_num = 5,
+        .internal_pullup_resistor_val = I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K,
+        .flags = {
+            .enable_async_trans = 0,
+            .ibi_rstart_trans_en = 0,
+            .ibi_silent_sir_rejected = 0,
+            .ibi_no_auto_disable = 0,
+        }
     };
     i3c_master_bus_handle_t bus_handle;
 
@@ -74,7 +100,20 @@ TEST_CASE("I3C device add & remove check", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .trans_queue_depth = 30,
         .intr_priority = 0,
-        .flags = {.enable_async_trans = 1}
+        .i3c_scl_freq_hz_od = 0,
+        .i3c_scl_freq_hz_pp = 0,
+        .i3c_scl_pp_duty_cycle = 0.5,
+        .i3c_scl_od_duty_cycle = 0.5,
+        .i3c_sda_od_hold_time_ns = 25,  // 1 clock cycle at 40MHz XTAL
+        .i3c_sda_pp_hold_time_ns = 0,
+        .entdaa_device_num = 5,
+        .internal_pullup_resistor_val = I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K,
+        .flags = {
+            .enable_async_trans = 1,
+            .ibi_rstart_trans_en = 0,
+            .ibi_silent_sir_rejected = 0,
+            .ibi_no_auto_disable = 0,
+        }
     };
     i3c_master_bus_handle_t bus_handle;
 
@@ -119,7 +158,20 @@ TEST_CASE("I3C master clock frequency test", "[i3c]")
         .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
         .trans_queue_depth = 1,
         .intr_priority = 0,
-        .flags = {0}
+        .i3c_scl_freq_hz_od = 0,
+        .i3c_scl_freq_hz_pp = 0,
+        .i3c_scl_pp_duty_cycle = 0.5,
+        .i3c_scl_od_duty_cycle = 0.5,
+        .i3c_sda_od_hold_time_ns = 25,  // 1 clock cycle at 40MHz XTAL
+        .i3c_sda_pp_hold_time_ns = 0,
+        .entdaa_device_num = 5,
+        .internal_pullup_resistor_val = I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K,
+        .flags = {
+            .enable_async_trans = 0,
+            .ibi_rstart_trans_en = 0,
+            .ibi_silent_sir_rejected = 0,
+            .ibi_no_auto_disable = 0,
+        }
     };
     i3c_master_bus_handle_t bus_handle;
     gpio_pullup_en(I3C_MASTER_SCL_IO);
