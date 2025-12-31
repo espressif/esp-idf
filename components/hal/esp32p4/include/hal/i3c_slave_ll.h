@@ -16,6 +16,7 @@
 #include "hal/misc.h"
 #include "soc/i3c_slv_struct.h"
 #include "soc/i3c_slv_reg.h"
+#include "soc/io_mux_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -204,6 +205,76 @@ static inline void i3c_slave_ll_set_transmit_fifo_threshold(i3c_slv_dev_t *dev, 
 static inline void i3c_slave_ll_set_receive_fifo_threshold(i3c_slv_dev_t *dev, uint8_t threshold)
 {
     dev->datactrl.rxtrig = threshold;
+}
+
+/**
+ * @brief Set the IBI payload byte
+ *
+ * Configure the single-byte payload that will be transmitted by the slave as
+ * part of an In-Band Interrupt (IBI) once the controller acknowledges the
+ * request. This should be programmed before starting the IBI request via
+ * i3c_slave_ll_start_ibi().
+ *
+ * - Only the least significant 8 bits are used.
+ * - If no payload is required by the use case, this can be left at its default.
+ *
+ * @param dev I3C slave hardware pointer
+ * @param payload 8-bit payload value to be sent with the IBI
+ */
+static inline void i3c_slave_ll_set_ibi_payload(i3c_slv_dev_t *dev, uint8_t payload)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->ctrl, ibidata, payload);
+}
+
+/**
+ * @brief Request or cancel an In-Band Interrupt (IBI)
+ *
+ * Set this flag to request the slave to initiate an IBI on the bus at the next
+ * appropriate opportunity. Clear the flag to cancel any pending IBI request.
+ * If the IBI requires a payload byte, configure it beforehand using
+ * i3c_slave_ll_set_ibi_payload().
+ *
+ * @param dev I3C slave hardware pointer
+ * @param start_ibi true to request/start an IBI, false to cancel/clear the request
+ */
+static inline void i3c_slave_ll_start_ibi(i3c_slv_dev_t *dev, bool start_ibi)
+{
+    dev->ctrl.slv_event = start_ibi;
+}
+
+/**
+ * @brief Enable or disable the I3C internal pull-up for a specific pin
+ *
+ * Controls the dedicated I3C pull-up resistor unit in IO MUX for the slave
+ * role. This is different from the generic GPIO pull-up and is intended for
+ * I3C operation.
+ *
+ * Note: Only IO32 and IO33 support the I3C internal pull-up on this SoC.
+ *
+ * @param io GPIO index, must be 32 or 33
+ * @param enable true to enable the internal pull-up control; false to disable
+ */
+static inline void i3c_slave_ll_enable_internal_pullup(int io, bool enable)
+{
+    HAL_ASSERT(io == 32 || io == 33);
+    IO_MUX.gpio[io].i3c_rue_en = enable;
+}
+
+/**
+ * @brief Set the I3C internal pull-up strength/value for a specific pin
+ *
+ * Programs the pull-up resistor unit value used by the I3C pin in IO MUX.
+ *
+ * Effective only if the internal pull-up is enabled via
+ * i3c_slave_ll_enable_internal_pullup().
+ *
+ * @param io GPIO index, must be 32 or 33
+ * @param value Encoded pull-up value (SoC-specific)
+ */
+static inline void i3c_slave_ll_set_internal_pullup_value(int io, uint32_t value)
+{
+    HAL_ASSERT(io == 32 || io == 33);
+    IO_MUX.gpio[io].i3c_ru = value;
 }
 
 #ifdef __cplusplus
