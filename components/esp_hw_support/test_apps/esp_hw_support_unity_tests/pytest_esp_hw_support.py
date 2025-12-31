@@ -13,6 +13,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
         ('single_core_esp32', 'esp32'),
         *(('default', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
         *(('release', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
+        *(('rwdt_monitor', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
     ],
     indirect=['config', 'target'],
 )
