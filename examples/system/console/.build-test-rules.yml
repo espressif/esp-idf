@@ -1,0 +1,23 @@
+examples/system/console/advanced:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"] # IDF-9120 and IDF-9133
+      reason: Sufficient to run this app on one chip with each architecture
+  depends_components:
+    - console
+    - esp_driver_uart
+    - esp_driver_usb_serial_jtag
+    - esp_usb_cdc_rom_console
+    - esp_stdio
+    - vfs
+
+examples/system/console/basic:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run this app on one chip with each architecture
+  depends_components:
+    - console
+    - esp_driver_uart
+    - esp_driver_usb_serial_jtag
+    - esp_usb_cdc_rom_console
+    - esp_stdio
+    - vfs
