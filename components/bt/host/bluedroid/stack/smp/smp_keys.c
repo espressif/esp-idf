@@ -34,8 +34,18 @@
 #include "btm_int.h"
 #include "btm_ble_int.h"
 #include "stack/hcimsgs.h"
+#if (SMP_CRYPTO_MBEDTLS == TRUE)
+#include "psa/crypto.h"
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+#include "tinycrypt/aes.h"
+#include "tinycrypt/cmac_mode.h"
+#include "tinycrypt/ecc_dh.h"
+#include "tinycrypt/ecc.h"
+#include "tinycrypt/constants.h"
+#else
 #include "aes.h"
 #include "p_256_ecc_pp.h"
+#endif /* SMP_CRYPTO_MBEDTLS */
 #include "device/controller.h"
 
 #ifndef SMP_MAX_ENC_REPEAT
@@ -159,12 +169,11 @@ BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
                           UINT8 *plain_text, UINT8 pt_len,
                           tSMP_ENC *p_out)
 {
-    aes_context ctx;
     UINT8 *p_start = NULL;
     UINT8 *p = NULL;
-    UINT8 *p_rev_data = NULL;    /* input data in big endilan format */
-    UINT8 *p_rev_key = NULL;     /* input key in big endilan format */
-    UINT8 *p_rev_output = NULL;  /* encrypted output in big endilan format */
+    UINT8 *p_rev_data = NULL;    /* input data in big endian format */
+    UINT8 *p_rev_key = NULL;     /* input key in big endian format */
+    UINT8 *p_rev_output = NULL;  /* encrypted output in big endian format */
 
     SMP_TRACE_DEBUG ("%s\n", __func__);
     if ( (p_out == NULL ) || (key_len != SMP_ENCRYT_KEY_SIZE) ) {
@@ -194,8 +203,67 @@ BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
     smp_debug_print_nbyte_little_endian(p_start, (const UINT8 *)"Plain text", SMP_ENCRYT_DATA_SIZE);
 #endif
     p_rev_output = p;
-    aes_set_key(p_rev_key, SMP_ENCRYT_KEY_SIZE, &ctx);
-    bluedroid_aes_encrypt(p_rev_data, p, &ctx);  /* outputs in byte 48 to byte 63 */
+
+#if (SMP_CRYPTO_MBEDTLS == TRUE)
+    {
+        psa_status_t status;
+        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+        psa_key_id_t key_id = 0;
+        size_t output_len = 0;
+
+        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT);
+        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECB_NO_PADDING);
+        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+        psa_set_key_bits(&key_attributes, 128);
+
+        status = psa_import_key(&key_attributes, p_rev_key, SMP_ENCRYT_KEY_SIZE, &key_id);
+        psa_reset_key_attributes(&key_attributes);
+
+        if (status != PSA_SUCCESS) {
+            SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __func__, status);
+            osi_free(p_start);
+            return FALSE;
+        }
+
+        status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, p_rev_data,
+                                    SMP_ENCRYT_DATA_SIZE, p_rev_output, SMP_ENCRYT_DATA_SIZE, &output_len);
+        psa_destroy_key(key_id);
+
+        if (status != PSA_SUCCESS || output_len != SMP_ENCRYT_DATA_SIZE) {
+            SMP_TRACE_ERROR("%s psa_cipher_encrypt failed: %d\n", __func__, status);
+            osi_free(p_start);
+            return FALSE;
+        }
+    }
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+    {
+        struct tc_aes_key_sched_struct sched;
+
+        /* TinyCrypt expects big-endian key and data */
+        if (tc_aes128_set_encrypt_key(&sched, p_rev_key) == TC_CRYPTO_FAIL) {
+            SMP_TRACE_ERROR("%s tc_aes128_set_encrypt_key failed\n", __func__);
+            memset(&sched, 0, sizeof(sched));
+            osi_free(p_start);
+            return FALSE;
+        }
+
+        if (tc_aes_encrypt(p_rev_output, p_rev_data, &sched) == TC_CRYPTO_FAIL) {
+            SMP_TRACE_ERROR("%s tc_aes_encrypt failed\n", __func__);
+            memset(&sched, 0, sizeof(sched));
+            osi_free(p_start);
+            return FALSE;
+        }
+
+        /* Clear sensitive data from key schedule */
+        memset(&sched, 0, sizeof(sched));
+    }
+#else
+    {
+        aes_context ctx;
+        aes_set_key(p_rev_key, SMP_ENCRYT_KEY_SIZE, &ctx);
+        bluedroid_aes_encrypt(p_rev_data, p_rev_output, &ctx);  /* outputs in byte 48 to byte 63 */
+    }
+#endif /* SMP_CRYPTO_MBEDTLS */
 
     p = p_out->param_buf;
     REVERSE_ARRAY_TO_STREAM (p, p_rev_output, SMP_ENCRYT_DATA_SIZE);
@@ -207,6 +275,8 @@ BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
     p_out->status = HCI_SUCCESS;
     p_out->opcode =  HCI_BLE_ENCRYPT;
 
+    /* Clear sensitive data (including key at byte 32-47) before freeing */
+    memset(p_start, 0, SMP_ENCRYT_DATA_SIZE * 4);
     osi_free(p_start);
 
     return TRUE;
@@ -1118,8 +1188,6 @@ void smp_continue_private_key_creation (tSMP_CB *p_cb, tBTM_RAND_ENC *p)
 *******************************************************************************/
 void smp_process_private_key(tSMP_CB *p_cb)
 {
-    Point       public_key;
-    BT_OCTET32  private_key;
     tSMP_LOC_OOB_DATA *p_loc_oob = &p_cb->sc_oob_data.loc_oob_data;
 
     SMP_TRACE_DEBUG ("%s", __FUNCTION__);
@@ -1131,10 +1199,90 @@ void smp_process_private_key(tSMP_CB *p_cb)
         memcpy(p_cb->loc_publ_key.y, p_loc_oob->publ_key_used.y, BT_OCTET32_LEN);
         memcpy(p_cb->local_random, p_loc_oob->randomizer, BT_OCTET16_LEN);
     } else {
+#if (SMP_CRYPTO_MBEDTLS == TRUE)
+        psa_status_t status;
+        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+        psa_key_id_t key_id = 0;
+        UINT8 priv_be[BT_OCTET32_LEN];
+        UINT8 pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];  /* 0x04 || X (32 bytes) || Y (32 bytes) */
+        size_t pub_len = 0;
+
+        /* Convert private key from little-endian to big-endian */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            priv_be[i] = p_cb->private_key[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Import the private key */
+        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+        psa_set_key_bits(&key_attributes, 256);
+        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
+        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
+
+        status = psa_import_key(&key_attributes, priv_be, BT_OCTET32_LEN, &key_id);
+        psa_reset_key_attributes(&key_attributes);
+
+        if (status != PSA_SUCCESS) {
+            SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __FUNCTION__, status);
+            goto psa_pubkey_cleanup;
+        }
+
+        /* Export public key */
+        status = psa_export_public_key(key_id, pub_be, sizeof(pub_be), &pub_len);
+        if (status != PSA_SUCCESS || pub_len != (BT_OCTET32_LEN + BT_OCTET32_LEN + 1)) {
+            SMP_TRACE_ERROR("%s psa_export_public_key failed: %d\n", __FUNCTION__, status);
+            goto psa_pubkey_cleanup;
+        }
+
+        /* Convert X and Y from big-endian to little-endian */
+        /* pub_be: 0x04 || X (32 bytes) || Y (32 bytes) */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            p_cb->loc_publ_key.x[i] = pub_be[1 + BT_OCTET32_LEN - 1 - i];
+            p_cb->loc_publ_key.y[i] = pub_be[33 + BT_OCTET32_LEN - 1 - i];
+        }
+
+psa_pubkey_cleanup:
+        psa_destroy_key(key_id);
+        /* Clear sensitive data from stack */
+        memset(priv_be, 0, sizeof(priv_be));
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+        {
+            UINT8 pub_key[64];  /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+            UINT8 priv_be[BT_OCTET32_LEN];
+
+            /* Convert private key from little-endian to big-endian */
+            for (int i = 0; i < BT_OCTET32_LEN; i++) {
+                priv_be[i] = p_cb->private_key[BT_OCTET32_LEN - 1 - i];
+            }
+
+            /* Compute public key from private key */
+            /* uECC_compute_public_key returns 1 if successful, 0 if failed */
+            if (uECC_compute_public_key(priv_be, pub_key, uECC_secp256r1()) != TC_CRYPTO_SUCCESS) {
+                SMP_TRACE_ERROR("%s uECC_compute_public_key failed\n", __FUNCTION__);
+                memset(priv_be, 0, sizeof(priv_be));
+                memset(pub_key, 0, sizeof(pub_key));
+                return;
+            }
+
+            /* Convert X and Y from big-endian to little-endian */
+            /* TinyCrypt format: X (32 bytes) || Y (32 bytes) */
+            for (int i = 0; i < BT_OCTET32_LEN; i++) {
+                p_cb->loc_publ_key.x[i] = pub_key[BT_OCTET32_LEN - 1 - i];
+                p_cb->loc_publ_key.y[i] = pub_key[BT_OCTET32_LEN + BT_OCTET32_LEN - 1 - i];
+            }
+
+            /* Clear sensitive data from stack */
+            memset(priv_be, 0, sizeof(priv_be));
+            memset(pub_key, 0, sizeof(pub_key));
+        }
+#else
+        Point       public_key;
+        BT_OCTET32  private_key;
+
         memcpy(private_key, p_cb->private_key, BT_OCTET32_LEN);
         ECC_PointMult(&public_key, &(curve_p256.G), (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
         memcpy(p_cb->loc_publ_key.x, public_key.x, BT_OCTET32_LEN);
         memcpy(p_cb->loc_publ_key.y, public_key.y, BT_OCTET32_LEN);
+#endif /* SMP_CRYPTO_MBEDTLS */
     }
 
     smp_debug_print_nbyte_little_endian (p_cb->private_key, (const UINT8 *)"private",
@@ -1161,10 +1309,111 @@ void smp_process_private_key(tSMP_CB *p_cb)
 *******************************************************************************/
 void smp_compute_dhkey (tSMP_CB *p_cb)
 {
+    SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
+
+#if (SMP_CRYPTO_MBEDTLS == TRUE)
+    psa_status_t status;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    UINT8 priv_be[BT_OCTET32_LEN];
+    UINT8 peer_pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];  /* 0x04 || X (32 bytes) || Y (32 bytes) */
+    UINT8 shared_secret[BT_OCTET32_LEN];
+    size_t output_len = 0;
+
+    /* Convert private key from little-endian to big-endian */
+    for (int i = 0; i < BT_OCTET32_LEN; i++) {
+        priv_be[i] = p_cb->private_key[BT_OCTET32_LEN - 1 - i];
+    }
+
+    /* Import the private key */
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&key_attributes, 256);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
+
+    status = psa_import_key(&key_attributes, priv_be, BT_OCTET32_LEN, &key_id);
+    psa_reset_key_attributes(&key_attributes);
+
+    if (status != PSA_SUCCESS) {
+        SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __FUNCTION__, status);
+        goto psa_dhkey_cleanup;
+    }
+
+    /* Construct peer public key in uncompressed format: 0x04 || X || Y */
+    peer_pub_be[0] = 0x04;
+    for (int i = 0; i < BT_OCTET32_LEN; i++) {
+        peer_pub_be[1 + i] = p_cb->peer_publ_key.x[BT_OCTET32_LEN - 1 - i];
+        peer_pub_be[33 + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
+    }
+
+    /* Compute ECDH shared secret */
+    status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, peer_pub_be, sizeof(peer_pub_be),
+                                   shared_secret, sizeof(shared_secret), &output_len);
+    if (status != PSA_SUCCESS || output_len != BT_OCTET32_LEN) {
+        SMP_TRACE_ERROR("%s psa_raw_key_agreement failed: %d\n", __FUNCTION__, status);
+        goto psa_dhkey_cleanup;
+    }
+
+    /* Convert shared secret from big-endian to little-endian for DHKey */
+    for (int i = 0; i < BT_OCTET32_LEN; i++) {
+        p_cb->dhkey[i] = shared_secret[BT_OCTET32_LEN - 1 - i];
+    }
+
+psa_dhkey_cleanup:
+    psa_destroy_key(key_id);
+    /* Clear sensitive data from stack */
+    memset(priv_be, 0, sizeof(priv_be));
+    memset(shared_secret, 0, sizeof(shared_secret));
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+    {
+        UINT8 priv_be[BT_OCTET32_LEN];
+        UINT8 peer_pub_be[64];  /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+        UINT8 shared_secret[BT_OCTET32_LEN];
+
+        /* Convert private key from little-endian to big-endian */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            priv_be[i] = p_cb->private_key[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Convert peer public key from little-endian to big-endian */
+        /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            peer_pub_be[i] = p_cb->peer_publ_key.x[BT_OCTET32_LEN - 1 - i];
+            peer_pub_be[BT_OCTET32_LEN + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Validate peer public key */
+        /* uECC_valid_public_key returns 0 if valid, negative value if invalid */
+        if (uECC_valid_public_key(peer_pub_be, uECC_secp256r1()) < 0) {
+            SMP_TRACE_ERROR("%s Invalid peer public key\n", __FUNCTION__);
+            memset(priv_be, 0, sizeof(priv_be));
+            memset(peer_pub_be, 0, sizeof(peer_pub_be));
+            return;
+        }
+
+        /* Compute ECDH shared secret */
+        /* uECC_shared_secret returns TC_CRYPTO_SUCCESS (1) if successful, TC_CRYPTO_FAIL (0) if failed */
+        if (uECC_shared_secret(peer_pub_be, priv_be, shared_secret, uECC_secp256r1()) != TC_CRYPTO_SUCCESS) {
+            SMP_TRACE_ERROR("%s uECC_shared_secret failed\n", __FUNCTION__);
+            memset(priv_be, 0, sizeof(priv_be));
+            memset(peer_pub_be, 0, sizeof(peer_pub_be));
+            memset(shared_secret, 0, sizeof(shared_secret));
+            return;
+        }
+
+        /* Convert shared secret from big-endian to little-endian for DHKey */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            p_cb->dhkey[i] = shared_secret[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Clear sensitive data from stack */
+        memset(priv_be, 0, sizeof(priv_be));
+        memset(peer_pub_be, 0, sizeof(peer_pub_be));
+        memset(shared_secret, 0, sizeof(shared_secret));
+    }
+#else
     Point       peer_publ_key, new_publ_key;
     BT_OCTET32  private_key;
-
-    SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
 
     memcpy(private_key, p_cb->private_key, BT_OCTET32_LEN);
     memcpy(peer_publ_key.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
@@ -1173,8 +1422,9 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     ECC_PointMult(&new_publ_key, &peer_publ_key, (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
 
     memcpy(p_cb->dhkey, new_publ_key.x, BT_OCTET32_LEN);
+#endif /* SMP_CRYPTO_MBEDTLS */
 
-    smp_debug_print_nbyte_little_endian (p_cb->dhkey, (const UINT8 *)"Old DHKey",
+    smp_debug_print_nbyte_little_endian (p_cb->dhkey, (const UINT8 *)"DHKey",
                                          BT_OCTET32_LEN);
 
     smp_debug_print_nbyte_little_endian (p_cb->private_key, (const UINT8 *)"private",
@@ -1182,8 +1432,6 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     smp_debug_print_nbyte_little_endian (p_cb->peer_publ_key.x, (const UINT8 *)"rem public(x)",
                                          BT_OCTET32_LEN);
     smp_debug_print_nbyte_little_endian (p_cb->peer_publ_key.y, (const UINT8 *)"rem public(y)",
-                                         BT_OCTET32_LEN);
-    smp_debug_print_nbyte_little_endian (p_cb->dhkey, (const UINT8 *)"Reverted DHKey",
                                          BT_OCTET32_LEN);
 }
 
