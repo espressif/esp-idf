@@ -1,5 +1,14 @@
 menu "Hardware Settings"
 
+    config ESP_HW_SUPPORT_FUNC_IN_IRAM
+        bool
+        default n if SPI_FLASH_AUTO_SUSPEND
+        default y
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+        select ESP_REGI2C_CTRL_FUNC_IN_IRAM
+        select RTC_CLK_FUNC_IN_IRAM
+        select RTC_TIME_FUNC_IN_IRAM
+
     menu "Chip revision"
         # Insert chip-specific HW config
         orsource "./port/$IDF_TARGET/Kconfig.hw_support"
@@ -264,12 +273,24 @@ menu "Hardware Settings"
 
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
+
+        config RTC_CLK_FUNC_IN_IRAM
+            bool "Place RTC clock module functions into IRAM"
+            default y
+            help
+                Place RTC clock module (all rtc clock functions and const data) into IRAM.
+
+        config RTC_TIME_FUNC_IN_IRAM
+            bool "Place RTC time module functions into IRAM"
+            default y
+            help
+                Place RTC time module (all rtc clock functions) into IRAM.
     endmenu
 
     menu "Peripheral Control"
         config ESP_PERIPH_CTRL_FUNC_IN_IRAM
             bool "Place peripheral control functions into IRAM"
-            default n
+            default y
             help
                 Place peripheral control functions (e.g. periph_module_reset) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.

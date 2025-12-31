@@ -226,7 +226,8 @@ SECTIONS
    */
   .dram0.dummy (NOLOAD):
   {
-    . = ORIGIN(dram0_0_seg) + MAX(_iram_end - _diram_i_start, 0);
+    /* MAX() uses unsigned long arithmetic. Add offset to prevent underflow when _iram_end < _diram_i_start */
+    . = ORIGIN(dram0_0_seg) + MAX(_iram_end - _diram_i_start + (_diram_i_start - ORIGIN(iram0_0_seg)), (_diram_i_start - ORIGIN(iram0_0_seg))) - (_diram_i_start - ORIGIN(iram0_0_seg));
   } > dram0_0_seg
 
   .dram0.data :

@@ -229,43 +229,76 @@ TEST_CASE("Test REE-TEE isolation: DROM-W1", "[exception]")
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
-static void do_stack_smash(bool underflow, int depth, volatile uint8_t *sink)
+static void do_stack_overflow(int depth, volatile uint8_t *sink)
 {
-    /* Overflow path */
-    if (!underflow) {
-        if (depth == -1) {
-            return; // unreachable
-        }
-
-        uint8_t buffer[1024];
-        buffer[0] = (uint8_t)depth;
-        *sink = buffer[0];
-
-        do_stack_smash(false, depth + 1, sink);
-        return;
+    if (depth == -1) {
+        return; // unreachable
     }
 
-    /* Underflow path */
-    asm volatile(
-        "li   t0, 4096\n"
-        "add  sp, sp, t0\n"
+    uint8_t buffer[1024];
+    buffer[0] = (uint8_t)depth;
+    *sink = buffer[0];
+
+    do_stack_overflow(depth + 1, sink);
+}
+
+static void do_stack_underflow(void *underflow)
+{
+    __asm__ __volatile__(
+        "mv sp, %0\n" :: "r"(underflow)
     );
 
-    volatile uint8_t temp = 1;
-    (void)temp;
+    /* The blocking delay ensures that the stack protection fault interrupt is
+     * captured and handled by the CPU before the current function returns.
+     */
+    esp_rom_delay_us(10);
+}
+
+typedef struct {
+    bool    underflow;
+    StackType_t *underflow_stack;
+} StackProtectionTaskArgs;
+
+static void tStackProtection(void *pvParameters)
+{
+    StackProtectionTaskArgs *tArgs = (StackProtectionTaskArgs *)pvParameters;
+
+    if (!tArgs->underflow) { /* Overflow path */
+        volatile uint8_t sink = 0;
+        do_stack_overflow(1, &sink);
+    } else { /* Underflow path */
+        do_stack_underflow((void *)tArgs->underflow_stack);
+    }
+}
+
+static void do_stack_smash(bool underflow)
+{
+    static struct {
+        StackType_t StackBuffer[2048];
+
+        StackType_t UnderflowStart[0];
+        StackType_t Underflow[1024];
+        StackType_t UnderflowEnd[0];
+    } tData;
+
+    static StaticTask_t TaskBuffer;
+    static StackProtectionTaskArgs taskArgs;
+    taskArgs.underflow = underflow;
+    taskArgs.underflow_stack = tData.UnderflowEnd;
+
+    TaskHandle_t handle = xTaskCreateStatic(tStackProtection, "tt", sizeof(tData.StackBuffer), &taskArgs, 10, tData.StackBuffer, &TaskBuffer);
+    assert(handle != NULL);
 }
 
 TEST_CASE("Test REE stack overflow", "[exception]")
 {
-    volatile uint8_t sink = 0;
-    do_stack_smash(false, 1, &sink);
+    do_stack_smash(false);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 TEST_CASE("Test REE stack underflow", "[exception]")
 {
-    volatile uint8_t sink = 0;
-    do_stack_smash(true, 0, &sink);
+    do_stack_smash(true);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
