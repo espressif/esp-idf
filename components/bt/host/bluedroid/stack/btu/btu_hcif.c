@@ -964,7 +964,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_DELETE_STORED_LINK_KEY:
-        btm_delete_stored_link_key_complete (p);
+        btm_delete_stored_link_key_complete (p, evt_len);
         break;
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -977,20 +977,20 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_READ_RSSI:
-        btm_read_rssi_complete (p);
+        btm_read_rssi_complete (p, evt_len);
         break;
 
     case HCI_READ_TRANSMIT_POWER_LEVEL:
-        btm_read_tx_power_complete(p, FALSE);
+        btm_read_tx_power_complete(p, evt_len, FALSE);
         break;
 
     case HCI_CREATE_CONNECTION_CANCEL:
-        btm_create_conn_cancel_complete(p);
+        btm_create_conn_cancel_complete(p, evt_len);
         break;
 
     case HCI_READ_LOCAL_OOB_DATA:
 #if BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-        btm_read_local_oob_complete(p);
+        btm_read_local_oob_complete(p, evt_len);
 #endif
         break;
 
@@ -1049,7 +1049,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_BLE_READ_ADV_CHNL_TX_POWER:
-        btm_read_tx_power_complete(p, TRUE);
+        btm_read_tx_power_complete(p, evt_len, TRUE);
         break;
 
     case HCI_BLE_WRITE_ADV_ENABLE:
