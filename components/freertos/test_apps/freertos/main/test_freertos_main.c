@@ -29,27 +29,32 @@ void setUp(void)
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 
+#if SOC_WDT_SUPPORTED
     esp_task_wdt_add(NULL);
     esp_task_wdt_reset();
+#endif
 
 }
 
 void tearDown(void)
 {
+#if SOC_WDT_SUPPORTED
+    esp_task_wdt_reset();
+    esp_task_wdt_delete(NULL);
+#endif
+
     // Add a short delay of 10ms to allow the idle task to free an remaining memory
     vTaskDelay(pdMS_TO_TICKS(10));
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");
     check_leak(before_free_32bit, after_free_32bit, "32BIT");
-
-    esp_task_wdt_reset();
-    esp_task_wdt_delete(NULL);
 }
 
 void app_main(void)
 {
 
+#if SOC_WDT_SUPPORTED
     // Configure the task watchdog timer to catch any tests that hang
     esp_task_wdt_config_t config = {
         .timeout_ms = 25 * 1000, // 25 seconds, smaller than the default pytest timeout
@@ -58,6 +63,7 @@ void app_main(void)
     };
 
     esp_task_wdt_init(&config);
+#endif // SOC_WDT_SUPPORTED
 
     /*
     Some FreeRTOS tests are reliant on the main task being at priority UNITY_FREERTOS_PRIORITY to test scheduling
