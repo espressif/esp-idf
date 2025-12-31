@@ -119,6 +119,9 @@ typedef union {
     UINT16                  icon;
     UINT8                   *p_dev_name;
     UINT8                   addr_resolution;
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+    UINT16                  security_level;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
 
 } tGAP_BLE_ATTR_VALUE;
 

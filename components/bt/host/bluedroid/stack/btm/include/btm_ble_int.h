@@ -606,6 +606,21 @@ void btm_ble_transmit_power_report_evt(tBTM_BLE_TRANS_POWER_REPORT_EVT *params);
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 void btm_ble_subrate_change_evt(tBTM_BLE_SUBRATE_CHANGE_EVT *params);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void btm_ble_pa_subevt_data_req_evt(tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT *params);
+void btm_ble_pa_rsp_rpt_evt(tBTM_BLE_PA_RSP_REPORT_EVT *params);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void btm_ble_cs_read_remote_supp_caps_cmpl_evt(tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT *cs_read_remote_supp_caps);
+void btm_ble_cs_read_remote_fae_tab_cmpl_evt(tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT *cs_read_remote_fae_tab);
+void btm_ble_cs_securuty_enable_cmpl_evt(tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT *cs_security_enable);
+void btm_ble_cs_config_cmpl_evt(tBTM_BLE_CS_CONFIG_CMPL_EVT *config_cmpl);
+void btm_ble_cs_proc_enable_cmpl_evt(tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT *proc_en);
+void btm_ble_cs_subevt_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT *subevt_result);
+void btm_ble_cs_subevt_continue_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT *subevt_continue_result);
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 
 /*
 #ifdef __cplusplus
