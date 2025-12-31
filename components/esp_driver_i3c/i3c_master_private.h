@@ -66,6 +66,19 @@ extern "C" {
 
 #define I3C_ALIGN_UP(num, align)         (((num) + ((align) - 1)) & ~((align) - 1))
 
+#define I3C_BUS_BROADCAST_ADDR                    0x7EU /*!< Broad cast address. */
+#define I3C_BUS_MAX_ADDR                          0x7FU /*!< Maximum address allowed for address assignment. */
+#define I3C_BUS_ADDR_SLOTWIDTH                    2U  /*!< Address slot width used in address management in bus pool. */
+#define I3C_BUS_ADDR_SLOTDEPTH                    32U /*!< Address slot depth used in address management in bus pool. */
+#define I3C_BUS_ADDR_SLOTMASK                     3U  /*!< Address slot mask used in address management in bus pool. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR1 0x3EU /*!< Broadcast address single bit error detect address. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR2 0x5EU /*!< Broadcast address single bit error detect address. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR3 0x6EU /*!< Broadcast address single bit error detect address. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR4 0x76U /*!< Broadcast address single bit error detect address. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR5 0x7AU /*!< Broadcast address single bit error detect address. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR6 0x7CU /*!< Broadcast address single bit error detect address. */
+#define I3C_BOARDCAST_SINGLE_BIT_ERR_DETECT_ADDR7 0x7FU /*!< Broadcast address single bit error detect address. */
+
 /**
  * @brief Forward declaration of the I3C master bus structure.
  */
@@ -75,6 +88,21 @@ typedef struct i3c_master_bus_t i3c_master_bus_t;
  * @brief Forward declaration of the I3C master I2C device structure.
  */
 typedef struct i3c_master_i2c_dev_t i3c_master_i2c_dev_t;
+
+/**
+ * @brief Forward declaration of the I3C master I3C device structure.
+ */
+typedef struct i3c_master_i3c_dev_t i3c_master_i3c_dev_t;
+
+/**
+ * @brief Structure representing the base device containing common members.
+ *
+ * This structure contains the common members shared between I2C and I3C devices
+ * on an I3C master bus.
+ */
+struct i3c_master_device_t {
+    i3c_master_bus_t *bus_handle; /**< Handle to the I3C master bus managing this device. */
+};
 
 /**
  * @brief I3C master bus port number.
@@ -92,8 +120,9 @@ typedef struct {
     uint8_t *write_buffer;                  /**< Pointer to the data buffer for writing. */
     uint8_t *read_buffer;                   /**< Pointer to the data buffer for reading. */
     uint32_t scl_freq_hz;                  /**< Speed of the SCL clock in Hz for the transaction. */
-    i3c_master_i2c_device_handle_t dev_handle;  /**< Direct storage of device handle. */
-} i3c_i2c_transaction_desc_t;
+    i3c_master_device_handle_t dev_handle;  /**< Direct storage of device handle. */
+    bool i2c_trans; /**< Flag indicating whether the transaction is an I2C transaction. */
+} i3c_transaction_desc_t;
 
 /**
  * @brief Enumeration representing the states of the I3C transaction queue.
@@ -117,7 +146,7 @@ typedef enum {
 /**
  * @brief Function pointer type for transaction handler
  */
-typedef esp_err_t (*i3c_transaction_handler_t)(i3c_master_bus_t *bus_handle, i3c_i2c_transaction_desc_t *trans_desc);
+typedef esp_err_t (*i3c_transaction_handler_t)(i3c_master_bus_t *bus_handle, i3c_transaction_desc_t *trans_desc);
 
 /**
  * @brief Structure representing the I3C master bus.
@@ -135,9 +164,10 @@ struct i3c_master_bus_t {
     bool use_dma_transaction; /**< Flag indicating whether DMA is used for transactions. */
     bool async_transaction; /**< Flag indicating whether asynchronous transactions are enabled. */
     QueueHandle_t event_queue; /**< Queue for handling I3C events. */
-    SLIST_HEAD(i3c_i2c_device_list_head, i3c_master_i2c_dev_t) device_list; /**< List of I2C devices on the bus. */
-    i3c_i2c_transaction_desc_t *cur_trans; /**< Pointer to the current transaction descriptor. */
-    i3c_i2c_transaction_desc_t *trans_desc_pool; /**< Pool of pre-allocated transaction descriptors. */
+    SLIST_HEAD(i3c_i2c_device_list_head, i3c_master_i2c_dev_t) i2c_device_list; /**< List of I2C devices on the bus. */
+    SLIST_HEAD(i3c_i3c_device_list_head, i3c_master_i3c_dev_t) i3c_device_list; /**< List of I3C devices on the bus. */
+    i3c_transaction_desc_t *cur_trans; /**< Pointer to the current transaction descriptor. */
+    i3c_transaction_desc_t *trans_desc_pool; /**< Pool of pre-allocated transaction descriptors. */
     uint32_t ops_prepare_idx; /**< Index for preparing operations. */
     bool async_memory_allocated; /**< The async transaction is allocated or not */
     i3c_master_ll_device_address_descriptor_t (*i3c_async_addr_table)[SOC_I3C_MASTER_ADDRESS_TABLE_NUM]; /**< Address table for asynchronous transactions. */
@@ -149,6 +179,8 @@ struct i3c_master_bus_t {
     size_t queue_depth; /**< Depth of the transaction queue. */
     SemaphoreHandle_t bus_lock_mux; /**< Semaphore for bus locking. */
     portMUX_TYPE spinlock; /**< Spinlock for protecting critical sections. */
+    uint32_t addr_slots[((I3C_BUS_MAX_ADDR + 1U) * I3C_BUS_ADDR_SLOTWIDTH) / I3C_BUS_ADDR_SLOTDEPTH]; /**< Address slots. */
+    uint8_t entdaa_device_num; /**< Number of devices to discover via ENTDAA. */
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; /**< Power management lock handle. */
 #endif
@@ -163,6 +195,7 @@ struct i3c_master_bus_t {
     gdma_link_list_handle_t rx_dma_link; /**< Linked list for RX DMA. */
     size_t dma_buffer_alignment; /**< Alignment of the DMA buffer. */
     i3c_transaction_handler_t transaction_handler; /**< Function pointer for transaction handling (FIFO or DMA) */
+    bool global_ibi_configured; /**< Flag indicating whether global IBI configuration has been set */
 };
 
 /**
@@ -172,12 +205,31 @@ struct i3c_master_bus_t {
  * required to communicate with an I2C device on an I3C master bus.
  */
 struct i3c_master_i2c_dev_t {
-    i3c_master_bus_t *bus_handle; /**< Handle to the I3C master bus managing this device. */
+    i3c_master_device_handle_t base; /**< Base device handle containing common members. */
     uint8_t address; /**< 7-bit I2C address of the device. */
     uint32_t scl_freq_hz; /**< I2C clock speed for this device, in Hz. */
     i3c_master_i2c_callback_t on_trans_done; /**< Callback function invoked upon transaction completion. */
     void *user_ctx; /**< User-defined context passed to the callback function. */
     SLIST_ENTRY(i3c_master_i2c_dev_t) next; /**< Pointer to the next device in the single-linked list. */
+};
+
+struct i3c_master_i3c_dev_t {
+    i3c_master_device_handle_t base; /**< Base device handle containing common members. */
+    SLIST_ENTRY(i3c_master_i3c_dev_t) next; /**< Pointer to the next device in the single-linked list. */
+    i3c_master_i3c_callback_t on_trans_done; /**< Callback function invoked upon transaction completion. */
+    i3c_master_ibi_callback_t on_ibi; /**< Callback function invoked upon IBI. */
+    void *user_ctx; /**< User-defined context passed to the callback function. */
+    uint8_t dynamic_addr; /**< Dynamic address of the device. */
+    uint8_t static_addr; /**< Static address of the device. */
+    uint8_t bcr; /**< Bus Characteristics Register (BCR) value reported by the device. */
+    uint8_t dcr; /**< Device Characteristics Register (DCR) value reported by the device. */
+    uint64_t pid; /**< Provisional ID (PID). Lower 48 bits are valid as per spec. */
+};
+
+struct i3c_master_i3c_device_table_t {
+    i3c_master_i3c_device_handle_t *devices; /**< Array of I3C device handles */
+    size_t device_count; /**< Number of devices in the table */
+    i3c_master_bus_handle_t bus_handle; /**< Bus handle that owns these devices, internal resource management */
 };
 
 #ifdef __cplusplus
