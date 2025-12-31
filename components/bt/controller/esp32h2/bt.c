@@ -1619,12 +1619,13 @@ void esp_ble_controller_log_dump_all(bool output)
 #include "tinycrypt/cmac_mode.h"
 #include "tinycrypt/ecc_dh.h"
 
+#if CONFIG_BT_CONTROLLER_ONLY
 /* Used by uECC to get random data */
 static int ecc_rand_func(uint8_t *dst, unsigned int len)
 {
     int offset_cnt = 0;
     uint8_t *u8ptr = dst;
-    uint64_t random_64 = 0;
+    uint64_t random64 = 0;
 
     while(len > 0) {
         random64 = (uint64_t)esp_random();
@@ -1637,6 +1638,7 @@ static int ecc_rand_func(uint8_t *dst, unsigned int len)
 
     return 1;
 }
+#endif // CONFIG_BT_CONTROLLER_ONLY
 #endif // CONFIG_BT_LE_SM_SC
 #endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
