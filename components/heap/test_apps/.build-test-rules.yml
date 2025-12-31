@@ -13,7 +13,13 @@ components/heap/test_apps/heap_tests:
     - if: CONFIG_NAME == "in_flash" and (IDF_TARGET != "esp32c6" and NIGHTLY_RUN != "1")
   depends_components:
     - heap
+    - soc
+    - esp_psram
 
 components/heap/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
+  depends_components:
+    - heap
+  depends_filepatterns:
+    - components/soc/**/include/soc/soc.h
