@@ -20,3 +20,4 @@ components/freertos/test_apps/freertos:
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: not support yet # TODO: [ESP32S31] IDF-14685
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
