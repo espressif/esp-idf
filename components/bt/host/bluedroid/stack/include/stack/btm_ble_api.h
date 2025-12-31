@@ -781,6 +781,10 @@ typedef struct {
     tBTM_BLE_GAP_PHY secondary_phy;
     UINT8 sid;
     BOOLEAN scan_req_notif;
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+    UINT8 primary_adv_phy_options;
+    UINT8 secondary_adv_phy_options;
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 } tBTM_BLE_GAP_EXT_ADV_PARAMS;
 
 typedef struct {
@@ -808,7 +812,14 @@ typedef struct {
 typedef struct {
     UINT16 interval_min;
     UINT16 interval_max;
-    UINT8  properties;
+    UINT16  properties;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 num_subevents;
+    UINT8 subevent_interval;
+    UINT8 rsp_slot_delay;
+    UINT8 rsp_slot_spacing;
+    UINT8 num_rsp_slots;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTM_BLE_Periodic_Adv_Params;
 
 typedef struct {
@@ -1090,7 +1101,29 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define    BTM_BLE_GAP_SET_HOST_FEATURE_EVT                        51
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               52
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define    BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT            52
+#define    BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT          53
+#define    BTM_BLE_GAP_SET_PERIODIC_SYNC_SUBEVT_EVT                54
+#define    BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT        55
+#define    BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT            56
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#define    BTM_BLE_GAP_CS_READ_LOCAL_SUPP_CAPS_EVT                 57
+#define    BTM_BLE_GAP_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT        58
+#define    BTM_BLE_GAP_CS_SET_DEFAULT_SETTINGS_EVT                 59
+#define    BTM_BLE_GAP_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT          60
+#define    BTM_BLE_GAP_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT           61
+#define    BTM_BLE_GAP_CS_SET_CHANNEL_CLASS_CMPL_EVT               62
+#define    BTM_BLE_GAP_CS_PROC_PARAMS_CMPL_EVT                     63
+#define    BTM_BLE_GAP_CS_PROC_ENABLE_CMPL_EVT                     64
+#define    BTM_BLE_GAP_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT           65
+#define    BTM_BLE_GAP_CS_SECURITY_ENABLE_CMPL_EVT                 66
+#define    BTM_BLE_GAP_CS_CONFIG_CMPL_EVT                          67
+#define    BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT                      68
+#define    BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT             69
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               70
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1332,6 +1365,10 @@ typedef struct {
     UINT8 tx_power;
     INT8 rssi;
     UINT8 cte_type;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT16  periodic_evt_cnt;
+    UINT8   subevt;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     tBTM_BLE_EXT_ADV_DATA_STATUS data_status;
     UINT8 data_length;
     UINT8 *data;
@@ -1350,6 +1387,12 @@ typedef struct {
     UINT8 adv_phy;
     UINT16 period_adv_interval;
     UINT8 adv_clk_accuracy;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 num_subevt;
+    UINT8 subevt_interval;
+    UINT8 rsp_slot_delay;
+    UINT8 rsp_slot_spacing;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 } tBTM_BLE_PERIOD_ADV_SYNC_ESTAB;
 
 typedef struct {
@@ -1452,6 +1495,199 @@ typedef struct {
     UINT16 supervision_timeout;
 } __attribute__((packed)) tBTM_BLE_SUBRATE_CHANGE_EVT;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 adv_handle;
+} __attribute__((packed)) tBTM_BLE_PA_SUBEVT_DATA_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+} __attribute__((packed)) tBTM_BLE_PA_RSP_DATA_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+} __attribute__((packed)) tBTM_BLE_PA_SYNC_SUBEVT_DATA_EVT;
+typedef struct {
+    UINT8 adv_handle;
+    UINT8 subevt_start;
+    UINT8 subevt_data_count;
+} __attribute__((packed)) tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT;
+
+typedef struct {
+    INT8 tx_power;
+    INT8 rssi;
+    UINT8 cte_type;
+    UINT8 rsp_slot;
+    UINT8 data_status;
+    UINT8 data_len;
+    UINT8 *data;
+} __attribute__((packed)) tBTM_BLE_PA_RSP_DATA_INFO;
+
+typedef struct {
+    UINT8 adv_handle;
+    UINT8 subevt;
+    UINT8 tx_status;
+    UINT8 num_rsp;
+    tBTM_BLE_PA_RSP_DATA_INFO *rsp_data_info;
+} __attribute__((packed)) tBTM_BLE_PA_RSP_REPORT_EVT;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CS_WRITE_CACHED_SUPPORT_CAPS_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CS_SET_DEFAULT_SETTINGS_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CS_SET_PAROC_PARAMS_EVT;
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 num_config_supported;
+    UINT16 max_consecutive_proc_supported;
+    UINT8 num_ant_supported;
+    UINT8 max_ant_paths_supported;
+    UINT8 roles_supported;
+    UINT8 modes_supported;
+    UINT8 rtt_capability;
+    UINT8 rtt_aa_only_n;
+    UINT8 rtt_sounding_n;
+    UINT8 rtt_random_payload_n;
+    UINT16 NADM_sounding_capability;
+    UINT16 NADM_random_capability;
+    UINT8  cs_sync_phys_supported;
+    UINT16 subfeatures_supported;
+    UINT16 T_IP1_times_supported;
+    UINT16 T_IP2_times_supported;
+    UINT16 T_FCS_times_supported;
+    UINT16 T_PM_times_supported;
+    UINT8 T_SW_times_supported;
+    UINT8 TX_SNR_capability;
+} __attribute__((packed)) tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 remote_fae_table[72];
+} __attribute__((packed)) tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT8 action;
+    UINT8 main_mode_type;
+    UINT8 sub_mode_type;
+    UINT8 min_main_mode_steps;
+    UINT8 max_main_mode_steps;
+    UINT8 main_mode_repetition;
+    UINT8 mode_0_steps;
+    UINT8 role;
+    UINT8 rtt_type;
+    UINT8 cs_sync_phy;
+    UINT8 channel_map[10];
+    UINT8 channel_map_repetition;
+    UINT8 channel_selection_type;
+    UINT8 ch3c_shape;
+    UINT8 ch3c_jump;
+    UINT8 reserved;
+    UINT8 t_ip1_time;
+    UINT8 t_ip2_time;
+    UINT8 t_fcs_time;
+    UINT8 t_pm_time;
+}__attribute__((packed)) tBTM_BLE_CS_CONFIG_CMPL_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT8 state;
+    UINT8 tone_ant_config_select;
+    INT8 select_tx_power;
+    UINT32 subevent_Len;
+    UINT8 subevents_per_event;
+    UINT16 subevent_interval;
+    UINT16 event_interval;
+    UINT16 procedure_interval;
+    UINT16 procedure_count;
+    UINT16 max_procedure_len;
+}__attribute__((packed)) tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT;
+
+typedef struct {
+    UINT8 step_mode;
+    UINT8 step_channel;
+    UINT8 step_data_len;
+    UINT8 *data;
+} __attribute__((packed)) tBTM_BLE_CS_STEP_INFO;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT16 start_acl_conn_event_counter;
+    UINT16 procedure_counter;
+    INT16 frequency_compensation;
+    INT8 reference_power_level;
+    UINT8 procedure_done_status;
+    UINT8 subevent_done_status;
+    UINT8 abort_reason;
+    UINT8 num_ant_paths;
+    UINT8 num_steps_reported;
+    tBTM_BLE_CS_STEP_INFO *step_info;
+}__attribute__((packed)) tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT8 proc_done_status;
+    UINT8 subevt_done_status;
+    UINT8 abort_reason;
+    UINT8 num_ant_paths;
+    UINT8 num_steps_reported;
+    tBTM_BLE_CS_STEP_INFO *step_info;
+}__attribute__((packed)) tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 num_config_supported;
+    UINT16 max_consecutive_proc_supported;
+    UINT8 num_ant_supported;
+    UINT8 max_ant_paths_supported;
+    UINT8 roles_supported;
+    UINT8 modes_supported;
+    UINT8 rtt_capability;
+    UINT8 rtt_aa_only_n;
+    UINT8 rtt_sounding_n;
+    UINT8 rtt_random_payload_n;
+    UINT16 NADM_sounding_capability;
+    UINT16 NADM_random_capability;
+    UINT8  cs_sync_phys_supported;
+    UINT16 subfeatures_supported;
+    UINT16 T_IP1_times_supported;
+    UINT16 T_IP2_times_supported;
+    UINT16 T_FCS_times_supported;
+    UINT16 T_PM_times_supported;
+    UINT8 T_SW_times_supported;
+    UINT8 TX_SNR_capability;
+} __attribute__((packed)) tBTM_BLE_CS_READ_LOCAL_SUPP_CAPS_CMPL_EVT;
+
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
@@ -1819,6 +2055,27 @@ typedef union {
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     tBTM_BLE_SUBRATE_CHANGE_EVT          subrate_change_evt;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    tBTM_BLE_PA_SUBEVT_DATA_EVT          pa_subevt_data_evt;
+    tBTM_BLE_PA_RSP_DATA_EVT             pa_rsp_data_evt;
+    tBTM_BLE_PA_SYNC_SUBEVT_DATA_EVT     pa_sync_subevt_evt;
+    tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT      pa_subevent_data_req_evt;
+    tBTM_BLE_PA_RSP_REPORT_EVT           pa_rsp_rpt_evt;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    tBTM_BLE_CS_WRITE_CACHED_SUPPORT_CAPS_EVT   cs_write_cached_remote_supp_caps;
+    tBTM_BLE_CS_SET_DEFAULT_SETTINGS_EVT        cs_set_default_settings;
+    tBTM_BLE_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT cs_write_cached_remote_fae_tab;
+    tBTM_BLE_CS_SET_PAROC_PARAMS_EVT            cs_set_proc_params;
+    tBTM_BLE_CS_READ_LOCAL_SUPP_CAPS_CMPL_EVT   cs_read_local_supp_caps;
+    tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT  cs_read_remote_supp_caps;
+    tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT    cs_read_remote_fae_tab;
+    tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT             cs_security_enable;
+    tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT            cs_proc_en;
+    tBTM_BLE_CS_CONFIG_CMPL_EVT                 cs_config_update;
+    tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT          cs_subevt_result;
+    tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT      cs_subevt_result_continue;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3371,7 +3628,46 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
 void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max,
                             UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTM_BleSetPaSubeventData(UINT8 adv_handle, UINT8 num_subevents_with_data, uint8_t *subevent_params);
+void BTM_BleSetPaResponseData(UINT16 sync_handle, UINT16 req_evt, UINT8 req_subevt, UINT8 rsp_subevt, UINT8 rsp_slot, UINT8 rsp_data_len, UINT8 *rsp_data);
+void BTM_BleSetPaSyncSubevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void BTM_BleCSReadLocalSuppCaps(void);
+void BTM_BleCSReadRemoteSuppCaps(UINT16 conn_handle);
+void BTM_BleGapWriteCachedRemoteSupportedCaps(UINT16 conn_handle, UINT8 num_config_supported, UINT16 max_consecutive_proc_supported,
+                                                UINT8 num_ant_supported, UINT8 max_ant_paths_supported, UINT8 roles_supported,
+                                                UINT8 modes_supported, UINT8 rtt_capability, UINT8 rtt_aa_only_n,
+                                                UINT8 rtt_sounding_n, UINT8 rtt_random_payload_n, UINT16 NADM_sounding_capability,
+                                                UINT16 NADM_random_capability, UINT8  cs_sync_phys_supported, UINT16 subfeatures_supported,
+                                                UINT16 T_IP1_times_supported, UINT16 T_IP2_times_supported, UINT16 T_FCS_times_supported,
+                                                UINT16 T_PM_times_supported, UINT8 T_SW_times_supported, UINT8 TX_SNR_capability);
+void BTM_BleGapCsSecurityEnable(UINT16 conn_handle);
+void BTM_BleGapCsSetDefaultSetting(UINT16 conn_handle, UINT8 role_enable, UINT8 cs_sync_ant_selection, INT8 max_tx_power);
+void BTM_BleGapCsReadRemoteFaeTable(UINT16 conn_handle);
+void BTM_BleGapWriteCachedRemoteFaeTable(UINT16 conn_handle, UINT8 *remote_fae_table);
+void BTM_BleGapCsCreateConfig(UINT16 conn_handle, UINT8 config_id, UINT8 create_context,
+                                UINT8 main_mode_type, UINT8 sub_mode_type, UINT8 min_main_mode_steps,
+                                UINT8 max_main_mode_steps, UINT8 main_mode_repetition, UINT8 mode_0_steps,
+                                UINT8 role, UINT8 rtt_type, UINT8 cs_sync_phy, UINT8 *channel_map,
+                                UINT8 channel_map_repetition, UINT8 channel_selection_type, UINT8 ch3c_shape,
+                                UINT8 ch3c_jump,UINT8 reserved);
+void BTM_BleGapCsRemoveConfig(UINT16 conn_handle, UINT8 config_id);
+void BTM_BleGapCsSetChannelClass(UINT8 *channel_class);
+void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+                                UINT16 min_procedure_interval, UINT16 max_procedure_interval,
+                                UINT16 max_procedure_count, UINT32 min_subevent_len,
+                                UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
+                                UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
+                                UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
+void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 #endif

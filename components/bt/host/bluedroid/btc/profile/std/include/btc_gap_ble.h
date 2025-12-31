@@ -141,6 +141,25 @@ typedef enum {
     BTC_GAP_ACT_SET_HOST_FEATURE,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
+    BTC_GAP_BLE_SET_PA_RSP_DATA,
+    BTC_GAP_BLE_SET_PA_SYNC_SUBEVT,
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    BTC_GAP_BLE_CS_READ_LOCAL_SUPPORTED_CAPS,
+    BTC_GAP_BLE_CS_READ_REMOTE_SUPPORTED_CAPS,
+    BTC_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS,
+    BTC_GAP_BLE_CS_SECURITY_ENABLE,
+    BTC_GAP_BLE_CS_SET_DEFAULT_SETTINGS,
+    BTC_GAP_BLE_CS_READ_REMOTE_FAE_TABLE,
+    BTC_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE,
+    BTC_GAP_BLE_CS_CREATE_CONFIG,
+    BTC_GAP_BLE_CS_REMOVE_CONFIG,
+    BTC_GAP_BLE_CS_SET_CAHNNEL_CLASSIFICATION,
+    BTC_GAP_BLE_CS_SET_PROCEDURE_PARAMS,
+    BTC_GAP_BLE_CS_PROCEDURE_ENABLE,
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -531,9 +550,136 @@ typedef union {
     } subrate_req_param;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     struct set_host_feature_arg {
-            uint16_t bit_num;
-            uint8_t bit_val;
-        } set_host_feature_params;
+        uint16_t bit_num;
+        uint8_t bit_val;
+    } set_host_feature_params;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
+    struct per_adv_subevent_data_params_args {
+        uint8_t adv_handle;
+        uint8_t num_subevents_with_data;
+        esp_ble_subevent_params *subevent_params;
+    } per_adv_subevent_data_params;
+    // BTC_GAP_BLE_SET_PA_RSP_DATA
+    struct per_adv_response_data_params_args {
+        uint16_t sync_handle;
+        uint16_t request_event;
+        uint8_t request_subevent;
+        uint8_t response_subevent;
+        uint8_t response_slot;
+        uint8_t response_data_len;
+        uint8_t *response_data;
+    } per_adv_response_data_params;
+    // BTC_GAP_BLE_SET_PA_SYNC_SUBEVT
+    struct per_sync_subevent_params_args {
+        uint16_t sync_handle;
+        uint16_t periodic_adv_properties;
+        uint8_t num_subevents_to_sync;
+        uint8_t *subevent;
+    } per_sync_subevent_params;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    struct cs_read_remote_supp_caps_args {
+        uint16_t conn_handle;
+    } cs_read_remote_supp_caps;
+
+    struct cs_write_cached_remote_supp_caps_args {
+        uint16_t conn_handle;
+        uint8_t num_config_supported;
+        uint16_t max_consecutive_proc_supported;
+        uint8_t num_ant_supported;
+        uint8_t max_ant_paths_supported;
+        uint8_t roles_supported;
+        uint8_t modes_supported;
+        uint8_t rtt_capability;
+        uint8_t rtt_aa_only_n;
+        uint8_t rtt_sounding_n;
+        uint8_t rtt_random_payload_n;
+        uint16_t NADM_sounding_capability;
+        uint16_t NADM_random_capability;
+        uint8_t  cs_sync_phys_supported;
+        uint16_t subfeatures_supported;
+        uint16_t T_IP1_times_supported;
+        uint16_t T_IP2_times_supported;
+        uint16_t T_FCS_times_supported;
+        uint16_t T_PM_times_supported;
+        uint8_t T_SW_times_supported;
+        uint8_t TX_SNR_capability;
+    } cs_write_cached_remote_supp_caps;
+
+    struct cs_security_enable_args {
+        uint16_t conn_handle;
+    } cs_security_enable;
+
+    struct cs_set_default_settings_params_args {
+        uint16_t conn_handle;
+        uint8_t role_enable;
+        uint8_t cs_sync_ant_selection;
+        int8_t max_tx_power;
+    } cs_set_default_settings_params;
+
+    struct cs_read_remote_tab_args {
+        uint16_t conn_handle;
+    } cs_read_remote_tab;
+
+    struct cs_write_cached_remote_fae_table_params_args {
+        uint16_t conn_handle;
+        uint8_t remote_fae_table[72];
+    } cs_write_cached_remote_fae_table_params;
+
+    struct cs_create_config_params_args {
+        uint16_t conn_handle;
+        uint8_t config_id;
+        uint8_t create_context;
+        uint8_t main_mode_type;
+        uint8_t sub_mode_type;
+        uint8_t min_main_mode_steps;
+        uint8_t max_main_mode_steps;
+        uint8_t main_mode_repetition;
+        uint8_t mode_0_steps;
+        uint8_t role;
+        uint8_t rtt_type;
+        uint8_t cs_sync_phy;
+        uint8_t channel_map[10];
+        uint8_t channel_map_repetition;
+        uint8_t channel_selection_type;
+        uint8_t ch3c_shape;
+        uint8_t ch3c_jump;
+        uint8_t reserved;
+    } cs_create_config_params;
+
+    struct cs_remove_config_params_args {
+        uint16_t conn_handle;
+        uint8_t config_id;
+    } cs_remove_config_params;
+
+    struct cs_set_channel_class_params_args {
+        uint8_t channel_class[10];
+    } cs_set_channel_class_params;
+
+    struct cs_set_procedure_params_args {
+        uint16_t conn_handle;
+        uint8_t config_id;
+        uint16_t max_procedure_len;
+        uint16_t min_procedure_interval;
+        uint16_t max_procedure_interval;
+        uint16_t max_procedure_count;
+        uint32_t min_subevent_len;
+        uint32_t max_subevent_len;
+        uint8_t tone_ant_config_selection;
+        uint8_t phy;
+        uint8_t tx_power_delta;
+        uint8_t preferred_peer_antenna;
+        uint8_t SNR_control_initiator;
+        uint8_t SNR_control_reflector;
+    } cs_set_procedure_params;
+
+    struct cs_procedure_enable_params_args {
+        uint16_t conn_handle;
+        uint8_t config_id;
+        uint8_t enable;
+    } cs_procedure_enable_params;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
