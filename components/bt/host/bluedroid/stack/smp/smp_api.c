@@ -161,7 +161,7 @@ tSMP_STATUS SMP_Pair (BD_ADDR bd_addr)
 
         memcpy (p_cb->pairing_bda, bd_addr, BD_ADDR_LEN);
 
-        if (!L2CA_ConnectFixedChnl (L2CAP_SMP_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
+        if (!L2CA_ConnectFixedChnl (L2CAP_SMP_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE, FALSE, 0xFF, 0xFF)) {
             SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.\n", __FUNCTION__);
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
             return status;
@@ -205,7 +205,7 @@ tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
 
     memcpy (p_cb->pairing_bda, bd_addr, BD_ADDR_LEN);
 
-    if (!L2CA_ConnectFixedChnl (L2CAP_SMP_BR_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
+    if (!L2CA_ConnectFixedChnl (L2CAP_SMP_BR_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE, FALSE, 0xFF, 0xFF)) {
         SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.", __FUNCTION__);
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
         return status;
@@ -524,10 +524,10 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
 ** Description      This function is called to encrypt the data with the specified
 **                  key
 **
-** Parameters:      key                 - Pointer to key key[0] conatins the MSB
+** Parameters:      key                 - Pointer to key key[0] contains the MSB
 **                  key_len             - key length
 **                  plain_text          - Pointer to data to be encrypted
-**                                        plain_text[0] conatins the MSB
+**                                        plain_text[0] contains the MSB
 **                  pt_len              - plain text length
 **                  p_out                - output of the encrypted texts
 **

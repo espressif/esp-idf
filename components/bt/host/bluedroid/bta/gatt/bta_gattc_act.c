@@ -511,6 +511,10 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     tGATT_TCB *p_tcb;
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
 
+    BOOLEAN is_pawr_synced = FALSE;
+    UINT8   adv_handle = 0xFF;
+    UINT8   subevent   = 0xFF;
+
     if (!p_clcb || !p_data) {
         return;
     }
@@ -545,10 +549,15 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             APPL_TRACE_ERROR("Unknown Device, setting rejected");
         }
     }
-
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    is_pawr_synced = p_data->api_conn.is_pawr_synced;
+    adv_handle = p_data->api_conn.adv_handle;
+    subevent = p_data->api_conn.subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     /* open/hold a connection */
     if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda, p_data->api_conn.remote_addr_type,
-                      TRUE, p_data->api_conn.transport, p_data->api_conn.is_aux)) {
+                      TRUE, p_data->api_conn.transport, p_data->api_conn.is_aux, is_pawr_synced,
+                      adv_handle, subevent)) {
         APPL_TRACE_ERROR("Connection open failure");
 
         bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_OPEN_FAIL_EVT, p_data);
@@ -585,7 +594,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN *p_data, tBTA_GATTC_RCB *p_clreg
         /* always call open to hold a connection */
         if (!GATT_Connect(p_data->client_if, p_data->remote_bda,
                           p_data->remote_addr_type, FALSE,
-                          p_data->transport,  p_data->is_aux)) {
+                          p_data->transport,  p_data->is_aux, FALSE, 0xFF, 0xFF)) {
 #if (!CONFIG_BT_STACK_NO_LOG)
             uint8_t *bda = (uint8_t *)p_data->remote_bda;
 #endif
