@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
 /* TODO: [ESP32S31] IDF-14733 */
 
@@ -30,15 +30,15 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     ESP_RETURN_ON_FALSE(precision < ESP_CLK_TREE_SRC_FREQ_PRECISION_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown precision");
     ESP_RETURN_ON_FALSE(freq_value, ESP_ERR_INVALID_ARG, TAG, "null pointer");
 
-#if SOC_CLK_TREE_SUPPORTED
-
     uint32_t clk_src_freq = 0;
     switch (clk_src) {
+#if SOC_CLK_TREE_SUPPORTED
     case SOC_MOD_CLK_CPU:
         clk_src_freq = clk_hal_cpu_get_freq_hz();
         break;
+#endif // SOC_CLK_TREE_SUPPORTED
     case SOC_MOD_CLK_XTAL:
-        clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
+        clk_src_freq = SOC_XTAL_FREQ_40M * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F20M:
         clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ / clk_ll_pll_f20m_get_divider() * MHZ;
@@ -52,6 +52,7 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     case SOC_MOD_CLK_PLL_F240M:
         clk_src_freq = CLK_LL_PLL_240M_FREQ_MHZ * MHZ;
         break;
+#if SOC_CLK_TREE_SUPPORTED
     case SOC_MOD_CLK_CPLL:
         clk_src_freq = clk_ll_cpll_get_freq_mhz(clk_hal_xtal_get_freq_mhz()) * MHZ;
         break;
@@ -84,6 +85,7 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     case SOC_MOD_CLK_LP_PLL:
         clk_src_freq = clk_ll_lp_pll_get_freq_mhz() * MHZ;
         break;
+#endif // SOC_CLK_TREE_SUPPORTED
     default:
         break;
     }
@@ -91,7 +93,7 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
                         "freq shouldn't be 0, calibration failed");
     *freq_value = clk_src_freq;
-#endif // SOC_CLK_TREE_SUPPORTED
+
     return ESP_OK;
 }
 

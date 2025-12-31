@@ -33,7 +33,7 @@
 // #define SOC_AXI_GDMA_SUPPORTED          1      // TODO: [ESP32S31] IDF-14758
 // #define SOC_DW_GDMA_SUPPORTED           1      // TODO: [ESP32S31] IDF-14758
 // #define SOC_DMA2D_SUPPORTED             1      // TODO: [ESP32S31] IDF-14762
-// #define SOC_GPTIMER_SUPPORTED           1      // TODO: [ESP32S31] IDF-14745
+#define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1      // TODO: [ESP32S31] IDF-14699
 // #define SOC_LCDCAM_SUPPORTED            1      // TODO: [ESP32S31] IDF-14722
 // #define SOC_LCDCAM_CAM_SUPPORTED        1      // TODO: [ESP32S31] IDF-14722
@@ -216,6 +216,10 @@
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 
+/*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
+#define SOC_TIMER_SUPPORT_ETM             (1)
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
+
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 // TODO: [ESP32S31] IDF-14656
 #define SOC_MWDT_SUPPORT_XTAL              (1)
@@ -271,3 +275,5 @@
 #define SOC_CLK_LP_FAST_SUPPORT_XTAL              (1)     /*!< Support XTAL clock as the LP_FAST clock source */
 
 #define SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE         (1)     /*!< Any regi2c operation needs enable the analog i2c master clock first */
+
+#define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */

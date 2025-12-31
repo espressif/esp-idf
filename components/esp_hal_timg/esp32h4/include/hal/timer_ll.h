@@ -15,10 +15,10 @@
 #include "soc/pcr_struct.h"
 #include "soc/soc_etm_source.h"
 
-// Get timer group register base address with giving group number
 // Total number of general purpose timers
 #define TIMER_LL_GPTIMERS_TOTAL     (TIMG_LL_INST_NUM * TIMG_LL_GPTIMERS_PER_INST)
 
+// Get timer group register base address with giving group number
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
 
 // Bit width of GPTIMER counter
