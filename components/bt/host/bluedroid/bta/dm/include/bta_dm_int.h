@@ -335,6 +335,25 @@ enum {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTA_DM_API_SET_HOST_FEATURE_EVT,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BTA_DM_API_SET_PA_SUBEVT_DATA,
+    BTA_DM_API_SET_PA_RSP_DATA,
+    BTA_DM_API_SET_PA_SYNC_SUBEVT,
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    BTA_DM_API_CS_READ_LOCAL_SUPPORTED_CAPS,
+    BTA_DM_API_CS_READ_REMOTE_SUPPORTED_CAPS,
+    BTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS,
+    BTA_DM_API_CS_SECURITY_ENABLE,
+    BTA_DM_API_CS_SET_DEFAULT_SETTINGS,
+    BTA_DM_API_CS_READ_REMOTE_FAE_TABLE,
+    BTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TABLE,
+    BTA_DM_API_CS_CREATE_CONFIG,
+    BTA_DM_API_CS_REMOVE_CONFIG,
+    BTA_DM_API_CS_SET_CAHNNEL_CLASSIFICATION,
+    BTA_DM_API_CS_SET_PROCEDURE_PARAMS,
+    BTA_DM_API_CS_PROCEDURE_ENABLE,
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1156,6 +1175,167 @@ typedef struct {
 } tBTA_DM_API_SET_HOST_FEATURE;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+typedef struct {
+	UINT8 subevent;
+	UINT8 response_slot_start;
+	UINT8 response_slot_count;
+    UINT8 subevent_data_len;
+	UINT8 *subevent_data;
+} tBTA_BLE_SUBEVENT_PARAMS;
+
+typedef struct {
+	UINT8 subevent;
+	UINT8 response_slot_start;
+	UINT8 response_slot_count;
+    UINT8 subevent_data_len;
+	UINT8 subevent_data[251];
+} tBTA_DM_API_BLE_SUBEVENT_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT8 adv_handle;
+    UINT8 num_subevents_with_data;
+    tBTA_DM_API_BLE_SUBEVENT_PARAMS *subevent_params;
+} tBTA_DM_API_BLE_PA_SUBEVENT_DATA;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 sync_handle;
+    UINT16 request_event;
+    UINT8 request_subevent;
+    UINT8 rsp_subevent;
+    UINT8 rsp_slot;
+    UINT8 rsp_data_len;
+    UINT8 *rsp_data;
+} tBTA_DM_API_BLE_PA_RSP_DATA;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 sync_handle;
+    UINT16 periodic_adv_properties;
+    UINT8 num_subevents_to_sync;
+    UINT8 *subevent;
+} tBTA_DM_API_BLE_PA_SYNC_SUBEVT;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+typedef struct {
+    BT_HDR hdr;
+} tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS;
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+} tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS;
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 num_config_supported;
+    UINT16 max_consecutive_proc_supported;
+    UINT8 num_ant_supported;
+    UINT8 max_ant_paths_supported;
+    UINT8 roles_supported;
+    UINT8 modes_supported;
+    UINT8 rtt_capability;
+    UINT8 rtt_aa_only_n;
+    UINT8 rtt_sounding_n;
+    UINT8 rtt_random_payload_n;
+    UINT16 NADM_sounding_capability;
+    UINT16 NADM_random_capability;
+    UINT8  cs_sync_phys_supported;
+    UINT16 subfeatures_supported;
+    UINT16 T_IP1_times_supported;
+    UINT16 T_IP2_times_supported;
+    UINT16 T_FCS_times_supported;
+    UINT16 T_PM_times_supported;
+    UINT8 T_SW_times_supported;
+    UINT8 TX_SNR_capability;
+} tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+} tBTA_DM_API_CS_SECURITY_ENABLE;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 role_enable;
+    UINT8 cs_sync_ant_selection;
+    INT8 max_tx_power;
+} tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+} tBTA_DM_API_CS_READ_REMOTE_TAB;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 remote_fae_table[72];
+} tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT8 create_context;
+    UINT8 main_mode_type;
+    UINT8 sub_mode_type;
+    UINT8 min_main_mode_steps;
+    UINT8 max_main_mode_steps;
+    UINT8 main_mode_repetition;
+    UINT8 mode_0_steps;
+    UINT8 role;
+    UINT8 rtt_type;
+    UINT8 cs_sync_phy;
+    UINT8 channel_map[10];
+    UINT8 channel_map_repetition;
+    UINT8 channel_selection_type;
+    UINT8 ch3c_shape;
+    UINT8 ch3c_jump;
+    UINT8 reserved;
+} tBTA_DM_API_CS_CREATE_CONFIG_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 config_id;
+} tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT8 channel_class[10];
+} tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT16 max_procedure_len;
+    UINT16 min_procedure_interval;
+    UINT16 max_procedure_interval;
+    UINT16 max_procedure_count;
+    UINT32 min_subevent_len;
+    UINT32 max_subevent_len;
+    UINT8 tone_ant_config_selection;
+    UINT8 phy;
+    UINT8 tx_power_delta;
+    UINT8 preferred_peer_antenna;
+    UINT8 SNR_control_initiator;
+    UINT8 SNR_control_reflector;
+} tBTA_DM_API_CS_SET_PROC_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT8 config_id;
+    UINT8 enable;
+} tBTA_DM_API_CS_PROC_ENABLE_PARAMS;
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 #endif /* BLE_INCLUDED */
 
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
@@ -1876,6 +2056,25 @@ typedef union {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTA_DM_API_SET_HOST_FEATURE    set_host_feat;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    tBTA_DM_API_BLE_PA_SUBEVENT_DATA pa_subevt_data;
+    tBTA_DM_API_BLE_PA_RSP_DATA    pa_rsp_data;
+    tBTA_DM_API_BLE_PA_SYNC_SUBEVT pa_sync_subevt;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS read_local_supp_caps;
+    tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS read_remote_supp_caps;
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS write_cached_remote_caps;
+    tBTA_DM_API_CS_SECURITY_ENABLE  security_enable;
+    tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS set_default_setting_params;
+    tBTA_DM_API_CS_READ_REMOTE_TAB read_remote_tab;
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS write_cached_remote_fae_tab_params;
+    tBTA_DM_API_CS_CREATE_CONFIG_PARAMS create_config_params;
+    tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS remove_config_params;
+    tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS set_channel_class_params;
+    tBTA_DM_API_CS_SET_PROC_PARAMS set_proc_params;
+    tBTA_DM_API_CS_PROC_ENABLE_PARAMS proc_enable_params;
+#endif
 } tBTA_DM_MSG;
 
 
@@ -2543,4 +2742,23 @@ void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void bta_dm_api_set_periodic_adv_subevt_data(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_periodic_adv_response_data(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_periodic_sync_subevt(tBTA_DM_MSG *p_data);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void bta_dm_api_cs_read_local_supported_caps(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_read_remote_supported_caps(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_write_cached_remote_supported_caps(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_security_enable(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_set_default_settings(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_read_remote_fae_table(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_write_cached_remote_fae_table(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_create_config(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_remove_config(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_set_channel_classification(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_set_procedure_params(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_procedure_enable(tBTA_DM_MSG *p_data);
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 #endif /* BTA_DM_INT_H */

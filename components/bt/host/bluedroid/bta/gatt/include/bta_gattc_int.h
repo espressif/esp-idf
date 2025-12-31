@@ -130,6 +130,11 @@ typedef struct {
     tBTA_GATTC_IF           client_if;
     BOOLEAN                 is_direct;
     BOOLEAN                 is_aux;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BOOLEAN                 is_pawr_synced;
+    UINT8                   adv_handle;
+    UINT8                   subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     tBTA_TRANSPORT          transport;
     tBTA_ADDR_TYPE          own_addr_type;
     UINT8                   phy_mask;
