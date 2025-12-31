@@ -47,3 +47,29 @@ def test_dma_psram(dut: Dut) -> None:
 @idf_parametrize('target', soc_filtered_targets('SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION == 1'), indirect=['target'])
 def test_dma_weighted_arbitration(dut: Dut) -> None:
     dut.run_all_single_board_cases(reset=True)
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'ext_mem_encryption',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4', 'esp32c5'], indirect=['target'])
+def test_dma_ext_mem_encryption(dut: Dut) -> None:
+    dut.run_all_single_board_cases(reset=True)
+
+
+@pytest.mark.flash_encryption_f4r8
+@pytest.mark.parametrize(
+    'config',
+    [
+        'ext_mem_encryption',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_dma_ext_mem_encryption_s3_f4r8(dut: Dut) -> None:
+    dut.run_all_single_board_cases(reset=True)

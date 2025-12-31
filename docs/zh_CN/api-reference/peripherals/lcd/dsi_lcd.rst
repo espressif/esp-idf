@@ -92,6 +92,10 @@ MIPI DSI 接口的 LCD
 
         ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
 
+    .. note::
+
+        由于硬件限制，如果启用了外部存储加密，则 DMA2D 只能访问地址和长度都对齐到 16 字节的地址空间。除非你能确保你的绘制 buffer 的地址和长度都对齐到 16 字节， 否则不建议使用 DMA2D 来绘制位图。
+
     若需更高级的应用，用户可为绘制位图添加自定义钩子，例如通过 PPA 实现旋转、缩放等操作。
 
     .. code-block:: c

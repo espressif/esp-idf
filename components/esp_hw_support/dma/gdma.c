@@ -28,7 +28,6 @@
 
 #include "gdma_priv.h"
 #include "esp_memory_utils.h"
-#include "esp_flash_encrypt.h"
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
@@ -401,12 +400,21 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
 #endif
 
     // if MSPI encryption is enabled, and DMA wants to read/write external memory
-    if (esp_flash_encryption_enabled()) {
+    if (efuse_hal_flash_encryption_enabled()) {
         gdma_hal_enable_access_encrypt_mem(hal, pair->pair_id, dma_chan->direction, config->access_ext_mem);
-        // when DMA access the encrypted memory, extra alignment is needed for external memory
+#if SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
+        uint32_t enc_mem_alignment = GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT);
+        // when DMA access the encrypted external memory, extra alignment is needed for external memory
         if (config->access_ext_mem) {
-            ext_mem_alignment = MAX(ext_mem_alignment, GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT);
+            ext_mem_alignment = MAX(ext_mem_alignment, enc_mem_alignment);
         }
+#if SOC_HAS(AXI_GDMA)
+        if (group->bus_id == SOC_GDMA_BUS_AXI) {
+            // once AXI-GDMA enables access to encrypted memory, internal memory also needs to align
+            int_mem_alignment = MAX(int_mem_alignment, enc_mem_alignment);
+        }
+#endif // SOC_HAS(AXI_GDMA)
+#endif // SOC_PSRAM_DMA_CAPABLE
     } else {
         gdma_hal_enable_access_encrypt_mem(hal, pair->pair_id, dma_chan->direction, false);
     }

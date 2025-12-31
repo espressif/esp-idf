@@ -30,6 +30,7 @@
 #include "hal/gdma_hal_ahb.h"
 #include "hal/gdma_hal_axi.h"
 #include "hal/gdma_periph.h"
+#include "hal/efuse_hal.h"
 #include "soc/periph_defs.h"
 #include "esp_private/gdma.h"
 #include "esp_private/periph_ctrl.h"
@@ -41,8 +42,6 @@
 #else
 #define GDMA_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif
-
-#define GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 /*!< The alignment of the memory and size when DMA accesses the encryption memory */
 
 #ifdef __cplusplus
 extern "C" {
