@@ -22,7 +22,15 @@
 #include "btm_int.h"
 #include "stack/l2c_api.h"
 #include "smp_int.h"
+#if (SMP_CRYPTO_MBEDTLS == TRUE)
+#include "psa/crypto.h"
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+#include "tinycrypt/ecc_dh.h"
+#include "tinycrypt/ecc.h"
+#include "tinycrypt/constants.h"
+#else
 #include "p_256_ecc_pp.h"
+#endif
 //#include "utils/include/bt_utils.h"
 
 #if SMP_INCLUDED == TRUE
@@ -771,10 +779,78 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     }
     /* In order to prevent the x and y coordinates of the public key from being modified,
        we need to check whether the x and y coordinates are on the given elliptic curve. */
+#if (SMP_CRYPTO_MBEDTLS == TRUE)
+    {
+        /*
+         * PSA Crypto validates the public key when importing.
+         * We try to import the peer's public key as a ECC public key.
+         * If import fails, the key is invalid.
+         */
+        psa_status_t status;
+        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+        psa_key_id_t key_id = 0;
+        UINT8 pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];  /* 0x04 || X (32 bytes) || Y (32 bytes) */
+
+        /* Construct peer public key in uncompressed format (0x04 || X || Y) */
+        pub_be[0] = 0x04;
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            pub_be[1 + i] = p_cb->peer_publ_key.x[BT_OCTET32_LEN - 1 - i];
+            pub_be[33 + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Try to import as public key - PSA will validate it's on the curve */
+        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+        psa_set_key_bits(&key_attributes, 256);
+        psa_set_key_usage_flags(&key_attributes, 0);  /* No usage needed, just validating */
+
+        status = psa_import_key(&key_attributes, pub_be, sizeof(pub_be), &key_id);
+        psa_reset_key_attributes(&key_attributes);
+
+        if (status != PSA_SUCCESS) {
+            SMP_TRACE_ERROR("%s, Invalid Public key. psa_import_key failed: %d\n", __func__, status);
+            reason = SMP_INVALID_PARAMETERS;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            return;
+        }
+
+        /* Key is valid, clean up */
+        psa_destroy_key(key_id);
+    }
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+    {
+        /*
+         * TinyCrypt validates the public key using uECC_valid_public_key.
+         * TinyCrypt expects public key in format: X (32 bytes) || Y (32 bytes), no prefix.
+         */
+        UINT8 pub_be[64];  /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+
+        /* Convert peer public key from little-endian to big-endian */
+        /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            pub_be[i] = p_cb->peer_publ_key.x[BT_OCTET32_LEN - 1 - i];
+            pub_be[BT_OCTET32_LEN + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Validate public key - TinyCrypt will check if it's on the curve */
+        /* uECC_valid_public_key returns 0 if valid, negative value if invalid */
+        if (uECC_valid_public_key(pub_be, uECC_secp256r1()) < 0) {
+            SMP_TRACE_ERROR("%s, Invalid Public key. uECC_valid_public_key failed\n", __func__);
+            reason = SMP_INVALID_PARAMETERS;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            memset(pub_be, 0, sizeof(pub_be));
+            return;
+        }
+
+        /* Clear sensitive data from stack */
+        memset(pub_be, 0, sizeof(pub_be));
+    }
+#else
     if (!ECC_CheckPointIsInElliCur_P256((Point *)&p_cb->peer_publ_key)) {
         SMP_TRACE_ERROR("%s, Invalid Public key.", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
     }
+#endif /* SMP_CRYPTO_MBEDTLS */
     p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY;
 
     smp_wait_for_both_public_keys(p_cb, NULL);
