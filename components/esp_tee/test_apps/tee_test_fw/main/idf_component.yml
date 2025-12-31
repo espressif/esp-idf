@@ -1,8 +1,6 @@
 dependencies:
   ccomp_timer: "^1.0.0"
   espressif/cjson: "^1.7.19"
-  tee_attestation:
-    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_attestation
   tee_ota_ops:
     path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_ota_ops
   tee_sec_storage:
