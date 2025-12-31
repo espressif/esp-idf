@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,13 +155,31 @@ esp_err_t esp_att_utils_eat_data_to_json(struct esp_att_sw_claim_list *head, con
     esp_att_sw_claim_list_t *claim = NULL;
     char *claim_json = NULL;
 
-    json_gen_obj_set_int(&json_gen, "nonce", cfg->nonce);
+    // Convert auth_challenge to hex string - allocate based on actual challenge size
+    size_t auth_challenge_hexstr_size = cfg->challenge_size * 2 + 1;
+    char *auth_challenge_hexstr = calloc(auth_challenge_hexstr_size, sizeof(char));
+    if (auth_challenge_hexstr == NULL) {
+        free(json_buf);
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t err = esp_att_utils_hexbuf_to_hexstr(cfg->auth_challenge, cfg->challenge_size,
+                                                   auth_challenge_hexstr, auth_challenge_hexstr_size);
+    if (err != ESP_OK) {
+        free(auth_challenge_hexstr);
+        free(json_buf);
+        return err;
+    }
+    json_gen_obj_set_string(&json_gen, "auth_challenge", auth_challenge_hexstr);
+    free(auth_challenge_hexstr);
+
     json_gen_obj_set_int(&json_gen, "client_id", cfg->client_id);
     json_gen_obj_set_int(&json_gen, "device_ver", cfg->device_ver);
 
     char dev_id_hexstr[ESP_ATT_EAT_DEV_ID_SZ * 2 + 1] = {0};
-    esp_err_t err = esp_att_utils_hexbuf_to_hexstr(cfg->device_id, sizeof(cfg->device_id), dev_id_hexstr, sizeof(dev_id_hexstr));
+    err = esp_att_utils_hexbuf_to_hexstr(cfg->device_id, sizeof(cfg->device_id), dev_id_hexstr, sizeof(dev_id_hexstr));
     if (err != ESP_OK) {
+        free(json_buf);
         return err;
     }
     json_gen_obj_set_string(&json_gen, "device_id", dev_id_hexstr);
@@ -170,6 +188,7 @@ esp_err_t esp_att_utils_eat_data_to_json(struct esp_att_sw_claim_list *head, con
     char inst_id_hexstr[DIGEST_HEXSTR_LEN] = {0};
     err = esp_att_utils_hexbuf_to_hexstr(cfg->instance_id, sizeof(cfg->instance_id), inst_id_hexstr, sizeof(inst_id_hexstr));
     if (err != ESP_OK) {
+        free(json_buf);
         return err;
     }
     json_gen_obj_set_string(&json_gen, "instance_id", inst_id_hexstr);

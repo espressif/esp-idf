@@ -80,8 +80,8 @@ else()
 
     idf_component_register(INCLUDE_DIRS include
                            SRCS ${srcs}
-                           PRIV_REQUIRES efuse esp_security esp_system esp_stdio spi_flash esptool_py esp_hal_wdt)
-
+                           PRIV_REQUIRES efuse esp_hal_wdt esp_security esp_stdio
+                                         esp_system esptool_py mbedtls spi_flash)
     if(CONFIG_SECURE_ENABLE_TEE)
         set(EXTRA_LINK_FLAGS)
         list(APPEND EXTRA_LINK_FLAGS "-u esp_tee_app_config")

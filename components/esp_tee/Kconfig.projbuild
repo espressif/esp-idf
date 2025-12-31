@@ -127,6 +127,15 @@ menu "ESP-TEE (Trusted Execution Environment)"
                 storing the ECDSA keypair for executing sign/verify operations
                 from the TEE side for attestation.
 
+        config SECURE_TEE_ATT_PSA_CERT_REF
+            depends on SECURE_TEE_ATTESTATION
+            string
+            default "0632793520245-10010" if IDF_TARGET_ESP32C6
+            default "0632793520351-10100" if IDF_TARGET_ESP32H2
+            default "XXXXXXXXXXXXX-XXXXX"
+            help
+                PSA certification ID string for the attestation token
+
     endmenu
 
     config SECURE_TEE_EXT_FLASH_MEMPROT_SPI1

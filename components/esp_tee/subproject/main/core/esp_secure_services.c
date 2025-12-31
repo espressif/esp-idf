@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
 
+#include "esp_err.h"
 #include "esp_fault.h"
 #include "soc/soc_caps.h"
 
@@ -24,6 +25,7 @@
 #if SOC_ECC_SUPPORTED
 #include "ecc_impl.h"
 #endif
+#include "psa/initial_attestation.h"
 #include "esp_crypto_periph_clk.h"
 
 #include "esp_tee.h"
@@ -32,6 +34,9 @@
 
 #include "esp_tee_sec_storage.h"
 #include "esp_tee_ota_ops.h"
+#include "esp_attestation.h"
+
+#include "sdkconfig.h"
 
 static __attribute__((unused)) const char *TAG = "esp_tee_sec_srv";
 
@@ -425,4 +430,50 @@ esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 esp_err_t _ss_esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 {
     return esp_tee_sec_storage_gen_key(cfg);
+}
+
+/* ---------------------------------------------- PSA Attestation ------------------------------------------------- */
+
+__attribute__((unused)) static psa_status_t esp_err_to_psa_status(esp_err_t err)
+{
+    switch (err) {
+    case ESP_OK:
+        return PSA_SUCCESS;
+    case ESP_ERR_INVALID_ARG:
+        return PSA_ERROR_INVALID_ARGUMENT;
+    case ESP_ERR_INVALID_SIZE:
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    default:
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+}
+
+psa_status_t _ss_psa_initial_attest_get_token(const uint8_t *auth_challenge, size_t challenge_size,
+                                              uint8_t *token_buf, size_t token_buf_size, size_t *token_size)
+{
+#if CONFIG_SECURE_TEE_ATTESTATION
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)auth_challenge) &&
+                       esp_tee_ptr_in_ree((void *)token_buf) &&
+                       esp_tee_ptr_in_ree((void *)token_size));
+    valid_addr &= (esp_tee_ptr_in_ree((void *)((uint8_t *)auth_challenge + challenge_size)) &&
+                   esp_tee_ptr_in_ree((void *)((uint8_t *)token_buf + token_buf_size)));
+
+    if (!valid_addr) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_err_to_psa_status(esp_att_generate_token(auth_challenge, challenge_size, token_buf, token_buf_size, token_size));
+#else
+    return PSA_ERROR_NOT_SUPPORTED;
+#endif
+}
+
+psa_status_t _ss_psa_initial_attest_get_token_size(size_t challenge_size, size_t *token_size)
+{
+#if CONFIG_SECURE_TEE_ATTESTATION
+    return esp_err_to_psa_status(esp_att_get_token_size(challenge_size, token_size));
+#else
+    return PSA_ERROR_NOT_SUPPORTED;
+#endif
 }

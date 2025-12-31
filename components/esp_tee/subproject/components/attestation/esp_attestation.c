@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -165,10 +165,17 @@ exit:
     return err;
 }
 
-esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id, const char *psa_cert_ref,
-                                 uint8_t *token_buf, const size_t token_buf_size, uint32_t *token_len)
+esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge_size,
+                                 uint8_t *token_buf, size_t token_buf_size, size_t *token_size)
 {
-    if (token_buf == NULL || token_len == NULL || psa_cert_ref == NULL) {
+    if (auth_challenge == NULL || token_buf == NULL || token_buf_size == 0 || token_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (challenge_size != PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32 &&
+            challenge_size != PSA_INITIAL_ATTEST_CHALLENGE_SIZE_48 &&
+            challenge_size != PSA_INITIAL_ATTEST_CHALLENGE_SIZE_64) {
+        ESP_LOGE(TAG, "Invalid challenge size");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -191,10 +198,13 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
 
     esp_att_token_cfg_t cfg = {
-        .nonce = nonce,
-        .client_id = client_id,
+        .auth_challenge = (uint8_t *)auth_challenge,
+        .challenge_size = challenge_size,
+        /* TODO: client_id should point to the API caller (REE or TEE) */
+        .client_id = 0x0FACADE0,
+        /* TODO: PSA cert ref should be configurable or derived from system config */
+        .psa_cert_ref = ESP_ATT_TK_PSA_CERT_REF,
     };
-    memcpy(cfg.psa_cert_ref, psa_cert_ref, sizeof(cfg.psa_cert_ref));
 
     err = populate_att_token_cfg(&cfg, &keypair);
     if (err != ESP_OK) {
@@ -285,10 +295,30 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     free(sign_json);
 
     json_gen_end_object(&jstr);
-    *token_len = json_gen_str_end(&jstr);
+    *token_size = json_gen_str_end(&jstr);
     err = ESP_OK;
 
 exit:
     free_sw_claim_list();
     return err;
+}
+
+esp_err_t esp_att_get_token_size(size_t challenge_size, size_t *token_size)
+{
+    if (token_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    switch (challenge_size) {
+    case PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32:
+    case PSA_INITIAL_ATTEST_CHALLENGE_SIZE_48:
+    case PSA_INITIAL_ATTEST_CHALLENGE_SIZE_64:
+        *token_size = ESP_ATT_TK_MIN_SIZE;
+        break;
+    default:
+        *token_size = UINT32_MAX;
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
 }

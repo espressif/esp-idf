@@ -188,7 +188,6 @@ endif()
 set(mbedtls_targets mbedtls mbedx509 tfpsacrypto builtin)
 
 target_include_directories(tfpsacrypto PUBLIC "port/include")
-target_include_directories(tfpsacrypto PRIVATE "port/psa_crypto_storage/include")
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA OR CONFIG_MBEDTLS_HARDWARE_AES)
     target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
@@ -239,6 +238,11 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
             target_compile_definitions(tfpsacrypto PRIVATE ESP_PSA_ITS_AVAILABLE)
         endif()
     endif()
+endif()
+
+# PSA Attestation
+if(CONFIG_SECURE_TEE_ATTESTATION)
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/psa_attestation/psa_initial_attestation.c")
 endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)

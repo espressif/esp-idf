@@ -14,9 +14,15 @@
 #include "hal/spi_flash_hal.h"
 #include "hal/spi_flash_types.h"
 #include "esp_private/mspi_timing_tuning.h"
+#if SOC_AES_SUPPORTED
+#include "aes/esp_aes.h"
+#endif
 #if SOC_SHA_SUPPORTED
 #include "hal/sha_types.h"
-#include "hal/sha_hal.h"
+#include "psa_crypto_driver_esp_sha_contexts.h"
+#endif
+#if SOC_ECC_SUPPORTED
+#include "ecc_impl.h"
 #endif
 #if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
@@ -25,6 +31,7 @@
 #include "esp_ds.h"
 #include "rom/digital_signature.h"
 #endif
+#include "psa/crypto.h"
 #include "esp_crypto_lock.h"
 #include "esp_flash.h"
 
@@ -61,12 +68,6 @@ void IRAM_ATTR __wrap_wdt_hal_deinit(wdt_hal_context_t *hal)
 /* ---------------------------------------------- AES ------------------------------------------------- */
 
 #if SOC_AES_SUPPORTED
-typedef struct {
-    uint8_t key_bytes;
-    volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
-    uint8_t key[32];
-} esp_aes_context;
-
 int __wrap_esp_aes_intr_alloc(void)
 {
     return esp_tee_service_call(1, SS_ESP_AES_INTR_ALLOC);
@@ -158,49 +159,6 @@ int __wrap_esp_aes_crypt_ofb(esp_aes_context *ctx,
 /* ---------------------------------------------- SHA ------------------------------------------------- */
 
 #if SOC_SHA_SUPPORTED
-typedef enum {
-    ESP_SHA1_STATE_INIT,
-    ESP_SHA1_STATE_IN_PROCESS
-} esp_sha1_state;
-
-typedef enum {
-    ESP_SHA256_STATE_INIT,
-    ESP_SHA256_STATE_IN_PROCESS
-} esp_sha256_state;
-
-typedef enum {
-    ESP_SHA512_STATE_INIT,
-    ESP_SHA512_STATE_IN_PROCESS
-} esp_sha512_state;
-
-typedef struct {
-    uint32_t total[2];          /*!< number of bytes processed  */
-    uint32_t state[5];          /*!< intermediate digest state  */
-    unsigned char buffer[64];   /*!< data block being processed */
-    int first_block;            /*!< if first then true else false */
-    esp_sha_type mode;
-    esp_sha1_state sha_state;
-} esp_sha1_context;
-
-typedef struct {
-    uint32_t total[2];          /*!< number of bytes processed  */
-    uint32_t state[8];          /*!< intermediate digest state  */
-    unsigned char buffer[64];   /*!< data block being processed */
-    int first_block;           /*!< if first then true, else false */
-    esp_sha_type mode;
-    esp_sha256_state sha_state;
-} esp_sha256_context;
-
-typedef struct {
-    uint64_t total[2];          /*!< number of bytes processed  */
-    uint64_t state[8];          /*!< intermediate digest state  */
-    unsigned char buffer[128];  /*!< data block being processed */
-    int first_block;
-    esp_sha_type mode;
-    uint32_t t_val;             /*!< t_val for 512/t mode */
-    esp_sha512_state sha_state;
-} esp_sha512_context;
-
 void __wrap_esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
     esp_tee_service_call(5, SS_ESP_SHA,
@@ -343,15 +301,6 @@ void __wrap_esp_crypto_mpi_enable_periph_clk(bool enable)
 /* ---------------------------------------------- ECC ------------------------------------------------- */
 
 #if SOC_ECC_SUPPORTED
-#define P256_LEN        (256/8)
-#define P192_LEN        (192/8)
-
-typedef struct {
-    uint8_t x[P256_LEN]; /* Little endian order */
-    uint8_t y[P256_LEN]; /* Little endian order */
-    unsigned len;        /* P192_LEN or P256_LEN */
-} ecc_point_t;
-
 int __wrap_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
 {
     esp_crypto_ecc_lock_acquire();
@@ -540,4 +489,18 @@ void IRAM_ATTR __wrap_spi_timing_get_flash_timing_param(spi_flash_hal_timing_con
     esp_tee_service_call(2, SS_SPI_TIMING_GET_FLASH_TIMING_PARAM, out_timing_config);
 }
 #endif
+#endif
+
+#if CONFIG_SECURE_TEE_ATTESTATION
+psa_status_t __wrap_psa_initial_attest_get_token(const uint8_t *auth_challenge, size_t challenge_size,
+                                                 uint8_t *token_buf, size_t token_buf_size, size_t *token_size)
+{
+    return (esp_err_t)esp_tee_service_call_with_noniram_intr_disabled(6, SS_PSA_INITIAL_ATTEST_GET_TOKEN, auth_challenge, challenge_size,
+                                                                      token_buf, token_buf_size, token_size);
+}
+
+psa_status_t __wrap_psa_initial_attest_get_token_size(size_t challenge_size, size_t *token_size)
+{
+    return (esp_err_t)esp_tee_service_call_with_noniram_intr_disabled(3, SS_PSA_INITIAL_ATTEST_GET_TOKEN_SIZE, challenge_size, token_size);
+}
 #endif
