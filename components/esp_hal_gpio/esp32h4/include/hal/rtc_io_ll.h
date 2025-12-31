@@ -442,6 +442,34 @@ static inline void rtcio_ll_clear_interrupt_status(void)
     LP_GPIO.status_w1tc.val = 0x3F;
 }
 
+/**
+ * @brief Configure the source of output enable signal for the pad.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT-1.
+ * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+ * @param oen_inv True if the output enable signal needs to be inverted, otherwise False.
+ */
+static inline void rtcio_ll_set_output_enable_ctrl(uint8_t rtcio_num, bool ctrl_by_periph, bool oen_inv)
+{
+    (void)ctrl_by_periph; // deterministic:
+    // When the IO is used as a simple LP GPIO output, oe signal can only be controlled by the oe register;
+    // When the IO connects to a peripheral signal through IOMUX, oe signal can only be controlled by the peripheral
+    LP_GPIO.funcn_out_sel_cfg[rtcio_num].funcn_oe_inv_sel = oen_inv;
+}
+
+/**
+ * @brief Connect a peripheral signal which tagged as output attribute with a RTCIO.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT-1.
+ * @param signal_idx Peripheral signal index (tagged as output attribute).
+ * @param out_inv True if the output signal needs to be inverted, otherwise False.
+ */
+static inline void rtcio_ll_set_output_signal_matrix_source(uint8_t rtcio_num, uint32_t signal_idx, bool out_inv)
+{
+    (void)signal_idx; // no LP GPIO matrix on the target
+    LP_GPIO.funcn_out_sel_cfg[rtcio_num].funcn_out_inv_sel = out_inv;
+}
+
 #ifdef __cplusplus
 }
 #endif
