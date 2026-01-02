@@ -6,8 +6,6 @@
 
 #pragma once
 
-//TODO: [ESP32H4] IDF-12273 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif
