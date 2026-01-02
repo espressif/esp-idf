@@ -32,10 +32,41 @@ set(tee_binary_files
     "${TEE_BUILD_DIR}/esp_tee.map"
     )
 
-# Use only Newlib libc to reduce binary size, as some Newlib functions are already available in ROM
+# Override LibC for ESP-TEE if needed
 set(esp_tee_sdkconfig "${CMAKE_CURRENT_BINARY_DIR}/sdkconfig.esp_tee")
 configure_file("${sdkconfig}" "${esp_tee_sdkconfig}" COPYONLY)
-file(APPEND "${esp_tee_sdkconfig}" "\nCONFIG_LIBC_NEWLIB=y\n")
+
+file(READ "${esp_tee_sdkconfig}" content)
+
+unset(REE_LIBC)
+unset(TEE_LIBC)
+
+foreach(libc NEWLIB PICOLIBC)
+    if(content MATCHES "CONFIG_LIBC_${libc}=y")
+        set(REE_LIBC ${libc})
+    endif()
+
+    if(content MATCHES "CONFIG_SECURE_TEE_LIBC_${libc}=y")
+        set(TEE_LIBC ${libc})
+    endif()
+endforeach()
+
+if(REE_LIBC AND TEE_LIBC AND NOT REE_LIBC STREQUAL TEE_LIBC)
+    string(REGEX REPLACE
+        "CONFIG_LIBC_(NEWLIB|PICOLIBC)=y"
+        "# CONFIG_LIBC_\\1 is not set"
+        content
+        "${content}"
+    )
+    # Enable libc selected by TEE
+    string(REGEX REPLACE
+        "# CONFIG_LIBC_${TEE_LIBC} is not set"
+        "CONFIG_LIBC_${TEE_LIBC}=y"
+        content
+        "${content}"
+    )
+    file(WRITE "${esp_tee_sdkconfig}" "${content}")
+endif()
 
 set(secure_service_headers_dir "${CMAKE_CURRENT_BINARY_DIR}/secure_service_headers")
 make_directory(${secure_service_headers_dir})

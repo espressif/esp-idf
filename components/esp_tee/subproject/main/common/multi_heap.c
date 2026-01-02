@@ -152,7 +152,6 @@ void *calloc(size_t n, size_t size)
     return esp_tee_heap_calloc(n, size);
 }
 
-#if CONFIG_LIBC_PICOLIBC
 void *realloc(void* ptr, size_t size)
 {
     if (tee_heap == NULL) {
@@ -160,7 +159,7 @@ void *realloc(void* ptr, size_t size)
     }
 
     if (ptr == NULL) {
-        return esp_tee_heap_malloc(heap, size);
+        return esp_tee_heap_malloc(size);
     }
 
     size_t previous_block_size = tlsf_block_size(ptr);
@@ -177,7 +176,6 @@ void *realloc(void* ptr, size_t size)
 
     return result;
 }
-#endif
 
 void free(void *ptr)
 {
