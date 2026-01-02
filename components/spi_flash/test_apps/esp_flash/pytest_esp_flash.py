@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -61,8 +60,8 @@ def test_esp_flash_multi(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'config, baud',
     [
-        ('esp32c2_xtal26m', '74880'),
-        ('esp32c2_xtal26m_rom', '74880'),
+        ('c2_xtal26m', '74880'),
+        ('c2_xtal26m_rom', '74880'),
     ],
     indirect=True,
 )
