@@ -20,7 +20,8 @@ portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
 #if CONFIG_BLE_LOG_XOR_CHECKSUM_ENABLED
 #include "esp_compiler.h"
 
-static inline uint32_t ror32(uint32_t word, uint32_t shift)
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC BLE_LOG_INLINE
+uint32_t ror32(uint32_t word, uint32_t shift)
 {
     if (unlikely(shift == 0)) {
         return word;
