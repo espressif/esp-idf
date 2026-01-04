@@ -163,4 +163,5 @@ TYPES_MACRO_MAP = {
     'SCNoPTR': __PRIPTR_PREFIX + 'o',
     'SCNuPTR': __PRIPTR_PREFIX + 'u',
     'SCNxPTR': __PRIPTR_PREFIX + 'x',
+    'MACSTR': '%s',
 }
