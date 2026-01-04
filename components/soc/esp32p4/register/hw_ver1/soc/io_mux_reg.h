@@ -68,6 +68,16 @@
 #define FILTER_EN_M (FILTER_EN_V << FILTER_EN_S)
 #define FILTER_EN_V 1
 #define FILTER_EN_S 15
+/* Pull-up enable for i3c (this bit is only valid on gpio 32 and 33) */
+#define I3C_RUE_EN (BIT(16))
+#define I3C_RUE_EN_M (I3C_RUE_EN_V << I3C_RUE_EN_S)
+#define I3C_RUE_EN_V 1
+#define I3C_RUE_EN_S 16
+/* Pull-up register value for i3c (0: 0.3K, 1: 0.6K, 2: 1.2K, 3: 2.4K, this bit is only valid on gpio 32 and 33) */
+#define I3C_RU 0x3
+#define I3C_RU_M (I3C_RU_V << I3C_RU_S)
+#define I3C_RU_V 0x3
+#define I3C_RU_S 17
 
 #define PIN_SLP_INPUT_ENABLE(PIN_NAME)      SET_PERI_REG_MASK(PIN_NAME,SLP_IE)
 #define PIN_SLP_INPUT_DISABLE(PIN_NAME)     CLEAR_PERI_REG_MASK(PIN_NAME,SLP_IE)

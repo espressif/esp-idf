@@ -63,7 +63,18 @@ typedef union {
          *  input filter enable
          */
         uint32_t filter_en:1;
-        uint32_t reserved16 :16;
+        /** i3c_rue_en : R/W; bitpos: [16]; default: 0;
+         *  pull-up enable for i3c
+         *  @note: this bit is only valid on gpio 32 and 33
+         */
+        uint32_t i3c_rue_en:1;
+        /** i3c_ru : R/W; bitpos: [17:18]; default: 0;
+         *  pull-up register value for i3c
+         *  0: 0.3K, 1: 0.6K, 2: 1.2K, 3: 2.4K
+         *  @note: this bit is only valid on gpio 32 and 33
+         */
+        uint32_t i3c_ru:2;
+        uint32_t reserved16 :13;
     };
     uint32_t val;
 } io_mux_gpio_reg_t;

@@ -199,6 +199,12 @@ examples/peripherals/i3c/i3c_i2c_basic:
   depends_components:
     - esp_driver_i3c
 
+examples/peripherals/i3c/i3c_lsm6dscx:
+  disable:
+    - if: SOC_I3C_MASTER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i3c
+
 examples/peripherals/isp/multi_pipelines:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1

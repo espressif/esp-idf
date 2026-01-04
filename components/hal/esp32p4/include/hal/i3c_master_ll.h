@@ -19,6 +19,8 @@
 #include "soc/i3c_mst_struct.h"
 #include "soc/i3c_mst_reg.h"
 #include "hal/i3c_master_types.h"
+#include "soc/io_mux_struct.h"
+#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,8 +29,11 @@ extern "C" {
 #define I3C_LL_GET_HW(num)          (((num) == 0) ? (&I3C_MST) : NULL)
 #define I3C_LL_MASTER_EVENT_INTR    (I3C_MST_TRANSFER_COMPLETE_INT_ENA_M | I3C_MST_COMMAND_DONE_INT_ENA_M | I3C_MST_TX_DATA_BUF_THLD_INT_ENA_M | I3C_MST_RX_DATA_BUF_THLD_INT_ENA_M)
 #define I3C_LL_MASTER_DATA_BUFFER_SIZE       (128) // The TX Data Buffer and the RX Data Buffer can store up to 128 bytes at a time
-#define I3C_LL_MASTER_TRANSMIT_EVENT_INTR    (I3C_MST_TX_DATA_BUF_THLD_INT_ENA_M | I3C_MST_TRANSFER_COMPLETE_INT_ENA_M | I3C_MST_COMMAND_DONE_INT_ENA_M)
-#define I3C_LL_MASTER_RECEIVE_EVENT_INTR     (I3C_MST_RX_DATA_BUF_THLD_INT_ENA_M | I3C_MST_TRANSFER_COMPLETE_INT_ENA_M | I3C_MST_COMMAND_DONE_INT_ENA_M)
+#define I3C_LL_MASTER_COMMON_INTR      (I3C_MST_TRANSFER_COMPLETE_INT_ENA_M | I3C_MST_COMMAND_DONE_INT_ENA_M | I3C_MST_IBI_HANDLE_DONE_INT_ENA_M)
+#define I3C_LL_MASTER_TRANSMIT_INTR    (I3C_MST_TX_DATA_BUF_THLD_INT_ENA_M)
+#define I3C_LL_MASTER_RECEIVE_INTR     (I3C_MST_RX_DATA_BUF_THLD_INT_ENA_M)
+#define I3C_LL_MASTER_INTERNAL_PULLUP_IO_PINS_MASK            (BIT64(32) | BIT64(33))
+
 #define I3C_MASTER_LL_DEFAULT_SETUP_TIME     (600)
 
 /**
@@ -289,6 +294,43 @@ typedef union {
     uint32_t val; ///< Raw 32-bit value of the address table entry.
 } i3c_master_ll_device_address_descriptor_t;
 
+/**
+ * @brief I3C Device Characteristic Descriptor
+ *
+ * Holds the basic information read from the Device Characteristic Table (DCT),
+ * including PID, BCR, DCR, and the dynamic address, used to identify and manage
+ * I3C target devices.
+ */
+typedef struct {
+    uint64_t pid;           ///< Provisional ID, 48-bit PID (stored in 64-bit here)
+    uint8_t  bcr;           ///< Bus Characteristics Register
+    uint8_t  dcr;           ///< Device Characteristics Register (device class/type)
+    uint8_t  dynamic_addr;  ///< 7-bit dynamic address assigned via DATA/SETDASA
+} i3c_master_ll_device_char_descriptor_t;
+
+
+/**
+ * @brief IBI response status
+ *
+ * Indicates the master's response to a target's In-Band Interrupt (IBI/SIR) request.
+ */
+typedef enum {
+    I3C_MASTER_LL_IBI_ACK = 0x0,   ///< Master accepts the IBI (ACK)
+    I3C_MASTER_LL_IBI_NACK = 0x1,  ///< Master rejects the IBI (NACK)
+} i3c_master_ll_ibi_status_t;
+
+/**
+ * @brief IBI Status Descriptor
+ *
+ * Summarizes the key information for a single IBI event, including the payload
+ * length, a source identifier, and the master's response status.
+ */
+typedef struct {
+    size_t ibi_data_length;                  ///< IBI payload length in bytes
+    size_t ibi_identifier;                   ///< IBI source identifier (reported by HW to identify the requester)
+    i3c_master_ll_ibi_status_t ibi_sts;      ///< IBI response status, see `i3c_master_ll_ibi_status_t`
+} i3c_master_ll_ibi_status_descriptor_t;
+
 typedef enum {
     I3C_MASTER_LL_FIFO_WM_LENGTH_2 = 0x0,
     I3C_MASTER_LL_FIFO_WM_LENGTH_4 = 0x1,
@@ -430,17 +472,31 @@ static inline void i3c_master_ll_inject_broadcast_address_head(i3c_mst_dev_t *hw
 }
 
 /**
- * @brief Set the open-drain timing for I3C master
+ * @brief Set the open-drain timing for I3C master with duty cycle
  *
  * @param hw I3C master hardware instance
  * @param clock_source_freq Clock source frequency
  * @param scl_freq SCL frequency
+ * @param duty_cycle_num Duty cycle numerator, represents the numerator of the duty cycle ratio (duty_cycle = duty_cycle_num / duty_cycle_denom)
+ * @param duty_cycle_denom Duty cycle denominator, represents the denominator of the duty cycle ratio (duty_cycle = duty_cycle_num / duty_cycle_denom)
  */
-static inline void i3c_master_ll_set_i3c_open_drain_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq)
+static inline void i3c_master_ll_set_i3c_open_drain_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq, uint32_t duty_cycle_num, uint32_t duty_cycle_denom)
 {
-    uint32_t period_cnt = clock_source_freq / scl_freq / 2;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_od_time, reg_i3c_mst_od_high_period, (period_cnt - 1));
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_od_time, reg_i3c_mst_od_low_period, (period_cnt - 1));
+    HAL_ASSERT(duty_cycle_denom != 0);
+    uint64_t target_period = (uint64_t)clock_source_freq / (uint64_t)scl_freq;
+    uint32_t high_period = (uint32_t)((target_period * (uint64_t)duty_cycle_num) / (uint64_t)duty_cycle_denom);
+    uint32_t low_period = (uint32_t)target_period - high_period;
+
+    // Ensure minimum period values
+    if (high_period < 1) {
+        high_period = 1;
+    }
+    if (low_period < 1) {
+        low_period = 1;
+    }
+
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_od_time, reg_i3c_mst_od_high_period, (high_period - 1));
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_od_time, reg_i3c_mst_od_low_period, (low_period - 1));
 }
 
 /**
@@ -474,17 +530,56 @@ static inline void i3c_master_ll_set_i2c_fast_mode_plus_timing(i3c_mst_dev_t *hw
 }
 
 /**
-* @brief Set the push-pull timing for I3C master
+* @brief Set the push-pull timing for I3C master with duty cycle
 *
 * @param hw I3C master hardware instance
 * @param clock_source_freq Clock source frequency
 * @param scl_freq SCL frequency
+* @param duty_cycle_num Duty cycle numerator, represents the numerator of the duty cycle ratio (duty_cycle = duty_cycle_num / duty_cycle_denom)
+* @param duty_cycle_denom Duty cycle denominator, represents the denominator of the duty cycle ratio (duty_cycle = duty_cycle_num / duty_cycle_denom)
 */
-static inline void i3c_master_ll_set_i3c_push_pull_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq)
+static inline void i3c_master_ll_set_i3c_push_pull_timing(i3c_mst_dev_t *hw, uint32_t clock_source_freq, uint32_t scl_freq, uint32_t duty_cycle_num, uint32_t duty_cycle_denom)
 {
-    uint32_t period_cnt = clock_source_freq / scl_freq / 2;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_pp_time, reg_i3c_mst_pp_high_period, (period_cnt - 1));
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_pp_time, reg_i3c_mst_pp_low_period, (period_cnt - 1));
+    HAL_ASSERT(duty_cycle_denom != 0);
+    uint64_t target_period = (uint64_t)clock_source_freq / (uint64_t)scl_freq;
+    uint32_t high_period = (uint32_t)((target_period * (uint64_t)duty_cycle_num) / (uint64_t)duty_cycle_denom);
+    uint32_t low_period = (uint32_t)target_period - high_period;
+
+    // Ensure minimum period values
+    if (high_period < 1) {
+        high_period = 1;
+    }
+    if (low_period < 1) {
+        low_period = 1;
+    }
+
+    // Handle fractional part to maintain accuracy
+
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_pp_time, reg_i3c_mst_pp_high_period, (high_period - 1));
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->scl_i3c_mst_pp_time, reg_i3c_mst_pp_low_period, (low_period - 1));
+}
+
+/**
+ * @brief Set the open-drain sda hold time for I3C master
+ *
+ * @param hw I3C master hardware instance
+ * @param clock_source_freq Clock source frequency
+ * @param sda_hold_time SDA hold time
+ */
+static inline void i3c_master_ll_set_od_sda_hold_time(i3c_mst_dev_t *hw, uint16_t sda_hold_time)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sda_hold_time, reg_sda_od_tx_hold_time, sda_hold_time);
+}
+
+/**
+ * @brief Set the push-pull sda hold time for I3C master
+ *
+ * @param hw I3C master hardware instance
+ * @param sda_hold_time SDA hold time
+ */
+static inline void i3c_master_ll_set_pp_sda_hold_time(i3c_mst_dev_t *hw, uint16_t sda_hold_time)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sda_hold_time, reg_sda_pp_tx_hold_time, sda_hold_time);
 }
 
 /**
@@ -777,6 +872,215 @@ static inline uint32_t i3c_master_ll_get_current_dct_index(i3c_mst_dev_t *dev)
 static inline uint32_t i3c_master_ll_get_current_dat_index(i3c_mst_dev_t *dev)
 {
     return dev->device_table.present_dat_index;
+}
+
+/**
+ * @brief Read a Device Characteristic Table (DCT) entry
+ *
+ * Fetches one entry from the hardware DCT and fills the provided
+ * `i3c_master_ll_device_char_descriptor_t` with PID, BCR, DCR, and
+ * dynamic address information.
+ *
+ * @param dev I3C master hardware instance
+ * @param dev_char_table Output descriptor to receive the parsed device information
+ * @param device_number Index of the device entry in the hardware DCT
+ */
+static inline void i3c_master_ll_get_dev_char_table(i3c_mst_dev_t *dev, i3c_master_ll_device_char_descriptor_t *dev_char_table, size_t device_number)
+{
+    uint32_t pid_0_15 = I3C_MST_MEM.dev_char_table[device_number].loc1 & 0xFFFF;
+    uint32_t pid_16_48 = I3C_MST_MEM.dev_char_table[device_number].loc0 & 0xFFFF;
+    dev_char_table->pid = ((pid_0_15) | (pid_16_48 << 16));
+    dev_char_table->bcr = I3C_MST_MEM.dev_char_table[device_number].loc2 & 0xFF;
+    dev_char_table->dcr = (I3C_MST_MEM.dev_char_table[device_number].loc2 >> 8) & 0xFF;
+    dev_char_table->dynamic_addr = I3C_MST_MEM.dev_char_table[device_number].loc3 & 0xFF;
+}
+
+/**
+ * @brief Configure IBI accept policy for a target
+ *
+ * Controls whether the master accepts or rejects IBI/SIR requests
+ * from a target identified by its dynamic address.
+ *
+ * @param dev I3C master hardware instance
+ * @param dynamic_addr 7-bit dynamic address of the target device
+ * @param accept True to accept IBI requests; false to reject
+ */
+static inline void i3c_master_ll_set_ibi_accept(i3c_mst_dev_t *dev, uint8_t dynamic_addr, bool accept)
+{
+    uint8_t bit_index = ((dynamic_addr >> 5) + (dynamic_addr & 0x1F)) % 32;
+    if (accept) {
+        dev->ibi_sir_req_reject.reg_sir_req_reject &= ~(1UL << bit_index);
+    } else {
+        dev->ibi_sir_req_reject.reg_sir_req_reject |= (1UL << bit_index);
+    }
+}
+
+/**
+ * @brief Configure IBI payload retrieval for a target
+ *
+ * Enables or disables fetching IBI payload data for a specific target
+ * identified by its dynamic address.
+ *
+ * @param dev I3C master hardware instance
+ * @param dynamic_addr 7-bit dynamic address of the target device
+ * @param get_payload True to fetch payload for IBI; false to ignore payload
+ */
+static inline void i3c_master_ll_set_ibi_payload(i3c_mst_dev_t *dev, uint8_t dynamic_addr, bool get_payload)
+{
+    uint8_t bit_index = ((dynamic_addr >> 5) + (dynamic_addr & 0x1F)) % 32;
+    if (get_payload) {
+        dev->ibi_sir_req_payload.reg_sir_req_payload |= (1UL << bit_index);
+    } else {
+        dev->ibi_sir_req_payload.reg_sir_req_payload &= ~(1UL << bit_index);
+    }
+}
+
+/**
+ * @brief Enable or disable notification on SIR rejection
+ *
+ * Controls whether the controller reports a notification when a
+ * SIR (IBI) request is rejected by policy.
+ *
+ * @param dev I3C master hardware instance
+ * @param notify_sir_rejected True to enable notification, false to disable
+ */
+static inline void i3c_master_ll_set_ibi_notify_sir_rejected(i3c_mst_dev_t *dev, bool notify_sir_rejected)
+{
+    dev->ibi_notify_ctrl.reg_notify_sir_rejected = notify_sir_rejected;
+}
+
+/**
+ * @brief Enable or disable automatic IBI disable behavior
+ *
+ * When enabled, the hardware automatically disables IBI reception
+ * according to its internal policy after handling an event.
+ *
+ * @param dev I3C master hardware instance
+ * @param auto_disable_ibi True to enable auto-disable; false to keep IBI enabled
+ */
+static inline void i3c_master_ll_set_auto_disable_ibi(i3c_mst_dev_t *dev, bool auto_disable_ibi)
+{
+    dev->device_ctrl.reg_auto_dis_ibi_en = auto_disable_ibi;
+}
+
+/**
+ * @brief Enable or disable restart transaction on IBI
+ *
+ * Controls whether the controller issues or allows a restart-based
+ * transaction flow in response to an IBI event.
+ *
+ * @param dev I3C master hardware instance
+ * @param ibi_rstart_trans_en True to enable restart flow after IBI; false to disable
+ */
+static inline void i3c_master_ll_set_ibi_rstart_trans_en(i3c_mst_dev_t *dev, bool ibi_rstart_trans_en)
+{
+    dev->device_ctrl.reg_ibi_rstart_trans_en = ibi_rstart_trans_en;
+}
+
+/**
+ * @brief Read IBI status information
+ *
+ * Retrieves the IBI status including payload length, a source identifier,
+ * and the master's ACK/NACK decision.
+ *
+ * @param dev I3C master hardware instance
+ * @param ibi_status Output structure to receive status information
+ */
+__attribute__((always_inline))
+static inline void i3c_master_ll_get_ibi_status(i3c_mst_dev_t *dev, i3c_master_ll_ibi_status_descriptor_t *ibi_status)
+{
+    size_t len = HAL_FORCE_READ_U32_REG_FIELD(I3C_MST_MEM.ibi_status_buf, data_length);
+    size_t ibi_id = HAL_FORCE_READ_U32_REG_FIELD(I3C_MST_MEM.ibi_status_buf, ibi_id);
+    ibi_status->ibi_data_length = len;
+    ibi_status->ibi_identifier = ibi_id;
+    if (I3C_MST_MEM.ibi_status_buf.ibi_sts == 0x0) {
+        ibi_status->ibi_sts = I3C_MASTER_LL_IBI_ACK;
+    } else {
+        ibi_status->ibi_sts = I3C_MASTER_LL_IBI_NACK;
+    }
+}
+
+/**
+ * @brief Read IBI payload data
+ *
+ * Reads the specified number of bytes from the IBI data buffer into
+ * the provided buffer.
+ *
+ * @param dev I3C master hardware instance
+ * @param data Destination buffer for the IBI payload
+ * @param length Number of bytes to read from the hardware buffer
+ */
+__attribute__((always_inline))
+static inline void i3c_master_ll_get_ibi_data(i3c_mst_dev_t *dev, uint8_t *data, size_t length)
+{
+    HAL_ASSERT(length <= I3C_MASTER_IBI_DATA_SIZE_MAX);
+    for (int i = 0; i < length; i++) {
+        data[i] = I3C_MST_MEM.ibi_data_buf.ibi_data;
+    }
+}
+
+/**
+ * @brief reset the command buffer
+ *
+ * @param dev I3C master hardware instance
+ */
+__attribute__((always_inline))
+static inline void i3c_master_ll_reset_command_buf(i3c_mst_dev_t *dev)
+{
+    dev->reset_ctrl.reg_cmd_buf_rst = 1;
+    dev->reset_ctrl.reg_cmd_buf_rst = 0;
+}
+
+/**
+ * @brief Enable or disable the I3C internal pull-up for a specific pin
+ *
+ * Controls the dedicated I3C pull-up resistor unit in IO MUX. This is
+ * different from the generic GPIO pull-up and is intended for I3C operation.
+ *
+ * Note: Only IO32 and IO33 support the I3C internal pull-up on this SoC.
+ *
+ * @param io GPIO index, must be 32 or 33
+ * @param enable true to enable the internal pull-up control; false to disable
+ */
+static inline void i3c_master_ll_enable_internal_pullup(int io, bool enable)
+{
+    HAL_ASSERT(io == 32 || io == 33);
+    IO_MUX.gpio[io].i3c_rue_en = enable;
+}
+
+/**
+ * @brief Set the I3C internal pull-up strength/value for a specific pin
+ *
+ * Programs the pull-up resistor unit value used by the I3C pin in IO MUX.
+ * The exact encoding and effective resistance are hardware-defined; please
+ * refer to the SoC TRM for the value-to-resistance mapping.
+ *
+ * Effective only if the internal pull-up is enabled via
+ * i3c_master_ll_enable_internal_pullup().
+ *
+ * @param io GPIO index, must be 32 or 33
+ * @param value Encoded pull-up value (SoC-specific)
+ */
+static inline void i3c_master_ll_set_internal_pullup_value(int io, i3c_master_internal_pullup_resistor_val_t value)
+{
+    HAL_ASSERT(io == 32 || io == 33);
+    switch (value) {
+        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K:
+            IO_MUX.gpio[io].i3c_ru = 0;
+            break;
+        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_6K:
+            IO_MUX.gpio[io].i3c_ru = 1;
+            break;
+        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_1_2K:
+            IO_MUX.gpio[io].i3c_ru = 2;
+            break;
+        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_2_4K:
+            IO_MUX.gpio[io].i3c_ru = 3;
+            break;
+        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_DISABLED:
+            HAL_ASSERT(false);
+            break;
+    }
 }
 
 #ifdef __cplusplus
