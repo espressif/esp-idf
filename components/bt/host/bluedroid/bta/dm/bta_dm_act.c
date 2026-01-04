@@ -5406,6 +5406,22 @@ void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data)
     BTM_BleConfigLocalIcon (p_data->ble_local_icon.icon);
 }
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+/*******************************************************************************
+**
+** Function         bta_dm_ble_set_key_material
+**
+** Description      This function sets the Encrypted Data Key Material.
+**
+**
+*******************************************************************************/
+void bta_dm_ble_set_key_material (tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetKeyMaterial (p_data->ble_key_material.session_key,
+                           p_data->ble_key_material.iv);
+}
+#endif
+
 #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 /*******************************************************************************
 **
