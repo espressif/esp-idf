@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -739,11 +739,6 @@
 
 /*--------------------------- CAM ---------------------------------*/
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
-
-/*--------------------------- I3C ---------------------------------*/
-#define SOC_I3C_MASTER_PERIPH_NUM                   (1)
-#define SOC_I3C_MASTER_ADDRESS_TABLE_NUM            (12)
-#define SOC_I3C_MASTER_COMMAND_TABLE_NUM            (12)
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */

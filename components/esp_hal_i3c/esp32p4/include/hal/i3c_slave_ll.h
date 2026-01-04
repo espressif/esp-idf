@@ -24,7 +24,6 @@ extern "C" {
 
 #define I3C_SLAVE_LL_EVENT_INTR        (I3C_SLV_RXPEND_ENA_M | I3C_SLV_TXSEND_ENA_M)
 
-
 /**
  * @brief Enable or disable I3C slave bus clock
  *
@@ -70,7 +69,6 @@ static inline void i3c_slave_ll_config_static_address(i3c_slv_dev_t *hw, uint8_t
     hw->config.saddr = address;
 }
 
-
 /**
  * @brief Get pointer to I3C slave interrupt status register
  *
@@ -81,7 +79,6 @@ static inline volatile void *i3c_slave_ll_get_interrupt_status_reg(i3c_slv_dev_t
 {
     return &dev->intmasked;
 }
-
 
 /**
  * @brief Clear I3C slave interrupt flags

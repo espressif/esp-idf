@@ -1939,18 +1939,6 @@ config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
     bool
     default y
 
-config SOC_I3C_MASTER_PERIPH_NUM
-    bool
-    default y
-
-config SOC_I3C_MASTER_ADDRESS_TABLE_NUM
-    int
-    default 12
-
-config SOC_I3C_MASTER_COMMAND_TABLE_NUM
-    int
-    default 12
-
 config SOC_LP_CORE_SUPPORT_ETM
     bool
     default y

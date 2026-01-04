@@ -1,13 +1,14 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdint.h>
 #include <stdlib.h>
 #include "soc/soc_caps.h"
+#include "hal/i3c_master_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +25,7 @@ typedef struct {
     const uint8_t irq;
 } i3c_master_signal_conn_t;
 
-extern const i3c_master_signal_conn_t i3c_master_periph_signal[SOC_I3C_MASTER_PERIPH_NUM];
+extern const i3c_master_signal_conn_t i3c_master_periph_signal[I3C_MASTER_LL_PERIPH_NUM];
 
 #endif
 
