@@ -5,4 +5,4 @@ supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Organization: Google LLC'
 description: OpenThread released by Google is an open-source implementation of the Thread networking
 url: https://github.com/espressif/openthread
-hash: e16325e99f01a04079feb61ff900570b23b7cbcb
+hash: 03933d9b76cb7075cc29a6648b42b217971f82a5
