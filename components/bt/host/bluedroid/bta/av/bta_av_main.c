@@ -763,7 +763,7 @@ static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data)
     sep_reg.seid = p_data->api_reg_sep.seid;
     sep_reg.reg_state = BTA_AV_FAIL;
 
-    if (index > BTA_AV_MAX_SEPS || p_data->hdr.layer_specific != BTA_AV_CHNL_AUDIO) {
+    if (index >= BTA_AV_MAX_SEPS || p_data->hdr.layer_specific != BTA_AV_CHNL_AUDIO) {
         (*bta_av_cb.p_cback)(BTA_AV_SEP_REG_EVT, (tBTA_AV *)&sep_reg);
         APPL_TRACE_WARNING("%s invalid parameter: seid %d, ch %d", __FUNCTION__, index, p_data->hdr.layer_specific);
         return;
@@ -815,6 +815,7 @@ static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data)
                     p_scb->seps[index].codec_type = codec_type;
                     p_scb->seps[index].tsep = cs.tsep;
                     p_scb->seps[index].p_app_data_cback = p_data->api_reg_sep.p_data_cback;
+                    sep_reg.reg_state = BTA_AV_SUCCESS;
                 } else {
                     APPL_TRACE_WARNING("%s fail to create sep", __FUNCTION__);
                     break;
@@ -826,7 +827,6 @@ static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data)
         }
     }
 
-    sep_reg.reg_state = BTA_AV_SUCCESS;
     (*bta_av_cb.p_cback)(BTA_AV_SEP_REG_EVT, (tBTA_AV *)&sep_reg);
 #endif
 }

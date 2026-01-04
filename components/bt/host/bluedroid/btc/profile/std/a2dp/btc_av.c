@@ -1459,6 +1459,7 @@ static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
         param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_INVALID_STATE;
         btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
         BTC_TRACE_WARNING("%s: try to reg sep when a2dp not init or connected", __func__);
+        return;
     }
 
     if (mcc->type == ESP_A2D_MCT_SBC) {
