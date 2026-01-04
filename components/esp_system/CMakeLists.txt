@@ -75,7 +75,7 @@ else()
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include
-                        PRIV_REQUIRES spi_flash esp_timer esp_mm esp_hal_mspi esp_hal_wdt esp_hal_uart
+                        PRIV_REQUIRES spi_flash esp_timer esp_mm esp_hal_mspi esp_hal_wdt esp_hal_uart esp_hal_clock
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.

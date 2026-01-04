@@ -10,7 +10,7 @@ set(ld_fragments linker.lf)
 # As CONFIG_ETH_ENABLED comes from Kconfig, it is not evaluated yet
 # when components are being registered.
 # Thus, always add the (private) requirements, regardless of Kconfig
-set(priv_requires log esp_timer esp_driver_spi esp_driver_gpio)
+set(priv_requires log esp_timer esp_driver_spi esp_driver_gpio esp_hal_clock)
 
 # If Ethernet disabled in Kconfig, this is a config-only component
 if(CONFIG_ETH_ENABLED)

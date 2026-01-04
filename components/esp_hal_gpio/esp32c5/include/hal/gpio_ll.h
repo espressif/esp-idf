@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/soc.h"
-#include "soc/gpio_ext_reg.h"
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
 #include "soc/pmu_struct.h"
@@ -717,19 +716,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].mcu_oe = 1;
-}
-
-/**
- * @brief  Control the pin in the IOMUX
- *
- * @param  bmap   write mask of control value
- * @param  val    Control value
- * @param  shift  write mask shift of control value
- */
-__attribute__((always_inline))
-static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
-{
-    SET_PERI_REG_BITS(GPIO_EXT_PIN_CTRL_REG, bmap, val, shift);
 }
 
 #ifdef __cplusplus

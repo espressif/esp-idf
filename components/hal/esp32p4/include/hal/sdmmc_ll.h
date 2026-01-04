@@ -91,6 +91,7 @@ extern "C" {
 #define SDMMC_LL_HOST_CTLR_NUMS                       1U
 #define SDMMC_LL_DELAY_MAX_NUMS_LS                    4
 #define SDMMC_LL_DELAY_PHASE_SUPPORTED                1
+#define SDMMC_LL_SDIO_PLL_SUPPORTED                   1
 
 /**
  * SDMMC delay phase

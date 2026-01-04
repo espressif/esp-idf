@@ -11,7 +11,7 @@ endif()
 
 set(requires esp_hal_dma esp_hal_gpio esp_hal_usb esp_hal_pmu)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt esp_hal_rtc_timer)
+set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt esp_hal_rtc_timer esp_hal_clock)
 
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT non_os_build)

@@ -26,7 +26,6 @@
 #include "esp_private/periph_ctrl.h"
 
 #include "soc/rtc.h"
-#include "hal/clk_tree_ll.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
 
@@ -54,12 +53,6 @@
 #include "esp_sleep.h"
 #include "esp_memory_utils.h"
 #include "esp_rom_sys.h"
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define HP_UART_SRC_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
-#else
-#define HP_UART_SRC_CLK_ATOMIC()
-#endif
 
 #define MHZ (1000000)
 
