@@ -2265,6 +2265,9 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT:
         if (src->pa_rsp_rpt_evt.pa_rsp_info) {
+            // num_rsp is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
+            dst->pa_rsp_rpt_evt.num_rsp = src->pa_rsp_rpt_evt.num_rsp;
+
             dst->pa_rsp_rpt_evt.pa_rsp_info = osi_malloc(src->pa_rsp_rpt_evt.num_rsp * sizeof(esp_ble_pa_rsp_info));
             if (dst->pa_rsp_rpt_evt.pa_rsp_info) {
                 for (UINT8 i = 0; i < src->pa_rsp_rpt_evt.num_rsp; i++)
@@ -2274,18 +2277,22 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                     dst->pa_rsp_rpt_evt.pa_rsp_info[i].cte_type = src->pa_rsp_rpt_evt.pa_rsp_info[i].cte_type;
                     dst->pa_rsp_rpt_evt.pa_rsp_info[i].rsp_slot = src->pa_rsp_rpt_evt.pa_rsp_info[i].rsp_slot;
                     dst->pa_rsp_rpt_evt.pa_rsp_info[i].data_status = src->pa_rsp_rpt_evt.pa_rsp_info[i].data_status;
+                    // data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
                     dst->pa_rsp_rpt_evt.pa_rsp_info[i].data_len = src->pa_rsp_rpt_evt.pa_rsp_info[i].data_len;
-                    if (src->pa_rsp_rpt_evt.pa_rsp_info[i].data_len) {
+                    if (src->pa_rsp_rpt_evt.pa_rsp_info[i].data_len && src->pa_rsp_rpt_evt.pa_rsp_info[i].data) {
                         dst->pa_rsp_rpt_evt.pa_rsp_info[i].data = osi_malloc(src->pa_rsp_rpt_evt.pa_rsp_info[i].data_len);
                         if (dst->pa_rsp_rpt_evt.pa_rsp_info[i].data) {
                             memcpy(dst->pa_rsp_rpt_evt.pa_rsp_info[i].data, src->pa_rsp_rpt_evt.pa_rsp_info[i].data, src->pa_rsp_rpt_evt.pa_rsp_info[i].data_len);
                         } else {
-                            BTC_TRACE_ERROR("%s, data, no enough memory.", __func__);
+                            BTC_TRACE_ERROR("%s, data, no enough memory for data_len %d at index %d", __func__, dst->pa_rsp_rpt_evt.pa_rsp_info[i].data_len, i);
+                            dst->pa_rsp_rpt_evt.pa_rsp_info[i].data_len = 0;
                         }
+                    } else {
+                        dst->pa_rsp_rpt_evt.pa_rsp_info[i].data = NULL;
                     }
                 }
             } else {
-                BTC_TRACE_ERROR("%s, pa_rsp_info, no enough memory.", __func__);
+                BTC_TRACE_ERROR("%s, pa_rsp_info, no enough memory for array size %d", __func__, src->pa_rsp_rpt_evt.num_rsp);
             }
         }
         break;
