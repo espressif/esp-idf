@@ -2948,6 +2948,22 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN enable, tBTM_SET_LOCAL_PRIVACY_CBACK *set_l
 *******************************************************************************/
 void BTM_BleConfigLocalIcon(uint16_t icon);
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_BleSetKeyMaterial
+**
+** Description      Set the Encrypted Data Key Material in GAP service
+**
+** Parameters       session_key: 16-byte session key
+**                  iv:          8-byte initialization vector
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv);
+#endif
+
 /*******************************************************************************
 **
 ** Function         BTM_BleConfigConnParams

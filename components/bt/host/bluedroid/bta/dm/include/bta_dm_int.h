@@ -159,6 +159,9 @@ enum {
     BTA_DM_API_LOCAL_PRIVACY_EVT,
 #endif
     BTA_DM_API_LOCAL_ICON_EVT,
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    BTA_DM_API_KEY_MATERIAL_EVT,
+#endif
 
     /*******This event added by Yulong at 2016/10/20 to
     support setting the ble advertising param by the APP******/
@@ -852,6 +855,14 @@ typedef struct {
     BT_HDR                  hdr;
     uint16_t                icon;
 } tBTA_DM_API_LOCAL_ICON;
+
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+typedef struct {
+    BT_HDR                  hdr;
+    uint8_t                 session_key[16];
+    uint8_t                 iv[8];
+} tBTA_DM_API_KEY_MATERIAL;
+#endif
 
 /* set scan parameter for BLE connections */
 typedef struct {
@@ -1900,6 +1911,9 @@ typedef union {
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
     tBTA_DM_API_LOCAL_ICON              ble_local_icon;
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    tBTA_DM_API_KEY_MATERIAL            ble_key_material;
+#endif
     tBTA_DM_API_BLE_ADV_PARAMS_ALL      ble_set_adv_params_all;
     tBTA_DM_API_SET_ADV_CONFIG          ble_set_adv_data;
     tBTA_DM_API_SET_ADV_CONFIG_RAW      ble_set_adv_data_raw;
@@ -2504,6 +2518,9 @@ extern void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 extern void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data);
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+extern void bta_dm_ble_set_key_material (tBTA_DM_MSG *p_data);
+#endif
 extern void bta_dm_ble_set_adv_params_all(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data);
