@@ -107,7 +107,8 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
     }
     if (len_append) {
 #if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
-        if (omdata) {
+        if (omdata && !BLE_LOG_IN_ISR()) {
+            /* os_mbuf_copydata is in flash and not safe to call from ISR */
             os_mbuf_copydata((struct os_mbuf *)addr_append, 0,
                              len_append, buf + BLE_LOG_FRAME_HEAD_LEN + len);
         }
