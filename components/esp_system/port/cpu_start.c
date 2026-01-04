@@ -590,7 +590,8 @@ MSPI_INIT_ATTR void sys_rtc_init(const soc_reset_reason_t *rst_reas)
     esp_rtc_init();
 }
 
-NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+static NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
 {
     /**
      * This function initialise the Flash chip to the user-defined settings.
@@ -607,7 +608,6 @@ NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
 #endif
 }
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 MSPI_INIT_ATTR void mspi_init(void)
 {
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
