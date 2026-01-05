@@ -702,7 +702,7 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
 
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id;
+    psa_key_id_t key_id = 0;
     psa_cipher_operation_t *enc_operation = NULL;
     psa_cipher_operation_t *dec_operation = NULL;
 
