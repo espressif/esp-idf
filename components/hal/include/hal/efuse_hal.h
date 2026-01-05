@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc_caps.h"
-#include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
 extern "C" {

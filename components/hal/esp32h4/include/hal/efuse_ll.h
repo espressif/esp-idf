@@ -12,7 +12,6 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "hal/ecdsa_types.h"
 
 //TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
 

@@ -98,6 +98,7 @@
 /components/esp_hal_ieee802154/       @esp-idf-codeowners/ieee802154
 /components/esp_hal_pmu/              @esp-idf-codeowners/power-management @esp-idf-codeowners/peripherals
 /components/esp_hal_rtc_timer/        @esp-idf-codeowners/power-management @esp-idf-codeowners/peripherals
+/components/esp_hal_security/         @esp-idf-codeowners/security @esp-idf-codeowners/peripherals
 /components/esp_hid/                  @esp-idf-codeowners/bluetooth
 /components/esp_http_client/          @esp-idf-codeowners/app-utilities
 /components/esp_http_server/          @esp-idf-codeowners/app-utilities
@@ -133,8 +134,6 @@
 /components/fatfs/                    @esp-idf-codeowners/storage
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
-/components/hal/test_apps/crypto/     @esp-idf-codeowners/peripherals @esp-idf-codeowners/security
-/components/hal/test_apps/tee/        @esp-idf-codeowners/peripherals @esp-idf-codeowners/security
 /components/heap/                     @esp-idf-codeowners/system
 /components/http_parser/              @esp-idf-codeowners/app-utilities
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
