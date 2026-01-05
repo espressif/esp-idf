@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,4 +113,17 @@ void wdt_hal_deinit(wdt_hal_context_t *hal)
     //Deinit HAL context
     hal->mwdt_dev = NULL;
 }
+
+#if SOC_IS(ESP32P4)
+extern void rom_wdt_hal_config_stage(wdt_hal_context_t *hal, wdt_stage_t stage, uint32_t timeout, wdt_stage_action_t behavior);
+
+/* rwdt_ll_config_stage is implemented erroneously in ESP32P4 rom code, TODO: PM-654*/
+void wdt_hal_config_stage(wdt_hal_context_t *hal, wdt_stage_t stage, uint32_t timeout_ticks, wdt_stage_action_t behavior)
+{
+    if (hal->inst == WDT_RWDT && stage == WDT_STAGE0) {
+        timeout_ticks = timeout_ticks >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
+    }
+    rom_wdt_hal_config_stage(hal, stage, timeout_ticks, behavior);
+}
+#endif // SOC_IS(ESP32P4)
 #endif // ESP_ROM_WDT_INIT_PATCH
