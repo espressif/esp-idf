@@ -13,6 +13,8 @@ ESP-IDF is the development framework for Espressif SoCs supported on Windows, Li
 
 # ESP-IDF Release and SoC Compatibility
 
+![Chip support](https://dl.espressif.com/dl/esp-idf/chip-support.svg?v=1)
+
 See [Compatibility Between ESP-IDF Releases and Revisions of Espressif SoCs](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md) for the details of the compatibility between ESP-IDF and chip revisions.
 
 Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.

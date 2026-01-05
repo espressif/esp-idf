@@ -13,6 +13,8 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 
 # ESP-IDF 与乐鑫芯片
 
+![芯片支持](https://dl.espressif.com/dl/esp-idf/chip-support.svg?v=1)
+
 请参考 [ESP-IDF 版本与乐鑫芯片版本兼容性](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY_CN.md) 了解 ESP-IDF 版本与芯片版本之间的兼容性详情。
 
 对于 2016 年之前发布的乐鑫芯片（包括 ESP8266 和 ESP8285），请参考 [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK)。
