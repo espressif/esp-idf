@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,10 +43,13 @@ typedef struct {
  * @brief ISP BLC configurations
  */
 typedef struct {
-    isp_window_t          window;           ///< The sampling windows of BLC, only pixels within the window will be sampled
-    esp_isp_blc_thresh_t  filter_threshold; ///< Black level threshold for each channel of the raw Bayer image
-    bool                  filter_enable;    ///< Enable filter for BLC, if enabled, only pixels within the threshold will be sampled
-    esp_isp_blc_stretch_t stretch;          ///< Stretch configurations for each channel of the raw Bayer image
+    isp_window_t          window;               ///< The sampling windows of BLC, only pixels within the window will be sampled
+    esp_isp_blc_thresh_t  filter_threshold;     ///< Black level threshold for each channel of the raw Bayer image
+    bool                  filter_enable;        ///< Enable filter for BLC, if enabled, only pixels within the threshold will be sampled
+    esp_isp_blc_stretch_t stretch;              ///< Stretch configurations for each channel of the raw Bayer image
+    struct {
+        uint32_t update_once_configured : 1;    ///< If set, apply configuration to hardware immediately; otherwise defer to frame boundary
+    } flags;                                    ///< Driver behaviour flags
 } esp_isp_blc_config_t;
 
 /**
