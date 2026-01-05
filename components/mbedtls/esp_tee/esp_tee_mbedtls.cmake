@@ -102,6 +102,13 @@ if(CONFIG_SOC_SHA_SUPPORTED)
         "${COMPONENT_DIR}/port/sha/esp_sha.c")
 endif()
 
+if(CONFIG_MBEDTLS_ROM_MD5)
+    target_compile_definitions(tfpsacrypto PRIVATE ESP_MD5_DRIVER_ENABLED)
+    target_sources(tfpsacrypto PRIVATE
+        "${COMPONENT_DIR}/port/psa_driver/esp_md/psa_crypto_driver_esp_md5.c"
+    )
+endif()
+
 if(CONFIG_SOC_ECC_SUPPORTED)
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
                                     "${COMPONENT_DIR}/port/ecc/ecc_alt.c")

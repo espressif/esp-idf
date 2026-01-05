@@ -212,12 +212,10 @@
 /* MBEDTLS_MDx_ALT to enable ROM MD support
    with software fallback.
 */
-/* TODO: IDF-15029 */
-// #ifdef CONFIG_MBEDTLS_ROM_MD5
-// #define MBEDTLS_MD5_ALT
-// #else
-// #undef MBEDTLS_MD5_ALT
-// #endif
+#ifdef CONFIG_MBEDTLS_ROM_MD5
+#define MBEDTLS_PSA_ACCEL_ALG_MD5
+#undef MBEDTLS_PSA_BUILTIN_ALG_MD5
+#endif
 
 /* The following MPI (bignum) functions have hardware support.
  * Uncommenting these macros will use the hardware-accelerated
