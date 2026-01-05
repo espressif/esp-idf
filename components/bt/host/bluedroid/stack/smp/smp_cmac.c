@@ -33,7 +33,8 @@
 #include "smp_int.h"
 #include "stack/hcimsgs.h"
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
-#include "psa/crypto.h"
+#include "mbedtls/cipher.h"
+#include "mbedtls/cmac.h"
 #elif (SMP_CRYPTO_TINYCRYPT == TRUE)
 #include "tinycrypt/aes.h"
 #include "tinycrypt/cmac_mode.h"
@@ -307,92 +308,65 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
     {
         /*
-         * PSA Crypto CMAC implementation.
-         * Bluedroid uses little-endian, PSA uses big-endian.
-         * We reverse the key and input, then reverse the output.
+         * mbedTLS CMAC implementation.
+         * Bluedroid and mbedTLS both use little-endian, so no byte order conversion needed.
          */
-        psa_status_t status;
-        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-        psa_key_id_t key_id = 0;
-        psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
-        UINT8 key_be[BT_OCTET16_LEN];
-        UINT8 *input_be = NULL;
-        UINT8 mac_be[BT_OCTET16_LEN];
-        size_t mac_len = 0;
+        mbedtls_cipher_context_t ctx = {0};
+        const mbedtls_cipher_info_t *cipher_info;
+        int rc;
 
-        SMP_TRACE_DEBUG("AES128_CMAC (PSA) started, length = %d", length);
+        SMP_TRACE_DEBUG("AES128_CMAC (mbedTLS) started, length = %d", length);
 
-        /* Convert key from little-endian to big-endian */
-        for (int i = 0; i < BT_OCTET16_LEN; i++) {
-            key_be[i] = key[BT_OCTET16_LEN - 1 - i];
+        mbedtls_cipher_init(&ctx);
+
+        cipher_info = mbedtls_cipher_info_from_type(MBEDTLS_CIPHER_AES_128_ECB);
+        if (cipher_info == NULL) {
+            SMP_TRACE_ERROR("mbedtls_cipher_info_from_type failed");
+            mbedtls_cipher_free(&ctx);
+            return FALSE;
         }
 
-        /* Allocate and convert input from little-endian to big-endian */
-        if (length > 0) {
-            input_be = (UINT8 *)osi_malloc(length);
-            if (input_be == NULL) {
-                SMP_TRACE_ERROR("No resources for input_be");
+        rc = mbedtls_cipher_setup(&ctx, cipher_info);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("mbedtls_cipher_setup failed: %d", rc);
+            mbedtls_cipher_free(&ctx);
+            return FALSE;
+        }
+
+        rc = mbedtls_cipher_cmac_starts(&ctx, key, 128);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("mbedtls_cipher_cmac_starts failed: %d", rc);
+            mbedtls_cipher_free(&ctx);
+            return FALSE;
+        }
+
+        if (length > 0 && input != NULL) {
+            rc = mbedtls_cipher_cmac_update(&ctx, input, length);
+            if (rc != 0) {
+                SMP_TRACE_ERROR("mbedtls_cipher_cmac_update failed: %d", rc);
+                mbedtls_cipher_free(&ctx);
                 return FALSE;
             }
-            for (UINT16 i = 0; i < length; i++) {
-                input_be[i] = input[length - 1 - i];
-            }
         }
 
-        /* Import the key */
-        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
-        psa_set_key_algorithm(&key_attributes, PSA_ALG_CMAC);
-        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-        psa_set_key_bits(&key_attributes, 128);
+        UINT8 mac[BT_OCTET16_LEN];
+        rc = mbedtls_cipher_cmac_finish(&ctx, mac);
+        mbedtls_cipher_free(&ctx);
 
-        status = psa_import_key(&key_attributes, key_be, BT_OCTET16_LEN, &key_id);
-        psa_reset_key_attributes(&key_attributes);
-
-        if (status != PSA_SUCCESS) {
-            SMP_TRACE_ERROR("psa_import_key failed: %d", status);
-            if (input_be) osi_free(input_be);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("mbedtls_cipher_cmac_finish failed: %d", rc);
+            /* Clear sensitive data from stack */
+            memset(mac, 0, sizeof(mac));
             return FALSE;
         }
 
-        /* Setup MAC operation */
-        status = psa_mac_sign_setup(&operation, key_id, PSA_ALG_CMAC);
-        if (status != PSA_SUCCESS) {
-            SMP_TRACE_ERROR("psa_mac_sign_setup failed: %d", status);
-            psa_destroy_key(key_id);
-            if (input_be) osi_free(input_be);
-            return FALSE;
-        }
-
-        /* Update with input data */
-        if (length > 0 && input_be != NULL) {
-            status = psa_mac_update(&operation, input_be, length);
-            if (status != PSA_SUCCESS) {
-                SMP_TRACE_ERROR("psa_mac_update failed: %d", status);
-                psa_mac_abort(&operation);
-                psa_destroy_key(key_id);
-                osi_free(input_be);
-                return FALSE;
-            }
-            osi_free(input_be);
-        }
-
-        /* Finish and get MAC */
-        status = psa_mac_sign_finish(&operation, mac_be, sizeof(mac_be), &mac_len);
-        psa_destroy_key(key_id);
-
-        if (status != PSA_SUCCESS) {
-            SMP_TRACE_ERROR("psa_mac_sign_finish failed: %d", status);
-            psa_mac_abort(&operation);
-            return FALSE;
-        }
-
-        /* Convert MAC from big-endian to little-endian and truncate to tlen bytes */
+        /* Truncate to tlen bytes */
         for (UINT16 i = 0; i < tlen && i < BT_OCTET16_LEN; i++) {
-            p_signature[i] = mac_be[BT_OCTET16_LEN - 1 - i];
+            p_signature[i] = mac[i];
         }
 
         /* Clear sensitive data from stack */
-        memset(key_be, 0, sizeof(key_be));
+        memset(mac, 0, sizeof(mac));
 
         ret = TRUE;
     }
