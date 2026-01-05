@@ -1157,7 +1157,7 @@ JTAG 调试
       * - 高
         - 18 %
 
-  .. [#] 上述性能数据由 HAL 加密测试应用中的 XTS-AES 测试程序 :component_file:`test_xts_aes.c <hal/test_apps/crypto/main/xts_aes/test_xts_aes.c>` 计算得出。
+  .. [#] 上述性能数据由 HAL 加密测试应用中的 XTS-AES 测试程序 :component_file:`test_xts_aes.c <esp_hal_security/test_apps/crypto/main/xts_aes/test_xts_aes.c>` 计算得出。
 
   可以根据实际用例需求配置伪轮次功能的强度。例如，提高强度以提供更高的安全性，同时减慢 flash 加解密操作的速度。
 

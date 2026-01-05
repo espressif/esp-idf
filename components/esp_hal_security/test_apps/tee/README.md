@@ -85,7 +85,7 @@ Defined based on GDMA version:
 - `SOC_AHB_GDMA_VERSION == 1` → `GPSPI`
 - `SOC_AHB_GDMA_VERSION == 2` → `26` (e.g., `GDMA_DUMMY10`)
 
-Refer to `hal/apm_types.h` or the SoC TRM.
+Refer to `esp_hal_security/apm_types.h` or the SoC TRM.
 
 ### 2. APM Controller and Path Definitions
 
