@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #include "tinycrypt/ccm_mode.h"
 #include "tinycrypt/constants.h"
 #elif defined(CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
-#include "psa/crypto.h"
+#include "mbedtls/ccm.h"
 #else
 #error "Please select either CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT or CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS"
 #endif
@@ -129,11 +129,8 @@ static int ble_aes_ccm_encrypt(const uint8_t *key, const uint8_t *nonce,
     return 0;
 
 #elif defined(CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
-    psa_status_t status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, tag_len);
-    size_t output_length = 0;
+    mbedtls_ccm_context ctx = {0};
+    int ret;
 
     /* Validate inputs */
     if (key == NULL || nonce == NULL || ciphertext == NULL) {
@@ -141,43 +138,30 @@ static int ble_aes_ccm_encrypt(const uint8_t *key, const uint8_t *nonce,
         return -1;
     }
 
-    /* Set key attributes */
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&attributes, BLE_EAD_KEY_SIZE * 8);
+    mbedtls_ccm_init(&ctx);
 
-    /* Import key */
-    status = psa_import_key(&attributes, key, BLE_EAD_KEY_SIZE, &key_id);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_import_key failed: %d", status);
-        psa_reset_key_attributes(&attributes);
+    /* Set encryption key */
+    ret = mbedtls_ccm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, BLE_EAD_KEY_SIZE * 8);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "mbedtls_ccm_setkey failed: %d", ret);
+        mbedtls_ccm_free(&ctx);
         return -1;
     }
-    psa_reset_key_attributes(&attributes);
 
     /* Encrypt and authenticate */
-    /* PSA AEAD encrypt outputs: ciphertext || tag */
-    status = psa_aead_encrypt(key_id, alg,
-                              nonce, BLE_EAD_NONCE_SIZE,
-                              aad, aad_len,
-                              plaintext, plaintext_len,
-                              ciphertext, plaintext_len + tag_len,
-                              &output_length);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_aead_encrypt failed: %d", status);
-        psa_destroy_key(key_id);
+    /* mbedtls_ccm_encrypt_and_tag outputs: ciphertext || tag */
+    ret = mbedtls_ccm_encrypt_and_tag(&ctx, plaintext_len,
+                                      nonce, BLE_EAD_NONCE_SIZE,
+                                      aad, aad_len,
+                                      plaintext, ciphertext,
+                                      ciphertext + plaintext_len, tag_len);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "mbedtls_ccm_encrypt_and_tag failed: %d", ret);
+        mbedtls_ccm_free(&ctx);
         return -1;
     }
 
-    if (output_length != plaintext_len + tag_len) {
-        ESP_LOGE(TAG, "psa_aead_encrypt output length mismatch: expected %zu, got %zu",
-                 plaintext_len + tag_len, output_length);
-        psa_destroy_key(key_id);
-        return -1;
-    }
-
-    psa_destroy_key(key_id);
+    mbedtls_ccm_free(&ctx);
     return 0;
 #else
     #error "No crypto library selected"
@@ -253,11 +237,8 @@ static int ble_aes_ccm_decrypt(const uint8_t *key, const uint8_t *nonce,
     return 0;
 
 #elif defined(CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
-    psa_status_t status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, tag_len);
-    size_t output_length = 0;
+    mbedtls_ccm_context ctx = {0};
+    int ret;
     /* ciphertext_len here includes both ciphertext and tag */
     size_t plaintext_len;
 
@@ -275,44 +256,31 @@ static int ble_aes_ccm_decrypt(const uint8_t *key, const uint8_t *nonce,
 
     plaintext_len = ciphertext_len - tag_len;
 
-    /* Set key attributes */
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&attributes, BLE_EAD_KEY_SIZE * 8);
+    mbedtls_ccm_init(&ctx);
 
-    /* Import key */
-    status = psa_import_key(&attributes, key, BLE_EAD_KEY_SIZE, &key_id);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_import_key failed: %d", status);
-        psa_reset_key_attributes(&attributes);
+    /* Set decryption key */
+    ret = mbedtls_ccm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, BLE_EAD_KEY_SIZE * 8);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "mbedtls_ccm_setkey failed: %d", ret);
+        mbedtls_ccm_free(&ctx);
         return -1;
     }
-    psa_reset_key_attributes(&attributes);
 
     /* Decrypt and verify */
-    /* PSA AEAD decrypt expects: ciphertext || tag */
+    /* mbedtls_ccm_auth_decrypt expects: ciphertext || tag */
     /* ciphertext_len here already includes tag length */
-    status = psa_aead_decrypt(key_id, alg,
-                              nonce, BLE_EAD_NONCE_SIZE,
-                              aad, aad_len,
-                              ciphertext, ciphertext_len,
-                              plaintext, plaintext_len,
-                              &output_length);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "psa_aead_decrypt failed: %d", status);
-        psa_destroy_key(key_id);
+    ret = mbedtls_ccm_auth_decrypt(&ctx, plaintext_len,
+                                   nonce, BLE_EAD_NONCE_SIZE,
+                                   aad, aad_len,
+                                   ciphertext, plaintext,
+                                   ciphertext + plaintext_len, tag_len);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "mbedtls_ccm_auth_decrypt failed: %d", ret);
+        mbedtls_ccm_free(&ctx);
         return -1;
     }
 
-    if (output_length != plaintext_len) {
-        ESP_LOGE(TAG, "psa_aead_decrypt output length mismatch: expected %zu, got %zu",
-                 plaintext_len, output_length);
-        psa_destroy_key(key_id);
-        return -1;
-    }
-
-    psa_destroy_key(key_id);
+    mbedtls_ccm_free(&ctx);
     return 0;
 #else
     #error "No crypto library selected"
@@ -407,7 +375,7 @@ int ble_ead_decrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
 
     /* Ciphertext + MIC follows the randomizer */
     ciphertext = &encrypted_payload[BLE_EAD_RANDOMIZER_SIZE];
-    /* ciphertext_len includes both ciphertext and MIC (tag) for PSA API */
+    /* ciphertext_len includes both ciphertext and MIC (tag) for mbedTLS API */
     ciphertext_len = encrypted_payload_size - BLE_EAD_RANDOMIZER_SIZE;
 
     /* Generate nonce from randomizer and IV */

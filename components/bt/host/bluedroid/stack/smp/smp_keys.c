@@ -35,7 +35,18 @@
 #include "btm_ble_int.h"
 #include "stack/hcimsgs.h"
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
-#include "psa/crypto.h"
+#include "mbedtls/aes.h"
+#include "mbedtls/ecdh.h"
+#include "mbedtls/ecp.h"
+#include "esp_random.h"
+
+/* Random number generator function for mbedTLS ECP operations */
+static int smp_mbedtls_rng(void *ctx, unsigned char *output, size_t len)
+{
+    (void)ctx; /* Unused parameter */
+    esp_fill_random(output, len);
+    return 0;
+}
 #elif (SMP_CRYPTO_TINYCRYPT == TRUE)
 #include "tinycrypt/aes.h"
 #include "tinycrypt/cmac_mode.h"
@@ -206,31 +217,28 @@ BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
 
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
     {
-        psa_status_t status;
-        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-        psa_key_id_t key_id = 0;
-        size_t output_len = 0;
+        mbedtls_aes_context ctx = {0};
+        int rc;
 
-        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT);
-        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECB_NO_PADDING);
-        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-        psa_set_key_bits(&key_attributes, 128);
+        mbedtls_aes_init(&ctx);
 
-        status = psa_import_key(&key_attributes, p_rev_key, SMP_ENCRYT_KEY_SIZE, &key_id);
-        psa_reset_key_attributes(&key_attributes);
-
-        if (status != PSA_SUCCESS) {
-            SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __func__, status);
+        rc = mbedtls_aes_setkey_enc(&ctx, p_rev_key, 128);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s mbedtls_aes_setkey_enc failed: %d\n", __func__, rc);
+            mbedtls_aes_free(&ctx);
+            /* Clear sensitive data before freeing */
+            memset(p_start, 0, SMP_ENCRYT_DATA_SIZE * 4);
             osi_free(p_start);
             return FALSE;
         }
 
-        status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, p_rev_data,
-                                    SMP_ENCRYT_DATA_SIZE, p_rev_output, SMP_ENCRYT_DATA_SIZE, &output_len);
-        psa_destroy_key(key_id);
+        rc = mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, p_rev_data, p_rev_output);
+        mbedtls_aes_free(&ctx);
 
-        if (status != PSA_SUCCESS || output_len != SMP_ENCRYT_DATA_SIZE) {
-            SMP_TRACE_ERROR("%s psa_cipher_encrypt failed: %d\n", __func__, status);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s mbedtls_aes_crypt_ecb failed: %d\n", __func__, rc);
+            /* Clear sensitive data before freeing */
+            memset(p_start, 0, SMP_ENCRYT_DATA_SIZE * 4);
             osi_free(p_start);
             return FALSE;
         }
@@ -1200,37 +1208,48 @@ void smp_process_private_key(tSMP_CB *p_cb)
         memcpy(p_cb->local_random, p_loc_oob->randomizer, BT_OCTET16_LEN);
     } else {
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
-        psa_status_t status;
-        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-        psa_key_id_t key_id = 0;
-        UINT8 priv_be[BT_OCTET32_LEN];
-        UINT8 pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];  /* 0x04 || X (32 bytes) || Y (32 bytes) */
-        size_t pub_len = 0;
+        mbedtls_ecp_keypair keypair = {0};
+        int rc;
+        size_t olen;
 
-        /* Convert private key from little-endian to big-endian */
-        for (int i = 0; i < BT_OCTET32_LEN; i++) {
-            priv_be[i] = p_cb->private_key[BT_OCTET32_LEN - 1 - i];
+        mbedtls_ecp_keypair_init(&keypair);
+
+        /* Load the group */
+        rc = mbedtls_ecp_group_load(&keypair.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s mbedtls_ecp_group_load failed: %d\n", __FUNCTION__, rc);
+            goto mbedtls_pubkey_cleanup;
         }
 
-        /* Import the private key */
-        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-        psa_set_key_bits(&key_attributes, 256);
-        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
-        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
-
-        status = psa_import_key(&key_attributes, priv_be, BT_OCTET32_LEN, &key_id);
-        psa_reset_key_attributes(&key_attributes);
-
-        if (status != PSA_SUCCESS) {
-            SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __FUNCTION__, status);
-            goto psa_pubkey_cleanup;
+        /* Import private key (little-endian) */
+        rc = mbedtls_mpi_read_binary(&keypair.MBEDTLS_PRIVATE(d), p_cb->private_key, BT_OCTET32_LEN);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s mbedtls_mpi_read_binary failed: %d\n", __FUNCTION__, rc);
+            goto mbedtls_pubkey_cleanup;
         }
 
-        /* Export public key */
-        status = psa_export_public_key(key_id, pub_be, sizeof(pub_be), &pub_len);
-        if (status != PSA_SUCCESS || pub_len != (BT_OCTET32_LEN + BT_OCTET32_LEN + 1)) {
-            SMP_TRACE_ERROR("%s psa_export_public_key failed: %d\n", __FUNCTION__, status);
-            goto psa_pubkey_cleanup;
+        /* Validate private key */
+        rc = mbedtls_ecp_check_privkey(&keypair.MBEDTLS_PRIVATE(grp), &keypair.MBEDTLS_PRIVATE(d));
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s mbedtls_ecp_check_privkey failed: %d\n", __FUNCTION__, rc);
+            goto mbedtls_pubkey_cleanup;
+        }
+
+        /* Compute public key from private key */
+        /* mbedtls_ecp_keypair_calc_public requires a non-NULL RNG function for side-channel protection */
+        rc = mbedtls_ecp_keypair_calc_public(&keypair, smp_mbedtls_rng, NULL);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s mbedtls_ecp_keypair_calc_public failed: %d\n", __FUNCTION__, rc);
+            goto mbedtls_pubkey_cleanup;
+        }
+
+        /* Export public key in uncompressed format: 0x04 || X || Y */
+        UINT8 pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];
+        rc = mbedtls_ecp_point_write_binary(&keypair.MBEDTLS_PRIVATE(grp), &keypair.MBEDTLS_PRIVATE(Q),
+                                             MBEDTLS_ECP_PF_UNCOMPRESSED, &olen, pub_be, sizeof(pub_be));
+        if (rc != 0 || olen != sizeof(pub_be)) {
+            SMP_TRACE_ERROR("%s mbedtls_ecp_point_write_binary failed: %d\n", __FUNCTION__, rc);
+            goto mbedtls_pubkey_cleanup;
         }
 
         /* Convert X and Y from big-endian to little-endian */
@@ -1240,10 +1259,10 @@ void smp_process_private_key(tSMP_CB *p_cb)
             p_cb->loc_publ_key.y[i] = pub_be[33 + BT_OCTET32_LEN - 1 - i];
         }
 
-psa_pubkey_cleanup:
-        psa_destroy_key(key_id);
-        /* Clear sensitive data from stack */
-        memset(priv_be, 0, sizeof(priv_be));
+mbedtls_pubkey_cleanup:
+        /* Clear sensitive data - mbedtls_ecp_keypair_free will zero the private key */
+        mbedtls_ecp_keypair_free(&keypair);
+        /* Note: pub_be contains public key data, no need to clear */
 #elif (SMP_CRYPTO_TINYCRYPT == TRUE)
         {
             UINT8 pub_key[64];  /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
@@ -1312,31 +1331,30 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
 
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
-    psa_status_t status;
-    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-    UINT8 priv_be[BT_OCTET32_LEN];
+    mbedtls_ecp_group grp = {0};
+    mbedtls_ecp_point Q = {0};
+    mbedtls_mpi d = {0};
+    mbedtls_mpi z = {0};
+    int rc;
     UINT8 peer_pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];  /* 0x04 || X (32 bytes) || Y (32 bytes) */
-    UINT8 shared_secret[BT_OCTET32_LEN];
-    size_t output_len = 0;
 
-    /* Convert private key from little-endian to big-endian */
-    for (int i = 0; i < BT_OCTET32_LEN; i++) {
-        priv_be[i] = p_cb->private_key[BT_OCTET32_LEN - 1 - i];
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_ecp_point_init(&Q);
+    mbedtls_mpi_init(&d);
+    mbedtls_mpi_init(&z);
+
+    /* Load the group */
+    rc = mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256R1);
+    if (rc != 0) {
+        SMP_TRACE_ERROR("%s mbedtls_ecp_group_load failed: %d\n", __FUNCTION__, rc);
+        goto mbedtls_dhkey_cleanup;
     }
 
-    /* Import the private key */
-    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&key_attributes, 256);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
-
-    status = psa_import_key(&key_attributes, priv_be, BT_OCTET32_LEN, &key_id);
-    psa_reset_key_attributes(&key_attributes);
-
-    if (status != PSA_SUCCESS) {
-        SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __FUNCTION__, status);
-        goto psa_dhkey_cleanup;
+    /* Import private key (little-endian) */
+    rc = mbedtls_mpi_read_binary(&d, p_cb->private_key, BT_OCTET32_LEN);
+    if (rc != 0) {
+        SMP_TRACE_ERROR("%s mbedtls_mpi_read_binary failed: %d\n", __FUNCTION__, rc);
+        goto mbedtls_dhkey_cleanup;
     }
 
     /* Construct peer public key in uncompressed format: 0x04 || X || Y */
@@ -1346,12 +1364,34 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
         peer_pub_be[33 + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
     }
 
+    /* Read peer public key */
+    rc = mbedtls_ecp_point_read_binary(&grp, &Q, peer_pub_be, sizeof(peer_pub_be));
+    if (rc != 0) {
+        SMP_TRACE_ERROR("%s mbedtls_ecp_point_read_binary failed: %d\n", __FUNCTION__, rc);
+        goto mbedtls_dhkey_cleanup;
+    }
+
+    /* Validate peer public key */
+    rc = mbedtls_ecp_check_pubkey(&grp, &Q);
+    if (rc != 0) {
+        SMP_TRACE_ERROR("%s mbedtls_ecp_check_pubkey failed: %d\n", __FUNCTION__, rc);
+        goto mbedtls_dhkey_cleanup;
+    }
+
     /* Compute ECDH shared secret */
-    status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, peer_pub_be, sizeof(peer_pub_be),
-                                   shared_secret, sizeof(shared_secret), &output_len);
-    if (status != PSA_SUCCESS || output_len != BT_OCTET32_LEN) {
-        SMP_TRACE_ERROR("%s psa_raw_key_agreement failed: %d\n", __FUNCTION__, status);
-        goto psa_dhkey_cleanup;
+    /* mbedtls_ecdh_compute_shared requires a non-NULL RNG function for side-channel protection */
+    rc = mbedtls_ecdh_compute_shared(&grp, &z, &Q, &d, smp_mbedtls_rng, NULL);
+    if (rc != 0) {
+        SMP_TRACE_ERROR("%s mbedtls_ecdh_compute_shared failed: %d\n", __FUNCTION__, rc);
+        goto mbedtls_dhkey_cleanup;
+    }
+
+    /* Export shared secret (big-endian) and convert to little-endian for DHKey */
+    UINT8 shared_secret[BT_OCTET32_LEN];
+    rc = mbedtls_mpi_write_binary(&z, shared_secret, BT_OCTET32_LEN);
+    if (rc != 0) {
+        SMP_TRACE_ERROR("%s mbedtls_mpi_write_binary failed: %d\n", __FUNCTION__, rc);
+        goto mbedtls_dhkey_cleanup;
     }
 
     /* Convert shared secret from big-endian to little-endian for DHKey */
@@ -1359,11 +1399,15 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
         p_cb->dhkey[i] = shared_secret[BT_OCTET32_LEN - 1 - i];
     }
 
-psa_dhkey_cleanup:
-    psa_destroy_key(key_id);
+mbedtls_dhkey_cleanup:
+    /* Clear sensitive data - mbedtls_mpi_free will zero the memory */
+    mbedtls_mpi_free(&z);
+    mbedtls_mpi_free(&d);
+    mbedtls_ecp_point_free(&Q);
+    mbedtls_ecp_group_free(&grp);
     /* Clear sensitive data from stack */
-    memset(priv_be, 0, sizeof(priv_be));
     memset(shared_secret, 0, sizeof(shared_secret));
+    /* Note: peer_pub_be contains public key data, no need to clear */
 #elif (SMP_CRYPTO_TINYCRYPT == TRUE)
     {
         UINT8 priv_be[BT_OCTET32_LEN];
