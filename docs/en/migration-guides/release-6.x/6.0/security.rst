@@ -86,6 +86,20 @@ The following deprecated functions have been removed:
 
 Note that the new AES functions return error codes for better error handling, unlike the old void functions.
 
+BluFi
+-----
+
+BluFi (Wi-Fi provisioning over BLE) is affected by the Mbed TLS v4.x / PSA Crypto migration in ESP-IDF v6.0.
+
+- **Breaking change**: The BluFi protocol version has been updated (``BTC_BluFi_SUB_VER`` bumped from ``0x03`` to ``0x04``). The BluFi security negotiation implementation used by ESP-IDF has also been updated to use PSA Crypto (see the updated ``examples/bluetooth/blufi`` example).
+
+  **Impact**: Existing BluFi client applications (for example, mobile apps) built against the older BluFi crypto/protocol implementation may no longer interoperate with devices built with ESP-IDF v6.0. This typically shows up as BluFi negotiation/connection failures when attempting to provision.
+
+  **Required action**: Update both sides together:
+
+  - Update the device firmware to ESP-IDF v6.0.
+  - Update the BluFi client application to a version compatible with the updated BluFi protocol/security negotiation used by ESP-IDF v6.0.
+
 Bootloader Support
 ------------------
 

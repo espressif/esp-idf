@@ -129,7 +129,6 @@ TEST_CASE("PSA ARIA-GCM multipart", "[psa-gcm]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA ARIA-GCM one-shot", "[psa-gcm]")
@@ -206,5 +205,4 @@ TEST_CASE("PSA ARIA-GCM one-shot", "[psa-gcm]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    // mbedtls_psa_crypto_free();
 }

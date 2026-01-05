@@ -79,6 +79,7 @@
 #define MBEDTLS_ECP_VERIFY_ALT
 #endif
 
+#define PSA_WANT_ECC_SECP_R1_192                1
 #undef PSA_WANT_ECC_SECP_K1_192
 #undef PSA_WANT_ECC_SECP_K1_256
 #undef PSA_WANT_ECC_SECP_R1_224
