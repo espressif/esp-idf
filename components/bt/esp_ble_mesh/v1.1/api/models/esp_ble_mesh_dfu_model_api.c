@@ -73,7 +73,8 @@ esp_err_t esp_ble_mesh_dfu_cli_img_send(esp_ble_mesh_dfu_cli_t *cli,
     arg.send_arg.xfer = xfer;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_dfu_client_args_t),
-                                 NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+                                 btc_ble_mesh_dfu_client_arg_deep_copy,
+                                 btc_ble_mesh_dfu_client_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 uint8_t esp_ble_mesh_dfu_cli_progress(esp_ble_mesh_dfu_cli_t *cli)
