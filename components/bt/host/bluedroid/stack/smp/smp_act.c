@@ -23,7 +23,7 @@
 #include "stack/l2c_api.h"
 #include "smp_int.h"
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
-#include "psa/crypto.h"
+#include "mbedtls/ecp.h"
 #elif (SMP_CRYPTO_TINYCRYPT == TRUE)
 #include "tinycrypt/ecc_dh.h"
 #include "tinycrypt/ecc.h"
@@ -782,14 +782,26 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
     {
         /*
-         * PSA Crypto validates the public key when importing.
-         * We try to import the peer's public key as a ECC public key.
-         * If import fails, the key is invalid.
+         * mbedTLS validates the public key using mbedtls_ecp_check_pubkey.
          */
-        psa_status_t status;
-        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-        psa_key_id_t key_id = 0;
+        mbedtls_ecp_group grp = {0};
+        mbedtls_ecp_point pt = {0};
+        int rc;
         UINT8 pub_be[BT_OCTET32_LEN + BT_OCTET32_LEN + 1];  /* 0x04 || X (32 bytes) || Y (32 bytes) */
+
+        mbedtls_ecp_group_init(&grp);
+        mbedtls_ecp_point_init(&pt);
+
+        /* Load the group */
+        rc = mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256R1);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s, Invalid Public key. mbedtls_ecp_group_load failed: %d\n", __func__, rc);
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
+            reason = SMP_INVALID_PARAMETERS;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            return;
+        }
 
         /* Construct peer public key in uncompressed format (0x04 || X || Y) */
         pub_be[0] = 0x04;
@@ -798,23 +810,31 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             pub_be[33 + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
         }
 
-        /* Try to import as public key - PSA will validate it's on the curve */
-        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
-        psa_set_key_bits(&key_attributes, 256);
-        psa_set_key_usage_flags(&key_attributes, 0);  /* No usage needed, just validating */
+        /* Read public key */
+        rc = mbedtls_ecp_point_read_binary(&grp, &pt, pub_be, sizeof(pub_be));
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s, Invalid Public key. mbedtls_ecp_point_read_binary failed: %d\n", __func__, rc);
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
+            reason = SMP_INVALID_PARAMETERS;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            return;
+        }
 
-        status = psa_import_key(&key_attributes, pub_be, sizeof(pub_be), &key_id);
-        psa_reset_key_attributes(&key_attributes);
-
-        if (status != PSA_SUCCESS) {
-            SMP_TRACE_ERROR("%s, Invalid Public key. psa_import_key failed: %d\n", __func__, status);
+        /* Validate public key - check if it's on the curve */
+        rc = mbedtls_ecp_check_pubkey(&grp, &pt);
+        if (rc != 0) {
+            SMP_TRACE_ERROR("%s, Invalid Public key. mbedtls_ecp_check_pubkey failed: %d\n", __func__, rc);
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
             reason = SMP_INVALID_PARAMETERS;
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             return;
         }
 
         /* Key is valid, clean up */
-        psa_destroy_key(key_id);
+        mbedtls_ecp_point_free(&pt);
+        mbedtls_ecp_group_free(&grp);
     }
 #elif (SMP_CRYPTO_TINYCRYPT == TRUE)
     {
