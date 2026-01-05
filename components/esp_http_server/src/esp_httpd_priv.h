@@ -405,19 +405,6 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd);
  */
 esp_err_t httpd_req_delete(struct httpd_data *hd);
 
-/**
- * @brief   For handling HTTP errors by invoking registered
- *          error handler function
- *
- * @param[in] req     Pointer to the HTTP request for which error occurred
- * @param[in] error   Error type
- *
- * @return
- *  - ESP_OK    : error handled successful
- *  - ESP_FAIL  : failure indicates that the underlying socket needs to be closed
- */
-esp_err_t httpd_req_handle_err(httpd_req_t *req, httpd_err_code_t error);
-
 /** End of Group : Parsing
  * @}
  */
