@@ -17,6 +17,8 @@ Device Firmware Upgrade via USB
 
     However, you can permanently switch the internal USB PHY to work with USB OTG peripheral instead of USB_SERIAL_JTAG by burning the ``USB_PHY_SEL`` eFuse. See *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] for more details about USB_SERIAL_JTAG and USB OTG.
 
+    For a practical example of USB OTG implementation, refer to the `ESP32-S3-USB-OTG <https://documentation.espressif.com/esp-dev-kits/en/latest/esp32s3/esp32-s3-usb-otg/index.html>`_ development board, which is specifically designed for USB OTG applications.
+
 Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of {IDF_TARGET_NAME} directly via the Universal Serial Bus (USB). However, enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or DFU on that port.
 
 - :ref:`get-started-get-prerequisites` of the Getting Started Guide introduces the software requirements of DFU.
