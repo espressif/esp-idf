@@ -241,7 +241,7 @@ static void gas_query_timeout(void *eloop_data, void *user_ctx)
 {
     struct dpp_authentication *auth = user_ctx;
 
-    if (!auth || !auth->auth_success) {
+    if (!s_dpp_ctx.dpp_auth || !s_dpp_ctx.dpp_auth->auth_success || (s_dpp_ctx.dpp_auth != auth)) {
         wpa_printf(MSG_INFO, "DPP-GAS: Auth %p state not correct", auth);
         return;
     }
