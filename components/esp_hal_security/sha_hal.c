@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "esp_hal_security/sha_hal.h"
-#include "esp_hal_security/sha_types.h"
-#include "esp_hal_security/sha_ll.h"
+#include "hal/sha_hal.h"
+#include "hal/sha_types.h"
+#include "hal/sha_ll.h"
 #include "soc/soc_caps.h"
 
 #define SHA1_STATE_LEN_WORDS    (160 / 32)

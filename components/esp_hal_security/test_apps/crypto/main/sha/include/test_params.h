@@ -6,7 +6,7 @@
  */
 #pragma once
 #include "soc/soc_caps.h"
-#include "esp_hal_security/sha_types.h"
+#include "hal/sha_types.h"
 
 #if SOC_SHA_SUPPORTED
 

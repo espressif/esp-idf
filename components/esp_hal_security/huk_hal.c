@@ -1,13 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 // The HAL layer for Hardware Unique Key(HUK) Generator
 
-#include "esp_hal_security/huk_hal.h"
-#include "esp_hal_security/huk_ll.h"
-#include "esp_hal_security/huk_types.h"
+#include "hal/huk_hal.h"
+#include "hal/huk_ll.h"
+#include "hal/huk_types.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "rom/km.h"

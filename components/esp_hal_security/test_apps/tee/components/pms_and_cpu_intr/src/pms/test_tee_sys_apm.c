@@ -11,8 +11,8 @@
 #include "soc/soc_caps.h"
 
 #include "soc/apm_defs.h"
-#include "esp_hal_security/apm_hal.h"
-#include "esp_hal_security/apm_types.h"
+#include "hal/apm_hal.h"
+#include "hal/apm_types.h"
 
 #include "rom/cache.h"
 #include "esp_rom_sys.h"

@@ -6,8 +6,8 @@
 
 // The HAL layer for AES
 
-#include "esp_hal_security/aes_hal.h"
-#include "esp_hal_security/aes_ll.h"
+#include "hal/aes_hal.h"
+#include "hal/aes_ll.h"
 #include <stdlib.h>
 #include <string.h>
 #include "soc/soc_caps.h"

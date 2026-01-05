@@ -8,8 +8,8 @@
 #include <string.h>
 
 #include "soc/apm_defs.h"
-#include "esp_hal_security/apm_hal.h"
-#include "esp_hal_security/apm_types.h"
+#include "hal/apm_hal.h"
+#include "hal/apm_types.h"
 
 #include "esp_cpu.h"
 #include "esp_bit_defs.h"

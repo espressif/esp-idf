@@ -13,8 +13,8 @@
 #include "esp_log.h"
 #include "ecc_params.h"
 #include "soc/soc_caps.h"
-#include "esp_hal_security/ecc_hal.h"
-#include "esp_hal_security/ecc_ll.h"
+#include "hal/ecc_hal.h"
+#include "hal/ecc_ll.h"
 
 #include "memory_checks.h"
 #include "unity_fixture.h"

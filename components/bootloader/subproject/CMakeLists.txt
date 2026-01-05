@@ -20,6 +20,7 @@ set(COMPONENTS
     bootloader
     esptool_py
     esp_hw_support
+    esp_hal_security
     esp_system
     freertos
     hal

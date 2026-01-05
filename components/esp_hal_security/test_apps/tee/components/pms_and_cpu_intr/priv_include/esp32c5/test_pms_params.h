@@ -9,7 +9,7 @@
 #include "soc/soc.h"
 #include "soc/reg_base.h"
 
-#include "esp_hal_security/apm_types.h"
+#include "hal/apm_types.h"
 #include "esp_bit_defs.h"
 
 /*

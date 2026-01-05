@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@ ESP_LOG_ATTR_TAG(TAG, "test_ds");
 #include "rom/hmac.h"
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
-#include "esp_hal_security/key_mgr_ll.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -60,12 +60,12 @@ _Static_assert(NUM_RESULTS == NUM_MESSAGES, "expected_results size should be the
 #if !CONFIG_IDF_TARGET_ESP32S2
 
 #include "esp_private/periph_ctrl.h"
-#include "esp_hal_security/aes_ll.h"
-#include "esp_hal_security/ds_hal.h"
-#include "esp_hal_security/ds_ll.h"
-#include "esp_hal_security/hmac_hal.h"
-#include "esp_hal_security/hmac_ll.h"
-#include "esp_hal_security/sha_ll.h"
+#include "hal/aes_ll.h"
+#include "hal/ds_hal.h"
+#include "hal/ds_ll.h"
+#include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
+#include "hal/sha_ll.h"
 #include "esp_crypto_periph_clk.h"
 
 static void ds_acquire_enable(void)

@@ -1,13 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 // The HAL layer for Key Manager
 
-#include "esp_hal_security/key_mgr_hal.h"
-#include "esp_hal_security/key_mgr_ll.h"
-#include "esp_hal_security/key_mgr_types.h"
+#include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
+#include "hal/key_mgr_types.h"
 
 void key_mgr_hal_start(void)
 {

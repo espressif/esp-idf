@@ -31,15 +31,15 @@ list(APPEND srcs "src/esp_efuse_api.c"
 
 if(non_os_build)
     idf_component_register(SRCS "${srcs}"
-                    PRIV_REQUIRES bootloader_support soc spi_flash
+                    PRIV_REQUIRES bootloader_support soc spi_flash esp_hal_security
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${private_include}")
 else()
     list(APPEND srcs "src/esp_efuse_startup.c")
     if(${target} STREQUAL "linux")
-        set(priv_requires soc spi_flash esp_system esp_partition)
+        set(priv_requires soc spi_flash esp_system esp_partition esp_hal_security)
     else()
-        set(priv_requires bootloader_support soc spi_flash esp_system esp_partition esp_app_format)
+        set(priv_requires bootloader_support soc spi_flash esp_system esp_partition esp_app_format esp_hal_security)
     endif()
     idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES "${priv_requires}"

@@ -5,8 +5,8 @@
  */
 
 #include "hal/systimer_hal.h"
-#include "esp_hal_security/ds_hal.h"
-#include "esp_hal_security/ds_ll.h"
+#include "hal/ds_hal.h"
+#include "hal/ds_ll.h"
 #include "hal/assert.h"
 #include "soc/soc_caps.h"
 

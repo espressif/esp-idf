@@ -21,7 +21,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include" "priv_include"
                        PRIV_INCLUDE_DIRS "priv_include/${target}"
-                       REQUIRES ulp unity
+                       REQUIRES ulp unity esp_hal_security
                        PRIV_REQUIRES esp_hal_timg
                        LDFRAGMENTS linker.lf)
 

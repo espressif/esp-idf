@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "hal/assert.h"
-#include "esp_hal_security/ecdsa_ll.h"
-#include "esp_hal_security/ecdsa_hal.h"
+#include "hal/ecdsa_ll.h"
+#include "hal/ecdsa_hal.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
 #include "soc/soc_caps.h"
@@ -18,8 +18,8 @@
 #endif
 
 #ifdef SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-#include "esp_hal_security/key_mgr_hal.h"
-#include "esp_hal_security/key_mgr_ll.h"
+#include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 #define ECDSA_HAL_P192_COMPONENT_LEN        24

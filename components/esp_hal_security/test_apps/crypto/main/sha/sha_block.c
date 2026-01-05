@@ -13,8 +13,8 @@
 #include "soc/periph_defs.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_crypto_periph_clk.h"
-#include "esp_hal_security/sha_hal.h"
-#include "esp_hal_security/sha_ll.h"
+#include "hal/sha_hal.h"
+#include "hal/sha_ll.h"
 #include "sha_block.h"
 
 static inline size_t block_length(esp_sha_type type)

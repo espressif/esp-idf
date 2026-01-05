@@ -16,8 +16,8 @@
 #define ESP_MPI_USE_MONT_EXP
 #endif
 
-#include "esp_hal_security/mpi_hal.h"
-#include "esp_hal_security/mpi_ll.h"
+#include "hal/mpi_hal.h"
+#include "hal/mpi_ll.h"
 #include "mpi_params.h"
 #include "esp_crypto_periph_clk.h"
 

@@ -73,7 +73,7 @@ typedef struct {
 } mbedtls_sha512_context;
 
 /**
- * @brief Sets the specfic algorithm for SHA512
+ * @brief Sets the specific algorithm for SHA512
  *
  * @param ctx The mbedtls sha512 context
  *
@@ -82,7 +82,7 @@ typedef struct {
  */
 void esp_sha512_set_mode(mbedtls_sha512_context *ctx, esp_sha_type type);
 
-/* For SHA512/t mode the intial hash value will depend on t */
+/* For SHA512/t mode the initial hash value will depend on t */
 void esp_sha512_set_t( mbedtls_sha512_context *ctx, uint16_t t_val);
 
 

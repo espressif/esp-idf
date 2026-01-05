@@ -13,7 +13,7 @@
 
 #include "soc/periph_defs.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_hal_security/sha_hal.h"
+#include "hal/sha_hal.h"
 #include "test_params.h"
 
 #if defined(SOC_SHA_SUPPORT_SHA1)

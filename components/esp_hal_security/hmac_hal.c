@@ -1,18 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "stdio.h"
-#include "esp_hal_security/hmac_hal.h"
-#include "esp_hal_security/hmac_ll.h"
+#include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
 #include "hal/assert.h"
 #include "soc/soc_caps.h"
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
-#include "esp_hal_security/key_mgr_hal.h"
-#include "esp_hal_security/key_mgr_ll.h"
+#include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 void hmac_hal_start(void)

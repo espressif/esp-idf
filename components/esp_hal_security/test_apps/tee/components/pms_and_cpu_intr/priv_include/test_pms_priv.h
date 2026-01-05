@@ -12,7 +12,7 @@
 #include "soc/soc_caps.h"
 
 #include "soc/lp_aon_reg.h"
-#include "esp_hal_security/apm_types.h"
+#include "hal/apm_types.h"
 
 /********* Panic Handler *********/
 

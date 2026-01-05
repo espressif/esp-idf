@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,11 +10,11 @@
 #include "esp_efuse_chip.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_crc.h"
-#include "esp_hal_security/key_mgr_hal.h"
-#include "esp_hal_security/key_mgr_ll.h"
-#include "esp_hal_security/key_mgr_types.h"
-#include "esp_hal_security/huk_types.h"
-#include "esp_hal_security/huk_hal.h"
+#include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
+#include "hal/key_mgr_types.h"
+#include "hal/huk_types.h"
+#include "hal/huk_hal.h"
 #include "esp_key_mgr.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -26,10 +26,10 @@
 #include "esp_log.h"
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-#include "esp_hal_security/ecdsa_types.h"
+#include "hal/ecdsa_types.h"
 #endif
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
-#include "esp_hal_security/hmac_types.h"
+#include "hal/hmac_types.h"
 #endif
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
 #include "ds/ds_types.h"

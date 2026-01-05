@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,10 +31,10 @@ static esp_err_t hmac_jtag_disable(void)
 
 #if !CONFIG_IDF_TARGET_ESP32S2
 
-#include "esp_hal_security/hmac_hal.h"
-#include "esp_hal_security/hmac_ll.h"
-#include "esp_hal_security/ds_ll.h"
-#include "esp_hal_security/sha_ll.h"
+#include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
+#include "hal/ds_ll.h"
+#include "hal/sha_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 #define SHA256_BLOCK_SZ 64

@@ -11,7 +11,6 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "esp_hal_security/ecdsa_types.h"
 #include "soc/efuse_defs.h"
 
 #ifdef __cplusplus

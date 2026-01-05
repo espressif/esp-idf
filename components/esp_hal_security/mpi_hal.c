@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "esp_hal_security/mpi_hal.h"
-#include "esp_hal_security/mpi_ll.h"
+#include "hal/mpi_hal.h"
+#include "hal/mpi_ll.h"
 #include "soc/soc_caps.h"
 
 size_t mpi_hal_calc_hardware_words(size_t words)

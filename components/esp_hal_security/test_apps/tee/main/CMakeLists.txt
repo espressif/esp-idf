@@ -5,7 +5,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ""
-                       PRIV_REQUIRES pms_and_cpu_intr esp_psram
+                       PRIV_REQUIRES pms_and_cpu_intr esp_psram esp_hal_security
                        WHOLE_ARCHIVE)
 
 # TODO: IDF-14145

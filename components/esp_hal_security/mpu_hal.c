@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,9 @@
 
 #include "esp_err.h"
 
-#include "esp_hal_security/mpu_hal.h"
-#include "esp_hal_security/mpu_ll.h"
-#include "esp_hal_security/mpu_types.h"
+#include "hal/mpu_hal.h"
+#include "hal/mpu_ll.h"
+#include "hal/mpu_types.h"
 
 #include "soc/soc_caps.h"
 

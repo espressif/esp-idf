@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
-#include "esp_hal_security/apm_hal.h"
-#include "esp_hal_security/apm_ll.h"
+#include "hal/apm_hal.h"
+#include "hal/apm_ll.h"
 #include "hal/log.h"
 
 #if SOC_IS(ESP32P4)
