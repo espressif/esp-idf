@@ -363,6 +363,13 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     )
 endif()
 
+if(CONFIG_MBEDTLS_ROM_MD5)
+    target_compile_definitions(tfpsacrypto PRIVATE ESP_MD5_DRIVER_ENABLED)
+    target_sources(tfpsacrypto PRIVATE
+        "${COMPONENT_DIR}/port/psa_driver/esp_md/psa_crypto_driver_esp_md5.c"
+    )
+endif()
+
 if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
 target_sources(tfpsacrypto PRIVATE
                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
@@ -447,10 +454,6 @@ CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
         target_link_libraries(builtin PRIVATE idf::tee_sec_storage)
     endif()
 endif()
-
-# if(CONFIG_MBEDTLS_ROM_MD5)
-#     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/md/esp_md.c")
-# endif()
 
 # if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
 #     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/mbedtls_rom/mbedtls_rom_osi.c")
