@@ -1940,6 +1940,10 @@ esp_err_t esp_ble_gap_set_path_loss_reporting_params(esp_ble_path_loss_rpt_param
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (path_loss_rpt_params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_SET_PATH_LOSS_REPORT_PARAMS;
@@ -2006,7 +2010,7 @@ esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *defau
     }
 
     if (!default_subrate_params) {
-        return ESP_ERR_NOT_ALLOWED;
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -2033,7 +2037,7 @@ esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_p
     }
 
     if (!subrate_req_params) {
-        return ESP_ERR_NOT_ALLOWED;
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;

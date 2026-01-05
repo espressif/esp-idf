@@ -64,16 +64,16 @@ ble_hci_set_iso_buf_sz(uint16_t pktlen, uint8_t max_pkts)
     ble_hs_iso_avail_pkts = max_pkts;
 #endif /* (BLE_ISO_STD_FLOW_CTRL) */
 
-    HCI_TRACE_WARNING("ISO Flow Control:\n");
-    HCI_TRACE_WARNING("          Length: %u\n", pktlen);
-    HCI_TRACE_WARNING("           Count: %u\n", max_pkts);
-    HCI_TRACE_WARNING("          Status: ");
+    HCI_TRACE_DEBUG("ISO Flow Control:");
+    HCI_TRACE_DEBUG("Length: %u\n", pktlen);
+    HCI_TRACE_DEBUG("Count: %u\n", max_pkts);
+    HCI_TRACE_DEBUG("Status: ");
 #if (BLE_ISO_STD_FLOW_CTRL == TRUE)
-    HCI_TRACE_WARNING("%s\n", "Standard");
+    HCI_TRACE_DEBUG("%s", "Standard");
 #elif (BLE_ISO_NON_STD_FLOW_CTRL == TRUE)
-    HCI_TRACE_WARNING("%s\n", "Non-standard");
+    HCI_TRACE_DEBUG("%s\n", "Non-standard");
 #else
-    HCI_TRACE_WARNING("%s\n", "Not support");
+    HCI_TRACE_DEBUG("%s\n", "Not support");
 #endif
 
     return 0;
@@ -261,7 +261,7 @@ ble_hci_iso_tx_now(struct ble_hci_iso_conn *conn, const uint8_t *sdu,
 #endif
 
     dlh_len = (conn->ts_flag ? BLE_HCI_ISO_DATA_LOAD_TS_SZ : 0) + BLE_HCI_ISO_DATA_LOAD_HDR_SZ;
-
+    // free in controller
     frag = malloc(BLE_HCI_ISO_DATA_HDR_SZ + dlh_len + conn->sdu_len);
     if (frag == NULL) {
         HCI_TRACE_ERROR("frag is null\n");
@@ -279,7 +279,7 @@ ble_hci_iso_tx_now(struct ble_hci_iso_conn *conn, const uint8_t *sdu,
 
     rc = ble_hci_tx_iso_data(frag, BLE_HCI_ISO_DATA_HDR_SZ + dlh_len + conn->sdu_len, NULL);
     if (rc) {
-        HCI_TRACE_ERROR("iso tx failed\n");
+        HCI_TRACE_ERROR("iso tx failed_%d\n", rc);
         return 14;
     }
 

@@ -17,6 +17,7 @@ tBTM_BLE_EXTENDED_CB extend_adv_cb;
 tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
 #define INVALID_VALUE   0XFF
+
 extern BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda);
 extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
 extern void BTM_BleSetStaticAddr(BD_ADDR rand_addr);
