@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Encrypted Advertising Data Central Example (Bluedroid)
 
@@ -195,7 +195,7 @@ This central example works with the `enc_adv_data_prph` peripheral example to de
 
 ### Hardware Required
 
-* Two development boards with ESP32/ESP32-C2/ESP32-C3/ESP32-C5/ESP32-C6/ESP32-C61/ESP32-H2/ESP32-S3 SoC
+* Two development boards with ESP32/ESP32-C2/ESP32-C3/ESP32-C6/ESP32-H2/ESP32-S3 SoC
 * USB cables for power supply and programming
 
 ### Setup
