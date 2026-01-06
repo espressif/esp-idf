@@ -13,11 +13,11 @@
 static const char *TAG = "touch_wakeup";
 
 #define EXAMPLE_TOUCH_SAMPLE_CFG_NUM         1
-#define EXAMPLE_TOUCH_CHANNEL_NUM            3
+#define EXAMPLE_TOUCH_CHANNEL_NUM            2
 #define EXAMPLE_TOUCH_CHAN_INIT_SCAN_TIMES   3
 
 // If you want to change the wake-up channels, please make sure the channel GPIOs won't conflict to the EXT wakeup GPIOs
-static int s_channel_id[EXAMPLE_TOUCH_CHANNEL_NUM] = {7, 8, 9};
+static int s_channel_id[EXAMPLE_TOUCH_CHANNEL_NUM] = {8, 9};
 
 // Active threshold to benchmark ratio. (i.e., touch will be activated when data >= benchmark * (1 + ratio))
 static float s_thresh2bm_ratio[EXAMPLE_TOUCH_CHANNEL_NUM] = {
