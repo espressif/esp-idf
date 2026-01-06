@@ -6,6 +6,10 @@ entries:
 entries:
     .rtc.coredump+
 
+[sections:rtc_noinit_coredump]
+entries:
+    .rtc_noinit.coredump+
+
 [sections:dram_coredump]
 entries:
     .dram2.coredump+
@@ -17,11 +21,17 @@ entries:
 entries:
     .iram2.coredump+
 
+[sections:noinit_coredump]
+entries:
+    .noinit.coredump+
+
 [scheme:coredump_default]
 entries:
     dram_coredump -> dram0_data
     rtc_coredump -> rtc_data
     rtc_fast_coredump -> rtc_force_fast
+    rtc_noinit_coredump -> rtc_noinit
+    noinit_coredump -> noinit
     iram_coredump -> iram0_data
 
 [mapping:coredump_default]
@@ -30,6 +40,8 @@ entries:
     * (coredump_default);
         rtc_fast_coredump -> rtc_force_fast SURROUND(coredump_rtc_fast),
         rtc_coredump -> rtc_data SURROUND(coredump_rtc),
+        rtc_noinit_coredump -> rtc_noinit SURROUND(coredump_rtc_noinit),
+        noinit_coredump -> noinit SURROUND(coredump_noinit),
         dram_coredump -> dram0_data SURROUND(coredump_dram),
         iram_coredump -> iram0_data SURROUND(coredump_iram)
 

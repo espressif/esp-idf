@@ -119,7 +119,14 @@ extern "C" {
 
 // Allows to place data into RTC_FAST memory and map it to coredump
 #define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __COUNTER__)
+
+// Allows to place data into RTC_NOINIT memory and map it to coredump
+#define COREDUMP_NOINIT_ATTR _SECTION_ATTR_IMPL(".rtc_noinit.coredump", __COUNTER__)
 #else
+
+// Allows to place data into NOINIT memory and map it to coredump
+#define COREDUMP_NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit.coredump", __COUNTER__)
+
 #define RTC_DATA_ATTR
 #define RTC_NOINIT_ATTR
 #define RTC_RODATA_ATTR

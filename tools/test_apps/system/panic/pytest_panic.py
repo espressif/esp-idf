@@ -1304,6 +1304,9 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     assert re.search(r'0x[0-9a-fA-F]+ "Coredump Test"', dut.gdb_data_eval_expr('g_heap_ptr'))
     assert int(dut.gdb_data_eval_expr('g_cd_iram')) == 0x4243
     assert int(dut.gdb_data_eval_expr('g_cd_dram')) == 0x4344
+    assert int(dut.gdb_data_eval_expr('g_noinit_var')) == 0xCAFEBABE
+    buffer_value = str(dut.gdb_data_eval_expr('g_noinit_buffer'))
+    assert 'NOINIT_TEST_STRING' in buffer_value
 
     if dut.target not in ['esp32c61', 'esp32c2']:
         assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA

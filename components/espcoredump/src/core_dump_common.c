@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,11 @@ extern int _coredump_rtc_start;
 extern int _coredump_rtc_end;
 extern int _coredump_rtc_fast_start;
 extern int _coredump_rtc_fast_end;
+extern int _coredump_rtc_noinit_start;
+extern int _coredump_rtc_noinit_end;
+#else
+extern int _coredump_noinit_start;
+extern int _coredump_noinit_end;
 #endif
 
 static void* s_exc_frame = NULL;
@@ -253,6 +258,9 @@ uint32_t esp_core_dump_get_user_ram_segments(void)
 #if SOC_RTC_MEM_SUPPORTED
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start) > 0 ? 1 : 0;
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start) > 0 ? 1 : 0;
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_noinit_end, &_coredump_rtc_noinit_start) > 0 ? 1 : 0;
+#else
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_noinit_end, &_coredump_noinit_start) > 0 ? 1 : 0;
 #endif
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start) > 0 ? 1 : 0;
 
@@ -280,6 +288,9 @@ static const struct {
 #if SOC_RTC_MEM_SUPPORTED
     [COREDUMP_MEMORY_RTC] = { &_coredump_rtc_start, &_coredump_rtc_end },
     [COREDUMP_MEMORY_RTC_FAST] = { &_coredump_rtc_fast_start, &_coredump_rtc_fast_end },
+    [COREDUMP_MEMORY_NOINIT] = { &_coredump_rtc_noinit_start, &_coredump_rtc_noinit_end },
+#else
+    [COREDUMP_MEMORY_NOINIT] = { &_coredump_noinit_start, &_coredump_noinit_end },
 #endif
 };
 
