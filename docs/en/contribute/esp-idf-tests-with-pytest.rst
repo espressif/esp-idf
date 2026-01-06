@@ -708,7 +708,7 @@ We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATE
         check_performance('RSA_2048KEY_PUBLIC_OP', 123, 'esp32')
         check_performance('RSA_2048KEY_PUBLIC_OP', 19001, 'esp32')
 
-The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from :idf_file:`components/idf_test/include/idf_performance.h` and the target-specific one :idf_file:`components/idf_test/include/esp32/idf_performance_target.h`, then check if the value reached the minimum limit or exceeded the maximum limit.
+The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from the component-specific performance header files (e.g., :idf_file:`components/esp_adc/test_apps/adc/include/adc_performance.h` for ADC performance tests), then check if the value reached the minimum limit or exceeded the maximum limit.
 
 Let us assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 19000. so the first ``check_performance`` line would pass and the second one would fail with warning: ``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``.
 

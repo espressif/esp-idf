@@ -52,7 +52,6 @@ components/protocomm/proto-c/
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
 
-components/idf_test/include/idf_performance.h
 
 
 components/spiffs/include/spiffs_config.h

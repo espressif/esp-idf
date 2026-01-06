@@ -460,7 +460,6 @@ components/fatfs/src/ff.h
 components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
-components/idf_test/include/idf_performance.h
 components/log/host_test/log_test/main/log_test.cpp
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
 components/mbedtls/port/aes/esp_aes_xts.c

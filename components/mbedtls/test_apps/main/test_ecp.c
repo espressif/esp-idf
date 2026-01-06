@@ -22,6 +22,8 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "unity.h"
+#include "crypto_performance.h"
+
 #if CONFIG_MBEDTLS_HARDWARE_ECC
 #include "hal/ecc_ll.h"
 #endif

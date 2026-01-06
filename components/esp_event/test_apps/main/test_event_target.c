@@ -29,6 +29,7 @@
 #include "unity_test_utils_memory.h"
 
 #include "test_utils.h"
+#include "event_performance.h"
 
 static const char* TAG = "test_event";
 

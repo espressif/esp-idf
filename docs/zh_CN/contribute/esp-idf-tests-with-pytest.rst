@@ -708,7 +708,7 @@ Pytest 使用技巧
         check_performance('RSA_2048KEY_PUBLIC_OP', 123, 'esp32')
         check_performance('RSA_2048KEY_PUBLIC_OP', 19001, 'esp32')
 
-以上示例会首先从 :idf_file:`components/idf_test/include/idf_performance.h` 和指定目标芯片的 :idf_file:`components/idf_test/include/esp32/idf_performance_target.h` 头文件中获取性能项 ``RSA_2048KEY_PUBLIC_OP`` 的阈值，然后检查该值是否达到了最小值或超过了最大值。
+以上示例会首先从组件特定的性能头文件中获取性能项 ``RSA_2048KEY_PUBLIC_OP`` 的阈值（例如，ADC 性能测试使用 :idf_file:`components/esp_adc/test_apps/adc/include/adc_performance.h`），然后检查该值是否达到了最小值或超过了最大值。
 
 例如，假设 ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` 的值为 19000，则上例中第一行 ``check_performance`` 会通过测试，第二行会失败并警告：``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``。
 

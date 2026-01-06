@@ -16,6 +16,8 @@
 #include "esp_cpu.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "freertos_performance.h"
+
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xtensa/hal.h"
 #include "xtensa_api.h"     // Replace with interrupt allocator API (IDF-3891)

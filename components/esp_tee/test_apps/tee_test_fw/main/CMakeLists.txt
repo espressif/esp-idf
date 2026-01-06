@@ -50,5 +50,6 @@ list(APPEND srcs "${mbedtls_test_srcs_dir}/test_apb_dport_access.c"
                  "${mbedtls_test_srcs_dir}/test_mbedtls_utils.c")
 
 idf_component_register(SRCS ${srcs}
+                       PRIV_INCLUDE_DIRS "${idf_path}/components/mbedtls/test_apps/include"
                        PRIV_REQUIRES ${priv_requires}
                        WHOLE_ARCHIVE)

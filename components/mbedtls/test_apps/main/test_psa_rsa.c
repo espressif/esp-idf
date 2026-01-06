@@ -16,6 +16,7 @@
 #include "unity.h"
 #include "ccomp_timer.h"
 #include "test_utils.h"
+#include "crypto_performance.h"
 
 typedef enum {
     PSA_RSA_KEY_SIZE_2048,

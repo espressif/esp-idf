@@ -13,9 +13,6 @@
 #include "sdkconfig.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
-/* include performance pass standards header file */
-#include "idf_performance.h"
-#include "idf_performance_target.h"
 
 #ifdef __cplusplus
 extern "C" {

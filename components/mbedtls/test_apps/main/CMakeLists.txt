@@ -10,7 +10,7 @@ set(TEST_CRTS "crts/server_cert_chain.pem"
 
 idf_component_register(
                     SRC_DIRS "."
-                    PRIV_INCLUDE_DIRS "."
+                    PRIV_INCLUDE_DIRS "." "../include"
                     PRIV_REQUIRES efuse cmock test_utils mbedtls esp_timer unity spi_flash esp_psram esp_security
                     EMBED_TXTFILES ${TEST_CRTS}
                     WHOLE_ARCHIVE)

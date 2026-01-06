@@ -136,7 +136,6 @@
 /components/hal/test_apps/tee/        @esp-idf-codeowners/peripherals @esp-idf-codeowners/security
 /components/heap/                     @esp-idf-codeowners/system
 /components/http_parser/              @esp-idf-codeowners/app-utilities
-/components/idf_test/                 @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
 /components/linux/                    @esp-idf-codeowners/system
 /components/log/                      @esp-idf-codeowners/system

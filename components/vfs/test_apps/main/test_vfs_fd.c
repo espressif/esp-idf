@@ -20,6 +20,7 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
+#include "vfs_performance.h"
 #include "driver/uart.h"
 #include "driver/uart_vfs.h"
 #include "lwip/sockets.h"
