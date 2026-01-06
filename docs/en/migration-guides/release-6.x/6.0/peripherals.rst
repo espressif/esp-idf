@@ -144,7 +144,9 @@ LEDC
 UART
 ----
 
-``UART_FIFO_LEN`` macro has been removed. Please use ``UART_HW_FIFO_LEN`` instead.
+- ``UART_FIFO_LEN`` macro has been removed. Please use ``UART_HW_FIFO_LEN`` instead.
+
+- ``soc/uart_channel.h`` header file has been removed. All UART GPIO lookup macros can be found in ``soc/uart_pins.h``. For example, ``UART_NUM_0_TXD_DIRECT_GPIO_NUM`` is equivalent to ``U0TXD_GPIO_NUM``.
 
 I2C
 ---

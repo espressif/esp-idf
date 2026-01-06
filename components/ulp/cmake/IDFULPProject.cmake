@@ -119,8 +119,8 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
 
-        "${IDF_PATH}/components/hal/uart_hal_iram.c"
-        "${IDF_PATH}/components/hal/uart_hal.c"
+        "${IDF_PATH}/components/esp_hal_uart/uart_hal_iram.c"
+        "${IDF_PATH}/components/esp_hal_uart/uart_hal.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_uart.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"

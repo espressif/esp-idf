@@ -445,6 +445,6 @@ API Reference
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
 
-Some UART ports have dedicated IO_MUX pins to which they are connected directly. These can be useful if you need very high UART baud rates, which means you will have to use IO_MUX pins only. In other cases, any GPIO pin can be used for UART communication by routing the signals through the GPIO matrix. If the UART port has dedicated IO_MUX pins, :c:macro:`UART_NUM_x_TXD_DIRECT_GPIO_NUM` and :c:macro:`UART_NUM_x_RXD_DIRECT_GPIO_NUM` can be used to find the corresponding IO_MUX pin numbers.
+Some UART ports have dedicated IO_MUX pins to which they are connected directly. These can be useful if you need very high UART baud rates, which means you will have to use IO_MUX pins only. In other cases, any GPIO pin can be used for UART communication by routing the signals through the GPIO matrix. If the UART port has dedicated IO_MUX pins, :c:macro:`UxTXD_GPIO_NUM` and :c:macro:`UxRXD_GPIO_NUM` can be used to find the corresponding IO_MUX pin numbers.
 
-.. include-build-file:: inc/uart_channel.inc
+.. include-build-file:: inc/uart_pins.inc

@@ -445,6 +445,6 @@ API 参考
 GPIO 查找宏指令
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-一些 UART 外设有供直接连接的专用 IO_MUX 管脚。这些管脚可用于需要极高 UART 波特率的场景，即仅可使用 IO_MUX 管脚。在其他情况下，任一 GPIO 管脚都可用于 UART 通信，只需将信号通过 GPIO 矩阵路由即可。当特定的 UART 外设有专用 IO_MUX 管脚时，:c:macro:`UART_NUM_x_TXD_DIRECT_GPIO_NUM` 和 :c:macro:`UART_NUM_x_RXD_DIRECT_GPIO_NUM` 可用于查找对应的 IO_MUX 管脚编号。
+一些 UART 外设有供直接连接的专用 IO_MUX 管脚。这些管脚可用于需要极高 UART 波特率的场景，即仅可使用 IO_MUX 管脚。在其他情况下，任一 GPIO 管脚都可用于 UART 通信，只需将信号通过 GPIO 矩阵路由即可。当特定的 UART 外设有专用 IO_MUX 管脚时，:c:macro:`UxTXD_GPIO_NUM` 和 :c:macro:`UxRXD_GPIO_NUM` 可用于查找对应的 IO_MUX 管脚编号。
 
-.. include-build-file:: inc/uart_channel.inc
+.. include-build-file:: inc/uart_pins.inc

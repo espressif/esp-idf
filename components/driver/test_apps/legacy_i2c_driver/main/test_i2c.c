@@ -20,7 +20,7 @@
 #include "hal/gpio_types.h"
 #include "hal/uart_ll.h"
 #include "hal/i2c_types.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "test_utils.h"
 #include "esp_private/gpio.h"
 #include "driver/gpio.h"

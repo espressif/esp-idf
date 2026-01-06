@@ -80,15 +80,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
 
     orsource "../esp_hal_wdt/Kconfig.hal_wdt"
 
-    config HAL_GPIO_USE_ROM_IMPL
-        bool "Use ROM implementation of GPIO HAL driver"
-        default y
-        help
-            Enable this flag to use HAL functions from ROM when applicable instead of ESP-IDF.
-
-            If keeping this as "n" in your project, you will have less free IRAM.
-            When compiling an application for a CPU that cannot access to the ROM memory,
-            this option should be disabled.
+    orsource "../esp_hal_gpio/Kconfig.hal_gpio"
 
     config HAL_ECDSA_GEN_SIG_CM
         bool "Enable countermeasure for ECDSA signature generation"

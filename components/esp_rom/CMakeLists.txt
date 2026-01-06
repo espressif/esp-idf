@@ -44,7 +44,7 @@ else()
         list(APPEND sources "patches/esp_rom_multi_heap.c")
     endif()
 
-    list(APPEND private_required_comp soc hal)
+    list(APPEND private_required_comp soc hal esp_hal_uart)
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)

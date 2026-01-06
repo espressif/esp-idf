@@ -79,6 +79,7 @@ examples/peripherals/dac/dac_cosine_wave:
 examples/peripherals/gpio:
   depends_components:
     - esp_driver_gpio
+    - esp_hal_gpio
 
 examples/peripherals/gpio/matrix_keyboard:
   enable:
@@ -442,6 +443,7 @@ examples/peripherals/sigma_delta:
     - if: SOC_SDM_SUPPORTED != 1
   depends_components:
     - esp_driver_sdm
+    - esp_hal_gpio
 
 examples/peripherals/spi_master/hd_eeprom:
   disable:

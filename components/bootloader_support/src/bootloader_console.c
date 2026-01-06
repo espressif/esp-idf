@@ -7,7 +7,7 @@
 #include "sdkconfig.h"
 #include "bootloader_console.h"
 #include "soc/soc_caps.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "soc/uart_pins.h"
 #include "soc/io_mux_reg.h"
 #include "soc/gpio_sig_map.h"
