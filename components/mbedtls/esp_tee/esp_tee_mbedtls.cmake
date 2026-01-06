@@ -71,23 +71,24 @@ target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/
 # AES implementation
 if(CONFIG_SOC_AES_SUPPORTED)
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes.c"
-        "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
-    target_compile_definitions(tfpsacrypto PRIVATE ESP_AES_DRIVER_ENABLED)
+                                        "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c"
+                                        "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c"
+                                        "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
+                                        "${COMPONENT_DIR}/port/aes/esp_aes_xts.c")
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/include/aes")
-    if(CONFIG_MBEDTLS_HARDWARE_SHA)
+    if(CONFIG_MBEDTLS_HARDWARE_AES)
+        target_compile_definitions(tfpsacrypto PRIVATE ESP_AES_DRIVER_ENABLED)
         target_sources(tfpsacrypto PRIVATE
                 "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
-                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_cmac.c"
+                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes_gcm.c"
         )
-    endif()
-    if(CONFIG_SOC_AES_SUPPORT_GCM)
-        target_sources(tfpsacrypto PRIVATE "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_gcm.c"
-        "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes_gcm.c")
+        if(CONFIG_MBEDTLS_HARDWARE_SHA)
+            target_sources(tfpsacrypto PRIVATE
+                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_cmac.c"
+            )
+        endif()
     endif()
 
-    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
-                                    "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
-                                    "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
 endif()
 # SHA implementation
 if(CONFIG_SOC_SHA_SUPPORTED)
