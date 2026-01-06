@@ -61,6 +61,9 @@ void ble_log_ts_deinit(void)
     gpio_reset_pin(CONFIG_BLE_LOG_SYNC_IO_NUM);
 }
 
+#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
+BLE_LOG_IRAM_ATTR
+#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD */
 void ble_log_ts_info_update(ble_log_ts_info_t **info)
 {
     if (!ts_inited) {
