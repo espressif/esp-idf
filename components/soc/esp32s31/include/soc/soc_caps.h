@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -27,11 +27,10 @@
 // #define SOC_ANA_CMPR_SUPPORTED          1      // TODO: [ESP32S31] IDF-14787
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1      // TODO: [ESP32S31] IDF-14782
 #define SOC_UART_SUPPORTED              1         // TODO: [ESP32S31] IDF-14789
-// #define SOC_GDMA_SUPPORTED              1      // TODO: [ESP32S31] IDF-14758
+#define SOC_GDMA_SUPPORTED              1
 // #define SOC_UHCI_SUPPORTED              1      // TODO: [ESP32S31] IDF-14791
-// #define SOC_AHB_GDMA_SUPPORTED          1      // TODO: [ESP32S31] IDF-14758
-// #define SOC_AXI_GDMA_SUPPORTED          1      // TODO: [ESP32S31] IDF-14758
-// #define SOC_DW_GDMA_SUPPORTED           1      // TODO: [ESP32S31] IDF-14758
+#define SOC_AHB_GDMA_SUPPORTED          1
+#define SOC_AXI_GDMA_SUPPORTED          1
 // #define SOC_DMA2D_SUPPORTED             1      // TODO: [ESP32S31] IDF-14762
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1      // TODO: [ESP32S31] IDF-14699
@@ -43,7 +42,7 @@
 // #define SOC_TWAI_SUPPORTED              1      // TODO: [ESP32S31] IDF-14719
 // #define SOC_ETM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14724
 // #define SOC_PARLIO_SUPPORTED            1      // TODO: [ESP32S31] IDF-14711
-// #define SOC_ASYNC_MEMCPY_SUPPORTED      1      // TODO: [ESP32S31] IDF-14758
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_USB_OTG_SUPPORTED           1      // TODO: [ESP32S31] IDF-14701
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1      // TODO: [ESP32S31] IDF-14788
 // #define SOC_TEMP_SENSOR_SUPPORTED       1      // TODO: [ESP32S31] IDF-14799
@@ -80,7 +79,7 @@
 // #define SOC_LP_I2C_SUPPORTED            1      // TODO: [ESP32S31] IDF-14635
 // #define SOC_LP_SPI_SUPPORTED            1      // TODO: [ESP32S31] IDF-14639
 // #define SOC_SPIRAM_SUPPORTED            1      // TODO: [ESP32S31] IDF-14718
-// #define SOC_PSRAM_DMA_CAPABLE           1      // TODO: [ESP32S31] IDF-14758
+#define SOC_PSRAM_DMA_CAPABLE           1
 // #define SOC_SDMMC_HOST_SUPPORTED        1      // TODO: [ESP32S31] IDF-14705
 // #define SOC_CLK_TREE_SUPPORTED          1      // TODO: [ESP32S31] IDF-14733
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1      // TODO: [ESP32S31] IDF-14675
@@ -139,6 +138,18 @@
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
 #define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
+
+/*-------------------------- DMA Common CAPS ----------------------------------------*/
+#define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
+
+/*-------------------------- GDMA CAPS -------------------------------------*/
+#define SOC_AHB_GDMA_VERSION                2
+#define SOC_GDMA_SUPPORT_ETM                1
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+#define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
+
+/*-------------------------- APM CAPS ----------------------------------------*/
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-S31 has 1 GPIO peripheral

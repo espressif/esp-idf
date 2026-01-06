@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
+#include "soc/ext_mem_defs.h"
 
 ESP_LOG_ATTR_TAG(TAG, "gdma-link");
 
@@ -26,7 +27,7 @@ ESP_LOG_ATTR_TAG(TAG, "gdma-link");
 #define GDMA_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) ((addr) + SOC_NON_CACHEABLE_OFFSET)
 #else
 #define GDMA_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) (addr)
-#endif
+#endif // SOC_NON_CACHEABLE_OFFSET
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
@@ -113,8 +114,22 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
     list->num_items = num_items;
     list->item_size = item_size;
     list->items = items;
+
     // calculate the non-cached address
-    list->items_nc = GDMA_CACHE_ADDR_TO_NON_CACHE_ADDR(items);
+    if (items_in_ext_mem) {
+#if SOC_NON_CACHEABLE_OFFSET
+        list->items_nc = items + SOC_NON_CACHEABLE_OFFSET;
+#else
+        ESP_GOTO_ON_ERROR(ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported to put link list items in external memory");
+#endif
+    } else {
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        list->items_nc = items + SOC_NON_CACHEABLE_OFFSET;
+#else
+        list->items_nc = items;
+#endif
+    }
+
     list->flags.check_owner = config->flags.check_owner;
 
     ESP_LOGD(TAG, "new link list @%p, items @%p", list, items);

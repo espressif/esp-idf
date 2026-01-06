@@ -7,7 +7,23 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_AXI_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
@@ -28,6 +44,10 @@ config SOC_SYSTIMER_SUPPORTED
     default y
 
 config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_PSRAM_DMA_CAPABLE
     bool
     default y
 
@@ -142,6 +162,30 @@ config SOC_CPU_HAS_LOCKUP_RESET
 config SOC_SIMD_PREFERRED_DATA_ALIGNMENT
     int
     default 16
+
+config SOC_DMA_CAN_ACCESS_FLASH
+    bool
+    default y
+
+config SOC_AHB_GDMA_VERSION
+    int
+    default 2
+
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+    int
+    default 16
+
+config SOC_APM_CTRL_FILTER_SUPPORTED
+    bool
+    default y
 
 config SOC_GPIO_PORT
     int

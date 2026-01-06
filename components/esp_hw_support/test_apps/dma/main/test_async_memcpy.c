@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,9 +258,9 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
     printf("Testing memcpy by AHB GDMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver));
     test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
     test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+#endif // GDMA_LL_GET(AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_HAS(AHB_GDMA)
 
@@ -268,9 +268,9 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
     printf("Testing memcpy by AXI GDMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver));
     test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+#if GDMA_LL_GET(AXI_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
     test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+#endif // GDMA_LL_GET(AXI_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_HAS(AXI_GDMA)
 }

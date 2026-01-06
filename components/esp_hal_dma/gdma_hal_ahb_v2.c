@@ -285,7 +285,7 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
     if (config->flags.enable_weighted_arbitration) {
         ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, true);
         // always enable weighted arbitration optimize
-        for (int i = 0; i < GDMA_LL_GET(PAIRS_PER_INST); i++) {
+        for (int i = 0; i < GDMA_LL_GET(AHB_PAIRS_PER_GROUP); i++) {
             ahb_dma_ll_tx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
             ahb_dma_ll_rx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
         }
