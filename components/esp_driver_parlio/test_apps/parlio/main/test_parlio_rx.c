@@ -379,7 +379,7 @@ TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")
 {
     parlio_rx_pulse_delimiter_config_t pls_deli_cfg = {
         .valid_sig_line_id = TEST_VALID_SIG,
-        .sample_edge = PARLIO_SAMPLE_EDGE_NEG,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
         .eof_data_len = TEST_EOF_DATA_LEN,
         .timeout_ticks = 0,

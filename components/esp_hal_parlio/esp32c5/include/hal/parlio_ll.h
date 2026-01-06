@@ -264,8 +264,9 @@ static inline void parlio_ll_rx_start_soft_recv(parl_io_dev_t *dev, bool en)
 __attribute__((always_inline))
 static inline void parlio_ll_rx_set_sample_clock_edge(parl_io_dev_t *dev, parlio_sample_edge_t edge)
 {
-    dev->rx_clk_cfg.rx_clk_i_inv = edge;
-    dev->rx_clk_cfg.rx_clk_o_inv = edge;
+    bool invert = edge == PARLIO_SAMPLE_EDGE_NEG;
+    dev->rx_clk_cfg.rx_clk_i_inv = invert;
+    dev->rx_clk_cfg.rx_clk_o_inv = invert;
 }
 
 /**
@@ -568,8 +569,9 @@ static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t sta
  */
 static inline void parlio_ll_tx_set_sample_clock_edge(parl_io_dev_t *dev, parlio_sample_edge_t edge)
 {
-    dev->tx_clk_cfg.tx_clk_i_inv = edge;
-    dev->tx_clk_cfg.tx_clk_o_inv = edge;
+    bool invert = edge == PARLIO_SAMPLE_EDGE_NEG;
+    dev->tx_clk_cfg.tx_clk_i_inv = invert;
+    dev->tx_clk_cfg.tx_clk_o_inv = invert;
 }
 
 /**
