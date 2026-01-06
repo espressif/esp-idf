@@ -73,7 +73,9 @@ test_partition_table_on_host:
     - pytest_for_ut ./gen_esp32part_tests.py
 
 test_ldgen_on_host:
-  extends: .host_test_template
+  extends:
+  - .host_test_template
+  - .rules:test:host_test_ldgen
   script:
     - cd tools/ldgen/test
     - export PYTHONPATH=$PYTHONPATH:..
@@ -104,6 +106,7 @@ test_certificate_bundle_on_host:
 test_cli_installer:
   extends:
     - .host_test_template
+    - .rules:test:host_test_cli_installer
     - .before_script:minimal
   artifacts:
     when: on_failure
@@ -167,6 +170,7 @@ test_sysviewtrace_proc:
 test_tools:
   extends:
     - .host_test_template
+    - .rules:test:host_test_tools
   artifacts:
     paths:
       - ${IDF_PATH}/*.out
