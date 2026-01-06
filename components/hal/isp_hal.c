@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,24 @@ bool isp_hal_awb_set_window_range(isp_hal_context_t *hal, const isp_window_t *wi
     }
     isp_ll_awb_set_window_range(hal->hw, win->top_left.x, win->top_left.y,
                                 win->btm_right.x, win->btm_right.y);
+    return true;
+}
+
+bool isp_hal_awb_set_subwindow_range(isp_hal_context_t *hal, const isp_window_t *win)
+{
+    if (win->top_left.x > win->btm_right.x ||
+        win->top_left.y > win->btm_right.y ||
+        win->btm_right.x > ISP_LL_AWB_WINDOW_MAX_RANGE ||
+        win->btm_right.y > ISP_LL_AWB_WINDOW_MAX_RANGE) {
+        return false;
+    }
+    isp_ll_awb_set_subwindow_range(
+        hal->hw,
+        win->top_left.x,
+        win->top_left.y,
+        (win->btm_right.x - win->top_left.x) / SOC_ISP_AWB_WINDOW_X_NUMS,
+        (win->btm_right.y - win->top_left.y) / SOC_ISP_AWB_WINDOW_Y_NUMS
+    );
     return true;
 }
 
