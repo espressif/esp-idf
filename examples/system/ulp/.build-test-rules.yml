@@ -1,0 +1,249 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/system/ulp/lp_core/build_system:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/lp_core/debugging:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/lp_core/gpio:
+  disable:
+    - if: SOC_DEEP_SLEEP_SUPPORTED != 1
+  enable:
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_gpio
+
+examples/system/ulp/lp_core/gpio_intr_pulse_counter:
+  enable:
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_gpio
+
+examples/system/ulp/lp_core/gpio_wakeup:
+  enable:
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_driver_gpio
+    - esp_hal_gpio
+
+examples/system/ulp/lp_core/inter_cpu_critical_section/:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/lp_core/interrupt:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/lp_core/lp_adc:
+  disable:
+    - if: (SOC_LP_ADC_SUPPORTED != 1)
+  depends_components:
+    - ulp
+    - esp_adc
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_ana_conv
+    - esp_hal_uart
+
+examples/system/ulp/lp_core/lp_i2c:
+  enable:
+    - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_i2c
+
+examples/system/ulp/lp_core/lp_mailbox:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/lp_core/lp_spi:
+  enable:
+    - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_gpspi
+
+examples/system/ulp/lp_core/lp_timer_interrupt:
+  disable:
+    - if: (SOC_LP_CORE_SUPPORTED != 1) or (SOC_LP_TIMER_SUPPORTED != 1)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/lp_core/lp_touch:
+  enable:
+    - if: SOC_TOUCH_SENSOR_SUPPORTED == 1 and (SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LP_CORE_SUPPORTED == 1)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_driver_touch_sens
+    - esp_hal_touch_sens
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
+  disable:
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_uart
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
+  disable:
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_uart
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_print:
+  disable:
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_uart
+
+examples/system/ulp/ulp_fsm/ulp:
+  disable:
+    - if: SOC_ULP_FSM_SUPPORTED != 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/ulp_fsm/ulp_adc:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_adc
+    - esp_hal_ana_conv
+
+examples/system/ulp/ulp_riscv/adc:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_adc
+    - esp_hal_ana_conv
+
+examples/system/ulp/ulp_riscv/ds18b20_onewire:
+  enable:
+    - if: IDF_TARGET == "esp32s2"
+      temporary: true
+      reason: the other targets are not tested yet
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_gpio
+
+examples/system/ulp/ulp_riscv/gpio:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_gpio
+
+examples/system/ulp/ulp_riscv/gpio_interrupt:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_driver_gpio
+    - esp_hal_gpio
+
+examples/system/ulp/ulp_riscv/gpio_pulse_counter:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_gpio
+
+examples/system/ulp/ulp_riscv/i2c:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_hal_i2c
+
+examples/system/ulp/ulp_riscv/interrupts:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+examples/system/ulp/ulp_riscv/touch:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+    - esp_driver_touch_sens
+    - esp_hal_touch_sens
+
+examples/system/ulp/ulp_riscv/uart_print:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
