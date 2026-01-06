@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,7 +115,14 @@ extern "C" {
 
 // Allows to place data into RTC_FAST memory and map it to coredump
 #define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __COUNTER__)
+
+// Allows to place data into RTC_NOINIT memory and map it to coredump
+#define COREDUMP_NOINIT_ATTR _SECTION_ATTR_IMPL(".rtc_noinit.coredump", __COUNTER__)
 #else
+
+// Allows to place data into NOINIT memory and map it to coredump
+#define COREDUMP_NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit.coredump", __COUNTER__)
+
 // RTC memory is not supported on these chips
 #define RTC_DATA_ATTR ESP_STATIC_ASSERT(0, "RTC_DATA_ATTR is not supported on this chip. Use DRAM_ATTR instead.")
 #define RTC_NOINIT_ATTR ESP_STATIC_ASSERT(0, "RTC_NOINIT_ATTR is not supported on this chip. Use DRAM_ATTR instead.")

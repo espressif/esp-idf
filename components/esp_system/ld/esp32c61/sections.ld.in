@@ -121,6 +121,8 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _noinit_start)
 
+    mapping[noinit]
+
     *(.noinit .noinit.*)
 
     ALIGNED_SYMBOL(4, _noinit_end)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -405,6 +405,8 @@ int g_bss_var;
 char *g_heap_ptr;
 COREDUMP_IRAM_DATA_ATTR uint32_t g_cd_iram = 0x4242;
 COREDUMP_DRAM_ATTR uint32_t g_cd_dram = 0x4343;
+COREDUMP_NOINIT_ATTR uint32_t g_noinit_var;
+COREDUMP_NOINIT_ATTR char g_noinit_buffer[28];
 #if SOC_RTC_MEM_SUPPORTED
 COREDUMP_RTC_FAST_ATTR uint32_t g_rtc_fast_var;
 COREDUMP_RTC_DATA_ATTR uint32_t g_rtc_data_var = 0x55A9;
@@ -422,6 +424,8 @@ void test_capture_dram(void)
     g_rtc_fast_var = 0xAABBCCDD;
     g_rtc_data_var++;
 #endif
+    g_noinit_var = 0xCAFEBABE;
+    strcpy(g_noinit_buffer, "NOINIT_TEST_STRING");
     assert(0);
 }
 #endif
