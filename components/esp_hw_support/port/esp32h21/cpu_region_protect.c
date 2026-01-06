@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "soc/soc.h"
 #include "esp_cpu.h"
 #include "esp_fault.h"
+#include "esp32h21/rom/rom_layout.h"
 
 #ifdef BOOTLOADER_BUILD
 // Without L bit set
@@ -104,7 +105,7 @@ void esp_cpu_configure_region_protection(void)
     const unsigned NONE    = PMP_L;
     __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
-    const unsigned RX      = PMP_L | PMP_R | PMP_X;
+    __attribute__((unused)) const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
 
     //
@@ -122,17 +123,33 @@ void esp_cpu_configure_region_protection(void)
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
     // 2. I/D-ROM
-    const uint32_t pmpaddr1 = PMPADDR_NAPOT(SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH);
-    PMP_ENTRY_SET(1, pmpaddr1, PMP_NAPOT | RX);
-    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
+    /* For non-MP (Mass Production) revisions of the chip, the PMP (Physical Memory Protection) entries 2 and 3 are not utilized for ROM memory mapping.
+    *  In such cases, these entries remain unconfigured and vacant.
+    */
+#if CONFIG_ESP32H21_SELECTS_REV_MP && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
+    const uint32_t drom_start = (uint32_t) (ets_rom_layout_p->drom_start);
+    if ((drom_start & (SOC_CPU_PMP_REGION_GRANULARITY - 1)) == 0) {
+        PMP_ENTRY_CFG_RESET(1);
+        PMP_ENTRY_CFG_RESET(2);
+        PMP_ENTRY_CFG_RESET(3);
+        PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
+        PMP_ENTRY_SET(2, drom_start, PMP_TOR | RX);
+        PMP_ENTRY_SET(3, SOC_DROM_MASK_HIGH, PMP_TOR | RW);
+    } else
+#endif
+    {
+        const uint32_t pmpaddr1 = PMPADDR_NAPOT(SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH);
+        PMP_ENTRY_SET(1, pmpaddr1, PMP_NAPOT | CONDITIONAL_RX);
+        _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
+    }
 
     if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode
         ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
 
         // 3. IRAM and DRAM
-        PMP_ENTRY_SET(2, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(3, SOC_IRAM_HIGH, PMP_TOR | RWX);
+        PMP_ENTRY_SET(4, SOC_IRAM_LOW, NONE);
+        PMP_ENTRY_SET(5, SOC_IRAM_HIGH, PMP_TOR | RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
     } else {
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
@@ -141,16 +158,16 @@ void esp_cpu_configure_region_protection(void)
         /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
          * Bootloader might have given extra permissions and those won't be cleared
          */
-        PMP_ENTRY_CFG_RESET(2);
-        PMP_ENTRY_CFG_RESET(3);
         PMP_ENTRY_CFG_RESET(4);
-        PMP_ENTRY_SET(2, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(3, (int)&_iram_text_end, PMP_TOR | RX);
-        PMP_ENTRY_SET(4, SOC_DRAM_HIGH, PMP_TOR | RW);
+        PMP_ENTRY_CFG_RESET(5);
+        PMP_ENTRY_CFG_RESET(6);
+        PMP_ENTRY_SET(4, SOC_IRAM_LOW, NONE);
+        PMP_ENTRY_SET(5, (int)&_iram_text_end, PMP_TOR | RX);
+        PMP_ENTRY_SET(6, SOC_DRAM_HIGH, PMP_TOR | RW);
 #else
         // 3. IRAM and DRAM
-        PMP_ENTRY_SET(2, SOC_IRAM_LOW, CONDITIONAL_NONE);
-        PMP_ENTRY_SET(3, SOC_IRAM_HIGH, PMP_TOR | CONDITIONAL_RWX);
+        PMP_ENTRY_SET(4, SOC_IRAM_LOW, CONDITIONAL_NONE);
+        PMP_ENTRY_SET(5, SOC_IRAM_HIGH, PMP_TOR | CONDITIONAL_RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
 #endif
     }
@@ -163,16 +180,16 @@ void esp_cpu_configure_region_protection(void)
     const uint32_t drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
     // 4. I_Cache / D_Cache (flash)
-    PMP_ENTRY_CFG_RESET(5);
-    PMP_ENTRY_CFG_RESET(6);
     PMP_ENTRY_CFG_RESET(7);
-    PMP_ENTRY_SET(5, SOC_IROM_LOW, NONE);
-    PMP_ENTRY_SET(6, irom_resv_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(7, drom_resv_end, PMP_TOR | R);
+    PMP_ENTRY_CFG_RESET(8);
+    PMP_ENTRY_CFG_RESET(9);
+    PMP_ENTRY_SET(7, SOC_IROM_LOW, NONE);
+    PMP_ENTRY_SET(8, irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(9, drom_resv_end, PMP_TOR | R);
 #else
     // 4. I_Cache / D_Cache (flash)
-    const uint32_t pmpaddr5 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
-    PMP_ENTRY_SET(5, pmpaddr5, PMP_NAPOT | CONDITIONAL_RX);
+    const uint32_t pmpaddr7 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_ENTRY_SET(7, pmpaddr7, PMP_NAPOT | CONDITIONAL_RX);
     _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
 #endif
 
@@ -182,21 +199,21 @@ void esp_cpu_configure_region_protection(void)
     /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
      * Bootloader might have given extra permissions and those won't be cleared
      */
-    PMP_ENTRY_CFG_RESET(8);
-    PMP_ENTRY_CFG_RESET(9);
     PMP_ENTRY_CFG_RESET(10);
-    PMP_ENTRY_SET(8, SOC_RTC_IRAM_LOW, NONE);
-    PMP_ENTRY_SET(9, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(10, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+    PMP_ENTRY_CFG_RESET(11);
+    PMP_ENTRY_CFG_RESET(12);
+    PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW, NONE);
+    PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
 #else
-    const uint32_t pmpaddr8 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
-    PMP_ENTRY_SET(8, pmpaddr8, PMP_NAPOT | CONDITIONAL_RWX);
+    const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
+    PMP_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | CONDITIONAL_RWX);
     _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
 #endif
 
     // 6. Peripheral addresses
-    PMP_ENTRY_CFG_RESET(11);
-    const uint32_t pmpaddr11 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_ENTRY_SET(11, pmpaddr11, PMP_NAPOT | RW);
+    PMP_ENTRY_CFG_RESET(13);
+    const uint32_t pmpaddr13 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_ENTRY_SET(13, pmpaddr13, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
