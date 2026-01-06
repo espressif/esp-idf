@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "soc/io_mux_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_attr.h"
 
 static const char *TAG = "rtc_clk";
 
@@ -126,7 +127,7 @@ static void rtc_clk_cpll_disable(void)
  * If to_default is set, then will configure CPU - MEM - SYS - APB frequencies back to power-on reset configuration (40 - 20 - 20 - 10)
  * If to_default is not set, then will configure to 40 - 40 - 40 - 40
  */
-static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
+static FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
 {
     // TODO: ["ESP32S31"] IDF-14678
     // let f_cpu = f_mem = f_sys = f_apb
@@ -191,7 +192,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_cpll_disable();
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     // TODO: ["ESP32S31"] IDF-14678
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "soc/io_mux_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_attr.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
@@ -179,7 +180,7 @@ static void rtc_clk_cpll_configure(soc_xtal_freq_t xtal_freq, int cpll_freq)
  * If to_default is set, then will configure CPU - MEM - SYS - APB frequencies back to power-on reset configuration (40 - 20 - 20 - 10)
  * If to_default is not set, then will configure to 40 - 40 - 40 - 40
  */
-static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
+static FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
 {
     // let f_cpu = f_mem = f_sys = f_apb
     uint32_t mem_divider = 1;
@@ -494,7 +495,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_cpll_disable();
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
@@ -509,7 +510,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
     s_cur_cpll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }
 
-soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+FORCE_IRAM_ATTR soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {
