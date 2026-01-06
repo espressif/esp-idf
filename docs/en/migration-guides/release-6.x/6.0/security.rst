@@ -20,7 +20,7 @@ In ESP-IDF v6.0, multiple ESP-IDF components have been migrated from using legac
 This migration aligns ESP-IDF with Mbed TLS v4.x, where PSA Crypto is the primary cryptography interface, and it enables the use of ESP-IDF hardware acceleration through PSA drivers where available.
 
 Mbed TLS v4.0 migration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 ESP-IDF v6.0 updates to Mbed TLS v4.0, where **PSA Crypto is the primary cryptography interface** (TF-PSA-Crypto provides cryptography; Mbed TLS focuses on TLS and X.509). This can impact applications directly using Mbed TLS cryptography primitives, TLS configuration, or Mbed TLS internal/private declarations.
 
@@ -30,33 +30,35 @@ ESP-IDF v6.0 updates to Mbed TLS v4.0, where **PSA Crypto is the primary cryptog
 - **Breaking change**: APIs that previously required an application-provided RNG callback (``f_rng``, ``p_rng``) have changed in Mbed TLS v4.0 to use the PSA RNG instead. Update application code to the new prototypes (for example X.509 write APIs, SSL cookie setup, and SSL ticket setup).
 - **Breaking change**: TLS 1.2 / DTLS 1.2 interoperability may be affected because Mbed TLS v4.0 removes support for key exchanges based on finite-field DHE and RSA key exchange without forward secrecy (and static ECDH). If a peer requires removed suites, TLS connections may fail; update server/client cipher suite configuration accordingly.
 - **Breaking change**: certificates/peers using elliptic curves of less than 250 bits (for example secp192r1/secp224r1) are no longer supported in certificates and in TLS.
-- **Note**: avoid relying on Mbed TLS private declarations (for example headers under ``mbedtls/private/`` or declarations enabled via ``MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS`` / ``MBEDTLS_ALLOW_PRIVATE_ACCESS``). Such private interfaces may change without notice.
-- **Note**: the PSA Crypto migration (TF-PSA-Crypto) can increase flash footprint, depending on the features enabled. As reference points:
+- **Note**:
 
-  .. list-table::
-     :header-rows: 1
-     :widths: 30 15 15 15 10
+  - void relying on Mbed TLS private declarations (for example headers under ``mbedtls/private/`` or declarations enabled via ``MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS`` / ``MBEDTLS_ALLOW_PRIVATE_ACCESS``). Such private interfaces may change without notice.
+  - The PSA Crypto migration (TF-PSA-Crypto) can increase flash footprint, depending on the features enabled. As reference points:
 
-     * - Example
-       - non PSA build (bytes)
-       - PSA migration (bytes)
-       - Diff (bytes)
-       - Diff (%)
-     * - :example:`protocols/esp_http_client`
-       - 609041
-       - 646293
-       - 37252
-       - 5.76
-     * - :example:`protocols/https_server`
-       - 871021
-       - 898717
-       - 27696
-       - 3.08
-     * - :example:`protocols/http_server/simple`
-       - 785825
-       - 826909
-       - 41084
-       - 4.97
+    .. list-table::
+       :header-rows: 1
+       :widths: 30 15 15 15 10
+
+       * - Example
+         - non PSA build (bytes)
+         - PSA migration (bytes)
+         - Diff (bytes)
+         - Diff (%)
+       * - :example:`protocols/esp_http_client`
+         - 609041
+         - 646293
+         - 37252
+         - 5.76
+       * - :example:`protocols/https_server`
+         - 871021
+         - 898717
+         - 27696
+         - 3.08
+       * - :example:`protocols/http_server/simple`
+         - 785825
+         - 826909
+         - 41084
+         - 4.97
 
 References
 ^^^^^^^^^^
@@ -91,14 +93,14 @@ BluFi
 
 BluFi (Wi-Fi provisioning over BLE) is affected by the Mbed TLS v4.x / PSA Crypto migration in ESP-IDF v6.0.
 
-- **Breaking change**: The BluFi protocol version has been updated (``BTC_BluFi_SUB_VER`` bumped from ``0x03`` to ``0x04``). The BluFi security negotiation implementation used by ESP-IDF has also been updated to use PSA Crypto (see the updated ``examples/bluetooth/blufi`` example).
+- **Breaking change**: The BluFi protocol version has been updated (``BTC_BluFi_SUB_VER`` bumped from ``0x03`` to ``0x04``). The BluFi security negotiation implementation in ESP-IDF has been migrated to use PSA Crypto (see the updated ``examples/bluetooth/blufi`` example).
 
-  **Impact**: Existing BluFi client applications (for example, mobile apps) built against the older BluFi crypto/protocol implementation may no longer interoperate with devices built with ESP-IDF v6.0. This typically shows up as BluFi negotiation/connection failures when attempting to provision.
+- **Impact**: Existing BluFi client applications (for example, mobile apps) built against the previous BluFi crypto/protocol implementation may no longer interoperate with devices built with ESP-IDF v6.0. This typically shows up as BluFi negotiation or connection failures during provisioning.
 
-  **Required action**: Update both sides together:
+- **Required action**: Update both sides together:
 
   - Update the device firmware to ESP-IDF v6.0.
-  - Update the BluFi client application to a version compatible with the updated BluFi protocol/security negotiation used by ESP-IDF v6.0.
+  - Update the BluFi client application to a version compatible with the updated BluFi protocol and security negotiation used by ESP-IDF v6.0.
 
 Bootloader Support
 ------------------
