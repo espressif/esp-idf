@@ -27,8 +27,8 @@
 #include <string.h>
 
 
-/* Stack Configuation Related Init Definaton
- * TODO: Now Just Unmask these defination until stack layer is OK
+/* Stack Configuration Related Init Definition
+ * TODO: Now Just Unmask these definition until stack layer is OK
  */
 
 #ifndef BTA_INCLUDED

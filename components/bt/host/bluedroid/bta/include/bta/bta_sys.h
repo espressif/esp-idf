@@ -142,7 +142,7 @@ typedef void (tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 
 typedef void (tBTA_SYS_SSR_CFG_CBACK)(UINT8 id, UINT8 app_id, UINT16 latency, UINT16 tout);
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
-/* eir callback for adding/removeing UUID */
+/* eir callback for adding/removing UUID */
 typedef void (tBTA_SYS_EIR_CBACK)(tBT_UUID uuid, BOOLEAN adding);
 #endif
 
