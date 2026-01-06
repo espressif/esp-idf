@@ -91,9 +91,17 @@ class PanicTestDut(IdfDut):
         else:
             assert match
 
-    def expect_stack_dump(self) -> None:
+    def expect_stack_dump(self) -> Any:
+        """Expect and capture the entire stack memory dump (RISC-V only).
+
+        Returns:
+            str: The full stack dump hex data
+        """
         assert not self.is_xtensa, 'Stack memory dump is only printed on RISC-V'
         self.expect_exact('Stack memory:')
+        pattern = re.compile(rb'\r?\n\r?\n')
+        result = self.expect(pattern, return_what_before_match=True).decode('utf-8')
+        return result.strip()
 
     def expect_gme(self, reason: str) -> None:
         """Expect method for Guru Meditation Errors"""

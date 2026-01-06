@@ -355,10 +355,19 @@ void test_coredump_summary(void)
 
 void test_tcb_corrupted(void)
 {
-    uint32_t volatile *tcb_ptr = (uint32_t *)xTaskGetIdleTaskHandleForCore(0);
-    for (size_t i = 0; i < sizeof(StaticTask_t) / sizeof(uint32_t); i++) {
-        tcb_ptr[i] = 0xDEADBEE0;
-    }
+    StaticTask_t *tcb = (StaticTask_t *)xTaskGetIdleTaskHandleForCore(0);
+
+    // Corrupt critical fields that are read by xTaskGetNext() and vTaskGetSnapshot().
+    tcb->pxDummy1 = (void *)0xDEADBEE0; // pxTopOfStack
+    tcb->xDummy3[0].pvDummy3[0] = (void *)0xDEADBEE1;  // xStateListItem.pxNext
+    tcb->xDummy3[0].pvDummy3[1] = (void *)0xDEADBEE2;  // xStateListItem.pxPrevious
+    tcb->xDummy3[0].pvDummy3[2] = (void *)0xDEADBEE3;  // xStateListItem.pvOwner
+    tcb->pxDummy6 = (void *)0xDEADBEE6; // pxStack
+#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+    tcb->pxDummy8 = (void *)0xDEADBEE8; // pxEndOfStack
+#endif
+
+    // Trigger a context switch.
     vTaskDelay(2);
 }
 
