@@ -213,7 +213,8 @@ endforeach()
 list(APPEND mbedtls_targets everest p256m)
 
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
-                           "${COMPONENT_DIR}/port/esp_platform_time.c")
+                           "${COMPONENT_DIR}/port/esp_platform_time.c"
+                           "${COMPONENT_DIR}/port/esp_timing.c")
 
 list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c")
 # Add ESP-IDF NVS-based PSA ITS implementation
