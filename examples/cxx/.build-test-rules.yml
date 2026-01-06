@@ -1,0 +1,14 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/cxx/exceptions:
+  depends_components:
+    - cxx
+
+examples/cxx/pthread:
+  depends_components:
+    - cxx
+    - pthread
+
+examples/cxx/rtti:
+  depends_components:
+    - cxx

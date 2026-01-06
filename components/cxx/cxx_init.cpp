@@ -6,7 +6,6 @@
 
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "esp_private/startup_internal.h"
 
 namespace {
 const char *TAG = "C++ init";

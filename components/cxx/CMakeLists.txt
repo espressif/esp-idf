@@ -6,7 +6,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(srcs "cxx_exception_stubs.cpp")
-set(priv_requires esp_system)
+set(priv_requires)
 
 if(NOT esp_tee_build)
     list(APPEND srcs "cxx_guards.cpp" "cxx_init.cpp")
