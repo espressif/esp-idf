@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,16 +9,14 @@
 #pragma once
 
 #include <esp_intr_alloc.h>
+#include "esp_pm.h"
 #include "driver/spi_common.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
 #include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
 #include "esp_private/spi_dma.h"
-#include "esp_pm.h"
-#include "esp_private/spi_share_hw_ctrl.h"
-#if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
-#endif
+#include "esp_private/spi_share_hw_ctrl.h"
 
 #ifdef __cplusplus
 extern "C"

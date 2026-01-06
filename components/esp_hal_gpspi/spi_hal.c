@@ -27,11 +27,11 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
     spi_ll_apply_config(hw);
 }
 
-void spi_hal_config_io_default_level(spi_hal_context_t *hal, bool level)
+void spi_hal_set_data_pin_idle_level(spi_hal_context_t *hal, bool level)
 {
 #if SPI_LL_MOSI_FREE_LEVEL
     // Config default output data line level when don't have transaction
-    spi_ll_set_mosi_free_level(hal->hw, level);
+    spi_ll_set_data_pin_idle_level(hal->hw, level);
     spi_ll_apply_config(hal->hw);
 #endif
 }

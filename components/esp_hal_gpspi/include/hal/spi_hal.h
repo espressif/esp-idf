@@ -163,12 +163,12 @@ typedef struct {
 void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id);
 
 /**
- * Config default output IO level when don't have transaction
+ * Config default output data IO level when bus idle
  *
  * @param hal Context of the HAL layer.
  * @param level IO level to config
  */
-void spi_hal_config_io_default_level(spi_hal_context_t *hal, bool level);
+void spi_hal_set_data_pin_idle_level(spi_hal_context_t *hal, bool level);
 
 /**
  * Deinit the peripheral (and the context if needed).
