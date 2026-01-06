@@ -73,9 +73,11 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
         /* There is no device record, allocate one.
          * If we can not find an empty spot for this one, let it fail. */
         if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS) {
-	    p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
-	    if(p_dev_rec) {
-	        list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
+            p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
+            if(p_dev_rec) {
+                BTM_TRACE_DEBUG("%s alloc a new dev rec %p bd_addr="MACSTR"",
+                    __func__, p_dev_rec, MAC2STR(bd_addr));
+                list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
                 /* Mark this record as in use and initialize */
                 memset (p_dev_rec, 0, sizeof (tBTM_SEC_DEV_REC));
                 p_dev_rec->sec_flags = BTM_SEC_IN_USE;
@@ -360,6 +362,8 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
         if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS){
             p_dev_new_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
             if (p_dev_new_rec) {
+                BTM_TRACE_DEBUG("%s alloc a new dev rec %p bd_addr="MACSTR"",
+                    __func__, p_dev_new_rec, MAC2STR(bd_addr));
                 new_entry_found = TRUE;
                 malloc_new_entry = TRUE;
             } else {

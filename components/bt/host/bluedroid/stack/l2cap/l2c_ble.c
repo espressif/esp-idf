@@ -92,6 +92,8 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
 {
     tL2C_LCB *p_lcb;
 
+    L2CAP_TRACE_DEBUG("%s rem_bda="MACSTR"", __func__, MAC2STR(rem_bda));
+
     /* There can be only one BLE connection request outstanding at a time */
     if (btm_ble_get_conn_st() == BLE_CONN_IDLE) {
         L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - no connection pending");
@@ -99,10 +101,8 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
     }
 
     if (memcmp (rem_bda, l2cb.ble_connecting_bda, BD_ADDR_LEN)) {
-        L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - different  BDA Connecting: %08x%04x  Cancel: %08x%04x",
-                             (l2cb.ble_connecting_bda[0] << 24) + (l2cb.ble_connecting_bda[1] << 16) + (l2cb.ble_connecting_bda[2] << 8) + l2cb.ble_connecting_bda[3],
-                             (l2cb.ble_connecting_bda[4] << 8) + l2cb.ble_connecting_bda[5],
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3], (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - different BDA Connecting: "MACSTR" Cancel: "MACSTR"",
+                             MAC2STR(l2cb.ble_connecting_bda), MAC2STR(rem_bda));
 
         return (FALSE);
     }
@@ -148,16 +148,12 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
 
     /* If we don't have one, create one and accept the connection. */
     if (!p_lcb || !p_acl_cb) {
-        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - unknown BD_ADDR %08x%04x",
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - unknown BD_ADDR "MACSTR"", MAC2STR(rem_bda));
         return (FALSE);
     }
 
     if (p_lcb->transport != BT_TRANSPORT_LE) {
-        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - BD_ADDR %08x%04x not LE",
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - BD_ADDR "MACSTR" not LE", MAC2STR(rem_bda));
         return (FALSE);
     }
 
@@ -172,7 +168,7 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
     if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL){
         status = HCI_ERR_ILLEGAL_COMMAND;
         need_cb = true;
-        L2CAP_TRACE_ERROR("There are two connection parameter requests that are being updated, please try later ");
+        L2CAP_TRACE_ERROR("%s connection parameter update in progress, please try later", __func__);
     }
 
     if ((need_cb == TRUE) && (conn_callback_func.update_conn_param_cb != NULL)) {
@@ -221,20 +217,16 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
     p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_LE);
 
     if (!p_lcb) {
-        L2CAP_TRACE_WARNING ("L2CA_EnableUpdateBleConnParams - unknown BD_ADDR %08x%04x",
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_EnableUpdateBleConnParams - unknown BD_ADDR "MACSTR"", MAC2STR(rem_bda));
         return (FALSE);
     }
 
-    L2CAP_TRACE_API ("%s - BD_ADDR %08x%04x enable %d current upd state 0x%02x", __FUNCTION__,
-                     (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                     (rem_bda[4] << 8) + rem_bda[5], enable, p_lcb->conn_update_mask);
+    L2CAP_TRACE_API ("%s - BD_ADDR "MACSTR" enable %d current upd state 0x%02x",
+        __func__, MAC2STR(rem_bda), enable, p_lcb->conn_update_mask);
 
     if (p_lcb->transport != BT_TRANSPORT_LE) {
-        L2CAP_TRACE_WARNING ("%s - BD_ADDR %08x%04x not LE (link role %d)", __FUNCTION__,
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5], p_lcb->link_role);
+        L2CAP_TRACE_WARNING ("%s - BD_ADDR "MACSTR" not LE (link role %d)",
+            __func__, MAC2STR(rem_bda), p_lcb->link_role);
         return (FALSE);
     }
 

@@ -1907,6 +1907,8 @@ BOOLEAN L2CA_RemoveFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda)
     tL2C_CCB    *p_ccb;
     tBT_TRANSPORT   transport = BT_TRANSPORT_BR_EDR;
 
+    L2CAP_TRACE_DEBUG("%s cid=%04x bda="MACSTR"", __func__, fixed_cid, MAC2STR(rem_bda));
+
     /* Check CID is valid and registered */
     if ( (fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL)
             ||  (l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb == NULL) ) {

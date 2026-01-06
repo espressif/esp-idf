@@ -39,8 +39,10 @@
 #endif
 
 
+#if (APPL_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG)
 #ifndef     BTA_GATT_DEBUG
 #define     BTA_GATT_DEBUG       FALSE
+#endif
 #endif
 
 typedef enum {

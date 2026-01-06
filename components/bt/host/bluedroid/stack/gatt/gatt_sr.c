@@ -405,7 +405,7 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
     tGATT_STATUS    ret_code = GATT_SUCCESS;
     UNUSED(trans_id);
 
-    GATT_TRACE_DEBUG("gatt_sr_process_app_rsp gatt_if=%d\n", gatt_if);
+    GATT_TRACE_DEBUG("gatt_sr_process_app_rsp gatt_if=%d opcode=%x\n", gatt_if, op_code);
 
     gatt_sr_update_cback_cnt(p_tcb, gatt_if, FALSE, FALSE);
 
@@ -1827,6 +1827,7 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
 {
     /* there is pending command, discard this one */
     if (!gatt_sr_cmd_empty(p_tcb) && op_code != GATT_HANDLE_VALUE_CONF) {
+        GATT_TRACE_WARNING("%s discard command opcode=%02x", __func__, op_code);
         return;
     }
 
@@ -1891,6 +1892,7 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
             break;
 
         default:
+            GATT_TRACE_ERROR("%s unknown command opcode=%02x", __func__, op_code);
             break;
         }
     }

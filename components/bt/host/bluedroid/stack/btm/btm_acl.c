@@ -786,7 +786,7 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     tBTM_SEC_DEV_REC  *p_dev_rec;
     tBTM_BL_ROLE_CHG_DATA   evt;
 
-    BTM_TRACE_DEBUG ("btm_acl_encrypt_change handle=%d status=%d encr_enabl=%d\n",
+    BTM_TRACE_DEBUG ("btm_acl_encrypt_change handle=%d status=%d encr_enable=%d\n",
                      handle, status, encr_enable);
     p = btm_handle_to_acl(handle);
     if (p == NULL) {
