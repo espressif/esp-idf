@@ -518,11 +518,7 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
-char btm_ble_map_adv_tx_power(int tx_power_index);
-void btm_ble_batchscan_init(void);
-void btm_ble_batchscan_cleanup(void);
-void btm_ble_adv_filter_init(void);
-void btm_ble_adv_filter_cleanup(void);
+char btm_ble_map_adv_tx_power(int tx_power_index);;
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 BOOLEAN btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
