@@ -80,19 +80,6 @@ enum {
 
 typedef uint8_t tBTM_STATUS;
 
-#if (defined(BTA_HOST_INTERLEAVE_SEARCH) && BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-typedef enum {
-    BTM_BR_ONE,                         /*0 First state or BR/EDR scan 1*/
-    BTM_BLE_ONE,                        /*1BLE scan 1*/
-    BTM_BR_TWO,                         /*2 BR/EDR scan 2*/
-    BTM_BLE_TWO,                        /*3 BLE scan 2*/
-    BTM_FINISH,                         /*4 End of Interleave Scan, or normal scan*/
-    BTM_NO_INTERLEAVING                 /*5 No Interleaving*/
-} btm_inq_state;
-#endif
-
-
-
 /*************************
 **  Device Control Types
 **************************/
@@ -647,9 +634,6 @@ typedef struct {            /* contains the parameters passed to the inquiry fun
     BOOLEAN report_dup;                 /* report duplicated inquiry response with higher RSSI value */
     UINT8   filter_cond_type;           /* new devices, BD ADDR, COD, or No filtering */
     tBTM_INQ_FILT_COND  filter_cond;    /* filter value based on filter cond type */
-#if (defined(BTA_HOST_INTERLEAVE_SEARCH) && BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-    UINT8   intl_duration[4];              /*duration array storing the interleave scan's time portions*/
-#endif
 } tBTM_INQ_PARMS;
 
 #define BTM_INQ_RESULT_BR       0x01
