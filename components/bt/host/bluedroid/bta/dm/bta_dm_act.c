@@ -6448,35 +6448,6 @@ void bta_dm_ble_disable_batch_scan (tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_read_scan_reports
-**
-** Description      This function reads the batch scan reports
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-    if (0 != cmn_ble_vsc_cb.tot_scan_results_strg) {
-        btm_status = BTM_BleReadScanReports(p_data->ble_read_reports.scan_type,
-                                            p_data->ble_read_reports.ref_value);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_READ_REPTS_EVT, p_data->ble_enable_scan.ref_value,
-                              btm_status);
-    }
-}
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_ble_scan_setup_cb

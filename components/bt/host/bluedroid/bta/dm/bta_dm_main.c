@@ -196,9 +196,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_enable_batch_scan,           /* BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT */
     bta_dm_ble_disable_batch_scan,          /* BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT */
 #endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-    bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
