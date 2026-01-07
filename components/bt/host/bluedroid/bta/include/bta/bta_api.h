@@ -2865,9 +2865,6 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
                              tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
 
-#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-extern void BTA_DmBleStopAdvertising(void);
-#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
 extern void BTA_DmClearRandAddress(void);
