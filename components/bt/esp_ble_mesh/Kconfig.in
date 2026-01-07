@@ -1870,6 +1870,53 @@ if BLE_MESH
 
             endif #BLE_MESH_DFU_SLOTS
 
+            config BLE_MESH_DFD_CLI
+                bool "Support for Device Distribution Client model"
+                help
+                    Enable the Device Distribution Client model
+
+            config BLE_MESH_DFD_SRV
+                bool "Support for Firmware Distribution Server model"
+                depends on BLE_MESH_BLOB_SRV
+                depends on BLE_MESH_DFU_CLI
+                help
+                    Enable the Firmware Distribution Server model.
+
+            if BLE_MESH_DFD_SRV
+
+                config BLE_MESH_DFD_SRV_SLOT_MAX_SIZE
+                    int "Largest DFU image that can be stored"
+                    default BLE_MESH_BLOB_SIZE_MAX
+                    range 0 BLE_MESH_BLOB_SIZE_MAX
+                    help
+                        This value defines the largest DFU image a single slot can store.
+
+                config BLE_MESH_DFD_SRV_SLOT_SPACE
+                    int "Total DFU image storage space"
+                    default BLE_MESH_DFD_SRV_SLOT_MAX_SIZE
+                    range 0 4294967295
+                    help
+                        This value defines the total storage space dedicated to storing DFU
+                        images on the Firmware Distribution Server.
+
+                config BLE_MESH_DFD_SRV_TARGETS_MAX
+                    int "Maximum Target node count"
+                    default 8
+                    range 1 65535
+                    help
+                        This value defines the maximum number of Target nodes the Firmware
+                        Distribution Server can target simultaneously.
+
+                config BLE_MESH_DFD_SRV_OOB_UPLOAD
+                    bool "Support for DFU image OOB upload"
+                    help
+                        This enables support for OOB upload of firmware images for
+                        distribution. This makes several callbacks and use of the init
+                        macro BLE_MESH_DFD_SRV_INIT_OOB mandatory. See the API documentation
+                        for bt_mesh_dfd_srv_cb for details about the mandatory callbacks.
+
+            endif #BLE_MESH_DFD_SRV
+
         endmenu # Device Firmware Update model
 
     endmenu #Support for BLE Mesh Client/Server models

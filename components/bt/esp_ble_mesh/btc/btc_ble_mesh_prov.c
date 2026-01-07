@@ -1427,6 +1427,14 @@ extern const struct bt_mesh_model_cb _bt_mesh_dfu_srv_cb;
 extern const struct bt_mesh_model_op _bt_mesh_dfu_cli_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_dfu_cli_cb;
 #endif /* CONFIG_BLE_MESH_DFU_CLI */
+#if CONFIG_BLE_MESH_DFD_SRV
+extern const struct bt_mesh_model_op _bt_mesh_dfd_srv_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_dfd_srv_cb;
+#endif /* CONFIG_BLE_MESH_DFD_SRV */
+#if CONFIG_BLE_MESH_DFD_CLI
+extern const struct bt_mesh_model_op _bt_mesh_dfd_cli_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_dfd_cli_cb;
+#endif /* CONFIG_BLE_MESH_DFD_CLI */
 
 static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
 {
@@ -2274,6 +2282,24 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
         }
         break;
 #endif /* CONFIG_BLE_MESH_DFU_SRV */
+#if CONFIG_BLE_MESH_DFD_SRV
+    case BLE_MESH_MODEL_ID_DFD_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)_bt_mesh_dfd_srv_op;
+        model->cb = (esp_ble_mesh_model_cbs_t *)&_bt_mesh_dfd_srv_cb;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+#endif /* CONFIG_BLE_MESH_DFD_SRV */
+#if CONFIG_BLE_MESH_DFD_CLI
+    case BLE_MESH_MODEL_ID_DFD_CLI:
+        model->op = (esp_ble_mesh_model_op_t *)_bt_mesh_dfd_cli_op;
+        model->cb = (esp_ble_mesh_model_cbs_t *)&_bt_mesh_dfd_cli_cb;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+#endif /* CONFIG_BLE_MESH_DFD_SRV */
     default:
         goto set_vnd_op;
     }
