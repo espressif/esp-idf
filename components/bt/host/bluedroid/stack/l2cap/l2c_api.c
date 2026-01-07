@@ -863,7 +863,7 @@ UINT8 L2CA_SetTraceLevel (UINT8 new_level)
     return (l2cb.l2cap_trace_level);
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     L2CA_SetDesireRole
@@ -901,6 +901,7 @@ UINT8 L2CA_SetDesireRole (UINT8 new_role)
 
     return (l2cb.desire_role);
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
