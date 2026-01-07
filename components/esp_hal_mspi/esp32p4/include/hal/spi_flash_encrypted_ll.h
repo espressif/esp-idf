@@ -20,6 +20,8 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
+#include "hal/config.h"
+#include "hal/spi_flash_encrypt_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,6 +146,43 @@ static inline void spi_flash_encrypt_ll_destroy(void)
 static inline bool spi_flash_encrypt_ll_check(uint32_t address, uint32_t length)
 {
     return ((address % length) == 0) ? true : false;
+}
+
+/**
+ * @brief Enable the pseudo-round function during XTS-AES operations
+ *
+ * @param mode set the mode for pseudo rounds, zero to disable, with increasing security upto three.
+ * @param base basic number of pseudo rounds, zero if disable
+ * @param increment increment number of pseudo rounds, zero if disable
+ * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
+ */
+static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(esp_xts_aes_psuedo_rounds_state_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_MODE_PSEUDO, mode);
+
+    if (mode != ESP_XTS_AES_PSEUDO_ROUNDS_DISABLE) {
+        REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_PSEUDO_BASE, base);
+        REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_PSEUDO_INC, increment);
+        REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_PSEUDO_RNG_CNT, key_rng_cnt);
+    } else {
+        REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_PSEUDO_BASE, 0);
+        REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_PSEUDO_INC, 0);
+        REG_SET_FIELD(SPI_MEM_C_XTS_PSEUDO_ROUND_CONF_REG, SPI_MEM_C_PSEUDO_RNG_CNT, 0);
+    }
+#endif
+}
+
+/**
+ * @brief Check if the pseudo round function is supported
+ */
+static inline bool spi_flash_encrypt_ll_is_pseudo_rounds_function_supported(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    return true;
+#else
+    return false;
+#endif
 }
 
 #ifdef __cplusplus

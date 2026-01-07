@@ -1667,6 +1667,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+    bool
+    default y
+
 config SOC_UART_NUM
     int
     default 6
