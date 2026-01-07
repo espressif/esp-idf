@@ -1015,6 +1015,7 @@ BOOLEAN BTM_BleSetBgConnType(tBTM_BLE_CONN_TYPE   bg_conn_type,
     return started;
 }
 
+#if (GATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleClearBgConnDev
@@ -1032,10 +1033,9 @@ void BTM_BleClearBgConnDev(void)
 {
     btm_ble_start_auto_conn(FALSE);
     btm_ble_clear_white_list(NULL);
-#if (tGATT_BG_CONN_DEV == TRUE)
     gatt_reset_bgdev_list();
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
 }
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 /*******************************************************************************
 **
@@ -3955,9 +3955,9 @@ BOOLEAN btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 st
        now in order */
     if (btm_ble_get_conn_st() == BLE_CONN_IDLE && status != HCI_ERR_HOST_REJECT_RESOURCES &&
             !btm_send_pending_direct_conn()) {
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
         bg_con = btm_ble_resume_bg_conn();
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
     }
 
     return bg_con;
