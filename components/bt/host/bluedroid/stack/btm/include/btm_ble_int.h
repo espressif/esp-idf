@@ -381,8 +381,10 @@ typedef struct {
 
     tBTM_BLE_WL_OP wl_op_q[BTM_BLE_MAX_BG_CONN_DEV_NUM];
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     /* current BLE link state */
     tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     UINT8 link_count[2]; /* total link count master and slave*/
     tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *update_exceptional_list_cmp_cb;
     tBTM_SET_CSA_SUPPORT_CMPL_CBACK *set_csa_support_cmpl_cb;
@@ -516,11 +518,13 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
-char btm_ble_map_adv_tx_power(int tx_power_index);;
+char btm_ble_map_adv_tx_power(int tx_power_index);
+#if (BLE_TOPOLOGY_CHECK == TRUE)
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 BOOLEAN btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
 tBTM_BLE_STATE_MASK btm_ble_get_topology_mask(void);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
 #if BTM_BLE_CONFORMANCE_TESTING == TRUE
 void btm_ble_set_no_disc_if_pair_fail (BOOLEAN disble_disc);

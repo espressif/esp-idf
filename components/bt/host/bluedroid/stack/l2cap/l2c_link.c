@@ -392,10 +392,12 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
         p_lcb->link_state = LST_DISCONNECTING;
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         /* Check for BLE and handle that differently */
         if (p_lcb->transport == BT_TRANSPORT_LE) {
             btm_ble_update_link_topology_mask(p_lcb->link_role, FALSE);
         }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Link is disconnected. For all channels, send the event through */
