@@ -464,7 +464,15 @@ void btm_ble_add_2_white_list_complete(UINT8 status)
     BTM_TRACE_EVENT("%s status=%d", __func__, status);
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     if (status == HCI_SUCCESS) {
-        --btm_cb.ble_ctr_cb.white_list_avail_size;
+        // --btm_cb.ble_ctr_cb.white_list_avail_size;
+        /*
+        According to the latest Bluetooth spec:
+        If the device is already in the Filter Accept List, the Controller should not add the device
+        to the Filter Accept List again and should return success.
+        The host cannot obtain the controller as the actual remaining white list size unless the host
+        also maintains a white list
+        Keep consistent behavior with the NimBLE host stack
+        */
     }
     // add whitelist complete callback
     if (p_cb->update_wl_cb)
@@ -487,7 +495,7 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len)
     UNUSED(evt_len);
     BTM_TRACE_EVENT ("%s status=%d", __func__, *p);
     if (*p == HCI_SUCCESS) {
-        ++btm_cb.ble_ctr_cb.white_list_avail_size;
+        // ++btm_cb.ble_ctr_cb.white_list_avail_size;
     }
     if (p_cb->update_wl_cb)
     {
