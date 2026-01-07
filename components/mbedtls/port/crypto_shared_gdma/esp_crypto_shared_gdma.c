@@ -34,25 +34,27 @@
 
 static const char *TAG = "crypto_shared_gdma";
 
-static gdma_channel_handle_t rx_channel;
-static gdma_channel_handle_t tx_channel;
+static gdma_channel_handle_t s_rx_channel;
+static gdma_channel_handle_t s_tx_channel;
 
 /* Allocate a new GDMA channel, will keep trying until NEW_CHANNEL_TIMEOUT_MS */
-static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config_t *channel_config, gdma_channel_handle_t *channel)
+static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config_t *channel_config,
+                                                        gdma_channel_handle_t *tx_channel, gdma_channel_handle_t *rx_channel)
 {
     esp_err_t ret = ESP_FAIL;
     int time_waited_ms = 0;
 
     while (1) {
 #if SOC_AXI_GDMA_SUPPORTED
-        ret = gdma_new_axi_channel(channel_config, channel);
+        ret = gdma_new_axi_channel(channel_config, tx_channel, rx_channel);
 #else /* !SOC_AXI_GDMA_SUPPORTED */
-        ret = gdma_new_ahb_channel(channel_config, channel);
+        ret = gdma_new_ahb_channel(channel_config, tx_channel, rx_channel);
 #endif /* SOC_AXI_GDMA_SUPPORTED */
         if (ret == ESP_OK) {
             break;
         } else if (time_waited_ms >= NEW_CHANNEL_TIMEOUT_MS) {
-            *channel = NULL;
+            if (tx_channel && *tx_channel) *tx_channel = NULL;
+            if (rx_channel && *rx_channel) *rx_channel = NULL;
             break;
         }
 
@@ -67,22 +69,17 @@ static esp_err_t crypto_shared_gdma_init(void)
 {
     esp_err_t ret;
 
-    gdma_channel_alloc_config_t channel_config_tx = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
+    gdma_channel_alloc_config_t channel_config = {0};
 
-    gdma_channel_alloc_config_t channel_config_rx = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-    };
-
-    ret = crypto_shared_gdma_new_channel(&channel_config_tx, &tx_channel);
+    // Allocate TX and RX channels separately (they don't need to be in the same pair)
+    ret = crypto_shared_gdma_new_channel(&channel_config, &s_tx_channel, NULL);
     if (ret != ESP_OK) {
         goto err;
     }
 
-    ret = crypto_shared_gdma_new_channel(&channel_config_rx, &rx_channel);
+    ret = crypto_shared_gdma_new_channel(&channel_config, NULL, &s_rx_channel);
     if (ret != ESP_OK) {
-        gdma_del_channel(tx_channel); // Clean up already allocated TX channel
+        gdma_del_channel(s_tx_channel); // Clean up already allocated TX channel
         goto err;
     }
 
@@ -90,7 +87,7 @@ static esp_err_t crypto_shared_gdma_init(void)
         .max_data_burst_size = 16,
         .access_ext_mem = true, // crypto peripheral may want to access PSRAM
     };
-    gdma_config_transfer(tx_channel, &transfer_cfg);
+    gdma_config_transfer(s_tx_channel, &transfer_cfg);
 
     /* When using AHB-GDMA version 1, the max data burst size must be 0, otherwise buffers need to be aligned as well.
      * Whereas, in case of the other GDMA versions, the RX max burst size is default enabled, but with default burst size of 4,
@@ -101,21 +98,21 @@ static esp_err_t crypto_shared_gdma_init(void)
     transfer_cfg.max_data_burst_size = 0;
 #endif
 
-    gdma_config_transfer(rx_channel, &transfer_cfg);
+    gdma_config_transfer(s_rx_channel, &transfer_cfg);
 
 #ifdef SOC_AES_SUPPORTED
-    gdma_connect(rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
-    gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
+    gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
+    gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
 #elif SOC_SHA_SUPPORTED
-    gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
+    gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
 #endif
 
     return ESP_OK;
 
 err:
     ESP_LOGE(TAG, "Failed to acquire DMA channel, Err=%d", ret);
-    tx_channel = NULL;
-    rx_channel = NULL;
+    s_tx_channel = NULL;
+    s_rx_channel = NULL;
 
     return ret;
 }
@@ -141,7 +138,7 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
 {
     int rx_ch_id = 0;
 
-    if (tx_channel == NULL) {
+    if (s_tx_channel == NULL) {
         /* Allocate a pair of RX and TX for crypto, should only happen the first time we use the GMDA
            or if user called esp_crypto_shared_gdma_release */
         esp_err_t ret = crypto_shared_gdma_init();
@@ -151,16 +148,16 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     }
 
     /* Tx channel is shared between AES and SHA, need to connect to peripheral every time */
-    gdma_disconnect(tx_channel);
+    gdma_disconnect(s_tx_channel);
 
 #ifdef SOC_SHA_SUPPORTED
     if (peripheral == GDMA_TRIG_PERIPH_SHA) {
-        gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
+        gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
     } else
 #endif // SOC_SHA_SUPPORTED
 #ifdef SOC_AES_SUPPORTED
     if (peripheral == GDMA_TRIG_PERIPH_AES) {
-        gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
+        gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
     } else
 #endif // SOC_AES_SUPPORTED
     {
@@ -168,7 +165,7 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     }
 
     /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
-    gdma_get_channel_id(rx_channel, &rx_ch_id);
+    gdma_get_channel_id(s_rx_channel, &rx_ch_id);
 
     // IDF-14335: Use gdma_reset() instead
 #if SOC_AXI_GDMA_SUPPORTED
@@ -184,7 +181,7 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
 #if (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED)
     if (efuse_hal_flash_encryption_enabled()) {
         int tx_ch_id = 0;
-        gdma_get_channel_id(tx_channel, &tx_ch_id);
+        gdma_get_channel_id(s_tx_channel, &tx_ch_id);
 
         if (check_dma_descs_need_ext_mem_ecc_aes_access(input) || check_dma_descs_need_ext_mem_ecc_aes_access(output)) {
             axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(&AXI_DMA, rx_ch_id, true);
@@ -196,8 +193,8 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     }
 #endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
-    gdma_start(tx_channel, (intptr_t)input);
-    gdma_start(rx_channel, (intptr_t)output);
+    gdma_start(s_tx_channel, (intptr_t)input);
+    gdma_start(s_rx_channel, (intptr_t)output);
 
     return ESP_OK;
 }
@@ -206,7 +203,7 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
 bool esp_crypto_shared_gdma_done(void)
 {
     int rx_ch_id = 0;
-    gdma_get_channel_id(rx_channel, &rx_ch_id);
+    gdma_get_channel_id(s_rx_channel, &rx_ch_id);
     while (1) {
         if ((axi_dma_ll_rx_get_interrupt_status(&AXI_DMA, rx_ch_id, true) & 1)) {
             break;
@@ -220,16 +217,16 @@ void esp_crypto_shared_gdma_free()
 {
     esp_crypto_sha_aes_lock_acquire();
 
-    if (rx_channel != NULL) {
-        gdma_disconnect(rx_channel);
-        gdma_del_channel(rx_channel);
-        rx_channel = NULL;
+    if (s_rx_channel != NULL) {
+        gdma_disconnect(s_rx_channel);
+        gdma_del_channel(s_rx_channel);
+        s_rx_channel = NULL;
     }
 
-    if (tx_channel != NULL) {
-        gdma_disconnect(tx_channel);
-        gdma_del_channel(tx_channel);
-        tx_channel = NULL;
+    if (s_tx_channel != NULL) {
+        gdma_disconnect(s_tx_channel);
+        gdma_del_channel(s_tx_channel);
+        s_tx_channel = NULL;
     }
 
     esp_crypto_sha_aes_lock_release();

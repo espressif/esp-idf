@@ -33,14 +33,13 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     gdma_channel_alloc_config_t channel_config = {};
     gdma_channel_handle_t tx_channels[GDMA_LL_GET(PAIRS_PER_INST)] = {};
     gdma_channel_handle_t rx_channels[GDMA_LL_GET(PAIRS_PER_INST)] = {};
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
 
 #if SOC_HAS(AHB_GDMA)
     // install TX channels
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
-        TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[i]));
+        TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[i], NULL));
     };
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_ahb_channel(&channel_config, &tx_channels[0]));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_ahb_channel(&channel_config, &tx_channels[0], NULL));
 
     // Free interrupts before installing RX interrupts to ensure enough free interrupts
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
@@ -48,11 +47,10 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     }
 
     // install RX channels
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_RX;
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
-        TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &rx_channels[i]));
+        TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, NULL, &rx_channels[i]));
     }
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_ahb_channel(&channel_config, &rx_channels[0]));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_ahb_channel(&channel_config, NULL, &rx_channels[0]));
 
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
@@ -62,20 +60,12 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     // install single and paired TX/RX channels
 #if GDMA_LL_AHB_PAIRS_PER_GROUP >= 2
     // single tx channel
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
-    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[0]));
+    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[0], NULL));
 
-    // create tx channel and reserve sibling
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
-    channel_config.flags.reserve_sibling = 1;
-    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[1]));
-    // create rx channel and specify sibling channel
-    channel_config.flags.reserve_sibling = 0;
-    channel_config.sibling_chan = tx_channels[1]; // specify sibling channel
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_RX;
-    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &rx_channels[1]));
-    channel_config.sibling_chan = NULL;
-    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &rx_channels[0]));
+    // create tx and rx channel pair
+    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[1], &rx_channels[1]));
+    // create single rx channel
+    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, NULL, &rx_channels[0]));
 
     gdma_trigger_t fake_ahb_trigger1 = {
         .periph = 1,
@@ -105,11 +95,10 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
 
 #if SOC_HAS(AXI_GDMA)
     // install TX channels
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
-        TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_channels[i]));
+        TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_channels[i], NULL));
     };
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_axi_channel(&channel_config, &tx_channels[0]));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_axi_channel(&channel_config, &tx_channels[0], NULL));
 
     // Free interrupts before installing RX interrupts to ensure enough free interrupts
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
@@ -117,11 +106,10 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     }
 
     // install RX channels
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_RX;
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
-        TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &rx_channels[i]));
+        TEST_ESP_OK(gdma_new_axi_channel(&channel_config, NULL, &rx_channels[i]));
     }
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_axi_channel(&channel_config, &rx_channels[0]));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_axi_channel(&channel_config, NULL, &rx_channels[0]));
 
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
@@ -131,20 +119,12 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     // install single and paired TX/RX channels
 #if GDMA_LL_AXI_PAIRS_PER_GROUP >= 2
     // single tx channel
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
-    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_channels[0]));
+    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_channels[0], NULL));
 
-    // create tx channel and reserve sibling
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
-    channel_config.flags.reserve_sibling = 1;
-    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_channels[1]));
-    // create rx channel and specify sibling channel
-    channel_config.flags.reserve_sibling = 0;
-    channel_config.sibling_chan = tx_channels[1]; // specify sibling channel
-    channel_config.direction = GDMA_CHANNEL_DIRECTION_RX;
-    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &rx_channels[1]));
-    channel_config.sibling_chan = NULL;
-    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &rx_channels[0]));
+    // create tx and rx channel pair
+    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_channels[1], &rx_channels[1]));
+    // create single rx channel
+    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, NULL, &rx_channels[0]));
 
     gdma_trigger_t fake_axi_trigger1 = {
         .periph = 1,
@@ -363,20 +343,10 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 {
     gdma_channel_handle_t tx_chan = NULL;
     gdma_channel_handle_t rx_chan = NULL;
-    gdma_channel_alloc_config_t tx_chan_alloc_config = {};
-    gdma_channel_alloc_config_t rx_chan_alloc_config = {};
+    gdma_channel_alloc_config_t chan_alloc_config = {};
 
 #if SOC_HAS(AHB_GDMA)
-    tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-        .flags.reserve_sibling = true,
-    };
-    TEST_ESP_OK(gdma_new_ahb_channel(&tx_chan_alloc_config, &tx_chan));
-    rx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = tx_chan,
-    };
-    TEST_ESP_OK(gdma_new_ahb_channel(&rx_chan_alloc_config, &rx_chan));
+    TEST_ESP_OK(gdma_new_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
     test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
 
@@ -385,16 +355,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 #endif // SOC_HAS(AHB_GDMA)
 
 #if SOC_HAS(AXI_GDMA)
-    tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-        .flags.reserve_sibling = true,
-    };
-    TEST_ESP_OK(gdma_new_axi_channel(&tx_chan_alloc_config, &tx_chan));
-    rx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = tx_chan,
-    };
-    TEST_ESP_OK(gdma_new_axi_channel(&rx_chan_alloc_config, &rx_chan));
+    TEST_ESP_OK(gdma_new_axi_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
     // the AXI GDMA allows to put the DMA link list in the external memory
     test_gdma_m2m_transaction(tx_chan, rx_chan, true, trig_retention_backup);
@@ -435,18 +396,8 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     memset(dst_data, 0, data_length + offset_len);
     gdma_channel_handle_t tx_chan = NULL;
     gdma_channel_handle_t rx_chan = NULL;
-    gdma_channel_alloc_config_t tx_chan_alloc_config = {};
-    gdma_channel_alloc_config_t rx_chan_alloc_config = {};
-    tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-        .flags.reserve_sibling = true,
-    };
-    TEST_ESP_OK(gdma_new_ahb_channel(&tx_chan_alloc_config, &tx_chan));
-    rx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = tx_chan,
-    };
-    TEST_ESP_OK(gdma_new_ahb_channel(&rx_chan_alloc_config, &rx_chan));
+    gdma_channel_alloc_config_t chan_alloc_config = {};
+    TEST_ESP_OK(gdma_new_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
     size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
 
     gdma_link_list_handle_t tx_link_list = NULL;
@@ -701,22 +652,12 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
 {
     [[maybe_unused]] gdma_channel_handle_t tx_chan = NULL;
     [[maybe_unused]] gdma_channel_handle_t rx_chan = NULL;
-    [[maybe_unused]] gdma_channel_alloc_config_t tx_chan_alloc_config = {};
-    [[maybe_unused]] gdma_channel_alloc_config_t rx_chan_alloc_config = {};
+    [[maybe_unused]] gdma_channel_alloc_config_t chan_alloc_config = {};
 
 #if SOC_HAS(AHB_GDMA)
 #if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
     printf("Testing AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
-    tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-        .flags.reserve_sibling = true,
-    };
-    TEST_ESP_OK(gdma_new_ahb_channel(&tx_chan_alloc_config, &tx_chan));
-    rx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = tx_chan,
-    };
-    TEST_ESP_OK(gdma_new_ahb_channel(&rx_chan_alloc_config, &rx_chan));
+    TEST_ESP_OK(gdma_new_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
     test_gdma_memcpy_from_to_psram(tx_chan, rx_chan);
 
@@ -728,16 +669,7 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
 #if SOC_HAS(AXI_GDMA)
 #if GDMA_LL_GET(AXI_PSRAM_CAPABLE)
     printf("Testing AXI-GDMA memory copy SRAM->PSRAM->SRAM\n");
-    tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-        .flags.reserve_sibling = true,
-    };
-    TEST_ESP_OK(gdma_new_axi_channel(&tx_chan_alloc_config, &tx_chan));
-    rx_chan_alloc_config = (gdma_channel_alloc_config_t) {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = tx_chan,
-    };
-    TEST_ESP_OK(gdma_new_axi_channel(&rx_chan_alloc_config, &rx_chan));
+    TEST_ESP_OK(gdma_new_axi_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
     test_gdma_memcpy_from_to_psram(tx_chan, rx_chan);
 

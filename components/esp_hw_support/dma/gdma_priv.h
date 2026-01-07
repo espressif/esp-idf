@@ -60,7 +60,6 @@ typedef struct gdma_group_t {
     uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
     uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
     gdma_pair_t *pairs[GDMA_LL_GET(PAIRS_PER_INST)];  // handles of GDMA pairs
-    int pair_ref_counts[GDMA_LL_GET(PAIRS_PER_INST)]; // reference count used to protect pair install/uninstall
 } gdma_group_t;
 
 struct gdma_pair_t {

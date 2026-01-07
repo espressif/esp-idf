@@ -64,6 +64,14 @@
 #define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1 // AHB GDMA supports adjustable burst size
 #endif
 
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define GDMA_LL_AHB_M2M_CAPABLE_PAIR_MASK   0x06  // only pair 1,2 are M2M capable
+#else
+#define GDMA_LL_AHB_M2M_CAPABLE_PAIR_MASK   0x07  // pair 0,1,2 are M2M capable
+#endif
+
+#define GDMA_LL_AXI_M2M_CAPABLE_PAIR_MASK   0x07  // pair 0,1,2 are M2M capable
+
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                \
     (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                \
         {                                                             \

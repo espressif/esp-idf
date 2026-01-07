@@ -127,18 +127,17 @@ TEST_CASE("GDMA CRC Calculation", "[GDMA][CRC]")
 {
     gdma_channel_handle_t tx_chan = NULL;
     gdma_channel_alloc_config_t tx_chan_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
 #if SOC_HAS(AHB_GDMA)
     printf("Test CRC calculation for AHB GDMA\r\n");
-    TEST_ESP_OK(gdma_new_ahb_channel(&tx_chan_alloc_config, &tx_chan));
+    TEST_ESP_OK(gdma_new_ahb_channel(&tx_chan_alloc_config, &tx_chan, NULL));
     test_gdma_crc_calculation(tx_chan, 4);
     TEST_ESP_OK(gdma_del_channel(tx_chan));
 #endif // SOC_HAS(AHB_GDMA)
 
 #if SOC_HAS(AXI_GDMA)
     printf("Test CRC calculation for AXI GDMA\r\n");
-    TEST_ESP_OK(gdma_new_axi_channel(&tx_chan_alloc_config, &tx_chan));
+    TEST_ESP_OK(gdma_new_axi_channel(&tx_chan_alloc_config, &tx_chan, NULL));
     test_gdma_crc_calculation(tx_chan, 3);
     TEST_ESP_OK(gdma_del_channel(tx_chan));
 #endif // SOC_HAS(AXI_GDMA)
