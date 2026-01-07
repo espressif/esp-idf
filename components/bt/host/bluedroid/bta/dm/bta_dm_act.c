@@ -125,10 +125,6 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data);
 extern tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 #endif
 
-#if BLE_VND_INCLUDED == TRUE
-static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
-#endif
-
 #ifndef BTA_DM_BLE_ADV_CHNL_MAP
 #define BTA_DM_BLE_ADV_CHNL_MAP (BTM_BLE_ADV_CHNL_37|BTM_BLE_ADV_CHNL_38|BTM_BLE_ADV_CHNL_39)
 #endif
@@ -526,10 +522,6 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 #endif
         BTM_RegBusyLevelNotif (bta_dm_bl_change_cback, NULL, BTM_BL_UPDATE_MASK | BTM_BL_ROLE_CHG_MASK);
         BTM_RegAclLinkStatNotif (bta_dm_acl_link_stat_cback);
-
-#if BLE_VND_INCLUDED == TRUE
-        BTM_BleReadControllerFeatures (bta_dm_ctrl_features_rd_cmpl_cback);
-#endif
 
         /* Earlier, we used to invoke BTM_ReadLocalAddr which was just copying the bd_addr
            from the control block and invoking the callback which was sending the DM_ENABLE_EVT.
@@ -6709,29 +6701,5 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 }
 #endif /* #if (GATTC_INCLUDED == TRUE) */
 #endif /* BTA_GATT_INCLUDED */
-
-#if BLE_VND_INCLUDED == TRUE
-/*******************************************************************************
-**
-** Function         bta_dm_ctrl_features_rd_cmpl_cback
-**
-** Description      callback to handle controller feature read complete
-**
-** Parameters:
-**
-*******************************************************************************/
-static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result)
-{
-    APPL_TRACE_DEBUG("%s  status = %d ", __FUNCTION__, result);
-    if (result == BTM_SUCCESS) {
-        if (bta_dm_cb.p_sec_cback) {
-            bta_dm_cb.p_sec_cback(BTA_DM_LE_FEATURES_READ, NULL);
-        }
-    } else {
-        APPL_TRACE_ERROR("%s Ctrl BLE feature read failed: status :%d", __FUNCTION__, result);
-    }
-
-}
-#endif /* BLE_VND_INCLUDED */
 
 #endif  /* BLE_INCLUDED */

@@ -2812,25 +2812,8 @@ void BTA_VendorCleanup (void)
 {
     tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
     BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-#if (BLE_INCLUDED == TRUE && BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE)
-    btm_ble_adv_filter_cleanup();       // when BLE_VND_INCLUDED is false, this function will be ignore, so move it out of "if"
-
-#if 0                                   //by TH, comment out temporarily
-    if (cmn_ble_vsc_cb.max_filter > 0) {
-        btm_ble_adv_filter_cleanup();
-#if BLE_PRIVACY_SPT == TRUE
-        btm_ble_resolving_list_cleanup ();
-#endif
-    }
-#endif
-
-    if (cmn_ble_vsc_cb.tot_scan_results_strg > 0) {
-        btm_ble_batchscan_cleanup();
-    }
-#endif
-
 }
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void BTA_DmBleGapReadPHY(BD_ADDR addr)
 {
