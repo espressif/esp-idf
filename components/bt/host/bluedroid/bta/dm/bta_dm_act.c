@@ -93,7 +93,9 @@ static void bta_dm_eir_search_services( tBTM_INQ_RESULTS  *p_result,
 #endif  ///SDP_INCLUDED == TRUE
 static void bta_dm_search_timer_cback (TIMER_LIST_ENT *p_tle);
 static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_adjust_roles(BOOLEAN delay_role_switch);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -532,10 +534,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
            the DM_ENABLE_EVT to be sent only after all the init steps are complete */
 #if (CLASSIC_BT_INCLUDED == TRUE)
         BTM_ReadLocalDeviceNameFromController((tBTM_CMPL_CB *)bta_dm_local_name_cback);
-#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
         bta_sys_rm_register((tBTA_SYS_CONN_CBACK *)bta_dm_rm_cback);
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 #if (BTA_DM_PM_INCLUDED == TRUE)
         /* initialize bluetooth low power manager */
         bta_dm_init_pm();
@@ -672,8 +673,9 @@ static void bta_dm_disable_timer_cback (TIMER_LIST_ENT *p_tle)
         }
     } else {
         bta_dm_cb.disabling = FALSE;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
     }
 }
@@ -3652,13 +3654,13 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         return;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Collision report from Stack: Notify profiles */
     if (p_data->acl_change.event == BTM_BL_COLLISION_EVT) {
         bta_sys_notify_collision (p_bda);
         return;
     }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     if (is_new) {
         for (i = 0; i < bta_dm_cb.device_list.count; i++) {
             if (!bdcmp( bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_bda)
@@ -3827,6 +3829,7 @@ static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle)
 
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_rm_cback
@@ -3899,7 +3902,6 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_delay_role_switch_cback

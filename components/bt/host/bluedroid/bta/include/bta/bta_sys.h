@@ -44,7 +44,7 @@ typedef void (tBTA_SYS_DISABLE)(void);
 /* HW modules */
 enum {
     BTA_SYS_HW_BLUETOOTH,
-    BTA_SYS_HW_RT,
+    // BTA_SYS_HW_RT,
 
     BTA_SYS_MAX_HW_MODULES
 };
