@@ -49,9 +49,10 @@
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
 #endif
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_inq_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_inq_cmpl_cb (void *p_result);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_service_search_remname_cback (BD_ADDR bd_addr, DEV_CLASS dc, BD_NAME bd_name);
 static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name);
 #if (SDP_INCLUDED == TRUE)
@@ -70,7 +71,9 @@ static UINT8 bta_dm_new_link_key_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_
 static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, int result);
 #endif  ///SMP_INCLUDED == TRUE
 static void bta_dm_local_name_cback(const BD_ADDR bd_addr);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static BOOLEAN bta_dm_check_av(UINT16 event);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 
 
@@ -91,7 +94,9 @@ static void bta_dm_eir_search_services( tBTM_INQ_RESULTS  *p_result,
 static void bta_dm_search_timer_cback (TIMER_LIST_ENT *p_tle);
 static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle);
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_adjust_roles(BOOLEAN delay_role_switch);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if (SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE)
 static char *bta_dm_get_remname(void);
 #endif  ///SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE
@@ -137,7 +142,10 @@ static void bta_dm_observe_cmpl_cb(void *p_result);
 static void bta_dm_observe_discard_cb (uint32_t num_dis);
 #endif  ///BLE_INCLUDED == TRUE
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128);
 static void bta_dm_disable_timer_cback(TIMER_LIST_ENT *p_tle);
 
@@ -481,7 +489,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         /* hw is ready, go on with BTA DM initialization */
         memset(&bta_dm_search_cb, 0x00, sizeof(bta_dm_search_cb));
         memset(&bta_dm_conn_srvcs, 0x00, sizeof(bta_dm_conn_srvcs));
+#if (CLASSIC_BT_INCLUDED == TRUE)
         memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         memcpy(dev_class, p_bta_dm_cfg->dev_class, sizeof(dev_class));
 #if CLASSIC_BT_INCLUDED
         BTM_SetDeviceClass (dev_class);
@@ -1673,7 +1683,9 @@ void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_search_start (tBTA_DM_MSG *p_data)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_INQUIRY_CMPL result;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
     UINT16 len = (UINT16)(sizeof(tBT_UUID) * p_data->search.num_uuid);
@@ -1682,12 +1694,13 @@ void bta_dm_search_start (tBTA_DM_MSG *p_data)
 
     APPL_TRACE_DEBUG("%s avoid_scatter=%d", __func__, p_bta_dm_cfg->avoid_scatter);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (p_bta_dm_cfg->avoid_scatter &&
             (p_data->search.rs_res == BTA_DM_RS_NONE) && bta_dm_check_av(BTA_DM_API_SEARCH_EVT)) {
         memcpy(&bta_dm_cb.search_msg, &p_data->search, sizeof(tBTA_DM_API_SEARCH));
         return;
     }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     BTM_ClearInqDb(NULL);
     /* save search params */
     bta_dm_search_cb.p_search_cback = p_data->search.p_cback;
@@ -1710,6 +1723,7 @@ void bta_dm_search_start (tBTA_DM_MSG *p_data)
         memcpy(bta_dm_search_cb.p_srvc_uuid, p_data->search.p_uuid, len);
     }
 #endif
+#if (CLASSIC_BT_INCLUDED == TRUE)
     result.status = BTM_StartInquiry(   (tBTM_INQ_PARMS *)&p_data->search.inq_params,
                                         bta_dm_inq_results_cb,
                                         (tBTM_CMPL_CB *) bta_dm_inq_cmpl_cb);
@@ -1719,6 +1733,7 @@ void bta_dm_search_start (tBTA_DM_MSG *p_data)
         result.num_resp = 0;
         bta_dm_inq_cmpl_cb ((void *)&result);
     }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
@@ -2869,6 +2884,7 @@ static void bta_dm_sdp_callback (UINT16 sdp_status)
     }
 }
 #endif  ///SDP_INCLUDED == TRUE
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_inq_results_cb
@@ -2957,6 +2973,7 @@ static void bta_dm_inq_cmpl_cb (void *p_result)
         }
     }
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -3583,6 +3600,7 @@ static void bta_dm_acl_link_stat_cback(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_rs_cback
@@ -3651,6 +3669,7 @@ static BOOLEAN bta_dm_check_av(UINT16 event)
     }
     return switching;
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -3670,10 +3689,11 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
     tBTA_DM_SEC conn;
     BOOLEAN is_new = p_data->acl_change.is_new;
     BD_ADDR_PTR     p_bda = p_data->acl_change.bd_addr;
-    BOOLEAN         need_policy_change = FALSE;
     BOOLEAN         issue_unpair_cb = FALSE;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    BOOLEAN         need_policy_change = FALSE;
     tBTA_DM_PEER_DEVICE *p_dev;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     memset(&conn, 0, sizeof(tBTA_DM_SEC));
 
     switch (p_data->acl_change.event) {
@@ -3684,7 +3704,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             bta_dm_cb.p_sec_cback(BTA_DM_BUSY_LEVEL_EVT, &conn);
         }
         return;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTM_BL_ROLE_CHG_EVT:   /* role change event */
         p_dev = bta_dm_find_peer_device(p_bda);
         if (p_dev) {
@@ -3720,6 +3740,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
         }
         return;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 
     /* Collision report from Stack: Notify profiles */
@@ -3857,7 +3878,9 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         }
     }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_adjust_roles(TRUE);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
@@ -3934,7 +3957,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
             }
         }
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if ((BTA_ID_AV == id) || (BTA_ID_AVK == id)) {
         if ( status == BTA_SYS_CONN_BUSY) {
             if (p_dev) {
@@ -3963,8 +3986,10 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
     if ((status != BTA_SYS_CONN_BUSY) && (status != BTA_SYS_CONN_IDLE)) {
         bta_dm_adjust_roles(FALSE);
     }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_delay_role_switch_cback
@@ -3980,6 +4005,7 @@ static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle)
     APPL_TRACE_EVENT("bta_dm_delay_role_switch_cback: initiating Delayed RS");
     bta_dm_adjust_roles (FALSE);
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -4023,7 +4049,7 @@ static BOOLEAN bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_adjust_roles
@@ -4107,6 +4133,7 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
 
 
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **

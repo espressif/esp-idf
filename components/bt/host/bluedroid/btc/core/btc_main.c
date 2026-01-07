@@ -79,9 +79,9 @@ static void btc_deinit_bluetooth(void)
 #if (GATTC_INCLUDED)
     bta_gattc_deinit();
 #endif /* #if (GATTC_INCLUDED) */
-#if (GATTS_INCLUDED)
+#if (GATTS_INCLUDED == TRUE)
     bta_gatts_deinit();
-#endif /* #if (GATTS_INCLUDED) */
+#endif /* #if (GATTS_INCLUDED == TRUE) */
     bte_main_shutdown();
 #if (SMP_INCLUDED)
     btc_config_clean_up();
