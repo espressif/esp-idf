@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import re
@@ -32,7 +32,7 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
         'Reading file /sdcard/foo.txt',
         f"Read from file: 'Hello {name}!'",
     )
-    sd_card_format = re.compile(str.encode('Formatting card, allocation unit size=\\S+'))
+    sd_card_format = re.compile(str.encode('formatting drive, allocation unit size=\\S+'))
     message_list2 = (
         "file doesn't exist, formatting done",
         'Opening file /sdcard/nihao.txt',
