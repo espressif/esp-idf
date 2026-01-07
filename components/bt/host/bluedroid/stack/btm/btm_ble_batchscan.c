@@ -33,18 +33,9 @@
 
 #if BTM_DYNAMIC_MEMORY == FALSE
 tBTM_BLE_BATCH_SCAN_CB      ble_batchscan_cb;
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-tBTM_BLE_ADV_TRACK_CB       ble_advtrack_cb;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 #else
 tBTM_BLE_BATCH_SCAN_CB      *ble_batchscan_cb_ptr;
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-tBTM_BLE_ADV_TRACK_CB       *ble_advtrack_cb_ptr;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 #define ble_batchscan_cb    (*ble_batchscan_cb_ptr)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-#define ble_advtrack_cb     (*ble_advtrack_cb_ptr)
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 #endif
 
 /* length of each batch scan command */
@@ -73,10 +64,6 @@ void btm_ble_batchscan_cleanup(void);
 *******************************************************************************/
 void btm_ble_batchscan_filter_track_adv_vse_cback(UINT8 len, UINT8 *p)
 {
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    tBTM_BLE_TRACK_ADV_DATA adv_data;
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
     UINT8   sub_event = 0;
     STREAM_TO_UINT8(sub_event, p);
 
@@ -86,54 +73,6 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(UINT8 len, UINT8 *p)
         ble_batchscan_cb.p_thres_cback(ble_batchscan_cb.ref_value);
         return;
     }
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    if (HCI_VSE_SUBCODE_BLE_TRACKING_SUB_EVT == sub_event && NULL != ble_advtrack_cb.p_track_cback) {
-        if (len < 10) {
-            return;
-        }
-
-        memset(&adv_data, 0 , sizeof(tBTM_BLE_TRACK_ADV_DATA));
-        BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-        adv_data.client_if = (UINT8)ble_advtrack_cb.ref_value;
-        if (cmn_ble_vsc_cb.version_supported > BTM_VSC_CHIP_CAPABILITY_L_VERSION) {
-            STREAM_TO_UINT8(adv_data.filt_index, p);
-            STREAM_TO_UINT8(adv_data.advertiser_state, p);
-            STREAM_TO_UINT8(adv_data.advertiser_info_present, p);
-            STREAM_TO_BDADDR(adv_data.bd_addr.address, p);
-            STREAM_TO_UINT8(adv_data.addr_type, p);
-
-            /* Extract the adv info details */
-            if (ADV_INFO_PRESENT == adv_data.advertiser_info_present) {
-                STREAM_TO_UINT8(adv_data.tx_power, p);
-                STREAM_TO_UINT8(adv_data.rssi_value, p);
-                STREAM_TO_UINT16(adv_data.time_stamp, p);
-
-                STREAM_TO_UINT8(adv_data.adv_pkt_len, p);
-                if (adv_data.adv_pkt_len > 0) {
-                    adv_data.p_adv_pkt_data = osi_malloc(adv_data.adv_pkt_len);
-                    memcpy(adv_data.p_adv_pkt_data, p, adv_data.adv_pkt_len);
-                }
-
-                STREAM_TO_UINT8(adv_data.scan_rsp_len, p);
-                if (adv_data.scan_rsp_len > 0) {
-                    adv_data.p_scan_rsp_data = osi_malloc(adv_data.scan_rsp_len);
-                    memcpy(adv_data.p_scan_rsp_data, p, adv_data.scan_rsp_len);
-                }
-            }
-        } else {
-            /* Based on L-release version */
-            STREAM_TO_UINT8(adv_data.filt_index, p);
-            STREAM_TO_UINT8(adv_data.addr_type, p);
-            STREAM_TO_BDADDR(adv_data.bd_addr.address, p);
-            STREAM_TO_UINT8(adv_data.advertiser_state, p);
-        }
-
-        BTM_TRACE_EVENT("track_adv_vse_cback called: %d, %d, %d", adv_data.filt_index,
-                        adv_data.addr_type, adv_data.advertiser_state);
-        ble_advtrack_cb.p_track_cback(&adv_data);
-        return;
-    }
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 }
 
 /*******************************************************************************
@@ -867,41 +806,6 @@ tBTM_STATUS BTM_BleReadScanReports(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
 }
 #endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleTrackAdvertiser
-**
-** Description      This function is called to setup the callback for tracking advertisers
-**
-** Parameters:      p_track_cback - Tracking callback pointer
-**                  ref_value - Reference value
-**
-** Returns          tBTM_STATUS
-**
-*******************************************************************************/
-tBTM_STATUS BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK *p_track_cback,
-                                   tBTM_BLE_REF_VALUE ref_value)
-{
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-    BTM_TRACE_EVENT (" BTM_BleTrackAdvertiser");
-    if (!controller_get_interface()->supports_ble()) {
-        return BTM_ILLEGAL_VALUE;
-    }
-
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-    if (0 == cmn_ble_vsc_cb.tot_scan_results_strg) {
-        BTM_TRACE_ERROR("Controller does not support scan storage");
-        return BTM_ERR_PROCESSING;
-    }
-
-    ble_advtrack_cb.p_track_cback = p_track_cback;
-    ble_advtrack_cb.ref_value = ref_value;
-    return BTM_CMD_STARTED;
-}
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         btm_ble_batchscan_init
@@ -917,9 +821,6 @@ void btm_ble_batchscan_init(void)
 {
 #if BTM_DYNAMIC_MEMORY == TRUE
     ble_batchscan_cb_ptr = (tBTM_BLE_BATCH_SCAN_CB *)osi_malloc(sizeof(tBTM_BLE_BATCH_SCAN_CB));
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    ble_advtrack_cb_ptr = (tBTM_BLE_ADV_TRACK_CB *)osi_malloc(sizeof(tBTM_BLE_ADV_TRACK_CB));
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
     if (ble_batchscan_cb_ptr == NULL || ble_advtrack_cb_ptr == NULL) {
         BTM_TRACE_ERROR("%s malloc failed", __func__);
         return;
@@ -927,9 +828,6 @@ void btm_ble_batchscan_init(void)
 #endif
     BTM_TRACE_EVENT (" btm_ble_batchscan_init");
     memset(&ble_batchscan_cb, 0, sizeof(tBTM_BLE_BATCH_SCAN_CB));
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    memset(&ble_advtrack_cb, 0, sizeof(tBTM_BLE_ADV_TRACK_CB));
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
     BTM_RegisterForVSEvents(btm_ble_batchscan_filter_track_adv_vse_cback, TRUE);
 }
 
@@ -957,17 +855,10 @@ void btm_ble_batchscan_cleanup(void)
     }
 
     memset(&ble_batchscan_cb, 0, sizeof(tBTM_BLE_BATCH_SCAN_CB));
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    memset(&ble_advtrack_cb, 0, sizeof(tBTM_BLE_ADV_TRACK_CB));
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #if BTM_DYNAMIC_MEMORY == TRUE
     osi_free(ble_batchscan_cb_ptr);
     ble_batchscan_cb_ptr = NULL;
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    osi_free(ble_advtrack_cb_ptr);
-    ble_advtrack_cb_ptr = NULL;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #endif
 }
