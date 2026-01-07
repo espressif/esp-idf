@@ -4632,28 +4632,6 @@ void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding)
 }
 #endif
 
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_execute_callback
-**
-** Description      Just execute a generic call back in the context of the BTU/BTA tack
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void bta_dm_execute_callback(tBTA_DM_MSG *p_data)
-{
-    /* sanity check */
-    if (p_data->exec_cback.p_exec_cback == NULL) {
-        return;
-    }
-
-    p_data->exec_cback.p_exec_cback(p_data->exec_cback.p_param);
-}
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_dm_encrypt_cback
