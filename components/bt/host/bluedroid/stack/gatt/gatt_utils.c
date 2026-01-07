@@ -80,30 +80,6 @@ static const UINT8  base_uuid[LEN_UUID_128] = {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x0
 
 static UINT8 gatt_tcb_id[GATT_MAX_PHY_CHANNEL / 8 + 1];
 
-/*******************************************************************************
-**
-** Function         gatt_free_pending_ind
-**
-** Description    Free all pending indications
-**
-** Returns       None
-**
-*******************************************************************************/
-void gatt_free_pending_ind(tGATT_TCB *p_tcb)
-{
-    GATT_TRACE_DEBUG("gatt_free_pending_ind");
-    if (p_tcb->pending_ind_q == NULL) {
-        return;
-    }
-
-    /* release all queued indications */
-    while (!fixed_queue_is_empty(p_tcb->pending_ind_q)) {
-        osi_free(fixed_queue_dequeue(p_tcb->pending_ind_q, 0));
-	}
-    fixed_queue_free(p_tcb->pending_ind_q, NULL);
-    p_tcb->pending_ind_q = NULL;
-}
-
 #if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
@@ -129,7 +105,7 @@ void gatt_free_pending_enc_queue(tGATT_TCB *p_tcb)
     p_tcb->pending_enc_clcb = NULL;
 }
 #endif // (SMP_INCLUDED == TRUE)
-
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_free_pending_prepare_write_queue
@@ -155,6 +131,7 @@ void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb)
     p_tcb->prepare_write_record.total_num = 0;
     p_tcb->prepare_write_record.error_code_app = GATT_SUCCESS;
 }
+#endif // (GATTS_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
@@ -252,27 +229,6 @@ tGATTS_PENDING_NEW_SRV_START *gatt_sr_is_new_srv_chg(tBT_UUID *p_app_uuid128, tB
     return p_buf;
 }
 #endif // (GATTS_INCLUDED == TRUE)
-
-/*******************************************************************************
-**
-** Function     gatt_add_pending_ind
-**
-** Description  Add a pending indication
-**
-** Returns    Pointer to the current pending indication buffer, NULL no buffer available
-**
-*******************************************************************************/
-tGATT_VALUE *gatt_add_pending_ind(tGATT_TCB  *p_tcb, tGATT_VALUE *p_ind)
-{
-    tGATT_VALUE   *p_buf;
-    GATT_TRACE_DEBUG ("gatt_add_pending_ind");
-    if ((p_buf = (tGATT_VALUE *)osi_malloc((UINT16)sizeof(tGATT_VALUE))) != NULL) {
-        GATT_TRACE_DEBUG ("enqueue a pending indication");
-        memcpy(p_buf, p_ind, sizeof(tGATT_VALUE));
-    fixed_queue_enqueue(p_tcb->pending_ind_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
-    }
-    return p_buf;
-}
 
 #if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
@@ -821,23 +777,10 @@ BOOLEAN gatt_is_srv_chg_ind_pending (tGATT_TCB *p_tcb)
 {
     BOOLEAN srv_chg_ind_pending = FALSE;
 
-    GATT_TRACE_DEBUG("gatt_is_srv_chg_ind_pending is_queue_empty=%d",
-                     fixed_queue_is_empty(p_tcb->pending_ind_q));
+    GATT_TRACE_DEBUG("gatt_is_srv_chg_ind_pending is_queue_empty=%d_%d", p_tcb->indicate_handle, gatt_cb.handle_of_h_r);
 
     if (p_tcb->indicate_handle == gatt_cb.handle_of_h_r) {
         srv_chg_ind_pending = TRUE;
-    } else if (! fixed_queue_is_empty(p_tcb->pending_ind_q)) {
-        list_t *list = fixed_queue_get_list(p_tcb->pending_ind_q);
-        for (const list_node_t *node = list_begin(list);
-             node != list_end(list);
-             node = list_next(node)) {
-            tGATT_VALUE *p_buf = (tGATT_VALUE *)list_node(node);
-            if (p_buf->handle == gatt_cb.handle_of_h_r)
-            {
-                srv_chg_ind_pending = TRUE;
-                break;
-            }
-        }
     }
 
     GATT_TRACE_DEBUG("srv_chg_ind_pending = %d", srv_chg_ind_pending);
@@ -1089,7 +1032,6 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
 #if (SMP_INCLUDED == TRUE)
             p_tcb->pending_enc_clcb = fixed_queue_new(QUEUE_SIZE_MAX);
 #endif // (SMP_INCLUDED == TRUE)
-            p_tcb->pending_ind_q = fixed_queue_new(QUEUE_SIZE_MAX);
             p_tcb->in_use = TRUE;
             p_tcb->tcb_idx = i;
             p_tcb->transport = transport;
@@ -2377,11 +2319,12 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
 
         btu_free_timer (&p_tcb->ind_ack_timer_ent);
         btu_free_timer (&p_tcb->conf_timer_ent);
-        gatt_free_pending_ind(p_tcb);
 #if (SMP_INCLUDED == TRUE)
         gatt_free_pending_enc_queue(p_tcb);
 #endif // (SMP_INCLUDED == TRUE)
+#if (GATTS_INCLUDED == TRUE)
         gatt_free_pending_prepare_write_queue(p_tcb);
+#endif // (GATTS_INCLUDED == TRUE)
 #if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, osi_free_func);
         p_tcb->sr_cmd.multi_rsp_q = NULL;
