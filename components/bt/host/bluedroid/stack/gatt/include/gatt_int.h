@@ -397,16 +397,18 @@ typedef struct {
     /* server response data */
 #if (GATTS_INCLUDED == TRUE)
     tGATT_SR_CMD    sr_cmd;
-#endif  ///GATTS_INCLUDED == TRUE
     UINT16          indicate_handle;
 
     TIMER_LIST_ENT  conf_timer_ent;     /* peer confirm to indication timer */
+#endif  ///GATTS_INCLUDED == TRUE
 
     UINT8           prep_cnt[GATT_MAX_APPS];
+#if (GATTC_INCLUDED == TRUE)
     UINT8           ind_count;
 
     tGATT_CMD_Q     cl_cmd_q[GATT_CL_MAX_LCB];
     TIMER_LIST_ENT  ind_ack_timer_ent;    /* local app confirm to indication timer */
+#endif // (GATTC_INCLUDED == TRUE)
     UINT8           pending_cl_req;
     UINT8           next_slot_inq;    /* index of next available slot in queue */
 #if (GATTS_ROBUST_CACHING_ENABLED == TRUE)
