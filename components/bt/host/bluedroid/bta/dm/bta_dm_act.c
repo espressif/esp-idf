@@ -3446,11 +3446,13 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data)
             p_msg->busy_level = p_data->update.busy_level;
             p_msg->busy_level_flags = p_data->update.busy_level_flags;
             break;
+#if (CLASSIC_BT_INCLUDED == TRUE)
         case BTM_BL_ROLE_CHG_EVT:
             p_msg->new_role = p_data->role_chg.new_role;
             p_msg->hci_status = p_data->role_chg.hci_status;
             bdcpy(p_msg->bd_addr, p_data->role_chg.p_bda);
             break;
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         case BTM_BL_COLLISION_EVT:
             bdcpy(p_msg->bd_addr, p_data->conn.p_bda);
             break;

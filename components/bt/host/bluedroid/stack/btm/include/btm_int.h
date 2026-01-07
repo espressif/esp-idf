@@ -202,12 +202,15 @@ tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  
 
 tBTM_CMPL_CB        *p_ble_ch_map_cmpl_cb; /* Callback function to be called when */
 /* read channel map function completes */
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 TIMER_LIST_ENT       lnk_quality_timer;
 tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
+
 /* read link quality function completes */
 TIMER_LIST_ENT       txpwer_timer;
 tBTM_CMPL_CB        *p_txpwer_cmpl_cb;    /* Callback function to be called when  */
+
 /* read inq tx power function completes  */
 #if (CLASSIC_BT_INCLUDED == TRUE)
 TIMER_LIST_ENT       qossu_timer;
