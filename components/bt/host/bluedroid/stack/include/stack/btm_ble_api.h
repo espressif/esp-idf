@@ -2756,19 +2756,6 @@ void BTM_BleClearWhitelist(tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb);
 
 /*******************************************************************************
 **
-** Function         BTM_BleUpdateAdvFilterPolicy
-**
-** Description      This function update the filter policy of advertiser.
-**
-** Parameter        adv_policy: advertising filter policy
-**
-** Return           void
-*******************************************************************************/
-//extern
-void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy);
-
-/*******************************************************************************
-**
 ** Function         BTM_BleReceiverTest
 **
 ** Description      This function is called to start the LE Receiver test
