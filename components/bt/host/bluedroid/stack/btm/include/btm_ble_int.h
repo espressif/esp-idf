@@ -331,15 +331,15 @@ typedef struct {
     **      BLE Inquiry
     *****************************************************/
     tBTM_BLE_INQ_CB inq_var;
-
+#if (BLE_42_SCAN_EN == TRUE)
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     // /* observer callback and timer */
     tBTM_INQ_DIS_CB *p_obs_discard_cb;
-
+#endif // (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     /* scan callback and timer */
     tBTM_INQ_RESULTS_CB *p_scan_results_cb;
     tBTM_CMPL_CB *p_scan_cmpl_cb;
     TIMER_LIST_ENT scan_timer_ent;
-#if (BLE_42_SCAN_EN == TRUE)
     struct pkt_queue *adv_rpt_queue;
     struct osi_event *adv_rpt_ready;
 #endif // #if (BLE_42_SCAN_EN == TRUE)
@@ -384,11 +384,15 @@ typedef struct {
 #if (BLE_TOPOLOGY_CHECK == TRUE)
     /* current BLE link state */
     tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
-#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     UINT8 link_count[2]; /* total link count master and slave*/
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *update_exceptional_list_cmp_cb;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
+#if (BLE_VENDOR_HCI_EN == TRUE)
     tBTM_SET_CSA_SUPPORT_CMPL_CBACK *set_csa_support_cmpl_cb;
     tBTM_SET_VENDOR_EVT_MASK_CBACK *set_vendor_evt_mask_cmpl_cb;
+#endif // (BLE_VENDOR_HCI_EN == TRUE)
 } tBTM_BLE_CB;
 
 #ifdef __cplusplus
