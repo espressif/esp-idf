@@ -406,7 +406,6 @@ tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode);
 void btm_ble_stop_scan(void);
 void btm_clear_all_pending_le_entry(void);
 
-BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int, UINT32 scan_win, UINT8 addr_type_own, UINT8 scan_filter_policy);
 void btm_ble_init (void);
 void btm_ble_free (void);
 void btm_ble_connected (UINT8 *bda, UINT16 handle, UINT8 enc_mode, UINT8 role, tBLE_ADDR_TYPE addr_type, BOOLEAN addr_matched);
