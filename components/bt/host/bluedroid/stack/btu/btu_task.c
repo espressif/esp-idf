@@ -376,11 +376,15 @@ static void btu_general_alarm_process(void *param)
         break;
 
     case BTU_TTYPE_ATT_WAIT_FOR_RSP:
+#if (GATTC_INCLUDED == TRUE)
         gatt_rsp_timeout(p_tle);
+#endif // (GATTC_INCLUDED == TRUE)
         break;
 
     case BTU_TTYPE_ATT_WAIT_FOR_IND_ACK:
+#if (GATTC_INCLUDED == TRUE)
         gatt_ind_ack_timeout(p_tle);
+#endif // (GATTC_INCLUDED == TRUE)
         break;
 
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)

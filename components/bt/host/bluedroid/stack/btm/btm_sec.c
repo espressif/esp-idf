@@ -2641,6 +2641,7 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
 void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
 {
@@ -2701,7 +2702,7 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_sec_bond_cancel_complete
