@@ -736,7 +736,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_adjust_allocation
@@ -857,7 +857,7 @@ void l2c_link_adjust_allocation (void)
     }
 
 }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_adjust_chnl_allocation
@@ -1013,7 +1013,9 @@ void l2c_pin_code_request (BD_ADDR bd_addr)
 *******************************************************************************/
 BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_PM_MODE     mode;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB    *p_ccb;
     BOOLEAN need_to_active = FALSE;
 
@@ -1033,6 +1035,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 
     /* if we have packets to send */
     if ( need_to_active ) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* check power mode */
         if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode) == BTM_SUCCESS) {
             if ( mode == BTM_PM_STS_PENDING ) {
@@ -1041,6 +1044,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
                 return TRUE;
             }
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
     return FALSE;
 }

@@ -1143,6 +1143,7 @@ void l2c_link_processs_ble_num_bufs (UINT16 num_lm_ble_bufs)
     l2cb.num_lm_ble_bufs = l2cb.controller_le_xmit_window = num_lm_ble_bufs;
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_ble_link_adjust_allocation
@@ -1262,6 +1263,7 @@ void l2c_ble_link_adjust_allocation (void)
         }
     }
 }
+#endif // #if (BLE_INCLUDED == TRUE)
 
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
 /*******************************************************************************
