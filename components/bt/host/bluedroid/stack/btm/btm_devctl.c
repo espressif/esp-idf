@@ -176,9 +176,9 @@ static void reset_complete(void)
     btm_cb.ble_ctr_cb.conn_state = BLE_CONN_IDLE;
     btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_NONE;
     btm_cb.ble_ctr_cb.p_select_cback = NULL;
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     gatt_reset_bgdev_list();
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 #endif
 

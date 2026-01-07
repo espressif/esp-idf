@@ -489,14 +489,14 @@ typedef struct {
     UINT32      service_change;
 } tGATT_SVC_CHG;
 
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
 typedef struct {
     tGATT_IF        gatt_if[GATT_MAX_APPS];
     tGATT_IF        listen_gif[GATT_MAX_APPS];
     BD_ADDR         remote_bda;
     BOOLEAN         in_use;
 } tGATT_BG_CONN_DEV;
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 #define GATT_SVC_CHANGED_CONNECTING        1   /* wait for connection */
 #define GATT_SVC_CHANGED_SERVICE           2   /* GATT service discovery */
@@ -565,9 +565,9 @@ typedef struct {
 #if (GATTS_INCLUDED == TRUE)
     tGATT_HDL_CFG           hdl_cfg;
 #endif // (GATTS_INCLUDED == TRUE)
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     tGATT_BG_CONN_DEV       bgconn_dev[GATT_MAX_BG_CONN_DEV];
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 #if (GATTC_INCLUDED == TRUE)
     BOOLEAN             auto_disc;      /* internal use: true for auto discovering after connected */
 #endif // (GATTC_INCLUDED == TRUE)
@@ -682,7 +682,7 @@ extern BOOLEAN gatt_add_an_item_to_list(tGATT_HDL_LIST_INFO *p_list, tGATT_HDL_L
 extern BOOLEAN gatt_remove_an_item_from_list(tGATT_HDL_LIST_INFO *p_list, tGATT_HDL_LIST_ELEM *p_remove);
 extern tGATTS_SRV_CHG *gatt_add_srv_chg_clt(tGATTS_SRV_CHG *p_srv_chg);
 
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
 /* for background connection */
 extern BOOLEAN gatt_update_auto_connect_dev (tGATT_IF gatt_if, BOOLEAN add, BD_ADDR bd_addr, BOOLEAN is_initiator);
 extern BOOLEAN gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV *p_dev, tGATT_IF gatt_if);
@@ -692,7 +692,7 @@ extern BOOLEAN gatt_find_app_for_bg_dev(BD_ADDR bd_addr, tGATT_IF *p_gatt_if);
 extern tGATT_BG_CONN_DEV *gatt_find_bg_dev(BD_ADDR remote_bda);
 extern void gatt_deregister_bgdev_list(tGATT_IF gatt_if);
 extern void gatt_reset_bgdev_list(void);
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 /* server function */
 extern UINT8 gatt_sr_find_i_rcb_by_handle(UINT16 handle);
