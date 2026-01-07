@@ -1731,7 +1731,6 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn)
     UINT8_TO_STREAM(pp, p_conn->adv_handle);
     UINT8_TO_STREAM(pp, p_conn->subevent);
     UINT8_TO_STREAM(pp, p_conn->filter_policy);
-    UINT8_TO_STREAM(pp, p_conn->filter_policy);
     UINT8_TO_STREAM(pp, p_conn->own_addr_type);
     UINT8_TO_STREAM(pp, p_conn->peer_addr_type);
     BDADDR_TO_STREAM(pp, p_conn->peer_addr);
@@ -2995,7 +2994,7 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_su
             esp_log_buffer_hex_internal("data", subevent_params[i].data, subevent_params[i].subevent_data_len, ESP_LOG_DEBUG);
         }
 
-        param_len += (4 + subevent_params->subevent_data_len);
+        param_len += (4 + subevent_params[i].subevent_data_len);
     }
 
     HCIC_BLE_CMD_CREATED(p, pp, param_len);

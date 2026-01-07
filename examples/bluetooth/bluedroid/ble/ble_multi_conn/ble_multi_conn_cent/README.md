@@ -7,6 +7,52 @@
 
 **This example relies on the BLE controller. please use the chip modules listed under Supported Targets.**
 
+## Flow Diagram
+
+```
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                    BLE Multi-Connection Central                          │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+    ┌───────────────────┐
+    │  Multi-Conn Cent  │
+    │  (GATTC + GATTS)  │
+    └─────────┬─────────┘
+              │
+              │  1. Initialize GATT Client & Server
+              │  2. Set Random Address
+              │  3. Start Scanning
+              │
+              ▼
+    ┌───────────────────────────────────────────────────────────────────────┐
+    │                         Scan for Peripherals                          │
+    └───────────────────────────────────────────────────────────────────────┘
+              │
+              │  Found peripheral?
+              │
+              ├───────────────────┬───────────────────┬───────────────────┐
+              ▼                   ▼                   ▼                   ▼
+    ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐    ...
+    │  Peripheral 1   │ │  Peripheral 2   │ │  Peripheral 3   │
+    └────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+             │                   │                   │
+             │  ─────────── For Each Peripheral ───────────
+             │
+             │  4. Stop Scanning
+             │  5. Create Connection
+             │  6. Update Scheduling Length
+             │  7. Connection Established
+             │  8. Add to Peer List
+             │  9. Change Random Address
+             │ 10. Resume Scanning
+             │
+             ▼
+    ┌───────────────────────────────────────────────────────────────────────┐
+    │              All peripherals connected (up to CONFIG limit)           │
+    │                     Maintain multiple connections                      │
+    └───────────────────────────────────────────────────────────────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:
