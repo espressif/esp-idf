@@ -180,12 +180,15 @@ void gatt_free(void)
         fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
         p_tcb->pending_enc_clcb = NULL;
 #endif // (SMP_INCLUDED == TRUE)
-
+#if (GATTS_INCLUDED == TRUE)
         btu_free_timer(&p_tcb->conf_timer_ent);
         memset(&p_tcb->conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+#endif // (GATTS_INCLUDED == TRUE)
 
+#if (GATTC_INCLUDED == TRUE)
         btu_free_timer(&p_tcb->ind_ack_timer_ent);
         memset(&p_tcb->ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+#endif // #if (GATTC_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
