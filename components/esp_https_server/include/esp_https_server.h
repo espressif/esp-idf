@@ -39,11 +39,12 @@ typedef enum {
 
 /**
  * @brief Indicates the state at which the user callback is executed,
- *        i.e at session creation or session close
+ *        i.e at session creation, session close, or session error
  */
 typedef enum {
     HTTPD_SSL_USER_CB_SESS_CREATE,
-    HTTPD_SSL_USER_CB_SESS_CLOSE
+    HTTPD_SSL_USER_CB_SESS_CLOSE,
+    HTTPD_SSL_USER_CB_SESS_ERROR
 } httpd_ssl_user_cb_state_t;
 
 typedef esp_tls_handshake_callback esp_https_server_cert_select_cb;

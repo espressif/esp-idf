@@ -234,6 +234,13 @@ fail:
             last_error.last_error = esp_tls_get_and_clear_last_error(error_handle, &last_error.esp_tls_error_code, &last_error.esp_tls_flags);
             http_dispatch_event_to_event_loop(HTTPS_SERVER_EVENT_ERROR, &last_error, sizeof(last_error));
         }
+        // Call user callback if configured, allowing user to log failures
+        if (global_ctx->user_cb) {
+            esp_https_server_user_cb_arg_t user_cb_data = {0};
+            user_cb_data.user_cb_state = HTTPD_SSL_USER_CB_SESS_ERROR;
+            user_cb_data.tls = tls;
+            (global_ctx->user_cb)((void *)&user_cb_data);
+        }
         esp_tls_server_session_delete(tls);
     }
     return ESP_FAIL;
