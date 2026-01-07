@@ -1025,8 +1025,9 @@ static void btu_hcif_encryption_change_evt (UINT8 *p)
     STREAM_TO_UINT8  (status, p);
     STREAM_TO_UINT16 (handle, p);
     STREAM_TO_UINT8  (encr_enable, p);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_encrypt_change (handle, status, encr_enable);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     btm_sec_encrypt_change (handle, status, encr_enable);
 }
 #endif  ///SMP_INCLUDED == TRUE
@@ -1701,6 +1702,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
             case HCI_SWITCH_ROLE:
                 /* Tell BTM that the command failed */
                 /* read bd addr out of stored command */
+            #if (CLASSIC_BT_INCLUDED == TRUE)
                 if (p_cmd != NULL) {
                     p_cmd++;
                     STREAM_TO_BDADDR (bd_addr, p_cmd);
@@ -1709,6 +1711,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                     btm_acl_role_changed(status, NULL, BTM_ROLE_UNDEFINED);
                 }
                 l2c_link_role_changed (NULL, BTM_ROLE_UNDEFINED, HCI_ERR_COMMAND_DISALLOWED);
+            #endif // (CLASSIC_BT_INCLUDED == TRUE)
                 break;
 
             case HCI_CREATE_CONNECTION:
