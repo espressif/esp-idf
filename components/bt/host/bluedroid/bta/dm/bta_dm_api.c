@@ -1795,67 +1795,6 @@ extern void BTA_DmBleSetStorageParams(UINT8 batch_scan_full_max,
 }
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleEnableBatchScan
-**
-** Description      This function is called to enable the batch scan
-**
-** Parameters       scan_mode -Batch scan mode
-**                  scan_interval - Scan interval
-**                  scan_window - Scan window
-**                  discard_rule -Discard rules
-**                  addr_type - Address type
-**                  ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleEnableBatchScan(tBTA_BLE_BATCH_SCAN_MODE scan_mode,
-                                     UINT32 scan_interval, UINT32 scan_window,
-                                     tBTA_BLE_DISCARD_RULE discard_rule,
-                                     tBLE_ADDR_TYPE        addr_type,
-                                     tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_ENABLE_SCAN  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_ENABLE_SCAN *) osi_malloc(sizeof(tBTA_DM_API_ENABLE_SCAN))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT;
-        p_msg->scan_mode = scan_mode;
-        p_msg->scan_int = scan_interval;
-        p_msg->scan_window = scan_window;
-        p_msg->discard_rule = discard_rule;
-        p_msg->addr_type = addr_type;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleDisableBatchScan
-**
-** Description      This function is called to disable the batch scan
-**
-** Parameters       ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_DISABLE_SCAN  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_DISABLE_SCAN *)
-                 osi_malloc(sizeof(tBTA_DM_API_DISABLE_SCAN))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-
 #endif
 
 /*******************************************************************************

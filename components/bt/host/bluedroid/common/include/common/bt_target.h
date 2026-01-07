@@ -1584,10 +1584,6 @@
 #define BLE_HOST_SETUP_STORAGE_EN              FALSE
 #endif
 
-#ifndef BLE_HOST_BATCH_SCAN_EN
-#define BLE_HOST_BATCH_SCAN_EN              FALSE
-#endif
-
 #ifndef BLE_HOST_BG_CONNECT_EN
 #define BLE_HOST_BG_CONNECT_EN              FALSE
 #endif
