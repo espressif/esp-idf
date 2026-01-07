@@ -745,67 +745,6 @@ tBTM_STATUS BTM_BleDisableBatchScan(tBTM_BLE_REF_VALUE ref_value)
     return status;
 }
 
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleReadScanReports
-**
-** Description      This function is called to start reading batch scan reports
-**
-** Parameters:      scan_mode - Batch scan mode
-**                  ref_value - Reference value
-**
-** Returns          tBTM_STATUS
-**
-*******************************************************************************/
-tBTM_STATUS BTM_BleReadScanReports(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
-                                   tBTM_BLE_REF_VALUE ref_value)
-{
-    tBTM_STATUS     status = BTM_NO_RESOURCES;
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-    UINT8 read_scan_mode = 0;
-    UINT8  *p_data = NULL, num_records = 0;
-    UINT16 data_len = 0;
-
-    BTM_TRACE_EVENT (" BTM_BleReadScanReports; %d, %d", scan_mode, ref_value);
-
-    if (!controller_get_interface()->supports_ble()) {
-        return BTM_ILLEGAL_VALUE;
-    }
-
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-    if (0 == cmn_ble_vsc_cb.tot_scan_results_strg) {
-        BTM_TRACE_ERROR("Controller does not support batch scan");
-        return BTM_ERR_PROCESSING;
-    }
-
-    /*  Check if the requested scan mode has already been setup by the user */
-    read_scan_mode = ble_batchscan_cb.scan_mode & BTM_BLE_BATCH_SCAN_MODE_ACTI;
-    if (0 == read_scan_mode) {
-        read_scan_mode = ble_batchscan_cb.scan_mode & BTM_BLE_BATCH_SCAN_MODE_PASS;
-    }
-
-    /* Check only for modes, as scan reports can be called after disabling batch scan */
-    if (read_scan_mode > 0 && (BTM_BLE_BATCH_SCAN_MODE_PASS == scan_mode ||
-                               BTM_BLE_BATCH_SCAN_MODE_ACTI == scan_mode)) {
-        status = btm_ble_batchscan_enq_rep_q(scan_mode, ref_value);
-        if (BTM_SUCCESS == status) {
-            status = btm_ble_read_batchscan_reports(scan_mode, ref_value);
-            if (BTM_CMD_STARTED != status) {
-                btm_ble_batchscan_deq_rep_data(scan_mode, &ref_value,
-                                               &num_records, &p_data, &data_len);
-            }
-        }
-    } else {
-        BTM_TRACE_ERROR("Illegal read scan params: %d, %d, %d", read_scan_mode, scan_mode,
-                        ble_batchscan_cb.cur_state);
-        return BTM_ILLEGAL_VALUE;
-    }
-    return status;
-}
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         btm_ble_batchscan_init
