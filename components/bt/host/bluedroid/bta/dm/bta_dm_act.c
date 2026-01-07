@@ -5236,26 +5236,6 @@ void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data)
             p_data->ble_set_conn_params.slave_latency, p_data->ble_set_conn_params.supervision_tout);
 }
 
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_set_conn_scan_params
-**
-** Description      This function sets BLE scan parameters.
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data)
-{
-    BTM_BleSetScanParams(p_data->ble_set_scan_params.client_if,
-                         p_data->ble_set_scan_params.scan_int,
-                         p_data->ble_set_scan_params.scan_window,
-                         p_data->ble_set_scan_params.scan_mode,
-                         p_data->ble_set_scan_params.scan_param_setup_cback);
-}
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-
 #if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **

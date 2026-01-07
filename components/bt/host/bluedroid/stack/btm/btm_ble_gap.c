@@ -1625,67 +1625,6 @@ void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
     }
 }
 
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleSetScanParams
-**
-** Description      This function is called to set scan parameters.
-**
-** Parameters       client_if - Client IF
-**                  scan_interval - Scan interval
-**                  scan_window - Scan window
-**                  scan_mode -    Scan mode
-**                  scan_setup_status_cback - Scan param setup status callback
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
-                          tBLE_SCAN_MODE scan_mode,
-                          tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback)
-{
-    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
-    UINT32 max_scan_interval;
-    UINT32 max_scan_window;
-
-    BTM_TRACE_EVENT ("%s\n", __func__);
-    if (!controller_get_interface()->supports_ble()) {
-        return;
-    }
-
-    /* If not supporting extended scan support, use the older range for checking */
-    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0) {
-        max_scan_interval = BTM_BLE_SCAN_INT_MAX;
-        max_scan_window = BTM_BLE_SCAN_WIN_MAX;
-    } else {
-        /* If supporting extended scan support, use the new extended range for checking */
-        max_scan_interval = BTM_BLE_EXT_SCAN_INT_MAX;
-        max_scan_window = BTM_BLE_EXT_SCAN_WIN_MAX;
-    }
-
-    if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN, max_scan_interval) &&
-            BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN, max_scan_window) &&
-            (scan_mode == BTM_BLE_SCAN_MODE_ACTI || scan_mode == BTM_BLE_SCAN_MODE_PASS)) {
-        p_cb->scan_type = scan_mode;
-        p_cb->scan_interval = scan_interval;
-        p_cb->scan_window = scan_window;
-
-        if (scan_setup_status_cback != NULL) {
-            scan_setup_status_cback(client_if, BTM_SUCCESS);
-        }
-    } else {
-        if (scan_setup_status_cback != NULL) {
-            scan_setup_status_cback(client_if, BTM_ILLEGAL_VALUE);
-        }
-
-        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d\n",
-                        scan_interval, scan_window);
-    }
-
-}
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-
 #if (BLE_42_SCAN_EN == TRUE)
 tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
                                 tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBTM_BLE_SFP scan_filter_policy,
