@@ -1605,48 +1605,6 @@ void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR de
         bta_sys_sendmsg(p_msg);
     }
 }
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleSetStorageParams
-**
-** Description      This function is called to override the BTA scan response.
-**
-** Parameters       batch_scan_full_max -Max storage space (in %) allocated to full scanning
-**                  batch_scan_trunc_max -Max storage space (in %) allocated to truncated scanning
-**                  batch_scan_notify_threshold -Setup notification level based on total space
-**                  p_setup_cback - Setup callback pointer
-**                  p_thres_cback - Threshold callback pointer
-**                  p_rep_cback - Reports callback pointer
-**                  ref_value - Ref value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleSetStorageParams(UINT8 batch_scan_full_max,
-                                      UINT8 batch_scan_trunc_max,
-                                      UINT8 batch_scan_notify_threshold,
-                                      tBTA_BLE_SCAN_SETUP_CBACK *p_setup_cback,
-                                      tBTA_BLE_SCAN_THRESHOLD_CBACK *p_thres_cback,
-                                      tBTA_BLE_SCAN_REP_CBACK *p_rep_cback,
-                                      tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_SET_STORAGE_CONFIG  *p_msg;
-    bta_dm_cb.p_setup_cback = p_setup_cback;
-    if ((p_msg = (tBTA_DM_API_SET_STORAGE_CONFIG *)
-                 osi_malloc(sizeof(tBTA_DM_API_SET_STORAGE_CONFIG))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_SETUP_STORAGE_EVT;
-        p_msg->p_setup_cback = bta_ble_scan_setup_cb;
-        p_msg->p_thres_cback = p_thres_cback;
-        p_msg->p_read_rep_cback = p_rep_cback;
-        p_msg->ref_value = ref_value;
-        p_msg->batch_scan_full_max = batch_scan_full_max;
-        p_msg->batch_scan_trunc_max = batch_scan_trunc_max;
-        p_msg->batch_scan_notify_threshold = batch_scan_notify_threshold;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
 #endif
 
