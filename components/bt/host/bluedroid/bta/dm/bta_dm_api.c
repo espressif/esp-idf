@@ -1856,34 +1856,6 @@ extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value)
 }
 #endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleReadScanReports
-**
-** Description      This function is called to read scan reports
-**
-** Parameters       scan_type -Batch scan mode
-**                  ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleReadScanReports(tBTA_BLE_BATCH_SCAN_MODE scan_type,
-                                     tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_READ_SCAN_REPORTS  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_READ_SCAN_REPORTS *)
-                 osi_malloc(sizeof(tBTA_DM_API_READ_SCAN_REPORTS))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT;
-        p_msg->scan_type = scan_type;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-
 #endif
 
 /*******************************************************************************

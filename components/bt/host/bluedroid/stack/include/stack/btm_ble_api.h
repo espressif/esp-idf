@@ -2313,25 +2313,6 @@ tBTM_STATUS BTM_BleEnableBatchScan(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
 //extern
 tBTM_STATUS BTM_BleDisableBatchScan(tBTM_BLE_REF_VALUE ref_value);
 
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleReadScanReports
-**
-** Description      This function is called to read batch scan reports
-**
-** Parameters       tBLE_SCAN_MODE scan_mode - Scan mode report to be read out
-                    tBTM_BLE_SCAN_REP_CBACK* p_cback - Reports callback
-**
-** Returns          tBTM_STATUS
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
-                                   tBTM_BLE_REF_VALUE ref_value);
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-
-
 /*******************************************************************************
 **
 ** Function         BTM_BleWriteScanRsp
