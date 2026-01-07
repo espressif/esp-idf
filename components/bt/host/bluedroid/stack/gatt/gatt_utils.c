@@ -2424,7 +2424,7 @@ void gatt_dbg_display_uuid(tBT_UUID bt_uuid)
 
 }
 
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_is_bg_dev_for_app
@@ -2805,7 +2805,7 @@ BOOLEAN gatt_update_auto_connect_dev (tGATT_IF gatt_if, BOOLEAN add, BD_ADDR bd_
     }
     return ret;
 }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 #if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
