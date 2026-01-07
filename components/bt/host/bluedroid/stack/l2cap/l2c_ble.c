@@ -506,8 +506,13 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
 void l2cble_conn_comp(UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE type,
                       UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
 {
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     btm_ble_update_link_topology_mask(role, TRUE);
-
+#else
+    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
+    /* make device fall back into undirected adv mode by default */
+    btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     if (role == HCI_ROLE_MASTER) {
         l2cble_scanner_conn_comp(handle, bda, type, conn_interval, conn_latency, conn_timeout);
     } else {
@@ -945,11 +950,14 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #endif // CONTROLLER_RPA_LIST_ENABLE
 #endif // (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE)
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
         l2cu_release_lcb (p_lcb);
         L2CAP_TRACE_ERROR("initiate direct connection fail, topology limitation");
         return FALSE;
     }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+
     uint32_t link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
     if(GATTC_CONNECT_RETRY_COUNT) {
         if(!p_lcb->retry_create_con) {

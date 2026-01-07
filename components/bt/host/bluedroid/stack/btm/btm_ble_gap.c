@@ -101,6 +101,7 @@ bool btm_ble_inter_get(void)
     return is_ble50_inter;
 }
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
 /* LE states combo bit to check */
 const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
     {/* single state support */
@@ -242,6 +243,7 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
 };
 /* check LE combo state supported */
 #define BTM_LE_STATES_SUPPORTED(x, y, z)      ((x)[(z)] & (y))
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
 #if (BLE_42_ADV_EN == TRUE)
 static osi_mutex_t adv_enable_lock;
@@ -1219,6 +1221,7 @@ tBTM_STATUS BTM_BleSetAdvParamsAll(UINT16 adv_int_min, UINT16 adv_int_max, UINT8
     btm_ble_stop_adv();
 
     osi_mutex_lock(&adv_param_lock, OSI_MUTEX_MAX_TIMEOUT);
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     if(adv_type == BTM_BLE_CONNECT_DIR_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT);
     }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
@@ -1226,7 +1229,7 @@ tBTM_STATUS BTM_BleSetAdvParamsAll(UINT16 adv_int_min, UINT16 adv_int_max, UINT8
     }else if(adv_type == BTM_BLE_NON_CONNECT_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_NON_CONN_ADV_BIT);
     }
-
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     p_cb->adv_interval_min = adv_int_min;
     p_cb->adv_interval_max = adv_int_max;
     p_cb->adv_chnl_map = chnl_map;
@@ -3374,11 +3377,13 @@ tBTM_STATUS btm_ble_start_scan(void)
             status = BTM_NO_RESOURCES;
         }
         btm_cb.ble_ctr_cb.inq_var.state |= BTM_BLE_SCANNING;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
             btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
         } else {
             btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
         }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     }
     osi_mutex_unlock(&scan_enable_lock);
     return status;
@@ -3438,9 +3443,11 @@ static void btm_ble_stop_discover(void)
         if(btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE)) {
             osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
         }
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         /* reset status */
         btm_ble_clear_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
         btm_ble_clear_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     }
 
     if (p_scan_cb) {
@@ -3461,6 +3468,7 @@ static void btm_ble_stop_discover(void)
 *******************************************************************************/
 typedef BOOLEAN (BTM_TOPOLOGY_FUNC_PTR)(tBTM_BLE_STATE_MASK);
 #if (BLE_42_ADV_EN == TRUE)
+#if (BLE_TOPOLOGY_CHECK == TRUE)
 static BOOLEAN btm_ble_adv_states_operation(BTM_TOPOLOGY_FUNC_PTR *p_handler, UINT8 adv_evt)
 {
     BOOLEAN rt = FALSE;
@@ -3492,6 +3500,7 @@ static BOOLEAN btm_ble_adv_states_operation(BTM_TOPOLOGY_FUNC_PTR *p_handler, UI
 
     return rt;
 }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
 /*******************************************************************************
 **
@@ -3508,10 +3517,11 @@ tBTM_STATUS btm_ble_start_adv(void)
     tBTM_STATUS     rt = BTM_NO_RESOURCES;
     BTM_TRACE_EVENT ("btm_ble_start_adv\n");
 
-
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     if (!btm_ble_adv_states_operation (btm_ble_topology_check, p_cb->evt_type)) {
         return BTM_WRONG_MODE;
     }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
     osi_mutex_lock(&adv_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
 
@@ -3535,7 +3545,9 @@ tBTM_STATUS btm_ble_start_adv(void)
     UINT8 adv_mode = p_cb->adv_mode;
     p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
     p_cb->state |= BTM_BLE_ADVERTISING;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
         osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
         rt = adv_enable_status;
@@ -3544,7 +3556,9 @@ tBTM_STATUS btm_ble_start_adv(void)
         p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
         p_cb->state = temp_state;
         p_cb->adv_mode = adv_mode;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         btm_ble_adv_states_operation(btm_ble_clear_topology_mask, p_cb->evt_type);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
         btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
     }
 
@@ -3574,16 +3588,18 @@ tBTM_STATUS btm_ble_stop_adv(void)
         BOOLEAN temp_fast_adv_on = p_cb->fast_adv_on;
         tBTM_BLE_GAP_STATE temp_state = p_cb->state;
         tBTM_BLE_WL_STATE temp_wl_state = btm_cb.ble_ctr_cb.wl_state;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         tBTM_BLE_STATE_MASK temp_mask = btm_ble_get_topology_mask ();
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
         p_cb->fast_adv_on = FALSE;
         p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
         p_cb->state &= ~BTM_BLE_ADVERTISING;
         btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
-
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         /* clear all adv states */
         btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
-
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
         if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
             osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
             rt = adv_enable_status;
@@ -3593,8 +3609,9 @@ tBTM_STATUS btm_ble_stop_adv(void)
             p_cb->adv_mode = temp_adv_mode;
             p_cb->state = temp_state;
             btm_cb.ble_ctr_cb.wl_state = temp_wl_state;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
             btm_ble_set_topology_mask (temp_mask);
-
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
             rt = BTM_NO_RESOURCES;
         }
         if(adv_enable_status != HCI_SUCCESS) {
@@ -3852,6 +3869,7 @@ void btm_ble_dir_adv_tout(void)
     btm_cb.ble_ctr_cb.inq_var.directed_conn = FALSE;
 }
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_set_topology_mask
@@ -3933,6 +3951,7 @@ void btm_ble_update_link_topology_mask(UINT8 link_role, BOOLEAN increase)
         btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
     }
 }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
 /*******************************************************************************
 **
@@ -3951,8 +3970,10 @@ BOOLEAN btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 st
         btm_cb.ble_ctr_cb.inq_var.adv_mode  = BTM_BLE_ADV_DISABLE;
         /* make device fall back into undirected adv mode by default */
         btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         /* clear all adv states */
         btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     }
 
     if (btm_cb.ble_ctr_cb.inq_var.connectable_mode == BTM_BLE_CONNECTABLE) {
@@ -4013,8 +4034,9 @@ void btm_ble_init (void)
     btu_free_timer(&p_cb->scan_timer_ent);
     btu_free_timer(&p_cb->inq_var.fast_adv_timer);
     memset(p_cb, 0, sizeof(tBTM_BLE_CB));
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     p_cb->cur_states       = 0;
-
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     p_cb->conn_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
     p_cb->inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
@@ -4074,6 +4096,8 @@ void esp_qa_enable_topology_check(bool enable)
     // This is a workaround: If the topology check is disabled, the 'Supported States' will not be checked.
     enable_topology_check_flag = enable;
 }
+
+#if (BLE_TOPOLOGY_CHECK == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_topology_check
@@ -4138,7 +4162,7 @@ BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask)
     }
     return rt;
 }
-
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 /*******************************************************************************
  **
  ** Function         BTM_Ble_Authorization

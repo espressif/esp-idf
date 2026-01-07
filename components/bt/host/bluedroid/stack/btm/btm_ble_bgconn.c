@@ -519,7 +519,10 @@ BOOLEAN btm_ble_start_auto_conn(BOOLEAN start)
 
     if (start) {
         if (p_cb->conn_state == BLE_CONN_IDLE && background_connections_pending()
-                && btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+                && btm_ble_topology_check(BTM_BLE_STATE_INIT)
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+                ) {
             p_cb->wl_state  |= BTM_BLE_WL_INIT;
 
             btm_execute_wl_dev_operation();
@@ -615,11 +618,13 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cb
                                                 SP_ADV_WL)) {
                 return FALSE;
             }
-
+#if (BLE_TOPOLOGY_CHECK == TRUE)
             if (!btm_ble_topology_check(BTM_BLE_STATE_PASSIVE_SCAN)) {
                 BTM_TRACE_ERROR("peripheral device cannot initiate passive scan for a selective connection");
                 return FALSE;
-            } else if (background_connections_pending()) {
+            }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+            if (background_connections_pending()) {
 #if BLE_PRIVACY_SPT == TRUE
                 btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
@@ -822,11 +827,13 @@ void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st)
     BTM_TRACE_DEBUG("%s old=%u new=%u", __func__, btm_cb.ble_ctr_cb.conn_state, new_st);
     btm_cb.ble_ctr_cb.conn_state = new_st;
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     if (new_st == BLE_BG_CONN || new_st == BLE_DIR_CONN) {
         btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
     } else {
         btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 }
 
 /*******************************************************************************
