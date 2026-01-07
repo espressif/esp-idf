@@ -3067,6 +3067,7 @@ esp_err_t esp_ble_gap_clear_whitelist(void);
 
 /**
 * @brief            Get the whitelist size in the controller
+*                   Note: This API returns a constant value indicating the maximum number of whitelists supported by the controller
 *
 * @param[out]       length: the white list length.
 * @return
