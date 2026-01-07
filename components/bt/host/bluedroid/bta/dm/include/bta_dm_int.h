@@ -162,11 +162,6 @@ enum {
     BTA_DM_API_BLE_BROADCAST_EVT,
 #endif // #if (BLE_42_ADV_EN == TRUE)
     BTA_DM_API_SET_DATA_LENGTH_EVT,
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    BTA_DM_API_CFG_FILTER_COND_EVT,
-    BTA_DM_API_SCAN_FILTER_SETUP_EVT,
-    BTA_DM_API_SCAN_FILTER_ENABLE_EVT,
-#endif
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     BTA_DM_API_BLE_SETUP_STORAGE_EVT,
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
@@ -1278,35 +1273,6 @@ typedef struct {
     UINT16      timeout;
 } tBTA_DM_API_UPDATE_CONN_PARAM;
 
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-typedef struct {
-    BT_HDR                          hdr;
-    tBTA_DM_BLE_SCAN_COND_OP        action;
-    tBTA_DM_BLE_PF_COND_TYPE        cond_type;
-    tBTA_DM_BLE_PF_FILT_INDEX       filt_index;
-    tBTA_DM_BLE_PF_COND_PARAM       *p_cond_param;
-    tBTA_DM_BLE_PF_CFG_CBACK      *p_filt_cfg_cback;
-    tBTA_DM_BLE_REF_VALUE            ref_value;
-} tBTA_DM_API_CFG_FILTER_COND;
-
-typedef struct {
-    BT_HDR                          hdr;
-    UINT8                           action;
-    tBTA_DM_BLE_PF_STATUS_CBACK    *p_filt_status_cback;
-    tBTA_DM_BLE_REF_VALUE            ref_value;
-} tBTA_DM_API_ENABLE_SCAN_FILTER;
-
-typedef struct {
-    BT_HDR                          hdr;
-    UINT8                           action;
-    tBTA_DM_BLE_PF_FILT_INDEX       filt_index;
-    tBTA_DM_BLE_PF_FILT_PARAMS      filt_params;
-    tBLE_BD_ADDR                    *p_target;
-    tBTA_DM_BLE_PF_PARAM_CBACK      *p_filt_param_cback;
-    tBTA_DM_BLE_REF_VALUE            ref_value;
-} tBTA_DM_API_SCAN_FILTER_PARAM_SETUP;
-#endif
-
 #if (BLE_50_DTM_TEST_EN == TRUE)
 typedef struct {
     BT_HDR     hdr;
@@ -1811,11 +1777,6 @@ typedef union {
     tBTA_DM_API_BLE_ADV_PARAMS_ALL      ble_set_adv_params_all;
     tBTA_DM_API_SET_ADV_CONFIG          ble_set_adv_data;
     tBTA_DM_API_SET_ADV_CONFIG_RAW      ble_set_adv_data_raw;
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    tBTA_DM_API_SCAN_FILTER_PARAM_SETUP ble_scan_filt_param_setup;
-    tBTA_DM_API_CFG_FILTER_COND         ble_cfg_filter_cond;
-    tBTA_DM_API_ENABLE_SCAN_FILTER      ble_enable_scan_filt;
-#endif
     tBTA_DM_API_UPDATE_CONN_PARAM       ble_update_conn_params;
     tBTA_DM_API_BLE_SET_DATA_LENGTH     ble_set_data_length;
     tBTA_DM_APT_SET_DEV_ADDR            set_addr;
@@ -2401,11 +2362,6 @@ extern void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data);
 #if SMP_INCLUDED == TRUE
 extern void bta_dm_co_security_param_init(void);
-#endif
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-extern void bta_dm_cfg_filter_cond (tBTA_DM_MSG *p_data);
-extern void bta_dm_scan_filter_param_setup (tBTA_DM_MSG *p_data);
-extern void bta_dm_enable_scan_filter(tBTA_DM_MSG *p_data);
 #endif
 extern void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_multi_adv_data(tBTA_DM_MSG *p_data);

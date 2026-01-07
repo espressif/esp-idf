@@ -4579,9 +4579,7 @@ void btm_ble_init (void)
     osi_event_bind(p_cb->adv_rpt_ready, btu_get_current_thread(), 0);
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 #if BLE_VND_INCLUDED == FALSE
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    btm_ble_adv_filter_init();
-#endif // #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
+
 #endif
 #if (BLE_VENDOR_HCI_EN == TRUE)
     BTM_RegisterForVSEvents(btm_ble_vs_evt_callback, TRUE);
