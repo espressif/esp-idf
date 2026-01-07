@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -841,16 +841,6 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
 FORCE_INLINE_ATTR void pmu_ll_set_dcdc_ccm_sw_en(pmu_dev_t *hw, bool en)
 {
     hw->dcm_ctrl.dcdc_ccm_sw_en = en;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_ocode(pmu_dev_t *hw, uint32_t ocode)
-{
-    hw->ble_bandgap_ctrl.ext_ocode = ocode;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_force_ocode(pmu_dev_t *hw)
-{
-    hw->ble_bandgap_ctrl.ext_force_ocode = 1;
 }
 
 #ifdef __cplusplus

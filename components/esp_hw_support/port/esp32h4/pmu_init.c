@@ -11,6 +11,7 @@
 #include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/pmu_struct.h"
+#include "soc/pmu_reg.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
@@ -34,8 +35,6 @@ typedef struct {
     const pmu_lp_system_power_param_t  *power;
     pmu_lp_system_analog_param_t       *analog;    //param determined at runtime
 } pmu_lp_system_param_t;
-
-static uint32_t get_ulp_ocode(void);
 
 pmu_context_t * __attribute__((weak)) IRAM_ATTR PMU_instance(void)
 {
@@ -123,10 +122,20 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
     /* set dcdc ccm mode software enable */
     pmu_ll_set_dcdc_ccm_sw_en(ctx->hal->dev, true);
 
+#if CONFIG_ESP32H4_SELECTS_REV_MP
     /* set ble bandgap ocode */
-    uint32_t ulp_ocode = get_ulp_ocode();
-    pmu_ll_set_ble_bandgap_ocode(ctx->hal->dev, ulp_ocode);
-    pmu_ll_set_ble_bandgap_force_ocode(ctx->hal->dev);
+    uint32_t ulp_ocode = 0;
+#if !CONFIG_IDF_ENV_FPGA
+    bool ulp_force_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE);
+    if (ulp_force_flag) {
+        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_EXT_CODE);
+    } else {
+        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_OCODE);
+    }
+#endif
+    REG_SET_FIELD(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_OCODE, ulp_ocode);
+    SET_PERI_REG_MASK(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_FORCE_OCODE);
+#endif
 }
 
 void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_system_param_t *param)
@@ -237,20 +246,6 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
-}
-
-static uint32_t get_ulp_ocode(void)
-{
-    uint32_t ulp_ocode = 0;
-#if !CONFIG_IDF_ENV_FPGA
-    bool ulp_force_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE);
-    if (ulp_force_flag) {
-        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_EXT_CODE);
-    } else {
-        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_OCODE);
-    }
-#endif
-    return ulp_ocode;
 }
 
 void pmu_init(void)
