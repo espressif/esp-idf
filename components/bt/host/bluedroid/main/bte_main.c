@@ -105,9 +105,6 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 ******************************************************************************/
 void bte_main_shutdown(void)
 {
-#if (BLE_INCLUDED == TRUE)
-    BTA_VendorCleanup();
-#endif
 
 #if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
     free_controller_param();

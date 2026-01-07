@@ -2636,21 +2636,6 @@ void BTA_VendorInit (void)
     APPL_TRACE_API("BTA_VendorInit");
 }
 
-/*******************************************************************************
-**
-** Function         BTA_VendorCleanup
-**
-** Description      This function frees up Broadcom specific VS specific dynamic memory
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_VendorCleanup (void)
-{
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-}
-
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void BTA_DmBleGapReadPHY(BD_ADDR addr)
 {
