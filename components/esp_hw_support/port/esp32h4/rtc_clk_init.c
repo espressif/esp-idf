@@ -24,6 +24,7 @@
 #include "hal/modem_lpcon_ll.h"
 #endif
 #include "pmu_param.h"
+#include "soc/regi2c_dcdc.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
@@ -79,10 +80,26 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, cfg.clk_8m_dfreq);
     REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.slow_clk_dcap); // h4 specific workaround (RC32K_DFREQ is used for RC_SLOW clock tuning) TODO: IDF-12313
 
-    uint32_t hp_dbias = get_act_hp_dbias();
+
+    // switch to ccm mode
+    REG_SET_FIELD(PMU_DCM_CTRL_REG, PMU_DCDC_CCM_SW_EN, 1);
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCDC_CCM_ENB, 0);
+
+
+    // dcdc init
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_CCM_DREG0, 24);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_CCM_PCUR_LIMIT0, 4);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_VCM_DREG0, 24);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_VCM_PCUR_LIMIT0, 2);
+    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_XPD_TRX, 0);
+
+    // close rf_pll
+    CLEAR_PERI_REG_MASK(PMU_DATE_REG, BIT(25)); //bit25 control rfpll
+
+    uint32_t hp_drvb = get_act_hp_drvb();
     uint32_t lp_dbias = get_act_lp_dbias();
     pmu_ll_hp_set_regulator_xpd(&PMU, PMU_MODE_HP_ACTIVE, true);
-    pmu_ll_hp_set_regulator_dbias(&PMU, PMU_MODE_HP_ACTIVE, hp_dbias);
+    pmu_ll_hp_set_regulator_driver_bar(&PMU, PMU_MODE_HP_ACTIVE, hp_drvb);
     pmu_ll_lp_set_regulator_dbias(&PMU, PMU_MODE_LP_ACTIVE, lp_dbias);
 
     // XTAL freq can be directly informed from register field PCR_CLK_XTAL_FREQ

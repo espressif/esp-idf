@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -370,9 +370,13 @@ RTC_NOINIT_ATTR
 #if CONFIG_IDF_TARGET_ESP32C2
 #define TEMP_RTC_STORE_REG          RTC_CNTL_DATE_REG
 #define TEMP_RTC_STORE_REG_M        RTC_CNTL_DATE_M
-#elif CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4
+#elif CONFIG_IDF_TARGET_ESP32C61
 #define TEMP_RTC_STORE_REG          LP_AON_DATE_REG
 #define TEMP_RTC_STORE_REG_M        LP_AON_DATE_M
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "soc/pmu_reg.h"
+#define TEMP_RTC_STORE_REG          PMU_DATE_REG
+#define TEMP_RTC_STORE_REG_M        PMU_PMU_DATE_M
 #endif
 #endif
 static int64_t start = 0;

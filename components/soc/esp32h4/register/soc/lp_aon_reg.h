@@ -669,13 +669,23 @@ extern "C" {
  *  reserved
  */
 #define LP_AON_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
-/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 38814352;
- *  version register
+/** LP_AON_CLK_EN : R/W; bitpos: [5]; default: 0;
+ *  0: DREG_LDO control by SW;
+ *  1: DREG_LDO control by HW;
  */
-#define LP_AON_DATE    0x7FFFFFFFU
-#define LP_AON_DATE_M  (LP_AON_DATE_V << LP_AON_DATE_S)
-#define LP_AON_DATE_V  0x7FFFFFFFU
-#define LP_AON_DATE_S  0
+#define LP_AON_DREG_LDO_HW  BIT(5)
+#define LP_AON_DREG_LDO_HW_M  (LP_AON_DREG_LDO_HW_V << LP_AON_DREG_LDO_HW_S)
+#define LP_AON_DREG_LDO_HW_V  0x00000001U
+#define LP_AON_DREG_LDO_HW_S  31
+
+/** LP_AON_IO_LDO_ADJUST_SW : R/W; bitpos: [30:23]; default: 0;
+ *  need_des
+ */
+#define LP_AON_DREG_LDO_SW    0x0000000FU
+#define LP_AON_DREG_LDO_SW_M  (LP_AON_DREG_LDO_SW_V << LP_AON_DREG_LDO_SW_S)
+#define LP_AON_DREG_LDO_SW_V  0x0000000FU
+#define LP_AON_DREG_LDO_SW_S  11
+
 /** LP_AON_CLK_EN : R/W; bitpos: [31]; default: 0;
  *  version register
  */

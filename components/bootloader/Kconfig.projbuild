@@ -41,8 +41,8 @@ menu "Bootloader config"
 
     config BOOTLOADER_CPU_CLK_FREQ_MHZ
         int
-        default 64 if IDF_TARGET_ESP32H2
-        default 48 if IDF_TARGET_ESP32H21 || IDF_TARGET_ESP32H4
+        default 48 if IDF_TARGET_ESP32H21
+        default 64 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
         default 90 if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
         default 100 if IDF_TARGET_ESP32P4 && !ESP32P4_SELECTS_REV_LESS_V3
         default 80

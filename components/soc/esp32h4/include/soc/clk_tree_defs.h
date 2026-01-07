@@ -68,7 +68,7 @@ typedef enum {
  */
 typedef enum {
     SOC_ROOT_CIRCUIT_CLK_BBPLL,         /*!< BBPLL_CLK is the output of the PLL generator circuit */
-    // SOC_ROOT_CIRCUIT_CLK_XTAL_X2,       /*!< XTAL_X2_CLK is the output of the XTAL_X2 generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_XTAL_X2,       /*!< XTAL_X2_CLK is the output of the XTAL_X2 generator circuit */
 } soc_root_clk_circuit_t;
 
 /**
@@ -78,7 +78,7 @@ typedef enum {
 typedef enum {
     SOC_CPU_CLK_SRC_XTAL = 0,              /*!< Select XTAL_CLK as CPU_CLK source */
     SOC_CPU_CLK_SRC_RC_FAST = 1,           /*!< Select RC_FAST_CLK as CPU_CLK source */
-    // SOC_CPU_CLK_SRC_XTAL_X2 = 2,           /*!< Select XTAL_X2_CLK as CPU_CLK source (XTAL_X2_CLK is the other output of 32MHz crystal oscillator frequency multiplier, 64MHz) */
+    SOC_CPU_CLK_SRC_XTAL_X2 = 2,           /*!< Select XTAL_X2_CLK as CPU_CLK source (XTAL_X2_CLK is the other output of 32MHz crystal oscillator frequency multiplier, 64MHz) */
     SOC_CPU_CLK_SRC_PLL = 3,               /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 32MHz crystal oscillator frequency multiplier, 96MHz) */
     SOC_CPU_CLK_SRC_INVALID,               /*!< Invalid CPU_CLK source */
 } soc_cpu_clk_src_t;
@@ -134,9 +134,9 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW_D4, XTAL32K, or OSC_SLOW by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, BLE
-    // SOC_MOD_CLK_XTAL_X2_F32M,                  /*!< XTAL_X2_F32M_CLK is derived from XTAL_X2 (clock gating + fixed divider of 2), it has a fixed frequency of 32MHz */
+    SOC_MOD_CLK_XTAL_X2_F32M,                  /*!< XTAL_X2_F32M_CLK is derived from XTAL_X2 (clock gating + fixed divider of 2), it has a fixed frequency of 32MHz */
     SOC_MOD_CLK_PLL_F48M,                      /*!< PLL_F48M_CLK is derived from PLL (clock gating + fixed divider of 2), it has a fixed frequency of 48MHz */
-    // SOC_MOD_CLK_XTAL_X2_F64M,                  /*!< XTAL_X2_F64M_CLK is derived from XTAL_X2 (clock gating), it has a fixed frequency of 64MHz */
+    SOC_MOD_CLK_XTAL_X2_F64M,                  /*!< XTAL_X2_F64M_CLK is derived from XTAL_X2 (clock gating), it has a fixed frequency of 64MHz */
     SOC_MOD_CLK_PLL_F96M,                      /*!< PLL_F96M_CLK is derived from PLL (clock gating), it has a fixed frequency of 96MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
@@ -285,9 +285,9 @@ typedef enum {
 typedef enum {
     FLASH_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     FLASH_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
-    // FLASH_CLK_SRC_REF_F64M = SOC_MOD_CLK_XTAL_X2_F64M, /*!< Select XTAL_X2_F64M as the source clock */
+    FLASH_CLK_SRC_REF_F64M = SOC_MOD_CLK_XTAL_X2_F64M, /*!< Select XTAL_X2_F64M as the source clock */
     FLASH_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL_F48M as the source clock */
-    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
+    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL_X2_F64M,  /*!< Select XTAL_X2_F64M as the default clock choice */
     FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_flash_clk_src_t;
 
@@ -428,7 +428,7 @@ typedef enum {
 typedef enum {
     I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,                 /*!< Select PLL_F96M as the default source clock */
     I2S_CLK_SRC_PLL_96M = SOC_MOD_CLK_PLL_F96M,                 /*!< Select PLL_F96M as the source clock */
-    // I2S_CLK_SRC_PLL_64M = SOC_MOD_CLK_XTAL_X2_F64M,          /*!< Select XTAL_X2_F64M as the source clock */
+    I2S_CLK_SRC_PLL_64M = SOC_MOD_CLK_XTAL_X2_F64M,          /*!< Select XTAL_X2_F64M as the source clock */
     I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
     I2S_CLK_SRC_EXTERNAL = -1,                                  /*!< Select external clock as source clock */
 } soc_periph_i2s_clk_src_t;

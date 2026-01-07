@@ -13,4 +13,5 @@ static inline void esp_crypto_clk_init(void)
 {
     // Set crypto clock (`clk_sec`) to use 96M PLL clock
     REG_SET_FIELD(PCR_SEC_CONF_REG, PCR_SEC_CLK_SEL, 0x3);
+    // TODO: IDF-12266 need to call esp_clk_tree_enable_src() to acquire PLL 96M clock gating
 }

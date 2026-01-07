@@ -45,8 +45,11 @@ entries:
             pmu_init (noflash)
             pmu_param (noflash)
         elif PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
-            pmu_param:get_act_hp_dbias (noflash)
             pmu_param:get_act_lp_dbias (noflash)
+            if IDF_TARGET_ESP32H4 = y:
+                pmu_param:get_act_hp_drvb (noflash)
+            else:
+                pmu_param:get_act_hp_dbias (noflash)
     if SOC_PMU_PVT_SUPPORTED = y:
         pmu_pvt (noflash)
     if PM_SLP_IRAM_OPT = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:

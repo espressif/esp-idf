@@ -152,7 +152,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         if (!(sleep_flags & PMU_SLEEP_PD_XTAL)){
             analog_default.hp_sys.analog.xpd_trx = PMU_XPD_TRX_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
+            analog_default.hp_sys.analog.dbias = get_act_hp_drvb();
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
 
@@ -160,7 +160,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         } else if (!(sleep_flags & PMU_SLEEP_PD_RC_FAST)) {
-            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
+            analog_default.hp_sys.analog.dbias = get_act_hp_drvb();
             analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         }
         config->analog = analog_default;

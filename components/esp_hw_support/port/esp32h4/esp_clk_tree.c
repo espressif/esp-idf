@@ -30,15 +30,15 @@ uint32_t *freq_value)
     case SOC_MOD_CLK_XTAL:
         clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
         break;
-    // case SOC_MOD_CLK_XTAL_X2_F32M:
-    //     clk_src_freq = CLK_LL_PLL_32M_FREQ_MHZ * MHZ;
-    //     break;
+    case SOC_MOD_CLK_XTAL_X2_F32M:
+        clk_src_freq = CLK_LL_PLL_32M_FREQ_MHZ * MHZ;
+        break;
     case SOC_MOD_CLK_PLL_F48M:
         clk_src_freq = CLK_LL_PLL_48M_FREQ_MHZ * MHZ;
         break;
-    // case SOC_MOD_CLK_XTAL_X2_F64M:
-    //     clk_src_freq = CLK_LL_PLL_64M_FREQ_MHZ * MHZ;
-    //     break;
+    case SOC_MOD_CLK_XTAL_X2_F64M:
+        clk_src_freq = CLK_LL_PLL_64M_FREQ_MHZ * MHZ;
+        break;
     case SOC_MOD_CLK_PLL_F96M:
         clk_src_freq = CLK_LL_PLL_96M_FREQ_MHZ * MHZ;
         break;
@@ -63,66 +63,103 @@ uint32_t *freq_value)
     return ESP_OK;
 }
 
-// static int16_t s_xtal_x2_ref_cnt = 0;
+static int16_t s_xtal_x2_ref_cnt = 0;
+static int16_t s_bbpll_ref_cnt = 0;
 
 void esp_clk_tree_initialize(void)
 {
-    // // TODO: IDF-14962
-    // // // In bootloader, flash clock source will always be switched to use XTAL_X2 clock
-    // // s_xtal_x2_ref_cnt++;
-    // if (clk_ll_cpu_get_src() == SOC_CPU_CLK_SRC_XTAL_X2) {
-    //     s_xtal_x2_ref_cnt++;
-    // }
+    // Power
+    // In bootloader, flash clock source will always be switched to use XTAL_X2 clock
+    s_xtal_x2_ref_cnt++;
+    soc_cpu_clk_src_t cpu_clk_src_btld = clk_ll_cpu_get_src();
+    if (cpu_clk_src_btld == SOC_CPU_CLK_SRC_XTAL_X2) {
+        s_xtal_x2_ref_cnt++;
+    } else if (cpu_clk_src_btld == SOC_CPU_CLK_SRC_PLL) {
+        s_bbpll_ref_cnt++;
+    }
+
+    // Gating
+    // PLL_F64M ++ for MSPI
 }
 
 bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
 {
     switch (clk_circuit) {
-    // case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
-    //     return s_xtal_x2_ref_cnt > 0;
+    case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
+        return s_xtal_x2_ref_cnt > 0;
+    case SOC_ROOT_CIRCUIT_CLK_BBPLL:
+        return s_bbpll_ref_cnt > 0;
     default:
         break;
     }
     return false;
 }
 
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
+    bool toggled = false;
     switch (clk_circuit) {
-    // case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
-    //     if (enable) {
-    //         s_xtal_x2_ref_cnt++;
-    //     } else {
-    //         s_xtal_x2_ref_cnt--;
-    //     }
+    case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
+        if (enable) {
+            s_xtal_x2_ref_cnt++;
+        } else {
+            s_xtal_x2_ref_cnt--;
+        }
 
-    //     if (s_xtal_x2_ref_cnt == 1) {
-    //         clk_ll_xtal_x2_enable();
-    //     } else if (s_xtal_x2_ref_cnt == 0) {
-    //         clk_ll_xtal_x2_disable();
-    //     }
+        if (s_xtal_x2_ref_cnt == 1) {
+            clk_ll_xtal_x2_enable();
+            toggled = true;
+        } else if (s_xtal_x2_ref_cnt == 0) {
+            clk_ll_xtal_x2_disable();
+            toggled = true;
+        }
 
-    //     assert(s_xtal_x2_ref_cnt >= 0);
-    //     break;
+        assert(s_xtal_x2_ref_cnt >= 0);
+        break;
+    case SOC_ROOT_CIRCUIT_CLK_BBPLL:
+        if (enable) {
+            s_bbpll_ref_cnt++;
+        } else {
+            s_bbpll_ref_cnt--;
+        }
+
+        // Note that a calibration is usually needed after enabling BBPLL
+        if (s_bbpll_ref_cnt == 1) {
+            clk_ll_bbpll_enable();
+            toggled = true;
+        } else if (s_bbpll_ref_cnt == 0) {
+            clk_ll_bbpll_disable();
+            toggled = true;
+        }
+
+        assert(s_bbpll_ref_cnt >= 0);
+        break;
     default:
         break;
     }
-    return ESP_OK; // TODO: PM-456
+    return toggled;
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
-    switch (clk_src) {
-    // case SOC_MOD_CLK_XTAL_X2_F32M:
-    //     // later, here should handle ref count for XTAL_X2_F32M clock gating, then also handle XTAL_X2 circuit enable/disable
-    //     esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
-    //     break;
-    // case SOC_MOD_CLK_XTAL_X2_F64M:
-    //     // later, here should handle ref count for XTAL_X2_F64M clock gating, then also handle XTAL_X2 circuit enable/disable
-    //     esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
-    //     break;
-    default:
-        break;
+    PERIPH_RCC_ATOMIC() {
+        switch (clk_src) {
+        case SOC_MOD_CLK_XTAL_X2_F32M:
+            // later, here should handle ref count for XTAL_X2_F32M clock gating, then also handle XTAL_X2 circuit enable/disable
+            esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
+            break;
+        case SOC_MOD_CLK_XTAL_X2_F64M:
+            // later, here should handle ref count for XTAL_X2_F64M clock gating, then also handle XTAL_X2 circuit enable/disable
+            esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
+            break;
+        // case SOC_MOD_CLK_PLL_FxxM:
+        //     bool truly_toggled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, enable);
+        //     if (enable && truly_toggled) {
+        //         ESP_LOGW(TAG, "BBPLL enabled, a calibration may be needed");
+        //     }
+        default:
+            break;
+        }
     }
     return ESP_OK; // TODO: PM-456
 }
