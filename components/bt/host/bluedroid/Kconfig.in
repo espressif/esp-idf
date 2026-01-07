@@ -441,6 +441,14 @@ menu "Bluedroid debug option"
         help
             Bluedroid memory debug
 
+    config BT_BLUEDROID_MEM_STATS
+        bool "Bluedroid memory statistics"
+        depends on BT_BLUEDROID_ENABLED
+        depends on !BT_BLUEDROID_MEM_DEBUG
+        default n
+        help
+            Enable Bluedroid memory usage statistics
+
     config BT_BLUEDROID_THREAD_DEBUG
         bool "Bluedroid thread debug"
         depends on BT_BLUEDROID_ENABLED
