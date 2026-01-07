@@ -93,13 +93,14 @@ void btm_dev_init (void)
     btm_cb.btm_acl_pkt_types_supported = BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1 +
                                          BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3 +
                                          BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.btm_sco_pkt_types_supported = BTM_SCO_PKT_TYPES_MASK_HV1 +
                                          BTM_SCO_PKT_TYPES_MASK_HV2 +
                                          BTM_SCO_PKT_TYPES_MASK_HV3 +
                                          BTM_SCO_PKT_TYPES_MASK_EV3 +
                                          BTM_SCO_PKT_TYPES_MASK_EV4 +
                                          BTM_SCO_PKT_TYPES_MASK_EV5;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 
@@ -330,7 +331,7 @@ static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p
 
         BTM_TRACE_DEBUG("Local supported ACL packet types: 0x%04x",
                         btm_cb.btm_acl_pkt_types_supported);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* Create (e)SCO supported packet types mask */
         btm_cb.btm_sco_pkt_types_supported = 0;
 #if BTM_SCO_INCLUDED == TRUE
@@ -386,7 +387,7 @@ static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p
 
         BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                         btm_cb.btm_sco_pkt_types_supported);
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Create Default Policy Settings */
         if (HCI_SWITCH_SUPPORTED(p_features)) {
             btm_cb.btm_def_link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;

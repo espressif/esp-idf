@@ -3002,7 +3002,9 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete\n");
     if (((p_bd_addr == NULL) && !BTM_ACL_IS_CONNECTED(btm_cb.connecting_bda))
             || ((p_bd_addr != NULL) && !BTM_ACL_IS_CONNECTED(p_bd_addr))) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_acl_resubmit_page();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 
     /* If remote name request failed, p_bd_addr is null and we need to search */
@@ -4284,8 +4286,9 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     BOOLEAN          is_pairing_device = FALSE;
     tACL_CONN        *p_acl_cb;
     UINT8            bit_shift = 0;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_resubmit_page();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
     /* Commenting out trace due to obf/compilation problems.
     */

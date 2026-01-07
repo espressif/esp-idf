@@ -376,8 +376,11 @@ typedef struct{
 }tGATT_PREPARE_WRITE_RECORD;
 
 typedef struct {
+#if (SMP_INCLUDED == TRUE)
     fixed_queue_t    *pending_enc_clcb;   /* pending encryption channel q */
     tGATT_SEC_ACTION sec_act;
+#endif // (SMP_INCLUDED == TRUE)
+
     BD_ADDR         peer_bda;
     tBT_TRANSPORT   transport;
     UINT32          trans_id;
@@ -514,11 +517,11 @@ typedef struct {
 
 typedef struct {
     list_t              *p_tcb_list;
-    fixed_queue_t       *sign_op_queue;
-
+#if (GATTS_INCLUDED == TRUE)
     tGATT_SR_REG        sr_reg[GATT_MAX_SR_PROFILES];
     UINT16              next_handle;    /* next available handle */
     tGATT_SVC_CHG       gattp_attr;     /* GATT profile attribute service change */
+#endif // (GATTS_INCLUDED == TRUE)
     tGATT_IF            gatt_if;
 #if (GATTS_INCLUDED == TRUE)
     tGATT_HDL_LIST_INFO hdl_list_info;
@@ -526,13 +529,13 @@ typedef struct {
     tGATT_SRV_LIST_INFO srv_list_info;
     tGATT_SRV_LIST_ELEM srv_list[GATT_MAX_SR_PROFILES];
 #endif  ///GATTS_INCLUDED == TRUE
+#if (GATTS_INCLUDED == TRUE)
     fixed_queue_t       *srv_chg_clt_q;   /* service change clients queue */
     fixed_queue_t       *pending_new_srv_start_q; /* pending new service start queue */
+#endif // (GATTS_INCLUDED == TRUE)
     tGATT_REG           cl_rcb[GATT_MAX_APPS];
     list_t              *p_clcb_list;           /* connection link control block*/
-    tGATT_SCCB          sccb[GATT_MAX_SCCB];    /* sign complete callback function GATT_MAX_SCCB <= GATT_CL_MAX_LCB */
     UINT8               trace_level;
-    UINT16              def_mtu_size;
 
 #if GATT_CONFORMANCE_TESTING == TRUE
     BOOLEAN             enable_err_rsp;
@@ -556,13 +559,18 @@ typedef struct {
     tGATT_APPL_INFO       cb_info;
 
 
-
+#if (GATTS_INCLUDED == TRUE)
     tGATT_HDL_CFG           hdl_cfg;
+#endif // (GATTS_INCLUDED == TRUE)
 #if (tGATT_BG_CONN_DEV == TRUE)
     tGATT_BG_CONN_DEV       bgconn_dev[GATT_MAX_BG_CONN_DEV];
 #endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATTC_INCLUDED == TRUE)
     BOOLEAN             auto_disc;      /* internal use: true for auto discovering after connected */
+#endif // (GATTC_INCLUDED == TRUE)
+#if (GATTS_INCLUDED == TRUE)
     UINT8               srv_chg_mode;   /* internal use: service change mode */
+#endif // (GATTS_INCLUDED == TRUE)
     tGATTS_RSP          rsp;            /* use to read internal service attribute */
 } tGATT_CB;
 

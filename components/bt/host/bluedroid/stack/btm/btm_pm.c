@@ -903,7 +903,7 @@ BOOLEAN btm_pm_device_in_active_or_sniff_mode(void)
 
     return FALSE;
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_pm_device_in_scan_state
@@ -932,7 +932,7 @@ BOOLEAN btm_pm_device_in_scan_state(void)
 
     return FALSE;
 }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_PM_ReadControllerState
@@ -946,9 +946,13 @@ tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void)
 {
     if (TRUE == btm_pm_device_in_active_or_sniff_mode()) {
         return BTM_CONTRL_ACTIVE;
-    } else if (TRUE == btm_pm_device_in_scan_state()) {
+    }
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    else if (TRUE == btm_pm_device_in_scan_state()) {
         return BTM_CONTRL_SCAN;
-    } else {
+    }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+    else {
         return BTM_CONTRL_IDLE;
     }
 }

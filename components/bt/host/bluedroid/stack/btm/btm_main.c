@@ -64,7 +64,9 @@ void btm_init (void)
 #endif /* #if BTM_DYNAMIC_MEMORY */
     /* All fields are cleared; nonzero fields are reinitialized in appropriate function */
     memset(&btm_cb, 0, sizeof(tBTM_CB));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.page_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
 #if defined(BTM_INITIAL_TRACE_LEVEL)
@@ -110,8 +112,10 @@ void btm_init (void)
 *******************************************************************************/
 void btm_free(void)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     fixed_queue_free(btm_cb.page_queue, osi_free_func);
     fixed_queue_free(btm_cb.sec_pending_q, osi_free_func);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_free();
     btm_sec_dev_free();
 #if BTM_SCO_INCLUDED == TRUE
