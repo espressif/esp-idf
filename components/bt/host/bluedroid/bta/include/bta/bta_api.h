@@ -2889,7 +2889,7 @@ extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
 
 /*******************************************************************************
 **
-** Function         BTA_DmBleBroadcast
+** Function         BTA_DmBleAdvStop
 **
 ** Description      This function starts or stops LE broadcasting.
 **
@@ -2899,7 +2899,7 @@ extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
+extern void BTA_DmBleAdvStop (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
 
 /*******************************************************************************
 **

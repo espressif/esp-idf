@@ -159,7 +159,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     /* New function to allow set raw scan
        response data to HCI */
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
-    bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
+    bta_dm_ble_advstop,                   /* BTA_DM_API_BLE_ADVSTOP_EVT */
 #endif // #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_data_length,             /* BTA_DM_API_SET_DATA_LENGTH_EVT */
     bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */

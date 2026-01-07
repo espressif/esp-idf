@@ -153,7 +153,7 @@ enum {
     BTA_DM_API_BLE_SET_SCAN_RSP_EVT,
     /* Add for set raw scan response data */
     BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT,
-    BTA_DM_API_BLE_BROADCAST_EVT,
+    BTA_DM_API_BLE_ADVSTOP_EVT,
 #endif // #if (BLE_42_ADV_EN == TRUE)
     BTA_DM_API_SET_DATA_LENGTH_EVT,
 
@@ -2232,7 +2232,7 @@ extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data);
-extern void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_advstop (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data);
 #if SMP_INCLUDED == TRUE

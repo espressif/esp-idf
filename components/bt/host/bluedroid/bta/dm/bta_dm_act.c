@@ -133,9 +133,9 @@ extern tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 static BOOLEAN bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
 #endif  ///SMP_INCLUDED == TRUE
 #if (BLE_INCLUDED == TRUE)
-static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
-static void bta_dm_observe_cmpl_cb(void *p_result);
-static void bta_dm_observe_discard_cb (uint32_t num_dis);
+static void bta_dm_scan_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
+static void bta_dm_scan_cmpl_cb(void *p_result);
+static void bta_dm_scan_discard_cb (uint32_t num_dis);
 #endif  ///BLE_INCLUDED == TRUE
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -4657,9 +4657,10 @@ BOOLEAN bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr)
 #endif /* BTA_HD_INCLUDED == TRUE */
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
-** Function         bta_dm_observe_results_cb
+** Function         bta_dm_scan_results_cb
 **
 ** Description      Callback for BLE Observe result
 **
@@ -4667,7 +4668,7 @@ BOOLEAN bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
+static void bta_dm_scan_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
 {
     tBTA_DM_SEARCH     result;
     tBTM_INQ_INFO      *p_inq_info;
@@ -4707,7 +4708,7 @@ static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
 
 /*******************************************************************************
 **
-** Function         bta_dm_observe_cmpl_cb
+** Function         bta_dm_scan_cmpl_cb
 **
 ** Description      Callback for BLE Observe complete
 **
@@ -4715,11 +4716,11 @@ static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_dm_observe_cmpl_cb (void *p_result)
+static void bta_dm_scan_cmpl_cb (void *p_result)
 {
     tBTA_DM_SEARCH  data;
 
-    APPL_TRACE_DEBUG("bta_dm_observe_cmpl_cb");
+    APPL_TRACE_DEBUG("bta_dm_scan_cmpl_cb");
 
     data.inq_cmpl.num_resps = ((tBTM_INQUIRY_CMPL *)p_result)->num_resp;
     if (bta_dm_search_cb.p_scan_cback) {
@@ -4729,7 +4730,7 @@ static void bta_dm_observe_cmpl_cb (void *p_result)
 
 /*******************************************************************************
 **
-** Function         bta_dm_observe_discard_cb
+** Function         bta_dm_scan_discard_cb
 **
 ** Description      Callback for BLE Observe lost
 **
@@ -4737,17 +4738,18 @@ static void bta_dm_observe_cmpl_cb (void *p_result)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_dm_observe_discard_cb (uint32_t num_dis)
+static void bta_dm_scan_discard_cb (uint32_t num_dis)
 {
     tBTA_DM_SEARCH  data;
 
-    APPL_TRACE_DEBUG("bta_dm_observe_discard_cb");
+    APPL_TRACE_DEBUG("bta_dm_scan_discard_cb");
 
     data.inq_dis.num_dis = num_dis;
     if (bta_dm_search_cb.p_scan_cback) {
         bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_DISCARD_NUM_EVT, &data);
     }
 }
+#endif // (BLE_42_SCAN_EN == TRUE)
 
 #if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
@@ -5228,7 +5230,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
         bta_dm_search_cb.p_scan_cback = p_data->ble_scan.p_cback;
 
         if ((status = BTM_BleScan(TRUE, p_data->ble_scan.duration,
-                                     bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb, bta_dm_observe_discard_cb)) != BTM_CMD_STARTED) {
+                                     bta_dm_scan_results_cb, bta_dm_scan_cmpl_cb, bta_dm_scan_discard_cb)) != BTM_CMD_STARTED) {
             APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
         }
 
@@ -5463,14 +5465,14 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
-** Function         bta_dm_ble_broadcast
+** Function         bta_dm_ble_advstop
 **
 ** Description      Starts or stops LE broadcasts
 **
 ** Parameters:
 **
 *******************************************************************************/
-void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data)
+void bta_dm_ble_advstop (tBTA_DM_MSG *p_data)
 {
     tBTA_STATUS status = BTA_FAILURE;
     BOOLEAN start = p_data->ble_observe.start;
