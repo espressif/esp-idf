@@ -2193,29 +2193,6 @@ void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
 //extern
 void BTM_BleObtainVendorCapabilities(tBTM_BLE_VSC_CB *p_cmn_vsc_cb);
 
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleSetScanParams
-**
-** Description      This function is called to set Scan parameters.
-**
-** Parameters       client_if - Client IF value
-**                  scan_interval - Scan interval
-**                  scan_window - Scan window
-**                  scan_type - Scan type
-**                  scan_setup_status_cback - Scan setup status callback
-**
-** Returns          void
-**
-*******************************************************************************/
-//extern
-void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
-                          UINT32 scan_window, tBLE_SCAN_MODE scan_type,
-                          tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
-
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-
 /*******************************************************************************
 **
 ** Function         BTM_BleSetScanFilterParams
