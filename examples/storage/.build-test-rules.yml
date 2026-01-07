@@ -65,6 +65,7 @@ examples/storage/perf_benchmark:
 
 examples/storage/sd_card/sdmmc:
   depends_components:
+    - fatfs
     - vfs
     - sdmmc
     - esp_driver_sdmmc
@@ -77,6 +78,7 @@ examples/storage/sd_card/sdmmc:
 
 examples/storage/sd_card/sdspi:
   depends_components:
+    - fatfs
     - vfs
     - sdmmc
     - esp_driver_sdspi
