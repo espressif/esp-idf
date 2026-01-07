@@ -369,6 +369,7 @@ uint8_t l2cu_ble_plcb_active_count(void)
 
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_get_conn_role
@@ -385,6 +386,7 @@ UINT8 l2cu_get_conn_role (tL2C_LCB *p_this_lcb)
 {
     return l2cb.desire_role;
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -2373,7 +2375,7 @@ UINT8 l2cu_get_num_hi_priority (void)
     return no_hi;
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_create_conn_after_switch
@@ -2448,7 +2450,7 @@ BOOLEAN l2cu_create_conn_after_switch (tL2C_LCB *p_lcb)
 
     return (TRUE);
 }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
