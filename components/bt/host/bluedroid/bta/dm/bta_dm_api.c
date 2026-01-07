@@ -110,53 +110,6 @@ tBTA_STATUS BTA_DisableBluetooth(void)
 
     return BTA_SUCCESS;
 }
-#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_EnableTestMode
-**
-** Description      Enables bluetooth device under test mode
-**
-**
-** Returns          tBTA_STATUS
-**
-*******************************************************************************/
-tBTA_STATUS BTA_EnableTestMode(void)
-{
-    BT_HDR    *p_msg;
-
-    APPL_TRACE_API("BTA_EnableTestMode");
-
-    if ((p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        p_msg->event = BTA_DM_API_ENABLE_TEST_MODE_EVT;
-        bta_sys_sendmsg(p_msg);
-        return BTA_SUCCESS;
-    }
-    return BTA_FAILURE;
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DisableTestMode
-**
-** Description      Disable bluetooth device under test mode
-**
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DisableTestMode(void)
-{
-    BT_HDR    *p_msg;
-
-    APPL_TRACE_API("BTA_DisableTestMode");
-
-    if ((p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        p_msg->event = BTA_DM_API_DISABLE_TEST_MODE_EVT;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 
 /*******************************************************************************
 **
