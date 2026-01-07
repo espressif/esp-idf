@@ -556,8 +556,21 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/common/mutex.c"
                     "esp_ble_mesh/common/queue.c"
                     "esp_ble_mesh/common/timer.c"
-                    "esp_ble_mesh/common/utils.c"
-                    "esp_ble_mesh/core/storage/settings_nvs.c"
+                    "esp_ble_mesh/common/utils.c")
+
+        # Select crypto implementation based on config
+        if(CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT OR
+           CONFIG_BT_SMP_CRYPTO_STACK_NATIVE)
+            list(APPEND srcs "esp_ble_mesh/common/crypto_tc.c")
+        elseif(CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
+            if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
+                list(APPEND srcs "esp_ble_mesh/common/crypto_psa.c")
+            else()
+                list(APPEND srcs "esp_ble_mesh/common/crypto_mbedtls.c")
+            endif()
+        endif()
+
+        list(APPEND srcs "esp_ble_mesh/core/storage/settings_nvs.c"
                     "esp_ble_mesh/core/storage/settings_uid.c"
                     "esp_ble_mesh/core/storage/settings.c"
                     "esp_ble_mesh/core/access.c"
@@ -599,7 +612,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/models/server/state_transition.c"
                     "esp_ble_mesh/models/server/time_scene_server.c")
 
-        if(NOT CONFIG_BLE_MESH_USE_UNIFIED_CRYPTO)
+        if(CONFIG_BT_SMP_CRYPTO_STACK_NATIVE)
             list(APPEND include_dirs ${ble_mesh_tinycrypt_dirs})
                 list(APPEND srcs
                     "esp_ble_mesh/common/tinycrypt/src/aes_decrypt.c"
