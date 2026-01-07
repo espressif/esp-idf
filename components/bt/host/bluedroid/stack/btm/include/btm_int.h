@@ -201,10 +201,11 @@ tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  
 TIMER_LIST_ENT       txpwer_timer;
 tBTM_CMPL_CB        *p_txpwer_cmpl_cb;    /* Callback function to be called when  */
 /* read inq tx power function completes  */
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 TIMER_LIST_ENT       qossu_timer;
 tBTM_CMPL_CB        *p_qossu_cmpl_cb;   /* Callback function to be called when  */
 /* qos setup function completes         */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
 tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  */
