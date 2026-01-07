@@ -78,9 +78,9 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 
 
 static void bta_dm_acl_link_stat_cback(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data);
-static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
+static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 static void bta_dm_encryption_change_cback(BD_ADDR bd_addr, UINT8 enc_mode);
 static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
 /* Extended Inquiry Response */
@@ -540,8 +540,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         /* initialize bluetooth low power manager */
         bta_dm_init_pm();
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         bta_sys_policy_register((tBTA_SYS_CONN_CBACK *)bta_dm_policy_cback);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
         bta_dm_gattc_register();
@@ -1361,6 +1362,7 @@ void bta_dm_pin_reply (tBTA_DM_MSG *p_data)
 }
 #endif  ///SMP_INCLUDED == TRUE
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_policy_cback
@@ -1426,7 +1428,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
         break;
     }
 }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_confirm
