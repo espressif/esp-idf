@@ -130,9 +130,6 @@ enum {
 #if (BLE_42_SCAN_EN == TRUE)
     BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT,
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-    BTA_DM_API_BLE_OBSERVE_EVT,
-#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 #if (BLE_42_SCAN_EN == TRUE)
     BTA_DM_API_BLE_SCAN_EVT,
 #endif // #if (BLE_42_SCAN_EN == TRUE)
