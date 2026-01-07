@@ -1247,6 +1247,8 @@ void gatt_start_rsp_timer(UINT16 clcb_idx)
     btu_start_timer (&p_clcb->rsp_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_RSP,
                      GATT_WAIT_FOR_RSP_TOUT);
 }
+
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_start_conf_timer
@@ -1262,6 +1264,9 @@ void gatt_start_conf_timer(tGATT_TCB    *p_tcb)
     btu_start_timer (&p_tcb->conf_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_RSP,
                      GATT_WAIT_FOR_RSP_TOUT);
 }
+#endif // (GATTS_INCLUDED == TRUE)
+
+#if (GATTC_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_start_ind_ack_timer
@@ -1279,6 +1284,7 @@ void gatt_start_ind_ack_timer(tGATT_TCB *p_tcb)
                      GATT_WAIT_FOR_IND_ACK_TOUT);
 
 }
+
 /*******************************************************************************
 **
 ** Function         gatt_rsp_timeout
@@ -1337,6 +1343,7 @@ void gatt_ind_ack_timeout(TIMER_LIST_ENT *p_tle)
 
     attp_send_cl_msg(((tGATT_TCB *)p_tle->param), 0, GATT_HANDLE_VALUE_CONF, NULL);
 }
+#endif // (GATTC_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
@@ -2095,6 +2102,7 @@ BOOLEAN gatt_find_specific_app_in_hold_link(tGATT_TCB *p_tcb, tGATT_IF p_gatt_if
     return found;
 }
 
+#if (GATTC_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_cmd_enq
@@ -2148,6 +2156,7 @@ tGATT_CLCB *gatt_cmd_dequeue(tGATT_TCB *p_tcb, UINT8 *p_op_code)
 
     return p_clcb;
 }
+#endif // (GATTC_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -2316,9 +2325,12 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
                 gatt_clcb_dealloc(p_clcb);
             }
         }
-
+#if (GATTC_INCLUDED == TRUE)
         btu_free_timer (&p_tcb->ind_ack_timer_ent);
+#endif // #if (GATTC_INCLUDED == TRUE)
+#if (GATTS_INCLUDED == TRUE)
         btu_free_timer (&p_tcb->conf_timer_ent);
+#endif // (GATTS_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
         gatt_free_pending_enc_queue(p_tcb);
 #endif // (SMP_INCLUDED == TRUE)
