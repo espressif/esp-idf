@@ -2274,8 +2274,11 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 #if BTM_SCO_INCLUDED == TRUE
     BOOLEAN         is_sco_active;
 #endif
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
     list_node_t *p_node     = NULL;
     tL2C_LCB    *p_lcb_cur  = NULL;
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
     tBT_DEVICE_TYPE     dev_type;
@@ -2298,6 +2301,7 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
     }
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If there is a connection where we perform as a slave, try to switch roles
        for this connection */
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
@@ -2341,6 +2345,8 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
     p_lcb->link_state = LST_CONNECTING;
 
     return (l2cu_create_conn_after_switch (p_lcb));
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
+    return false;
 }
 
 /*******************************************************************************
