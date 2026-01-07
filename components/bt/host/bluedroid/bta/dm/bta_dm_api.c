@@ -73,8 +73,10 @@ tBTA_STATUS BTA_EnableBluetooth(tBTA_DM_SEC_CBACK *p_cback)
     bta_sys_register (BTA_ID_DM, &bta_dm_reg );
     bta_sys_register (BTA_ID_DM_SEARCH, &bta_dm_search_reg );
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* if UUID list is not provided as static data */
     bta_sys_eir_register(bta_dm_eir_update_uuid);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
     if ((p_msg = (tBTA_DM_API_ENABLE *) osi_malloc(sizeof(tBTA_DM_API_ENABLE))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_ENABLE_EVT;
