@@ -170,8 +170,8 @@ struct i3c_master_bus_t {
     i3c_transaction_desc_t *trans_desc_pool; /**< Pool of pre-allocated transaction descriptors. */
     uint32_t ops_prepare_idx; /**< Index for preparing operations. */
     bool async_memory_allocated; /**< The async transaction is allocated or not */
-    i3c_master_ll_device_address_descriptor_t (*i3c_async_addr_table)[SOC_I3C_MASTER_ADDRESS_TABLE_NUM]; /**< Address table for asynchronous transactions. */
-    i3c_master_ll_command_descriptor_t (*i3c_async_command_table)[SOC_I3C_MASTER_COMMAND_TABLE_NUM]; /**< Command table for asynchronous transactions. */
+    i3c_master_ll_device_address_descriptor_t (*i3c_async_addr_table)[I3C_MASTER_LL_ADDRESS_TABLE_NUM]; /**< Address table for asynchronous transactions. */
+    i3c_master_ll_command_descriptor_t (*i3c_async_command_table)[I3C_MASTER_LL_COMMAND_TABLE_NUM]; /**< Command table for asynchronous transactions. */
     QueueHandle_t trans_queues[I3C_TRANS_QUEUE_MAX]; /**< Array of transaction queues for different states. */
     intr_handle_t intr_handle; /**< Interrupt handle for I3C interrupts. */
     _Atomic i3c_fsm_t fsm; /**< Current state of the I3C finite state machine. */

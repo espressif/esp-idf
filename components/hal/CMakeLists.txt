@@ -75,10 +75,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "systimer_hal.c")
     endif()
 
-    if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
-        list(APPEND srcs "i3c_master_hal.c")
-    endif()
-
     if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
         list(APPEND srcs "sdmmc_hal.c")
     endif()

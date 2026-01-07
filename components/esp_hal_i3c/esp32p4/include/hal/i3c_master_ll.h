@@ -33,6 +33,9 @@ extern "C" {
 #define I3C_LL_MASTER_TRANSMIT_INTR    (I3C_MST_TX_DATA_BUF_THLD_INT_ENA_M)
 #define I3C_LL_MASTER_RECEIVE_INTR     (I3C_MST_RX_DATA_BUF_THLD_INT_ENA_M)
 #define I3C_LL_MASTER_INTERNAL_PULLUP_IO_PINS_MASK            (BIT64(32) | BIT64(33))
+#define I3C_MASTER_LL_PERIPH_NUM                   (1)
+#define I3C_MASTER_LL_ADDRESS_TABLE_NUM            (12)
+#define I3C_MASTER_LL_COMMAND_TABLE_NUM            (12)
 
 #define I3C_MASTER_LL_DEFAULT_SETUP_TIME     (600)
 
@@ -307,7 +310,6 @@ typedef struct {
     uint8_t  dcr;           ///< Device Characteristics Register (device class/type)
     uint8_t  dynamic_addr;  ///< 7-bit dynamic address assigned via DATA/SETDASA
 } i3c_master_ll_device_char_descriptor_t;
-
 
 /**
  * @brief IBI response status
@@ -1065,21 +1067,21 @@ static inline void i3c_master_ll_set_internal_pullup_value(int io, i3c_master_in
 {
     HAL_ASSERT(io == 32 || io == 33);
     switch (value) {
-        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K:
-            IO_MUX.gpio[io].i3c_ru = 0;
-            break;
-        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_6K:
-            IO_MUX.gpio[io].i3c_ru = 1;
-            break;
-        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_1_2K:
-            IO_MUX.gpio[io].i3c_ru = 2;
-            break;
-        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_2_4K:
-            IO_MUX.gpio[io].i3c_ru = 3;
-            break;
-        case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_DISABLED:
-            HAL_ASSERT(false);
-            break;
+    case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K:
+        IO_MUX.gpio[io].i3c_ru = 0;
+        break;
+    case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_6K:
+        IO_MUX.gpio[io].i3c_ru = 1;
+        break;
+    case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_1_2K:
+        IO_MUX.gpio[io].i3c_ru = 2;
+        break;
+    case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_2_4K:
+        IO_MUX.gpio[io].i3c_ru = 3;
+        break;
+    case I3C_MASTER_INTERNAL_PULLUP_RESISTOR_DISABLED:
+        HAL_ASSERT(false);
+        break;
     }
 }
 

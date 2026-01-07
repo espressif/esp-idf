@@ -29,13 +29,12 @@ typedef soc_periph_i3c_master_clk_src_t i3c_master_clock_source_t;
 typedef int                             i3c_master_clock_source_t;
 #endif
 
-
 /**
  * @brief I3C Common Command Code (CCC) enumeration
  *
  * This enumeration defines all I3C CCC command codes as per MIPI I3C specification.
  */
- typedef enum {
+typedef enum {
     I3C_CCC_ENEC              = 0x00,    ///< Enable Events Command
     I3C_CCC_DISEC             = 0x01,    ///< Disable Events Command
     I3C_CCC_ENTAS0            = 0x02,    ///< Enable Target Activity State 0

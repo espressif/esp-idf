@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,13 +39,13 @@
 #include "hal/i3c_master_ll.h"
 #include "i3c_master_private.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/i3c_master_periph.h"
+#include "hal/i3c_master_periph.h"
 
 static const char *TAG = "i3c.master";
 
 typedef struct i3c_master_platform_t {
     portMUX_TYPE spinlock;                        // platform level spinlock.
-    i3c_master_bus_handle_t buses[SOC_I3C_MASTER_PERIPH_NUM];  // array of I3C master bus instances.
+    i3c_master_bus_handle_t buses[I3C_MASTER_LL_PERIPH_NUM];  // array of I3C master bus instances.
 } i3c_master_platform_t;
 
 static i3c_master_platform_t s_i3c_master_platform = {}; // singleton platform
@@ -333,10 +333,10 @@ static esp_err_t i3c_master_async_transaction_preparation(i3c_master_bus_t *i3c_
         ESP_RETURN_ON_FALSE(xQueueSend(i3c_master_handle->trans_queues[I3C_TRANS_QUEUE_READY], &p_trans_desc, 0) == pdTRUE,
                             ESP_ERR_INVALID_STATE, TAG, "ready queue full");
     }
-    i3c_master_handle->i3c_async_addr_table = (i3c_master_ll_device_address_descriptor_t(*)[SOC_I3C_MASTER_ADDRESS_TABLE_NUM])heap_caps_calloc(i3c_master_handle->queue_depth, sizeof(*i3c_master_handle->i3c_async_addr_table), I3C_MASTER_MEM_ALLOC_CAPS);
+    i3c_master_handle->i3c_async_addr_table = (i3c_master_ll_device_address_descriptor_t(*)[I3C_MASTER_LL_ADDRESS_TABLE_NUM])heap_caps_calloc(i3c_master_handle->queue_depth, sizeof(*i3c_master_handle->i3c_async_addr_table), I3C_MASTER_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(i3c_master_handle->i3c_async_addr_table, ESP_ERR_NO_MEM, TAG, "no mem for address table");
 
-    i3c_master_handle->i3c_async_command_table = (i3c_master_ll_command_descriptor_t(*)[SOC_I3C_MASTER_COMMAND_TABLE_NUM])heap_caps_calloc(i3c_master_handle->queue_depth, sizeof(*i3c_master_handle->i3c_async_command_table), I3C_MASTER_MEM_ALLOC_CAPS);
+    i3c_master_handle->i3c_async_command_table = (i3c_master_ll_command_descriptor_t(*)[I3C_MASTER_LL_COMMAND_TABLE_NUM])heap_caps_calloc(i3c_master_handle->queue_depth, sizeof(*i3c_master_handle->i3c_async_command_table), I3C_MASTER_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(i3c_master_handle->i3c_async_command_table, ESP_ERR_NO_MEM, TAG, "no mem for command table");
 
     i3c_master_handle->ops_prepare_idx = 0;
@@ -712,7 +712,7 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
     s_i3c_master_platform.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&s_i3c_master_platform.spinlock);
     bool bus_found = false;
-    for (int i = 0; i < SOC_I3C_MASTER_PERIPH_NUM; i++) {
+    for (int i = 0; i < I3C_MASTER_LL_PERIPH_NUM; i++) {
         if (i3c_master_bus_occupied(i) == false) {
             s_i3c_master_platform.buses[i] = i3c_master_handle;
             bus_found = true;
