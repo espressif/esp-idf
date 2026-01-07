@@ -137,7 +137,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
     bta_dm_security_grant,                  /* BTA_DM_API_BLE_SEC_GRANT_EVT */
 #endif  ///SMP_INCLUDED == TRUE
-    bta_dm_ble_set_bg_conn_type,
+#if (BLE_GATT_BGCONN == TRUE)
+    bta_dm_ble_set_bg_conn_type,            /* BTA_DM_API_BLE_SET_BG_CONN_TYPE */
+#endif // (BLE_GATT_BGCONN == TRUE)
     bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
 #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
