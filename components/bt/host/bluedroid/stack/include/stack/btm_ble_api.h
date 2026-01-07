@@ -922,26 +922,6 @@ typedef UINT8   tBTM_BLE_CONN_TYPE;
 #define ADV_INFO_PRESENT        0x00
 #define NO_ADV_INFO_PRESENT     0x01
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-typedef btgatt_track_adv_info_t tBTM_BLE_TRACK_ADV_DATA;
-
-typedef void (tBTM_BLE_TRACK_ADV_CBACK)(tBTM_BLE_TRACK_ADV_DATA *p_track_adv_data);
-
-typedef UINT8 tBTM_BLE_TRACK_ADV_EVT;
-
-typedef struct {
-    tBTM_BLE_REF_VALUE             ref_value;
-    tBTM_BLE_TRACK_ADV_CBACK *p_track_cback;
-} tBTM_BLE_ADV_TRACK_CB;
-
-enum {
-    BTM_BLE_TRACK_ADV_ADD,
-    BTM_BLE_TRACK_ADV_REMOVE
-};
-
-typedef UINT8 tBTM_BLE_TRACK_ADV_ACTION;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-
 #define BTM_BLE_MULTI_ADV_INVALID   0
 
 #define BTM_BLE_BATCH_SCAN_ENABLE_EVT     1
@@ -2351,23 +2331,6 @@ tBTM_STATUS BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
                                    tBTM_BLE_REF_VALUE ref_value);
 #endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleTrackAdvertiser
-**
-** Description      This function is called to read batch scan reports
-**
-** Parameters       p_track_cback - Tracking callback
-**                  ref_value - Reference value
-**
-** Returns          tBTM_STATUS
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK *p_track_cback,
-                                   tBTM_BLE_REF_VALUE ref_value);
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 /*******************************************************************************
 **

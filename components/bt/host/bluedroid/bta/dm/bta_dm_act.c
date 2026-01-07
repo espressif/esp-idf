@@ -6504,41 +6504,6 @@ void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_track_advertiser
-**
-** Description      This function tracks the specific advertiser
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_track_advertiser(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-    BD_ADDR bda;
-    memset(&bda, 0 , sizeof(BD_ADDR));
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-    tBTA_DM_BLE_TRACK_ADV_DATA track_adv_data;
-
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-    if (0 != cmn_ble_vsc_cb.tot_scan_results_strg) {
-        btm_status = BTM_BleTrackAdvertiser((tBTM_BLE_TRACK_ADV_CBACK *)
-                                            p_data->ble_track_advert.p_track_adv_cback,
-                                            p_data->ble_track_advert.ref_value);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        memset(&track_adv_data, 0, sizeof(tBTA_DM_BLE_TRACK_ADV_DATA));
-        track_adv_data.advertiser_info_present = NO_ADV_INFO_PRESENT; /* Indicates failure */
-        track_adv_data.client_if = (UINT8)p_data->ble_track_advert.ref_value;
-        p_data->ble_track_advert.p_track_adv_cback(&track_adv_data);
-    }
-}
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_ble_scan_setup_cb
