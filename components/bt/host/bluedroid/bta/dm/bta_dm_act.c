@@ -6415,66 +6415,6 @@ void bta_dm_ble_setup_storage (tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_enable_batch_scan
-**
-** Description      This function sets up the parameters and enables batch scan
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_enable_batch_scan (tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-    if (0 != cmn_ble_vsc_cb.tot_scan_results_strg) {
-        btm_status = BTM_BleEnableBatchScan(p_data->ble_enable_scan.scan_mode,
-                                            p_data->ble_enable_scan.scan_int,
-                                            p_data->ble_enable_scan.scan_window,
-                                            p_data->ble_enable_scan.discard_rule,
-                                            p_data->ble_enable_scan.addr_type,
-                                            p_data->ble_enable_scan.ref_value);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_ENABLE_EVT, p_data->ble_enable_scan.ref_value,
-                              btm_status);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         bta_dm_ble_disable_batch_scan
-**
-** Description      This function disables the batch scan
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_disable_batch_scan (tBTA_DM_MSG *p_data)
-{
-    UNUSED(p_data);
-    tBTM_STATUS btm_status = 0;
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-    if (0 != cmn_ble_vsc_cb.tot_scan_results_strg) {
-        btm_status = BTM_BleDisableBatchScan(p_data->ble_disable_scan.ref_value);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_DISABLE_EVT, p_data->ble_enable_scan.ref_value,
-                              btm_status);
-    }
-}
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_ble_scan_setup_cb
