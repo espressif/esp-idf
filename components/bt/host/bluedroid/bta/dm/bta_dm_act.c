@@ -5391,48 +5391,6 @@ void bta_dm_ble_set_key_material (tBTA_DM_MSG *p_data)
 }
 #endif
 
-#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_observe
-**
-** Description      This function set the preferred connection scan parameters.
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS status;
-    if (p_data->ble_observe.start) {
-        /*Save the  callback to be called when a scan results are available */
-        bta_dm_search_cb.p_scan_cback = p_data->ble_observe.p_cback;
-
-        if ((status = BTM_BleObserve(TRUE, p_data->ble_observe.duration,
-                                     bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb)) != BTM_CMD_STARTED) {
-            APPL_TRACE_WARNING(" %s start observe failed. status=0x%x\n", __FUNCTION__, status);
-        }
-
-        if (p_data->ble_observe.p_start_scan_cback) {
-            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
-            p_data->ble_observe.p_start_scan_cback(status);
-        }
-    } else {
-        bta_dm_search_cb.p_scan_cback = NULL;
-        status = BTM_BleObserve(FALSE, 0, NULL, NULL);
-
-        if (status != BTM_CMD_STARTED){
-            APPL_TRACE_WARNING(" %s stop observe failed, status=0x%x\n", __FUNCTION__, status);
-        }
-
-        if (p_data->ble_observe.p_stop_scan_cback) {
-            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
-            p_data->ble_observe.p_stop_scan_cback(status);
-        }
-    }
-}
-#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_scan

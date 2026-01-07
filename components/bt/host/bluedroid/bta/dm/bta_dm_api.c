@@ -2550,48 +2550,6 @@ void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transpor
 #endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 
 #if BLE_INCLUDED == TRUE
-#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleObserve
-**
-** Description      This procedure keep the device listening for advertising
-**                  events from a broadcast device.
-**
-** Parameters       start: start or stop observe.
-**
-** Returns          void
-
-**
-** Returns          void.
-**
-*******************************************************************************/
-extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb)
-{
-    tBTA_DM_API_BLE_OBSERVE   *p_msg;
-
-    APPL_TRACE_API("BTA_DmBleObserve:start = %d ", start);
-
-    if ((p_msg = (tBTA_DM_API_BLE_OBSERVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_OBSERVE))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_OBSERVE));
-
-        p_msg->hdr.event = BTA_DM_API_BLE_OBSERVE_EVT;
-        p_msg->start = start;
-        p_msg->duration = duration;
-        p_msg->p_cback = p_results_cb;
-        if (start){
-            p_msg->p_start_scan_cback = p_start_stop_scan_cb;
-        }
-        else {
-            p_msg->p_stop_scan_cback = p_start_stop_scan_cb;
-        }
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 
 #if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
