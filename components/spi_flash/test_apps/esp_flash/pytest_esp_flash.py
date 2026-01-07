@@ -54,8 +54,8 @@ def test_esp_flash_multi(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'config, baud',
     [
-        ('esp32c2_xtal26m', '74880'),
-        ('esp32c2_xtal26m_rom', '74880'),
+        ('c2_xtal26m', '74880'),
+        ('c2_xtal26m_rom', '74880'),
     ],
     indirect=True,
 )
