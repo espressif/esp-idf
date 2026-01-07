@@ -1565,10 +1565,6 @@
 #define BLE_INCLUDED            FALSE
 #endif
 
-#ifndef BLE_HOST_READ_TX_POWER_EN
-#define BLE_HOST_READ_TX_POWER_EN                  FALSE
-#endif
-
 #ifndef BLE_HOST_SETUP_STORAGE_EN
 #define BLE_HOST_SETUP_STORAGE_EN              FALSE
 #endif
