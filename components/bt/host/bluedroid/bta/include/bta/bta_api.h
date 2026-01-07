@@ -526,16 +526,6 @@ enum {
 };
 typedef UINT8 tBTA_BLE_ADV_CHANGE_REASON;
 
-enum {
-    BTA_BLE_BATCH_SCAN_ENB_EVT      = 1,
-    BTA_BLE_BATCH_SCAN_CFG_STRG_EVT = 2,
-    BTA_BLE_BATCH_SCAN_DATA_EVT     = 3,
-    BTA_BLE_BATCH_SCAN_THRES_EVT    = 4,
-    BTA_BLE_BATCH_SCAN_PARAM_EVT    = 5,
-    BTA_BLE_BATCH_SCAN_DIS_EVT      = 6
-};
-typedef tBTM_BLE_BATCH_SCAN_EVT tBTA_BLE_BATCH_SCAN_EVT;
-
 // #endif
 
 /* BLE customer specific feature function type definitions */
@@ -1213,10 +1203,6 @@ typedef void (tBTA_BLE_SCAN_THRESHOLD_CBACK)(tBTA_DM_BLE_REF_VALUE ref_value);
 typedef void (tBTA_BLE_SCAN_REP_CBACK) (tBTA_DM_BLE_REF_VALUE ref_value, UINT8 report_format,
                                         UINT8 num_records, UINT16 data_len,
                                         UINT8 *p_rep_data, tBTA_STATUS status);
-
-typedef void (tBTA_BLE_SCAN_SETUP_CBACK) (tBTA_BLE_BATCH_SCAN_EVT evt,
-        tBTA_DM_BLE_REF_VALUE ref_value,
-        tBTA_STATUS status);
 
 typedef void (tBTA_START_STOP_SCAN_CMPL_CBACK) (tBTA_STATUS status);
 
@@ -3014,54 +3000,6 @@ void BTA_DmBleGapCsSetChannelClass(uint8_t *channel_class, uint8_t channl_len);
 void BTA_DmBleGapCsSetProcPatams(tBTA_DM_CS_SET_PROC_PARAMS *set_proc_params);
 void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleSetStorageParams
-**
-** Description      This function is called to set the storage parameters
-**
-** Parameters       batch_scan_full_max -Max storage space (in %) allocated to full scanning
-**                  batch_scan_trunc_max -Max storage space (in %) allocated to truncated scanning
-**                  batch_scan_notify_threshold - Setup notification level based on total space
-**                  consumed by both pools. Setting it to 0 will disable threshold notification
-**                  p_setup_cback - Setup callback
-**                  p_thres_cback - Threshold callback
-**                  p_rep_cback - Reports callback
-**                  ref_value - Reference value
-**
-** Returns           None
-**
-*******************************************************************************/
-extern void BTA_DmBleSetStorageParams(UINT8 batch_scan_full_max,
-                                      UINT8 batch_scan_trunc_max,
-                                      UINT8 batch_scan_notify_threshold,
-                                      tBTA_BLE_SCAN_SETUP_CBACK *p_setup_cback,
-                                      tBTA_BLE_SCAN_THRESHOLD_CBACK *p_thres_cback,
-                                      tBTA_BLE_SCAN_REP_CBACK *p_rep_cback,
-                                      tBTA_DM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleEnableBatchScan
-**
-** Description      This function is called to enable the batch scan
-**
-** Parameters       scan_mode -Batch scan mode
-**                  scan_interval - Scan interval
-**                  scan_window - Scan window
-**                  discard_rule -Discard rules
-**                  addr_type - Address type
-**                  ref_value - Reference value
-**
-** Returns           None
-**
-*******************************************************************************/
-extern void BTA_DmBleEnableBatchScan(tBTA_BLE_BATCH_SCAN_MODE scan_mode,
-                                     UINT32 scan_interval, UINT32 scan_window,
-                                     tBTA_BLE_DISCARD_RULE discard_rule,
-                                     tBLE_ADDR_TYPE        addr_type,
-                                     tBTA_DM_BLE_REF_VALUE ref_value);
 
 /*******************************************************************************
 **

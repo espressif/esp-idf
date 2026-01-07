@@ -156,9 +156,6 @@ enum {
     BTA_DM_API_BLE_BROADCAST_EVT,
 #endif // #if (BLE_42_ADV_EN == TRUE)
     BTA_DM_API_SET_DATA_LENGTH_EVT,
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-    BTA_DM_API_BLE_SETUP_STORAGE_EVT,
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
     BTA_DM_API_BLE_DISCONNECT_EVT,
 
@@ -896,19 +893,6 @@ typedef struct {
     UINT32                  raw_adv_len;
     tBTA_SET_ADV_DATA_CMPL_CBACK    *p_adv_data_cback;
 } tBTA_DM_API_SET_ADV_CONFIG_RAW;
-
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    UINT8                   batch_scan_full_max;
-    UINT8                   batch_scan_trunc_max;
-    UINT8                   batch_scan_notify_threshold;
-    tBTA_BLE_SCAN_SETUP_CBACK *p_setup_cback;
-    tBTA_BLE_SCAN_THRESHOLD_CBACK *p_thres_cback;
-    tBTA_BLE_SCAN_REP_CBACK *p_read_rep_cback;
-    tBTA_DM_BLE_REF_VALUE    ref_value;
-} tBTA_DM_API_SET_STORAGE_CONFIG;
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
 typedef struct {
     BT_HDR      hdr;
@@ -1700,9 +1684,6 @@ typedef union {
     tBTA_DM_APT_CLEAR_ADDR              clear_addr;
     tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
     tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST add_dev_to_resolving_list;
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-    tBTA_DM_API_SET_STORAGE_CONFIG      ble_set_storage;
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     tBTA_DM_API_BLE_DISCONNECT          ble_disconnect;
     tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST ble_duplicate_exceptional_list;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -1940,9 +1921,6 @@ typedef struct {
     BOOLEAN                     is_bta_dm_active;
     tBTA_DM_ACTIVE_LINK         device_list;
     tBTA_DM_SEC_CBACK           *p_sec_cback;
-#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
-    tBTA_BLE_SCAN_SETUP_CBACK   *p_setup_cback;
-#endif
     UINT16                      state;
     BOOLEAN                     disabling;
     TIMER_LIST_ENT              disable_timer;
@@ -2290,9 +2268,6 @@ extern void bta_dm_ble_gap_set_ext_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_ext_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-extern void bta_dm_ble_setup_storage(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 extern void bta_dm_ble_enable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_disable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data);
