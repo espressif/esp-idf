@@ -2268,8 +2268,6 @@ extern void bta_dm_ble_gap_set_ext_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_ext_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-extern void bta_dm_ble_enable_batch_scan(tBTA_DM_MSG *p_data);
-extern void bta_dm_ble_disable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data);
 
 #endif

@@ -487,7 +487,6 @@
 //ESP BLE subcode define
 #define HCI_SUBCODE_BLE_INIT                       0x00
 #define HCI_SUBCODE_BLE_MULTI_ADV                  0x01
-#define HCI_SUBCODE_BLE_BATCH_SCAN                 0x02
 #define HCI_SUBCODE_BLE_ADV_FILTER                 0x03
 #define HCI_SUBCODE_BLE_TRACK_ADV                  0x04
 
@@ -535,8 +534,7 @@
 //ESP BLE HCI CMD
 /* Multi adv OCF */
 #define HCI_BLE_MULTI_ADV_OCF             HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BLE, HCI_SUBCODE_BLE_MULTI_ADV)
-/* Batch scan OCF */
-#define HCI_BLE_BATCH_SCAN_OCF            HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BLE, HCI_SUBCODE_BLE_BATCH_SCAN)
+
 /* ADV filter OCF */
 #define HCI_BLE_ADV_FILTER_OCF            HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BLE, HCI_SUBCODE_BLE_ADV_FILTER)
 /* Tracking OCF */
@@ -572,12 +570,6 @@
 
 /* multi adv VSE subcode */
 #define HCI_VSE_SUBCODE_BLE_MULTI_ADV_ST_CHG       0x55 /* multi adv instance state change */
-
-/* subcode for batch scan feature */
-#define BTM_BLE_BATCH_SCAN_ENB_DISAB_CUST_FEATURE      0x01
-#define BTM_BLE_BATCH_SCAN_SET_STORAGE_PARAM           0x02
-#define BTM_BLE_BATCH_SCAN_SET_PARAMS                  0x03
-#define BTM_BLE_BATCH_SCAN_READ_RESULTS                0x04
 
 /* batch scan VSE subcode */
 #define HCI_VSE_SUBCODE_BLE_THRESHOLD_SUB_EVT      0x54 /* Threshold event */

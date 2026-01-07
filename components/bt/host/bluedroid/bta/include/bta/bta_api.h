@@ -508,13 +508,6 @@ typedef struct {
 } tBTA_BLE_INQ_DATA;
 
 enum {
-    BTA_BLE_BATCH_SCAN_MODE_PASS = 1,
-    BTA_BLE_BATCH_SCAN_MODE_ACTI = 2,
-    BTA_BLE_BATCH_SCAN_MODE_PASS_ACTI = 3
-};
-typedef UINT8 tBTA_BLE_BATCH_SCAN_MODE;
-
-enum {
     BTA_BLE_DISCARD_OLD_ITEMS = 0,
     BTA_BLE_DISCARD_LOWER_RSSI_ITEMS = 1
 };
@@ -3000,34 +2993,6 @@ void BTA_DmBleGapCsSetChannelClass(uint8_t *channel_class, uint8_t channl_len);
 void BTA_DmBleGapCsSetProcPatams(tBTA_DM_CS_SET_PROC_PARAMS *set_proc_params);
 void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleReadScanReports
-**
-** Description      This function is called to read the batch scan reports
-**
-** Parameters       scan_mode -Batch scan mode
-**                  ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleReadScanReports(tBTA_BLE_BATCH_SCAN_MODE scan_type,
-                                     tBTA_DM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleDisableBatchScan
-**
-** Description      This function is called to disable the batch scanning
-**
-** Parameters       ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value);
 
 /*******************************************************************************
 **
