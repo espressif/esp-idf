@@ -181,9 +181,6 @@ void gatt_free(void)
         p_tcb->pending_enc_clcb = NULL;
 #endif // (SMP_INCLUDED == TRUE)
 
-        fixed_queue_free(p_tcb->pending_ind_q, NULL);
-        p_tcb->pending_ind_q = NULL;
-
         btu_free_timer(&p_tcb->conf_timer_ent);
         memset(&p_tcb->conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
 
@@ -418,9 +415,6 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
                         fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
                     }
 #endif // (SMP_INCLUDED == TRUE)
-                    if(p_tcb->pending_ind_q != NULL) {
-                        fixed_queue_free(p_tcb->pending_ind_q, NULL);
-                    }
                     gatt_tcb_free(p_tcb);
                 }
 
