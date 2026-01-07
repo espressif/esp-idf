@@ -177,9 +177,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-    bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */
     bta_dm_ble_set_channels,                /* BTA_DM_API_BLE_SET_CHANNELS_EVT */
     bta_dm_update_white_list,               /* BTA_DM_API_UPDATE_WHITE_LIST_EVT */

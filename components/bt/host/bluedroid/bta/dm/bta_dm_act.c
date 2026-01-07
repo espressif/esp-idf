@@ -1273,37 +1273,6 @@ void bta_dm_close_acl(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_remove_all_acl
-**
-** Description      This function forces to close all the ACL links specified by link type
-****
-*******************************************************************************/
-void bta_dm_remove_all_acl(tBTA_DM_MSG *p_data)
-{
-    const tBTA_DM_LINK_TYPE link_type = p_data->remove_all_acl.link_type;
-    tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-
-    APPL_TRACE_DEBUG("%s link type = %d", __func__, link_type);
-
-    for (UINT8 i = 0; i < bta_dm_cb.device_list.count; i++) {
-        BD_ADDR addr = {0};
-        bdcpy(addr, bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
-#if defined (BLE_INCLUDED) && (BLE_INCLUDED == TRUE)
-        transport = bta_dm_cb.device_list.peer_device[i].transport;
-#endif
-        if ((link_type == BTA_DM_LINK_TYPE_ALL) ||
-                ((link_type == BTA_DM_LINK_TYPE_LE) && (transport == BT_TRANSPORT_LE)) ||
-                ((link_type == BTA_DM_LINK_TYPE_BR_EDR) && (transport == BT_TRANSPORT_BR_EDR))) {
-            /* Disconnect the ACL link */
-            btm_remove_acl(addr, transport);
-        }
-    }
-}
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_dm_bond
