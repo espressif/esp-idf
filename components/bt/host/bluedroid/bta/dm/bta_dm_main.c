@@ -40,11 +40,15 @@
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_DM_CB  bta_dm_cb;
 tBTA_DM_SEARCH_CB bta_dm_search_cb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTA_DM_DI_CB       bta_dm_di_cb;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #else
 tBTA_DM_CB  *bta_dm_cb_ptr;
 tBTA_DM_SEARCH_CB *bta_dm_search_cb_ptr;
-tBTA_DM_DI_CB       *bta_dm_di_cb_ptr;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+ tBTA_DM_DI_CB       *bta_dm_di_cb_ptr;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 SemaphoreHandle_t deinit_semaphore;
 #endif
 
@@ -566,11 +570,15 @@ void bta_dm_sm_deinit(void)
 {
     memset(&bta_dm_cb, 0, sizeof(tBTA_DM_CB));
     memset(&bta_dm_search_cb, 0, sizeof(tBTA_DM_SEARCH_CB));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if BTA_DYNAMIC_MEMORY
     FREE_AND_RESET(bta_dm_cb_ptr);
     FREE_AND_RESET(bta_dm_search_cb_ptr);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     FREE_AND_RESET(bta_dm_di_cb_ptr);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif /* #if BTA_DYNAMIC_MEMORY */
 }
 

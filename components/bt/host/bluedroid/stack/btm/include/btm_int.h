@@ -899,7 +899,9 @@ typedef struct {
 
     /* Packet types supported by the local device */
     UINT16      btm_acl_pkt_types_supported;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16      btm_sco_pkt_types_supported;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 
     /*****************************************************
@@ -969,10 +971,12 @@ typedef struct {
     UINT8                   acl_disc_reason;
     UINT8                   trace_level;
     UINT8                   busy_level; /* the current busy level */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN                 is_paging;  /* TRUE, if paging is in progress */
     BOOLEAN                 is_inquiry; /* TRUE, if inquiry is in progress */
     fixed_queue_t           *page_queue;
     BOOLEAN                 paging;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN                 discing;
     fixed_queue_t           *sec_pending_q;  /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
 #if  (!defined(BT_TRACE_VERBOSE) || (BT_TRACE_VERBOSE == FALSE))

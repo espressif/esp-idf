@@ -249,10 +249,12 @@ void BTE_DeinitStack(void)
         osi_free(bta_dm_conn_srvcs_ptr);
         bta_dm_conn_srvcs_ptr = NULL;
     }
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (bta_dm_di_cb_ptr){
         osi_free(bta_dm_di_cb_ptr);
         bta_dm_di_cb_ptr = NULL;
     }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     if (bta_dm_search_cb_ptr){
         osi_free(bta_dm_search_cb_ptr);
         bta_dm_search_cb_ptr = NULL;
@@ -399,16 +401,20 @@ bt_status_t BTE_InitStack(void)
     if ((bta_dm_search_cb_ptr = (tBTA_DM_SEARCH_CB *)osi_malloc(sizeof(tBTA_DM_SEARCH_CB))) == NULL) {
         goto error_exit;
     }
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if ((bta_dm_di_cb_ptr = (tBTA_DM_DI_CB *)osi_malloc(sizeof(tBTA_DM_DI_CB))) == NULL) {
         goto error_exit;
     }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     if ((bta_dm_conn_srvcs_ptr = (tBTA_DM_CONNECTED_SRVCS *)osi_malloc(sizeof(tBTA_DM_CONNECTED_SRVCS))) == NULL) {
         goto error_exit;
     }
     memset((void *)bta_sys_cb_ptr, 0, sizeof(tBTA_SYS_CB));
     memset((void *)bta_dm_cb_ptr, 0, sizeof(tBTA_DM_CB));
     memset((void *)bta_dm_search_cb_ptr, 0, sizeof(tBTA_DM_SEARCH_CB));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     memset((void *)bta_dm_di_cb_ptr, 0, sizeof(tBTA_DM_DI_CB));
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     memset((void *)bta_dm_conn_srvcs_ptr, 0, sizeof(tBTA_DM_CONNECTED_SRVCS));
     //memset((void *)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
 
