@@ -145,9 +145,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-    bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT */
-#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
 #endif // #if (BLE_42_SCAN_EN == TRUE)
