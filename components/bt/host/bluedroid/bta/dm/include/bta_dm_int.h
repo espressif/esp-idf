@@ -125,9 +125,6 @@ enum {
 #endif  ///SMP_INCLUDED == TRUE
     BTA_DM_API_BLE_SET_BG_CONN_TYPE,
     BTA_DM_API_BLE_CONN_PARAM_EVT,
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-    BTA_DM_API_BLE_SCAN_PARAM_EVT,
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     /*******This event added by Yulong at 2016/10/25 to
     support the scan filter setting for the APP******/
 #if (BLE_42_SCAN_EN == TRUE)
@@ -1795,9 +1792,6 @@ typedef union {
     tBTA_DM_API_BLE_SEC_GRANT           ble_sec_grant;
     tBTA_DM_API_BLE_SET_BG_CONN_TYPE    ble_set_bd_conn_type;
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-    tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS  ble_set_scan_fil_params;
     tBTA_DM_API_BLE_OBSERVE             ble_observe;
     tBTA_DM_API_BLE_SCAN                ble_scan;
