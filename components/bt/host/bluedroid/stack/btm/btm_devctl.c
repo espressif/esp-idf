@@ -393,7 +393,7 @@ static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p
 
         BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                         btm_cb.btm_sco_pkt_types_supported);
-#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
         /* Create Default Policy Settings */
         if (HCI_SWITCH_SUPPORTED(p_features)) {
             btm_cb.btm_def_link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
@@ -418,9 +418,9 @@ static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p
         } else {
             btm_cb.btm_def_link_policy &= ~HCI_ENABLE_PARK_MODE;
         }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         btm_sec_dev_reset ();
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         if (HCI_LMP_INQ_RSSI_SUPPORTED(p_features)) {
             if (HCI_EXT_INQ_RSP_SUPPORTED(p_features)) {
                 BTM_SetInquiryMode (BTM_INQ_RESULT_EXTENDED);
@@ -428,7 +428,7 @@ static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p
                 BTM_SetInquiryMode (BTM_INQ_RESULT_WITH_RSSI);
             }
         }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 #if L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE
         if ( HCI_NON_FLUSHABLE_PB_SUPPORTED(p_features)) {
             l2cu_set_non_flushable_pbf(TRUE);
@@ -771,6 +771,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
     switch(opcode) {
         case HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST: {
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
             uint8_t subcode, status; uint32_t length;
             STREAM_TO_UINT8(status, p);
             STREAM_TO_UINT8(subcode, p);
@@ -779,6 +780,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                 (*ble_cb->update_exceptional_list_cmp_cb)(status, subcode, length, p);
             }
             break;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
         }
         case HCI_VENDOR_BLE_CLEAR_ADV: {
             uint8_t status;

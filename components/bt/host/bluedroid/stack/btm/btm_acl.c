@@ -257,7 +257,9 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
 #endif
         BTM_TRACE_DEBUG ("Duplicate btm_acl_created: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
                 bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+#if (CLASSIC_BT_INCLUDED == TRUE)
         BTM_SetLinkPolicy(p->remote_addr, &btm_cb.btm_def_link_policy);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         return;
     }
 
@@ -871,6 +873,7 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     }
 }
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_SetLinkPolicy
@@ -954,7 +957,7 @@ void BTM_SetDefaultLinkPolicy (UINT16 settings)
     /* Set the default Link Policy of the controller */
     btsnd_hcic_write_def_policy_set(settings);
 }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_read_remote_version_complete
@@ -1260,6 +1263,7 @@ void btm_establish_continue (tACL_CONN *p_acl_cb)
     tBTM_BL_EVENT_DATA  evt_data;
     BTM_TRACE_DEBUG ("btm_establish_continue\n");
 #if (!defined(BTM_BYPASS_EXTRA_ACL_SETUP) || BTM_BYPASS_EXTRA_ACL_SETUP == FALSE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
     if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR)
 #endif
@@ -1273,6 +1277,7 @@ void btm_establish_continue (tACL_CONN *p_acl_cb)
             BTM_SetLinkPolicy (p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
         }
     }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 #endif
     p_acl_cb->link_up_issued = TRUE;
 
