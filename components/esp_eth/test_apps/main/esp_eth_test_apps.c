@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,7 @@
 #include "esp_http_client.h"
 #include "esp_rom_md5.h"
 #include "esp_eth_test_common.h"
+#include "unity.h"
 
 #define LOOPBACK_TEST_PACKET_SIZE 256
 
@@ -401,7 +402,7 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
 #endif
 
     eth_duplex_t duplex_modes[] = {ETH_DUPLEX_HALF, ETH_DUPLEX_FULL};
-    eth_speed_t speeds[] = {ETH_SPEED_10M, ETH_SPEED_100M};
+    eth_speed_t speeds[] = {ETH_SPEED_100M, ETH_SPEED_10M};
     emac_frame_t* test_packet = malloc(LOOPBACK_TEST_PACKET_SIZE);
     esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, test_packet->src);
     esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, test_packet->dest);
@@ -447,7 +448,27 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
             TEST_ASSERT_EQUAL(expected_duplex, actual_duplex);
 
             TEST_ESP_OK(esp_eth_transmit(eth_handle, test_packet, LOOPBACK_TEST_PACKET_SIZE));
-            TEST_ASSERT(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(10000)) == pdTRUE);
+            /* 10Mbps RMII loopback may have timing issues due to clock division architecture. RMII CLK stays 50MHz while the data signal must be held still for 10 cycles to
+            achieve the speed reduction. Everything, including control signals must be perfectly synchronized. This may be a challenge for some PHYs or PCB layouts.*/
+            if (expected_speed == ETH_SPEED_10M) {
+                int i;
+                for (i = 0; i < 3; i++) {
+                    if(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(1000)) != pdTRUE) {
+                        ESP_LOGW(TAG, "Timeout waiting for data received for 10 Mbps mode, trying again...");
+                        TEST_ESP_OK(esp_eth_stop(eth_handle));
+                        bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+                        TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+                        TEST_ESP_OK(esp_eth_start(eth_handle));
+                        bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+                        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_packet, LOOPBACK_TEST_PACKET_SIZE));
+                    } else {
+                        break;
+                    }
+                }
+                TEST_ASSERT_LESS_THAN(3, i);
+            } else {
+                TEST_ASSERT(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(1000)) == pdTRUE);
+            }
             TEST_ESP_OK(esp_eth_stop(eth_handle));
         }
     }
