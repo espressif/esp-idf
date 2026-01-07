@@ -3005,28 +3005,6 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL
 **
 *******************************************************************************/
 tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_ReadTxPower
-**
-** Description      This function is called to read the current connection
-**                  TX power of the connection. The TX power level results
-**                  are returned in the callback.
-**                  (tBTM_RSSI_RESULTS)
-**
-** Returns          BTM_CMD_STARTED if command issued to controller.
-**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
-**                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
-**                  BTM_BUSY if command is already in progress
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda,
-                             tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
-
-tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 
