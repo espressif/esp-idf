@@ -399,7 +399,6 @@ typedef struct {
     tGATT_SR_CMD    sr_cmd;
 #endif  ///GATTS_INCLUDED == TRUE
     UINT16          indicate_handle;
-    fixed_queue_t   *pending_ind_q;
 
     TIMER_LIST_ENT  conf_timer_ent;     /* peer confirm to indication timer */
 
@@ -410,17 +409,19 @@ typedef struct {
     TIMER_LIST_ENT  ind_ack_timer_ent;    /* local app confirm to indication timer */
     UINT8           pending_cl_req;
     UINT8           next_slot_inq;    /* index of next available slot in queue */
-
+#if (GATTS_ROBUST_CACHING_ENABLED == TRUE)
     /* client supported feature */
     UINT8           cl_supp_feat;
     /* server supported feature */
     UINT8           sr_supp_feat;
     /* if false, should handle database out of sync */
     BOOLEAN         is_robust_cache_change_aware;
-
+#endif // (GATTS_ROBUST_CACHING_ENABLED == TRUE)
     BOOLEAN         in_use;
     UINT8           tcb_idx;
+#if (GATTS_INCLUDED == TRUE)
     tGATT_PREPARE_WRITE_RECORD prepare_write_record;    /* prepare write packets record */
+#endif // (GATTS_INCLUDED == TRUE)
 } tGATT_TCB;
 
 
@@ -660,7 +661,6 @@ extern tGATTS_SRV_CHG *gatt_is_bda_in_the_srv_chg_clt_list (BD_ADDR bda);
 extern BOOLEAN gatt_find_the_connected_bda(UINT8 start_idx, BD_ADDR bda, UINT8 *p_found_idx, tBT_TRANSPORT *p_transport);
 extern void gatt_set_srv_chg(void);
 extern void gatt_delete_dev_from_srv_chg_clt_list(BD_ADDR bd_addr);
-extern tGATT_VALUE *gatt_add_pending_ind(tGATT_TCB  *p_tcb, tGATT_VALUE *p_ind);
 extern tGATTS_PENDING_NEW_SRV_START *gatt_add_pending_new_srv_start( tGATTS_HNDL_RANGE *p_new_srv_start);
 extern void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id);
 extern BOOLEAN gatt_update_listen_mode(void);
