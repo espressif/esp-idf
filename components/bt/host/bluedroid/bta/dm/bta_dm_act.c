@@ -5319,28 +5319,6 @@ void bta_dm_ble_clear_rand_address(tBTA_DM_MSG *p_data)
     BTM_BleClearRandAddress();
 }
 
-#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_stop_advertising
-**
-** Description      This function stop the BLE avdertising for the device.
-**
-** Parameters:      void
-** Explanation:     This function added by Yulong at 2016/10/19
-*******************************************************************************/
-void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data)
-{
-    if (p_data->hdr.event != BTA_DM_API_BLE_STOP_ADV_EVT) {
-        APPL_TRACE_ERROR("Invalid BTA event,can't stop the BLE adverting\n");
-    }
-#if (BLE_42_ADV_EN == TRUE)
-    btm_ble_stop_adv();
-#endif // #if (BLE_42_ADV_EN == TRUE)
-}
-#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-
-
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
 **

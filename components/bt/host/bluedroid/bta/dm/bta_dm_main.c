@@ -155,9 +155,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
        Yulong at 2016/10/19 to support
        stop the ble advertising setting
        by the APP */
-#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-    bta_dm_ble_stop_advertising,            /* BTA_DM_API_BLE_STOP_ADV_EVT */
-#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
