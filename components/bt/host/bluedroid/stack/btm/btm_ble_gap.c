@@ -523,6 +523,7 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
+#if (BLE_VENDOR_HCI_EN == TRUE)
 void BTM_VendorHciEchoCmdCallback(tBTM_VSC_CMPL *p1)
 {
 #if (!CONFIG_BT_STACK_NO_LOG)
@@ -555,6 +556,7 @@ void BTM_VendorHciEchoCmdTest(uint8_t echo)
                                 &echo,
                                 BTM_VendorHciEchoCmdCallback);
 }
+#endif // (BLE_VENDOR_HCI_EN == TRUE)
 
 /*******************************************************************************
 **
