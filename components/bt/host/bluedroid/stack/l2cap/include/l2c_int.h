@@ -490,9 +490,10 @@ typedef struct {
     list_t          *p_ccb_pool;                    /* Channel Control Block pool       */
     tL2C_RCB        rcb_pool[MAX_L2CAP_CLIENTS];    /* Registration info pool           */
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8           desire_role;                    /* desire to be master/slave when accepting a connection */
     BOOLEAN         disallow_switch;                /* FALSE, to allow switch at create conn */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          num_lm_acl_bufs;                /* # of ACL buffers on controller   */
     UINT16          idle_timeout;                   /* Idle timeout                     */
 
