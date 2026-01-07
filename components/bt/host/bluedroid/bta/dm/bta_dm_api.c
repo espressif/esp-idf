@@ -1431,33 +1431,6 @@ void BTA_DmSetBlePrefConnParams(BD_ADDR bd_addr,
 #endif
 }
 
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmSetBleConnScanParams
-**
-** Description      This function is called to set scan parameters used in
-**                  BLE connection request
-**
-** Parameters:      scan_interval    - scan interval
-**                  scan_window      - scan window
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmSetBleConnScanParams(UINT32 scan_interval, UINT32 scan_window)
-{
-    tBTA_DM_API_BLE_SCAN_PARAMS  *p_msg;
-    if ((p_msg = (tBTA_DM_API_BLE_SCAN_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_BLE_SCAN_PARAMS))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SCAN_PARAMS));
-        p_msg->hdr.event = BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT;
-        p_msg->scan_int         = scan_interval;
-        p_msg->scan_window      = scan_window;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-
 #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 /*******************************************************************************
 **

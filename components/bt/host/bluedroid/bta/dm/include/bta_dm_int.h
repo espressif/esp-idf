@@ -125,9 +125,6 @@ enum {
 #endif  ///SMP_INCLUDED == TRUE
     BTA_DM_API_BLE_SET_BG_CONN_TYPE,
     BTA_DM_API_BLE_CONN_PARAM_EVT,
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-    BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     BTA_DM_API_BLE_SCAN_PARAM_EVT,
 #endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
@@ -858,15 +855,6 @@ typedef struct {
     UINT8 scan_filter_policy;
     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 } tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;
-
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-/* set scan parameter for BLE connections */
-typedef struct {
-    BT_HDR                  hdr;
-    UINT16                  scan_int;
-    UINT16                  scan_window;
-} tBTA_DM_API_BLE_CONN_SCAN_PARAMS;
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 
 /* Data type for start/stop observe */
 typedef struct {
@@ -1807,9 +1795,6 @@ typedef union {
     tBTA_DM_API_BLE_SEC_GRANT           ble_sec_grant;
     tBTA_DM_API_BLE_SET_BG_CONN_TYPE    ble_set_bd_conn_type;
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-    tBTA_DM_API_BLE_CONN_SCAN_PARAMS    ble_set_conn_scan_params;
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
 #endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
@@ -2388,9 +2373,6 @@ extern void bta_dm_ble_set_bg_conn_type (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 #endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
