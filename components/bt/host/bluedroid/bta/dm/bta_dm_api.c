@@ -1615,25 +1615,25 @@ void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR de
 #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
-** Function         BTA_DmBleBroadcast
+** Function         BTA_DmBleAdvStop
 **
 ** Description      This function starts or stops LE broadcasting.
 **
-** Parameters       start: start or stop broadcast.
+** Parameters       start: always be false.
 **
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb)
+extern void BTA_DmBleAdvStop (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb)
 {
     tBTA_DM_API_BLE_OBSERVE   *p_msg;
 
-    APPL_TRACE_API("BTA_DmBleBroadcast: start = %d \n", start);
+    APPL_TRACE_API("BTA_DmBleAdvStop: start = %d \n", start);
 
     if ((p_msg = (tBTA_DM_API_BLE_OBSERVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_OBSERVE))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_OBSERVE));
 
-        p_msg->hdr.event = BTA_DM_API_BLE_BROADCAST_EVT;
+        p_msg->hdr.event = BTA_DM_API_BLE_ADVSTOP_EVT;
         p_msg->start = start;
         if (start == FALSE){
             p_msg->p_stop_adv_cback= p_start_stop_adv_cb;
