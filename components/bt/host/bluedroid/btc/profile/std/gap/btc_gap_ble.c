@@ -1801,7 +1801,7 @@ static void btc_ble_stop_advertising(tBTA_START_STOP_ADV_CMPL_CBACK *stop_adv_cb
 {
     bool stop_adv = false;
 
-    BTA_DmBleBroadcast(stop_adv, stop_adv_cb);
+    BTA_DmBleAdvStop(stop_adv, stop_adv_cb);
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 

@@ -528,6 +528,8 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
 #endif
 
     if (start) {
+// "start" should not be ture
+#if (0)
         /* update adv params */
         if (!btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
                                               BTM_BLE_GAP_ADV_INT),
@@ -547,6 +549,7 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
         }
 
         status = btm_ble_start_adv ();
+#endif //
     } else {
         //save the stop adv callback to the BTM env.
         p_cb->p_stop_adv_cb = p_stop_adv_cback;
