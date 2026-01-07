@@ -1046,22 +1046,6 @@ typedef union {
 /* Security callback */
 typedef void (tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data);
 
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-#define BTA_BLE_MULTI_ADV_ILLEGAL 0
-
-/* multi adv callback event */
-#define BTA_BLE_MULTI_ADV_ENB_EVT           1
-#define BTA_BLE_MULTI_ADV_DISABLE_EVT       2
-#define BTA_BLE_MULTI_ADV_PARAM_EVT         3
-#define BTA_BLE_MULTI_ADV_DATA_EVT          4
-
-typedef UINT8 tBTA_BLE_MULTI_ADV_EVT;
-
-/* multi adv callback */
-typedef void (tBTA_BLE_MULTI_ADV_CBACK)(tBTA_BLE_MULTI_ADV_EVT event,
-                                        UINT8 inst_id, void *p_ref, tBTA_STATUS status);
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-
 typedef UINT32 tBTA_DM_BLE_REF_VALUE;
 
 #define BTA_DM_BLE_PF_ENABLE_EVT       BTM_BLE_PF_ENABLE
@@ -3056,67 +3040,6 @@ extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
 **
 *******************************************************************************/
 extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_BleEnableAdvInstance
-**
-** Description      This function enables the Multi ADV instance feature
-**
-** Parameters       p_params Pointer to ADV param user defined structure
-**                  p_cback  Pointer to Multi ADV callback structure
-**                  p_ref - Reference pointer
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_BleEnableAdvInstance (tBTA_BLE_ADV_PARAMS *p_params,
-                                      tBTA_BLE_MULTI_ADV_CBACK *p_cback, void *p_ref);
-
-/*******************************************************************************
-**
-** Function         BTA_BleUpdateAdvInstParam
-**
-** Description      This function updates the Multi ADV instance params
-**
-** Parameters       inst_id Instance ID
-**                  p_params Pointer to ADV param user defined structure
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_BleUpdateAdvInstParam (UINT8 inst_id,
-                                       tBTA_BLE_ADV_PARAMS *p_params);
-
-/*******************************************************************************
-**
-** Function         BTA_BleCfgAdvInstData
-**
-** Description      This function is called to configure the ADV instance data
-**
-** Parameters       inst_id - Instance ID
-**                  is_scan_rsp - Boolean value Scan response
-**                  Pointer to User defined ADV data structure
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
-                                   tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_data);
-
-/*******************************************************************************
-**
-** Function         BTA_BleDisableAdvInstance
-**
-** Description      This function is called to disable the ADV instance
-**
-** Parameters       inst_id - Instance ID to be disabled
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_BleDisableAdvInstance(UINT8 inst_id);
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
