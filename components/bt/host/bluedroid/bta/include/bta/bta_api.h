@@ -3005,17 +3005,6 @@ void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t e
 *******************************************************************************/
 extern void BTA_VendorInit  (void);
 
-/*******************************************************************************
-**
-** Function         BTA_BrcmCleanup
-**
-** Description      This function frees up Broadcom specific VS specific dynamic memory
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_VendorCleanup (void);
-
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void BTA_DmBleGapReadPHY(BD_ADDR addr);
 
