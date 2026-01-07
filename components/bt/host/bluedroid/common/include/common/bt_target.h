@@ -1612,11 +1612,6 @@
 #endif
 #endif
 
-
-#ifndef BLE_BATCH_SCAN_INCLUDED
-#define BLE_BATCH_SCAN_INCLUDED  TRUE
-#endif
-
 /******************************************************************************
 **
 ** ATT/GATT Protocol/Profile Settings
