@@ -1212,7 +1212,9 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_GET_LINK_QUALITY:
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_read_link_quality_complete (p);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_READ_LOCAL_NAME:
