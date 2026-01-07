@@ -1702,8 +1702,10 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 break;
 
             case HCI_QOS_SETUP_COMP_EVT:
+            #if (CLASSIC_BT_INCLUDED == TRUE)
                 /* Tell qos setup that we are done */
                 btm_qos_setup_complete(status, 0, NULL);
+            #endif // (CLASSIC_BT_INCLUDED == TRUE)
                 break;
 
             case HCI_SWITCH_ROLE:
