@@ -767,11 +767,6 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback (tBTM_VSC_CMPL *p_vcs_cplt_
                     __func__, status, btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
                     btm_cb.cmn_ble_vsc_cb.adv_inst_max, btm_cb.cmn_ble_vsc_cb.rpa_offloading,
                     btm_cb.cmn_ble_vsc_cb.energy_support, btm_cb.cmn_ble_vsc_cb.extended_scan_support);
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
-        btm_ble_multi_adv_init();
-    }
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) {
         btm_ble_adv_filter_init();
     }
@@ -948,12 +943,6 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
         /* always set host random address, used when privacy 1.1 or priavcy 1.2 is disabled */
         btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
 #endif
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-        if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
-            btm_ble_multi_adv_enb_privacy(privacy_mode);
-        }
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
         /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private address in controller */
         if (controller_get_interface()->supports_ble_privacy()) {
@@ -1223,23 +1212,6 @@ void BTM_BleConfigConnParams(uint16_t int_min, uint16_t int_max, uint16_t latenc
     BTM_TRACE_ERROR("%s\n", __func__);
 #endif
 }
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/*******************************************************************************
-**
-** Function          BTM_BleMaxMultiAdvInstanceCount
-**
-** Description        Returns max number of multi adv instances supported by controller
-**
-** Returns          Max multi adv instance count
-**
-*******************************************************************************/
-extern UINT8  BTM_BleMaxMultiAdvInstanceCount(void)
-{
-    return btm_cb.cmn_ble_vsc_cb.adv_inst_max < BTM_BLE_MULTI_ADV_MAX ?
-           btm_cb.cmn_ble_vsc_cb.adv_inst_max : BTM_BLE_MULTI_ADV_MAX;
-}
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
@@ -4364,12 +4336,6 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
                 /* refresh the random addr */
                 btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
 #endif
-            } else {
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-                if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
-                    btm_ble_multi_adv_configure_rpa((tBTM_BLE_MULTI_ADV_INST *)p_tle->param);
-                }
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
             }
         }
         break;

@@ -179,9 +179,7 @@ static void reset_complete(void)
 #if (tGATT_BG_CONN_DEV == TRUE)
     gatt_reset_bgdev_list();
 #endif // #if (tGATT_BG_CONN_DEV == TRUE)
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    btm_ble_multi_adv_init();
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
+
 #endif
 
     btm_pm_reset();
