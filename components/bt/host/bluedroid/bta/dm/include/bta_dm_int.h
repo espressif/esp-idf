@@ -1691,7 +1691,9 @@ typedef union {
     tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
     tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST add_dev_to_resolving_list;
     tBTA_DM_API_BLE_DISCONNECT          ble_disconnect;
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST ble_duplicate_exceptional_list;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTA_DM_API_READ_PHY                ble_read_phy;
     tBTA_DM_API_SET_PER_DEF_PHY         ble_set_per_def_phy;
