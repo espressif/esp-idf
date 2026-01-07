@@ -865,8 +865,9 @@ typedef struct {
     list_t      *p_acl_db_list;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8       btm_scn[BTM_MAX_SCN];        /* current SCNs: TRUE if SCN is in use */
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
     UINT16      btm_def_link_policy;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     UINT16      btm_def_link_super_tout;
 
     tBTM_ACL_LINK_STAT_CB *p_acl_link_stat_cb; /* Callback for when ACL link related events came */
@@ -892,12 +893,15 @@ typedef struct {
     *****************************************************/
 #if (BLE_INCLUDED == TRUE)
     tBTM_BLE_CB             ble_ctr_cb;
-
+#if (SMP_INCLUDED == TRUE)
     UINT16                  enc_handle;
     BT_OCTET8               enc_rand;   /* received rand value from LTK request*/
     UINT16                  ediv;       /* received ediv value from LTK request */
     UINT8                   key_size;
+#endif // (SMP_INCLUDED == TRUE)
+#if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
     BOOLEAN                 addr_res_en;   /* internal use for test: address resolution enable/disable */
+#endif // ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 #endif
 
     /* Packet types supported by the local device */
@@ -980,8 +984,12 @@ typedef struct {
     fixed_queue_t           *page_queue;
     BOOLEAN                 paging;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN                 discing;
+#endif // (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE)
     fixed_queue_t           *sec_pending_q;  /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
+#endif // (SMP_INCLUDED == TRUE)
 #if  (!defined(BT_TRACE_VERBOSE) || (BT_TRACE_VERBOSE == FALSE))
     char state_temp_buffer[BTM_STATE_BUFFER_SIZE];
 #endif
