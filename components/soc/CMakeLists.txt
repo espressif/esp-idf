@@ -99,12 +99,6 @@ if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "${target}/twai_periph.c")
 endif()
 
-if(CONFIG_SOC_IEEE802154_SUPPORTED)
-    if(NOT target STREQUAL "esp32h4")
-        list(APPEND srcs "${target}/ieee802154_periph.c")
-    endif()
-endif()
-
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND srcs "${target}/usb_periph.c"
                      "${target}/usb_dwc_periph.c")
