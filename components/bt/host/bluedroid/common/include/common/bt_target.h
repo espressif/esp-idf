@@ -1641,10 +1641,6 @@
 #define BLE_HOST_READ_TX_POWER_EN                  FALSE
 #endif
 
-#ifndef BLE_HOST_STOP_ADV_UNUSED
-#define BLE_HOST_STOP_ADV_UNUSED                  FALSE
-#endif
-
 #ifndef BLE_HOST_BLE_OBSERVE_EN
 #define BLE_HOST_BLE_OBSERVE_EN                  FALSE
 #endif
