@@ -102,8 +102,9 @@ void gatt_init (void)
 #endif /* #if GATT_DYNAMIC_MEMORY */
     memset (&gatt_cb, 0, sizeof(tGATT_CB));
     memset (&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
-
+#if (GATTC_INCLUDED == TRUE)
     gatt_cb.auto_disc = TRUE;
+#endif // (GATTC_INCLUDED == TRUE)
     gatt_cb.p_clcb_list = list_new(osi_free_func);
     gatt_cb.p_tcb_list  = list_new(osi_free_func);
 #if defined(GATT_INITIAL_TRACE_LEVEL)
@@ -111,11 +112,11 @@ void gatt_init (void)
 #else
     gatt_cb.trace_level = BT_TRACE_LEVEL_NONE;    /* No traces */
 #endif
-    gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
-    gatt_cb.sign_op_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+#if (GATTS_INCLUDED == TRUE)
     gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
     gatt_cb.pending_new_srv_start_q = fixed_queue_new(QUEUE_SIZE_MAX);
     gatt_cb.srv_chg_mode = GATTS_SEND_SERVICE_CHANGE_MODE;
+#endif // (GATTS_INCLUDED == TRUE)
 
     /* First, register fixed L2CAP channel for ATT over BLE */
     fixed_reg.fixed_chnl_opts.mode         = L2CAP_FCR_BASIC_MODE;
@@ -140,11 +141,10 @@ void gatt_init (void)
 #endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
     BTM_SetSecurityLevel(TRUE, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT, 0, 0);
     BTM_SetSecurityLevel(FALSE, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT, 0, 0);
-
+#if (GATTS_INCLUDED == TRUE)
     gatt_cb.hdl_cfg.gatt_start_hdl = GATT_GATT_START_HANDLE;
     gatt_cb.hdl_cfg.gap_start_hdl  = GATT_GAP_START_HANDLE;
     gatt_cb.hdl_cfg.app_start_hdl  = GATT_APP_START_HANDLE;
-#if (GATTS_INCLUDED == TRUE)
     gatt_profile_db_init();
 #endif  ///GATTS_INCLUDED == TRUE
     //init local MTU size
@@ -165,19 +165,21 @@ void gatt_init (void)
 void gatt_free(void)
 {
     GATT_TRACE_DEBUG("gatt_free()");
-    fixed_queue_free(gatt_cb.sign_op_queue, NULL);
-    gatt_cb.sign_op_queue = NULL;
+#if (GATTS_INCLUDED == TRUE)
     fixed_queue_free(gatt_cb.srv_chg_clt_q, NULL);
     gatt_cb.srv_chg_clt_q = NULL;
     fixed_queue_free(gatt_cb.pending_new_srv_start_q, osi_free_func);
     gatt_cb.pending_new_srv_start_q = NULL;
+#endif // (GATTS_INCLUDED == TRUE)
 
     list_node_t *p_node = NULL;
     tGATT_TCB   *p_tcb  = NULL;
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
 	p_tcb = list_node(p_node);
+#if (SMP_INCLUDED == TRUE)
         fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
         p_tcb->pending_enc_clcb = NULL;
+#endif // (SMP_INCLUDED == TRUE)
 
         fixed_queue_free(p_tcb->pending_ind_q, NULL);
         p_tcb->pending_ind_q = NULL;
@@ -411,9 +413,11 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
                 // but here p_tcb is get from gatt_allocate_tcb_by_bdaddr(), is too old, so we get p_tcb again
                 p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
                 if(p_tcb != NULL) {
+#if (SMP_INCLUDED == TRUE)
                     if(p_tcb->pending_enc_clcb != NULL) {
                         fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
                     }
+#endif // (SMP_INCLUDED == TRUE)
                     if(p_tcb->pending_ind_q != NULL) {
                         fixed_queue_free(p_tcb->pending_ind_q, NULL);
                     }
@@ -450,8 +454,10 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
 {
 
     tGATT_TCB       *p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+#if (GATTS_INCLUDED == TRUE)
     BOOLEAN                 check_srv_chg = FALSE;
     tGATTS_SRV_CHG          *p_srv_chg_clt = NULL;
+#endif // (GATTS_INCLUDED == TRUE)
 
     /* ignore all fixed channel connect/disconnect on BR/EDR link for GATT */
     if (transport == BT_TRANSPORT_BR_EDR) {
@@ -461,7 +467,7 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
     GATT_TRACE_DEBUG ("GATT   ATT protocol channel with BDA: %08x%04x is %s",
                       (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
                       (bd_addr[4] << 8) + bd_addr[5], (connected) ? "connected" : "disconnected");
-
+#if (GATTS_INCLUDED == TRUE)
     if ((p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr)) != NULL) {
         check_srv_chg = TRUE;
     } else {
@@ -469,6 +475,7 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
             gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
         }
     }
+#endif // #if (GATTS_INCLUDED == TRUE)
 
     if (connected) {
         /* do we have a channel initiating a connection? */
@@ -481,11 +488,11 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
 
                 gatt_send_conn_cback(p_tcb);
             }
-            if (check_srv_chg) {
 #if (GATTS_INCLUDED == TRUE)
+            if (check_srv_chg) {
                 gatt_chk_srv_chg (p_srv_chg_clt);
-#endif  ///GATTS_INCLUDED == TRUE
             }
+#endif  ///GATTS_INCLUDED == TRUE
         }
         /* this is incoming connection or background connection callback */
 
@@ -498,11 +505,11 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
                 p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
 
                 gatt_send_conn_cback (p_tcb);
-                if (check_srv_chg) {
 #if (GATTS_INCLUDED == TRUE)
+                 if (check_srv_chg) {
                     gatt_chk_srv_chg (p_srv_chg_clt);
-#endif  ///GATTS_INCLUDED == TRUE
                 }
+#endif  ///GATTS_INCLUDED == TRUE
             } else {
                 GATT_TRACE_ERROR("CCB max out, no resources");
             }

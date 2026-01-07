@@ -428,13 +428,13 @@
 #define CONTROLLER_RPA_LIST_ENABLE   FALSE
 #endif
 
-#if (UC_BT_GATTS_ENABLE)
+#if (UC_BT_GATTS_ENABLE == TRUE)
 #define GATTS_INCLUDED              TRUE
 #else
 #define GATTS_INCLUDED              FALSE
 #endif /* UC_BT_GATTS_ENABLE */
 
-#if (UC_BT_GATTC_ENABLE)
+#if (UC_BT_GATTC_ENABLE == TRUE)
 #define GATTC_INCLUDED              TRUE
 #else
 #define GATTC_INCLUDED              FALSE

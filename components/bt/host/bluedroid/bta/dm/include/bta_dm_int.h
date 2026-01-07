@@ -2212,9 +2212,6 @@ typedef struct {
     UINT16                      state;
     BOOLEAN                     disabling;
     TIMER_LIST_ENT              disable_timer;
-    UINT32                      wbt_sdp_handle;          /* WIDCOMM Extensions SDP record handle */
-    UINT8                       wbt_scn;                 /* WIDCOMM Extensions SCN */
-    UINT8                       num_master_only;
 #if (BTA_DM_PM_INCLUDED == TRUE)
     UINT8                       pm_id;
     tBTA_PM_TIMER               pm_timer[BTA_DM_NUM_PM_TIMER];
@@ -2222,7 +2219,9 @@ typedef struct {
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8                       cur_av_count;       /* current AV connections */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN                     disable_pair_mode;          /* disable pair mode or not */
     BOOLEAN                     conn_paired_only;   /* allow connectable to paired device only or not */
     tBTA_DM_API_SEARCH          search_msg;
@@ -2253,7 +2252,9 @@ typedef struct {
 
 
     tBTA_DM_ENCRYPT_CBACK      *p_encrypt_cback;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     TIMER_LIST_ENT              switch_delay_timer[BTA_DM_NUM_PEER_DEVICE];
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 } tBTA_DM_CB;
 
@@ -2423,8 +2424,10 @@ extern tBTA_DM_SEARCH_CB *bta_dm_search_cb_ptr;
 #if BTA_DYNAMIC_MEMORY == FALSE
 extern tBTA_DM_DI_CB  bta_dm_di_cb;
 #else
+#if (CLASSIC_BT_INCLUDED == TRUE)
 extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 #define bta_dm_di_cb (*bta_dm_di_cb_ptr)
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 extern SemaphoreHandle_t deinit_semaphore;
 #endif
 

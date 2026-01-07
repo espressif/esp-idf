@@ -104,6 +104,7 @@ void gatt_free_pending_ind(tGATT_TCB *p_tcb)
     p_tcb->pending_ind_q = NULL;
 }
 
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_free_pending_enc_queue
@@ -127,6 +128,7 @@ void gatt_free_pending_enc_queue(tGATT_TCB *p_tcb)
 	fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
     p_tcb->pending_enc_clcb = NULL;
 }
+#endif // (SMP_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -154,6 +156,7 @@ void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb)
     p_tcb->prepare_write_record.error_code_app = GATT_SUCCESS;
 }
 
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_delete_dev_from_srv_chg_clt_list
@@ -248,7 +251,7 @@ tGATTS_PENDING_NEW_SRV_START *gatt_sr_is_new_srv_chg(tBT_UUID *p_app_uuid128, tB
 
     return p_buf;
 }
-
+#endif // (GATTS_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -271,7 +274,7 @@ tGATT_VALUE *gatt_add_pending_ind(tGATT_TCB  *p_tcb, tGATT_VALUE *p_ind)
     return p_buf;
 }
 
-
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     gatt_add_pending_new_srv_start
@@ -327,7 +330,7 @@ tGATTS_SRV_CHG *gatt_add_srv_chg_clt(tGATTS_SRV_CHG *p_srv_chg)
 ** Returns    Pointer to the allocated buffer, NULL no buffer available
 **
 *******************************************************************************/
-#if (GATTS_INCLUDED == TRUE)
+
 tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void)
 {
     UINT8 i;
@@ -803,7 +806,7 @@ BOOLEAN gatt_find_the_connected_bda(UINT8 start_idx, BD_ADDR bda, UINT8 *p_found
     return found;
 }
 
-
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_is_srv_chg_ind_pending
@@ -874,7 +877,7 @@ tGATTS_SRV_CHG *gatt_is_bda_in_the_srv_chg_clt_list (BD_ADDR bda)
 
     return p_buf;
 }
-
+#endif // (GATTS_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1083,7 +1086,9 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
         }
         if (allocated) {
             memset(p_tcb, 0, sizeof(tGATT_TCB));
+#if (SMP_INCLUDED == TRUE)
             p_tcb->pending_enc_clcb = fixed_queue_new(QUEUE_SIZE_MAX);
+#endif // (SMP_INCLUDED == TRUE)
             p_tcb->pending_ind_q = fixed_queue_new(QUEUE_SIZE_MAX);
             p_tcb->in_use = TRUE;
             p_tcb->tcb_idx = i;
@@ -1390,6 +1395,8 @@ void gatt_ind_ack_timeout(TIMER_LIST_ENT *p_tle)
 
     attp_send_cl_msg(((tGATT_TCB *)p_tle->param), 0, GATT_HANDLE_VALUE_CONF, NULL);
 }
+
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_sr_find_i_rcb_by_handle
@@ -1422,7 +1429,7 @@ UINT8 gatt_sr_find_i_rcb_by_handle(UINT16 handle)
 ** Returns          GATT_MAX_SR_PROFILES if not found. Otherwise index of th eservice.
 **
 *******************************************************************************/
-#if (GATTS_INCLUDED == TRUE)
+
 UINT8 gatt_sr_find_i_rcb_by_app_id(tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid, UINT16 svc_inst)
 {
     UINT8           i_rcb = 0;
@@ -1446,7 +1453,7 @@ UINT8 gatt_sr_find_i_rcb_by_app_id(tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid
     }
     return i_rcb;
 }
-#endif  ///GATTS_INCLUDED == TRUE
+
 /*******************************************************************************
 **
 ** Function         gatt_sr_find_i_rcb_by_handle
@@ -1482,6 +1489,7 @@ UINT8 gatt_sr_alloc_rcb(tGATT_HDL_LIST_ELEM *p_list )
 
     return ii;
 }
+#endif  ///GATTS_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         gatt_sr_get_sec_info
@@ -2370,12 +2378,14 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         btu_free_timer (&p_tcb->ind_ack_timer_ent);
         btu_free_timer (&p_tcb->conf_timer_ent);
         gatt_free_pending_ind(p_tcb);
+#if (SMP_INCLUDED == TRUE)
         gatt_free_pending_enc_queue(p_tcb);
+#endif // (SMP_INCLUDED == TRUE)
         gatt_free_pending_prepare_write_queue(p_tcb);
-#if (GATTS_INCLUDED)
+#if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, osi_free_func);
         p_tcb->sr_cmd.multi_rsp_q = NULL;
-#endif /* #if (GATTS_INCLUDED) */
+#endif /* #if (GATTS_INCLUDED == TRUE) */
         for (i = 0; i < GATT_MAX_APPS; i ++) {
             p_reg = &gatt_cb.cl_rcb[i];
             if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
@@ -2389,7 +2399,9 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         GATT_TRACE_DEBUG ("exit gatt_cleanup_upon_disc ");
         BTM_Recovery_Pre_State();
     }
+#if (GATTS_INCLUDED == TRUE)
     gatt_delete_dev_from_srv_chg_clt_list(bda);
+#endif // (GATTS_INCLUDED == TRUE)
 }
 /*******************************************************************************
 **
@@ -2840,7 +2852,7 @@ BOOLEAN gatt_update_auto_connect_dev (tGATT_IF gatt_if, BOOLEAN add, BD_ADDR bd_
 }
 #endif // #if (tGATT_BG_CONN_DEV == TRUE)
 
-
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     gatt_add_pending_new_srv_start
@@ -2858,10 +2870,11 @@ tGATT_PENDING_ENC_CLCB *gatt_add_pending_enc_channel_clcb(tGATT_TCB *p_tcb, tGAT
     if ((p_buf = (tGATT_PENDING_ENC_CLCB *)osi_malloc((UINT16)sizeof(tGATT_PENDING_ENC_CLCB))) != NULL) {
         GATT_TRACE_DEBUG ("enqueue a new pending encryption channel clcb");
         p_buf->p_clcb = p_clcb;
-    fixed_queue_enqueue(p_tcb->pending_enc_clcb, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
+        fixed_queue_enqueue(p_tcb->pending_enc_clcb, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
     return p_buf;
 }
+#endif // (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     gatt_update_listen_mode
