@@ -1602,10 +1602,6 @@
 #define BLE_HOST_BLE_OBSERVE_EN                  FALSE
 #endif
 
-#ifndef BLE_HOST_BLE_SCAN_PARAM_UNUSED
-#define BLE_HOST_BLE_SCAN_PARAM_UNUSED           FALSE
-#endif
-
 #ifndef BLE_HOST_SETUP_STORAGE_EN
 #define BLE_HOST_SETUP_STORAGE_EN              FALSE
 #endif
