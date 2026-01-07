@@ -809,11 +809,6 @@
 #define BT_CLASSIC_BQB_INCLUDED FALSE
 #endif
 
-/* This feature is used to enable interleaved scan*/
-#ifndef BTA_HOST_INTERLEAVE_SEARCH
-#define BTA_HOST_INTERLEAVE_SEARCH FALSE
-#endif
-
 #ifndef BT_USE_TRACES
 #define BT_USE_TRACES  FALSE
 #endif
@@ -1572,10 +1567,6 @@
 
 #ifndef BLE_ANDROID_CONTROLLER_SCAN_FILTER
 #define BLE_ANDROID_CONTROLLER_SCAN_FILTER            FALSE
-#endif
-
-#ifndef BLE_HOST_BLE_MULTI_ADV_EN
-#define BLE_HOST_BLE_MULTI_ADV_EN                     FALSE
 #endif
 
 #ifndef BLE_HOST_TRACK_ADVERTISER_EN

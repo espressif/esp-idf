@@ -518,14 +518,6 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-void btm_ble_multi_adv_configure_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst);
-void btm_ble_multi_adv_init(void);
-void *btm_ble_multi_adv_get_ref(UINT8 inst_id);
-void btm_ble_multi_adv_cleanup(void);
-void btm_ble_multi_adv_reenable(UINT8 inst_id);
-void btm_ble_multi_adv_enb_privacy(BOOLEAN enable);
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 char btm_ble_map_adv_tx_power(int tx_power_index);
 void btm_ble_batchscan_init(void);
 void btm_ble_batchscan_cleanup(void);

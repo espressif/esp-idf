@@ -394,9 +394,6 @@ typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
 typedef struct {
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    UINT8 adv_inst_max;         /* max adv instance supported in controller */
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     UINT8 rpa_offloading;
     UINT16 tot_scan_results_strg;
     UINT8 max_irk_list_sz;
@@ -499,40 +496,6 @@ typedef struct {
     tBTM_BLE_AFP    adv_filter_policy;
     tBTM_BLE_ADV_TX_POWER tx_power;
 } tBTM_BLE_ADV_PARAMS;
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-typedef struct {
-    UINT8   *p_sub_code; /* dynamic array to store sub code */
-    UINT8   *p_inst_id;  /* dynamic array to store instance id */
-    UINT8   pending_idx;
-    UINT8   next_idx;
-} tBTM_BLE_MULTI_ADV_OPQ;
-
-typedef void (tBTM_BLE_MULTI_ADV_CBACK)(tBTM_BLE_MULTI_ADV_EVT evt, UINT8 inst_id,
-                                        void *p_ref, tBTM_STATUS status);
-
-typedef struct {
-    UINT8                       inst_id;
-    BOOLEAN                     in_use;
-    UINT8                       adv_evt;
-    BD_ADDR                     rpa;
-    TIMER_LIST_ENT              raddr_timer_ent;
-    tBTM_BLE_MULTI_ADV_CBACK    *p_cback;
-    void                        *p_ref;
-    UINT8                       index;
-} tBTM_BLE_MULTI_ADV_INST;
-
-typedef struct {
-    UINT8 inst_index_queue[BTM_BLE_MULTI_ADV_MAX];
-    int front;
-    int rear;
-} tBTM_BLE_MULTI_ADV_INST_IDX_Q;
-
-typedef struct {
-    tBTM_BLE_MULTI_ADV_INST *p_adv_inst; /* dynamic array to store adv instance */
-    tBTM_BLE_MULTI_ADV_OPQ  op_q;
-} tBTM_BLE_MULTI_ADV_CB;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 typedef UINT8 tGATT_IF;
 
@@ -3005,20 +2968,6 @@ BOOLEAN BTM_BleLocalPrivacyEnabled(void);
 //extern
 void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on);
 
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/*******************************************************************************
-**
-** Function          BTM_BleMaxMultiAdvInstanceCount
-**
-** Description        Returns max number of multi adv instances  supported by controller
-**
-** Returns          Max multi adv instance count
-**
-*******************************************************************************/
-//extern
-UINT8  BTM_BleMaxMultiAdvInstanceCount(void);
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         BTM_BleSetConnectableMode
@@ -3198,80 +3147,6 @@ BOOLEAN BTM_BleSecurityProcedureIsRunning (BD_ADDR bd_addr);
 //extern
 UINT8 BTM_BleGetSupportedKeySize (BD_ADDR bd_addr);
 
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/*******************************************************************************/
-/*                          Multi ADV API                                      */
-/*******************************************************************************
-**
-** Function         BTM_BleEnableAdvInstance
-**
-** Description      This function enable a Multi-ADV instance with the specified
-**                  adv parameters
-**
-** Parameters       p_params: pointer to the adv parameter structure, set as default
-**                            adv parameter when the instance is enabled.
-**                  p_cback: callback function for the adv instance.
-**                  p_ref:  reference data attach to the adv instance to be enabled.
-**
-** Returns          status
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleEnableAdvInstance (tBTM_BLE_ADV_PARAMS *p_params,
-                                      tBTM_BLE_MULTI_ADV_CBACK *p_cback,
-                                      void *p_ref);
-
-/*******************************************************************************
-**
-** Function         BTM_BleUpdateAdvInstParam
-**
-** Description      This function update a Multi-ADV instance with the specified
-**                  adv parameters.
-**
-** Parameters       inst_id: adv instance ID
-**                  p_params: pointer to the adv parameter structure.
-**
-** Returns          status
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleUpdateAdvInstParam (UINT8 inst_id, tBTM_BLE_ADV_PARAMS *p_params);
-
-/*******************************************************************************
-**
-** Function         BTM_BleCfgAdvInstData
-**
-** Description      This function configure a Multi-ADV instance with the specified
-**                  adv data or scan response data.
-**
-** Parameters       inst_id: adv instance ID
-**                  is_scan_rsp: is this scacn response, if no set as adv data.
-**                  data_mask: adv data mask.
-**                  p_data: pointer to the adv data structure.
-**
-** Returns          status
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
-                                   tBTM_BLE_AD_MASK data_mask,
-                                   tBTM_BLE_ADV_DATA *p_data);
-
-/*******************************************************************************
-**
-** Function         BTM_BleDisableAdvInstance
-**
-** Description      This function disable a Multi-ADV instance.
-**
-** Parameters       inst_id: adv instance ID
-**
-** Returns          status
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleDisableAdvInstance (UINT8 inst_id);
-
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
