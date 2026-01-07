@@ -1891,6 +1891,7 @@ tBTM_STATUS BTM_RegAclLinkStatNotif(tBTM_ACL_LINK_STAT_CB *p_cb)
     return BTM_SUCCESS;
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_SetQoS
@@ -1972,7 +1973,7 @@ void btm_qos_setup_complete (UINT8 status, UINT16 handle, FLOW_SPEC *p_flow)
         (*p_cb)(&qossu);
     }
 }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_qos_setup_timeout
@@ -1987,7 +1988,9 @@ void btm_qos_setup_timeout (void *p_tle)
 {
     BTM_TRACE_DEBUG ("%s\n", __func__);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_qos_setup_complete (HCI_ERR_HOST_TIMEOUT, 0, NULL);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
