@@ -6,6 +6,43 @@ config BT_ALARM_MAX_NUM
         This option decides the maximum number of alarms which
         could be used by Bluetooth host.
 
+choice BT_SMP_CRYPTO_STACK
+    prompt "SMP cryptographic stack"
+    depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE || BT_NIMBLE_SECURITY_ENABLE)
+    default BT_SMP_CRYPTO_STACK_NATIVE
+    help
+        Select the cryptographic library to use for SMP operations (AES, AES-CMAC, ECDH P-256).
+
+    config BT_SMP_CRYPTO_STACK_NATIVE
+        bool "Native Bluedroid implementation"
+        depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE)
+        help
+            Use the built-in Bluedroid cryptographic implementation.
+            This provides compatibility with all features.
+            This option is only available for Bluedroid host.
+
+    config BT_SMP_CRYPTO_STACK_TINYCRYPT
+        bool "TinyCrypt"
+        help
+            Use TinyCrypt library for cryptographic operations.
+            TinyCrypt is a lightweight cryptographic library designed for constrained devices.
+            This can reduce code size compared to the native implementation.
+            This is the default option.
+
+    config BT_SMP_CRYPTO_STACK_MBEDTLS
+        bool "mbedTLS"
+        select MBEDTLS_AES_C
+        select MBEDTLS_CMAC_C
+        select MBEDTLS_ECDH_C
+        select MBEDTLS_ECP_C
+        select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+        help
+            Use mbedTLS library for cryptographic operations.
+            This can provide hardware acceleration on supported platforms and reduce code size
+            by sharing crypto implementations with other components.
+
+endchoice
+
 menu "BLE Log"
     source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"
 endmenu

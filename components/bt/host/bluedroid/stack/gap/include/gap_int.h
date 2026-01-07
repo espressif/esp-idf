@@ -93,7 +93,11 @@ typedef struct {
 
 
 #if BLE_INCLUDED == TRUE
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+#define GAP_MAX_CHAR_NUM          6
+#else
 #define GAP_MAX_CHAR_NUM          5
+#endif
 
 typedef struct {
     UINT16                  handle;
