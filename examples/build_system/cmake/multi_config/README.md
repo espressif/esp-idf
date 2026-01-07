@@ -89,14 +89,14 @@ You can further enhance your build process by using configuration profile files.
 
 You can use these profile files to quickly set up the build environment with specific configurations.
 
-- To build with the production profile: `idf.py @profiles/prod build`
-- To build with the debug profile: `idf.py @profiles/debug build`
+- To build with the production profile: `idf.py "@profiles/prod" build`
+- To build with the debug profile: `idf.py "@profiles/debug" build`
 
 This approach simplifies the process of specifying complex command-line arguments and allows for greater flexibility in managing different build scenarios.
 
 Moreover, you can combine arguments from a profile file with additional command line arguments. Anywhere on the idf.py command line, you can specify a file as @filename.txt to read one or more arguments from the text file. Arguments in the file can be separated by newlines or spaces and are expanded exactly as if they had appeared in that order on the idf.py command line.
 
-For example using [cutom_flash.txt](custom_flash.txt), you can expand the command: `idf.py -B build_production @custom_flash.txt monitor`
+For example using [cutom_flash.txt](custom_flash.txt), you can expand the command: `idf.py -B build_production "@custom_flash.txt" monitor`
 
 ### Generated `sdkconfig` file
 
