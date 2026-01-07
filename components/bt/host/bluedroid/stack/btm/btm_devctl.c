@@ -88,7 +88,9 @@ void btm_dev_init (void)
 #endif
 
     btm_cb.devcb.reset_timer.param  = (TIMER_PARAM_TYPE)TT_DEV_RESET;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.devcb.rln_timer.param    = (TIMER_PARAM_TYPE)TT_DEV_RLN;
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
     btm_cb.btm_acl_pkt_types_supported = BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1 +
                                          BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3 +
@@ -122,6 +124,7 @@ static void btm_db_reset (void)
 
     btm_inq_db_reset();
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (btm_cb.devcb.p_rln_cmpl_cb) {
         p_cb = btm_cb.devcb.p_rln_cmpl_cb;
         btm_cb.devcb.p_rln_cmpl_cb = NULL;
@@ -130,6 +133,7 @@ static void btm_db_reset (void)
             (*p_cb)((void *) NULL);
         }
     }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
     if (btm_cb.devcb.p_rssi_cmpl_cb) {
         p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
@@ -248,6 +252,7 @@ BOOLEAN BTM_IsDeviceUp (void)
     return controller_get_interface()->get_is_ready();
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_dev_timeout
@@ -271,6 +276,7 @@ void btm_dev_timeout (TIMER_LIST_ENT  *p_tle)
         }
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -553,7 +559,7 @@ tBTM_STATUS BTM_ReadLocalDeviceName (char **p_name, tBT_DEVICE_TYPE name_type)
 #endif
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadLocalDeviceNameFromController
@@ -611,7 +617,7 @@ void btm_read_local_name_complete (UINT8 *p, UINT16 evt_len)
         }
     }
 }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_SetDeviceClass
