@@ -1522,10 +1522,6 @@
 #define BLE_INCLUDED            FALSE
 #endif
 
-#ifndef BLE_ANDROID_CONTROLLER_SCAN_FILTER
-#define BLE_ANDROID_CONTROLLER_SCAN_FILTER            FALSE
-#endif
-
 #ifndef BLE_HOST_ENERGY_INFO_EN
 #define BLE_HOST_ENERGY_INFO_EN                  FALSE
 #endif
