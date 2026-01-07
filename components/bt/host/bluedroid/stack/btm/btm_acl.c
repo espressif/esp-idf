@@ -292,7 +292,9 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
                     p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
 #endif
 #endif
+#if (CLASSIC_BT_INCLUDED == TRUE)
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
             p->p_pm_mode_db = btm_pm_sm_alloc();
 #if BTM_PM_DEBUG == TRUE
@@ -384,7 +386,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
     }
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_acl_report_role_change
@@ -408,6 +410,7 @@ void btm_acl_report_role_change (UINT8 hci_status, BD_ADDR bda)
         btm_cb.devcb.p_switch_role_cb = NULL;
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -432,8 +435,10 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
     if (p != (tACL_CONN *)NULL) {
         p->in_use = FALSE;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* if the disconnected channel has a pending role switch, clear it now */
         btm_acl_report_role_change(HCI_ERR_NO_CONNECTION, bda);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
         /* Only notify if link up has had a chance to be issued */
         if (p->link_up_issued) {
@@ -646,7 +651,7 @@ tBTM_STATUS BTM_GetRole (BD_ADDR remote_bd_addr, UINT8 *p_role)
     return (BTM_SUCCESS);
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_SwitchRole
@@ -860,6 +865,7 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 #endif
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_SetLinkPolicy
@@ -1467,6 +1473,7 @@ void btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset)
 
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_acl_role_changed
@@ -1566,6 +1573,7 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
 #endif
 
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -2566,6 +2574,7 @@ UINT8 BTM_SetTraceLevel (UINT8 new_level)
     return (btm_cb.trace_level);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_cont_rswitch
@@ -2620,6 +2629,7 @@ void btm_cont_rswitch (tACL_CONN *p, tBTM_SEC_DEV_REC *p_dev_rec,
         }
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************

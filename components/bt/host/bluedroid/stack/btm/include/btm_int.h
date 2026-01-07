@@ -140,7 +140,10 @@ UINT8           legacy_auth_state;
 #define BTM_ACL_SWKEY_STATE_SWITCHING           3
 #define BTM_ACL_SWKEY_STATE_ENCRYPTION_ON       4
 #define BTM_ACL_SWKEY_STATE_IN_PROGRESS         5
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8           switch_role_state;
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #define BTM_ACL_ENCRYPT_STATE_IDLE              0
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF       1   /* encryption turning off */
@@ -207,9 +210,11 @@ tBTM_CMPL_CB        *p_qossu_cmpl_cb;   /* Callback function to be called when  
 /* qos setup function completes         */
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
 tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  */
 /* requested switch role is completed   */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 TIMER_LIST_ENT       tx_power_timer;
