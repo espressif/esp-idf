@@ -1522,11 +1522,6 @@
 #define BLE_INCLUDED            FALSE
 #endif
 
-#ifndef BLE_HOST_ENERGY_INFO_EN
-#define BLE_HOST_ENERGY_INFO_EN                  FALSE
-#endif
-
-
 #ifndef BLE_HOST_ENABLE_TEST_MODE_EN
 #define BLE_HOST_ENABLE_TEST_MODE_EN                  FALSE
 #endif

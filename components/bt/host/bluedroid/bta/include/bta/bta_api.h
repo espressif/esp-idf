@@ -1201,16 +1201,6 @@ typedef void (tBTA_DM_ENCRYPT_CBACK) (BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 #define BTA_DM_BLE_SEC_MITM         BTM_BLE_SEC_ENCRYPT_MITM
 typedef tBTM_BLE_SEC_ACT            tBTA_DM_BLE_SEC_ACT;
 
-typedef tBTM_BLE_TX_TIME_MS         tBTA_DM_BLE_TX_TIME_MS;
-typedef tBTM_BLE_RX_TIME_MS         tBTA_DM_BLE_RX_TIME_MS;
-typedef tBTM_BLE_IDLE_TIME_MS       tBTA_DM_BLE_IDLE_TIME_MS;
-typedef tBTM_BLE_ENERGY_USED        tBTA_DM_BLE_ENERGY_USED;
-
-#define BTA_DM_CONTRL_UNKNOWN 0       /* Unknown state */
-#define BTA_DM_CONTRL_ACTIVE  1       /* ACL link on, SCO link ongoing, sniff mode */
-#define BTA_DM_CONTRL_SCAN    2       /* Scan state - paging/inquiry/trying to connect*/
-#define BTA_DM_CONTRL_IDLE    3       /* Idle state - page scan, LE advt, inquiry scan */
-
 typedef UINT8 tBTA_DM_CONTRL_STATE;
 
 typedef UINT8 tBTA_DM_BLE_ADV_STATE;
@@ -1233,15 +1223,6 @@ typedef void (tBTA_START_STOP_SCAN_CMPL_CBACK) (tBTA_STATUS status);
 typedef void (tBTA_START_STOP_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_CLEAR_ADV_CMPL_CBACK) (tBTA_STATUS status);
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-typedef void (tBTA_BLE_ENERGY_INFO_CBACK)(tBTA_DM_BLE_TX_TIME_MS tx_time,
-        tBTA_DM_BLE_RX_TIME_MS rx_time,
-        tBTA_DM_BLE_IDLE_TIME_MS idle_time,
-        tBTA_DM_BLE_ENERGY_USED  energy_used,
-        tBTA_DM_CONTRL_STATE ctrl_state,
-        tBTA_STATUS status);
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 #else
 typedef UINT8                       tBTA_DM_BLE_SEC_ACT;
@@ -3109,21 +3090,6 @@ extern void BTA_DmBleReadScanReports(tBTA_BLE_BATCH_SCAN_MODE scan_type,
 **
 *******************************************************************************/
 extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value);
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleGetEnergyInfo
-**
-** Description      This function is called to obtain the energy info
-**
-** Parameters       p_cmpl_cback - Command complete callback
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK *p_cmpl_cback);
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 /*******************************************************************************
 **

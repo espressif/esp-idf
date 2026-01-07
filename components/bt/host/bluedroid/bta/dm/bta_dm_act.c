@@ -6318,56 +6318,6 @@ void bta_ble_scan_setup_cb(tBTM_BLE_BATCH_SCAN_EVT evt, tBTM_BLE_REF_VALUE ref_v
     }
 }
 
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_ble_enable_scan_cmpl
-**
-** Description      ADV payload filtering enable / disable complete callback
-**
-**
-** Returns          None
-**
-*******************************************************************************/
-static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
-                                     tBTM_BLE_RX_TIME_MS rx_time,
-                                     tBTM_BLE_IDLE_TIME_MS idle_time,
-                                     tBTM_BLE_ENERGY_USED  energy_used,
-                                     tBTM_STATUS status)
-{
-    tBTA_STATUS st = (status == BTM_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
-    tBTA_DM_CONTRL_STATE ctrl_state = 0;
-#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
-    if (BTA_SUCCESS == st) {
-        ctrl_state = bta_dm_pm_obtain_controller_state();
-    }
-#endif
-    if (bta_dm_cb.p_energy_info_cback) {
-        bta_dm_cb.p_energy_info_cback(tx_time, rx_time, idle_time, energy_used, ctrl_state, st);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         bta_dm_ble_get_energy_info
-**
-** Description      This function obtains the energy info
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-
-    bta_dm_cb.p_energy_info_cback = p_data->ble_energy_info.p_energy_info_cback;
-    btm_status = BTM_BleGetEnergyInfo(bta_ble_energy_info_cmpl);
-    if (BTM_CMD_STARTED != btm_status) {
-        bta_ble_energy_info_cmpl(0, 0, 0, 0, btm_status);
-    }
-}
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
 #define BTA_DM_GATT_CLOSE_DELAY_TOUT    1000
