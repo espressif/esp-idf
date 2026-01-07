@@ -2939,6 +2939,22 @@ extern void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_P
 *******************************************************************************/
 extern void BTA_DmBleConfigLocalIcon(uint16_t icon);
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetKeyMaterial
+**
+** Description      Set the Encrypted Data Key Material in GAP service
+**
+** Parameters:      session_key - 16-byte session key
+**                  iv          - 8-byte initialization vector
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv);
+#endif
+
 /*******************************************************************************
 **
 ** Function         BTA_DmBleEnableRemotePrivacy

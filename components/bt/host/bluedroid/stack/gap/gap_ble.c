@@ -262,6 +262,13 @@ tGATT_STATUS gap_read_attr_value (UINT16 handle, tGATT_VALUE *p_value, BOOLEAN i
                 p_value->len = 2;
                 break;
 #endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+            case GATT_UUID_GAP_KEY_MATERIAL:
+                ARRAY_TO_STREAM(p, p_db_attr->attr_value.key_material.session_key, GAP_KEY_MATERIAL_SESSION_KEY_SIZE);
+                ARRAY_TO_STREAM(p, p_db_attr->attr_value.key_material.iv, GAP_KEY_MATERIAL_IV_SIZE);
+                p_value->len = GAP_KEY_MATERIAL_SIZE;
+                break;
+#endif // (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
             }
             return GATT_SUCCESS;
         }
@@ -481,6 +488,20 @@ void gap_attr_db_init(void)
     p_db_attr++;
 #endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    /* Add Encrypted Data Key Material Characteristic
+     * Per Bluetooth spec: readable only when authenticated and authorized,
+     * requires encrypted link to read.
+     */
+    uuid.len = LEN_UUID_16;
+    uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_KEY_MATERIAL;
+    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
+                        GATT_PERM_READ_ENCRYPTED, GATT_CHAR_PROP_BIT_READ,
+                        NULL, NULL);
+    memset(&p_db_attr->attr_value.key_material, 0, sizeof(tGAP_BLE_KEY_MATERIAL));
+    p_db_attr++;
+#endif // (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+
     /* start service now */
     memset (&app_uuid.uu.uuid128, 0x81, LEN_UUID_128);
 
@@ -512,6 +533,11 @@ void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
 
     GAP_TRACE_EVENT("GAP_BleAttrDBUpdate attr_uuid=0x%04x\n", attr_uuid);
 
+    if (p_value == NULL) {
+        GAP_TRACE_ERROR("GAP_BleAttrDBUpdate: NULL pointer parameter");
+        return;
+    }
+
     for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++) {
         if (p_db_attr->uuid == attr_uuid) {
             GAP_TRACE_EVENT("Found attr_uuid=0x%04x\n", attr_uuid);
@@ -539,6 +565,13 @@ void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
                 p_db_attr->attr_value.security_level = p_value->security_level;
                 break;
 #endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+            case GATT_UUID_GAP_KEY_MATERIAL:
+                memcpy(&p_db_attr->attr_value.key_material, &p_value->key_material,
+                       sizeof(tGAP_BLE_KEY_MATERIAL));
+                break;
+#endif // (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
 
             }
             break;
