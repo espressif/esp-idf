@@ -536,7 +536,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
            But then we have a few HCI commands being invoked above which were still in progress
            when the ENABLE_EVT was sent. So modified this to fetch the local name which forces
            the DM_ENABLE_EVT to be sent only after all the init steps are complete */
+#if (CLASSIC_BT_INCLUDED == TRUE)
         BTM_ReadLocalDeviceNameFromController((tBTM_CMPL_CB *)bta_dm_local_name_cback);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
         bta_sys_rm_register((tBTA_SYS_CONN_CBACK *)bta_dm_rm_cback);
 
@@ -549,6 +551,12 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 
 #if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
         bta_dm_gattc_register();
+#endif
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    // do nothing
+#else
+    bta_dm_local_name_cback(NULL);
 #endif
 
     } else {
