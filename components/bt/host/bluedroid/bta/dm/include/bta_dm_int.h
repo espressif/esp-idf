@@ -169,9 +169,6 @@ enum {
     BTA_DM_API_BLE_DISCONNECT_EVT,
 
 #endif
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-    BTA_DM_API_EXECUTE_CBACK_EVT,
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     BTA_DM_API_REMOVE_ALL_ACL_EVT,
 #endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
@@ -723,15 +720,6 @@ typedef struct {
     BD_ADDR             bd_addr;
     UINT8               transport;
 } tBTA_DM_API_REMOVE_DEVICE;
-
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-/* data type for BTA_DM_API_EXECUTE_CBACK_EVT */
-typedef struct {
-    BT_HDR               hdr;
-    void                *p_param;
-    tBTA_DM_EXEC_CBACK  *p_exec_cback;
-} tBTA_DM_API_EXECUTE_CBACK;
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 
 /* data type for tBTA_DM_API_SET_ENCRYPTION */
 typedef struct {
@@ -1738,9 +1726,6 @@ typedef union {
 #endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 
     tBTA_DM_API_DI_DISC     di_disc;
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-    tBTA_DM_API_EXECUTE_CBACK exec_cback;
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
     tBTA_DM_API_SET_ENCRYPTION     set_encryption;
 
 #if BLE_INCLUDED == TRUE
