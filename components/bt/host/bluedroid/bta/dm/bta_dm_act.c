@@ -1225,54 +1225,6 @@ void bta_dm_add_device (tBTA_DM_MSG *p_data)
     }
 }
 
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_close_acl
-**
-** Description      This function forces to close the connection to a remote device
-**                  and optionally remove the device from security database if
-**                  required.
-****
-*******************************************************************************/
-void bta_dm_close_acl(tBTA_DM_MSG *p_data)
-{
-    tBTA_DM_API_REMOVE_ACL *p_remove_acl = &p_data->remove_acl;
-    UINT8   index;
-
-    APPL_TRACE_DEBUG("bta_dm_close_acl");
-
-    if (BTM_IsAclConnectionUp(p_remove_acl->bd_addr, p_remove_acl->transport)) {
-        for (index = 0; index < bta_dm_cb.device_list.count; index ++) {
-            if (!bdcmp( bta_dm_cb.device_list.peer_device[index].peer_bdaddr, p_remove_acl->bd_addr)) {
-                break;
-            }
-        }
-        if (index != bta_dm_cb.device_list.count) {
-            if (p_remove_acl->remove_dev) {
-                bta_dm_cb.device_list.peer_device[index].remove_dev_pending = TRUE;
-            }
-        } else {
-            APPL_TRACE_ERROR("unknown device, remove ACL failed");
-        }
-        /* Disconnect the ACL link */
-        btm_remove_acl(p_remove_acl->bd_addr, p_remove_acl->transport);
-    }
-    /* if to remove the device from security database ? do it now */
-    else if (p_remove_acl->remove_dev) {
-        if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr, p_remove_acl->transport)) {
-            APPL_TRACE_ERROR("delete device from security database failed.");
-        }
-#if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
-        /* need to remove all pending background connection if any */
-        BTA_GATTC_CancelOpen(0, p_remove_acl->bd_addr, FALSE);
-#endif
-    }
-    /* otherwise, no action needed */
-
-}
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_dm_bond

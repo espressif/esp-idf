@@ -77,9 +77,6 @@ enum {
 
     BTA_DM_ACL_CHANGE_EVT,
     BTA_DM_API_ADD_DEVICE_EVT,
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-    BTA_DM_API_REMOVE_ACL_EVT,
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     BTA_DM_API_BOND_EVT,
@@ -1203,17 +1200,6 @@ typedef struct {
 
 #endif /* BLE_INCLUDED */
 
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-/* data type for BTA_DM_API_REMOVE_ACL_EVT */
-typedef struct {
-    BT_HDR      hdr;
-    BD_ADDR     bd_addr;
-    BOOLEAN     remove_dev;
-    tBTA_TRANSPORT transport;
-
-} tBTA_DM_API_REMOVE_ACL;
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     bd_addr;
@@ -1783,10 +1769,6 @@ typedef union {
     tBTA_DM_API_BLE_SET_CSA_SUPPORT ble_set_csa_support;
     tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK ble_set_vendor_evt_mask;
 #endif
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-    tBTA_DM_API_REMOVE_ACL              remove_acl;
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
     tBTA_DM_API_BIG_CREATE              big_creat;

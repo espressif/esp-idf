@@ -88,9 +88,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_acl_change,                      /* BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* BTA_DM_API_ADD_DEVICE_EVT */
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-    bta_dm_close_acl,                       /* BTA_DM_API_REMOVE_ACL_EVT */
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     bta_dm_bond,                            /* BTA_DM_API_BOND_EVT */
