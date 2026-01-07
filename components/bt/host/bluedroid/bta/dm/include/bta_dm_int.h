@@ -181,12 +181,6 @@ enum {
     BTA_DM_API_SCAN_FILTER_SETUP_EVT,
     BTA_DM_API_SCAN_FILTER_ENABLE_EVT,
 #endif
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    BTA_DM_API_BLE_MULTI_ADV_ENB_EVT,
-    BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT,
-    BTA_DM_API_BLE_MULTI_ADV_DATA_EVT,
-    BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT,
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     BTA_DM_API_BLE_SETUP_STORAGE_EVT,
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
@@ -970,35 +964,6 @@ typedef struct {
     BOOLEAN                 enable;
 
 } tBTA_DM_API_BLE_FEATURE;
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/* multi adv data structure */
-typedef struct {
-    BT_HDR                      hdr;
-    tBTA_BLE_MULTI_ADV_CBACK    *p_cback;
-    void                        *p_ref;
-    tBTA_BLE_ADV_PARAMS         *p_params;
-} tBTA_DM_API_BLE_MULTI_ADV_ENB;
-
-typedef struct {
-    BT_HDR                      hdr;
-    UINT8                        inst_id;
-    tBTA_BLE_ADV_PARAMS         *p_params;
-} tBTA_DM_API_BLE_MULTI_ADV_PARAM;
-
-typedef struct {
-    BT_HDR                  hdr;
-    UINT8                   inst_id;
-    BOOLEAN                 is_scan_rsp;
-    tBTA_BLE_AD_MASK        data_mask;
-    tBTA_BLE_ADV_DATA      *p_data;
-} tBTA_DM_API_BLE_MULTI_ADV_DATA;
-
-typedef struct {
-    BT_HDR                  hdr;
-    UINT8                   inst_id;
-} tBTA_DM_API_BLE_MULTI_ADV_DISABLE;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 typedef struct {
     BT_HDR                  hdr;
@@ -1928,13 +1893,6 @@ typedef union {
     tBTA_DM_APT_CLEAR_ADDR              clear_addr;
     tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
     tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST add_dev_to_resolving_list;
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    tBTA_DM_API_BLE_MULTI_ADV_ENB       ble_multi_adv_enb;
-    tBTA_DM_API_BLE_MULTI_ADV_PARAM     ble_multi_adv_param;
-    tBTA_DM_API_BLE_MULTI_ADV_DATA      ble_multi_adv_data;
-    tBTA_DM_API_BLE_MULTI_ADV_DISABLE   ble_multi_adv_disable;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     tBTA_DM_API_SET_STORAGE_CONFIG      ble_set_storage;
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
@@ -2202,9 +2160,6 @@ typedef struct {
     tBTA_DM_BLE_PF_CFG_CBACK     *p_scan_filt_cfg_cback;
     tBTA_DM_BLE_PF_STATUS_CBACK  *p_scan_filt_status_cback;
     tBTA_DM_BLE_PF_PARAM_CBACK   *p_scan_filt_param_cback;
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    tBTA_BLE_MULTI_ADV_CBACK     *p_multi_adv_cback;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     tBTA_BLE_ENERGY_INFO_CBACK   *p_energy_info_cback;
 #endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)

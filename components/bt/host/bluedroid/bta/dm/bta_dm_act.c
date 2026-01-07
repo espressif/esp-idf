@@ -633,13 +633,6 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
     btm_ble_resolving_list_cleanup ();  //by TH, because cmn_ble_vsc_cb.max_filter has something mistake as btm_ble_adv_filter_cleanup
 #endif
 
-#if BLE_INCLUDED == TRUE
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    // btm_ble_multi_adv_init is called when the host is enabled, so btm_ble_multi_adv_cleanup is called when the host is disabled.
-    btm_ble_multi_adv_cleanup();
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-#endif
-
 }
 
 /*******************************************************************************
@@ -5775,116 +5768,6 @@ void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data)
 
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_multi_adv_enb
-**
-** Description      This function enables a single advertising instance
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_multi_adv_enb(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-
-    bta_dm_cb.p_multi_adv_cback = p_data->ble_multi_adv_enb.p_cback;
-    if (BTM_BleMaxMultiAdvInstanceCount() > 0 && NULL != p_data->ble_multi_adv_enb.p_ref) {
-        btm_status = BTM_BleEnableAdvInstance((tBTM_BLE_ADV_PARAMS *)
-                                              p_data->ble_multi_adv_enb.p_params,
-                                              p_data->ble_multi_adv_enb.p_cback,
-                                              p_data->ble_multi_adv_enb.p_ref);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        bta_dm_cb.p_multi_adv_cback(BTA_BLE_MULTI_ADV_ENB_EVT, 0xFF,
-                                    p_data->ble_multi_adv_enb.p_ref, BTA_FAILURE);
-    }
-}
-/*******************************************************************************
-**
-** Function         bta_dm_ble_multi_adv_param_upd
-**
-** Description      This function updates multiple advertising instance parameters
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_multi_adv_upd_param(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-    void *p_ref = NULL;
-
-    if (BTM_BleMaxMultiAdvInstanceCount() > 0 && p_data->ble_multi_adv_param.inst_id > 0
-            && p_data->ble_multi_adv_param.inst_id < BTM_BleMaxMultiAdvInstanceCount()) {
-        btm_status = BTM_BleUpdateAdvInstParam(p_data->ble_multi_adv_param.inst_id,
-                                               (tBTM_BLE_ADV_PARAMS *)p_data->ble_multi_adv_param.p_params);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        p_ref = btm_ble_multi_adv_get_ref(p_data->ble_multi_adv_param.inst_id);
-        bta_dm_cb.p_multi_adv_cback(BTA_BLE_MULTI_ADV_PARAM_EVT,
-                                    p_data->ble_multi_adv_param.inst_id, p_ref, BTA_FAILURE);
-    }
-}
-/*******************************************************************************
-**
-** Function         bta_dm_ble_multi_adv_data
-**
-** Description      This function write multiple advertising instance adv data
-**                  or scan response data
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_multi_adv_data(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-    void *p_ref = NULL;
-
-    if (BTM_BleMaxMultiAdvInstanceCount() > 0 && p_data->ble_multi_adv_data.inst_id > 0
-            && p_data->ble_multi_adv_data.inst_id < BTM_BleMaxMultiAdvInstanceCount()) {
-        btm_status = BTM_BleCfgAdvInstData(p_data->ble_multi_adv_data.inst_id,
-                                           p_data->ble_multi_adv_data.is_scan_rsp,
-                                           p_data->ble_multi_adv_data.data_mask,
-                                           (tBTM_BLE_ADV_DATA *)p_data->ble_multi_adv_data.p_data);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        p_ref = btm_ble_multi_adv_get_ref(p_data->ble_multi_adv_data.inst_id);
-        bta_dm_cb.p_multi_adv_cback(BTA_BLE_MULTI_ADV_DATA_EVT,
-                                    p_data->ble_multi_adv_data.inst_id, p_ref, BTA_FAILURE);
-    }
-
-}
-/*******************************************************************************
-**
-** Function         btm_dm_ble_multi_adv_disable
-**
-** Description      This function disable a single adv instance
-**
-** Parameters:
-**
-*******************************************************************************/
-void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data)
-{
-    tBTM_STATUS btm_status = 0;
-    void *p_ref = NULL;
-
-    if (BTM_BleMaxMultiAdvInstanceCount() > 0 && p_data->ble_multi_adv_disable.inst_id > 0
-            && p_data->ble_multi_adv_disable.inst_id < BTM_BleMaxMultiAdvInstanceCount()) {
-        btm_status = BTM_BleDisableAdvInstance(p_data->ble_multi_adv_disable.inst_id);
-    }
-
-    if (BTM_CMD_STARTED != btm_status) {
-        p_ref = btm_ble_multi_adv_get_ref(p_data->ble_multi_adv_disable.inst_id);
-        bta_dm_cb.p_multi_adv_cback(BTA_BLE_MULTI_ADV_DISABLE_EVT,
-                                    p_data->ble_multi_adv_disable.inst_id, p_ref, BTA_FAILURE);
-    }
-}
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 #if (BLE_42_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data)

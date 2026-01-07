@@ -195,12 +195,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
     bta_dm_enable_scan_filter,              /* BTA_DM_API_SCAN_FILTER_ENABLE_EVT */
 #endif
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    bta_dm_ble_multi_adv_enb,               /* BTA_DM_API_BLE_MULTI_ADV_ENB_EVT */
-    bta_dm_ble_multi_adv_upd_param,         /* BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
-    bta_dm_ble_multi_adv_data,              /* BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
-    btm_dm_ble_multi_adv_disable,           /* BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
-#endif // BLE_HOST_BLE_MULTI_ADV_EN
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     bta_dm_ble_setup_storage,               /* BTA_DM_API_BLE_SETUP_STORAGE_EVT */
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
