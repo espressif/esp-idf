@@ -1565,10 +1565,6 @@
 #define BLE_INCLUDED            FALSE
 #endif
 
-#ifndef BLE_HOST_EXECUTE_CBACK_EN
-#define BLE_HOST_EXECUTE_CBACK_EN                  FALSE
-#endif
-
 #ifndef BLE_HOST_REMOVE_ALL_ACL_EN
 #define BLE_HOST_REMOVE_ALL_ACL_EN                  FALSE
 #endif
