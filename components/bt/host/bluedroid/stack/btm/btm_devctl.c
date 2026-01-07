@@ -1095,65 +1095,6 @@ tBTM_STATUS BTM_WriteVoiceSettings(UINT16 settings)
     return (BTM_NO_RESOURCES);
 }
 
-#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_EnableTestMode
-**
-** Description      Send HCI the enable device under test command.
-**
-**                  Note: Controller can only be taken out of this mode by
-**                      resetting the controller.
-**
-** Returns
-**      BTM_SUCCESS         Command sent.
-**      BTM_NO_RESOURCES    If out of resources to send the command.
-**
-**
-*******************************************************************************/
-tBTM_STATUS BTM_EnableTestMode(void)
-{
-    UINT8   cond;
-
-    BTM_TRACE_EVENT ("BTM: BTM_EnableTestMode");
-
-    /* set auto accept connection as this is needed during test mode */
-    /* Allocate a buffer to hold HCI command */
-    cond = HCI_DO_AUTO_ACCEPT_CONNECT;
-    if (!btsnd_hcic_set_event_filter(HCI_FILTER_CONNECTION_SETUP,
-                                     HCI_FILTER_COND_NEW_DEVICE,
-                                     &cond, sizeof(cond))) {
-        return (BTM_NO_RESOURCES);
-    }
-
-    /* put device to connectable mode */
-    if (BTM_SetConnectability(BTM_CONNECTABLE, BTM_DEFAULT_CONN_WINDOW,
-                               BTM_DEFAULT_CONN_INTERVAL) != BTM_SUCCESS) {
-        return BTM_NO_RESOURCES;
-    }
-
-    /* put device to discoverable mode */
-    if (BTM_SetDiscoverability(BTM_GENERAL_DISCOVERABLE, BTM_DEFAULT_DISC_WINDOW,
-                                BTM_DEFAULT_DISC_INTERVAL) != BTM_SUCCESS) {
-        return BTM_NO_RESOURCES;
-    }
-
-    /* mask off all of event from controller */
-    hci_layer_get_interface()->transmit_command(
-        hci_packet_factory_get_interface()->make_set_event_mask((const bt_event_mask_t *)("\x00\x00\x00\x00\x00\x00\x00\x00")),
-        NULL,
-        NULL,
-        NULL);
-
-    /* Send the HCI command */
-    if (btsnd_hcic_enable_test_mode ()) {
-        return (BTM_SUCCESS);
-    } else {
-        return (BTM_NO_RESOURCES);
-    }
-}
-#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
