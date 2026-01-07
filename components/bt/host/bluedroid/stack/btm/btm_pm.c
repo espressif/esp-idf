@@ -45,6 +45,8 @@
 //#include "bt_utils.h"
 //#include "osi/include/log.h"
 #include "osi/allocator.h"
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*****************************************************************************/
 /*      to handle different modes                                            */
 /*****************************************************************************/
@@ -968,3 +970,5 @@ static const char *mode_to_string(tBTM_PM_MODE mode)
     }
 }
 #endif
+
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)

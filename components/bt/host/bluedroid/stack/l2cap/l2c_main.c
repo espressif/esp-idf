@@ -859,8 +859,10 @@ void l2c_init (void)
     l2c_cb_ptr = (tL2C_CB *)osi_malloc(sizeof(tL2C_CB));
 #endif /* #if L2C_DYNAMIC_MEMORY */
     memset (&l2cb, 0, sizeof (tL2C_CB));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* the psm is increased by 2 before being used */
     l2cb.dyn_psm = 0xFFF;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
     l2cb.p_ccb_pool = list_new(osi_free_func);
     if (l2cb.p_ccb_pool == NULL) {
