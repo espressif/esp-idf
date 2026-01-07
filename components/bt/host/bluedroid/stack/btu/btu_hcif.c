@@ -1216,7 +1216,9 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_READ_LOCAL_NAME:
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_read_local_name_complete (p, evt_len);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
     case HCI_READ_RSSI:
         btm_read_rssi_complete (p, evt_len);

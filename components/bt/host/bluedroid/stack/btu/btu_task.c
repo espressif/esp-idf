@@ -315,7 +315,9 @@ static void btu_general_alarm_process(void *param)
 
     switch (p_tle->event) {
     case BTU_TTYPE_BTM_DEV_CTL:
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_dev_timeout(p_tle);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
 
     case BTU_TTYPE_L2CAP_LINK:

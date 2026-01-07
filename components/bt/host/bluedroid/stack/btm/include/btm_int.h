@@ -183,13 +183,18 @@ typedef struct {
 tBTM_DEV_STATUS_CB  *p_dev_status_cb;   /* Device status change callback        */
 tBTM_VS_EVT_CB      *p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS];     /* Register for vendor specific events  */
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTM_CMPL_CB        *p_stored_link_key_cmpl_cb;   /* Read/Write/Delete stored link key    */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 TIMER_LIST_ENT       reset_timer;
 tBTM_CMPL_CB         *p_reset_cmpl_cb;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 TIMER_LIST_ENT       rln_timer;
 tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
+
 /* read local name function complete    */
 TIMER_LIST_ENT       rssi_timer;
 tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
