@@ -3192,6 +3192,11 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapCsProcEnable(arg_5->cs_procedure_enable_params.conn_handle, arg_5->cs_procedure_enable_params.config_id, arg_5->cs_procedure_enable_params.enable);
         break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    case BTC_GAP_BLE_ACT_SET_KEY_MATERIAL:
+        BTA_DmBleSetKeyMaterial(arg->set_key_material.session_key, arg->set_key_material.iv);
+        break;
+#endif
     default:
         break;
     }
