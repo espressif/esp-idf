@@ -1553,6 +1553,7 @@ void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         BTA_DmUpdateDuplicateExceptionalList
@@ -1580,6 +1581,7 @@ void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR de
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 #endif
 

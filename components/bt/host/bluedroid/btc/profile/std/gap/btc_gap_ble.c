@@ -470,6 +470,7 @@ static void btc_stop_adv_callback(uint8_t status)
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 void btc_update_duplicate_exceptional_list_callback(tBTA_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info)
 {
     esp_ble_gap_cb_param_t param;
@@ -498,6 +499,7 @@ static void btc_ble_update_duplicate_exceptional_list(uint8_t subcode, uint32_t 
 {
     BTA_DmUpdateDuplicateExceptionalList(subcode, info_type, device_info, p_update_duplicate_ignore_list_cback);
 }
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 #if (BLE_42_ADV_EN == TRUE)
 static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params, tBTA_START_ADV_CMPL_CBACK start_adv_cback)
@@ -2695,13 +2697,17 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                       btc_scan_rsp_data_raw_callback);
         break;
 #endif // #if (BLE_42_ADV_EN == TRUE)
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     case BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST:
         btc_ble_update_duplicate_exceptional_list(arg->update_duplicate_exceptional_list.subcode,
                                                 arg->update_duplicate_exceptional_list.info_type,
                                                 arg->update_duplicate_exceptional_list.device_info,
                                                 btc_update_duplicate_exceptional_list_callback);
         break;
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
+
 #if (SMP_INCLUDED == TRUE)
     case BTC_GAP_BLE_SET_ENCRYPTION_EVT: {
         BD_ADDR bd_addr;
