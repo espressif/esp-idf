@@ -5290,23 +5290,6 @@ void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_ble_set_conn_scan_params
-**
-** Description      This function set the preferred connection scan parameters.
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data)
-{
-    BTM_BleSetConnScanParams(p_data->ble_set_conn_scan_params.scan_int,
-                             p_data->ble_set_conn_scan_params.scan_window);
-}
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_update_conn_params

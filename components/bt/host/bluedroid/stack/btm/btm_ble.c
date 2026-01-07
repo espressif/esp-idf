@@ -549,48 +549,6 @@ void BTM_BleSecureConnectionCreateOobData(void)
 #endif
 }
 
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-/******************************************************************************
-**
-** Function         BTM_BleSetConnScanParams
-**
-** Description      Set scan parameter used in BLE connection request
-**
-** Parameters:      scan_interval: scan interval
-**                  scan_window: scan window
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTM_BleSetConnScanParams (UINT32 scan_interval, UINT32 scan_window)
-{
-#if SMP_INCLUDED == TRUE
-    tBTM_BLE_CB *p_ble_cb = &btm_cb.ble_ctr_cb;
-    BOOLEAN     new_param = FALSE;
-
-    if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN, BTM_BLE_SCAN_INT_MAX) &&
-            BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN, BTM_BLE_SCAN_WIN_MAX)) {
-        if (p_ble_cb->scan_int != scan_interval) {
-            p_ble_cb->scan_int = scan_interval;
-            new_param = TRUE;
-        }
-
-        if (p_ble_cb->scan_win != scan_window) {
-            p_ble_cb->scan_win = scan_window;
-            new_param = TRUE;
-        }
-#if (tGATT_BG_CONN_DEV == TRUE)
-        if (new_param && p_ble_cb->conn_state == BLE_BG_CONN) {
-            btm_ble_suspend_bg_conn();
-        }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
-    } else {
-        BTM_TRACE_ERROR("Illegal Connection Scan Parameters");
-    }
-#endif
-}
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-
 /********************************************************
 **
 ** Function         BTM_BleSetPrefConnParams
