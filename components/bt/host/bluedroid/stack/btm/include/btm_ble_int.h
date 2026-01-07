@@ -343,11 +343,15 @@ typedef struct {
     struct pkt_queue *adv_rpt_queue;
     struct osi_event *adv_rpt_ready;
 #endif // #if (BLE_42_SCAN_EN == TRUE)
+#if (BLE_GATT_BGCONN == TRUE)
     /* background connection procedure cb value */
     tBTM_BLE_CONN_TYPE bg_conn_type;
+#endif // (BLE_GATT_BGCONN == TRUE)
     UINT32 scan_int;
     UINT32 scan_win;
+#if (BLE_GATT_BGCONN == TRUE)
     tBTM_BLE_SEL_CBACK *p_select_cback;
+#endif // (BLE_GATT_BGCONN == TRUE)
     /* white list information */
     UINT8 white_list_avail_size;
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
