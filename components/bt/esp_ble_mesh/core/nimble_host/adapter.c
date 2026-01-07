@@ -10,19 +10,12 @@
 
 #include "btc/btc_task.h"
 #include "osi/alarm.h"
-
-#include "psa/crypto.h"
-
 #include "host/ble_hs.h"
 #include "host/ble_uuid.h"
 #include "host/ble_att.h"
 #include "host/ble_gatt.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
-
-#include <tinycrypt/aes.h>
-#include <tinycrypt/constants.h>
-
 #include "mesh/hci.h"
 #include "mesh/common.h"
 #include "prov_pvnr.h"
@@ -63,10 +56,6 @@
 
 static uint16_t proxy_svc_start_handle, prov_svc_start_handle;
 struct bt_mesh_dev bt_mesh_dev;
-
-/* P-256 Variables */
-static uint8_t bt_mesh_public_key[64];
-static uint8_t bt_mesh_private_key[32];
 
 /* Scan related functions */
 static bt_mesh_scan_cb_t *bt_mesh_scan_dev_found_cb;
@@ -2605,232 +2594,11 @@ void bt_mesh_gatt_deinit(void)
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
-void ble_sm_alg_ecc_init(void);
-
 void bt_mesh_adapt_init(void)
 {
-    /* initialization of P-256 parameters */
-    ble_sm_alg_ecc_init();
-
-    /* Set "bt_mesh_dev.flags" to 0 (only the "BLE_MESH_DEV_HAS_PUB_KEY"
-     * flag is used) here, because we need to make sure each time after
-     * the private key is initialized, a corresponding public key must
-     * be generated.
-     */
+    /* Use unified crypto module initialization */
+    bt_mesh_crypto_init();
     bt_mesh_atomic_set(bt_mesh_dev.flags, 0);
-    bt_mesh_rand(bt_mesh_private_key, sizeof(bt_mesh_private_key));
-}
-
-void bt_mesh_set_private_key(const uint8_t pri_key[32])
-{
-    memcpy(bt_mesh_private_key, pri_key, 32);
-}
-
-int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
-
-const uint8_t *bt_mesh_pub_key_get(void)
-{
-    uint8_t pri_key[32] = {0};
-
-#if 1
-    if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_HAS_PUB_KEY)) {
-        return bt_mesh_public_key;
-    }
-#else
-    /* BLE Mesh BQB test case MESH/NODE/PROV/UPD/BV-12-C requires
-     * different public key for each provisioning procedure.
-     * Note: if enabled, when Provisioner provision multiple devices
-     * at the same time, this may cause invalid confirmation value.
-     */
-    if (bt_mesh_rand(bt_mesh_private_key, 32)) {
-        BT_ERR("%s, Unable to generate bt_mesh_private_key", __func__);
-        return NULL;
-    }
-#endif
-
-    int rc = ble_sm_alg_gen_key_pair(bt_mesh_public_key, pri_key);
-    if (rc != 0) {
-        BT_ERR("Failed to generate the key pair");
-        return NULL;
-    }
-    memcpy(bt_mesh_private_key, pri_key, 32);
-
-    bt_mesh_atomic_set_bit(bt_mesh_dev.flags, BLE_MESH_DEV_HAS_PUB_KEY);
-
-    BT_DBG("Public Key %s", bt_hex(bt_mesh_public_key, sizeof(bt_mesh_public_key)));
-
-    return bt_mesh_public_key;
-}
-
-bool bt_mesh_check_public_key(const uint8_t key[64])
-{
-    psa_status_t status = PSA_SUCCESS;
-
-    uint8_t pub[65] = {0};
-    /* Hardcoded first byte of pub key for MBEDTLS_ECP_PF_UNCOMPRESSED */
-    pub[0] = 0x04;
-    memcpy(&pub[1], key, 64);
-
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH);
-    psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attributes, 256);
-
-    status = psa_import_key(&attributes, pub, sizeof(pub), &key_id);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("Failed to import public key, status: %d", status);
-        return false;
-    }
-    psa_reset_key_attributes(&attributes);
-    psa_destroy_key(key_id);
-
-    return true;
-}
-
-int ble_sm_alg_gen_dhkey(uint8_t *peer_pub_key_x, uint8_t *peer_pub_key_y,
-                         uint8_t *our_priv_key, uint8_t *out_dhkey);
-
-int bt_mesh_dh_key_gen(const uint8_t remote_pub_key[64], uint8_t dhkey[32])
-{
-    BT_DBG("private key = %s", bt_hex(bt_mesh_private_key, 32));
-
-    return ble_sm_alg_gen_dhkey((uint8_t *)&remote_pub_key[0], (uint8_t *)&remote_pub_key[32],
-                                bt_mesh_private_key, dhkey);
-}
-
-int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16])
-{
-    uint8_t tmp[16] = {0};
-
-    BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
-
-#if CONFIG_MBEDTLS_HARDWARE_AES
-    sys_memcpy_swap(tmp, key, 16);
-    psa_status_t status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
-    psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&attributes, 128);
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
-
-    status = psa_import_key(&attributes, tmp, 16, &key_id);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("psa_import_key failed with status %d", status);
-        return -EINVAL;
-    }
-    psa_reset_key_attributes(&attributes);
-
-    status = psa_cipher_encrypt_setup(&operation, key_id, alg);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("psa_cipher_encrypt_setup failed with status %d", status);
-        psa_destroy_key(key_id);
-        return -EINVAL;
-    }
-    size_t output_length = 0;
-    status = psa_cipher_update(&operation, plaintext, 16, enc_data, 16, &output_length);
-    if (status != PSA_SUCCESS || output_length != 16) {
-        BT_ERR("psa_cipher_update failed with status %d", status);
-        psa_cipher_abort(&operation);
-        psa_destroy_key(key_id);
-        return -EINVAL;
-    }
-
-    status = psa_cipher_finish(&operation, enc_data + output_length, 16 - output_length, &output_length);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("psa_cipher_finish failed with status %d", status);
-        return -EINVAL;
-    }
-
-    psa_destroy_key(key_id);
-#else /* CONFIG_MBEDTLS_HARDWARE_AES */
-    struct tc_aes_key_sched_struct s = {0};
-
-    sys_memcpy_swap(tmp, key, 16);
-
-    if (tc_aes128_set_encrypt_key(&s, tmp) == TC_CRYPTO_FAIL) {
-        return -EINVAL;
-    }
-
-    sys_memcpy_swap(tmp, plaintext, 16);
-
-    if (tc_aes_encrypt(enc_data, tmp, &s) == TC_CRYPTO_FAIL) {
-        return -EINVAL;
-    }
-#endif /* CONFIG_MBEDTLS_HARDWARE_AES */
-
-    sys_mem_swap(enc_data, 16);
-
-    BT_DBG("enc_data %s", bt_hex(enc_data, 16));
-
-    return 0;
-}
-
-int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16])
-{
-    BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
-
-#if CONFIG_MBEDTLS_HARDWARE_AES
-    psa_status_t status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = 0;
-    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
-    psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&attributes, 128);
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
-
-    status = psa_import_key(&attributes, key, 16, &key_id);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("psa_import_key failed with status %d", status);
-        return -EINVAL;
-    }
-
-    status = psa_cipher_encrypt_setup(&operation, key_id, alg);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("psa_cipher_encrypt_setup failed with status %d", status);
-        psa_destroy_key(key_id);
-        return -EINVAL;
-    }
-    size_t output_length = 0;
-    status = psa_cipher_update(&operation, plaintext, 16, enc_data, 16, &output_length);
-    if (status != PSA_SUCCESS || output_length != 16) {
-        BT_ERR("psa_cipher_update failed with status %d", status);
-        psa_cipher_abort(&operation);
-        psa_destroy_key(key_id);
-        return -EINVAL;
-    }
-
-    status = psa_cipher_finish(&operation, enc_data + output_length, 16 - output_length, &output_length);
-    if (status != PSA_SUCCESS) {
-        BT_ERR("psa_cipher_finish failed with status %d", status);
-        psa_destroy_key(key_id);
-        return -EINVAL;
-    }
-
-    psa_destroy_key(key_id);
-#else /* CONFIG_MBEDTLS_HARDWARE_AES */
-    struct tc_aes_key_sched_struct s = {0};
-
-    if (tc_aes128_set_encrypt_key(&s, key) == TC_CRYPTO_FAIL) {
-        return -EINVAL;
-    }
-
-    if (tc_aes_encrypt(enc_data, plaintext, &s) == TC_CRYPTO_FAIL) {
-        return -EINVAL;
-    }
-#endif /* CONFIG_MBEDTLS_HARDWARE_AES */
-
-    BT_DBG("enc_data %s", bt_hex(enc_data, 16));
-
-    return 0;
 }
 
 #if CONFIG_BLE_MESH_USE_DUPLICATE_SCAN

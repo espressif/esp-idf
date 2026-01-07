@@ -616,7 +616,7 @@ int bt_mesh_input_string(const char *str)
 
 static void send_pub_key(void)
 {
-    const uint8_t *key = NULL;
+    uint8_t pub_key[64] = {0};
     uint8_t dhkey[32] = {0};
     PROV_BUF(buf, 65);
 
@@ -625,8 +625,8 @@ static void send_pub_key(void)
      * buffer as a temporary storage location. The validating
      * of the remote public key is finished when it is received.
      */
-    sys_memcpy_swap(buf.data, &prov_link.conf_inputs[17], 32);
-    sys_memcpy_swap(&buf.data[32], &prov_link.conf_inputs[49], 32);
+    memcpy(buf.data, &prov_link.conf_inputs[17], 32);
+    memcpy(&buf.data[32], &prov_link.conf_inputs[49], 32);
 
     if (bt_mesh_dh_key_gen(buf.data, dhkey)) {
         BT_ERR("Unable to generate DHKey");
@@ -634,26 +634,25 @@ static void send_pub_key(void)
         return;
     }
 
-    sys_memcpy_swap(prov_link.dhkey, dhkey, 32);
+    memcpy(prov_link.dhkey, dhkey, 32);
 
     BT_DBG("DHkey: %s", bt_hex(prov_link.dhkey, 32));
 
     bt_mesh_atomic_set_bit(prov_link.flags, HAVE_DHKEY);
 
-    key = bt_mesh_pub_key_get();
-    if (!key) {
+    if (bt_mesh_pub_key_copy(pub_key)) {
         BT_ERR("No public key available");
         close_link(PROV_ERR_UNEXP_ERR);
         return;
     }
 
-    BT_DBG("Local Public Key: %s", bt_hex(key, 64));
+    BT_DBG("Local Public Key: %s", bt_hex(pub_key, 64));
 
     bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
 
-    /* Swap X and Y halves independently to big-endian */
-    sys_memcpy_swap(net_buf_simple_add(&buf, 32), key, 32);
-    sys_memcpy_swap(net_buf_simple_add(&buf, 32), &key[32], 32);
+    /* Public key is already in big-endian format from bt_mesh_pub_key_copy() */
+    memcpy(net_buf_simple_add(&buf, 32), pub_key, 32);
+    memcpy(net_buf_simple_add(&buf, 32), &pub_key[32], 32);
 
     memcpy(&prov_link.conf_inputs[81], &buf.data[1], 64);
 
@@ -673,8 +672,8 @@ static int bt_mesh_calc_dh_key(void)
     /* Copy remote key in little-endian for generating DHKey.
      * X and Y halves are swapped independently.
      */
-    sys_memcpy_swap(&pub_key[0], &prov_link.conf_inputs[17], 32);
-    sys_memcpy_swap(&pub_key[32], &prov_link.conf_inputs[49], 32);
+    memcpy(&pub_key[0], &prov_link.conf_inputs[17], 32);
+    memcpy(&pub_key[32], &prov_link.conf_inputs[49], 32);
 
     if (bt_mesh_dh_key_gen(pub_key, dhkey)) {
         BT_ERR("Unable to generate DHKey");
@@ -682,7 +681,7 @@ static int bt_mesh_calc_dh_key(void)
         return -EIO;
     }
 
-    sys_memcpy_swap(prov_link.dhkey, dhkey, 32);
+    memcpy(prov_link.dhkey, dhkey, 32);
 
     BT_DBG("DHkey: %s", bt_hex(prov_link.dhkey, 32));
 
@@ -704,6 +703,8 @@ int bt_mesh_set_oob_pub_key(const uint8_t pub_key_x[32],
                             const uint8_t pub_key_y[32],
                             const uint8_t pri_key[32])
 {
+    uint8_t privkey[32] = {0};
+
     if (!pub_key_x || !pub_key_y || !pri_key) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
@@ -715,7 +716,8 @@ int bt_mesh_set_oob_pub_key(const uint8_t pub_key_x[32],
      */
     sys_memcpy_swap(&prov_link.conf_inputs[81], pub_key_x, 32);
     sys_memcpy_swap(&prov_link.conf_inputs[81] + 32, pub_key_y, 32);
-    bt_mesh_set_private_key(pri_key);
+    sys_memcpy_swap(privkey, pri_key, 32);
+    bt_mesh_set_private_key(privkey);
 
     bt_mesh_atomic_set_bit(prov_link.flags, OOB_PUB_KEY);
 
@@ -1558,8 +1560,6 @@ static void protocol_timeout(struct k_work *work)
 
 int bt_mesh_prov_init(void)
 {
-    const uint8_t *key = NULL;
-
     if (bt_mesh_prov_get() == NULL) {
         BT_ERR("No provisioning context provided");
         return -EINVAL;
@@ -1574,8 +1574,7 @@ int bt_mesh_prov_init(void)
 
     __ASSERT(bt_mesh_prov_get()->uuid, "Device UUID not initialized");
 
-    key = bt_mesh_pub_key_get();
-    if (!key) {
+    if (bt_mesh_pub_key_gen()) {
         BT_ERR("Failed to generate public key");
         return -EIO;
     }

@@ -25,6 +25,7 @@ if BLE_MESH
     config BLE_MESH_USE_UNIFIED_CRYPTO
         bool "Use the unified BLE tinycrypt implementation"
         depends on !BT_LE_CRYPTO_STACK_MBEDTLS && !BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+        default y if BT_SMP_CRYPTO_STACK_TINYCRYPT
         default n
         help
             Enable this option to use the unified BLE tinycrypt solution
