@@ -24,9 +24,12 @@
 //#include <stdio.h>
 //#include <stdlib.h>
 #include <string.h>
+#include "common/bt_target.h"
+
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
+
 #include "p_256_ecc_pp.h"
 #include "p_256_multprecision.h"
-#include "common/bt_target.h"
 
 #if SMP_DYNAMIC_MEMORY == FALSE
 elliptic_curve_t curve;
@@ -281,3 +284,5 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
         return true;
     }
 }
+
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */

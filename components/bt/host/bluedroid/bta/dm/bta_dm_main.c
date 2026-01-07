@@ -170,6 +170,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
     bta_dm_ble_config_local_icon,           /* BTA_DM_API_LOCAL_ICON_EVT */
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    bta_dm_ble_set_key_material,            /* BTA_DM_API_KEY_MATERIAL_EVT */
+#endif
 #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_adv_params_all,          /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
     bta_dm_ble_set_adv_config,              /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */

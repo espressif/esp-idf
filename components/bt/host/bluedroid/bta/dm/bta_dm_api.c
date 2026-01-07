@@ -2223,6 +2223,41 @@ void BTA_DmBleConfigLocalIcon(uint16_t icon)
     }
 }
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetKeyMaterial
+**
+** Description      Set the Encrypted Data Key Material in GAP service
+**
+** Parameters:      session_key - 16-byte session key (must not be NULL)
+**                  iv          - 8-byte initialization vector (must not be NULL)
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmBleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv)
+{
+    tBTA_DM_API_KEY_MATERIAL *p_msg;
+
+    if (session_key == NULL || iv == NULL) {
+        APPL_TRACE_ERROR("%s: NULL pointer parameter", __func__);
+        return;
+    }
+
+    if ((p_msg = (tBTA_DM_API_KEY_MATERIAL *) osi_malloc(sizeof(tBTA_DM_API_KEY_MATERIAL))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_KEY_MATERIAL));
+
+        p_msg->hdr.event = BTA_DM_API_KEY_MATERIAL_EVT;
+        memcpy(p_msg->session_key, session_key, 16);
+        memcpy(p_msg->iv, iv, 8);
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s: failed to allocate memory", __func__);
+    }
+}
+#endif
+
 #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
