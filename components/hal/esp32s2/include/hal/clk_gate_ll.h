@@ -140,6 +140,18 @@ static inline void periph_ll_wifi_module_disable_clk_set_rst(void)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 0);
 }
 
+static inline void periph_ll_phy_calibration_module_enable_clk_clear_rst(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_PHY_EN_M);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 0);
+}
+
+static inline void periph_ll_phy_calibration_module_disable_clk_set_rst(void)
+{
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_PHY_EN_M);
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 0);
+}
+
 #ifdef __cplusplus
 }
 #endif

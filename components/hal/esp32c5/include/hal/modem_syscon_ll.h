@@ -325,6 +325,12 @@ static inline void modem_syscon_ll_clk_conf1_configure(modem_syscon_dev_t *hw, b
 }
 
 __attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_clk_conf1_get(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf1.val;
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_clk_wifibb_configure(modem_syscon_dev_t *hw, bool en)
 {
 #if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT

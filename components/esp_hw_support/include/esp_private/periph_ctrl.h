@@ -153,6 +153,27 @@ void wifi_module_enable(void);
  */
 void wifi_module_disable(void);
 
+/**
+ * @brief Enable phy module by un-gating related clock and de-asserting the reset signal.
+ *
+ * @note This function acquires clocks required during the PHY enable sequence.
+ */
+void phy_module_enable(void);
+
+/**
+ * @brief Disable phy module by gating related clock and asserting the reset signal.
+ *
+ * @note This function releases clocks required during the PHY enable sequence.
+ */
+void phy_module_disable(void);
+
+/**
+ * @brief Checks whether phy module has all bits in @p mask set.
+ *
+ * @return true if all bits in @p mask are set; false otherwise.
+ */
+bool phy_module_has_clock_bits(uint32_t mask);
+
 #undef __PERIPH_CTRL_DEPRECATE_ATTR
 
 #ifdef __cplusplus
