@@ -36,6 +36,9 @@ typedef struct {
                                                    *   Zero (0): Maintains the original brightness, without adjusting the image's brightness.
                                                    *   Positive range (1 to 127): Increases brightness, the larger the value, the brighter the image.
                                                    */
+    struct {
+        uint32_t update_once_configured : 1;      ///< If set, apply configuration to hardware immediately; otherwise defer to frame boundary
+    } flags;                                      ///< Driver behaviour flags
 } esp_isp_color_config_t;
 
 /**
