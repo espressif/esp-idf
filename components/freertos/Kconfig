@@ -337,6 +337,7 @@ menu "FreeRTOS"
             # Todo: Rename to CONFIG_FREERTOS_EXPECTED_IDLE_TIME_BEFORE_SLEEP (IDF-4986)
             int "configEXPECTED_IDLE_TIME_BEFORE_SLEEP"
             depends on FREERTOS_USE_TICKLESS_IDLE
+            default 8 if !PM_SLP_IRAM_OPT && (FREERTOS_HZ > 200)
             default 3
             range 2 4294967295
             # Minimal value is 2 because of a check in FreeRTOS.h (search configEXPECTED_IDLE_TIME_BEFORE_SLEEP)
