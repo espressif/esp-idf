@@ -160,6 +160,32 @@ static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
     return ret;
 }
 
+static void adc_continuous_deinit_light(adc_continuous_handle_t handle)
+{
+    if (handle) {
+        if (handle->ringbuf_hdl) {
+            vRingbufferDelete(handle->ringbuf_hdl);
+            handle->ringbuf_hdl = NULL;
+        }
+
+        free(handle->ringbuf_storage);
+        free(handle->ringbuf_struct);
+
+#if CONFIG_PM_ENABLE
+        if (handle->pm_lock) {
+            esp_pm_lock_delete(handle->pm_lock);
+        }
+#endif
+
+        free(handle->rx_dma_buf);
+        free(handle->hal.rx_desc);
+        free(handle->hal_digi_ctrlr_cfg.adc_pattern);
+        adc_dma_deinit(handle->adc_dma);
+        free(handle);
+        handle = NULL;
+    }
+}
+
 esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_config, adc_continuous_handle_t *ret_handle)
 {
 #if CONFIG_ADC_ENABLE_DEBUG_LOG
@@ -250,7 +276,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     return ret;
 
 cleanup:
-    adc_continuous_deinit(adc_ctx);
+    adc_continuous_deinit_light(adc_ctx);
     return ret;
 }
 
