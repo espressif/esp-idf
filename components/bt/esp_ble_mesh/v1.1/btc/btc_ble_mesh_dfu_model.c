@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +81,11 @@ void btc_ble_mesh_dfu_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
         }
         break;
     }
+    case BTC_BLE_MESH_ACT_DFU_CLIENT_IMG_SEND:
+        /* That will be freed when dfu completed or failed not on btc deep free */
+        dst->send_arg.inputs =(struct esp_ble_mesh_blob_cli_inputs *)
+            dfu_targets_alloc((struct bt_mesh_blob_cli_inputs *)src->send_arg.inputs);
+        break;
     default:
         BT_DBG("%s, Unknown act %d", __func__, msg->act);
         break;

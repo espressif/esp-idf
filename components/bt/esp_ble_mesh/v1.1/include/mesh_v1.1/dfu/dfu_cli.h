@@ -261,6 +261,9 @@ struct bt_mesh_dfu_cli_xfer {
     const struct bt_mesh_dfu_cli_xfer_blob_params *blob_params;
 };
 
+void dfu_targets_free(void);
+struct bt_mesh_blob_cli_inputs *dfu_targets_alloc(struct bt_mesh_blob_cli_inputs *src);
+
 /** @brief Start distributing a DFU.
  *
  *  Starts distribution of the firmware in the given slot to the list of DFU
