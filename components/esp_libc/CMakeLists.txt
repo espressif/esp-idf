@@ -33,6 +33,18 @@ set(srcs
     "src/reent_syscalls.c"
     "src/port/esp_time_impl.c")
 
+# TODO IDF-15041: remove this block and sources
+if(CONFIG_LIBC_PICOLIBC AND CONFIG_SPIRAM_CACHE_WORKAROUND)
+    list(APPEND srcs "src/picolibc/esp32_psram/memcpy.S")
+    list(APPEND srcs "src/picolibc/esp32_psram/memset.S")
+    list(APPEND srcs "src/picolibc/esp32_psram/strcpy.S")
+    list(APPEND srcs "src/picolibc/esp32_psram/strncpy.S")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memset_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncpy_impl")
+endif()
+
 if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
     list(APPEND srcs "src/port/xtensa/stdatomic_s32c1i.c")
 endif()
@@ -100,6 +112,15 @@ idf_component_get_property(esp_libc esp_libc COMPONENT_LIB)
 target_link_libraries(${COMPONENT_LIB} INTERFACE c m ${CONFIG_COMPILER_RT_LIB_NAME} "$<TARGET_FILE:${esp_libc}>")
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
+
+# TODO IDF-15041: remove this block and sources
+if(CONFIG_LIBC_PICOLIBC AND CONFIG_SPIRAM_CACHE_WORKAROUND)
+    set_source_files_properties("src/picolibc/esp32_psram/memcpy.S"
+                                "src/picolibc/esp32_psram/memset.S"
+                                "src/picolibc/esp32_psram/strcpy.S"
+                                "src/picolibc/esp32_psram/strncpy.S"
+                                PROPERTIES COMPILE_FLAGS "-DXTENSA_ESP32_PSRAM_CACHE_FIX=1")
+endif()
 
 if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
     set_source_files_properties("src/port/xtensa/stdatomic_s32c1i.c"
