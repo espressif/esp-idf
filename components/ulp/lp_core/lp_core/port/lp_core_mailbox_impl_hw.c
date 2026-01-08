@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,11 @@
 /* Implementation agnostic interrupt handler */
 static void (*s_intr_handler)(void);
 
-static void LP_CORE_ISR_ATTR ulp_lp_core_mailbox_intr_handler(void)
+void LP_CORE_ISR_ATTR ulp_lp_core_mailbox_intr_handler(void)
 {
-    s_intr_handler();
+    if (s_intr_handler) {
+        s_intr_handler();
+    }
 }
 
 lp_core_mailbox_ctx_t lp_core_mailbox_impl_get_context(void)
