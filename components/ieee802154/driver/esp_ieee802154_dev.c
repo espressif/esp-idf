@@ -78,14 +78,6 @@ static esp_err_t ieee802154_sleep_deinit(void);
 #define NEEDS_NEXT_OPT(a) do {s_needs_next_operation = a;} while(0)
 static esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool cca);
 
-#if !CONFIG_IEEE802154_TEST
-typedef struct {
-    const uint8_t *frame;
-    bool cca;
-} pending_tx_t;
-static pending_tx_t s_pending_tx = { 0 };
-#endif
-
 static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
     // If the RX done packet is written in the stub buffer, drop it silently.
@@ -383,26 +375,13 @@ static void enable_rx(void)
 
 static IRAM_ATTR void next_operation(void)
 {
+    if (ieee802154_pib_get_rx_when_idle()) {
+        enable_rx();
+    } else {
+        ieee802154_set_state(IEEE802154_STATE_IDLE);
 #if !CONFIG_IEEE802154_TEST
-    if (s_pending_tx.frame) {
-        // Here the driver needs to recover the setting of rx aborts, see function `ieee802154_transmit`.
-        ieee802154_ll_disable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
-        ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
-        // Clear the RX abort event again for avoiding the risk if there are still some rx abort events created after last isr process.
-        ieee802154_ll_clear_events(IEEE802154_EVENT_RX_ABORT);
-        ieee802154_transmit_internal(s_pending_tx.frame, s_pending_tx.cca);
-        s_pending_tx.frame = NULL;
-    } else
+        ieee802154_sleep();
 #endif
-    {
-        if (ieee802154_pib_get_rx_when_idle()) {
-            enable_rx();
-        } else {
-            ieee802154_set_state(IEEE802154_STATE_IDLE);
-#if !CONFIG_IEEE802154_TEST
-            ieee802154_sleep();
-#endif
-        }
     }
 }
 
@@ -902,15 +881,12 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
     ieee802154_enter_critical();
     if ((s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame())
         || s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK) {
-        // If the current radio is processing an RX frame or sending an ACK, do not shut down the ongoing process.
-        // Instead, defer the transmission of the pending TX frame.
-        // Once the current process is completed, the pending transmit frame will be initiated.
-        s_pending_tx.frame = frame;
-        s_pending_tx.cca = cca;
+        if (cca) {
+            ieee802154_inner_transmit_failed(frame, ESP_IEEE802154_TX_ERR_CCA_BUSY);
+        } else {
+            ieee802154_inner_transmit_failed(frame, ESP_IEEE802154_TX_ERR_ABORT);
+        }
         IEEE802154_TX_DEFERRED_NUMS_UPDATE();
-        // Here we enable all rx interrupts due to the driver needs to know when the current RX has finished.
-        // Will recover the setting of rx abort in function `next_operation`.
-        ieee802154_ll_enable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
         ieee802154_exit_critical();
         return ESP_OK;
     }
