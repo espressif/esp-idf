@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -220,6 +220,10 @@
 #define SOC_ROM_STACK_START_REV2    0x4ffbcfc0
 #define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
+
+// non-cacheable offset for memory behind the cache
+#define SOC_NON_CACHEABLE_OFFSET_SRAM        0x40000000
+#define SOC_NON_CACHEABLE_OFFSET_PSRAM       0x40000000
 
 #define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
 #define LP_RAM_END        0x50110000

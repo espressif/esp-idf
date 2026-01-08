@@ -19,15 +19,8 @@
 #include "hal/efuse_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
-#include "soc/ext_mem_defs.h"
 
 ESP_LOG_ATTR_TAG(TAG, "gdma-link");
-
-#if SOC_NON_CACHEABLE_OFFSET
-#define GDMA_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) ((addr) + SOC_NON_CACHEABLE_OFFSET)
-#else
-#define GDMA_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) (addr)
-#endif // SOC_NON_CACHEABLE_OFFSET
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
@@ -117,14 +110,14 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
 
     // calculate the non-cached address
     if (items_in_ext_mem) {
-#if SOC_NON_CACHEABLE_OFFSET
-        list->items_nc = items + SOC_NON_CACHEABLE_OFFSET;
+#if SOC_NON_CACHEABLE_OFFSET_PSRAM
+        list->items_nc = items + SOC_NON_CACHEABLE_OFFSET_PSRAM;
 #else
         ESP_GOTO_ON_ERROR(ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported to put link list items in external memory");
 #endif
     } else {
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        list->items_nc = items + SOC_NON_CACHEABLE_OFFSET;
+#if SOC_NON_CACHEABLE_OFFSET_SRAM
+        list->items_nc = items + SOC_NON_CACHEABLE_OFFSET_SRAM;
 #else
         list->items_nc = items;
 #endif
