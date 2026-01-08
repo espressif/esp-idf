@@ -8,7 +8,7 @@
  ***************************************/
 
 coex_core_timer_idx_get = 0x40000aec;
-//coex_status_get = 0x40000b0c;
+coex_status_get = 0x40000b0c;
 ets_delay_us = 0x4000003c;
 Cache_Set_IDROM_MMU_Size = 0x400006c4;
 

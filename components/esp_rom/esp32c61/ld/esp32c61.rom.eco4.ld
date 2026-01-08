@@ -9,7 +9,7 @@
  ***************************************/
 
 coex_core_timer_idx_get = 0x40000a54;
-//coex_status_get = 0x40000a74;
+coex_status_get = 0x40000a74;
 ets_delay_us = 0x4000003c;
 
 ieee80211_encap_esfbuf = 0x40000ac8;
