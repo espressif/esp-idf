@@ -26,7 +26,8 @@ hci_transport_controller_packet_rx(hci_driver_data_type_t data_type, uint8_t *da
         r_ble_hci_trans_hs_cmd_tx(data);
     }
 
-#if CONFIG_BT_BLUEDROID_ENABLED || (CONFIG_BT_NIMBLE_ENABLED && (CONFIG_BT_NIMBLE_ROLE_CENTRAL || CONFIG_BT_NIMBLE_ROLE_PERIPHERAL))
+#if CONFIG_BT_CONTROLLER_ONLY || CONFIG_BT_BLUEDROID_ENABLED || \
+   (CONFIG_BT_NIMBLE_ENABLED && (CONFIG_BT_NIMBLE_ROLE_CENTRAL || CONFIG_BT_NIMBLE_ROLE_PERIPHERAL))
     if (data_type == HCI_DRIVER_TYPE_ACL) {
         r_ble_hci_trans_hs_acl_tx((struct os_mbuf *) data);
     }
