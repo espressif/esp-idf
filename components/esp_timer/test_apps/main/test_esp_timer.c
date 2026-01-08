@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1334,3 +1334,146 @@ TEST_CASE("Test ISR dispatch callbacks are not blocked even if TASK callbacks ta
 }
 
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+typedef struct {
+    SemaphoreHandle_t callback_started;
+    SemaphoreHandle_t stop_called_from_cb;
+    SemaphoreHandle_t callback_can_finish;
+    SemaphoreHandle_t callback_finished;
+    volatile int callback_count;
+    esp_timer_handle_t timer;
+} test_stop_blocking_state_t;
+
+static void test_stop_blocking_callback(void* arg)
+{
+    test_stop_blocking_state_t* state = (test_stop_blocking_state_t*) arg;
+    state->callback_count++;
+
+    // Notify that callback has started
+    xSemaphoreGive(state->callback_started);
+
+    // Wait for permission to finish (simulating long-running callback)
+    xSemaphoreTake(state->callback_can_finish, portMAX_DELAY);
+
+    // Notify that callback has finished
+    xSemaphoreGive(state->callback_finished);
+}
+
+TEST_CASE("esp_timer_stop_blocking waits for callback completion", "[esp_timer]")
+{
+    test_stop_blocking_state_t state = {
+        .callback_started = xSemaphoreCreateBinary(),
+        .stop_called_from_cb = NULL,
+        .callback_can_finish = xSemaphoreCreateBinary(),
+        .callback_finished = xSemaphoreCreateBinary(),
+        .callback_count = 0,
+        .timer = NULL,
+    };
+
+    esp_timer_create_args_t timer_args = {
+        .callback = test_stop_blocking_callback,
+        .arg = &state,
+        .name = "test_blocking",
+    };
+
+    esp_timer_handle_t timer;
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+
+    // Start a one-shot timer
+    TEST_ESP_OK(esp_timer_start_once(timer, 1000));
+
+    // Wait for callback to start
+    TEST_ASSERT_TRUE(xSemaphoreTake(state.callback_started, pdMS_TO_TICKS(100)));
+
+    // At this point, callback is running
+    TEST_ASSERT_TRUE(esp_timer_is_active(timer));
+
+    // Try to stop with blocking - this should wait for callback
+    TEST_ESP_ERR(ESP_ERR_TIMEOUT, esp_timer_stop_blocking(timer, pdMS_TO_TICKS(100)));
+
+    // Now allow callback to finish
+    xSemaphoreGive(state.callback_can_finish);
+
+    // Wait for callback to complete
+    TEST_ASSERT_TRUE(xSemaphoreTake(state.callback_finished, pdMS_TO_TICKS(100)));
+
+    // Timer should no longer be active
+    TEST_ASSERT_FALSE(esp_timer_is_active(timer));
+
+    // Callback should have run exactly once
+    TEST_ASSERT_EQUAL(1, state.callback_count);
+
+    // Clean up
+    TEST_ESP_OK(esp_timer_delete(timer));
+    vSemaphoreDelete(state.callback_started);
+    vSemaphoreDelete(state.callback_can_finish);
+    vSemaphoreDelete(state.callback_finished);
+}
+
+static void test_stop_blocking_callback_stop_inside(void* arg)
+{
+    test_stop_blocking_state_t* state = (test_stop_blocking_state_t*) arg;
+    state->callback_count++;
+
+    // Notify that callback has started (we are now in esp_timer task context for TASK dispatch)
+    xSemaphoreGive(state->callback_started);
+
+    // Call stop_blocking from the timer's own callback:
+    // This must NOT block (otherwise we deadlock waiting for ourselves).
+    TEST_ESP_OK(esp_timer_stop_blocking(state->timer, portMAX_DELAY));
+
+    // Signal to the test that stop_blocking has returned from inside callback
+    xSemaphoreGive(state->stop_called_from_cb);
+
+    // Keep callback running until the test allows us to finish
+    xSemaphoreTake(state->callback_can_finish, portMAX_DELAY);
+
+    xSemaphoreGive(state->callback_finished);
+}
+
+TEST_CASE("esp_timer_stop_blocking from timer callback and does not block", "[esp_timer]")
+{
+    test_stop_blocking_state_t state = {
+        .callback_started     = xSemaphoreCreateBinary(),
+        .stop_called_from_cb  = xSemaphoreCreateBinary(),
+        .callback_can_finish  = xSemaphoreCreateBinary(),
+        .callback_finished    = xSemaphoreCreateBinary(),
+        .timer               = NULL,
+        .callback_count       = 0,
+    };
+
+    esp_timer_create_args_t timer_args = {
+        .callback = test_stop_blocking_callback_stop_inside,
+        .arg      = &state,
+        .name     = "stop_from_cb",
+    };
+
+    esp_timer_handle_t timer;
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+    state.timer = timer;
+
+    TEST_ESP_OK(esp_timer_start_once(timer, 1000));
+
+    // Wait until callback starts
+    TEST_ASSERT_TRUE(xSemaphoreTake(state.callback_started, portMAX_DELAY));
+
+    // Ensure stop_blocking has returned from inside the callback (i.e., it did not block)
+    TEST_ASSERT_TRUE(xSemaphoreTake(state.stop_called_from_cb, pdMS_TO_TICKS(200)));
+
+    // While callback is still running, timer should still be considered active
+    TEST_ASSERT_TRUE(esp_timer_is_active(timer));
+
+    // Now let callback finish
+    xSemaphoreGive(state.callback_can_finish);
+    TEST_ASSERT_TRUE(xSemaphoreTake(state.callback_finished, pdMS_TO_TICKS(1000)));
+
+    // After callback finishes, timer should be inactive (one-shot already disarmed)
+    TEST_ASSERT_FALSE(esp_timer_is_active(timer));
+    TEST_ASSERT_EQUAL(1, state.callback_count);
+
+    TEST_ESP_OK(esp_timer_delete(timer));
+    vSemaphoreDelete(state.callback_started);
+    vSemaphoreDelete(state.stop_called_from_cb);
+    vSemaphoreDelete(state.callback_can_finish);
+    vSemaphoreDelete(state.callback_finished);
+}
