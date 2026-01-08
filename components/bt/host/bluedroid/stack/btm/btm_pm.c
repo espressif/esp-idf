@@ -45,6 +45,8 @@
 //#include "bt_utils.h"
 //#include "osi/include/log.h"
 #include "osi/allocator.h"
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*****************************************************************************/
 /*      to handle different modes                                            */
 /*****************************************************************************/
@@ -820,9 +822,10 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, U
             (*btm_cb.pm_reg_db[yy].cback)( p->remote_addr, mode, interval, hci_status);
         }
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If mode change was because of an active role switch or change link key */
     btm_cont_rswitch(p, btm_find_dev(p->remote_addr), hci_status);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
@@ -901,7 +904,7 @@ BOOLEAN btm_pm_device_in_active_or_sniff_mode(void)
 
     return FALSE;
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_pm_device_in_scan_state
@@ -930,7 +933,7 @@ BOOLEAN btm_pm_device_in_scan_state(void)
 
     return FALSE;
 }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_PM_ReadControllerState
@@ -944,9 +947,13 @@ tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void)
 {
     if (TRUE == btm_pm_device_in_active_or_sniff_mode()) {
         return BTM_CONTRL_ACTIVE;
-    } else if (TRUE == btm_pm_device_in_scan_state()) {
+    }
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    else if (TRUE == btm_pm_device_in_scan_state()) {
         return BTM_CONTRL_SCAN;
-    } else {
+    }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+    else {
         return BTM_CONTRL_IDLE;
     }
 }
@@ -963,3 +970,5 @@ static const char *mode_to_string(tBTM_PM_MODE mode)
     }
 }
 #endif
+
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)

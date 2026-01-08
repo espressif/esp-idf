@@ -499,6 +499,7 @@ void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len)
     }
 }
 
+#if (0)
 /*******************************************************************************
                 VSC that implement controller based privacy
 ********************************************************************************/
@@ -534,7 +535,7 @@ void btm_ble_resolving_list_vsc_op_cmpl (tBTM_VSC_CMPL *p_params)
         /* RPA offloading enable/disabled */
     }
 }
-
+#endif
 /*******************************************************************************
 **
 ** Function         btm_ble_remove_resolving_list_entry
@@ -569,6 +570,7 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
             * send key to the controller, but to resolve the random address in host. */
         #endif
     } else {
+#if (0)
         UINT8 param[20] = {0};
         UINT8 *p = param;
 
@@ -580,6 +582,7 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
                                        BTM_BLE_META_REMOVE_IRK_LEN,
                                        param,
                                        btm_ble_resolving_list_vsc_op_cmpl);
+#endif
     }
 
     if (st == BTM_CMD_STARTED) {
@@ -609,6 +612,7 @@ tBTM_STATUS btm_ble_clear_resolving_list(void)
             st =  BTM_SUCCESS;
         }
     } else {
+#if (0)
         UINT8 param[20] = {0};
         UINT8 *p = param;
 
@@ -617,6 +621,7 @@ tBTM_STATUS btm_ble_clear_resolving_list(void)
                                         BTM_BLE_META_CLEAR_IRK_LEN,
                                         param,
                                         btm_ble_resolving_list_vsc_op_cmpl);
+#endif
     }
 
     return st;
@@ -647,6 +652,7 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
             st =  BTM_CMD_STARTED;
         }
     } else {
+#if (0)
         UINT8 param[20] = {0};
         UINT8 *p = param;
 
@@ -657,6 +663,7 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
                                         BTM_BLE_META_READ_IRK_LEN,
                                         param,
                                         btm_ble_resolving_list_vsc_op_cmpl);
+#endif
     }
 
     if (st == BTM_CMD_STARTED) {
@@ -711,11 +718,11 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
         btm_ble_stop_scan();
         p_ble_cb->suspended_rl_state |= BTM_BLE_RL_SCAN;
     }
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     if (btm_ble_suspend_bg_conn()) {
         p_ble_cb->suspended_rl_state |= BTM_BLE_RL_INIT;
     }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
     return TRUE;
 }
 
@@ -743,14 +750,15 @@ void btm_ble_resume_resolving_list_activity(void)
         btm_ble_start_scan();
     }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     if  (p_ble_cb->suspended_rl_state & BTM_BLE_RL_INIT) {
         btm_ble_resume_bg_conn();
     }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
     p_ble_cb->suspended_rl_state = BTM_BLE_RL_IDLE;
 }
 
+#if (0)
 /*******************************************************************************
 **
 ** Function         btm_ble_vendor_enable_irk_feature
@@ -780,6 +788,7 @@ tBTM_STATUS btm_ble_vendor_enable_irk_feature(BOOLEAN enable)
 
     return st;
 }
+#endif
 
 /*******************************************************************************
 **
@@ -797,7 +806,9 @@ BOOLEAN btm_ble_exe_disable_resolving_list(void)
     }
 
     if (!controller_get_interface()->supports_ble_privacy()) {
+#if (0)
         btm_ble_vendor_enable_irk_feature(FALSE);
+#endif
     } else {
         //btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
     }
@@ -821,7 +832,9 @@ void btm_ble_exe_enable_resolving_list(void)
     }
 
     if (!controller_get_interface()->supports_ble_privacy()) {
+#if (0)
         btm_ble_vendor_enable_irk_feature(TRUE);
+#endif
     } else {
         //btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
     }
@@ -930,6 +943,7 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
 #endif
 
                 } else {
+#if (0)
                     UINT8 param[40] = {0};
                     UINT8 *p = param;
 
@@ -945,6 +959,7 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                             == BTM_CMD_STARTED) {
                         rt = TRUE;
                     }
+#endif
                 }
 
                 if (rt) {
