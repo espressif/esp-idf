@@ -50,7 +50,7 @@ entries:
                 pmu_param:get_act_hp_drvb (noflash)
             else:
                 pmu_param:get_act_hp_dbias (noflash)
-    if SOC_PMU_PVT_SUPPORTED = y:
+    if SOC_PMU_PVT_SUPPORTED = y && ESP_ENABLE_PVT = y:
         pmu_pvt (noflash)
     if PM_SLP_IRAM_OPT = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
