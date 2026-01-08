@@ -10,6 +10,6 @@ set(MY_COMPONENT_REQUIRES
 
 idf_component_register(SRCS "bt_app_av.c"
                             "main.c"
-                    PRIV_REQUIRES esp_driver_i2s bt nvs_flash esp_ringbuf esp_driver_dac
+                    PRIV_REQUIRES bt nvs_flash
                     PRIV_REQUIRES ${MY_COMPONENT_REQUIRES}
                     INCLUDE_DIRS ".")

@@ -221,6 +221,8 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 #endif
 #endif
 
+        /* Get the default value of the delay value */
+        esp_a2d_sink_get_delay_value();
         /* Get local device name */
         esp_bt_gap_get_device_name();
 
