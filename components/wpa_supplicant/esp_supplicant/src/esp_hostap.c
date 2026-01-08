@@ -214,7 +214,8 @@ void *hostap_init(void)
     }
 #endif /* CONFIG_SAE */
 
-    os_memcpy(hapd->conf->ssid.wpa_passphrase, esp_wifi_ap_get_prof_password_internal(), strlen((char *)esp_wifi_ap_get_prof_password_internal()));
+    os_snprintf(hapd->conf->ssid.wpa_passphrase, WIFI_PASSWORD_LEN_MAX,
+                "%s", esp_wifi_ap_get_prof_password_internal());
     hapd->conf->ssid.wpa_passphrase[WIFI_PASSWORD_LEN_MAX - 1] = '\0';
     hapd->conf->max_num_sta = esp_wifi_ap_get_max_sta_conn();
     auth_conf->transition_disable = esp_wifi_ap_get_transition_disable_internal();
