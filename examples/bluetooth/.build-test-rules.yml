@@ -27,6 +27,16 @@ examples/bluetooth/bluedroid/ble:
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble/pytest_ble_test.py
 
+examples/bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+
+examples/bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+
 examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
   <<: *bt_default_depends
   disable:
@@ -57,6 +67,61 @@ examples/bluetooth/bluedroid/ble_50:
     - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
+
+examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_central:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_peripheral:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_connection_central_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_connection_peripheral_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_synchronizer:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_periodic_adv_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_periodic_sync_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_power_control_central:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_power_control_peripheral:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
 
 examples/bluetooth/bluedroid/classic_bt:
   <<: *bt_default_depends
