@@ -48,3 +48,5 @@ Bluedroid
         - Field ``ESP_A2D_MEDIA_CTRL_STOP`` is removed in structure ``esp_a2d_media_ctrl_t``, and is replaced by ``ESP_A2D_MEDIA_CTRL_SUSPEND``.
 
         - Field ``sbc, m12, m24 and atrac`` is removed and replaced by ``sbc_info, m12_info, m24_info and atrc_info`` in structure ``esp_a2d_mcc_t``.
+
+        - Macro ``ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN`` is renamed to ``ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR``. The old macro is kept for backward compatibility, but it is deprecated and will emit a compile-time warning.

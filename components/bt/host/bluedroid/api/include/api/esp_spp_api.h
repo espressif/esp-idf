@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,15 +42,18 @@ Due to certain limitations, do not use these mask modes:
 2. ESP_SPP_SEC_MODE4_LEVEL4
 3. ESP_SPP_SEC_MITM
 */
-#define ESP_SPP_SEC_NONE            0x0000    /*!< No security. relate to BTA_SEC_NONE in bta/bta_api.h */
-#define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) relate to BTA_SEC_AUTHORIZE in bta/bta_api.h*/
-#define ESP_SPP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required.  relate to BTA_SEC_AUTHENTICATE in bta/bta_api.h*/
-#define ESP_SPP_SEC_ENCRYPT         0x0024    /*!< Encryption required.  relate to BTA_SEC_ENCRYPT in bta/bta_api.h*/
-#define ESP_SPP_SEC_MODE4_LEVEL4    0x0040    /*!< Mode 4 level 4 service, i.e. incoming/outgoing MITM and P-256 encryption  relate to BTA_SEC_MODE4_LEVEL4 in bta/bta_api.h*/
-#define ESP_SPP_SEC_MITM            0x3000    /*!< Man-In-The_Middle protection  relate to BTA_SEC_MITM in bta/bta_api.h*/
-#define ESP_SPP_SEC_IN_16_DIGITS    0x4000    /*!< Min 16 digit for pin code  relate to BTA_SEC_IN_16_DIGITS in bta/bta_api.h*/
-typedef uint16_t esp_spp_sec_t;
+#define ESP_SPP_SEC_NONE            0x0000    /*!< No security. */
+#define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) */
+#define ESP_SPP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required. */
+#define ESP_SPP_SEC_ENCRYPT         0x0024    /*!< Encryption required. */
+#define ESP_SPP_SEC_MODE4_LEVEL4    0x0040    /*!< Mode 4 level 4 service, i.e. incoming/outgoing MITM and P-256 encryption. */
+#define ESP_SPP_SEC_MITM            0x3000    /*!< Man-In-The-Middle protection. */
+#define ESP_SPP_SEC_IN_16_DIGITS    0x4000    /*!< Min 16 digit for pin code. */
+typedef uint16_t esp_spp_sec_t;               /*!< SPP security type */
 
+/**
+ * @brief SPP status type.
+ */
 typedef enum {
     ESP_SPP_SUCCESS   = 0,          /*!< Successful operation. */
     ESP_SPP_FAILURE,                /*!< Generic failure. */
@@ -63,11 +66,17 @@ typedef enum {
     ESP_SPP_NO_SERVER,              /*!< No SPP server */
 } esp_spp_status_t;
 
+/**
+ * @brief SPP role type.
+ */
 typedef enum {
     ESP_SPP_ROLE_MASTER     = 0,          /*!< Role: master */
     ESP_SPP_ROLE_SLAVE      = 1,          /*!< Role: slave */
 } esp_spp_role_t;
 
+/**
+ * @brief SPP mode type.
+ */
 typedef enum {
     ESP_SPP_MODE_CB         = 0,          /*!< When data is coming, a callback will come with data */
     ESP_SPP_MODE_VFS        = 1,          /*!< Use VFS to write/read data */
@@ -304,7 +313,7 @@ esp_err_t esp_spp_deinit(void);
 
 
 /**
- * @brief       This function is called to performs service discovery for the services provided by the given peer device.
+ * @brief       Perform service discovery for the services provided by the given peer device.
  *              When the operation is completed, the callback function will be called with ESP_SPP_DISCOVERY_COMP_EVT.
  *              This function must be called after esp_spp_enhanced_init() successful and before esp_spp_deinit().
  *
