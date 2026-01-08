@@ -80,19 +80,6 @@ enum {
 
 typedef uint8_t tBTM_STATUS;
 
-#if (defined(BTA_HOST_INTERLEAVE_SEARCH) && BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-typedef enum {
-    BTM_BR_ONE,                         /*0 First state or BR/EDR scan 1*/
-    BTM_BLE_ONE,                        /*1BLE scan 1*/
-    BTM_BR_TWO,                         /*2 BR/EDR scan 2*/
-    BTM_BLE_TWO,                        /*3 BLE scan 2*/
-    BTM_FINISH,                         /*4 End of Interleave Scan, or normal scan*/
-    BTM_NO_INTERLEAVING                 /*5 No Interleaving*/
-} btm_inq_state;
-#endif
-
-
-
 /*************************
 **  Device Control Types
 **************************/
@@ -647,9 +634,6 @@ typedef struct {            /* contains the parameters passed to the inquiry fun
     BOOLEAN report_dup;                 /* report duplicated inquiry response with higher RSSI value */
     UINT8   filter_cond_type;           /* new devices, BD ADDR, COD, or No filtering */
     tBTM_INQ_FILT_COND  filter_cond;    /* filter value based on filter cond type */
-#if (defined(BTA_HOST_INTERLEAVE_SEARCH) && BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-    UINT8   intl_duration[4];              /*duration array storing the interleave scan's time portions*/
-#endif
 } tBTM_INQ_PARMS;
 
 #define BTM_INQ_RESULT_BR       0x01
@@ -3046,28 +3030,6 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL
 **
 *******************************************************************************/
 tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_ReadTxPower
-**
-** Description      This function is called to read the current connection
-**                  TX power of the connection. The TX power level results
-**                  are returned in the callback.
-**                  (tBTM_RSSI_RESULTS)
-**
-** Returns          BTM_CMD_STARTED if command issued to controller.
-**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
-**                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
-**                  BTM_BUSY if command is already in progress
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda,
-                             tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
-
-tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 

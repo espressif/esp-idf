@@ -488,19 +488,24 @@ typedef struct {
 
     list_t          *p_lcb_pool;                    /* Link Control Block pool          */
     list_t          *p_ccb_pool;                    /* Channel Control Block pool       */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_RCB        rcb_pool[MAX_L2CAP_CLIENTS];    /* Registration info pool           */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8           desire_role;                    /* desire to be master/slave when accepting a connection */
     BOOLEAN         disallow_switch;                /* FALSE, to allow switch at create conn */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          num_lm_acl_bufs;                /* # of ACL buffers on controller   */
     UINT16          idle_timeout;                   /* Idle timeout                     */
 
     list_t          *rcv_pending_q;                 /* Recv pending queue               */
     TIMER_LIST_ENT  rcv_hold_tle;                   /* Timer list entry for rcv hold    */
 
-    tL2C_LCB        *p_cur_hcit_lcb;                /* Current HCI Transport buffer     */
+    // tL2C_LCB        *p_cur_hcit_lcb;                /* Current HCI Transport buffer     */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          num_links_active;               /* Number of links active           */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
     UINT16          non_flushable_pbf;              /* L2CAP_PKT_START_NON_FLUSHABLE if controller supports */
@@ -529,13 +534,16 @@ typedef struct {
     tL2C_RCB                 ble_rcb_pool[BLE_MAX_L2CAP_CLIENTS]; /* Registration info pool          */
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2CA_ECHO_DATA_CB      *p_echo_data_cb;                /* Echo data callback */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (defined(L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE) && (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == TRUE))
     UINT16              high_pri_min_xmit_quota;    /* Minimum number of ACL credit for high priority link */
 #endif /* (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == TRUE) */
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          dyn_psm;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 } tL2C_CB;
 
 

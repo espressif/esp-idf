@@ -128,8 +128,9 @@ typedef struct {
 } tGAP_CLCB;
 
 typedef struct {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGAP_INFO        blk[GAP_MAX_BLOCKS];
-    tBTM_CMPL_CB    *btm_cback[GAP_MAX_BLOCKS];
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     UINT8            trace_level;
     //tGAP_FINDADDR_CB findaddr_cb;   /* Contains the control block for finding a device addr */
     //tBTM_INQ_INFO   *cur_inqptr;

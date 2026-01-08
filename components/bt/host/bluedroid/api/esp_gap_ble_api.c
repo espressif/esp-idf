@@ -524,6 +524,29 @@ esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_l
                 btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
+
+esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_data_len)
+{
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if ((raw_data_len != 0 && raw_data == NULL) || raw_data_len > ESP_BLE_ADV_DATA_LEN_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW;
+    arg.cfg_scan_rsp_data_raw.raw_scan_rsp = raw_data;
+    arg.cfg_scan_rsp_data_raw.raw_scan_rsp_len = raw_data_len;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy,
+                btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+
+}
+
 #endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr)
@@ -547,28 +570,7 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
-esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_data_len)
-{
-    btc_msg_t msg = {0};
-    btc_ble_gap_args_t arg;
-
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-
-    if ((raw_data_len != 0 && raw_data == NULL) || raw_data_len > ESP_BLE_ADV_DATA_LEN_MAX) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW;
-    arg.cfg_scan_rsp_data_raw.raw_scan_rsp = raw_data;
-    arg.cfg_scan_rsp_data_raw.raw_scan_rsp_len = raw_data_len;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy,
-                btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
-
-}
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_exceptional_info_type_t type, esp_duplicate_info_t device_info)
 {
@@ -636,7 +638,8 @@ esp_err_t esp_ble_gap_clean_duplicate_scan_exceptional_list(esp_duplicate_scan_e
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
+
 #if (SMP_INCLUDED == TRUE)
 esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
         void *value, uint8_t len)
