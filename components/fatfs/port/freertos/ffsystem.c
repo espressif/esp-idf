@@ -7,9 +7,7 @@
 #include <stdlib.h>
 #include "ff.h"
 #include "sdkconfig.h"
-#ifdef CONFIG_FATFS_ALLOC_PREFER_EXTRAM
 #include "esp_heap_caps.h"
-#endif
 
 /*------------------------------------------------------------------------*/
 /* Allocate/Free a Memory Block                                           */
@@ -19,14 +17,32 @@ void* ff_memalloc (    /* Returns pointer to the allocated memory block (null if
     unsigned msize     /* Number of bytes to allocate */
 )
 {
-#ifdef CONFIG_FATFS_ALLOC_PREFER_EXTRAM
-    return heap_caps_malloc_prefer(msize, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
-                                            MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-#else
-    return malloc(msize);
-#endif
-}
+    void *ptr = NULL;
+    (void) ptr;
 
+#if CONFIG_FATFS_ALLOC_PREFER_EXTRAM && CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+    ptr = heap_caps_calloc_prefer(1, msize, 2, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM, MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM);
+    if (ptr != NULL) {
+        return ptr;
+    }
+#endif
+
+#if CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+    ptr = heap_caps_calloc_prefer(1, msize, 2, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED, MALLOC_CAP_CACHE_ALIGNED);
+    if (ptr != NULL) {
+        return ptr;
+    }
+#endif
+
+#if CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+    ptr = heap_caps_calloc(1, msize, MALLOC_CAP_SPIRAM);
+    if (ptr != NULL) {
+        return ptr;
+    }
+#endif
+
+    return heap_caps_calloc(1, msize, MALLOC_CAP_DEFAULT);
+}
 
 void ff_memfree (
     void* mblock    /* Pointer to the memory block to free (no effect if null) */
