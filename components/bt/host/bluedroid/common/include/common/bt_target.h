@@ -457,13 +457,13 @@
 #define CONTROLLER_RPA_LIST_ENABLE   FALSE
 #endif
 
-#if (UC_BT_GATTS_ENABLE)
+#if (UC_BT_GATTS_ENABLE == TRUE)
 #define GATTS_INCLUDED              TRUE
 #else
 #define GATTS_INCLUDED              FALSE
 #endif /* UC_BT_GATTS_ENABLE */
 
-#if (UC_BT_GATTC_ENABLE)
+#if (UC_BT_GATTC_ENABLE == TRUE)
 #define GATTC_INCLUDED              TRUE
 #else
 #define GATTC_INCLUDED              FALSE
@@ -852,11 +852,6 @@
 #define BT_CLASSIC_BQB_INCLUDED TRUE
 #else
 #define BT_CLASSIC_BQB_INCLUDED FALSE
-#endif
-
-/* This feature is used to enable interleaved scan*/
-#ifndef BTA_HOST_INTERLEAVE_SEARCH
-#define BTA_HOST_INTERLEAVE_SEARCH FALSE
 #endif
 
 #ifndef BT_USE_TRACES
@@ -1623,71 +1618,6 @@
 #define BLE_INCLUDED            FALSE
 #endif
 
-#ifndef BLE_ANDROID_CONTROLLER_SCAN_FILTER
-#define BLE_ANDROID_CONTROLLER_SCAN_FILTER            FALSE
-#endif
-
-#ifndef BLE_HOST_BLE_MULTI_ADV_EN
-#define BLE_HOST_BLE_MULTI_ADV_EN                     FALSE
-#endif
-
-#ifndef BLE_HOST_TRACK_ADVERTISER_EN
-#define BLE_HOST_TRACK_ADVERTISER_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_ENERGY_INFO_EN
-#define BLE_HOST_ENERGY_INFO_EN                  FALSE
-#endif
-
-
-#ifndef BLE_HOST_ENABLE_TEST_MODE_EN
-#define BLE_HOST_ENABLE_TEST_MODE_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_EXECUTE_CBACK_EN
-#define BLE_HOST_EXECUTE_CBACK_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_REMOVE_ALL_ACL_EN
-#define BLE_HOST_REMOVE_ALL_ACL_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_REMOVE_AN_ACL_EN
-#define BLE_HOST_REMOVE_AN_ACL_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_READ_TX_POWER_EN
-#define BLE_HOST_READ_TX_POWER_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_STOP_ADV_UNUSED
-#define BLE_HOST_STOP_ADV_UNUSED                  FALSE
-#endif
-
-#ifndef BLE_HOST_BLE_OBSERVE_EN
-#define BLE_HOST_BLE_OBSERVE_EN                  FALSE
-#endif
-
-#ifndef BLE_HOST_BLE_SCAN_PARAM_UNUSED
-#define BLE_HOST_BLE_SCAN_PARAM_UNUSED           FALSE
-#endif
-
-#ifndef BLE_HOST_CONN_SCAN_PARAM_EN
-#define BLE_HOST_CONN_SCAN_PARAM_EN              FALSE
-#endif
-
-#ifndef BLE_HOST_SETUP_STORAGE_EN
-#define BLE_HOST_SETUP_STORAGE_EN              FALSE
-#endif
-
-#ifndef BLE_HOST_READ_SCAN_REPORTS_EN
-#define BLE_HOST_READ_SCAN_REPORTS_EN              FALSE
-#endif
-
-#ifndef BLE_HOST_BATCH_SCAN_EN
-#define BLE_HOST_BATCH_SCAN_EN              FALSE
-#endif
-
 #ifndef BLE_HOST_BG_CONNECT_EN
 #define BLE_HOST_BG_CONNECT_EN              FALSE
 #endif
@@ -1709,14 +1639,6 @@
  */
 #ifndef BLE_LOCAL_PRIVACY_ENABLED
 #define BLE_LOCAL_PRIVACY_ENABLED         TRUE
-#endif
-
-/*
- * Toggles support for vendor specific extensions such as RPA offloading,
- * feature discovery, multi-adv etc.
- */
-#ifndef BLE_VND_INCLUDED
-#define BLE_VND_INCLUDED        FALSE
 #endif
 
 #ifndef BTM_BLE_ADV_TX_POWER
@@ -1741,11 +1663,6 @@
 #else
 #define BTM_TX_POWER_LEVEL_MAX 15
 #endif
-#endif
-
-
-#ifndef BLE_BATCH_SCAN_INCLUDED
-#define BLE_BATCH_SCAN_INCLUDED  TRUE
 #endif
 
 /******************************************************************************

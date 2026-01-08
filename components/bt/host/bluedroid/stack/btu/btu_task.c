@@ -315,7 +315,9 @@ static void btu_general_alarm_process(void *param)
 
     switch (p_tle->event) {
     case BTU_TTYPE_BTM_DEV_CTL:
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_dev_timeout(p_tle);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
 
     case BTU_TTYPE_L2CAP_LINK:
@@ -374,11 +376,15 @@ static void btu_general_alarm_process(void *param)
         break;
 
     case BTU_TTYPE_ATT_WAIT_FOR_RSP:
+#if (GATTC_INCLUDED == TRUE)
         gatt_rsp_timeout(p_tle);
+#endif // (GATTC_INCLUDED == TRUE)
         break;
 
     case BTU_TTYPE_ATT_WAIT_FOR_IND_ACK:
+#if (GATTC_INCLUDED == TRUE)
         gatt_ind_ack_timeout(p_tle);
+#endif // (GATTC_INCLUDED == TRUE)
         break;
 
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
