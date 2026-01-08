@@ -348,8 +348,10 @@ void esp_sleep_overhead_out_time_refresh(void)
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
 static uint32_t get_sleep_clock_icg_flags(void);
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP || CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
 static uint32_t get_sleep_rtc_wdt_timeout(uint64_t sleep_duration);
 static uint32_t calc_sleep_slow_clk_required_cycles(uint32_t timeout, uint32_t rtc_slow_clk_cal_period);
+#endif
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 static void ext0_wakeup_prepare(void);
 #endif
@@ -776,8 +778,12 @@ static SLEEP_FN_ATTR void sleep_rtc_wdt_prepare(bool enable)
     if (enable) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
         // Use default timeout for sleep monitoring
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP || CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
         uint32_t rtc_wdt_timeout = get_sleep_rtc_wdt_timeout(s_config.sleep_duration);
         uint32_t rtc_wdt_timeout_required_cycles = calc_sleep_slow_clk_required_cycles(rtc_wdt_timeout, s_config.rtc_clk_cal_period);
+#else
+        uint32_t rtc_wdt_timeout_required_cycles = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+#endif
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, rtc_wdt_timeout_required_cycles, WDT_STAGE_ACTION_RESET_RTC);
         wdt_hal_enable(&rtc_wdt_ctx);
@@ -2959,6 +2965,7 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
     return clk_flags;
 }
 
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP || CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
 /* TODO: PM-609 */
 /* Calculate drift cycles of rtc slow clock in long-term working scenarios. */
 static SLEEP_FN_ATTR uint32_t calc_sleep_slow_clk_required_cycles(uint32_t timeout, uint32_t rtc_slow_clk_cal_period)
@@ -2980,13 +2987,12 @@ static SLEEP_FN_ATTR uint32_t get_sleep_rtc_wdt_timeout(uint64_t sleep_duration)
     uint32_t sleep_timeout = 0;
     uint32_t rtc_wdt_timeout = 0;
 
-#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP || CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
     sleep_timeout = (uint32_t)sleep_duration;
-#endif
     rtc_wdt_timeout = default_timeout + sleep_timeout;
 
     return rtc_wdt_timeout;
 }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
