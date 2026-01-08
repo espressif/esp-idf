@@ -730,8 +730,8 @@ esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 /**
   * @brief     Set the bandwidth of specified interface
   *
-  * @attention 1. WIFI_BW_HT40 is supported only when the interface support 11N
-  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW_HT20.
+  * @attention 1. WIFI_BW40 is supported only when the interface support 11N
+  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW20.
   * @attention 3. Can not set WiFi bandwidth under band mode 2.4G + 5G (WIFI_BAND_MODE_AUTO), you can use esp_wifi_set_bandwidths instead
   * @attention 4. API return ESP_ERR_NOT_SUPPORTED if the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *
@@ -1091,6 +1091,9 @@ typedef void (*esp_vendor_ie_cb_t)(void *ctx, wifi_vendor_ie_type_t type, const 
   * @param     idx  Index to set or clear. Each IE type can be associated with up to two elements (indices 0 & 1).
   * @param     vnd_ie Pointer to vendor specific element data. First 6 bytes should be a header with fields matching vendor_ie_data_t.
   *            If enable is false, this argument is ignored and can be NULL. Data does not need to remain valid after the function returns.
+  *
+  * @attention If user set the same vendor ie twice, the second set will fail and return ESP_ERR_INVALID_ARG.
+  *            Please clear the vendor ie before setting again.
   *
   * @return
   *    - ESP_OK: succeed
@@ -1737,8 +1740,8 @@ esp_err_t esp_wifi_get_protocols(wifi_interface_t ifx, wifi_protocols_t *protoco
 /**
   * @brief     Set the bandwidth of specified interface and specified band
   *
-  * @attention 1. WIFI_BW_HT40 is supported only when the interface support 11N
-  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW_HT20.
+  * @attention 1. WIFI_BW40 is supported only when the interface support 11N
+  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW20.
   * @attention 3. When the WiFi band mode is set to 2.4G only, it will not set 5G bandwidth
   * @attention 4. When the WiFi band mode is set to 5G only, it will not set 2.4G bandwidth
   *

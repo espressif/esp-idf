@@ -37,6 +37,8 @@ Removed Variables, Macros and Enum Values
 
 - **FTM:** Field ``use_get_report_api`` from structure ``wifi_ftm_initiator_cfg_t`` and field ``ftm_report_data`` from structure ``wifi_event_ftm_report_t`` has been removed. Please use ``esp_wifi_ftm_get_report`` to fetch raw FTM report data instead.
 
+- **Wi-Fi Bandwidth:** The enum values ``WIFI_BW_HT20`` and ``WIFI_BW_HT40`` have been removed. Please use the enum values ``WIFI_BW20`` and ``WIFI_BW40`` directly.
+
 Modified Functions and Types
 ----------------------------
 
