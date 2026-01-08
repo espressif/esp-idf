@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,13 @@ esp_err_t esp_isp_wbg_configure(isp_proc_handle_t isp_proc, const esp_isp_wbg_co
     }
 #endif
 
-    ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(isp_proc && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     // Configure clock control mode
     isp_ll_awb_set_wb_gain_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
+
+    bool valid = isp_ll_shadow_update_wbg(isp_proc->hal.hw, config->flags.update_once_configured);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update wbg shadow register");
 
     return ESP_OK;
 }
@@ -60,9 +63,6 @@ esp_err_t esp_isp_wbg_set_wb_gain(isp_proc_handle_t isp_proc, isp_wbg_gain_t gai
 
     // Set WBG gain
     isp_ll_awb_set_wb_gain(isp_proc->hal.hw, gain);
-
-    bool valid = isp_ll_shadow_update_wbg(isp_proc->hal.hw);
-    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update wbg shadow register");
 
     return ESP_OK;
 }
