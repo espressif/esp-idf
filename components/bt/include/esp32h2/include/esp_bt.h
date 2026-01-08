@@ -287,7 +287,7 @@ typedef struct {
     .ignore_wl_for_direct_adv   = 0,                                                    \
     .enable_pcl                 = DEFAULT_BT_LE_POWER_CONTROL_ENABLED,                  \
     .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
-    .enable_csr                 = 0,                                                    \
+    .enable_csr                 = DEFAULT_BT_LE_SUBRATE_ENABLED,                        \
     .ble_aa_check               = DEFAULT_BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS,  \
     .ble_llcp_disc_flag         = BT_LE_CTRL_LLCP_DISC_FLAG,                            \
     .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,                   \
