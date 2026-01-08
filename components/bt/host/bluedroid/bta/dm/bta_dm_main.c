@@ -42,11 +42,15 @@
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_DM_CB  bta_dm_cb;
 tBTA_DM_SEARCH_CB bta_dm_search_cb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTA_DM_DI_CB       bta_dm_di_cb;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #else
 tBTA_DM_CB  *bta_dm_cb_ptr;
 tBTA_DM_SEARCH_CB *bta_dm_search_cb_ptr;
-tBTA_DM_DI_CB       *bta_dm_di_cb_ptr;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+ tBTA_DM_DI_CB       *bta_dm_di_cb_ptr;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 SemaphoreHandle_t deinit_semaphore;
 #endif
 
@@ -90,9 +94,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_acl_change,                      /* BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* BTA_DM_API_ADD_DEVICE_EVT */
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-    bta_dm_close_acl,                       /* BTA_DM_API_REMOVE_ACL_EVT */
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     bta_dm_bond,                            /* BTA_DM_API_BOND_EVT */
@@ -134,38 +135,21 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_passkey_reply,               /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
     bta_dm_ble_set_static_passkey,          /* BTA_DM_API_BLE_SET_STATIC_PASSKEY_EVT */
     bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
-    bta_dm_security_grant,
+    bta_dm_security_grant,                  /* BTA_DM_API_BLE_SEC_GRANT_EVT */
 #endif  ///SMP_INCLUDED == TRUE
-    bta_dm_ble_set_bg_conn_type,
+#if (BLE_GATT_BGCONN == TRUE)
+    bta_dm_ble_set_bg_conn_type,            /* BTA_DM_API_BLE_SET_BG_CONN_TYPE */
+#endif // (BLE_GATT_BGCONN == TRUE)
     bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-    bta_dm_ble_set_conn_scan_params,        /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-    bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-    bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT */
-#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
 #endif // #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
-    /* This handler function added by
-       Yulong at 2016/9/9 to support the
-       random address setting for the APP */
     bta_dm_ble_set_rand_address,            /* BTA_DM_API_SET_RAND_ADDR_EVT*/
     bta_dm_ble_clear_rand_address,          /* BTA_DM_API_CLEAR_RAND_ADDR_EVT */
-    /* This handler function added by
-       Yulong at 2016/10/19 to support
-       stop the ble advertising setting
-       by the APP */
-#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-    bta_dm_ble_stop_advertising,            /* BTA_DM_API_BLE_STOP_ADV_EVT */
-#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
@@ -183,58 +167,20 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     /* New function to allow set raw scan
        response data to HCI */
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
-    bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
+    bta_dm_ble_advstop,                   /* BTA_DM_API_BLE_ADVSTOP_EVT */
 #endif // #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_data_length,             /* BTA_DM_API_SET_DATA_LENGTH_EVT */
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    bta_dm_cfg_filter_cond,                 /* BTA_DM_API_CFG_FILTER_COND_EVT */
-    bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
-    bta_dm_enable_scan_filter,              /* BTA_DM_API_SCAN_FILTER_ENABLE_EVT */
-#endif
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    bta_dm_ble_multi_adv_enb,               /* BTA_DM_API_BLE_MULTI_ADV_ENB_EVT */
-    bta_dm_ble_multi_adv_upd_param,         /* BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
-    bta_dm_ble_multi_adv_data,              /* BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
-    btm_dm_ble_multi_adv_disable,           /* BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
-#endif // BLE_HOST_BLE_MULTI_ADV_EN
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-    bta_dm_ble_setup_storage,               /* BTA_DM_API_BLE_SETUP_STORAGE_EVT */
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    bta_dm_ble_enable_batch_scan,           /* BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT */
-    bta_dm_ble_disable_batch_scan,          /* BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT */
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-    bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    bta_dm_ble_track_advertiser,            /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
-#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-    bta_dm_enable_test_mode,                /* BTA_DM_API_ENABLE_TEST_MODE_EVT */
-    bta_dm_disable_test_mode,               /* BTA_DM_API_DISABLE_TEST_MODE_EVT */
-#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-    bta_dm_execute_callback,                /* BTA_DM_API_EXECUTE_CBACK_EVT */
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-    bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */
     bta_dm_ble_set_channels,                /* BTA_DM_API_BLE_SET_CHANNELS_EVT */
     bta_dm_update_white_list,               /* BTA_DM_API_UPDATE_WHITE_LIST_EVT */
     bta_dm_clear_white_list,                /* BTA_DM_API_CLEAR_WHITE_LIST_EVT */
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-    bta_dm_ble_read_adv_tx_power,           /* BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT */
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
     bta_dm_read_rssi,                       /* BTA_DM_API_READ_RSSI_EVT */
 #if BLE_INCLUDED == TRUE
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     bta_dm_ble_update_duplicate_exceptional_list,/* BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT */
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 #endif
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     bta_dm_ble_gap_read_phy,                /* BTA_DM_API_READ_PHY_EVT */
@@ -572,11 +518,15 @@ void bta_dm_sm_deinit(void)
 {
     memset(&bta_dm_cb, 0, sizeof(tBTA_DM_CB));
     memset(&bta_dm_search_cb, 0, sizeof(tBTA_DM_SEARCH_CB));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if BTA_DYNAMIC_MEMORY
     FREE_AND_RESET(bta_dm_cb_ptr);
     FREE_AND_RESET(bta_dm_search_cb_ptr);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     FREE_AND_RESET(bta_dm_di_cb_ptr);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif /* #if BTA_DYNAMIC_MEMORY */
 }
 

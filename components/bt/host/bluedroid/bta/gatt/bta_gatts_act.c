@@ -695,12 +695,13 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                                                         p_msg->api_indicate.len,
                                                         p_msg->api_indicate.value);
             }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
             /* if over BR_EDR, inform PM for mode change */
             if (transport == BTA_TRANSPORT_BR_EDR) {
                 bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
                 bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
             }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         } else {
             APPL_TRACE_ERROR("Unknown connection ID: %d fail sending notification",
                              p_msg->api_indicate.hdr.layer_specific);
@@ -839,10 +840,11 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
         p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
         if (p_rcb && p_rcb->p_cback) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             if (transport == BTA_TRANSPORT_BR_EDR) {
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, remote_bda);
             }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
             close.status = status;
             close.conn_id = p_msg->hdr.layer_specific;
             (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT,  (tBTA_GATTS *)&close);
@@ -925,12 +927,13 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
                           conn_id, trans_id, req_type);
 
         if (p_rcb && p_rcb->p_cback) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             /* if over BR_EDR, inform PM for mode change */
             if (transport == BTA_TRANSPORT_BR_EDR) {
                 bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
                 bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
             }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
             cb_data.req_data.conn_id    = conn_id;
             cb_data.req_data.trans_id   = trans_id;
             cb_data.req_data.p_data     = (tBTA_GATTS_REQ_DATA *)p_data;
@@ -980,6 +983,7 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
     p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
     if (p_reg && p_reg->p_cback) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* there is no RM for GATT */
         if (transport == BTA_TRANSPORT_BR_EDR) {
             if (connected) {
@@ -988,6 +992,7 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, bda);
             }
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         if(evt == BTA_GATTS_CONNECT_EVT) {
             tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
             if(p_lcb != NULL) {

@@ -392,10 +392,12 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
         p_lcb->link_state = LST_DISCONNECTING;
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         /* Check for BLE and handle that differently */
         if (p_lcb->transport == BT_TRANSPORT_LE) {
             btm_ble_update_link_topology_mask(p_lcb->link_role, FALSE);
         }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Link is disconnected. For all channels, send the event through */
@@ -734,7 +736,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_adjust_allocation
@@ -855,7 +857,7 @@ void l2c_link_adjust_allocation (void)
     }
 
 }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_adjust_chnl_allocation
@@ -936,6 +938,7 @@ UINT8 l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles)
     return (num_found);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_role_changed
@@ -973,6 +976,7 @@ void l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status)
         }
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1009,7 +1013,9 @@ void l2c_pin_code_request (BD_ADDR bd_addr)
 *******************************************************************************/
 BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_PM_MODE     mode;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB    *p_ccb;
     BOOLEAN need_to_active = FALSE;
 
@@ -1029,6 +1035,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 
     /* if we have packets to send */
     if ( need_to_active ) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* check power mode */
         if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode) == BTM_SUCCESS) {
             if ( mode == BTM_PM_STS_PENDING ) {
@@ -1037,6 +1044,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
                 return TRUE;
             }
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
     return FALSE;
 }
