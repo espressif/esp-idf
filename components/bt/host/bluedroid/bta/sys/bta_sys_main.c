@@ -543,7 +543,7 @@ void bta_sys_deregister(UINT8 id)
 **
 ** Function         bta_sys_is_register
 **
-** Description      Called by other BTA subsystems to get registeration
+** Description      Called by other BTA subsystems to get registration
 **                  status.
 **
 **
@@ -724,7 +724,7 @@ void bta_sys_disable(tBTA_SYS_HW_MODULE module)
         bta_id_max = BTA_ID_BLUETOOTH_MAX;
         break;
     default:
-        APPL_TRACE_WARNING("bta_sys_disable: unkown module");
+        APPL_TRACE_WARNING("bta_sys_disable: unknown module");
         return;
     }
 
@@ -750,7 +750,7 @@ void bta_sys_set_trace_level(UINT8 level)
 {
     appl_trace_level = level;
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_sys_get_sys_features
@@ -764,3 +764,4 @@ UINT16 bta_sys_get_sys_features (void)
 {
     return bta_sys_cb.sys_features;
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
