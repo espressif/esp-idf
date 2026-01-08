@@ -599,6 +599,10 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
 #endif
 
+#if MYNEWT_VAL(STATIC_PASSKEY) && NIMBLE_BLE_CONNECT
+    ble_sm_configure_static_passkey(456789, true);
+#endif
+
 #if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
