@@ -293,8 +293,7 @@ static esp_err_t i3c_master_init_dma(i3c_master_bus_t *i3c_master_handle, const 
         .flags.isr_cache_safe = true,
 #endif
     };
-    dma_cfg.direction = GDMA_CHANNEL_DIRECTION_TX;
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &i3c_master_handle->dma_tx_chan), TAG, "DMA tx channel alloc failed");
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &i3c_master_handle->dma_tx_chan, NULL), TAG, "DMA tx channel alloc failed");
     gdma_connect(i3c_master_handle->dma_tx_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I3C, 0));
 
     gdma_transfer_config_t transfer_cfg = {
@@ -316,8 +315,7 @@ static esp_err_t i3c_master_init_dma(i3c_master_bus_t *i3c_master_handle, const 
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &i3c_master_handle->tx_dma_link), TAG, "DMA tx link list alloc failed");
 
     // Initialize DMA RX channel
-    dma_cfg.direction = GDMA_CHANNEL_DIRECTION_RX;
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &i3c_master_handle->dma_rx_chan), TAG, "DMA rx channel alloc failed");
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, NULL, &i3c_master_handle->dma_rx_chan), TAG, "DMA rx channel alloc failed");
     gdma_connect(i3c_master_handle->dma_rx_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I3C, 0));
 
     ESP_RETURN_ON_ERROR(gdma_config_transfer(i3c_master_handle->dma_rx_chan, &transfer_cfg), TAG, "Config DMA rx channel transfer failed");

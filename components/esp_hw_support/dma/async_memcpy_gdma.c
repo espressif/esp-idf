@@ -103,7 +103,7 @@ static esp_err_t mcp_gdma_destroy(async_memcpy_gdma_context_t *mcp_gdma)
 }
 
 static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp,
-                                                        esp_err_t (*new_channel_func)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *),
+                                                        esp_err_t (*new_channel_func)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *, gdma_channel_handle_t *),
                                                         int gdma_bus_id)
 {
     esp_err_t ret = ESP_OK;
@@ -118,17 +118,9 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     mcp_gdma->transaction_pool = heap_caps_calloc(trans_queue_len, sizeof(async_memcpy_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(mcp_gdma->transaction_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction pool");
 
-    // create TX channel and RX channel, they should reside in the same DMA pair
-    gdma_channel_alloc_config_t tx_alloc_config = {
-        .flags.reserve_sibling = 1,
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
-    ESP_GOTO_ON_ERROR(new_channel_func(&tx_alloc_config, &mcp_gdma->tx_channel), err, TAG, "failed to alloc GDMA TX channel");
-    gdma_channel_alloc_config_t rx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = mcp_gdma->tx_channel,
-    };
-    ESP_GOTO_ON_ERROR(new_channel_func(&rx_alloc_config, &mcp_gdma->rx_channel), err, TAG, "failed to alloc GDMA RX channel");
+    // create TX and RX channels in the same pair with a single call
+    gdma_channel_alloc_config_t channel_config = {0};
+    ESP_GOTO_ON_ERROR(new_channel_func(&channel_config, &mcp_gdma->tx_channel, &mcp_gdma->rx_channel), err, TAG, "failed to alloc GDMA channels");
 
     // get a free DMA trigger ID for memory copy
     gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
@@ -147,7 +139,7 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     gdma_apply_strategy(mcp_gdma->rx_channel, &strategy_cfg);
 
 #if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
-    if(config->weight){
+    if (config->weight) {
         ESP_GOTO_ON_ERROR(gdma_set_weight(mcp_gdma->rx_channel, config->weight), err, TAG, "Set GDMA rx channel weight failed");
         ESP_GOTO_ON_ERROR(gdma_set_weight(mcp_gdma->tx_channel, config->weight), err, TAG, "Set GDMA tx channel weight failed");
     }

@@ -173,12 +173,11 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
 {
     // Initialize DMA TX channel
     gdma_channel_alloc_config_t tx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
 #if CONFIG_UHCI_ISR_CACHE_SAFE
         .flags.isr_cache_safe = true,
 #endif
     };
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&tx_alloc_config, &uhci_ctrl->tx_dir.dma_chan), TAG, "DMA tx channel alloc failed");
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&tx_alloc_config, &uhci_ctrl->tx_dir.dma_chan, NULL), TAG, "DMA tx channel alloc failed");
     gdma_connect(uhci_ctrl->tx_dir.dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
 
     gdma_transfer_config_t transfer_cfg = {
@@ -207,12 +206,11 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
 
     // Initialize DMA RX channel
     gdma_channel_alloc_config_t rx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
 #if CONFIG_UHCI_ISR_CACHE_SAFE
         .flags.isr_cache_safe = true,
 #endif
     };
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&rx_alloc_config, &uhci_ctrl->rx_dir.dma_chan), TAG, "DMA rx channel alloc failed");
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&rx_alloc_config, NULL, &uhci_ctrl->rx_dir.dma_chan), TAG, "DMA rx channel alloc failed");
     gdma_connect(uhci_ctrl->rx_dir.dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     ESP_RETURN_ON_ERROR(gdma_config_transfer(uhci_ctrl->rx_dir.dma_chan, &transfer_cfg), TAG, "Config DMA rx channel transfer failed");
 
