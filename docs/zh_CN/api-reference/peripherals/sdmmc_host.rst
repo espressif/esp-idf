@@ -177,8 +177,8 @@ SDMMC 主机驱动支持以下速率模式：
 
     如果设计需要更高速度的 SD 模式（仅在 1.8 V IO 电平下工作），则有两种可选方案：
 
-    - 使用片上可编程 LDO。将所需的 LDO 输出通道连接到 VDDPST_5 (SD_VREF) 管脚上，并调用 :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` 来初始化 SD 电源控制驱动。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctl_handle` 设置为生成句柄。
-    - 使用外部可编程 LDO。同样，将 LDO 输出连接到 VDDPST_5 (SD_VREF) 管脚，并自定义 `sd_pwr_ctrl` 驱动程序来控制 LDO。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` 分配给驱动程序实例句柄。
+    - 使用片上可编程 LDO。将所需的 LDO 输出通道连接到 VDDPST_5 (SD_VREF) 管脚上，并调用 :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` 来初始化 SD 电源控制驱动。最后，将 :cpp:member:`sdmmc_host_t::pwr_ctl_handle` 设置为生成句柄。
+    - 使用外部可编程 LDO。同样，将 LDO 输出连接到 VDDPST_5 (SD_VREF) 管脚，并自定义 `sd_pwr_ctrl` 驱动程序来控制 LDO。最后，将 :cpp:member:`sdmmc_host_t::pwr_ctrl_handle` 分配给驱动程序实例句柄。
 
 
 eMMC 芯片的 DDR 模式
@@ -210,3 +210,7 @@ API 参考
 -------------
 
 .. include-build-file:: inc/sdmmc_host.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl_by_on_chip_ldo.inc

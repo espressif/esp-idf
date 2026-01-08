@@ -177,8 +177,8 @@ To configure the bus width, set the ``width`` field of :cpp:class:`sdmmc_slot_co
 
     If the design does require higher speed SD modes (which only work at 1.8V IO levels), there are two options available:
 
-    - Use the on-chip programmable LDO. In this case, connect the desired LDO output channel to VDDPST_5 (SD_VREF) pin. Call :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` to initialize the SD power control driver, then set :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` to the resulting handle.
-    - Use an external programmable LDO. Likewise, connect the LDO output to the VDDPST_5 (SD_VREF) pin. Then implement a custom `sd_pwr_ctrl` driver to control your LDO. Finally, assign :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` to the handle of your driver instance.
+    - Use the on-chip programmable LDO. In this case, connect the desired LDO output channel to VDDPST_5 (SD_VREF) pin. Call :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` to initialize the SD power control driver, then set :cpp:member:`sdmmc_host_t::pwr_ctrl_handle` to the resulting handle.
+    - Use an external programmable LDO. Likewise, connect the LDO output to the VDDPST_5 (SD_VREF) pin. Then implement a custom `sd_pwr_ctrl` driver to control your LDO. Finally, assign :cpp:member:`sdmmc_host_t::pwr_ctrl_handle` to the handle of your driver instance.
 
 
 DDR Mode for eMMC Chips
@@ -210,3 +210,7 @@ API Reference
 -------------
 
 .. include-build-file:: inc/sdmmc_host.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl_by_on_chip_ldo.inc
