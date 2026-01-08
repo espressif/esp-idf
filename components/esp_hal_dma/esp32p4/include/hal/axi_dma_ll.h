@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -294,6 +294,9 @@ static inline void axi_dma_ll_rx_enable_etm_task(axi_dma_dev_t *dev, uint32_t ch
 
 /**
  * @brief Whether to enable access to ecc or aes memory
+ *
+ * @note This function is not used for AXI-GDMA because it will affect the alignment requirement for internal memory.
+ *       We have ensured that the AXI-GDMA can access the encrypted memory by 16-bytes alignment in software.
  */
 static inline void axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
@@ -528,6 +531,9 @@ static inline void axi_dma_ll_tx_enable_etm_task(axi_dma_dev_t *dev, uint32_t ch
 
 /**
  * @brief Whether to enable access to ecc or aes memory
+ *
+ * @note This function is not used for AXI-GDMA because it will affect the alignment requirement for internal memory.
+ *       We have ensured that the AXI-GDMA can access the encrypted memory by 16-bytes alignment in software.
  */
 static inline void axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
