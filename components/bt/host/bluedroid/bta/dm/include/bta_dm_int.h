@@ -80,9 +80,6 @@ enum {
 
     BTA_DM_ACL_CHANGE_EVT,
     BTA_DM_API_ADD_DEVICE_EVT,
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-    BTA_DM_API_REMOVE_ACL_EVT,
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     BTA_DM_API_BOND_EVT,
@@ -126,22 +123,15 @@ enum {
     BTA_DM_API_BLE_CONFIRM_REPLY_EVT,
     BTA_DM_API_BLE_SEC_GRANT_EVT,
 #endif  ///SMP_INCLUDED == TRUE
+#if (BLE_GATT_BGCONN == TRUE)
     BTA_DM_API_BLE_SET_BG_CONN_TYPE,
+#endif // (BLE_GATT_BGCONN == TRUE)
     BTA_DM_API_BLE_CONN_PARAM_EVT,
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-    BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-    BTA_DM_API_BLE_SCAN_PARAM_EVT,
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     /*******This event added by Yulong at 2016/10/25 to
     support the scan filter setting for the APP******/
 #if (BLE_42_SCAN_EN == TRUE)
     BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT,
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
-    BTA_DM_API_BLE_OBSERVE_EVT,
-#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 #if (BLE_42_SCAN_EN == TRUE)
     BTA_DM_API_BLE_SCAN_EVT,
 #endif // #if (BLE_42_SCAN_EN == TRUE)
@@ -150,11 +140,6 @@ enum {
     support the random address setting for the APP******/
     BTA_DM_API_SET_RAND_ADDR_EVT,
     BTA_DM_API_CLEAR_RAND_ADDR_EVT,
-    /*******This event added by Yulong at 2016/10/19 to
-    support stop the ble advertising setting by the APP******/
-#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-    BTA_DM_API_BLE_STOP_ADV_EVT,
-#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 #if BLE_PRIVACY_SPT == TRUE
     BTA_DM_API_LOCAL_PRIVACY_EVT,
 #endif
@@ -173,59 +158,22 @@ enum {
     BTA_DM_API_BLE_SET_SCAN_RSP_EVT,
     /* Add for set raw scan response data */
     BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT,
-    BTA_DM_API_BLE_BROADCAST_EVT,
+    BTA_DM_API_BLE_ADVSTOP_EVT,
 #endif // #if (BLE_42_ADV_EN == TRUE)
     BTA_DM_API_SET_DATA_LENGTH_EVT,
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    BTA_DM_API_CFG_FILTER_COND_EVT,
-    BTA_DM_API_SCAN_FILTER_SETUP_EVT,
-    BTA_DM_API_SCAN_FILTER_ENABLE_EVT,
-#endif
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    BTA_DM_API_BLE_MULTI_ADV_ENB_EVT,
-    BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT,
-    BTA_DM_API_BLE_MULTI_ADV_DATA_EVT,
-    BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT,
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-    BTA_DM_API_BLE_SETUP_STORAGE_EVT,
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT,
-    BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT,
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-    BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT,
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    BTA_DM_API_BLE_TRACK_ADVERTISER_EVT,
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    BTA_DM_API_BLE_ENERGY_INFO_EVT,
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
+
     BTA_DM_API_BLE_DISCONNECT_EVT,
 
 #endif
-#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-    BTA_DM_API_ENABLE_TEST_MODE_EVT,
-    BTA_DM_API_DISABLE_TEST_MODE_EVT,
-#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-    BTA_DM_API_EXECUTE_CBACK_EVT,
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-    BTA_DM_API_REMOVE_ALL_ACL_EVT,
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     BTA_DM_API_REMOVE_DEVICE_EVT,
     BTA_DM_API_BLE_SET_CHANNELS_EVT,
     BTA_DM_API_UPDATE_WHITE_LIST_EVT,
     BTA_DM_API_CLEAR_WHITE_LIST_EVT,
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-    BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
     BTA_DM_API_READ_RSSI_EVT,
 #if BLE_INCLUDED == TRUE
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT,
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 #endif
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTA_DM_API_READ_PHY_EVT,
@@ -489,6 +437,7 @@ typedef struct {
     tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 typedef struct {
     BT_HDR    hdr;
     UINT8     subcode;
@@ -496,13 +445,7 @@ typedef struct {
     BD_ADDR   device_info;
     tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *exceptional_list_cb;
 }tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST;
-
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-typedef struct {
-    BT_HDR       hdr;
-    tBTA_CMPL_CB *read_tx_power_cb;
-}tBTA_DM_API_READ_ADV_TX_POWER;
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 #endif  ///BLE_INCLUDED == TRUE
 
@@ -765,15 +708,6 @@ typedef struct {
     UINT8               transport;
 } tBTA_DM_API_REMOVE_DEVICE;
 
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-/* data type for BTA_DM_API_EXECUTE_CBACK_EVT */
-typedef struct {
-    BT_HDR               hdr;
-    void                *p_param;
-    tBTA_DM_EXEC_CBACK  *p_exec_cback;
-} tBTA_DM_API_EXECUTE_CBACK;
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-
 /* data type for tBTA_DM_API_SET_ENCRYPTION */
 typedef struct {
     BT_HDR                    hdr;
@@ -886,15 +820,6 @@ typedef struct {
     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 } tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;
 
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-/* set scan parameter for BLE connections */
-typedef struct {
-    BT_HDR                  hdr;
-    UINT16                  scan_int;
-    UINT16                  scan_window;
-} tBTA_DM_API_BLE_CONN_SCAN_PARAMS;
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-
 /* Data type for start/stop observe */
 typedef struct {
     BT_HDR                  hdr;
@@ -971,35 +896,6 @@ typedef struct {
 
 } tBTA_DM_API_BLE_FEATURE;
 
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-/* multi adv data structure */
-typedef struct {
-    BT_HDR                      hdr;
-    tBTA_BLE_MULTI_ADV_CBACK    *p_cback;
-    void                        *p_ref;
-    tBTA_BLE_ADV_PARAMS         *p_params;
-} tBTA_DM_API_BLE_MULTI_ADV_ENB;
-
-typedef struct {
-    BT_HDR                      hdr;
-    UINT8                        inst_id;
-    tBTA_BLE_ADV_PARAMS         *p_params;
-} tBTA_DM_API_BLE_MULTI_ADV_PARAM;
-
-typedef struct {
-    BT_HDR                  hdr;
-    UINT8                   inst_id;
-    BOOLEAN                 is_scan_rsp;
-    tBTA_BLE_AD_MASK        data_mask;
-    tBTA_BLE_ADV_DATA      *p_data;
-} tBTA_DM_API_BLE_MULTI_ADV_DATA;
-
-typedef struct {
-    BT_HDR                  hdr;
-    UINT8                   inst_id;
-} tBTA_DM_API_BLE_MULTI_ADV_DISABLE;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-
 typedef struct {
     BT_HDR                  hdr;
     UINT32                  data_mask;
@@ -1015,59 +911,6 @@ typedef struct {
     UINT32                  raw_adv_len;
     tBTA_SET_ADV_DATA_CMPL_CBACK    *p_adv_data_cback;
 } tBTA_DM_API_SET_ADV_CONFIG_RAW;
-
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    UINT8                   batch_scan_full_max;
-    UINT8                   batch_scan_trunc_max;
-    UINT8                   batch_scan_notify_threshold;
-    tBTA_BLE_SCAN_SETUP_CBACK *p_setup_cback;
-    tBTA_BLE_SCAN_THRESHOLD_CBACK *p_thres_cback;
-    tBTA_BLE_SCAN_REP_CBACK *p_read_rep_cback;
-    tBTA_DM_BLE_REF_VALUE    ref_value;
-} tBTA_DM_API_SET_STORAGE_CONFIG;
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_BLE_BATCH_SCAN_MODE  scan_mode;
-    UINT32                  scan_int;
-    UINT32                  scan_window;
-    tBTA_BLE_DISCARD_RULE   discard_rule;
-    tBLE_ADDR_TYPE          addr_type;
-    tBTA_DM_BLE_REF_VALUE   ref_value;
-} tBTA_DM_API_ENABLE_SCAN;
-
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_DM_BLE_REF_VALUE    ref_value;
-} tBTA_DM_API_DISABLE_SCAN;
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_BLE_BATCH_SCAN_MODE scan_type;
-    tBTA_DM_BLE_REF_VALUE    ref_value;
-} tBTA_DM_API_READ_SCAN_REPORTS;
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_DM_BLE_REF_VALUE ref_value;
-    tBTA_BLE_TRACK_ADV_CBACK *p_track_adv_cback;
-} tBTA_DM_API_TRACK_ADVERTISER;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_BLE_ENERGY_INFO_CBACK *p_energy_info_cback;
-} tBTA_DM_API_ENERGY_INFO;
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 typedef struct {
     BT_HDR      hdr;
@@ -1349,26 +1192,6 @@ typedef struct {
 
 #endif /* BLE_INCLUDED */
 
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-/* data type for BTA_DM_API_REMOVE_ACL_EVT */
-typedef struct {
-    BT_HDR      hdr;
-    BD_ADDR     bd_addr;
-    BOOLEAN     remove_dev;
-    tBTA_TRANSPORT transport;
-
-} tBTA_DM_API_REMOVE_ACL;
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-/* data type for BTA_DM_API_REMOVE_ALL_ACL_EVT */
-typedef struct {
-    BT_HDR      hdr;
-    tBTA_DM_LINK_TYPE link_type;
-
-} tBTA_DM_API_REMOVE_ALL_ACL;
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     bd_addr;
@@ -1377,35 +1200,6 @@ typedef struct {
     UINT16      latency;
     UINT16      timeout;
 } tBTA_DM_API_UPDATE_CONN_PARAM;
-
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-typedef struct {
-    BT_HDR                          hdr;
-    tBTA_DM_BLE_SCAN_COND_OP        action;
-    tBTA_DM_BLE_PF_COND_TYPE        cond_type;
-    tBTA_DM_BLE_PF_FILT_INDEX       filt_index;
-    tBTA_DM_BLE_PF_COND_PARAM       *p_cond_param;
-    tBTA_DM_BLE_PF_CFG_CBACK      *p_filt_cfg_cback;
-    tBTA_DM_BLE_REF_VALUE            ref_value;
-} tBTA_DM_API_CFG_FILTER_COND;
-
-typedef struct {
-    BT_HDR                          hdr;
-    UINT8                           action;
-    tBTA_DM_BLE_PF_STATUS_CBACK    *p_filt_status_cback;
-    tBTA_DM_BLE_REF_VALUE            ref_value;
-} tBTA_DM_API_ENABLE_SCAN_FILTER;
-
-typedef struct {
-    BT_HDR                          hdr;
-    UINT8                           action;
-    tBTA_DM_BLE_PF_FILT_INDEX       filt_index;
-    tBTA_DM_BLE_PF_FILT_PARAMS      filt_params;
-    tBLE_BD_ADDR                    *p_target;
-    tBTA_DM_BLE_PF_PARAM_CBACK      *p_filt_param_cback;
-    tBTA_DM_BLE_REF_VALUE            ref_value;
-} tBTA_DM_API_SCAN_FILTER_PARAM_SETUP;
-#endif
 
 #if (BLE_50_DTM_TEST_EN == TRUE)
 typedef struct {
@@ -1815,12 +1609,14 @@ typedef union {
     tBTA_DM_API_CFG_COEX_STATUS cfg_coex_status;
 #endif
     tBTA_DM_API_SEND_VENDOR_HCI_CMD vendor_hci_cmd;
+#if CLASSIC_BT_INCLUDED
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
     tBTA_DM_API_PAGE_TO_SET set_page_timeout;
     tBTA_DM_API_PAGE_TO_GET get_page_timeout;
     tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
+#endif /* CLASSIC_BT_INCLUDED */
 #if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
     tBTA_DM_API_SET_MIN_ENC_KEY_SIZE set_min_enc_key_size;
 #endif
@@ -1831,9 +1627,6 @@ typedef union {
 #if (BLE_INCLUDED == TRUE)
     tBTA_DM_API_BLE_SET_CHANNELS  ble_set_channels;
     tBTA_DM_API_UPDATE_WHITE_LIST white_list;
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-    tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 #endif  ///BLE_INCLUDED == TRUE
     tBTA_DM_API_READ_RSSI rssi;
 
@@ -1886,9 +1679,6 @@ typedef union {
 #endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 
     tBTA_DM_API_DI_DISC     di_disc;
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-    tBTA_DM_API_EXECUTE_CBACK exec_cback;
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
     tBTA_DM_API_SET_ENCRYPTION     set_encryption;
 
 #if BLE_INCLUDED == TRUE
@@ -1899,12 +1689,6 @@ typedef union {
     tBTA_DM_API_BLE_SEC_GRANT           ble_sec_grant;
     tBTA_DM_API_BLE_SET_BG_CONN_TYPE    ble_set_bd_conn_type;
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-    tBTA_DM_API_BLE_CONN_SCAN_PARAMS    ble_set_conn_scan_params;
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
-    tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
-#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS  ble_set_scan_fil_params;
     tBTA_DM_API_BLE_OBSERVE             ble_observe;
     tBTA_DM_API_BLE_SCAN                ble_scan;
@@ -1917,44 +1701,16 @@ typedef union {
     tBTA_DM_API_BLE_ADV_PARAMS_ALL      ble_set_adv_params_all;
     tBTA_DM_API_SET_ADV_CONFIG          ble_set_adv_data;
     tBTA_DM_API_SET_ADV_CONFIG_RAW      ble_set_adv_data_raw;
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    tBTA_DM_API_SCAN_FILTER_PARAM_SETUP ble_scan_filt_param_setup;
-    tBTA_DM_API_CFG_FILTER_COND         ble_cfg_filter_cond;
-    tBTA_DM_API_ENABLE_SCAN_FILTER      ble_enable_scan_filt;
-#endif
     tBTA_DM_API_UPDATE_CONN_PARAM       ble_update_conn_params;
     tBTA_DM_API_BLE_SET_DATA_LENGTH     ble_set_data_length;
     tBTA_DM_APT_SET_DEV_ADDR            set_addr;
     tBTA_DM_APT_CLEAR_ADDR              clear_addr;
     tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
     tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST add_dev_to_resolving_list;
-
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    tBTA_DM_API_BLE_MULTI_ADV_ENB       ble_multi_adv_enb;
-    tBTA_DM_API_BLE_MULTI_ADV_PARAM     ble_multi_adv_param;
-    tBTA_DM_API_BLE_MULTI_ADV_DATA      ble_multi_adv_data;
-    tBTA_DM_API_BLE_MULTI_ADV_DISABLE   ble_multi_adv_disable;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-    tBTA_DM_API_SET_STORAGE_CONFIG      ble_set_storage;
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    tBTA_DM_API_ENABLE_SCAN             ble_enable_scan;
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-    tBTA_DM_API_READ_SCAN_REPORTS       ble_read_reports;
-#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    tBTA_DM_API_DISABLE_SCAN            ble_disable_scan;
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    tBTA_DM_API_TRACK_ADVERTISER        ble_track_advert;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    tBTA_DM_API_ENERGY_INFO             ble_energy_info;
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     tBTA_DM_API_BLE_DISCONNECT          ble_disconnect;
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST ble_duplicate_exceptional_list;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTA_DM_API_READ_PHY                ble_read_phy;
     tBTA_DM_API_SET_PER_DEF_PHY         ble_set_per_def_phy;
@@ -2006,13 +1762,6 @@ typedef union {
     tBTA_DM_API_BLE_SET_CSA_SUPPORT ble_set_csa_support;
     tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK ble_set_vendor_evt_mask;
 #endif
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-    tBTA_DM_API_REMOVE_ACL              remove_acl;
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-    tBTA_DM_API_REMOVE_ALL_ACL          remove_all_acl;
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
     tBTA_DM_API_BIG_CREATE              big_creat;
@@ -2197,24 +1946,9 @@ typedef struct {
     BOOLEAN                     is_bta_dm_active;
     tBTA_DM_ACTIVE_LINK         device_list;
     tBTA_DM_SEC_CBACK           *p_sec_cback;
-#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
-    tBTA_BLE_SCAN_SETUP_CBACK   *p_setup_cback;
-    tBTA_DM_BLE_PF_CFG_CBACK     *p_scan_filt_cfg_cback;
-    tBTA_DM_BLE_PF_STATUS_CBACK  *p_scan_filt_status_cback;
-    tBTA_DM_BLE_PF_PARAM_CBACK   *p_scan_filt_param_cback;
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-    tBTA_BLE_MULTI_ADV_CBACK     *p_multi_adv_cback;
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    tBTA_BLE_ENERGY_INFO_CBACK   *p_energy_info_cback;
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-#endif
     UINT16                      state;
     BOOLEAN                     disabling;
     TIMER_LIST_ENT              disable_timer;
-    UINT32                      wbt_sdp_handle;          /* WIDCOMM Extensions SDP record handle */
-    UINT8                       wbt_scn;                 /* WIDCOMM Extensions SCN */
-    UINT8                       num_master_only;
 #if (BTA_DM_PM_INCLUDED == TRUE)
     UINT8                       pm_id;
     tBTA_PM_TIMER               pm_timer[BTA_DM_NUM_PM_TIMER];
@@ -2222,7 +1956,9 @@ typedef struct {
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8                       cur_av_count;       /* current AV connections */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN                     disable_pair_mode;          /* disable pair mode or not */
     BOOLEAN                     conn_paired_only;   /* allow connectable to paired device only or not */
     tBTA_DM_API_SEARCH          search_msg;
@@ -2253,7 +1989,9 @@ typedef struct {
 
 
     tBTA_DM_ENCRYPT_CBACK      *p_encrypt_cback;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     TIMER_LIST_ENT              switch_delay_timer[BTA_DM_NUM_PEER_DEVICE];
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 } tBTA_DM_CB;
 
@@ -2423,8 +2161,10 @@ extern tBTA_DM_SEARCH_CB *bta_dm_search_cb_ptr;
 #if BTA_DYNAMIC_MEMORY == FALSE
 extern tBTA_DM_DI_CB  bta_dm_di_cb;
 #else
+#if (CLASSIC_BT_INCLUDED == TRUE)
 extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 #define bta_dm_di_cb (*bta_dm_di_cb_ptr)
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 extern SemaphoreHandle_t deinit_semaphore;
 #endif
 
@@ -2501,9 +2241,6 @@ extern void bta_dm_ble_set_bg_conn_type (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
-#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
-extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 #endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
@@ -2513,9 +2250,6 @@ extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_clear_rand_address(tBTA_DM_MSG *p_data);
-#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
-extern void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 extern void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data);
 #if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
@@ -2526,16 +2260,11 @@ extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data);
-extern void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_advstop (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data);
 #if SMP_INCLUDED == TRUE
 extern void bta_dm_co_security_param_init(void);
-#endif
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-extern void bta_dm_cfg_filter_cond (tBTA_DM_MSG *p_data);
-extern void bta_dm_scan_filter_param_setup (tBTA_DM_MSG *p_data);
-extern void bta_dm_enable_scan_filter(tBTA_DM_MSG *p_data);
 #endif
 extern void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_multi_adv_data(tBTA_DM_MSG *p_data);
@@ -2567,20 +2296,7 @@ extern void bta_dm_ble_gap_set_ext_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_ext_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-extern void bta_dm_ble_setup_storage(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-extern void bta_dm_ble_enable_batch_scan(tBTA_DM_MSG *p_data);
-extern void bta_dm_ble_disable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data);
-
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-extern void bta_dm_ble_track_advertiser(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-extern void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 #endif
 extern void bta_dm_set_encryption(tBTA_DM_MSG *p_data);
@@ -2644,7 +2360,6 @@ extern void bta_dm_disable_test_mode(tBTA_DM_MSG *p_data);
 extern void bta_dm_execute_callback(tBTA_DM_MSG *p_data);
 
 
-extern void bta_dm_remove_all_acl(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data);
 

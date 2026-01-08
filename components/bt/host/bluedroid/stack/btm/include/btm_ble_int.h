@@ -331,26 +331,27 @@ typedef struct {
     **      BLE Inquiry
     *****************************************************/
     tBTM_BLE_INQ_CB inq_var;
-
-    /* observer callback and timer */
-    tBTM_INQ_RESULTS_CB *p_obs_results_cb;
-    tBTM_CMPL_CB *p_obs_cmpl_cb;
+#if (BLE_42_SCAN_EN == TRUE)
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    // /* observer callback and timer */
     tBTM_INQ_DIS_CB *p_obs_discard_cb;
-    TIMER_LIST_ENT obs_timer_ent;
-
+#endif // (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     /* scan callback and timer */
     tBTM_INQ_RESULTS_CB *p_scan_results_cb;
     tBTM_CMPL_CB *p_scan_cmpl_cb;
     TIMER_LIST_ENT scan_timer_ent;
-#if (BLE_42_SCAN_EN == TRUE)
     struct pkt_queue *adv_rpt_queue;
     struct osi_event *adv_rpt_ready;
 #endif // #if (BLE_42_SCAN_EN == TRUE)
+#if (BLE_GATT_BGCONN == TRUE)
     /* background connection procedure cb value */
     tBTM_BLE_CONN_TYPE bg_conn_type;
+#endif // (BLE_GATT_BGCONN == TRUE)
     UINT32 scan_int;
     UINT32 scan_win;
+#if (BLE_GATT_BGCONN == TRUE)
     tBTM_BLE_SEL_CBACK *p_select_cback;
+#endif // (BLE_GATT_BGCONN == TRUE)
     /* white list information */
     UINT8 white_list_avail_size;
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
@@ -380,12 +381,18 @@ typedef struct {
 
     tBTM_BLE_WL_OP wl_op_q[BTM_BLE_MAX_BG_CONN_DEV_NUM];
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     /* current BLE link state */
     tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
     UINT8 link_count[2]; /* total link count master and slave*/
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *update_exceptional_list_cmp_cb;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
+#if (BLE_VENDOR_HCI_EN == TRUE)
     tBTM_SET_CSA_SUPPORT_CMPL_CBACK *set_csa_support_cmpl_cb;
     tBTM_SET_VENDOR_EVT_MASK_CBACK *set_vendor_evt_mask_cmpl_cb;
+#endif // (BLE_VENDOR_HCI_EN == TRUE)
 } tBTM_BLE_CB;
 
 #ifdef __cplusplus
@@ -406,12 +413,9 @@ BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda);
 
 tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode);
 tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode);
-tBTM_STATUS btm_ble_start_inquiry (UINT8 mode, UINT8   duration);
 void btm_ble_stop_scan(void);
 void btm_clear_all_pending_le_entry(void);
 
-BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int, UINT32 scan_win, UINT8 addr_type_own, UINT8 scan_filter_policy);
-void btm_ble_stop_inquiry(void);
 void btm_ble_init (void);
 void btm_ble_free (void);
 void btm_ble_connected (UINT8 *bda, UINT16 handle, UINT8 enc_mode, UINT8 role, tBLE_ADDR_TYPE addr_type, BOOLEAN addr_matched);
@@ -470,11 +474,11 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_clear_white_list_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_white_list_init(UINT8 white_list_size);
 
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
 /* background connection function */
 BOOLEAN btm_ble_suspend_bg_conn(void);
 BOOLEAN btm_ble_resume_bg_conn(void);
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 void btm_ble_initiate_select_conn(BD_ADDR bda);
 BOOLEAN btm_ble_start_auto_conn(BOOLEAN start);
@@ -518,23 +522,13 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
-#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
-void btm_ble_multi_adv_configure_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst);
-void btm_ble_multi_adv_init(void);
-void *btm_ble_multi_adv_get_ref(UINT8 inst_id);
-void btm_ble_multi_adv_cleanup(void);
-void btm_ble_multi_adv_reenable(UINT8 inst_id);
-void btm_ble_multi_adv_enb_privacy(BOOLEAN enable);
-#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 char btm_ble_map_adv_tx_power(int tx_power_index);
-void btm_ble_batchscan_init(void);
-void btm_ble_batchscan_cleanup(void);
-void btm_ble_adv_filter_init(void);
-void btm_ble_adv_filter_cleanup(void);
+#if (BLE_TOPOLOGY_CHECK == TRUE)
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 BOOLEAN btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
 tBTM_BLE_STATE_MASK btm_ble_get_topology_mask(void);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
 #if BTM_BLE_CONFORMANCE_TESTING == TRUE
 void btm_ble_set_no_disc_if_pair_fail (BOOLEAN disble_disc);

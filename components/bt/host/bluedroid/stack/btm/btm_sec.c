@@ -211,7 +211,7 @@ static BOOLEAN btm_serv_trusted(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_SEC_SERV_REC *
     }
     return (FALSE);
 }
-#endif  ///SMP_INCLUDED == TRUE
+
 /*******************************************************************************
 **
 ** Function         BTM_SecRegister
@@ -274,6 +274,7 @@ BOOLEAN BTM_SecRegisterLinkKeyNotificationCallback (tBTM_LINK_KEY_CALLBACK *p_ca
     btm_cb.api.p_link_key_callback = p_callback;
     return TRUE;
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -410,6 +411,7 @@ void BTM_SetPinType (UINT8 pin_type, PIN_CODE pin_code, UINT8 pin_code_len)
 }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_SetPairableMode
@@ -455,6 +457,8 @@ void BTM_SetSecureConnectionsOnly (BOOLEAN secure_connections_only_mode)
     btm_cb.devcb.secure_connections_only = secure_connections_only_mode;
     btm_cb.security_mode = BTM_SEC_MODE_SC;
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
 #define BTM_NO_AVAIL_SEC_SERVICES   ((UINT16) 0xffff)
 
 /*******************************************************************************
@@ -2641,6 +2645,7 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
 void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
 {
@@ -2701,7 +2706,7 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_sec_bond_cancel_complete
@@ -2778,10 +2783,12 @@ void btm_create_conn_cancel_complete (UINT8 *p, UINT16 evt_len)
     case HCI_ERR_CONNECTION_EXISTS:
     case HCI_ERR_NO_CONNECTION:
     default:
+#if (SMP_INCLUDED == TRUE)
         /* Notify application of the error */
         if (btm_cb.api.p_bond_cancel_cmpl_callback) {
             btm_cb.api.p_bond_cancel_cmpl_callback(BTM_ERR_PROCESSING);
         }
+#endif // #if (SMP_INCLUDED == TRUE)
         break;
     }
 }
@@ -3007,7 +3014,9 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete\n");
     if (((p_bd_addr == NULL) && !BTM_ACL_IS_CONNECTED(btm_cb.connecting_bda))
             || ((p_bd_addr != NULL) && !BTM_ACL_IS_CONNECTED(p_bd_addr))) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_acl_resubmit_page();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 
     /* If remote name request failed, p_bd_addr is null and we need to search */
@@ -4303,8 +4312,9 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     BOOLEAN          is_pairing_device = FALSE;
     tACL_CONN        *p_acl_cb;
     UINT8            bit_shift = 0;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_resubmit_page();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
 
@@ -4545,10 +4555,11 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
         /* commands events and data at the same time. */
         /* Set the packet types to the default allowed by the device */
         btm_set_packet_types (p_acl_cb, btm_cb.btm_acl_pkt_types_supported);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         if (btm_cb.btm_def_link_policy) {
             BTM_SetLinkPolicy (p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif
     }
     btm_acl_created (bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle, HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
@@ -4635,10 +4646,10 @@ BOOLEAN btm_sec_disconnected (UINT16 handle, UINT8 reason)
     tBTM_SEC_CALLBACK   *p_callback = NULL;
     tBT_TRANSPORT      transport = BT_TRANSPORT_BR_EDR;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If page was delayed for disc complete, can do it now */
     btm_cb.discing = FALSE;
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_resubmit_page();
 #endif
 

@@ -1025,8 +1025,9 @@ static void btu_hcif_encryption_change_evt (UINT8 *p)
     STREAM_TO_UINT8  (status, p);
     STREAM_TO_UINT16 (handle, p);
     STREAM_TO_UINT8  (encr_enable, p);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_encrypt_change (handle, status, encr_enable);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     btm_sec_encrypt_change (handle, status, encr_enable);
 }
 #endif  ///SMP_INCLUDED == TRUE
@@ -1211,22 +1212,25 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_GET_LINK_QUALITY:
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_read_link_quality_complete (p);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_READ_LOCAL_NAME:
+#if (CLASSIC_BT_INCLUDED == TRUE)
         btm_read_local_name_complete (p, evt_len);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
     case HCI_READ_RSSI:
         btm_read_rssi_complete (p, evt_len);
         break;
     case HCI_BLE_READ_CHNL_MAP:
+#if BLE_INCLUDED == TRUE
         btm_read_channel_map_complete (p);
+#endif // #if BLE_INCLUDED == TRUE
         break;
     case HCI_READ_TRANSMIT_POWER_LEVEL:
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-        btm_read_tx_power_complete(p, evt_len, FALSE);
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
         break;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_CREATE_CONNECTION_CANCEL:
@@ -1306,9 +1310,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_BLE_READ_ADV_CHNL_TX_POWER:
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-        btm_read_tx_power_complete(p, evt_len, TRUE);
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
         break;
 #if (BLE_42_ADV_EN == TRUE)
     case HCI_BLE_WRITE_ADV_ENABLE:
@@ -1702,13 +1703,16 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 break;
 
             case HCI_QOS_SETUP_COMP_EVT:
+            #if (CLASSIC_BT_INCLUDED == TRUE)
                 /* Tell qos setup that we are done */
                 btm_qos_setup_complete(status, 0, NULL);
+            #endif // (CLASSIC_BT_INCLUDED == TRUE)
                 break;
 
             case HCI_SWITCH_ROLE:
                 /* Tell BTM that the command failed */
                 /* read bd addr out of stored command */
+            #if (CLASSIC_BT_INCLUDED == TRUE)
                 if (p_cmd != NULL) {
                     p_cmd++;
                     STREAM_TO_BDADDR (bd_addr, p_cmd);
@@ -1717,6 +1721,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                     btm_acl_role_changed(status, NULL, BTM_ROLE_UNDEFINED);
                 }
                 l2c_link_role_changed (NULL, BTM_ROLE_UNDEFINED, HCI_ERR_COMMAND_DISALLOWED);
+            #endif // (CLASSIC_BT_INCLUDED == TRUE)
                 break;
 
             case HCI_CREATE_CONNECTION:
