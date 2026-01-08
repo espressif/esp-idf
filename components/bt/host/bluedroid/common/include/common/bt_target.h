@@ -2083,7 +2083,7 @@
  * in basic and streaming modes. Range: 1 - 63
  */
 #ifndef OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR
-#define OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR       20
+#define OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR       10
 #endif
 
 /*
