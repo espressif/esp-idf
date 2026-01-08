@@ -106,6 +106,12 @@ static inline void lp_aon_ll_set_regdma_link_addr(uint32_t addr)
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, aon_link_addr_aon, addr);
 }
 
+static inline void lp_aon_ll_set_ldo_sw(uint32_t value)
+{
+    CLEAR_PERI_REG_MASK(LP_AON_DATE_REG, LP_AON_DREG_LDO_HW);
+    REG_SET_FIELD(LP_AON_DATE_REG, LP_AON_DREG_LDO_SW, value);
+}
+
 #ifdef __cplusplus
 }
 #endif

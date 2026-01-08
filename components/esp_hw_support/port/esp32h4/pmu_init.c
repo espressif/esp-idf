@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,15 +11,15 @@
 #include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/pmu_struct.h"
+#include "soc/pmu_reg.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
-#include "soc/regi2c_dcdc.h"
-#include "soc/regi2c_ulp.h"
-#include "soc/lp_aon_reg.h"
-#include "soc/rtc.h"
 #include "regi2c_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "esp_rom_sys.h"
+#include "soc/regi2c_ulp.h"
+#include "hal/lp_aon_ll.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_init";
 
@@ -121,6 +121,21 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
 
     /* set dcdc ccm mode software enable */
     pmu_ll_set_dcdc_ccm_sw_en(ctx->hal->dev, true);
+
+#if CONFIG_ESP32H4_SELECTS_REV_MP
+    /* set ble bandgap ocode */
+    uint32_t ulp_ocode = 0;
+#if !CONFIG_IDF_ENV_FPGA
+    bool ulp_force_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE);
+    if (ulp_force_flag) {
+        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_EXT_CODE);
+    } else {
+        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_OCODE);
+    }
+#endif
+    REG_SET_FIELD(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_OCODE, ulp_ocode);
+    SET_PERI_REG_MASK(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_FORCE_OCODE);
+#endif
 }
 
 void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_system_param_t *param)
@@ -233,38 +248,19 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
     }
 }
 
-uint32_t get_ulp_ocode()
-{
-    uint32_t ulp_ocode = 0;
-#if !CONFIG_IDF_ENV_FPGA
-    bool ulp_force_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE);
-    if (ulp_force_flag) {
-        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_EXT_CODE);
-    } else {
-        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_OCODE);
-    }
-#endif
-    return ulp_ocode;
-}
-
 void pmu_init(void)
 {
+    /* Peripheral reg i2c power up */
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+    regi2c_ctrl_ll_i2c_rftx_periph_enable();
+    regi2c_ctrl_ll_i2c_rfrx_periph_enable();
+
+    //Initialize hp and lp systems
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
-#if !CONFIG_IDF_ENV_FPGA
-    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_CCM_DREG0, 24);
-    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_CCM_PCUR_LIMIT0, 4);
 
-    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_VCM_DREG0, 24);
-    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_VCM_PCUR_LIMIT0, 2);
-    REGI2C_WRITE_MASK(I2C_DCDC, I2C_DCDC_XPD_TRX, 0);
-#endif
-
-    // close rfpll to decrease mslp_cur
-    REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL, 1);
-    REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_RFPLL, 0);
 
 #if !CONFIG_IDF_ENV_FPGA
     // TODO: IDF-12313
@@ -272,12 +268,4 @@ void pmu_init(void)
     //     esp_ocode_calib_init();
     // }
 #endif
-
-    uint32_t ulp_ocode = get_ulp_ocode();
-    REG_SET_FIELD(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_OCODE, ulp_ocode);
-    SET_PERI_REG_MASK(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_FORCE_OCODE);
-
-    //For dcdc ldo mode when VDD is low than about a certion value, eg 2.6v
-    CLEAR_PERI_REG_MASK(LP_AON_DATE_REG, LP_AON_DREG_LDO_HW);
-    REG_SET_FIELD(LP_AON_DATE_REG, LP_AON_DREG_LDO_SW, 15);
 }
