@@ -231,7 +231,12 @@ static const cmd_item_t *find_command_by_name(const char *name)
     return cmd;
 }
 
-esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
+esp_err_t esp_console_run(const char* cmdline, int* cmd_ret)
+{
+    return esp_console_run_with_context(cmdline, cmd_ret, NULL);
+}
+
+esp_err_t esp_console_run_with_context(const char *cmdline, int *cmd_ret, void* invocation_ctx)
 {
     if (s_tmp_line_buf == NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -257,7 +262,7 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
         *cmd_ret = (*cmd->func)(argc, argv);
     }
     if (cmd->func_w_context) {
-        *cmd_ret = (*cmd->func_w_context)(cmd->context, argc, argv);
+        *cmd_ret = (*cmd->func_w_context)(invocation_ctx ? : cmd->context, argc, argv);
     }
     free(argv);
     return ESP_OK;
