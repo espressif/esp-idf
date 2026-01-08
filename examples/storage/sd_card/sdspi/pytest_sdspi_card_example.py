@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import re
@@ -34,8 +34,8 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
         f"Read from file: 'Hello {name}!'",
     )
     sd_card_format = re.compile(str.encode('formatting drive, allocation unit size=\\S+'))
+    after_card_format = "file doesn't exist, formatting done"
     message_list2 = (
-        "file doesn't exist, formatting done",
         'Opening file /sdcard/nihao.txt',
         'File written',
         'Reading file /sdcard/nihao.txt',
@@ -45,6 +45,7 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
 
     for msg in message_list1:
         dut.expect_exact(msg, timeout=30)
-    dut.expect(sd_card_format, timeout=180)  # Provide enough time for SD card FATFS format operation
+    dut.expect(sd_card_format, timeout=10)
+    dut.expect_exact(after_card_format, timeout=180)  # Provide enough time for SD card FATFS format operation
     for msg in message_list2:
-        dut.expect_exact(msg, timeout=180)
+        dut.expect_exact(msg, timeout=30)
