@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -128,22 +128,22 @@ void app_main(void)
     s_vlan_event_group = xEventGroupCreate();
 
     static esp_vlan_netifs vlan_netif_list;
-
-    // Initialize Ethernet driver
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handle;
-    ESP_ERROR_CHECK(ethernet_init_all(&eth_handle, &eth_port_cnt));
-
-    // Check or multiple ethernet interface
-    if (1 < eth_port_cnt) {
-        ESP_LOGW(TAG, "Multiple Ethernet Interface detected: Only the first initialized interface is going to be used.");
-    }
 
     // Initialize TCP/IP network interface (should be called only once in application)
     ESP_ERROR_CHECK(esp_netif_init());
 
     // Create default event loop that running in background
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // Initialize Ethernet driver
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handle, &eth_port_cnt));
+
+    // Check or multiple ethernet interface
+    if (1 < eth_port_cnt) {
+        ESP_LOGW(TAG, "Multiple Ethernet Interface detected: Only the first initialized interface is going to be used.");
+    }
 
     // Register user defined event handlers
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
