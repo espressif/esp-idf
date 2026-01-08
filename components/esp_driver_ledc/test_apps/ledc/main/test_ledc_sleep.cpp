@@ -59,7 +59,7 @@ static void test_ledc_sleep_retention(bool allow_pd)
 
     printf("Check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_PMU_SUPPORTED && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_PMU_SUPPORTED
     // check if the TOP power domain on/off as desired
     TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
