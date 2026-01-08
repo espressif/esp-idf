@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -49,8 +49,8 @@ static SemaphoreHandle_t test_sem = NULL;
 
 esp_ble_gap_ext_adv_params_t ext_adv_params_1M = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
-    .interval_min = 0x30,
-    .interval_max = 0x30,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(30),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(30),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
@@ -64,8 +64,8 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_1M = {
 
 esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE,
-    .interval_min = 0x40,
-    .interval_max = 0x40,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(40),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(40),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
@@ -79,8 +79,8 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
 
 esp_ble_gap_ext_adv_params_t legacy_adv_params = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND,
-    .interval_min = 0x45,
-    .interval_max = 0x45,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(43),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(43),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
@@ -94,8 +94,8 @@ esp_ble_gap_ext_adv_params_t legacy_adv_params = {
 
 esp_ble_gap_ext_adv_params_t ext_adv_params_coded = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE,
-    .interval_min = 0x50,
-    .interval_max = 0x50,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(50),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(50),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
@@ -108,37 +108,37 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_coded = {
 };
 
 static uint8_t raw_adv_data_1m[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x11, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', '1', 'M'
 };
 
 static uint8_t raw_scan_rsp_data_2m[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x11, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', '2', 'M'
 };
 
 static uint8_t legacy_adv_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x14, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x14, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', 'C', 'O', 'D', 'E', 'D'
 };
 
 static uint8_t legacy_scan_rsp_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x15, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x15, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', 'L', 'E', 'G', 'A', 'C', 'Y'
 };
 
 static uint8_t raw_scan_rsp_data_coded[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x14, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x14, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', 'C', 'O', 'D', 'E', 'D'
 };
 

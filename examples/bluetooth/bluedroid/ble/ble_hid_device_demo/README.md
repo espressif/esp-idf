@@ -13,6 +13,54 @@ This example implement a BLE HID device profile related functions, in which the 
 Users can choose different reports according to their own application scenarios.
 BLE HID profile inheritance and USB HID class.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  BLE HID     │                                    │   Host       │
+    │   Device     │                                    │ (PC/Phone)   │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Initialization ───────────           │
+           │                                                   │
+           │  1. Create HID Service                            │
+           │     - HID Information Char                        │
+           │     - Report Map Char                             │
+           │     - Report Chars (Mouse/Keyboard/Consumer)      │
+           │     - HID Control Point Char                      │
+           │  2. Start Advertising                             │
+           │                                                   │
+           │  ─────────── Connection & Pairing ───────────     │
+           │                                                   │
+           │                           Scan & Connect          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Pairing (Bonding)                                │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  Enable Report Notification                       │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── HID Data Transfer ───────────        │
+           │                                                   │
+           │  Send Keyboard Report                             │
+           │  (Key Press/Release)                              │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  Send Mouse Report                                │
+           │  (X/Y Movement, Buttons)                          │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  Send Consumer Report                             │
+           │  (Volume +/-, Media Control)                      │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  BLE HID     │                                    │    Host      │
+    │   Device     │                                    │ (PC/Phone)   │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

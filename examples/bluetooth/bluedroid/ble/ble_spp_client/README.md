@@ -9,6 +9,71 @@
 
   This vendor-specific custom profile is implemented in [spp_client_demo.c](../ble_spp_client/main/spp_client_demo.c) and [spp_server_demo.c](../ble_spp_server/main/ble_spp_server_demo.c).
 
+## Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        BLE SPP Data Flow                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   SPP Client                                              SPP Server
+ ┌───────────┐                                           ┌───────────┐
+ │   UART    │                                           │   UART    │
+ │ Terminal  │                                           │ Terminal  │
+ └─────┬─────┘                                           └─────┬─────┘
+       │                                                       │
+       ▼                                                       ▼
+ ┌───────────┐                                           ┌───────────┐
+ │ uart_task │                                           │ uart_task │
+ └─────┬─────┘                                           └─────┬─────┘
+       │                                                       │
+       │  ─────────── Connection Phase ───────────             │
+       │                                                       │
+       │  1. Scan for SPP Server                               │  Advertising
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  2. Connect                                           │
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  3. MTU Exchange (200 bytes)                          │
+       │ <────────────────────────────────────────────────────>│
+       │                                                       │
+       │  4. Service Discovery                                 │
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  5. Enable Notification (CCCD)                        │
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  ─────────── Data Exchange ───────────                │
+       │                                                       │
+       │  UART Input ──> WriteNoRsp (SPP_DATA_RECV_CHAR)       │
+       │ ───────────────────────────────────────────────────>  │──> UART Output
+       │                                                       │
+       │  UART Output <── Notification (SPP_DATA_NOTIFY_CHAR)  │
+       │ <───────────────────────────────────────────────────  │<── UART Input
+       │                                                       │
+ ┌─────┴─────┐                                           ┌─────┴─────┐
+ │ SPP Client│                                           │SPP Server │
+ └───────────┘                                           └───────────┘
+
+
+                    ┌─────────────────────────────────┐
+                    │       SPP Characteristics       │
+                    ├─────────────────────────────────┤
+                    │  SPP_DATA_RECV (0xABF1)         │
+                    │    - Client writes data here   │
+                    │                                 │
+                    │  SPP_DATA_NOTIFY (0xABF2)       │
+                    │    - Server sends data here    │
+                    │                                 │
+                    │  SPP_COMMAND (0xABF3)           │
+                    │    - Command channel           │
+                    │                                 │
+                    │  SPP_STATUS (0xABF4)            │
+                    │    - Status notification       │
+                    └─────────────────────────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

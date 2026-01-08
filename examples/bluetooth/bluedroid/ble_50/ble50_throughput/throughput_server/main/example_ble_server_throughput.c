@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -98,12 +98,12 @@ static esp_attr_value_t gatts_demo_char1_val =
 };
 
 static uint8_t ext_adv_raw_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x03, 0x03, 0xab, 0xcd,
-        0x11, 0x07, 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xEE, 0x00, 0x00, 0x00,
-        0x11, 0x07, 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00,
-        0x14, 0X09, 'T', 'H', 'R', 'O', 'U', 'G', 'H', 'P', 'U', 'T', '_', 'P', 'H', 'Y', '_', 'D', 'E', 'M', 'O',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xab, 0xcd,
+        0x11, ESP_BLE_AD_TYPE_128SRV_CMPL, 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xEE, 0x00, 0x00, 0x00,
+        0x11, ESP_BLE_AD_TYPE_128SRV_CMPL, 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00,
+        0x14, ESP_BLE_AD_TYPE_NAME_CMPL, 'T', 'H', 'R', 'O', 'U', 'G', 'H', 'P', 'U', 'T', '_', 'P', 'H', 'Y', '_', 'D', 'E', 'M', 'O',
 };
 
 static esp_ble_gap_ext_adv_t ext_adv[1] = {
@@ -112,8 +112,8 @@ static esp_ble_gap_ext_adv_t ext_adv[1] = {
 
 esp_ble_gap_ext_adv_params_t ext_adv_params = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
-    .interval_min = 0x20,
-    .interval_max = 0x20,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(20),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
