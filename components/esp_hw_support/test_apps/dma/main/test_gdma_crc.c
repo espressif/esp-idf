@@ -70,10 +70,10 @@ static void test_gdma_crc_calculation(gdma_channel_handle_t tx_chan, int test_nu
 
     uint32_t crc_result = 0;
 
-    static const char test_input_string[] __attribute__((aligned(GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT)))) = "GDMACRC Share::Connect::Innovate";
+    static const char test_input_string[] __attribute__((aligned(GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT))) = "GDMACRC Share::Connect::Innovate";
     size_t input_data_size = strlen(test_input_string);
 
-    TEST_ASSERT_EQUAL((uintptr_t)test_input_string % GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT), 0);
+    TEST_ASSERT_EQUAL((uintptr_t)test_input_string % GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT, 0);
     // this test case also test the GDMA can fetch data from MSPI Flash
     TEST_ASSERT_TRUE(esp_ptr_in_drom(test_input_string));
     printf("Calculate CRC value for string: \"%s\"\r\n", test_input_string);
