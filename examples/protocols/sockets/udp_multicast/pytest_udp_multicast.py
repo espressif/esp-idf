@@ -11,7 +11,6 @@ import netifaces
 import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
-from pytest_embedded_idf.utils import idf_parametrize
 
 PORT = 3333
 IPV6_REGEX = (
@@ -156,10 +155,12 @@ def test_examples_udp_multicast_proto(dut: Dut, ip_version: str = 'ipv4', nic: s
     sock.close()
 
 
-@pytest.mark.eth_ip101
-@idf_parametrize(
-    'target',
-    ['esp32', 'esp32p4'],
+@pytest.mark.parametrize(
+    'config, target',
+    [
+        pytest.param('default', 'esp32', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+    ],
     indirect=['target'],
 )
 def test_examples_udp_multicast(dut: Dut) -> None:
