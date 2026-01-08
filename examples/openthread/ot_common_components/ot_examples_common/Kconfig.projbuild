@@ -9,6 +9,16 @@ menu "Config for OpenThread Examples"
             If enabled, the Openthread Device will create or connect to Thread network with pre-configured
             network parameters automatically. Otherwise, user need to configure Thread via CLI command manually.
 
+    menu "External Console Commands"
+        config OPENTHREAD_IPERF_CMD_ENABLE
+            bool "Enable iperf command"
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default y
+            help
+                If enabled, iperf will be registered and available as a console command.
+                This allows network performance testing using iperf over the Thread network.
+    endmenu # External Console Commands
+
     menu "External coexist wire type and pin config"
         depends on ESP_COEX_EXTERNAL_COEXIST_ENABLE
 
