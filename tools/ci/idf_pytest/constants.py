@@ -150,6 +150,7 @@ ENV_MARKERS = {
     'esp32c2eco4': 'esp32c2 major version(v2.0) chips',
     'recovery_bootloader': 'Runner with recovery bootloader offset set in eFuse',
     'esp32p4_eco4': 'Runner with esp32p4 eco4 connected',
+    'esp32c5_eco3': 'Runner with esp32c5 eco3 connected',
 }
 
 # by default the timeout is 1h, for some special cases we need to extend it
