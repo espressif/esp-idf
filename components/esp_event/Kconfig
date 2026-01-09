@@ -44,4 +44,17 @@ menu "Event Loop Library"
             Enable posting events from interrupt handlers placed in IRAM. Enabling this option places API functions
             esp_event_post and esp_event_post_to in IRAM.
 
+    config ESP_EVENT_LOOP_IN_EXT_RAM
+        bool "Place event loop related allocations in external RAM"
+        default n
+        depends on SPIRAM
+        depends on FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+        help
+            When this configuration is enabled, the event loop will place all of its
+            event loop related allocations in external RAM.
+
+            Note that when CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR is enabled, queue related
+            allocations will still be placed in internal RAM to ensure that posting events
+            from IRAM ISR works correctly.
+
 endmenu

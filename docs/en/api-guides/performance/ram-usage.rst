@@ -193,6 +193,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
     - Disable :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM` if no ISRs that run while cache is disabled (i.e. IRAM ISRs) use libc lock APIs.
     :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - Disable :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` to save approximately 1000 bytes of IRAM, at the cost of reduced performance.
+    :SOC_SPIRAM_SUPPORTED: - Enable :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM` to force esp_event to place event loop related allocations in external RAM instead of internal RAM.
 
 .. only:: esp32
 

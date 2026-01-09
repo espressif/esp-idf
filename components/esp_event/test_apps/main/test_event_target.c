@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -23,6 +23,7 @@
 
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "soc/soc_memory_layout.h"
 
 #include "sdkconfig.h"
 #include "unity.h"
@@ -618,7 +619,7 @@ static void performance_test(bool dedicated_task)
     int average = (int)(running_sum / (running_count));
 
     if (!dedicated_task) {
-        ((esp_event_loop_instance_t*) loop)->task = mtask;
+        vTaskDelete(mtask);
     }
 
     TEST_ESP_OK(esp_event_loop_delete(loop));
@@ -761,3 +762,65 @@ TEST_CASE("can post events from interrupt handler", "[event][intr]")
 }
 
 #endif // CONFIG_ESP_EVENT_POST_FROM_ISR
+
+#if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && CONFIG_SPIRAM
+TEST_CASE("event loop structures are allocated in external RAM", "[event][ext_ram]")
+{
+    esp_event_loop_handle_t loop;
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+
+    loop_args.task_name = "test_loop";
+    TEST_ESP_OK(esp_event_loop_create(&loop_args, &loop));
+
+    esp_event_loop_instance_t* loop_inst = (esp_event_loop_instance_t*) loop;
+
+    // Verify that the loop structure itself is in external RAM
+    TEST_ASSERT_TRUE(esp_ptr_external_ram(loop_inst));
+
+    // Verify that the queue handle is valid
+    // Note: With xQueueCreateWithCaps(MALLOC_CAP_SPIRAM), the queue internals (buffer and storage)
+    // are allocated in external RAM, but we cannot directly access them for verification.
+    // The queue is only created with SPIRAM when CONFIG_ESP_EVENT_POST_FROM_ISR is disabled.
+    TEST_ASSERT_NOT_NULL(loop_inst->queue);
+
+    // Verify that the task handle is valid
+    // The task stack is allocated in external RAM via xTaskCreatePinnedToCoreWithCaps
+    TEST_ASSERT_NOT_NULL(loop_inst->task);
+
+    // Register a handler and verify handler structures are in external RAM
+    int handler_called = 0;
+    simple_arg_t arg = {
+        .data = &handler_called,
+        .mutex = xSemaphoreCreateMutex()  // Mutex must be in internal RAM
+    };
+
+    esp_event_handler_instance_t ctx;
+    TEST_ESP_OK(esp_event_handler_instance_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1,
+                                                         test_event_simple_handler, &arg, &ctx));
+
+    // Verify handler context is in external RAM (allocated with esp_event_calloc)
+    TEST_ASSERT_NOT_NULL(ctx);
+    TEST_ASSERT_TRUE(esp_ptr_external_ram(ctx));
+
+    // Post an event and verify queue functionality
+    TEST_ESP_OK(esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+
+    vTaskDelay(pdMS_TO_TICKS(100)); // Give time for event to be processed
+
+    TEST_ASSERT_EQUAL(1, handler_called);
+
+    // Post again to verify the queue (with internal structures in external RAM) is working correctly
+    TEST_ESP_OK(esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    TEST_ASSERT_EQUAL(2, handler_called);
+
+    // Cleanup
+    TEST_ESP_OK(esp_event_handler_instance_unregister_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, ctx));
+    TEST_ESP_OK(esp_event_loop_delete(loop));
+    vSemaphoreDelete(arg.mutex);
+
+    vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_TEARDOWN_WAIT));
+}
+#endif // CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && CONFIG_SPIRAM

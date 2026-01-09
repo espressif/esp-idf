@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 
 #include "esp_event.h"
 #include "esp_event_internal.h"
@@ -48,6 +50,17 @@ static portMUX_TYPE s_event_loops_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #endif
 
 /* ------------------------- Static Functions ------------------------------- */
+
+FORCE_INLINE_ATTR void *esp_event_calloc(size_t n, size_t size)
+{
+    uint32_t caps = MALLOC_CAP_DEFAULT;
+    /* to enable this config, SPIRAM has to be enabled too,
+     * which ensure that a heap in external RAM exists */
+#if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM
+    caps = MALLOC_CAP_SPIRAM;
+#endif
+    return heap_caps_calloc(n, size, caps);
+}
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 
@@ -148,13 +161,13 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_n
 
 static esp_err_t handler_instances_add(esp_event_handler_nodes_t* handlers, esp_event_handler_t event_handler, void* event_handler_arg, esp_event_handler_instance_context_t **handler_ctx, bool legacy)
 {
-    esp_event_handler_node_t *handler_instance = calloc(1, sizeof(*handler_instance));
+    esp_event_handler_node_t *handler_instance = esp_event_calloc(1, sizeof(*handler_instance));
 
     if (!handler_instance) {
         return ESP_ERR_NO_MEM;
     }
 
-    esp_event_handler_instance_context_t *context = calloc(1, sizeof(*context));
+    esp_event_handler_instance_context_t *context = esp_event_calloc(1, sizeof(*context));
 
     if (!context) {
         free(handler_instance);
@@ -216,7 +229,7 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node,
         }
 
         if (!last_id_node || !id_node) {
-            id_node = (esp_event_id_node_t*) calloc(1, sizeof(*id_node));
+            id_node = (esp_event_id_node_t*) esp_event_calloc(1, sizeof(*id_node));
 
             if (!id_node) {
                 ESP_LOGE(TAG, "alloc for new id node failed");
@@ -271,7 +284,7 @@ static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node,
                 !base_node ||
                 (base_node && !SLIST_EMPTY(&(base_node->id_nodes)) && id == ESP_EVENT_ANY_ID) ||
                 (last_base_node && last_base_node->base != base && !SLIST_EMPTY(&(last_base_node->id_nodes)) && id == ESP_EVENT_ANY_ID)) {
-            base_node = (esp_event_base_node_t*) calloc(1, sizeof(*base_node));
+            base_node = (esp_event_base_node_t*) esp_event_calloc(1, sizeof(*base_node));
 
             if (!base_node) {
                 ESP_LOGE(TAG, "alloc mem for new base node failed");
@@ -524,7 +537,7 @@ static esp_err_t find_and_unregister_handler(esp_event_remove_handler_context_t*
     handler_to_unregister->unregistered = true;
     if (ctx->legacy) {
         /* in case of legacy code, we have to copy the handler_ctx content since it was created in the calling function */
-        esp_event_handler_instance_context_t *handler_ctx_copy = calloc(1, sizeof(esp_event_handler_instance_context_t));
+        esp_event_handler_instance_context_t *handler_ctx_copy = esp_event_calloc(1, sizeof(esp_event_handler_instance_context_t));
         if (!handler_ctx_copy) {
             return ESP_ERR_NO_MEM;
         }
@@ -552,13 +565,17 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     esp_event_loop_instance_t* loop;
     esp_err_t err = ESP_ERR_NO_MEM; // most likely error
 
-    loop = calloc(1, sizeof(*loop));
+    loop = esp_event_calloc(1, sizeof(*loop));
     if (loop == NULL) {
         ESP_LOGE(TAG, "alloc for event loop failed");
         return err;
     }
 
+#if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && !CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+    loop->queue = xQueueCreateWithCaps(event_loop_args->queue_size, sizeof(esp_event_post_instance_t), MALLOC_CAP_SPIRAM);
+#else
     loop->queue = xQueueCreate(event_loop_args->queue_size, sizeof(esp_event_post_instance_t));
+#endif // CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && !CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
     if (loop->queue == NULL) {
         ESP_LOGE(TAG, "create event loop queue failed");
         goto on_err;
@@ -574,9 +591,24 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
 
     // Create the loop task if requested
     if (event_loop_args->task_name != NULL) {
-        BaseType_t task_created = xTaskCreatePinnedToCore(esp_event_loop_run_task, event_loop_args->task_name,
-                                                          event_loop_args->task_stack_size, (void*) loop,
-                                                          event_loop_args->task_priority, &(loop->task), event_loop_args->task_core_id);
+#if !CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM
+        BaseType_t task_created = xTaskCreatePinnedToCore(esp_event_loop_run_task,
+                                                          event_loop_args->task_name,
+                                                          event_loop_args->task_stack_size,
+                                                          (void*) loop,
+                                                          event_loop_args->task_priority,
+                                                          &(loop->task),
+                                                          event_loop_args->task_core_id);
+#else
+        BaseType_t task_created = xTaskCreatePinnedToCoreWithCaps(esp_event_loop_run_task,
+                                                                  event_loop_args->task_name,
+                                                                  event_loop_args->task_stack_size,
+                                                                  (void*) loop,
+                                                                  event_loop_args->task_priority,
+                                                                  &(loop->task),
+                                                                  event_loop_args->task_core_id,
+                                                                  MALLOC_CAP_SPIRAM);
+#endif // !CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM
 
         if (task_created != pdPASS) {
             ESP_LOGE(TAG, "create task for loop failed");
@@ -608,7 +640,11 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
 
 on_err:
     if (loop->queue != NULL) {
+#if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && !CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+        vQueueDeleteWithCaps(loop->queue);
+#else
         vQueueDelete(loop->queue);
+#endif
     }
 
     if (loop->mutex != NULL) {
@@ -753,7 +789,12 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
 
     // Delete the task if it was created
     if (loop->task != NULL) {
+#if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM
+        vTaskDeleteWithCaps(loop->task);
+#else
         vTaskDelete(loop->task);
+#endif
+        loop->task = NULL;
     }
 
     // Remove all registered events and handlers in the loop
@@ -771,7 +812,11 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     }
 
     // Cleanup loop
+#if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && !CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+    vQueueDeleteWithCaps(loop->queue);
+#else
     vQueueDelete(loop->queue);
+#endif
     free(loop);
     // Free loop mutex before deleting
     xSemaphoreGiveRecursive(loop_mutex);
@@ -812,7 +857,7 @@ esp_err_t esp_event_handler_register_with_internal(esp_event_loop_handle_t event
 
     if (!last_loop_node ||
             (last_loop_node && !SLIST_EMPTY(&(last_loop_node->base_nodes)) && is_loop_level_handler)) {
-        loop_node = (esp_event_loop_node_t*) calloc(1, sizeof(*loop_node));
+        loop_node = (esp_event_loop_node_t*) esp_event_calloc(1, sizeof(*loop_node));
 
         if (!loop_node) {
             ESP_LOGE(TAG, "alloc for new loop node failed");
@@ -938,7 +983,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
         post.data_set = true;
 #else // !CONFIG_ESP_EVENT_POST_FROM_ISR
         // Make persistent copy of event data on heap.
-        void* event_data_copy = calloc(1, event_data_size);
+        void* event_data_copy = esp_event_calloc(1, event_data_size);
 
         if (event_data_copy == NULL) {
             return ESP_ERR_NO_MEM;
@@ -1055,7 +1100,7 @@ esp_err_t esp_event_dump(FILE* file)
 
     // Allocate memory for printing
     int sz = esp_event_dump_prepare();
-    char* buf = calloc(sz, sizeof(char));
+    char* buf = esp_event_calloc(sz, sizeof(char));
     char* dst = buf;
 
     char id_str_buf[20];

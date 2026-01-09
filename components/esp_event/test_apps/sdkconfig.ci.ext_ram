@@ -1,0 +1,5 @@
+# Test configuration for external RAM placement feature
+CONFIG_SPIRAM=y # disabled by default
+CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM=y # disabled by default on esp32
+CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM=y
+CONFIG_ESP_EVENT_LOOP_PROFILING=y
