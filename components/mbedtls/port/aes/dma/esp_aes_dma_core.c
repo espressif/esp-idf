@@ -1044,6 +1044,18 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
                 return -1;
             }
         }
+
+        // When a DMA engine (AES-DMA operations) writes into a PSRAM destination buffer that previously contained dirty D-cache lines,
+        // later cache eviction can write back stale data and corrupt the DMA result.
+        // Fix this by cleaning the destination buffers before starting DMA transfers.
+        if (esp_ptr_external_ram(output)) {
+            if (esp_cache_msync((void *)output, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+                mbedtls_platform_zeroize(output, len);
+                ESP_LOGE(TAG, "Cache sync failed for the output in external RAM");
+                return -1;
+            }
+        }
+
         if (esp_ptr_external_ram(output)) {
             size_t dcache_line_size;
             ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &dcache_line_size);
