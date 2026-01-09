@@ -45,6 +45,7 @@
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/cmakev2/**/*"
+  - "tools/kconfig_new/**/*"
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
   - "tools/ci/ignore_build_warnings.txt"
