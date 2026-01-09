@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,6 +10,21 @@
 #include <stdint.h>
 #include <string.h>
 #include "esp_a2dp_api.h"
+
+#define RINGBUF_HIGHEST_WATER_LEVEL    (32 * 1024)
+#define RINGBUF_PREFETCH_WATER_LEVEL   (20 * 1024)
+
+typedef enum {
+    RINGBUFFER_MODE_PROCESSING,    /* ringbuffer is buffering incoming audio data */
+    RINGBUFFER_MODE_PREFETCHING,   /* ringbuffer is buffering incoming audio data */
+    RINGBUFFER_MODE_DROPPING       /* ringbuffer is not buffering (dropping) incoming audio data */
+} audio_sink_ringbuffer_mode_t;
+
+typedef enum {
+    CHANNEL_STATUS_IDLE,
+    CHANNEL_STATUS_OPENED,
+    CHANNEL_STATUS_ENABLED
+} audio_sink_chan_st_t;
 
 /**
  * @brief  open audio sink service
