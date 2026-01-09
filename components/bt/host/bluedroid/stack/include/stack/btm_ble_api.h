@@ -1298,32 +1298,28 @@ typedef struct {
     UINT8 phy;
     INT8 cur_tx_pwr_level;
     INT8 max_tx_pwr_level;
-} __attribute__((packed)) tBTM_BLE_ENH_TRANS_PWR_LEVEL_CMPL;
+} tBTM_BLE_ENH_TRANS_PWR_LEVEL_CMPL;
 
 typedef struct {
     UINT8 status;
-} __attribute__((packed)) tBTM_BLE_REMOTE_TRANS_PWR_LEVEL_CMPL;
-
-typedef struct {
-    UINT8 status;
-    UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_SET_PATH_LOSS_RPTING_PARAMS;
-
+} tBTM_BLE_REMOTE_TRANS_PWR_LEVEL_CMPL;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_SET_PATH_LOSS_RPTING_ENABLE;
-
+} tBTM_BLE_SET_PATH_LOSS_RPTING_PARAMS;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_SET_TRANS_POWER_RPTING_ENABLE;
-
+} tBTM_BLE_SET_PATH_LOSS_RPTING_ENABLE;
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} tBTM_BLE_SET_TRANS_POWER_RPTING_ENABLE;
 typedef struct {
     UINT16 conn_handle;
     UINT8 cur_path_loss;
     UINT8 zone_entered;
-} __attribute__((packed)) tBTM_BLE_PATH_LOSS_THRESHOLD_EVT;
+} tBTM_BLE_PATH_LOSS_THRESHOLD_EVT;
 
 typedef struct {
     UINT8 status;
@@ -1333,7 +1329,7 @@ typedef struct {
     INT8 tx_power_level;
     UINT8 tx_power_level_flag;
     INT8 delta;
-} __attribute__((packed)) tBTM_BLE_TRANS_POWER_REPORT_EVT;
+} tBTM_BLE_TRANS_POWER_REPORT_EVT;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
@@ -1344,27 +1340,27 @@ typedef struct {
     UINT16 peripheral_latency;
     UINT16 continuation_number;
     UINT16 supervision_timeout;
-} __attribute__((packed)) tBTM_BLE_SUBRATE_CHANGE_EVT;
+} tBTM_BLE_SUBRATE_CHANGE_EVT;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 typedef struct {
     UINT8 status;
     UINT8 adv_handle;
-} __attribute__((packed)) tBTM_BLE_PA_SUBEVT_DATA_EVT;
+} tBTM_BLE_PA_SUBEVT_DATA_EVT;
 typedef struct {
     UINT8 status;
     UINT16 sync_handle;
-} __attribute__((packed)) tBTM_BLE_PA_RSP_DATA_EVT;
+} tBTM_BLE_PA_RSP_DATA_EVT;
 typedef struct {
     UINT8 status;
     UINT16 sync_handle;
-} __attribute__((packed)) tBTM_BLE_PA_SYNC_SUBEVT_DATA_EVT;
+} tBTM_BLE_PA_SYNC_SUBEVT_DATA_EVT;
 typedef struct {
     UINT8 adv_handle;
     UINT8 subevt_start;
     UINT8 subevt_data_count;
-} __attribute__((packed)) tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT;
+} tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT;
 
 typedef struct {
     INT8 tx_power;
@@ -1382,26 +1378,26 @@ typedef struct {
     UINT8 tx_status;
     UINT8 num_rsp;
     tBTM_BLE_PA_RSP_DATA_INFO *rsp_data_info;
-} __attribute__((packed)) tBTM_BLE_PA_RSP_REPORT_EVT;
+} tBTM_BLE_PA_RSP_REPORT_EVT;
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CS_WRITE_CACHED_SUPPORT_CAPS_EVT;
+} tBTM_BLE_CS_WRITE_CACHED_SUPPORT_CAPS_EVT;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CS_SET_DEFAULT_SETTINGS_EVT;
+} tBTM_BLE_CS_SET_DEFAULT_SETTINGS_EVT;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT;
+} tBTM_BLE_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CS_SET_PAROC_PARAMS_EVT;
+} tBTM_BLE_CS_SET_PAROC_PARAMS_EVT;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
@@ -1425,18 +1421,18 @@ typedef struct {
     UINT16 T_PM_times_supported;
     UINT8 T_SW_times_supported;
     UINT8 TX_SNR_capability;
-} __attribute__((packed)) tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT;
+} tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT;
 
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
     UINT8 remote_fae_table[72];
-} __attribute__((packed)) tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT;
+} tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT;
 
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT;
+} tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT;
 
 typedef struct {
     UINT8 status;
@@ -1462,7 +1458,7 @@ typedef struct {
     UINT8 t_ip2_time;
     UINT8 t_fcs_time;
     UINT8 t_pm_time;
-}__attribute__((packed)) tBTM_BLE_CS_CONFIG_CMPL_EVT;
+} tBTM_BLE_CS_CONFIG_CMPL_EVT;
 
 typedef struct {
     UINT8 status;
@@ -1478,14 +1474,14 @@ typedef struct {
     UINT16 procedure_interval;
     UINT16 procedure_count;
     UINT16 max_procedure_len;
-}__attribute__((packed)) tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT;
+} tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT;
 
 typedef struct {
     UINT8 step_mode;
     UINT8 step_channel;
     UINT8 step_data_len;
     UINT8 *data;
-} __attribute__((packed)) tBTM_BLE_CS_STEP_INFO;
+} tBTM_BLE_CS_STEP_INFO;
 
 typedef struct {
     UINT16 conn_handle;
@@ -1500,7 +1496,7 @@ typedef struct {
     UINT8 num_ant_paths;
     UINT8 num_steps_reported;
     tBTM_BLE_CS_STEP_INFO *step_info;
-}__attribute__((packed)) tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT;
+} tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT;
 
 typedef struct {
     UINT16 conn_handle;
@@ -1511,7 +1507,7 @@ typedef struct {
     UINT8 num_ant_paths;
     UINT8 num_steps_reported;
     tBTM_BLE_CS_STEP_INFO *step_info;
-}__attribute__((packed)) tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT;
+} tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT;
 
 typedef struct {
     UINT8 status;
@@ -1536,7 +1532,7 @@ typedef struct {
     UINT16 T_PM_times_supported;
     UINT8 T_SW_times_supported;
     UINT8 TX_SNR_capability;
-} __attribute__((packed)) tBTM_BLE_CS_READ_LOCAL_SUPP_CAPS_CMPL_EVT;
+} tBTM_BLE_CS_READ_LOCAL_SUPP_CAPS_CMPL_EVT;
 
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
@@ -1741,44 +1737,38 @@ typedef void (*tBTM_BLE_ISO_CBACK)(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PAR
 #if (BLE_FEAT_CTE_EN == TRUE)
 typedef struct {
     UINT8 status;
-} __attribute__((packed)) tBTM_BLE_CTE_SET_TRANS_PARAMS_CMPL;
+} tBTM_BLE_CTE_SET_TRANS_PARAMS_CMPL;
 
 typedef struct {
     UINT8 status;
-} __attribute__((packed)) tBTM_BLE_CTE_SET_TRANS_EN_CMPL;
-
+} tBTM_BLE_CTE_SET_TRANS_EN_CMPL;
 typedef struct {
     UINT8 status;
     UINT16 sync_handle;
-} __attribute__((packed)) tBTM_BLE_CTE_IQ_SAMP_EN_CMPL;
-
+} tBTM_BLE_CTE_IQ_SAMP_EN_CMPL;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CTE_CONN_RECV_PARAMS_CMPL;
-
+} tBTM_BLE_CTE_CONN_RECV_PARAMS_CMPL;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CTE_CONN_TRANS_PARAMS_CMPL;
-
+} tBTM_BLE_CTE_CONN_TRANS_PARAMS_CMPL;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CTE_CONN_REQ_ENABLE_CMPL;
-
+} tBTM_BLE_CTE_CONN_REQ_ENABLE_CMPL;
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CTE_CONN_RSP_ENABLE_CMPL;
-
+} tBTM_BLE_CTE_CONN_RSP_ENABLE_CMPL;
 typedef struct {
     UINT8 status;
     UINT8 supported_switching_sampling_rates;
     UINT8 num_ant;
     UINT8 max_switching_pattern_len;
     UINT8 max_cte_len;
-} __attribute__((packed)) tBTM_BLE_CTE_READ_ANT_INFOR_CMPL;
+} tBTM_BLE_CTE_READ_ANT_INFOR_CMPL;
 
 typedef struct {
     UINT16 sync_handle;
@@ -1792,7 +1782,7 @@ typedef struct {
     UINT8 sample_count;
     UINT8 i_sample[0x52];
     UINT8 q_sample[0x52];
-} __attribute__((packed)) tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT;
+} tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT;
 
 typedef struct {
     UINT16 conn_handle;
@@ -1807,12 +1797,12 @@ typedef struct {
     UINT8 sample_count;
     UINT8 i_sample[0x52];
     UINT8 q_sample[0x52];
-} __attribute__((packed)) tBTM_BLE_CTE_CONN_IQ_REPORT_EVT;
+} tBTM_BLE_CTE_CONN_IQ_REPORT_EVT;
 
 typedef struct {
     UINT8  status;
     UINT16 conn_handle;
-} __attribute__((packed)) tBTM_BLE_CTE_REQ_FAILED_EVT;
+} tBTM_BLE_CTE_REQ_FAILED_EVT;
 
 typedef union {
     UINT8 status;
