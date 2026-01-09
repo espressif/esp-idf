@@ -74,9 +74,6 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
     list(APPEND srcs "${target_folder}/sdmmc_periph.c")
 endif()
 
-if(CONFIG_SOC_IEEE802154_SUPPORTED)
-    list(APPEND srcs "${target_folder}/ieee802154_periph.c")
-endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
     list(APPEND srcs "${target_folder}/sdio_slave_periph.c")

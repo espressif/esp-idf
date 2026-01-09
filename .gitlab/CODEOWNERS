@@ -95,6 +95,7 @@
 /components/esp_event/                @esp-idf-codeowners/system
 /components/esp_gdbstub/              @esp-idf-codeowners/debugging
 /components/esp_hal_*/                @esp-idf-codeowners/peripherals
+/components/esp_hal_ieee802154/       @esp-idf-codeowners/ieee802154
 /components/esp_hal_pmu/              @esp-idf-codeowners/power-management @esp-idf-codeowners/peripherals
 /components/esp_hal_rtc_timer/        @esp-idf-codeowners/power-management @esp-idf-codeowners/peripherals
 /components/esp_hid/                  @esp-idf-codeowners/bluetooth
