@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,8 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/spi_mem_struct.h"
 #include "soc/spi_mem_s_struct.h"
+#include "hal/config.h"
+#include "soc/lp_system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -651,6 +653,100 @@ __attribute__((always_inline))
 static inline void mspi_ll_psram_enable_axi_access(uint8_t spi_num, bool enable)
 {
     SPIMEM2.mem_cache_fctrl.close_axi_inf_en = !enable;
+}
+
+/*---------------------------------------------------------------
+                    MSPI IOMUX pin configuration
+---------------------------------------------------------------*/
+/**
+ * @brief MSPI IOMUX pin ID enumeration for Flash pins
+ * ID ranges:
+ *   0-5:   Flash pins (CS, Q, WP, HOLD, CK, D) - maps to flash_pin_regs[] array index
+ */
+typedef enum {
+    MSPI_LL_PIN_ID_FLASH_CS = 0,   /**< Flash CS pin */
+    MSPI_LL_PIN_ID_FLASH_Q,        /**< Flash Q pin */
+    MSPI_LL_PIN_ID_FLASH_WP,       /**< Flash WP pin */
+    MSPI_LL_PIN_ID_FLASH_HOLD,     /**< Flash HOLD pin */
+    MSPI_LL_PIN_ID_FLASH_CK,       /**< Flash CLK pin */
+    MSPI_LL_PIN_ID_FLASH_D,        /**< Flash D pin */
+} mspi_ll_flash_pin_id_t;
+
+/**
+ * @brief MSPI IOMUX Flash pin configuration structure
+ * Register layout: hys(0), ie(1), wpu(2), wpd(3), drv(5:4)
+ */
+typedef union {
+    struct {
+        uint32_t hys: 1;    /**< Hysteresis enable */
+        uint32_t ie: 1;     /**< Input enable */
+        uint32_t wpu: 1;    /**< Weak pull-up enable */
+        uint32_t wpd: 1;    /**< Weak pull-down enable */
+        uint32_t drv: 2;    /**< Drive strength (0-3) */
+        uint32_t reserved: 26; /**< Reserved bits */
+    };
+    uint32_t val;           /**< Raw register value for atomic write */
+} mspi_ll_flash_pin_cfg_t;
+
+/**
+ * @brief Set configuration for Flash pin
+ *
+ * @param pin_id Pin ID (MSPI_LL_PIN_ID_FLASH_CS to MSPI_LL_PIN_ID_FLASH_D, i.e., 0-5)
+ * @param cfg Pin configuration structure
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_set_flash_pin_cfg(mspi_ll_flash_pin_id_t pin_id, const mspi_ll_flash_pin_cfg_t *cfg)
+{
+    HAL_ASSERT(pin_id <= MSPI_LL_PIN_ID_FLASH_D);
+    MSPI_IOMUX.flash_pin_regs[pin_id].val = cfg->val;
+}
+
+/**
+ * @brief Hold all Flash pins
+ * Sets all Flash pins (CS, Q, WP, HOLD, CK, D) to hold status
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_hold_all_flash_pins(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300 // Only rev3+ chips support mspi pad holding.
+    LP_SYS.ded_pad_rtc_hold_ctrl.ded_pad_rtc_hold_ctrl |= 0x3F;
+#endif
+}
+
+/**
+ * @brief Unhold all Flash pins
+ * Releases hold status for all Flash pins (CS, Q, WP, HOLD, CK, D)
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_unhold_all_flash_pins(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300 // Only rev3+ chips support mspi pad holding.
+    LP_SYS.ded_pad_rtc_hold_ctrl.ded_pad_rtc_hold_ctrl &= ~0x3F;
+#endif
+}
+
+/**
+ * @brief Hold all PSRAM pins
+ * Sets all PSRAM pins (pin_group0, dqs0, pin_group1, dqs1) to hold status
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_hold_all_psram_pins(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300 // Only rev3+ chips support mspi pad holding.
+    LP_SYS.ded_pad_rtc_hold_ctrl.ded_pad_rtc_hold_ctrl |= 0x3FFFFC0;
+#endif
+}
+
+/**
+ * @brief Unhold all PSRAM pins
+ * Releases hold status for all PSRAM pins (pin_group0, dqs0, pin_group1, dqs1)
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_unhold_all_psram_pins(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300 // Only rev3+ chips support mspi pad holding.
+    LP_SYS.ded_pad_rtc_hold_ctrl.ded_pad_rtc_hold_ctrl &= ~0x3FFFFC0;
+#endif
 }
 
 #ifdef __cplusplus
