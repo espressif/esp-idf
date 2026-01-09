@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,17 +21,9 @@
 /* log tag */
 #define AUDIO_SNK_SRV_DAC_TAG    "SNK_SRV_DAC"
 
-#define RINGBUF_HIGHEST_WATER_LEVEL    (32 * 1024)
-#define RINGBUF_PREFETCH_WATER_LEVEL   (20 * 1024)
-
-enum {
-    RINGBUFFER_MODE_PROCESSING,    /* ringbuffer is buffering incoming audio data, I2S is working */
-    RINGBUFFER_MODE_PREFETCHING,   /* ringbuffer is buffering incoming audio data, I2S is waiting */
-    RINGBUFFER_MODE_DROPPING       /* ringbuffer is not buffering (dropping) incoming audio data, I2S is working */
-};
-
 typedef struct {
     dac_continuous_handle_t tx_chan;        /* handle of dac continuous channel */
+    audio_sink_chan_st_t chan_st;           /* dac channel status */
     TaskHandle_t write_task_handle;         /* handle of writing task */
     RingbufHandle_t ringbuf;                /* handle of ringbuffer */
     SemaphoreHandle_t write_semaphore;      /* handle of write semaphore */
@@ -100,11 +92,17 @@ void audio_sink_srv_open(void)
     };
     /* Allocate continuous channels */
     ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &s_dac_cb.tx_chan));
+    s_dac_cb.chan_st = CHANNEL_STATUS_OPENED;
 }
 
 void audio_sink_srv_close(void)
 {
-    ESP_ERROR_CHECK(dac_continuous_del_channels(s_dac_cb.tx_chan));
+    audio_sink_srv_stop();
+
+    if (s_dac_cb.chan_st == CHANNEL_STATUS_OPENED) {
+        ESP_ERROR_CHECK(dac_continuous_del_channels(s_dac_cb.tx_chan));
+        s_dac_cb.chan_st = CHANNEL_STATUS_IDLE;
+    }
     if (s_dac_cb.write_task_handle) {
         vTaskDelete(s_dac_cb.write_task_handle);
         s_dac_cb.write_task_handle = NULL;
@@ -122,7 +120,13 @@ void audio_sink_srv_close(void)
 
 void audio_sink_srv_start(void)
 {
-    dac_continuous_enable(s_dac_cb.tx_chan);
+    if (s_dac_cb.chan_st != CHANNEL_STATUS_OPENED) {
+        ESP_LOGE(AUDIO_SNK_SRV_DAC_TAG, "%s, TX channel wrong state: %d", __func__, s_dac_cb.chan_st);
+        return;
+    }
+    ESP_ERROR_CHECK(dac_continuous_enable(s_dac_cb.tx_chan));
+    s_dac_cb.chan_st = CHANNEL_STATUS_ENABLED;
+
     ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "ringbuffer data empty! mode changed: RINGBUFFER_MODE_PREFETCHING");
     s_dac_cb.ringbuffer_mode = RINGBUFFER_MODE_PREFETCHING;
     if ((s_dac_cb.write_semaphore = xSemaphoreCreateBinary()) == NULL) {
@@ -138,7 +142,10 @@ void audio_sink_srv_start(void)
 
 void audio_sink_srv_stop(void)
 {
-    ESP_ERROR_CHECK(dac_continuous_disable(s_dac_cb.tx_chan));
+    if (s_dac_cb.chan_st == CHANNEL_STATUS_ENABLED) {
+        ESP_ERROR_CHECK(dac_continuous_disable(s_dac_cb.tx_chan));
+        s_dac_cb.chan_st = CHANNEL_STATUS_OPENED;
+    }
 }
 
 void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
