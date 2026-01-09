@@ -8,6 +8,7 @@
 
 This example demonstrates how to use the ISP (image signal processor) to work with esp_driver_cam component. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor/versions/0.5.3) and capture camera sensor signals via CSI interface and display it via DSI interface. This example enables following ISP functions:
 
+- ISP AWB (auto white balance) & WBG (white balance gain) feature
 - ISP AF (auto-focus) feature
 - ISP BF (bayer denoise) feature
 - ISP BLC (black level correction) feature
@@ -160,23 +161,37 @@ To exit the serial monitor, use `Ctrl` + `]`.
 If you see the following console output, your example should be running correctly:
 
 ```
-I (1425) main_task: Calling app_main()
-I (1425) example_dsi_init: Allocating DSI resources with 2 frame buffer(s)
-I (1485) example_dsi_init: Frame buffer[0] allocated at: 0x48000a40
-I (1485) example_dsi_init: Frame buffer[1] allocated at: 0x481f4a80
-I (1485) isp_dsi: Original CSI resolution: 800x640
-I (1485) isp_dsi: Display resolution: 800x640, bits per pixel: 16
-I (1495) isp_dsi: frame_buffer_size: 2048000
-I (1495) isp_dsi: Frame buffers: fb0=0x48000a40, fb1=0x481f4a80
-I (1515) ov5647: Detected Camera sensor PID=0x5647
-I (1535) sensor_init: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
-I (1535) sensor_init: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
-I (1535) sensor_init: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
-I (1535) sensor_init: fmt[3].name:MIPI_2lane_24Minput_RAW10_1920x1080_30fps
-I (1545) sensor_init: fmt[4].name:MIPI_2lane_24Minput_RAW10_1280x960_binning_45fps
-I (2025) sensor_init: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
-I (2045) isp_dsi: ISP Crop not configured
-I (2105) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
+I (1457) main_task: Calling app_main()
+I (1457) example_dsi_init: Allocating DSI resources with 2 frame buffer(s)
+I (1517) isp_dsi: Original CSI resolution: 800x640
+I (1517) isp_dsi: Display resolution: 800x640, bits per pixel: 16
+I (1517) isp_dsi: Frame buffers: fb0=0x48000a40, fb1=0x481f4a80
+I (1517) ov5647: Detected Camera sensor PID=0x5647
+I (1537) sensor_init: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
+I (1537) sensor_init: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1537) sensor_init: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
+I (1547) sensor_init: fmt[3].name:MIPI_2lane_24Minput_RAW10_1920x1080_30fps
+I (1547) sensor_init: fmt[4].name:MIPI_2lane_24Minput_RAW10_1280x960_binning_45fps
+I (1617) sensor_init: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1627) isp_pipeline: ISP processor initialized
+I (1627) isp_pipeline: BLC module configured
+I (1627) isp_pipeline: BF module configured
+I (1627) isp_pipeline: LSC module configured
+I (1627) isp_pipeline: DEMOSAIC module configured
+I (1637) isp_pipeline: CCM module configured
+I (1637) isp_pipeline: GAMMA module configured
+I (1637) isp_pipeline: SHARPEN module configured
+I (1647) isp_pipeline: COLOR module configured
+I (1647) isp_pipeline: All ISP pipeline modules initialized
+W (1657) ISP_AWB: subwindow size (480 x 384) is not divisible by AWB subwindow blocks grid (5 x 5).                     Resolution will be floored to the nearest divisible value.
+I (1667) isp_wb: AWB and WBG module initialized
+I (1677) isp_wb: White balance task started
+I (1677) isp_wb: WB enabled: AWB statistics started, WBG module enabled, processing task created
+I (1687) isp_af: AF module initialized
+I (1687) isp_af: AF task started
+I (1697) isp_af: AF task created
+I (1757) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
+I (1877) isp_dsi: ISP DSI example started
 ```
 
 Below picture is from the video stream of OV5647 and ILI9881C. The camera module is auto-focused and calibrated by ESP on-chip ISP hardware. The edge is over-sharpened as example code configured.
