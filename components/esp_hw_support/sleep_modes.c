@@ -778,11 +778,12 @@ static SLEEP_FN_ATTR void sleep_rtc_wdt_prepare(bool enable)
     if (enable) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
         // Use default timeout for sleep monitoring
-#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP || CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
-        uint32_t rtc_wdt_timeout = get_sleep_rtc_wdt_timeout(s_config.sleep_duration);
-        uint32_t rtc_wdt_timeout_required_cycles = calc_sleep_slow_clk_required_cycles(rtc_wdt_timeout, s_config.rtc_clk_cal_period);
-#else
         uint32_t rtc_wdt_timeout_required_cycles = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP || CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+        if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
+            uint32_t rtc_wdt_timeout = get_sleep_rtc_wdt_timeout(s_config.sleep_duration);
+            rtc_wdt_timeout_required_cycles = calc_sleep_slow_clk_required_cycles(rtc_wdt_timeout, s_config.rtc_clk_cal_period);
+        }
 #endif
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, rtc_wdt_timeout_required_cycles, WDT_STAGE_ACTION_RESET_RTC);
@@ -2911,7 +2912,11 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
 #endif
 
 #if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
-    sleep_flags |= RTC_SLEEP_USE_RTC_WDT;
+    if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
+        sleep_flags |= RTC_SLEEP_USE_RTC_WDT;
+    } else {
+        sleep_flags &= ~RTC_SLEEP_USE_RTC_WDT;
+    }
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4
