@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import http.client
 import logging
 import os
@@ -48,8 +47,8 @@ def test_examples_protocol_http2_request(dut: Dut) -> None:
     # Skip the test if the server test server (http2.github.io) is not available at the moment.
     if test_server_available:
         logging.info('test server \"{}\" is available'.format(TEST_SERVER))
-        # check for connection
-        dut.expect('Connection done', timeout=30)
+        dut.expect('Connected to example_netif_eth', timeout=60)  # Network setup
+        dut.expect('Connection done', timeout=60)                  # HTTP2 connection
         # check for get response
         dut.expect('Frame fully received')
     else:
