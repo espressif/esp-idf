@@ -5,9 +5,9 @@ Introduction to Low Power Mode in Wi-Fi Scenarios
 
 After the previous introduction to low power mode from a systemic perspective, this section delves into low power mode in Wi-Fi scenarios. Due to the complexity of Wi-Fi scenarios, basic principles of Wi-Fi power saving will be introduced before specific low power mode. This section is focused on station mode.
 
-.. todo - add sleep-current/esp32c5_summary.inc and sleep-current/esp32c61_summary.inc
+.. todo - add sleep-current/esp32c61_summary.inc
 
-.. only:: not esp32c5 and not esp32c61
+.. only:: not esp32c61
 
   Choosing Low Power Mode in Wi-Fi Scenarios
   ---------------------------------------------
@@ -355,17 +355,17 @@ Modem-sleep Mode Configuration
           - 1000
 
         * - ``max_freq_mhz``
-          - 160
+          - The maximum CPU frequency supported by {IDF_TARGET_NAME}
 
         * - ``min_freq_mhz``
-          - 40
+          - {CONFIG_XTAL_FREQ}
 
         * - ``light_sleep_enable``
           - false
 
-    .. todo - add sleep-current/esp32c5_modem_sleep.inc sleep-current/esp32c61_modem_sleep.inc
+    .. todo - add sleep-current/esp32c61_modem_sleep.inc
 
-    .. only:: not esp32c5 and not esp32c61
+    .. only:: not esp32c61
 
       - Configuration Performance
 
@@ -377,9 +377,9 @@ Auto Light-sleep Mode + Wi-Fi Scenario Configuration
 
 Auto Light-sleep mode in Wi-Fi scenarios does not require wake-up source configuration compared with a pure system. But the remaining part of configuration is basically the same in the two operation scenarios. Therefore, detailed introduction of configurable options, configuration steps, and recommended configurations can be found in the previous section :ref:`Deep-sleep Mode`, with the Wi-Fi-related configurations set to default.
 
-.. todo - add sleep-current/esp32c5_light_sleep.inc and leep-current/esp32c61_light_sleep.inc
+.. todo - add eep-current/esp32c61_light_sleep.inc
 
-.. only:: not esp32c5 and not esp32c61
+.. only:: not esp32c61
 
   - Configuration Performance
 
@@ -415,3 +415,11 @@ Deep-sleep mode configuration in Wi-Fi scenarios is essentially the same as in a
     .. only:: esp32c2
 
       Average current approximately 4.9 μA
+
+    .. only:: esp32c6
+
+      Average current approximately 6.7 μA
+
+    .. only:: esp32c5
+
+      Average current approximately 10.0 μA
