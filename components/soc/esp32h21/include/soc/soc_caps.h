@@ -226,7 +226,7 @@
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-// #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1 //TODO [ESP32H21] IDF-14159
+#define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
 
 /*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
