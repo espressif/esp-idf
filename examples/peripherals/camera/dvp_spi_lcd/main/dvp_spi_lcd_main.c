@@ -24,7 +24,7 @@
 
 static const char *TAG = "dvp_spi_lcd";
 
-#define BUFFER_SIZE         (CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8)
+#define BUFFER_SIZE         (CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL)
 
 typedef struct {
     esp_lcd_panel_handle_t panel_hdl;
@@ -164,7 +164,7 @@ void app_main(void)
     }
 
     //--------Allocate Camera Buffer----------//
-    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL;
     void *cam_buffer = NULL;
 
     cam_buffer = esp_cam_ctlr_alloc_buffer(cam_handle, cam_buffer_size, EXAMPLE_DVP_CAM_BUF_ALLOC_CAPS);

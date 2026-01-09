@@ -295,4 +295,3 @@ API 参考
 .. include-build-file:: inc/esp_cam_ctlr_types.inc
 .. include-build-file:: inc/esp_cam_ctlr_csi.inc
 .. include-build-file:: inc/esp_cam_ctlr_isp_dvp.inc
-.. include-build-file:: inc/isp_core.inc

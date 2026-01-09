@@ -329,7 +329,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_ldo_acquire_channel(&ldo_mipi_phy_config, &ldo_mipi_phy));
 
     //---------------DSI Init------------------//
-    example_dsi_resource_alloc(&mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, NULL);
+    example_dsi_resource_alloc(NULL, &mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, NULL, NULL);
     example_dpi_panel_reset(mipi_dpi_panel);
     example_dpi_panel_init(mipi_dpi_panel);
 
