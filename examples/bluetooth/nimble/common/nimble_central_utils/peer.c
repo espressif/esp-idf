@@ -515,7 +515,7 @@ peer_inc_add(struct peer *peer,  uint16_t svc_start_handle,
         }
     }
 
-    /* Including the services into inlucding list */
+    /* Including the services into including list */
 
     cur_svc = peer_svc_find_range(peer, gatt_incl_svc->handle);
 

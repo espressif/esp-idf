@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -132,13 +132,13 @@ void ble_receive_apple_data_source(uint8_t *message, uint16_t message_len)
                 return;
             }
             uint32_t NotificationUID = (message[1]) | (message[2]<< 8) | (message[3]<< 16) | (message[4] << 24);
-            uint32_t remian_attr_len = message_len - 5;
+            uint32_t remain_attr_len = message_len - 5;
             uint8_t *attrs = &message[5];
             ESP_LOGI(NimBLE_ANCS_TAG, "recevice Notification Attributes response Command_id %d NotificationUID %" PRIu32, Command_id, NotificationUID);
-            while(remian_attr_len >= 3) {
+            while(remain_attr_len > 0) {
                 uint8_t AttributeID = attrs[0];
                 uint16_t len = attrs[1] | (attrs[2] << 8);
-                if(len > remian_attr_len - 3) {
+                if(len > (remain_attr_len -3)) {
                     ESP_LOGE(NimBLE_ANCS_TAG, "data error");
                     break;
                 }
@@ -175,16 +175,16 @@ void ble_receive_apple_data_source(uint8_t *message, uint16_t message_len)
                 }
 
                 attrs += (1 + 2 + len);
-                remian_attr_len -= (1 + 2 + len);
+                remain_attr_len -= (1 + 2 + len);
             }
 
             break;
         }
         case CommandIDGetAppAttributes:
-            ESP_LOGI(NimBLE_ANCS_TAG, "recevice APP Attributes response");
+            ESP_LOGI(NimBLE_ANCS_TAG, "received APP Attributes response");
             break;
         case CommandIDPerformNotificationAction:
-            ESP_LOGI(NimBLE_ANCS_TAG, "recevice Perform Notification Action");
+            ESP_LOGI(NimBLE_ANCS_TAG, "received Perform Notification Action");
             break;
         default:
             ESP_LOGI(NimBLE_ANCS_TAG, "unknown Command ID");
@@ -213,5 +213,4 @@ char *Errcode_to_String(uint16_t status)
             break;
     }
     return Errstr;
-
 }
