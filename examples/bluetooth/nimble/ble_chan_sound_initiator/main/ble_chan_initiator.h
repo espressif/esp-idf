@@ -24,7 +24,6 @@ union ble_store_key;
 #define BLE_HCI_LE_CS_SUBEVENT_DONE_STATUS_ABORTED   0xF
 
 #define LOCAL_PROCEDURE_MEM  1024  // Replace with an appropriate constant value
-struct ble_hs_cfg;
 struct ble_gatt_register_ctxt;
 
 /** GATT server. */

@@ -191,7 +191,7 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
         m = ble_transport_alloc_acl_from_ll();
 
         if (!m) {
-            if (retry_count % 5) {
+            if (retry_count % 5 == 0) {
                 esp_rom_printf("ACL buf alloc failed %d times\n", retry_count);
                 esp_rom_printf("Free ACL mbufs: %d\n", os_msys_num_free());
             }

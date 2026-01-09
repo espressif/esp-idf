@@ -348,7 +348,7 @@ blecoex_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_CONNECT:
 	MODLOG_DFLT(INFO, "%s connection %s; status=%d ",
-	            client_connect == 1 ? "Client" : "Server",
+		    client_connect == 1 ? "Client" : "Server",
                     event->connect.status == 0 ? "established" : "failed",
                     event->connect.status);
 
