@@ -9,6 +9,8 @@
 #ifndef WPA_I_H
 #define WPA_I_H
 
+#include "common/defs.h"
+
 extern struct wpa_sm gWpaSm;
 #define DEFAULT_EAPOL_VERSION 1
 
@@ -86,6 +88,7 @@ struct wpa_sm {
     struct wpa_gtk_data gd; //used for calllback save param
     u16 key_info;       //used for txcallback param
     u16 txcb_flags;
+    u8 transition_disable;
     bool   ap_notify_completed_rsne;
     wifi_pmf_config_t pmf_cfg;
     u8 eapol1_count;
@@ -207,6 +210,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode);
 int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
+
+u8 wpa_sm_get_transition_disable(struct wpa_sm *sm);
 
 int wpa_derive_ptk_ft(struct wpa_sm *sm, const unsigned char *src_addr,
                       const struct wpa_eapol_key *key, struct wpa_ptk *ptk);

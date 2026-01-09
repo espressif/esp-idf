@@ -24,6 +24,7 @@
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
 #include "esp_wifi_types_generic.h"
+#include "esp_roaming.h"
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -663,6 +664,9 @@ void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
     config->sta.channel = bss->channel;
     /* supplicant connect will only be called in case of bss transition(roaming) */
     esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    esp_wifi_roaming_set_current_bssid(bss->bssid);
+#endif
     esp_wifi_set_config(WIFI_IF_STA, config);
     os_free(config);
     esp_wifi_connect();
