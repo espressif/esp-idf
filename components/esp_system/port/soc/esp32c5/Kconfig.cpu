@@ -1,9 +1,12 @@
 choice ESP_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
     default ESP_DEFAULT_CPU_FREQ_MHZ_40 if IDF_ENV_FPGA
+    default ESP_DEFAULT_CPU_FREQ_MHZ_160 if SECURE_FLASH_ENC_ENABLED
     default ESP_DEFAULT_CPU_FREQ_MHZ_240
     help
-        CPU frequency to be set on application startup.
+        CPU frequency to be set on application startup. For flash encryption enabled case,
+        the default CPU frequency is 160MHz as the encrypted flash writes are not stable at
+        higher CPU clock. Please see SoC Errata document for details.
 
     config ESP_DEFAULT_CPU_FREQ_MHZ_40
         bool "40 MHz"
@@ -13,6 +16,9 @@ choice ESP_DEFAULT_CPU_FREQ_MHZ
     config ESP_DEFAULT_CPU_FREQ_MHZ_160
         bool "160 MHz"
     config ESP_DEFAULT_CPU_FREQ_MHZ_240
+        # Encrypted flash writes aren't supported at 240 MHz.
+        # Please see SoC Errata document for details.
+        depends on !SECURE_FLASH_ENC_ENABLED
         bool "240 MHz"
         help
             When 240MHz is selected, esp_flash_write_encrypted() will automatically limit CPU frequency during
