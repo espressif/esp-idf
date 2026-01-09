@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,7 +129,7 @@ ESP_SYSTEM_INIT_FN(psram_core_stage_init, CORE, BIT(0), 103)
         ret = esp_psram_extram_add_to_heap_allocator();
         if (ret != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
-            abort();
+            return ret;
         }
 #if CONFIG_SPIRAM_USE_MALLOC
         heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
@@ -140,7 +140,13 @@ ESP_SYSTEM_INIT_FN(psram_core_stage_init, CORE, BIT(0), 103)
     ret = esp_psram_mspi_register_isr();
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to register PSRAM ISR!");
-        abort();
+        return ret;
+    }
+
+    ret = esp_psram_mspi_mb_init();
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to initialize PSRAM MSPI memory barrier!");
+        return ret;
     }
 
     return ret;

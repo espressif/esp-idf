@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -13,13 +13,21 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_intr_alloc.h"
+#include "esp_cache.h"
+#include "esp_heap_caps.h"
 #include "hal/mspi_ll.h"
 #include "hal/mspi_periph.h"
 #include "esp_private/mspi_intr.h"
+#include "esp_private/esp_psram_mspi.h"
+#if CONFIG_SPIRAM
 #if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S2
 #include "hal/psram_ctrlr_ll.h"
 #endif
+#endif
 
+__attribute__((unused)) ESP_LOG_ATTR_TAG_DRAM(TAG, "psram_mspi");
+
+#if CONFIG_SPIRAM
 #if PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED
 
 #if CONFIG_ESP_PANIC_HANDLER_IRAM
@@ -29,8 +37,6 @@
 #define PSRAM_ISR_ATTR
 #define PSRAM_ISR_FLAGS  0
 #endif
-
-ESP_LOG_ATTR_TAG_DRAM(TAG, "psram_mspi");
 
 static void PSRAM_ISR_ATTR mspi_psram_isr_handler(void *arg, uint32_t intr_events)
 {
@@ -124,3 +130,34 @@ esp_err_t esp_psram_mspi_unregister_isr(void)
     return ESP_OK;
 }
 #endif  //#if PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED
+#endif  //#if CONFIG_SPIRAM
+
+#if ESP_PSRAM_MSPI_MB_WORKAROUND
+static void *s_psram_mb_dummy_cacheline;  //dummy cacheline for cache memory barrier
+#endif
+
+esp_err_t esp_psram_mspi_mb_init(void)
+{
+#if ESP_PSRAM_MSPI_MB_WORKAROUND
+    s_psram_mb_dummy_cacheline = heap_caps_calloc(1, CONFIG_CACHE_L1_CACHE_LINE_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_CACHE_ALIGNED);
+    if (!s_psram_mb_dummy_cacheline) {
+        ESP_EARLY_LOGE(TAG, "Failed to allocate dummy cacheline for PSRAM memory barrier!");
+    }
+#endif
+
+    return ESP_OK;
+}
+
+void IRAM_ATTR esp_psram_mspi_mb(void)
+{
+#if ESP_PSRAM_MSPI_MB_WORKAROUND
+    if (!s_psram_mb_dummy_cacheline) {
+        uint32_t *p = (uint32_t *)s_psram_mb_dummy_cacheline;
+        *p = (*p + 1) % UINT32_MAX;
+        __attribute__((unused)) esp_err_t ret = ESP_FAIL;
+        ret = esp_cache_msync(s_psram_mb_dummy_cacheline, sizeof(uint32_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED); //malloc is aligned, no need to writeback all
+        assert(ret == ESP_OK);
+        asm volatile("fence");
+    }
+#endif
+}
