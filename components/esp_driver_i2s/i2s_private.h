@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,6 +177,7 @@ struct i2s_channel_obj_t {
     uint32_t                sclk_hz;        /*!< Source clock frequency */
     uint32_t                origin_mclk_hz; /*!< Original mclk frequency */
     uint32_t                curr_mclk_hz;   /*!< Current mclk frequency */
+    uint32_t                bclk_hz;        /*!< BCLK frequency */
     /* Locks and queues */
     SemaphoreHandle_t       mutex;          /*!< Mutex semaphore for the channel operations */
     SemaphoreHandle_t       binary;         /*!< Binary semaphore for writing / reading / enabling / disabling */

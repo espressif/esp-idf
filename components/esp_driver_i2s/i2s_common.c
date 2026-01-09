@@ -1186,6 +1186,12 @@ found:
     chan_info->dir = handle->dir;
     chan_info->role = handle->role;
     chan_info->mode = handle->mode;
+    chan_info->is_enabled = handle->state == I2S_CHAN_STATE_RUNNING;
+    chan_info->clk_src = handle->clk_src;
+    chan_info->sclk_hz = handle->sclk_hz;
+    chan_info->mclk_hz = handle->curr_mclk_hz;
+    chan_info->bclk_hz = handle->bclk_hz;
+    chan_info->mode_cfg = handle->mode_info;
     chan_info->total_dma_buf_size = handle->state >= I2S_CHAN_STATE_READY ? handle->dma.desc_num * handle->dma.buf_size : 0;
     if (handle->controller->full_duplex) {
         if (handle->dir == I2S_DIR_TX) {
