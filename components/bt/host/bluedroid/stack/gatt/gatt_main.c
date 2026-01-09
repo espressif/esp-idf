@@ -194,6 +194,7 @@ void gatt_free(void)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
         p_tcb->sr_cmd.multi_rsp_q = NULL;
 #endif /* #if (GATTS_INCLUDED == TRUE) */
+        UNUSED(p_tcb);
     }
     list_free(gatt_cb.p_tcb_list);
     list_free(gatt_cb.p_clcb_list);
