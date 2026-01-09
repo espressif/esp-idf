@@ -66,7 +66,8 @@ static esp_err_t eth_init(esp_eth_handle_t *eth_handle_out)
     esp32_emac_config.clock_config.rmii.clock_gpio = CONFIG_EXAMPLE_ETH_RMII_CLK_GPIO;
 
 #if CONFIG_EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_EN
-    esp32_emac_config.clock_config.rmii.clock_loopback_gpio = CONFIG_EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_IN_GPIO;
+    esp32_emac_config.clock_config_out_in.rmii.clock_gpio = CONFIG_EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_IN_GPIO;
+    esp32_emac_config.clock_config_out_in.rmii.clock_mode = EMAC_CLK_EXT_IN;
 #endif
 
 #if SOC_EMAC_USE_MULTI_IO_MUX
