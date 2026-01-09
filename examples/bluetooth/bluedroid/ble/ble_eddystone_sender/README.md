@@ -5,10 +5,42 @@
 
 This example demonstrates Eddystone-compatible BLE sending of eddystone frame, including UID and URL and TLM.
 
-Eddystone is an open beacon protocol specification from Google aimed at improving “proximity-based experiences”
+Eddystone is an open beacon protocol specification from Google aimed at improving "proximity-based experiences"
 with support for both Android and iOS smart device platforms.
 
 Learn more on [Beacons](https://developers.google.com/nearby/notifications/get-started) and [Eddystone](https://github.com/google/eddystone).
+
+## Flow Diagram
+
+```
+    ┌──────────────────┐                           ┌──────────────────┐
+    │ Eddystone Sender │                           │ Eddystone Receiver│
+    │   (Advertiser)   │                           │    (Scanner)      │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  1. Initialize BLE                           │
+             │  2. Configure Eddystone Frame:               │
+             │     - UID Frame (Namespace + Instance)       │
+             │     - URL Frame (Encoded URL)                │
+             │     - TLM Frame (Telemetry Data)             │
+             │  3. Set Raw Advertising Data                 │
+             │  4. Start Advertising                        │
+             │                                              │
+             │  ─────────── Broadcasting ───────────        │
+             │                                              │
+             │     Eddystone Advertisement Packet           │
+             │  ═══════════════════════════════════════════>│
+             │     (Broadcast periodically)                 │
+             │                                              │
+             │                                              │  Parse Frame:
+             │                                              │  - UID: Namespace ID
+             │                                              │  - URL: Decoded URL
+             │                                              │  - TLM: Battery, Temp
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │ Eddystone Sender │                           │ Eddystone Receiver│
+    └──────────────────┘                           └──────────────────┘
+```
 
 ## How to Use Example
 
