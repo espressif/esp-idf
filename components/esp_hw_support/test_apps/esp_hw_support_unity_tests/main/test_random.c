@@ -92,7 +92,7 @@ TEST_CASE("verify esp_random() bit balance 0/1 ratio", "[random]")
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif

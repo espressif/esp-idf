@@ -83,11 +83,9 @@ static void eth_test_start_sleep(esp_eth_handle_t eth_handle, bool pd_top_down)
     esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_DUMP_REGS, NULL);
 #endif
 
-#if !SOC_PM_TOP_PD_NOT_ALLOWED
     printf("sleep_ctx.sleep_flags: 0x%" PRIx32 "\n", sleep_ctx.sleep_flags);
     // Check if the power domain was powered down
     TEST_ASSERT_EQUAL(pd_top_down ? PMU_SLEEP_PD_TOP : 0, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
-#endif
 
     esp_sleep_set_sleep_context(NULL);
 }

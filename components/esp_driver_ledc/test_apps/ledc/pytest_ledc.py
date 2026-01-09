@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded_idf import IdfDut
@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_ledc_psram')
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='c5 eco2 does not support top pd')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -17,6 +18,33 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_ledc(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'iram_safe',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_ledc_esp32c5(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_eco3
+@pytest.mark.parametrize(
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_ledc_esp32c5_eco3(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(reset=True)
 
 
