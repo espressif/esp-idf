@@ -40,7 +40,14 @@ def test_temperature_sensor_cbs(dut: Dut) -> None:
 @pytest.mark.esp32c6
 @pytest.mark.two_duts
 @pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
+)
 def test_temperature_phy_cases(case_tester: CaseTester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'two_duts') == 'two_duts':
-            case_tester.run_all_multi_dev_cases(case=case, reset=True)
+            case_tester.run_multi_dev_case(case=case, reset=True)

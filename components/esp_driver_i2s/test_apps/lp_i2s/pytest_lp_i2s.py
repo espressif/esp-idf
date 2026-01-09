@@ -6,5 +6,12 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32p4
 @pytest.mark.lp_i2s
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+    ],
+    indirect=True,
+)
 def test_lp_i2s(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=200)
