@@ -82,19 +82,16 @@ typedef struct {
  *
  */
 typedef struct {
-    gdma_trigger_peripheral_t periph; /*!< Target peripheral which will trigger DMA operations */
     int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `hal/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UHCI0 */
     int bus_id;                       /*!< Which system bus should the DMA attached to */
 } gdma_trigger_t;
 
 /**
  * @brief Helper macro to initialize GDMA trigger
- * @note value of `peri` must be selected from `gdma_trigger_peripheral_t` enum.
- *       e.g. GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I2S,0)
- *
+ * @example
+ *        GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI,2)
  */
-#define GDMA_MAKE_TRIGGER(peri, id) \
-    (gdma_trigger_t) { .periph = peri, .instance_id = SOC_##peri##id, .bus_id = SOC_##peri##id##_BUS }
+#define GDMA_MAKE_TRIGGER(peri, id) (gdma_trigger_t) {.instance_id = SOC_##peri##id, .bus_id = SOC_##peri##id##_BUS }
 
 /**
  * @brief A collection of strategy item that each GDMA channel could apply

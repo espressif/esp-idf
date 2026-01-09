@@ -38,14 +38,19 @@ void gdma_hal_set_priority(gdma_hal_context_t *hal, int chan_id, gdma_channel_di
     hal->set_priority(hal, chan_id, dir, priority);
 }
 
-void gdma_hal_connect_peri(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, gdma_trigger_peripheral_t periph, int periph_sub_id)
+void gdma_hal_connect_peri(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, int periph_id)
 {
-    hal->connect_peri(hal, chan_id, dir, periph, periph_sub_id);
+    hal->connect_peri(hal, chan_id, dir, periph_id);
 }
 
-void gdma_hal_disconnect_peri(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+void gdma_hal_connect_mem(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, int dummy_id)
 {
-    hal->disconnect_peri(hal, chan_id, dir);
+    hal->connect_mem(hal, chan_id, dir, dummy_id);
+}
+
+void gdma_hal_disconnect_all(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    hal->disconnect_all(hal, chan_id, dir);
 }
 
 void gdma_hal_enable_burst(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_data_burst, bool en_desc_burst)

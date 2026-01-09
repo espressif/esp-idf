@@ -68,12 +68,10 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, NULL, &rx_channels[0]));
 
     gdma_trigger_t fake_ahb_trigger1 = {
-        .periph = 1,
         .bus_id = SOC_GDMA_BUS_AHB,
         .instance_id = 0,
     };
     gdma_trigger_t fake_ahb_trigger2 = {
-        .periph = 2,
         .bus_id = SOC_GDMA_BUS_AHB,
         .instance_id = 1,
     };
@@ -127,12 +125,10 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     TEST_ESP_OK(gdma_new_axi_channel(&channel_config, NULL, &rx_channels[0]));
 
     gdma_trigger_t fake_axi_trigger1 = {
-        .periph = 1,
         .bus_id = SOC_GDMA_BUS_AXI,
         .instance_id = 0,
     };
     gdma_trigger_t fake_axi_trigger2 = {
-        .periph = 2,
         .bus_id = SOC_GDMA_BUS_AXI,
         .instance_id = 1,
     };

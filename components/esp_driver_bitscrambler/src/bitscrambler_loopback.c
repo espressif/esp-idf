@@ -47,7 +47,7 @@ static esp_err_t new_dma_channel(const gdma_channel_alloc_config_t *cfg, gdma_ch
     //Note that there are chips that do not have SOC_GDMA_BUS_* defined, but those chips also do
     //not have a BitScrambler.
 #ifdef SOC_GDMA_BUS_AHB
-    if (bus == SOC_GDMA_BUS_AHB || bus == SOC_GDMA_BUS_ANY) {
+    if (bus == SOC_GDMA_BUS_AHB) {
         ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(cfg, tx_handle, rx_handle), TAG, "alloc AHB DMA channel failed");
     }
 #endif

@@ -25,11 +25,10 @@ extern "C" {
  *
  * @param input Input linked list descriptor (crypto_dma_desc_t *)
  * @param output Output linked list descriptor (crypto_dma_desc_t *)
- * @param peripheral Crypto peripheral to connect the DMA to, either GDMA_TRIG_PERIPH_AES or
- *                   GDMA_TRIG_PERIPH_SHA
+ * @param peripheral Crypto peripheral to connect the DMA to, either CRYPTO_DMA_USER_AES or CRYPTO_DMA_USER_SHA
  * @return esp_err_t ESP_FAIL if no GDMA channel available
  */
-esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t peripheral);
+esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, crypto_dma_user_t peripheral);
 
 #if SOC_AXI_GDMA_SUPPORTED
 /**
