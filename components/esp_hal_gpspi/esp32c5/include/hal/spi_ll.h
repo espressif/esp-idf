@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -900,13 +900,16 @@ static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
 }
 
 /**
- * Determine and unify the default level of mosi line when bus free
+ * Determine and unify the default level of data line when bus idle
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_set_mosi_free_level(spi_dev_t *hw, bool level)
+static inline void spi_ll_set_data_pin_idle_level(spi_dev_t *hw, bool level)
 {
-    hw->ctrl.d_pol = level;     //set default level for MOSI only on IDLE state
+    hw->ctrl.d_pol = level;
+    hw->ctrl.q_pol = level;
+    hw->ctrl.wp_pol = level;
+    hw->ctrl.hold_pol = level;
 }
 
 /*------------------------------------------------------------------------------
