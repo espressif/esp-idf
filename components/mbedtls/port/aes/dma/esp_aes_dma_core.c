@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1045,17 +1045,6 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
             }
         }
 
-        // When a DMA engine (AES-DMA operations) writes into a PSRAM destination buffer that previously contained dirty D-cache lines,
-        // later cache eviction can write back stale data and corrupt the DMA result.
-        // Fix this by cleaning the destination buffers before starting DMA transfers.
-        if (esp_ptr_external_ram(output)) {
-            if (esp_cache_msync((void *)output, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
-                mbedtls_platform_zeroize(output, len);
-                ESP_LOGE(TAG, "Cache sync failed for the output in external RAM");
-                return -1;
-            }
-        }
-
         if (esp_ptr_external_ram(output)) {
             size_t dcache_line_size;
             ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &dcache_line_size);
@@ -1081,6 +1070,19 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         if (input_needs_realloc || output_needs_realloc) {
             return esp_aes_process_dma_ext_ram(ctx, input, output, len, stream_out, input_needs_realloc, output_needs_realloc);
         }
+
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+        // When a DMA engine (AES-DMA operations) writes into a PSRAM destination buffer that previously contained dirty D-cache lines,
+        // later cache eviction can write back stale data and corrupt the DMA result.
+        // Fix this by cleaning the destination buffers before starting DMA transfers.
+        if (esp_ptr_external_ram(output)) {
+            if (esp_cache_msync((void *)output, block_bytes, ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+                mbedtls_platform_zeroize(output, len);
+                ESP_LOGE(TAG, "Cache sync failed for the output in external RAM");
+                return -1;
+            }
+        }
+#endif
 
         /* Set up dma descriptors for input and output considering the 16 byte alignment requirement for EDMA */
         crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED);
@@ -1171,17 +1173,6 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         goto cleanup;
     }
 
-#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
-    if (block_bytes > 0) {
-        if (esp_ptr_external_ram(output)) {
-            if(esp_cache_msync((void*)output, block_bytes, ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
-                mbedtls_platform_zeroize(output, len);
-                ESP_LOGE(TAG, "Cache sync failed for the output in external RAM");
-                return -1;
-            }
-        }
-    }
-#endif
     aes_hal_transform_dma_finish();
 
     if (stream_bytes > 0) {
