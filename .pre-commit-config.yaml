@@ -116,7 +116,7 @@ repos:
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
         language: python
-        files: '^tools/.+'
+        files: '^(tools/.+|.gitlab/ci/rules\.yml)'
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
