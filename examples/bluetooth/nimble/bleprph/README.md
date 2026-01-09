@@ -103,7 +103,7 @@ Notification sent successfully
 The following configuration flags can be adjusted to significantly reduce RAM usage in your ESP-IDF project while retaining basic BLE functionality.
 
 | Config Option                                    | Old → New Value | RAM Saved (Bytes)  |
-|--------------------------------------------------|-----------------|--------------------|
+| -------------------------------------------------|---------------- | ------------------ |
 | CONFIG_BT_NIMBLE_SM_SC                           | y → n           | 2016               |
 | CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION       | y → n           | 32                 |
 | CONFIG_BT_NIMBLE_GATT_MAX_PROCS                  | 4 → 2           | 112                |

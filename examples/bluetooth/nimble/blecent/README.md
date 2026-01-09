@@ -165,7 +165,7 @@ The following configuration flags can be adjusted to significantly reduce RAM us
 | CONFIG_COMPILER_OPTIMIZATION_SIZE               | n → y           | 8408              |
 | CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE | n → y           | 5896              |
 | CONFIG_ESP_COEX_SW_COEXIST_ENABLE               | y → n           | 896               |
-| ESP_TASK_WDT_EN                                 | y → n           | 528               |
+| CONFIG_ESP_TASK_WDT_EN                          | y → n           | 528               |
 | CONFIG_LOG_DEFAULT_LEVEL_NONE                   | n → y           | 2592              |
 
 ## Troubleshooting

@@ -39,12 +39,15 @@ static inline const char *ble_svc_gap_device_name(void)
 
 static inline int ble_svc_gap_device_appearance_set(uint16_t appearance)
 {
+    (void)appearance;
     ESP_LOGE(BLE_SVC_GAP_TAG, "GAP service not enabled. Enable CONFIG_BT_NIMBLE_GAP_SERVICE to use this API.");
     return -1;
 }
 
 static inline int ble_svc_gap_device_key_material_set(uint8_t *session_key, uint8_t *iv)
 {
+    (void)session_key;
+    (void)iv;
     ESP_LOGE(BLE_SVC_GAP_TAG, "GAP service not enabled. Enable CONFIG_BT_NIMBLE_GAP_SERVICE to use this API.");
     return -1;
 }
