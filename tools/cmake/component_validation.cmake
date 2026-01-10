@@ -6,6 +6,11 @@
 # have been discovered and processed.
 #
 
+# Temporary hotfix: list of components to skip warnings from
+# TODO: Remove this once a permanent solution is merged
+# Note: This is a hotfix only for the v6.0 branch. It is not present in v6.1+.
+set(__component_validation_skip_warnings esp_wifi)
+
 #
 # Check if a path belongs to a specific component
 #
@@ -54,13 +59,17 @@ function(__component_validation_check_sources component_target)
 
         if(owner_component AND NOT owner_component STREQUAL component_target)
             __component_get_property(owner_name ${owner_component} COMPONENT_NAME)
-            message(WARNING
-                "Source file '${src}' belongs to component ${owner_name} but is being built by "
-                "component ${component_name}. It is recommended to build source files by "
-                "defining component dependencies for ${component_name} "
-                "via using idf_component_register(REQUIRES ${owner_name}) "
-                "or idf_component_register(PRIV_REQUIRES ${owner_name}) in the CMakeLists.txt of "
-                "${component_name}.")
+            # Skip warning if either component is in the skip list (temporary hotfix)
+            if(NOT component_name IN_LIST __component_validation_skip_warnings AND
+               NOT owner_name IN_LIST __component_validation_skip_warnings)
+                message(WARNING
+                    "Source file '${src}' belongs to component ${owner_name} but is being built by "
+                    "component ${component_name}. It is recommended to build source files by "
+                    "defining component dependencies for ${component_name} "
+                    "via using idf_component_register(REQUIRES ${owner_name}) "
+                    "or idf_component_register(PRIV_REQUIRES ${owner_name}) in the CMakeLists.txt of "
+                    "${component_name}.")
+            endif()
         endif()
     endforeach()
 endfunction()
@@ -83,14 +92,18 @@ function(__component_validation_check_include_dirs component_target)
 
         if(owner_component AND NOT owner_component STREQUAL component_target)
             __component_get_property(owner_name ${owner_component} COMPONENT_NAME)
-            message(WARNING
-                "Include directory '${abs_dir}' belongs to component ${owner_name} but is being "
-                "used by component ${component_name}. It is recommended to define the "
-                "component dependency for '${component_name}' on the component ${owner_name}, "
-                "i.e. 'idf_component_register(... REQUIRES ${owner_name})' in the "
-                "CMakeLists.txt of ${component_name}, and specify the included directory "
-                "as idf_component_register(... INCLUDE_DIRS <dir relative to component>) "
-                "in the CMakeLists.txt of component ${owner_name}.")
+            # Skip warning if either component is in the skip list (temporary hotfix)
+            if(NOT component_name IN_LIST __component_validation_skip_warnings AND
+               NOT owner_name IN_LIST __component_validation_skip_warnings)
+                message(WARNING
+                    "Include directory '${abs_dir}' belongs to component ${owner_name} but is being "
+                    "used by component ${component_name}. It is recommended to define the "
+                    "component dependency for '${component_name}' on the component ${owner_name}, "
+                    "i.e. 'idf_component_register(... REQUIRES ${owner_name})' in the "
+                    "CMakeLists.txt of ${component_name}, and specify the included directory "
+                    "as idf_component_register(... INCLUDE_DIRS <dir relative to component>) "
+                    "in the CMakeLists.txt of component ${owner_name}.")
+            endif()
         endif()
     endforeach()
 
@@ -103,16 +116,20 @@ function(__component_validation_check_include_dirs component_target)
 
         if(owner_component AND NOT owner_component STREQUAL component_target)
             __component_get_property(owner_name ${owner_component} COMPONENT_NAME)
-            message(WARNING
-                "Private include directory '${abs_dir}' belongs to component ${owner_name} but "
-                "is being used by component ${component_name}. "
-                "It is recommended to define the component dependency for ${component_name} "
-                "on the component ${owner_name}, "
-                "i.e. 'idf_component_register(... PRIV_REQUIRES ${owner_name})' in the "
-                "CMakeLists.txt of ${component_name}, "
-                "and specify the included directory as "
-                "idf_component_register(... PRIV_INCLUDE_DIRS <dir relative to component>) "
-                "in the CMakeLists.txt of component ${owner_name}.")
+            # Skip warning if either component is in the skip list (temporary hotfix)
+            if(NOT component_name IN_LIST __component_validation_skip_warnings AND
+               NOT owner_name IN_LIST __component_validation_skip_warnings)
+                message(WARNING
+                    "Private include directory '${abs_dir}' belongs to component ${owner_name} but "
+                    "is being used by component ${component_name}. "
+                    "It is recommended to define the component dependency for ${component_name} "
+                    "on the component ${owner_name}, "
+                    "i.e. 'idf_component_register(... PRIV_REQUIRES ${owner_name})' in the "
+                    "CMakeLists.txt of ${component_name}, "
+                    "and specify the included directory as "
+                    "idf_component_register(... PRIV_INCLUDE_DIRS <dir relative to component>) "
+                    "in the CMakeLists.txt of component ${owner_name}.")
+            endif()
         endif()
     endforeach()
 endfunction()
