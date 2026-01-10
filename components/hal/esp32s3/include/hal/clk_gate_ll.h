@@ -83,6 +83,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(shared_periph_module_t periph)
     case PERIPH_WIFI_MODULE:
     case PERIPH_BT_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:
+        return SYSTEM_WIFI_CLK_EN_REG;
     case PERIPH_UART2_MODULE:
     case PERIPH_LCD_CAM_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
@@ -150,6 +151,18 @@ static inline void periph_ll_wifi_module_enable_clk_clear_rst(void)
 static inline void periph_ll_wifi_module_disable_clk_set_rst(void)
 {
     DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_EN_M);
+    DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
+}
+
+static inline void periph_ll_phy_calibration_module_enable_clk_clear_rst(void)
+{
+    DPORT_SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_PHY_EN_M);
+    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
+}
+
+static inline void periph_ll_phy_calibration_module_disable_clk_set_rst(void)
+{
+    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_PHY_EN_M);
     DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
 }
 

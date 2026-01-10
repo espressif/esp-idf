@@ -11,6 +11,7 @@
 #ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
 #include "hal/clk_gate_ll.h"
 #endif
+#include "esp_log.h"
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT && SOC_MODEM_CLOCK_SUPPORTED
 #include "esp_private/esp_modem_clock.h"
@@ -131,7 +132,10 @@ void wifi_module_enable(void)
     modem_clock_module_enable(PERIPH_WIFI_MODULE);
 #else
     esp_os_enter_critical_safe(&periph_spinlock);
-    periph_ll_wifi_module_enable_clk_clear_rst();
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_WIFI_MODULE]++;
     esp_os_exit_critical_safe(&periph_spinlock);
 #endif
 }
@@ -142,8 +146,89 @@ void wifi_module_disable(void)
     modem_clock_module_disable(PERIPH_WIFI_MODULE);
 #else
     esp_os_enter_critical_safe(&periph_spinlock);
-    periph_ll_wifi_module_disable_clk_set_rst();
+    ref_counts[PERIPH_WIFI_MODULE]--;
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_disable_clk_set_rst();
+    }
     esp_os_exit_critical_safe(&periph_spinlock);
 #endif
 }
 #endif // CONFIG_ESP_WIFI_ENABLED
+
+#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED
+// PERIPH_WIFI_BT_COMMON_MODULE is enabled outside
+IRAM_ATTR void phy_module_enable(void)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_PHY_CALIBRATION_MODULE);
+#else
+    esp_os_enter_critical_safe(&periph_spinlock);
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
+    periph_ll_phy_calibration_module_enable_clk_clear_rst();
+    if (ref_counts[PERIPH_RNG_MODULE] == 0) {
+        periph_ll_enable_clk_clear_rst(PERIPH_RNG_MODULE);
+    }
+    ref_counts[PERIPH_RNG_MODULE]++;
+#endif
+#if SOC_WIFI_SUPPORTED
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_WIFI_MODULE]++;
+#endif
+#if SOC_BT_SUPPORTED
+    if (ref_counts[PERIPH_BT_MODULE] == 0) {
+        periph_ll_enable_clk_clear_rst(PERIPH_BT_MODULE);
+    }
+    ref_counts[PERIPH_BT_MODULE]++;
+#endif
+    esp_os_exit_critical_safe(&periph_spinlock);
+#endif
+}
+
+// PERIPH_WIFI_BT_COMMON_MODULE is disabled outside
+IRAM_ATTR void phy_module_disable(void)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_PHY_CALIBRATION_MODULE);
+#else
+    esp_os_enter_critical_safe(&periph_spinlock);
+#if SOC_BT_SUPPORTED
+    ref_counts[PERIPH_BT_MODULE]--;
+    if (ref_counts[PERIPH_BT_MODULE] == 0) {
+        periph_ll_disable_clk_set_rst(PERIPH_BT_MODULE);
+    }
+#endif
+#if SOC_WIFI_SUPPORTED
+    ref_counts[PERIPH_WIFI_MODULE]--;
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_disable_clk_set_rst();
+    }
+#endif
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
+    // Do not disable PHY clock and RNG clock
+    ref_counts[PERIPH_RNG_MODULE]--;
+#endif
+    esp_os_exit_critical_safe(&periph_spinlock);
+#endif
+}
+
+IRAM_ATTR bool phy_module_has_clock_bits(uint32_t mask)
+{
+    uint32_t val = 0;
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    val = modem_clock_module_bits_get(PERIPH_PHY_MODULE);
+#else
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
+    val = DPORT_REG_READ(periph_ll_get_clk_en_reg(PERIPH_WIFI_BT_COMMON_MODULE));
+#else
+    return true;
+#endif
+#endif
+    if ((val & mask) != mask) {
+        ESP_LOGW("periph_ctrl", "phy module clock bits 0x%x, required 0x%x", val, mask);
+        return false;
+    }
+    return true;
+}
+#endif  //#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED

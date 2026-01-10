@@ -54,6 +54,8 @@ typedef enum {
     MODEM_CLOCK_DEVICE_MAX
 } modem_clock_device_t;
 
+#define MODEM_STATUS_IDLE           (0)
+#define MODEM_STATUS_WIFI_INITED    (0x1UL)
 
 typedef struct modem_clock_context {
     modem_clock_hal_context_t *hal;
@@ -65,13 +67,16 @@ typedef struct modem_clock_context {
     } dev[MODEM_CLOCK_DEVICE_MAX];
     /* the low-power clock source for each module */
     modem_clock_lpclk_src_t lpclk_src[PERIPH_MODEM_MODULE_NUM];
+#if SOC_WIFI_SUPPORTED
+    uint32_t modem_status;
+#endif
 } modem_clock_context_t;
 
 
 #if SOC_WIFI_SUPPORTED
 static void IRAM_ATTR modem_clock_wifi_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
-    if (enable) {
+    if (enable || !(ctx->modem_status & MODEM_STATUS_WIFI_INITED)) {
 #if !SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
         modem_syscon_ll_enable_wifi_apb_clock(ctx->hal->syscon_dev, enable);
 #endif
@@ -81,7 +86,7 @@ static void IRAM_ATTR modem_clock_wifi_mac_configure(modem_clock_context_t *ctx,
 
 static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, bool enable)
 {
-    if (enable) {
+    if (enable || !(ctx->modem_status & MODEM_STATUS_WIFI_INITED)) {
         modem_syscon_ll_clk_wifibb_configure(ctx->hal->syscon_dev, enable);
     }
 }
@@ -99,14 +104,14 @@ static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, 
 #if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
 static void IRAM_ATTR modem_clock_wifi_apb_configure(modem_clock_context_t *ctx, bool enable)
 {
-    if (enable) {
+    if (enable || !(ctx->modem_status & MODEM_STATUS_WIFI_INITED)) {
         modem_syscon_ll_enable_wifi_apb_clock(ctx->hal->syscon_dev, enable);
     }
 }
 
 static void IRAM_ATTR modem_clock_wifi_bb_44m_configure(modem_clock_context_t *ctx, bool enable)
 {
-    if (enable) {
+    if (enable || !(ctx->modem_status & MODEM_STATUS_WIFI_INITED)) {
         modem_syscon_ll_enable_wifibb_44m_clock(ctx->hal->syscon_dev, enable);
     }
 }
@@ -196,6 +201,10 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
             [MODEM_CLOCK_DATADUMP]              = { .refs = 0, .configure = modem_clock_data_dump_configure }
         },
         .lpclk_src = { [0 ... PERIPH_MODEM_MODULE_NUM - 1] = MODEM_CLOCK_LPCLK_SRC_INVALID }
+#if SOC_WIFI_SUPPORTED
+        ,
+        .modem_status = MODEM_STATUS_IDLE
+#endif
     };
     if (modem_clock_hal.syscon_dev == NULL || modem_clock_hal.lpcon_dev == NULL) {
         modem_clock_hal.syscon_dev = &MODEM_SYSCON;
@@ -312,8 +321,21 @@ void IRAM_ATTR modem_clock_module_mac_reset(shared_periph_module_t module)
 #define MODEM_ETM_CLOCK_DEPS    (BIT(MODEM_CLOCK_ETM))
 #define MODEM_ADC_COMMON_FE_CLOCK_DEPS  (BIT(MODEM_CLOCK_MODEM_ADC_COMMON_FE))
 #if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
-#define PHY_CALIBRATION_CLOCK_DEPS      (BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB_44M))
+#define PHY_CALIBRATION_WIFI_CLOCK_DEPS     (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_WIFI_BB_44M))
+#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS (BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB_44M) | BIT(MODEM_CLOCK_BT_I154_COMMON_BB))
+#else
+#define PHY_CALIBRATION_WIFI_CLOCK_DEPS     (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_BB))
+#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS (BIT(MODEM_CLOCK_BT_I154_COMMON_BB))
 #endif
+#ifndef SOC_WIFI_SUPPORTED
+#undef  PHY_CALIBRATION_WIFI_CLOCK_DEPS
+#define PHY_CALIBRATION_WIFI_CLOCK_DEPS     0
+#endif
+#if !defined(SOC_BT_SUPPORTED) && !defined(SOC_IEEE802154_SUPPORTED)
+#undef  PHY_CALIBRATION_BT_I154_CLOCK_DEPS
+#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS 0
+#endif
+#define PHY_CALIBRATION_CLOCK_DEPS          (PHY_CALIBRATION_WIFI_CLOCK_DEPS | PHY_CALIBRATION_BT_I154_CLOCK_DEPS)
 
 static IRAM_ATTR uint32_t modem_clock_get_module_deps(shared_periph_module_t module)
 {
@@ -331,9 +353,7 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(shared_periph_module_t mod
 #if SOC_BT_SUPPORTED
         case PERIPH_BT_MODULE:                  deps = BLE_CLOCK_DEPS;                  break;
 #endif
-#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
         case PERIPH_PHY_CALIBRATION_MODULE:     deps = PHY_CALIBRATION_CLOCK_DEPS;      break;
-#endif
 #if SOC_IEEE802154_SUPPORTED
         case PERIPH_IEEE802154_MODULE:          deps = IEEE802154_CLOCK_DEPS;           break;
 #endif
@@ -395,6 +415,41 @@ void IRAM_ATTR modem_clock_module_disable(shared_periph_module_t module)
     uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_disable(MODEM_CLOCK_instance(), deps);
 }
+
+uint32_t IRAM_ATTR modem_clock_module_bits_get(shared_periph_module_t module)
+{
+    assert(IS_MODEM_MODULE(module));
+    uint32_t val = 0;
+    switch (module)
+    {
+#if SOC_WIFI_SUPPORTED
+        case PERIPH_WIFI_MODULE:
+#endif
+#if SOC_BT_SUPPORTED
+        case PERIPH_BT_MODULE:
+#endif
+#if SOC_IEEE802154_SUPPORTED
+        case PERIPH_IEEE802154_MODULE:
+#endif
+        case PERIPH_PHY_MODULE:
+            val = modem_syscon_ll_clk_conf1_get(MODEM_CLOCK_instance()->hal->syscon_dev);
+        default:
+            break;
+    }
+    return val;
+}
+
+#if SOC_WIFI_SUPPORTED
+void modem_clock_configure_wifi_status(bool inited)
+{
+    esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
+    if (inited)
+        MODEM_CLOCK_instance()->modem_status |= MODEM_STATUS_WIFI_INITED;
+    else
+        MODEM_CLOCK_instance()->modem_status &= ~MODEM_STATUS_WIFI_INITED;
+    esp_os_exit_critical_safe(&MODEM_CLOCK_instance()->lock);
+}
+#endif
 
 void modem_clock_deselect_all_module_lp_clock_source(void)
 {
