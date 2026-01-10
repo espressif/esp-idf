@@ -600,7 +600,7 @@ void vPortExitCriticalCompliance(portMUX_TYPE *mux)
 void vPortEnterCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortEnterCritical(void) is not supported on single-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortEnterCritical(void) is not supported on multi-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
     BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -614,7 +614,7 @@ void vPortEnterCritical(void)
 void vPortExitCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortExitCritical(void) is not supported on single-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortExitCritical(void) is not supported on multi-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
 
