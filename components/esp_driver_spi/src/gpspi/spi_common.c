@@ -227,7 +227,6 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 
     if (dma_chan == SPI_DMA_CH_AUTO) {
         gdma_channel_alloc_config_t tx_alloc_config = {
-            .flags.reserve_sibling = 1,
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
             .flags.isr_cache_safe = true,
 #endif
@@ -237,7 +236,6 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 
         gdma_channel_alloc_config_t rx_alloc_config = {
             .direction = GDMA_CHANNEL_DIRECTION_RX,
-            .sibling_chan = dma_ctx->tx_dma_chan,
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
             .flags.isr_cache_safe = true,
 #endif
