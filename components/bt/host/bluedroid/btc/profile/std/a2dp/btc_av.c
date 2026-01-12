@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -224,6 +224,7 @@ UNUSED_ATTR static const char *dump_av_sm_event_name(btc_av_sm_event_t event)
         CASE_RETURN_STR(BTA_AV_RECONFIG_EVT)
         CASE_RETURN_STR(BTA_AV_SUSPEND_EVT)
         CASE_RETURN_STR(BTA_AV_PENDING_EVT)
+        CASE_RETURN_STR(BTA_AV_INCOMING_CFG_EVT)
         CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
         CASE_RETURN_STR(BTA_AV_REJECT_EVT)
         CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
@@ -384,6 +385,16 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         }
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_OPENING);
     } break;
+
+    case BTA_AV_INCOMING_CFG_EVT: {
+        /* Upper layer notification that incoming CONFIG_IND was received while stream SSM was in INIT
+         * and BTA force-switched to INCOMING. BTC should move to OPENING so upcoming CONFIG/OPEN/START
+         * can be handled in the correct state, but MUST NOT call BTA_AvOpen() here to avoid
+         * restarting discovery/open procedure while config is already in progress. */
+        bdcpy(btc_av_cb.peer_bda.address, ((tBTA_AV *)p_data)->incoming.bd_addr);
+        btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_OPENING);
+        break;
+    }
 
     case BTC_AV_DISCONNECT_REQ_EVT:
         BTC_TRACE_WARNING("No Link At All.");
