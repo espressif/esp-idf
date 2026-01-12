@@ -601,11 +601,9 @@ static NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
      * In this stage, we re-configure the Flash (and MSPI) to required configuration
      */
     spi_flash_init_chip_state();
-#if SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
     // This function needs to be called when PLL is enabled. Needs to be called after spi_flash_init_chip_state in case
     // some state of flash is modified.
     mspi_timing_flash_tuning();
-#endif
 }
 
 MSPI_INIT_ATTR void mspi_init(void)

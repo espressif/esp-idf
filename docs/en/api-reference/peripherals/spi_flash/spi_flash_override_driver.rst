@@ -231,16 +231,14 @@ The flash driver in the application is used to read, write, erase, and save data
 
 - Step 7: Build your project, and you will see the new flash driver in use.
 
-.. only:: SOC_MEMSPI_SRC_FREQ_120M
+High Performance Flash Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    High Performance Flash Implementation
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The high performance mode operates at frequencies higher than 80 MHz. Please check the datasheet for your flash and to determine which approach can reach to frequencies higher than 80 MHz, as listed in *DC Characteristics* section. Some behavior is already defined in the `high performance file <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ . If your flash meets the specified behavior, extend the list as introduced in the ``bootloader_flash_unlock`` section. If your flash has different behavior, please add the new behavior and override the behavior table ``spi_flash_hpm_enable_list``.
 
-    The high performance mode operates at frequencies higher than 80 MHz. Please check the datasheet for your flash and to determine which approach can reach to frequencies higher than 80 MHz, as listed in *DC Characteristics* section. Some behavior is already defined in the `high performance file <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ . If your flash meets the specified behavior, extend the list as introduced in the ``bootloader_flash_unlock`` section. If your flash has different behavior, please add the new behavior and override the behavior table ``spi_flash_hpm_enable_list``.
+.. important::
 
-    .. important::
-
-        Flash with a frequency set above 80 MHz should be tested carefully due to its strict timing requirements. If you want to use the high performance mode feature for mass production, please contact `Espressif's business team <https://www.espressif.com/en/contact-us/sales-questions>`_.
+    Flash with a frequency set above 80 MHz should be tested carefully due to its strict timing requirements. If you want to use the high performance mode feature for mass production, please contact `Espressif's business team <https://www.espressif.com/en/contact-us/sales-questions>`_.
 
 Example
 -------

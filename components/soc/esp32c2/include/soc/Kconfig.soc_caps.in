@@ -479,22 +479,6 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
-config SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
-    bool
-    default y
-
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2

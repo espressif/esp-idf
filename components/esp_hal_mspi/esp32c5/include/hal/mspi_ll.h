@@ -75,9 +75,6 @@ static inline __attribute__((always_inline)) void mspi_timing_ll_set_core_clock(
     case 120:
         divider = 4;
         break;
-    case 240:
-        divider = 2;
-        break;
     default:
         HAL_ASSERT(false);
     }

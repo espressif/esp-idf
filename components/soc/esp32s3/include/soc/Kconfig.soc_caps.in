@@ -683,22 +683,6 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
-config SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
-    bool
-    default y
-
 config SOC_SPIRAM_SUPPORTED
     bool
     default y
@@ -1140,6 +1124,10 @@ config SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
     default y
 
 config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+    bool
+    default y
+
+config SOC_SPI_MEM_FLASH_SUPPORT_HPM
     bool
     default y
 

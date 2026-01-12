@@ -231,16 +231,14 @@
 
 - 步骤 7：构建项目，你将看到新的 flash 驱动程序。
 
-.. only:: SOC_MEMSPI_SRC_FREQ_120M
+高性能 flash 实现
+~~~~~~~~~~~~~~~~~
 
-    高性能 flash 实现
-    ~~~~~~~~~~~~~~~~~
+高性能模式在高于 80 MHz 的频率下运行。请查阅 *直流电气特性* 章节，判断芯片是否支持在高于 80 MHz 的频率下工作。`高性能文件 <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ 中已经预定义了部分高性能模式下的行为，如果你的 flash 芯片符合指定行为，请按照 ``bootloader_flash_unlock`` 部分介绍的方法扩展列表。如果你的 flash 芯片有不同的行为，请添加新行为并覆盖 ``spi_flash_hpm_enable_list`` 行为表。
 
-    高性能模式在高于 80 MHz 的频率下运行。请查阅 *直流电气特性* 章节，判断芯片是否支持在高于 80 MHz 的频率下工作。`高性能文件 <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ 中已经预定义了部分高性能模式下的行为，如果你的 flash 芯片符合指定行为，请按照 ``bootloader_flash_unlock`` 部分介绍的方法扩展列表。如果你的 flash 芯片有不同的行为，请添加新行为并覆盖 ``spi_flash_hpm_enable_list`` 行为表。
+.. important::
 
-    .. important::
-
-        频率设置为 80 MHz 以上的 flash 芯片应进行仔细的测试，因为此时系统对于时序的要求非常严格。如果想在量产过程中使用高性能模式的功能，请联系 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+    频率设置为 80 MHz 以上的 flash 芯片应进行仔细的测试，因为此时系统对于时序的要求非常严格。如果想在量产过程中使用高性能模式的功能，请联系 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
 
 示例
 ----

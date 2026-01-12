@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os
 import pathlib
@@ -53,7 +53,6 @@ def test_flash4_psram4(dut: IdfDut) -> None:
     'config',
     [
         'esp32p4_120sdr_200ddr',
-        'esp32p4_timing_tuning_log_safe',
     ],
     indirect=True,
 )
@@ -62,15 +61,44 @@ def test_flash_psram_esp32p4(dut: IdfDut) -> None:
     dut.run_all_single_board_cases()
 
 
-# TODO: never was tested IDF-14918
-# @pytest.mark.generic
-# @pytest.mark.parametrize(
-#     'config',
-#     [
-#         'generic_timing_tuning_log_safe',
-#     ],
-#     indirect=True,
-# )
-# @idf_parametrize('target', ['esp32c5', 'esp32c61'], indirect=['target'])
-# def test_flash_psram_generic(dut: IdfDut) -> None:
-#     dut.run_all_single_board_cases()
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        '120sdr_120sdr',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5', 'esp32c61'], indirect=['target'])
+def test_flash_psram_120sdr_120sdr(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.parametrize(
+    'config',
+    [
+        'generic_timing_tuning_log_safe',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target,markers',
+    [
+        # S3 has no flash support auto suspend, this test is not applicable
+        (
+            'esp32p4',
+            (pytest.mark.generic,),
+        ),
+        (
+            'esp32c5',
+            (pytest.mark.generic,),
+        ),
+        (
+            'esp32c61',
+            (pytest.mark.generic,),
+        ),
+    ],
+    indirect=['target'],
+)
+def test_flash_psram_generic(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases()
