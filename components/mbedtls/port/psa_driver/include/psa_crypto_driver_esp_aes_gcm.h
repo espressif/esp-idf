@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#if (defined(ESP_AES_DRIVER_ENABLED) || defined(MBEDTLS_HARDWARE_GCM))
+#if defined(ESP_AES_DRIVER_ENABLED)
 #include "psa/crypto.h"
 #include "psa_crypto_driver_esp_aes_contexts.h"
 

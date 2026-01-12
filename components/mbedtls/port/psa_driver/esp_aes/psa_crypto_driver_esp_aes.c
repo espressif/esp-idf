@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -458,10 +458,10 @@ static psa_status_t esp_crypto_aes_setup(
         goto exit;
     }
 
-    // if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
-    //     status = PSA_ERROR_INVALID_ARGUMENT;
-    //     goto exit;
-    // }
+    if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto exit;
+    }
 
     switch (alg) {
         case PSA_ALG_ECB_NO_PADDING:
@@ -528,8 +528,6 @@ psa_status_t esp_aes_cipher_encrypt(
     esp_aes_operation_t esp_aes_driver_ctx;
     memset(&esp_aes_driver_ctx, 0, sizeof(esp_aes_operation_t));
     size_t update_output_length, finish_output_length;
-
-    // ESP_LOGI("esp_aes_cipher_encrypt", "Starting encryption");
 
     status = esp_aes_cipher_encrypt_setup(&esp_aes_driver_ctx, attributes,
                                         key_buffer, key_buffer_size,
@@ -641,8 +639,6 @@ exit:
     } else {
         esp_crypto_aes_abort(&esp_aes_driver_ctx);
     }
-
-    // printf("AES decryption finished with status: %ld\n", status);
 
     return status;
 }

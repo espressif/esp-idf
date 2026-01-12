@@ -212,12 +212,10 @@
 /* MBEDTLS_MDx_ALT to enable ROM MD support
    with software fallback.
 */
-/* TODO: IDF-15029 */
-// #ifdef CONFIG_MBEDTLS_ROM_MD5
-// #define MBEDTLS_MD5_ALT
-// #else
-// #undef MBEDTLS_MD5_ALT
-// #endif
+#ifdef CONFIG_MBEDTLS_ROM_MD5
+#define MBEDTLS_PSA_ACCEL_ALG_MD5
+#undef MBEDTLS_PSA_BUILTIN_ALG_MD5
+#endif
 
 /* The following MPI (bignum) functions have hardware support.
  * Uncommenting these macros will use the hardware-accelerated
@@ -1813,19 +1811,6 @@
 #endif
 
 /**
- * \def MBEDTLS_BLOWFISH_C
- *
- * Enable the Blowfish block cipher.
- *
- * Module:  library/blowfish.c
- */
-#ifdef CONFIG_MBEDTLS_BLOWFISH_C
-#define MBEDTLS_BLOWFISH_C
-#else
-#undef MBEDTLS_BLOWFISH_C
-#endif
-
-/**
  * \def MBEDTLS_CAMELLIA_C
  *
  * Enable the Camellia block cipher.
@@ -1879,7 +1864,7 @@
  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
  */
 #ifdef CONFIG_MBEDTLS_CAMELLIA_C
-#define MBEDTLS_CAMELLIA_C
+#define PSA_WANT_KEY_TYPE_CAMELLIA 1
 #else
 #undef MBEDTLS_CAMELLIA_C
 #undef PSA_WANT_KEY_TYPE_CAMELLIA
@@ -1938,6 +1923,7 @@
 #ifdef CONFIG_MBEDTLS_ARIA_C
 #define PSA_WANT_KEY_TYPE_ARIA 1
 #else
+#undef MBEDTLS_ARIA_C
 #undef PSA_WANT_KEY_TYPE_ARIA
 #endif
 
@@ -1980,9 +1966,10 @@
  * Module:  library/chacha20.c
  */
 #ifdef CONFIG_MBEDTLS_CHACHA20_C
-#define MBEDTLS_CHACHA20_C
+#define PSA_WANT_KEY_TYPE_CHACHA20 1
 #else
 #undef MBEDTLS_CHACHA20_C
+#undef PSA_WANT_KEY_TYPE_CHACHA20
 #endif
 
 /**
@@ -1995,9 +1982,10 @@
  * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
  */
 #ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
-#define MBEDTLS_CHACHAPOLY_C
+#define PSA_WANT_ALG_CHACHA20_POLY1305 1
 #else
 #undef MBEDTLS_CHACHAPOLY_C
+#undef PSA_WANT_ALG_CHACHA20_POLY1305
 #endif
 
 /**
@@ -3033,20 +3021,6 @@
 #define MBEDTLS_X509_CSR_WRITE_C
 #else
 #undef MBEDTLS_X509_CSR_WRITE_C
-#endif
-
-/**
- * \def MBEDTLS_XTEA_C
- *
- * Enable the XTEA block cipher.
- *
- * Module:  library/xtea.c
- * Caller:
- */
-#ifdef CONFIG_MBEDTLS_XTEA_C
-#define MBEDTLS_XTEA_C
-#else
-#undef MBEDTLS_XTEA_C
 #endif
 
 /* \} name SECTION: mbed TLS modules */

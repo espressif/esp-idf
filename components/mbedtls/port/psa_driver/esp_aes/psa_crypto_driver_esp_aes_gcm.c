@@ -14,7 +14,7 @@
 #include "../include/psa_crypto_driver_esp_aes_contexts.h"
 // #ifdef ESP_MBEDTLS_AES_ACCEL
 
-#if (defined(ESP_AES_DRIVER_ENABLED) || defined(MBEDTLS_HARDWARE_GCM))
+#if defined(ESP_AES_DRIVER_ENABLED)
 
 #define ESP_AES_GCM_TAG_LENGTH 16
 
@@ -271,4 +271,4 @@ exit:
     return status;
 }
 // #endif /* ESP_MBEDTLS_AES_ACCEL */
-#endif /* ESP_AES_DRIVER_ENABLED && MBEDTLS_HARDWARE_GCM */
+#endif /* ESP_AES_DRIVER_ENABLED */
