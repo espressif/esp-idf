@@ -547,6 +547,9 @@ static void test_ecdsa_sign(esp_ecdsa_curve_t curve)
     };
 
     psa_algorithm_t alg = PSA_ALG_ECDSA(sha_alg);
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
+    alg = PSA_ALG_DETERMINISTIC_ECDSA(sha_alg);
+#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC */
 
     // Set attributes for opaque private key
     psa_set_key_type(&priv_key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
@@ -574,6 +577,21 @@ static void test_ecdsa_sign(esp_ecdsa_curve_t curve)
 
     TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
     TEST_ASSERT_EQUAL(signature_len, 2 * key_len);
+
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
+    uint8_t signature_det_verify[2 * ECDSA_SECP384R1_KEY_LEN];
+    size_t signature_det_verify_len = 0;
+
+    status = psa_sign_hash(priv_key_id,
+                           alg,
+                           sha, sha_len,
+                           signature_det_verify, 2 * key_len,
+                           &signature_det_verify_len);
+
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(signature_det_verify_len, signature_len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(signature, signature_det_verify, signature_len);
+#endif
 
     psa_set_key_type(&pub_key_attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_bits(&pub_key_attr, key_len * 8);

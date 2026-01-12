@@ -492,7 +492,13 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    psa_algorithm_t ecdsa_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
+
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
+    ecdsa_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256);
+#endif
+
+    psa_set_key_algorithm(&key_attributes, ecdsa_alg);
 
     uint8_t *priv_key = NULL;
     size_t priv_key_len = 0;
@@ -517,7 +523,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 
     ESP_LOGD(TAG, "Generating ECDSA signature...");
     size_t signature_len = 0;
-    status = psa_sign_hash(key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), hash, hlen, out_sign->signature, sizeof(out_sign->signature), &signature_len);
+    status = psa_sign_hash(key_id, ecdsa_alg, hash, hlen, out_sign->signature, sizeof(out_sign->signature), &signature_len);
     if (status != PSA_SUCCESS) {
         err = ESP_FAIL;
         ESP_LOGE(TAG, "Failed to generate ECDSA signature: %ld", status);
