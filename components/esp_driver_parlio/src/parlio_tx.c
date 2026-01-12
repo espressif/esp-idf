@@ -642,6 +642,9 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE(payload_bits <= tx_unit->max_transfer_bits, ESP_ERR_INVALID_ARG, TAG, "payload bit length too large");
 #if !PARLIO_LL_SUPPORT(TRANS_BIT_ALIGN)
     ESP_RETURN_ON_FALSE((payload_bits % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must be multiple of 8");
+    if (payload_bits % 32 != 0) {
+        ESP_LOGW(TAG, "payload bit length %d is not multiple of 32, it may cause unexpected behavior", payload_bits);
+    }
 #endif // !PARLIO_LL_SUPPORT(TRANS_BIT_ALIGN)
 
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
