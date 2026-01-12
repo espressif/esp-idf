@@ -107,8 +107,7 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
     }
     if (len_append) {
 #if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
-        if (omdata && !BLE_LOG_IN_ISR()) {
-            /* os_mbuf_copydata is in flash and not safe to call from ISR */
+        if (omdata) {
             os_mbuf_copydata((struct os_mbuf *)addr_append, 0,
                              len_append, buf + BLE_LOG_FRAME_HEAD_LEN + len);
         }
@@ -494,6 +493,9 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
     if (BLE_LOG_IN_ISR()) {
         /* Reuse common LBM acquire logic */
         lbm = ble_log_lbm_acquire();
+
+        /* os_mbuf_copydata is in flash and not safe to call from ISR */
+        omdata = false;
     } else {
         lbm = (use_ll_task)? &(lbm_ctx->lbm_ll_task): &(lbm_ctx->lbm_ll_hci);
     }
