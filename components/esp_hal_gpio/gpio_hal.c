@@ -47,7 +47,9 @@ void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func)
 
 void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool in_inv)
 {
-    gpio_ll_input_enable(hal->dev, gpio_num);
+    if (gpio_num < GPIO_NUM_MAX) {  // skip const_0/1 io num from enabling input
+        gpio_ll_input_enable(hal->dev, gpio_num);
+    }
 #if HAL_CONFIG(GPIO_USE_ROM_API)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, in_inv);
 #else

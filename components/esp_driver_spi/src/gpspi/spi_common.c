@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,7 @@
 #include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_cache.h"
-#include "esp_rom_gpio.h"
 #include "esp_heap_caps.h"
-#include "soc/spi_periph.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -538,14 +536,13 @@ static void s_spi_common_bus_via_gpio(gpio_num_t gpio_num, int in_sig, int out_s
 {
     assert(GPIO_IS_VALID_GPIO(gpio_num));  //coverity check
     if (in_sig != -1) {
-        gpio_input_enable(gpio_num);
-        esp_rom_gpio_connect_in_signal(gpio_num, in_sig, false);
+        gpio_matrix_input(gpio_num, in_sig, false);
     }
     if (out_sig != -1) {
         // For gpio_matrix, reserve output pins, see 'esp_gpio_reserve.h'
         *io_mask |= BIT64(gpio_num);
         s_spi_common_gpio_check_reserve(gpio_num);
-        esp_rom_gpio_connect_out_signal(gpio_num, out_sig, false, false);
+        gpio_matrix_output(gpio_num, out_sig, false, false);
     }
     gpio_func_sel(gpio_num, PIN_FUNC_GPIO);
 }
@@ -613,9 +610,9 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         SPI_CHECK_PIN(bus_config->miso_io_num, "miso", !(flags & SPICOMMON_BUSFLAG_MASTER) || (temp_flag & SPICOMMON_BUSFLAG_DUAL));
     }
     //set flags for DUAL mode according to output-capability of MOSI and MISO pins.
-    if ((bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) &&
-            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num)) &&
-            (bus_config->miso_io_num != bus_config->mosi_io_num)) {
+    //DUAL mode requires both MOSI and MISO to able to input and output.
+    if (GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num) && GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num) &&
+            bus_config->miso_io_num != bus_config->mosi_io_num) {
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
 
@@ -682,7 +679,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     } else {
         //Use GPIO matrix
         if (bus_config->mosi_io_num >= 0) {
-            int in_sig = (!(flags & SPICOMMON_BUSFLAG_MASTER) || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) ? spi_periph_signal[host].spid_in : -1;
+            int in_sig  = spi_periph_signal[host].spid_in; // always connect input in case sio mode device is used
             int out_sig = ((flags & SPICOMMON_BUSFLAG_MASTER) || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) ? spi_periph_signal[host].spid_out : -1;
             s_spi_common_bus_via_gpio(bus_config->mosi_io_num, in_sig, out_sig, &gpio_reserv);
         }
@@ -731,20 +728,41 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     return ESP_OK;
 }
 
-esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg, uint64_t *io_reserved)
+esp_err_t spicommon_bus_free_io_cfg(spi_host_device_t host)
 {
+    spi_bus_attr_t *bus_attr = (spi_bus_attr_t *)spi_bus_get_attr(host);
+    assert(bus_attr);
+    spi_bus_config_t *bus_cfg = &bus_attr->bus_cfg;
+
     for (uint8_t i = 0; i < sizeof(bus_cfg->iocfg) / sizeof(bus_cfg->iocfg[0]); i++) {
 #if !SOC_SPI_SUPPORT_OCT
         if (i > 4) {
             break;
         }
 #endif
-        if (GPIO_IS_VALID_GPIO(bus_cfg->iocfg[i]) && (*io_reserved & BIT64(bus_cfg->iocfg[i]))) {
-            *io_reserved &= ~BIT64(bus_cfg->iocfg[i]);
+        if (GPIO_IS_VALID_GPIO(bus_cfg->iocfg[i]) && (bus_attr->gpio_reserve & BIT64(bus_cfg->iocfg[i]))) {
+            bus_attr->gpio_reserve &= ~BIT64(bus_cfg->iocfg[i]);
+            // all reserved pins (even iomux input pins) is harmless to be disabled here.
             gpio_output_disable(bus_cfg->iocfg[i]);
             esp_gpio_revoke(BIT64(bus_cfg->iocfg[i]));
         }
     }
+
+    // disconnect all input signals anyway
+    gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spics_in, false);
+    gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spiclk_in, false);
+    gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spid_in, false);
+    gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spiq_in, false);
+    gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spiwp_in, false);
+    gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spihd_in, false);
+#if SOC_SPI_SUPPORT_OCT
+    if (host == SPI2_HOST) { // only gpspi2 supports octal pins (data4 ~ data7)
+        gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spid4_in, false);
+        gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spid5_in, false);
+        gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spid6_in, false);
+        gpio_matrix_input(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host].spid7_in, false);
+    }
+#endif
     return ESP_OK;
 }
 
@@ -762,12 +780,11 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_id, i
         if (GPIO_IS_VALID_OUTPUT_GPIO(cs_io_num)) {
             out_mask |= BIT64(cs_io_num);
             s_spi_common_gpio_check_reserve(cs_io_num);
-            esp_rom_gpio_connect_out_signal(cs_io_num, spi_periph_signal[host].spics_out[cs_id], false, false);
+            gpio_matrix_output(cs_io_num, spi_periph_signal[host].spics_out[cs_id], false, false);
         }
         // cs_id 0 is always used by slave for input
         if (cs_id == 0) {
-            gpio_input_enable(cs_io_num);
-            esp_rom_gpio_connect_in_signal(cs_io_num, spi_periph_signal[host].spics_in, false);
+            gpio_matrix_input(cs_io_num, spi_periph_signal[host].spics_in, false);
         }
         gpio_func_sel(cs_io_num, PIN_FUNC_GPIO);
     }
@@ -966,7 +983,7 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
             return err;
         }
     }
-    spicommon_bus_free_io_cfg(&bus_attr->bus_cfg, &bus_attr->gpio_reserve);
+    spicommon_bus_free_io_cfg(host_id);
 
 #if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     const periph_retention_module_t retention_id = spi_reg_retention_info[host_id - 1].module_id;

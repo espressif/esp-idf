@@ -283,7 +283,7 @@ static void test_bus_lock(bool test_flash)
 
 #if CONFIG_IDF_TARGET_ESP32
 // no need this case in other target, only esp32 need buslock to split MSPI and GPSPI2 action
-TEST_CASE("spi bus lock, with flash", "[spi][test_env=external_flash]")
+TEST_CASE("spi bus lock, with flash", "[external_flash][test_env=external_flash]")
 {
     test_bus_lock(true);
 }

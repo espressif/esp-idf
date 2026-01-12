@@ -337,7 +337,7 @@ esp_err_t spi_slave_free(spi_host_device_t host)
         free(spihost[host]->dma_ctx->dmadesc_rx);
         spicommon_dma_chan_free(spihost[host]->dma_ctx);
     }
-    spicommon_bus_free_io_cfg(&spihost[host]->bus_attr->bus_cfg, &spihost[host]->bus_attr->gpio_reserve);
+    spicommon_bus_free_io_cfg(host);
     if (spihost[host]->cfg.spics_io_num >= 0) {
         spicommon_cs_free_io(spihost[host]->cfg.spics_io_num, &spihost[host]->bus_attr->gpio_reserve);
     }

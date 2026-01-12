@@ -50,7 +50,7 @@ typedef enum {
 /// Attributes of an SPI bus
 typedef struct {
     spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus
-    uint64_t gpio_reserve;              ///< reserved output gpio bit mask
+    uint64_t gpio_reserve;              ///< reserved gpio matrix output pins and all iomux pins bit mask
     uint32_t flags;                     ///< Flags (SPICOMMON_BUSFLAG_* flag combination of bus abilities) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
@@ -185,14 +185,13 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 /**
  * @brief Free the IO used by a SPI peripheral
  *
- * @param bus_cfg Bus config struct which defines which pins to be used.
- * @param io_reserved Bitmap indicate which pin is reserved
+ * @param host SPI peripheral
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg, uint64_t *io_reserved);
+esp_err_t spicommon_bus_free_io_cfg(spi_host_device_t host);
 
 /**
  * @brief Initialize a Chip Select pin for a specific SPI peripheral
