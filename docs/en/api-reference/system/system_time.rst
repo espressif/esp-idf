@@ -66,11 +66,12 @@ Some chips may provide the **internal oscillator** option, which is a trade-off 
 
 In most designs, the additional sleep current is a reasonable trade-off for significantly improved RTC Timer frequency stability and reduced time drift during sleep.
 
-**Bluetooth LE** requires sleep clock accuracy within 500 PPM. The RTC clock source may not meet this requirement, leading to connection establishment failures, unexpected timeouts, or incompatibility with non-ESP peer devices.
+**Bluetooth LE** requires sleep clock accuracy within 500 PPM. The RTC clock source may not meet this requirement, leading to connection establishment failures, unexpected timeouts, or incompatibility with non-Espressif peer devices.
 
 .. only:: SOC_BLE_SUPPORTED
 
     For a detailed comparison of Bluetooth LE clock configurations and power consumption, refer to :doc:`Low Power Mode in Bluetooth LE </api-guides/low-power-mode/low-power-mode-ble>`.
+
 
 Get Current Time
 ----------------
