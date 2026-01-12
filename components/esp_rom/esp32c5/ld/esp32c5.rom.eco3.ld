@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,11 +12,48 @@ coex_status_get = 0x40000b0c;
 ets_delay_us = 0x4000003c;
 Cache_Set_IDROM_MMU_Size = 0x400006c4;
 
-ieee80211_encap_esfbuf = 0x40000b60;
-ieee80211_set_tx_desc = 0x40000b70;
-sta_input = 0x40000bd4;
-sta_rx_eapol = 0x40000bd8;
-sta_reset_beacon_timeout = 0x40000bdc;
+//ieee80211_encap_esfbuf = 0x40000b60;
+//ieee80211_set_tx_desc = 0x40000b70;
+//sta_input = 0x40000bd4;
+//sta_rx_eapol = 0x40000bd8;
+//sta_reset_beacon_timeout = 0x40000bdc;
+
+hal_mac_tx_set_ppdu = 0x40000c0c;
+ic_mac_deinit = 0x40000c78;
+ic_mac_init = 0x40000c7c;
+lmacTxFrame = 0x40000cd0;
+lmacDisableTransmit = 0x40000cd4;
+pm_check_state = 0x40000d48;
+//pm_set_beacon_filter = 0x40000d6c;
+//pm_is_in_wifi_slice_threshold = 0x40000d70;
+pm_keep_alive = 0x40000d78;
+pm_process_tim = 0x40000da8;
+//pm_tbtt_process = 0x40000dbc;
+//pm_tx_data_process = 0x40000dd8;
+pm_twt_process = 0x40000de8;
+//pm_mac_try_enable_modem_state = 0x40000dfc;
+//pm_update_next_tbtt = 0x40000e04;
+pm_clear_wakeup_signal = 0x40000e0c;
+pm_mac_disable_tsf_tbtt_soc_wakeup = 0x40000e10;
+//pm_mac_disable_tsf_tbtt_modem_wakeup = 0x40000e14;
+pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000e18;
+//pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000e1c;
+//pm_mac_modem_params_rt_update = 0x40000e20;
+ppMapTxQueue = 0x40000e64;
+//ppProcTxSecFrame = 0x40000e68;
+//ppProcessTxQ = 0x40000e70;
+ppRxPkt = 0x40000e8c;
+ppRxProtoProc = 0x40000e90;
+//ppProcessLifeTime = 0x40000ee4;
+//rcGetSched = 0x40000f40;
+//wDev_ProcessRxSucData = 0x40000fe0;
+esp_test_tx_process_complete = 0x40001030;
+pm_get_tbtt_count = 0x4000151c;
+pm_enable_max_idle_timer = 0x400015b8;
+//pm_beacon_offset_check = 0x400015cc;
+pm_beacon_offset_get_average = 0x400015d0;
+pm_beacon_offset_get_expect = 0x400015d4;
+pm_beacon_offset_get_params = 0x400015d8;
 
 phy_rate_to_index = 0x400010e8;
 phy_get_target_pwr = 0x400010ec;
@@ -42,7 +79,7 @@ phy_ant_wifitx_cfg = 0x4000113c;
 phy_ant_wifirx_cfg = 0x40001140;
 phy_ant_bttx_cfg = 0x40001144;
 phy_ant_btrx_cfg = 0x40001148;
-phy_chan_dump_cfg = 0x4000114c;
+//phy_chan_dump_cfg = 0x4000114c;
 phy_chan_dump_cfg_752 = 0x40001150;
 phy_enable_low_rate = 0x40001154;
 phy_disable_low_rate = 0x40001158;
@@ -273,37 +310,6 @@ phy_bt_get_tx_tab_ = 0x400014f8;
 phy_bt_set_tx_gain = 0x400014fc;
 phy_bt_tx_gain_init = 0x40001500;
 
-hal_mac_tx_set_ppdu = 0x40000c0c;
-ic_mac_deinit = 0x40000c78;
-ic_mac_init = 0x40000c7c;
-lmacTxFrame = 0x40000cd0;
-lmacDisableTransmit = 0x40000cd4;
-pm_check_state = 0x40000d48;
-pm_set_beacon_filter = 0x40000d6c;
-pm_is_in_wifi_slice_threshold = 0x40000d70;
-pm_keep_alive = 0x40000d78;
-pm_process_tim = 0x40000da8;
-pm_tbtt_process = 0x40000dbc;
-pm_tx_data_process = 0x40000dd8;
-pm_twt_process = 0x40000de8;
-pm_mac_try_enable_modem_state = 0x40000dfc;
-pm_update_next_tbtt = 0x40000e04;
-pm_clear_wakeup_signal = 0x40000e0c;
-pm_mac_disable_tsf_tbtt_soc_wakeup = 0x40000e10;
-pm_mac_disable_tsf_tbtt_modem_wakeup = 0x40000e14;
-pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000e18;
-pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000e1c;
-pm_mac_modem_params_rt_update = 0x40000e20;
-ppMapTxQueue = 0x40000e64;
-ppProcTxSecFrame = 0x40000e68;
-ppProcessTxQ = 0x40000e70;
-ppRxPkt = 0x40000e8c;
-ppRxProtoProc = 0x40000e90;
-ppProcessLifeTime = 0x40000ee4;
-rcGetSched = 0x40000f40;
-wDev_ProcessRxSucData = 0x40000fe0;
-esp_test_tx_process_complete = 0x40001030;
-
 /***************************************
  eco3 newly added
  ***************************************/
@@ -374,7 +380,7 @@ phy_freq_cal_test = 0x400016c0;
 phy_set_rfpll_freq = 0x400016c4;
 phy_set_channel_rfpll_freq_ = 0x400016c8;
 phy_read_pll_cap = 0x400016cc;
-phy_set_chan_misc = 0x400016d0;
+//phy_set_chan_misc = 0x400016d0;
 phy_chip_set_chan_offset = 0x400016d4;
 phy_chip_set_chan_ana = 0x400016d8;
 phy_freq_set_reg = 0x400016dc;
