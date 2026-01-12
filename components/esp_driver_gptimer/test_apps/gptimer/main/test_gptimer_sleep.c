@@ -85,7 +85,7 @@ static void test_gptimer_sleep_retention(bool allow_pd)
 
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
@@ -202,7 +202,7 @@ static void test_gptimer_etm_sleep_retention(bool back_up_before_sleep)
 
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(back_up_before_sleep ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
