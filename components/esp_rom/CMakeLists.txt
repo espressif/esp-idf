@@ -322,6 +322,9 @@ else() # Regular app build
         rom_linker_script("coexist")
         rom_linker_script("net80211")
         rom_linker_script("pp")
+        if(CONFIG_ESP32C5_REV_MIN_FULL GREATER_EQUAL 102)
+            rom_linker_script("eco3")
+        endif()
     elseif(target STREQUAL "esp32c61")
         # esp32c61.rom.api.ld has been split to several lds by components.
         # esp32c61.rom.api.ld is still reserved to map the APIs
@@ -329,8 +332,10 @@ else() # Regular app build
         rom_linker_script("coexist")
         rom_linker_script("net80211")
         rom_linker_script("pp")
+        if(CONFIG_ESP32C61_REV_MIN_FULL GREATER_EQUAL 101)
+            rom_linker_script("eco4")
+        endif()
     endif()
-
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
