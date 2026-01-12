@@ -1,7 +1,7 @@
 /*
  * BLE Combined Advertising and Scanning Example.
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,8 +18,10 @@
 
 static const char *TAG = "BLE_ADV_SCAN";
 
+#define SCAN_LOCAL_NAME_MAX_LEN 32
+
 typedef struct {
-    char scan_local_name[32];
+    char scan_local_name[SCAN_LOCAL_NAME_MAX_LEN];
     uint8_t name_len;
 } ble_scan_local_name_t;
 
@@ -56,7 +58,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
     host_rcv_data_t send_data;
     uint8_t *data_pkt;
     /* Check second byte for HCI event. If event opcode is 0x0e, the event is
-     * HCI Command Complete event. Sice we have recieved "0x0e" event, we can
+     * HCI Command Complete event. Sice we have received "0x0e" event, we can
      * check for byte 4 for command opcode and byte 6 for it's return status. */
     if (data[1] == 0x0e) {
         if (data[6] == 0) {
@@ -114,7 +116,7 @@ static void hci_cmd_send_ble_scan_params(void)
     uint16_t scan_window = 0x30; /* 30 ms */
 
     uint8_t own_addr_type = 0x00; /* Public Device Address (default). */
-    uint8_t filter_policy = 0x00; /* Accept all packets excpet directed advertising packets (default). */
+    uint8_t filter_policy = 0x00; /* Accept all packets except directed advertising packets (default). */
     uint16_t sz = make_cmd_ble_set_scan_params(hci_cmd_buf, scan_type, scan_interval, scan_window, own_addr_type, filter_policy);
     esp_vhci_host_send_packet(hci_cmd_buf, sz);
 }
@@ -187,28 +189,58 @@ static void hci_cmd_send_ble_set_adv_data(void)
     ESP_LOGI(TAG, "Starting BLE advertising with name \"%s\"", adv_name);
 }
 
-static esp_err_t get_local_name (uint8_t *data_msg, uint8_t data_len, ble_scan_local_name_t *scanned_packet)
+static esp_err_t get_local_name(uint8_t *data_msg, uint8_t data_len, ble_scan_local_name_t *scanned_packet)
 {
-    uint8_t curr_ptr = 0, curr_len, curr_type;
+    uint8_t curr_ptr = 0;
+
+    /* Initialize output structure */
+    scanned_packet->name_len = 0;
+    scanned_packet->scan_local_name[0] = '\0';
+
     while (curr_ptr < data_len) {
-        curr_len = data_msg[curr_ptr++];
-        curr_type = data_msg[curr_ptr++];
+        /* Ensure there is at least 1 byte for length field */
+        if (curr_ptr >= data_len) {
+            return ESP_FAIL;
+        }
+        uint8_t curr_len = data_msg[curr_ptr++];
+
+        /* Length of 0 indicates end of AD structures or invalid data */
         if (curr_len == 0) {
             return ESP_FAIL;
         }
 
-        /* Search for current data type and see if it contains name as data (0x08 or 0x09). */
-        if (curr_type == 0x08 || curr_type == 0x09) {
-            for (uint8_t i = 0; i < curr_len - 1; i += 1) {
-                scanned_packet->scan_local_name[i] = data_msg[curr_ptr + i];
-            }
-            scanned_packet->name_len = curr_len - 1;
-            return ESP_OK;
-        } else {
-            /* Search for next data. Current length includes 1 octate for AD Type (2nd octate). */
-            curr_ptr += curr_len - 1;
+        /* Ensure there is at least 1 byte for type field */
+        if (curr_ptr >= data_len) {
+            return ESP_FAIL;
         }
+        uint8_t curr_type = data_msg[curr_ptr++];
+
+        /* Calculate data field length (curr_len includes type byte) */
+        uint8_t data_field_len = curr_len - 1;
+
+        /* Verify remaining buffer has enough data */
+        if (curr_ptr + data_field_len > data_len) {
+            return ESP_FAIL;
+        }
+
+        /* Check for Local Name type (0x08: Shortened, 0x09: Complete) */
+        if (curr_type == 0x08 || curr_type == 0x09) {
+            /* Limit copy length to prevent buffer overflow */
+            uint8_t copy_len = data_field_len;
+            if (copy_len > SCAN_LOCAL_NAME_MAX_LEN - 1) {
+                copy_len = SCAN_LOCAL_NAME_MAX_LEN - 1;
+            }
+
+            memcpy(scanned_packet->scan_local_name, &data_msg[curr_ptr], copy_len);
+            scanned_packet->scan_local_name[copy_len] = '\0';  /* Ensure null termination */
+            scanned_packet->name_len = copy_len;
+            return ESP_OK;
+        }
+
+        /* Move to next AD structure */
+        curr_ptr += data_field_len;
     }
+
     return ESP_FAIL;
 }
 
