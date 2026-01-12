@@ -31,6 +31,7 @@
 #include "btm_int.h"
 #include "stack/hcimsgs.h"
 #include "device/controller.h"
+#include "bta_dm_gap.h"
 
 #if (BLE_INCLUDED == TRUE)
 
@@ -171,14 +172,18 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
         L2CAP_TRACE_ERROR("%s connection parameter update in progress, please try later", __func__);
     }
 
-    if ((need_cb == TRUE) && (conn_callback_func.update_conn_param_cb != NULL)) {
-        tBTM_LE_UPDATE_CONN_PRAMS update_param;
-        update_param.max_conn_int = max_int;
-        update_param.min_conn_int = min_int;
-        update_param.conn_int = p_lcb->current_used_conn_interval;
-        update_param.slave_latency = p_lcb->current_used_conn_latency;
-        update_param.supervision_tout = p_lcb->current_used_conn_timeout;
-        (conn_callback_func.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+    if (need_cb) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.conn_params_update.status = status;
+        memcpy(cb_params.conn_params_update.remote_bd_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
+        cb_params.conn_params_update.min_conn_int = min_int;
+        cb_params.conn_params_update.max_conn_int = max_int;
+        cb_params.conn_params_update.conn_int = p_lcb->current_used_conn_interval;
+        cb_params.conn_params_update.slave_latency = p_lcb->current_used_conn_latency;
+        cb_params.conn_params_update.supervision_tout = p_lcb->current_used_conn_timeout;
+
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_CONNECTION_PARAMS_UPDATE_EVT, &cb_params);
+
         return (status == HCI_SUCCESS);
     }
 
@@ -647,9 +652,8 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
     p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
     btu_stop_timer(&p_lcb->upda_con_timer);
 
-    if (conn_callback_func.update_conn_param_cb != NULL) {
-        l2c_send_update_conn_params_cb(p_lcb, status);
-    }
+
+    l2c_send_update_conn_params_cb(p_lcb, status);
 
     if (l2cble_start_conn_update(p_lcb) == TRUE) {
         UINT32 time = CalConnectParamTimeout(p_lcb);
@@ -686,9 +690,8 @@ void l2cble_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handl
 
     btu_stop_timer (&p_lcb->upda_con_timer);
 
-    if (conn_callback_func.update_conn_param_cb != NULL) {
-        l2c_send_update_conn_params_cb(p_lcb, status);
-    }
+    l2c_send_update_conn_params_cb(p_lcb, status);
+
     if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL) != 0){
         p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
         if (l2cble_start_conn_update(p_lcb) == TRUE) {
@@ -1419,23 +1422,24 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
 
     if(p_acl) {
         p_acl->data_length_params = data_length_params;
-        if (p_acl->p_set_pkt_data_cback) {
-            // Only when the corresponding API is called will the callback be registered
-            (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
-        } else {
-            // If the callback is not registered,using global callback
-            (*conn_callback_func.set_pkt_data_length_cb)(BTM_SUCCESS, &data_length_params);
-        }
+
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.data_length_params.status = BTM_SUCCESS;
+        cb_params.data_length_params.rx_len = data_length_params.rx_len;
+        cb_params.data_length_params.tx_len = data_length_params.tx_len;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_DATA_LEN_SET_COMPLETE_EVT, &cb_params);
+
         p_acl->data_len_updating = false;
         if(p_acl->data_len_waiting) {
             p_acl->data_len_waiting = false;
-            p_acl->p_set_pkt_data_cback = p_acl->p_set_data_len_cback_waiting;
-            p_acl->p_set_data_len_cback_waiting = NULL;
             // if value is same, trigger callback directly
             if(p_acl->tx_len_waiting == p_acl->data_length_params.tx_len) {
-                if(p_acl->p_set_pkt_data_cback) {
-                    (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &p_acl->data_length_params);
-                }
+
+                tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+                cb_params.data_length_params.status = BTM_SUCCESS;
+                cb_params.data_length_params.rx_len = data_length_params.rx_len;
+                cb_params.data_length_params.tx_len = data_length_params.tx_len;
+                BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_DATA_LEN_SET_COMPLETE_EVT, &cb_params);
                 return;
             }
             p_acl->data_len_updating = true;
@@ -1495,24 +1499,26 @@ void l2cble_set_fixed_channel_tx_data_length(BD_ADDR remote_bda, UINT16 fix_cid,
 *******************************************************************************/
 void l2c_send_update_conn_params_cb(tL2C_LCB *p_lcb, UINT8 status)
 {
-    if(conn_callback_func.update_conn_param_cb != NULL){
-        tBTM_LE_UPDATE_CONN_PRAMS update_param;
-        //if myself update the connection parameters
-        if (p_lcb->updating_param_flag){
-            update_param.max_conn_int = p_lcb->updating_conn_max_interval;
-            update_param.min_conn_int = p_lcb->updating_conn_min_interval;
-            p_lcb->updating_param_flag = false;
-        }else{
-            // remote device update the connection parameters
-            update_param.max_conn_int = update_param.min_conn_int = 0;
-        }
-        // current connection parameters
-        update_param.conn_int = p_lcb->current_used_conn_interval;
-        update_param.slave_latency = p_lcb->current_used_conn_latency;
-        update_param.supervision_tout = p_lcb->current_used_conn_timeout;
-
-        (conn_callback_func.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    //if myself update the connection parameters
+    if (p_lcb->updating_param_flag){
+        cb_params.conn_params_update.max_conn_int = p_lcb->updating_conn_max_interval;
+        cb_params.conn_params_update.min_conn_int = p_lcb->updating_conn_min_interval;
+        p_lcb->updating_param_flag = false;
+    }else{
+        // remote device update the connection parameters
+        cb_params.conn_params_update.max_conn_int = cb_params.conn_params_update.min_conn_int = 0;
     }
+    // current connection parameters
+    cb_params.conn_params_update.conn_int = p_lcb->current_used_conn_interval;
+    cb_params.conn_params_update.slave_latency = p_lcb->current_used_conn_latency;
+    cb_params.conn_params_update.supervision_tout = p_lcb->current_used_conn_timeout;
+
+
+    cb_params.conn_params_update.status = status;
+    memcpy(cb_params.conn_params_update.remote_bd_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
+
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_CONNECTION_PARAMS_UPDATE_EVT, &cb_params);
 }
 
 /*******************************************************************************

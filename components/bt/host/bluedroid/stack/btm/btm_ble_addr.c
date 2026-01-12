@@ -34,6 +34,7 @@
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
 #include "btm_ble_int.h"
 #include "stack/smp_api.h"
+#include "bta_dm_gap.h"
 
 
 /*******************************************************************************
@@ -50,6 +51,7 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
 {
     tBTM_LE_RANDOM_CB *p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
     BTM_TRACE_EVENT ("btm_gen_resolve_paddr_cmpl");
+    tBTM_STATUS status = BTM_SUCCESS;
 
     if (p) {
         /* set hash to be LSB of rpAddress */
@@ -62,10 +64,7 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
 
         p_cb->exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RESOLVABLE;
         memcpy(p_cb->resolvale_addr, p_cb->private_addr, BD_ADDR_LEN);
-        if (p_cb->set_local_privacy_cback){
-            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
-            p_cb->set_local_privacy_cback = NULL;
-        }
+        status = BTM_SET_PRIVACY_SUCCESS;
 
         /* start a periodical timer to refresh random addr */
         btu_stop_timer_oneshot(&p_cb->raddr_timer_ent);
@@ -79,11 +78,12 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
     } else {
         /* random address set failure */
         BTM_TRACE_DEBUG("set random address failed");
-        if (p_cb->set_local_privacy_cback){
-            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
-            p_cb->set_local_privacy_cback = NULL;
-        }
+        status = BTM_SET_PRIVACY_FAIL;
     }
+
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
 }
 /*******************************************************************************
 **

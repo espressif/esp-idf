@@ -39,6 +39,7 @@
 #include "stack/gap_api.h"    /* For GAP_BleReadPeerPrefConnParams */
 #include <string.h>
 #include "device/controller.h"
+#include "bta_dm_gap.h"
 
 #define LOG_TAG "bt_bta_dm"
 // #include "osi/include/log.h"
@@ -261,6 +262,26 @@ UINT8 g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
 UINT8 *g_disc_raw_data_buf;
 #endif
 #endif  ///SDP_INCLUDED == TRUE
+
+#if (BLE_INCLUDED == TRUE)
+tBTM_BLE_LEGACY_GAP_CBACK ble_legacy_gap_cb;
+
+void BTM_BleLegacyGapRegisterCallback(tBTM_BLE_LEGACY_GAP_CBACK cb)
+{
+    if (cb) {
+        ble_legacy_gap_cb = cb;
+    } else {
+        BTM_TRACE_ERROR("%s, register fail, the cb function is NULL.", __func__);
+    }
+}
+
+void BTM_LegacyBleCallbackTrigger(tBTM_BLE_LEGACY_GAP_EVENT event, tBTM_BLE_LEGACY_GAP_CB_PARAMS *params)
+{
+    if (ble_legacy_gap_cb) {
+        ble_legacy_gap_cb(event, params);
+    }
+}
+#endif // #if (BLE_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -764,23 +785,31 @@ void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data)
 
 void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
 {
-    if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
-        if (p_data->ble_clear_adv.p_clear_adv_cback) {
-            (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
-        }
+    if (BTM_BleClearAdv() == FALSE) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTA_FAILURE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_CLEAR_ADV_COMPLETE_EVT, &cb_params);
     }
 }
 
 void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, csa_select = %d", __func__, p_data->ble_set_csa_support.csa_select);
-    BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
+    if (BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select) == FALSE) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTA_FAILURE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_CSA_SUPPORT_COMPLETE_EVT, &cb_params);
+    }
 }
 
 void bta_dm_ble_gap_set_vendor_evt_mask(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, evt_mask = %d", __func__, p_data->ble_set_vendor_evt_mask.evt_mask);
-    BTM_BleSetVendorEventMask(p_data->ble_set_vendor_evt_mask.evt_mask, p_data->ble_set_vendor_evt_mask.p_cback);
+    if (BTM_BleSetVendorEventMask(p_data->ble_set_vendor_evt_mask.evt_mask) == FALSE) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTA_FAILURE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_VENDOR_EVT_MASK_COMPLETE_EVT, &cb_params);
+    }
 }
 #endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 
@@ -998,21 +1027,21 @@ void bta_dm_set_min_enc_key_size (tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_channels (tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleSetChannels (p_data->ble_set_channels.channels, p_data->ble_set_channels.set_channels_cb);
+    BTM_BleSetChannels (p_data->ble_set_channels.channels);
 #endif /// BLE_INCLUDED == TRUE
 }
 
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.update_wl_cb);
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type);
 #endif  ///BLE_INCLUDED == TRUE
 }
 
 void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
-    BTM_BleClearWhitelist(p_data->white_list.update_wl_cb);
+    BTM_BleClearWhitelist();
 #endif
 }
 
@@ -5196,25 +5225,24 @@ void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
+    tBTM_STATUS status;
 
-    if (BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
+
+    status = BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
                                 p_data->ble_set_scan_fil_params.scan_int,
                                 p_data->ble_set_scan_fil_params.scan_window,
                                 p_data->ble_set_scan_fil_params.scan_mode,
                                 p_data->ble_set_scan_fil_params.addr_type_own,
                                 p_data->ble_set_scan_fil_params.scan_duplicate_filter,
-                                p_data->ble_set_scan_fil_params.scan_filter_policy,
-                                p_data->ble_set_scan_fil_params.scan_param_setup_cback) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
+                                p_data->ble_set_scan_fil_params.scan_filter_policy);
 
-    } else {
+    if (status != BTM_SUCCESS) {
         APPL_TRACE_ERROR("%s(), fail to set scan params.", __func__);
     }
-    if (p_data->ble_set_scan_fil_params.scan_param_setup_cback != NULL) {
-        p_data->ble_set_scan_fil_params.scan_param_setup_cback(p_data->ble_set_scan_fil_params.client_if, status);
-    }
 
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_PARAMS_SET_COMPLETE_EVT, &cb_params);
 }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 
@@ -5265,16 +5293,15 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
     tBTM_STATUS status = BTM_SET_STATIC_RAND_ADDR_FAIL;
     if (p_data->set_addr.addr_type != BLE_ADDR_RANDOM) {
         APPL_TRACE_ERROR("Invalid random address type = %d\n", p_data->set_addr.addr_type);
-        if(p_data->set_addr.p_set_rand_addr_cback) {
-            (*p_data->set_addr.p_set_rand_addr_cback)(status);
-        }
-        return;
+        goto _addr_set_end;
     }
     //send the setting random address to BTM layer
     status = BTM_BleSetRandAddress(p_data->set_addr.address);
-    if(p_data->set_addr.p_set_rand_addr_cback) {
-        (*p_data->set_addr.p_set_rand_addr_cback)(status);
-    }
+
+_addr_set_end:
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_RANDOM_ADDR_EVT, &cb_params);
 
 }
 
@@ -5296,7 +5323,7 @@ void bta_dm_ble_clear_rand_address(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data)
 {
-    BTM_BleConfigPrivacy (p_data->ble_local_privacy.privacy_enable, p_data->ble_local_privacy.set_local_privacy_cback);
+    BTM_BleConfigPrivacy (p_data->ble_local_privacy.privacy_enable);
 }
 #endif
 
@@ -5351,10 +5378,11 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
             APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
         }
 
-        if (p_data->ble_scan.p_start_scan_cback) {
-            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
-            p_data->ble_scan.p_start_scan_cback(status);
-        }
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+        cb_params.status = status;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_START_COMPLETE_EVT, &cb_params);
+
     } else {
         bta_dm_search_cb.p_scan_cback = NULL;
         status = BTM_BleScan(FALSE, 0, NULL, NULL, NULL);
@@ -5363,10 +5391,10 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
             APPL_TRACE_WARNING(" %s stop scan failed, status=0x%x\n", __FUNCTION__, status);
         }
 
-        if (p_data->ble_scan.p_stop_scan_cback) {
-            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
-            p_data->ble_scan.p_stop_scan_cback(status);
-        }
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+        cb_params.status = status;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_STOP_COMPLETE_EVT, &cb_params);
 #if (BLE_TOPOLOGY_CHECK == TRUE)
         // reset BLE scan link state when stop scan
         btm_ble_clear_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
@@ -5379,7 +5407,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
 #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
-** Function         bta_dm_ble_set_adv_params_all
+** Function         bta_dm_ble_start_adv_with_params
 **
 ** Description      This function is called to set all of the advertising parameters.
 **
@@ -5388,31 +5416,28 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
+void bta_dm_ble_start_adv_with_params  (tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
-    if (BTM_BleSetAdvParamsAll(p_data->ble_set_adv_params_all.adv_int_min,
+    tBTM_STATUS status = BTA_FAILURE;
+    status = BTM_BleStartAdvWithParams(p_data->ble_set_adv_params_all.adv_int_min,
                                 p_data->ble_set_adv_params_all.adv_int_max,
                                 p_data->ble_set_adv_params_all.adv_type,
                                 p_data->ble_set_adv_params_all.addr_type_own,
                                 p_data->ble_set_adv_params_all.p_dir_bda,
                                 p_data->ble_set_adv_params_all.channel_map,
-                                p_data->ble_set_adv_params_all.adv_filter_policy,
-                                p_data->ble_set_adv_params_all.p_start_adv_cback) == BTM_SUCCESS) {
-        APPL_TRACE_DEBUG("%s(), success to set ble adv params.", __func__);
-    } else {
-        APPL_TRACE_ERROR("%s(), fail to set ble adv params.", __func__);
-        if(p_data->ble_set_adv_params_all.p_start_adv_cback) {
-            (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
-        }
-        return;
+                                p_data->ble_set_adv_params_all.adv_filter_policy);
+
+    if (status != BTM_SUCCESS) {
+        APPL_TRACE_ERROR("fail to set ble adv params.");
+        goto _adv_param_error;
     }
-    if(BTM_BleStartAdv() == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
-    if(p_data->ble_set_adv_params_all.p_start_adv_cback) {
-        (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
-    }
+
+    status = BTM_BleStartAdv();
+
+_adv_param_error:
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_START_COMPLETE_EVT, &cb_params);
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
@@ -5429,8 +5454,7 @@ void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
 {
     BTM_UpdateBleDuplicateExceptionalList(p_data->ble_duplicate_exceptional_list.subcode,
                                           p_data->ble_duplicate_exceptional_list.type,
-                                          p_data->ble_duplicate_exceptional_list.device_info,
-                                          p_data->ble_duplicate_exceptional_list.exceptional_list_cb);
+                                          p_data->ble_duplicate_exceptional_list.device_info);
 }
 #endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
@@ -5446,16 +5470,14 @@ void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
+    tBTM_STATUS status;
 
-    if (BTM_BleWriteAdvData(p_data->ble_set_adv_data.data_mask,
-                            (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
+    status = BTM_BleWriteAdvData(p_data->ble_set_adv_data.data_mask,
+                            (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg);
 
-    if (p_data->ble_set_adv_data.p_adv_data_cback) {
-        (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 }
 
 /*******************************************************************************
@@ -5469,16 +5491,14 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
+    tBTM_STATUS status;
 
-    if (BTM_BleWriteAdvDataRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
-                               p_data->ble_set_adv_data_raw.raw_adv_len) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
+    status = BTM_BleWriteAdvDataRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
+                               p_data->ble_set_adv_data_raw.raw_adv_len);
 
-    if (p_data->ble_set_adv_data_raw.p_adv_data_cback) {
-        (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_RAW_SET_COMPLETE_EVT, &cb_params);
 }
 
 /*******************************************************************************
@@ -5492,16 +5512,14 @@ void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
+   tBTM_STATUS status;
 
-    if (BTM_BleWriteScanRsp(p_data->ble_set_adv_data.data_mask,
-                            (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
+    status = BTM_BleWriteScanRsp(p_data->ble_set_adv_data.data_mask,
+                            (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg);
 
-    if (p_data->ble_set_adv_data.p_adv_data_cback) {
-        (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_RSP_SET_COMPLETE_EVT, &cb_params);
 }
 
 /*******************************************************************************
@@ -5515,16 +5533,14 @@ void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
+    tBTM_STATUS status;
 
-    if (BTM_BleWriteScanRspRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
-                               p_data->ble_set_adv_data_raw.raw_adv_len) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
+    status = BTM_BleWriteScanRspRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
+                               p_data->ble_set_adv_data_raw.raw_adv_len);
 
-    if (p_data->ble_set_adv_data_raw.p_adv_data_cback) {
-        (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RSP_RAW_SET_COMPLETE_EVT, &cb_params);
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
@@ -5542,16 +5558,19 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
     tACL_CONN *p_acl_cb = btm_bda_to_acl(p_data->ble_set_data_length.remote_bda, BT_TRANSPORT_LE);
     if (p_acl_cb == NULL) {
         APPL_TRACE_ERROR("%s error: Invalid connection remote_bda.", __func__);
+        uint16_t length = controller_get_interface()->get_acl_data_size_ble();
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.data_length_params.status = BTM_UNKNOWN_ADDR;
+        cb_params.data_length_params.rx_len = length;
+        cb_params.data_length_params.tx_len = length;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_DATA_LEN_SET_COMPLETE_EVT, &cb_params);
         return;
     }
 
-    p_acl_cb->p_set_pkt_data_cback = p_data->ble_set_data_length.p_set_pkt_data_cback;
     // if the value of the data length is same, trigger callback directly
     if(p_data->ble_set_data_length.tx_data_length == p_acl_cb->data_length_params.tx_len) {
-        if(p_data->ble_set_data_length.p_set_pkt_data_cback) {
-            (*p_data->ble_set_data_length.p_set_pkt_data_cback)(status, &p_acl_cb->data_length_params);
-        }
-        return;
+
+        goto _data_length_set_complete;
     }
 
     if(p_acl_cb->data_len_updating) {
@@ -5560,7 +5579,6 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
             status = BTM_ILLEGAL_ACTION;
         } else {
             // save the command
-            p_acl_cb->p_set_data_len_cback_waiting = p_data->ble_set_data_length.p_set_pkt_data_cback;
             p_acl_cb->tx_len_waiting = p_data->ble_set_data_length.tx_data_length;
             p_acl_cb->data_len_waiting = true;
             return;
@@ -5569,17 +5587,27 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
         status = BTM_SetBleDataLength(p_data->ble_set_data_length.remote_bda,
                                         p_data->ble_set_data_length.tx_data_length);
     }
+
     if (status != BTM_SUCCESS) {
         APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
-    }
-    if (p_data->ble_set_data_length.p_set_pkt_data_cback && status != BTM_SUCCESS) {
         if (p_acl_cb->data_length_params.tx_len == 0){
             uint16_t length = controller_get_interface()->get_acl_data_size_ble();
             p_acl_cb->data_length_params.rx_len = length;
             p_acl_cb->data_length_params.tx_len = length;
         }
-        (*p_data->ble_set_data_length.p_set_pkt_data_cback)(status, &p_acl_cb->data_length_params);
+
+        goto _data_length_set_complete;
+    } else {
+        return;
     }
+
+_data_length_set_complete:
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.data_length_params.status = status;
+    cb_params.data_length_params.rx_len = p_acl_cb->data_length_params.rx_len;
+    cb_params.data_length_params.tx_len = p_acl_cb->data_length_params.tx_len;
+
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_DATA_LEN_SET_COMPLETE_EVT, &cb_params);
 
 }
 
@@ -5595,19 +5623,16 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_advstop (tBTA_DM_MSG *p_data)
 {
-    tBTA_STATUS status = BTA_FAILURE;
-    BOOLEAN start = p_data->ble_adv_action.start;
+    tBTM_STATUS status;
+    status = BTM_BleAdvStop();
 
-    tBTM_STATUS btm_status = BTM_BleBroadcast(start, p_data->ble_adv_action.p_stop_adv_cback);
-    if (btm_status == BTM_SUCCESS) {
-         status = BTA_SUCCESS;
-    } else {
+    if (status != BTM_SUCCESS) {
         APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
     }
 
-    if (p_data->ble_adv_action.p_stop_adv_cback){
-        (*p_data->ble_adv_action.p_stop_adv_cback)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_STOP_COMPLETE_EVT, &cb_params);
 
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
@@ -5634,7 +5659,7 @@ void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
 void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, rpa_timeout = %d", __func__, p_data->set_rpa_timeout.rpa_timeout);
-    BTM_BleSetRpaTimeout(p_data->set_rpa_timeout.rpa_timeout,p_data->set_rpa_timeout.p_set_rpa_timeout_cback);
+    BTM_BleSetRpaTimeout(p_data->set_rpa_timeout.rpa_timeout);
 }
 
 void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data)
@@ -5642,21 +5667,24 @@ void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data)
     APPL_TRACE_API("%s", __func__);
     BTM_BleAddDevToResolvingList(p_data->add_dev_to_resolving_list.addr,
                                   p_data->add_dev_to_resolving_list.addr_type,
-                                  p_data->add_dev_to_resolving_list.irk,
-                                  p_data->add_dev_to_resolving_list.p_add_dev_to_resolving_list_callback);
+                                  p_data->add_dev_to_resolving_list.irk);
 }
 
 void bta_dm_ble_gap_set_privacy_mode(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, privacy_mode = %d", __func__, p_data->ble_set_privacy_mode.privacy_mode);
-    BTM_BleSetPrivacyMode(p_data->ble_set_privacy_mode.addr_type, p_data->ble_set_privacy_mode.addr,
-                        p_data->ble_set_privacy_mode.privacy_mode, p_data->ble_set_privacy_mode.p_cback);
+    if (BTM_BleSetPrivacyMode(p_data->ble_set_privacy_mode.addr_type, p_data->ble_set_privacy_mode.addr,
+                        p_data->ble_set_privacy_mode.privacy_mode) == FALSE) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTA_FAILURE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT, &cb_params);
+    }
 }
 
 void bta_dm_read_ble_channel_map(tBTA_DM_MSG *p_data)
 {
-    if (p_data && p_data->ch_map.read_ch_map_cb) {
-        BTM_ReadChannelMap(p_data->ch_map.remote_addr, p_data->ch_map.read_ch_map_cb);
+    if (p_data) {
+        BTM_ReadChannelMap(p_data->ch_map.remote_addr);
     }
 }
 

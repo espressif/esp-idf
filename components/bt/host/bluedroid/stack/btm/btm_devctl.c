@@ -42,6 +42,7 @@
 #if BLE_INCLUDED == TRUE
 #include "gatt_int.h"
 #endif /* BLE_INCLUDED */
+#include "bta_dm_gap.h"
 
 //extern thread_t *bt_workqueue_thread;
 
@@ -769,7 +770,6 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback)
 {
 #if (BLE_INCLUDED == TRUE)
-    tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
     switch(opcode) {
         case HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST: {
 #if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
@@ -777,34 +777,38 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
             STREAM_TO_UINT8(status, p);
             STREAM_TO_UINT8(subcode, p);
             STREAM_TO_UINT32(length, p);
-            if(ble_cb && ble_cb->update_exceptional_list_cmp_cb) {
-                (*ble_cb->update_exceptional_list_cmp_cb)(status, subcode, length, p);
-            }
+
+            tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+            cb_params.exception_list_up.status = status;
+            cb_params.exception_list_up.subcode = subcode;
+            cb_params.exception_list_up.length = length;
+            cb_params.exception_list_up.device_info = p;
+            BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_EXCEPTION_LIST_UPDATE_EVT, &cb_params);
 #endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
-        break;
+            break;
         }
         case HCI_VENDOR_BLE_CLEAR_ADV: {
             uint8_t status;
             STREAM_TO_UINT8(status, p);
-            if (ble_cb && ble_cb->inq_var.p_clear_adv_cb) {
-                ble_cb->inq_var.p_clear_adv_cb(status);
-            }
+            tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+            cb_params.status = status;
+            BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_CLEAR_ADV_COMPLETE_EVT, &cb_params);
             break;
         }
         case HCI_VENDOR_BLE_SET_CSA_SUPPORT: {
             uint8_t status;
             STREAM_TO_UINT8(status, p);
-            if (ble_cb && ble_cb->set_csa_support_cmpl_cb) {
-                ble_cb->set_csa_support_cmpl_cb(status);
-            }
+            tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+            cb_params.status = status;
+            BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_CSA_SUPPORT_COMPLETE_EVT, &cb_params);
             break;
         }
         case HCI_VENDOR_BLE_SET_EVT_MASK: {
             uint8_t status;
             STREAM_TO_UINT8(status, p);
-            if (ble_cb && ble_cb->set_vendor_evt_mask_cmpl_cb) {
-                ble_cb->set_vendor_evt_mask_cmpl_cb(status);
-            }
+            tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+            cb_params.status = status;
+            BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_VENDOR_EVT_MASK_COMPLETE_EVT, &cb_params);
             break;
         }
         default:
@@ -1286,19 +1290,11 @@ void btm_set_afh_channels_complete (UINT8 *p)
 ** Returns          status of the operation
 **
 *******************************************************************************/
-tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback)
+tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels)
 {
     if (!controller_get_interface()->get_is_ready()) {
         return (BTM_DEV_RESET);
     }
-
-    /* Check if set afh already in progress */
-    if (btm_cb.devcb.p_ble_channels_cmpl_cb) {
-        return (BTM_NO_RESOURCES);
-    }
-
-    /* Save callback */
-    btm_cb.devcb.p_ble_channels_cmpl_cb = p_ble_channels_cmpl_cback;
 
     if (!btsnd_hcic_ble_set_channels (channels)) {
         return (BTM_NO_RESOURCES);
@@ -1321,30 +1317,24 @@ tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_chann
 *******************************************************************************/
 void btm_ble_set_channels_complete (UINT8 *p)
 {
-    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_ble_channels_cmpl_cb;
-    tBTM_BLE_SET_CHANNELS_RESULTS results;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
 
     btu_free_timer (&btm_cb.devcb.ble_channels_timer);
 
-    /* If there is a callback address for setting AFH channels, call it */
-    btm_cb.devcb.p_ble_channels_cmpl_cb = NULL;
+    STREAM_TO_UINT8 (cb_params.set_channels.hci_status, p);
 
-    if (p_cb) {
-        STREAM_TO_UINT8 (results.hci_status, p);
-
-        switch (results.hci_status){
-            case HCI_SUCCESS:
-                results.status = BTM_SUCCESS;
-                break;
-            case HCI_ERR_UNSUPPORTED_VALUE:
-            case HCI_ERR_ILLEGAL_PARAMETER_FMT:
-                results.status = BTM_ILLEGAL_VALUE;
-                break;
-            default:
-                results.status = BTM_ERR_PROCESSING;
-                break;
-        }
-        (*p_cb)(&results);
+    switch (cb_params.set_channels.hci_status){
+        case HCI_SUCCESS:
+            cb_params.set_channels.status = BTM_SUCCESS;
+            break;
+        case HCI_ERR_UNSUPPORTED_VALUE:
+        case HCI_ERR_ILLEGAL_PARAMETER_FMT:
+            cb_params.set_channels.status = BTM_ILLEGAL_VALUE;
+            break;
+        default:
+            cb_params.set_channels.status = BTM_ERR_PROCESSING;
+            break;
     }
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_CHANNELS_COMPLETE_EVT, &cb_params);
 }
 #endif /// BLE_INCLUDED == TRUE

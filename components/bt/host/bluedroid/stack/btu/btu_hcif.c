@@ -254,20 +254,6 @@ static void btu_ble_cs_subevt_result_evt(UINT8 *p, UINT8 evt_len);
 static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p, UINT8 evt_len);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
-#if (BLE_42_ADV_EN == TRUE)
-extern osi_sem_t adv_enable_sem;
-extern osi_sem_t adv_data_sem;
-extern osi_sem_t adv_param_sem;
-extern uint8_t adv_enable_status;
-extern uint8_t adv_data_status;
-extern uint8_t adv_param_status;
-#endif // #if (BLE_42_ADV_EN == TRUE)
-#if (BLE_42_SCAN_EN == TRUE)
-extern osi_sem_t scan_enable_sem;
-extern osi_sem_t scan_param_sem;
-extern uint8_t scan_enable_status;
-extern uint8_t scan_param_status;
-#endif // #if (BLE_42_SCAN_EN == TRUE)
 #endif
 
 /*******************************************************************************
@@ -726,7 +712,7 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
 #endif
 }
 
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 {
     if (!p_buf) {
@@ -777,8 +763,7 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 #endif
     return btsnd_hcic_ble_get_status();
 }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-
+#endif // ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 
 /*******************************************************************************
 **
@@ -1523,52 +1508,14 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
 
 static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 {
-#if (BLE_INCLUDED == TRUE)
-    command_opcode_t opcode;
-    uint8_t *stream = response->data + response->offset + 3;
-    STREAM_TO_UINT16(opcode, stream);
-    switch (opcode) {
-#if (BLE_42_ADV_EN == TRUE)
-        case HCI_BLE_WRITE_ADV_DATA:
-            adv_data_status = *stream;
-            osi_sem_give(&adv_data_sem);
-            break;
-        case HCI_BLE_WRITE_SCAN_RSP_DATA:
-            adv_data_status = *stream;
-            osi_sem_give(&adv_data_sem);
-            break;
-        case HCI_BLE_WRITE_ADV_ENABLE: {
-            adv_enable_status = *stream;
-            osi_sem_give(&adv_enable_sem);
-            break;
-        }
-        case HCI_BLE_WRITE_ADV_PARAMS:
-            adv_param_status = *stream;
-            osi_sem_give(&adv_param_sem);
-            break;
-#endif // #if (BLE_42_ADV_EN == TRUE)
-#if (BLE_42_SCAN_EN == TRUE)
-        case HCI_BLE_WRITE_SCAN_PARAMS:
-            scan_param_status = *stream;
-            osi_sem_give(&scan_param_sem);
-            break;
-        case HCI_BLE_WRITE_SCAN_ENABLE:
-            scan_enable_status = *stream;
-            osi_sem_give(&scan_enable_sem);
-            break;
-#endif // #if (BLE_42_SCAN_EN == TRUE)
-        default:
-            break;
-    }
-#endif
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_complete_hack_t));
     command_complete_hack_t *hack = (command_complete_hack_t *)&event->data[0];
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     UINT8 status = 0;
-    stream = response->data + response->offset + 3 + 2; // 2 to skip the event headers, 1 to skip the command credits, 2 to opcode.
+    uint8_t *stream = response->data + response->offset + 3 + 2; // 2 to skip the event headers, 1 to skip the command credits, 2 to opcode.
     STREAM_TO_UINT8(status, stream);
     btsnd_hci_ble_set_status(status);
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     HCI_TRACE_DEBUG("btu_hcif_command_complete_evt\n");
 
     hack->callback = btu_hcif_command_complete_evt_on_task;

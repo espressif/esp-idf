@@ -32,6 +32,7 @@
 #include "btm_int.h"
 #include "device/controller.h"
 #include "stack/hcidefs.h"
+#include "bta_dm_gap.h"
 
 #define HCI_VENDOR_BLE_RPA_VSC          (0x0155 | HCI_GRP_VENDOR_SPECIFIC)
 
@@ -294,14 +295,10 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
     STREAM_TO_UINT8(status, p);
-    if (btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb) {
-        tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK   *p_cb = btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb;
-        if (p_cb) {
-            (*p_cb)(status);
-        }
-    } else {
-        BTM_TRACE_DEBUG("no resolving list callback");
-    }
+
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
@@ -441,19 +438,17 @@ void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
 
     tBTM_LE_RANDOM_CB *random_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-    if (!(random_cb && random_cb->set_local_privacy_cback)) {
+    if (random_cb->cb_is_triggered) {
         return;
     }
 
-    if (status == HCI_SUCCESS) {
-        random_cb->set_local_privacy_cback(BTM_SUCCESS);
-        return;
-    } else if (status == HCI_ERR_COMMAND_DISALLOWED) {
-        BTM_TRACE_ERROR("a non-connected activity is ongoing, such as advertising and scanning");
-    } else {
-        BTM_TRACE_ERROR("set local privacy failed");
+    if (status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("set local privacy failed with status: 0x%x", status);
     }
-    random_cb->set_local_privacy_cback(BTM_ILLEGAL_VALUE);
+    random_cb->cb_is_triggered = true;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = (status == HCI_SUCCESS)? BTM_SUCCESS : BTM_ILLEGAL_VALUE;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
 }
 
 /*******************************************************************************
@@ -478,11 +473,9 @@ void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len)
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
-    tBTM_SET_RPA_TIMEOUT_CMPL_CBACK   *p_cb = btm_cb.devcb.p_ble_set_rpa_timeout_cmpl_cb;
-
-    if (p_cb) {
-        (*p_cb)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RPA_TIMEOUT_EVT, &cb_params);
 
 }
 
@@ -507,11 +500,9 @@ void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len)
 
     BTM_TRACE_DEBUG("%s status = 0x%x", __func__, status);
 
-    tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_cb = btm_cb.devcb.p_set_privacy_mode_cmpl_cb;
-
-    if (p_cb) {
-        (*p_cb)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT, &cb_params);
 }
 
 #if (0)

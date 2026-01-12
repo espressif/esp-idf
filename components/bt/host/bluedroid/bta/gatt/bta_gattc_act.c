@@ -67,7 +67,7 @@ static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYP
 static tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda);
 
 extern void btc_gattc_congest_callback(tBTA_GATTC *param);
-extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb);
+extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type);
 
 static const tGATT_CBACK bta_gattc_cl_cback = {
     bta_gattc_conn_cback,
@@ -345,7 +345,7 @@ void bta_gattc_process_api_open (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
     if (p_clreg != NULL) {
         if (p_msg->api_conn.own_addr_type <= BLE_ADDR_TYPE_MAX) {
             // update own address type for creating connection
-            BTM_BleUpdateOwnType(&p_msg->api_conn.own_addr_type, NULL);
+            BTM_BleUpdateOwnType(&p_msg->api_conn.own_addr_type);
         }
         if (p_msg->api_conn.is_direct) {
             if ((p_clcb = bta_gattc_find_alloc_clcb(p_msg->api_conn.client_if,

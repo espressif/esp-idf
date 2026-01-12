@@ -158,12 +158,10 @@ UINT8           conn_addr_type;         /* local device address type for this co
 BD_ADDR         active_remote_addr;     /* remote address used on this connection */
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
-tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
 BOOLEAN   data_len_updating;
 // data len update cmd cache
 BOOLEAN   data_len_waiting;
-tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_data_len_cback_waiting;
 UINT16 tx_len_waiting;
 #endif
 tBTM_PM_MCB     *p_pm_mode_db;          /* Pointer to PM mode control block per ACL link */
@@ -241,7 +239,7 @@ tBTM_CMPL_CB        *p_write_iscan_tx_pwr_lvl_cmpl_cb;    /* Callback function t
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if BLE_INCLUDED == TRUE
-tBTM_CMPL_CB        *p_ble_ch_map_cmpl_cb; /* Callback function to be called when */
+BOOLEAN        is_ch_map_cb;
 #endif // #if BLE_INCLUDED == TRUE
 /* read channel map function completes */
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -292,15 +290,6 @@ DEV_CLASS            dev_class;         /* Local device class                   
 #if BLE_INCLUDED == TRUE
 
 TIMER_LIST_ENT       ble_channels_timer;
-tBTM_CMPL_CB        *p_ble_channels_cmpl_cb; /* Callback function to be called  When
-                                                ble set host channels is completed   */
-
-tBTM_SET_RPA_TIMEOUT_CMPL_CBACK  *p_ble_set_rpa_timeout_cmpl_cb; /* Callback function to be called  When
-                                                ble set rpa timeout is completed   */
-
-tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_cmpl_cb;
-
-tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_set_privacy_mode_cmpl_cb;
 
 tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
                                                   LE test mode command has been sent successfully */
@@ -1053,14 +1042,6 @@ typedef struct {
 #endif
 } tBTM_CB;
 
-typedef struct{
-  //connection parameters update callback
-  tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
-  // setting packet data length callback
-  tBTM_SET_PKT_DATA_LENGTH_CBACK *set_pkt_data_length_cb;
-}tBTM_CallbackFunc;
-
-extern tBTM_CallbackFunc conn_callback_func;
 /* security action for L2CAP COC channels */
 #define BTM_SEC_OK                1
 #define BTM_SEC_ENCRYPT           2    /* encrypt the link with current key */
@@ -1364,10 +1345,6 @@ UINT8 btm_sec_clr_service_by_psm (UINT16 psm);
 void  btm_sec_clr_temp_auth_service (BD_ADDR bda);
 
 void btm_ble_lock_init(void);
-
-void btm_ble_sem_init(void);
-
-void btm_ble_sem_free(void);
 
 void btm_ble_lock_free(void);
 
