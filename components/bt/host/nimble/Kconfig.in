@@ -290,7 +290,7 @@ menu "GAP"
     config BT_NIMBLE_MAX_CCCDS
         int "Maximum number of CCC descriptors to save across reboots"
         default 8
-        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_NVS_PERSIST
+        depends on BT_NIMBLE_ENABLED
         help
             Defines maximum number of CCC descriptors to save
 
