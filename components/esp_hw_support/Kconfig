@@ -355,6 +355,7 @@ menu "Hardware Settings"
     config ESP_ENABLE_PVT
         bool "Auto adjust hp & lp voltage using pvt function (MUST ENABLE FOR MP)"
         depends on SOC_PMU_PVT_SUPPORTED
+        default n if IDF_TARGET_ESP32C6
         default y
         help
             If enabled, hp & lp voltage can be auto adjust by PVT characteristic.
