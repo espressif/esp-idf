@@ -55,7 +55,7 @@
 // #define SOC_RTC_MEM_SUPPORTED           1      // TODO: [ESP32S31] IDF-14678
 // #define SOC_RMT_SUPPORTED               1      // TODO: [ESP32S31] IDF-14794
 // #define SOC_I2S_SUPPORTED               1      // TODO: [ESP32S31] IDF-14771
-// #define SOC_SDM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14783
+#define SOC_SDM_SUPPORTED               1
 // #define SOC_GPSPI_SUPPORTED             1      // TODO: [ESP32S31] IDF-14734
 // #define SOC_LEDC_SUPPORTED              1      // TODO: [ESP32S31] IDF-14709
 // #define SOC_ISP_SUPPORTED               1      // TODO: [ESP32S31] IDF-14769
@@ -179,6 +179,9 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8
+
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_SUPPORT_SLEEP_RETENTION     1
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 // TODO: [ESP32S31] IDF-14669

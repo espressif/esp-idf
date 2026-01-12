@@ -19,6 +19,10 @@ config SOC_EFUSE_SUPPORTED
     bool
     default y
 
+config SOC_SDM_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
@@ -190,6 +194,10 @@ config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 config SOC_RTCIO_PIN_COUNT
     int
     default 8
+
+config SOC_SDM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_MMU_PERIPH_NUM
     int
