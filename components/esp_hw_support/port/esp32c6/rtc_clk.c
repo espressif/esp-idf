@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,6 +215,8 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
+    pvt_auto_dbias_init();
+    charge_pump_init();
     pvt_func_enable(true);
     charge_pump_enable(true);
 #endif
@@ -353,10 +355,6 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 void rtc_clk_cpu_freq_set_xtal(void)
 {
     rtc_clk_cpu_set_to_default_config();
-#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    charge_pump_enable(false);
-    pvt_func_enable(false);
-#endif
     rtc_clk_bbpll_disable();
 }
 
