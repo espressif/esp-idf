@@ -410,35 +410,13 @@ typedef struct {
     UINT8                   tx_power;
 } tBTA_BLE_ADV_DATA;
 
-typedef void (tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTA_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info);
-
-typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
+// typedef void (tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTA_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info);
 
 typedef tBTM_VSC_CMPL_CB tBTA_SEND_VENDOR_HCI_CMPL_CBACK;
 
-typedef tBTM_START_ADV_CMPL_CBACK tBTA_START_ADV_CMPL_CBACK;
-
-typedef tBTM_START_STOP_ADV_CMPL_CBACK tBTA_START_STOP_ADV_CMPL_CBACK;
-
-typedef tBTM_UPDATE_WHITELIST_CBACK tBTA_UPDATE_WHITELIST_CBACK;
-
-typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
+// typedef tBTM_UPDATE_WHITELIST_CBACK tBTA_UPDATE_WHITELIST_CBACK;
 
 typedef tBTM_DTM_CMD_CMPL_CBACK tBTA_DTM_CMD_CMPL_CBACK;
-
-typedef tBTM_SET_RAND_ADDR_CBACK tBTA_SET_RAND_ADDR_CBACK;
-
-typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
-
-typedef tBTM_SET_RPA_TIMEOUT_CMPL_CBACK tBTA_SET_RPA_TIMEOUT_CMPL_CBACK;
-
-typedef tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK;
-
-typedef tBTM_SET_PRIVACY_MODE_CMPL_CBACK tBTA_SET_PRIVACY_MODE_CMPL_CBACK;
-
-typedef tBTM_SET_CSA_SUPPORT_CMPL_CBACK tBTA_SET_CSA_SUPPORT_CMPL_CBACK;
-
-typedef tBTM_SET_VENDOR_EVT_MASK_CBACK tBTA_SET_VENDOR_EVT_MASK_CBACK;
 
 typedef tBTM_CMPL_CB tBTA_CMPL_CB;
 
@@ -744,7 +722,6 @@ typedef UINT8 tBTA_DM_BLE_CONN_TYPE;
 typedef BOOLEAN (tBTA_DM_BLE_SEL_CBACK)(BD_ADDR random_bda, UINT8 *p_remote_name);
 
 typedef tBTM_LE_UPDATE_CONN_PRAMS tBTA_LE_UPDATE_CONN_PRAMS;
-typedef tBTM_UPDATE_CONN_PARAM_CBACK tBTA_UPDATE_CONN_PARAM_CBACK;
 
 
 /* Structure associated with BTA_DM_BLE_SEC_REQ_EVT */
@@ -1204,11 +1181,7 @@ typedef void (tBTA_BLE_SCAN_REP_CBACK) (tBTA_DM_BLE_REF_VALUE ref_value, UINT8 r
                                         UINT8 num_records, UINT16 data_len,
                                         UINT8 *p_rep_data, tBTA_STATUS status);
 
-typedef void (tBTA_START_STOP_SCAN_CMPL_CBACK) (tBTA_STATUS status);
 
-typedef void (tBTA_START_STOP_ADV_CMPL_CBACK) (tBTA_STATUS status);
-
-typedef void (tBTA_CLEAR_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 #else
 typedef UINT8                       tBTA_DM_BLE_SEC_ACT;
@@ -2007,11 +1980,11 @@ void BTA_DmSetMinEncKeySize(UINT8 key_size, tBTM_CMPL_CB *p_cb);
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmBleSetChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_channels_cb);
+void BTA_DmBleSetChannels(const uint8_t *channels);
 
-extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb);
+extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type);
 
-extern void BTA_DmClearWhiteList(tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb);
+extern void BTA_DmClearWhiteList(void);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 #endif  ///BLE_INCLUDED == TRUE
@@ -2585,26 +2558,6 @@ extern void BTA_DmSetBleConnScanParams(UINT32 scan_interval,
 
 /*******************************************************************************
 **
-** Function         BTA_DmSetBleScanParams
-**
-** Description      This function is called to set scan parameters
-**
-** Parameters:      client_if - Client IF
-**                  scan_interval - scan interval
-**                  scan_window - scan window
-**                  scan_mode - scan mode
-**                  scan_param_setup_status_cback - Set scan param status callback
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
-                                   UINT32 scan_window, tBLE_SCAN_MODE scan_mode,
-                                   tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_status_cback);
-
-
-/*******************************************************************************
-**
 ** Function         BTA_DmSetBleScanFilterParams
 **
 ** Description      This function is called to set scan parameters
@@ -2621,13 +2574,13 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 *******************************************************************************/
 extern void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
         UINT32 scan_window, tBLE_SCAN_MODE scan_mode, UINT8 scan_fil_poilcy,
-        UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
+        UINT8 addr_type_own, UINT8 scan_duplicate_filter);
 
 
-extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
+extern void BTA_DmAdvStartWithParams (UINT16 adv_int_min, UINT16 adv_int_max,
                                       UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                       tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
-                                      tBLE_BD_ADDR *p_dir_bda, tBTA_START_ADV_CMPL_CBACK p_start_adv_cb);
+                                      tBLE_BD_ADDR *p_dir_bda);
 
 
 /*******************************************************************************
@@ -2717,25 +2670,6 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
                                 tBTA_DM_ENCRYPT_CBACK *p_callback,
                                 tBTA_DM_BLE_SEC_ACT sec_act);
 
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleObserve
-**
-** Description      This procedure keep the device listening for advertising
-**                  events from a broadcast device.
-**
-** Parameters       start: start or stop observe.
-**                  duration : Duration of the scan. Continuous scan if 0 is passed
-**                  p_results_cb: Callback to be called with scan results
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
-
 /*******************************************************************************
 **
 ** Function         BTA_DmBleScan
@@ -2751,17 +2685,15 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
 **
 *******************************************************************************/
 extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
+                             tBTA_DM_SEARCH_CBACK *p_results_cb);
 
 
-extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
+extern void BTA_DmSetRandAddress(BD_ADDR rand_addr);
 extern void BTA_DmClearRandAddress(void);
-extern void BTA_DmBleSetRpaTimeout(uint16_t rpa_timeout,tBTA_SET_RPA_TIMEOUT_CMPL_CBACK *p_set_rpa_timeout_cback);
+extern void BTA_DmBleSetRpaTimeout(uint16_t rpa_timeout);
 extern void BTA_DmBleAddDevToResolvingList(BD_ADDR addr,
                                     uint8_t addr_type,
-                                    PEER_IRK irk,
-                                    tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *add_dev_to_resolving_list_callback);
+                                    PEER_IRK irk);
 #endif
 
 #if BLE_INCLUDED == TRUE
@@ -2773,11 +2705,11 @@ extern void BTA_DmBleAddDevToResolvingList(BD_ADDR addr,
 ** Description      Enable/disable privacy on the local device
 **
 ** Parameters:      privacy_enable   - enable/disable privacy on remote device.
-**                  set_local_privacy_cback -callback to be called with result
+**
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback);
+extern void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable);
 
 /*******************************************************************************
 **
@@ -2835,8 +2767,7 @@ extern void BTA_DmBleEnableRemotePrivacy(BD_ADDR bd_addr, BOOLEAN privacy_enable
 **
 *******************************************************************************/
 extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
-                                   tBTA_BLE_ADV_DATA *p_adv_cfg,
-                                   tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+                                   tBTA_BLE_ADV_DATA *p_adv_cfg);
 
 /*******************************************************************************
 **
@@ -2851,8 +2782,7 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len);
 
 
 /*******************************************************************************
@@ -2866,7 +2796,7 @@ extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback);
+void BTA_DmBleClearAdv (void);
 
 /*******************************************************************************
 **
@@ -2880,8 +2810,7 @@ void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback);
 **
 *******************************************************************************/
 extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask,
-                                 tBTA_BLE_ADV_DATA *p_adv_cfg,
-                                 tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+                                 tBTA_BLE_ADV_DATA *p_adv_cfg);
 
 /*******************************************************************************
 **
@@ -2891,13 +2820,12 @@ extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask,
 **
 ** Parameters       p_raw_scan_rsp : raw scan_rspertising data.
 **                  raw_scan_rsp_len : raw scan_rspertising data length.
-**                  p_scan_rsp_data_cback : set scan_rsp data complete callback.
+**
 **
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
-                                    tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback);
+extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len);
 
 /*******************************************************************************
 **
@@ -2914,8 +2842,7 @@ extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_l
 **
 *******************************************************************************/
 extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
-                                                BD_ADDR device_info,
-                                                tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK p_update_duplicate_exceptional_list_cback);
+                                                BD_ADDR device_info);
 
 /*******************************************************************************
 **
@@ -2924,12 +2851,12 @@ extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
 ** Description      This function starts or stops LE broadcasting.
 **
 ** Parameters       start: start or stop broadcast.
-**                  p_start_stop_adv_cb: stop broadcast completed event
+**
 **
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleAdvStop (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
+extern void BTA_DmBleAdvStop (void);
 
 /*******************************************************************************
 **
@@ -2969,7 +2896,7 @@ extern void BTA_DmBleDisconnect(BD_ADDR bd_addr);
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback);
+extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length);
 #if (BLE_42_DTM_TEST_EN == TRUE)
 extern void BTA_DmBleDtmTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 extern void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
@@ -2977,11 +2904,11 @@ extern void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_d
 
 extern void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 
-extern void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode, tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback);
+extern void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode);
 
-extern void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback);
+extern void BTA_DmBleGapSetCsaSupport(uint8_t csa_select);
 
-extern void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask, tBTA_SET_VENDOR_EVT_MASK_CBACK *p_callback);
+extern void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask);
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 void BTA_DmBleGapEnhReadTransPwrLevel(uint16_t conn_handle, uint8_t phy);

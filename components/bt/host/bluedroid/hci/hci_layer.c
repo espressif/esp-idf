@@ -199,7 +199,7 @@ static int hci_layer_init_env(void)
         HCI_TRACE_ERROR("%s unable to create command response timer.", __func__);
         return -1;
     }
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     btsnd_hcic_ble_sync_sem_init();
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
@@ -225,9 +225,9 @@ static void hci_layer_deinit_env(void)
     osi_mutex_free(&cmd_wait_q->commands_pending_response_lock);
     osi_alarm_free(cmd_wait_q->command_response_timer);
     cmd_wait_q->command_response_timer = NULL;
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     btsnd_hcic_ble_sync_sem_deinit();
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 }
 
 static void hci_downstream_data_handler(void *arg)
@@ -481,7 +481,7 @@ static bool filter_incoming_event(BT_HDR *packet)
         metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         if (metadata->command_complete_cb) {
             metadata->command_complete_cb(packet, metadata->context);
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
             BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
             if(!sync_info) {
                 HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
@@ -491,7 +491,7 @@ static bool filter_incoming_event(BT_HDR *packet)
                     sync_info->opcode = 0;
                 }
             }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
         } else if (metadata->flags_vnd & HCI_CMD_MSG_F_VND_FUTURE) {
             future_ready((future_t *)(metadata->complete_future), packet);
         }

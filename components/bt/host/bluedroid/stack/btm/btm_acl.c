@@ -49,6 +49,7 @@
 #include "stack/hcidefs.h"
 //#include "bt_utils.h"
 #include "osi/list.h"
+#include "bta_dm_gap.h"
 
 static void btm_read_remote_features (UINT16 handle);
 static void btm_read_remote_ext_features (UINT16 handle, UINT8 page_number);
@@ -2275,10 +2276,11 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 ** Returns          BTM_CMD_STARTED if successfully initiated or error code
 **
 *******************************************************************************/
-tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda)
 {
     tACL_CONN *p;
     tBTM_BLE_CH_MAP_RESULTS result;
+    UINT8 status;
 
     BTM_TRACE_DEBUG("BTM_ReadChannelMap: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
                   remote_bda[0], remote_bda[1], remote_bda[2],
@@ -2286,29 +2288,33 @@ tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
 
     memset(result.channel_map, 0, sizeof(result.channel_map));  // Clear channel map data
     /* If someone already waiting for the channel map, do not allow another */
-    if (btm_cb.devcb.p_ble_ch_map_cmpl_cb) {
+    if (btm_cb.devcb.is_ch_map_cb) {
         result.status = BTM_BUSY;
-        (*p_cb)(&result);
-        return BTM_BUSY;
+        status = BTM_BUSY;
+        goto _ch_map_err;
     }
     p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
     if (p != NULL) {
-        btm_cb.devcb.p_ble_ch_map_cmpl_cb = p_cb;
-
         if (!btsnd_hcic_ble_read_chnl_map(p->hci_handle)) {
-            btm_cb.devcb.p_ble_ch_map_cmpl_cb = NULL;
+            btm_cb.devcb.is_ch_map_cb = false;
             result.status = BTM_NO_RESOURCES;
-            (*p_cb)(&result);
-            return BTM_NO_RESOURCES;
+            status = BTM_NO_RESOURCES;
+            goto _ch_map_err;
         } else {
+            btm_cb.devcb.is_ch_map_cb = true;
             return BTM_CMD_STARTED;
         }
     }
-
+    status = BTM_UNKNOWN_ADDR;
     /* If here, no BD Addr found */
     result.status = BTM_UNKNOWN_ADDR;
-    (*p_cb)(&result);
-    return BTM_UNKNOWN_ADDR;
+
+_ch_map_err:
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    // `ch_map_read` is same as `results`
+    memcpy(&cb_params.ch_map_results, &result, sizeof(tBTM_BLE_CH_MAP_RESULTS));
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_READ_CHANNEL_MAP_EVT, &cb_params);
+    return status;
 }
 
 void BTM_BleGetWhiteListSize(uint16_t *length)
@@ -2349,17 +2355,15 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 *******************************************************************************/
 void btm_read_channel_map_complete(UINT8 *p)
 {
-    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_ble_ch_map_cmpl_cb;
     tBTM_BLE_CH_MAP_RESULTS results;
     UINT16 handle;
     tACL_CONN *p_acl_cb = NULL;
 
     BTM_TRACE_DEBUG("btm_read_channel_map_complete\n");
 
-    /* Reset the callback pointer to prevent duplicate calls */
-    btm_cb.devcb.p_ble_ch_map_cmpl_cb = NULL;
-
-    if (p_cb) {
+    if (btm_cb.devcb.is_ch_map_cb) {
+        /* Reset the callback pointer to prevent duplicate calls */
+        btm_cb.devcb.is_ch_map_cb = false;
         /* Extract HCI status from the response */
         STREAM_TO_UINT8(results.hci_status, p);
 
@@ -2386,7 +2390,10 @@ void btm_read_channel_map_complete(UINT8 *p)
         }
 
         /* Invoke the registered callback with the results */
-        (*p_cb)(&results);
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        // `ch_map_read` is same as `results`
+        memcpy(&cb_params.ch_map_results, &results, sizeof(tBTM_BLE_CH_MAP_RESULTS));
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_READ_CHANNEL_MAP_EVT, &cb_params);
     }
 }
 #endif // #if BLE_INCLUDED == TRUE

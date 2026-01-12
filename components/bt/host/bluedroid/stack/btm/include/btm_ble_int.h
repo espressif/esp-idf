@@ -157,9 +157,6 @@ typedef struct {
     UINT16 adv_interval_max;
     tBTM_BLE_AFP afp; /* advertising filter policy */
     tBTM_BLE_SFP sfp; /* scanning filter policy */
-    tBTM_START_ADV_CMPL_CBACK *p_adv_cb;
-    tBTM_START_STOP_ADV_CMPL_CBACK *p_stop_adv_cb;
-    tBTM_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cb;
     tBLE_ADDR_TYPE adv_addr_type;
     UINT8 evt_type;
     UINT8 adv_mode;
@@ -206,7 +203,7 @@ typedef struct {
     tBTM_BLE_ADDR_CBACK         *p_generate_cback;
     void                        *p;
     TIMER_LIST_ENT              raddr_timer_ent;
-    tBTM_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback;
+    bool                        cb_is_triggered;
 } tBTM_LE_RANDOM_CB;
 
 #define BTM_BLE_MAX_BG_CONN_DEV_NUM    10
@@ -358,7 +355,6 @@ typedef struct {
     /* periodic list information */
     UINT8 periodic_adv_list_size;
 #endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
-    tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb;
     tBTM_BLE_WL_STATE wl_state;
 
     fixed_queue_t *conn_pending_q;
@@ -386,13 +382,6 @@ typedef struct {
     tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
     UINT8 link_count[2]; /* total link count master and slave*/
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
-    tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *update_exceptional_list_cmp_cb;
-#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
-#if (BLE_VENDOR_HCI_EN == TRUE)
-    tBTM_SET_CSA_SUPPORT_CMPL_CBACK *set_csa_support_cmpl_cb;
-    tBTM_SET_VENDOR_EVT_MASK_CBACK *set_vendor_evt_mask_cmpl_cb;
-#endif // (BLE_VENDOR_HCI_EN == TRUE)
 } tBTM_BLE_CB;
 
 #ifdef __cplusplus
@@ -464,10 +453,10 @@ void btm_ble_update_sec_key_size(BD_ADDR bd_addr, UINT8 enc_key_size);
 UINT8 btm_ble_read_sec_key_size(BD_ADDR bd_addr);
 
 /* white list function */
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb);
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type);
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
-void btm_ble_clear_white_list (tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb);
+void btm_ble_clear_white_list (void);
 void btm_read_white_list_size_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_add_2_white_list_complete(UINT8 status);
 void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len);

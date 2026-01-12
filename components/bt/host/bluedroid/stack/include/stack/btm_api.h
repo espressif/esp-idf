@@ -171,23 +171,13 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 ** Parameters are the BD Address of remote and the Dev Class of remote.
 ** If the app returns none zero, the connection or inquiry result will be dropped.
 */
-typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
-
-typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
-
-typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
+// typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 
 typedef void (tBTM_DTM_CMD_CMPL_CBACK) (void *p1);
 
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
-typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
-
-typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
-
-typedef void (tBTM_SET_RPA_TIMEOUT_CMPL_CBACK) (UINT8 status);
-
-typedef void (tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK) (UINT8 status);
+// typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
 
 typedef void (tBTM_BLE_VENDOR_HCI_EVT_CBACK) (UINT8 subevt_code, UINT8 param_len, UINT8 *params);
 /*******************************
@@ -3167,7 +3157,7 @@ tBTM_STATUS BTM_WriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBT
 ** Returns          BTM_CMD_STARTED if successfully initiated or error code
 **
 *******************************************************************************/
-tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda);
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 
@@ -4480,7 +4470,7 @@ tBTM_STATUS BTM_SetAfhChannels (AFH_CHANNELS channels, tBTM_CMPL_CB *p_afh_chann
 ** Returns          status of the operation
 **
 *******************************************************************************/
-tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback);
+tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels);
 
 /*******************************************************************************
 **
