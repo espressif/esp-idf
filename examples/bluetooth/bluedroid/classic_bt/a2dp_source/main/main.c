@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -90,6 +90,12 @@ static void bt_app_av_sm_hdlr(uint16_t event, void *param);
 
 /* utils for transfer BLuetooth Deveice Address into string form */
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size);
+
+/* check preferred codec configuration against sink capabilities */
+static bool check_pref_mcc_against_sink_caps(const esp_a2d_mcc_t *sink_caps, const esp_a2d_mcc_t *pref_mcc);
+
+/* set preferred codec configuration */
+static void bt_app_a2d_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *sink_caps);
 
 /* A2DP application state machine handler for each state */
 static void bt_app_av_state_unconnected_hdlr(uint16_t event, void *param);
@@ -404,6 +410,77 @@ static void bt_app_av_sm_hdlr(uint16_t event, void *param)
     }
 }
 
+static bool is_one_bit_set_u8(uint8_t v)
+{
+    return (v != 0) && ((v & (uint8_t)(v - 1)) == 0);
+}
+
+static bool check_pref_mcc_against_sink_caps(const esp_a2d_mcc_t *sink_caps, const esp_a2d_mcc_t *pref_mcc)
+{
+    const esp_a2d_cie_sbc_t *caps;
+    const esp_a2d_cie_sbc_t *cfg;
+
+    if (sink_caps == NULL || pref_mcc == NULL) {
+        return false;
+    }
+    if (sink_caps->type != pref_mcc->type) {
+        return false;
+    }
+
+    if (pref_mcc->type != ESP_A2D_MCT_SBC) {
+        return false;
+    }
+
+    caps = &sink_caps->cie.sbc_info;
+    cfg = &pref_mcc->cie.sbc_info;
+
+    /* For preferred configuration, each field should select a single value (one bit) */
+    if (!is_one_bit_set_u8(cfg->samp_freq) || ((cfg->samp_freq & caps->samp_freq) != cfg->samp_freq)) {
+        return false;
+    }
+    if (!is_one_bit_set_u8(cfg->ch_mode) || ((cfg->ch_mode & caps->ch_mode) != cfg->ch_mode)) {
+        return false;
+    }
+    if (!is_one_bit_set_u8(cfg->block_len) || ((cfg->block_len & caps->block_len) != cfg->block_len)) {
+        return false;
+    }
+    if (!is_one_bit_set_u8(cfg->num_subbands) || ((cfg->num_subbands & caps->num_subbands) != cfg->num_subbands)) {
+        return false;
+    }
+    if (!is_one_bit_set_u8(cfg->alloc_mthd) || ((cfg->alloc_mthd & caps->alloc_mthd) != cfg->alloc_mthd)) {
+        return false;
+    }
+
+    if (cfg->min_bitpool < caps->min_bitpool || cfg->max_bitpool > caps->max_bitpool || cfg->min_bitpool > cfg->max_bitpool) {
+        return false;
+    }
+
+    return true;
+}
+
+static void bt_app_a2d_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *sink_caps)
+{
+    esp_a2d_mcc_t pref_mcc;
+
+    memset(&pref_mcc, 0, sizeof(pref_mcc));
+    pref_mcc.type = ESP_A2D_MCT_SBC;
+    pref_mcc.cie.sbc_info.samp_freq    = ESP_A2D_SBC_CIE_SF_44K;
+    pref_mcc.cie.sbc_info.ch_mode      = ESP_A2D_SBC_CIE_CH_MODE_MONO; // Joint Stereo --> Mono
+    pref_mcc.cie.sbc_info.block_len    = ESP_A2D_SBC_CIE_BLOCK_LEN_16;
+    pref_mcc.cie.sbc_info.num_subbands = ESP_A2D_SBC_CIE_NUM_SUBBANDS_8;
+    pref_mcc.cie.sbc_info.alloc_mthd   = ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS;
+    pref_mcc.cie.sbc_info.min_bitpool  = 2;
+    pref_mcc.cie.sbc_info.max_bitpool  = 35; // 53 --> 35
+
+    if (!check_pref_mcc_against_sink_caps(sink_caps, &pref_mcc)) {
+        ESP_LOGW(BT_AV_TAG, "pref_mcc not supported by sink");
+        return;
+    }
+
+    esp_err_t ret = esp_a2d_source_set_pref_mcc(conn_hdl, &pref_mcc);
+    ESP_LOGD(BT_AV_TAG, "Set pref_mcc result: %s", esp_err_to_name(ret));
+}
+
 static void bt_app_av_state_unconnected_hdlr(uint16_t event, void *param)
 {
     esp_a2d_cb_param_t *a2d = NULL;
@@ -581,6 +658,30 @@ static void bt_app_av_state_connected_hdlr(uint16_t event, void *param)
         ESP_LOGI(BT_AV_TAG, "%s, delay value: %u * 1/10 ms", __func__, a2d->a2d_report_delay_value_stat.delay_value);
         break;
     }
+    case ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(param);
+        esp_a2d_mcc_t *sink_mcc = &a2d->a2d_report_snk_codec_caps_stat.mcc;
+        ESP_LOGI(BT_AV_TAG, "sink codec type: %d", sink_mcc->type);
+        /* for now only SBC stream is supported */
+        if (sink_mcc->type == ESP_A2D_MCT_SBC) {
+            ESP_LOGI(BT_AV_TAG, "sink codec capabilities: 0x%x-0x%x-0x%x-0x%x-0x%x-%d-%d",
+                     sink_mcc->cie.sbc_info.samp_freq,
+                     sink_mcc->cie.sbc_info.ch_mode,
+                     sink_mcc->cie.sbc_info.block_len,
+                     sink_mcc->cie.sbc_info.num_subbands,
+                     sink_mcc->cie.sbc_info.alloc_mthd,
+                     sink_mcc->cie.sbc_info.min_bitpool,
+                     sink_mcc->cie.sbc_info.max_bitpool);
+        }
+        bt_app_a2d_set_pref_mcc(a2d->a2d_report_snk_codec_caps_stat.conn_hdl, sink_mcc);
+        break;
+    }
+    case ESP_A2D_SRC_SET_PREF_MCC_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(param);
+        ESP_LOGI(BT_AV_TAG, "Set preferred media codec config result: conn_hdl: %d, set_status: %d",
+                 a2d->a2d_set_pref_mcc_stat.conn_hdl, a2d->a2d_set_pref_mcc_stat.set_status);
+        break;
+    }
     default: {
         ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
         break;
@@ -629,7 +730,8 @@ static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
     case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
-    case ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT: {
+    case ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT:
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }
@@ -720,6 +822,17 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     /* when set absolute volume responded, this event comes */
     case ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "Set absolute volume response: volume %d", rc->set_volume_rsp.volume);
+        break;
+    }
+    /* when avrcp controller init or deinit completed, this event comes */
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP CT STATE error: %d", rc->avrc_ct_init_stat.state);
+        }
         break;
     }
     /* other */

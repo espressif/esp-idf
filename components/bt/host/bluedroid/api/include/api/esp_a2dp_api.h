@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -231,6 +231,7 @@ typedef enum {
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
     ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report sink codec capabilities, only used for A2DP SRC */
+    ESP_A2D_SRC_SET_PREF_MCC_EVT,              /*!< indicate a2dp source set preferred media codec configuration status, only used for A2DP SRC */
 } esp_a2d_cb_event_t;
 
 /**
@@ -336,6 +337,16 @@ typedef union {
         esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
         esp_a2d_mcc_t mcc;                     /*!< A2DP sink media codec capability information */
     } a2d_report_snk_codec_caps_stat;         /*!< A2DP source received sink codec capabilities */
+
+    /**
+     * @brief ESP_A2D_SRC_SET_PREF_MCC_EVT
+     */
+    struct a2d_set_pref_mcc_param {
+        esp_bt_status_t set_status;                /*!< set status.
+                                                        @note Possible values: ESP_BT_STATUS_SUCCESS, ESP_BT_STATUS_FAIL,
+                                                              ESP_BT_STATUS_NOT_READY, ESP_BT_STATUS_BUSY, ESP_BT_STATUS_UNSUPPORTED. */
+        esp_a2d_conn_hdl_t conn_hdl;               /*!< connection handle */
+    } a2d_set_pref_mcc_stat;                       /*!< A2DP source set preferred media codec configuration */
 
 } esp_a2d_cb_param_t;
 
@@ -557,6 +568,23 @@ esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
  *
  */
 esp_err_t esp_a2d_source_init(void);
+
+/**
+ *
+ * @brief           Set the preferred A2DP source media codec configuration after establishing A2DP connection
+ *                  and before starting A2DP stream.
+ *
+ * @param[in]       conn_hdl : connection handle
+ * @param[in]       pref_mcc : preferred media codec configuration
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *pref_mcc);
 
 /**
  * @brief           Register a a2dp source Stream Endpoint (SEP) with specific codec capability, shall register
