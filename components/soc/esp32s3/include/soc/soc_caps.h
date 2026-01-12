@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -201,25 +201,16 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-S3 has 2 I2C
-#define SOC_I2C_NUM                 (2U)
-#define SOC_HP_I2C_NUM              (2U)
+#define SOC_I2C_NUM                             (2U)
+#define SOC_HP_I2C_NUM                          (2U)
 
-#define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
-#define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
-#define SOC_I2C_SUPPORT_SLAVE       (1)
+#define SOC_I2C_SUPPORT_XTAL                    (1)
+#define SOC_I2C_SUPPORT_RTC                     (1)
+#define SOC_I2C_SUPPORT_10BIT_ADDR              (1)
 
-// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
-//ESP32-S3 support hardware clear bus
-#define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
-
-#define SOC_I2C_SUPPORT_XTAL       (1)
-#define SOC_I2C_SUPPORT_RTC        (1)
-
-#define SOC_I2C_SUPPORT_10BIT_ADDR  (1)
-#define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
-#define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
-#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
+#define SOC_I2C_SUPPORT_SLAVE                   (1)
+#define SOC_I2C_SLAVE_SUPPORT_BROADCAST         (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE     (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_HW_VERSION_2        (1)

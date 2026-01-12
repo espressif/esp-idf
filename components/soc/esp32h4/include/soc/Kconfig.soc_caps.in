@@ -439,26 +439,6 @@ config SOC_HP_I2C_NUM
     int
     default 2
 
-config SOC_I2C_FIFO_LEN
-    int
-    default 32
-
-config SOC_I2C_CMD_REG_NUM
-    int
-    default 8
-
-config SOC_I2C_SUPPORT_SLAVE
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_FSM_RST
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
-
 config SOC_I2C_SUPPORT_XTAL
     bool
     default y
@@ -471,19 +451,15 @@ config SOC_I2C_SUPPORT_10BIT_ADDR
     bool
     default y
 
+config SOC_I2C_SUPPORT_SLAVE
+    bool
+    default y
+
 config SOC_I2C_SLAVE_SUPPORT_BROADCAST
     bool
     default y
 
 config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
 

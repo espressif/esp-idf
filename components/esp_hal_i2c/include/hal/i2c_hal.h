@@ -179,7 +179,7 @@ void _i2c_hal_deinit(i2c_hal_context_t *hal);
  */
 void i2c_hal_master_trans_start(i2c_hal_context_t *hal);
 
-#if !SOC_I2C_SUPPORT_HW_FSM_RST
+#if !I2C_LL_SUPPORT_HW_FSM_RST
 
 /**
  * @brief Get timing configuration
@@ -197,7 +197,7 @@ void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
  */
 void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config);
 
-#endif // !SOC_I2C_SUPPORT_HW_FSM_RST
+#endif // !I2C_LL_SUPPORT_HW_FSM_RST
 
 #endif  // #if SOC_I2C_SUPPORTED
 

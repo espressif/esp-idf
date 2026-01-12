@@ -427,31 +427,19 @@ config SOC_HP_I2C_NUM
     int
     default 2
 
-config SOC_I2C_FIFO_LEN
-    int
-    default 32
+config SOC_I2C_SUPPORT_REF_TICK
+    bool
+    default y
 
-config SOC_I2C_CMD_REG_NUM
-    int
-    default 16
+config SOC_I2C_SUPPORT_APB
+    bool
+    default y
 
 config SOC_I2C_SUPPORT_SLAVE
     bool
     default y
 
 config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_REF_TICK
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_APB
     bool
     default y
 

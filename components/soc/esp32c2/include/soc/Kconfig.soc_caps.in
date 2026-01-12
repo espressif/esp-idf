@@ -335,18 +335,6 @@ config SOC_HP_I2C_NUM
     int
     default 1
 
-config SOC_I2C_FIFO_LEN
-    int
-    default 16
-
-config SOC_I2C_CMD_REG_NUM
-    int
-    default 8
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
-
 config SOC_I2C_SUPPORT_XTAL
     bool
     default y

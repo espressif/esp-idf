@@ -69,7 +69,7 @@ void i2c_hal_master_set_scl_timeout_val(i2c_hal_context_t *hal, uint32_t timeout
     i2c_ll_set_tout(hal->dev, reg_val);
 }
 
-#if !SOC_I2C_SUPPORT_HW_FSM_RST
+#if !I2C_LL_SUPPORT_HW_FSM_RST
 
 void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config)
 {
@@ -93,7 +93,7 @@ void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
     i2c_ll_master_set_fractional_divider(hal->dev, timing_config->clk_cfg.clk_div.numerator, timing_config->clk_cfg.clk_div.denominator);
 }
 
-#endif // !SOC_I2C_SUPPORT_HW_FSM_RST
+#endif // !I2C_LL_SUPPORT_HW_FSM_RST
 
 void i2c_hal_master_trans_start(i2c_hal_context_t *hal)
 {

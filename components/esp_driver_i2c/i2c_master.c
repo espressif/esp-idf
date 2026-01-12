@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,32 +7,28 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/lock.h>
-#include "esp_rom_sys.h"
 #include "sdkconfig.h"
-#include "esp_types.h"
-#include "esp_attr.h"
 #if CONFIG_I2C_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
 #include "esp_check.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
+#include "esp_rom_sys.h"
+#include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
+#include "driver/gpio.h"
+#include "soc/soc_caps.h"
+#include "hal/i2c_ll.h"
 #include "hal/i2c_periph.h"
-#include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_clk.h"
-#include "esp_rom_gpio.h"
 #include "driver/i2c_master.h"
 #include "i2c_private.h"
-#include "driver/gpio.h"
-#include "clk_ctrl_os.h"
-#include "hal/i2c_types.h"
-#include "hal/i2c_hal.h"
-#include "esp_memory_utils.h"
-#include "freertos/idf_additions.h"
 
 static const char *TAG = "i2c.master";
 
@@ -41,9 +37,9 @@ static const char *TAG = "i2c.master";
 #define I2C_ADDRESS_TRANS_READ(device_address)    (((device_address) << 1) | 1)
 
 #if SOC_LP_I2C_SUPPORTED
-#define I2C_FIFO_LEN(port_num) (((port_num) < SOC_HP_I2C_NUM) ? SOC_I2C_FIFO_LEN : SOC_LP_I2C_FIFO_LEN)
+#define I2C_FIFO_LEN(port_num) (((port_num) < SOC_HP_I2C_NUM) ? I2C_LL_GET(FIFO_LEN) : I2C_LL_GET(LP_FIFO_LEN))
 #else
-#define I2C_FIFO_LEN(port_num) (SOC_I2C_FIFO_LEN)
+#define I2C_FIFO_LEN(port_num) (I2C_LL_GET(FIFO_LEN))
 #endif
 
 #define I2C_CLR_BUS_TIMEOUT_MS        (50)  // 50ms is sufficient for clearing the bus
@@ -60,7 +56,7 @@ static i2c_master_bus_platform_t s_platform;
 static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
 {
     esp_err_t ret = ESP_OK;
-#if !SOC_I2C_SUPPORT_HW_CLR_BUS
+#if !I2C_LL_SUPPORT_HW_CLR_BUS
     const int scl_half_period = 5; // use standard 100kHz data rate
     int i = 0;
     gpio_set_direction(handle->scl_num, GPIO_MODE_OUTPUT_OD);
@@ -116,7 +112,7 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool cle
 {
     esp_err_t ret = ESP_OK;
     i2c_hal_context_t *hal = &i2c_master->base->hal;
-#if !SOC_I2C_SUPPORT_HW_FSM_RST
+#if !I2C_LL_SUPPORT_HW_FSM_RST
     i2c_hal_timing_config_t timing_config;
     uint8_t filter_cfg;
 
@@ -1269,12 +1265,12 @@ esp_err_t i2c_master_get_bus_handle(i2c_port_num_t port_num, i2c_master_bus_hand
 esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_master_transmit_multi_buffer_info_t *buffer_info_array, size_t array_size, int xfer_timeout_ms)
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
-    ESP_RETURN_ON_FALSE(array_size <= (SOC_I2C_CMD_REG_NUM - 2), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
+    ESP_RETURN_ON_FALSE(array_size <= (I2C_LL_GET(CMD_REG_NUM) - 2), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
     ESP_RETURN_ON_FALSE(buffer_info_array != NULL, ESP_ERR_INVALID_ARG, TAG, "buffer info array is empty");
 
     esp_err_t ret = ESP_OK;
     size_t op_index = 0;
-    i2c_operation_t i2c_ops[SOC_I2C_CMD_REG_NUM] = {};
+    i2c_operation_t i2c_ops[I2C_LL_GET(CMD_REG_NUM)] = {};
     i2c_ops[op_index++].hw_cmd.op_code = I2C_LL_CMD_RESTART;
     for (int i = 0; i < array_size; i++) {
         if (buffer_info_array[i].buffer_size == 0) {
@@ -1449,7 +1445,7 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
     ESP_RETURN_ON_FALSE(i2c_operation != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c operation pointer is invalid");
-    ESP_RETURN_ON_FALSE(operation_list_num <= (SOC_I2C_CMD_REG_NUM), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
+    ESP_RETURN_ON_FALSE(operation_list_num <= (I2C_LL_GET(CMD_REG_NUM)), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
 
     esp_err_t ret = ESP_OK;
     i2c_operation_t i2c_ops[operation_list_num];
