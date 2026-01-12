@@ -253,8 +253,14 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_SET_DELAY_VALUE_EVT   22      /* set delay reporting value */
 #define BTA_AV_GET_DELAY_VALUE_EVT   23      /* get delay reporting value */
 #define BTA_AV_SNK_PSC_CFG_EVT  24      /* Protocol service capabilities. */
+
+/* Incoming stream configuration indication received while local stream SSM is in INIT state.
+ * This is used to notify upper layers (BTC) that the stream state was force-switched to INCOMING
+ * to handle the new signalling/configuration. */
+#define BTA_AV_INCOMING_CFG_EVT 25
+
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          25
+#define BTA_AV_MAX_EVT          26
 
 
 /* function types for call-out functions */
@@ -481,6 +487,10 @@ typedef struct {
     UINT16          psc_mask;
 } tBTA_AV_SNK_PSC_CFG;
 
+/* data associated with BTA_AV_INCOMING_CFG_EVT */
+typedef struct {
+    BD_ADDR         bd_addr;
+} tBTA_AV_INCOMING;
 
 /* union of data associated with AV callback */
 typedef union {
@@ -506,6 +516,7 @@ typedef union {
     tBTA_AV_RC_FEAT     rc_feat;
     tBTA_AV_DELAY       delay;
     tBTA_AV_SNK_PSC_CFG psc;
+    tBTA_AV_INCOMING    incoming;
 } tBTA_AV;
 
 /* union of data associated with AV Media callback */
