@@ -211,7 +211,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         ESP_LOGI(TAG, "GATT server register, status %d, app_id %d, gatts_if %d",
                  param->reg.status, param->reg.app_id, gatts_if);
 
-        esp_ble_gap_set_device_name(DEVICE_NAME);\
+        esp_ble_gap_set_device_name(DEVICE_NAME);
 
         // Set extended advertising parameters
         esp_ble_gap_ext_adv_set_params(EXT_ADV_HANDLE, &ext_adv_params);
