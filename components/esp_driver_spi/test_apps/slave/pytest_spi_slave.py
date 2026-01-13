@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='c5 eco2 does not support top pd')
 @pytest.mark.parametrize('config', ['release', 'iram_safe'], indirect=True)
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_GPSPI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
+)
 def test_slave_single_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_normal_cases(reset=True)
 

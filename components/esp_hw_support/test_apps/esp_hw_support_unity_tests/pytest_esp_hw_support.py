@@ -3,13 +3,17 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='c5 eco2 does not support top pd')
 @idf_parametrize(
     'config,target',
-    [('single_core_esp32', 'esp32'), ('default', 'supported_targets'), ('release', 'supported_targets')],
+    [
+        ('single_core_esp32', 'esp32'),
+        *(('default', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
+        *(('release', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
+    ],
     indirect=['config', 'target'],
 )
 def test_esp_hw_support(dut: Dut) -> None:
