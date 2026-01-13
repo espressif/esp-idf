@@ -7,6 +7,7 @@
 #define _BLE_LOG_COMPRESSION_UTILS_H
 
 #include "ble_log.h"
+#include <stdio.h>
 
 #define CONCAT(a, b) a##b
 #define _CONCAT(a, b) CONCAT(a, b)
@@ -47,6 +48,7 @@
 enum {
     BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
     BLE_COMPRESSED_LOG_OUT_SOURCE_MESH,
+    BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB,
 };
 
 enum {

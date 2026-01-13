@@ -14,6 +14,10 @@
 #include "bta/bta_api.h"
 #endif
 
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+#include "log_compression/utils.h"
+#endif
+
 #include "btc_ble_mesh_agg_model.h"
 #include "btc_ble_mesh_brc_model.h"
 #include "btc_ble_mesh_df_model.h"
@@ -5017,6 +5021,31 @@ void bt_mesh_lib_log_debug(const char *format, ...)
         va_end(args);
     }
 #endif
+}
+
+void ble_mesh_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...)
+{
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+    if (BLE_MESH_LOG_LEVEL >= log_level) {
+        va_list args = {0};
+        va_start(args, arg_cnt);
+        extern int ble_log_compressed_hex_printv(uint8_t source, uint32_t log_index, size_t args_cnt, va_list args);
+        ble_log_compressed_hex_printv(BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB, log_index, arg_cnt, args);
+        va_end(args);
+    }
+#endif
+    return;
+}
+
+void ble_mesh_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx, const uint8_t *buf, uint8_t len)
+{
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+    if (BLE_MESH_LOG_LEVEL >= log_level) {
+        extern int ble_log_compressed_hex_print_buf(uint8_t source, uint32_t log_index, uint8_t buf_idx, const uint8_t *buf, size_t len);
+        ble_log_compressed_hex_print_buf(BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB, log_index, buf_idx, buf, len);
+    }
+#endif
+    return;
 }
 
 /**
