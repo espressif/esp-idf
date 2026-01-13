@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -220,7 +220,7 @@ esp_err_t hal_i2c_write(i2c_port_t port_num, uint16_t addr, const uint8_t *txdat
 
     uint32_t remaining_byte = txlength;
     while (remaining_byte) {
-        uint32_t tx_len_tmp = remaining_byte > SOC_I2C_FIFO_LEN - 1 ? SOC_I2C_FIFO_LEN - 1 : remaining_byte;
+        uint32_t tx_len_tmp = remaining_byte > I2C_LL_GET(FIFO_LEN) - 1 ? I2C_LL_GET(FIFO_LEN) - 1 : remaining_byte;
         i2c_ll_write_txfifo(dev, txdata, tx_len_tmp);
         /*The I2C controller support up to  I2C commands, as such, if we need to enqueue more commands than that,
         we can tell the hardware to start with the enqueued commands first and wait for the next commands to send afterwards.
@@ -262,7 +262,7 @@ esp_err_t hal_i2c_read(i2c_port_t port_num, uint16_t addr, uint8_t *rxdata, uint
     uint32_t remaining_byte = rxlength;
 
     while (remaining_byte) {
-        uint32_t tmp_rx_length = (remaining_byte > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : remaining_byte;
+        uint32_t tmp_rx_length = (remaining_byte > I2C_LL_GET(FIFO_LEN)) ? I2C_LL_GET(FIFO_LEN) : remaining_byte;
         remaining_byte -= tmp_rx_length;
         if (tmp_rx_length == 1) {
             i2c_format_cmd(port_num, cmd_idx++, I2C_LL_CMD_READ, NACK_VALUE, 0, NOT_CHECK_ACK_VALUE, 1);
@@ -307,7 +307,7 @@ esp_err_t hal_i2c_write_read(i2c_port_t port_num, uint16_t addr, const uint8_t *
     // Write first
     uint32_t remaining_byte = txlength;
     while (remaining_byte) {
-        uint32_t tx_len_tmp = remaining_byte > SOC_I2C_FIFO_LEN - 1 ? SOC_I2C_FIFO_LEN - 1 : remaining_byte;
+        uint32_t tx_len_tmp = remaining_byte > I2C_LL_GET(FIFO_LEN) - 1 ? I2C_LL_GET(FIFO_LEN) - 1 : remaining_byte;
         i2c_ll_write_txfifo(dev, txdata, tx_len_tmp);
         /*The I2C controller support up to  I2C commands, as such, if we need to enqueue more commands than that,
         we can tell the hardware to start with the enqueued commands first and wait for the next commands to send afterwards.
@@ -333,7 +333,7 @@ esp_err_t hal_i2c_write_read(i2c_port_t port_num, uint16_t addr, const uint8_t *
     remaining_byte = rxlength;
 
     while (remaining_byte) {
-        uint32_t tmp_rx_length = (remaining_byte > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : remaining_byte;
+        uint32_t tmp_rx_length = (remaining_byte > I2C_LL_GET(FIFO_LEN)) ? I2C_LL_GET(FIFO_LEN) : remaining_byte;
         remaining_byte -= tmp_rx_length;
         if (tmp_rx_length == 1) {
             i2c_format_cmd(port_num, cmd_idx++, I2C_LL_CMD_READ, NACK_VALUE, 0, NOT_CHECK_ACK_VALUE, 1);

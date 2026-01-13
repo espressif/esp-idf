@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -198,19 +198,16 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32 has 2 I2C
 #define SOC_I2C_NUM                (2U)
-#define SOC_HP_I2C_NUM             (2)
+#define SOC_HP_I2C_NUM             (2U)
 
-#define SOC_I2C_FIFO_LEN        (32) /*!< I2C hardware FIFO depth */
-#define SOC_I2C_CMD_REG_NUM     (16) /*!< Number of I2C command registers */
-#define SOC_I2C_SUPPORT_SLAVE   (1)
-
-#define SOC_I2C_SUPPORT_APB     (1)
+#define SOC_I2C_SUPPORT_APB        (1)
 #define SOC_I2C_SUPPORT_10BIT_ADDR (1)
 
+#define SOC_I2C_SUPPORT_SLAVE      (1)
+
 // On ESP32, the stop bit should be independent, we can't put trans data and stop command together
-#define SOC_I2C_STOP_INDEPENDENT (1)
+#define SOC_I2C_STOP_INDEPENDENT   (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 has 2 I2S

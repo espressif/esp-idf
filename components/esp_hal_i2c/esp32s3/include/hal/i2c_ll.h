@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define I2C_LL_GET(_attr)       I2C_LL_ ## _attr
+
+#define I2C_LL_FIFO_LEN         32 /*!< I2C hardware FIFO depth */
+#define I2C_LL_CMD_REG_NUM      8  /*!< Number of I2C command registers */
+
+// FSM_RST only resets the FSM, not using it. So I2C_LL_SUPPORT_HW_FSM_RST not defined.
+#define I2C_LL_SUPPORT_HW_CLR_BUS            (1)  /*!< Support hardware clear bus */
+// #define I2C_LL_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)  /*!< Slave support I2CRAM access */
 
 /**
  * @brief I2C hardware cmd register fields.
@@ -612,7 +621,7 @@ static inline void i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw, uint32_t *length)
 __attribute__((always_inline))
 static inline void i2c_ll_get_txfifo_len(i2c_dev_t *hw, uint32_t *length)
 {
-    *length = (hw->sr.txfifo_cnt >= SOC_I2C_FIFO_LEN) ? 0 : (SOC_I2C_FIFO_LEN - hw->sr.txfifo_cnt);
+    *length = (hw->sr.txfifo_cnt >= I2C_LL_GET(FIFO_LEN)) ? 0 : (I2C_LL_GET(FIFO_LEN) - hw->sr.txfifo_cnt);
 }
 
 /**

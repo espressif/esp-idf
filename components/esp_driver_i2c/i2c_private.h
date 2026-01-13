@@ -66,7 +66,7 @@ extern "C" {
 
 #define I2C_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define I2C_STATIC_OPERATION_ARRAY_MAX SOC_I2C_CMD_REG_NUM
+#define I2C_STATIC_OPERATION_ARRAY_MAX I2C_LL_GET(CMD_REG_NUM)
 
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
 #define I2C_TRANS_WRITE_COMMAND(ack_check)   {.ack_en = (ack_check), .op_code = I2C_LL_CMD_WRITE}

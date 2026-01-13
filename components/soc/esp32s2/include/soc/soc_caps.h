@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -192,21 +192,14 @@
 #define SOC_DEDIC_GPIO_HAS_INTERRUPT    (1) /*!< Dedicated GPIO has its own interrupt source */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-S2 has 2 I2C
-#define SOC_I2C_NUM                 (2U)
-#define SOC_HP_I2C_NUM              (2U)
+#define SOC_I2C_NUM                             (2U)
+#define SOC_HP_I2C_NUM                          (2U)
 
-#define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
-#define SOC_I2C_CMD_REG_NUM    (16) /*!< Number of I2C command registers */
-#define SOC_I2C_SUPPORT_SLAVE       (1)
-#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
+#define SOC_I2C_SUPPORT_REF_TICK                (1)
+#define SOC_I2C_SUPPORT_APB                     (1)
 
-// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
-//ESP32-S2 support hardware clear bus
-#define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
-
-#define SOC_I2C_SUPPORT_REF_TICK   (1)
-#define SOC_I2C_SUPPORT_APB        (1)
+#define SOC_I2C_SUPPORT_SLAVE                   (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE     (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32-S2 has 1 I2S

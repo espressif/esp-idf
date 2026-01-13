@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define I2C_LL_GET(_attr)       I2C_LL_ ## _attr
+
+#define I2C_LL_FIFO_LEN         32 /*!< I2C hardware FIFO depth */
+#define I2C_LL_CMD_REG_NUM      16 /*!< Number of I2C command registers */
 
 /**
  * @brief I2C hardware cmd register fields.
@@ -485,7 +490,7 @@ static inline void i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw, uint32_t *length)
 __attribute__((always_inline))
 static inline void i2c_ll_get_txfifo_len(i2c_dev_t *hw, uint32_t *length)
 {
-    *length = (hw->status_reg.tx_fifo_cnt >= SOC_I2C_FIFO_LEN) ? 0 : (SOC_I2C_FIFO_LEN - hw->status_reg.tx_fifo_cnt);
+    *length = (hw->status_reg.tx_fifo_cnt >= I2C_LL_GET(FIFO_LEN)) ? 0 : (I2C_LL_GET(FIFO_LEN) - hw->status_reg.tx_fifo_cnt);
 }
 
 /**

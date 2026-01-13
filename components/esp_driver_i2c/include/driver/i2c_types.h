@@ -8,8 +8,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "hal/i2c_types.h"
 #include "soc/soc_caps.h"
+#include "hal/i2c_types.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
