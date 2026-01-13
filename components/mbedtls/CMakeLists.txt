@@ -124,11 +124,11 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
 endif()
 
 # Only build mbedtls libraries
-set(ENABLE_TESTING CACHE BOOL OFF)
-set(ENABLE_PROGRAMS CACHE BOOL OFF)
+set(ENABLE_TESTING OFF CACHE BOOL "mbedtls: enable testing")
+set(ENABLE_PROGRAMS OFF CACHE BOOL "mbedtls: enable programs")
 
 # Use pre-generated source files in mbedtls repository
-set(GEN_FILES CACHE BOOL OFF)
+set(GEN_FILES OFF CACHE BOOL "mbedtls: use pre-generated source files")
 
 # Make sure mbedtls finds the same Python interpreter as IDF uses
 idf_build_get_property(python PYTHON)
