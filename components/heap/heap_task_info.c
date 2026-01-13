@@ -641,8 +641,8 @@ static void heap_caps_print_task_info(FILE *stream, task_info_t *task_info, bool
 
     heap_stats_t *heap_info = NULL;
     STAILQ_FOREACH(heap_info, &task_info->heaps_stats, next_heap_stat) {
-        char *next_heap_visual = !STAILQ_NEXT(heap_info, next_heap_stat) ? " " : "│";
-        char *next_heap_visual_start = !STAILQ_NEXT(heap_info, next_heap_stat) ? "└" : "├";
+        const char *next_heap_visual = !STAILQ_NEXT(heap_info, next_heap_stat) ? " " : "│";
+        const char *next_heap_visual_start = !STAILQ_NEXT(heap_info, next_heap_stat) ? "└" : "├";
         fprintf(stream, "%s    %s HEAP: %s, CAPS: 0x%08lx, SIZE: %d, USAGE: CURRENT %d (%d%%), PEAK %d (%d%%), ALLOC COUNT: %d\n",
                 task_info_visual,
                 next_heap_visual_start,
