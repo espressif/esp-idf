@@ -793,21 +793,21 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
     int port_id = handle->controller->id;
     ESP_RETURN_ON_FALSE((port_id >= 0) && (port_id < I2S_LL_GET(INST_NUM)), ESP_ERR_INVALID_ARG, TAG, "invalid handle");
     /* Set GDMA trigger module */
-    gdma_trigger_t trig = {.periph = GDMA_TRIG_PERIPH_I2S};
+    gdma_trigger_t trig = {0};
 
     switch (port_id) {
 #if I2S_LL_GET(INST_NUM) > 2
     case I2S_NUM_2:
-        trig.instance_id = SOC_GDMA_TRIG_PERIPH_I2S2;
+        trig = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I2S, 2);
         break;
 #endif
 #if I2S_LL_GET(INST_NUM) > 1
     case I2S_NUM_1:
-        trig.instance_id = SOC_GDMA_TRIG_PERIPH_I2S1;
+        trig = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I2S, 1);
         break;
 #endif
     case I2S_NUM_0:
-        trig.instance_id = SOC_GDMA_TRIG_PERIPH_I2S0;
+        trig = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I2S, 0);
         break;
     default:
         ESP_LOGE(TAG, "Unsupported I2S port number");

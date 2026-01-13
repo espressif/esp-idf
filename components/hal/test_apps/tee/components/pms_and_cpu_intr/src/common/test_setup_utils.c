@@ -96,8 +96,8 @@ void test_switch_lp_mem_speed(bool high_speed)
 #define dma_ll_tx_connect_to_periph         DMA_LL_FUNC(tx_connect_to_periph)
 #define dma_ll_rx_reset_channel             DMA_LL_FUNC(rx_reset_channel)
 #define dma_ll_rx_connect_to_periph         DMA_LL_FUNC(rx_connect_to_periph)
-#define dma_ll_tx_disconnect_from_periph    DMA_LL_FUNC(tx_disconnect_from_periph)
-#define dma_ll_rx_disconnect_from_periph    DMA_LL_FUNC(rx_disconnect_from_periph)
+#define dma_ll_tx_disconnect_all            DMA_LL_FUNC(tx_disconnect_all)
+#define dma_ll_rx_disconnect_all            DMA_LL_FUNC(rx_disconnect_all)
 #define dma_ll_tx_set_desc_addr             DMA_LL_FUNC(tx_set_desc_addr)
 #define dma_ll_tx_start                     DMA_LL_FUNC(tx_start)
 #define dma_ll_rx_set_desc_addr             DMA_LL_FUNC(rx_set_desc_addr)
@@ -181,8 +181,8 @@ void test_gdma_init(void)
     dma_ll_tx_set_priority(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, 1);
     dma_ll_rx_set_priority(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, 1);
 
-    dma_ll_tx_connect_to_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_SPI2, SOC_GDMA_TRIG_PERIPH_SPI2);
-    dma_ll_rx_connect_to_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_SPI2, SOC_GDMA_TRIG_PERIPH_SPI2);
+    dma_ll_tx_connect_to_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_SPI2);
+    dma_ll_rx_connect_to_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_SPI2);
     TEST_DMA_DEV.channel[TEST_DMA_CHN_NUM].in.in_conf0.DMA_MEM_TRANS_EN_FIELD = 1;
 
     dma_ll_tx_enable_interrupt(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, GDMA_LL_EVENT_TX_EOF, true);
@@ -194,8 +194,8 @@ void test_gdma_deinit(void)
     dma_ll_tx_stop(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
     dma_ll_rx_stop(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
 
-    dma_ll_tx_disconnect_from_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
-    dma_ll_rx_disconnect_from_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
+    dma_ll_tx_disconnect_all(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
+    dma_ll_rx_disconnect_all(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
 
     dma_ll_tx_reset_channel(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
     dma_ll_rx_reset_channel(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);

@@ -134,7 +134,7 @@ static bool check_dma_descs_need_ext_mem_ecc_aes_access(const crypto_dma_desc_t 
 }
 #endif /* (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED) */
 
-esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t peripheral)
+esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, crypto_dma_user_t peripheral)
 {
     int rx_ch_id = 0;
 
@@ -151,12 +151,12 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     gdma_disconnect(s_tx_channel);
 
 #ifdef SOC_SHA_SUPPORTED
-    if (peripheral == GDMA_TRIG_PERIPH_SHA) {
+    if (peripheral == CRYPTO_DMA_USER_SHA) {
         gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
     } else
 #endif // SOC_SHA_SUPPORTED
 #ifdef SOC_AES_SUPPORTED
-    if (peripheral == GDMA_TRIG_PERIPH_AES) {
+    if (peripheral == CRYPTO_DMA_USER_AES) {
         gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
     } else
 #endif // SOC_AES_SUPPORTED

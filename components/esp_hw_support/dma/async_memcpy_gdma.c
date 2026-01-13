@@ -122,6 +122,8 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     gdma_channel_alloc_config_t channel_config = {0};
     ESP_GOTO_ON_ERROR(new_channel_func(&channel_config, &mcp_gdma->tx_channel, &mcp_gdma->rx_channel), err, TAG, "failed to alloc GDMA channels");
 
+    gdma_reset(mcp_gdma->tx_channel);
+    gdma_reset(mcp_gdma->rx_channel);
     // get a free DMA trigger ID for memory copy
     gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
     uint32_t free_m2m_id_mask = 0;

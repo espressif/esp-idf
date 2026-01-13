@@ -61,23 +61,30 @@ void gdma_axi_hal_set_priority(gdma_hal_context_t *hal, int chan_id, gdma_channe
     }
 }
 
-void gdma_axi_hal_connect_peri(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, gdma_trigger_peripheral_t periph, int periph_sub_id)
+void gdma_axi_hal_connect_peri(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, int periph_id)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
-        axi_dma_ll_rx_reset_channel(hal->axi_dma_dev, chan_id); // reset channel
-        axi_dma_ll_rx_connect_to_periph(hal->axi_dma_dev, chan_id, periph, periph_sub_id);
+        axi_dma_ll_rx_connect_to_periph(hal->axi_dma_dev, chan_id, periph_id);
     } else {
-        axi_dma_ll_tx_reset_channel(hal->axi_dma_dev, chan_id); // reset channel
-        axi_dma_ll_tx_connect_to_periph(hal->axi_dma_dev, chan_id, periph, periph_sub_id);
+        axi_dma_ll_tx_connect_to_periph(hal->axi_dma_dev, chan_id, periph_id);
     }
 }
 
-void gdma_axi_hal_disconnect_peri(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+void gdma_axi_hal_connect_mem(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, int dummy_id)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
-        axi_dma_ll_rx_disconnect_from_periph(hal->axi_dma_dev, chan_id);
+        axi_dma_ll_rx_connect_to_mem(hal->axi_dma_dev, chan_id, dummy_id);
     } else {
-        axi_dma_ll_tx_disconnect_from_periph(hal->axi_dma_dev, chan_id);
+        axi_dma_ll_tx_connect_to_mem(hal->axi_dma_dev, chan_id, dummy_id);
+    }
+}
+
+void gdma_axi_hal_disconnect_all(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        axi_dma_ll_rx_disconnect_all(hal->axi_dma_dev, chan_id);
+    } else {
+        axi_dma_ll_tx_disconnect_all(hal->axi_dma_dev, chan_id);
     }
 }
 
@@ -240,7 +247,8 @@ void gdma_axi_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
     hal->reset = gdma_axi_hal_reset;
     hal->set_priority = gdma_axi_hal_set_priority;
     hal->connect_peri = gdma_axi_hal_connect_peri;
-    hal->disconnect_peri = gdma_axi_hal_disconnect_peri;
+    hal->connect_mem = gdma_axi_hal_connect_mem;
+    hal->disconnect_all = gdma_axi_hal_disconnect_all;
     hal->enable_burst = gdma_axi_hal_enable_burst;
     hal->set_strategy = gdma_axi_hal_set_strategy;
     hal->enable_intr = gdma_axi_hal_enable_intr;
