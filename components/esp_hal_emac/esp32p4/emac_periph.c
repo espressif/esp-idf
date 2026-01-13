@@ -4,10 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "hal/emac_periph.h"
+#include "hal/config.h"
 #include "soc/io_mux_reg.h"
 #if __has_include("soc/emac_reg.h")
 #include "soc/emac_reg.h"
 #endif
+
+/**
+ * In emac_periph terms, `SIG_GPIO_OUT_IDX` indicates that the EMAC signal cannot be connected
+ * via the GPIO Matrix (i.e. such connection doesn't exist for the function), so it should
+ * stay in the default "unconnected state".
+ *
+ * Note: `SIG_GPIO_OUT_IDX` is defined for all targets and is usually used to signify "disconnect
+ * from peripheral signal" (a default unconnected peripheral state).
+ */
 
 const emac_io_info_t emac_io_idx = {
     .mdc_idx = MII_MDC_PAD_OUT_IDX,
@@ -30,7 +40,12 @@ const emac_io_info_t emac_io_idx = {
     .mii_tx_er_o_idx = EMAC_PHY_TXER_PAD_OUT_IDX,
     .mii_rx_er_i_idx = EMAC_PHY_RXER_PAD_IN_IDX,
     .rmii_refclk_i_idx = SIG_GPIO_OUT_IDX,
-    .rmii_refclk_o_idx = SIG_GPIO_OUT_IDX
+    .rmii_refclk_o_idx = SIG_GPIO_OUT_IDX,
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    .ptp_pps_idx = EMAC_PTP_PPS_PAD_OUT_IDX,
+#else
+    .ptp_pps_idx = SIG_GPIO_OUT_IDX,
+#endif
 };
 
 static const emac_iomux_info_t emac_rmii_iomux_clki[] = {

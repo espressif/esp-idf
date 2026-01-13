@@ -541,20 +541,36 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 
     ::
 
+        esp_eth_mac_t *mac;
+        esp_eth_get_mac_instance(eth_hndl, &mac);
+
         // 启用硬件时间戳
-        bool ptp_enable = true;
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_PTP_ENABLE, &ptp_enable);
+        eth_mac_ptp_config_t ptp_cfg = ETH_MAC_ESP_PTP_DEFAULT_CONFIG();
+        esp_eth_mac_ptp_enable(mac, &ptp_cfg);
 
         // 获取当前 EMAC 时间
         eth_mac_time_t ptp_time;
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_G_PTP_TIME, &ptp_time);
+        esp_eth_mac_get_ptp_time(mac, &ptp_time);
 
         // 设置 EMAC 时间
         ptp_time = {
             .seconds = 42,
             .nanoseconds = 0
         };
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+        esp_eth_mac_set_ptp_time(mac, &ptp_time);
+
+    PTP 模块可以按如下方式配置：
+
+    .. list::
+        * :cpp:member:`eth_mac_ptp_config_t::clk_src`：PTP 时钟源。从 :cpp:type:`soc_periph_emac_ptp_clk_src_t` 枚举中选择一个时钟源。
+
+        * :cpp:member:`eth_mac_ptp_config_t::clk_src_period_ns`：PTP 时钟源的周期（以纳秒为单位）。例如，如果时钟源为 40 MHz，则周期为 25 ns。
+
+        * :cpp:member:`eth_mac_ptp_config_t::required_accuracy_ns`：PTP 的所需精度（以纳秒为单位）。所需精度必须低于 PTP 时钟源的周期。例如，如果时钟源为 40 MHz（25 ns 周期），则所需精度为 40 ns。
+
+        * :cpp:member:`eth_mac_ptp_config_t::roll_type`：亚秒寄存器的翻转模式（数字或二进制）。推荐使用二进制翻转模式，因为它能提供更精确的时间同步。
+
+    接收帧的时间戳可以通过注册的 :cpp:member:`esp_eth_config_t::stack_input_info` 函数的最后一个参数进行访问，传输帧的时间戳可以通过注册的 :cpp:func:`esp_eth_transmit_ctrl_vargs` 函数的 ``ctrl`` 参数进行访问。然而，对于用户获取时间戳信息，更简便的方式是利用 L2 TAP :ref:`扩展缓冲区 <esp_netif_l2tap_ext_buff>` 机制。
 
     您可以通过注册回调函数和设置事件触发的目标时间，在精确的时间点调度事件。请注意，回调函数将在中断服务程序 (ISR) 上下文中调用，因此应尽量简洁。
 
@@ -563,16 +579,21 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
     ::
 
         // 注册回调函数
-        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_CB, ts_callback);
+        esp_eth_mac_set_target_time_cb(mac, ts_callback);
 
         // 设置事件的触发时间
         eth_mac_time_t mac_target_time = {
             .seconds = 42,
             .nanoseconds = 0
         };
-        esp_eth_ioctl(s_eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_TIME, &mac_target_time);
+        esp_eth_mac_set_target_time(mac, &mac_target_time);
 
-    接收帧的时间戳可以通过注册的 :cpp:member:`esp_eth_config_t::stack_input_info` 函数的最后一个参数进行访问，传输帧的时间戳可以通过注册的 :cpp:func:`esp_eth_transmit_ctrl_vargs` 函数的 ``ctrl`` 参数进行访问。然而，对于用户获取时间戳信息，更简便的方式是利用 L2 TAP :ref:`扩展缓冲区 <esp_netif_l2tap_ext_buff>` 机制。
+    此外，PTP 同步的时间可以通过 GPIO 上的 PPS (Pulse-Per-Second) 信号输出。这提供了一个精确的硬件时间参考，可用于同步外部设备、对齐独立时钟域或驱动 ESP32 芯片系列之外的时间关键型进程。顾名思义，PPS 信号默认每秒产生一次脉冲。但是，可以通过 :cpp:func:`esp_eth_mac_set_pps_out_freq` 函数设置 PPS0 输出频率来调整频率。该命令接受 0-16384 范围内的整数值，其中 0 = 1 PPS（单次脉冲），其他值产生方波时钟信号。时钟频率必须是 2 的幂且小于或等于 16384 Hz。请注意，由于数字翻转模式中位的非线性切换，实际频率是一个平均值（在一秒钟的总周期内占空比不同于 50%）。此行为不适用于二进制翻转模式，因此推荐使用二进制翻转模式。可以使用 :cpp:func:`esp_eth_mac_set_pps_out_gpio` 函数配置 PPS 信号在 GPIO 上输出。
+
+    .. only:: esp32p4
+
+        .. note::
+            GPIO 管脚上的 PPS 信号输出从 ESP32-P4 芯片版本 3 开始可用。
 
 .. _flow-control:
 

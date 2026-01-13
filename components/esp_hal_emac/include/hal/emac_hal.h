@@ -222,8 +222,8 @@ typedef struct {
 typedef struct {
     eth_mac_ptp_update_method_t upd_method;
     eth_mac_ptp_roll_type_t roll;
-    uint32_t ptp_clk_src_period_ns;         /*!< 1/ptp_ref_clk */
-    uint32_t ptp_req_accuracy_ns;           /*!< required PTP accuracy in ns, must be greater than clk_src period */
+    float ptp_clk_src_period_ns;         /*!< 1/ptp_ref_clk */
+    float ptp_req_accuracy_ns;           /*!< required PTP accuracy in ns, must be greater than clk_src period */
 } emac_hal_ptp_config_t;
 #endif
 
@@ -244,8 +244,6 @@ void emac_hal_init(emac_hal_context_t *hal);
 #define emac_hal_reset(hal) emac_ll_reset((hal)->dma_regs)
 
 #define emac_hal_is_reset_done(hal) emac_ll_is_reset_done((hal)->dma_regs)
-
-#define emac_hal_get_csr_freq_hz(void) emac_ll_get_csr_freq_hz()
 
 void emac_hal_find_set_closest_csr_clock_range(emac_hal_context_t *hal, int mdc_freq_hz, int freq_hz);
 
@@ -324,6 +322,8 @@ void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor
 #define emac_hal_receive_poll_demand(hal) emac_ll_receive_poll_demand((hal)->dma_regs, 0)
 
 #define emac_hal_transmit_poll_demand(hal) emac_ll_transmit_poll_demand((hal)->dma_regs, 0)
+
+#define emac_hal_get_hw_feat(hal) emac_ll_get_hw_feat((hal)->dma_regs)
 
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
 #define emac_hal_get_ts_status(hal) emac_ll_get_ts_status((hal)->ptp_regs);
@@ -457,6 +457,8 @@ esp_err_t emac_hal_get_rxdesc_timestamp(emac_hal_context_t *hal, eth_dma_rx_desc
  *     - ESP_ERR_INVALID_STATE: descriptor is still owned by DMA or time stamp is not ready yet
  */
 esp_err_t emac_hal_get_txdesc_timestamp(emac_hal_context_t *hal, eth_dma_tx_descriptor_t *txdesc, uint32_t *seconds, uint32_t *nano_seconds);
+
+esp_err_t emac_hal_set_pps0_out_freq(emac_hal_context_t *hal, uint32_t freq_hz);
 
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 #endif  // SOC_EMAC_SUPPORTED

@@ -29,6 +29,7 @@
 #include "test_utils.h"
 
 #include "esp_vfs_l2tap.h"
+#include "esp_eth_mac_esp.h"
 
 #define ETH_FILTER_LE 0x7A05
 #define ETH_FILTER_BE 0x057A
@@ -844,13 +845,11 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
 
     // Enable time stamping in driver
-    bool ts_enable = true;
-    TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_MAC_ESP_CMD_PTP_ENABLE, &ts_enable));
+    eth_mac_ptp_config_t ptp_config = ETH_MAC_ESP_PTP_DEFAULT_CONFIG();
+    TEST_ESP_OK(esp_eth_mac_ptp_enable(eth_network_hndls.mac, &ptp_config));
 
     test_eth_ptp_msg_t test_ptp_msg = {
         .eth_hdr = {
-            // Note that PTPv2 MAC 01:80:C2:00:00:0E is reserved for "Peer delay messages" which are currently not
-            // enabled to be snapped by internal EMAC, hence not tested
             .dest.addr = {0x01, 0x1b, 0x19, 0x0, 0x0, 0x0},
             .type = htons(ETH_TYPE_PTP)
         },
@@ -1002,7 +1001,7 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
         .seconds = 10,
         .nanoseconds = 412000
     };
-    esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+    esp_eth_mac_set_ptp_time(eth_network_hndls.mac, &ptp_time);
 
     ESP_LOGI(TAG, "Verify retrieval of Tx and Rx time stamps");
     for (int i = 0; i < 4; i++) {

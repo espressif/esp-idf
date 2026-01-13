@@ -123,6 +123,8 @@ int esp_eth_clock_register_target_cb(clockid_t clock_id,
  * @return
  *     - ESP_OK: Success
  *     - ESP_FAIL: Failure
+ *     - ESP_ERR_INVALID_ARG: Invalid argument
+ *     - ESP_ERR_INVALID_STATE: Clock is already initialized
  */
 esp_err_t esp_eth_clock_init(clockid_t clock_id, esp_eth_clock_cfg_t *cfg);
 

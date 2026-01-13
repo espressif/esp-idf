@@ -262,6 +262,13 @@ esp_err_t emac_esp_iomux_mii_init_rx_er(int num)
     return ESP_OK;
 }
 
+esp_err_t emac_esp_gpio_matrix_init_ptp_pps(int num)
+{
+    ESP_RETURN_ON_ERROR(emac_esp_gpio_matrix_init(num, 0, emac_io_idx.ptp_pps_idx, GPIO_MODE_OUTPUT),
+                        TAG, "PTP PPS GPIO matrix config failed");
+    return ESP_OK;
+}
+
 esp_err_t emac_esp_gpio_deinit_all(void)
 {
     for (int gpio_num = 0; gpio_num < 64; gpio_num++) {

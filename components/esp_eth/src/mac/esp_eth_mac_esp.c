@@ -366,83 +366,6 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
 
     switch (cmd)
     {
-#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
-    case ETH_MAC_ESP_CMD_PTP_ENABLE: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP enable invalid argument, cant' be NULL");
-        bool enable = *((bool *)data);
-        if (enable) {
-            EMAC_IF_RCC_ATOMIC() {
-                emac_hal_clock_enable_ptp(&emac->hal, EMAC_PTP_CLK_SRC_XTAL, true);
-            }
-            emac_hal_ptp_config_t ptp_config = {
-                .upd_method = ETH_PTP_UPDATE_METHOD_FINE,
-                .roll = ETH_PTP_DIGITAL_ROLLOVER,
-                .ptp_clk_src_period_ns = 25,  // = 1 / 40MHz
-                .ptp_req_accuracy_ns = 40     // required accuracy (must be worse than ptp_ref_clk)
-            };
-            ESP_RETURN_ON_ERROR(emac_hal_ptp_start(&emac->hal, &ptp_config), TAG, "failed to start PTP module");
-            emac_esp_dma_ts_enable(emac->emac_dma_hndl, true);
-        } else {
-            ESP_RETURN_ON_ERROR(emac_hal_ptp_stop(&emac->hal), TAG, "failed to stop PTP module");
-            emac_esp_dma_ts_enable(emac->emac_dma_hndl, false);
-            EMAC_IF_RCC_ATOMIC() {
-                emac_hal_clock_enable_ptp(&emac->hal, 0, false);
-            }
-        }
-        break;
-    }
-    case ETH_MAC_ESP_CMD_S_PTP_TIME: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP set time invalid argument, cant' be NULL");
-        eth_mac_time_t *time = (eth_mac_time_t *)data;
-        ESP_RETURN_ON_ERROR(emac_hal_ptp_set_sys_time(&emac->hal, time->seconds, time->nanoseconds), TAG, "failed to set PTP time");
-        break;
-    }
-    case ETH_MAC_ESP_CMD_G_PTP_TIME: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP get time invalid argument, cant' be NULL");
-        eth_mac_time_t *time = (eth_mac_time_t *)data;
-        ESP_RETURN_ON_ERROR(emac_hal_ptp_get_sys_time(&emac->hal, &time->seconds, &time->nanoseconds), TAG, "failed to get PTP time");
-        break;
-    }
-    case ETH_MAC_ESP_CMD_ADJ_PTP_TIME: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP adjust time invalid argument, cant' be NULL");
-        int32_t adj_ppb = *((int32_t *)data);
-        ESP_RETURN_ON_ERROR(emac_hal_ptp_adj_inc(&emac->hal, adj_ppb), TAG, "failed to adjust PTP time base");
-        break;
-    }
-    case ETH_MAC_ESP_CMD_ADJ_PTP_FREQ: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP adjust frequency invalid argument, cant' be NULL");
-        double scale_factor = *((double *)data);
-        ESP_RETURN_ON_ERROR(emac_hal_adj_freq_factor(&emac->hal, scale_factor), TAG, "failed to aject PTP time base by scale factor");
-        break;
-    }
-    case ETH_MAC_ESP_CMD_S_TARGET_CB:
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP set target callback function invalid argument, cant' be NULL");
-        emac->ts_target_exceed_cb_from_isr = (ts_target_exceed_cb_from_isr_t)data;
-        break;
-    case ETH_MAC_ESP_CMD_S_TARGET_TIME: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP set target time invalid argument, cant' be NULL");
-        eth_mac_time_t *start_time = (eth_mac_time_t *)data;
-        ESP_RETURN_ON_ERROR(emac_hal_ptp_set_target_time(&emac->hal, start_time->seconds, start_time->nanoseconds), TAG,
-                            "failed to set PTP target time");
-        break;
-    }
-    case ETH_MAC_ESP_CMD_ENABLE_TS4ALL: {
-        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP enable TS for all invalid argument, cant' be NULL");
-        bool enable = *(bool *)data;
-        ESP_RETURN_ON_ERROR(emac_hal_ptp_enable_ts4all(&emac->hal, enable), TAG, "failed to enable timestamping for all frames");
-        break;
-    }
-#else
-    case ETH_MAC_ESP_CMD_PTP_ENABLE:
-    case ETH_MAC_ESP_CMD_S_PTP_TIME:
-    case ETH_MAC_ESP_CMD_G_PTP_TIME:
-    case ETH_MAC_ESP_CMD_ADJ_PTP_TIME:
-    case ETH_MAC_ESP_CMD_ADJ_PTP_FREQ:
-    case ETH_MAC_ESP_CMD_S_TARGET_CB:
-    case ETH_MAC_ESP_CMD_S_TARGET_TIME:
-    case ETH_MAC_ESP_CMD_ENABLE_TS4ALL:
-	return ESP_ERR_NOT_SUPPORTED;
-#endif
     case ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS:
         ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "cannot set DMA tx desc flag to null");
         emac_esp_dma_set_tdes0_ctrl_bits(emac->emac_dma_hndl, *(uint32_t *)data);
@@ -908,6 +831,111 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
 err:
     return ret;
 }
+
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+esp_err_t esp_eth_mac_ptp_enable(esp_eth_mac_t *mac, const eth_mac_ptp_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(mac && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    EMAC_IF_RCC_ATOMIC() {
+        emac_hal_clock_enable_ptp(&emac->hal, config->clk_src, true);
+    }
+    emac_hal_ptp_config_t ptp_config = {
+        .upd_method = ETH_PTP_UPDATE_METHOD_FINE,
+        .roll = config->roll_type,
+        .ptp_clk_src_period_ns = config->clk_src_period_ns,
+        .ptp_req_accuracy_ns = config->required_accuracy_ns
+    };
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_start(&emac->hal, &ptp_config), TAG, "failed to start PTP module");
+    emac_esp_dma_ts_enable(emac->emac_dma_hndl, true);
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_ptp_disable(esp_eth_mac_t *mac)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_stop(&emac->hal), TAG, "failed to stop PTP module");
+    emac_esp_dma_ts_enable(emac->emac_dma_hndl, false);
+    EMAC_IF_RCC_ATOMIC() {
+        emac_hal_clock_enable_ptp(&emac->hal, 0, false);
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_set_ptp_time(esp_eth_mac_t *mac, const eth_mac_time_t *time)
+{
+    ESP_RETURN_ON_FALSE(mac && time, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_set_sys_time(&emac->hal, time->seconds, time->nanoseconds), TAG, "failed to set PTP time");
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_get_ptp_time(esp_eth_mac_t *mac, eth_mac_time_t *time)
+{
+    ESP_RETURN_ON_FALSE(mac && time, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_get_sys_time(&emac->hal, &time->seconds, &time->nanoseconds), TAG, "failed to get PTP time");
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_adj_ptp_freq(esp_eth_mac_t *mac, double scale_factor)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_adj_freq_factor(&emac->hal, scale_factor), TAG, "failed to adjust PTP time base by scale factor");
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_adj_ptp_time(esp_eth_mac_t *mac, int32_t adj_ppb)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_adj_inc(&emac->hal, adj_ppb), TAG, "failed to adjust PTP time base");
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_set_target_time(esp_eth_mac_t *mac, const eth_mac_time_t *target)
+{
+    ESP_RETURN_ON_FALSE(mac && target, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_set_target_time(&emac->hal, target->seconds, target->nanoseconds), TAG,
+                        "failed to set PTP target time");
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_set_target_time_cb(esp_eth_mac_t *mac, ts_target_exceed_cb_from_isr_t cb)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac->ts_target_exceed_cb_from_isr = cb;
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_enable_ts4all(esp_eth_mac_t *mac, bool enable)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_enable_ts4all(&emac->hal, enable), TAG, "failed to enable timestamping for all frames");
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_set_pps_out_gpio(esp_eth_mac_t *mac, int gpio_num)
+{
+    // The mac argument is unused in implementation but kept for API consistency
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    ESP_RETURN_ON_ERROR(emac_esp_gpio_matrix_init_ptp_pps(gpio_num), TAG, "failed to set PPS0 output at GPIO %i", gpio_num);
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_mac_set_pps_out_freq(esp_eth_mac_t *mac, uint32_t freq_hz)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_set_pps0_out_freq(&emac->hal, freq_hz), TAG, "failed to set PPS0 output frequency");
+    return ESP_OK;
+}
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config, const eth_mac_config_t *config)
 {
