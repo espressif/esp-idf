@@ -226,6 +226,9 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_SET_FLASH_DPD
             bool "Set SPI flash to deep power-down mode in light sleep"
+            select PM_SLP_IRAM_OPT
+            select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+            select ESP_REGI2C_CTRL_FUNC_IN_IRAM
             depends on (!APP_BUILD_TYPE_PURE_RAM_APP && !ESP_SLEEP_POWER_DOWN_FLASH && !SPI_FLASH_ROM_IMPL)
             default y if (IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21)
             default y if (IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3)

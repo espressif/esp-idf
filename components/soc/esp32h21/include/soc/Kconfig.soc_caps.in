@@ -423,6 +423,10 @@ config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
     default y
 
+config SOC_SDM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_ETM_SUPPORT_SLEEP_RETENTION
     bool
     default y
