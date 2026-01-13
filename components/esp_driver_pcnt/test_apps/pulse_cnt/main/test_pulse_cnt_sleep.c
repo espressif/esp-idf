@@ -99,7 +99,7 @@ static void test_pcnt_sleep_retention(void)
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
 
-#if SOC_PMU_SUPPORTED && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_PMU_SUPPORTED
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif

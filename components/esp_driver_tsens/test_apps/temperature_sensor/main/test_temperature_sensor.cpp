@@ -186,7 +186,7 @@ static void test_temperature_sensor_sleep_retention(bool allow_pd)
 #endif
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #elif CONFIG_IDF_TARGET_ESP32P4

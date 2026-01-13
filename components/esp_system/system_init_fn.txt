@@ -94,7 +94,6 @@ SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/p
 SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32h4/sleep_clock.c on BIT(0)
 SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32p4/sleep_clock.c on BIT(0)
 SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
-SECONDARY: 108: sleep_mmu_startup_init in components/esp_hw_support/lowpower/port/esp32c5/sleep_mmu.c on BIT(0)
 
 # app_trace doesn't have init dependencies
 SECONDARY: 115: apptrace_early_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES

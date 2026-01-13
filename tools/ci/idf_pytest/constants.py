@@ -30,4 +30,5 @@ ECO_MARKERS = [
     'esp32c2eco4',
     'esp32c3eco7',
     'esp32p4_eco4',
+    'esp32c5_eco3',
 ]
