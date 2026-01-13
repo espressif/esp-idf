@@ -14,31 +14,27 @@
 extern "C" {
 #endif
 
-/**
- * @brief Media codec types supported by A2DP.
- */
+/* Media codec types supported by A2DP. */
 #define ESP_A2D_MCT_SBC         (0)             /*!< SBC */
 #define ESP_A2D_MCT_M12         (0x01)          /*!< MPEG-1, 2 Audio */
 #define ESP_A2D_MCT_M24         (0x02)          /*!< MPEG-2, 4 AAC */
 #define ESP_A2D_MCT_ATRAC       (0x04)          /*!< ATRAC family */
 #define ESP_A2D_MCT_NON_A2DP    (0xff)          /*!< NON-A2DP */
-typedef uint8_t esp_a2d_mct_t;
+typedef uint8_t esp_a2d_mct_t;                  /*!< Media codec type of A2DP */
 
-/**
- * @brief Protocol service capabilities. This value is a mask.
- */
+/* Protocol service capabilities. This value is a mask. */
 #define ESP_A2D_PSC_DELAY_RPT          (1<<0)  /*!< Delay Report */
-typedef uint16_t esp_a2d_psc_t;
+typedef uint16_t esp_a2d_psc_t;                /*!< Protocol service capabilities type */
 
 /**
  * @brief A2DP media codec capabilities union
  */
 typedef struct {
     esp_a2d_mct_t type;                        /*!< A2DP media codec type */
-#define ESP_A2D_CIE_LEN_SBC          (4)
-#define ESP_A2D_CIE_LEN_M12          (4)
-#define ESP_A2D_CIE_LEN_M24          (6)
-#define ESP_A2D_CIE_LEN_ATRAC        (7)
+#define ESP_A2D_CIE_LEN_SBC          (4)       /*!< SBC cie length */
+#define ESP_A2D_CIE_LEN_M12          (4)       /*!< MPEG-1,2 cie length */
+#define ESP_A2D_CIE_LEN_M24          (6)       /*!< MPEG-2,4 AAC cie length */
+#define ESP_A2D_CIE_LEN_ATRAC        (7)       /*!< ATRAC family cie length */
     union {
         uint8_t sbc[ESP_A2D_CIE_LEN_SBC];      /*!< SBC codec capabilities */
         uint8_t m12[ESP_A2D_CIE_LEN_M12];      /*!< MPEG-1,2 audio codec capabilities */
@@ -100,7 +96,7 @@ typedef enum {
  */
 typedef enum {
     ESP_A2D_DEINIT_SUCCESS = 0,                /*!< A2DP profile deinit successful event */
-    ESP_A2D_INIT_SUCCESS                       /*!< A2DP profile deinit successful event */
+    ESP_A2D_INIT_SUCCESS                       /*!< A2DP profile init successful event */
 } esp_a2d_init_state_t;
 
 /**
@@ -213,9 +209,9 @@ typedef union {
 /**
  * @brief           A2DP profile callback function type
  *
- * @param           event : Event type
+ * @param[in]       event : Event type
  *
- * @param           param : Pointer to callback parameter
+ * @param[in]       param : Pointer to callback parameter
  */
 typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
 
@@ -257,7 +253,6 @@ typedef int32_t (* esp_a2d_source_data_cb_t)(uint8_t *buf, int32_t len);
  */
 esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 
-
 /**
  * @brief           Register A2DP sink data output function; For now the output is PCM data stream decoded
  *                  from SBC format. This function should be called only after esp_bluedroid_enable()
@@ -273,7 +268,6 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
  *
  */
 esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
-
 
 /**
  *
@@ -291,7 +285,6 @@ esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
  */
 esp_err_t esp_a2d_sink_init(void);
 
-
 /**
  *
  * @brief           De-initialize for A2DP sink module. This function
@@ -305,7 +298,6 @@ esp_err_t esp_a2d_sink_init(void);
  *
  */
 esp_err_t esp_a2d_sink_deinit(void);
-
 
 /**
  *
@@ -321,7 +313,6 @@ esp_err_t esp_a2d_sink_deinit(void);
  *
  */
 esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
-
 
 /**
  *
@@ -368,7 +359,6 @@ esp_err_t esp_a2d_sink_set_delay_value(uint16_t delay_value);
  */
 esp_err_t esp_a2d_sink_get_delay_value(void);
 
-
 /**
  *
  * @brief           Media control commands. This API can be used for both A2DP sink and source
@@ -384,7 +374,6 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
  */
 esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
 
-
 /**
  * @brief       This function is used to get the status of A2DP
  *
@@ -395,7 +384,6 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
  *              - other: failed
  */
 esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
-
 
 /**
  *
@@ -413,7 +401,6 @@ esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
  */
 esp_err_t esp_a2d_source_init(void);
 
-
 /**
  *
  * @brief           De-initialize for A2DP source module. This function
@@ -427,7 +414,6 @@ esp_err_t esp_a2d_source_init(void);
  *
  */
 esp_err_t esp_a2d_source_deinit(void);
-
 
 /**
  * @brief           Register A2DP source data input function. For now, the input should be PCM data stream.
@@ -445,7 +431,6 @@ esp_err_t esp_a2d_source_deinit(void);
  */
 esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callback);
 
-
 /**
  *
  * @brief           Connect to remote A2DP sink device. This API must be called
@@ -460,7 +445,6 @@ esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callbac
  *
  */
 esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
-
 
 /**
  *
@@ -479,6 +463,5 @@ esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* __ESP_A2DP_API_H__ */

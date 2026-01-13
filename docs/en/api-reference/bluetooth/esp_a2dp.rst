@@ -1,6 +1,11 @@
 Bluetooth® A2DP API
 ===================
 
+Overview
+--------
+
+A2DP (Advanced Audio Distribution Profile) enables high-quality audio streaming from one device to another over Bluetooth. It is primarily used for streaming audio from source devices such as smartphones, computers, and media players to sink devices such as Bluetooth speakers, headphones, and car audio systems. Users can use the A2DP APIs to transmit or receive audio streams.
+
 Application Examples
 --------------------
 
