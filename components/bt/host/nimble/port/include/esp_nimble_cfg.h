@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2264,4 +2264,19 @@
 #endif
 #endif
 
+#ifndef MYNEWT_VAL_BLE_ADV_SEND_CONSTANT_DID
+#ifdef CONFIG_BT_NIMBLE_ADV_SEND_CONSTANT_DID
+#define MYNEWT_VAL_BLE_ADV_SEND_CONSTANT_DID (CONFIG_BT_NIMBLE_ADV_SEND_CONSTANT_DID)
+#else
+#define MYNEWT_VAL_BLE_ADV_SEND_CONSTANT_DID (0)
+#endif
+#endif
+
+#ifndef MYNEWT_VAL_BLE_SCAN_ALLOW_ENH_ADI_FILTER
+#ifdef CONFIG_BT_NIMBLE_SCAN_ALLOW_ENH_ADI_FILTER
+#define MYNEWT_VAL_BLE_SCAN_ALLOW_ENH_ADI_FILTER (CONFIG_BT_NIMBLE_SCAN_ALLOW_ENH_ADI_FILTER)
+#else
+#define MYNEWT_VAL_BLE_SCAN_ALLOW_ENH_ADI_FILTER (0)
+#endif
+#endif
 #endif
