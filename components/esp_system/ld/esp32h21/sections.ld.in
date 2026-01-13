@@ -111,6 +111,8 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _rtc_noinit_start)
 
+    mapping[rtc_noinit]
+
     *(.rtc_noinit .rtc_noinit.*)
 
     ALIGNED_SYMBOL(4, _rtc_noinit_end)
