@@ -6,7 +6,7 @@
 重大变更
 --------
 
-本次更新从 ESP-IDF 中移除了组件 ``wifi_provisioning``，更名为 ``network_provisioning`` 并作为一个独立组件受到支持。该组件增加了对Thread 配网的支持。可在乐鑫组件注册表中，查看更多有关 ``network_provisioning`` 的信息：
+本次更新从 ESP-IDF 中移除了组件 ``wifi_provisioning``，更名为 ``network_provisioning`` 并作为一个独立组件受到支持。该组件增加了对 Thread 配网的支持。可在乐鑫组件注册表中，查看更多有关 ``network_provisioning`` 的信息：
 
 * `network_provisioning 组件 <https://components.espressif.com/component/espressif/network_provisioning>`__
 
