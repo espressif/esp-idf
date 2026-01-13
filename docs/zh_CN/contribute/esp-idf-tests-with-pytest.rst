@@ -91,17 +91,26 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('target', [
-        'esp32',
-        'esp32s2',
-    ], indirect=True)
+    @idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
     @pytest.mark.generic
     def test_hello_world(dut) -> None:
         dut.expect('Hello world!')
 
 这是一个简单的测试脚本，可以与入门示例 :example:`get-started/hello_world` 一起运行。
 
-在这个测试脚本中，使用了 ``@pytest.mark.parametrize`` 装饰器来参数化测试用例。``target`` 参数是一个特殊参数，用于指示目标板类型。``indirect=True`` 参数表示此参数在其他 fixture 之前被预先计算。
+``idf_parametrize`` 是对 ``pytest.mark.parametrize`` 的一层封装，用于简化并扩展基于字符串的测试参数化功能。使用 ``idf_parametrize`` 可以让参数化测试更加灵活，也更易于维护。
+
+在这个测试脚本中，使用了 ``idf_parametrize`` 装饰器来参数化测试用例。``target`` 是一个特殊的参数，用于指示目标板类型。``indirect=['target']`` 表示此参数在其他 fixture 之前被预先计算。
+
+在这个示例中，target 被设置为 ``esp32`` 和 ``esp32s2``，因此测试将分别在 ESP32 和 ESP32-S2 上运行。
+
+.. note::
+
+    如果测试用例可以在 ESP-IDF 官方支持的所有 target（可通过 ``idf.py --list-targets`` 查看详情）上运行，可以使用特殊参数 ``supported_targets`` 一次性应用所有 target。同时也支持使用 ``preview_targets`` 和 ``all`` 作为特殊取值（可通过 ``idf.py --list-targets --preview`` 查看包含 preview target 在内的完整列表）。例如：``@idf_parametrize('target', ['supported_targets'], indirect=['target'])``。
+
+.. note::
+
+    如果 target 需要通过 ``soc_caps`` 来指定，可以使用 ``soc_filtered_targets`` 进行过滤。例如：``@idf_parametrize('target', soc_filtered_targets('SOC_ULP_SUPPORTED != 1'), indirect=['target'])``。
 
 紧接着是环境标记。``@pytest.mark.generic`` 标记表示此测试用例应在 generic 板类型上运行。
 
@@ -133,14 +142,14 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('target', [
-        'esp32',                            # <-- run with esp32 target
-        'esp32s2',                          # <-- run with esp32s2 target
-    ], indirect=True)
-    @pytest.mark.parametrize('config', [    # <-- parameterize the sdkconfig file
-        'foo',                              # <-- run with sdkconfig.ci.foo
-        'bar',                              # <-- run with sdkconfig.ci.bar
-    ], indirect=True)                       # <-- `indirect=True` is required, indicates this param is pre-calculated before other fixtures
+    @idf_parametrize('target', [
+        'esp32',                      # <-- 使用 esp32 运行
+        'esp32s2'                     # <-- 使用 esp32s2 运行
+    ], indirect=['target'])
+    @pytest.mark.parametrize('config', [    # <-- 使用此 marker 指定 sdkconfig 文件；如果不指定，则使用 ``default``（由 ``sdkconfig.ci`` 或 ``sdkconfig.ci.default`` 构建）；如果指定，则采用指定的 ``sdkconfig.ci.<config>``（例如 ``sdkconfig.ci.foo`` 或 ``sdkconfig.ci.bar``）
+        'foo',                              # <-- 使用 sdkconfig.ci.foo 运行
+        'bar',                              # <-- 使用 sdkconfig.ci.bar 运行
+    ], indirect=True)                       # <-- 需要设置 `indirect=True`，表示该参数会先于其他 fixture 被计算
     def test_foo_bar(dut, config) -> None:
         if config == 'foo':
           dut.expect('This is from sdkconfig.ci.foo')
@@ -176,14 +185,18 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 使用不同的 sdkconfig 文件运行相同的应用程序，支持不同的目标芯片
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-对于某些测试用例，可能需要使用不同的 sdkconfig 文件运行相同的应用程序。这些 sdkconfig 文件支持不同的目标芯片。可以使用 ``pytest.param`` 来实现。使用与上文相同的文件夹结构。
+对于某些测试用例，可能需要使用不同的 sdkconfig 文件运行相同的应用程序。这些 sdkconfig 文件支持不同的目标芯片。可以使用 ``idf_parametrize`` 来实现。使用与上文相同的文件夹结构。
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('config, target', [
-        pytest.param('foo', 'esp32'),
-        pytest.param('bar', 'esp32s2'),
-    ], indirect=True)
+    @idf_parametrize(
+        'target, config',
+        [
+            ('esp32', 'foo'),
+            ('esp32s2', 'bar')
+        ],
+        indirect=['target', 'config']
+    )
 
 此时，这个测试函数将被复制为 2 个测试用例（测试用例 ID）：
 

@@ -98,21 +98,19 @@ Getting Started
 
 This is a simple test script that could run with the ESP-IDF getting-started example :example:`get-started/hello_world`.
 
-`idf_parametrize` is a wrapper around `pytest.mark.parametrize` that simplifies and extends string-based parameterization for tests. Using `idf_parametrize` makes testing parameters more flexible and easier to maintain.
+``idf_parametrize`` is a wrapper around ``pytest.mark.parametrize`` that simplifies and extends string-based test parameterization. It provides greater flexibility and improves the maintainability of parameterized tests.
 
 In this test script, the ``idf_parametrize`` decorator is used to parameterize the test case. The ``target`` parameter is a special parameter that indicates the target board type. The ``indirect=['target']`` argument indicates that this parameter is pre-calculated before other fixtures.
 
-In this example, the target is set to `esp32` and `esp32s2`, so the test will be run on both the ESP32 and the ESP32-S2.
+In this example, the target is set to ``esp32`` and ``esp32s2``, so the test will be run on both the ESP32 and the ESP32-S2.
 
 .. note::
 
-    If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use the special parameter ``supported_targets`` to apply all of them in one line. We also support ``preview_targets`` and ``all`` as special values (call ``idf.py --list-targets --preview`` for the full list of targets, including preview targets). For example: ``@idf_parametrize('target', ['supported_targets'], indirect=['target'])``
-
+    If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use the special parameter ``supported_targets`` to apply all of them in one line. We also support ``preview_targets`` and ``all`` as special values (call ``idf.py --list-targets --preview`` for the full list of targets, including preview targets). For example: ``@idf_parametrize('target', ['supported_targets'], indirect=['target'])``.
 
 .. note::
 
-    If the target should be specified by ``soc_caps``, it is possible to filter them using ``soc_filtered_targets``. For example: ``@idf_parametrize('target', soc_filtered_targets('SOC_ULP_SUPPORTED != 1'), indirect=['target'])``
-
+    If the target should be specified by ``soc_caps``, it is possible to filter them using ``soc_filtered_targets``. For example: ``@idf_parametrize('target', soc_filtered_targets('SOC_ULP_SUPPORTED != 1'), indirect=['target'])``.
 
 Next is the environment marker. The ``@pytest.mark.generic`` marker indicates that this test case should run on the generic board type.
 
