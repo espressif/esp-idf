@@ -611,12 +611,12 @@ function(idf_build_executable executable)
 endfunction()
 
 #[[
-    __get_components_metadata(COMPONENTS <component>...
+    __get_components_metadata(COMPONENTS <component_interface>...
                               OUTPUT <variable>)
 
     *COMPONENTS[in]*
 
-        List of components for which to generate metadata.
+        List of component interfaces for which to generate metadata.
 
     *OUTPUT[out]*
 
@@ -641,19 +641,20 @@ function(__get_components_metadata)
 
     set(components_json "")
 
-    foreach(name IN LISTS ARG_COMPONENTS)
-        idf_component_get_property(target ${name} COMPONENT_REAL_TARGET)
-        idf_component_get_property(alias ${name} COMPONENT_ALIAS)
-        idf_component_get_property(prefix ${name} __PREFIX)
-        idf_component_get_property(dir ${name} COMPONENT_DIR)
-        idf_component_get_property(type ${name} COMPONENT_TYPE)
-        idf_component_get_property(lib ${name} COMPONENT_LIB)
-        idf_component_get_property(reqs ${name} REQUIRES)
-        idf_component_get_property(include_dirs ${name} INCLUDE_DIRS)
-        idf_component_get_property(priv_reqs ${name} PRIV_REQUIRES)
-        idf_component_get_property(managed_reqs ${name} MANAGED_REQUIRES)
-        idf_component_get_property(managed_priv_reqs ${name} MANAGED_PRIV_REQUIRES)
-        idf_component_get_property(component_source ${name} COMPONENT_SOURCE)
+    foreach(interface IN LISTS ARG_COMPONENTS)
+        __idf_component_get_property_unchecked(name ${interface} COMPONENT_NAME)
+        __idf_component_get_property_unchecked(target ${interface} COMPONENT_REAL_TARGET)
+        __idf_component_get_property_unchecked(alias ${interface} COMPONENT_ALIAS)
+        __idf_component_get_property_unchecked(prefix ${interface} __PREFIX)
+        __idf_component_get_property_unchecked(dir ${interface} COMPONENT_DIR)
+        __idf_component_get_property_unchecked(type ${interface} COMPONENT_TYPE)
+        __idf_component_get_property_unchecked(lib ${interface} COMPONENT_LIB)
+        __idf_component_get_property_unchecked(reqs ${interface} REQUIRES)
+        __idf_component_get_property_unchecked(include_dirs ${interface} INCLUDE_DIRS)
+        __idf_component_get_property_unchecked(priv_reqs ${interface} PRIV_REQUIRES)
+        __idf_component_get_property_unchecked(managed_reqs ${interface} MANAGED_REQUIRES)
+        __idf_component_get_property_unchecked(managed_priv_reqs ${interface} MANAGED_PRIV_REQUIRES)
+        __idf_component_get_property_unchecked(component_source ${interface} COMPONENT_SOURCE)
         if("${type}" STREQUAL "LIBRARY")
             set(file "$<TARGET_LINKER_FILE:${lib}>")
 
@@ -774,16 +775,18 @@ function(idf_build_generate_metadata binary)
     __make_json_list("${common_component_reqs}" OUTPUT common_component_reqs_json)
 
     idf_library_get_property(build_components "${library}" LIBRARY_COMPONENTS_LINKED)
+    idf_library_get_property(build_component_interfaces "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
     list(SORT build_components)
+    list(SORT build_component_interfaces)
     __make_json_list("${build_components}" OUTPUT build_components_json)
 
     set(build_component_paths)
     set(COMPONENT_KCONFIGS)
     set(COMPONENT_KCONFIGS_PROJBUILD)
-    foreach(component_name IN LISTS build_components)
-        idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
-        idf_component_get_property(component_kconfig "${component_name}" __KCONFIG)
-        idf_component_get_property(component_kconfig_projbuild "${component_name}" __KCONFIG_PROJBUILD)
+    foreach(component_interface IN LISTS build_component_interfaces)
+        __idf_component_get_property_unchecked(component_dir "${component_interface}" COMPONENT_DIR)
+        __idf_component_get_property_unchecked(component_kconfig "${component_interface}" __KCONFIG)
+        __idf_component_get_property_unchecked(component_kconfig_projbuild "${component_interface}" __KCONFIG_PROJBUILD)
         list(APPEND build_component_paths "${component_dir}")
         if(component_kconfig)
             list(APPEND COMPONENT_KCONFIGS "${component_kconfig}")
@@ -794,10 +797,10 @@ function(idf_build_generate_metadata binary)
     endforeach()
     __make_json_list("${build_component_paths}" OUTPUT build_component_paths_json)
 
-    __get_components_metadata(COMPONENTS "${build_components}" OUTPUT build_component_info_json)
+    __get_components_metadata(COMPONENTS "${build_component_interfaces}" OUTPUT build_component_info_json)
 
-    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
-    __get_components_metadata(COMPONENTS "${components_discovered}" OUTPUT all_component_info_json)
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
+    __get_components_metadata(COMPONENTS "${component_interfaces}" OUTPUT all_component_info_json)
 
     __generate_gdbinit()
     idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)

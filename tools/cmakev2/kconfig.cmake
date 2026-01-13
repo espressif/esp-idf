@@ -173,14 +173,14 @@ endfunction()
     __consolidate_component_kconfig_files()
 
     Consolidate Kconfig files from discovered components into global build
-    properties.  This scans the COMPONENTS_DISCOVERED build property and for
+    properties.  This scans the COMPONENT_INTERFACES build property and for
     each component, retrieves its Kconfig files from component properties and
     adds them to the global __KCONFIGS, __KCONFIG_PROJBUILDS, and
     __SDKCONFIG_RENAMES build properties.
 #]]
 function(__consolidate_component_kconfig_files)
-    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
-    if(NOT components_discovered)
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
+    if(NOT component_interfaces)
         idf_die("No components discovered. This must be run after component discovery.")
     endif()
 
@@ -190,12 +190,13 @@ function(__consolidate_component_kconfig_files)
     idf_build_set_property(__KCONFIG_PROJBUILDS "")
     idf_build_set_property(__SDKCONFIG_RENAMES "")
 
-    # Iterate through all discovered components and consolidate their Kconfig files
-    foreach(component_name IN LISTS components_discovered)
+    # Iterate through all interfaces of discovered components and consolidate
+    # their Kconfig files
+    foreach(component_interface IN LISTS component_interfaces)
         # Get Kconfig files from component properties
-        idf_component_get_property(component_kconfig "${component_name}" __KCONFIG)
-        idf_component_get_property(component_projbuild "${component_name}" __KCONFIG_PROJBUILD)
-        idf_component_get_property(component_rename "${component_name}" __SDKCONFIG_RENAME)
+        __idf_component_get_property_unchecked(component_kconfig "${component_interface}" __KCONFIG)
+        __idf_component_get_property_unchecked(component_projbuild "${component_interface}" __KCONFIG_PROJBUILD)
+        __idf_component_get_property_unchecked(component_rename "${component_interface}" __SDKCONFIG_RENAME)
 
         if(component_kconfig)
             idf_build_set_property(__KCONFIGS "${component_kconfig}" APPEND)
@@ -395,20 +396,20 @@ function(__create_executable_config_env_file executable)
 
     __get_executable_library_or_die(TARGET "${executable}" OUTPUT library)
 
-    idf_library_get_property(components_linked "${library}" LIBRARY_COMPONENTS_LINKED)
+    idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
 
     set(kconfigs "")
     set(kconfigs_projbuild "")
     set(kconfigs_excluded "")
     set(kconfigs_projbuild_excluded "")
 
-    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
-    foreach(component_name IN LISTS components_discovered)
-        idf_component_get_property(component_kconfig "${component_name}" __KCONFIG)
-        idf_component_get_property(component_projbuild "${component_name}" __KCONFIG_PROJBUILD)
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
+    foreach(component_interface IN LISTS component_interfaces)
+        __idf_component_get_property_unchecked(component_kconfig "${component_interface}" __KCONFIG)
+        __idf_component_get_property_unchecked(component_projbuild "${component_interface}" __KCONFIG_PROJBUILD)
 
         if(component_kconfig)
-            if("${component_name}" IN_LIST components_linked)
+            if("${component_interface}" IN_LIST component_interfaces_linked)
                 list(APPEND kconfigs "${component_kconfig}")
             else()
                 list(APPEND kconfigs_excluded "${component_kconfig}")
@@ -416,7 +417,7 @@ function(__create_executable_config_env_file executable)
         endif()
 
         if(component_projbuild)
-            if("${component_name}" IN_LIST components_linked)
+            if("${component_interface}" IN_LIST component_interfaces_linked)
                 list(APPEND kconfigs_projbuild "${component_projbuild}")
             else()
                 list(APPEND kconfigs_projbuild_excluded "${component_projbuild}")
