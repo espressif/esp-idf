@@ -289,8 +289,13 @@ endfunction()
         List of component as specified by the ``COMPONENTS`` option.
 
     LIBRARY_COMPONENTS_LINKED
-        List of components linked to the library based on recursive evaluations
+        List of component names linked to the library based on recursive evaluations
         of the INTERFACE_LINK_LIBRARIES and LINK_LIBRARIES target properties.
+
+    LIBRARY_COMPONENT_INTERFACES_LINKED
+        List of component interfaces linked to the library based on recursive
+        evaluations of the INTERFACE_LINK_LIBRARIES and LINK_LIBRARIES target
+        properties.
 #]]
 function(idf_build_library library)
     set(options)
@@ -336,26 +341,27 @@ function(idf_build_library library)
 
     # Identify the components linked to the library by looking at all targets
     # that are transitively linked to the library and mapping these targets to
-    # components. Store the linked component interfaces in
-    # LIBRARY_COMPONENTS_LINKED property.
-    set(component_interfaces_linked)
+    # components. Store the linked component name in LIBRARY_COMPONENTS_LINKED
+    # and component interface in LIBRARY_COMPONENT_INTERFACES_LINKED property.
     foreach(dep IN LISTS dependencies)
         __get_component_interface(COMPONENT "${dep}" OUTPUT component_interface)
         if(NOT component_interface)
             continue()
         endif()
+        idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
         if("${component_interface}" IN_LIST component_interfaces_linked)
             continue()
         endif()
 
-        list(APPEND component_interfaces_linked "${component_interface}")
         idf_component_get_property(component_name "${component_interface}" COMPONENT_NAME)
         idf_library_set_property("${library}" LIBRARY_COMPONENTS_LINKED "${component_name}" APPEND)
+        idf_library_set_property("${library}" LIBRARY_COMPONENT_INTERFACES_LINKED "${component_interface}" APPEND)
     endforeach()
 
     # Collect linker fragment files from all components linked to the library
     # interface and store them in the __LDGEN_FRAGMENT_FILES files. This
     # property is used by ldgen to generate template-based linker scripts.
+    idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
     foreach(component_interface IN LISTS component_interfaces_linked)
         idf_component_get_property(component_ldfragments "${component_interface}" LDFRAGMENTS)
         idf_component_get_property(component_directory "${component_interface}" COMPONENT_DIR)
@@ -369,6 +375,7 @@ function(idf_build_library library)
     # mutable, in the __LDGEN_MUTABLE_LIBS library property. These libraries
     # are placed by ldgen into a separate location in the linker script,
     # enabling the fast reflashing feature.
+    idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
     foreach(component_interface IN LISTS component_interfaces_linked)
         idf_component_get_property(component_source "${component_interface}" COMPONENT_SOURCE)
         idf_component_get_property(component_target "${component_interface}" COMPONENT_TARGET)
@@ -414,6 +421,7 @@ function(idf_build_library library)
     # for files and targets specific to the library.
     string(MAKE_C_IDENTIFIER "_${library}" suffix)
 
+    idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
     foreach(component_interface IN LISTS component_interfaces_linked)
         set(scripts)
         idf_component_get_property(component_dir "${component_interface}" COMPONENT_DIR)
