@@ -58,7 +58,52 @@ esp_err_t NVSPartition::write(size_t dst_offset, const void* src, size_t size)
 
 esp_err_t NVSPartition::erase_range(size_t dst_offset, size_t size)
 {
+#ifndef CONFIG_NVS_FLASH_VERIFY_ERASE
     return esp_partition_erase_range(mESPPartition, dst_offset, size);
+#else
+    esp_err_t err = ESP_FAIL;
+
+    // Loop up to the CONFIG_NVS_FLASH_ERASE_ATTEMPTS times to attempt the erase operation.
+    for (int attempt = 0; attempt < CONFIG_NVS_FLASH_ERASE_ATTEMPTS; ++attempt)
+    {
+        // In the loop, do the flash erase followed by a read(s) to verify the success of the operation.
+
+        // Perform the erase operation.
+        esp_err_t err = esp_partition_erase_range(mESPPartition, dst_offset, size);
+        if (err != ESP_OK)
+        {
+            continue; // Erase failed, continue to the next attempt.
+        }
+
+        // Validate the erase operation by reading back the erased area.
+        // Buffer of some reasonable size to read back and check.
+        const size_t buf_size = 32;
+        uint8_t buf[buf_size];
+        size_t remaining = size;
+        size_t read_offset = dst_offset;
+
+        while (remaining > 0)
+        {
+            size_t to_read = (remaining < buf_size) ? remaining : buf_size;
+            err = esp_partition_read_raw(mESPPartition, read_offset, buf, to_read);
+            if (err != ESP_OK) {
+                break; // Read failed, break to attempt erase again.
+            }
+            for (size_t i = 0; i < to_read; ++i)
+            {
+                if (buf[i] != 0xFF)
+                {
+                    err = ESP_ERR_NOT_FINISHED; // Verification failed.
+                    break;
+                }
+            }
+            remaining -= to_read;
+            read_offset += to_read;
+        }
+        if(err == ESP_OK) return ESP_OK; // Erase and verification succeeded do not need to attempt again.
+    }
+    return err; // All attempts exhausted, return the last error.
+#endif // CONFIG_NVS_FLASH_VERIFY_ERASE
 }
 
 uint32_t NVSPartition::get_address()

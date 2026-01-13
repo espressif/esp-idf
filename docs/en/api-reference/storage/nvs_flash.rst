@@ -104,6 +104,12 @@ If NVS encryption is not used, it is possible for anyone with physical access to
 
 The library does try to recover from conditions when flash memory is in an inconsistent state. In particular, one should be able to power off the device at any point and time and then power it back on. This should not result in loss of data, except for the new key-value pair if it was being written at the moment of powering off. The library should also be able to initialize properly with any random data present in flash memory.
 
+Unstable Power Conditions
+-------------------------
+
+When NVS is used in systems powered by weak or unstable energy sources (such as solar or battery), flash erase operations may occasionally fail to complete without being detected by the application. This can create a mismatch between the actual flash contents and the expected layout of reserved pages. In rare cases, especially during unexpected power loss, this may exhaust the available NVS pages and cause partition initialization to fail with the error ``ESP_ERR_NVS_NO_FREE_PAGES``.
+
+To address this issue, the Kconfig option :ref:`CONFIG_NVS_FLASH_VERIFY_ERASE` enables verification of flash erase operations by reading back the affected page. If the page is not fully erased to ``0xFF`` after a ``flash_erase`` operation, the erase is retried until the page is correctly cleared. The total number of erase attempts, including the initial attempt, is controlled by the Kconfig option :ref:`CONFIG_NVS_FLASH_ERASE_ATTEMPTS`.
 
 .. _nvs_encryption:
 
