@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,16 @@ int extAdv_stack_initEnv(void);
 void extAdv_stack_deinitEnv(void);
 int extAdv_stack_enable(void);
 void extAdv_stack_disable(void);
+
+int scan_stack_initEnv(void);
+void scan_stack_deinitEnv(void);
+int scan_stack_enable(void);
+void scan_stack_disable(void);
+
+int scan_stack_initEnv(void);
+void scan_stack_deinitEnv(void);
+int scan_stack_enable(void);
+void scan_stack_disable(void);
 
 int sync_stack_initEnv(void);
 void sync_stack_deinitEnv(void);
@@ -84,6 +94,12 @@ void winWiden_stack_enableSetConstPeerScaVsCmd(bool en);
 void adv_stack_enableScanReqRxdVsEvent(bool en);
 void conn_stack_enableChanMapUpdCompVsEvent(bool en);
 void sleep_stack_enableWakeupVsEvent(bool en);
+#if DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+void scan_stack_enableSetScanADIOnlyFilterVsCmd(bool en);
+#endif // DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+#if DEFAULT_BT_ADV_SEND_CONSTANT_DID
+void extAdv_stack_setExtAdvConstantDidVsCmd(bool en);
+#endif // DEFAULT_BT_ADV_SEND_CONSTANT_DID
 #endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
 #if CONFIG_BT_LE_RXBUF_OPT_ENABLED
 extern void mmgmt_enableRxbufOptFeature(void);
@@ -104,6 +120,12 @@ void ble_stack_enableVsCmds(bool en)
     log_stack_enableLogsRelatedVsCmd(en);
     hci_stack_enableSetVsEvtMaskVsCmd(en);
     winWiden_stack_enableSetConstPeerScaVsCmd(en);
+#if DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+    scan_stack_enableSetScanADIOnlyFilterVsCmd(en);
+#endif // DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+#if DEFAULT_BT_ADV_SEND_CONSTANT_DID
+    extAdv_stack_setExtAdvConstantDidVsCmd(en);
+#endif // DEFAULT_BT_ADV_SEND_CONSTANT_DID
 }
 
 void ble_stack_enableVsEvents(bool en)
@@ -132,6 +154,11 @@ int ble_stack_initEnv(void)
     }
 
     rc = extAdv_stack_initEnv();
+    if (rc) {
+        return rc;
+    }
+
+    rc = scan_stack_initEnv();
     if (rc) {
         return rc;
     }
@@ -210,6 +237,7 @@ void ble_stack_deinitEnv(void)
 #endif // CONFIG_BT_LE_DTM_ENABLED
 
     sync_stack_deinitEnv();
+    scan_stack_deinitEnv();
     extAdv_stack_deinitEnv();
     adv_stack_deinitEnv();
     base_stack_deinitEnv();
@@ -230,6 +258,11 @@ int ble_stack_enable(void)
     }
 
     rc = extAdv_stack_enable();
+    if (rc) {
+        return rc;
+    }
+
+    rc = scan_stack_enable();
     if (rc) {
         return rc;
     }
@@ -302,6 +335,7 @@ void ble_stack_disable(void)
     dtm_stack_disable();
 #endif // CONFIG_BT_LE_DTM_ENABLED
     sync_stack_disable();
+    scan_stack_disable();
     extAdv_stack_disable();
     adv_stack_disable();
     base_stack_disable();
