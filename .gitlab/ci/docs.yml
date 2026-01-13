@@ -58,7 +58,9 @@
 check_readme_links:
   extends:
     - .pre_check_template
-  tags: ["amd64", "brew"]
+  variables:
+    GIT_STRATEGY: "fetch"
+  tags: ["check_doc_links"]
   allow_failure: true
   rules:
     - <<: *if-protected-check
@@ -100,6 +102,9 @@ check_docs_gh_links:
   extends:
     - .pre_check_template
     - .doc-rules:build:docs-full
+  variables:
+    GIT_STRATEGY: "fetch"
+  tags: ["check_doc_links"]
   script:
     - cd docs
     - build-docs gh-linkcheck
@@ -217,7 +222,9 @@ check_doc_links:
   needs:
     - job: deploy_docs_production
       artifacts: false
-  tags: ["build", "amd64", "internet"]
+  variables:
+    GIT_STRATEGY: "fetch"
+  tags: ["check_doc_links"]
   artifacts:
     when: always
     paths:

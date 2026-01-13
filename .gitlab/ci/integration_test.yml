@@ -25,6 +25,7 @@
     # support trigger by ci labels
     - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*target_test(?:,[^,\n\r]+)*$/i'
     - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test(?:,[^,\n\r]+)*$/i'
+    - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*qa-test(?:,[^,\n\r]+)*$/i'
     - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i'
 
 gen_integration_pipeline:
@@ -36,6 +37,7 @@ gen_integration_pipeline:
   cache: []
   tags: [fast_run, shiny]
   variables:
+    GIT_STRATEGY: "fetch"
     SUBMODULES_TO_FETCH: "none"
     GIT_LFS_SKIP_SMUDGE: 1
   needs: []
