@@ -437,9 +437,6 @@ esp_err_t sdm_channel_set_pulse_density(sdm_channel_handle_t chan, int8_t densit
     return ESP_OK;
 }
 
-esp_err_t sdm_channel_set_duty(sdm_channel_handle_t chan, int8_t duty)
-__attribute__((alias("sdm_channel_set_pulse_density")));
-
 #if CONFIG_SDM_ENABLE_DEBUG_LOG
 __attribute__((constructor))
 static void sdm_override_default_log_level(void)

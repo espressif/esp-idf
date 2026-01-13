@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,22 +107,6 @@ esp_err_t sdm_channel_disable(sdm_channel_handle_t chan);
  *      - ESP_FAIL: Set pulse density failed because of other error
  */
 esp_err_t sdm_channel_set_pulse_density(sdm_channel_handle_t chan, int8_t density);
-
-/**
- * @brief The alias function of `sdm_channel_set_pulse_density`, it decides the pulse density of the output signal
- *
- * @note  `sdm_channel_set_pulse_density` has a more appropriate name compare this
- *        alias function, suggest to turn to `sdm_channel_set_pulse_density` instead
- *
- * @param[in] chan SDM channel created by `sdm_new_channel`
- * @param[in] duty Actually it's the quantized pulse density of the PDM output signal
- *
- * @return
- *      - ESP_OK: Set duty cycle successfully
- *      - ESP_ERR_INVALID_ARG: Set duty cycle failed because of invalid argument
- *      - ESP_FAIL: Set duty cycle failed because of other error
- */
-esp_err_t sdm_channel_set_duty(sdm_channel_handle_t chan, int8_t duty);
 
 #ifdef __cplusplus
 }
