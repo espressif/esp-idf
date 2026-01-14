@@ -375,6 +375,25 @@ An SPI Host reads and writes data into memory byte by byte. By default, data is 
 
 For example, if ``0b00010`` needs to be sent, it should be written into a ``uint8_t`` variable, and the length for reading should be set to 5 bits. The Device will still receive 8 bits with 3 additional "random" bits, so the reading must be performed correctly.
 
+Not all chips support data transmission with any bit lengths. Sending or receiving unsupported bit lengths will return :c:macro:`ESP_ERR_NOT_SUPPORTED` error. The supported lengths are shown in the table below (**YES** means support any bits length, **NO** means bytes (8 bits) only):
+
++------+--------+-------+----------+--------------------+---------------------+
+|               | ESP32 | ESP32-S2 | ESP32-S3/C2/C3/C6  | ESP32-H2/P4/C5/C61  |
++======+========+=======+==========+====================+=====================+
+| TX   | DMA    | YES   | YES      | (bit_len % 8) != 1 | YES                 |
++      +--------+-------+----------+--------------------+---------------------+
+|      | NO DMA | YES   | YES      | (bit_len % 8) != 1 | YES                 |
++------+--------+-------+----------+--------------------+---------------------+
+| RX   | DMA    | NO    | NO       | YES                | YES                 |
++      +--------+-------+----------+--------------------+---------------------+
+|      | NO DMA | YES   | NO       | YES                | YES                 |
++------+--------+-------+----------+--------------------+---------------------+
+
+If you still need to use unsupported bit lengths, you can use the following alternatives:
+
+1. Use :cpp:member:`spi_transaction_t::cmd` and :cpp:member:`spi_transaction_t::addr` and data phase combination. The drawback is that the command and address phases do not receive data from the slave device.
+2. Use two supported length transmissions combination, like ``2+7`` to implement ``9 bit`` transmission, while keeping the CS line valid. The drawback is that there is a minimum time interval between two transmissions (see :ref:`transaction_time_cost`), and the overall transfer rate is lower.
+
 On top of that, {IDF_TARGET_NAME} is a little-endian chip, which means that the least significant byte of ``uint16_t`` and ``uint32_t`` variables is stored at the smallest address. Hence, if ``uint16_t`` is stored in memory, bits [7:0] are sent first, followed by bits [15:8].
 
 For cases when the data to be transmitted has a size differing from ``uint8_t`` arrays, the following macros can be used to transform data to the format that can be sent by the SPI driver directly:
@@ -536,6 +555,7 @@ There are three factors limiting the transfer speed:
 
 The main parameter that determines the transfer speed for large transactions is clock frequency. For multiple small transactions, the transfer speed is mostly determined by the length of transaction intervals.
 
+.. _transaction_time_cost:
 
 Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
