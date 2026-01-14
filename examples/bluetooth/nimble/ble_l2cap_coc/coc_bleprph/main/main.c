@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,10 +17,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x12,
-    0x12, 0X09, 'e', 'x', 't', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'l', '2', 'c', 'o', 'c',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x12,
+    0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'e', 'x', 't', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'l', '2', 'c', 'o', 'c',
 };
 #endif
 
