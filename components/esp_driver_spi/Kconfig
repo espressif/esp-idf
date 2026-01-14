@@ -44,7 +44,7 @@ menu "ESP-Driver:SPI Configurations"
         help
             Normally only the ISR of SPI slave is placed in the IRAM, so that it
             can work without the flash when interrupt is triggered.
-            For other functions, there's some possibility that the flash cache
+            For other functions, there is some possibility that the flash cache
             miss when running inside and out of SPI functions, which may increase
             the interval of SPI transactions.
             Enable this to put ``queue_trans``, ``get_trans_result`` and

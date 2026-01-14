@@ -343,7 +343,11 @@ static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata)
     trans[4].tx_data[0] = 0x2C;         //memory write
     trans[5].tx_buffer = linedata;      //finally send the line data
     trans[5].length = 320 * 2 * 8 * PARALLEL_LINES;  //Data length, in bits
+#if CONFIG_LCD_BUFFER_IN_PSRAM
+    trans[5].flags = SPI_TRANS_DMA_USE_PSRAM; //using PSRAM
+#else
     trans[5].flags = 0; //undo SPI_TRANS_USE_TXDATA flag
+#endif
 
     //Queue all transactions.
     for (x = 0; x < 6; x++) {
@@ -375,9 +379,17 @@ static void send_line_finish(spi_device_handle_t spi)
 static void display_pretty_colors(spi_device_handle_t spi)
 {
     uint16_t *lines[2];
+#if CONFIG_LCD_BUFFER_IN_PSRAM
+    uint32_t mem_cap = MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA;
+    printf("Get LCD buffer from PSRAM\n");
+#else
+    uint32_t mem_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+    printf("Get LCD buffer from internal\n");
+#endif
+
     //Allocate memory for the pixel buffers
     for (int i = 0; i < 2; i++) {
-        lines[i] = spi_bus_dma_memory_alloc(LCD_HOST, 320 * PARALLEL_LINES * sizeof(uint16_t), 0);
+        lines[i] = spi_bus_dma_memory_alloc(LCD_HOST, 320 * PARALLEL_LINES * sizeof(uint16_t), mem_cap);
         assert(lines[i] != NULL);
     }
     int frame = 0;

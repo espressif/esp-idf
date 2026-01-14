@@ -56,7 +56,8 @@ typedef struct {
     uint32_t flags;                     ///< Flags (attributes) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
-    size_t internal_mem_align_size;     ///< Buffer align byte requirement for internal memory
+    size_t cache_align_int;             ///< Internal memory align byte requirement
+    size_t cache_align_ext;             ///< External memory align byte requirement
     spi_bus_lock_handle_t lock;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;       ///< Power management lock
@@ -71,9 +72,13 @@ typedef struct {
     spi_dma_chan_handle_t tx_dma_chan;  ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
     spi_dma_chan_handle_t rx_dma_chan;  ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
 #endif
-    int dma_desc_num;               ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
-    spi_dma_desc_t *dmadesc_tx;     ///< DMA descriptor array for TX
-    spi_dma_desc_t *dmadesc_rx;     ///< DMA descriptor array for RX
+    size_t dma_align_tx_int;            ///< Internal memory align byte requirement for TX
+    size_t dma_align_tx_ext;            ///< External memory align byte requirement for TX
+    size_t dma_align_rx_int;            ///< Internal memory align byte requirement for RX
+    size_t dma_align_rx_ext;            ///< External memory align byte requirement for RX
+    int dma_desc_num;                   ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
+    spi_dma_desc_t *dmadesc_tx;         ///< DMA descriptor array for TX
+    spi_dma_desc_t *dmadesc_rx;         ///< DMA descriptor array for RX
 } spi_dma_ctx_t;
 
 /// Destructor called when a bus is deinitialized.

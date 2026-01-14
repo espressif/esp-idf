@@ -235,6 +235,16 @@ bool spi_hal_usr_is_done(const spi_hal_context_t *hal)
     return spi_ll_usr_is_done(hal->hw);
 }
 
+#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
+bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    return spi_ll_get_intr(hal->hw, mask);
+}
+
+void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    spi_ll_clear_intr(hal->hw, mask);
+}
+#endif
+
 void spi_hal_push_tx_buffer(const spi_hal_context_t *hal, const spi_hal_trans_config_t *hal_trans)
 {
     if (hal_trans->send_buffer) {
@@ -256,15 +266,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
 #if SOC_SPI_SCT_SUPPORTED
 /*------------------------------------------------------------------------------
  * Segmented-Configure-Transfer
- *----------------------------------------------------------------------------*/
-void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
-    spi_ll_clear_intr(hal->hw, mask);
-}
-
-bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
-    return spi_ll_get_intr(hal->hw, mask);
-}
-
+*----------------------------------------------------------------------------*/
 void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len) {
     spi_ll_set_conf_phase_bits_len(hal->hw, conf_len);
 }
