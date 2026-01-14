@@ -488,6 +488,8 @@
 #define SOC_SPI_MEM_FLASH_SUPPORT_HPM                     (1) /*!< Support High Performance Mode */
 #define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 // TODO: [ESP32C5] IDF-8707
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units

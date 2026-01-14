@@ -366,6 +366,8 @@
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE         (1)
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* ESP32 style SHA engine, where multiple states can be stored in parallel */
 #define SOC_SHA_SUPPORT_PARALLEL_ENG    (1)
