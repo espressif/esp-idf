@@ -154,11 +154,27 @@ Supported since ESP-IDF v5.3.
 
 ### ESP32-C5
 
-Supported since ESP-IDF v5.5.1.
+#### v1.0
+
+Supported since ESP-IDF v5.5.2.
+
+#### v1.2
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.5 and above | v5.5.2+     | v5.5.2   |
 
 ### ESP32-C61
 
-Supported since ESP-IDF v5.5.1.
+#### v1.0
+
+Supported since ESP-IDF v5.5.2.
+
+#### v1.1
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.5 and above | v5.5.2+     | v5.5.2   |
 
 ### ESP32-H4
 
