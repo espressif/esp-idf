@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -564,6 +564,16 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req);
  *  - ESP_ERR_INVALID_ARG : Null arguments
  */
 esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *session);
+
+/**
+ * @brief   Directly closes the least recently used session
+ *
+ * @param[in] hd  Server instance data
+ *
+ * @return
+ *  - ESP_OK    : if session closed successfully
+ */
+esp_err_t httpd_sess_close_lru_direct(struct httpd_data *hd);
 
 /** End of WebSocket related functions
  * @}

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -499,4 +499,22 @@ void httpd_sess_close_all(struct httpd_data *hd)
         .hd = hd
     };
     httpd_sess_enum(hd, enum_function, &context);
+}
+
+esp_err_t httpd_sess_close_lru_direct(struct httpd_data *hd)
+{
+    enum_context_t context = {
+        .task = HTTPD_TASK_FIND_LOWEST_LRU,
+        .lru_counter = UINT64_MAX,
+        .fd = -1
+    };
+    httpd_sess_enum(hd, enum_function, &context);
+    if (!context.session) {
+        return ESP_OK;
+    }
+
+    ESP_LOGD(TAG, LOG_FMT("Directly closing session with fd %d"), context.session->fd);
+    // Call httpd_sess_delete directly instead of going through work queue
+    httpd_sess_delete(hd, context.session);
+    return ESP_OK;
 }
