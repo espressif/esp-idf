@@ -800,6 +800,10 @@ int wps_start_pending(void)
 
 static void wps_stop_connection_timers(struct wps_sm *sm)
 {
+    eloop_cancel_timeout(wifi_station_wps_timeout, NULL, NULL);
+    eloop_cancel_timeout(wifi_wps_scan, NULL, NULL);
+    eloop_cancel_timeout(wifi_station_wps_eapol_start_handle, NULL, NULL);
+
     esp_wifi_disarm_sta_connection_timer_internal();
     eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
     eloop_cancel_timeout(wifi_station_wps_success, NULL, NULL);
@@ -1144,9 +1148,7 @@ out:
         wifi_event_sta_wps_fail_reason_t reason_code = WPS_FAIL_REASON_NORMAL;
         wpa_printf(MSG_DEBUG, "wpa rx eapol internal: fail ret=%d", ret);
         wps_set_status(WPS_STATUS_DISABLE);
-        esp_wifi_disarm_sta_connection_timer_internal();
-        eloop_cancel_timeout(wifi_station_wps_timeout, NULL, NULL);
-
+        wps_stop_connection_timers(sm);
         esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), OS_BLOCK);
 
         return ret;
