@@ -791,5 +791,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
-            - CONFIG_I3C_MASTER_ENABLED
             - CONFIG_ESPTOOLPY_FAST_REFLASHING

@@ -777,8 +777,10 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
     // Convert float duty cycle to numerator and denominator for LL function
     // Use 10000 as denominator to support 0.01 precision
     const uint32_t duty_cycle_denom = 100;
-    uint32_t od_duty_cycle_num = (uint32_t)(bus_config->i3c_scl_od_duty_cycle * duty_cycle_denom);
-    uint32_t pp_duty_cycle_num = (uint32_t)(bus_config->i3c_scl_pp_duty_cycle * duty_cycle_denom);
+    float od_duty_cycle = (bus_config->i3c_scl_od_duty_cycle == 0) ? 0.5 : bus_config->i3c_scl_od_duty_cycle;
+    float pp_duty_cycle = (bus_config->i3c_scl_pp_duty_cycle == 0) ? 0.5 : bus_config->i3c_scl_pp_duty_cycle;
+    uint32_t od_duty_cycle_num = (uint32_t)(od_duty_cycle * duty_cycle_denom);
+    uint32_t pp_duty_cycle_num = (uint32_t)(pp_duty_cycle * duty_cycle_denom);
     i3c_master_ll_set_i3c_open_drain_timing(i3c_master_handle->hal.dev, periph_src_clk_hz, bus_config->i3c_scl_freq_hz_od, od_duty_cycle_num, duty_cycle_denom);
     i3c_master_ll_set_i3c_push_pull_timing(i3c_master_handle->hal.dev, periph_src_clk_hz, bus_config->i3c_scl_freq_hz_pp, pp_duty_cycle_num, duty_cycle_denom);
     // Convert hold time from nanoseconds to clock cycles

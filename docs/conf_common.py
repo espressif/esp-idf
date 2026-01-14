@@ -209,6 +209,10 @@ I2C_DOCS = [
     'api-reference/peripherals/i2c_slave_v1.rst',
 ]
 
+I3C_DOCS = [
+    'api-reference/peripherals/i3c_master.rst',
+]
+
 SPI_DOCS = [
     'api-reference/peripherals/spi_master.rst',
     'api-reference/peripherals/spi_slave.rst',
@@ -377,6 +381,7 @@ conditional_include_dict = {
     'SOC_TOUCH_SENSOR_SUPPORTED': TOUCH_SENSOR_DOCS,
     'SOC_TWAI_SUPPORTED': TWAI_DOCS,
     'SOC_I2C_SUPPORTED': I2C_DOCS,
+    'SOC_I3C_MASTER_SUPPORTED': I3C_DOCS,
     'SOC_GPSPI_SUPPORTED': SPI_DOCS,
     'SOC_I2S_SUPPORTED': I2S_DOCS,
     'SOC_LP_I2S_SUPPORTED': LP_I2S_DOCS,
