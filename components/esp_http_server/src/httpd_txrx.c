@@ -122,7 +122,7 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, httpd_recv_op
     size_t recv_len = pending_len;
     do {
         int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
-        if (ret < 0) {
+        if (ret <= 0) {
             ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
             if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
                 /* If recv() timeout occurred, but pending data is
