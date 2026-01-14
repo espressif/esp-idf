@@ -23,7 +23,6 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_private/bootloader_flash_internal.h"
-#include "hal/mspi_iomux_ll.h"
 
 void IRAM_ATTR bootloader_flash_update_id(void)
 {
@@ -79,7 +78,7 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
     // Configure all Flash pins: clear pull-up/pull-down, set drive strength
     // SPI CS is external pull-uped so there no need to set internal pull-up
-    mspi_iomux_flash_pin_cfg_t flash_cfg = {
+    mspi_ll_flash_pin_cfg_t flash_cfg = {
         .hys = 0,
         .ie = 0,
         .wpu = 0,
@@ -87,8 +86,8 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
         .drv = drv,
         .reserved = 0
     };
-    for (mspi_iomux_flash_pin_id_t pin_id = MSPI_IOMUX_FLASH_PIN_ID_CS; pin_id < MSPI_IOMUX_FLASH_PIN_ID_MAX; pin_id++) {
-        mspi_iomux_ll_set_flash_pin_cfg(pin_id, &flash_cfg);
+    for (mspi_ll_flash_pin_id_t pin_id = MSPI_LL_PIN_ID_FLASH_CS; pin_id <= MSPI_LL_PIN_ID_FLASH_D; pin_id++) {
+        mspi_ll_set_flash_pin_cfg(pin_id, &flash_cfg);
     }
 }
 
