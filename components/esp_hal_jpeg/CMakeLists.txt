@@ -14,7 +14,7 @@ set(srcs)
 
 # JPEG related source files
 if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
-    list(APPEND srcs "jpeg_hal.c")
+    list(APPEND srcs "jpeg_hal.c" "${target}/jpeg_periph.c")
 endif()
 
 idf_component_register(SRCS ${srcs}
