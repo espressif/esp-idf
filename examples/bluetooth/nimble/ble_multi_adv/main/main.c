@@ -30,33 +30,33 @@ static void ble_multi_advertise(ble_addr_t addr);
 
 /* Advertising patterns */
 static uint8_t legacy_dur_adv_pattern[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x12, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'l', 'e', 'g', 'a', 'c', 'y', '-', 'd', 'u',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'l', 'e', 'g', 'a', 'c', 'y', '-', 'd', 'u',
     'r'
 };
 
 static uint8_t scannable_legacy_adv_pattern[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x13, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 's', 'c', 'a', 'n', '-', 'l', 'e', 'g', 'a',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x13, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 's', 'c', 'a', 'n', '-', 'l', 'e', 'g', 'a',
     'c', 'y'
 };
 
 static uint8_t connectable_adv_pattern[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x12, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'c', 'o', 'n', 'n', 'e', 't', 'a', 'b', 'l', 'e'
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'c', 'o', 'n', 'n', 'e', 't', 'a', 'b', 'l', 'e'
 };
 
 static uint8_t non_conn_adv_pattern[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x10, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'n', 'o', 'n', '-', 'c', 'o', 'n', 'n'
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x10, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'n', 'o', 'n', '-', 'c', 'o', 'n', 'n'
 };
 
 /**

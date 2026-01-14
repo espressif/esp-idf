@@ -19,7 +19,7 @@
 
 /* Global constants */
 static const char *TAG = "CTE_ADV_EXAMPLE";
-static uint8_t s_periodic_adv_raw_data[] = {0x0D, 0x09, 'C','T','E',' ','P','e','r','i','o','d','i','c'};
+static uint8_t s_periodic_adv_raw_data[] = {0x0D, BLE_HS_ADV_TYPE_COMP_NAME, 'C','T','E',' ','P','e','r','i','o','d','i','c'};
 
 /* Configuration based on Kconfig settings */
 #if CONFIG_EXAMPLE_RANDOM_ADDR
