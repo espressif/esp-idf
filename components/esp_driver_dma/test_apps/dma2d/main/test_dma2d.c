@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,9 @@
 #include "hal/color_types.h"
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
+#include "esp_efuse.h"
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
 // All test will perform `M2M_TRANS_TIMES` times memcpy transactions, utilizing all available 2D-DMA channels.
 // This tests the hardware capability of multiple 2D-DMA transactions running together, and the driver capbility of
@@ -25,6 +28,7 @@
 #define M2M_TRANS_TIMES (12)
 
 // Descriptor and buffer address and size should aligned to 64 bytes (the cacheline size alignment restriction) to be used by CPU
+// Additionally, if flash encryption is enabled, no matter descriptor or buffer, if in internal RAM, the address should be 16-byte aligned; if in external RAM, the address and size both should be 16-byte aligned.
 
 static dma2d_descriptor_t *tx_dsc[M2M_TRANS_TIMES];
 static dma2d_descriptor_t *rx_dsc[M2M_TRANS_TIMES];
@@ -71,8 +75,13 @@ TEST_CASE("DMA2D_M2M_1D_basic", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
-    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        // descriptor size is not 16-byte aligned, so can not be in external RAM
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+    }
+    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
+    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_link_buffer);
     TEST_ASSERT_NOT_NULL(rx_link_buffer);
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
@@ -88,7 +97,8 @@ TEST_CASE("DMA2D_M2M_1D_basic", "[DMA2D]")
     TEST_ASSERT_NOT_NULL(rx_buf);
 
     dma2d_transfer_ability_t transfer_ability_config = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_64,
+        .access_ext_mem = true,
+        .data_burst_length = 64,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -210,8 +220,13 @@ TEST_CASE("DMA2D_M2M_1D_RGB565_to_RGB888", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
-    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        // descriptor size is not 16-byte aligned, so can not be in external RAM
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+    }
+    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
+    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_link_buffer);
     TEST_ASSERT_NOT_NULL(rx_link_buffer);
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
@@ -229,7 +244,8 @@ TEST_CASE("DMA2D_M2M_1D_RGB565_to_RGB888", "[DMA2D]")
     SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(M2M_TRANS_TIMES, 0);
 
     dma2d_transfer_ability_t transfer_ability_config = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = true,
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -323,8 +339,13 @@ TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
-    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        // descriptor size is not 16-byte aligned, so can not be in external RAM
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+    }
+    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
+    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_link_buffer);
     TEST_ASSERT_NOT_NULL(rx_link_buffer);
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
@@ -342,7 +363,8 @@ TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
     SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(M2M_TRANS_TIMES, 0);
 
     dma2d_transfer_ability_t transfer_ability_config = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = true,
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -456,8 +478,13 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
-    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        // descriptor size is not 16-byte aligned, so can not be in external RAM
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+    }
+    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
+    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_link_buffer);
     TEST_ASSERT_NOT_NULL(rx_link_buffer);
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
@@ -475,7 +502,8 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
     SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(M2M_TRANS_TIMES, 0);
 
     dma2d_transfer_ability_t transfer_ability_config = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_16,
+        .access_ext_mem = true,
+        .data_burst_length = 16,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -562,17 +590,30 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
 
 TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
 {
-    // Test 2D memcpy to a 2 x 2 block at (2, 4) in a 8 x 8 picture (pixel in RGB565 format)
+    // Test 2D memcpy to a 8 x 2 block at (8，0) in a 24 x 8 picture (pixel in RGB565 format)
+
+    // When flash encryption is enabled, and tx/rx buffer are in PSRAM (if located in internal RAM, there is no alignment restriction due to encryption):
+    // - The address and size of the tx/rx buffer should be 16-byte aligned
+    // - The width of the window multiply byte number of one pixel should be 16-byte aligned
+    // - The address of every row of the window should be 16-byte aligned
+
     const esp_color_fourcc_t pixel_format = ESP_COLOR_FOURCC_RGB16;
-    const uint32_t va = 8, ha = 8; // Define picture height and width (unit: pixel)
-    const uint32_t vb = 2, hb = 2; // Define block height and width (unit: pixel)
-    const uint32_t x_offset = 2, y_offset = 4; // Define block location in the picture (unit: pixel)
+    const uint32_t va = 8, ha = 24; // Define picture height and width (unit: pixel)
+    const uint32_t vb = 2, hb = 8; // Define block height and width (unit: pixel)
+    const uint32_t x_offset = 8, y_offset = 0; // Define block location in the picture (unit: pixel)
 
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
-    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, MALLOC_CAP_DEFAULT);
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    uint32_t buf_malloc_cap = MALLOC_CAP_INTERNAL;
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        // descriptor size is not 16-byte aligned, so can not be in external RAM
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        buf_malloc_cap = MALLOC_CAP_SPIRAM; // to test its strict alignment requirement
+    }
+    dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
+    dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_link_buffer);
     TEST_ASSERT_NOT_NULL(rx_link_buffer);
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
@@ -582,15 +623,18 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
 
     uint8_t *prtx;
     uint8_t *prrx;
-    uint8_t *tx_buf = heap_caps_aligned_calloc(64, 64 * M2M_TRANS_TIMES, sizeof(uint8_t), MALLOC_CAP_INTERNAL);
-    uint8_t *rx_buf = heap_caps_aligned_calloc(64, va * ha * 2 * M2M_TRANS_TIMES, sizeof(uint8_t), MALLOC_CAP_INTERNAL);
+    size_t tx_buf_size = ALIGN_UP(vb * hb * 2, 64); // buffer msync alignment restriction
+    uint8_t *tx_buf = heap_caps_aligned_calloc(64, tx_buf_size * M2M_TRANS_TIMES, sizeof(uint8_t), buf_malloc_cap);
+    size_t rx_buf_size = ALIGN_UP(va * ha * 2, 64); // buffer msync alignment restriction
+    uint8_t *rx_buf = heap_caps_aligned_calloc(64, rx_buf_size * M2M_TRANS_TIMES, sizeof(uint8_t), buf_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_buf);
     TEST_ASSERT_NOT_NULL(rx_buf);
 
     SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(M2M_TRANS_TIMES, 0);
 
     dma2d_transfer_ability_t transfer_ability_config = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = (buf_malloc_cap & MALLOC_CAP_SPIRAM) ? true : false,
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -598,8 +642,8 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
     // Preparation
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
         // Buffer data preparation
-        prtx = tx_buf + i * 64;
-        prrx = rx_buf + i * va * ha * 2;
+        prtx = tx_buf + i * tx_buf_size;
+        prrx = rx_buf + i * rx_buf_size;
         for (int idx = 0; idx < vb * hb; idx++) {
             prtx[idx * 2] = 0x55 + idx + i;
             prtx[idx * 2 + 1] = 0xAA + idx + i;
@@ -610,8 +654,8 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
         }
 
         // Writeback TX and RX buffers
-        esp_cache_msync((void *)prtx, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-        esp_cache_msync((void *)prrx, va * ha * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prtx, tx_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prrx, rx_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
         // DMA description preparation
         dma2d_link_dscr_init((uint32_t *)tx_dsc[i], NULL, (void *)prtx,
@@ -649,12 +693,12 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
 
     // Print the picture and check result
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
-        prtx = tx_buf + i * 64;
-        prrx = rx_buf + i * va * ha * 2;
+        prtx = tx_buf + i * tx_buf_size;
+        prrx = rx_buf + i * rx_buf_size;
 
         // Invalidate TX and RX buffers
-        esp_cache_msync((void *)prtx, 64, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-        esp_cache_msync((void *)prrx, va * ha * 2, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prtx, tx_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prrx, rx_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
         printf("pic:\n");
         for (int idx = 0; idx < va * ha; idx++) {

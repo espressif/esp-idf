@@ -173,6 +173,9 @@ static bool dma2d_job_picked_cb(uint32_t num_chans, const dma2d_trans_channel_in
     };
     dma2d_register_rx_event_callbacks(rx_chan, &dma_cbs, mcp);
 
+    // 2D-DMA channel data burst length is set to the maximum burst length by default, which meets the encryption alignment restriction
+    // so even if flash encryption is enabled, it can work properly
+
     dma2d_set_desc_addr(tx_chan, (intptr_t)(mcp->tx_desc));
     dma2d_set_desc_addr(rx_chan, (intptr_t)(mcp->rx_desc));
 

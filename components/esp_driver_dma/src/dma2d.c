@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 #include "hal/dma2d_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_bit_defs.h"
+#include "esp_efuse.h"
 
 /**
  * The 2D-DMA driver is designed with a pool & client model + queue design pattern.
@@ -584,7 +585,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         dma2d_ll_tx_enable_auto_write_back(group->hal.dev, channel_id, false);
         dma2d_ll_tx_enable_eof_mode(group->hal.dev, channel_id, true);
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, false);
-        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, DMA2D_DATA_BURST_LENGTH_128);
+        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, 128);
         dma2d_ll_tx_enable_page_bound_wrap(group->hal.dev, channel_id, true);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, DMA2D_MACRO_BLOCK_SIZE_NONE);
         if ((1 << channel_id) & DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK) {
@@ -608,7 +609,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         dma2d_ll_rx_enable_owner_check(group->hal.dev, channel_id, false);
         dma2d_ll_rx_set_auto_return_owner(group->hal.dev, channel_id, DMA2D_DESCRIPTOR_BUFFER_OWNER_CPU); // After auto write back, the owner field will be cleared
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, false);
-        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, DMA2D_DATA_BURST_LENGTH_128);
+        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, 128);
         dma2d_ll_rx_enable_page_bound_wrap(group->hal.dev, channel_id, true);
         dma2d_ll_rx_set_macro_block_size(group->hal.dev, channel_id, DMA2D_MACRO_BLOCK_SIZE_NONE);
         if ((1 << channel_id) & DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK) {
@@ -713,6 +714,8 @@ esp_err_t dma2d_set_desc_addr(dma2d_channel_handle_t dma2d_chan, intptr_t desc_b
     ESP_GOTO_ON_FALSE_ISR(dma2d_chan && desc_base_addr, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     // 2D-DMA descriptor addr needs 8-byte alignment and not in TCM (addr not in TCM is IDF restriction)
     ESP_GOTO_ON_FALSE_ISR((desc_base_addr & 0x7) == 0 && !esp_ptr_in_tcm((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // When flash encryption is enabled, the descriptor must be in internal RAM because descriptor size is not 16-byte aligned, which breaks flash encryption alignment restriction
+    ESP_GOTO_ON_FALSE_ISR(!esp_efuse_is_flash_encryption_enabled() || esp_ptr_internal((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
@@ -828,19 +831,30 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE_ISR(dma2d_chan && ability, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE_ISR(ability->data_burst_length < DMA2D_DATA_BURST_LENGTH_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(ability->data_burst_length && ((ability->data_burst_length & (ability->data_burst_length - 1)) == 0), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument"); // burst size must be power of 2
     ESP_GOTO_ON_FALSE_ISR(ability->mb_size < DMA2D_MACRO_BLOCK_SIZE_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
 
+    // When flash encryption is enabled, and the channel is accessing external memory, burst length has to be as least as the encryption alignment restriction size
+    uint32_t data_burst_length = ability->data_burst_length;
+#if SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
+    if (esp_efuse_is_flash_encryption_enabled() && ability->access_ext_mem) {
+        if (data_burst_length < SOC_MEMSPI_ENCRYPTION_ALIGNMENT) {
+            data_burst_length = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+            ESP_LOGW(TAG, "channel access encrypted external memory, adjust burst size to %d", SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        }
+    }
+#endif
+
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
-        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
+        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, data_burst_length);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
     } else {
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
-        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
+        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, data_burst_length);
         dma2d_ll_rx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
     }
 

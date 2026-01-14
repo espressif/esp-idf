@@ -410,13 +410,15 @@ static void jpeg_enc_config_dma_trans_ability(jpeg_encoder_handle_t encoder_engi
 {
     // set transfer ability
     dma2d_transfer_ability_t transfer_ability_config_tx = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = true, // in most cases
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
 
     dma2d_transfer_ability_t transfer_ability_config_rx = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = true, // in most cases
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };

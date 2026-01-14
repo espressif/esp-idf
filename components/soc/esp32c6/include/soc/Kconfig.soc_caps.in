@@ -863,6 +863,10 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_SYSTIMER_SUPPORT_ETM
     bool
     default y

@@ -228,7 +228,8 @@ esp_err_t dma2d_apply_strategy(dma2d_channel_handle_t dma2d_chan, const dma2d_st
  */
 typedef struct {
     bool desc_burst_en;                             /*!< If set / clear, DMA channel enables / disables burst reading descriptor link */
-    dma2d_data_burst_length_t data_burst_length;    /*!< Configure the DMA channel burst reading data length */
+    uint32_t data_burst_length;                     /*!< Configure the DMA channel burst reading data length */
+    bool access_ext_mem;                            /*!< Set this bit if the DMA transfer may access external memory */
     dma2d_macro_block_size_t mb_size;               /*!< Configure the DMA channel macro block size (only useful in DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE mode) */
 } dma2d_transfer_ability_t;
 
