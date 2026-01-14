@@ -258,6 +258,8 @@ SDMMC
 
     The legacy Sigma-Delta Modulator driver ``driver/sigmadelta.h`` is deprecated since version 5.0 (see :ref:`deprecate_sdm_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_sdm`, and the header file path is ``driver/sdm.h``.
 
+    - :func:`sdm_channel_set_duty` has been removed. Use :func:`sdm_channel_set_pulse_density` instead.
+
 LCD
 ---
 

@@ -258,6 +258,8 @@ SDMMC
 
     旧版的 Sigma-Delta 调制器驱动 ``driver/sigmadelta.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_sdm_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_sdm` 组件中，头文件引用路径为 ``driver/sdm.h``。
 
+    - :func:`sdm_channel_set_duty` 已被移除。请使用 :func:`sdm_channel_set_pulse_density` 替代。
+
 LCD
 ---
 

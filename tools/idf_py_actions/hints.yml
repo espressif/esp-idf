@@ -53,6 +53,9 @@
         -
             re_variables: ['(esp_spiram_get_chip_size|esp_spiram_get_size)']
             hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
+        -
+            re_variables: ['sdm_channel_set_duty']
+            hint_variables: ['sdm_channel_set_duty()', 'sdm_channel_set_pulse_density()']
 
 -
     re: "error: implicit declaration of function '(MCPWM_GEN_TIMER_EVENT_ACTION_END|MCPWM_GEN_COMPARE_EVENT_ACTION_END|MCPWM_GEN_BRAKE_EVENT_ACTION_END)'"
