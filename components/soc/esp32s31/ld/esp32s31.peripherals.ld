@@ -72,6 +72,7 @@ PROVIDE ( TIMERG1             = 0x20581000 );
 PROVIDE ( IO_MUX              = 0x20582000 );
 PROVIDE ( GPIO                = 0x20583000 );
 PROVIDE ( GPIO_EXT            = 0x20583E00 );
+PROVIDE ( SDM                 = 0x20583E04 );
 PROVIDE ( MSPI_IOMUX          = 0x20584000 );
 PROVIDE ( HP_SYSTEM           = 0x20586000 );
 PROVIDE ( HP_SYS_CLKRST       = 0x20587000 );

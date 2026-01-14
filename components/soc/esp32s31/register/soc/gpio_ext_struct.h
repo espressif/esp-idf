@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1207,10 +1207,14 @@ typedef union {
 } gpio_ext_version_reg_t;
 
 
+typedef struct gpio_sd_dev_t {
+    volatile gpio_ext_sigmadelta_misc_reg_t misc;
+    volatile gpio_ext_sigmadeltan_reg_t channel[8];
+} gpio_sd_dev_t;
+
 typedef struct {
     uint32_t reserved_000;
-    volatile gpio_ext_sigmadelta_misc_reg_t sigmadelta_misc;
-    volatile gpio_ext_sigmadeltan_reg_t sigmadeltan[8];
+    volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_028[44];
     volatile gpio_ext_glitch_filter_chn_reg_t glitch_filter_chn[8];
     uint32_t reserved_0f8[8];
@@ -1237,6 +1241,9 @@ typedef struct {
 #ifndef __cplusplus
 _Static_assert(sizeof(gpio_ext_dev_t) == 0x200, "Invalid size of gpio_ext_dev_t structure");
 #endif
+
+extern gpio_sd_dev_t SDM;
+extern gpio_ext_dev_t GPIO_EXT;
 
 #ifdef __cplusplus
 }

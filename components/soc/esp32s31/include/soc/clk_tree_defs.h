@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -307,6 +307,15 @@ typedef enum {
     MWDT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RTC fast as the source clock */
     MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL 40 MHz as the default clock choice */
 } soc_periph_mwdt_clk_src_t;
+
+/**
+ * @brief Sigma Delta Modulator clock source
+ */
+typedef enum {
+    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    SDM_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
+} soc_periph_sdm_clk_src_t;
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {
