@@ -435,6 +435,30 @@ For ``build_test_related_apps``, all the built binaries will be uploaded to our 
 
 For ``build_non_test_related_apps``, all the built binaries will be removed after the build job is finished. Only the build log files will be uploaded to our internal MinIO server. You may also find the download link in the build report posted in the internal MR.
 
+Dependency-driven builds
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To optimize CI build time, we use the dependency-driven build feature from idf-build-apps. It helps us build only the apps that are affected by the changed components.
+
+Dependency-driven build rules are defined in per-folder manifest files (``.build-test-rules.yml``), where each app may define ``depends_components``.
+
+.. code-block:: yaml
+
+    examples/foo/bar:
+      depends_components:
+        - esp_eth
+        - esp_netif
+
+
+We also have a set of common components (defined as ``common_components`` in :idf_file:`.idf_build_apps.toml`). ``common_components`` is a list of baseline (core) components that are used by many apps. In general, if one of these components changes, you usually want to rebuild and retest the apps that depend on it.
+
+The app maintainer should decide which components are important for their app. If the app should depend on a ``common_components``, add it to ``depends_components``. If not, specify only the important components.
+
+If ``depends_components`` is not specified, we use the calculated components (``project_description.json``) and check whether the app is affected by the changed components.
+
+Deprecated (prefer using ``depends_components`` / ``common_components`` instead):
+``deactivate_dependency_driven_build_by_components`` disables the dependency-driven checks if certain components change.
+
 Target Test Jobs
 ----------------
 

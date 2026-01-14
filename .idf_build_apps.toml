@@ -43,7 +43,9 @@ manifest_filepatterns = [
 ]
 
 # dependency-driven build
-deactivate_dependency_driven_build_by_components = [
+deactivate_dependency_driven_build_by_components = []
+
+common_components = [
     'cxx',
     'esp_common',
     'esp_hw_support',
