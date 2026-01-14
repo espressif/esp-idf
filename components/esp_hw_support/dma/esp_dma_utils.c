@@ -20,6 +20,9 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_mspi.h"
+#endif
 
 ESP_LOG_ATTR_TAG(TAG, "dma_utils");
 
@@ -52,7 +55,7 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
     } else {
         // If the stash buffer is offered by the caller, check if it is aligned
         ESP_RETURN_ON_FALSE_ISR(split_line_size == 0 || (uintptr_t)(*ret_stash_buffer) % split_line_size == 0,
-                            ESP_ERR_INVALID_ARG, TAG, "the offered stash buffer is not aligned");
+                                ESP_ERR_INVALID_ARG, TAG, "the offered stash buffer is not aligned");
         // If the stash buffer is offered by the caller, use it
         stash_buffer = *ret_stash_buffer;
     }
@@ -126,6 +129,15 @@ err:
 esp_err_t esp_dma_merge_aligned_rx_buffers(dma_buffer_split_array_t *align_array)
 {
     ESP_RETURN_ON_FALSE_ISR(align_array, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+#if CONFIG_SPIRAM
+    // check if the original buffer is in external RAM, if so, add memory barrier
+    if (esp_ptr_external_ram(align_array->buf.head.recovery_address) ||
+            esp_ptr_external_ram(align_array->buf.body.recovery_address) ||
+            esp_ptr_external_ram(align_array->buf.tail.recovery_address)) {
+        esp_psram_mspi_mb();
+    }
+#endif
 
     // only need to copy the head and tail buffer
     if (align_array->buf.head.length) {
