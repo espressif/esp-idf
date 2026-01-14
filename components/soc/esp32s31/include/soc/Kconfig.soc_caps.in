@@ -133,11 +133,11 @@ config SOC_HP_CPU_HAS_MULTIPLE_CORES
 
 config SOC_CPU_BREAKPOINTS_NUM
     int
-    default 3
+    default 4
 
 config SOC_CPU_WATCHPOINTS_NUM
     int
-    default 3
+    default 4
 
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     hex
