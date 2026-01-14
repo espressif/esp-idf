@@ -510,18 +510,19 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
     }
 
     while (max_len) {
+        UINT16 length = (p_ccb->rem_mtu_size < max_len) ? p_ccb->rem_mtu_size : max_len;
         if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-            if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_FCR_ERTM_BUF_SIZE)) == NULL) {
+            if ((p_buf = (BT_HDR *)osi_malloc(BT_HDR_SIZE + length + L2CAP_MIN_OFFSET + L2CAP_FCS_LEN)) == NULL) {
                 return (GAP_ERR_CONGESTED);
             }
         } else {
-            if ((p_buf = (BT_HDR *)osi_malloc(GAP_DATA_BUF_SIZE)) == NULL) {
+            if ((p_buf = (BT_HDR *)osi_malloc(BT_HDR_SIZE + length + L2CAP_MIN_OFFSET)) == NULL) {
                 return (GAP_ERR_CONGESTED);
             }
         }
 
         p_buf->offset = L2CAP_MIN_OFFSET;
-        p_buf->len = (p_ccb->rem_mtu_size < max_len) ? p_ccb->rem_mtu_size : max_len;
+        p_buf->len = length;
         p_buf->event = BT_EVT_TO_BTU_SP_DATA;
 
         memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset, p_data, p_buf->len);
