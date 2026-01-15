@@ -2901,11 +2901,11 @@ Wi-Fi AMSDU
 Wi-Fi 分片
 -------------------------
 
-.. only:: esp32 or esp32s2
+.. only:: not SOC_WIFI_TXOP_SUPPORT
 
     支持 Wi-Fi 接收分片，但不支持 Wi-Fi 发送分片。
 
-.. only:: esp32c3 or esp32s3 or esp32c6 or esp32c5
+.. only:: SOC_WIFI_TXOP_SUPPORT
 
     {IDF_TARGET_NAME} 支持 Wi-Fi 接收和发送分片。
 
