@@ -446,11 +446,11 @@
 
 #define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
 
-// #define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
+#define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
-// #define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)      // TODO: [ESP32H4] PM-457
-// #define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
-// #define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
+#define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)
+#define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
+#define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
 
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_XIP_SUPPORTED      1
@@ -486,6 +486,8 @@
 // #define SOC_PM_SUPPORT_PMU_MODEM_STATE  (1)
 // /* macro redefine for pass esp_wifi headers md5sum check */
 // #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
+
+#define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
