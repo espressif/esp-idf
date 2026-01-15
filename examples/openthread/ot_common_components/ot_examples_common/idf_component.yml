@@ -1,4 +1,5 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  espressif/iperf-cmd: "^1.0.0"
   cmd_system:
     path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system

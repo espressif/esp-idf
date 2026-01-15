@@ -128,5 +128,49 @@ You can refer to the [extension command](https://github.com/espressif/esp-thread
 The following examples are supported by `ot_cli`:
 
 * TCP and UDP Example
-* Iperf Example
 
+## Using iPerf to measure bandwidth
+
+iPerf is a tool used to obtain TCP or UDP throughput on the Thread network. To run iPerf, you need to have two Thread devices on the same network.
+
+Refer to [the iperf-cmd component](https://components.espressif.com/components/espressif/iperf-cmd) for details on specific configurations.
+
+### Typical usage on a thread network
+
+For measuring the TCP throughput, first create an iperf service on one node:
+```bash
+> iperf -V -s -t 20 -i 3 -p 5001 -f k
+Done
+```
+
+Then create an iperf client connecting to the service on another node. Note that the [ML-EID](https://openthread.io/guides/thread-primer/ipv6-addressing#unicast_address_types) address is used for iperf.
+
+```bash
+> ipaddr mleid
+fdde:ad00:beef:0:a7c6:6311:9c8c:271b
+Done
+
+> iperf -V -c fdde:ad00:beef:0:a7c6:6311:9c8c:271b -t 20 -i 1 -p 5001 -l 85 -f k
+Done
+[ ID] Interval		Transfer	Bandwidth
+[  1]  0.0- 1.0 sec	3.15 KBytes	25.16 Kbits/sec
+[  1]  1.0- 2.0 sec	2.89 KBytes	23.12 Kbits/sec
+[  1]  2.0- 3.0 sec	2.98 KBytes	23.80 Kbits/sec
+...
+[  1]  9.0-10.0 sec	2.55 KBytes	20.40 Kbits/sec
+[  1]  0.0-10.0 sec	27.80 KBytes	22.24 Kbits/sec
+```
+
+For measuring the UDP throughput, first create an iperf service similarly:
+
+```bash
+> iperf -V -u -s -t 20 -i 3 -p 5001 -f k
+Done
+```
+
+Then create an iperf client:
+
+```bash
+> iperf -V -u -c fdde:ad00:beef:0:a7c6:6311:9c8c:271b -t 20 -i 1 -p 5001 -l 85 -f k
+Done
+```
