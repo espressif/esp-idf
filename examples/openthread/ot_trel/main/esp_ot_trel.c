@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -44,7 +44,6 @@
 #include "esp_ot_cli_extension.h"
 #endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 
-
 #define TAG "ot_esp_trel"
 
 void app_main(void)
@@ -68,6 +67,7 @@ void app_main(void)
 
 #if CONFIG_OPENTHREAD_CLI
     ot_console_start();
+    ot_register_external_commands();
 #endif
 
     static esp_openthread_config_t config = {
@@ -82,6 +82,9 @@ void app_main(void)
     esp_netif_set_default_netif(esp_openthread_get_netif());
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_cli_custom_command_init();
+#endif
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+    ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
 #endif
 #if CONFIG_OPENTHREAD_NETWORK_AUTO_START
     ot_network_auto_start();
