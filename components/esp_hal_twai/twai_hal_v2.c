@@ -48,7 +48,7 @@ bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp)
     return twaifd_ll_check_brp_validation(brp);
 }
 
-void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config)
+void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config)
 {
     twaifd_ll_set_nominal_bitrate(hal_ctx->dev, t_config);
     if (t_config->ssp_offset) {
@@ -57,7 +57,7 @@ void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_co
     }
 }
 
-void twai_hal_configure_timing_fd(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config_fd)
+void twai_hal_configure_timing_fd(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config_fd)
 {
     twaifd_ll_set_fd_bitrate(hal_ctx->dev, t_config_fd);
     if (t_config_fd->ssp_offset) {

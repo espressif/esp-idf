@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,7 @@ typedef struct {
     QueueHandle_t tx_mount_queue;
     EventGroupHandle_t event_group;
     twai_clock_source_t curr_clk_src;
+    uint32_t src_freq_hz;
     uint32_t valid_fd_timing;
     twai_event_callbacks_t cbs;
     void *user_data;
@@ -326,39 +327,13 @@ static esp_err_t _node_register_callbacks(twai_node_handle_t node, const twai_ev
     return ESP_OK;
 }
 
-static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twai_timing_advanced_config_t *timing, uint32_t source_freq)
+static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twai_timing_advanced_config_t *timing)
 {
-    if (!timing) {
-        return ESP_OK;
-    }
-    ESP_RETURN_ON_FALSE(!timing->quanta_resolution_hz, ESP_ERR_INVALID_ARG, TAG, "quanta_resolution_hz is not supported");  //TODO: IDF-12725
-    ESP_RETURN_ON_FALSE(twai_hal_check_brp_validation(twai_ctx->hal, timing->brp), ESP_ERR_INVALID_ARG, TAG, "invalid brp");
-    ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
-    ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
-    ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
-    return ESP_OK;
-}
-
-static esp_err_t _node_set_clock_source(twai_node_handle_t node, twai_clock_source_t clock_src)
-{
-    twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
-    if (clock_src != twai_ctx->curr_clk_src) {
-        // Order of operations is important here.
-        // First enable and switch to the new clock source, then disable the old one.
-        // To ensure the clock to controller is continuous.
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clock_src, true), TAG, "enable clock source failed");
-        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, clock_src);
-        if (twai_ctx->curr_clk_src) {
-            // Disable previous clock source
-            esp_err_t err = esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "disable previous clock source failed, err: %d", err);
-                esp_clk_tree_enable_src(clock_src, false);
-                return err;
-            }
-        }
-        twai_ctx->curr_clk_src = clock_src;
-        ESP_LOGD(TAG, "set clock source to %d", clock_src);
+    if (timing) {
+        ESP_RETURN_ON_FALSE(twai_hal_check_brp_validation(twai_ctx->hal, timing->brp), ESP_ERR_INVALID_ARG, TAG, "invalid brp");
+        ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
+        ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
+        ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
     }
     return ESP_OK;
 }
@@ -366,23 +341,9 @@ static esp_err_t _node_set_clock_source(twai_node_handle_t node, twai_clock_sour
 static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing_advanced_config_t *timing, const twai_timing_advanced_config_t *timing_fd)
 {
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
-    twai_clock_source_t new_clock_src = twai_ctx->curr_clk_src;
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config timing must when node stopped");
-    if (timing && timing_fd) {
-        ESP_RETURN_ON_FALSE(timing->clk_src == timing_fd->clk_src, ESP_ERR_INVALID_ARG, TAG, "clk_src of 2 configs must same");
-        new_clock_src = timing->clk_src ? timing->clk_src : TWAI_CLK_SRC_DEFAULT;
-    } else {
-        if (timing) {
-            ESP_RETURN_ON_FALSE(!twai_ctx->valid_fd_timing || !timing->clk_src || (timing->clk_src == TWAI_CLK_SRC_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "don't change clk_src in single config");
-            new_clock_src = timing->clk_src ? timing->clk_src : TWAI_CLK_SRC_DEFAULT;
-        } else {
-            ESP_RETURN_ON_FALSE(!timing_fd->clk_src || (timing_fd->clk_src == TWAI_CLK_SRC_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "don't change clk_src in single config");
-        }
-    }
-    uint32_t source_freq = 0;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(new_clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq), TAG, "clock src error, can't get freq");
-    ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing, source_freq), TAG, "invalid param");
-    ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing_fd, source_freq), TAG, "invalid fd param");
+    ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing), TAG, "invalid param");
+    ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing_fd), TAG, "invalid fd param");
 
     if (timing) {
         twai_hal_configure_timing(twai_ctx->hal, timing);
@@ -393,22 +354,17 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
         twai_hal_configure_timing_fd(twai_ctx->hal, timing_fd);
     }
 #endif
-
-    return _node_set_clock_source(node, new_clock_src);
+    return ESP_OK;
 }
 
-static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_source_t clk_src, const twai_timing_basic_config_t *timing, const twai_timing_basic_config_t *timing_fd)
+static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_timing_basic_config_t *timing, const twai_timing_basic_config_t *timing_fd)
 {
+    twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(timing->bitrate, ESP_ERR_INVALID_ARG, TAG, "classic timing config is required");
 #if !SOC_HAS(TWAI_FD)
     ESP_RETURN_ON_FALSE((!timing_fd->bitrate) || (timing_fd->bitrate == timing->bitrate), ESP_ERR_INVALID_ARG, TAG, "FD stage bitrate is not supported");
 #endif
-    twai_clock_source_t root_clock_src = clk_src ? clk_src : TWAI_CLK_SRC_DEFAULT;
-    uint32_t source_freq = 0;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(root_clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq), TAG, "can't get clock source freq");
 
-    twai_timing_advanced_config_t timing_adv = { .clk_src = root_clock_src, };
-    twai_timing_advanced_config_t *fd_cfg_ptr = NULL;
     twai_timing_constraint_t hw_const = {
         .brp_min = TWAI_LL_BRP_MIN,
         .brp_max = TWAI_LL_BRP_MAX,
@@ -418,25 +374,27 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
         .tseg2_max = TWAI_LL_TSEG2_MAX,
         .sjw_max = TWAI_LL_SJW_MAX,
     };
-    uint32_t real_baud = twai_node_timing_calc_param(source_freq, timing, &hw_const, &timing_adv);
-    ESP_LOGD(TAG, "timing: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", source_freq, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
+
+    twai_timing_advanced_config_t timing_adv = {}, *timing_fd_ptr = NULL;
+    uint32_t real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing, &hw_const, &timing_adv);
+    ESP_LOGD(TAG, "timing: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", twai_ctx->src_freq_hz, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
     ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
     if (timing->bitrate != real_baud) {
         ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing->bitrate, real_baud);
     }
 #if SOC_HAS(TWAI_FD)
-    twai_timing_advanced_config_t timing_adv_fd = { .clk_src = root_clock_src, };
+    twai_timing_advanced_config_t timing_adv_fd = {};
     if (timing_fd->bitrate) {
-        real_baud = twai_node_timing_calc_param(source_freq, timing_fd, &hw_const, &timing_adv_fd);
-        ESP_LOGD(TAG, "timing_fd: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", source_freq, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
+        real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing_fd, &hw_const, &timing_adv_fd);
+        ESP_LOGD(TAG, "timing_fd: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", twai_ctx->src_freq_hz, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
         ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
         if (timing_fd->bitrate != real_baud) {
             ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing_fd->bitrate, real_baud);
         }
-        fd_cfg_ptr = &timing_adv_fd;
+        timing_fd_ptr = &timing_adv_fd;
     }
 #endif
-    ESP_RETURN_ON_ERROR(_node_set_bit_timing(node, &timing_adv, fd_cfg_ptr), TAG, "invalid timing param, bitrate can't achieve!");
+    ESP_RETURN_ON_ERROR(_node_set_bit_timing(node, &timing_adv, timing_fd_ptr), TAG, "invalid timing param, bitrate can't achieve!");
     return ESP_OK;
 }
 
@@ -667,25 +625,6 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_periph_signals[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
                       err, TAG, "Alloc interrupt failed");
 
-    // Set default clock source first
-    ESP_RETURN_ON_ERROR(_node_set_clock_source(&node->api_base, TWAI_CLK_SRC_DEFAULT), TAG, "enable default clock source failed");
-    // Enable bus clock and reset controller
-    _twai_rcc_clock_ctrl(ctrlr_id, true);
-    // Initialize HAL and configure register defaults.
-    twai_hal_config_t hal_config = {
-        .controller_id = node->ctrlr_id,
-        .intr_mask = TWAI_LL_DRIVER_INTERRUPTS,
-        .retry_cnt = node_config->fail_retry_cnt,
-        .no_receive_rtr = node_config->flags.no_receive_rtr,
-        .enable_listen_only = node_config->flags.enable_listen_only,
-        .enable_self_test = node_config->flags.enable_self_test,
-        .enable_loopback = node_config->flags.enable_loopback,
-    };
-    ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
-    // Configure bus timing
-    ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, node_config->clk_src, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");
-    // Configure GPIO
-    ESP_GOTO_ON_ERROR(_node_config_io(node, node_config), err, TAG, "gpio config failed");
 #if CONFIG_PM_ENABLE
 #if TWAI_LL_SUPPORT(APB_CLK)
     // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
@@ -695,6 +634,32 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_periph_signals[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
 #endif //TWAI_LL_SUPPORT(APB_CLK)
 #endif //CONFIG_PM_ENABLE
+
+    node->curr_clk_src = node_config->clk_src ? node_config->clk_src : TWAI_CLK_SRC_DEFAULT;
+    esp_clk_tree_src_get_freq_hz(node->curr_clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &node->src_freq_hz);
+
+    // Set clock source, enable bus clock and reset controller
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(node->curr_clk_src, true), TAG, "enable clock source failed");
+    ESP_LOGD(TAG, "set clock source to %d, freq: %ld Hz", node->curr_clk_src, node->src_freq_hz);
+    _twai_rcc_clock_sel(node->ctrlr_id, node->curr_clk_src);
+    _twai_rcc_clock_ctrl(ctrlr_id, true);
+
+    // Initialize HAL and configure register defaults.
+    twai_hal_config_t hal_config = {
+        .controller_id = node->ctrlr_id,
+        .intr_mask = TWAI_LL_DRIVER_INTERRUPTS,
+        .clock_source_hz = node->src_freq_hz,
+        .retry_cnt = node_config->fail_retry_cnt,
+        .no_receive_rtr = node_config->flags.no_receive_rtr,
+        .enable_listen_only = node_config->flags.enable_listen_only,
+        .enable_self_test = node_config->flags.enable_self_test,
+        .enable_loopback = node_config->flags.enable_loopback,
+    };
+    ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
+    // Configure bus timing
+    ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");
+    // Configure GPIO
+    ESP_GOTO_ON_ERROR(_node_config_io(node, node_config), err, TAG, "gpio config failed");
 
     node->api_base.enable = _node_enable;
     node->api_base.disable = _node_disable;
@@ -713,7 +678,6 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 
     *node_ret = &node->api_base;
     return ESP_OK;
-
 err:
     if (node) {
         _node_destroy(node);
