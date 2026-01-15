@@ -151,7 +151,7 @@ esp_err_t esp_psram_mspi_mb_init(void)
 void IRAM_ATTR esp_psram_mspi_mb(void)
 {
 #if ESP_PSRAM_MSPI_MB_WORKAROUND
-    if (!s_psram_mb_dummy_cacheline) {
+    if (s_psram_mb_dummy_cacheline) {
         uint32_t *p = (uint32_t *)s_psram_mb_dummy_cacheline;
         *p = (*p + 1) % UINT32_MAX;
         __attribute__((unused)) esp_err_t ret = ESP_FAIL;
