@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,17 +21,9 @@
 /* log tag */
 #define AUDIO_SNK_SRV_I2S_TAG    "SNK_SRV_I2S"
 
-#define RINGBUF_HIGHEST_WATER_LEVEL    (32 * 1024)
-#define RINGBUF_PREFETCH_WATER_LEVEL   (20 * 1024)
-
-enum {
-    RINGBUFFER_MODE_PROCESSING,    /* ringbuffer is buffering incoming audio data, I2S is working */
-    RINGBUFFER_MODE_PREFETCHING,   /* ringbuffer is buffering incoming audio data, I2S is waiting */
-    RINGBUFFER_MODE_DROPPING       /* ringbuffer is not buffering (dropping) incoming audio data, I2S is working */
-};
-
 typedef struct {
     i2s_chan_handle_t tx_chan;        /* handle of i2s channel */
+    audio_sink_chan_st_t chan_st;     /* i2s channel status */
     TaskHandle_t write_task_handle;   /* handle of writing task */
     RingbufHandle_t ringbuf;          /* handle of ringbuffer */
     SemaphoreHandle_t write_semaphore;/* handle of write semaphore */
@@ -115,11 +107,17 @@ void audio_sink_srv_open(void)
     /* initialize I2S channel */
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &s_i2s_cb.tx_chan, NULL));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(s_i2s_cb.tx_chan, &std_cfg));
+    s_i2s_cb.chan_st = CHANNEL_STATUS_OPENED;
 }
 
 void audio_sink_srv_close(void)
 {
-    ESP_ERROR_CHECK(i2s_del_channel(s_i2s_cb.tx_chan));
+    audio_sink_srv_stop();
+
+    if (s_i2s_cb.chan_st == CHANNEL_STATUS_OPENED) {
+        ESP_ERROR_CHECK(i2s_del_channel(s_i2s_cb.tx_chan));
+        s_i2s_cb.chan_st = CHANNEL_STATUS_IDLE;
+    }
     if (s_i2s_cb.write_task_handle) {
         vTaskDelete(s_i2s_cb.write_task_handle);
         s_i2s_cb.write_task_handle = NULL;
@@ -137,7 +135,13 @@ void audio_sink_srv_close(void)
 
 void audio_sink_srv_start(void)
 {
-    i2s_channel_enable(s_i2s_cb.tx_chan);
+    if (s_i2s_cb.chan_st != CHANNEL_STATUS_OPENED) {
+        ESP_LOGE(AUDIO_SNK_SRV_I2S_TAG, "%s, TX channel wrong state: %d", __func__, s_i2s_cb.chan_st);
+        return;
+    }
+    ESP_ERROR_CHECK(i2s_channel_enable(s_i2s_cb.tx_chan));
+    s_i2s_cb.chan_st = CHANNEL_STATUS_ENABLED;
+
     ESP_LOGI(AUDIO_SNK_SRV_I2S_TAG, "ringbuffer data empty! mode changed: RINGBUFFER_MODE_PREFETCHING");
     s_i2s_cb.ringbuffer_mode = RINGBUFFER_MODE_PREFETCHING;
     if ((s_i2s_cb.write_semaphore = xSemaphoreCreateBinary()) == NULL) {
@@ -153,7 +157,10 @@ void audio_sink_srv_start(void)
 
 void audio_sink_srv_stop(void)
 {
-    ESP_ERROR_CHECK(i2s_channel_disable(s_i2s_cb.tx_chan));
+    if (s_i2s_cb.chan_st == CHANNEL_STATUS_ENABLED) {
+        ESP_ERROR_CHECK(i2s_channel_disable(s_i2s_cb.tx_chan));
+        s_i2s_cb.chan_st = CHANNEL_STATUS_OPENED;
+    }
 }
 
 void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
