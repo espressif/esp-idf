@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -39,9 +39,9 @@
 
 struct blufi_security {
 #define DH_PARAM_LEN_MAX        1024
-#define DH_SELF_PUB_KEY_LEN     256
+#define DH_SELF_PUB_KEY_LEN     384  /* Support 3072-bit DH key (3072/8 = 384 bytes) */
     uint8_t  self_public_key[DH_SELF_PUB_KEY_LEN];
-#define SHARE_KEY_LEN           256
+#define SHARE_KEY_LEN           384  /* Support 3072-bit DH key (3072/8 = 384 bytes) */
     uint8_t  share_key[SHARE_KEY_LEN];
     size_t   share_len;
 #define PSK_LEN                 16
@@ -106,28 +106,62 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             return;
         }
 
-
         uint8_t *param = blufi_sec->dh_param;
         memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
+
+        /* Parse P length */
         size_t p_len = (param[0] << 8) | param[1];
+        if (2 + p_len > (size_t)blufi_sec->dh_param_len) {
+            BLUFI_ERROR("P length %d exceeds dh_param bounds", p_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
         param += 2 + p_len;
 
+        /* Parse G length */
         size_t g_len = (param[0] << 8) | param[1];
+        if ((param - blufi_sec->dh_param) + 2 + g_len > (size_t)blufi_sec->dh_param_len) {
+            BLUFI_ERROR("G length %d exceeds dh_param bounds", g_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
         param += 2 + g_len;
 
+        /* Parse public key length */
         size_t pub_len = (param[0] << 8) | param[1];
         param += 2;
-        ESP_LOGD("blfi", "P len %d, G len %d, pub len %d", p_len, g_len, pub_len);
+        if ((param - blufi_sec->dh_param) + pub_len > (size_t)blufi_sec->dh_param_len) {
+            BLUFI_ERROR("Public key length %d exceeds dh_param bounds", pub_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
+
+        /* Determine key bits based on public key length (RFC7919 key sizes) */
+        size_t key_bits;
+        if (pub_len == 256) {
+            key_bits = 2048;
+        } else if (pub_len == 384) {
+            key_bits = 3072;
+        } else if (pub_len == 512) {
+            key_bits = 4096;
+        } else if (pub_len == 768) {
+            key_bits = 6144;
+        } else if (pub_len == 1024) {
+            key_bits = 8192;
+        } else {
+            BLUFI_ERROR("Unsupported DH key length: %d bytes", pub_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
 
         psa_key_type_t key_type = PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919);
-        size_t key_bits = 3072;
-        ESP_LOGI("blfi", "DH param len %d, bits %d", blufi_sec->dh_param_len, key_bits);
         psa_algorithm_t alg = PSA_ALG_FFDH;
         psa_key_attributes_t attributes = psa_key_attributes_init();
         psa_set_key_type(&attributes, key_type);
         psa_set_key_bits(&attributes, key_bits);
         psa_set_key_algorithm(&attributes, alg);
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
+
         psa_key_id_t private_key = 0;
         psa_status_t status = psa_generate_key(&attributes, &private_key);
         if (status != PSA_SUCCESS) {
@@ -135,6 +169,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
             return;
         }
+
         psa_reset_key_attributes(&attributes);
         size_t public_key_len = 0;
         status = psa_export_public_key(private_key, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, &public_key_len);
@@ -147,6 +182,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
         status = psa_raw_key_agreement(alg, private_key, param, pub_len, blufi_sec->share_key, SHARE_KEY_LEN, &blufi_sec->share_len);
         psa_destroy_key(private_key);
+
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_raw_key_agreement failed %d\n", __func__, status);
             free(blufi_sec->dh_param);
