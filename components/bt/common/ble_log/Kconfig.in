@@ -98,6 +98,12 @@ if BLE_LOG_ENABLED
                 it will be truncated.
     endif
 
+    config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+        bool "Enable BLE Host side HCI Logging"
+        default y
+        help
+            Enable BLE Host side HCI Logging
+
     config BLE_LOG_PAYLOAD_CHECKSUM_ENABLED
         bool "Enable payload checksum for BLE Log data integrity check"
         default y
