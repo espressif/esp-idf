@@ -381,6 +381,6 @@ If you can see readable log output, it means serial connection is working and yo
 
    For some serial port wiring configurations, the serial RTS & DTR pins need to be disabled in the terminal program before the {IDF_TARGET_NAME} booting and producing serial output. This depends on the hardware itself, most development boards (including all Espressif boards) *do not* have this issue. The issue is present if RTS & DTR are wired directly to the EN & {IDF_TARGET_STRAP_GPIO} pins. See the `esptool documentation`_ for more details.
 
-If you got here from :ref:`get-started-connect` when installing s/w for {IDF_TARGET_NAME} development, then you can continue with :ref:`get-started-configure`.
+If you got here from :ref:`Connect Your Device for Windows <get-started-connect>`, :ref:`Linux, or macOS <get-started-connect-linux-macos>` when installing s/w for {IDF_TARGET_NAME} development, then you can continue with :ref:`Configure Your Project for Windows <get-started-configure>`, :ref:`Linux, or macOS <get-started-configure-linux-macos>`.
 
 .. _esptool documentation: https://docs.espressif.com/projects/esptool/en/latest/advanced-topics/boot-mode-selection.html#automatic-bootloader
