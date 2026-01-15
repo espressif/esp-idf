@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "soc/regi2c_dig_reg.h"
 #include "soc/sens_reg.h"
 #include "sdkconfig.h"
+#include "esp_attr.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
@@ -316,7 +317,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
     }
 }
 
-void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
+FORCE_IRAM_ATTR void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
     uint32_t source_freq_mhz;
@@ -339,8 +340,8 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         } else if (freq_mhz == CLK_LL_PLL_240M_FREQ_MHZ  && source_freq_mhz == CLK_LL_PLL_480M_FREQ_MHZ) {
             div = 2;
         } else {
-            ESP_HW_LOGE(TAG, "unsupported frequency configuration");
-            return;
+            // Unsupported frequency configuration
+            abort();
         }
         break;
     }
@@ -350,8 +351,8 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         freq_mhz = source_freq_mhz;
         break;
     default:
-        ESP_HW_LOGE(TAG, "unsupported frequency configuration");
-        return;
+        // Unsupported frequency configuration
+        abort();
     }
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
@@ -380,7 +381,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_bbpll_disable();
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
@@ -399,7 +400,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
  *
  * Public function for testing only.
  */
-void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
     rtc_cpu_freq_config_t cur_config;
     rtc_clk_cpu_freq_get_config(&cur_config);
@@ -433,7 +434,7 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
     REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE);
 }
 
-soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+FORCE_IRAM_ATTR soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {
@@ -448,7 +449,7 @@ void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
     clk_ll_xtal_store_freq_mhz(xtal_freq);
 }
 
-void rtc_clk_apb_freq_update(uint32_t apb_freq)
+FORCE_IRAM_ATTR void rtc_clk_apb_freq_update(uint32_t apb_freq)
 {
     s_apb_freq = apb_freq;
 }

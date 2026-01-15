@@ -22,7 +22,6 @@ entries:
         rtc_clk (noflash)
     if IDF_TARGET_ESP32 = y:
         rtc_clk:rtc_clk_cpu_freq_to_pll_mhz (noflash)
-        rtc_clk:rtc_clk_cpu_freq_to_xtal (noflash)
     if RTC_TIME_FUNC_IN_IRAM = y:
         rtc_time (noflash_text)
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:

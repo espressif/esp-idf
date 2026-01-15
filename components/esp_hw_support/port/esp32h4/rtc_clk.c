@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_attr.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
@@ -403,7 +404,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
 #endif
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
@@ -426,7 +427,7 @@ void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
     clk_ll_cpu_clk_src_lock_release();
 }
 
-soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+FORCE_IRAM_ATTR soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_get_freq_mhz();
     assert(xtal_freq_mhz == SOC_XTAL_FREQ_32M);
