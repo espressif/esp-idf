@@ -202,7 +202,7 @@ static void rtc_wdt_light_sleep_prepare_timeout(void)
 }
 #endif
 
-#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
 /* MULTI test case for deep sleep prepare timeout then RTC WDT resets RTC */
 static void rtc_wdt_deep_sleep_prepare_timeout(void)
 {
@@ -266,7 +266,7 @@ TEST_CASE_MULTIPLE_STAGES(
 )
 #endif
 
-#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
 TEST_CASE_MULTIPLE_STAGES(
     "Deep sleep prepare timeout then RTC WDT resets RTC",
     "[rtc_wdt][deepsleep][reset]",

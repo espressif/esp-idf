@@ -283,7 +283,7 @@ menu "Hardware Settings"
                 compensation time.
 
                 NOTE: This feature only works when a timer wakeup is used. In the current phase, the RTC slow clock
-                compensation time remains zero (pending implementation). When using the RC_SLOW_CLK without
+                compensation time remains zero (pending implementation). When using the RC_SLOW_CLK clock without
                 calibration, the maximum continuous sleep duration is typically around 5 minutes, and may vary
                 between chips. Therefore, avoid configuring sleep periods longer than this when enabling this option.
 
