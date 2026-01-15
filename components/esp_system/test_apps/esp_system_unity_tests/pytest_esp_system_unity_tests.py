@@ -9,16 +9,20 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='c5 eco2 does not support top pd')
 @idf_parametrize(
     'config,target',
     [
-        ('default', 'supported_targets'),
-        ('pd_vddsdio', 'supported_targets'),
-        *(('psram', target) for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1')),
+        *(('default', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
+        *(('pd_vddsdio', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
+        *(
+            ('psram', target)
+            for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]')
+        ),
         *(
             ('psram_with_pd_top', target)
-            for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1 and SOC_PM_SUPPORT_TOP_PD == 1')
+            for target in soc_filtered_targets(
+                'SOC_SPIRAM_SUPPORTED == 1 and SOC_PM_SUPPORT_TOP_PD == 1 and IDF_TARGET not in ["esp32c5"]'
+            )
         ),
         ('single_core_esp32', 'esp32'),
     ],

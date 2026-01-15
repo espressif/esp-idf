@@ -12,11 +12,10 @@ CONFIGS = [
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='c5 eco2 does not support top pd')
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @idf_parametrize(
     'target',
-    soc_filtered_targets('SOC_SDM_SUPPORTED == 1'),
+    soc_filtered_targets('SOC_SDM_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'),
     indirect=['target'],
 )
 def test_sdm(dut: IdfDut) -> None:
@@ -33,5 +32,6 @@ def test_sdm_esp32c5(dut: IdfDut) -> None:
 @pytest.mark.generic
 @pytest.mark.esp32c5_eco3
 @pytest.mark.parametrize('config', ['release'], indirect=True)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
 def test_sdm_esp32c5_eco3(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='sdm')
