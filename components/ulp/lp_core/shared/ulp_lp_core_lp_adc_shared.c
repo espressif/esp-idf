@@ -19,18 +19,48 @@
 #define INV_ATTEN_6DB   (1996)  /* Inverse of 10^(-6/20) * 1000 */
 #define INV_ATTEN_12DB  (3984)  /* Inverse of 10^(-12/20) * 1000 */
 
-adc_oneshot_unit_handle_t s_adc1_handle;
+/* ADC unit handles - one for each supported ADC unit */
+static adc_oneshot_unit_handle_t s_adc_unit_handles[SOC_ADC_PERIPH_NUM] = {NULL};
 
-esp_err_t lp_core_lp_adc_init(adc_unit_t unit_id)
+/************************************************** Static Helper Functions **************************************************/
+
+static esp_err_t lp_adc_validate_unit(adc_unit_t unit_id)
 {
+    /* Currently, LP ADC2 does not work during sleep (DIG-396)
+     * TODO: Remove this check once DIG-396 is fixed
+     */
     if (unit_id != ADC_UNIT_1) {
-        // TODO: LP ADC2 does not work during sleep (DIG-396)
-        // For now, we do not allow LP ADC2 usage.
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Verify unit ID is within valid range */
+    if (unit_id >= SOC_ADC_PERIPH_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t lp_adc_validate_channel(adc_unit_t unit_id, adc_channel_t channel)
+{
+    if (channel >= SOC_ADC_CHANNEL_NUM(unit_id)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
+/************************************************** Public API **************************************************/
+
+esp_err_t lp_core_lp_adc_init(adc_unit_t unit_id)
+{
+    esp_err_t ret = lp_adc_validate_unit(unit_id);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
 #if IS_ULP_COCPU
-    // Not supported
+    // Not supported from LP core
     return ESP_ERR_NOT_SUPPORTED;
 #else
     /* LP ADC is being initialized from the HP core.
@@ -43,33 +73,39 @@ esp_err_t lp_core_lp_adc_init(adc_unit_t unit_id)
         .ulp_mode = ADC_ULP_MODE_LP_CORE, // LP Core will use the ADC
     };
 
-    return (adc_oneshot_new_unit(&init_config, &s_adc1_handle));
+    return (adc_oneshot_new_unit(&init_config, &s_adc_unit_handles[unit_id]));
 #endif /* IS_ULP_COCPU */
 }
 
 esp_err_t lp_core_lp_adc_deinit(adc_unit_t unit_id)
 {
-    if (unit_id != ADC_UNIT_1) {
-        return ESP_ERR_INVALID_ARG;
+    esp_err_t ret = lp_adc_validate_unit(unit_id);
+    if (ret != ESP_OK) {
+        return ret;
     }
 
 #if IS_ULP_COCPU
-    // Not supported
+    // Not supported from LP core
     return ESP_ERR_NOT_SUPPORTED;
 #else
-    return (adc_oneshot_del_unit(s_adc1_handle));
+    return (adc_oneshot_del_unit(s_adc_unit_handles[unit_id]));
 #endif /* IS_ULP_COCPU */
 }
 
 esp_err_t lp_core_lp_adc_config_channel(adc_unit_t unit_id, adc_channel_t channel, const lp_core_lp_adc_chan_cfg_t *chan_config)
 {
-    if (unit_id != ADC_UNIT_1) {
-        // TODO: LP ADC2 does not work during sleep (DIG-396)
-        // For now, we do not allow LP ADC2 usage.
-        return ESP_ERR_INVALID_ARG;
+    esp_err_t ret = lp_adc_validate_unit(unit_id);
+    if (ret != ESP_OK) {
+        return ret;
     }
+
+    ret = lp_adc_validate_channel(unit_id, channel);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
 #if IS_ULP_COCPU
-    // Not supported
+    // Not supported from LP core
     return ESP_ERR_NOT_SUPPORTED;
 #else
     adc_oneshot_chan_cfg_t config = {
@@ -94,8 +130,18 @@ esp_err_t lp_core_lp_adc_config_channel(adc_unit_t unit_id, adc_channel_t channe
 
 esp_err_t lp_core_lp_adc_read_channel_raw(adc_unit_t unit_id, adc_channel_t channel, int *adc_raw)
 {
-    if (unit_id != ADC_UNIT_1 || adc_raw == NULL) {
+    if (adc_raw == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = lp_adc_validate_unit(unit_id);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = lp_adc_validate_channel(unit_id, channel);
+    if (ret != ESP_OK) {
+        return ret;
     }
 
 #if IS_ULP_COCPU
@@ -114,7 +160,7 @@ esp_err_t lp_core_lp_adc_read_channel_raw(adc_unit_t unit_id, adc_channel_t chan
 
     adc_oneshot_ll_disable_all_unit();
 #else
-    return (adc_oneshot_read(s_adc1_handle, channel, adc_raw));
+    return (adc_oneshot_read(s_adc_unit_handles[unit_id], channel, adc_raw));
 #endif /* IS_ULP_COCPU */
 
     return ESP_OK;
@@ -122,10 +168,18 @@ esp_err_t lp_core_lp_adc_read_channel_raw(adc_unit_t unit_id, adc_channel_t chan
 
 esp_err_t lp_core_lp_adc_read_channel_converted(adc_unit_t unit_id, adc_channel_t channel, int *voltage_mv)
 {
-    esp_err_t ret = ESP_OK;
-
-    if (unit_id != ADC_UNIT_1 || voltage_mv == NULL) {
+    if (voltage_mv == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = lp_adc_validate_unit(unit_id);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = lp_adc_validate_channel(unit_id, channel);
+    if (ret != ESP_OK) {
+        return ret;
     }
 
     /* Read the raw ADC value */
