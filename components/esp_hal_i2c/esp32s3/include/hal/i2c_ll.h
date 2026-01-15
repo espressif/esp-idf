@@ -32,7 +32,6 @@ extern "C" {
 
 // FSM_RST only resets the FSM, not using it. So I2C_LL_SUPPORT_HW_FSM_RST not defined.
 #define I2C_LL_SUPPORT_HW_CLR_BUS            (1)  /*!< Support hardware clear bus */
-// #define I2C_LL_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)  /*!< Slave support I2CRAM access */
 
 /**
  * @brief I2C hardware cmd register fields.
