@@ -70,15 +70,39 @@ if BLE_LOG_ENABLED
         help
             Enable BLE Log for Link Layer
 
-    config BLE_LOG_LBM_LL_TRANS_SIZE
-        int "Buffer size for each peripheral transport of Link Layer LBM"
-        depends on BLE_LOG_LL_ENABLED
-        default 1024
+    if BLE_LOG_LL_ENABLED
+        config BLE_LOG_LBM_LL_TRANS_SIZE
+            int "Buffer size for each peripheral transport of Link Layer LBM"
+            default 1024
+            help
+                There're 2 Link Layer dedicated log buffer managers (LBMs) with
+                compare-and-swap (CAS) protection. Each LBM is managing 2 ping-
+                pong buffers, which means there will be additional 2 * 2 *
+                BLE_LOG_LBM_LL_TRANS_SIZE bytes buffer allocated
+
+        config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
+            bool "Enable LL HCI Log Payload Length Limit"
+            default n
+            help
+                Enable length limit for LL HCI Log payload (addr_append).
+                When enabled, if len_append exceeds the configured limit,
+                it will be truncated to the maximum length.
+
+        config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT
+            int "LL HCI Log Payload Length Limit (bytes)"
+            depends on BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
+            default 32
+            help
+                Maximum length for LL HCI Log payload (len_append).
+                When the feature is enabled and len_append exceeds this value,
+                it will be truncated.
+    endif
+
+    config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+        bool "Enable BLE Host side HCI Logging"
+        default y
         help
-            There're 2 Link Layer dedicated log buffer managers (LBMs) with
-            compare-and-swap (CAS) protection. Each LBM is managing 2 ping-
-            pong buffers, which means there will be additional 2 * 2 *
-            BLE_LOG_LBM_LL_TRANS_SIZE bytes buffer allocated
+            Enable BLE Host side HCI Logging
 
     config BLE_LOG_PAYLOAD_CHECKSUM_ENABLED
         bool "Enable payload checksum for BLE Log data integrity check"
