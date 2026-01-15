@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -224,11 +224,14 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog = analog_default;
     }
 
+    if ((sleep_flags & RTC_SLEEP_USE_ADC_TESEN_MONITOR) || (sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) {
+        config->analog.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+        config->analog.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+    }
+
     if (sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST) {
         // Keep XTAL on in HP_SLEEP state if it is the clock source of RTC_FAST
         power_default.hp_sys.xtal.xpd_xtal = 1;
-        config->analog.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
-        config->analog.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
         config->analog.hp_sys.analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
         config->analog.hp_sys.analog.dbias = HP_CALI_ACTIVE_DBIAS_DEFAULT;
     }
