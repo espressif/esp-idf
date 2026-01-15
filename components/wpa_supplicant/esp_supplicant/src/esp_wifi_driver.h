@@ -132,7 +132,7 @@ struct wpa_funcs {
     bool (*wpa_ap_deinit)(void *data);
     bool (*wpa_ap_join)(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8* rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *rsn_selection_ie);
     bool (*wpa_ap_remove)(u8 *bssid);
-    uint8_t *(*wpa_ap_get_wpa_ie)(uint8_t *len);
+    uint8_t *(*wpa_ap_get_wpa_ie)(size_t *len);
     bool (*wpa_ap_rx_eapol)(void *hapd_data, void *sm, u8 *data, size_t data_len);
     void (*wpa_ap_get_peer_spp_msg)(void *sm, bool *spp_cap, bool *spp_req);
     char *(*wpa_config_parse_string)(const char *value, size_t *len);
