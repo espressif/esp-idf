@@ -10,10 +10,10 @@
 
 #include <esp_intr_alloc.h>
 #include "esp_pm.h"
+#include "soc/soc.h"   //for SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "driver/spi_common.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
-#include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
 #include "esp_private/spi_dma.h"
 #include "esp_private/gdma.h"
 #include "esp_private/spi_share_hw_ctrl.h"
@@ -32,7 +32,7 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 typedef dma_descriptor_align4_t spi_dma_desc_t;
 #endif
 
-#if SOC_NON_CACHEABLE_OFFSET
+#if SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "hal/cache_ll.h"
 #define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
 #define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))

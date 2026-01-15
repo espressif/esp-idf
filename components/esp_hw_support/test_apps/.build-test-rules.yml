@@ -2,9 +2,8 @@
 
 components/esp_hw_support/test_apps/dma:
   disable:
-    - if: IDF_TARGET in ["esp32", "esp32s31"] # TODO: [ESP32S31] IDF-14758
-      temporary: false
-      reason: No general DMA controller on ESP32
+    - if: SOC_GDMA_SUPPORTED != 1 and SOC_CP_DMA_SUPPORTED != 1
+    - if: CONFIG_NAME == "ext_mem_encryption" and SOC_FLASH_ENC_SUPPORTED != 1
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
   depends_components:

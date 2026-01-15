@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,9 +67,9 @@ typedef struct {
 static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 static esp_err_t mcp_gdma_del(async_memcpy_context_t *ctx);
 static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
-#if SOC_GDMA_SUPPORT_ETM
+#if SOC_GDMA_SUPPORT_ETM && SOC_ETM_SUPPORTED
 static esp_err_t mcp_new_etm_event(async_memcpy_context_t *ctx, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
-#endif // SOC_GDMA_SUPPORT_ETM
+#endif // SOC_GDMA_SUPPORT_ETM && SOC_ETM_SUPPORTED
 
 static esp_err_t mcp_gdma_destroy(async_memcpy_gdma_context_t *mcp_gdma)
 {
@@ -179,9 +179,9 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
 
     mcp_gdma->parent.del = mcp_gdma_del;
     mcp_gdma->parent.memcpy = mcp_gdma_memcpy;
-#if SOC_GDMA_SUPPORT_ETM
+#if SOC_GDMA_SUPPORT_ETM && SOC_ETM_SUPPORTED
     mcp_gdma->parent.new_etm_event = mcp_new_etm_event;
-#endif
+#endif // SOC_GDMA_SUPPORT_ETM && SOC_ETM_SUPPORTED
     // return base object
     *mcp = &mcp_gdma->parent;
     return ESP_OK;
@@ -465,7 +465,7 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
     return need_yield;
 }
 
-#if SOC_GDMA_SUPPORT_ETM
+#if SOC_GDMA_SUPPORT_ETM && SOC_ETM_SUPPORTED
 static esp_err_t mcp_new_etm_event(async_memcpy_context_t *ctx, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event)
 {
     async_memcpy_gdma_context_t *mcp_gdma = __containerof(ctx, async_memcpy_gdma_context_t, parent);

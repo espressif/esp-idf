@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,10 +21,10 @@
 #error "Unsupported GDMA bus type for LCD i80"
 #endif
 
-#if SOC_NON_CACHEABLE_OFFSET
-#define LCD_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) ((addr) + SOC_NON_CACHEABLE_OFFSET)
+#if SOC_NON_CACHEABLE_OFFSET_SRAM
+#define LCD_SRAM_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) ((addr) + SOC_NON_CACHEABLE_OFFSET_SRAM)
 #else
-#define LCD_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) (addr)
+#define LCD_SRAM_CACHE_ADDR_TO_NON_CACHE_ADDR(addr) (addr)
 #endif
 
 typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
@@ -131,7 +131,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
         esp_cache_msync(bus->format_buffer, LCD_I80_IO_FORMAT_BUF_SIZE,
                         ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }
-    bus->format_buffer_nc = LCD_CACHE_ADDR_TO_NON_CACHE_ADDR(bus->format_buffer);
+    bus->format_buffer_nc = LCD_SRAM_CACHE_ADDR_TO_NON_CACHE_ADDR(bus->format_buffer);
     // register to platform
     int bus_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_I80, bus);
     ESP_GOTO_ON_FALSE(bus_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free i80 bus slot");

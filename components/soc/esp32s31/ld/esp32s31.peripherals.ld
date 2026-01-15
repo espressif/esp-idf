@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -85,14 +85,14 @@ PROVIDE ( LP_ANA_PERI         = 0x20702000 );
 PROVIDE ( HUK                 = 0x20703000 );
 PROVIDE ( PMU                 = 0x20704000 );
 PROVIDE ( TOUCH_AON           = 0x20705000 );
+PROVIDE ( LP_PERI_PMS         = 0x20706000 );
+PROVIDE ( LP_TEE              = 0x20706800 );
+PROVIDE ( LP_APM              = 0x20706C00 );
 PROVIDE ( LP_PERICLKRST       = 0x20710000 );
 PROVIDE ( LP_IO_MUX           = 0x20712000 );
 PROVIDE ( LP_GPIO             = 0x20713000 );
 PROVIDE ( LP_INTR             = 0x20714000 );
 PROVIDE ( EFUSE               = 0x20715000 );
-PROVIDE ( LP_PERI_PMS         = 0x20716000 );
-PROVIDE ( LP_TEE              = 0x20716800 );
-PROVIDE ( LP_APM              = 0x20716C00 );
 PROVIDE ( LP_TIMER            = 0x20800000 );
 PROVIDE ( LP_WDT              = 0x20801000 );
 PROVIDE ( LP_CLOCK_CALI0      = 0x20802000 );

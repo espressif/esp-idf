@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -53,7 +53,7 @@
 #define DR_REG_PSRAM_MSPI1_BASE                   0x20503000
 #define DR_REG_TEE_BASE                           0x20504000
 #define DR_REG_HP_APM_BASE                        0x20504400
-#define DR_REG_HP_MEM_BASE                        0x20504800
+#define DR_REG_HP_MEM_APM_BASE                    0x20504800
 #define DR_REG_CPU_APM_BASE                       0x20504C00
 #define DR_REG_HP_PERI0_PMS_BASE                  0x20505000
 #define DR_REG_KEYMNG_BASE                        0x20506000
@@ -86,14 +86,14 @@
 #define DR_REG_HUK_BASE                           0x20703000
 #define DR_REG_PMU_BASE                           0x20704000
 #define DR_REG_TOUCH_AON_BASE                     0x20705000
+#define DR_REG_LP_PERI_PMS_BASE                   0x20706000
+#define DR_REG_LP_TEE_BASE                        0x20706800
+#define DR_REG_LP_APM_BASE                        0x20706C00
 #define DR_REG_LP_PERICLKRST_BASE                 0x20710000
 #define DR_REG_LP_IO_MUX_BASE                     0x20712000
 #define DR_REG_LP_GPIO_BASE                       0x20713000
 #define DR_REG_LP_INTR_BASE                       0x20714000
 #define DR_REG_EFUSE_BASE                         0x20715000
-#define DR_REG_LP_PERI_PMS_BASE                   0x20716000
-#define DR_REG_LP_TEE_BASE                        0x20716800
-#define DR_REG_LP_APM_BASE                        0x20716C00
 #define DR_REG_LP_TIMER_BASE                      0x20800000
 #define DR_REG_LP_WDT_BASE                        0x20801000
 #define DR_REG_RTCLOCKCALI0_BASE                  0x20802000

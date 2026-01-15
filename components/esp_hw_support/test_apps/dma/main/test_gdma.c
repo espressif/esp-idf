@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -353,8 +353,12 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 #if SOC_HAS(AXI_GDMA)
     TEST_ESP_OK(gdma_new_axi_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
+    bool lli_in_ext_mem = false;
+#if SOC_SPIRAM_SUPPORTED
     // the AXI GDMA allows to put the DMA link list in the external memory
-    test_gdma_m2m_transaction(tx_chan, rx_chan, true, trig_retention_backup);
+    lli_in_ext_mem = true;
+#endif
+    test_gdma_m2m_transaction(tx_chan, rx_chan, lli_in_ext_mem, trig_retention_backup);
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));

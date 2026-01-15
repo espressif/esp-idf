@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,17 +20,6 @@
 extern "C" {
 #endif
 // TODO: [ESP32S31] IDF-14651
-/**
- * @brief Given a L2MEM cached address, get the corresponding non-cacheable address
- * @example 0x4FF0_0000 => 0x8FF0_0000
- */
-#define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((uintptr_t)(addr) + SOC_NON_CACHEABLE_OFFSET)
-
-/**
- * @brief Given a non-cacheable address, get the corresponding L2MEM cached address
- * @example 0x8FF0_0000 => 0x4FF0_0000
- */
-#define CACHE_LL_L2MEM_CACHE_ADDR(non_cache_addr) ((uintptr_t)(non_cache_addr) - SOC_NON_CACHEABLE_OFFSET)
 
 /**
  * Cache capabilities

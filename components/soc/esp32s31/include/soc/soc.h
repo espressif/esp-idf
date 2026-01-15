@@ -215,6 +215,9 @@
 #define SOC_ROM_STACK_START         0x2f07cfb0
 #define SOC_ROM_STACK_SIZE          0x2000
 
+// non-cacheable offset for memory behind the cache
+#define SOC_NON_CACHEABLE_OFFSET_PSRAM       0x70000000
+
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.
 

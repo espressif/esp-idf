@@ -65,8 +65,6 @@ extern "C" {
 #define SOC_MMU_FLASH_SENSITIVE             BIT(13)
 #define SOC_MMU_PSRAM_SENSITIVE             BIT(12)
 
-#define SOC_NON_CACHEABLE_OFFSET            0x40000000
-
 /**
  * MMU entry valid bit mask for mapping value.
  * - For a Flash MMU entry:

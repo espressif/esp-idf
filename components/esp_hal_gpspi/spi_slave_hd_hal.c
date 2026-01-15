@@ -12,7 +12,7 @@
 #include "esp_err.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
-#include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
+#include "soc/soc.h"   //for SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "hal/spi_slave_hd_hal.h"
 #include "hal/assert.h"
 
@@ -68,7 +68,7 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     spi_ll_slave_set_seg_mode(hal->dev, true);
 }
 
-#if SOC_NON_CACHEABLE_OFFSET
+#if SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "hal/cache_ll.h"
 #define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
 #define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))

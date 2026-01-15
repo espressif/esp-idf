@@ -84,7 +84,8 @@ archive: libesp_hal_mspi.a
 entries:
     if SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM = y:
         spi_flash_hal_iram (noflash)
-        spi_flash_encrypt_hal_iram (noflash)
+        if SOC_FLASH_ENC_SUPPORTED = y:
+            spi_flash_encrypt_hal_iram (noflash)
 
         if SOC_GPSPI_SUPPORTED = y && IDF_TARGET_ESP32 = n:
             spi_flash_hal_gpspi (noflash)

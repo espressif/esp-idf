@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1290,7 +1290,7 @@ typedef union {
          *  6: I2S1-1
          *  7: I2S1-2
          *  8: I2S1-3
-         *  9: ADC_DAC
+         *  9: DUMMY
          *  10: RMT
          *  11: Sample_rate_convert-0
          *  12: Sample_rate_convert-1
@@ -1320,7 +1320,7 @@ typedef union {
          *  6: I2S1-1
          *  7: I2S1-2
          *  8: I2S1-3
-         *  9: ADC_DAC
+         *  9: DUMMY
          *  10: RMT
          *  11: Sample_rate_convert-0
          *  12: Sample_rate_convert-1
@@ -1334,232 +1334,75 @@ typedef union {
     uint32_t val;
 } ahb_dma_out_peri_sel_chn_reg_t;
 
+typedef struct {
+    volatile ahb_dma_in_int_raw_chn_reg_t raw;
+    volatile ahb_dma_in_int_st_chn_reg_t st;
+    volatile ahb_dma_in_int_ena_chn_reg_t ena;
+    volatile ahb_dma_in_int_clr_chn_reg_t clr;
+} ahb_dma_in_int_chn_reg_t;
 
 typedef struct {
-    volatile ahb_dma_in_int_raw_chn_reg_t in_int_raw_ch0;
-    volatile ahb_dma_in_int_st_chn_reg_t in_int_st_ch0;
-    volatile ahb_dma_in_int_ena_chn_reg_t in_int_ena_ch0;
-    volatile ahb_dma_in_int_clr_chn_reg_t in_int_clr_ch0;
-    volatile ahb_dma_in_int_raw_chn_reg_t in_int_raw_ch1;
-    volatile ahb_dma_in_int_st_chn_reg_t in_int_st_ch1;
-    volatile ahb_dma_in_int_ena_chn_reg_t in_int_ena_ch1;
-    volatile ahb_dma_in_int_clr_chn_reg_t in_int_clr_ch1;
-    volatile ahb_dma_in_int_raw_chn_reg_t in_int_raw_ch2;
-    volatile ahb_dma_in_int_st_chn_reg_t in_int_st_ch2;
-    volatile ahb_dma_in_int_ena_chn_reg_t in_int_ena_ch2;
-    volatile ahb_dma_in_int_clr_chn_reg_t in_int_clr_ch2;
-    volatile ahb_dma_in_int_raw_chn_reg_t in_int_raw_ch3;
-    volatile ahb_dma_in_int_st_chn_reg_t in_int_st_ch3;
-    volatile ahb_dma_in_int_ena_chn_reg_t in_int_ena_ch3;
-    volatile ahb_dma_in_int_clr_chn_reg_t in_int_clr_ch3;
-    volatile ahb_dma_in_int_raw_chn_reg_t in_int_raw_ch4;
-    volatile ahb_dma_in_int_st_chn_reg_t in_int_st_ch4;
-    volatile ahb_dma_in_int_ena_chn_reg_t in_int_ena_ch4;
-    volatile ahb_dma_in_int_clr_chn_reg_t in_int_clr_ch4;
-    volatile ahb_dma_out_int_raw_chn_reg_t out_int_raw_ch0;
-    volatile ahb_dma_out_int_st_chn_reg_t out_int_st_ch0;
-    volatile ahb_dma_out_int_ena_chn_reg_t out_int_ena_ch0;
-    volatile ahb_dma_out_int_clr_chn_reg_t out_int_clr_ch0;
-    volatile ahb_dma_out_int_raw_chn_reg_t out_int_raw_ch1;
-    volatile ahb_dma_out_int_st_chn_reg_t out_int_st_ch1;
-    volatile ahb_dma_out_int_ena_chn_reg_t out_int_ena_ch1;
-    volatile ahb_dma_out_int_clr_chn_reg_t out_int_clr_ch1;
-    volatile ahb_dma_out_int_raw_chn_reg_t out_int_raw_ch2;
-    volatile ahb_dma_out_int_st_chn_reg_t out_int_st_ch2;
-    volatile ahb_dma_out_int_ena_chn_reg_t out_int_ena_ch2;
-    volatile ahb_dma_out_int_clr_chn_reg_t out_int_clr_ch2;
-    volatile ahb_dma_out_int_raw_chn_reg_t out_int_raw_ch3;
-    volatile ahb_dma_out_int_st_chn_reg_t out_int_st_ch3;
-    volatile ahb_dma_out_int_ena_chn_reg_t out_int_ena_ch3;
-    volatile ahb_dma_out_int_clr_chn_reg_t out_int_clr_ch3;
-    volatile ahb_dma_out_int_raw_chn_reg_t out_int_raw_ch4;
-    volatile ahb_dma_out_int_st_chn_reg_t out_int_st_ch4;
-    volatile ahb_dma_out_int_ena_chn_reg_t out_int_ena_ch4;
-    volatile ahb_dma_out_int_clr_chn_reg_t out_int_clr_ch4;
+    volatile ahb_dma_out_int_raw_chn_reg_t raw;
+    volatile ahb_dma_out_int_st_chn_reg_t st;
+    volatile ahb_dma_out_int_ena_chn_reg_t ena;
+    volatile ahb_dma_out_int_clr_chn_reg_t clr;
+} ahb_dma_out_int_chn_reg_t;
+
+typedef struct {
+    volatile ahb_dma_in_conf0_chn_reg_t in_conf0;
+    volatile ahb_dma_in_conf1_chn_reg_t in_conf1;
+    volatile ahb_dma_infifo_status_chn_reg_t infifo_status;
+    volatile ahb_dma_in_pop_chn_reg_t in_pop;
+    volatile ahb_dma_in_link_chn_reg_t in_link;
+    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr;
+    volatile ahb_dma_in_state_chn_reg_t in_state;
+    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr;
+    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr;
+    volatile ahb_dma_in_done_des_addr_chn_reg_t in_done_des_addr;
+    volatile ahb_dma_in_dscr_chn_reg_t in_dscr;
+    volatile ahb_dma_in_dscr_bf0_chn_reg_t in_dscr_bf0;
+    volatile ahb_dma_in_dscr_bf1_chn_reg_t in_dscr_bf1;
+    volatile ahb_dma_in_pri_chn_reg_t in_pri;
+    volatile ahb_dma_in_peri_sel_chn_reg_t in_peri_sel;
+    volatile ahb_dma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh;
+    volatile ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt;
+} ahb_dma_in_chn_reg_t;
+
+typedef struct {
+    volatile ahb_dma_out_conf0_chn_reg_t out_conf0;
+    volatile ahb_dma_out_conf1_chn_reg_t out_conf1;
+    volatile ahb_dma_outfifo_status_chn_reg_t outfifo_status;
+    volatile ahb_dma_out_push_chn_reg_t out_push;
+    volatile ahb_dma_out_link_chn_reg_t out_link;
+    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr;
+    volatile ahb_dma_out_state_chn_reg_t out_state;
+    volatile ahb_dma_out_eof_des_addr_chn_reg_t out_eof_des_addr;
+    volatile ahb_dma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr;
+    volatile ahb_dma_out_done_des_addr_chn_reg_t out_done_des_addr;
+    volatile ahb_dma_out_dscr_chn_reg_t out_dscr;
+    volatile ahb_dma_out_dscr_bf0_chn_reg_t out_dscr_bf0;
+    volatile ahb_dma_out_dscr_bf1_chn_reg_t out_dscr_bf1;
+    volatile ahb_dma_out_pri_chn_reg_t out_pri;
+    volatile ahb_dma_out_peri_sel_chn_reg_t out_peri_sel;
+    volatile ahb_dma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh;
+    volatile ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt;
+} ahb_dma_out_chn_reg_t;
+
+typedef struct {
+    volatile ahb_dma_in_chn_reg_t in;
+    uint32_t reserved_in[15];
+    volatile ahb_dma_out_chn_reg_t out;
+    uint32_t reserved_out[15];
+} ahb_dma_chn_reg_t;
+
+typedef struct {
+    volatile ahb_dma_in_int_chn_reg_t in_intr[5];
+    volatile ahb_dma_out_int_chn_reg_t out_intr[5];
     volatile ahb_dma_ahb_test_reg_t ahb_test;
     volatile ahb_dma_misc_conf_reg_t misc_conf;
     volatile ahb_dma_date_reg_t date;
     uint32_t reserved_0ac[21];
-    volatile ahb_dma_in_conf0_chn_reg_t in_conf0_ch0;
-    volatile ahb_dma_in_conf1_chn_reg_t in_conf1_ch0;
-    volatile ahb_dma_infifo_status_chn_reg_t infifo_status_ch0;
-    volatile ahb_dma_in_pop_chn_reg_t in_pop_ch0;
-    volatile ahb_dma_in_link_chn_reg_t in_link_ch0;
-    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr_ch0;
-    volatile ahb_dma_in_state_chn_reg_t in_state_ch0;
-    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch0;
-    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch0;
-    volatile ahb_dma_in_done_des_addr_chn_reg_t in_done_des_addr_ch0;
-    volatile ahb_dma_in_dscr_chn_reg_t in_dscr_ch0;
-    volatile ahb_dma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch0;
-    volatile ahb_dma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch0;
-    volatile ahb_dma_in_pri_chn_reg_t in_pri_ch0;
-    volatile ahb_dma_in_peri_sel_chn_reg_t in_peri_sel_ch0;
-    volatile ahb_dma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch0;
-    volatile ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch0;
-    uint32_t reserved_144[15];
-    volatile ahb_dma_out_conf0_ch0_reg_t out_conf0_ch0;
-    volatile ahb_dma_out_conf1_chn_reg_t out_conf1_ch0;
-    volatile ahb_dma_outfifo_status_chn_reg_t outfifo_status_ch0;
-    volatile ahb_dma_out_push_chn_reg_t out_push_ch0;
-    volatile ahb_dma_out_link_chn_reg_t out_link_ch0;
-    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr_ch0;
-    volatile ahb_dma_out_state_chn_reg_t out_state_ch0;
-    volatile ahb_dma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch0;
-    volatile ahb_dma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch0;
-    volatile ahb_dma_out_done_des_addr_chn_reg_t out_done_des_addr_ch0;
-    volatile ahb_dma_out_dscr_chn_reg_t out_dscr_ch0;
-    volatile ahb_dma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch0;
-    volatile ahb_dma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch0;
-    volatile ahb_dma_out_pri_chn_reg_t out_pri_ch0;
-    volatile ahb_dma_out_peri_sel_chn_reg_t out_peri_sel_ch0;
-    volatile ahb_dma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch0;
-    volatile ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch0;
-    uint32_t reserved_1c4[15];
-    volatile ahb_dma_in_conf0_chn_reg_t in_conf0_ch1;
-    volatile ahb_dma_in_conf1_chn_reg_t in_conf1_ch1;
-    volatile ahb_dma_infifo_status_chn_reg_t infifo_status_ch1;
-    volatile ahb_dma_in_pop_chn_reg_t in_pop_ch1;
-    volatile ahb_dma_in_link_chn_reg_t in_link_ch1;
-    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr_ch1;
-    volatile ahb_dma_in_state_chn_reg_t in_state_ch1;
-    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch1;
-    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch1;
-    volatile ahb_dma_in_done_des_addr_chn_reg_t in_done_des_addr_ch1;
-    volatile ahb_dma_in_dscr_chn_reg_t in_dscr_ch1;
-    volatile ahb_dma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch1;
-    volatile ahb_dma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch1;
-    volatile ahb_dma_in_pri_chn_reg_t in_pri_ch1;
-    volatile ahb_dma_in_peri_sel_chn_reg_t in_peri_sel_ch1;
-    volatile ahb_dma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch1;
-    volatile ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch1;
-    uint32_t reserved_244[15];
-    volatile ahb_dma_out_conf0_chn_reg_t out_conf0_ch1;
-    volatile ahb_dma_out_conf1_chn_reg_t out_conf1_ch1;
-    volatile ahb_dma_outfifo_status_chn_reg_t outfifo_status_ch1;
-    volatile ahb_dma_out_push_chn_reg_t out_push_ch1;
-    volatile ahb_dma_out_link_chn_reg_t out_link_ch1;
-    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr_ch1;
-    volatile ahb_dma_out_state_chn_reg_t out_state_ch1;
-    volatile ahb_dma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch1;
-    volatile ahb_dma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch1;
-    volatile ahb_dma_out_done_des_addr_chn_reg_t out_done_des_addr_ch1;
-    volatile ahb_dma_out_dscr_chn_reg_t out_dscr_ch1;
-    volatile ahb_dma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch1;
-    volatile ahb_dma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch1;
-    volatile ahb_dma_out_pri_chn_reg_t out_pri_ch1;
-    volatile ahb_dma_out_peri_sel_chn_reg_t out_peri_sel_ch1;
-    volatile ahb_dma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch1;
-    volatile ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch1;
-    uint32_t reserved_2c4[15];
-    volatile ahb_dma_in_conf0_chn_reg_t in_conf0_ch2;
-    volatile ahb_dma_in_conf1_chn_reg_t in_conf1_ch2;
-    volatile ahb_dma_infifo_status_chn_reg_t infifo_status_ch2;
-    volatile ahb_dma_in_pop_chn_reg_t in_pop_ch2;
-    volatile ahb_dma_in_link_chn_reg_t in_link_ch2;
-    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr_ch2;
-    volatile ahb_dma_in_state_chn_reg_t in_state_ch2;
-    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch2;
-    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch2;
-    volatile ahb_dma_in_done_des_addr_chn_reg_t in_done_des_addr_ch2;
-    volatile ahb_dma_in_dscr_chn_reg_t in_dscr_ch2;
-    volatile ahb_dma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch2;
-    volatile ahb_dma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch2;
-    volatile ahb_dma_in_pri_chn_reg_t in_pri_ch2;
-    volatile ahb_dma_in_peri_sel_chn_reg_t in_peri_sel_ch2;
-    volatile ahb_dma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch2;
-    volatile ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch2;
-    uint32_t reserved_344[15];
-    volatile ahb_dma_out_conf0_chn_reg_t out_conf0_ch2;
-    volatile ahb_dma_out_conf1_chn_reg_t out_conf1_ch2;
-    volatile ahb_dma_outfifo_status_chn_reg_t outfifo_status_ch2;
-    volatile ahb_dma_out_push_chn_reg_t out_push_ch2;
-    volatile ahb_dma_out_link_chn_reg_t out_link_ch2;
-    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr_ch2;
-    volatile ahb_dma_out_state_chn_reg_t out_state_ch2;
-    volatile ahb_dma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch2;
-    volatile ahb_dma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch2;
-    volatile ahb_dma_out_done_des_addr_chn_reg_t out_done_des_addr_ch2;
-    volatile ahb_dma_out_dscr_chn_reg_t out_dscr_ch2;
-    volatile ahb_dma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch2;
-    volatile ahb_dma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch2;
-    volatile ahb_dma_out_pri_chn_reg_t out_pri_ch2;
-    volatile ahb_dma_out_peri_sel_chn_reg_t out_peri_sel_ch2;
-    volatile ahb_dma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch2;
-    volatile ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch2;
-    uint32_t reserved_3c4[15];
-    volatile ahb_dma_in_conf0_chn_reg_t in_conf0_ch3;
-    volatile ahb_dma_in_conf1_chn_reg_t in_conf1_ch3;
-    volatile ahb_dma_infifo_status_chn_reg_t infifo_status_ch3;
-    volatile ahb_dma_in_pop_chn_reg_t in_pop_ch3;
-    volatile ahb_dma_in_link_chn_reg_t in_link_ch3;
-    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr_ch3;
-    volatile ahb_dma_in_state_chn_reg_t in_state_ch3;
-    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch3;
-    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch3;
-    volatile ahb_dma_in_done_des_addr_chn_reg_t in_done_des_addr_ch3;
-    volatile ahb_dma_in_dscr_chn_reg_t in_dscr_ch3;
-    volatile ahb_dma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch3;
-    volatile ahb_dma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch3;
-    volatile ahb_dma_in_pri_chn_reg_t in_pri_ch3;
-    volatile ahb_dma_in_peri_sel_chn_reg_t in_peri_sel_ch3;
-    volatile ahb_dma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch3;
-    volatile ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch3;
-    uint32_t reserved_444[15];
-    volatile ahb_dma_out_conf0_chn_reg_t out_conf0_ch3;
-    volatile ahb_dma_out_conf1_chn_reg_t out_conf1_ch3;
-    volatile ahb_dma_outfifo_status_chn_reg_t outfifo_status_ch3;
-    volatile ahb_dma_out_push_chn_reg_t out_push_ch3;
-    volatile ahb_dma_out_link_chn_reg_t out_link_ch3;
-    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr_ch3;
-    volatile ahb_dma_out_state_chn_reg_t out_state_ch3;
-    volatile ahb_dma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch3;
-    volatile ahb_dma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch3;
-    volatile ahb_dma_out_done_des_addr_chn_reg_t out_done_des_addr_ch3;
-    volatile ahb_dma_out_dscr_chn_reg_t out_dscr_ch3;
-    volatile ahb_dma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch3;
-    volatile ahb_dma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch3;
-    volatile ahb_dma_out_pri_chn_reg_t out_pri_ch3;
-    volatile ahb_dma_out_peri_sel_chn_reg_t out_peri_sel_ch3;
-    volatile ahb_dma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch3;
-    volatile ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch3;
-    uint32_t reserved_4c4[15];
-    volatile ahb_dma_in_conf0_chn_reg_t in_conf0_ch4;
-    volatile ahb_dma_in_conf1_chn_reg_t in_conf1_ch4;
-    volatile ahb_dma_infifo_status_chn_reg_t infifo_status_ch4;
-    volatile ahb_dma_in_pop_chn_reg_t in_pop_ch4;
-    volatile ahb_dma_in_link_chn_reg_t in_link_ch4;
-    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr_ch4;
-    volatile ahb_dma_in_state_chn_reg_t in_state_ch4;
-    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch4;
-    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch4;
-    volatile ahb_dma_in_done_des_addr_chn_reg_t in_done_des_addr_ch4;
-    volatile ahb_dma_in_dscr_chn_reg_t in_dscr_ch4;
-    volatile ahb_dma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch4;
-    volatile ahb_dma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch4;
-    volatile ahb_dma_in_pri_chn_reg_t in_pri_ch4;
-    volatile ahb_dma_in_peri_sel_chn_reg_t in_peri_sel_ch4;
-    volatile ahb_dma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch4;
-    volatile ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch4;
-    uint32_t reserved_544[15];
-    volatile ahb_dma_out_conf0_chn_reg_t out_conf0_ch4;
-    volatile ahb_dma_out_conf1_chn_reg_t out_conf1_ch4;
-    volatile ahb_dma_outfifo_status_chn_reg_t outfifo_status_ch4;
-    volatile ahb_dma_out_push_chn_reg_t out_push_ch4;
-    volatile ahb_dma_out_link_chn_reg_t out_link_ch4;
-    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr_ch4;
-    volatile ahb_dma_out_state_chn_reg_t out_state_ch4;
-    volatile ahb_dma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch4;
-    volatile ahb_dma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch4;
-    volatile ahb_dma_out_done_des_addr_chn_reg_t out_done_des_addr_ch4;
-    volatile ahb_dma_out_dscr_chn_reg_t out_dscr_ch4;
-    volatile ahb_dma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch4;
-    volatile ahb_dma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch4;
-    volatile ahb_dma_out_pri_chn_reg_t out_pri_ch4;
-    volatile ahb_dma_out_peri_sel_chn_reg_t out_peri_sel_ch4;
-    volatile ahb_dma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch4;
-    volatile ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch4;
-    uint32_t reserved_5c4[15];
+    volatile ahb_dma_chn_reg_t channel[5];
     volatile ahb_dma_intr_mem_start_addr_reg_t intr_mem_start_addr;
     volatile ahb_dma_intr_mem_end_addr_reg_t intr_mem_end_addr;
     volatile ahb_dma_arb_timeout_reg_t arb_timeout;
@@ -1572,6 +1415,7 @@ typedef struct {
     volatile ahb_dma_ahbinf_resp_err_status1_reg_t ahbinf_resp_err_status1;
 } ahb_dma_dev_t;
 
+extern ahb_dma_dev_t AHB_DMA;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ahb_dma_dev_t) == 0x628, "Invalid size of ahb_dma_dev_t structure");
