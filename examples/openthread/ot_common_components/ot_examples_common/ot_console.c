@@ -22,9 +22,10 @@
 #include "iperf_cmd.h"
 #endif
 
+static esp_console_repl_t *repl = NULL;
+
 void ot_console_start(void)
 {
-    esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
@@ -39,7 +40,6 @@ void ot_console_start(void)
 #elif defined(CONFIG_ESP_CONSOLE_USB_CDC)
     esp_console_dev_usb_cdc_config_t hw_config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_usb_cdc(&hw_config, &repl_config, &repl));
-
 #elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
     esp_console_dev_usb_serial_jtag_config_t hw_config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl));
@@ -47,6 +47,11 @@ void ot_console_start(void)
 #error Unsupported console type
 #endif
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
+}
+
+void ot_console_stop(void)
+{
+    ESP_ERROR_CHECK(esp_console_stop_repl(repl)); // this does esp_console_repl_usb_serial_xxxx_delete
 }
 
 void ot_register_external_commands(void)
