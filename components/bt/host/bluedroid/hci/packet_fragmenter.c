@@ -37,6 +37,7 @@
 #define START_PACKET_BOUNDARY 2
 #define CONTINUATION_PACKET_BOUNDARY 1
 #define L2CAP_HEADER_SIZE       4
+#define L2CAP_LENGTH_SIZE       2
 
 // TODO(zachoverflow): find good value for this
 #define NUMBER_OF_BUCKETS 42
@@ -78,6 +79,11 @@ static void fragment_and_dispatch(BT_HDR *packet)
 
     // We only fragment ACL packets
     if (event != MSG_STACK_TO_HC_HCI_ACL) {
+        callbacks->fragmented(packet, true);
+        return;
+    }
+    if (packet->len < HCI_ACL_PREAMBLE_SIZE) {
+        HCI_TRACE_ERROR("ACL packet too short for preamble (len=%u)", packet->len);
         callbacks->fragmented(packet, true);
         return;
     }
@@ -143,6 +149,11 @@ static void reassemble_and_dispatch(BT_HDR *packet)
         uint16_t l2cap_length;
         uint16_t acl_length __attribute__((unused));
 
+        if (packet->len < HCI_ACL_PREAMBLE_SIZE + L2CAP_LENGTH_SIZE) {
+            HCI_TRACE_ERROR("ACL packet too short (len=%u)\n", packet->len);
+            osi_free(packet);
+            return;
+        }
         STREAM_TO_UINT16(handle, stream);
         STREAM_TO_UINT16(acl_length, stream);
         STREAM_TO_UINT16(l2cap_length, stream);

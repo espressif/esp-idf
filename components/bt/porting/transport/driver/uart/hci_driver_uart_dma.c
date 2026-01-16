@@ -581,7 +581,7 @@ hci_driver_uart_dma_deinit(void)
 
     ESP_ERROR_CHECK(uart_driver_delete(s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port));
     hci_driver_uart_dma_memory_deinit();
-    if (!s_hci_driver_uart_dma_env.process_sem) {
+    if (s_hci_driver_uart_dma_env.process_sem) {
         vSemaphoreDelete(s_hci_driver_uart_dma_env.process_sem);
     }
 
