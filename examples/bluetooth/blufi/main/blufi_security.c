@@ -44,7 +44,7 @@ struct blufi_security {
 #define SHARE_KEY_LEN           384  /* Support 3072-bit DH key (3072/8 = 384 bytes) */
     uint8_t  share_key[SHARE_KEY_LEN];
     size_t   share_len;
-#define PSK_LEN                 16
+#define PSK_LEN                 32
     uint8_t  psk[PSK_LEN];
     uint8_t  *dh_param;
     int      dh_param_len;
@@ -59,6 +59,13 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 {
     if (data == NULL || len < 3) {
         BLUFI_ERROR("BLUFI Invalid data format");
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+        return;
+    }
+
+    /* Validate output parameters */
+    if (output_data == NULL || output_len == NULL || need_free == NULL) {
+        BLUFI_ERROR("BLUFI Invalid output parameters");
         btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
         return;
     }
@@ -81,10 +88,17 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
+
+        /* Allow renegotiation - clean up previous state */
         if (blufi_sec->dh_param) {
             free(blufi_sec->dh_param);
             blufi_sec->dh_param = NULL;
         }
+        if (blufi_sec->aes_key != 0) {
+            psa_destroy_key(blufi_sec->aes_key);
+            blufi_sec->aes_key = 0;
+        }
+
         blufi_sec->dh_param = (uint8_t *)malloc(blufi_sec->dh_param_len);
         if (blufi_sec->dh_param == NULL) {
             blufi_sec->dh_param_len = 0;  /* Reset length to avoid using unallocated memory */
@@ -110,17 +124,29 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
 
         /* Parse P length */
+        if (blufi_sec->dh_param_len < 2) {
+            BLUFI_ERROR("DH param too short for P length");
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
         size_t p_len = (param[0] << 8) | param[1];
-        if (2 + p_len > (size_t)blufi_sec->dh_param_len) {
+        size_t p_offset = 2 + p_len;
+        if (p_offset > (size_t)blufi_sec->dh_param_len) {
             BLUFI_ERROR("P length %d exceeds dh_param bounds", p_len);
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
-        param += 2 + p_len;
+        param += p_offset;
 
         /* Parse G length */
+        if ((param - blufi_sec->dh_param) + 2 > (size_t)blufi_sec->dh_param_len) {
+            BLUFI_ERROR("DH param too short for G length");
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
         size_t g_len = (param[0] << 8) | param[1];
-        if ((param - blufi_sec->dh_param) + 2 + g_len > (size_t)blufi_sec->dh_param_len) {
+        size_t g_offset = (param - blufi_sec->dh_param) + 2 + g_len;
+        if (g_offset > (size_t)blufi_sec->dh_param_len) {
             BLUFI_ERROR("G length %d exceeds dh_param bounds", g_len);
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
@@ -128,28 +154,34 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         param += 2 + g_len;
 
         /* Parse public key length */
+        if ((param - blufi_sec->dh_param) + 2 > (size_t)blufi_sec->dh_param_len) {
+            BLUFI_ERROR("DH param too short for public key length");
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
         size_t pub_len = (param[0] << 8) | param[1];
         param += 2;
-        if ((param - blufi_sec->dh_param) + pub_len > (size_t)blufi_sec->dh_param_len) {
+
+        size_t pub_offset = (param - blufi_sec->dh_param) + pub_len;
+        if (pub_offset > (size_t)blufi_sec->dh_param_len) {
             BLUFI_ERROR("Public key length %d exceeds dh_param bounds", pub_len);
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
 
-        /* Determine key bits based on public key length (RFC7919 key sizes) */
-        size_t key_bits;
-        if (pub_len == 256) {
-            key_bits = 2048;
-        } else if (pub_len == 384) {
-            key_bits = 3072;
-        } else if (pub_len == 512) {
-            key_bits = 4096;
-        } else if (pub_len == 768) {
-            key_bits = 6144;
-        } else if (pub_len == 1024) {
-            key_bits = 8192;
-        } else {
-            BLUFI_ERROR("Unsupported DH key length: %d bytes", pub_len);
+        /* Determine key bits based on public key length (RFC7919 key sizes)
+         * Note: Only 2048 and 3072 bit keys are supported due to buffer size constraints
+         * (DH_SELF_PUB_KEY_LEN = 384 bytes = 3072 bits maximum) */
+        size_t key_bits = pub_len * 8;
+        if (key_bits != 2048 && key_bits != 3072) {
+            BLUFI_ERROR("Unsupported DH key length: %d bytes (only 2048 and 3072 bit keys supported)", pub_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
+
+        /* Validate public key length fits in output buffer */
+        if (pub_len > DH_SELF_PUB_KEY_LEN) {
+            BLUFI_ERROR("Public key length %d exceeds output buffer size %d", pub_len, DH_SELF_PUB_KEY_LEN);
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
@@ -191,18 +223,33 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             return;
         }
 
-        size_t hash_length = 0;
-        status = psa_hash_compute(PSA_ALG_MD5, blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk, PSK_LEN, &hash_length);
-        if (status != PSA_SUCCESS) {
-            BLUFI_ERROR("%s psa_hash_compute failed %d\n", __func__, status);
-            btc_blufi_report_error(ESP_BLUFI_CALC_MD5_ERROR);
+        /* Validate share key length fits in buffer */
+        if (blufi_sec->share_len > SHARE_KEY_LEN) {
+            BLUFI_ERROR("Share key length %d exceeds buffer size %d", blufi_sec->share_len, SHARE_KEY_LEN);
+            free(blufi_sec->dh_param);
+            blufi_sec->dh_param = NULL;
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
 
-        // mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, PSK_LEN * 8);
+        size_t hash_length = 0;
+        status = psa_hash_compute(PSA_ALG_SHA_256, blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk, PSK_LEN, &hash_length);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s psa_hash_compute failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_CALC_SHA_256_ERROR);
+            return;
+        }
+
+        /* Destroy previous AES key if it exists to prevent key slot leak */
+        if (blufi_sec->aes_key != 0) {
+            psa_destroy_key(blufi_sec->aes_key);
+            blufi_sec->aes_key = 0;
+        }
+
         attributes = psa_key_attributes_init();
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
         psa_set_key_bits(&attributes, PSK_LEN * 8);
+        psa_set_key_algorithm(&attributes, PSA_ALG_CFB);
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
         status = psa_import_key(&attributes, blufi_sec->psk, PSK_LEN, &blufi_sec->aes_key);
         if (status != PSA_SUCCESS) {
@@ -223,6 +270,11 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
     case SEC_TYPE_DH_G:
         break;
     case SEC_TYPE_DH_PUBLIC:
+        break;
+    default:
+        /* Reject unknown packet types */
+        BLUFI_ERROR("Unknown packet type: 0x%02x", type);
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
         break;
     }
 }
@@ -250,20 +302,21 @@ int blufi_aes_encrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
         return -1;
     }
 
-    size_t encrypt_out_len = 0;
-    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &encrypt_out_len);
+    size_t update_out_len = 0;
+    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &update_out_len);
     if (status != PSA_SUCCESS) {
         psa_cipher_abort(&operation);
         return -1;
     }
 
-    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &encrypt_out_len);
+    size_t finish_out_len = 0;
+    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &finish_out_len);
     if (status != PSA_SUCCESS) {
         psa_cipher_abort(&operation);
         return -1;
     }
 
-    return encrypt_out_len;
+    return update_out_len + finish_out_len;
 }
 
 int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
@@ -289,20 +342,21 @@ int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
         return -1;
     }
 
-    size_t encrypt_out_len = 0;
-    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &encrypt_out_len);
+    size_t update_out_len = 0;
+    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &update_out_len);
     if (status != PSA_SUCCESS) {
         psa_cipher_abort(&operation);
         return -1;
     }
 
-    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &encrypt_out_len);
+    size_t finish_out_len = 0;
+    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &finish_out_len);
     if (status != PSA_SUCCESS) {
         psa_cipher_abort(&operation);
         return -1;
     }
 
-    return crypt_len;
+    return update_out_len + finish_out_len;
 }
 
 uint16_t blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len)
