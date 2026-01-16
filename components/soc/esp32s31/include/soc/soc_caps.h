@@ -25,7 +25,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1      // TODO: [ESP32S31] IDF-14741
 // #define SOC_ANA_CMPR_SUPPORTED          1      // TODO: [ESP32S31] IDF-14787
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1      // TODO: [ESP32S31] IDF-14782
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1         // TODO: [ESP32S31] IDF-14789
 #define SOC_GDMA_SUPPORTED              1
 // #define SOC_UHCI_SUPPORTED              1      // TODO: [ESP32S31] IDF-14791
