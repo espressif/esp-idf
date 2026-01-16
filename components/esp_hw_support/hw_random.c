@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "soc/wdev_reg.h"
 #include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
+#include "esp_log.h"
 
 #if !ESP_TEE_BUILD
 #include "esp_private/startup_internal.h"
@@ -47,8 +48,20 @@
 #define APB_CYCLE_WAIT_NUM (16)
 #endif
 
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
+static bool s_random_warning_printed = false;
+#endif
+
 uint32_t IRAM_ATTR esp_random(void)
 {
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
+    if (!s_random_warning_printed) {
+        ESP_LOGW("esp_random", "esp_random is not yet supported and will not give proper random values");
+        s_random_warning_printed = true;
+    }
+    // Return a fixed pattern for bringup purposes
+    return 0x5A5A5A5A;
+#else
     /* The PRNG which implements WDEV_RANDOM register gets 2 bits
      * of extra entropy from a hardware randomness source every APB clock cycle
      * (provided WiFi or BT are enabled). To make sure entropy is not drained
@@ -84,6 +97,7 @@ uint32_t IRAM_ATTR esp_random(void)
     }
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
+#endif // CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
 }
 
 void esp_fill_random(void *buf, size_t len)
