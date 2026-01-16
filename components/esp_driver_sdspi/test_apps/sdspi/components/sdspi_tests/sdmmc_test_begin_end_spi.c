@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,13 +37,24 @@ void sdmmc_test_spi_skip_if_board_incompatible(int slot, int freq_khz)
 
 }
 
-void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card)
+void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card,
+                          sdmmc_host_t *_config, sdspi_device_config_t *_dev_config, spi_bus_config_t *_bus_config)
 {
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     spi_bus_config_t bus_config = {};
-    sdspi_dev_handle_t handle;
 
+    if (_config != NULL) {
+        config = *_config;
+    }
+    if (_dev_config != NULL) {
+        dev_config = *_dev_config;
+    }
+    if (_bus_config != NULL) {
+        bus_config = *_bus_config;
+    }
+
+    sdspi_dev_handle_t handle;
     /* Similar to the checks in sdmmc_test_spi_skip_if_board_incompatible, but
      * we fail the test if we somehow got to this point with an incompatible board.
      */

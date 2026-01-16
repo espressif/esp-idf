@@ -43,10 +43,15 @@
 typedef struct {
     spi_host_device_t   host_id; //!< SPI host id.
     spi_device_handle_t spi_handle; //!< SPI device handle, used for transactions
+    uint8_t* block_buf;
+    /// semaphore of gpio interrupt
+    SemaphoreHandle_t   semphr_int;
+    uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
     uint8_t gpio_cs;            //!< CS GPIO, or GPIO_UNUSED
     uint8_t gpio_cd;            //!< Card detect GPIO, or GPIO_UNUSED
     uint8_t gpio_wp;            //!< Write protect GPIO, or GPIO_UNUSED
     uint8_t gpio_int;           //!< Write protect GPIO, or GPIO_UNUSED
+    uint8_t poll_busy_start_command_timeout;  ///< Timeout value in milliseconds the driver will be waiting for MISO to be high before sending commands.
     /// GPIO write protect polarity.
     /// 0 means "active low", i.e. card is protected when the GPIO is low;
     /// 1 means "active high", i.e. card is protected when GPIO is high.
@@ -55,10 +60,6 @@ typedef struct {
     uint8_t data_crc_enabled : 1;
     /// Intermediate buffer used when application buffer is not in DMA memory;
     /// allocated on demand, SDSPI_BLOCK_BUF_SIZE bytes long. May be zero.
-    uint8_t* block_buf;
-    /// semaphore of gpio interrupt
-    SemaphoreHandle_t   semphr_int;
-    uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
 } slot_info_t;
 
 // Reserved for old API to be back-compatible
@@ -327,6 +328,28 @@ static void gpio_intr(void* arg)
     }
 }
 
+static inline int wait_for_miso_to_poll_busy_timeout_ms(int8_t wait_for_miso)
+{
+    static int default_timeout = 40; // default timeout in ms
+    int ret;
+    switch (wait_for_miso) {
+    case -1:
+        ret = 0; // no waiting
+        break;
+    case 0:
+        ret = default_timeout;
+        break;
+    case 1 ... 127:
+        ret = (int) wait_for_miso; // timeout in ms
+        break;
+    default:
+        ret = default_timeout; // unsupported values (from -128 to -2), use default
+        break;
+    }
+    assert(ret >= 0);
+    return ret;
+}
+
 esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi_dev_handle_t* out_handle)
 {
     ESP_LOGD(TAG, "%s: SPI%d cs=%d cd=%d wp=%d wp_polarity:%d",
@@ -341,6 +364,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
         .host_id = slot_config->host_id,
         .gpio_cs = slot_config->gpio_cs,
         .duty_cycle_pos = slot_config->duty_cycle_pos,
+        .poll_busy_start_command_timeout = wait_for_miso_to_poll_busy_timeout_ms(slot_config->wait_for_miso),
     };
 
     // Attach the SD card to the SPI bus
@@ -452,7 +476,6 @@ cleanup:
     }
     free(slot);
     return ret;
-
 }
 
 esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cmd, void *data,
@@ -473,8 +496,21 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
     ESP_LOGV(TAG, "%s: slot=%i, CMD%d, arg=0x%08"PRIx32" flags=0x%x, data=%p, data_size=%"PRIu32" crc=0x%02x",
              __func__, handle, cmd_index, cmd_arg, flags, data, data_size, cmd->crc7);
 
-    spi_device_acquire_bus(slot->spi_handle, portMAX_DELAY);
-    poll_busy(slot, 40, true);
+    esp_err_t ret;
+    ret = spi_device_acquire_bus(slot->spi_handle, portMAX_DELAY);
+    if (ret != ESP_OK) {
+        ESP_LOGD(TAG, "%s: spi_device_acquire_bus returned 0x%x", __func__, ret);
+        return ret;
+    }
+
+    ret = poll_busy(slot, slot->poll_busy_start_command_timeout, true);
+    if (ret != ESP_OK && ret != ESP_ERR_TIMEOUT) {
+        ESP_LOGD(TAG, "%s: poll_busy error=0x%x", __func__, ret);
+        cs_high(slot);
+        release_bus(slot);
+        spi_device_release_bus(slot->spi_handle);
+        return ret;
+    }
 
     // For CMD0, clock out 80 cycles to help the card enter idle state,
     // *before* CS is asserted.
@@ -482,7 +518,7 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
         go_idle_clockout(slot);
     }
     // actual transaction
-    esp_err_t ret = ESP_OK;
+    ret = ESP_OK;
 
     cs_low(slot);
     if (flags & SDSPI_CMD_FLAG_DATA) {
@@ -574,6 +610,11 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
 // Wait until MISO goes high
 static esp_err_t poll_busy(slot_info_t *slot, int timeout_ms, bool polling)
 {
+    if (timeout_ms < 0) {
+        return ESP_ERR_INVALID_ARG;
+    } else if (timeout_ms == 0) {
+        return ESP_OK;
+    }
     uint8_t t_rx;
     spi_transaction_t t = {
         .tx_buffer = &t_rx,
