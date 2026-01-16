@@ -98,11 +98,6 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
         menu "Secure Storage: Additional supported curves for ECDSA signing"
 
-            config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-                bool "SECP192R1"
-                help
-                    Enable ECDSA signing with the SECP192R1 curve using TEE secure storage
-
             config SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
                 bool "SECP384R1"
                 depends on SOC_ECDSA_SUPPORT_CURVE_P384

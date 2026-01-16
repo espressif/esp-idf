@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -841,9 +841,6 @@ int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, const char *tee_key_
     if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP256R1) {
         len = ECDSA_KEY_LEN_P256;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
-    } else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP192R1) {
-        len = ECDSA_KEY_LEN_P192;
-        key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
     }
 #if SOC_ECDSA_SUPPORT_CURVE_P384
     else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP384R1) {
@@ -954,8 +951,7 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && msg_len != ECDSA_SHA_LEN) ||
-        (grp->id == MBEDTLS_ECP_DP_SECP256R1 && msg_len != ECDSA_SHA_LEN)
+    if ((grp->id == MBEDTLS_ECP_DP_SECP256R1 && msg_len != ECDSA_SHA_LEN)
 #if SOC_ECDSA_SUPPORT_CURVE_P384
         || (grp->id == MBEDTLS_ECP_DP_SECP384R1 && msg_len != ECDSA_SHA_LEN_P384)
 #endif
@@ -966,9 +962,6 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
     if (grp->id == MBEDTLS_ECP_DP_SECP256R1) {
         len = ECDSA_KEY_LEN_P256;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
-    } else if (grp->id == MBEDTLS_ECP_DP_SECP192R1) {
-        len = ECDSA_KEY_LEN_P192;
-        key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
     }
 #if SOC_ECDSA_SUPPORT_CURVE_P384
     else if (grp->id == MBEDTLS_ECP_DP_SECP384R1) {

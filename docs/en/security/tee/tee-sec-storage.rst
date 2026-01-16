@@ -25,7 +25,6 @@ Additionally, the secure storage provides interfaces for performing the followin
 
    .. list::
       - ``ecdsa_secp256r1``
-      - ``ecdsa_secp192r1``
       :SOC_ECDSA_SUPPORT_CURVE_P384: - ``ecdsa_secp384r1``
 
 
@@ -35,7 +34,7 @@ Additionally, the secure storage provides interfaces for performing the followin
 
 .. only:: SOC_HMAC_SUPPORTED
 
-  TEE secure storage also supports ECDSA signing with keys derived via PBKDF2 (Password-Based Key Derivation Function 2), using an HMAC key programmed in eFuse along with a user-provided salt. This mechanism enables ECDSA signing on both P-256 and P-192 curves without requiring storage of the actual private keys. The eFuse HMAC key ID for the PBKDF2 operations is specified via the :ref:`CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID` option.
+  TEE secure storage also supports ECDSA signing with keys derived via PBKDF2 (Password-Based Key Derivation Function 2), using an HMAC key programmed in eFuse along with a user-provided salt. This mechanism enables ECDSA signing on the P-256 curve without requiring storage of the actual private keys. The eFuse HMAC key ID for the PBKDF2 operations is specified via the :ref:`CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID` option.
 
   .. important::
 
@@ -58,7 +57,6 @@ Currently, TEE secure storage supports storing the following cryptographic keys:
 
    .. list::
       - ``ecdsa_secp256r1``
-      - ``ecdsa_secp192r1``
       :SOC_ECDSA_SUPPORT_CURVE_P384: - ``ecdsa_secp384r1``
 
 

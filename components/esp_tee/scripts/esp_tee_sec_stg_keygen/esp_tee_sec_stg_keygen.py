@@ -19,7 +19,6 @@ AES_KEY_LEN = 32
 AES_DEFAULT_IV_LEN = 16
 AES_GCM_IV_LEN = 12
 ECDSA_P256_LEN = 32
-ECDSA_P192_LEN = 24
 ECDSA_P384_LEN = 48
 
 
@@ -27,7 +26,6 @@ ECDSA_P384_LEN = 48
 class KeyType(Enum):
     AES256 = 0
     ECDSA_P256 = 1
-    ECDSA_P192 = 2
     ECDSA_P384 = 3
 
 
@@ -93,8 +91,6 @@ def generate_key_data(key_type: KeyType, flags: Flags, input_file: str | None) -
         return generate_aes256_key(flags, input_file)
     elif key_type == KeyType.ECDSA_P256:
         return generate_ecdsa_key(ec.SECP256R1(), key_type, ECDSA_P256_LEN, flags, input_file)
-    elif key_type == KeyType.ECDSA_P192:
-        return generate_ecdsa_key(ec.SECP192R1(), key_type, ECDSA_P192_LEN, flags, input_file)
     elif key_type == KeyType.ECDSA_P384:
         return generate_ecdsa_key(ec.SECP384R1(), key_type, ECDSA_P384_LEN, flags, input_file)
     else:

@@ -339,7 +339,6 @@ class TEESerial(IdfSerial):
                 'LS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo='
             ),
         },
-        {'key': 'p192_key0', 'type': 'ecdsa_p192', 'input': None, 'write_once': False},
         {
             'key': 'p384_key0',
             'type': 'ecdsa_p384',
