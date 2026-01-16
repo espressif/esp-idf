@@ -1,4 +1,3 @@
 dependencies:
-  espressif/esp_cam_sensor: ">=0.5.*"
   sensor_init:
     path: ${IDF_PATH}/examples/peripherals/camera/common_components/sensor_init
