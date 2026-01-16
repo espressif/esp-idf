@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import collections
@@ -83,11 +83,13 @@ class Placement:
         #
         # Placement can also be a basis if it has flags
         # (self.flags) or its basis has flags (self.basis.flags)
-        significant = (not self.basis or
-                       self.target != self.basis.target or
-                       (self.flags and not self.basis.flags) or
-                       (not self.flags and self.basis.flags) or
-                       self.force)
+        significant = (
+            not self.basis
+            or self.target != self.basis.target
+            or (self.flags and not self.basis.flags)
+            or (not self.flags and self.basis.flags)
+            or self.force
+        )
 
         if significant and not self.explicit and not self.sections:
             # The placement is significant, but it is an intermediate placement
@@ -155,7 +157,7 @@ class EntityNode:
         assert name and name != Entity.ALL
 
         child = [c for c in self.children if c.name == name]
-        assert (len(child) <= 1)
+        assert len(child) <= 1
 
         if not child:
             child = self.child_t(self, name)
@@ -169,7 +171,7 @@ class EntityNode:
         commands = collections.defaultdict(list)
 
         def process_commands(cmds):
-            for (target, commands_list) in cmds.items():
+            for target, commands_list in cmds.items():
                 commands[target].extend(commands_list)
 
         # Process the commands generated from this node
@@ -221,16 +223,28 @@ class EntityNode:
                 placement_sections = frozenset(placement.sections)
                 command_sections = sections if sections == placement_sections else placement_sections
 
-                command = InputSectionDesc(placement.node.entity, command_sections,
-                                           [e.node.entity for e in placement.exclusions], keep, sort, tied)
+                command = InputSectionDesc(
+                    placement.node.entity,
+                    command_sections,
+                    [e.node.entity for e in placement.exclusions],
+                    keep,
+                    sort,
+                    tied,
+                )
                 commands[placement.target].append(command)
 
                 # Generate commands for intermediate, non-explicit exclusion placements here,
                 # so that they can be enclosed by flags that affect the parent placement.
                 for subplacement in placement.subplacements:
                     if not subplacement.flags and not subplacement.explicit:
-                        command = InputSectionDesc(subplacement.node.entity, subplacement.sections,
-                                                   [e.node.entity for e in subplacement.exclusions], keep, sort, tied)
+                        command = InputSectionDesc(
+                            subplacement.node.entity,
+                            subplacement.sections,
+                            [e.node.entity for e in subplacement.exclusions],
+                            keep,
+                            sort,
+                            tied,
+                        )
                         commands[placement.target].append(command)
 
                 for flag in surround_type:
@@ -319,7 +333,20 @@ class ObjectNode(EntityNode):
 
             if obj_sections:
                 symbol = entity.symbol
-                remove_sections = [s.replace('.*', '.%s' % symbol) for s in sections if '.*' in s]
+                remove_sections = [s.replace('.*', f'.{symbol}') for s in sections if '.*' in s]
+                # As part of IPA optimization, the compiler may perform
+                # constant propagation and generate specialized versions of a
+                # function. For example, for the function spiflash_start_core,
+                # the compiler might also generate a
+                # spiflash_start_core.constprop.0 symbol, which will be placed
+                # in a separate input section named
+                # .text.spiflash_start_core.constprop.0. Ensure that such
+                # generated functions are placed into the appropriate marker as
+                # well.
+                remove_sections_patterns = [s.replace('.*', f'.{symbol}.*') for s in sections if '.*' in s]
+                for pattern in remove_sections_patterns:
+                    remove_sections.extend(fnmatch.filter(obj_sections, pattern))
+
                 filtered_sections = [s for s in obj_sections if s not in remove_sections]
 
                 if set(filtered_sections) != set(obj_sections):
@@ -404,7 +431,7 @@ class Generation:
         for scheme in self.schemes.values():
             sections_bucket = collections.defaultdict(list)
 
-            for (sections_name, target_name) in scheme.entries:
+            for sections_name, target_name in scheme.entries:
                 # Get the sections under the bucket 'target_name'. If this bucket does not exist
                 # is created automatically
                 sections_in_bucket = sections_bucket[target_name]
@@ -420,7 +447,7 @@ class Generation:
             scheme_dictionary[scheme.name] = sections_bucket
 
         # Search for and raise exception on first instance of sections mapped to multiple targets
-        for (scheme_name, sections_bucket) in scheme_dictionary.items():
+        for scheme_name, sections_bucket in scheme_dictionary.items():
             for sections_a, sections_b in itertools.combinations(sections_bucket.values(), 2):
                 set_a = set()
                 set_b = set()
@@ -453,15 +480,17 @@ class Generation:
         for mapping in self.mappings.values():
             archive = mapping.archive
 
-            for (obj, symbol, scheme_name) in mapping.entries:
+            for obj, symbol, scheme_name in mapping.entries:
                 entity = Entity(archive, obj, symbol)
 
                 # Check the entity exists
-                if (self.check_mappings
-                        and entity.specificity.value > Entity.Specificity.ARCHIVE.value
-                        and mapping.name not in self.check_mapping_exceptions):
+                if (
+                    self.check_mappings
+                    and entity.specificity.value > Entity.Specificity.ARCHIVE.value
+                    and mapping.name not in self.check_mapping_exceptions
+                ):
                     if not entities.check_exists(entity):
-                        message = "'%s' not found" % str(entity)
+                        message = f"'{entity}' not found"
                         raise GenerationException(message, mapping)
 
                 if (obj, symbol, scheme_name) in mapping.flags.keys():
@@ -469,16 +498,16 @@ class Generation:
                     # Check if all section->target defined in the current
                     # scheme.
                     for flag in flags:
-                        if (flag.target not in scheme_dictionary[scheme_name].keys()
-                                or flag.section not in
-                                [_s.name for _s in scheme_dictionary[scheme_name][flag.target]]):
-                            message = "%s->%s not defined in scheme '%s'" % (flag.section, flag.target, scheme_name)
+                        if flag.target not in scheme_dictionary[scheme_name].keys() or flag.section not in [
+                            _s.name for _s in scheme_dictionary[scheme_name][flag.target]
+                        ]:
+                            message = f"{flag.section}->{flag.target} not defined in scheme '{scheme_name}'"
                             raise GenerationException(message, mapping)
                 else:
                     flags = None
 
                 # Create placement for each 'section -> target' in the scheme.
-                for (target, sections) in scheme_dictionary[scheme_name].items():
+                for target, sections in scheme_dictionary[scheme_name].items():
                     for section in sections:
                         # Find the applicable flags
                         _flags = []
@@ -509,9 +538,9 @@ class Generation:
                             if _flags or existing.flags:
                                 if (_flags and not existing.flags) or (not _flags and existing.flags):
                                     _flags.extend(existing.flags)
-                                    entity_mappings[key] = Generation.EntityMapping(entity,
-                                                                                    sections_str,
-                                                                                    target, _flags)
+                                    entity_mappings[key] = Generation.EntityMapping(
+                                        entity, sections_str, target, _flags
+                                    )
                                 elif _flags == existing.flags:
                                     pass
                                 else:
@@ -552,8 +581,7 @@ class Generation:
             if fragment.name in dict_to_append_to:
                 stored = dict_to_append_to[fragment.name].path
                 new = fragment.path
-                message = "Duplicate definition of fragment '%s' found in %s and %s." % (
-                    fragment.name, stored, new)
+                message = f"Duplicate definition of fragment '{fragment.name}' found in {stored} and {new}."
                 raise GenerationException(message)
 
             dict_to_append_to[fragment.name] = fragment
@@ -573,6 +601,6 @@ class GenerationException(LdGenFailure):
 
     def __str__(self):
         if self.fragment:
-            return "%s\nIn fragment '%s' defined in '%s'." % (self.message, self.fragment.name, self.fragment.path)
+            return f"{self.message}\nIn fragment '{self.fragment.name}' defined in '{self.fragment.path}'."
         else:
             return self.message
