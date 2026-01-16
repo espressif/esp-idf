@@ -25,9 +25,7 @@ extern "C" {
 typedef struct {
     const char *module_name;       // peripheral name
     const int irq_id;              // interrupt source ID
-#if TWAI_LL_SUPPORT(TIMESTAMP)
     const int timer_irq_id;        // time base interrupt source ID
-#endif
     const int tx_sig;              // TX signal ID in GPIO matrix
     const int rx_sig;              // RX signal ID in GPIO matrix
     const int clk_out_sig;         // CLK_OUT signal ID in GPIO matrix

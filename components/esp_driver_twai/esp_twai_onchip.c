@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_timer.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "esp_private/twai_interface.h"
@@ -40,10 +41,12 @@ typedef struct {
     uint64_t gpio_reserved;
     twai_hal_context_t *hal;
     intr_handle_t intr_hdl;
+    intr_handle_t timer_intr_hdl;
     QueueHandle_t tx_mount_queue;
     EventGroupHandle_t event_group;
     twai_clock_source_t curr_clk_src;
     uint32_t src_freq_hz;
+    uint32_t timestamp_freq_hz;
     uint32_t valid_fd_timing;
     twai_event_callbacks_t cbs;
     void *user_data;
@@ -61,7 +64,8 @@ typedef struct {
 } twai_onchip_ctx_t;
 
 typedef struct twai_platform_s {
-    _lock_t mutex;
+    _lock_t ctrlr_mutex;
+    _lock_t intr_mutex;
     twai_onchip_ctx_t *nodes[SOC_TWAI_CONTROLLER_NUM];
 } twai_platform_t;
 static twai_platform_t s_platform;
@@ -69,7 +73,7 @@ static twai_platform_t s_platform;
 static int _ctrlr_acquire(twai_onchip_ctx_t *node)
 {
     int ctrlr_id = -1;
-    _lock_acquire(&s_platform.mutex);
+    _lock_acquire(&s_platform.ctrlr_mutex);
     // Check if there is a controller available for use
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
         if (s_platform.nodes[i] == NULL) {
@@ -79,7 +83,7 @@ static int _ctrlr_acquire(twai_onchip_ctx_t *node)
             break;
         }
     }
-    _lock_release(&s_platform.mutex);
+    _lock_release(&s_platform.ctrlr_mutex);
 
     // Return the controller index or -1
     return ctrlr_id;
@@ -87,11 +91,11 @@ static int _ctrlr_acquire(twai_onchip_ctx_t *node)
 
 static void _ctrlr_release(int ctrlr_id)
 {
-    _lock_acquire(&s_platform.mutex);
+    _lock_acquire(&s_platform.ctrlr_mutex);
     assert(s_platform.nodes[ctrlr_id]);
     // Clear the node object from the controller slot
     s_platform.nodes[ctrlr_id] = NULL;
-    _lock_release(&s_platform.mutex);
+    _lock_release(&s_platform.ctrlr_mutex);
 }
 
 static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node_config_t *node_config)
@@ -286,6 +290,9 @@ static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
     if (twai_ctx->intr_hdl) {
         esp_intr_free(twai_ctx->intr_hdl);
     }
+    if (twai_ctx->timer_intr_hdl) {
+        esp_intr_free(twai_ctx->timer_intr_hdl);
+    }
     if (twai_ctx->tx_mount_queue) {
         vQueueDeleteWithCaps(twai_ctx->tx_mount_queue);
     }
@@ -398,6 +405,18 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_t
     return ESP_OK;
 }
 
+//convert microseconds to timestamp units
+__attribute__((always_inline))
+static inline uint64_t _time_us_to_timestamp(uint64_t time_us, uint32_t resolution)
+{
+    if (resolution > 1000000) {
+        return time_us * (resolution / 1000000);
+    } else if (resolution > 0) {
+        return time_us / (1000000 / resolution);
+    }
+    return 0;
+}
+
 /* -------------------------------------------------- Node Control -------------------------------------------------- */
 
 static esp_err_t _node_enable(twai_node_handle_t node)
@@ -412,7 +431,12 @@ static esp_err_t _node_enable(twai_node_handle_t node)
     }
 #endif //CONFIG_PM_ENABLE
     twai_hal_start(twai_ctx->hal);
-
+#if TWAI_LL_SUPPORT(TIMESTAMP)
+    if (twai_ctx->timestamp_freq_hz) {
+        twai_hal_timer_start_with(twai_ctx->hal, _time_us_to_timestamp(esp_timer_get_time(), twai_ctx->timestamp_freq_hz));
+        ESP_RETURN_ON_ERROR(esp_intr_enable(twai_ctx->timer_intr_hdl), TAG, "enable timer interrupt failed");
+    }
+#endif
     twai_error_state_t hw_state = twai_hal_get_err_state(twai_ctx->hal);
     atomic_store(&twai_ctx->state, hw_state);
     // continuing the transaction if there be
@@ -428,6 +452,12 @@ static esp_err_t _node_disable(twai_node_handle_t node)
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node already disabled");
 
+#if TWAI_LL_SUPPORT(TIMESTAMP)
+    if (twai_ctx->timestamp_freq_hz) {
+        twai_hal_timer_stop(twai_ctx->hal);
+        ESP_RETURN_ON_ERROR(esp_intr_disable(twai_ctx->timer_intr_hdl), TAG, "disable timer interrupt failed");
+    }
+#endif
     ESP_RETURN_ON_ERROR(esp_intr_disable(twai_ctx->intr_hdl), TAG, "disable interrupt failed");
     atomic_store(&twai_ctx->state, TWAI_ERROR_BUS_OFF);
     twai_hal_stop(twai_ctx->hal);
@@ -594,7 +624,11 @@ static esp_err_t _node_parse_rx(twai_node_handle_t node, twai_frame_t *rx_frame)
     ESP_RETURN_ON_FALSE_ISR(atomic_load(&twai_ctx->rx_isr), ESP_ERR_INVALID_STATE, TAG, "rx can only called in `rx_done` callback");
     assert(xPortInIsrContext() && "should always in rx_done callback");
 
-    twai_hal_parse_frame(&twai_ctx->rcv_buff, &rx_frame->header, rx_frame->buffer, rx_frame->buffer_len);
+    twai_hal_parse_frame(twai_ctx->hal, &twai_ctx->rcv_buff, &rx_frame->header, rx_frame->buffer, rx_frame->buffer_len);
+    if (twai_ctx->timestamp_freq_hz && !rx_frame->header.timestamp) {
+        // if timestamp not updated by hardware, use the esp_timer timestamp to calculate the timestamp
+        rx_frame->header.timestamp = _time_us_to_timestamp(esp_timer_get_time(), twai_ctx->timestamp_freq_hz);
+    }
     return ESP_OK;
 }
 
@@ -614,6 +648,8 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_FALSE(ctrlr_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "Controller not available");
     node->ctrlr_id = ctrlr_id;
     node->hal = (twai_hal_context_t *)(node + 1);   //hal context is place at end of driver context
+    node->curr_clk_src = node_config->clk_src ? node_config->clk_src : TWAI_CLK_SRC_DEFAULT;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(node->curr_clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &node->src_freq_hz), err, TAG, "get clock source frequency failed");
 
     // state is in bus_off before enabled
     atomic_store(&node->state, TWAI_ERROR_BUS_OFF);
@@ -622,8 +658,28 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_FALSE((node->tx_mount_queue && node->event_group) || node_config->flags.enable_listen_only, ESP_ERR_NO_MEM, err, TAG, "no_mem");
     uint32_t intr_flags = TWAI_INTR_ALLOC_FLAGS;
     intr_flags |= (node_config->intr_priority > 0) ? BIT(node_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    _lock_acquire(&s_platform.intr_mutex);  // lock to prevent twai_intr and timer_intr registered to different cpu then triggered at the same time
     ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_periph_signals[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
                       err, TAG, "Alloc interrupt failed");
+
+    if (node_config->timestamp_resolution_hz) {
+#if TWAI_LL_SUPPORT(TIMESTAMP)
+        ESP_GOTO_ON_FALSE((node_config->timestamp_resolution_hz >= (node->src_freq_hz / TWAI_LL_TIMER_DIV_MAX)) && (node_config->timestamp_resolution_hz <= node->src_freq_hz), \
+                          ESP_ERR_INVALID_ARG, err, TAG, "Timestamp resolution range [%d, %d]", node->src_freq_hz / TWAI_LL_TIMER_DIV_MAX, node->src_freq_hz);
+        uint32_t real_timer_freq = node->src_freq_hz / (node->src_freq_hz / node_config->timestamp_resolution_hz);
+        if (real_timer_freq != node_config->timestamp_resolution_hz) {
+            ESP_LOGW(TAG, "timestamp resolution loss, adjust to %dHz", real_timer_freq);
+        }
+        // deal timer interrupt in same `_node_isr_main` handler and check timer event first
+        // to avoid race condition if two hardware interrupts are triggered at the same time
+        ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_periph_signals[ctrlr_id].timer_irq_id, intr_flags, _node_isr_main, (void *)node, &node->timer_intr_hdl),
+                          err, TAG, "Alloc timer interrupt failed");
+#else
+        ESP_GOTO_ON_FALSE(node_config->timestamp_resolution_hz <= 1000000, ESP_ERR_INVALID_ARG, err, TAG, "Timestamp resolution is at most 1MHz");
+#endif
+        node->timestamp_freq_hz = node_config->timestamp_resolution_hz;
+    }
+    _lock_release(&s_platform.intr_mutex);
 
 #if CONFIG_PM_ENABLE
 #if TWAI_LL_SUPPORT(APB_CLK)
@@ -634,9 +690,6 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_periph_signals[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
 #endif //TWAI_LL_SUPPORT(APB_CLK)
 #endif //CONFIG_PM_ENABLE
-
-    node->curr_clk_src = node_config->clk_src ? node_config->clk_src : TWAI_CLK_SRC_DEFAULT;
-    esp_clk_tree_src_get_freq_hz(node->curr_clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &node->src_freq_hz);
 
     // Set clock source, enable bus clock and reset controller
     ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(node->curr_clk_src, true), TAG, "enable clock source failed");
@@ -649,6 +702,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
         .controller_id = node->ctrlr_id,
         .intr_mask = TWAI_LL_DRIVER_INTERRUPTS,
         .clock_source_hz = node->src_freq_hz,
+        .timer_freq = node->timestamp_freq_hz,
         .retry_cnt = node_config->fail_retry_cnt,
         .no_receive_rtr = node_config->flags.no_receive_rtr,
         .enable_listen_only = node_config->flags.enable_listen_only,
@@ -680,6 +734,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     return ESP_OK;
 err:
     if (node) {
+        _lock_release(&s_platform.intr_mutex);
         _node_destroy(node);
     }
     return ret;

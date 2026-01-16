@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,12 +18,13 @@
 #define TWAIFD_LL_GET_HW(num) (((num) == 0) ? (&TWAI0) : NULL)
 
 #define TWAI_LL_BRP_MIN                 1
-#define TWAI_LL_BRP_MAX                 255
 #define TWAI_LL_TSEG1_MIN               0
 #define TWAI_LL_TSEG2_MIN               1
+#define TWAI_LL_BRP_MAX                 TWAIFD_BRP
 #define TWAI_LL_TSEG1_MAX               TWAIFD_PH1
 #define TWAI_LL_TSEG2_MAX               TWAIFD_PH2
 #define TWAI_LL_SJW_MAX                 TWAIFD_SJW
+#define TWAI_LL_TIMER_DIV_MAX           TWAIFD_TIMER_STEP
 
 #define TWAIFD_IDENTIFIER_BASE_S        18      // Start bit of std_id in IDENTIFIER_W of TX buffer or RX buffer
 
@@ -965,6 +966,7 @@ static inline void twaifd_ll_timer_enable(twaifd_dev_t *hw, bool enable)
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return Bit width of the timer.
  */
+__attribute__((always_inline))
 static inline uint8_t twaifd_ll_timer_get_bitwidth(twaifd_dev_t *hw)
 {
     return hw->err_capt_retr_ctr_alc_ts_info.ts_bits + 1;
@@ -972,6 +974,7 @@ static inline uint8_t twaifd_ll_timer_get_bitwidth(twaifd_dev_t *hw)
 
 /**
  * @brief Get the current timer count.
+ * @note  The frame time is recorded by hardware, so this function is not required, can be used for independent test
  *
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return Current timer count as a 64-bit value.
@@ -983,16 +986,16 @@ static inline uint64_t twaifd_ll_timer_get_count(twaifd_dev_t *hw)
 }
 
 /**
- * @brief Set the timer step value.
+ * @brief Set the timer clock divider value.
  *
  * @note This is to determine the resolution of the timer. We can also treat it as a prescaler.
  *
  * @param hw Pointer to the TWAI-FD device hardware.
- * @param step Step value to set (actual step = step - 1).
+ * @param div Clock divider value to set.
  */
-static inline void twaifd_ll_timer_set_step(twaifd_dev_t *hw, uint32_t step)
+static inline void twaifd_ll_timer_set_clkdiv(twaifd_dev_t *hw, uint32_t div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->timer_cfg, timer_step, (step - 1));
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->timer_cfg, timer_step, (div - 1));
 }
 
 /**
@@ -1018,7 +1021,7 @@ static inline void twaifd_ll_timer_clr_count(twaifd_dev_t *hw, bool clear)
 }
 
 /**
- * @brief Set the timer preload value.
+ * @brief Set the timer preload value when overflow.
  *
  * @param hw Pointer to the TWAI-FD device hardware.
  * @param load_value 64-bit load value.
@@ -1074,6 +1077,7 @@ static inline void twaifd_ll_timer_enable_intr(twaifd_dev_t *hw, uint32_t mask, 
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return Current interrupt status.
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_timer_get_intr_status(twaifd_dev_t *hw, uint32_t mask)
 {
     return hw->timer_int_st.val & mask;
@@ -1084,6 +1088,7 @@ static inline uint32_t twaifd_ll_timer_get_intr_status(twaifd_dev_t *hw, uint32_
  *
  * @param hw Pointer to the TWAI-FD device hardware.
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_timer_clr_intr_status(twaifd_dev_t *hw, uint32_t mask)
 {
     hw->timer_int_clr.val = mask;

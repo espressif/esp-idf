@@ -168,6 +168,13 @@ Receiving messages inside the callback:
 
 Similarly, since the driver uses pointers for message passing, you must configure the pointer :cpp:member:`twai_frame_t::buffer` and its memory length :cpp:member:`twai_frame_t::buffer_len` before receiving.
 
+Frame Timestamp
+---------------
+
+The TWAI driver supports creating a 64-bit timestamp for each successfully received frame, enabling this feature by configuring the :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz` field when creating the node. The timestamp is stored in the :cpp:member:`twai_frame_t::header::timestamp` field of the received frame.
+
+The node time inherits from the system time, i.e. the time starts from the power-on of the chip, and is not affected by the stop/restart/BUS_OFF state during the node's lifetime.
+
 Stopping and Deleting the Node
 ------------------------------
 

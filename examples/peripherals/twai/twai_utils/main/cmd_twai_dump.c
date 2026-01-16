@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,7 +17,6 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "cmd_twai_internal.h"
-#include "esp_timer.h"
 #include "esp_check.h"
 #include "twai_utils_parser.h"
 
@@ -27,7 +26,6 @@
  */
 typedef struct {
     twai_frame_t frame;        /**< TWAI frame with embedded buffer */
-    int64_t timestamp_us;      /**< Frame timestamp in microseconds */
     uint8_t buffer[TWAI_FRAME_BUFFER_SIZE];        /**< Frame data buffer (supports both TWAI and TWAI-FD) */
 } rx_queue_item_t;
 
@@ -178,11 +176,9 @@ static IRAM_ATTR bool twai_dump_rx_done_cb(twai_node_handle_t handle, const twai
     item.frame.buffer_len = sizeof(item.buffer);
 
     if (ESP_OK == twai_node_receive_from_isr(handle, &item.frame)) {
-        item.timestamp_us = esp_timer_get_time();
-
         /* Non-blocking queue send with explicit error handling */
         if (xQueueSendFromISR(controller->dump_ctx.rx_queue, &item, &higher_priority_task_woken) != pdTRUE) {
-            /* Queue full - frame dropped silently to maintain ISR performance */
+            ESP_EARLY_LOGW(TAG, "app queue full");
         }
     }
 
@@ -208,7 +204,7 @@ static void dump_task(void *parameter)
         if (xQueueReceive(dump_ctx->rx_queue, &item, pdMS_TO_TICKS(CONFIG_EXAMPLE_DUMP_TASK_TIMEOUT_MS)) == pdPASS) {
             item.frame.buffer = item.buffer;    // point to the new buffer
 
-            format_twaidump_frame(dump_ctx->timestamp_mode, &item.frame, item.timestamp_us,
+            format_twaidump_frame(dump_ctx->timestamp_mode, &item.frame, item.frame.header.timestamp,
                                   dump_ctx->start_time_us, &dump_ctx->last_frame_time_us,
                                   controller_id, output_line, sizeof(output_line));
             printf("%s", output_line);
@@ -440,11 +436,6 @@ static int twai_dump_handler(int argc, char **argv)
         }
     }
 
-    /* Initialize timestamp base time */
-    int64_t current_time = esp_timer_get_time();
-    controller->dump_ctx.start_time_us = current_time;
-    controller->dump_ctx.last_frame_time_us = current_time;
-
     /* Start dump task and create resources */
     ret = twai_dump_start_controller(controller);
     ESP_RETURN_ON_FALSE(ret == ESP_OK, ret, TAG, "Failed to start dump task");
@@ -512,7 +503,7 @@ void register_twai_dump_commands(void)
     }
 
     /* Register command */
-    twai_dump_args.controller_filter = arg_str1(NULL, NULL, "<controller>[,filter]",
+    twai_dump_args.controller_filter = arg_str1(NULL, NULL, "<controller> [filter]",
                                                 "Controller ID and optional filters");
     twai_dump_args.stop = arg_lit0(NULL, "stop",
                                    "Stop monitoring the specified controller");

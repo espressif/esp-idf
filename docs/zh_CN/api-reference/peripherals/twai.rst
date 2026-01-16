@@ -168,6 +168,13 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 
 同样，驱动使用指针进行传递，因此需要在接收前配置 :cpp:member:`twai_frame_t::buffer` 的指针及其内存长度 :cpp:member:`twai_frame_t::buffer_len`
 
+报文时间戳
+----------
+
+TWAI 驱动支持为每个成功接收的报文创建一个 64 位的时间戳，在创建节点时配置 :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz` 字段即可启用该功能，时间戳保存在接收报文的 :cpp:member:`twai_frame_t::header::timestamp` 字段中。
+
+节点时间继承自系统时间，即时间起点同为芯片上电启动时开始计时，期间不受驱动停止/启动/BUS_OFF 状态的影响。
+
 停止和删除节点
 --------------
 

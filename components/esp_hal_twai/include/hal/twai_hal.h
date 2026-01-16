@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,7 @@ typedef struct {
     twai_soc_handle_t dev; // TWAI SOC layer handle (i.e. register base address)
     uint32_t state_flags;
     uint32_t clock_source_hz;
+    uint32_t timer_overflow_cnt;
     twai_error_flags_t errors;
     uint8_t sja1000_filter_id_type;    // hardware don't check id type, check in software, 0:no_filter, 1: std_id_only, 2: ext_id_only
     int8_t retry_cnt;
@@ -72,6 +73,7 @@ typedef struct {
 typedef struct {
     int controller_id;
     uint32_t clock_source_hz;
+    uint32_t timer_freq;
     uint32_t intr_mask;
     int8_t retry_cnt;
     bool no_receive_rtr;
@@ -192,6 +194,19 @@ void twai_hal_start(twai_hal_context_t *hal_ctx);
 void twai_hal_stop(twai_hal_context_t *hal_ctx);
 
 /**
+ * @brief Start the TWAI timer with a start value
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @param preload_value Preload value for the timer
+ */
+void twai_hal_timer_start_with(twai_hal_context_t *hal_ctx, uint64_t preload_value);
+
+/**
+ * @brief Stop the TWAI timer
+ */
+void twai_hal_timer_stop(twai_hal_context_t *hal_ctx);
+
+/**
  * @brief Start bus recovery
  *
  * @param hal_ctx Context of the HAL layer
@@ -310,10 +325,11 @@ void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_fra
  * This function takes a TWAI frame (in the format of the RX frame buffer) and
  * parses it to a TWAI message (containing ID, DLC, data and flags).
  *
+ * @param hal_ctx Context of the HAL layer
  * @param frame Pointer to frame structure
  * @param message Pointer to empty message structure
  */
-void twai_hal_parse_frame(const twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len);
+void twai_hal_parse_frame(twai_hal_context_t *hal_ctx, twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len);
 
 /**
  * @brief Copy a frame into the TX buffer and transmit

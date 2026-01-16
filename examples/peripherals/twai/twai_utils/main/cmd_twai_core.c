@@ -304,6 +304,9 @@ static int twai_init_handler(int argc, char **argv)
 #endif
     ESP_LOGI(TAG, "FD bitrate set to %" PRIu32, ctx->driver_config.data_timing.bitrate);
 
+    /* Always configure timestamp frequency to 1MHz */
+    ctx->driver_config.timestamp_resolution_hz = 1000000;
+
     /* Start TWAI controller */
     controller->node_handle = twai_start(controller);
     ret = (controller->node_handle != NULL) ? ESP_OK : ESP_FAIL;
