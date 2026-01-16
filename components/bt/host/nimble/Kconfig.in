@@ -1621,6 +1621,24 @@ menu "Vendor / Optimization"
         depends on BT_NIMBLE_ENABLED
         help
             This enable BLE high duty advertising interval feature
+
+    config BT_NIMBLE_ADV_SEND_CONSTANT_DID
+        bool "Enable BLE Ext Adv to Send with Specific DID"
+        depends on SOC_ESP_NIMBLE_CONTROLLER && BT_NIMBLE_50_FEATURE_SUPPORT && !(IDF_TARGET_ESP32C2)
+        select BT_NIMBLE_VS_SUPPORT
+        help
+            This enable vendor-specific APIs to send specific DID for different advertising data in extended
+            advertising.
+
+    config BT_NIMBLE_SCAN_ALLOW_ENH_ADI_FILTER
+        bool "Enable BLE Ext Scan to Receive Packet with Specific ADI"
+        depends on SOC_ESP_NIMBLE_CONTROLLER && BT_NIMBLE_50_FEATURE_SUPPORT && !(IDF_TARGET_ESP32C2)
+        select BT_NIMBLE_VS_SUPPORT
+        help
+            This enables vendor-specific APIs to only receive specific groups of ADIs, and implements DIDs
+            duplicate filtering for extended scanning. Enabling this can reduce the unnecessary reception of
+            secondary channel PDUs carrying non-targeted ADIs.
+
 endmenu #Vendor
 
 menu "Helper Utils"
