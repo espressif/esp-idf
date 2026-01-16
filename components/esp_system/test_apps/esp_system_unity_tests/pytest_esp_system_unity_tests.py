@@ -1,16 +1,17 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
 @idf_parametrize(
     'config,target',
     [
-        ('default', 'supported_targets'),
-        ('pd_vddsdio', 'supported_targets'),
+        *(('default', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
+        *(('pd_vddsdio', target) for target in soc_filtered_targets('IDF_TARGET not in ["esp32c5"]')),
         ('psram', 'esp32'),
         ('psram', 'esp32p4'),
         ('psram', 'esp32s2'),
@@ -22,6 +23,35 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 def test_esp_system(dut: Dut) -> None:
     # esp32p4 32MB PSRAM initialize in startup takes more than 30 sec
+    dut.run_all_single_board_cases(timeout=60)
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config',
+    [
+        'pd_vddsdio',
+        'psram',
+    ],
+    indirect=['config'],
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_esp_system_esp32c5(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=60)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_eco3
+@idf_parametrize(
+    'config',
+    [
+        'default',
+        'psram_with_pd_top',
+    ],
+    indirect=['config'],
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_esp_system_esp32c5_eco3(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=60)
 
 

@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -13,9 +14,44 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_GPSPI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
+)
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14399')
 def test_master_single_dev(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'test_env' in case.attributes:
+            continue  # If `test_env` is defined, should not run on generic runner
+        case_tester.run_normal_case(case=case, reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'freertos_flash',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_master_single_dev_esp32c5(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'test_env' in case.attributes:
+            continue  # If `test_env` is defined, should not run on generic runner
+        case_tester.run_normal_case(case=case, reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_eco3
+@pytest.mark.parametrize(
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_master_single_dev_esp32c5_eco3(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
             continue  # If `test_env` is defined, should not run on generic runner
