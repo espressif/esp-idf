@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 import copy
@@ -100,8 +100,9 @@ default_cli_ot_para = ocf.thread_parameter('router', '', '', '', False)
 ESPPORT1 = os.getenv('ESPPORT1')
 ESPPORT2 = os.getenv('ESPPORT2')
 ESPPORT3 = os.getenv('ESPPORT3')
+ESPPORT4 = os.getenv('ESPPORT4')
 
-PORT_MAPPING = {'ESPPORT1': 'esp32h2', 'ESPPORT2': 'esp32s3', 'ESPPORT3': 'esp32c6'}
+PORT_MAPPING = {'ESPPORT1': 'esp32h2', 'ESPPORT2': 'esp32s3', 'ESPPORT3': 'esp32c6', 'ESPPORT4': 'esp32c5'}
 
 
 # Case 1: Thread network formation and attaching
@@ -662,6 +663,15 @@ def test_TCP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> 
             f'{ESPPORT3}|{ESPPORT1}',
             id='c6-h2',
         ),
+        pytest.param(
+            'cli|sleepy',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+            'esp32h2|esp32c5',
+            f'{ESPPORT1}|{ESPPORT4}',
+            id='h2-c5',
+        ),
     ],
     indirect=True,
 )
@@ -678,10 +688,15 @@ def test_ot_sleepy_device(dut: tuple[IdfDut, IdfDut]) -> None:
         ocf.wait(leader, 5)
         dataset = ocf.getDataset(leader)
         ocf.execute_command(sleepy_device, 'mode -')
+        sleepy_device.expect('Done', timeout=5)
         ocf.execute_command(sleepy_device, 'pollperiod 3000')
+        sleepy_device.expect('Done', timeout=5)
         ocf.execute_command(sleepy_device, 'dataset set active ' + dataset)
+        sleepy_device.expect('Done', timeout=5)
         ocf.execute_command(sleepy_device, 'ifconfig up')
+        sleepy_device.expect('Done', timeout=5)
         ocf.execute_command(sleepy_device, 'thread start')
+        sleepy_device.expect('Done', timeout=5)
         info = sleepy_device.expect(r'(.+)detached -> child', timeout=20)[1].decode(errors='replace')
         assert not bool(fail_info.search(str(info)))
         info = sleepy_device.expect(r'(.+)PMU_SLEEP_PD_TOP: True', timeout=10)[1].decode(errors='replace')
@@ -694,7 +709,9 @@ def test_ot_sleepy_device(dut: tuple[IdfDut, IdfDut]) -> None:
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
         assert not bool(fail_info.search(str(output)))
     finally:
+        logging.info('Cleaning up...')
         ocf.execute_command(leader, 'factoryreset')
+        leader.expect('OpenThread attached to netif', timeout=20)
         ocf.hardreset_dut(sleepy_device)
         time.sleep(3)
 
@@ -995,9 +1012,10 @@ def test_ot_ssed_device(dut: tuple[IdfDut, IdfDut]) -> None:
     leader = dut[0]
     ssed_device = dut[1]
     try:
-        ocf.hardreset_dut(ssed_device)
+        ocf.clean_buffer(ssed_device)
+        ssed_device.serial.hard_reset()
         # CI device must have external XTAL to run SSED case, we will check this here first
-        ssed_device.expect('32k XTAL in use', timeout=10)
+        ssed_device.expect('32k XTAL in use', timeout=20)
         ocf.init_thread(leader)
         time.sleep(3)
         leader_para = ocf.thread_parameter('leader', '', '12', '7766554433221100', False)
