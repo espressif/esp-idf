@@ -33,6 +33,9 @@ choice ESP32P4_REV_MIN
     config ESP32P4_REV_MIN_300
         bool "Rev v3.0"
         depends on !ESP32P4_SELECTS_REV_LESS_V3
+    config ESP32P4_REV_MIN_301
+        bool "Rev v3.1"
+        depends on !ESP32P4_SELECTS_REV_LESS_V3
 endchoice
 
 config ESP32P4_REV_MIN_FULL
@@ -41,6 +44,7 @@ config ESP32P4_REV_MIN_FULL
     default 1 if ESP32P4_REV_MIN_1
     default 100 if ESP32P4_REV_MIN_100
     default 300 if ESP32P4_REV_MIN_300
+    default 301 if ESP32P4_REV_MIN_301
 
 config ESP_REV_MIN_FULL
     int

@@ -67,15 +67,24 @@ void rtc_clk_init(rtc_clk_config_t cfg)
         hp_dcmvset = pvt_hp_dcmvset;
     }
     // Switch to DCDC
+#if CONFIG_ESP32P4_REV_MIN_301
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (ESP_CHIP_REV_ABOVE(chip_version, 301)) {
+        SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_FB_RES_FORCE_PD);
+    }
+#endif
     pmu_ll_set_dcdc_en(&PMU, true);
     pmu_ll_set_dcdc_switch_force_power_down(&PMU, false);
     pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, hp_dcmvset);
     SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // Hand over control of dbias to pmu
     esp_rom_delay_us(1000);
-    unsigned chip_version = efuse_hal_chip_revision();
+#if CONFIG_ESP32P4_REV_MIN_301
     if (ESP_CHIP_REV_ABOVE(chip_version, 301)) {
         REG_SET_FIELD(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_SEL, 0xEF);// lp_fib_sel bit4 set to 0: select dig_fib_reg instead of ana_fib_reg
+        CLEAR_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_FB_RES_FORCE_PD);
+        esp_rom_delay_us(10);
     }
+#endif
     pmu_ll_hp_set_regulator_xpd(&PMU, PMU_MODE_HP_ACTIVE, false);
 
     soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
