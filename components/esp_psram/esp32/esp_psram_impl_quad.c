@@ -27,12 +27,14 @@
 #include "driver/gpio.h"
 #include "hal/efuse_hal.h"
 #include "hal/gpio_hal.h"
-#include "esp_private/spi_common_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
 #include "bootloader_flash_config.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "soc/spi_reg.h"
+#include "soc/spi_pins.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"
