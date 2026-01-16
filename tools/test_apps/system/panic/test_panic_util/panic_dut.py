@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import re
 import subprocess
 import sys
+import time
 from typing import Any
 from typing import TextIO
 
@@ -138,7 +139,7 @@ class PanicTestDut(IdfDut):
                 else:
                     raise ValueError(f'Unsupported input type: {type(pattern).__name__}')
 
-    def _call_espcoredump(self, extra_args: list[str], output_file_name: str) -> None:
+    def _call_espcoredump(self, extra_args: list[str], output_file_name: str, max_retries: int = 3) -> None:
         # no "with" here, since we need the file to be open for later inspection by the test case
         if not self.coredump_output:
             self.coredump_output = open(output_file_name, 'w')
@@ -156,15 +157,26 @@ class PanicTestDut(IdfDut):
         logging.info('espcoredump output is written to %s', self.coredump_output.name)
 
         self.serial.close()
-        try:
-            subprocess.check_call(espcoredump_args, stdout=self.coredump_output, stderr=self.coredump_output)
-        except subprocess.CalledProcessError:
-            self.coredump_output.flush()
-            with open(output_file_name) as file:
-                logging.error('espcoredump failed with output: %s', file.read())
-            raise
-        finally:
-            self.coredump_output.seek(0)
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    # Reset output file for retry
+                    time.sleep(1)
+                    self.coredump_output.seek(0)
+                    self.coredump_output.truncate()
+                    logging.info(f'Retrying espcoredump (attempt {attempt + 1}/{max_retries})')
+                subprocess.check_call(espcoredump_args, stdout=self.coredump_output, stderr=self.coredump_output)
+                self.coredump_output.seek(0)
+                return  # Success
+            except subprocess.CalledProcessError:
+                self.coredump_output.flush()
+                with open(output_file_name) as file:
+                    content = file.read()
+                if attempt < max_retries - 1:
+                    logging.warning(f'espcoredump attempt {attempt + 1}/{max_retries} failed with output: {content}')
+                else:
+                    logging.error(f'espcoredump failed after {max_retries} attempts with output: {content}')
+                    raise
 
     def process_coredump_uart(
         self,
