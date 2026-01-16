@@ -401,11 +401,11 @@ For example, let's have a file `custom_flash.txt`:
 
   flash --baud 115200
 
-Then the command can be executed as: ``idf.py @custom_flash.txt monitor``
+Then the command can be executed as: ``idf.py "@custom_flash.txt" monitor``
 
-Arguments from a file can be combined with additional command line arguments, and multiple files annotated with ``@`` can be used simultaneously. For instance, if there is a second file ``another_config.txt``, both can be utilized by specifying ``idf.py @custom_flash.txt @another_config.txt monitor``.
+Arguments from a file can be combined with additional command line arguments, and multiple files annotated with ``@`` can be used simultaneously. For instance, if there is a second file ``another_config.txt``, both can be utilized by specifying ``idf.py "@custom_flash.txt" "@another_config.txt" monitor``.
 
-A further example of how this argument file can be used, e.g., creating configuration profile files via @filename, is in the :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`.
+A further example of how this argument file can be used, e.g., creating configuration profile files via @filename, is in the `Create configuration profile files <profile_file_>`_ paragraph in Multiple Build Configurations Example.
 
 Extending ``idf.py``
 ====================
@@ -517,3 +517,4 @@ Basic Usage Examples
 .. _CCache: https://ccache.dev/
 .. _click context: https://click.palletsprojects.com/en/stable/api/#context
 .. _CMake presets: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
+.. _profile_file: https://github.com/espressif/esp-idf/tree/release/v5.5/examples/build_system/cmake/multi_config#create-configuration-profile-files-via-filename
