@@ -468,15 +468,12 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
     switch (tls->conn_state) {
     case ESP_TLS_INIT:
         tls->sockfd = -1;
-        if (cfg != NULL && cfg->is_plain_tcp == false) {
-            _esp_tls_net_init(tls);
-            tls->is_tls = true;
-        }
+        _esp_tls_net_init(tls);
         if ((esp_ret = tcp_connect(hostname, hostlen, port, cfg, tls->error_handle, &tls->sockfd)) != ESP_OK) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             return -1;
         }
-        if (tls->is_tls == false) {
+        if (cfg && cfg->is_plain_tcp) {
             tls->read = tcp_read;
             tls->write = tcp_write;
             ESP_LOGD(TAG, "non-tls connection established");
