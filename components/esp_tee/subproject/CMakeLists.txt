@@ -28,7 +28,7 @@ set(NON_OS_BUILD 1)
 list(APPEND COMPONENTS bootloader_support efuse esp_hal_mspi esp_hal_wdt esp_security mbedtls esp_stdio)
 
 # TEE-specific components
-list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation)
+list(APPEND COMPONENTS attestation tee_flash_mgr tee_ota_ops tee_sec_storage)
 
 include_directories("${SECURE_SERVICE_HEADERS_DIR}")
 

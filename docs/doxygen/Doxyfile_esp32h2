@@ -5,5 +5,5 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
     $(PROJECT_PATH)/components/esp_tee/include/esp_tee.h \
     $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_sec_storage/include/esp_tee_sec_storage.h \
-    $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_attestation/esp_tee_attestation.h \
     $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_ota_ops/include/esp_tee_ota_ops.h \
+    $(PROJECT_PATH)/components/mbedtls/port/include/psa/initial_attestation.h \

@@ -26,7 +26,7 @@
     "key_id": "tee_att_key0",
   },
   "eat": {
-    "nonce": -1582119980,
+    "auth_challenge": "dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678",
     "client_id": 262974944,
     "device_ver": 1,
     "device_id": "e8cddb2a7f9a5a7c61735d6dda26e4bd153c6d772a9be6f26bd321dfe25e0ac8",

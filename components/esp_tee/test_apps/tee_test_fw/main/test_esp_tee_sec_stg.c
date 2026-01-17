@@ -13,9 +13,7 @@
 #include "esp_tee.h"
 #include "esp_tee_sec_storage.h"
 #include "secure_service_num.h"
-#if CONFIG_SECURE_TEE_ATTESTATION
-#include "esp_tee_attestation.h"
-#endif
+#include "psa/initial_attestation.h"
 
 #include "esp_random.h"
 #include "nvs.h"
@@ -32,9 +30,6 @@
 #define ECDSA_SECP384R1_KEY_LEN  (48)
 #define ECDSA_SECP256R1_KEY_LEN  (32)
 #define ECDSA_SECP192R1_KEY_LEN  (24)
-
-#define ESP_ATT_TK_BUF_SIZE      (1792)
-#define ESP_ATT_TK_PSA_CERT_REF  ("0632793520245-10010")
 
 #define MAX_SEC_STG_ITER         (16)
 
@@ -527,13 +522,19 @@ TEST_CASE("Test TEE Secure Storage - Host-generated keys", "[sec_storage_host_ke
 #endif /* CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN */
 
 #if CONFIG_SECURE_TEE_ATTESTATION
-    uint8_t *token_buf = heap_caps_calloc(ESP_ATT_TK_BUF_SIZE, sizeof(uint8_t), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    // Prepare authentication challenge (just the nonce/challenge data)
+    uint8_t auth_challenge[PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32];
+    size_t challenge_size = sizeof(auth_challenge);
+    esp_fill_random(auth_challenge, challenge_size);
+
+    size_t token_buf_size = 0;
+    TEST_ESP_OK(psa_initial_attest_get_token_size(challenge_size, &token_buf_size));
+
+    uint8_t *token_buf = heap_caps_calloc(token_buf_size, sizeof(uint8_t), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(token_buf);
 
-    uint32_t token_len = 0;
-    TEST_ESP_OK(esp_tee_att_generate_token(0xA1B2C3D4, 0x0FACADE0, (const char *)ESP_ATT_TK_PSA_CERT_REF,
-                                           token_buf, ESP_ATT_TK_BUF_SIZE, &token_len));
-
+    size_t token_len = 0;
+    TEST_ESP_OK(psa_initial_attest_get_token(auth_challenge, challenge_size, token_buf, token_buf_size, &token_len));
     free(token_buf);
 
     const char *attest_key_id  = "attest_key";
