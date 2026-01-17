@@ -27,7 +27,7 @@ static void config_psram_spi_phases(void);
 
 static uint8_t s_psram_cs_io = (uint8_t) -1;
 
-uint8_t esp_psram_impl_get_cs_io(void)
+uint8_t esp_psram_quad_get_cs_io(void)
 {
     return s_psram_cs_io;
 }
@@ -335,7 +335,7 @@ static bool s_check_2tmode(void)
     return is_2t;
 }
 
-esp_err_t esp_psram_impl_enable(void)
+esp_err_t esp_psram_quad_enable(void)
 {
     psram_gpio_config();
     psram_set_cs_timing();
@@ -438,7 +438,7 @@ static void config_psram_spi_phases(void)
  *
  * Consider moving these to another file if this kind of APIs grows dramatically
  *-------------------------------------------------------------------------------*/
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_quad_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -452,7 +452,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * If ECC is enabled, available PSRAM size will be 7/8 times its physical size.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_quad_get_available_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
