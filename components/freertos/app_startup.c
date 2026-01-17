@@ -138,10 +138,10 @@ void esp_startup_start_app_other_cores(void)
 ESP_LOG_ATTR_TAG(MAIN_TAG, "main_task");
 
 #if !CONFIG_FREERTOS_UNICORE
-static volatile bool s_other_cpu_startup_done = false;
+static volatile bool s_other_cpu_startup_done[2] = {false, false};
 static bool other_cpu_startup_idle_hook_cb(void)
 {
-    s_other_cpu_startup_done = true;
+    s_other_cpu_startup_done[xPortGetCoreID()] = true;
     return true;
 }
 #endif
@@ -151,11 +151,13 @@ static void main_task(void* args)
     ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on other core, before replacing its startup stack
-    esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
-    while (!s_other_cpu_startup_done) {
+    esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 0);
+    esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 1);
+    while (!s_other_cpu_startup_done[!xPortGetCoreID()]) {
         ;
     }
-    esp_deregister_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
+    esp_deregister_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 0);
+    esp_deregister_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, 1);
 #endif
 
     // [refactor-todo] check if there is a way to move the following block to esp_system startup
