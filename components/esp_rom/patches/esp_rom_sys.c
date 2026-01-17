@@ -158,5 +158,5 @@ void __attribute__((constructor)) ets_ops_set_rom_patches(void)
     ets_ops_table_ptr = &ets_ops_patch_table_ptr;
 }
 
-#endif // CONFIG_ESP32C5_REV_MIN_100 || CONFIG_ESP32C61_REV_MIN_100
+#endif // CONFIG_ESP32C5_REV_MIN_FULL <= 100 || CONFIG_ESP32C61_REV_MIN_FULL <= 100
 #endif // ESP_ROM_DELAY_US_PATCH && CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD

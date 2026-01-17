@@ -232,19 +232,20 @@ static uint32_t current_read_mapping = UINT32_MAX;
  */
 static void rom_read_api_workaround(void)
 {
-#if CONFIG_ESP32C6_REV_MIN_0
-    extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
-    extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
+#if CONFIG_ESP32C6_REV_MIN_FULL == 0
+    if (efuse_hal_chip_revision() == 0) {
+        extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
+        extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 
-    static bool is_first_call = true;
-    if (is_first_call) {
-        uint32_t dummy_val = UINT32_MAX;
-        uint32_t dest_addr = ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN;
-        esp_rom_spiflash_write(dest_addr, &dummy_val, sizeof(dummy_val));
-        is_first_call = false;
-    }
+        static bool is_first_call = true;
+        if (is_first_call) {
+            uint32_t dummy_val = UINT32_MAX;
+            uint32_t dest_addr = ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN;
+            esp_rom_spiflash_write(dest_addr, &dummy_val, sizeof(dummy_val));
+            is_first_call = false;
+        }
 
-    uint32_t freqdiv = 0;
+        uint32_t freqdiv = 0;
 
 #if CONFIG_ESPTOOLPY_FLASHFREQ_80M
     freqdiv = 1;
@@ -265,10 +266,11 @@ static void rom_read_api_workaround(void)
     read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
 #endif
 
-    esp_rom_spiflash_config_clk(freqdiv, 1);
-    spi_dummy_len_fix(1, freqdiv);
-    esp_rom_spiflash_config_readmode(read_mode);
-    spi_common_set_dummy_output(read_mode);
+        esp_rom_spiflash_config_clk(freqdiv, 1);
+        spi_dummy_len_fix(1, freqdiv);
+        esp_rom_spiflash_config_readmode(read_mode);
+        spi_common_set_dummy_output(read_mode);
+    }
 #endif
 }
 
