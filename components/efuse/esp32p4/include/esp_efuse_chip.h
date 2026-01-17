@@ -66,7 +66,7 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                    /**< ECDSA private key (Expected in little endian order)*/
 
-#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256 = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, /**< ECDSA private key (P256) (Expected in little endian order)*/
 #endif
 
@@ -82,7 +82,7 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,         /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
     ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY = 12,                 /**< KM_INIT_KEY */
 
-#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1 = 13,     /**< PSRAM encryption key (XTS_AES_256_KEY_1) */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2 = 14,     /**< PSRAM encryption key (XTS_AES_256_KEY_2) */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY = 15,       /**< PSRAM encryption key (XTS_AES_128_KEY) */

@@ -1,7 +1,7 @@
 config P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
     bool
     depends on IDF_TARGET_ESP32P4
-    default y if ESP32P4_REV_MIN_300
+    default y if ESP32P4_REV_MIN_300  # Fixed since REV3.1
 
 config P4_REV3_MSPI_WORKAROUND_SIZE
     hex

@@ -29,12 +29,14 @@ extern "C" {
  */
 
 #define ESP_CHIP_REV_ABOVE(rev, min_rev) ((min_rev) <= (rev))
+#define ESP_CHIP_REV_BETWEEN(rev, min_rev, max_rev) (((min_rev) <= (rev)) && ((rev) <= (max_rev)))
 #define ESP_CHIP_REV_MAJOR_AND_ABOVE(rev, min_rev) (((rev) / 100 == (min_rev) / 100) && ((rev) >= (min_rev)))
 
 /**
  * eFuse block revision strategy is same as chip revision
  */
 #define ESP_EFUSE_BLK_REV_ABOVE(rev, min_rev) ESP_CHIP_REV_ABOVE(rev, min_rev)
+#define ESP_EFUSE_BLK_REV_BETWEEN(rev, min_rev, max_rev) ESP_CHIP_REV_BETWEEN(rev, min_rev, max_rev)
 #define ESP_EFUSE_BLK_REV_MAJOR_AND_ABOVE(rev, min_rev) ESP_CHIP_REV_MAJOR_AND_ABOVE(rev, min_rev)
 
 #ifdef __cplusplus

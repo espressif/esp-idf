@@ -177,7 +177,7 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
         pmu_hp_system_param_default(mode, &param);
         pmu_hp_system_init(ctx, mode, &param);
     }
-#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     lp_sys_ll_set_hp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
 #endif
 }
@@ -196,7 +196,7 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
-#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     lp_sys_ll_set_lp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
 #endif
 }

@@ -430,7 +430,9 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         }
     } else {
 #if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+    if (efuse_hal_chip_revision() == 300) {
         lp_clkrst_ll_boot_from_lp_ram(true);
+    }
 #endif
     }
 
@@ -461,8 +463,10 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), true);
 #endif
 #if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
-        // Set reset vector back to HP ROM after deepsleep request rejected
-        lp_clkrst_ll_boot_from_lp_ram(false);
+        if (efuse_hal_chip_revision() == 300) {
+            // Set reset vector back to HP ROM after deepsleep request rejected
+            lp_clkrst_ll_boot_from_lp_ram(false);
+        }
 #endif
     }
 
