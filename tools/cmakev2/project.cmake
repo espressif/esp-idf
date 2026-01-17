@@ -85,7 +85,7 @@ function(__init_project_configuration)
 
     idf_build_get_property(idf_ver IDF_VER)
     idf_build_get_property(idf_target IDF_TARGET)
-    idf_build_get_property(components_discovered COMPONENTS_DISCOVERED)
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(project_name PROJECT_NAME)
@@ -457,8 +457,9 @@ function(__init_project_configuration)
 
         # Generate mapping for component paths
         set(gdbinit_file_lines)
-        foreach(component_name ${components_discovered})
-            idf_component_get_property(component_dir ${component_name} COMPONENT_DIR)
+        foreach(component_interface ${component_interfaces})
+            __idf_component_get_property_unchecked(component_name ${component_interface} COMPONENT_NAME)
+            __idf_component_get_property_unchecked(component_dir ${component_interface} COMPONENT_DIR)
 
             string(TOUPPER ${component_name} component_name_uppercase)
             set(substituted_path "/COMPONENT_${component_name_uppercase}_DIR")
@@ -599,10 +600,11 @@ macro(idf_project_init)
 
         # Include all project_include.cmake files for the components that have
         # been discovered.
-        idf_build_get_property(component_names COMPONENTS_DISCOVERED)
-        foreach(component_name IN LISTS component_names)
-            idf_component_get_property(project_include ${component_name} __PROJECT_INCLUDE)
-            idf_component_get_property(component_dir ${component_name} COMPONENT_DIR)
+        idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
+        foreach(component_interface IN LISTS component_interfaces)
+            __idf_component_get_property_unchecked(project_include ${component_interface} __PROJECT_INCLUDE)
+            __idf_component_get_property_unchecked(component_dir ${component_interface} COMPONENT_DIR)
+            __idf_component_get_property_unchecked(component_name ${component_interface} COMPONENT_NAME)
             if(project_include)
                 set(COMPONENT_NAME ${component_name})
                 set(COMPONENT_DIR ${component_dir})

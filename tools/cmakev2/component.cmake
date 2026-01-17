@@ -54,6 +54,40 @@ function(idf_component_set_property component property value)
                    ${append})
 endfunction()
 
+#[[
+.. cmakev2:function:: __idf_component_get_property_unchecked
+
+    .. code-block:: cmake
+
+        __idf_component_get_property_unchecked(<variable> <component_interface> <property>)
+
+    *variable[out]*
+
+        Variable to store the value in.
+
+    *component_interface[in]*
+
+        Component interface target.
+
+    *property[in]*
+
+        Property name to get the value of.
+
+    Retrieve the value of the specified component property quickly. The
+    ``idf_component_get_property`` function performs various checks to identify
+    the component interface target, which keeps the component properties and
+    accepts a component name, target, target alias, or interface. While
+    ``idf_component_get_property`` uses a cache to identify the component
+    interface relatively quickly, it is still much slower compared to the raw
+    ``get_property``. This function should only be used if the component
+    interface is already known. It skips all the checks, so it must be used
+    carefully.
+#]]
+function(__idf_component_get_property_unchecked variable component_interface property)
+    get_property(value TARGET ${component_interface} PROPERTY ${property})
+    set(${variable} ${value} PARENT_SCOPE)
+endfunction()
+
 #[[api
 .. cmakev2:function:: idf_component_get_property
 

@@ -184,9 +184,10 @@ function(__download_component_level_managed_components)
 
     # Build local components list from discovered components
     set(__contents "components:\n")
-    idf_build_get_property(component_names COMPONENTS_DISCOVERED)
-    foreach(name ${component_names})
-        idf_component_get_property(dir ${name} COMPONENT_DIR)
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
+    foreach(interface ${component_interfaces})
+        __idf_component_get_property_unchecked(name ${interface} COMPONENT_NAME)
+        __idf_component_get_property_unchecked(dir ${interface} COMPONENT_DIR)
         set(__contents "${__contents}  - name: \"${name}\"\n    path: \"${dir}\"\n")
     endforeach()
     file(WRITE ${local_components_list_file} "${__contents}")

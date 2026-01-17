@@ -29,7 +29,7 @@ function(__component_validation_get_component_for_path var path)
     endif()
 
     # Get all component names
-    idf_build_get_property(component_names COMPONENTS_DISCOVERED)
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
 
     # Walk up the directory tree from the deepest path towards root and return
     # the first component whose COMPONENT_DIR matches exactly. This guarantees
@@ -37,9 +37,10 @@ function(__component_validation_get_component_for_path var path)
     while(NOT "${current_dir}" STREQUAL "" AND
           NOT "${current_dir}" STREQUAL "/" AND
           NOT "${current_dir}" MATCHES "^[A-Za-z]:/$")
-        foreach(component_name ${component_names})
-            idf_component_get_property(component_dir ${component_name} COMPONENT_DIR)
+        foreach(component_interface ${component_interfaces})
+            __idf_component_get_property_unchecked(component_dir ${component_interface} COMPONENT_DIR)
             if(current_dir STREQUAL component_dir)
+                __idf_component_get_property_unchecked(component_name ${component_interface} COMPONENT_NAME)
                 set(${var} ${component_name} PARENT_SCOPE)
                 return()
             endif()
@@ -52,18 +53,19 @@ function(__component_validation_get_component_for_path var path)
 endfunction()
 
 #[[
-    __component_validation_check_sources(<component_name>)
+    __component_validation_check_sources(<component_interface>)
 
-    *component_name[in]*
+    *component_interface[in]*
 
-        Component name to validate.
+        Component interface to validate.
 
     Validate that all source files of the specified component belong to that
     component's directory tree. Issues warnings if source files belong to other
     components.
 #]]
-function(__component_validation_check_sources component_name)
-    idf_component_get_property(sources ${component_name} SRCS)
+function(__component_validation_check_sources component_interface)
+    __idf_component_get_property_unchecked(component_name ${component_interface} COMPONENT_NAME)
+    __idf_component_get_property_unchecked(sources ${component_interface} SRCS)
 
     # Skip validation if component does not have any sources
     if(NOT sources)
@@ -97,10 +99,11 @@ endfunction()
     properties) of the specified component belong to that component's directory
     tree. Issues warnings if include directories belong to other components.
 #]]
-function(__component_validation_check_include_dirs component_name)
-    idf_component_get_property(include_dirs ${component_name} INCLUDE_DIRS)
-    idf_component_get_property(priv_include_dirs ${component_name} PRIV_INCLUDE_DIRS)
-    idf_component_get_property(component_dir ${component_name} COMPONENT_DIR)
+function(__component_validation_check_include_dirs component_interface)
+    __idf_component_get_property_unchecked(component_name ${component_interface} COMPONENT_NAME)
+    __idf_component_get_property_unchecked(include_dirs ${component_interface} INCLUDE_DIRS)
+    __idf_component_get_property_unchecked(priv_include_dirs ${component_interface} PRIV_INCLUDE_DIRS)
+    __idf_component_get_property_unchecked(component_dir ${component_interface} COMPONENT_DIR)
 
     # Check public include directories
     foreach(dir ${include_dirs})
@@ -163,11 +166,11 @@ function(__component_validation_run_checks)
     endif()
 
     # Validate only components linked to the specified library
-    idf_library_get_property(component_names "${ARG_LIBRARY}" LIBRARY_COMPONENTS_LINKED)
+    idf_library_get_property(component_interfaces "${ARG_LIBRARY}" LIBRARY_COMPONENT_INTERFACES_LINKED)
 
     # Run validation checks for each component
-    foreach(component_name ${component_names})
-        __component_validation_check_sources(${component_name})
-        __component_validation_check_include_dirs(${component_name})
+    foreach(component_interface ${component_interfaces})
+        __component_validation_check_sources(${component_interface})
+        __component_validation_check_include_dirs(${component_interface})
     endforeach()
 endfunction()
