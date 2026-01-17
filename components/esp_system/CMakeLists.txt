@@ -103,7 +103,7 @@ else()
 
     # Generate sections.ld.in and pass it through linker script generator
     set(sections_name "ld/${target}/sections.ld.in")
-    if(CONFIG_ESP32P4_REV_MIN_300)
+    if(CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
         set(sections_name "ld/${target}/sections.rev3.ld.in")
     endif()
     target_linker_script(${COMPONENT_LIB} INTERFACE "${sections_name}"
