@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,13 +88,6 @@ uint32_t gdma_hal_get_intr_status_reg(gdma_hal_context_t *hal, int chan_id, gdma
 uint32_t gdma_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool is_success)
 {
     return hal->get_eof_desc_addr(hal, chan_id, dir, is_success);
-}
-
-void gdma_hal_enable_access_encrypt_mem(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis)
-{
-    if (hal->enable_access_encrypt_mem) {
-        hal->enable_access_encrypt_mem(hal, chan_id, dir, en_or_dis);
-    }
 }
 
 #if SOC_GDMA_SUPPORT_CRC
