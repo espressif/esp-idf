@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -97,6 +97,7 @@ void app_main(void)
 
 #if CONFIG_OPENTHREAD_CLI
     ot_console_start();
+    ot_register_external_commands();
 #endif
 
 #if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE

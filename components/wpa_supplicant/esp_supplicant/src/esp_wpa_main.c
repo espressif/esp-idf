@@ -385,6 +385,10 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8
             wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
             goto fail;
         }
+#ifdef CONFIG_WPS_REGISTRAR
+    } else {
+	ieee802_1x_free_station(hapd, sta_info);
+#endif
     }
 #ifdef CONFIG_SAE
     if (sta_info->lock && os_semphr_take(sta_info->lock, 0) != TRUE) {
