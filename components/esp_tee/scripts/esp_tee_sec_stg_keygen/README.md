@@ -7,13 +7,13 @@
 
 ```
 $ python esp_tee_sec_stg_keygen.py --help
-usage: esp_tee_sec_stg_keygen.py [-h] -k {aes256,ecdsa_p256,ecdsa_p192,ecdsa_p384} -o OUTPUT [-i INPUT] [--write-once]
+usage: esp_tee_sec_stg_keygen.py [-h] -k {aes256,ecdsa_p256,ecdsa_p384} -o OUTPUT [-i INPUT] [--write-once]
 
 Generate or import a cryptographic key structure for secure storage
 
 options:
   -h, --help            show this help message and exit
-  -k, --key-type {aes256,ecdsa_p256,ecdsa_p192,ecdsa_p384}
+  -k, --key-type {aes256,ecdsa_p256,ecdsa_p384}
                         key type to be processed
   -o, --output OUTPUT   output binary file name
   -i, --input INPUT     input key file (.pem for ecdsa, .bin for aes)
@@ -24,7 +24,6 @@ options:
 
 ```bash
 python esp_tee_sec_stg_keygen.py -k ecdsa_p256 -o ecdsa_p256_k0.bin
-python esp_tee_sec_stg_keygen.py -k ecdsa_p192 -o ecdsa_p192_k0.bin
 python esp_tee_sec_stg_keygen.py -k ecdsa_p384 -o ecdsa_p384_k0.bin
 ```
 
@@ -65,7 +64,6 @@ key,type,encoding,value
 tee_sec_stg_ns,namespace,,
 aes256_key0,file,binary,aes256_gcm_k0.bin
 p256_key0,file,binary,ecdsa_p256_k0.bin
-p192_key0,file,binary,ecdsa_p192_k0.bin
 p384_key0,file,binary,ecdsa_p384_k0.bin
 attest_key0,file,binary,ecdsa_p256_k1.bin
 ```

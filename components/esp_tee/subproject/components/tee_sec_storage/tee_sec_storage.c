@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,6 @@
 #define AES256_GCM_IV_LEN                   12
 #define ECDSA_SECP384R1_KEY_LEN             48
 #define ECDSA_SECP256R1_KEY_LEN             32
-#define ECDSA_SECP192R1_KEY_LEN             24
 
 #define SHA256_DIGEST_SZ                    32
 
@@ -57,12 +56,6 @@ typedef struct {
     uint8_t pub_key[2 * ECDSA_SECP256R1_KEY_LEN];  /* Public key for ECDSA SECP256R1 (X and Y coordinates) */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp256r1_t;
 
-/* Structure to hold ECDSA SECP192R1 key pair */
-typedef struct {
-    uint8_t priv_key[ECDSA_SECP192R1_KEY_LEN];     /* Private key for ECDSA SECP192R1 */
-    uint8_t pub_key[2 * ECDSA_SECP192R1_KEY_LEN];  /* Public key for ECDSA SECP192R1 (X and Y coordinates) */
-} __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp192r1_t;
-
 /* Structure to hold AES-256 key and IV */
 typedef struct {
     uint8_t key[AES256_KEY_LEN];          /* Key for AES-256 */
@@ -76,7 +69,6 @@ typedef struct {
     union {
         sec_stg_ecdsa_secp384r1_t ecdsa_secp384r1;  /* ECDSA SECP384R1 key pair */
         sec_stg_ecdsa_secp256r1_t ecdsa_secp256r1;  /* ECDSA SECP256R1 key pair */
-        sec_stg_ecdsa_secp192r1_t ecdsa_secp192r1;  /* ECDSA SECP192R1 key pair */
         sec_stg_aes256_t aes256;                    /* AES-256 key and IV */
     };
     uint32_t reserved[26];                          /* Reserved space for future use */
@@ -321,15 +313,6 @@ static esp_err_t get_ecdsa_curve_info(esp_tee_sec_storage_type_t type, sec_stg_k
         *pub_key  = ctx->ecdsa_secp256r1.pub_key;
         err = ESP_OK;
         break;
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
-        *priv_key_len = ECDSA_SECP192R1_KEY_LEN;
-        *priv_key = ctx->ecdsa_secp192r1.priv_key;
-        *pub_key_len = sizeof(ctx->ecdsa_secp192r1.pub_key);
-        *pub_key  = ctx->ecdsa_secp192r1.pub_key;
-        err = ESP_OK;
-        break;
-#endif
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
     case ESP_SEC_STG_KEY_ECDSA_SECP384R1:
         *priv_key_len = ECDSA_SECP384R1_KEY_LEN;
@@ -385,8 +368,8 @@ static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t 
         goto exit;
     }
 
-    /* PSA exports public key with 0x04 prefix (65 bytes for secp256r1, 49 bytes for secp192r1)
-     * We need to strip the prefix and store only X and Y coordinates (64 bytes for secp256r1, 48 bytes for secp192r1)
+    /* PSA exports public key with 0x04 prefix (65 bytes for secp256r1)
+     * We need to strip the prefix and store only X and Y coordinates (64 bytes for secp256r1)
      * Use fixed-size array to avoid VLA issues with goto statements
      */
     uint8_t pub_key_with_prefix[(2 * ECDSA_SECP384R1_KEY_LEN) + 1];  /* Max size: 65 bytes for secp256r1 */
@@ -452,9 +435,6 @@ esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 
     switch (cfg->type) {
     case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
-#endif
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
     case ESP_SEC_STG_KEY_ECDSA_SECP384R1:
 #endif
@@ -482,12 +462,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
     if (cfg == NULL || cfg->id == NULL || hash == NULL || out_sign == NULL || hlen == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-
-#if !CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-#endif
 
 #if SOC_ECC_SUPPORT_CURVE_P384 && !CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
     if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP384R1) {
@@ -526,12 +500,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
         psa_set_key_bits(&key_attributes, ECDSA_SECP256R1_KEY_LEN * 8);
         priv_key = keyctx.ecdsa_secp256r1.priv_key;
         priv_key_len = sizeof(keyctx.ecdsa_secp256r1.priv_key);
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    } else if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
-        psa_set_key_bits(&key_attributes, ECDSA_SECP192R1_KEY_LEN * 8);
-        priv_key = keyctx.ecdsa_secp192r1.priv_key;
-        priv_key_len = sizeof(keyctx.ecdsa_secp192r1.priv_key);
-#endif
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
     } else if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP384R1) {
         psa_set_key_bits(&key_attributes, ECDSA_SECP384R1_KEY_LEN * 8);
@@ -601,12 +569,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
         pub_key_src = keyctx.ecdsa_secp256r1.pub_key;
         pub_key_len = ECDSA_SECP256R1_KEY_LEN;
         break;
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
-        pub_key_src = keyctx.ecdsa_secp192r1.pub_key;
-        pub_key_len = ECDSA_SECP192R1_KEY_LEN;
-        break;
-#endif
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
     case ESP_SEC_STG_KEY_ECDSA_SECP384R1:
         pub_key_src = keyctx.ecdsa_secp384r1.pub_key;
@@ -724,12 +686,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
         key_len = ECDSA_SECP256R1_KEY_LEN;
         curve_id = MBEDTLS_ECP_DP_SECP256R1;
         break;
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
-        key_len = ECDSA_SECP192R1_KEY_LEN;
-        curve_id = MBEDTLS_ECP_DP_SECP192R1;
-        break;
-#endif
     default:
         ESP_LOGE(TAG, "Unsupported key type");
         return ESP_ERR_INVALID_ARG;
