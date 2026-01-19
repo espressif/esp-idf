@@ -730,6 +730,7 @@ static void test_susp_task(void *arg)
     vTaskSuspend(NULL);
 }
 
+#if SOC_GPTIMER_SUPPORTED
 TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll on all cores resumes all tasks", "[freertos]")
 {
     volatile bool has_run[TEST_PENDED_NUM_BLOCKED_TASKS];
@@ -786,6 +787,7 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
     vTaskDelete(susp_task);
     vSemaphoreDelete(done_sem);
 }
+#endif //SOC_GPTIMER_SUPPORTED
 #endif  // !CONFIG_FREERTOS_UNICORE
 
 /* ---------------------------------------------------------------------------------------------------------------------
