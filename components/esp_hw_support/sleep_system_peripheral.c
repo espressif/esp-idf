@@ -164,7 +164,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     err = sleep_pau_retention_init();
     if(err) goto error;
 #endif
-#if CONFIG_ESP_ENABLE_PVT
+#if CONFIG_ESP_ENABLE_PVT && SOC_PVT_RETENTION_BY_REGDMA
     err = sleep_pvt_retention_init();
     if(err) goto error;
 #endif

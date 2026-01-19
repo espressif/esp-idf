@@ -239,6 +239,14 @@ config SOC_PMU_PVT_SUPPORTED
     bool
     default y
 
+config SOC_PVT_EN_WITH_SLEEP
+    bool
+    default y
+
+config SOC_PVT_RETENTION_BY_REGDMA
+    bool
+    default y
+
 config SOC_DCDC_SUPPORTED
     bool
     default y
