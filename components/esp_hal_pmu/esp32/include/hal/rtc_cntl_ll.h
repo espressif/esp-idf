@@ -8,8 +8,7 @@
 
 #include "soc/soc.h"
 #include "esp_attr.h"
-#include "hal/clk_tree_ll.h"
-#include "esp_rom_sys.h"
+#include "soc/rtc_cntl_reg.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus

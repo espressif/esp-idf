@@ -984,7 +984,7 @@ static void sd_host_set_clk_div(sd_host_sdmmc_ctlr_t *ctlr, soc_periph_sdmmc_clk
         sdmmc_ll_set_clock_div(ctlr->hal.dev, div);
         sdmmc_ll_select_clk_source(ctlr->hal.dev, src);
         sdmmc_ll_init_phase_delay(ctlr->hal.dev);
-#if SOC_CLK_SDIO_PLL_SUPPORTED
+#if SDMMC_LL_SDIO_PLL_SUPPORTED
         if (src == SDMMC_CLK_SRC_SDIO_200M) {
             sdmmc_ll_enable_sdio_pll(ctlr->hal.dev, true);
         }

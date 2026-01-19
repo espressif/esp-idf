@@ -35,6 +35,6 @@ list(APPEND srcs "${target}/mspi_periph.c")
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${includes}
-    REQUIRES soc hal esp_hal_gpspi
+    REQUIRES soc hal esp_hal_gpspi esp_hal_clock # TODO: IDF-15106 remove esp_hal_clock dependency
     PRIV_REQUIRES esp_hal_gpio
 )

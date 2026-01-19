@@ -737,19 +737,6 @@ static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint3
     hw->func_out_sel_cfg[gpio_num].inv_sel = out_inv;
 }
 
-/**
- * @brief  Control the pin in the IOMUX
- *
- * @param  bmap   write mask of control value
- * @param  val    Control value
- * @param  shift  write mask shift of control value
- */
-__attribute__((always_inline))
-static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
-{
-    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
-}
-
 #ifdef __cplusplus
 }
 #endif

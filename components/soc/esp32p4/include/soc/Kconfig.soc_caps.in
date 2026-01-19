@@ -1843,10 +1843,6 @@ config SOC_CLK_MPLL_SUPPORTED
     bool
     default y
 
-config SOC_CLK_SDIO_PLL_SUPPORTED
-    bool
-    default y
-
 config SOC_CLK_XTAL32K_SUPPORTED
     bool
     default y

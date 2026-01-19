@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs)
-set(priv_req esp_pm esp_driver_gpio)
+set(priv_req esp_pm esp_driver_gpio esp_hal_clock)
 
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator

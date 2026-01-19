@@ -67,10 +67,6 @@ if(esp_tee_build)
 elseif(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 
-    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
-        list(APPEND srcs "${target}/clk_tree_hal.c")
-    endif()
-
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
     endif()

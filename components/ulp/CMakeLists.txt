@@ -98,5 +98,5 @@ idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${includes}
     REQUIRES esp_adc esp_driver_gpio esp_driver_uart esp_driver_i2s
-             esp_hal_i2c esp_hal_touch_sens esp_hal_gpspi esp_hal_pmu esp_hal_rtc_timer
+             esp_hal_i2c esp_hal_touch_sens esp_hal_gpspi esp_hal_pmu esp_hal_rtc_timer esp_hal_clock
 )
