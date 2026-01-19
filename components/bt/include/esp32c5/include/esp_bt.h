@@ -159,7 +159,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20251125
+#define CONFIG_VERSION  0x20251211
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -237,6 +237,7 @@ typedef struct {
     uint8_t priority_level_cfg;                      /*!< The option for priority level configuration */
     uint8_t slv_fst_rx_lat_en;                       /*!< The option for enabling slave fast PDU reception during latency. */
     uint8_t dl_itvl_phy_sync_en;                    /*!< The option for automatically initiate the data length update when phy update or connect interval update. */
+    uint8_t scan_allow_adi_filter;                  /*!< The option for ext scan to allow PDU with specific adi. */
     uint32_t config_magic;                           /*!< Magic number for configuration validation */
 } esp_bt_controller_config_t;
 
@@ -301,6 +302,7 @@ typedef struct {
     .priority_level_cfg         = BT_LL_CTRL_PRIO_LVL_CFG,                              \
     .slv_fst_rx_lat_en          = DEFAULT_BT_LE_CTRL_SLV_FAST_RX_CONN_DATA_EN,          \
     .dl_itvl_phy_sync_en        = DEFAULT_BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN,               \
+    .scan_allow_adi_filter      = DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER,                 \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
