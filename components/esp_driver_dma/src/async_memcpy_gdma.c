@@ -207,6 +207,13 @@ esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config,
 }
 #endif // SOC_HAS(AXI_GDMA)
 
+#if SOC_HAS(LP_AHB_GDMA)
+esp_err_t esp_async_memcpy_install_gdma_lp_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp)
+{
+    return esp_async_memcpy_install_gdma_template(config, mcp, gdma_new_lp_ahb_channel, SOC_GDMA_BUS_LP);
+}
+#endif // SOC_HAS(LP_AHB_GDMA)
+
 #if SOC_HAS(AHB_GDMA)
 /// default installation falls back to use the AHB GDMA
 esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
@@ -320,6 +327,14 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
         dma_link_item_alignment = GDMA_LL_AXI_DESC_ALIGNMENT;
     }
 #endif // SOC_HAS(AXI_GDMA)
+#if SOC_HAS(LP_AHB_GDMA)
+    if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_LP) {
+#if !GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "LP AHB GDMA can only access SRAM");
+#endif // !GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+        dma_link_item_alignment = GDMA_LL_AHB_DESC_ALIGNMENT;
+    }
+#endif // SOC_HAS(LP_AHB_GDMA)
     // alignment check
     ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "address|size not aligned: %p -> %p, sz=%zu", src, dst, n);
 

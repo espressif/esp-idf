@@ -23,6 +23,10 @@ config SOC_AXI_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_LP_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
     bool
     default y

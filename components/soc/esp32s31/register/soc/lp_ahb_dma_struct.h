@@ -1420,6 +1420,7 @@ typedef struct {
     volatile ahb_dma_ahbinf_resp_err_status1_reg_t ahbinf_resp_err_status1;
 } ahb_dma_dev_t;
 
+// We map the LP_AHB_DMA instance to the ahb_dma_dev_t struct for convenience of using the same HAL/LL. See soc/ahb_dma_struct.h
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ahb_dma_dev_t) == 0x628, "Invalid size of ahb_dma_dev_t structure");

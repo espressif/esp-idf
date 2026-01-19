@@ -147,6 +147,64 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
     }
 #endif // GDMA_LL_AXI_PAIRS_PER_GROUP >= 2
+
+#if SOC_HAS(LP_AHB_GDMA)
+    // install TX channels
+    for (int i = 0; i < GDMA_LL_LP_AHB_PAIRS_PER_GROUP; i++) {
+        TEST_ESP_OK(gdma_new_lp_ahb_channel(&channel_config, &tx_channels[i], NULL));
+    };
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_lp_ahb_channel(&channel_config, &tx_channels[0], NULL));
+
+    // Free interrupts before installing RX interrupts to ensure enough free interrupts
+    for (int i = 0; i < GDMA_LL_LP_AHB_PAIRS_PER_GROUP; i++) {
+        TEST_ESP_OK(gdma_del_channel(tx_channels[i]));
+    }
+
+    // install RX channels
+    for (int i = 0; i < GDMA_LL_LP_AHB_PAIRS_PER_GROUP; i++) {
+        TEST_ESP_OK(gdma_new_lp_ahb_channel(&channel_config, NULL, &rx_channels[i]));
+    }
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_lp_ahb_channel(&channel_config, NULL, &rx_channels[0]));
+
+    for (int i = 0; i < GDMA_LL_LP_AHB_PAIRS_PER_GROUP; i++) {
+        TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
+    }
+#endif // SOC_HAS(LP_AHB_GDMA)
+
+    // install single and paired TX/RX channels
+#if GDMA_LL_LP_AHB_PAIRS_PER_GROUP >= 2
+    // single tx channel
+    TEST_ESP_OK(gdma_new_lp_ahb_channel(&channel_config, &tx_channels[0], NULL));
+
+    // create tx and rx channel pair
+    TEST_ESP_OK(gdma_new_lp_ahb_channel(&channel_config, &tx_channels[1], &rx_channels[1]));
+    // create single rx channel
+    TEST_ESP_OK(gdma_new_lp_ahb_channel(&channel_config, NULL, &rx_channels[0]));
+
+    gdma_trigger_t fake_lp_ahb_trigger1 = {
+        .bus_id = SOC_GDMA_BUS_LP,
+        .instance_id = 0,
+    };
+    gdma_trigger_t fake_lp_ahb_trigger2 = {
+        .bus_id = SOC_GDMA_BUS_LP,
+        .instance_id = 1,
+    };
+    TEST_ESP_OK(gdma_connect(tx_channels[0], fake_lp_ahb_trigger1));
+    // can't connect multiple channels to the same peripheral
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gdma_connect(tx_channels[1], fake_lp_ahb_trigger1));
+    TEST_ESP_OK(gdma_connect(tx_channels[1], fake_lp_ahb_trigger2));
+
+    // but rx and tx can connect to the same peripheral
+    TEST_ESP_OK(gdma_connect(rx_channels[0], fake_lp_ahb_trigger1));
+    TEST_ESP_OK(gdma_connect(rx_channels[1], fake_lp_ahb_trigger2));
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_OK(gdma_disconnect(tx_channels[i]));
+        TEST_ESP_OK(gdma_disconnect(rx_channels[i]));
+        TEST_ESP_OK(gdma_del_channel(tx_channels[i]));
+        TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
+    }
+#endif // GDMA_LL_LP_AHB_PAIRS_PER_GROUP >= 2
+
 }
 
 static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan,
@@ -363,6 +421,15 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif // SOC_HAS(AXI_GDMA)
+
+#if SOC_HAS(LP_AHB_GDMA)
+    TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
+
+    test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
+
+    TEST_ESP_OK(gdma_del_channel(tx_chan));
+    TEST_ESP_OK(gdma_del_channel(rx_chan));
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
@@ -677,5 +744,15 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif
 #endif // SOC_HAS(AXI_GDMA)
+
+#if SOC_HAS(LP_AHB_GDMA)
+    printf("Testing LP-AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
+    TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
+
+    test_gdma_memcpy_from_to_psram(tx_chan, rx_chan);
+
+    TEST_ESP_OK(gdma_del_channel(tx_chan));
+    TEST_ESP_OK(gdma_del_channel(rx_chan));
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 #endif // SOC_SPIRAM_SUPPORTED

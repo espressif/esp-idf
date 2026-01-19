@@ -451,11 +451,12 @@ typedef struct {
     volatile lp_periclkrst_dm_ctrl_reg_t dm_ctrl;
     uint32_t reserved_054[234];
     volatile lp_periclkrst_date_reg_t date;
-} lp_periclkrst_dev_t;
+} lp_peri_clkrst_dev_t;
 
+extern lp_peri_clkrst_dev_t LP_PERI_CLKRST;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lp_periclkrst_dev_t) == 0x400, "Invalid size of lp_periclkrst_dev_t structure");
+_Static_assert(sizeof(lp_peri_clkrst_dev_t) == 0x400, "Invalid size of lp_peri_clkrst_dev_t structure");
 #endif
 
 #ifdef __cplusplus
