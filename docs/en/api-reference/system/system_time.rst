@@ -43,6 +43,36 @@ The choice depends on your requirements for system time accuracy and power consu
 
 More details about the wiring requirements for the external crystal or external oscillator, please refer to the `Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/{IDF_TARGET_PATH_NAME}>`_.
 
+Selecting RTC Timer Clock Source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use the default **internal RC oscillator** when:
+
+- Minimizing sleep current consumption is critical for battery-powered or energy-constrained devices.
+- High time accuracy during sleep modes is not required. Time drifting in the range of several seconds per day is acceptable.
+- Minimizing external components and hardware complexity is a priority.
+- The operating temperature is relatively stable (reducing frequency variation).
+- Bluetooth LE with power saving is not used, or only used for legacy advertising/scanning without connections.
+
+Use an **external 32 kHz crystal** or **external 32 kHz oscillator** when:
+
+- Accurate time-keeping during Deep-sleep and Light-sleep modes is required.
+- A small increase in sleep current (typically a few μA) fits within the power budget.
+- Adding external components is acceptable for the design.
+- Operating temperature may vary significantly.
+- Bluetooth LE with power saving is enabled and connections are required.
+
+Some chips may provide the **internal oscillator** option, which is a trade-off between the internal RC oscillator and external 32 kHz crystal/oscillator options. It does not require external components while providing better frequency stability than the internal RC oscillator but at the cost of higher sleep current consumption. If Bluetooth LE is used please verify the internal oscillator meets Bluetooth LE sleep clock accuracy requirements (see below).
+
+In most designs, the additional sleep current is a reasonable trade-off for significantly improved RTC Timer frequency stability and reduced time drift during sleep.
+
+**Bluetooth LE** requires sleep clock accuracy within 500 PPM. The RTC clock source may not meet this requirement, leading to connection establishment failures, unexpected timeouts, or incompatibility with non-Espressif peer devices.
+
+.. only:: SOC_BLE_SUPPORTED
+
+    For a detailed comparison of Bluetooth LE clock configurations and power consumption, refer to :doc:`Low Power Mode in Bluetooth LE </api-guides/low-power-mode/low-power-mode-ble>`.
+
+
 Get Current Time
 ----------------
 
