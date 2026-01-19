@@ -272,6 +272,22 @@ menu "Hardware Settings"
                 to configure the value of tRES1, different types of flash require different tRES1 values, usually no
                 more than 35us, please refer to the datasheet of the used Flash to configure this option.
 
+        config ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+            bool "Enable rtc wdt during sleep (EXPERIMENTAL)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            depends on SOC_LIGHT_SLEEP_SUPPORTED
+            default n
+            help
+                If enabled, rtc watchdog will remain active during sleep to prevent program runaway. Specifically, its
+                timeout will be set as the sum of the sleep duration, hardware overhead time, and RTC slow clock
+                compensation time.
+
+                NOTE: In the current phase, the RTC slow clock compensation time remains zero (pending implementation).
+                When using the RC_SLOW_CLK without calibration, the maximum continuous sleep duration is typically
+                around 5 minutes, and may vary between chips. Therefore, avoid configuring sleep periods longer than
+                this when enabling this option.
+
+
     endmenu
 
     menu "RTC Clock Config"

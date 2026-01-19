@@ -336,6 +336,7 @@ typedef struct {
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     }                                                                   \
 }
 
@@ -343,18 +344,21 @@ typedef struct {
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     }                                                                   \
 }
 #else // !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     }                                                                   \
 }
 
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {            \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     }                                                                   \
 }
 #endif

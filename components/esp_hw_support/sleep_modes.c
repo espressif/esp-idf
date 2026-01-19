@@ -348,6 +348,7 @@ void esp_sleep_overhead_out_time_refresh(void)
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
 static uint32_t get_sleep_clock_icg_flags(void);
+static uint32_t get_slow_clk_zero_drift_compensate(uint32_t sleep_duration);
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 static void ext0_wakeup_prepare(void);
 #endif
@@ -1539,9 +1540,15 @@ esp_err_t esp_light_sleep_start(void)
     bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
     if (!wdt_was_enabled) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
-        uint32_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+        uint64_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+        uint64_t sleep_timout_ticks = rtc_time_us_to_slowclk(s_config.sleep_duration, s_config.rtc_clk_cal_period);
+#else
+        uint64_t sleep_timout_ticks = 0;
+#endif
+        uint64_t slow_clk_comp_ticks = get_slow_clk_zero_drift_compensate(sleep_timout_ticks + stage_timeout_ticks);
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, (uint32_t)(stage_timeout_ticks + sleep_timout_ticks + slow_clk_comp_ticks), WDT_STAGE_ACTION_RESET_RTC);
         wdt_hal_enable(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
@@ -2868,6 +2875,10 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
     }
 #endif
 
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+    sleep_flags |= RTC_SLEEP_USE_RTC_WDT;
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32P4
     /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
        triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
@@ -2917,6 +2928,13 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
 #endif
 #endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
     return clk_flags;
+}
+
+/* Compensate zero drift of rtc slow clock in long-term working scenarios */
+static uint32_t get_slow_clk_zero_drift_compensate(uint32_t sleep_duration)
+{
+    (void) sleep_duration;
+    return 0;
 }
 
 #if CONFIG_IDF_TARGET_ESP32
