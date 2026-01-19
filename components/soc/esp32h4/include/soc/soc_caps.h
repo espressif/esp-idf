@@ -65,8 +65,8 @@
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1    // TODO: [ESP32H4] IDF-12251 IDF-12252 IDF-12253
-// #define SOC_AES_SUPPORTED               0    // TODO: [ESP32H4] IDF-12266
-// #define SOC_SHA_SUPPORTED               1    // TODO: [ESP32H4] IDF-12263
+#define SOC_AES_SUPPORTED               1
+#define SOC_SHA_SUPPORTED               1
 // #define SOC_HMAC_SUPPORTED              0    // TODO: [ESP32H4] IDF-12257
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
@@ -96,13 +96,15 @@
 #define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
-// #define SOC_AES_SUPPORT_DMA     (1)
+#define SOC_AES_SUPPORT_DMA     (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-// #define SOC_AES_GDMA            (1)
+#define SOC_AES_GDMA            (1)
 
-// #define SOC_AES_SUPPORT_AES_128 (1)
-// #define SOC_AES_SUPPORT_AES_256 (1)
+#define SOC_AES_SUPPORT_AES_128 (1)
+#define SOC_AES_SUPPORT_AES_256 (1)
+
+#define SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION (1)
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
@@ -342,19 +344,22 @@
    for SHA this means that the biggest safe amount of bytes is
    31 blocks of 128 bytes = 3968
 */
-// #define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
-// #define SOC_SHA_SUPPORT_DMA             (1)
+#define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
+#define SOC_SHA_SUPPORT_DMA             (1)
 
 /* The SHA engine is able to resume hashing from a user */
-// #define SOC_SHA_SUPPORT_RESUME          (1)
+#define SOC_SHA_SUPPORT_RESUME          (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
-// #define SOC_SHA_GDMA             (1)
+#define SOC_SHA_GDMA             (1)
 
 /* Supported HW algorithms */
-// #define SOC_SHA_SUPPORT_SHA1            (1)
-// #define SOC_SHA_SUPPORT_SHA224          (1)
-// #define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA224          (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+#define SOC_SHA_SUPPORT_SHA512_T        (1)
 
 /*--------------------------- ECC CAPS ---------------------------------------*/
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
