@@ -21,14 +21,14 @@
  * use RTOS notification mechanisms (queues, semaphores, event groups, etc.) to
  * pass information to other tasks.
  *
- * To be implemented: it should be possible to request the callback to be called
- * directly from the ISR. This reduces the latency, but has potential impact on
- * all other callbacks which need to be dispatched. This option should only be
- * used for simple callback functions, which do not take longer than a few
- * microseconds to run.
+ * Timer callbacks can be dispatched from either an esp_timer task (default) or
+ * directly from an ISR if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD is enabled
+ * and ESP_TIMER_ISR dispatch method is specified. ISR dispatch reduces latency but
+ * callbacks must be very short and follow ISR restrictions (no blocking, no FreeRTOS
+ * calls except those ending in FromISR).
  *
- * Timer callbacks are called from a task running on CPU0.
- * On chips with multiple cores, CPU0 (default) can be changed using
+ * Timer callbacks are called from the esp_timer task by default.
+ * The CPU core affinity of the esp_timer task can be configured using
  * the Kconfig option CONFIG_ESP_TIMER_TASK_AFFINITY.
  */
 
@@ -71,9 +71,9 @@ typedef enum {
 typedef struct {
     esp_timer_cb_t callback;        //!< Callback function to execute when timer expires
     void* arg;                      //!< Argument to pass to callback
-    esp_timer_dispatch_t dispatch_method;   //!< Dispatch callback from task or ISR; if not specified, esp_timer task
-    //                                !< is used; for ISR to work, also set Kconfig option
-    //                                !< `CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD`
+    esp_timer_dispatch_t dispatch_method;   //!< Dispatch callback from task (ESP_TIMER_TASK, default) or
+    //                                !< ISR (ESP_TIMER_ISR). For ISR dispatch, enable Kconfig option
+    //                                !< CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
     const char* name;               //!< Timer name, used in esp_timer_dump() function
     bool skip_unhandled_events;     //!< Setting to skip unhandled events in light sleep for periodic timers
 } esp_timer_create_args_t;
@@ -169,8 +169,8 @@ esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us);
  * @param alarm_us timer alarm time, in absolute microseconds (as returned by esp_timer_get_time())
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if the handle is invalid
- *      - ESP_ERR_INVALID_STATE if the timer is already running or in the past
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid or alarm_us is in the past
+ *      - ESP_ERR_INVALID_STATE if the timer is already running
  */
 esp_err_t esp_timer_start_once_at(esp_timer_handle_t timer, uint64_t alarm_us);
 
@@ -202,8 +202,8 @@ esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period);
  * @param first_alarm_us timer first alarm time, in absolute microseconds (as returned by esp_timer_get_time())
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if the handle is invalid
- *      - ESP_ERR_INVALID_STATE if the timer is already running or in the past
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid or first_alarm_us is in the past
+ *      - ESP_ERR_INVALID_STATE if the timer is already running
  */
 esp_err_t esp_timer_start_periodic_at(esp_timer_handle_t timer, uint64_t period_us, uint64_t first_alarm_us);
 
@@ -238,8 +238,8 @@ esp_err_t esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us);
  * @param first_alarm_us timer alarm time, in absolute microseconds (as returned by esp_timer_get_time())
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if the handle is invalid
- *      - ESP_ERR_INVALID_STATE if the timer is not running or in the past
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid or first_alarm_us is in the past
+ *      - ESP_ERR_INVALID_STATE if the timer is not running
  */
 esp_err_t esp_timer_restart_at(esp_timer_handle_t timer, uint64_t period_us, uint64_t first_alarm_us);
 
@@ -290,8 +290,8 @@ esp_err_t esp_timer_stop(esp_timer_handle_t timer);
  *           still be running.
  *
  * If ESP_ERR_NOT_FINISHED is returned, it means that the timer is disarmed, but its callback
- * may is still running or will run soon. In this case, you can wait for the callback to complete
- * using esp_timer_is_active().
+ * may still be running or will run soon. In this case, you can poll esp_timer_is_active()
+ * until it returns false to ensure the callback has completed.
  *
  * @param timer Timer handle created using esp_timer_create()
  * @param timeout_ticks Maximum time to wait for callback completion, in FreeRTOS ticks.
@@ -325,17 +325,26 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer);
 int64_t esp_timer_get_time(void);
 
 /**
- * @brief Get the timestamp of the next expected timeout
- * @return Timestamp of the nearest timer event, in microseconds.
+ * @brief Get the timestamp when the next timer will expire
+ *
+ * This function returns the alarm time of the timer that will expire soonest
+ * across all dispatch methods (TASK and ISR).
+ *
+ * @return Timestamp of the nearest timer event, in microseconds since boot.
+ *         Returns INT64_MAX if no timers are currently armed.
  *         The timebase is the same as for the values returned by esp_timer_get_time().
  */
 int64_t esp_timer_get_next_alarm(void);
 
 /**
- * @brief Get the timestamp of the next expected timeout excluding those timers
- *        that should not interrupt light sleep (such timers have
- *        ::esp_timer_create_args_t::skip_unhandled_events enabled)
- * @return Timestamp of the nearest timer event, in microseconds.
+ * @brief Get the timestamp when the next timer that should wake from light sleep will expire
+ *
+ * This function returns the alarm time of the timer that will expire soonest, excluding
+ * timers that have ::esp_timer_create_args_t::skip_unhandled_events enabled. Used by
+ * the power management system to determine when to wake from light sleep.
+ *
+ * @return Timestamp of the nearest timer event that should wake the system, in microseconds since boot.
+ *         Returns INT64_MAX if no wake-capable timers are currently armed.
  *         The timebase is the same as for the values returned by esp_timer_get_time().
  */
 int64_t esp_timer_get_next_alarm_for_wake_up(void);
@@ -343,8 +352,9 @@ int64_t esp_timer_get_next_alarm_for_wake_up(void);
 /**
  * @brief Get the period of a timer
  *
- * This function fetches the timeout period of a timer.
- * For a one-shot timer, the timeout period will be 0.
+ * This function fetches the period of a timer.
+ * For a one-shot timer, the period will be 0.
+ * For a periodic timer, returns the interval between successive callback invocations.
  *
  * @param timer timer handle created using esp_timer_create()
  * @param period memory to store the timer period value in microseconds
@@ -373,31 +383,38 @@ esp_err_t esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry);
 /**
  * @brief Dump the list of timers to a stream
  *
- * By default, this function prints the list of active (running) timers. The output format is:
+ * This function prints statistics about timers. Without CONFIG_ESP_TIMER_PROFILING,
+ * it prints only the active (armed) timers. With CONFIG_ESP_TIMER_PROFILING enabled,
+ * it prints all created timers (both armed and disarmed).
  *
- * | Name | Period | Alarm |
+ * Output format without CONFIG_ESP_TIMER_PROFILING:
  *
- * - Name — timer pointer
- * - Period — period of timer in microseconds, or 0 for one-shot timer
- * - Alarm - time of the next alarm in microseconds since boot, or 0 if the timer is not started
+ * Name              | Period      | Alarm
+ * ------------------|-------------|-------------
+ * timer@0x3ffb1234  | 1000000     | 12345678
  *
- * To print the list of all created timers, enable Kconfig option `CONFIG_ESP_TIMER_PROFILING`.
- * In this case, the output format is:
+ * - Name — timer pointer (or timer name if CONFIG_ESP_TIMER_PROFILING is enabled)
+ * - Period — period of timer in microseconds, or 0 for one-shot timers
+ * - Alarm — time of the next alarm in microseconds since boot, or 0 if the timer is not armed
  *
- * | Name | Period | Alarm | Times_armed | Times_trigg | Times_skip | Cb_exec_time |
+ * Output format with CONFIG_ESP_TIMER_PROFILING:
  *
- * - Name — timer name
+ * Name              | Period      | Alarm       | Times_armed | Times_trigg | Times_skip | Cb_exec_time
+ * ------------------|-------------|-------------|-------------|-------------|------------|-------------
+ * my_timer          | 1000000     | 12345678    | 42          | 40          | 2          | 1234
+ *
+ * - Name — timer name (from esp_timer_create_args_t::name)
  * - Period — same as above
  * - Alarm — same as above
- * - Times_armed — number of times the timer was armed via esp_timer_start_X
- * - Times_triggered - number of times the callback was triggered
- * - Times_skipped - number of times the callback was skipped
- * - Callback_exec_time - total time taken by callback to execute, across all calls
+ * - Times_armed — number of times the timer was armed via esp_timer_start_*
+ * - Times_trigg — number of times the callback was invoked
+ * - Times_skip — number of times the callback was skipped (periodic timers with skip_unhandled_events)
+ * - Cb_exec_time — total time spent executing the callback, in microseconds
  *
  * @param stream stream (such as stdout) to which to dump the information
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NO_MEM if can not allocate temporary buffer for the output
+ *      - ESP_ERR_NO_MEM if cannot allocate temporary buffer for the output
  */
 esp_err_t esp_timer_dump(FILE* stream);
 
@@ -412,14 +429,17 @@ void esp_timer_isr_dispatch_need_yield(void);
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD || defined __DOXYGEN__
 
 /**
- * @brief Returns status of a timer, active or not
+ * @brief Check if a timer is active
  *
- * This function is used to identify if the timer is still active (running) or not.
+ * A timer is considered active if it is armed (will expire in the future) or
+ * if its callback is currently executing. After calling esp_timer_stop(), the
+ * timer is disarmed but its callback may still be running, so this function
+ * may still return true.
  *
  * @param timer timer handle created using esp_timer_create()
  * @return
- *      - 1 if timer is still active (running)
- *      - 0 if timer is not active
+ *      - true if timer is armed or its callback is currently running
+ *      - false if timer is disarmed and callback is not running
  */
 bool esp_timer_is_active(esp_timer_handle_t timer);
 
