@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -735,6 +735,51 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
 FORCE_INLINE_ATTR void pmu_ll_set_dcdc_ccm_sw_en(pmu_dev_t *hw, bool enable)
 {
     hw->dcm_ctrl.dcdc_ccm_sw_en = enable;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_boost_ccm_ctrlen(pmu_dev_t *hw, bool enable)
+{
+    hw->dcm_boost_ctrl.dcdc_boost_ccm_ctrlen = enable;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_boost_ccm_enb(pmu_dev_t *hw, bool enable)
+{
+    hw->dcm_boost_ctrl.dcdc_boost_ccm_enb = enable;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_boost_en(pmu_dev_t *hw, bool enable)
+{
+    hw->dcm_boost_ctrl.dcdc_boost_en = enable;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_boost_dreg(pmu_dev_t *hw, uint32_t dreg)
+{
+    hw->dcm_boost_ctrl.dcdc_boost_dreg = dreg;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_dcdc_boost_dreg(pmu_dev_t *hw)
+{
+    return hw->dcm_boost_ctrl.dcdc_boost_dreg;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_ext_ocode(pmu_dev_t *hw, uint32_t ocode)
+{
+    hw->ble_bandgap_ctrl.ext_ocode = ocode;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_ble_bandgap_ext_ocode(pmu_dev_t *hw)
+{
+    return hw->ble_bandgap_ctrl.ext_ocode;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_ext_force_ocode(pmu_dev_t *hw, bool force)
+{
+    hw->ble_bandgap_ctrl.ext_force_ocode = force;
+}
+
+FORCE_INLINE_ATTR bool pmu_ll_get_ble_bandgap_ext_force_ocode(pmu_dev_t *hw)
+{
+    return hw->ble_bandgap_ctrl.ext_force_ocode;
 }
 
 #ifdef __cplusplus
