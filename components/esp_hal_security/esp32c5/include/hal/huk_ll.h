@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,10 +71,13 @@ static inline void huk_ll_configure_interrupt(const esp_huk_interrupt_type_t int
     switch (intr) {
     case ESP_HUK_INT_PREP_DONE:
         REG_SET_FIELD(HUK_INT_ENA_REG, HUK_PREP_DONE_INT_ENA, en);
+        break;
     case ESP_HUK_INT_PROC_DONE:
         REG_SET_FIELD(HUK_INT_ENA_REG, HUK_PROC_DONE_INT_ENA, en);
+        break;
     case ESP_HUK_INT_POST_DONE:
         REG_SET_FIELD(HUK_INT_ENA_REG, HUK_POST_DONE_INT_ENA, en);
+        break;
     default:
         return;
     }
@@ -86,10 +89,13 @@ static inline void huk_ll_clear_int(const esp_huk_interrupt_type_t intr)
     switch (intr) {
     case ESP_HUK_INT_PREP_DONE:
         REG_SET_FIELD(HUK_INT_CLR_REG, HUK_PREP_DONE_INT_CLR, 1);
+        break;
     case ESP_HUK_INT_PROC_DONE:
         REG_SET_FIELD(HUK_INT_CLR_REG, HUK_PROC_DONE_INT_CLR, 1);
+        break;
     case ESP_HUK_INT_POST_DONE:
         REG_SET_FIELD(HUK_INT_CLR_REG, HUK_POST_DONE_INT_CLR, 1);
+        break;
     default:
         return;
     }
