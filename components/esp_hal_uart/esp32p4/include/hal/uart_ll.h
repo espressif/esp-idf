@@ -101,7 +101,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     switch (LPPERI.core_clk_sel.lp_uart_clk_sel) {
     default:
     case 0:
-        *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_FAST;
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_RC_FAST;
         break;
     case 1:
         *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
@@ -123,7 +123,7 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
 {
     (void)hw;
     switch (src_clk) {
-    case LP_UART_SCLK_LP_FAST:
+    case LP_UART_SCLK_RC_FAST:
         LPPERI.core_clk_sel.lp_uart_clk_sel = 0;
         break;
     case LP_UART_SCLK_XTAL_D2:

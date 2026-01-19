@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -284,16 +284,16 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of LP_UART
  */
-#define SOC_LP_UART_CLKS {SOC_MOD_CLK_RTC_FAST, SOC_MOD_CLK_XTAL_D2}
+#define SOC_LP_UART_CLKS {SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL_D2}
 
 /**
  * @brief Type of LP_UART clock source
  */
 typedef enum {
-    LP_UART_SCLK_LP_FAST = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock is LP(RTC)_FAST */
+    LP_UART_SCLK_RC_FAST = SOC_MOD_CLK_RC_FAST,         /*!< LP_UART source clock is FOSC */
     LP_UART_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock is XTAL_D2 */
     // LP_UART_SCLK_LP_PLL  = SOC_MOD_CLK_LP_PLL,       /*!< LP_UART source clock is LP_PLL (8M PLL) */ TODO: IDF-9581
-    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock default choice is LP(RTC)_FAST */
+    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_RC_FAST,         /*!< LP_UART source clock default choice is FOSC */
 } soc_periph_lp_uart_clk_src_t;
 
 //////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////
