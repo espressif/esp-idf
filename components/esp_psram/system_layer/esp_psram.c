@@ -426,7 +426,8 @@ esp_err_t esp_psram_init(void)
 
 #if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     // This workaround is only needed for P4 rev 300 (3.0.0)
-    if (efuse_hal_chip_revision == 300) {
+    unsigned chip_revision = efuse_hal_chip_revision();
+    if (chip_revision == 300) {
         esp_psram_p4_rev3_workaround();
     }
 #endif
