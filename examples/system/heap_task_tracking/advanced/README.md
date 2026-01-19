@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
-# Heap Task Tracking Basic Example
+# Heap Task Tracking Advanced Example
 
 ## Overview
 
@@ -10,7 +10,7 @@ The main then goes into a loop calling functions retrieving statistics for the "
 For each tasks, the following information is retrieved and printed:
     - the task name
     - the task status (running or deleted)
-    - the overall peak memory usage of the task 
+    - the overall peak memory usage of the task
     - the overall current memory usage of the task
 For each heap used by a given task, the following information is printed:
     - the heap name
