@@ -114,8 +114,9 @@ set pvt default param
 #define PVT_DELAY_NUM_HIGH      108
 #define PVT_DELAY_NUM_LOW       98
 #define PVT_PUMP_CHANNEL_CODE   1
-#define PVT_PUMP_BITMAP         25
+#define PVT_PUMP_BITMAP         21
 #define PVT_PUMP_DRV            0
+#define PVT_DELAY_NUM_PUMP      95
 
 /**
  * @brief Initialize PVT related parameters
