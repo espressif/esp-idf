@@ -13,6 +13,7 @@
 #include "sdkconfig.h"
 #include "esp_task.h"
 #include "esp_assert.h"
+#include "../../../../controller/esp32/esp_bredr_cfg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,7 @@ extern "C" {
 
 #define SOC_MEM_BT_EM_PER_SYNC_SIZE         0x870
 
-#define SOC_MEM_BT_EM_BREDR_REAL_END        (SOC_MEM_BT_EM_BREDR_NO_SYNC_END + CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF * SOC_MEM_BT_EM_PER_SYNC_SIZE)
+#define SOC_MEM_BT_EM_BREDR_REAL_END        (SOC_MEM_BT_EM_BREDR_NO_SYNC_END + UT_BR_EDR_CTRL_MAX_SYNC_CONN_EFF * SOC_MEM_BT_EM_PER_SYNC_SIZE)
 
 #endif //CONFIG_BT_ENABLED
 
@@ -241,7 +242,7 @@ the advertising packet will be discarded until the memory is restored. */
     .bt_sco_datapath = CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF,          \
     .auto_latency = BTDM_CTRL_AUTO_LATENCY_EFF,                            \
     .bt_legacy_auth_vs_evt = BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF,         \
-    .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
+    .bt_max_sync_conn = UT_BR_EDR_CTRL_MAX_SYNC_CONN_EFF,                  \
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
     .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
