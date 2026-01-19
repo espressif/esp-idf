@@ -89,9 +89,9 @@ menu "Power Supplier"
                 Use this option carefully to avoid damage to non-rechargeable batteries.
 
         choice ESP_VBAT_DET_LVL_LOW_SEL
-            prompt "VBAT start charging voltage level"
+            prompt "VBAT start charging voltage level (P4 revision < v3.0)"
             default ESP_VBAT_DET_LVL_LOW_SEL_6
-            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY && ESP32P4_SELECTS_REV_LESS_V3
             help
                 The brownout detector will start charging when the supply voltage drops below the selected threshold.
                 This ensures that the power supply is maintained at a stable level.
@@ -104,10 +104,26 @@ menu "Power Supplier"
                 bool "2.42V"
         endchoice
 
+        choice ESP_VBAT_DET_LVL_LOW_SEL_V3
+            prompt "VBAT start charging voltage level (P4 revision >= v3.0)"
+            default ESP_VBAT_DET_LVL_LOW_SEL_6_V3
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY && !ESP32P4_SELECTS_REV_LESS_V3
+            help
+                The brownout detector will start charging when the supply voltage drops below the selected threshold.
+                This ensures that the power supply is maintained at a stable level.
+
+            config ESP_VBAT_DET_LVL_LOW_SEL_7_V3
+                bool "2.84V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_6_V3
+                bool "2.74V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_5_V3
+                bool "2.64V"
+        endchoice
+
         choice ESP_VBAT_DET_LVL_HIGH_SEL
-            prompt "VBAT stop charging voltage level"
+            prompt "VBAT stop charging voltage level (P4 revision < v3.0)"
             default ESP_VBAT_DET_LVL_HIGH_SEL_7
-            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY && ESP32P4_SELECTS_REV_LESS_V3
             help
                 The brownout detector will stop charging when the supply voltage arrives the selected threshold.
 
@@ -117,6 +133,21 @@ menu "Power Supplier"
                 bool "2.52V"
             config ESP_VBAT_DET_LVL_HIGH_SEL_5
                 bool "2.42V"
+        endchoice
+
+        choice ESP_VBAT_DET_LVL_HIGH_SEL_V3
+            prompt "VBAT stop charging voltage level (P4 revision >= v3.0)"
+            default ESP_VBAT_DET_LVL_HIGH_SEL_7_V3
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY && !ESP32P4_SELECTS_REV_LESS_V3
+            help
+                The brownout detector will stop charging when the supply voltage arrives the selected threshold.
+
+            config ESP_VBAT_DET_LVL_HIGH_SEL_7_V3
+                bool "2.84V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_6_V3
+                bool "2.74V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_5_V3
+                bool "2.64V"
         endchoice
 
         choice ESP_VBAT_BROWNOUT_DET_LVL_SEL
@@ -144,16 +175,16 @@ menu "Power Supplier"
         config ESP_VBAT_DET_LVL_LOW
             int
             depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
-            default 5 if ESP_VBAT_DET_LVL_LOW_SEL_5
-            default 6 if ESP_VBAT_DET_LVL_LOW_SEL_6
-            default 7 if ESP_VBAT_DET_LVL_LOW_SEL_7
+            default 5 if ESP_VBAT_DET_LVL_LOW_SEL_5 || ESP_VBAT_DET_LVL_LOW_SEL_5_V3
+            default 6 if ESP_VBAT_DET_LVL_LOW_SEL_6 || ESP_VBAT_DET_LVL_LOW_SEL_6_V3
+            default 7 if ESP_VBAT_DET_LVL_LOW_SEL_7 || ESP_VBAT_DET_LVL_LOW_SEL_7_V3
 
         config ESP_VBAT_DET_LVL_HIGH
             int
             depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
-            default 5 if ESP_VBAT_DET_LVL_HIGH_SEL_5
-            default 6 if ESP_VBAT_DET_LVL_HIGH_SEL_6
-            default 7 if ESP_VBAT_DET_LVL_HIGH_SEL_7
+            default 5 if ESP_VBAT_DET_LVL_HIGH_SEL_5 || ESP_VBAT_DET_LVL_HIGH_SEL_5_V3
+            default 6 if ESP_VBAT_DET_LVL_HIGH_SEL_6 || ESP_VBAT_DET_LVL_HIGH_SEL_6_V3
+            default 7 if ESP_VBAT_DET_LVL_HIGH_SEL_7 || ESP_VBAT_DET_LVL_HIGH_SEL_7_V3
 
         config ESP_VBAT_BROWNOUT_DET_LVL
             int
