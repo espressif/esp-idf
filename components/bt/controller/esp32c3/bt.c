@@ -1698,11 +1698,16 @@ static esp_err_t btdm_low_power_mode_init(esp_bt_controller_config_t *cfg)
 #if !CONFIG_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
                     s_lp_cntl.no_light_sleep = 1;
 #endif
+                } else {
+                    ESP_LOGI(BT_LOG_TAG, "Using external 32.768 kHz crystal/oscillator as clock source");
                 }
             } else if (s_lp_cntl.lpclk_sel == ESP_BT_SLEEP_CLOCK_RTC_SLOW) {  // Internal 136kHz RC oscillator
                 if (rtc_clk_slow_src_get() != SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
                     ESP_LOGW(BT_LOG_TAG, "Internal 136kHz RC oscillator not detected.");
                     assert(0);
+                } else {
+                    ESP_LOGW(BT_LOG_TAG, "Using 136 kHz RC as clock source. The accuracy of this clock is a lot larger than 500ppm which is "
+                                "required in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.");
                 }
             } else if (s_lp_cntl.lpclk_sel == ESP_BT_SLEEP_CLOCK_MAIN_XTAL) {
 #if !CONFIG_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
@@ -1726,18 +1731,11 @@ static esp_err_t btdm_low_power_mode_init(esp_bt_controller_config_t *cfg)
             assert(select_src_ret && set_div_ret);
             btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
             btdm_lpcycle_us = 1 << (btdm_lpcycle_us_frac);
-        } else if (s_lp_cntl.lpclk_sel == ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL) {
-            ESP_LOGI(BT_LOG_TAG, "Using external 32.768 kHz crystal/oscillator as clock source");
-            select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
-            set_div_ret = btdm_lpclk_set_div(0);
-            assert(select_src_ret && set_div_ret);
-            btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-            btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
-                (1000000 >> (15 - RTC_CLK_CAL_FRACT));
-            assert(btdm_lpcycle_us != 0);
-        } else if (s_lp_cntl.lpclk_sel == ESP_BT_SLEEP_CLOCK_RTC_SLOW) {
-            ESP_LOGW(BT_LOG_TAG, "Using 136 kHz RC as clock source. The accuracy of this clock is a lot larger than 500ppm which is "
-                                "required in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.");
+        } else if (s_lp_cntl.lpclk_sel == ESP_BT_SLEEP_CLOCK_RTC_SLOW || s_lp_cntl.lpclk_sel == ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL) {
+            /* The enabling of the 32k crystal/oscillator depends on the RTC slow clock.
+             *  Therefore, if the 32k crystal/oscillator is enabled, selecting BTDM_LPCLK_SEL_RTC_SLOW
+             *  and BTDM_LPCLK_SEL_XTAL32K as the lp clock source is equivalent.
+             */
             select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_RTC_SLOW);
             set_div_ret = btdm_lpclk_set_div(0);
             assert(select_src_ret && set_div_ret);
