@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,9 @@
 #include "esp_private/ocode_init.h"
 #include "esp_rom_sys.h"
 #include "esp_hw_log.h"
+#include "soc/rtc.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
@@ -219,6 +222,22 @@ void pmu_init(void)
 #if !CONFIG_IDF_ENV_FPGA
     if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
         esp_ocode_calib_init();
+    }
+#endif
+
+#if CONFIG_ESP_ENABLE_PVT
+    /*setup pvt function*/
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 2) {
+        pvt_auto_dbias_init();
+        charge_pump_init();
+
+        pvt_func_enable(true);
+        charge_pump_enable(true);
+        esp_rom_delay_us(1000);
+    }
+    else {
+        ESP_HW_LOGW(TAG, "blk_version is less than 2, pvt function not supported in efuse.");
     }
 #endif
 }

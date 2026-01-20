@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -154,9 +154,10 @@ FORCE_INLINE_ATTR void _clk_gate_ll_rtc_fast_to_lp_periph_en(bool enable)
 typedef struct {
     bool disable_uart0_clk;          ///< Disable UART0 clock (when UART0 is not console)
     bool disable_uart1_clk;          ///< Disable UART1 clock (when UART1 is not console)
-    bool disable_mspi_flash_clk;           ///< Disable MSPI flash clock (for PURE_RAM_APP)
+    bool disable_mspi_flash_clk;     ///< Disable MSPI flash clock (for PURE_RAM_APP)
     bool disable_crypto_periph_clk;  ///< Disable crypto peripherals clock when TEE is not enabled
     bool disable_usb_serial_jtag;    ///< Disable USB-Serial-JTAG clock and pad (when not enabled)
+    bool disable_pvt_clk;            ///< Disable PVT clock
 } periph_ll_clk_gate_config_t;
 
 /**
@@ -201,6 +202,10 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
         PCR.uhci_conf.uhci_clk_en = 0;
         PCR.tcm_mem_monitor_conf.tcm_mem_monitor_clk_en = 0;
         PCR.psram_mem_monitor_conf.psram_mem_monitor_clk_en = 0;
+        if (config->disable_pvt_clk) {
+            PCR.pvt_monitor_conf.pvt_monitor_clk_en = 0;
+            PCR.pvt_monitor_func_clk_conf.pvt_monitor_func_clk_en = 0;
+        }
         PCR.ctrl_clk_out_en.val = 0;
 
         if (config->disable_usb_serial_jtag) {
