@@ -10,6 +10,8 @@
 # this will generate new source files, next rebuild all the sources.
 # !!!!!!!!!!! #
 
+# Note that EFUSE_BLK3 can be overwritten in esp_efuse_custom_table.c file for custom efuse fields, it is made for testing purposes!
+# After re-generating the custom efuse table, the overwritten efuse block will be lost.
 
 MODULE_VERSION,                   EFUSE_BLK3,    56,  8,    Module version
 DEVICE_ROLE,                      EFUSE_BLK3,    64,  3,    Device role
