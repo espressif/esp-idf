@@ -10,9 +10,10 @@
 OLDEST_PYTHON_SUPPORTED_MAJOR=3
 OLDEST_PYTHON_SUPPORTED_MINOR=10
 
-ESP_PYTHON=python
+# check if ESP_PYTHON has been set as environment variable, default to `python`
+ESP_PYTHON="${ESP_PYTHON:-python}"
 
-for p_cmd in python3 python python3.10 python3.11 python3.12 python3.13; do
+for p_cmd in $ESP_PYTHON python3 python python3.9 python3.10 python3.11 python3.12 python3.13; do
     $p_cmd --version >/dev/null 2>&1 || continue
     echo "Checking \"$p_cmd\" ..."
 
