@@ -6,7 +6,7 @@ set(includes "include" "interface")
 
 set(requires "esp_driver_isp" "esp_hal_cam")
 
-set(priv_requires "esp_driver_gpio")
+set(priv_requires "esp_driver_gpio" "esp_driver_dma")
 
 if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
     list(APPEND srcs "csi/src/esp_cam_ctlr_csi.c")

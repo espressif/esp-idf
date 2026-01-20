@@ -1,6 +1,6 @@
 idf_component_get_property(heap_dir heap COMPONENT_DIR)
 
-set(priv_requires esp_hw_support hal soc esp_hal_security)
+set(priv_requires esp_hw_support esp_hal_security esp_hal_dma)
 
 set(include_dirs "${COMPONENT_DIR}/port/include"
                  "${COMPONENT_DIR}/mbedtls/include"

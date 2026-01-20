@@ -9,7 +9,7 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(requires esp_hal_dma esp_hal_gpio esp_hal_usb esp_hal_pmu)
+set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt esp_hal_rtc_timer
     esp_hal_clock esp_hal_security)
@@ -29,8 +29,6 @@ if(NOT non_os_build)
                      "sar_tsens_ctrl.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
-                     "dma/esp_dma_utils.c"
-                     "dma/gdma_link.c"
                      "spi_bus_lock.c"
                      "clk_utils.c")
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
@@ -88,43 +86,12 @@ if(NOT non_os_build)
         list(APPEND srcs "rtc_wdt.c")
     endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "dma/gdma.c")
-        if(CONFIG_SOC_GDMA_SUPPORT_SLEEP_RETENTION AND CONFIG_SOC_PAU_SUPPORTED)
-            list(APPEND srcs "dma/gdma_sleep_retention.c")
-        endif()
-        if(CONFIG_SOC_GDMA_SUPPORT_ETM)
-            list(APPEND srcs "dma/gdma_etm.c")
-        endif()
-        if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-            list(APPEND srcs "dma/gdma_crc.c")
-        endif()
-    endif()
-
     if(CONFIG_SOC_GP_LDO_SUPPORTED)
         list(APPEND srcs "ldo/esp_ldo_regulator.c")
     endif()
 
     if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
         list(APPEND srcs "debug_probe/debug_probe.c")
-    endif()
-
-    if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
-        list(APPEND srcs "dma/esp_async_memcpy.c")
-        if(CONFIG_SOC_GDMA_SUPPORTED)
-            list(APPEND srcs "dma/async_memcpy_gdma.c")
-        endif() # CONFIG_SOC_GDMA_SUPPORTED
-        if(CONFIG_SOC_CP_DMA_SUPPORTED)
-            list(APPEND srcs "dma/async_memcpy_cp_dma.c")
-        endif() # CONFIG_SOC_CP_DMA_SUPPORTED
-    endif() # CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED
-
-    if(CONFIG_SOC_DW_GDMA_SUPPORTED)
-        list(APPEND srcs "dma/dw_gdma.c")
-    endif()
-
-    if(CONFIG_SOC_DMA2D_SUPPORTED)
-        list(APPEND srcs "dma/dma2d.c")
     endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED)
@@ -203,7 +170,7 @@ else()
 endif()
 
 set(public_include_dirs "include" "include/soc"
-                        "dma/include" "ldo/include" "debug_probe/include" "etm/include"
+                        "ldo/include" "debug_probe/include" "etm/include"
                         "mspi/mspi_timing_tuning/include" "mspi/mspi_timing_tuning/tuning_scheme_impl/include"
                         "mspi/mspi_intr/include"
                         "power_supply/include" "modem/include")
@@ -230,7 +197,7 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"
-                       LDFRAGMENTS linker.lf dma/linker.lf ldo/linker.lf mspi/linker.lf)
+                       LDFRAGMENTS linker.lf ldo/linker.lf mspi/linker.lf)
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})

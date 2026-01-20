@@ -96,6 +96,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_cosine.h \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_oneshot.h \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_types.h \
+    $(PROJECT_PATH)/components/esp_driver_dma/include/esp_async_memcpy.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio_etm.h \
@@ -197,7 +198,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
     $(PROJECT_PATH)/components/esp_hw_support/etm/include/esp_etm.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_clk_tree.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \

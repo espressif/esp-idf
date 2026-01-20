@@ -224,9 +224,10 @@ The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0
 
     The legacy RMT driver ``driver/rmt.h`` is deprecated since version 5.0 (see :ref:`deprecate_rmt_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_rmt`, and the header file path is ``driver/rmt_tx.h``, ``driver/rmt_rx.h`` and ``driver/rmt_encoder.h``.
 
-GDMA
-----
+DMA Driver
+----------
 
+- The DMA core driver has been moved out of the original ``esp_hw_support`` component and is now provided as a separate ``esp_driver_dma`` component. If you are using the ``esp_async_memcpy.h`` and ``esp_dma_utils.h`` drivers, please ensure that you add a dependency on the ``esp_driver_dma`` component in your project.
 - The ``GDMA_ISR_IRAM_SAFE`` Kconfig option has been removed due to potential risks. Now, the interrupt behavior of different DMA channels during Cache disabled periods are independent of each other.
 - ``gdma_new_channel`` is removed. When requesting a GDMA channel, use either ``gdma_new_ahb_channel`` or ``gdma_new_axi_channel`` according to the bus type.
 - The ``sram_trans_align`` and ``psram_trans_align`` members have been removed from :cpp:type:`async_memcpy_config_t`. Use :cpp:member:`async_memcpy_config_t::dma_burst_size` to set the DMA burst transfer size.

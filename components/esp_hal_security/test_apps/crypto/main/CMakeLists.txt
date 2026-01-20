@@ -77,7 +77,7 @@ if(CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES efuse mbedtls esp_security esp_mm bootloader_support spi_flash
+                       PRIV_REQUIRES efuse mbedtls esp_security esp_mm bootloader_support spi_flash esp_driver_dma
                        REQUIRES test_utils unity
                        WHOLE_ARCHIVE
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"

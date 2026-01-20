@@ -224,9 +224,10 @@ I2C 主机驱动的 API 也有一些用法上的改动。
 
     旧版的 RMT 驱动 ``driver/rmt.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_rmt_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_rmt` 组件中，头文件引用路径为 ``driver/rmt_tx.h``, ``driver/rmt_rx.h`` 和 ``driver/rmt_encoder.h``。
 
-GDMA
-----
+DMA 驱动
+--------
 
+- DMA 核心驱动程序现已从原来的 ``esp_hw_support`` 组件中移出，现作为单独的 ``esp_driver_dma`` 组件提供。如果你使用了 ``esp_async_memcpy.h`` 和 ``esp_dma_utils.h`` 驱动，请确保在项目中添加对 ``esp_driver_dma`` 组件的依赖。
 - ``GDMA_ISR_IRAM_SAFE`` Kconfig 选项会带来不必要的风险，因此被移除。现在，不同的 GDMA 通道它们的中断在 Cache 关闭期间的行为可以互不影响。
 - ``gdma_new_channel`` 已经被移除。现在当申请一个 GDMA 通道时，必须要根据实际使用的总线调用 ``gdma_new_ahb_channel`` 或 ``gdma_new_axi_channel`` 函数。
 - :cpp:type:`async_memcpy_config_t` 中的 ``sram_trans_align`` 和 ``psram_trans_align`` 成员均已经被移除。请使用 :cpp:member:`async_memcpy_config_t::dma_burst_size` 来设置 DMA 的突发传输大小。

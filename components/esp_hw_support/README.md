@@ -76,17 +76,6 @@ classDiagram
     }
 ```
 
-## DMA Service
-
-With the increasing demand, the hardware design of DMA is changing along the way. At first, each peripheral has a dedicated DMA controller. Later, a centralized DMA controller is introduced, which is called `GDMA` in the software.
-
-There may be multiple GDMA instances on a chip, some is attached to the AHB bus and some is attached to the AXI bus. But their functionalities are almost the same.
-
-Some high-performance peripherals, such as MIPI, require DMA to provide more functions, such as hardware handshake mechanism, address growth mode, out-of-order transmission and so on. Therefore, a new DMA controller, called `DW_GDMA` was born. The prefix *DW* is taken from *DesignWare*.
-
-Please note that the specific DMA controller to be used for peripherals is determined by the specific chip. It is possible that, on chip A, SPI works with AHB GDMA, while on chip B, SPI works with AXI GDMA.
-
-
 ## MSPI Interrupt Logic - Chip Differences Analysis
 
 ### 1. Overview

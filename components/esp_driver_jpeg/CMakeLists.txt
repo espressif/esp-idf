@@ -27,7 +27,7 @@ set(requires esp_hal_jpeg)
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
-    set(priv_requires esp_mm esp_pm esp_psram)
+    set(priv_requires esp_mm esp_pm esp_psram esp_driver_dma)
 endif()
 
 idf_component_register(SRCS ${srcs}

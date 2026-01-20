@@ -60,7 +60,6 @@ uint32_t dma2d_rx_channel_reserved_mask[DMA2D_LL_GET(INST_NUM)] = { [0 ... DMA2D
 // The most number of channels required for a 2D-DMA transaction (a PPA Blend operation requires 2 TX + 1 RX)
 #define DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION   3
 
-
 /* This static function is not thread-safe, group's spinlock protection should be added in its caller */
 static bool acquire_free_channels_for_trans(dma2d_group_t *dma2d_group, const dma2d_trans_config_t *trans_desc, dma2d_trans_channel_info_t *channel_handle_array)
 {
@@ -73,7 +72,7 @@ static bool acquire_free_channels_for_trans(dma2d_group_t *dma2d_group, const dm
         if (!trans_desc->specified_tx_channel_mask) {
             tx_free_channel_mask = dma2d_group->tx_channel_free_mask;
             tx_free_channel_mask &= (((trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_TX_REORDER) ? DMA2D_LL_TX_CHANNEL_SUPPORT_RO_MASK : UINT32_MAX) &
-                                    ((trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC) ? DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK : UINT32_MAX));
+                                     ((trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC) ? DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK : UINT32_MAX));
             tx_free_channel_mask &= ~dma2d_group->tx_channel_reserved_mask;
             if (trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING) {
                 uint32_t rx_channel_candidate = dma2d_group->rx_channel_free_mask &
@@ -121,7 +120,7 @@ static bool acquire_free_channels_for_trans(dma2d_group_t *dma2d_group, const dm
         } else {
             rx_free_channel_mask = dma2d_group->rx_channel_free_mask;
             rx_free_channel_mask &= (((trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_RX_REORDER) ? DMA2D_LL_RX_CHANNEL_SUPPORT_RO_MASK : UINT32_MAX) &
-                                    ((trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC) ? DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK : UINT32_MAX));
+                                     ((trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC) ? DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK : UINT32_MAX));
             rx_free_channel_mask &= ~dma2d_group->rx_channel_reserved_mask;
             // As long as __builtin_popcount(rx_free_channel_mask) >= trans_desc->rx_channel_num, it can meet the criteria of "found"
         }
@@ -910,8 +909,8 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
     dma2d_group_t *dma2d_group = dma2d_pool;
     if (trans_desc->specified_tx_channel_mask || trans_desc->specified_rx_channel_mask) {
         ESP_GOTO_ON_FALSE_ISR(
-            (trans_desc->specified_tx_channel_mask ? (trans_desc->specified_tx_channel_mask & dma2d_group->tx_channel_reserved_mask) : 1 ) &&
-            (trans_desc->specified_rx_channel_mask ? (trans_desc->specified_rx_channel_mask & dma2d_group->rx_channel_reserved_mask) : 1 ),
+            (trans_desc->specified_tx_channel_mask ? (trans_desc->specified_tx_channel_mask & dma2d_group->tx_channel_reserved_mask) : 1) &&
+            (trans_desc->specified_rx_channel_mask ? (trans_desc->specified_rx_channel_mask & dma2d_group->rx_channel_reserved_mask) : 1),
             ESP_ERR_INVALID_ARG, err, TAG, "specified channel(s) not reserved");
         ESP_GOTO_ON_FALSE_ISR(
             (__builtin_popcount(trans_desc->specified_tx_channel_mask) == trans_desc->tx_channel_num) &&

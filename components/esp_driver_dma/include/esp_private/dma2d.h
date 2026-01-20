@@ -173,7 +173,6 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
  */
 esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield);
 
-
 /*********************************************** DMA CHANNEL OPERATIONS ***********************************************/
 
 /**

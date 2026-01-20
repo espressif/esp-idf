@@ -7,7 +7,7 @@ endif()
 set(includes "include")
 
 # Note: requires spi_flash for cache_utils, will be refactored
-set(priv_requires heap spi_flash)
+set(priv_requires heap spi_flash esp_hal_dma)
 
 set(srcs)
 
