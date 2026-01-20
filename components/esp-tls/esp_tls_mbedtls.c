@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,8 +24,8 @@
 #include "mbedtls/esp_mbedtls_dynamic.h"
 #include "mbedtls/private/pk_private.h"
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-#include "mbedtls/ecp.h"
-#include "ecdsa/ecdsa_alt.h"
+#include "psa_crypto_driver_esp_ecdsa.h"
+#include "hal/ecdsa_types.h"
 #endif
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
@@ -66,23 +66,31 @@ static mbedtls_x509_crt *global_cacert = NULL;
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 /**
- * @brief Convert ESP-TLS ECDSA curve enum to mbedTLS group ID
- * @param curve ESP-TLS ECDSA curve enum value
- * @param grp_id Pointer to store the converted mbedTLS group ID
+ * @brief Convert ESP-TLS ECDSA curve enum to ESP ECDSA curve
+ * @param tls_curve ESP-TLS ECDSA curve enum value
+ * @param curve Pointer to store the converted ESP ECDSA curve
+ * @param curve_bits Pointer to store the curve bits
+ * @param sha_alg Pointer to store the SHA algorithm
  * @return ESP_OK on success, ESP_ERR_INVALID_ARG on invalid curve
  */
-static esp_err_t esp_tls_ecdsa_curve_to_mbedtls_group_id(esp_tls_ecdsa_curve_t curve, mbedtls_ecp_group_id *grp_id)
+static esp_err_t esp_tls_ecdsa_curve_to_esp_ecdsa_curve(esp_tls_ecdsa_curve_t tls_curve, esp_ecdsa_curve_t *curve, size_t *curve_bits, psa_algorithm_t *sha_alg)
 {
-    switch (curve) {
+    switch (tls_curve) {
         case ESP_TLS_ECDSA_CURVE_SECP256R1:
-            *grp_id = MBEDTLS_ECP_DP_SECP256R1;
+            *curve = ESP_ECDSA_CURVE_SECP256R1;
+            *curve_bits = 256;
+            *sha_alg = PSA_ALG_SHA_256;
             break;
 #if SOC_ECDSA_SUPPORT_CURVE_P384
         case ESP_TLS_ECDSA_CURVE_SECP384R1:
-            *grp_id = MBEDTLS_ECP_DP_SECP384R1;
+            *curve = ESP_ECDSA_CURVE_SECP384R1;
+            *curve_bits = 384;
+            *sha_alg = PSA_ALG_SHA_384;
             break;
 #endif
         default:
+            *curve_bits = 0;
+            *sha_alg = 0;
             return ESP_ERR_INVALID_ARG;
     }
     return ESP_OK;
@@ -513,12 +521,14 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     /* In mbedtls v4.0, ECDSA keys require manual cleanup of the keypair structure */
     if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_ECDSA) {
+        ESP_LOGD(TAG, "Cleaning up client key");
         mbedtls_ecp_keypair *keypair = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
         if (keypair != NULL) {
             mbedtls_ecp_keypair_free(keypair);
             mbedtls_free(keypair);
             keypair = NULL;
         }
+        psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
         tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 
@@ -530,6 +540,7 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
             mbedtls_free(keypair);
             keypair = NULL;
         }
+        psa_destroy_key(tls->serverkey.MBEDTLS_PRIVATE(priv_id));
         tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 #endif
@@ -599,23 +610,51 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 #endif
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         if (tls->use_ecdsa_peripheral) {
+            esp_ecdsa_curve_t curve = ESP_ECDSA_CURVE_MAX;
+            size_t curve_bits = 0;
+            psa_algorithm_t sha_alg = 0;
+            psa_algorithm_t ecdsa_alg = 0;
             // Determine the curve group ID based on user preference
-            mbedtls_ecp_group_id grp_id;
-            esp_err_t esp_ret = esp_tls_ecdsa_curve_to_mbedtls_group_id(tls->ecdsa_curve, &grp_id);
-            if (esp_ret != ESP_OK) {
+            esp_err_t esp_ret = esp_tls_ecdsa_curve_to_esp_ecdsa_curve(tls->ecdsa_curve, &curve, &curve_bits, &sha_alg);
+            if (esp_ret != ESP_OK || curve == ESP_ECDSA_CURVE_MAX || curve_bits == 0 || sha_alg == 0) {
                 return esp_ret;
             }
 
-            esp_ecdsa_pk_conf_t conf = {
-                .grp_id = grp_id,
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+            ecdsa_alg = PSA_ALG_DETERMINISTIC_ECDSA(sha_alg);
+#else
+            ecdsa_alg = PSA_ALG_ECDSA(sha_alg);
+#endif
+
+            psa_key_id_t priv_key_id = 0;
+            psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+            // Set attributes for opaque private key
+            psa_set_key_type(&key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+            psa_set_key_bits(&key_attr, curve_bits);
+            psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_SIGN_HASH);
+            psa_set_key_algorithm(&key_attr, ecdsa_alg);
+            psa_set_key_lifetime(&key_attr, PSA_KEY_LIFETIME_ESP_ECDSA_VOLATILE);
+
+            esp_ecdsa_opaque_key_t opaque_key = {
+                .curve = curve,
                 .efuse_block = tls->ecdsa_efuse_blk,
+                .use_km_key = false,
             };
 
-            ret = esp_ecdsa_set_pk_context(pki->pk_key, &conf);
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to initialize pk context for ecdsa peripheral with the key stored in efuse block %d", tls->ecdsa_efuse_blk);
+            // Import opaque key reference
+            psa_status_t status = psa_import_key(&key_attr, (uint8_t*) &opaque_key, sizeof(opaque_key), &priv_key_id);
+            if (status != PSA_SUCCESS) {
+                ESP_LOGE(TAG, "Failed to import opaque key reference");
+                return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
+            }
+            mbedtls_pk_init(pki->pk_key);
+            ret = mbedtls_pk_wrap_psa(pki->pk_key, priv_key_id);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "Failed to wrap opaque key reference");
                 return ret;
             }
+
+            psa_reset_key_attributes(&key_attr);
         } else
 #endif
         if (pki->privkey_pem_buf != NULL) {
@@ -1071,24 +1110,21 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return esp_ret;
         }
 
-        mbedtls_ecp_group_id grp_id;
-        esp_ret = esp_tls_ecdsa_curve_to_mbedtls_group_id(tls->ecdsa_curve, &grp_id);
-        if (esp_ret != ESP_OK) {
-            return esp_ret;
-        }
-
         // Create dynamic ciphersuite array based on curve
         static int ecdsa_peripheral_supported_ciphersuites[4] = {0}; // Max 4 elements
         int ciphersuite_count = 0;
 
-        if (grp_id == MBEDTLS_ECP_DP_SECP384R1) {
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        if (tls->ecdsa_curve == ESP_TLS_ECDSA_CURVE_SECP384R1) {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384;
-        } else {
+        } else
+#endif
+        {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
         }
 
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-        if (grp_id == MBEDTLS_ECP_DP_SECP384R1) {
+        if (tls->ecdsa_curve == ESP_TLS_ECDSA_CURVE_SECP384R1) {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS1_3_AES_256_GCM_SHA384;
         } else {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS1_3_AES_128_GCM_SHA256;

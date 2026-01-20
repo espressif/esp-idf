@@ -137,4 +137,4 @@ ECDSA 外设依靠硬件真随机数生成器 (TRNG) 来满足其内部熵要求
 API 参考
 --------
 
-.. include-build-file:: inc/ecdsa_alt.inc
+.. include-build-file:: inc/psa_crypto_driver_esp_ecdsa_contexts.inc

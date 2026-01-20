@@ -8,18 +8,18 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "esp_partition.h"
-#include "ecdsa/ecdsa_alt.h"
 
 #include "esp_tee.h"
 #include "esp_tee_sec_storage.h"
 #include "secure_service_num.h"
 #include "psa/initial_attestation.h"
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_ecdsa.h"
 
 #include "esp_random.h"
 #include "nvs.h"
 #include "unity.h"
 #include "sdkconfig.h"
-#include "ecdsa/ecdsa_alt.h"
 
 /* Note: negative value here so that assert message prints a grep-able
    error hex value (mbedTLS uses -N for error codes) */
@@ -491,26 +491,35 @@ static const uint8_t sha[] = {
     0xa9, 0x53, 0x97, 0xec, 0xcc, 0x66, 0x5b, 0xa6
 };
 
-static void test_ecdsa_sign(mbedtls_ecp_group_id gid)
+static void test_ecdsa_sign(esp_ecdsa_curve_t curve)
 {
     esp_tee_sec_storage_type_t key_type = ESP_SEC_STG_TYPE_MAX;
     size_t key_len = 0;
     size_t sha_len = SHA256_DIGEST_SZ;
 
-    switch (gid) {
-    case MBEDTLS_ECP_DP_SECP256R1:
+    psa_algorithm_t sha_alg = 0;
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+
+    uint8_t export_pub_key[1 + 2 * ECDSA_SECP384R1_KEY_LEN] = {0};
+    uint8_t signature[2 * ECDSA_SECP384R1_KEY_LEN];
+    size_t signature_len = 0;
+
+    switch (curve) {
+    case ESP_ECDSA_CURVE_SECP256R1:
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
         key_len  = ECDSA_SECP256R1_KEY_LEN;
+        sha_alg = PSA_ALG_SHA_256;
         break;
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
-    case MBEDTLS_ECP_DP_SECP384R1:
+    case ESP_ECDSA_CURVE_SECP384R1:
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP384R1;
         key_len  = ECDSA_SECP384R1_KEY_LEN;
         sha_len  = SHA384_DIGEST_SZ;
+        sha_alg = PSA_ALG_SHA_384;
         break;
 #endif
     default:
-        ESP_LOGE(TAG, "Unsupported curve ID: %d", gid);
+        ESP_LOGE(TAG, "Unsupported curve ID: %d", curve);
         return;
     }
     const char *key_id = "ecdsa_k0";
@@ -523,53 +532,93 @@ static void test_ecdsa_sign(mbedtls_ecp_group_id gid)
     esp_err_t err = esp_tee_sec_storage_clear_key(key_cfg.id);
     TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_NOT_FOUND);
 
+    // TODO: Add wrapper for psa_generate_key()
     TEST_ESP_OK(esp_tee_sec_storage_gen_key(&key_cfg));
 
-    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
-    TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey));
+    psa_key_id_t priv_key_id = 0;
+    psa_key_attributes_t priv_key_attr = PSA_KEY_ATTRIBUTES_INIT;
 
-    mbedtls_mpi r, s;
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
+    psa_key_id_t pub_key_id = 0;
+    psa_key_attributes_t pub_key_attr = PSA_KEY_ATTRIBUTES_INIT;
 
-    mbedtls_ecdsa_context ecdsa_context;
-    mbedtls_ecdsa_init(&ecdsa_context);
-
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), gid));
-
-    mbedtls_pk_context key_ctx;
-
-    esp_ecdsa_pk_conf_t conf = {
-        .grp_id = gid,
+    esp_ecdsa_opaque_key_t opaque_key = {
+        .curve = curve,
         .tee_key_id = key_id,
-        .load_pubkey = true,
     };
-    TEST_ASSERT_EQUAL(0, esp_ecdsa_tee_set_pk_context(&key_ctx, &conf));
 
-    mbedtls_ecp_keypair *keypair = key_ctx.MBEDTLS_PRIVATE(pk_ctx); //mbedtls_pk_ec(key_ctx);
-    mbedtls_mpi key_mpi = keypair->MBEDTLS_PRIVATE(d);
+    psa_algorithm_t alg = PSA_ALG_ECDSA(sha_alg);
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
+    alg = PSA_ALG_DETERMINISTIC_ECDSA(sha_alg);
+#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC */
 
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, sha_len, NULL, NULL));
+    // Set attributes for opaque private key
+    psa_set_key_type(&priv_key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&priv_key_attr, key_len * 8);
+    psa_set_key_usage_flags(&priv_key_attr, PSA_KEY_USAGE_SIGN_HASH);
+    psa_set_key_algorithm(&priv_key_attr, alg);
+    psa_set_key_lifetime(&priv_key_attr, PSA_KEY_LIFETIME_ESP_ECDSA_VOLATILE);  // Opaque key
 
-    esp_tee_sec_storage_ecdsa_sign_t sign = {};
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&r, sign.signature, key_len));
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&s, sign.signature + key_len, key_len));
+    status = psa_import_key(&priv_key_attr, (uint8_t*) &opaque_key, sizeof(opaque_key), &priv_key_id);
 
-    TEST_ESP_OK(verify_ecdsa_sign(key_type, sha, sha_len, &pubkey, &sign));
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_NOT_EQUAL(0, priv_key_id);
 
-    esp_ecdsa_free_pk_context(&key_ctx);
-    mbedtls_ecdsa_free(&ecdsa_context);
-    mbedtls_mpi_free(&r);
-    mbedtls_mpi_free(&s);
+    size_t pub_key_len = 0;
+    status = psa_export_public_key(priv_key_id, export_pub_key, sizeof(export_pub_key), &pub_key_len);
+
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(pub_key_len, 1 + 2 * key_len);
+
+    status = psa_sign_hash(priv_key_id,
+                           alg,
+                           sha, sha_len,
+                           signature, 2 * key_len,
+                           &signature_len);
+
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(signature_len, 2 * key_len);
+
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
+    uint8_t signature_det_verify[2 * ECDSA_SECP384R1_KEY_LEN];
+    size_t signature_det_verify_len = 0;
+
+    status = psa_sign_hash(priv_key_id,
+                           alg,
+                           sha, sha_len,
+                           signature_det_verify, 2 * key_len,
+                           &signature_det_verify_len);
+
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(signature_det_verify_len, signature_len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(signature, signature_det_verify, signature_len);
+#endif
+
+    psa_set_key_type(&pub_key_attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&pub_key_attr, key_len * 8);
+    psa_set_key_usage_flags(&pub_key_attr, PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&pub_key_attr, alg);
+    psa_set_key_lifetime(&pub_key_attr, PSA_KEY_PERSISTENCE_VOLATILE);
+
+    status = psa_import_key(&pub_key_attr, export_pub_key, pub_key_len, &pub_key_id);
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_NOT_EQUAL(0, pub_key_id);
+
+    status = psa_verify_hash(pub_key_id, alg, sha, sha_len, signature, 2 * key_len);
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
 
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
+
+    psa_destroy_key(priv_key_id);
+    psa_destroy_key(pub_key_id);
+    psa_reset_key_attributes(&priv_key_attr);
+    psa_reset_key_attributes(&pub_key_attr);
 }
 
 TEST_CASE("Test TEE Secure Storage - mbedtls ECDSA signing", "[mbedtls]")
 {
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1);
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP384R1);
+    test_ecdsa_sign(ESP_ECDSA_CURVE_SECP384R1);
 #endif
 }
 #endif

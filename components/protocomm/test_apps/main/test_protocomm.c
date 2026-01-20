@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "psa/crypto_struct.h"
-#include "psa/crypto_types.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
