@@ -260,7 +260,11 @@ esp_err_t example_isp_awb_init(isp_proc_handle_t isp_proc)
     }
 
     // Configure WBG module
-    esp_isp_wbg_config_t wbg_config = {};
+    esp_isp_wbg_config_t wbg_config = {
+        .flags = {
+            .update_once_configured = true,
+        },
+    };
     ret = esp_isp_wbg_configure(isp_proc, &wbg_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to configure WBG: %d", ret);
