@@ -1231,18 +1231,6 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     if (!deep_sleep) {
         if (result == ESP_OK) {
             s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
-#if !CONFIG_PM_SLP_IRAM_OPT && !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32P4)
-#if CONFIG_SPIRAM
-            // TODO: PM-651
-            Cache_WriteBack_All();
-#endif
-            /* When the IRAM optimization for the sleep flow is disabled, all
-             * cache contents are forcibly invalidated before exiting the sleep
-             * flow. This ensures that the code execution time of sleep exit
-             * flow remains consistent, allowing the use of ccount to
-             * dynamically calculate the sleep adjustment time. */
-            cache_ll_invalidate_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL);
-#endif
         }
         misc_modules_wake_prepare(sleep_flags);
     }
