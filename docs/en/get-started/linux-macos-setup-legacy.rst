@@ -237,6 +237,24 @@ If changing the ``IDF_TOOLS_PATH``, make sure it is exported in the environment 
 
 .. _get-started-set-up-env-legacy:
 
+Customizing the Python Command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you wish to specify the python command to use, you can set the ``ESP_PYTHON`` environment variable:
+
+.. code-block:: bash
+
+    export ESP_PYTHON=python3.11
+    ./install.sh
+
+or with Fish shell
+
+.. code-block:: fish
+
+    # TODO
+    ./install.fish all
+
+
 Step 4. Set up the Environment Variables
 ========================================
 
