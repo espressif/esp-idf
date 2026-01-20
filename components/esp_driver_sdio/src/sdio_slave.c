@@ -104,12 +104,6 @@ static const char TAG[] = "sdio_slave";
 #define SDIO_SLAVE_LOGE(s, ...) ESP_LOGE(TAG, "%s(%d): "s, __FUNCTION__,__LINE__,##__VA_ARGS__)
 #define SDIO_SLAVE_LOGW(s, ...) ESP_LOGW(TAG, "%s: "s, __FUNCTION__,##__VA_ARGS__)
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define SDIO_SLAVE_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SDIO_SLAVE_RCC_ATOMIC()
-#endif
-
 // sdio_slave_buf_handle_t is of type recv_desc_t*;
 typedef struct recv_desc_s {
     union {
@@ -312,7 +306,7 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     configure_pin(slot->d3_gpio, slot->func, pullup);
 
     //enable register clock
-    SDIO_SLAVE_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdio_slave_ll_enable_bus_clock(true);
         sdio_slave_ll_reset_register();
     }
@@ -345,7 +339,7 @@ static void sdio_slave_hw_deinit(void)
     recover_pin(slot->d3_gpio, slot->func);
 
     //disable register clock
-    SDIO_SLAVE_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdio_slave_ll_enable_bus_clock(false);
     }
 }

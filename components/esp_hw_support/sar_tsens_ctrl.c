@@ -29,12 +29,6 @@ ESP_LOG_ATTR_TAG(TAG_TSENS, "temperature_sensor");
 
 #define INT_NOT_USED 999999
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define TSENS_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TSENS_RCC_ATOMIC()
-#endif
-
 #define TSENS_LINE_REGRESSION_US (200)
 
 static int s_temperature_sensor_power_cnt;
@@ -51,7 +45,7 @@ void temperature_sensor_power_acquire(void)
 #if !SOC_TSENS_IS_INDEPENDENT_FROM_ADC
         adc_apb_periph_claim();
 #endif
-        TSENS_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             temperature_sensor_ll_bus_clk_enable(true);
             temperature_sensor_ll_reset_module();
         }
@@ -74,7 +68,7 @@ void temperature_sensor_power_release(void)
         abort();
     } else if (s_temperature_sensor_power_cnt == 0) {
         temperature_sensor_ll_enable(false);
-        TSENS_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             temperature_sensor_ll_bus_clk_enable(false);
         }
 #if !SOC_TSENS_IS_INDEPENDENT_FROM_ADC

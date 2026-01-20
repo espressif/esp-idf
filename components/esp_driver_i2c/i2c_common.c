@@ -113,21 +113,21 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
 
             // Enable the I2C module
             if (!bus->is_lp_i2c) {
-                I2C_RCC_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     i2c_ll_enable_bus_clock(bus->port_num, true);
                     i2c_ll_reset_register(bus->port_num);
                 }
             }
 #if SOC_LP_I2C_SUPPORTED
             else {
-                LP_I2C_BUS_CLK_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     lp_i2c_ll_enable_bus_clock(bus->port_num - SOC_HP_I2C_NUM, true);
                     lp_i2c_ll_reset_register(bus->port_num - SOC_HP_I2C_NUM);
                 }
             }
 #endif
 
-            I2C_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2c_hal_init(&bus->hal, port_num);
             }
         }
@@ -217,13 +217,13 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
 #endif
             // Disable I2C module
             if (!i2c_bus->is_lp_i2c) {
-                I2C_RCC_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     i2c_ll_enable_bus_clock(port_num, false);
                 }
             }
 #if SOC_LP_I2C_SUPPORTED
             else {
-                LP_I2C_BUS_CLK_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     lp_i2c_ll_enable_bus_clock(port_num - SOC_HP_I2C_NUM, false);
                 }
             }

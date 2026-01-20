@@ -37,12 +37,6 @@
 #define DVP_CAM_BK_BUFFER_ALLOC_CAPS        (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define DVP_CAM_CLK_ATOMIC()                PERIPH_RCC_ATOMIC()
-#else
-#define DVP_CAM_CLK_ATOMIC()
-#endif
-
 #if CAM_LL_DATA_WIDTH_MAX
 #define CAP_DVP_PERIPH_NUM      CAM_LL_PERIPH_NUM           /*!< DVP port number */
 #define CAM_DVP_DATA_SIG_NUM    CAM_LL_DATA_WIDTH_MAX       /*!< DVP data bus width of CAM */
@@ -363,7 +357,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
     }
 
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
-    DVP_CAM_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, true);
         cam_ll_select_clk_src(ctlr_id, clk_src);
     };
@@ -394,7 +388,7 @@ esp_err_t esp_cam_ctlr_dvp_output_clock(int ctlr_id, cam_clock_source_t clk_src,
     ESP_LOGD(TAG, "DVP clock source frequency %" PRIu32 "Hz", src_clk_hz);
 
     if ((src_clk_hz % xclk_freq) == 0) {
-        DVP_CAM_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             // The camera sensors require precision without frequency and duty cycle jitter,
             // so the fractional divisor can't be used.
             cam_ll_set_group_clock_coeff(ctlr_id, src_clk_hz / xclk_freq, 0, 0);
@@ -456,7 +450,7 @@ esp_err_t esp_cam_ctlr_dvp_deinit(int ctlr_id)
 {
     ESP_RETURN_ON_FALSE(ctlr_id < CAP_DVP_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ctlr_id >= %d", CAP_DVP_PERIPH_NUM);
 
-    DVP_CAM_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, false);
     };
 

@@ -123,13 +123,13 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool cle
     if (clear_bus) {
         ret = s_i2c_master_clear_bus(i2c_master->base);
     }
-    I2C_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_reset_register(i2c_master->base->port_num);
     }
 
     i2c_hal_master_init(hal);
     // Restore the clock source here.
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
     }
     i2c_ll_enable_fifo_mode(hal->dev, true);
@@ -696,7 +696,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->read_len_static = 0;
     i2c_master->read_buf_pos = 0;
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
     }
 
@@ -1061,7 +1061,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
 
     if (!i2c_master->base->is_lp_i2c) {
-        I2C_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         }
     }
@@ -1080,7 +1080,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 
         ESP_GOTO_ON_FALSE(lp_clock_match, ESP_ERR_NOT_SUPPORTED, err, TAG, "the clock source does not support lp i2c, please check");
 
-        LP_I2C_SRC_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             lp_i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         }
     }
@@ -1385,7 +1385,7 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
 
     // I2C probe does not have i2c device module. So set the clock parameter independently
     // This will not influence device transaction.
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, bus_handle->base->clk_src);
         i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
     }

@@ -86,19 +86,6 @@
 // loop transmission requires ping-pong link to prevent data tearing.
 #define PARLIO_DMA_LINK_NUM         2
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PARLIO_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define PARLIO_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PARLIO_RCC_ATOMIC()
-#endif  // SOC_RCC_IS_INDEPENDENT
-
 ///!< Logging settings
 #define TAG "parlio"
 

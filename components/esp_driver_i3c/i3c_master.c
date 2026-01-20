@@ -730,11 +730,11 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
     i3c_master_hal_init(&i3c_master_handle->hal, i3c_master_handle->i3c_num);
 
     /// clock enable
-    I3C_MASTER_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i3c_master_ll_enable_bus_clock(i3c_master_handle->hal.dev, true);
         i3c_master_ll_reset_register(i3c_master_handle->hal.dev);
     }
-    I3C_MASTER_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i3c_master_ll_enable_controller_clock(i3c_master_handle->hal.dev, true);
     }
 
@@ -743,7 +743,7 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
     i3c_master_handle->clock_source = bus_config->clock_source;
 
     esp_clk_tree_enable_src((soc_module_clk_t)i3c_master_handle->clock_source, true);
-    I3C_MASTER_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i3c_master_ll_set_source_clk(i3c_master_handle->hal.dev, i3c_master_handle->clock_source);
     }
 

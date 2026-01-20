@@ -12,7 +12,6 @@
 #include "esp_rom_sys.h"
 
 #include "hal/uart_ll.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 
 #include "driver/uart.h"
 #include "soc/uart_pins.h"

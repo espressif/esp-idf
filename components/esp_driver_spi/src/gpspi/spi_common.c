@@ -29,12 +29,6 @@
 #include "soc/dport_reg.h"
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define SPI_COMMON_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_COMMON_PERI_CLOCK_ATOMIC()
-#endif
-
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define SPI_COMMON_ISR_ATTR IRAM_ATTR
 #else
@@ -93,7 +87,7 @@ esp_err_t spicommon_bus_alloc(spi_host_device_t host_id, const char *name)
         spicommon_periph_free(host_id);
         return ESP_ERR_NO_MEM;
     }
-    SPI_COMMON_PERI_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         spi_ll_enable_clock(host_id, true);
     }
     ctx->host_id = host_id;
@@ -105,7 +99,7 @@ esp_err_t spicommon_bus_free(spi_host_device_t host_id)
 {
     assert(bus_ctx[host_id]);
     spicommon_periph_free(host_id);
-    SPI_COMMON_PERI_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         spi_ll_enable_clock(host_id, false);
     }
     free(bus_ctx[host_id]);
@@ -180,7 +174,7 @@ static bool claim_dma_chan(int dma_chan, uint32_t *out_actual_dma_chan)
             }
         }
 #else
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             //esp32: have only one spi_dma
             spi_dma_ll_enable_bus_clock(dma_chan, true);
             spi_dma_ll_reset_register(dma_chan);
@@ -397,7 +391,7 @@ esp_err_t spicommon_dma_chan_free(spi_dma_ctx_t *dma_ctx)
         }
     }
 #else
-    SPI_COMMON_RCC_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         spi_dma_ll_enable_bus_clock(dma_ctx->tx_dma_chan.host_id, false);
     }
 #endif
@@ -1046,7 +1040,7 @@ bool SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworka
         ret = false;
     } else {
         //Reset DMA
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             spi_dma_ll_reset_register(dmachan);
         }
         ret = true;
@@ -1066,7 +1060,7 @@ void SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_idle(int dmachan)
     dmaworkaround_channels_busy[dmachan - 1] = 0;
     if (dmaworkaround_waiting_for_chan == dmachan) {
         //Reset DMA
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             spi_dma_ll_reset_register(dmachan);
         }
         dmaworkaround_waiting_for_chan = 0;

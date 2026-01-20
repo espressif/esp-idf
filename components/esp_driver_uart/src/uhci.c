@@ -426,7 +426,7 @@ esp_err_t uhci_del_controller(uhci_controller_handle_t uhci_ctrl)
         return ESP_ERR_INVALID_STATE;
     }
 
-    UHCI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uhci_ll_enable_bus_clock(uhci_ctrl->uhci_num, false);
     }
 
@@ -507,7 +507,7 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
         xQueueSend(uhci_ctrl->tx_dir.trans_queues[UHCI_TRANS_QUEUE_READY], &p_trans_desc, 0);
     }
 
-    UHCI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uhci_ll_enable_bus_clock(uhci_ctrl->uhci_num, true);
         uhci_ll_reset_register(uhci_ctrl->uhci_num);
     }

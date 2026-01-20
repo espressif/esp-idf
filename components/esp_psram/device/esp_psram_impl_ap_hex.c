@@ -15,9 +15,6 @@
 #include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"
 
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define PSRAM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-
 #define AP_HEX_PSRAM_SYNC_READ             0x0000
 #define AP_HEX_PSRAM_SYNC_WRITE            0x8080
 #define AP_HEX_PSRAM_BURST_READ            0x2020
@@ -416,7 +413,7 @@ esp_err_t esp_psram_impl_enable(void)
     ESP_EARLY_LOGD(TAG, "real_mpll_freq: %d", real_mpll_freq);
 #endif
 
-    PSRAM_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
         psram_ctrlr_ll_reset_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2);
         psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_MPLL);

@@ -280,18 +280,13 @@ void IRAM_ATTR int_handler2(void *arg)
     }
 }
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define TEST_BUS_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TEST_BUS_RCC_CLOCK_ATOMIC()
-#endif
 TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[intr_alloc]")
 {
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
 
     // enable SPI2
-    TEST_BUS_RCC_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         spi_ll_enable_bus_clock(1, true);
         spi_ll_reset_register(1);
     }

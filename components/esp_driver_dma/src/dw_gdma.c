@@ -34,13 +34,6 @@
 
 ESP_LOG_ATTR_TAG(TAG, "dw-gdma");
 
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define DW_GDMA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define DW_GDMA_RCC_ATOMIC()
-#endif
-
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define DW_GDMA_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
 #define DW_GDMA_GET_CACHE_ADDRESS(nc_addr) ((nc_addr) ? CACHE_LL_L2MEM_CACHE_ADDR(nc_addr) : 0)
@@ -116,7 +109,7 @@ static dw_gdma_group_t *dw_gdma_acquire_group_handle(int group_id)
             new_group = true;
             s_platform.groups[group_id] = group;
             // enable APB to access DMA registers
-            DW_GDMA_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 dw_gdma_ll_enable_bus_clock(group_id, true);
                 dw_gdma_ll_reset_register(group_id);
             }
@@ -157,7 +150,7 @@ static void dw_gdma_release_group_handle(dw_gdma_group_t *group)
         s_platform.groups[group_id] = NULL;
         // deinitialize the HAL context
         dw_gdma_hal_deinit(&group->hal);
-        DW_GDMA_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             dw_gdma_ll_enable_bus_clock(group_id, false);
         }
     }

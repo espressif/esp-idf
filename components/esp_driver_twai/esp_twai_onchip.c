@@ -15,31 +15,19 @@
 #include "hal/twaifd_ll.h"
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_RCC_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define TWAI_PERI_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_PERI_ATOMIC()
-#endif
-
 static void _twai_rcc_clock_ctrl(uint8_t ctrlr_id, bool enable)
 {
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(ctrlr_id, enable);
         twai_ll_reset_register(ctrlr_id);
     }
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_clock(ctrlr_id, enable);
     }
 }
 static void _twai_rcc_clock_sel(uint8_t ctrlr_id, twai_clock_source_t clock)
 {
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_set_clock_source(ctrlr_id, clock);
     }
 }
@@ -191,7 +179,7 @@ static void _node_isr_main(void *arg)
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         ESP_EARLY_LOGD(TAG, "Triggered peripheral reset");
         twai_hal_prepare_for_reset(twai_ctx->hal);
-        TWAI_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             twai_ll_reset_register(twai_ctx->ctrlr_id);
         }
         twai_hal_recover_from_reset(twai_ctx->hal);
@@ -489,7 +477,7 @@ static esp_err_t _node_disable(twai_node_handle_t node)
     // when `disable` happens during hardware busy, the next RX frame is corrupted, a HW reset can fix it
     if (twai_hal_is_hw_busy(twai_ctx->hal)) {
         twai_hal_backup_config(twai_ctx->hal);
-        TWAI_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             twai_ll_reset_register(twai_ctx->ctrlr_id);
         }
         twai_hal_restore_config(twai_ctx->hal);

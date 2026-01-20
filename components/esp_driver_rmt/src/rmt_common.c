@@ -9,18 +9,6 @@
 #include "soc/rtc.h"
 #include "driver/gpio.h"
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define RMT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define RMT_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define RMT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define RMT_RCC_ATOMIC()
-#endif
-
 typedef struct rmt_platform_t {
     _lock_t mutex;                              // platform level mutex lock
     rmt_group_t *groups[RMT_LL_GET(INST_NUM)];  // array of RMT group instances
@@ -54,7 +42,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
             // group interrupt priority is shared between all channels, it will be set when allocate the first channel
             group->intr_priority = RMT_GROUP_INTR_PRIORITY_UNINITIALIZED;
             // enable the bus clock for the RMT peripheral
-            RMT_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 rmt_ll_enable_bus_clock(group_id, true);
                 rmt_ll_reset_register(group_id);
             }
@@ -105,13 +93,13 @@ void rmt_release_group_handle(rmt_group_t *group)
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL;
         // disable core clock
-        RMT_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             rmt_ll_enable_group_clock(hal->regs, false);
         }
         // hal layer deinitialize
         rmt_hal_deinit(hal);
         // disable bus clock
-        RMT_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             rmt_ll_enable_bus_clock(group_id, false);
         }
     }
@@ -180,7 +168,7 @@ static esp_err_t rmt_set_group_prescale(rmt_channel_t *chan, uint32_t expect_res
     portENTER_CRITICAL(&group->spinlock);
     if (group->resolution_hz == 0) {
         group->resolution_hz = group_resolution_hz;
-        RMT_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, group->clk_src, group_prescale, 1, 0);
             rmt_ll_enable_group_clock(group->hal.regs, true);
         }
@@ -241,7 +229,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     // get clock source frequency
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
                         TAG, "get clock source frequency failed");
-    RMT_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, clk_src, 1, 1, 0);
         rmt_ll_enable_group_clock(group->hal.regs, true);
     }

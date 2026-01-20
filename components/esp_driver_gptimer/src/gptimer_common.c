@@ -143,7 +143,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     // !!! HARDWARE SHARED RESOURCE !!!
     // on some ESP chip, different peripheral's clock source setting are mixed in the same register
     // so we need to make this done in an atomic way
-    GPTIMER_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         timer_ll_set_clock_source(group_id, timer_id, src_clk);
         timer_ll_enable_clock(group_id, timer_id, true);
     }
