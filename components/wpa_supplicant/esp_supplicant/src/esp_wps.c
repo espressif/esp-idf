@@ -681,6 +681,10 @@ static int wps_finish(void)
     }
 
     if (sm->wps->state == WPS_FINISHED) {
+        if (sm->state == WPA_FINISH_PROCESS) {
+            return ESP_OK;
+        }
+        sm->state = WPA_FINISH_PROCESS;
         bool connect = (sm->ap_cred_cnt == 1);
 
 #ifdef CONFIG_WPS_RECONNECT_ON_FAIL
