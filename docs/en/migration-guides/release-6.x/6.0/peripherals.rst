@@ -148,54 +148,56 @@ UART
 
 - ``soc/uart_channel.h`` header file has been removed. All UART GPIO lookup macros can be found in ``soc/uart_pins.h``. For example, ``UART_NUM_0_TXD_DIRECT_GPIO_NUM`` is equivalent to ``U0TXD_GPIO_NUM``.
 
-I2C
----
+.. only:: SOC_I2C_SUPPORTED
 
-Legacy I2C Driver End-of-Life
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    I2C
+    ---
 
-.. warning::
+    Legacy I2C Driver End-of-Life
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    The legacy I2C driver (``driver/i2c.h``) has been marked as **End-of-Life (EOL)** in ESP-IDF v6.0 and is scheduled for **removal in v7.0**.
+    .. warning::
 
-    - ESP-IDF will not provide updates, bug fixes, or security patches for the legacy driver timely.
-    - Users are strongly recommended to migrate to the new I2C drivers: ``driver/i2c_master.h`` and ``driver/i2c_slave.h``.
-    - To temporarily suppress the compile-time warning, enable ``Component config`` > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning`` in menuconfig.
+        The legacy I2C driver (``driver/i2c.h``) has been marked as **End-of-Life (EOL)** in ESP-IDF v6.0 and is scheduled for **removal in v7.0**.
 
-The new I2C drivers provide improved slave and master functionality. For details, please refer to the :ref:`I2C Migration Guide <migration_guide_i2c_driver_5_2>` and the :doc:`I2C Driver Programming Guide <../../../api-reference/peripherals/i2c>`.
+        - ESP-IDF will not provide updates, bug fixes, or security patches for the legacy driver timely.
+        - Users are strongly recommended to migrate to the new I2C drivers: ``driver/i2c_master.h`` and ``driver/i2c_slave.h``.
+        - To temporarily suppress the compile-time warning, enable ``Component config`` > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning`` in menuconfig.
 
-I2C Slave Driver Updates
-~~~~~~~~~~~~~~~~~~~~~~~~~
+    The new I2C drivers provide improved slave and master functionality. For details, please refer to the :ref:`I2C Migration Guide <migration_guide_i2c_driver_5_2>` and the :doc:`I2C Driver Programming Guide <../../../api-reference/peripherals/i2c>`.
 
-The I2C slave driver has been redesigned in v5.4. In the current version, the old I2C slave driver has been removed.
+    I2C Slave Driver Updates
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Major Changes in Concepts
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    The I2C slave driver has been redesigned in v5.4. In the current version, the old I2C slave driver has been removed.
 
-- Previously, the I2C slave driver performed active read and write operations. In the new version, these operations are handled passively via callbacks triggered by master events, aligning with standard I2C slave behavior.
+    Major Changes in Concepts
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Major Changes in Usage
-^^^^^^^^^^^^^^^^^^^^^^
+    - Previously, the I2C slave driver performed active read and write operations. In the new version, these operations are handled passively via callbacks triggered by master events, aligning with standard I2C slave behavior.
 
-- ``i2c_slave_receive`` has been removed. In the new driver, data reception is handled via callbacks.
-- ``i2c_slave_transmit`` has been replaced by ``i2c_slave_write``.
-- ``i2c_slave_write_ram`` has been removed.
-- ``i2c_slave_read_ram`` has been removed.
+    Major Changes in Usage
+    ^^^^^^^^^^^^^^^^^^^^^^
 
-I2C Master Driver Updates
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - ``i2c_slave_receive`` has been removed. In the new driver, data reception is handled via callbacks.
+    - ``i2c_slave_transmit`` has been replaced by ``i2c_slave_write``.
+    - ``i2c_slave_write_ram`` has been removed.
+    - ``i2c_slave_read_ram`` has been removed.
 
-The I2C master driver also has some changes in its API definitions.
+    I2C Master Driver Updates
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Major Changes in Usage
-^^^^^^^^^^^^^^^^^^^^^^
+    The I2C master driver also has some changes in its API definitions.
 
-Following functions now will return ``ESP_ERR_INVALID_RESPONSE`` instead of ``ESP_ERR_INVALID_STATE`` when NACK from the bus is detected:
+    Major Changes in Usage
+    ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``i2c_master_transmit``
-- ``i2c_master_multi_buffer_transmit``
-- ``i2c_master_transmit_receive``
-- ``i2c_master_execute_defined_operations``
+    Following functions now will return ``ESP_ERR_INVALID_RESPONSE`` instead of ``ESP_ERR_INVALID_STATE`` when NACK from the bus is detected:
+
+    - ``i2c_master_transmit``
+    - ``i2c_master_multi_buffer_transmit``
+    - ``i2c_master_transmit_receive``
+    - ``i2c_master_execute_defined_operations``
 
 Legacy Timer Group Driver is Removed
 ------------------------------------

@@ -331,6 +331,10 @@ ESP32H4_DOCS = [
     'api-guides/phy.rst',
 ]
 
+ESP32S31_DOCS = [
+    'api-reference/system/ipc.rst',
+]
+
 ESP32P4_DOCS = [
     'api-reference/system/ipc.rst',
     'api-reference/peripherals/cap_touch_sens.rst',
@@ -410,6 +414,7 @@ conditional_include_dict = {
     'esp32c61': ESP32C61_DOCS,
     'esp32h2': ESP32H2_DOCS,
     'esp32h4': ESP32H4_DOCS,
+    'esp32s31': ESP32S31_DOCS,
     'esp32p4': ESP32P4_DOCS,
 }
 

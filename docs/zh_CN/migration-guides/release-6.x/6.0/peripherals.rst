@@ -148,54 +148,56 @@ UART
 
 - ``soc/uart_channel.h`` 头文件已被移除。所有 UART GPIO 查找宏都可以在 ``soc/uart_pins.h`` 中找到。例如，``UART_NUM_0_TXD_DIRECT_GPIO_NUM`` 等同于 ``U0TXD_GPIO_NUM``。
 
-I2C
----
+.. only:: SOC_I2C_SUPPORTED
 
-旧版 I2C 驱动生命周期终止
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+    I2C
+    ---
 
-.. warning::
+    旧版 I2C 驱动生命周期终止
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    旧版 I2C 驱动（``driver/i2c.h``）已在 ESP-IDF v6.0 中被标记为 **生命周期终止（End-of-Life, EOL）**，并计划在 **v7.0 中彻底移除**。
+    .. warning::
 
-    - ESP-IDF 将不再为旧版驱动提供及时的更新、错误修复或安全补丁。
-    - 强烈建议用户尽快迁移到新版 I2C 驱动：``driver/i2c_master.h`` 和 ``driver/i2c_slave.h``。
-    - 如需暂时抑制编译警告，可在 menuconfig 中启用 ``Component config``  > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning``。
+        旧版 I2C 驱动（``driver/i2c.h``）已在 ESP-IDF v6.0 中被标记为 **生命周期终止（End-of-Life, EOL）**，并计划在 **v7.0 中彻底移除**。
 
-新版 I2C 驱动主要改进了从机和主机的使用方式，详细内容请参考 :ref:`I2C 迁移指南 <migration_guide_i2c_driver_5_2>` 和 :doc:`I2C 驱动编程指南 <../../../api-reference/peripherals/i2c>`。
+        - ESP-IDF 将不再为旧版驱动提供及时的更新、错误修复或安全补丁。
+        - 强烈建议用户尽快迁移到新版 I2C 驱动：``driver/i2c_master.h`` 和 ``driver/i2c_slave.h``。
+        - 如需暂时抑制编译警告，可在 menuconfig 中启用 ``Component config``  > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning``。
 
-I2C 从机驱动更新
-~~~~~~~~~~~~~~~~~~
+    新版 I2C 驱动主要改进了从机和主机的使用方式，详细内容请参考 :ref:`I2C 迁移指南 <migration_guide_i2c_driver_5_2>` 和 :doc:`I2C 驱动编程指南 <../../../api-reference/peripherals/i2c>`。
 
-I2C 从机驱动在 v5.4 上已经被重新设计。在当前版本上，旧的 I2C 从机驱动已经被移除。
+    I2C 从机驱动更新
+    ~~~~~~~~~~~~~~~~~~
 
-主要概念更新
-^^^^^^^^^^^^
+    I2C 从机驱动在 v5.4 上已经被重新设计。在当前版本上，旧的 I2C 从机驱动已经被移除。
 
-- 旧版本的 I2C 从机驱动是主动读写，这不符合 I2C 从机的一般用法。在新版的 I2C 从机中，I2C 的读写通过主机驱动产生的事件以触发回调被动完成。
+    主要概念更新
+    ^^^^^^^^^^^^
 
-主要用法更新
-^^^^^^^^^^^^
+    - 旧版本的 I2C 从机驱动是主动读写，这不符合 I2C 从机的一般用法。在新版的 I2C 从机中，I2C 的读写通过主机驱动产生的事件以触发回调被动完成。
 
-- ``i2c_slave_receive`` 被移除，在新驱动中使用回调接收数据。
-- ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代。
-- ``i2c_slave_write_ram`` 被移除。
-- ``i2c_slave_read_ram`` 被移除。
+    主要用法更新
+    ^^^^^^^^^^^^
 
-I2C 主机驱动更新
-~~~~~~~~~~~~~~~~~~
+    - ``i2c_slave_receive`` 被移除，在新驱动中使用回调接收数据。
+    - ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代。
+    - ``i2c_slave_write_ram`` 被移除。
+    - ``i2c_slave_read_ram`` 被移除。
 
-I2C 主机驱动的 API 也有一些用法上的改动。
+    I2C 主机驱动更新
+    ~~~~~~~~~~~~~~~~~~
 
-主要用法更新
-^^^^^^^^^^^^
+    I2C 主机驱动的 API 也有一些用法上的改动。
 
-当主机在 I2C 总线上检测到 NACK，以下的函数目前会返回 ``ESP_ERR_INVALID_RESPONSE``，而不是像之前一样返回 ``ESP_ERR_INVALID_STATE``：
+    主要用法更新
+    ^^^^^^^^^^^^
 
-- ``i2c_master_transmit``
-- ``i2c_master_multi_buffer_transmit``
-- ``i2c_master_transmit_receive``
-- ``i2c_master_execute_defined_operations``
+    当主机在 I2C 总线上检测到 NACK，以下的函数目前会返回 ``ESP_ERR_INVALID_RESPONSE``，而不是像之前一样返回 ``ESP_ERR_INVALID_STATE``：
+
+    - ``i2c_master_transmit``
+    - ``i2c_master_multi_buffer_transmit``
+    - ``i2c_master_transmit_receive``
+    - ``i2c_master_execute_defined_operations``
 
 旧版定时器组驱动被移除
 ----------------------

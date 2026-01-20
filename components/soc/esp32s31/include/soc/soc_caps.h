@@ -193,6 +193,10 @@
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION     1
 
+/*-------------------------- LEDC CAPS ---------------------------------------*/
+// TODO: [ESP32S31] IDF-14709
+#define SOC_LEDC_CHANNEL_NUM                (6)
+
 /*-------------------------- MMU CAPS ----------------------------------------*/
 // TODO: [ESP32S31] IDF-14669
 #define SOC_MMU_PERIPH_NUM                    (2U)
@@ -256,6 +260,7 @@
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 // TODO: [ESP32S31] IDF-14628
+#define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 
 /*-------------------------- UART CAPS ---------------------------------------*/
