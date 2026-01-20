@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,17 @@ typedef struct {
 #define RETENTION_MODULE_BITMAP_INIT(module) { .bitmap[(SLEEP_RETENTION_MODULE_ ## module) >> 5] = BIT((SLEEP_RETENTION_MODULE_ ## module) % 32) }
     uint32_t bitmap[SLEEP_RETENTION_MODULE_BITMAP_SZ];
 } sleep_retention_module_bitmap_t;
+
+/**
+ * @brief Set a bit in the retention module bitmap
+ *
+ * @param bitmap_ptr Pointer to the bitmap structure
+ * @param module     Module number (e.g., SLEEP_RETENTION_MODULE_SYS_PERIPH)
+ */
+#define RETENTION_MODULE_BITMAP_SET(bitmap_ptr, module) \
+    do { \
+        (bitmap_ptr)->bitmap[(module) >> 5] |= BIT((module) % 32); \
+    } while (0)
 typedef regdma_entry_buf_t                  sleep_retention_entries_t;
 typedef regdma_entries_config_t             sleep_retention_entries_config_t;
 

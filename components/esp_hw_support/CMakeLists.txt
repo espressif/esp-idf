@@ -71,6 +71,7 @@ if(NOT non_os_build)
             )
         if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
             list(APPEND srcs "sleep_system_peripheral.c")
+            list(APPEND srcs "port/${target}/peripheral_domain_pd.c")
         endif()
     endif()
 
@@ -237,6 +238,10 @@ add_subdirectory(lowpower)
 
 if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")
+endif()
+
+if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u sleep_system_peripheral_dummy")
 endif()
 
 if(NOT non_os_build)

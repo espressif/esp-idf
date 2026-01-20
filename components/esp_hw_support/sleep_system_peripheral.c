@@ -1,25 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stddef.h>
-#include <string.h>
-
 #include "sdkconfig.h"
-#include "soc/soc_caps.h"
 #include "soc/system_periph_retention.h"
 #include "hal/uart_periph.h"
-#include "hal/timer_ll.h"
-#if SOC_HAS(I2S)
-#include "hal/i2s_ll.h"
-#endif
-
-#include "esp_sleep.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "hal/gdma_periph.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/sleep_retention.h"
 
@@ -177,141 +166,6 @@ error:
     return err;
 }
 
-bool peripheral_domain_pd_allowed(void)
-{
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-    const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
-    const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
-
-    sleep_retention_module_bitmap_t mask = RETENTION_MODULE_BITMAP_INIT(NULL);
-    mask.bitmap[SLEEP_RETENTION_MODULE_SYS_PERIPH >> 5] |= BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH % 32);
-#if SOC_MWDT_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_TG0_WDT >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_WDT % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_TG1_WDT >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_WDT % 32);
-#endif
-#if SOC_TIMER_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_TG0_TIMER0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_TIMER0 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_TG1_TIMER0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_TIMER0 % 32);
-#if TIMG_LL_GET(GPTIMERS_PER_INST) > 1
-    mask.bitmap[SLEEP_RETENTION_MODULE_TG0_TIMER1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_TIMER1 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_TG1_TIMER1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_TIMER1 % 32);
-#endif
-#endif
-
-#if SOC_ADC_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-11369
-    mask.bitmap[SLEEP_RETENTION_MODULE_ADC >> 5] |= BIT(SLEEP_RETENTION_MODULE_ADC % 32);
-#endif
-
-#if SOC_UART_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_UART0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_UART0 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_UART1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_UART1 % 32);
-# if (SOC_UART_HP_NUM > 2)
-    mask.bitmap[SLEEP_RETENTION_MODULE_UART2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_UART2 % 32);
-# endif
-# if (SOC_UART_HP_NUM > 3)
-    mask.bitmap[SLEEP_RETENTION_MODULE_UART3 >> 5] |= BIT(SLEEP_RETENTION_MODULE_UART3 % 32);
-# endif
-# if (SOC_UART_HP_NUM > 4)
-    mask.bitmap[SLEEP_RETENTION_MODULE_UART4 >> 5] |= BIT(SLEEP_RETENTION_MODULE_UART4 % 32);
-# endif
-#endif /* SOC_UART_SUPPORT_SLEEP_RETENTION */
-
-#if SOC_RMT_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_RMT0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_RMT0 % 32);
-#endif
-
-#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
-# if SOC_GDMA_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-11371
-    mask.bitmap[SLEEP_RETENTION_MODULE_GDMA_CH0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GDMA_CH0 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_GDMA_CH1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GDMA_CH1 % 32);
-#  if (GDMA_LL_GET(PAIRS_PER_INST) > 2)
-    mask.bitmap[SLEEP_RETENTION_MODULE_GDMA_CH2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GDMA_CH2 % 32);
-#  endif
-# endif /* SOC_GDMA_SUPPORTED */
-# if SOC_HAS(AHB_GDMA) && CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-11372
-    mask.bitmap[SLEEP_RETENTION_MODULE_AHB_DMA_CH0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AHB_DMA_CH0 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_AHB_DMA_CH1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AHB_DMA_CH1 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_AHB_DMA_CH2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AHB_DMA_CH2 % 32);
-# endif /* SOC_HAS(AHB_GDMA) */
-# if SOC_HAS(AXI_GDMA)
-    mask.bitmap[SLEEP_RETENTION_MODULE_AXI_DMA_CH0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AXI_DMA_CH0 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_AXI_DMA_CH1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AXI_DMA_CH1 % 32);
-    mask.bitmap[SLEEP_RETENTION_MODULE_AXI_DMA_CH2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AXI_DMA_CH2 % 32);
-# endif /* SOC_HAS(AXI_GDMA) */
-#endif /* SOC_GDMA_SUPPORT_SLEEP_RETENTION */
-
-#if SOC_HAS(PAU)
-    mask.bitmap[SLEEP_RETENTION_MODULE_I2S0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S0 % 32);
-#ifdef I2S_LL_GET
-# if (I2S_LL_GET(INST_NUM) > 1)
-    mask.bitmap[SLEEP_RETENTION_MODULE_I2S1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S1 % 32);
-# endif
-# if (I2S_LL_GET(INST_NUM) > 2)
-    mask.bitmap[SLEEP_RETENTION_MODULE_I2S2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S2 % 32);
-# endif
-#endif  /* I2S_LL_GET */
-#endif /* SOC_HAS(PAU) */
-
-#if SOC_I2C_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_I2C0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2C0 % 32);
-# if (SOC_HP_I2C_NUM > 1)
-    mask.bitmap[SLEEP_RETENTION_MODULE_I2C1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2C1 % 32);
-# endif
-#endif /* SOC_I2C_SUPPORT_SLEEP_RETENTION */
-
-#if SOC_ETM_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_ETM0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_ETM0 % 32);
-#endif
-
-#if SOC_TEMP_SENSOR_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4
-    mask.bitmap[SLEEP_RETENTION_MODULE_TEMP_SENSOR >> 5] |= BIT(SLEEP_RETENTION_MODULE_TEMP_SENSOR % 32);
-#endif
-
-#if SOC_TWAI_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_TWAI0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TWAI0 % 32);
-# if (SOC_TWAI_CONTROLLER_NUM > 1)
-    mask.bitmap[SLEEP_RETENTION_MODULE_TWAI1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TWAI1 % 32);
-# endif
-# if (SOC_TWAI_CONTROLLER_NUM > 2)
-    mask.bitmap[SLEEP_RETENTION_MODULE_TWAI2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TWAI2 % 32);
-# endif
-#endif /* SOC_TWAI_SUPPORT_SLEEP_RETENTION */
-
-#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_PARLIO0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_PARLIO0 % 32);
-#endif
-
-#if SOC_GPSPI_SUPPORTED
-    mask.bitmap[SLEEP_RETENTION_MODULE_GPSPI2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GPSPI2 % 32);
-# if CONFIG_IDF_TARGET_ESP32P4
-    mask.bitmap[SLEEP_RETENTION_MODULE_GPSPI3 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GPSPI3 % 32);
-# endif
-#endif
-
-#if SOC_LEDC_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_LEDC >> 5] |= BIT(SLEEP_RETENTION_MODULE_LEDC % 32);
-#endif
-
-#if SOC_MCPWM_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_MCPWM0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_MCPWM0 % 32);
-#endif
-
-#if SOC_SDM_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_SDM0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_SDM0 % 32);
-#endif
-
-#if SOC_EMAC_SUPPORT_SLEEP_RETENTION
-    mask.bitmap[SLEEP_RETENTION_MODULE_EMAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_EMAC % 32);
-#endif
-
-    const sleep_retention_module_bitmap_t peripheral_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
-    const sleep_retention_module_bitmap_t peripheral_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
-    return sleep_retention_module_bitmap_eq(peripheral_domain_inited_modules, peripheral_domain_created_modules);
-#else
-    return false;
-#endif
-}
-
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, SECONDARY, BIT(0), 107)
 {
@@ -329,3 +183,12 @@ ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, SECONDARY, BIT(0), 107)
     return ESP_OK;
 }
 #endif
+
+/**
+ * @brief Dummy function used to force linking this file.
+ * This works via -u sleep_system_peripheral_dummy flag in CMakeLists.txt
+ */
+void sleep_system_peripheral_dummy(void)
+{
+    return;
+}
