@@ -1563,7 +1563,11 @@ static esp_err_t btdm_low_power_mode_init(void)
         btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
     } else { // btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL32K
         ESP_LOGI(BTDM_LOG_TAG, "Using external 32.768 kHz crystal/oscillator as clock source");
-        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
+        /* The enabling of the 32k crystal/oscillator depends on the RTC slow clock.
+         *  Therefore, if the 32k crystal/oscillator is enabled, selecting BTDM_LPCLK_SEL_RTC_SLOW
+         *  and BTDM_LPCLK_SEL_XTAL32K as the lp clock source is equivalent.
+         */
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_RTC_SLOW);
         set_div_ret = btdm_lpclk_set_div(0);
         assert(select_src_ret && set_div_ret);
         btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
