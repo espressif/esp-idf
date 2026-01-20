@@ -186,6 +186,8 @@ struct esp_ble_mesh_blob_xfer {
     esp_ble_mesh_blob_xfer_mode_t mode;                                 /*!<  BLOB transfer mode.  */
     uint8_t block_size_log;                                             /*!< Logarithmic representation of the block size. */
     uint16_t chunk_size;                                                /*!<  Base chunk size. May be smaller for the last chunk.  */
+    /* Enhanced parameters for message context in blob chunks  */
+    esp_ble_mesh_msg_enh_params_t chunk_enh_params;
 };
 
 /** BLOB transfer data block. */

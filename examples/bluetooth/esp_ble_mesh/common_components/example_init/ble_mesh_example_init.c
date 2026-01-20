@@ -155,6 +155,23 @@ esp_err_t bluetooth_init(void)
     /* XXX Need to have template for store */
     ble_store_config_init();
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+    /**
+     * On the NimBLE host, once any of the discovery,
+     * advertising, or connection is enabled, it is
+     * no longer possible to register GATT services.
+     *
+     * Once the NimBLE host is started, it will call
+     * the registered sync callback. Since it is
+     * uncertain what the user will do in the sync
+     * callback, GATT services should be registered
+     * before starting the NimBLE.
+     */
+    extern void bt_mesh_gatts_svcs_add(void);
+    bt_mesh_gatts_svcs_add();
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+
+
     nimble_port_freertos_init(mesh_host_task);
 
     xSemaphoreTake(mesh_sem, portMAX_DELAY);
