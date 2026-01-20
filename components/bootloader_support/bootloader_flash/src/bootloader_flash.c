@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -537,16 +537,8 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 
 esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool allow_decrypt)
 {
-    if (src_addr & 3) {
-        ESP_EARLY_LOGE(TAG, "bootloader_flash_read src_addr 0x%x not 4-byte aligned", src_addr);
-        return ESP_FAIL;
-    }
-    if (size & 3) {
-        ESP_EARLY_LOGE(TAG, "bootloader_flash_read size 0x%x not 4-byte aligned", size);
-        return ESP_FAIL;
-    }
-    if ((intptr_t)dest & 3) {
-        ESP_EARLY_LOGE(TAG, "bootloader_flash_read dest 0x%x not 4-byte aligned", (intptr_t)dest);
+    if ((src_addr & 3) || (size & 3) || ((intptr_t)dest & 3)) {
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_read src_addr 0x%x, size 0x%x or dest 0x%x not 4-byte aligned", src_addr, size, (intptr_t)dest);
         return ESP_FAIL;
     }
 
