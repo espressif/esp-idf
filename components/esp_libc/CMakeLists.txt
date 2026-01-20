@@ -80,6 +80,7 @@ else()
          "src/picolibc/errno.c")
     if(CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
         list(APPEND srcs "src/picolibc/getreent.c")
+        list(APPEND srcs "src/picolibc/fopencookie.c")
     endif()
 endif()
 
