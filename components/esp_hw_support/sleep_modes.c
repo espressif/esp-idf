@@ -1684,6 +1684,10 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
 #endif
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_GPIO, RTC_GPIO_TRIG_EN)) {
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+        s_config.gpio_wakeup_mask = 0;
+        s_config.gpio_trigger_mode = 0;
+#endif
         s_config.wakeup_triggers &= ~RTC_GPIO_TRIG_EN;
 #if SOC_PMU_SUPPORTED && (SOC_UART_HP_NUM > 2)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN | RTC_UART2_TRIG_EN))) {
@@ -2162,12 +2166,12 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
             continue;
         }
         err = gpio_deep_sleep_wakeup_enable(gpio_idx, intr_type);
-
+        if (err != ESP_OK) return err;
         s_config.gpio_wakeup_mask |= BIT(gpio_idx);
         if (mode == ESP_GPIO_WAKEUP_GPIO_HIGH) {
-            s_config.gpio_trigger_mode |= (mode << gpio_idx);
+            s_config.gpio_trigger_mode |= BIT(gpio_idx);
         } else {
-            s_config.gpio_trigger_mode &= ~(mode << gpio_idx);
+            s_config.gpio_trigger_mode &= ~BIT(gpio_idx);
         }
     }
     s_config.wakeup_triggers |= RTC_GPIO_TRIG_EN;
