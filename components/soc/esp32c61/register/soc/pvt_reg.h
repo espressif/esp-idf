@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -363,10 +363,12 @@ extern "C" {
 /** PVT_DBIAS_CMD0 : R/W; bitpos: [16:0]; default: 0;
  *  needs field desc
  */
-#define PVT_DBIAS_CMD0    0x0001FFFFU
-#define PVT_DBIAS_CMD0_M  (PVT_DBIAS_CMD0_V << PVT_DBIAS_CMD0_S)
-#define PVT_DBIAS_CMD0_V  0x0001FFFFU
-#define PVT_DBIAS_CMD0_S  0
+#define PVT_DBIAS_CMD0_OFFSET_FLAG 1
+#define PVT_DBIAS_CMD0_OFFSET_FLAG_S 16
+#define PVT_DBIAS_CMD0_OFFSET_VALUE 0x1F
+#define PVT_DBIAS_CMD0_OFFSET_VALUE_S 11
+#define PVT_DBIAS_CMD0_PVT 0x7FF
+#define PVT_DBIAS_CMD0_PVT_S 0
 
 /** PVT_DBIAS_CMD1_REG register
  *  needs desc
@@ -375,10 +377,12 @@ extern "C" {
 /** PVT_DBIAS_CMD1 : R/W; bitpos: [16:0]; default: 0;
  *  needs field desc
  */
-#define PVT_DBIAS_CMD1    0x0001FFFFU
-#define PVT_DBIAS_CMD1_M  (PVT_DBIAS_CMD1_V << PVT_DBIAS_CMD1_S)
-#define PVT_DBIAS_CMD1_V  0x0001FFFFU
-#define PVT_DBIAS_CMD1_S  0
+#define PVT_DBIAS_CMD1_OFFSET_FLAG 1
+#define PVT_DBIAS_CMD1_OFFSET_FLAG_S 16
+#define PVT_DBIAS_CMD1_OFFSET_VALUE 0x1F
+#define PVT_DBIAS_CMD1_OFFSET_VALUE_S 11
+#define PVT_DBIAS_CMD1_PVT 0x7FF
+#define PVT_DBIAS_CMD1_PVT_S 0
 
 /** PVT_DBIAS_CMD2_REG register
  *  needs desc
@@ -387,10 +391,12 @@ extern "C" {
 /** PVT_DBIAS_CMD2 : R/W; bitpos: [16:0]; default: 0;
  *  needs field desc
  */
-#define PVT_DBIAS_CMD2    0x0001FFFFU
-#define PVT_DBIAS_CMD2_M  (PVT_DBIAS_CMD2_V << PVT_DBIAS_CMD2_S)
-#define PVT_DBIAS_CMD2_V  0x0001FFFFU
-#define PVT_DBIAS_CMD2_S  0
+#define PVT_DBIAS_CMD2_OFFSET_FLAG 1
+#define PVT_DBIAS_CMD2_OFFSET_FLAG_S 16
+#define PVT_DBIAS_CMD2_OFFSET_VALUE 0x1F
+#define PVT_DBIAS_CMD2_OFFSET_VALUE_S 11
+#define PVT_DBIAS_CMD2_PVT 0x7FF
+#define PVT_DBIAS_CMD2_PVT_S 0
 
 /** PVT_DBIAS_CMD3_REG register
  *  needs desc

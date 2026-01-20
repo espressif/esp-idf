@@ -119,6 +119,10 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
+config SOC_PMU_PVT_SUPPORTED
+    bool
+    default y
+
 config SOC_RTC_TIMER_V2_SUPPORTED
     bool
     default y

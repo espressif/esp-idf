@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -347,10 +347,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dbias_cmd0 : R/W; bitpos: [16:0]; default: 0;
+        /** dbias_cmd0 : R/W; bitpos: [10:0]; default: 0;
          *  needs field desc
          */
-        uint32_t dbias_cmd0:17;
+        uint32_t dbias_cmd0_pvt:11;
+        /** dbias_cmd0_offset_value : R/W; bitpos: [15:11]; default: 0;
+         *  needs field desc
+         */
+        uint32_t dbias_cmd0_offset_value:5;
+        /** dbias_cmd0_offset_flag : R/W; bitpos: [16]; default: 0;
+         *  needs field desc
+         */
+        uint32_t dbias_cmd0_offset_flag:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
@@ -361,10 +369,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dbias_cmd1 : R/W; bitpos: [16:0]; default: 0;
+        /** dbias_cmd1 : R/W; bitpos: [10:0]; default: 0;
          *  needs field desc
          */
-        uint32_t dbias_cmd1:17;
+        uint32_t dbias_cmd1_pvt:11;
+        /** dbias_cmd1_offset_value : R/W; bitpos: [15:11]; default: 0;
+         *  needs field desc
+         */
+        uint32_t dbias_cmd1_offset_value:5;
+        /** dbias_cmd1_offset_flag : R/W; bitpos: [16]; default: 0;
+         *  needs field desc
+         */
+        uint32_t dbias_cmd1_offset_flag:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
@@ -375,10 +391,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dbias_cmd2 : R/W; bitpos: [16:0]; default: 0;
+        /** dbias_cmd2 : R/W; bitpos: [10:0]; default: 0;
          *  needs field desc
          */
-        uint32_t dbias_cmd2:17;
+        uint32_t dbias_cmd2_pvt:11;
+        /** dbias_cmd2_offset_value : R/W; bitpos: [15:11]; default: 0;
+         *  needs field desc
+         */
+        uint32_t dbias_cmd2_offset_value:5;
+        /** dbias_cmd2_offset_flag : R/W; bitpos: [16]; default: 0;
+         *  needs field desc
+         */
+        uint32_t dbias_cmd2_offset_flag:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
