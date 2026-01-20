@@ -917,7 +917,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
             sleep_retention_do_system_retention(false);
 #endif
-#if CONFIG_IDF_TARGET_ESP32P4 && (CONFIG_ESP_REV_MIN_FULL == 300)
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
             sleep_flash_p4_rev3_workaround();
             sleep_retention_do_extra_retention(false);
 #endif

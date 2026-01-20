@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -133,7 +133,7 @@ _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "In
 #define N_REGS_SPI0_C_MEM_1()     (((SPI_MEM_C_SMEM_AC_REG - SPI_MEM_C_FMEM__PMS0_ATTR_REG) / 4) + 1)
 #define N_REGS_SPI0_C_MEM_2()     (1)
 #define N_REGS_SPI0_C_MEM_3()     (((SPI_MEM_C_DPA_CTRL_REG - SPI_MEM_C_MMU_POWER_CTRL_REG) / 4) + 1)
-#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#if (CONFIG_ESP_REV_MIN_FULL == 300) // Workaround for rev3.0 MSPI Power UP issue only.
 #define FLASH_SPIMEM_RETENTION_ENTRY     (ENTRY(0) | REGDMA_SW_TRIGGER_ENTRY)
 #else
 #define FLASH_SPIMEM_RETENTION_ENTRY     ENTRY(0)
@@ -178,8 +178,8 @@ const regdma_entries_config_t psram_spimem_regs_retention[SPIMEM_PSRAM_RETENTION
     [9] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x11),     SPI1_MEM_S_INT_ENA_REG,            SPI1_MEM_S_INT_ENA_REG,              N_REGS_SPI1_S_MEM_2(), 0, 0), .owner = ENTRY(0) },
     [10] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x12),    SPI1_MEM_S_TIMING_CALI_REG,        SPI1_MEM_S_TIMING_CALI_REG,          N_REGS_SPI1_S_MEM_3(), 0, 0), .owner = ENTRY(0) },
     [11] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x13),    SPI1_MEM_S_CLOCK_GATE_REG,         SPI1_MEM_S_CLOCK_GATE_REG,           N_REGS_SPI1_S_MEM_4(), 0, 0), .owner = ENTRY(0) },
-    [12] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x14),         HP_SYS_CLKRST_PERI_CLK_CTRL00_REG, 0,                                   HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN_M, 0, 1), .owner = ENTRY(0) }, // Enable PSRAM mspi core clock on backup
-    [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x15),         HP_SYS_CLKRST_SOC_CLK_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  0, 1), .owner = ENTRY(0) }, // Enable PSRAM mspi core clock on backup
+    [12] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x14),         HP_SYS_CLKRST_PERI_CLK_CTRL00_REG, 0,                                   HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN_M, 0, 1), .owner = ENTRY(0) }, // Disable PSRAM mspi core clock on backup
+    [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x15),         HP_SYS_CLKRST_SOC_CLK_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  0, 1), .owner = ENTRY(0) }, // Disable PSRAM mspi core clock on backup
 };
 
 _Static_assert(ARRAY_SIZE(psram_spimem_regs_retention) == SPIMEM_PSRAM_RETENTION_LINK_LEN, "Inconsistent PSRAM SPI Mem retention link length definitions");
@@ -220,6 +220,6 @@ _Static_assert(ARRAY_SIZE(pau_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "
 /* PVT Registers Context */
 #define N_REGS_PVT    (((PVT_COMB_PD_SITE3_UNIT0_VT1_CONF2_REG - DR_REG_PVT_MONITOR_BASE) / 4) + 1)
 const regdma_entries_config_t pvt_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PVT_LINK(0x00), DR_REG_PVT_MONITOR_BASE, DR_REG_PVT_MONITOR_BASE, N_REGS_PVT, 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PVT_LINK(0x00), DR_REG_PVT_MONITOR_BASE, DR_REG_PVT_MONITOR_BASE, N_REGS_PVT, 0, 0), .owner = ENTRY(0)},
 };
 _Static_assert(ARRAY_SIZE(pvt_regs_retention) == PVT_RETENTION_LINK_LEN, "Inconsistent PVT retention link length definitions");
