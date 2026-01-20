@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,7 @@
 #include "esp_private/esp_dma_utils.h"
 #include "esp_private/gdma_link.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_psram_mspi.h"
 #include "uhci_private.h"
 #include "esp_memory_utils.h"
 #include "esp_cache.h"
@@ -109,6 +110,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
 {
     bool need_yield = false;
     uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t) user_data;
+    bool is_buf_from_psram = esp_ptr_external_ram(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index]);
     // If the data is not all received, handle it in not normal_eof block. Otherwise, in eof block.
     if (!event_data->flags.normal_eof) {
         size_t rx_size = uhci_ctrl->rx_dir.buffer_size_per_desc_node[uhci_ctrl->rx_dir.node_index];
@@ -118,9 +120,8 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
             .flags.totally_received = false,
         };
 
-        bool need_cache_sync = esp_ptr_internal(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index]) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
-        if (need_cache_sync) {
-            esp_cache_msync(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index], rx_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        if (is_buf_from_psram) {
+            esp_psram_mspi_mb();
         }
         if (uhci_ctrl->rx_dir.on_rx_trans_event) {
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
@@ -140,10 +141,8 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
             .flags.totally_received = true,
         };
 
-        bool need_cache_sync = esp_ptr_internal(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index]) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
-        size_t m2c_size = UHCI_ALIGN_UP(rx_size, uhci_ctrl->rx_dir.cache_line);
-        if (need_cache_sync) {
-            esp_cache_msync(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index], m2c_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        if (is_buf_from_psram) {
+            esp_psram_mspi_mb();
         }
 #if CONFIG_PM_ENABLE
         // release power manager lock
@@ -352,6 +351,13 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
 #endif
 
     gdma_link_mount_buffers(uhci_ctrl->rx_dir.dma_link, 0, mount_configs, node_count, NULL);
+
+    // Invalidate cache before DMA starts to ensure no dirty cache lines.
+    // All DMA nodes (mount_configs) share the same contiguous user buffer, so checking mount_configs[0].buffer is sufficient.
+    bool need_cache_sync = esp_ptr_internal(mount_configs[0].buffer) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
+    if (need_cache_sync) {
+        ESP_RETURN_ON_ERROR(esp_cache_msync(mount_configs[0].buffer, usable_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
+    }
 
     gdma_reset(uhci_ctrl->rx_dir.dma_chan);
     gdma_start(uhci_ctrl->rx_dir.dma_chan, gdma_link_get_head_addr(uhci_ctrl->rx_dir.dma_link));
