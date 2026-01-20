@@ -77,6 +77,14 @@ Introduction
     * Multiple peripherals
     * Built-in security hardware
 
+.. only:: esp32c61
+
+    * Wi-Fi 6 (2.4 GHz band)
+    * Bluetooth Low Energy
+    * High performance 32-bit RISC-V single-core processor
+    * Multiple peripherals
+    * Built-in security hardware
+
 .. only:: esp32h2
 
     * Bluetooth Low Energy
@@ -183,6 +191,14 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 
         ESP32-C6-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/index.html>
         ESP32-C6-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitm-1/index.html>
+
+.. only:: esp32c61
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C61-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c61/esp32-c61-devkitc-1/index.html>
+
 
 .. only:: esp32p4
 
