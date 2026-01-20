@@ -111,7 +111,6 @@
 #define SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE      0
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
-// TODO: [ESP32S31] IDF-14655
 #define SOC_CPU_CORES_NUM               (2U)
 #define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
@@ -127,8 +126,8 @@
 
 #define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 
-#define SOC_CPU_BREAKPOINTS_NUM             3
-#define SOC_CPU_WATCHPOINTS_NUM             3
+#define SOC_CPU_BREAKPOINTS_NUM             4
+#define SOC_CPU_WATCHPOINTS_NUM             4
 #define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x100   // bytes
 
 #define SOC_CPU_HAS_PMA                 1
