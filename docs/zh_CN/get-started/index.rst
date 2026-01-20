@@ -77,6 +77,14 @@
     * 多种外设
     * 内置安全硬件
 
+.. only:: esp32c61
+
+    * 2.4 GHz Wi-Fi 6
+    * 低功耗蓝牙
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 内置安全硬件
+
 .. only:: esp32h2
 
     * 低功耗蓝牙
@@ -183,6 +191,14 @@
 
         ESP32-C6-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c6/esp32-c6-devkitc-1/index.html>
         ESP32-C6-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c6/esp32-c6-devkitm-1/index.html>
+
+.. only:: esp32c61
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C61-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c61/esp32-c61-devkitc-1/index.html>
+
 
 .. only:: esp32p4
 
