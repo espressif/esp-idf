@@ -115,9 +115,9 @@ static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t co
 
 static esp_efuse_coding_scheme_t get_coding_scheme(void)
 {
-    // The coding scheme is used for EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3.
-    // We use EFUSE_BLK3 (custom block) to verify it.
-    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK3);
+    // The coding scheme is used for EFUSE_BLK1, EFUSE_BLK2, and EFUSE_BLK3, etc.
+    // We use efuse block number of ESP_EFUSE_MODULE_VERSION (custom field) to verify it.
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(ESP_EFUSE_MODULE_VERSION[0]->efuse_block);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
         ESP_LOGI(TAG, "Coding Scheme NONE");
 #if CONFIG_IDF_TARGET_ESP32
