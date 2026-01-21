@@ -27,5 +27,9 @@
 #define HCI_SCO_PREAMBLE_SIZE 3
 // 1 byte for event code, 1 byte for parameter length (Volume 2, Part E, 5.4.4)
 #define HCI_EVENT_PREAMBLE_SIZE 2
+// 1 byte for Num_HCI_Command_Packets, 2 bytes for Commnad_Opcode (Volume 4, Part E, 7.7.14)
+#define HCI_CC_EVENT_MIN_PARAM_LEN 3
+// 1 byte for status, 1 byte for Num_HCI_Command_Packets, 2 bytes for Commnad_Opcode (Volume 4, Part E, 7.7.15)
+#define HCI_CS_EVENT_MIN_PARAM_LEN 4
 
 #endif /* _HCI_INTERNALS_H_ */
