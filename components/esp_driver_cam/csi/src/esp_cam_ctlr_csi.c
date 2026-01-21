@@ -20,6 +20,8 @@
 #include "esp_cam_ctlr_csi_internal.h"
 #include "hal/mipi_csi_ll.h"
 #include "hal/color_hal.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mipi_csi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
@@ -53,6 +55,7 @@ static esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t ctlr);
 static esp_err_t s_ctlr_csi_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
 static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
 static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config);
+static bool s_is_color_format_conversion_supported(cam_ctlr_color_t color_format);
 
 static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
 {
@@ -215,6 +218,12 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
 #if CONFIG_PM_ENABLE
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "cam_csi_ctlr", &ctlr->pm_lock), err, TAG, "failed to create pm lock");
 #endif //CONFIG_PM_ENABLE
+
+    cam_ctlr_format_conv_config_t format_conv_config = {
+        .src_format = config->input_data_color_type,
+        .dst_format = config->output_data_color_type,
+    };
+    ESP_GOTO_ON_ERROR(s_csi_ctlr_format_conversion(&(ctlr->base), &format_conv_config), err, TAG, "failed to configure format conversion");
 
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ctlr->csi_fsm = CSI_FSM_INIT;
@@ -571,9 +580,44 @@ static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32
     return buffer;
 }
 
+static bool s_is_color_format_conversion_supported(cam_ctlr_color_t color_format)
+{
+    return (color_format == CAM_CTLR_COLOR_RGB888 ||
+            color_format == CAM_CTLR_COLOR_RGB565 ||
+            color_format == CAM_CTLR_COLOR_YUV420 ||
+            color_format == CAM_CTLR_COLOR_YUV422_YVYU ||
+            color_format == CAM_CTLR_COLOR_YUV422_YUYV ||
+            color_format == CAM_CTLR_COLOR_YUV422_UYVY ||
+            color_format == CAM_CTLR_COLOR_YUV422_VYUY);
+}
+
 static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    // CSI controller doesn't support format conversion yet
-    return ESP_ERR_NOT_SUPPORTED;
+    ESP_RETURN_ON_FALSE(handle && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
+
+    if (config->src_format == config->dst_format) {
+        mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, true);
+        return ESP_OK;
+    } else {
+#if CONFIG_IDF_TARGET_ESP32P4
+        //If ESP32P4 chip version is less than v3.0, not support color format conversion
+        unsigned chip_version = efuse_hal_chip_revision();
+        if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+#endif
+
+        if (!s_is_color_format_conversion_supported(config->src_format) || !s_is_color_format_conversion_supported(config->dst_format)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        } else {
+            mipi_csi_brg_ll_set_input_color_format(ctlr->hal.bridge_dev, config->src_format);
+            mipi_csi_brg_ll_set_output_color_format(ctlr->hal.bridge_dev, config->dst_format);
+            mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, false);
+            mipi_csi_brg_ll_enable_color_conversion(ctlr->hal.bridge_dev, true);
+        }
+        ctlr->in_color_format = config->src_format;
+        ctlr->out_color_format = config->dst_format;
+        return ESP_OK;
+    }
 }
