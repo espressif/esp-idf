@@ -33,7 +33,7 @@ static uint8_t get_lp_hp_gap(void)
     int8_t lp_hp_gap = 0;
     uint32_t blk_version = efuse_hal_blk_version();
     uint8_t lp_hp_gap_efuse = 0;
-    if (blk_version >= 2 && blk_version < 100) {
+    if (blk_version >= 2 && blk_version != 100) {
         lp_hp_gap_efuse = efuse_ll_get_dbias_vol_gap();
         bool gap_flag = lp_hp_gap_efuse >> 4;
         uint8_t gap_abs_value = lp_hp_gap_efuse & 0xf;
@@ -77,7 +77,7 @@ static uint32_t pvt_get_lp_dbias(void)
 void pvt_auto_dbias_init(void)
 {
     uint32_t blk_version = efuse_hal_blk_version();
-    if (blk_version >= 2 && blk_version < 100) {
+    if (blk_version >= 2 && blk_version != 100) {
         SET_PERI_REG_MASK(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
         SET_PERI_REG_MASK(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_PVT_SYS_CLK_EN);
         /*config for dbias func*/
@@ -120,7 +120,7 @@ void pvt_auto_dbias_init(void)
 void pvt_func_enable(bool enable)
 {
     uint32_t blk_version = efuse_hal_blk_version();
-    if (blk_version >= 2 && blk_version < 100){
+    if (blk_version >= 2 && blk_version != 100){
 
         if (enable) {
             SET_PERI_REG_MASK(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
@@ -133,7 +133,7 @@ void pvt_func_enable(bool enable)
             SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                        // Start calibration @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_CLK_CFG_REG, PVT_MONITOR_CLK_PVT_EN);                                    // Once enable cannot be closed
             SET_PERI_REG_MASK(PVT_COMB_PD_SITE3_UNIT0_VT1_CONF1_REG, PVT_MONITOR_EN_VT1_PD_SITE3_UNIT0);   // Enable pvt clk
-            esp_rom_delay_us(1000);
+            esp_rom_delay_us(10);
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL);            // Hand over control of dbias to pvt
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                      // Must clear @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_DBIAS_TIMER_REG, PVT_TIMER_EN);                                          // Enable auto dbias
