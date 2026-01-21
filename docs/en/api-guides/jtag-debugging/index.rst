@@ -221,7 +221,7 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [skip_loaded]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
@@ -232,9 +232,37 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
  - ``no_clock_boost`` - Optional. Disable setting target clock frequency to its maximum possible value before programming. Clock boost is enabled by default.
  - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
+ - ``skip_loaded`` - Optional. Skip flashing if the binary is already loaded. Disabled by default.
+
+Alternative Method: Using program_esp_bins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For convenience when working with ESP-IDF projects, OpenOCD provides an alternative command ``program_esp_bins`` that can flash multiple binaries in a single command by reading the build configuration from the ``flasher_args.json`` file generated during the ESP-IDF build process.
+
+This method is particularly useful because:
+
+* It automatically reads all the binary files and their flash addresses from the build output
+* It handles encrypted partitions automatically based on the project configuration
+* It eliminates the need to manually specify addresses for each binary (bootloader, partition table, application, etc.)
+
+Basic usage:
+
+.. code-block:: bash
+
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp_bins build flasher_args.json verify exit"
+
+Command Format
+""""""""""""""
+
+The OpenOCD flashing command ``program_esp_bins`` has the following format:
+
+``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [skip_loaded]``
+
+ - ``build_dir`` - Path to the build directory containing the ``flasher_args.json`` file.
+ - ``json_file`` - Name of the JSON file containing flash configuration (typically ``flasher_args.json``).
+ - Other optional parameters work the same as ``program_esp`` command. See :ref:`jtag-upload-app-debug` section for details.
 
 You are now ready to start application debugging. Follow the steps described in the section below.
-
 
 .. _jtag-debugging-launching-debugger:
 
