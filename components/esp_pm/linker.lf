@@ -94,3 +94,10 @@ entries:
     if SOC_TEMP_SENSOR_SUPPORTED = y:
         if PM_SLP_IRAM_OPT = y:
             temperature_sensor_hal:temperature_sensor_hal_get_raw_value (noflash)
+
+[mapping:esp_hal_gpio_pm]
+archive: libesp_hal_gpio.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
+        if IDF_TARGET_ESP32 = y:
+            rtc_io_periph:rtc_io_desc (noflash_data)
