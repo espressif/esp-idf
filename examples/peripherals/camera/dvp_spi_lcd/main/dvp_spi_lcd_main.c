@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "hal/cam_ctlr_types.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -147,10 +148,15 @@ void app_main(void)
         .h_res = CONFIG_EXAMPLE_CAM_HRES,
         .v_res = CONFIG_EXAMPLE_CAM_VRES,
 #if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
-        .input_data_color_type = CAM_CTLR_COLOR_YUV422,
+        .input_data_color_type = CAM_CTLR_COLOR_YUV422_UYVY,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
 #else
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
 #endif
+        .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
+        .input_range = COLOR_RANGE_LIMIT,
+        .output_range = COLOR_RANGE_LIMIT,
         .dma_burst_size = 64,
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,
@@ -208,8 +214,8 @@ void app_main(void)
     ESP_LOGI(TAG, "Configure format conversion: YUV422 -> RGB565");
     // Configure format conversion
     const cam_ctlr_format_conv_config_t conv_cfg = {
-        .src_format = CAM_CTLR_COLOR_YUV422,      // Source format: YUV422
-        .dst_format = CAM_CTLR_COLOR_RGB565,      // Destination format: RGB565
+        .src_format = CAM_CTLR_COLOR_YUV422_UYVY,       // Source format: YUV422
+        .dst_format = CAM_CTLR_COLOR_RGB565,            // Destination format: RGB565
         .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
         .data_width = 8,
         .input_range = COLOR_RANGE_LIMIT,

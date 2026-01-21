@@ -88,6 +88,7 @@ TEST_CASE("TEST DVP camera on esp32s3_eye", "[dvp][camera][esp32s3_eye]")
         .h_res = TEST_DVP_CAM_H_RES,
         .v_res = TEST_DVP_CAM_V_RES,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 64,
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,

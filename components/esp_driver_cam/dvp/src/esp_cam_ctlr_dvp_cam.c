@@ -806,6 +806,9 @@ esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
     esp_cam_ctlr_dvp_cam_t *ctlr = (esp_cam_ctlr_dvp_cam_t *)cam_handle;
 
     ESP_LOGD(TAG, "Configure format conversion: %d -> %d", config->src_format, config->dst_format);
+    if (config->src_format == config->dst_format) {
+        return ESP_OK;
+    }
 
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if (config->src_format == CAM_CTLR_COLOR_YUV420) {
@@ -902,6 +905,16 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     }
 
     cam_hal_init(&ctlr->hal, &cam_hal_config);
+
+    cam_ctlr_format_conv_config_t format_conv_config = {
+        .src_format = config->input_data_color_type,
+        .dst_format = config->output_data_color_type,
+        .conv_std = config->conv_std,
+        .data_width = config->cam_data_width == 0 ? 8 : config->cam_data_width,
+        .input_range = config->input_range,
+        .output_range = config->output_range,
+    };
+    ESP_GOTO_ON_ERROR(esp_cam_ctlr_dvp_format_conversion(&(ctlr->base), &format_conv_config), fail5, TAG, "failed to configure format conversion");
 
     ctlr->ctlr_id = config->ctlr_id;
     ctlr->fb_size_in_bytes = fb_size_in_bytes;

@@ -184,6 +184,7 @@
                 .h_res = CONFIG_EXAMPLE_CAM_HRES,
                 .v_res = CONFIG_EXAMPLE_CAM_VRES,
                 .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+                .output_data_color_type = CAM_CTLR_COLOR_RGB565,
                 .dma_burst_size = 128,
                 .pin = &pin_cfg,
                 .bk_buffer_dis = 1,
