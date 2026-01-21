@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,7 +56,12 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     if (hd->config.lru_purge_enable == true) {
         if (!httpd_is_sess_available(hd)) {
             /* Queue asynchronous closure of the least recently used session */
+#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
+            /* In case of blocking mode, close the least recently used session directly */
+            return httpd_sess_close_lru_direct(hd);
+#else
             return httpd_sess_close_lru(hd);
+#endif /* CONFIG_HTTPD_QUEUE_WORK_BLOCKING */
             /* Returning from this allows the main server thread to process
              * the queued asynchronous control message for closing LRU session.
              * Since connection request hasn't been addressed yet using accept()
