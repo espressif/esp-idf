@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,7 @@ int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t **mgmt)
     {
 #if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
     case BLE_COMPRESSED_LOG_OUT_SOURCE_MESH:
+    case BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB:
         buffer_mgmt = BUF_MGMT_NAME(mesh);
         last_handle = &mesh_last_task_handle;
         break;
@@ -102,23 +103,10 @@ static inline int ble_compressed_log_buffer_free(ble_cp_log_buffer_mgmt_t *mgmt)
     return 0;
 }
 
-int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index, size_t args_cnt, ...)
+static inline
+int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32_t log_index, size_t args_cnt, va_list args)
 {
-    ble_cp_log_buffer_mgmt_t *mgmt = NULL;
     uint8_t arg_type = 0;
-    va_list args;
-
-    ble_compressed_log_cb_get(source, &mgmt);
-
-    if (args_cnt == 0) {
-        ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, 0));
-        ble_log_cp_push_u16(mgmt, log_index);
-        ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
-        ble_compressed_log_buffer_free(mgmt);
-        return 0;
-    }
-
-    va_start(args, args_cnt);
 
     ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, args_cnt));
     ble_log_cp_push_u16(mgmt, log_index);
@@ -142,7 +130,7 @@ int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index, size_t args
         }
         if (arg_type >= ARG_SIZE_TYPE_MAX) {
             printf("Found invalid arg type %08lx type %d", log_index, arg_type);
-            assert(0);
+            return 0;
         }
     }
 
@@ -232,10 +220,43 @@ int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index, size_t args
             break;
         }
     }
+    return 0;
+}
+
+int ble_log_compressed_hex_printv(uint8_t source, uint32_t log_index, size_t args_cnt, va_list args)
+{
+    ble_cp_log_buffer_mgmt_t *mgmt = NULL;
+
+    if (ble_compressed_log_cb_get(source, &mgmt)) {
+        return 0;
+    }
+
+    ble_log_compressed_hex_print_internal(mgmt, log_index, args_cnt, args);
+    ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
+    ble_compressed_log_buffer_free(mgmt);
+    return 0;
+}
+
+int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index, size_t args_cnt, ...)
+{
+    ble_cp_log_buffer_mgmt_t *mgmt = NULL;
+
+    if (ble_compressed_log_cb_get(source, &mgmt)) {
+        return 0;
+    }
+
+    if (args_cnt == 0) {
+        ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, 0));
+        ble_log_cp_push_u16(mgmt, log_index);
+    } else {
+        va_list args;
+        va_start(args, args_cnt);
+        ble_log_compressed_hex_print_internal(mgmt, log_index, args_cnt, args);
+        va_end(args);
+    }
 
     ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
     ble_compressed_log_buffer_free(mgmt);
-    va_end(args);
     return 0;
 }
 
@@ -243,7 +264,9 @@ int ble_log_compressed_hex_print_buf(uint8_t source, uint32_t log_index, uint8_t
 {
     ble_cp_log_buffer_mgmt_t *mgmt = NULL;
 
-    ble_compressed_log_cb_get(source, &mgmt);
+    if (ble_compressed_log_cb_get(source, &mgmt)) {
+        return 0;
+    }
 
     if (buf == NULL && len != 0) {
         ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_NULL_BUF));
