@@ -68,6 +68,7 @@ def test_flash_psram_esp32p4(dut: IdfDut) -> None:
     'config',
     [
         'generic_timing_tuning_log_safe',
+        'generic_timing_tuning_xip',
     ],
     indirect=True,
 )
