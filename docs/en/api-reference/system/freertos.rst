@@ -31,7 +31,7 @@ ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.5.1,
     Amazon SMP FreeRTOS
     ^^^^^^^^^^^^^^^^^^^
 
-    Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
+    Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the ``CONFIG_FREERTOS_SMP`` option (only available on ESP32). For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
 
     .. warning::
 
