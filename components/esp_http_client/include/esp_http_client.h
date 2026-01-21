@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -901,6 +901,17 @@ esp_http_state_t esp_http_client_get_state(esp_http_client_handle_t client);
  * @return     true if persistent connection is supported, false otherwise
  */
 bool esp_http_client_is_persistent_connection(esp_http_client_handle_t client);
+
+/**
+ * @brief       Get the socket from the underlying transport
+ *
+ * @param client The HTTP client handle
+ *
+ * @return
+ *     - -1 if the client is NULL or the transport is not initialized
+ *     - The socket file descriptor if successful
+ */
+int esp_http_client_get_socket(esp_http_client_handle_t client);
 
 #ifdef __cplusplus
 }

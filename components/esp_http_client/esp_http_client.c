@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2084,4 +2084,13 @@ bool esp_http_client_is_persistent_connection(esp_http_client_handle_t client)
         return true;
     }
     return false;
+}
+
+int esp_http_client_get_socket(esp_http_client_handle_t client)
+{
+    if (client == NULL || client->transport == NULL) {
+        return -1;
+    }
+
+    return esp_transport_get_socket(client->transport);
 }
