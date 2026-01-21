@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
 #include "hal/rtc_cntl_ll.h"
+#include "hal/rwdt_ll.h"
 #include "esp_rom_sys.h"
 
 #define MHZ (1000000)
@@ -121,6 +122,12 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
     } else {
         // make sure voltage is raised when RTC 8MCLK is enabled
         out_config->dbias_follow_8m = 1;
+    }
+
+    if (sleep_flags & RTC_SLEEP_USE_RTC_WDT) {
+        out_config->rtc_wdt_en = 1;
+    } else {
+        out_config->rtc_wdt_en = 0;
     }
 }
 
@@ -236,6 +243,11 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
         CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
     }
+
+    /* enable rtc wdt during sleep */
+    rwdt_ll_write_protect_disable(RWDT_DEV_GET());
+    rwdt_ll_set_pause_in_sleep_en(RWDT_DEV_GET(), !cfg.rtc_wdt_en);
+    rwdt_ll_write_protect_enable(RWDT_DEV_GET());
 
     /* enable VDDSDIO control by state machine */
     REG_CLR_BIT(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_FORCE);

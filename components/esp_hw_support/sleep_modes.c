@@ -348,6 +348,10 @@ void esp_sleep_overhead_out_time_refresh(void)
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
 static uint32_t get_sleep_clock_icg_flags(void);
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+static uint32_t get_sleep_rtc_wdt_timeout(uint64_t sleep_duration);
+static uint32_t calc_sleep_slow_clk_required_cycles(uint32_t timeout, uint32_t rtc_slow_clk_cal_period);
+#endif
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 static void ext0_wakeup_prepare(void);
 #endif
@@ -763,6 +767,33 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
         rng_ll_enable();
     }
 #endif
+}
+
+/**
+ * RTC WDT prepare for using during sleep
+ */
+static SLEEP_FN_ATTR void sleep_rtc_wdt_prepare(bool enable)
+{
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    if (enable) {
+        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+        // Use default timeout for sleep monitoring
+        uint32_t rtc_wdt_timeout_required_cycles = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+        if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
+            uint32_t rtc_wdt_timeout = get_sleep_rtc_wdt_timeout(s_config.sleep_duration);
+            rtc_wdt_timeout_required_cycles = calc_sleep_slow_clk_required_cycles(rtc_wdt_timeout, s_config.rtc_clk_cal_period);
+        }
+#endif
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, rtc_wdt_timeout_required_cycles, WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_enable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    } else {
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    }
 }
 
 static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
@@ -1219,6 +1250,15 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // Correct the sleep time
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
 
+    // Safety net: enable WDT in case exit from deep sleep fails
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    bool rtc_wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
+    if (!rtc_wdt_was_enabled) {
+        sleep_rtc_wdt_prepare(true);
+    } else {
+        ESP_EARLY_LOGW(TAG, "RTC WDT is enabled and will not be reconfigured again!");
+    }
+
 #if SOC_PMU_SUPPORTED
     uint32_t force_pd_flags = PMU_SLEEP_PD_TOP | PMU_SLEEP_PD_VDDSDIO | PMU_SLEEP_PD_MODEM | PMU_SLEEP_PD_HP_PERIPH \
                             | PMU_SLEEP_PD_CPU | PMU_SLEEP_PD_MEM | PMU_SLEEP_PD_XTAL;
@@ -1265,6 +1305,10 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         ESP_INFINITE_LOOP();
     }
     // Never returns here, except that the sleep is rejected.
+    if (!rtc_wdt_was_enabled) {
+        sleep_rtc_wdt_prepare(false);
+    }
+
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
     esp_os_exit_critical(&spinlock_rtc_deep_sleep);
@@ -1536,14 +1580,11 @@ esp_err_t esp_light_sleep_start(void)
 
     // Safety net: enable WDT in case exit from light sleep fails
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
-    bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
-    if (!wdt_was_enabled) {
-        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
-        uint32_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
-        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
-        wdt_hal_enable(&rtc_wdt_ctx);
-        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    bool rtc_wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
+    if (!rtc_wdt_was_enabled) {
+        sleep_rtc_wdt_prepare(true);
+    } else {
+        ESP_EARLY_LOGW(TAG, "RTC WDT is enabled and will not be reconfigured again!");
     }
 
     esp_err_t err = ESP_OK;
@@ -1615,10 +1656,8 @@ esp_err_t esp_light_sleep_start(void)
 #endif
 #endif
 
-    if (!wdt_was_enabled) {
-        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-        wdt_hal_disable(&rtc_wdt_ctx);
-        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    if (!rtc_wdt_was_enabled) {
+        sleep_rtc_wdt_prepare(false);
     }
 
 #if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
@@ -2868,6 +2907,14 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
     }
 #endif
 
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+    if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
+        sleep_flags |= RTC_SLEEP_USE_RTC_WDT;
+    } else {
+        sleep_flags &= ~RTC_SLEEP_USE_RTC_WDT;
+    }
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32P4
     /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
        triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
@@ -2918,6 +2965,35 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
 #endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
     return clk_flags;
 }
+
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+/* TODO: PM-609 */
+/* Calculate drift cycles of rtc slow clock in long-term working scenarios. */
+static SLEEP_FN_ATTR uint32_t calc_sleep_slow_clk_required_cycles(uint32_t timeout, uint32_t rtc_slow_clk_cal_period)
+{
+    uint32_t timeout_cycles = 0;
+    uint32_t required_timeout_cycles = 0;
+    timeout_cycles = (uint32_t)rtc_time_us_to_slowclk(timeout, rtc_slow_clk_cal_period);
+    /* TODO: Add slow clock drift compensation */
+    required_timeout_cycles = timeout_cycles;
+    return required_timeout_cycles;
+}
+
+/* Get the timeout in microseconds for the RTC WDT sleep monitoring.
+ * Returns: default_timeout (1 second) + sleep_duration, all in microseconds.
+ */
+static SLEEP_FN_ATTR uint32_t get_sleep_rtc_wdt_timeout(uint64_t sleep_duration)
+{
+    uint32_t default_timeout = 1000000;  // 1 second in microseconds
+    uint32_t sleep_timeout = 0;
+    uint32_t rtc_wdt_timeout = 0;
+
+    sleep_timeout = (uint32_t)sleep_duration;
+    rtc_wdt_timeout = default_timeout + sleep_timeout;
+
+    return rtc_wdt_timeout;
+}
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */

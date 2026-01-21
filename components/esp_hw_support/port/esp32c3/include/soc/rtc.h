@@ -595,6 +595,7 @@ typedef struct {
     uint32_t rtc_regulator_fpu  : 1;    //!< keep rtc regulator powered up in sleep
     uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
     uint32_t light_slp_reject : 1;      //!< enable light sleep reject
+    uint32_t rtc_wdt_en : 1;           //!< enable rtc wdt, in sleep mode
 } rtc_sleep_config_t;
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
@@ -616,6 +617,7 @@ typedef struct {
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
 #define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(19)
 #define RTC_SLEEP_FLASH_DPD             BIT(20)
+#define RTC_SLEEP_USE_RTC_WDT           BIT(21)
 
 /**
  * Default initializer for rtc_sleep_config_t
