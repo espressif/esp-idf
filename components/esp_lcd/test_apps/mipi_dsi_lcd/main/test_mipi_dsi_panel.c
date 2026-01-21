@@ -616,7 +616,7 @@ TEST_CASE("MIPI DSI draw YUV422 image (EK79007)", "[mipi_dsi]")
     test_bsp_disable_dsi_phy_power();
 }
 
-#if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_REV_MIN_FULL < 300)
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 
 TEST_CASE("MIPI DSI draw Gray8 image (EK79007)", "[mipi_dsi]")
 {

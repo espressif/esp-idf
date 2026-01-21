@@ -173,8 +173,9 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
 
-#if CONFIG_ESP32P4_REV_MIN_FULL == 300
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #include "hal/psram_ctrlr_ll.h"
+#include "hal/efuse_hal.h"
 static void IRAM_ATTR esp_psram_p4_rev3_workaround(void)
 {
     spi_mem_s_dev_t backup_reg = {};
@@ -423,8 +424,12 @@ esp_err_t esp_psram_init(void)
         }
     }
 
-#if CONFIG_ESP32P4_REV_MIN_FULL == 300
-    esp_psram_p4_rev3_workaround();
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    // This workaround is only needed for P4 rev 300 (3.0.0)
+    unsigned chip_revision = efuse_hal_chip_revision();
+    if (chip_revision == 300) {
+        esp_psram_p4_rev3_workaround();
+    }
 #endif
 
     uint32_t psram_available_size = 0;

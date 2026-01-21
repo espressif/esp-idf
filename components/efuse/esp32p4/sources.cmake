@@ -3,7 +3,7 @@ set(EFUSE_SOC_SRCS
     "esp_efuse_fields.c"
 )
 
-if(CONFIG_ESP32P4_REV_MIN_FULL GREATER_EQUAL 300)
+if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     list(APPEND EFUSE_SOC_SRCS
         "esp_efuse_table_v3.0.c"
         "esp_efuse_rtc_calib.c"
