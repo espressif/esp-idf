@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,53 @@ storing in efuse (based on ATE 5k ECO3 chips)
 #define K_DIG_MID_MUL10000 213
 #define V_RTC_MID_MUL10000  10800
 #define V_DIG_MID_MUL10000  10860
+
+#if CONFIG_ESP_ENABLE_PVT
+/*
+set pvt default param
+*/
+#define PVT_CHANNEL0_SEL        33
+#define PVT_CHANNEL1_SEL        37
+#define PVT_CHANNEL0_CFG        0x13e80
+#define PVT_CHANNEL1_CFG        0x13e80
+#define PVT_CHANNEL2_CFG        0x10000
+#define PVT_CMD0                0x24
+#define PVT_CMD1                0x5
+#define PVT_CMD2                0x427
+#define PVT_TARGET              0xffff
+#define PVT_CLK_DIV             1
+#define PVT_DELAY_NUM_HIGH      150
+#define PVT_DELAY_NUM_LOW       143
+#define PVT_PUMP_CHANNEL_CODE   1
+#define PVT_PUMP_BITMAP         22
+#define PVT_PUMP_DRV            0
+#define PVT_DELAY_NUM_PUMP      139
+
+/**
+ * @brief Initialize PVT related parameters
+ */
+void pvt_auto_dbias_init(void);
+
+/**
+ * @brief Enable or disable PVT functions
+ *
+ * @param enable  true to enable, false to disable
+ */
+void pvt_func_enable(bool enable);
+
+/**
+ * @brief Initialize charge pump related parameters
+ */
+void charge_pump_init(void);
+
+/**
+ * @brief Enable or disable charge pump functions
+ *
+ * @param enable  true to enable, false to disable
+ */
+void charge_pump_enable(bool enable);
+
+#endif //#if CONFIG_ESP_ENABLE_PVT
 
 /**
  * @brief CPU clock configuration structure
