@@ -222,13 +222,15 @@ class OpenOCD:
         else:
             raise ConnectionRefusedError
 
-    def write(self, s: str) -> t.Any:
+    def write(self, s: str, timeout: int = 30) -> t.Any:
         if self.telnet is None:
             logging.error('Telnet connection is not established.')
             return ''
         resp = self.telnet.read_very_eager()
         self.telnet.write(to_bytes(s, '\n'))
-        resp += self.telnet.read_until(b'>')
+        resp += self.telnet.read_until(b'>', timeout=timeout)
+        if not resp.endswith(b'>'):
+            return ''
         return to_str(resp)
 
     def apptrace_wait_stop(self, timeout: int = 30) -> None:
@@ -243,6 +245,17 @@ class OpenOCD:
             if not stopped and time.time() > end_before:
                 raise pexpect.TIMEOUT('Failed to wait for apptrace stop!')
             time.sleep(1)
+
+    def gcov_dump(self, on_the_fly: bool = True) -> t.Any:
+        cmd = 'esp gcov'
+        if not on_the_fly:
+            cmd += ' dump'
+        cmd_out = self.write(cmd)
+        if 'Targets connected.' not in cmd_out:
+            raise pexpect.TIMEOUT('Failed to start gcov dump!')
+        if 'Targets disconnected.' not in cmd_out:
+            raise pexpect.TIMEOUT('Failed to stop gcov dump!')
+        return cmd_out
 
     def kill(self) -> None:
         # Check if the process is still running

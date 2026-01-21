@@ -260,8 +260,6 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
         /* Initialize UART HAL (sets default 8N1 mode) */
         uart_hal_init(&uart_data->hal_ctx, uart_config->uart_num);
 
-        ESP_LOGI(TAG, "uart_hal_init: %d", uart_config->uart_num);
-
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&uart_data->hal_ctx, UART_SCLK_DEFAULT);
             uart_hal_set_baudrate(&uart_data->hal_ctx, uart_config->baud_rate, sclk_hz);
@@ -429,13 +427,25 @@ static uint8_t *esp_apptrace_uart_down_buffer_get(void *hw_data, uint32_t *size,
         return NULL;
     }
 
-    uint32_t rx_len = uart_ll_get_rxfifo_len(uart_data->hal_ctx.dev);
-    int to_read = MIN(rx_len, MIN(uart_data->rx_msg_buff_size, *size));
-    if (to_read) {
-        uart_hal_read_rxfifo(&uart_data->hal_ctx, uart_data->rx_msg_buff, &to_read);
-    }
-    *size = to_read;
+    /* Read until we get the requested number of bytes (or timeout) */
+    const uint32_t req_size = MIN(uart_data->rx_msg_buff_size, *size);
+    uint32_t total_read = 0;
+    while (total_read < req_size) {
+        uint32_t rx_len = uart_hal_get_rxfifo_len(&uart_data->hal_ctx);
+        int to_read = MIN((uint32_t)(req_size - total_read), rx_len);
+        if (to_read > 0) {
+            uart_hal_read_rxfifo(&uart_data->hal_ctx, uart_data->rx_msg_buff + total_read, &to_read);
+            total_read += to_read;
+            continue;
+        }
 
+        if (esp_apptrace_tmo_check(tmo) != ESP_OK) {
+            break;
+        }
+        esp_rom_delay_us(50);
+    }
+
+    *size = total_read;
     esp_apptrace_uart_unlock(uart_data);
 
     return (*size > 0) ? uart_data->rx_msg_buff : NULL;
