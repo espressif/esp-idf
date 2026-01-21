@@ -41,10 +41,6 @@ static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, 
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len == 0) {
-        return ESP_ERR_INVALID_SIZE;
-    }
-
     esp_err_t err = ESP_FAIL;
 
     psa_key_id_t pub_key_id = 0;
@@ -75,6 +71,9 @@ exit:
 
 static void example_tee_sec_stg_sign_verify(void *pvParameter)
 {
+    psa_key_id_t priv_key_id = 0;
+    psa_key_attributes_t priv_key_attr = PSA_KEY_ATTRIBUTES_INIT;
+
     char *msg = (char *)pvParameter;
     ESP_LOGI(TAG, "Message-to-be-signed: %s", msg);
 
@@ -108,10 +107,7 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
         .tee_key_id = cfg.id,
     };
 
-    psa_key_id_t priv_key_id = 0;
-    psa_key_attributes_t priv_key_attr = PSA_KEY_ATTRIBUTES_INIT;
     psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
-
     psa_set_key_type(&priv_key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_bits(&priv_key_attr, ECDSA_SECP256R1_KEY_LEN * 8);
     psa_set_key_usage_flags(&priv_key_attr, PSA_KEY_USAGE_SIGN_HASH);
@@ -129,6 +125,7 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
     status = psa_sign_hash(priv_key_id, alg, msg_digest, msg_digest_len, signature, sizeof(signature), &signature_len);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to generate signature!");
+        psa_destroy_key(priv_key_id);
         goto exit;
     }
 
@@ -139,19 +136,20 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
     status = psa_export_public_key(priv_key_id, pub_key, sizeof(pub_key), &pub_key_len);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to fetch public-key!");
+        psa_destroy_key(priv_key_id);
         goto exit;
     }
 
     err = verify_ecdsa_secp256r1_sign(msg_digest, msg_digest_len, pub_key, pub_key_len, signature, signature_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify signature!");
+        psa_destroy_key(priv_key_id);
         goto exit;
     }
 
     ESP_LOGI(TAG, "Signature verified successfully!");
 
 exit:
-    psa_destroy_key(priv_key_id);
     psa_reset_key_attributes(&priv_key_attr);
     vTaskDelete(NULL);
 }
