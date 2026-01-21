@@ -278,6 +278,27 @@ LCD
 - NT35510 LCD 设备驱动已经从 ESP-IDF 中移动到外部仓库，并且托管在了 `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__ 上。如果你的项目使用到了 NT35510 驱动，你可以通过运行 ``idf.py add-dependency "espressif/esp_lcd_nt35510"`` 将它添加到你的项目中。
 - :cpp:type:`esp_lcd_dpi_panel_config_t` 结构体中的 ``use_dma2d`` 成员已被移除。请使用 :func:`esp_lcd_dpi_panel_enable_dma2d` 函数来启用 DMA2D 功能。当不使用 DMA2D 时，可以减小 10KB 左右的二进制文件大小。
 
+颜色类型 (Color Types)
+----------------------
+
+位于 ``components/hal/include/hal/color_types.h`` 头文件中的以下类型已被移除，请使用 FourCC 格式（:cpp:type:`esp_color_fourcc_t`）替代：
+
+- :cpp:type:`color_space_t` - 颜色空间枚举类型已被移除。请使用 FourCC 格式来指定颜色空间和像素格式。
+- :cpp:type:`color_space_pixel_format_t` - 颜色空间像素格式联合体已被移除。请使用 :cpp:type:`esp_color_fourcc_t` 类型和相应的 FourCC 宏定义来指定像素格式。
+
+迁移示例：
+
+.. code-block:: c
+
+    /* 旧版 */
+    color_space_pixel_format_t format = {
+        .color_space = COLOR_SPACE_RGB,
+        .pixel_format = COLOR_PIXEL_RGB565
+    };
+
+    /* 新版 */
+    esp_color_fourcc_t format = ESP_COLOR_FOURCC_RGB565;
+
 SPI
 ---
 

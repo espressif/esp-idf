@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -266,10 +266,7 @@ static esp_err_t esp_cam_ctlr_dvp_cam_get_frame_size(const esp_cam_ctlr_dvp_conf
     if (config->pic_format_jpeg) {
         *p_size = config->h_res * config->v_res;
     } else {
-        color_space_pixel_format_t pixel_format = {
-            .color_type_id = config->input_data_color_type
-        };
-        uint32_t depth = color_hal_pixel_format_get_bit_depth(pixel_format);
+        uint32_t depth = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
         if (!depth) {
             return ESP_ERR_INVALID_ARG;
         }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +100,8 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(config->data_lane_num <= MIPI_CSI_HOST_LL_LANE_NUM_MAX, ESP_ERR_INVALID_ARG, TAG, "lane num should be equal or smaller than %d", MIPI_CSI_HOST_LL_LANE_NUM_MAX);
+    ESP_RETURN_ON_FALSE(config->input_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "input_data_color_type must be specified");
+    ESP_RETURN_ON_FALSE(config->output_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "output_data_color_type must be specified");
 
     csi_controller_t *ctlr = heap_caps_calloc(1, sizeof(csi_controller_t), CSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_NO_MEM, TAG, "no mem for csi controller context");
@@ -136,19 +138,17 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ESP_LOGD(TAG, "ctlr->v_res: 0d %"PRId32, ctlr->v_res);
 
     //in color type
-    color_space_pixel_format_t in_color_format = {
-        .color_type_id = config->input_data_color_type,
-    };
-    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_format);
-    ctlr->in_color_format = in_color_format;
+    int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
+    ESP_GOTO_ON_FALSE(in_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported input color format");
+    ctlr->in_color_format = config->input_data_color_type;
     ctlr->in_bpp = in_bits_per_pixel;
     ESP_LOGD(TAG, "ctlr->in_bpp: 0d %d", ctlr->in_bpp);
 
     //out color type
-    color_space_pixel_format_t out_color_format = {
-        .color_type_id = config->output_data_color_type,
-    };
-    int out_bits_per_pixel = color_hal_pixel_format_get_bit_depth(out_color_format);
+    int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->output_data_color_type);
+
+    ESP_GOTO_ON_FALSE(out_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported output color format");
+    ctlr->out_color_format = config->output_data_color_type;
     ctlr->out_bpp = out_bits_per_pixel;
     ESP_LOGD(TAG, "ctlr->out_bpp: 0d %d", ctlr->out_bpp);
 
