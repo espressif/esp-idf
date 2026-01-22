@@ -340,6 +340,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             bleprph_print_conn_desc(&desc);
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
             rc = ble_l2cap_create_server(psm, MTU, bleprph_l2cap_coc_event_cb, NULL);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to create L2CAP CoC server; rc=%d", rc);
+            }
 #endif
         }
         return 0;

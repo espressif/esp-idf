@@ -40,7 +40,7 @@ chr_end_handle(const struct peer_svc *svc, const struct peer_chr *chr);
 int
 chr_is_empty(const struct peer_svc *svc, const struct peer_chr *chr);
 static struct peer_chr *
-peer_chr_find(const struct peer_svc *svc, uint16_t chr_def_handle,
+peer_chr_find(const struct peer_svc *svc, uint16_t chr_val_handle,
               struct peer_chr **out_prev);
 static void
 peer_disc_chrs(struct peer *peer);
@@ -341,7 +341,7 @@ peer_chr_add(struct peer *peer,  uint16_t svc_start_handle,
         return BLE_HS_EUNKNOWN;
     }
 
-    chr = peer_chr_find(svc, gatt_chr->def_handle, &prev);
+    chr = peer_chr_find(svc, gatt_chr->val_handle, &prev);
     if (chr != NULL) {
         /* Characteristic already discovered. */
         return 0;
