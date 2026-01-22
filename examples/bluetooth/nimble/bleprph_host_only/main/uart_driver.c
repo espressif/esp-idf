@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -44,6 +45,7 @@ enum {
 };
 
 TaskHandle_t s_rx_task_hdl;
+static volatile bool s_shutdown_flag = false;
 
 static void IRAM_ATTR hci_uart_rx_task(void *arg)
 {
@@ -53,9 +55,15 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
     uint32_t len_total_read = 0;
     uint8_t rx_st = UART_RX_TYPE;
 
-    while (1) {
-        len_now_read = uart_read_bytes(UART_NO, &buf[len_total_read], len_to_read, portMAX_DELAY);
-        assert(len_now_read == len_to_read);
+    while (!s_shutdown_flag) {
+        // Use timeout instead of portMAX_DELAY to allow periodic shutdown flag check
+        len_now_read = uart_read_bytes(UART_NO, &buf[len_total_read], len_to_read, pdMS_TO_TICKS(100));
+
+        // If timeout occurred, continue loop to check shutdown flag again
+        if (len_now_read == 0) {
+            continue;
+        }
+
         len_total_read += len_now_read;
 
         switch (rx_st) {
@@ -130,6 +138,10 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
                 m = ble_transport_alloc_acl_from_ll();
                 if (!m) {
                     ESP_LOGE(TAG, "No buffers");
+                    rx_st = UART_RX_TYPE;
+                    len_to_read = 1;
+                    len_total_read = 0;
+                    break;
                 }
 
                 if ((rc = os_mbuf_append(m, &data[1], len_total_read - 1)) != 0) {
@@ -180,7 +192,7 @@ ble_transport_ll_init(void)
 void
 ble_transport_ll_deinit(void)
 {
-
+    hci_uart_close();
 }
 
 int
@@ -228,6 +240,7 @@ void hci_uart_open(void)
     intr_alloc_flags = ESP_INTR_FLAG_IRAM;
 #endif
 
+    s_shutdown_flag = false;  // Reset shutdown flag on open
     ESP_ERROR_CHECK(uart_driver_install(UART_NO, UART_BUF_SZ * 2, UART_BUF_SZ * 2, 0, NULL, intr_alloc_flags));
     ESP_ERROR_CHECK(uart_param_config(UART_NO, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_NO, UART_TX_PIN, UART_RX_PIN, -1, -1));
@@ -238,7 +251,26 @@ void hci_uart_open(void)
 void hci_uart_close(void)
 {
     if (s_rx_task_hdl) {
-        vTaskDelete(s_rx_task_hdl);
+
+        s_shutdown_flag = true;
+
+        int wait_count = 0;
+        const int max_wait_count = 5;
+        TaskHandle_t task_handle = s_rx_task_hdl;
+
+        while (wait_count < max_wait_count) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            wait_count++;
+
+        }
+
+
+        if (s_rx_task_hdl == task_handle) {
+            vTaskDelete(s_rx_task_hdl);
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+        s_rx_task_hdl = NULL;
     }
+
     uart_driver_delete(UART_NO);
 }

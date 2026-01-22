@@ -69,14 +69,16 @@ int blecent_on_subscribe(uint16_t conn_handle,
     MODLOG_DFLT(INFO, "Subscribe complete; status=%d conn_handle=%d "
                 "attr_handle=%d\n",
                 error->status, conn_handle, attr->handle);
-    subscribe_all++;
-    if (subscribe_all == 4){
-        struct ble_cs_initiator_procedure_start_params param;
-        memset(&param,0,sizeof param);
-        param.conn_handle=conn_handle;
-        param.cb=blecs_gap_event;
-        param.cb_arg=NULL;
-        ble_cs_initiator_procedure_start(&param);
+    if (error->status == 0) {
+        subscribe_all++;
+        if (subscribe_all == 4){
+            struct ble_cs_initiator_procedure_start_params param;
+            memset(&param,0,sizeof param);
+            param.conn_handle=conn_handle;
+            param.cb=blecs_gap_event;
+            param.cb_arg=NULL;
+            ble_cs_initiator_procedure_start(&param);
+        }
     }
 
     return 0;
@@ -161,13 +163,16 @@ blecent_on_custom_read(uint16_t conn_handle,
     MODLOG_DFLT(INFO, "Read complete RAS FEATURES; status=%d conn_handle=%d", error->status, conn_handle);
 
     if (error->status == 0) {
-        uint32_t var;
+        uint32_t var = 0;
         int rc = 0;
-        if (attr->om && OS_MBUF_PKTLEN(attr->om) > 0) {
-            os_mbuf_copydata(attr->om, 0, OS_MBUF_PKTLEN(attr->om), &var);
-        } else {
-            MODLOG_DFLT(ERROR, "Error: No data in the attribute\n");
-        }
+        uint16_t pktlen = (attr->om ? OS_MBUF_PKTLEN(attr->om) : 0);
+        if (attr->om && pktlen > 0 && pktlen <= sizeof(var)) {
+            os_mbuf_copydata(attr->om, 0, pktlen, &var);
+         }
+         else {
+            MODLOG_DFLT(ERROR, "Error: Invalid data length=%u in the attribute\n", pktlen);
+            return -1;
+         }
         MODLOG_DFLT(INFO, " attr_handle = %u value = %" PRIu32, attr->handle, var);
 
         if (var & REAL_TIME_RANGING_DATA_BIT) {
@@ -400,8 +405,8 @@ static int blecs_gap_event(struct ble_cs_event *event, void *arg){
                 return 0;
             }
             if (event->subev_result.num_steps_reported) {
-                memcpy(&local_cs_steps_data, event->subev_result.steps, sizeof local_cs_steps_data);
-
+                size_t copy_size = event->subev_result.num_steps_reported * sizeof(struct cs_steps_data);
+                memcpy(&local_cs_steps_data, event->subev_result.steps, MIN(copy_size, sizeof(local_cs_steps_data)));
             }
             nap=event->subev_result.num_antenna_paths;
             most_recent_local_ranging_counter=event->subev_result.procedure_counter;
@@ -486,6 +491,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
             connh = event->connect.conn_handle;
+            subscribe_all = 0;
             rc = ble_gap_security_initiate(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(INFO, "Security could not be initiated, rc = %d\n", rc);
@@ -580,7 +586,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             uint16_t ranging_counter;
             os_mbuf_copydata(event->notify_rx.om, 0, sizeof(uint16_t), &ranging_counter);
             most_recent_peer_ranging_counter=ranging_counter;
-            most_recent_local_ranging_counter=0;
+            most_recent_local_ranging_counter= ranging_counter;
 
             if (most_recent_peer_ranging_counter!=most_recent_local_ranging_counter) {
                MODLOG_DFLT(INFO, "Ranging counter mismatch : %" PRId32 " , %" PRId32,
@@ -601,14 +607,26 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         } else if (ble_svc_ras_od_val_handle == event->notify_rx.attr_handle) {
             MODLOG_DFLT(INFO, "Received On Demand Ranging Data\n");
 
-            struct segment ras_segment;
             int notif_len = OS_MBUF_PKTLEN(event->notify_rx.om);
-            os_mbuf_copydata(event->notify_rx.om, 0,notif_len , &ras_segment);
-            MODLOG_DFLT(INFO, "Received On Demand Ranging Data , len = %d\n",notif_len);
-            uint8_t * data= (uint8_t *)ras_segment.data;
-            for(int i=0;i<notif_len-sizeof(struct segment_header);i++){
-                MODLOG_DFLT(INFO, "data[%d] = %d\n",i,data[i]);
+
+#define RAS_OD_RX_BUF_MAX 512
+            if (notif_len >= sizeof(struct segment_header) && notif_len <= RAS_OD_RX_BUF_MAX) {
+                uint8_t ras_buf[RAS_OD_RX_BUF_MAX];
+                int rc_copy = os_mbuf_copydata(event->notify_rx.om, 0, notif_len, ras_buf);
+                if (rc_copy == 0) {
+                    uint8_t *data = ras_buf + sizeof(struct segment_header);
+                    size_t data_len = notif_len - sizeof(struct segment_header);
+
+                    MODLOG_DFLT(INFO,
+                                "Received On Demand Ranging Data , len = %d\n",
+                                notif_len);
+
+                    for (size_t i = 0; i < data_len; i++) {
+                        MODLOG_DFLT(INFO, "data[%d] = %d\n", (int)i, data[i]);
+                    }
+                }
             }
+#undef RAS_OD_RX_BUF_MAX
 
             /*
             handle the incoming notification

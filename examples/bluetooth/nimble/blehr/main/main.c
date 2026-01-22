@@ -200,6 +200,9 @@ blehr_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_DISCONNECT:
         MODLOG_DFLT(INFO, "disconnect; reason=%d\n", event->disconnect.reason);
 
+        notify_state = false;
+        blehr_tx_hrate_stop();
+        conn_handle = BLE_HS_CONN_HANDLE_NONE;
         /* Connection terminated; resume advertising */
         blehr_advertise();
         break;

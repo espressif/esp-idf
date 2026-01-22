@@ -68,8 +68,8 @@ enc_adv_data_prph_print_conn_desc(struct ble_gap_conn_desc *desc)
                 desc->sec_state.bonded);
 }
 
-static void
-enc_adv_data_prph_encrypt_set(uint8_t * out_encrypted_adv_data,
+static int
+enc_adv_data_prph_encrypt_set(uint8_t *out_encrypted_adv_data,
                               const unsigned encrypted_adv_data_len)
 {
     int rc;
@@ -85,13 +85,13 @@ enc_adv_data_prph_encrypt_set(uint8_t * out_encrypted_adv_data,
     print_bytes(unencrypted_adv_data, unencrypted_adv_data_len);
     MODLOG_DFLT(INFO, "\n");
 
-    rc = ble_ead_encrypt(km.session_key, km.iv, unencrypted_adv_data, unencrypted_adv_data_len, encrypted_adv_data);
-    if (rc == 0) {
-        MODLOG_DFLT(INFO, "Encryption of adv data done successfully");
-    } else {
-        MODLOG_DFLT(INFO, "Encryption of adv data failed");
-        return;
+    rc = ble_ead_encrypt(km.session_key, km.iv, unencrypted_adv_data,
+                         unencrypted_adv_data_len, encrypted_adv_data);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Encryption of adv data failed; rc=%d", rc);
+        return rc;
     }
+    MODLOG_DFLT(INFO, "Encryption of adv data done successfully");
 
     MODLOG_DFLT(INFO, "Data after encryption:");
     print_bytes(encrypted_adv_data, encrypted_adv_data_len);
@@ -99,6 +99,7 @@ enc_adv_data_prph_encrypt_set(uint8_t * out_encrypted_adv_data,
 
     /** Contains Randomiser ## Encrypted Advertising Data ## MIC */
     memcpy(out_encrypted_adv_data, encrypted_adv_data, encrypted_adv_data_len);
+    return 0;
 }
 
 /**
@@ -111,7 +112,6 @@ enc_adv_data_prph_advertise(void)
 {
     struct ble_gap_adv_params params;
     struct ble_hs_adv_fields fields;
-    uint8_t own_addr_type;
     int rc;
 
     const unsigned encrypted_adv_data_len = BLE_EAD_ENCRYPTED_PAYLOAD_SIZE(sizeof(unencrypted_adv_pattern));
@@ -149,7 +149,10 @@ enc_adv_data_prph_advertise(void)
     fields.uuids16_is_complete = 1;
 
     /** Getting the encrypted advertising data */
-    enc_adv_data_prph_encrypt_set(encrypted_adv_data, encrypted_adv_data_len);
+    rc = enc_adv_data_prph_encrypt_set(encrypted_adv_data, encrypted_adv_data_len);
+    if (rc != 0) {
+        return;
+    }
 
     fields.enc_adv_data = encrypted_adv_data;
     fields.enc_adv_data_len = encrypted_adv_data_len;

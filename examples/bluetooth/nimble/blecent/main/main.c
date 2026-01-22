@@ -121,6 +121,10 @@ blecent_on_custom_write(uint16_t conn_handle,
                 error->status, conn_handle, attr->handle);
 
     peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(WARN,"Peer not found (conn_handle=%d), likely disconnected\n",conn_handle);
+        return 0;
+    }
     chr = peer_chr_find_uuid(peer,
                              remote_svc_uuid,
                              remote_chr_uuid);
@@ -257,6 +261,7 @@ blecent_on_subscribe(uint16_t conn_handle,
     if (peer == NULL) {
         MODLOG_DFLT(ERROR, "Error in finding peer, aborting...");
         ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+        return 0;
     }
     /* Subscribe to, write to, and read the custom characteristic*/
     blecent_custom_gatt_operations(peer);
@@ -286,7 +291,10 @@ blecent_on_write(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
-
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Error: peer not found for conn_handle=%d", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);  // Use conn_handle to avoid dereference
+    }
     dsc = peer_dsc_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
                              BLE_UUID16_DECLARE(BLECENT_CHR_UNR_ALERT_STAT_UUID),
@@ -338,7 +346,10 @@ blecent_on_read(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
-
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Error: peer not found for conn_handle=%d", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
                              BLE_UUID16_DECLARE(BLECENT_CHR_ALERT_NOT_CTRL_PT));
@@ -877,7 +888,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                       event->cache_assoc.status,
                       (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
           /* Perform service discovery */
-          rc = peer_disc_all(event->connect.conn_handle,
+          rc = peer_disc_all(event->cache_assoc.conn_handle,
                              blecent_on_disc_complete, NULL);
           if(rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
