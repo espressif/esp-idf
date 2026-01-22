@@ -825,11 +825,17 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     ESP_GOTO_ON_FALSE(init_common_tcp_transport(client, config, ssl), ESP_FAIL, error, TAG, "Failed to set SSL config");
 
     if (config->crt_bundle_attach != NULL) {
-#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE) || defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE)
         esp_transport_ssl_crt_bundle_attach(ssl, config->crt_bundle_attach);
-#else //CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#else /* CONFIG_[PROVIDER]_CERTIFICATE_BUNDLE */
+    #if defined(CONFIG_ESP_TLS_USING_MBEDTLS)
         ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig: Please enable MBEDTLS_CERTIFICATE_BUNDLE option");
-#endif
+    #elif defined(CONFIG_ESP_TLS_USING_WOLFSSL)
+        ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig: Please enable WOLFSSL_CERTIFICATE_BUNDLE option");
+    #else
+        ESP_LOGE(TAG, "use_crt_bundle configured but a cryptographic provider not enabled in menuconfig: Please enable CONFIG_ESP_TLS_USING_WOLFSSL or CONFIG_ESP_TLS_USING_MBEDTLS");
+    #endif
+#endif /* !CONFIG_[PROVIDER]_CERTIFICATE_BUNDLE */
     } else if (config->use_global_ca_store == true) {
         esp_transport_ssl_enable_global_ca_store(ssl);
     } else if (config->cert_pem) {

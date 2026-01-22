@@ -16,10 +16,14 @@ __attribute__((unused)) static const char *TAG = "esp_crypto";
 #define _esp_crypto_sha1 esp_crypto_sha1_mbedtls
 #define _esp_crypto_base64_encode esp_crypto_bas64_encode_mbedtls
 #elif  CONFIG_ESP_TLS_USING_WOLFSSL
-#include "wolfssl/ssl.h" /* SHA functions are listed in wolfssl/ssl.h */
-#include "wolfssl/wolfcrypt/coding.h"
-#define _esp_crypto_sha1 esp_crypto_sha1_wolfSSL
-#define _esp_crypto_base64_encode esp_crypto_base64_encode_woflSSL
+    #include "wolfssl/wolfcrypt/settings.h"
+    #include "wolfssl/ssl.h" /* some SHA functions are listed in wolfssl/ssl.h */
+    #if defined(CONFIG_ESP_WOLFSSL_OPENSSL_EXTRA) || defined(OPENSSL_EXTRA)
+        #include "wolfssl/openssl/sha.h" /* old SHA functions only available with OpenSSL */
+    #endif
+    #include "wolfssl/wolfcrypt/coding.h"
+    #define _esp_crypto_sha1 esp_crypto_sha1_wolfSSL
+    #define _esp_crypto_base64_encode esp_crypto_base64_encode_woflSSL
 #endif
 
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
@@ -81,7 +85,17 @@ static int esp_crypto_base64_encode_woflSSL(unsigned char *dst, size_t dlen, siz
         const unsigned char *src, size_t slen)
 {
     *olen = dlen;
+#if defined(CONFIG_ESP_TLS_USING_WOLFSSL) && (defined(WOLFSSL_BASE64_ENCODE) || !defined(OPENSSL_EXTRA))
+    #if defined(WOLFSSL_BASE64_ENCODE_LINE_LEN)
+        #error "WOLFSSL_BASE64_ENCODE_LINE_LEN is defined - Base64_Encode() will insert newlines. Rebuild without it."
+    #endif
+    #ifndef WOLFSSL_BASE64_ENCODE
+        #warning "WOLFSSL_BASE64_ENCODE is missing - Base64_Encode() is unavailable."
+    #endif
+    return Base64_Encode((const byte *) src, (word32) slen, (byte *) dst, (word32 *) olen);
+#else
     return Base64_Encode_NoNl((const byte *) src, (word32) slen, (byte *) dst, (word32 *) olen);
+#endif
 }
 
 #else
