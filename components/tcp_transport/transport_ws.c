@@ -574,6 +574,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     }
     ws->frame_state.header_received = true;
     ws->frame_state.fin = (*data_ptr & 0x80) != 0;
+    ws->frame_state.rsv1 = (*data_ptr & 0x40) != 0;
     ws->frame_state.opcode = (*data_ptr & 0x0F);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
@@ -987,6 +988,12 @@ bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t)
 {
 transport_ws_t *ws = esp_transport_get_context_data(t);
 return ws->frame_state.fin;
+}
+
+bool esp_transport_ws_get_rsv1_flag(esp_transport_handle_t t)
+{
+  transport_ws_t *ws = esp_transport_get_context_data(t);
+  return ws->frame_state.rsv1;
 }
 
 int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t)
