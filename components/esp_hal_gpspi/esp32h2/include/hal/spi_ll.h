@@ -40,6 +40,8 @@ extern "C" {
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_TX_MINI_EXTRA_BITS (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102) ? 1 : 2)  //Minimum length of TX non byte aligned data in bits
+#define SPI_LL_RX_MINI_EXTRA_BITS 1            //Minimum length of RX non byte aligned data in bits
 #define SPI_LL_MAX_PRE_DIV_NUM    (16)
 #define SPI_LL_MAX_SCT_CONF_LEN   (0x3FFFA)    //18 bits wide reg
 #define SPI_LL_SCT_CONF_BUF_NUM   (1 + 14)     //1-word-bitmap + 14-word-regs according to TRM

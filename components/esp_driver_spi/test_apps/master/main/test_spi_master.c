@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,19 @@ const static char TAG[] = "test_spi";
 
 // There is no input-only pin except on esp32 and esp32s2
 #define TEST_SOC_HAS_INPUT_ONLY_PINS  (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
+
+static uint8_t bitswap(uint8_t in)
+{
+    uint8_t out = 0;
+    for (int i = 0; i < 8; i++) {
+        out = out >> 1;
+        if (in & 0x80) {
+            out |= 0x80;
+        }
+        in = in << 1;
+    }
+    return out;
+}
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
 {
@@ -880,19 +893,6 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
 
 #if (TEST_SPI_PERIPH_NUM >= 2)
 //These will only be enabled on chips with 2 or more SPI peripherals
-
-static uint8_t bitswap(uint8_t in)
-{
-    uint8_t out = 0;
-    for (int i = 0; i < 8; i++) {
-        out = out >> 1;
-        if (in & 0x80) {
-            out |= 0x80;
-        }
-        in = in << 1;
-    }
-    return out;
-}
 
 void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
 {
@@ -1839,6 +1839,90 @@ TEST_CASE("test_bus_free_safty_to_remain_devices", "[spi]")
     TEST_ESP_OK(spi_device_transmit(dev1, (spi_transaction_t *)&trans_cfg));
 
     TEST_ESP_OK(spi_bus_remove_device(dev1));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
+
+TEST_CASE("Test master 1-9 bits tx/rx", "[spi]")
+{
+    spi_device_handle_t dev0;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;
+
+    spi_transaction_t trans_cfg = {
+        .tx_data[0] = 0xc9,
+        .tx_data[1] = 0xad,
+        .flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA,
+    };
+    uint8_t exp[2], reversed[2] = {bitswap(trans_cfg.tx_data[0]), bitswap(trans_cfg.tx_data[1])};
+
+    for (int dma = 0; dma < 2; dma++) {
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, dma ? SPI_DMA_CH_AUTO : SPI_DMA_DISABLED));
+        for (int cfg = 0; cfg < 2; cfg++) {
+            printf("Test %s with DMA: %s\n", cfg ? "LSB" : "MSB", dma ? "AUTO" : "DISABLED");
+            devcfg.flags = cfg ? SPI_DEVICE_RXBIT_LSBFIRST : 0;
+            TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+            for (int i = 1; i <= 9; i++) {
+                trans_cfg.length = i;
+                trans_cfg.rxlength = i;
+                if (i <= 8) {
+                    exp[0] = devcfg.flags & SPI_DEVICE_RXBIT_LSBFIRST ? reversed[0] & (0xff >> (8 - i)) : trans_cfg.tx_data[0] & (0xff << (8 - i));
+                }
+                exp[1] = devcfg.flags & SPI_DEVICE_RXBIT_LSBFIRST ? reversed[1] & (0xff >> (16 - i)) : trans_cfg.tx_data[1] & (0xff << (16 - i));
+#if CONFIG_IDF_TARGET_ESP32
+                if ((i % 8) && dma) {
+#else
+                if ((i % 8) && ((i % 8 < SPI_LL_TX_MINI_EXTRA_BITS) || (i % 8 < SPI_LL_RX_MINI_EXTRA_BITS))) {
+#endif
+                    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, spi_device_transmit(dev0, &trans_cfg));
+                    continue;
+                }
+                TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+                printf("len %d bits tx %x %x reversed %x %x exp %2x %2x rx %2x %2x\n", i, trans_cfg.tx_data[0], trans_cfg.tx_data[1], reversed[0], reversed[1], exp[0], exp[1], trans_cfg.rx_data[0], trans_cfg.rx_data[1]);
+                TEST_ASSERT_EQUAL_HEX8_ARRAY(exp, trans_cfg.rx_data, 2);
+                memset(trans_cfg.rx_data, 0, sizeof(trans_cfg.rx_data));
+            }
+            TEST_ESP_OK(spi_bus_remove_device(dev0));
+            printf("--------------------------------\n");
+        }
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
+}
+
+TEST_CASE("Test master 1-9 bits rx only", "[spi]")
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_DISABLED));
+
+    spi_device_handle_t dev0;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.flags |= SPI_DEVICE_HALFDUPLEX;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+    spi_transaction_t trans_cfg = {
+        .flags = SPI_TRANS_USE_RXDATA,
+    };
+
+    gpio_set_level(buscfg.miso_io_num, 1);
+    spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, SIG_GPIO_OUT_IDX);
+    for (int i = 1; i <= 9; i++) {
+        trans_cfg.rxlength = i;
+        if ((i % 8) && (i % 8 < SPI_LL_RX_MINI_EXTRA_BITS)) {
+            TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, spi_device_transmit(dev0, &trans_cfg));
+            continue;
+        }
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+        printf("len %d bits rx %2x %2x\n", i, trans_cfg.rx_data[0], trans_cfg.rx_data[1]);
+        if (i <= 8) {
+            TEST_ASSERT_EQUAL_HEX8((0xff << (8 - i)), trans_cfg.rx_data[0]);
+        }
+        TEST_ASSERT_EQUAL_HEX8((0xff << (16 - i)), trans_cfg.rx_data[1]);
+        memset(trans_cfg.rx_data, 0, sizeof(trans_cfg.rx_data));
+    }
+
+    TEST_ESP_OK(spi_bus_remove_device(dev0));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 
