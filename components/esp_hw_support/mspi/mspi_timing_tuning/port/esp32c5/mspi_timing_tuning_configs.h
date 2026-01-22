@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,11 +121,6 @@ ESP_STATIC_ASSERT(MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % MSPI_TIMING_FLASH_MO
 #define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE           12
 #define MSPI_TIMING_FLASH_DEFAULT_CONFIG_ID_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE    4
 
-//FLASH: core clock 240M, module clock 80M, STR mode
-#define MSPI_TIMING_FLASH_CONFIG_TABLE_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE          {{2, 2, 1}, {2, 1, 1}, {2, 0, 1}, {0, 0, 0}, {3, 1, 2}, {2, 3, 2}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {3, 1, 3}, {2, 3, 3}, {2, 2, 3}, {2, 1, 3}}
-#define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE            14
-#define MSPI_TIMING_FLASH_DEFAULT_CONFIG_ID_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE     4
-
 //FLASH: core clock 80M, module clock 80M, STR mode
 #define MSPI_TIMING_FLASH_CONFIG_TABLE_CORE_CLK_80M_MODULE_CLK_80M_STR_MODE           {{2, 2, 1}, {2, 1, 1}, {2, 0, 1}, {0, 0, 0}, {3, 1, 2}, {2, 3, 2}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {3, 1, 3}, {2, 3, 3}, {2, 2, 3}, {2, 1, 3}}
 #define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_80M_MODULE_CLK_80M_STR_MODE             14
@@ -135,11 +130,6 @@ ESP_STATIC_ASSERT(MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % MSPI_TIMING_FLASH_MO
 #define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE         {{2, 0, 1}, {0, 0, 0}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {2, 2, 3}, {2, 1, 3}, {2, 0, 3}, {0, 0, 2}, {2, 2, 4}, {2, 1, 4}}
 #define MSPI_TIMING_PSRAM_CONFIG_NUM_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE           12
 #define MSPI_TIMING_PSRAM_DEFAULT_CONFIG_ID_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE    4
-
-//PSRAM: core clock 240M, module clock 80M, STR mode
-#define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE          {{2, 2, 1}, {2, 1, 1}, {2, 0, 1}, {0, 0, 0}, {3, 1, 2}, {2, 3, 2}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {3, 1, 3}, {2, 3, 3}, {2, 2, 3}, {2, 1, 3}}
-#define MSPI_TIMING_PSRAM_CONFIG_NUM_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE            14
-#define MSPI_TIMING_PSRAM_DEFAULT_CONFIG_ID_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE     4
 
 //PSRAM: core clock 80M, module clock 80M, STR mode
 #define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_80M_MODULE_CLK_80M_STR_MODE          {{2, 2, 1}, {2, 1, 1}, {2, 0, 1}, {0, 0, 0}, {3, 1, 2}, {2, 3, 2}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {3, 1, 3}, {2, 3, 3}, {2, 2, 3}, {2, 1, 3}}
