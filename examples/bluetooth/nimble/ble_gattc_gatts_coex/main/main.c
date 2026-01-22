@@ -21,9 +21,20 @@ static bool client_connect = 0;
 
 static int gatt_svr_access_cb(uint16_t conn_handle, uint16_t attr_handle,
                               struct ble_gatt_access_ctxt *ctxt, void *arg) {
+    int rc = 0;
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
         static uint8_t data[1] = {42};  // Example value
         os_mbuf_append(ctxt->om, data, sizeof(data));
+        if (rc != 0) {
+            return rc;
+        }
+    } else if (ctxt->op == BLE_GATT_ACCESS_OP_READ_DSC) {
+        static uint8_t dsc_data[1] = {0x01};  // Example descriptor value
+        return os_mbuf_append(ctxt->om, dsc_data, sizeof(dsc_data));
+    }
+    else if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
+        MODLOG_DFLT(INFO, "Characteristic written");
+        return 0;
     }
     return 0;
 }

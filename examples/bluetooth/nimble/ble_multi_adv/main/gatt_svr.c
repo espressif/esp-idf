@@ -13,6 +13,8 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "multi_adv.h"
 
+static uint8_t gatt_svr_chr_val = 0x01;  /* Example characteristic value */
+
 static const ble_uuid128_t gatt_svr_svc_uuid =
     BLE_UUID128_INIT(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
                      0x99, 0x99, 0x43, 0x95, 0x12, 0x2f, 0x46, 0x59);
@@ -81,24 +83,39 @@ static int
 gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
+    int rc = 0;
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
         MODLOG_DFLT(INFO, "Characteristic read; conn_handle=%d attr_handle=%d\n",
                     conn_handle, attr_handle);
-        return 0;
+        rc = os_mbuf_append(ctxt->om,
+                            &gatt_svr_chr_val,
+                            sizeof(gatt_svr_chr_val));
+        return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        break;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
         MODLOG_DFLT(INFO, "Characteristic write; conn_handle=%d attr_handle=%d",
                     conn_handle, attr_handle);
-        return 0;
+        rc = os_mbuf_copydata(ctxt->om,
+                              0,
+                              sizeof(gatt_svr_chr_val),
+                              &gatt_svr_chr_val);
+        return rc == 0 ? 0 : BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        break;
 
     case BLE_GATT_ACCESS_OP_READ_DSC:
         MODLOG_DFLT(INFO, "Descriptor read; conn_handle=%d attr_handle=%d\n",
                     conn_handle, attr_handle);
-        return 0;
+        rc = os_mbuf_append(ctxt->om,
+                            &gatt_svr_dsc_val,
+                            sizeof(gatt_svr_dsc_val));
+        return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        break;
 
     case BLE_GATT_ACCESS_OP_WRITE_DSC:
         goto unknown;
+        break;
 
     default:
         goto unknown;

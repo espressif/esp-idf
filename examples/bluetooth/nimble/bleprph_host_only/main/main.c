@@ -245,7 +245,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-	bleprph_power_control(event->connect.conn_handle);
+        if (event->connect.status == 0) {
+            bleprph_power_control(event->connect.conn_handle);
+        }
 #endif
         return 0;
 
@@ -497,6 +499,7 @@ app_main(void)
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(tag, "Failed to init nimble %d ", ret);
+        hci_uart_close();
         return;
     }
     /* Initialize the NimBLE host configuration. */

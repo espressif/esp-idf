@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include <time.h>
 #include "sys/time.h"
 
+static const char *TAG = "CTS_GATT_SVR";
 
 void
 gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
@@ -85,7 +86,21 @@ int fetch_current_time(struct ble_svc_cts_curr_time *ctime) {
 int set_current_time(struct ble_svc_cts_curr_time ctime) {
     time_t now;
     struct tm timeinfo;
-    struct timeval tv_now;
+    struct timeval tv_now = {0};
+
+    /* Basic sanity validation for incoming time fields */
+    if (ctime.et_256.d_d_t.d_t.year < 1900 ||
+        ctime.et_256.d_d_t.d_t.year > 9999 ||
+        ctime.et_256.d_d_t.d_t.month < 1 || ctime.et_256.d_d_t.d_t.month > 12 ||
+        ctime.et_256.d_d_t.d_t.day < 1 || ctime.et_256.d_d_t.d_t.day > 31 ||
+        ctime.et_256.d_d_t.d_t.hours > 23 ||
+        ctime.et_256.d_d_t.d_t.minutes > 59 ||
+        ctime.et_256.d_d_t.d_t.seconds > 59 ||
+        ctime.et_256.d_d_t.day_of_week < 1 || ctime.et_256.d_d_t.day_of_week > 7) {
+        ESP_LOGE(TAG, "Invalid current time parameters");
+        return -1;
+    }
+
     /* fill date_time */
     timeinfo.tm_year= ctime.et_256.d_d_t.d_t.year - 1900 ;
     timeinfo.tm_mon = ctime.et_256.d_d_t.d_t.month - 1;
@@ -95,7 +110,12 @@ int set_current_time(struct ble_svc_cts_curr_time ctime) {
     timeinfo.tm_sec = ctime.et_256.d_d_t.d_t.seconds;
     timeinfo.tm_wday = ctime.et_256.d_d_t.day_of_week - 1;
     now = mktime(&timeinfo);
+    if (now == (time_t)-1) {
+        ESP_LOGE(TAG, "Failed to convert current time");
+        return -1;
+    }
     tv_now.tv_sec = now;
+    tv_now.tv_usec = 0;
     settimeofday(&tv_now, NULL);
     /* set the last updated */
     gettimeofday(&last_updated, NULL);
