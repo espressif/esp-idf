@@ -362,7 +362,7 @@ esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot(void);
 /**
  * @brief Returns last partition with invalid state (ESP_OTA_IMG_INVALID or ESP_OTA_IMG_ABORTED).
  *
- * @return partition.
+ * @return Pointer to the last invalid partition, or NULL if no invalid partition is recorded.
  */
 const esp_partition_t* esp_ota_get_last_invalid_partition(void);
 
