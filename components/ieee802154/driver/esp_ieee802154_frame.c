@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -290,6 +290,28 @@ IEEE802154_STATIC IRAM_ATTR uint8_t ieee802154_frame_payload_offset(const uint8_
     return offset - 1;
 }
 
+bool ieee802154_is_data_request(const uint8_t *frame)
+{
+    if (ieee802154_frame_get_type(frame) != IEEE802154_FRAME_TYPE_COMMAND) {
+        return false;
+    }
+    uint8_t offset = ieee802154_frame_security_header_offset(frame);
+    if (is_security_enabled(frame)) {
+        // skip security field.
+        offset += ieee802154_frame_get_security_field_len(frame);
+    }
+
+    if (ieee802154_frame_get_version(frame) == IEEE802154_FRAME_VERSION_2 && is_ie_present(frame)) {
+        // skip IE fields.
+        offset += ieee802154_frame_get_ie_field_len(frame);
+    }
+    if (frame[offset] == IEEE802154_CMD_DATA_REQ) {
+        return true;
+    }
+
+    return false;
+}
+
 uint8_t IEEE802154_INLINE ieee802154_frame_get_type(const uint8_t *frame)
 {
     return frame[IEEE802154_FRAME_TYPE_OFFSET] & IEEE802154_FRAME_TYPE_MASK;
@@ -311,6 +333,9 @@ uint8_t ieee802154_frame_get_dst_addr(const uint8_t *frame, uint8_t *addr)
 
     uint8_t offset = ieee802154_frame_address_offset(frame);
     uint8_t dst_mode = dst_addr_mode(frame);
+    if (dst_mode == IEEE802154_FRAME_DST_MODE_NONE) {
+        return dst_mode;
+    }
     uint8_t addr_size;
 
     ESP_RETURN_ON_FALSE_ISR(dst_mode == IEEE802154_FRAME_DST_MODE_SHORT || dst_mode == IEEE802154_FRAME_DST_MODE_EXT, dst_mode, IEEE802154_TAG, "invalid address mode");
@@ -334,6 +359,10 @@ uint8_t ieee802154_frame_get_src_addr(const uint8_t *frame, uint8_t *addr)
     uint8_t dst_mode = dst_addr_mode(frame);
     uint8_t src_mode = src_addr_mode(frame);
     uint8_t addr_size;
+
+    if (src_mode == IEEE802154_FRAME_SRC_MODE_NONE) {
+        return src_mode;
+    }
 
     ESP_RETURN_ON_FALSE_ISR(src_mode == IEEE802154_FRAME_SRC_MODE_SHORT || src_mode == IEEE802154_FRAME_SRC_MODE_EXT, src_mode, IEEE802154_TAG, "invalid address mode");
 
