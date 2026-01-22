@@ -66,6 +66,81 @@ Example:
 
     For more information about the visibility and dependencies, please refer to the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_.
 
+.. _how-values-are-assigned-to-configuration-options:
+
+How Values are Assigned to Configuration Options
+------------------------------------------------
+
+Configuration process automatically decides which value a given configuration option should have and saves it to the ``sdkconfig`` file (if the ``sdkconfig`` file does not exist, it is created, otherwise it is updated). This process is run during the ``idf.py build``, ``idf.py reconfigure``, ``idf.py menuconfig`` or ``idf.py set-target`` commands. The ``idf.py set-target`` command deletes previous ``sdkconfig`` (if any) and will always create a new one.
+
+After ``sdkconfig`` file is created/updated, it contains **all currently visible configuration options** together with values currently assigned to them. It is important to mention that once the ``sdkconfig`` file is created, all the configuration options that are contained in it are **locked**, meaning their values are not changed automatically, and can only be changed manually via `idf.py menuconfig`. Read further for in-depth explanation or skip to the :ref:`workarounds-and-best-practices` section.
+
+There are three sources a configuration option can get its value from, where later sources may override the previous ones:
+
+1. ``Kconfig`` file. This is the source of **default values** for configuration options. Every configuration option should have its default value(s) defined as a part of its definition. Default values can be **conditioned**. This means that given default value will be used only if its condition holds. For more information how to define default values, please refer to the `default option description in Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/release-v2/kconfiglib/language.html#the-default-option>`_.
+2. ``sdkconfig.defaults`` file. If it exists, configuration options that have a value assigned in this file will be assigned this value, ignoring the default value (the one obtained from the ``Kconfig`` file). Configuration options **not set** in this file **are still free to change** based on the conditions of their default values!
+3. ``sdkconfig`` file. If it exists, configuration options that have a value assigned in this file will be assigned this value, ignoring the one obtained from the ``Kconfig`` or ``sdkconfig.defaults`` file (or caused by default value change during ``sdkconfig.defaults`` file processing).
+
+As it was mentioned, ``sdkconfig`` file is created as a result of the configuration process and it contains **all currently visible configuration options** together with values currently assigned to them. This has a very important consequence: once ``sdkconfig`` file is created, conditional default values from ``Kconfig`` files **won't be reevaluated**, even if given configuration option was not set by the user. See an example:
+
+.. code-block:: kconfig
+
+    config FEATURE_X
+        bool "Enable feature X"
+        default n
+
+    config MODE
+        string "Mode"
+        default "fast" if FEATURE_X
+        default "safe"
+
+Assume ``sdkconfig`` does not exist yet (or was deleted) and you run ``idf.py menuconfig``:
+
+1. According to the ``Kconfig`` file, ``FEATURE_X`` is ``n`` by default, so ``MODE`` gets the conditional default ``"safe"``.
+2. During the configuration process, ``sdkconfig`` file is created and now contains ``CONFIG_MODE="safe"`` explicitly.
+3. Menuconfig is entered.
+
+Because ``sdkconfig`` file was created before entering menuconfig, if you enable ``FEATURE_X``, the ``MODE``'s conditional ``default "fast" if FEATURE_X`` statement won't be applied because ``CONFIG_MODE="safe"`` is already set in ``sdkconfig`` and overrides any other value set in previous steps.
+
+This is a known behavior of the Kconfig system and is not a bug, although it may seem somewhat unintuitive at first glance.
+
+.. _workarounds-and-best-practices:
+
+Workarounds and Best Practices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+How to work around this behavior depends on the exact situation:
+
+1. **Values need to be set only in specific situations**: Instruct the user to set all the necessary values in menuconfig and do not rely on conditional defaults from ``Kconfig`` files. This solution requires users to do some manual work and if users delete their ``sdkconfig`` file, they would need to set the values again.
+
+2. **Values need to be set often**: You can instruct users to create a ``sdkconfig.defaults`` in their project root folder and set these values there. This file is described in the :ref:`sdkconfig.defaults <sdkconfig-defaults-file>` section of Configuration Structure. It is important to mention that **components themselves cannot provide these files** in a way that would be automatically picked up by the build system. Instead, users need to be instructed to create this file inside their project and set the values there. This solution requires users to do some manual work, but it is more convenient than the previous one. After the ``sdkconfig.defaults`` file is created, it is necessary to **delete the ``sdkconfig`` file** and run ``idf.py menuconfig`` again to pick up the new values.
+
+Thanks to the way how configuration system works, having necessary values set in ``sdkconfig.defaults`` file will also ensure that conditional default values from ``Kconfig`` files **are reevaluated** for configuration options that were not set there.
+
+See the following example:
+
+.. code-block:: kconfig
+
+    config FEATURE_X
+        bool "Enable feature X"
+        default n
+
+    config MODE
+        string "Mode"
+        default "fast" if FEATURE_X
+        default "safe"
+
+``sdkconfig.defaults`` (placed in the project root folder):
+
+.. code-block:: text
+
+    CONFIG_FEATURE_X=y
+
+Assume ``sdkconfig`` does not exist yet (or was deleted) and you run ``idf.py menuconfig``:
+
+1. Default values from ``Kconfig`` file are used. ``FEATURE_X`` is ``n`` by default, so ``MODE`` gets the conditional default ``"safe"``.
+2. ``sdkconfig.defaults`` file is processed. ``FEATURE_X`` is explicitly set to ``y`` there. However, ``MODE``'s default value **will be reevaluated** (``MODE`` is not explicitly set in ``sdkconfig.defaults`` file and ``sdkconfig`` file does not exist yet). Because ``FEATURE_X`` is now set to ``y`` and the conditional default ``default "fast" if FEATURE_X`` applies, ``MODE`` will get the conditional default ``"fast"``.
+3. ``sdkconfig`` file is created and contains ``CONFIG_MODE="fast"`` explicitly. This will once again **lock the value** of ``MODE`` configuration option, this time to ``"fast"``.
 
 .. _configuration-options-compatibility:
 

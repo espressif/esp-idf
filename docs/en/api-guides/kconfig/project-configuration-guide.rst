@@ -105,3 +105,24 @@ Defining New Configuration Options for the Project
 
 Some applications can get very complex and require a lot of configuration options. In such cases, it is useful to define new configuration options for the project. Similar to components, the application can have its own configuration options. These options are defined in the  ``Kconfig`` or ``Kconfig.projbuild`` file in the ``main`` folder of the project. The process is the same as :ref:`defining new configuration options for components <component-configuration-guide>`, only with **different location** location of the ``Kconfig`` or ``Kconfig.projbuild`` file (``main`` instead of the root folder).
 
+
+Frequently Asked Questions
+--------------------------
+
+Why doesn't a dependent option update after I enable the related option?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you already have a saved configuration (a ``sdkconfig`` file exists in your project root folder), all configuration option values are kept as-is unless you manually change them in menuconfig.
+
+This means that even if the symbol info (shown by pressing ``?`` in the menuconfig) shows something like this:
+
+.. code-block:: Kconfig
+
+    config MODE
+        string "Mode"
+        default "fast" if FEATURE_X
+        default "safe"
+
+The ``MODE`` option will still show ``"safe"`` even after you enable ``FEATURE_X``. You need to manually change the ``MODE`` option to ``"fast"`` in menuconfig.
+
+For a more detailed explanation, please refer to the :ref:`how-values-are-assigned-to-configuration-options` section.
