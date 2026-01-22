@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,10 @@
 #endif
 #include "esp_log.h"
 #include "esp_check.h"
+#include "hal/jpeg_periph.h"
+#if JPEG_USE_RETENTION_LINK
+#include "esp_private/sleep_retention.h"
+#endif
 
 static const char *TAG = "jpeg.common";
 
@@ -32,6 +36,30 @@ typedef struct jpeg_platform_t {
 } jpeg_platform_t;
 
 static jpeg_platform_t s_jpeg_platform = {};  // singleton platform
+
+#if JPEG_USE_RETENTION_LINK
+static esp_err_t s_jpeg_sleep_retention_init_cb(void *arg)
+{
+    esp_err_t ret = sleep_retention_entries_create(jpeg_regs_retention.link_list, jpeg_regs_retention.link_num, REGDMA_LINK_PRI_JPEG, jpeg_regs_retention.module_id);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
+    return ret;
+}
+
+void jpeg_create_retention_module(jpeg_codec_handle_t jpeg_codec)
+{
+    _lock_acquire(&s_jpeg_platform.mutex);
+    if (jpeg_codec->retention_link_created == false) {
+        if (sleep_retention_module_allocate(jpeg_regs_retention.module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, JPEG driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            jpeg_codec->retention_link_created = true;
+        }
+    }
+    _lock_release(&s_jpeg_platform.mutex);
+
+}
+#endif
 
 esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
 {
@@ -53,6 +81,22 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
             ESP_RETURN_ON_FALSE(codec->codec_mutex, ESP_ERR_NO_MEM, TAG, "No memory for codec mutex");
             SLIST_INIT(&codec->jpeg_isr_handler_list);
             xSemaphoreGive(codec->codec_mutex);
+
+#if JPEG_USE_RETENTION_LINK
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = s_jpeg_sleep_retention_init_cb,
+                        .arg = (void *)codec
+                    },
+                },
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+            };
+            esp_err_t err = sleep_retention_module_init(jpeg_regs_retention.module_id, &init_param);
+            if (err != ESP_OK) {
+                ESP_LOGW(TAG, "init sleep retention failed on jpeg, jpeg configuration maybe lost after sleep wakeup");
+            }
+#endif
             // init the clock
             PERIPH_RCC_ATOMIC() {
                 jpeg_ll_enable_bus_clock(true);
@@ -100,6 +144,14 @@ esp_err_t jpeg_release_codec_handle(jpeg_codec_handle_t jpeg_codec)
                 esp_pm_lock_delete(jpeg_codec->pm_lock);
             }
 #endif
+
+#if JPEG_USE_RETENTION_LINK
+            if (jpeg_codec->retention_link_created) {
+                sleep_retention_module_free(jpeg_regs_retention.module_id);
+            }
+            sleep_retention_module_deinit(jpeg_regs_retention.module_id);
+#endif
+
             PERIPH_RCC_ATOMIC() {
                 jpeg_ll_enable_bus_clock(false);
             }
