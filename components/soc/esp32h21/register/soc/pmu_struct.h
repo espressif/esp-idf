@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -960,28 +960,13 @@ typedef union
     uint32_t val;
 } pmu_dcm_ctrl_reg_t;
 
-/** Type of dcm_boost_ctrl register
- *  need_des
- */
 typedef union {
     struct {
-        uint32_t reserved_0:24;
-        /** dcdc_boost_ccm_ctrlen : R/W; bitpos: [24]; default: 0;
-         *  need_des
-         */
+        uint32_t reserved0            :24;
         uint32_t dcdc_boost_ccm_ctrlen:1;
-        /** dcdc_boost_ccm_enb : R/W; bitpos: [25]; default: 1;
-         *  need_des
-         */
-        uint32_t dcdc_boost_ccm_enb:1;
-        /** dcdc_boost_en : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
-        uint32_t dcdc_boost_en:1;
-        /** dcdc_boost_dreg : R/W; bitpos: [31:27]; default: 23;
-         *  need_des
-         */
-        uint32_t dcdc_boost_dreg:5;
+        uint32_t dcdc_boost_ccm_enb   :1;
+        uint32_t dcdc_boost_en        :1;
+        uint32_t dcdc_boost_dreg      :5;
     };
     uint32_t val;
 } pmu_dcm_boost_ctrl_reg_t;
@@ -999,19 +984,10 @@ typedef union
     volatile uint32_t val;
 } pmu_touch_pwr_ctrl_reg_t;
 
-/** Type of ble_bandgap_ctrl register
- *  need_des
- */
 typedef union {
     struct {
-        uint32_t reserved_0:23;
-        /** ext_ocode : R/W; bitpos: [30:23]; default: 120;
-         *  need_des
-         */
-        uint32_t ext_ocode:8;
-        /** ext_force_ocode : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
+        uint32_t reserved0      :23;
+        uint32_t ext_ocode      :8;
         uint32_t ext_force_ocode:1;
     };
     uint32_t val;
@@ -1037,7 +1013,7 @@ typedef struct pmu_dev_t
     volatile pmu_clk_state2_reg_t       clk_state2;
 
     volatile pmu_dcm_ctrl_reg_t         dcm_ctrl;
-    volatile pmu_dcm_boost_ctrl_reg_t dcm_boost_ctrl;
+    volatile pmu_dcm_boost_ctrl_reg_t   dcm_boost_ctrl;
     volatile pmu_touch_pwr_ctrl_reg_t   touch_pwr_ctrl;
     volatile pmu_ble_bandgap_ctrl_reg_t ble_bandgap_ctrl;
 
