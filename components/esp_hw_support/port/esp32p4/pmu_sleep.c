@@ -39,6 +39,7 @@
 #if CONFIG_SPIRAM
 #include "hal/ldo_ll.h"
 #include "hal/mspi_ll.h"
+#include "esp_private/esp_psram_impl.h"
 #endif
 
 #if (CONFIG_ESP_REV_MIN_FULL == 300)
@@ -195,7 +196,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         // Get light sleep analog default
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
 
-#if CONFIG_SPIRAM
+#if CONFIG_SPIRAM && CONFIG_ESP32P4_SELECTS_REV_LESS_V3
         // Adjust analog parameters to keep EXT_LDO PSRAM channel volt outputting during light-sleep.
         analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
         analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
@@ -408,11 +409,15 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     //    to be written back so that regdma can get the correct link.
     // 3. We cannot use the API provided by ROM to invalidate the cache, since it is a function calling that writes data to the stack during
     //    the return process, which results in dirty cachelines in L1 Cache again.
-    pmu_sleep_cache_sync_items(SMMU_GID_DEFAULT, CACHE_SYNC_WRITEBACK, CACHE_MAP_L1_DCACHE, 0, 0);
+    pmu_sleep_cache_sync_items(SMMU_GID_DEFAULT, CACHE_SYNC_WRITEBACK, CACHE_MAP_L1_DCACHE, 0, 0); // No PSRAM dirty data after this time write back
 
     if (!dslp) {
 #if CONFIG_SPIRAM
         psram_ctrlr_ll_wait_all_transaction_done();
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+        esp_psram_impl_enter_halfsleep_mode();
+#endif
+        mspi_ll_hold_all_psram_pins();
 #endif
         s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
         if (s_mpll_freq_mhz_before_sleep) {
@@ -426,10 +431,10 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
                 _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
                 _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
             }
-            mspi_ll_hold_all_psram_pins();
 #endif
             rtc_clk_mpll_disable();
         }
+        pmu_sleep_cache_sync_items(SMMU_GID_DEFAULT, CACHE_SYNC_WRITEBACK, CACHE_MAP_L1_DCACHE, 0, 0); // No L2 MEM dirty data after this time write back
     } else {
 #if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
     if (efuse_hal_chip_revision() == 300) {
@@ -493,19 +498,26 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
     // Wait eFuse memory update done.
     while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
 
-    if (s_mpll_freq_mhz_before_sleep && !dslp) {
-        rtc_clk_mpll_enable();
-        rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, true);
+    if (!dslp) {
+        if (s_mpll_freq_mhz_before_sleep) {
+            rtc_clk_mpll_enable();
+            rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, true);
 #if CONFIG_SPIRAM
-        if (!s_pmu_sleep_regdma_backup_enabled) {
-            // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
-            // If it's a PD_TOP sleep, psram MSPI core clock will be enabled by REGDMA
-            _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-            _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+            if (!s_pmu_sleep_regdma_backup_enabled) {
+                // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
+                // If it's a PD_TOP sleep, psram MSPI core clock will be enabled by REGDMA
+                _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+                _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+            }
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_MPLL);
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_MPLL);
+#endif
         }
-        _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_MPLL);
-        _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_MPLL);
+#if CONFIG_SPIRAM
         mspi_ll_unhold_all_psram_pins();
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+        esp_psram_impl_exit_halfsleep_mode();
+#endif
 #endif
     }
 
