@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -9,7 +9,12 @@ from fatfs_utils.boot_sector import BootSector
 from fatfs_utils.entry import Entry
 from fatfs_utils.fat import FAT
 from fatfs_utils.fatfs_state import BootSectorState
-from fatfs_utils.utils import FULL_BYTE, LONG_NAMES_ENCODING, PAD_CHAR, FATDefaults, lfn_checksum, read_filesystem
+from fatfs_utils.utils import FULL_BYTE
+from fatfs_utils.utils import LONG_NAMES_ENCODING
+from fatfs_utils.utils import PAD_CHAR
+from fatfs_utils.utils import FATDefaults
+from fatfs_utils.utils import lfn_checksum
+from fatfs_utils.utils import read_filesystem
 from wl_fatfsgen import remove_wl
 
 
@@ -33,7 +38,7 @@ def get_obj_name(obj_: dict, directory_bytes_: bytes, entry_position_: int, lfn_
 
     for pos in range(entry_position_ - 1, -1, -1):  # loop from the current entry back to the start
         obj_address_: int = FATDefaults.ENTRY_SIZE * pos
-        entry_bytes_: bytes = directory_bytes_[obj_address_: obj_address_ + FATDefaults.ENTRY_SIZE]
+        entry_bytes_: bytes = directory_bytes_[obj_address_ : obj_address_ + FATDefaults.ENTRY_SIZE]
         struct_ = Entry.parse_entry_long(entry_bytes_, lfn_checksum_)
         if len(struct_.items()) > 0:
             full_name[struct_['order']] = build_file_name(struct_['name1'], struct_['name2'], struct_['name3'])
@@ -42,11 +47,9 @@ def get_obj_name(obj_: dict, directory_bytes_: bytes, entry_position_: int, lfn_
     return ''.join(map(lambda x: x[1], sorted(full_name.items()))) or obj_name_
 
 
-def traverse_folder_tree(directory_bytes_: bytes,
-                         name: str,
-                         state_: BootSectorState,
-                         fat_: FAT,
-                         binary_array_: bytes) -> None:
+def traverse_folder_tree(
+    directory_bytes_: bytes, name: str, state_: BootSectorState, fat_: FAT, binary_array_: bytes
+) -> None:
     os.makedirs(name)
 
     assert len(directory_bytes_) % FATDefaults.ENTRY_SIZE == 0
@@ -56,7 +59,8 @@ def traverse_folder_tree(directory_bytes_: bytes,
         obj_address_: int = FATDefaults.ENTRY_SIZE * i
         try:
             obj_: dict = Entry.ENTRY_FORMAT_SHORT_NAME.parse(
-                directory_bytes_[obj_address_: obj_address_ + FATDefaults.ENTRY_SIZE])
+                directory_bytes_[obj_address_ : obj_address_ + FATDefaults.ENTRY_SIZE]
+            )
         except (construct.core.ConstError, UnicodeDecodeError, construct.core.StringError):
             args.long_name_support = True
             continue
@@ -64,15 +68,16 @@ def traverse_folder_tree(directory_bytes_: bytes,
         if obj_['DIR_Attr'] == 0:  # empty entry
             continue
 
-        obj_name_: str = get_obj_name(obj_,
-                                      directory_bytes_,
-                                      entry_position_=i,
-                                      lfn_checksum_=lfn_checksum(obj_['DIR_Name'] + obj_['DIR_Name_ext']))
+        obj_name_: str = get_obj_name(
+            obj_,
+            directory_bytes_,
+            entry_position_=i,
+            lfn_checksum_=lfn_checksum(obj_['DIR_Name'] + obj_['DIR_Name_ext']),
+        )
         if obj_['DIR_Attr'] == Entry.ATTR_ARCHIVE:
             content_ = b''
             if obj_['DIR_FileSize'] > 0:
-                content_ = fat_.get_chained_content(cluster_id_=Entry.get_cluster_id(obj_),
-                                                    size=obj_['DIR_FileSize'])
+                content_ = fat_.get_chained_content(cluster_id_=Entry.get_cluster_id(obj_), size=obj_['DIR_FileSize'])
             with open(os.path.join(name, obj_name_), 'wb') as new_file:
                 new_file.write(content_)
         elif obj_['DIR_Attr'] == Entry.ATTR_DIRECTORY:
@@ -80,11 +85,13 @@ def traverse_folder_tree(directory_bytes_: bytes,
             if obj_name_ in ('.', '..'):
                 continue
             child_directory_bytes_ = fat_.get_chained_content(cluster_id_=obj_['DIR_FstClusLO'])
-            traverse_folder_tree(directory_bytes_=child_directory_bytes_,
-                                 name=os.path.join(name, obj_name_),
-                                 state_=state_,
-                                 fat_=fat_,
-                                 binary_array_=binary_array_)
+            traverse_folder_tree(
+                directory_bytes_=child_directory_bytes_,
+                name=os.path.join(name, obj_name_),
+                state_=state_,
+                fat_=fat_,
+                binary_array_=binary_array_,
+            )
 
 
 def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
@@ -109,24 +116,18 @@ def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
 if __name__ == '__main__':
     desc = 'Tool for parsing fatfs image and extracting directory structure on host.'
     argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
-    argument_parser.add_argument('input_image',
-                                 help='Path to the image that will be parsed and extracted.')
-    argument_parser.add_argument('--long-name-support',
-                                 action='store_true',
-                                 help=argparse.SUPPRESS)
+    argument_parser.add_argument('input_image', help='Path to the image that will be parsed and extracted.')
+    argument_parser.add_argument('--long-name-support', action='store_true', help=argparse.SUPPRESS)
 
     # ensures backward compatibility
-    argument_parser.add_argument('--wear-leveling',
-                                 action='store_true',
-                                 help=argparse.SUPPRESS)
-    argument_parser.add_argument('--wl-layer',
-                                 choices=['detect', 'enabled', 'disabled'],
-                                 default=None,
-                                 help="If detection doesn't work correctly, "
-                                      'you can force analyzer to or not to assume WL.')
-    argument_parser.add_argument('--verbose',
-                                 action='store_true',
-                                 help='Prints details about FAT image.')
+    argument_parser.add_argument('--wear-leveling', action='store_true', help=argparse.SUPPRESS)
+    argument_parser.add_argument(
+        '--wl-layer',
+        choices=['detect', 'enabled', 'disabled'],
+        default=None,
+        help="If detection doesn't work correctly, you can force analyzer to or not to assume WL.",
+    )
+    argument_parser.add_argument('--verbose', action='store_true', help='Prints details about FAT image.')
 
     args = argument_parser.parse_args()
 
@@ -168,7 +169,11 @@ if __name__ == '__main__':
 
     boot_dir_start_ = boot_sector_.boot_sector_state.root_directory_start
     boot_dir_sectors = boot_sector_.boot_sector_state.root_dir_sectors_cnt
-    full_ = fs[boot_dir_start_: boot_dir_start_ + boot_dir_sectors * boot_sector_.boot_sector_state.sector_size]
-    traverse_folder_tree(full_,
-                         boot_sector_.boot_sector_state.volume_label.rstrip(chr(PAD_CHAR)),
-                         boot_sector_.boot_sector_state, fat, fs)
+    full_ = fs[boot_dir_start_ : boot_dir_start_ + boot_dir_sectors * boot_sector_.boot_sector_state.sector_size]
+    traverse_folder_tree(
+        full_,
+        boot_sector_.boot_sector_state.volume_label.rstrip(chr(PAD_CHAR)),
+        boot_sector_.boot_sector_state,
+        fat,
+        fs,
+    )
