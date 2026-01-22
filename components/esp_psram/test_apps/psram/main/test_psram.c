@@ -17,8 +17,10 @@
 #include "esp_private/esp_psram_io.h"
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
+#include "esp_private/esp_psram_impl.h"
 #include "esp_flash.h"
 #include "esp_partition.h"
+#include "soc/rtc.h"
 
 __attribute__((unused)) const static char *TAG = "PSRAM";
 
@@ -57,6 +59,21 @@ TEST_CASE("stress test psram heap allocable", "[psram][manual][ignore]")
         s_test_psram_heap_allocable();
     }
 }
+
+#if !CONFIG_SPIRAM_XIP_FROM_PSRAM
+TEST_CASE("test psram halfsleep mode (if applicable)", "[psram]")
+{
+    uint32_t rtc_slow_clk_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, CONFIG_RTC_CLK_CAL_CYCLES);
+    s_test_psram_heap_allocable();
+    for (int i = 0; i < 5; i++) {
+        esp_psram_impl_enter_halfsleep_mode();
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        esp_psram_impl_exit_halfsleep_mode();
+        esp_psram_impl_resume_from_halfsleep_mode(rtc_slow_clk_period);
+        s_test_psram_heap_allocable();
+    }
+}
+#endif
 
 #if CONFIG_SPIRAM_XIP_FROM_PSRAM
 /*---------------------------------------------------------------
