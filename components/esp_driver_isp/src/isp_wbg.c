@@ -40,6 +40,8 @@ esp_err_t esp_isp_wbg_configure(isp_proc_handle_t isp_proc, const esp_isp_wbg_co
     bool valid = isp_ll_shadow_update_wbg(isp_proc->hal.hw, config->flags.update_once_configured);
     ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update wbg shadow register");
 
+    isp_proc->sub_module_flags.wbg_update_once_configured = config->flags.update_once_configured;
+
     return ESP_OK;
 }
 
@@ -63,6 +65,9 @@ esp_err_t esp_isp_wbg_set_wb_gain(isp_proc_handle_t isp_proc, isp_wbg_gain_t gai
 
     // Set WBG gain
     isp_ll_awb_set_wb_gain(isp_proc->hal.hw, gain);
+
+    bool valid = isp_ll_shadow_update_wbg(isp_proc->hal.hw, isp_proc->sub_module_flags.wbg_update_once_configured);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update wbg shadow register");
 
     return ESP_OK;
 }

@@ -104,6 +104,10 @@ typedef struct isp_processor_t {
         uint32_t                hist_isr_added:  1;
     } isr_users;
 
+    struct {
+        uint32_t                wbg_update_once_configured: 1;
+    } sub_module_flags;
+
 } isp_processor_t;
 #endif
 
