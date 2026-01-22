@@ -27,7 +27,6 @@
 #if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_lpcon_ll.h"
 #endif
-#include "hal/apm_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_sleep_internal.h"

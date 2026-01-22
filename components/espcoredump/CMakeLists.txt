@@ -8,7 +8,8 @@ set(srcs "")
 set(includes "")
 set(priv_includes "")
 set(priv_requires
-  esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system esp_driver_gpio esp_app_format)
+  esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system esp_driver_gpio esp_app_format
+  esp_hal_security)
 
 if(CONFIG_ESP_COREDUMP_ENABLE)
   list(APPEND srcs "src/core_dump_init.c"

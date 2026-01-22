@@ -25,7 +25,8 @@ set(ESP_TEE_BUILD 1)
 set(NON_OS_BUILD 1)
 
 # Additional components
-list(APPEND COMPONENTS bootloader_support efuse esp_hal_mspi esp_hal_wdt esp_security mbedtls esp_stdio)
+list(APPEND COMPONENTS bootloader_support efuse esp_hal_mspi esp_hal_wdt
+     esp_hal_security esp_security mbedtls esp_stdio)
 
 # TEE-specific components
 list(APPEND COMPONENTS attestation tee_flash_mgr tee_ota_ops tee_sec_storage)

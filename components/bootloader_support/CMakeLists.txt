@@ -28,7 +28,7 @@ if(esp_tee_build)
 
     idf_component_register(SRCS ${tee_srcs}
                            INCLUDE_DIRS ${tee_inc_dirs}
-                           PRIV_REQUIRES efuse esp_app_format esptool_py)
+                           PRIV_REQUIRES efuse esp_app_format esptool_py esp_hal_security)
     return()
 endif()
 
@@ -74,7 +74,8 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
         "private_include")
     set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
     # `esp_hal_ana_conv` is required by bootloader_random_esp32xx.c
-    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv esp_hal_rtc_timer esp_hal_clock)
+    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv esp_hal_rtc_timer
+         esp_hal_clock esp_hal_security)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
@@ -92,7 +93,8 @@ else()
     # heap is required for `heap_memory_layout.h` header
     set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esptool_py)
     # `esp_hal_ana_conv` is required by bootloader_random_esp32xx.c
-    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv esp_hal_rtc_timer esp_hal_clock)
+    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv esp_hal_rtc_timer
+        esp_hal_clock esp_hal_security)
 endif()
 
 if(BOOTLOADER_BUILD)

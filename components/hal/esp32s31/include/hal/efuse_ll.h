@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,6 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "hal/ecdsa_types.h"
 #include "soc/efuse_defs.h"
 
 #ifdef __cplusplus
@@ -105,11 +104,12 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
     // TODO: [ESP32S31] IDF-14688
 }
 
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
-{
-    (void) curve;
-    // TODO: [ESP32S31] IDF-14688
-}
+// TODO: [ESP32S31] IDF-14688
+// __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
+// {
+//     (void) curve;
+//
+// }
 
 /******************* eFuse control functions *************************/
 

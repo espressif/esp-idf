@@ -6,6 +6,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(srcs "")
+set(requires esp_hal_security)
 set(priv_requires esp_hw_support hal efuse)
 set(priv_includes "")
 
@@ -53,6 +54,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS ${priv_includes}
+                    REQUIRES ${requires}
                     PRIV_REQUIRES ${priv_requires})
 
 if(NOT non_os_build)
