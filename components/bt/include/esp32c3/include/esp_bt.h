@@ -175,11 +175,11 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_AGC_RECORRECT_NEW       1
 #else
 //Check if chip target is ESP32-C3 101
-#if CONFIG_ESP32C3_REV_MIN_101
+#if CONFIG_ESP32C3_REV_MIN_FULL >= 101
 #define BT_CTRL_AGC_RECORRECT_NEW       1
 #else
 #define BT_CTRL_AGC_RECORRECT_NEW       0
-#endif // CONFIG_ESP32C3_REV_MIN_101
+#endif // CONFIG_ESP32C3_REV_MIN_FULL >= 101
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
 #else
