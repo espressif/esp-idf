@@ -79,7 +79,7 @@ static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool 
 static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
 
 /* split segment and verify if data_len is too long */
-static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
+static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata, bool first_iteration);
 
 /* Verify the main image header */
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
@@ -650,6 +650,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     uint32_t free_page_count = bootloader_mmap_get_free_pages();
     ESP_LOGD(TAG, "free data page_count 0x%08"PRIx32, free_page_count);
 
+    bool first_iteration = true;
     uint32_t data_len_remain = data_len;
     while (data_len_remain > 0) {
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1) && defined(BOOTLOADER_BUILD)
@@ -668,9 +669,10 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
             max_image_len = UINT32_MAX;
         }
         data_len = MIN(data_len_remain, max_image_len);
-        CHECK_ERR(process_segment_data(index, load_addr, data_addr, data_len, do_load, sha_handle, checksum, metadata));
+        CHECK_ERR(process_segment_data(index, load_addr, data_addr, data_len, do_load, sha_handle, checksum, metadata, first_iteration));
         data_addr += data_len;
         data_len_remain -= data_len;
+        first_iteration = false;
     }
 
     return ESP_OK;
@@ -718,7 +720,7 @@ static size_t process_esp_app_desc_data(const uint32_t *src, bootloader_sha256_h
 }
 #endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 
-static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
+static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata, bool first_iteration)
 {
     // If we are not loading, and the checksum is empty, skip processing this
     // segment for data
@@ -766,7 +768,7 @@ static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t 
     // Case II: Bootloader verifying bootloader
     // The esp_app_desc_t structure is located in DROM and is always in segment #0.
     // Anti-rollback check and efuse block version check should handle only Case I from above.
-    if (segment == 0 && !is_bootloader(metadata->start_addr)) {
+    if (segment == 0 && first_iteration && !is_bootloader(metadata->start_addr)) {
 /* ESP32 doesn't have more memory and more efuse bits for block major version. */
 #if !CONFIG_IDF_TARGET_ESP32
         const esp_app_desc_t *app_desc = (const esp_app_desc_t *)src;
