@@ -11,6 +11,7 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
       temporary: true
       reason: No runners.
   depends_components:
+    - *common_components
     - vfs
     - esp_driver_gpio
     - esp_driver_usb_serial_jtag
@@ -27,6 +28,7 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag_vfs:
       temporary: true
       reason: No runners.
   depends_components:
+    - *common_components
     - vfs
     - esp_driver_usb_serial_jtag
     - esp_hal_usb

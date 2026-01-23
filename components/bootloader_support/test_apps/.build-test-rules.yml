@@ -5,6 +5,7 @@ components/bootloader_support/test_apps/bootloader_support:
     - if: IDF_TARGET not in ["esp32", "esp32s3", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
   depends_components:
+    - *common_components
     - bootloader_support
 
 components/bootloader_support/test_apps/rtc_custom_section:
@@ -12,4 +13,5 @@ components/bootloader_support/test_apps/rtc_custom_section:
     - if: SOC_RTC_MEM_SUPPORTED == 1
       reason: this feature is supported on chips that have RTC memory
   depends_components:
+    - *common_components
     - bootloader_support

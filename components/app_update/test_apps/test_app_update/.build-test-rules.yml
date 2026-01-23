@@ -20,6 +20,7 @@ components/app_update/test_apps:
       temporary: true
       reason: lack of runners  # TODO: [ESP32C61] IDF-13165
   depends_components:
+    - *common_components
     - app_update
     - bootloader_support
     - esp_partitions

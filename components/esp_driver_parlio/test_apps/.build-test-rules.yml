@@ -4,4 +4,5 @@ components/esp_driver_parlio/test_apps/parlio:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_parlio

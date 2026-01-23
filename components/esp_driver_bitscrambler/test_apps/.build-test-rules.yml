@@ -2,5 +2,6 @@ components/esp_driver_bitscrambler/test_apps/bitscrambler:
   disable:
     - if: SOC_BITSCRAMBLER_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_bitscrambler
     - esp_hal_dma

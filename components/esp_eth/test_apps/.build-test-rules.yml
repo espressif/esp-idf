@@ -5,4 +5,5 @@ components/esp_eth/test_apps:
     - if: IDF_TARGET in ["esp32", "esp32p4"]
       reason: ESP32 and ESP32P4 have internal EMAC. SPI Ethernet runners are based on ESP32.
   depends_components:
+    - *common_components
     - esp_eth

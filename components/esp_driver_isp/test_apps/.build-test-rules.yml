@@ -2,4 +2,5 @@ components/esp_driver_isp/test_apps/isp:
   disable:
     - if: SOC_ISP_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_isp

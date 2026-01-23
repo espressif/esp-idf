@@ -5,5 +5,6 @@ components/esp_ringbuf/test_apps:
     - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2", "linux"]
       reason: covers all target types
   depends_components:
+    - *common_components
     - freertos
     - esp_ringbuf

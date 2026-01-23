@@ -4,4 +4,5 @@ components/esp_driver_mcpwm/test_apps/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_mcpwm

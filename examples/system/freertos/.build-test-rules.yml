@@ -3,6 +3,7 @@ examples/system/freertos/basic_freertos_smp_usage:
     - if: IDF_TARGET == "esp32c3" or IDF_TARGET == "esp32s3"
       reason: no target specific functionality, testing on a single core target and a multiple core target is sufficient
   depends_components:
+    - *common_components
     - freertos
 
 examples/system/freertos/real_time_stats:
@@ -10,4 +11,5 @@ examples/system/freertos/real_time_stats:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - freertos

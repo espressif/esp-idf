@@ -6,6 +6,7 @@ examples/custom_bootloader/bootloader_extra_dir:
     - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
   depends_components:
+    - *common_components
     - bootloader_support
 
 examples/custom_bootloader/bootloader_hooks:
@@ -13,6 +14,7 @@ examples/custom_bootloader/bootloader_hooks:
     - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
   depends_components:
+    - *common_components
     - bootloader_support
 
 examples/custom_bootloader/bootloader_multiboot:
@@ -24,6 +26,7 @@ examples/custom_bootloader/bootloader_multiboot:
     - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
   depends_components:
+    - *common_components
     - bootloader_support
 
 examples/custom_bootloader/bootloader_override:
@@ -31,4 +34,5 @@ examples/custom_bootloader/bootloader_override:
     - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
   depends_components:
+    - *common_components
     - bootloader_support

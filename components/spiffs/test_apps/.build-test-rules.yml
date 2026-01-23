@@ -4,6 +4,7 @@ components/spiffs/test_apps:
       reason: These chips should be sufficient for test coverage (Xtensa and RISC-V, single and dual core)
 
   depends_components:
+    - *common_components
     - spi_flash
     - esp_partition
     - spiffs

@@ -2,6 +2,7 @@
 
 .zigbee_dependencies: &zigbee_dependencies
   depends_components:
+    - *common_components
     - ieee802154
     - openthread
     - protocol_examples_common

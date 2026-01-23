@@ -4,6 +4,7 @@
 # Or delete TODO without modifying the configuration if it is sure that current rules are correct.
 .openthread_dependencies: &openthread_dependencies
   depends_components:
+    - *common_components
     - esp_coex
     - esp_netif
     - esp_phy
@@ -19,6 +20,7 @@
 
 .openthread_sleep_dependencies: &openthread_sleep_dependencies
   depends_components:
+    - *common_components
     - esp_hw_support
 
 examples/openthread/ot_br:

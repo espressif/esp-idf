@@ -10,6 +10,7 @@ components/mbedtls/test_apps:
     - if: CONFIG_NAME == "psram_all_ext_flash_enc" and IDF_TARGET not in ["esp32", "esp32p4", "esp32c5"]
       reason: lack of runners
   depends_components:
+    - *common_components
     - mbedtls
     - esp_security
     - esp_mm

@@ -11,4 +11,5 @@ components/efuse/test_apps:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       reason: eFuse for S2 and S3 is similar to the C3 chip, so we only test for C3.
   depends_components:
+    - *common_components
     - efuse

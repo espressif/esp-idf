@@ -5,5 +5,6 @@ components/esp_driver_sdspi/test_apps/sdspi:
     - if: IDF_TARGET not in ["esp32", "esp32s3", "esp32c3", "esp32c5", "esp32p4"]
       reason: needs special runner, select few typical targets for testing
   depends_components:
+    - *common_components
     - sdmmc
     - esp_driver_sdspi

@@ -4,4 +4,5 @@ components/esp_driver_rmt/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_rmt

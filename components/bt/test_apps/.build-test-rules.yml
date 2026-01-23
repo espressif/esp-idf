@@ -5,6 +5,7 @@ components/bt/test_apps/basic_unit_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Sufficient to run the tests on one chip of each architecture
   depends_components:
+    - *common_components
     - bt
 
 components/bt/test_apps/memory_release:
@@ -14,4 +15,5 @@ components/bt/test_apps/memory_release:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
       reason: Sufficient to run the tests on one chip of each architecture
   depends_components:
+    - *common_components
     - bt

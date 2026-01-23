@@ -3,5 +3,6 @@ components/esp_driver_sdmmc/test_apps/sdmmc:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1
 
   depends_components:
+    - *common_components
     - sdmmc
     - esp_driver_sdmmc

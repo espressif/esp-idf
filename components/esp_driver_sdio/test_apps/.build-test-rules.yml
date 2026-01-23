@@ -3,6 +3,7 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/host_sdmmc:
     - if: IDF_TARGET in ["esp32", "esp32p4"]
       reason: runners use ESP32 / ESP32P4 SDMMC as host
   depends_components:
+    - *common_components
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdio
@@ -15,6 +16,7 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/sdio:
   disable:
     - if: SOC_SDIO_SLAVE_SUPPORTED != 1
   depends_components:
+    - *common_components
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdio

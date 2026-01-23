@@ -8,4 +8,5 @@ components/esp_security/test_apps/crypto_drivers:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14418
   depends_components:
+    - *common_components
     - esp_security

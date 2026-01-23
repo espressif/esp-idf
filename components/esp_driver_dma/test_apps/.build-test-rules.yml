@@ -5,6 +5,7 @@ components/esp_driver_dma/test_apps/dma:
     - if: SOC_GDMA_SUPPORTED != 1 and SOC_CP_DMA_SUPPORTED != 1
     - if: CONFIG_NAME == "ext_mem_encryption" and SOC_FLASH_ENC_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_dma
     - esp_hal_dma
 
@@ -12,5 +13,6 @@ components/esp_driver_dma/test_apps/dma2d:
   disable:
     - if: SOC_DMA2D_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_dma
     - esp_hal_dma

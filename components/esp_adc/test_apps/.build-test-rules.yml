@@ -5,6 +5,7 @@ components/esp_adc/test_apps/adc:
     - if: SOC_ADC_SUPPORTED != 1
     - if: CONFIG_NAME == "gdma_iram_safe" and IDF_TARGET in ["esp32", "esp32s2", "esp32c2"]
   depends_components:
+    - *common_components
     - esp_adc
     - esp_driver_gpio
     - esp_driver_i2s  # ADC continuous driver relies on I2S on ESP32

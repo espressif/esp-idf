@@ -4,6 +4,7 @@ components/esp_driver_sdm/test_apps/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_gpio
     - esp_driver_sdm
     - esp_hal_gpio

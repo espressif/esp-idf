@@ -2,4 +2,5 @@ components/esp_driver_touch_sens/test_apps/touch_sens:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_touch_sens

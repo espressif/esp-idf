@@ -2,6 +2,7 @@
 
 components/esp_timer/test_apps:
   depends_components:
+    - *common_components
     - esp_timer
   disable:
     - if: CONFIG_NAME == "dfs" and SOC_CLK_XTAL32K_SUPPORTED != 1

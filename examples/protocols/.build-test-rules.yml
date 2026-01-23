@@ -2,6 +2,7 @@
 
 .default_rules: &default_rules
   depends_components:
+    - *common_components
     - lwip
     - esp_netif
     - esp_wifi

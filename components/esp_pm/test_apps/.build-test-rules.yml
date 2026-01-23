@@ -9,4 +9,5 @@ components/esp_pm/test_apps:
       temporary: true
       reason: not support yet # TODO: [ESP32H21] IDF-11522, [ESP32H4] IDF-12286 [ESP32S31] IDF-14645
   depends_components:
+    - *common_components
     - esp_pm

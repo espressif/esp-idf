@@ -2,6 +2,7 @@
 
 examples/storage/fatfs:
   depends_components:
+    - *common_components
     - fatfs
     - vfs
   disable_test:
@@ -10,6 +11,7 @@ examples/storage/fatfs:
 
 examples/storage/fatfs/ext_flash:
   depends_components:
+    - *common_components
     - fatfs
     - vfs
     - spi_flash

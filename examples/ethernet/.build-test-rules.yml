@@ -6,6 +6,7 @@ examples/ethernet/basic:
   disable:
     - if: IDF_TARGET not in ["esp32", "esp32p4"]
   depends_components:
+    - *common_components
     - esp_eth
     - esp_netif
     - lwip
@@ -20,6 +21,7 @@ examples/ethernet/iperf:
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - esp_eth
     - esp_netif
     - lwip
@@ -33,5 +35,6 @@ examples/ethernet/ptp:
   enable:
     - if: SOC_EMAC_IEEE1588V2_SUPPORTED == 1
   depends_components:
+    - *common_components
     - esp_eth
     - esp_netif

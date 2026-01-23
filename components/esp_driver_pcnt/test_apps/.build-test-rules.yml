@@ -4,4 +4,5 @@ components/esp_driver_pcnt/test_apps/pulse_cnt:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_pcnt
