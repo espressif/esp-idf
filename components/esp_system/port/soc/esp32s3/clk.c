@@ -36,7 +36,11 @@ ESP_LOG_ATTR_TAG(TAG, "clk");
  */
 #define SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
 
+#ifdef CONFIG_RTC_XTAL_CAL_RETRY
+#define RTC_XTAL_CAL_RETRY CONFIG_RTC_XTAL_CAL_RETRY
+#else
 #define RTC_XTAL_CAL_RETRY 1
+#endif
 
 /* Indicates that this 32k oscillator gets input from external oscillator, rather
  * than a crystal.
