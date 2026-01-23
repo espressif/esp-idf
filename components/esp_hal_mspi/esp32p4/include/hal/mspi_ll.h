@@ -395,6 +395,8 @@ __attribute__((always_inline))
 static inline void mspi_timinng_ll_enable_flash_timing_adjust_clk(uint8_t spi_num)
 {
     HAL_ASSERT(spi_num == MSPI_TIMING_LL_MSPI_ID_0);
+    // Should set ie always on to ensure it can read flash sr2
+    REG_SET_BIT(SPI_MEM_C_CTRL_REG, SPI_MEM_C_DATA_IE_ALWAYS_ON);
     REG_GET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CLK_ENA);
 }
 
