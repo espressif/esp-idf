@@ -159,6 +159,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_TARGET_LINUX
         bool
         default "y" if IDF_TARGET="linux"
+        select FREERTOS_UNICORE
 
     config IDF_FIRMWARE_CHIP_ID
         hex

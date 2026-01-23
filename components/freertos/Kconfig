@@ -6,7 +6,8 @@ menu "FreeRTOS"
 
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on !IDF_TARGET_ESP32P4 && !IDF_TARGET_ESP32H4  #TODO: IDF-8113: Enable P4/H4 support on AMZ SMP
+            # TODO: IDF-8113: Enable support on all targets
+            depends on IDF_TARGET_ESP32
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
@@ -23,7 +24,6 @@ menu "FreeRTOS"
         config FREERTOS_UNICORE
             # Todo: Replace with CONFIG_NUMBER_OF_CORES (IDF-9156)
             bool "Run FreeRTOS only on first core"
-            default "y" if IDF_TARGET_ESP32S2 || IDF_TARGET_LINUX
             select ESP_SYSTEM_SINGLE_CORE_MODE
             help
                 This version of FreeRTOS normally takes control of all cores of the CPU. Select this if you only want

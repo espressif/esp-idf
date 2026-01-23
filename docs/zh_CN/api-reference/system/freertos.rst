@@ -31,7 +31,7 @@ ESP-IDF FreeRTOS
     Amazon SMP FreeRTOS
     ^^^^^^^^^^^^^^^^^^^
 
-        Amazon SMP FreeRTOS 是由 Amazon 官方支持的 FreeRTOS SMP 实现。Amazon SMP FreeRTOS 能够支持 N 核，即双核以上。通过 :ref:`CONFIG_FREERTOS_SMP` 选项能够启用 Amazon SMP FreeRTOS。关于 Amazon SMP FreeRTOS 的更多细节，请参考 `官方 Amazon SMP FreeRTOS 文档 <https://freertos.org/zh-cn-cmn-s/symmetric-multiprocessing-introduction.html>`__。
+        Amazon SMP FreeRTOS 是由 Amazon 官方支持的 FreeRTOS SMP 实现。Amazon SMP FreeRTOS 能够支持 N 核，即双核以上。通过 ``CONFIG_FREERTOS_SMP`` 选项能够启用 Amazon SMP FreeRTOS（仅适用于 ESP32）。关于 Amazon SMP FreeRTOS 的更多细节，请参考 `官方 Amazon SMP FreeRTOS 文档 <https://freertos.org/zh-cn-cmn-s/symmetric-multiprocessing-introduction.html>`__。
 
         .. warning::
 
