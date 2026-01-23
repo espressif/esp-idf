@@ -139,3 +139,27 @@ function(partition_table_add_check_bootloader_size_target target_name)
         bootloader ${BOOTLOADER_OFFSET} ${CMD_BOOTLOADER_BINARY_PATH})
     add_custom_target(${target_name} COMMAND ${command} DEPENDS ${CMD_DEPENDS})
 endfunction()
+
+# Add a custom target (see add_custom_target) that checks a TEE binary
+# built by the build system will fit in the TEE partition.
+#
+# Adding the target doesn't mean it gets called during the build, use add_dependencies to make another
+# target depend on this one.
+#
+# Arguments:
+# - target name - (first argument) name of the target to create
+# - DEPENDS - dependencies the new target should have (i.e. whatever target generates the TEE binary)
+# - TEE_BINARY_PATH - path to TEE binary file
+#
+# Note: This function uses the PARTITION_TABLE_BIN_PATH variable which is passed from the parent
+# build to the TEE subproject via CMAKE_ARGS.
+function(partition_table_add_check_tee_size_target target_name)
+    cmake_parse_arguments(CMD "" "TEE_BINARY_PATH" "DEPENDS" ${ARGN})
+    idf_build_get_property(python PYTHON)
+
+    set(command ${python} ${PARTITION_TABLE_CHECK_SIZES_TOOL_PATH}
+        --offset ${PARTITION_TABLE_OFFSET}
+        partition --type app --subtype tee_0
+        ${PARTITION_TABLE_BIN_PATH} ${CMD_TEE_BINARY_PATH})
+    add_custom_target(${target_name} COMMAND ${command} DEPENDS ${CMD_DEPENDS})
+endfunction()

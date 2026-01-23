@@ -99,3 +99,17 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
         ${key_arg}
     )
 endif()
+
+# Generate TEE post-build check of the TEE size against the partition
+partition_table_add_check_tee_size_target(esp_tee_check_size
+    DEPENDS gen_esp_tee_binary
+    TEE_BINARY_PATH "${CMAKE_BINARY_DIR}/${esp_tee_unsigned_bin}")
+add_dependencies(app esp_tee_check_size)
+
+if(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    # Check the size of the TEE + signature block.
+    partition_table_add_check_tee_size_target(esp_tee_check_size_signed
+        DEPENDS gen_signed_esp_tee_binary
+        TEE_BINARY_PATH "${CMAKE_BINARY_DIR}/${project_bin}")
+    add_dependencies(app esp_tee_check_size_signed)
+endif()

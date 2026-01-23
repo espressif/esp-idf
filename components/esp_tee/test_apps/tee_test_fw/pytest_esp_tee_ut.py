@@ -24,6 +24,12 @@ CONFIG_OTA = [
     for target in TESTING_TARGETS
 ]
 
+CONFIG_TEST = [
+    # 'config, target, skip_autoflash, markers',
+    ('tee_ota', target, 'y', (pytest.mark.host_test,))
+    for target in TESTING_TARGETS
+]
+
 CONFIG_ALL = [
     # 'config, target, markers',
     (config, target, (pytest.mark.generic,))
@@ -337,7 +343,7 @@ def tee_ota_stage_checks(dut: IdfDut, stage: TeeOtaStage, offset: str) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_TEST,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
@@ -352,7 +358,7 @@ def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Reboot without ending OTA"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
 
     # after reboot
     tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x10000')
@@ -360,7 +366,7 @@ def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_TEST,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
@@ -375,23 +381,23 @@ def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Valid image"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
     dut.expect('TEE OTA update successful!', timeout=10)
 
     # after reboot 1
-    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
     # resetting device to check for image validity
     dut.serial.hard_reset()
 
     # after reboot 2
     dut.expect('TEE otadata - Current image state: VALID', timeout=10)
-    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_TEST,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
@@ -406,12 +412,12 @@ def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Rollback"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
     dut.expect('TEE OTA update successful!', timeout=10)
 
     # after reboot 1
     dut.expect('TEE otadata - Current image state: NEW', timeout=10)
-    dut.expect('Loaded TEE app from partition at offset 0x40000', timeout=10)
+    dut.expect('Loaded TEE app from partition at offset 0x50000', timeout=10)
     rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=10).group(2).decode()
     # NOTE: LP_WDT_SYS (C6/H2) and RTC_WDT_SYS (C5) are expected as bootloader fails to load the dummy TEE app
     if rst_rsn not in {'LP_WDT_SYS', 'RTC_WDT_SYS'}:

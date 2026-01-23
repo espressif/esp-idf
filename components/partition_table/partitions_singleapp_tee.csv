@@ -1,6 +1,6 @@
 # Name,   Type, SubType, Offset,  Size, Flags
 # Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
-tee,            app,   tee_0,       , 192K,
+tee,            app,   tee_0,       , 256K,
 secure_storage, data,  nvs,         , 64K,
 factory,        app,   factory,     , 1536K,
 nvs,            data,  nvs,         , 24K,
