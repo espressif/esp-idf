@@ -77,6 +77,26 @@ LED blinking example with Kconfig configuration and Component Manager integratio
 
 ## Build System Features Examples
 
+### idf_as_lib
+**Location:** [idf_as_lib/](./features/idf_as_lib/)
+
+Demonstrates using ESP-IDF components as a library in external projects.
+
+```cmake
+idf_build_library(idf_lib COMPONENTS spi_flash)
+target_link_libraries(external_app idf_lib)
+```
+
+**Key Concepts:** `idf_build_library()`, external project integration
+
+**When to use:** When integrating ESP-IDF components into non-IDF build systems or existing CMake projects.
+
+**Build Note:** This example uses direct CMake commands, not `idf.py`:
+```bash
+cmake -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=...
+ninja -C build
+```
+
 These examples demonstrate the build system capabilities and some `cmakev2` specific features.
 
 ## Build System v2 API Quick Reference
