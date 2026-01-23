@@ -227,6 +227,7 @@ void btm_ble_update_resolving_list(BD_ADDR pseudo_bda, BOOLEAN add)
 void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status = 0;
+
     STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_DEBUG("%s status=%d", __func__, status);
