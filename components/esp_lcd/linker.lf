@@ -6,7 +6,7 @@ entries:
         esp_lcd_panel_dpi: mipi_dsi_bridge_isr_handler (noflash)
 
 [mapping:esp_lcd_dsi_dma]
-archive: libesp_hw_support.a
+archive: libesp_driver_dma.a
 entries:
     if LCD_DSI_ISR_HANDLER_IN_IRAM = y:
         # Control dw_gdma function placement granularly
@@ -16,7 +16,7 @@ entries:
         dw_gdma: dw_gdma_channel_enable_ctrl (noflash)
 
 [mapping:esp_lcd_rgb_dma]
-archive: libesp_hw_support.a
+archive: libesp_driver_dma.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
         gdma: gdma_reset (noflash)

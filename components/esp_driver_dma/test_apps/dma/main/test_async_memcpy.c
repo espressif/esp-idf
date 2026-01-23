@@ -54,7 +54,7 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     uint32_t mem_caps = test_context->src_in_psram ? MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT :  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT ;
     src_buf = heap_caps_aligned_calloc(test_context->align, 1, buffer_size, mem_caps);
     TEST_ASSERT_NOT_NULL(src_buf);
-    if(test_context->src_dst_same) {
+    if (test_context->src_dst_same) {
         dst_buf = src_buf;
     } else {
         mem_caps = test_context->dst_in_psram ? MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT :  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT ;
@@ -409,7 +409,7 @@ static IRAM_ATTR bool test_weighted_arb_isr_cb(async_memcpy_handle_t mcp_hdl, as
 
 static void memcpy_weighted_arb_test(async_memcpy_handle_t driver[2], size_t burst_size, uint32_t buffer_size, bool buffer_in_psram)
 {
-    SemaphoreHandle_t sem[2] = {xSemaphoreCreateBinary(),xSemaphoreCreateBinary()};
+    SemaphoreHandle_t sem[2] = {xSemaphoreCreateBinary(), xSemaphoreCreateBinary()};
     int64_t elapse_us[2] = {0};
     float throughput[2] = {0.0};
 
@@ -439,7 +439,7 @@ static void memcpy_weighted_arb_test(async_memcpy_handle_t driver[2], size_t bur
     elapse_us[1] = ctx[1].elapse_us;
 
     // wait for channel_0 done, keep channel_1 busy to do arbitration
-    while(xSemaphoreTake(sem[0], 0) == pdFALSE) {
+    while (xSemaphoreTake(sem[0], 0) == pdFALSE) {
         TEST_ESP_OK(esp_async_memcpy(driver[1], test_context.to_addr, test_context.from_addr, test_context.copy_size, test_weighted_arb_isr_cb, &ctx[1]));
         TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem[1], pdMS_TO_TICKS(1000)));
     }

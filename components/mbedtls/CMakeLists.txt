@@ -4,8 +4,7 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 if(esp_tee_build)
     include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
-return()
-
+    return()
 elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
         set(include_dirs "${COMPONENT_DIR}/mbedtls/include"
@@ -15,14 +14,14 @@ elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
 
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS "${include_dirs}"
-                           PRIV_REQUIRES hal)
+                           PRIV_REQUIRES esp_hal_dma)
     return()
 endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     set(priv_requires soc esp_hw_support)
     if(NOT BOOTLOADER_BUILD)
-        list(APPEND priv_requires esp_pm)
+        list(APPEND priv_requires esp_pm esp_driver_dma)
         set(requires esp_security)
     endif()
 endif()
@@ -323,6 +322,10 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
 
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
     target_sources(tfpsacrypto PRIVATE "${AES_DMA_SRCS}")
+endif()
+
+if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_driver_dma)
 endif()
 
 if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")

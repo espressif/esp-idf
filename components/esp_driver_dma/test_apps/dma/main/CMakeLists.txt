@@ -23,7 +23,7 @@ endif()
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity esp_mm esp_driver_gpio
+                       PRIV_REQUIRES unity esp_mm esp_driver_gpio esp_psram esp_driver_dma
                        WHOLE_ARCHIVE)
 
 idf_component_get_property(lib_name esp_hal_dma COMPONENT_LIB)

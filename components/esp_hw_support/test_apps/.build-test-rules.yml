@@ -1,22 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_hw_support/test_apps/dma:
-  disable:
-    - if: SOC_GDMA_SUPPORTED != 1 and SOC_CP_DMA_SUPPORTED != 1
-    - if: CONFIG_NAME == "ext_mem_encryption" and SOC_FLASH_ENC_SUPPORTED != 1
-  depends_filepatterns:
-    - components/esp_hw_support/dma/**/*
-  depends_components:
-    - esp_hal_dma
-
-components/esp_hw_support/test_apps/dma2d:
-  disable:
-    - if: SOC_DMA2D_SUPPORTED != 1
-  depends_filepatterns:
-    - components/esp_hw_support/dma/**/*
-  depends_components:
-    - esp_hal_dma
-
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
   disable:
     - if: IDF_TARGET in ["esp32s31"] # TODO: [ESP32S31] IDF-14672

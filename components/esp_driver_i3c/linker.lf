@@ -11,7 +11,7 @@ entries:
         i3c_master: handle_ibi_status_thld_int (noflash)
 
 [mapping:i3c_driver_gdma]
-archive: libesp_hw_support.a
+archive: libesp_driver_dma.a
 entries:
     if I3C_MASTER_ISR_HANDLER_IN_IRAM = y:
         gdma_link: gdma_link_mount_buffers (noflash)

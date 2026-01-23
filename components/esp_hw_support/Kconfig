@@ -334,7 +334,6 @@ menu "Hardware Settings"
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu
 
-    rsource "./dma/Kconfig.dma"
     rsource "./etm/Kconfig.etm"
 
     menu "Main XTAL Config"

@@ -62,6 +62,7 @@ typedef struct {
 #define ASYNC_MEMCPY_DEFAULT_CONFIG() \
     {                                 \
         .backlog = 8,                 \
+        .weight = 0,                  \
         .dma_burst_size = 16,         \
         .flags = 0,                   \
     }

@@ -173,28 +173,28 @@ static void rgb565_to_rgb888(uint16_t rgb565, void *__r, void *__g, void *__b)
     uint8_t *b = (uint8_t *)__b;
 
     uint32_t _rgb565 = rgb565;
-    uint8_t _b = (_rgb565>>8) & 0xF8;
-    uint8_t _g = (_rgb565>>3) & 0xFC;
-    uint8_t _r = (_rgb565<<3) & 0xF8;
+    uint8_t _b = (_rgb565 >> 8) & 0xF8;
+    uint8_t _g = (_rgb565 >> 3) & 0xFC;
+    uint8_t _r = (_rgb565 << 3) & 0xF8;
     // *r = (_r & 0x08) ? (_r | 0x1) : (_r);
     // *g = (_g & 0x04) ? (_g | 0x1) : (_g);
     // *b = (_b & 0x08) ? (_b | 0x1) : (_b);
 
-    *r = _r | ( (_r >>3) & 0x7);
-    *g = _g | ( (_g >>2) & 0x3);
-    *b = _b | ( (_b >>3) & 0x7);
+    *r = _r | ((_r >> 3) & 0x7);
+    *g = _g | ((_g >> 2) & 0x3);
+    *b = _b | ((_b >> 3) & 0x7);
 }
 
 static int rgb565_to_rgb888_and_cmp(void *_rgb565, void *__rgb888, int pix)
 {
     uint16_t *rgb565 = (uint16_t *)_rgb565;
     uint8_t *_rgb888 = (uint8_t *)__rgb888;
-    uint8_t _r,_g,_b;
+    uint8_t _r, _g, _b;
     for (int i = 0; i < pix; i++) {
         rgb565_to_rgb888(rgb565[i], &_r, &_g, &_b);
         if (_r != _rgb888[0] || _g !=  _rgb888[1] || _b !=  _rgb888[2]) {
             printf("idx %d - conv fail, %x:%x:%x, rgb565:%x, _rgb888:%x:%x:%x\r\n",
-                   i, _r, _g, _b, rgb565[i], _rgb888[0], _rgb888[1] ,_rgb888[2]);
+                   i, _r, _g, _b, rgb565[i], _rgb888[0], _rgb888[1], _rgb888[2]);
             return -1;
         }
         _rgb888 += 3;
@@ -421,8 +421,8 @@ TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
 static void rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b, uint16_t *rgb565)
 {
     uint16_t _rgb565 = (b >> 3);
-    _rgb565 = (_rgb565 << 6) | (g >>2);
-    _rgb565 = (_rgb565 << 5) | (r >>3);
+    _rgb565 = (_rgb565 << 6) | (g >> 2);
+    _rgb565 = (_rgb565 << 5) | (r >> 3);
     *rgb565 = _rgb565;
 }
 

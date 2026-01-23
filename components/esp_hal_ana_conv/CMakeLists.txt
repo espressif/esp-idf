@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-set(requires soc hal)
+set(requires soc hal esp_hal_dma)
 if(${target} STREQUAL "esp32")
     list(APPEND requires esp_hal_i2s)
 endif()

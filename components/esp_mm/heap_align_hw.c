@@ -9,7 +9,6 @@
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "esp_private/esp_cache_private.h"
-#include "esp_private/gdma.h"
 #include "soc/soc_caps.h"
 #if SOC_HAS(GDMA)
 #include "hal/gdma_ll.h"

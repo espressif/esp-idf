@@ -32,7 +32,7 @@ entries:
         rmt_rx: rmt_receive (noflash)
 
 [mapping:rmt_driver_gdma_link]
-archive: libesp_hw_support.a
+archive: libesp_driver_dma.a
 entries:
     if RMT_TX_ISR_HANDLER_IN_IRAM = y && SOC_RMT_SUPPORT_DMA = y:
         gdma_link: gdma_link_mount_buffers (noflash)

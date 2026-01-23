@@ -6,7 +6,7 @@ endif()
 
 set(srcs)
 set(include "include")
-set(priv_requires esp_driver_gpio esp_pm esp_mm esp_hal_clock)
+set(priv_requires esp_driver_gpio esp_driver_dma esp_pm esp_mm esp_hal_clock)
 
 if(${target} STREQUAL "esp32")
     # ADC on esp32 is routed to I2S0, I2S driver needs to operate ADC to ensure the I2S function.
