@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,6 @@
 #include "freertos/event_groups.h"
 #include "soc/emac_mac_struct.h"
 #include "unity.h"
-#include "unity_test_utils.h"
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -22,7 +21,7 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
-#include "esp_eth_test_common.h"
+#include "esp_eth_test_utils.h"
 #include "hal/emac_hal.h"
 
 #include "lwip/inet.h"
@@ -185,31 +184,9 @@ static void ping_start(const esp_ip4_addr_t *ip, SemaphoreHandle_t sem)
 
 static void test_emac_sleep_retention(bool pd_top_down)
 {
-    test_case_uses_tcpip();
-    TEST_ESP_OK(esp_event_loop_create_default());
-    // create TCP/IP netif
-    esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-    esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-
-    // Initialize Ethernet
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle));
-    extra_eth_config(eth_handle);
-    // combine driver with netif
-    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
-    TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-
-    // Register event handlers
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT_NOT_NULL(eth_event_group);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
 
     uint8_t mac_addr[ETH_ADDR_LEN];
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr));
@@ -244,9 +221,12 @@ static void test_emac_sleep_retention(bool pd_top_down)
     // ----- Verify EMAC and full IP stack is still working after sleep -----
     eth_test_start_sleep(eth_handle, pd_top_down);
 
-    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
+    static StaticSemaphore_t sem_buffer;
+    SemaphoreHandle_t sem = xSemaphoreCreateBinaryStatic(&sem_buffer);
     TEST_ASSERT_NOT_NULL(sem);
     esp_netif_ip_info_t ip_info;
+    esp_netif_t *eth_netif = eth_test_get_netif();
+    TEST_ASSERT_NOT_NULL(eth_netif);
     esp_netif_get_ip_info(eth_netif, &ip_info);
 
     // Verify functionality of MAC and the full IP stack
@@ -327,30 +307,21 @@ static void test_emac_sleep_retention(bool pd_top_down)
     TEST_ASSERT_EQUAL(0, dma_regs->dmaoperation_mode.start_stop_transmission_command);
     TEST_ASSERT_EQUAL(0, mac_regs->gmacconfig.rx);
     TEST_ASSERT_EQUAL(0, mac_regs->gmacconfig.tx);
-
-    TEST_ESP_OK(esp_eth_del_netif_glue(glue));
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    esp_netif_destroy(eth_netif);
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
-    vSemaphoreDelete(sem);
 }
 
-TEST_CASE("internal emac sleep retention", "[sleep_retention]")
+TEST_CASE("internal emac sleep retention PD_TOP up", "[sleep_retention][esp-netif]")
 {
     ESP_LOGI(TAG, "Testing with PD_TOP powered up");
     test_emac_sleep_retention(false);
+}
 
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+TEST_CASE("internal emac sleep retention - PD_TOP down", "[sleep_retention][esp-netif]")
+{
     ESP_LOGI(TAG, "Testing with PD_TOP powered down");
     test_emac_sleep_retention(true);
-#endif
+
 }
+#endif
 
 #endif // CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_EMAC_SUPPORT_SLEEP_RETENTION
