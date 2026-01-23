@@ -105,6 +105,12 @@ IRAM_ATTR void wifi_bt_common_module_enable(void)
         periph_ll_wifi_bt_module_enable_clk();
     }
     ref_counts[PERIPH_WIFI_BT_COMMON_MODULE]++;
+#if CONFIG_IDF_TARGET_ESP32C2
+    if (ref_counts[PERIPH_COEX_MODULE] == 0) {
+        periph_ll_coex_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_COEX_MODULE]++;
+#endif
     esp_os_exit_critical_safe(&periph_spinlock);
 #endif
 }
@@ -119,6 +125,12 @@ IRAM_ATTR void wifi_bt_common_module_disable(void)
     if (ref_counts[PERIPH_WIFI_BT_COMMON_MODULE] == 0) {
         periph_ll_wifi_bt_module_disable_clk();
     }
+#if CONFIG_IDF_TARGET_ESP32C2
+    ref_counts[PERIPH_COEX_MODULE]--;
+    if (ref_counts[PERIPH_COEX_MODULE] == 0) {
+        periph_ll_coex_module_disable_clk_set_rst();
+    }
+#endif
     esp_os_exit_critical_safe(&periph_spinlock);
 #endif
 }
@@ -230,5 +242,37 @@ IRAM_ATTR bool phy_module_has_clock_bits(uint32_t mask)
         return false;
     }
     return true;
+}
+
+IRAM_ATTR void coex_module_enable(void)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_COEX_MODULE);
+#else
+    esp_os_enter_critical_safe(&periph_spinlock);
+#if CONFIG_IDF_TARGET_ESP32C2
+    if (ref_counts[PERIPH_COEX_MODULE] == 0) {
+        periph_ll_coex_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_COEX_MODULE]++;
+#endif
+    esp_os_exit_critical_safe(&periph_spinlock);
+#endif
+}
+
+IRAM_ATTR void coex_module_disable(void)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_COEX_MODULE);
+#else
+    esp_os_enter_critical_safe(&periph_spinlock);
+#if CONFIG_IDF_TARGET_ESP32C2
+    ref_counts[PERIPH_COEX_MODULE]--;
+    if (ref_counts[PERIPH_COEX_MODULE] == 0) {
+        periph_ll_coex_module_disable_clk_set_rst();
+    }
+#endif
+    esp_os_exit_critical_safe(&periph_spinlock);
+#endif
 }
 #endif  //#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED

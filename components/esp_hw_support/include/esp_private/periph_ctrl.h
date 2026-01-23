@@ -174,6 +174,25 @@ void phy_module_disable(void);
  */
 bool phy_module_has_clock_bits(uint32_t mask);
 
+/**
+ * @brief Enable coex module
+ *
+ * @note Calling this function will only enable coex module.
+ * @note For ESP32S2, ESP32S3, and ESP32C3, this function has no effect because
+ *       the coex module clock is controlled by the modem clock. On these chips,
+ *       you must call esp_wifi_init() to enable the modem clock before using
+ *       external coexistence features.
+ */
+void coex_module_enable(void);
+
+/**
+ * @brief Disable coex module
+ *
+ * @note Calling this function will only disable coex module.
+ * @note For ESP32S2, ESP32S3, and ESP32C3, this function has no effect because
+ *       the coex module clock is controlled by the modem clock.
+ */
+void coex_module_disable(void);
 #undef __PERIPH_CTRL_DEPRECATE_ATTR
 
 #ifdef __cplusplus
