@@ -2056,16 +2056,18 @@ int bt_mesh_gatts_service_stop(struct bt_mesh_gatt_service *svc)
 {
     int rc;
     uint16_t handle;
-
+    
     if (!svc) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
     if (BLE_MESH_UUID_16(svc->attrs[0].user_data)->val == BT_UUID_MESH_PROXY_VAL) {
-        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL), &handle);
+        const ble_uuid_t *uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL);
+        rc = ble_gatts_find_svc(uuid, &handle);
     } else {
-        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL), &handle);
+        const ble_uuid_t *uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL);
+        rc = ble_gatts_find_svc(uuid, &handle);
     }
 
     assert(rc == 0);
@@ -2081,16 +2083,16 @@ int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc)
 {
     int rc;
     uint16_t handle;
-
+    // const ble_uuid_t *uuid;
     if (BLE_MESH_UUID_16(svc->attrs[0].user_data)->val == BT_UUID_MESH_PROXY_VAL) {
-        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL), &handle);
+        const ble_uuid_t *uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL);
+        rc = ble_gatts_find_svc(uuid, &handle);
     } else {
-        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL), &handle);
+        const ble_uuid_t *uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL);
+        rc = ble_gatts_find_svc(uuid, &handle);
     }
-
     assert(rc == 0);
     ble_gatts_svc_set_visibility(handle, 1);
-
     /* FIXME: figure out end handle */
     ble_svc_gatt_changed(handle, 0xffff);
 
