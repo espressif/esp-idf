@@ -50,10 +50,9 @@ TEST_CASE("ledc etm event and task", "[ledc]")
     TEST_ESP_OK(esp_etm_channel_enable(etm_channel_a));
 
     // use UART auto baud rate detection feature to count the PWM pulse count
-    uart_bitrate_detect_config_t conf = {
-        .rx_io_num = PULSE_IO,
-        .source_clk = UART_SCLK_DEFAULT,
-    };
+    uart_bitrate_detect_config_t conf = {};
+    conf.rx_io_num = PULSE_IO;
+    conf.source_clk = UART_SCLK_DEFAULT;
     uart_bitrate_res_t res = {};
 
     uart_detect_bitrate_start(UART_NUM_1, &conf);

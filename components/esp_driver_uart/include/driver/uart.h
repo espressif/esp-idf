@@ -34,12 +34,13 @@ extern "C" {
  */
 typedef struct {
     int baud_rate;                      /*!< UART baud rate
-                                             Note that the actual baud rate set could have a slight deviation from the user-configured value due to rounding error*/
-    uart_word_length_t data_bits;       /*!< UART byte size*/
-    uart_parity_t parity;               /*!< UART parity mode*/
-    uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
-    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
-    uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
+                                             Note that the actual baud rate set could have a slight deviation from the user-configured value due to rounding error */
+    uart_word_length_t data_bits;       /*!< UART byte size */
+    uart_parity_t parity;               /*!< UART parity mode */
+    uart_stop_bits_t stop_bits;         /*!< UART stop bits */
+    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts) */
+    uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold */
+    uint32_t rx_glitch_filt_thresh;     /*!< The width of the glitch on the RX signal to be filtered (unit: ns). If set to 0, then RX signal filter is disabled. */
     union {
         uart_sclk_t source_clk;             /*!< UART source clock selection */
 #if (SOC_UART_LP_NUM >= 1)
@@ -247,7 +248,7 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baudrate);
  * @param baudrate Pointer to accept value of UART baud rate
  *
  * @return
- *     - ESP_FAIL Parameter error
+ *     - ESP_FAIL Parameter error or the UART port is not enabled
  *     - ESP_OK   Success, result will be put in (*baudrate)
  *
  */
@@ -896,6 +897,7 @@ typedef struct {
     int rx_io_num;                      /*!< GPIO pin number for the incoming signal */
     uart_sclk_t source_clk;             /*!< The higher the frequency of the clock source, the more accurate the detected bitrate value;
                                              The slower the frequency of the clock source, the slower the bitrate can be measured */
+    uint32_t rx_glitch_filt_thresh;     /*!< The width of the glitch on the incoming signal to be filtered (unit: ns). If set to 0, then glitch filter is disabled. */
 } uart_bitrate_detect_config_t;
 
 /**

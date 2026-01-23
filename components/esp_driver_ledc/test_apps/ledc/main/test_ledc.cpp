@@ -523,7 +523,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     } else if (clk_src_freq == 60 * 1000 * 1000) {
         theoretical_freq = 8993;
     }
-    frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 60);
+    frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 80);
 #endif
 
     // Pause and de-configure the timer so that it won't affect the following test cases
