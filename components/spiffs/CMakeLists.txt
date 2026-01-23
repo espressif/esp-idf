@@ -19,9 +19,9 @@ idf_component_register(SRCS ${srcs}
                        REQUIRES esp_partition
                        PRIV_REQUIRES ${pr})
 
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)
-endif()
-
 # Upstream SPIFFS code uses format specifiers in debug logging macros inconsistently
+list(TRANSFORM original_srcs PREPEND "${CMAKE_CURRENT_LIST_DIR}/")
 set_source_files_properties(${original_srcs} PROPERTIES COMPILE_FLAGS -Wno-format)
+
+get_source_file_property(nucleus_cc_flags "${CMAKE_CURRENT_LIST_DIR}/spiffs/src/spiffs_nucleus.c" COMPILE_FLAGS)
+set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/spiffs/src/spiffs_nucleus.c" PROPERTIES COMPILE_FLAGS "${nucleus_cc_flags} -Wno-tautological-compare")
