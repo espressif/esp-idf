@@ -86,27 +86,29 @@ class WLFATFS:
     )
     WL_CONFIG_T_HEADER_SIZE = 48
 
-    def __init__(self,
-                 size: int = FATDefaults.SIZE,
-                 sector_size: int = FATDefaults.SECTOR_SIZE,
-                 reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
-                 fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
-                 sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
-                 explicit_fat_type: Optional[int] = None,
-                 hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
-                 long_names_enabled: bool = False,
-                 num_heads: int = FATDefaults.NUM_HEADS,
-                 oem_name: str = FATDefaults.OEM_NAME,
-                 sec_per_track: int = FATDefaults.SEC_PER_TRACK,
-                 volume_label: str = FATDefaults.VOLUME_LABEL,
-                 file_sys_type: str = FATDefaults.FILE_SYS_TYPE,
-                 use_default_datetime: bool = True,
-                 version: int = FATDefaults.VERSION,
-                 temp_buff_size: int = FATDefaults.TEMP_BUFFER_SIZE,
-                 device_id: Optional[int] = None,
-                 root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
-                 media_type: int = FATDefaults.MEDIA_TYPE,
-                 wl_mode: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        size: int = FATDefaults.SIZE,
+        sector_size: int = FATDefaults.SECTOR_SIZE,
+        reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
+        fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
+        sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
+        explicit_fat_type: Optional[int] = None,
+        hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
+        long_names_enabled: bool = False,
+        num_heads: int = FATDefaults.NUM_HEADS,
+        oem_name: str = FATDefaults.OEM_NAME,
+        sec_per_track: int = FATDefaults.SEC_PER_TRACK,
+        volume_label: str = FATDefaults.VOLUME_LABEL,
+        file_sys_type: str = FATDefaults.FILE_SYS_TYPE,
+        use_default_datetime: bool = True,
+        version: int = FATDefaults.VERSION,
+        temp_buff_size: int = FATDefaults.TEMP_BUFFER_SIZE,
+        device_id: Optional[int] = None,
+        root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
+        media_type: int = FATDefaults.MEDIA_TYPE,
+        wl_mode: Optional[str] = None,
+    ) -> None:
         self._initialized = False
         self._version = version
         self._temp_buff_size = temp_buff_size
