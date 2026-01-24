@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
+from typing import Optional
+
 from construct import Const
 from construct import Int32ul
 from construct import Struct
@@ -94,7 +96,7 @@ class WLFATFS:
         reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
         fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
         sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
-        explicit_fat_type: int | None = None,
+        explicit_fat_type: Optional[int] = None,
         hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
         long_names_enabled: bool = False,
         num_heads: int = FATDefaults.NUM_HEADS,
@@ -105,10 +107,10 @@ class WLFATFS:
         use_default_datetime: bool = True,
         version: int = FATDefaults.VERSION,
         temp_buff_size: int = FATDefaults.TEMP_BUFFER_SIZE,
-        device_id: int | None = None,
+        device_id: Optional[int] = None,
         root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
         media_type: int = FATDefaults.MEDIA_TYPE,
-        wl_mode: str | None = None,
+        wl_mode: Optional[str] = None,
     ) -> None:
         self._initialized = False
         self._version = version
