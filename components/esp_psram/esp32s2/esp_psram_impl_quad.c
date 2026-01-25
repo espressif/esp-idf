@@ -168,7 +168,7 @@ extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mo
 
 static uint8_t s_psram_cs_io = (uint8_t) -1;
 
-uint8_t esp_psram_impl_get_cs_io(void)
+uint8_t esp_psram_quad_get_cs_io(void)
 {
     return s_psram_cs_io;
 }
@@ -412,7 +412,7 @@ static void psram_set_clk_mode(int spi_num, psram_clk_mode_t clk_mode)
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
  */
-esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
+esp_err_t IRAM_ATTR esp_psram_quad_enable(void)   //psram init
 {
     psram_vaddr_mode_t vaddrmode = PSRAM_VADDR_MODE_NORMAL;
     psram_cache_speed_t mode = PSRAM_SPEED;
@@ -551,7 +551,7 @@ static void IRAM_ATTR psram_cache_init(psram_cache_speed_t psram_cache_mode, psr
  *
  * Consider moving these to another file if this kind of APIs grows dramatically
  *-------------------------------------------------------------------------------*/
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_quad_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -573,7 +573,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * On ESP32S2, all of the PSRAM physical region are available
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_quad_get_available_size(uint32_t *out_size_bytes)
 {
-    return esp_psram_impl_get_physical_size(out_size_bytes);
+    return esp_psram_quad_get_physical_size(out_size_bytes);
 }
