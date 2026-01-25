@@ -127,7 +127,7 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
             .flags = SCF_CMD_BCR | SCF_RSP_R3,
             .opcode = SD_APP_OP_COND
     };
-    int nretries = SDMMC_SEND_OP_COND_MAX_RETRIES;
+    int nretries = SDMMC_SEND_OP_COND_MAX_RETRIES * 5;
     int err_cnt = SDMMC_SEND_OP_COND_MAX_ERRORS;
     for (; nretries != 0; --nretries)  {
         bzero(&cmd, sizeof cmd);
