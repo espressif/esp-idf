@@ -288,6 +288,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
             .form_err = (type == TWAI_LL_ERR_FORM),
             .stuff_err = (type == TWAI_LL_ERR_STUFF),
             .ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT),
+            .arb_lost = 0,
         };
         hal_ctx->errors = errors;
 #if TWAI_LL_HAS_RX_FRAME_ISSUE
@@ -301,6 +302,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
 #endif
     }
     if (events & TWAI_HAL_EVENT_ARB_LOST) {
+        hal_ctx->errors.arb_lost = 1;
         twai_ll_clear_arb_lost_cap(hal_ctx->dev);
     }
 #if TWAI_LL_HAS_RX_FIFO_ISSUE
