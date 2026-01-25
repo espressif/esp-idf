@@ -17,6 +17,8 @@
 #include "mbedtls/ssl_ticket.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
+/* ESP_TLS_HAS_WOLFSSL defined only for versions properly supporting wolfSSL */
+#define  ESP_TLS_HAS_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
 #include "wolfssl/ssl.h"
 #endif
@@ -779,8 +781,11 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
  *
  * @param[in]  tls  pointer to esp_tls_t
  */
+#ifdef CONFIG_ESP_TLS_USING_WOLFSSL
+int esp_tls_server_session_delete(esp_tls_t *tls);
+#else
 void esp_tls_server_session_delete(esp_tls_t *tls);
-
+#endif
 /**
  * @brief Creates a plain TCP connection, returning a valid socket fd on success or an error handle
  *
