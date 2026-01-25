@@ -30,6 +30,9 @@
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
 #include "wolfssl/ssl.h"
+#include "wolfssl/openssl/x509.h"
+#include "wolfssl/wolfcrypt/port/Espressif/esp_crt_bundle.h"
+#include "private_include/esp_tls_wolfssl.h"
 #endif
 
 struct esp_tls {
@@ -66,6 +69,11 @@ struct esp_tls {
     size_t client_session_len;                                                  /*!< Length of the serialized client session ticket context. */
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
+    #ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+    wolfssl_ssl_config conf;
+    void (*sync)(struct esp_tls*);
+    #endif
+
     void *priv_ctx;
     void *priv_ssl;
 #endif
