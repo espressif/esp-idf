@@ -1643,7 +1643,7 @@ static esp_err_t esp_netif_dhcpc_stop_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_dhcpc_stop(esp_netif_t *esp_netif) _RUN_IN_LWIP_TASK_IF_SUPPORTED(esp_netif_dhcpc_stop_api, esp_netif, NULL)
 
-static void dns_clear_servers(bool keep_fallback)
+static void dns_clear_servers_with_netif(esp_netif_t *esp_netif, bool keep_fallback)
 {
     u8_t numdns = 0;
 
@@ -1652,7 +1652,14 @@ static void dns_clear_servers(bool keep_fallback)
             continue;
         }
 
+#ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+        store_dnsserver_info(esp_netif->lwip_netif, numdns, NULL);
+        if (esp_netif == s_last_default_esp_netif) {
+            dns_setserver(numdns, NULL);
+        }
+#else
         dns_setserver(numdns, NULL);
+#endif
     }
 }
 
@@ -1676,7 +1683,7 @@ static esp_err_t esp_netif_dhcpc_start_api(esp_netif_api_msg_t *msg)
     esp_netif_reset_ip_info(esp_netif);
 
 #if LWIP_DNS
-    dns_clear_servers(true);
+    dns_clear_servers_with_netif(esp_netif, true);
 #endif
 
     if (p_netif != NULL) {
@@ -2044,7 +2051,7 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
             return ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED;
         }
 #if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
-        dns_clear_servers(true);
+        dns_clear_servers_with_netif(esp_netif, true);
 #endif
     }
 
