@@ -446,12 +446,10 @@ void esp_mbedtls_conn_delete(esp_tls_t *tls)
 {
     if (tls != NULL) {
         esp_mbedtls_cleanup(tls);
-        if (tls->is_tls) {
-            if (tls->server_fd.fd != -1) {
-                mbedtls_net_free(&tls->server_fd);
-                /* Socket is already closed by `mbedtls_net_free` and hence also change assignment of its copy to an invalid value */
-                tls->sockfd = -1;
-            }
+        if (tls->server_fd.fd != -1) {
+            mbedtls_net_free(&tls->server_fd);
+            /* Socket is already closed by `mbedtls_net_free` and hence also change assignment of its copy to an invalid value */
+            tls->sockfd = -1;
         }
     }
 }
