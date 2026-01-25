@@ -295,6 +295,12 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         }
         free(use_host);
     }
+    else {
+        if ((ret = wolfSSL_CTX_UseSNI(tls->priv_ctx, WOLFSSL_SNI_HOST_NAME, hostname, hostlen)) != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_CTX_UseSNI failed, returned %d", ret);
+            return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
+        }
+    }
 
     if (cfg->alpn_protos) {
 #ifdef CONFIG_WOLFSSL_HAVE_ALPN
@@ -316,24 +322,26 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     }
 
 #ifdef CONFIG_WOLFSSL_HAVE_OCSP
-    int ocsp_options = 0;
+    if (!cfg->skip_common_name) {
+        int ocsp_options = 0;
 #ifdef ESP_TLS_OCSP_CHECKALL
-    ocsp_options |= WOLFSSL_OCSP_CHECKALL;
+        ocsp_options |= WOLFSSL_OCSP_CHECKALL;
 #endif
-    /* enable OCSP certificate status check for this TLS context */
-    if ((ret = wolfSSL_CTX_EnableOCSP((WOLFSSL_CTX *)tls->priv_ctx, ocsp_options)) != WOLFSSL_SUCCESS) {
-        ESP_LOGE(TAG, "wolfSSL_CTX_EnableOCSP failed, returned %d", ret);
-        return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
-    }
-    /* enable OCSP stapling for this TLS context */
-    if ((ret = wolfSSL_CTX_EnableOCSPStapling((WOLFSSL_CTX *)tls->priv_ctx )) != WOLFSSL_SUCCESS) {
-        ESP_LOGE(TAG, "wolfSSL_CTX_EnableOCSPStapling failed, returned %d", ret);
-        return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
-    }
-    /* set option to use OCSP v1 stapling with nounce extension */
-    if ((ret = wolfSSL_UseOCSPStapling((WOLFSSL *)tls->priv_ssl, WOLFSSL_CSR_OCSP, WOLFSSL_CSR_OCSP_USE_NONCE)) != WOLFSSL_SUCCESS) {
-        ESP_LOGE(TAG, "wolfSSL_UseOCSPStapling failed, returned %d", ret);
-        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
+        /* enable OCSP certificate status check for this TLS context */
+        if ((ret = wolfSSL_CTX_EnableOCSP((WOLFSSL_CTX *)tls->priv_ctx, ocsp_options)) != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_CTX_EnableOCSP failed, returned %d", ret);
+            return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
+        }
+        /* enable OCSP stapling for this TLS context */
+        if ((ret = wolfSSL_CTX_EnableOCSPStapling((WOLFSSL_CTX *)tls->priv_ctx )) != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_CTX_EnableOCSPStapling failed, returned %d", ret);
+            return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
+        }
+        /* set option to use OCSP v1 stapling with nounce extension */
+        if ((ret = wolfSSL_UseOCSPStapling((WOLFSSL *)tls->priv_ssl, WOLFSSL_CSR_OCSP, WOLFSSL_CSR_OCSP_USE_NONCE)) != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_UseOCSPStapling failed, returned %d", ret);
+            return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
+        }
     }
 #endif /* CONFIG_WOLFSSL_HAVE_OCSP */
 
