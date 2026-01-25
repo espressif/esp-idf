@@ -10,6 +10,7 @@
 
     third-party-tools/platformio
     third-party-tools/clion
+    third-party-tools/wokwi
     third-party-tools/visualgdb
 
 有关这些第三方工具的问题，请寻求该工具的支持渠道或用户社区的帮助。
