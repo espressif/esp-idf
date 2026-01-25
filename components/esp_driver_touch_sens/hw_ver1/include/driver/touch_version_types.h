@@ -55,6 +55,7 @@ extern "C" {
 #define TOUCH_SENSOR_DEFAULT_FILTER_CONFIG() { \
     .interval_ms = 10,  \
     .data_filter_fn = NULL,  /* Set NULL to use default software filter */  \
+    .user_filter_ctx = NULL,  \
 }
 
 /**
