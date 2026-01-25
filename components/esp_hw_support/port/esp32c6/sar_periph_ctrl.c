@@ -135,7 +135,7 @@ void sar_periph_ctrl_adc_reset(void)
     // Acquire ADC reset lock to prevent temperature sensor readings during ADC reset
     adc_reset_lock_acquire();
 
-    ADC_BUS_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         // Save temperature sensor related register values before ADC reset
         tsens_ll_reg_values_t saved_tsens_regs = {};
         tsens_ll_backup_registers(&saved_tsens_regs);

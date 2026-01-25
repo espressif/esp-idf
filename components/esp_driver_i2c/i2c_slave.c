@@ -305,7 +305,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_ll_set_slave_addr(hal->dev, slave_config->slave_addr, false);
     i2c_ll_set_tout(hal->dev, I2C_LL_MAX_TIMEOUT);
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, slave_config->clk_source);
     }
     bool addr_10bit_en = slave_config->addr_bit_len != I2C_ADDR_BIT_LEN_7;

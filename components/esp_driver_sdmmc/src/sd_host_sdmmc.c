@@ -663,7 +663,7 @@ esp_err_t sd_host_set_delay_phase(sd_host_sdmmc_slot_t *slot)
         delay_phase_num = 0;
         break;
     }
-    SD_HOST_SDMMC_CLK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdmmc_ll_set_din_delay_phase(slot->ctlr->hal.dev, phase, speed_mode);
         sdmmc_ll_set_dout_delay_phase(slot->ctlr->hal.dev, phase, speed_mode);
     }
@@ -753,7 +753,7 @@ static esp_err_t sd_host_claim_controller(sd_host_sdmmc_ctlr_t *controller)
         if (found) {
             s_platform.controllers[i] = controller;
             controller->host_id = i;
-            SD_HOST_SDMMC_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 sdmmc_ll_enable_bus_clock(i, true);
                 sdmmc_ll_reset_register(i);
             }
@@ -774,7 +774,7 @@ static esp_err_t sd_host_declaim_controller(sd_host_sdmmc_ctlr_t *controller)
 
     _lock_acquire(&s_platform.mutex);
     s_platform.controllers[controller->host_id] = NULL;
-    SD_HOST_SDMMC_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(0, false);
     }
     _lock_release(&s_platform.mutex);
@@ -980,7 +980,7 @@ static esp_err_t sd_host_reset(sd_host_sdmmc_ctlr_t *ctlr)
 static void sd_host_set_clk_div(sd_host_sdmmc_ctlr_t *ctlr, soc_periph_sdmmc_clk_src_t src, int div)
 {
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)src, true));
-    SD_HOST_SDMMC_CLK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdmmc_ll_set_clock_div(ctlr->hal.dev, div);
         sdmmc_ll_select_clk_source(ctlr->hal.dev, src);
         sdmmc_ll_init_phase_delay(ctlr->hal.dev);

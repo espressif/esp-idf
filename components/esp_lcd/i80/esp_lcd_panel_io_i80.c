@@ -145,7 +145,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     }
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(bus->hal.dev, true);
     }
     // set peripheral clock resolution
@@ -554,7 +554,7 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
                         TAG, "get clock source frequency failed");
 
     ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_select_clk_src(bus->hal.dev, clk_src);
         // force to use integer division, as fractional division might lead to clock jitter
         lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);

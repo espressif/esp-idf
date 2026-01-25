@@ -18,12 +18,6 @@
 extern "C" {
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define SPI_COMMON_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_COMMON_RCC_CLOCK_ATOMIC()
-#endif
-
 #define BUS_LOCK_DEBUG  0
 
 #if BUS_LOCK_DEBUG

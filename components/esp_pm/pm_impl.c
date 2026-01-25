@@ -48,7 +48,6 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_private/esp_clk_utils.h"
 #include "esp_sleep.h"
 #include "esp_memory_utils.h"
@@ -979,7 +978,7 @@ void esp_pm_impl_init(void)
 
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
@@ -987,7 +986,7 @@ void esp_pm_impl_init(void)
     // Return value unused if asserts are disabled
     esp_err_t __attribute__((unused)) err = esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
     assert(err == ESP_OK);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif // CONFIG_ESP_CONSOLE_UART

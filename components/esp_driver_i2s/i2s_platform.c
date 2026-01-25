@@ -41,7 +41,7 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
         if ((!g_i2s.controller[id]) && (g_i2s.comp_name[id] == NULL)) {
             g_i2s.comp_name[id] = comp_name;
             /* Enable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_enable_bus_clock(id, true);
                 i2s_ll_reset_register(id);
                 i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), true);
@@ -58,7 +58,7 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
         if ((!g_i2s.lp_controller[id]) && (g_i2s.lp_comp_name[id] == NULL)) {
             g_i2s.lp_comp_name[id] = comp_name;
             /* Enable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 lp_i2s_ll_enable_module_clock(id, true);
                 lp_i2s_ll_reset_module_clock(id);
                 lp_i2s_ll_enable_rx_module_clock(id, true);
@@ -86,7 +86,7 @@ esp_err_t i2s_platform_release_occupation(i2s_ctlr_t type, int id)
         if (!g_i2s.controller[id]) {
             g_i2s.comp_name[id] = NULL;
             /* Disable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_enable_bus_clock(id, false);
                 i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), false);
             }
@@ -101,7 +101,7 @@ esp_err_t i2s_platform_release_occupation(i2s_ctlr_t type, int id)
         if (!g_i2s.lp_controller[id]) {
             g_i2s.lp_comp_name[id] = NULL;
             /* Disable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 lp_i2s_ll_enable_module_clock(id, false);
                 lp_i2s_ll_enable_rx_module_clock(id, false);
             }

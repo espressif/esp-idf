@@ -435,6 +435,6 @@ config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 
-config SOC_PERIPH_CLK_CTRL_SHARED
+config SOC_RCC_IS_INDEPENDENT
     bool
     default y

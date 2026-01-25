@@ -11,19 +11,19 @@
 #include "esp_log.h"
 #include "esp_cpu.h"
 #include "esp_attr.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "driver/uart.h"
 #include "hal/uart_periph.h"
 #include "esp_clk_tree.h"
-#include "esp_private/esp_clk_tree_common.h"
 #include "soc/gpio_periph.h"
 #include "esp_rom_gpio.h"
 #include "hal/uart_ll.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/periph_ctrl.h"
 
 #include "esp_app_trace_port.h"
 #include "esp_app_trace_util.h"
@@ -244,11 +244,11 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
 
         uart_data->hal_ctx.dev = UART_LL_GET_HW(uart_config->uart_num);
 
-        HP_UART_BUS_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             uart_ll_enable_bus_clock(uart_config->uart_num, true);
             uart_ll_reset_register(uart_config->uart_num);
         }
-        HP_UART_SRC_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             uart_ll_sclk_enable(uart_data->hal_ctx.dev);
         }
 
@@ -260,7 +260,7 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
         /* Initialize UART HAL (sets default 8N1 mode) */
         uart_hal_init(&uart_data->hal_ctx, uart_config->uart_num);
 
-        HP_UART_SRC_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             uart_hal_set_sclk(&uart_data->hal_ctx, UART_SCLK_DEFAULT);
             uart_hal_set_baudrate(&uart_data->hal_ctx, uart_config->baud_rate, sclk_hz);
         }
@@ -338,10 +338,10 @@ err_alloc_msg_buff:
     heap_caps_free(uart_data->tx_ring.buffer);
 err_init_ring_buff:
     esp_clk_tree_enable_src(UART_SCLK_DEFAULT, false);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_sclk_disable(uart_data->hal_ctx.dev);
     }
-    HP_UART_BUS_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_enable_bus_clock(uart_config->uart_num, false);
     }
     esp_gpio_revoke(gpio_mask);

@@ -151,12 +151,6 @@ We have two bits to control the interrupt:
 #define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_MASTER_PERI_CLOCK_ATOMIC()
-#endif
-
 #define SPI_PERIPH_SRC_FREQ_MAX     (80*1000*1000)    //peripheral hardware limitation for clock source into peripheral
 
 /**
@@ -614,7 +608,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
         // because `SPI_CLK_SRC_RC_FAST` will be disabled then, which block following transactions
         if (handle->host->cur_cs == DEV_NUM_MAX) {
             spi_device_acquire_bus(handle, portMAX_DELAY);
-            SPI_MASTER_PERI_CLOCK_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 spi_ll_set_clk_source(handle->host->hal.hw, SPI_CLK_SRC_DEFAULT);
             }
             spi_device_release_bus(handle);
@@ -689,7 +683,7 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_pr
     if (spi_bus_lock_touch(dev_lock) || clock_changed) {
         /* Configuration has not been applied yet. */
         spi_hal_setup_device(hal, hal_dev);
-        SPI_MASTER_PERI_CLOCK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
             //we set mst_div as const 2, then (hs_clk = 2*mst_clk) to ensure timing turning work as past
             //and sure (hs_div * mst_div = source_pre_div)

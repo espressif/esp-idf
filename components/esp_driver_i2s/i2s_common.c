@@ -1079,7 +1079,7 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     bool is_bound = true;
 
 #if SOC_I2S_HW_VERSION_2
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         if (dir == I2S_DIR_TX) {
             i2s_ll_tx_disable_clock(handle->controller->hal.dev);
         } else {
@@ -1092,7 +1092,7 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
         /* Must switch back to D2CLK on ESP32-S2,
          * because the clock of some registers are bound to APLL,
          * otherwise, once APLL is disabled, the registers can't be updated anymore */
-        I2S_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             if (handle->dir == I2S_DIR_TX) {
                 i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
             } else {
@@ -1481,7 +1481,7 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
         return ESP_ERR_INVALID_ARG;
     }
     /* Set the new divider for MCLK */
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         if (handle->dir == I2S_DIR_TX) {
             i2s_ll_tx_set_mclk(handle->controller->hal.dev, &mclk_div);
 #if SOC_I2S_HW_VERSION_2

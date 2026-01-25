@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -29,7 +30,6 @@
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -183,12 +183,12 @@ TEST_CASE("light sleep and frequency switching", "[lightsleep]")
     clk_source = UART_SCLK_XTAL;
 #endif
     esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
     TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif

@@ -17,7 +17,6 @@
 #include "hal/rtc_io_types.h"
 #include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 
 static const char *LP_UART_TAG = "lp_uart";
 
@@ -51,7 +50,7 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     }
 
     // LP UART clock source is mixed with other peripherals in the same register
-    LP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         /* Enable LP UART bus clock */
         lp_uart_ll_enable_bus_clock(0, true);
         lp_uart_ll_set_source_clk(hal.dev, clk_src);

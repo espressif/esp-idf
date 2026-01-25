@@ -52,13 +52,6 @@ static const char *TAG = "esp.emac";
 
 #define EMAC_MULTI_REG_MUTEX_TIMEOUT_MS (100)
 
-#if CONFIG_IDF_TARGET_ESP32P4
-// ESP32P4 EMAC interface clock configuration is shared among other modules in registers
-#define EMAC_IF_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define EMAC_IF_RCC_ATOMIC()
-#endif
-
 #define EMAC_USE_RETENTION_LINK (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_EMAC_SUPPORT_SLEEP_RETENTION)
 
 typedef struct {
@@ -285,11 +278,11 @@ static esp_err_t emac_esp32_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
         // Set RMII clk_rx/clk_tx divider to get 25MHz for 100mbps mode or 2.5MHz for 10mbps mode
         if (emac_hal_get_phy_intf(&emac->hal) == EMAC_DATA_INTERFACE_RMII) {
             if (speed == ETH_SPEED_10M) {
-                EMAC_IF_RCC_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     emac_hal_clock_rmii_rx_tx_div(&emac->hal, RMII_10M_SPEED_RX_TX_CLK_DIV);
                 }
             } else {
-                EMAC_IF_RCC_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     emac_hal_clock_rmii_rx_tx_div(&emac->hal, RMII_100M_SPEED_RX_TX_CLK_DIV);
                 }
             }
@@ -778,7 +771,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
         ESP_GOTO_ON_ERROR(emac_esp_iomux_init_mii(mii_data_gpio), err, TAG, "invalid EMAC MII data plane GPIO");
 #endif // SOC_EMAC_MII_USE_GPIO_MATRIX
         /* Enable MII clock */
-        EMAC_IF_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             emac_hal_clock_enable_mii(&emac->hal);
         }
         break;
@@ -793,7 +786,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
         /* If ref_clk is configured as input */
         if (esp32_emac_config->clock_config.rmii.clock_mode == EMAC_CLK_EXT_IN) {
             ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_input(esp32_emac_config->clock_config.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock input GPIO");
-            EMAC_IF_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 emac_hal_clock_enable_rmii_input(&emac->hal);
             }
         } else if (esp32_emac_config->clock_config.rmii.clock_mode == EMAC_CLK_OUT) {
@@ -803,7 +796,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
             ESP_GOTO_ON_FALSE(esp32_emac_config->clock_config_out_in.rmii.clock_mode == EMAC_CLK_EXT_IN && esp32_emac_config->clock_config_out_in.rmii.clock_gpio >= 0,
                               ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC input of output clock mode");
             ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_input(esp32_emac_config->clock_config_out_in.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock input GPIO");
-            EMAC_IF_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 emac_hal_clock_enable_rmii_input(&emac->hal);
             }
 #elif CONFIG_IDF_TARGET_ESP32
@@ -817,7 +810,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
                 ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_ouput(esp32_emac_config->clock_config.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock output GPIO");
             }
             /* Enable RMII Output clock */
-            EMAC_IF_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 emac_hal_clock_enable_rmii_output(&emac->hal);
             }
         } else {
@@ -837,7 +830,7 @@ esp_err_t esp_eth_mac_ptp_enable(esp_eth_mac_t *mac, const eth_mac_ptp_config_t 
 {
     ESP_RETURN_ON_FALSE(mac && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    EMAC_IF_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         emac_hal_clock_enable_ptp(&emac->hal, config->clk_src, true);
     }
     emac_hal_ptp_config_t ptp_config = {
@@ -857,7 +850,7 @@ esp_err_t esp_eth_mac_ptp_disable(esp_eth_mac_t *mac)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     ESP_RETURN_ON_ERROR(emac_hal_ptp_stop(&emac->hal), TAG, "failed to stop PTP module");
     emac_esp_dma_ts_enable(emac->emac_dma_hndl, false);
-    EMAC_IF_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         emac_hal_clock_enable_ptp(&emac->hal, 0, false);
     }
     return ESP_OK;

@@ -88,7 +88,7 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         if (handle->dir == I2S_DIR_TX) {
             i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src, &ret_mclk_div);
         } else {
@@ -190,21 +190,21 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
     /* Bind the MCLK signal to the TX or RX clock source */
     if (!handle->controller->full_duplex) {
         if (handle->dir == I2S_DIR_TX) {
-            I2S_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
             }
         } else {
-            I2S_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
             }
         }
     } else if (handle->role == I2S_ROLE_MASTER) {
         if (handle->dir == I2S_DIR_TX) {
-            I2S_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
             }
         } else {
-            I2S_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
             }
         }

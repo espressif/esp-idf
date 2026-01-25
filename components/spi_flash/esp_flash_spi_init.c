@@ -40,12 +40,6 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #error "Flash chip size equal or over 32MB memory cannot use driver in ROM"
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define GPSPI_FLASH_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define GPSPI_FLASH_RCC_CLOCK_ATOMIC()
-#endif
-
 /* This pointer is defined in ROM and extern-ed on targets where CONFIG_SPI_FLASH_ROM_IMPL = y*/
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 esp_flash_t *esp_flash_default_chip = NULL;
@@ -293,7 +287,7 @@ static uint32_t init_gpspi_clock(esp_flash_t *chip, const esp_flash_spi_device_c
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq);
 
     // Enable GPSPI clock
-    GPSPI_FLASH_RCC_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         gpspi_flash_ll_enable_clock(spi_flash_ll_get_hw(config->host_id), true);
         gpspi_flash_ll_set_clk_source(spi_flash_ll_get_hw(config->host_id), clk_src);
     }
@@ -349,7 +343,7 @@ static void deinit_gpspi_clock(esp_flash_t *chip)
     }
 
     // Disable GPSPI clock
-    GPSPI_FLASH_RCC_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         gpspi_flash_ll_enable_clock(spi_flash_ll_get_hw(host_id), false);
     }
 

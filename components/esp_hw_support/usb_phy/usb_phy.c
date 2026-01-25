@@ -25,12 +25,6 @@
 #include "esp_sleep.h"
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define USB_PHY_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define USB_PHY_RCC_ATOMIC()
-#endif
-
 static const char *USBPHY_TAG = "usb_phy";
 
 #define USBPHY_NOT_INIT_ERR_STR    "USB_PHY is not initialized"
@@ -283,13 +277,13 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     phy_context->status = USB_PHY_STATUS_IN_USE;
 
     if (phy_target != USB_PHY_TARGET_UTMI) {
-        USB_PHY_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             usb_wrap_hal_init(&phy_context->wrap_hal);
         }
     } else {
 #if (SOC_USB_UTMI_PHY_NUM > 0)
         usb_utmi_hal_context_t utmi_hal_context; // Unused for now
-        USB_PHY_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             usb_utmi_hal_init(&utmi_hal_context);
         }
 #endif
@@ -349,7 +343,7 @@ static void phy_uninstall(void)
     if (p_phy_ctrl_obj->ref_count == 0) {
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
-        USB_PHY_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             // Disable USB peripheral without reset the module
             usb_wrap_hal_disable();
 #if (SOC_USB_UTMI_PHY_NUM > 0)

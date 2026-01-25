@@ -10,18 +10,6 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/rtc_clk.h"
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define MCPWM_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define MCPWM_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define MCPWM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define MCPWM_RCC_ATOMIC()
-#endif
-
 #if MCPWM_USE_RETENTION_LINK
 static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg);
 #endif
@@ -67,14 +55,14 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             }
 #endif // MCPWM_USE_RETENTION_LINK
             // enable APB to access MCPWM registers
-            MCPWM_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 mcpwm_ll_enable_bus_clock(group_id, true);
                 mcpwm_ll_reset_register(group_id);
             }
             // enable function clock before initialize HAL context
             // MCPWM registers are in the core clock domain, there's a bridge between APB and the Core clock domain
             // if the core clock is not enabled, then even the APB clock is enabled, the MCPWM registers are still not accessible
-            MCPWM_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 mcpwm_ll_group_enable_clock(group_id, true);
             }
             // initialize HAL context
@@ -112,12 +100,12 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
     if (s_platform.group_ref_counts[group_id] == 0) {
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platform
-        MCPWM_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_group_enable_clock(group_id, false);
         }
         // hal layer deinitialize
         mcpwm_hal_deinit(&group->hal);
-        MCPWM_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_enable_bus_clock(group_id, false);
         }
 #if CONFIG_PM_ENABLE
@@ -202,7 +190,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
 #endif // CONFIG_PM_ENABLE
 
         ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
-        MCPWM_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_group_set_clock_source(group_id, clk_src);
         }
     }
@@ -261,7 +249,7 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
     if (group->prescale == 0) {
         group->prescale = group_prescale;
         group->resolution_hz = group_resolution_hz;
-        MCPWM_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_group_set_clock_prescale(group_id, group_prescale);
         }
     } else {

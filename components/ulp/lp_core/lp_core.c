@@ -25,12 +25,6 @@
 #include "esp32p4/rom/rtc.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
-#define LP_CORE_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LP_CORE_RCC_ATOMIC()
-#endif
-
 #if ESP_ROM_HAS_LP_ROM
 extern uint32_t _rtc_ulp_memory_start;
 #endif //ESP_ROM_HAS_LP_ROM
@@ -92,7 +86,7 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
 
 #endif //ESP_ROM_HAS_LP_ROM
 
-    LP_CORE_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
 #if CONFIG_ULP_NORESET_UNDER_DEBUG
         /* lp_core module reset causes loss of configured HW breakpoints and dcsr.ebreak* */
         if (!esp_cpu_dbgr_is_attached()) {

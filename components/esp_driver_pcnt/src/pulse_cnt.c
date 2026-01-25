@@ -50,18 +50,6 @@
 
 #define PCNT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define PCNT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PCNT_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define PCNT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PCNT_RCC_ATOMIC()
-#endif
-
 static const char *TAG = "pcnt";
 
 typedef struct pcnt_platform_t pcnt_platform_t;
@@ -922,7 +910,7 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
             group->intr_priority = -1;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable APB access pcnt registers
-            PCNT_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 pcnt_ll_enable_bus_clock(group_id, true);
                 pcnt_ll_reset_register(group_id);
             }
@@ -962,7 +950,7 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
         assert(s_platform.groups[group_id]);
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platform
-        PCNT_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             pcnt_ll_enable_bus_clock(group_id, false);
         }
 #if PCNT_USE_RETENTION_LINK
@@ -1017,7 +1005,7 @@ static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
-        PCNT_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             pcnt_ll_set_clock_source(group->hal.dev, clk_src);
         }
     }

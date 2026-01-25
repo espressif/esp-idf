@@ -26,12 +26,6 @@
  it shouldn't need anything more than a simple, straightforward driver.
 */
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define USJ_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define USJ_RCC_ATOMIC()
-#endif
-
 // The hardware buffer max size is 64, both for RX and TX.
 #define USB_SER_JTAG_ENDP_SIZE          (64)
 #define USB_SER_JTAG_RX_MAX_SIZE        (USB_SER_JTAG_ENDP_SIZE)
@@ -204,7 +198,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     }
 
     // Enable USB-Serial-JTAG peripheral module clock
-    USJ_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         usb_serial_jtag_ll_enable_bus_clock(true);
     }
 

@@ -237,7 +237,7 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
 {
     // ensure the HW state machine is stopped
     lcd_ll_stop(rgb_panel->hal.dev);
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     }
     if (rgb_panel->panel_id >= 0) {
@@ -373,7 +373,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     lcd_hal_init(&rgb_panel->hal, panel_id);
     lcd_hal_context_t *hal = &rgb_panel->hal;
     // enable clock
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(hal->dev, true);
     }
     // set clock source
@@ -590,7 +590,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     // set pixel clock frequency
     hal_utils_clk_div_t lcd_clk_div = {};
     rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, &lcd_clk_div);
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_set_group_clock_coeff(rgb_panel->hal.dev, lcd_clk_div.integer, lcd_clk_div.denominator, lcd_clk_div.numerator);
     }
     // pixel clock phase and polarity
@@ -885,7 +885,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
                         TAG, "get clock source frequency failed");
     rgb_panel->src_clk_hz = src_clk_hz;
     ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_select_clk_src(rgb_panel->hal.dev, clk_src);
     }
 
@@ -1220,7 +1220,7 @@ IRAM_ATTR static void lcd_rgb_panel_try_update_pclk(esp_rgb_panel_t *rgb_panel)
     if (unlikely(rgb_panel->flags.need_update_pclk)) {
         rgb_panel->flags.need_update_pclk = false;
         rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, &lcd_clk_div);
-        LCD_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             lcd_ll_set_group_clock_coeff(rgb_panel->hal.dev, lcd_clk_div.integer, lcd_clk_div.denominator, lcd_clk_div.numerator);
         }
     }

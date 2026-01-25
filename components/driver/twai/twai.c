@@ -58,18 +58,6 @@
 #define ALERT_LOG_LEVEL_WARNING     TWAI_ALERT_ARB_LOST  //Alerts above and including this level use ESP_LOGW
 #define ALERT_LOG_LEVEL_ERROR       TWAI_ALERT_TX_FAILED //Alerts above and including this level use ESP_LOGE
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_RCC_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define TWAI_PERI_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_PERI_ATOMIC()
-#endif
-
 #define TWAI_USE_RETENTION_LINK  (SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 /* ------------------ Typedefs, structures, and variables ------------------- */
@@ -232,7 +220,7 @@ static void twai_intr_handler_main(void *arg)
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         ESP_EARLY_LOGD(TWAI_TAG, "Triggered peripheral reset");
         twai_hal_prepare_for_reset(p_twai_obj->hal);
-        TWAI_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             twai_ll_reset_register(p_twai_obj->controller_id);
         }
         twai_hal_recover_from_reset(p_twai_obj->hal);
@@ -547,11 +535,11 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     portEXIT_CRITICAL(&g_spinlock);
 
     //Enable TWAI peripheral register clock
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, true);
         twai_ll_reset_register(controller_id);
     }
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         //Enable functional clock
         twai_ll_set_clock_source(p_twai_obj->controller_id, clk_src);
         twai_ll_enable_clock(p_twai_obj->controller_id, true);
@@ -622,10 +610,10 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
 
     //Clear registers by reading
     twai_hal_deinit(p_twai_obj->hal);
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_clock(controller_id, false);
     }
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, false);
     }
 

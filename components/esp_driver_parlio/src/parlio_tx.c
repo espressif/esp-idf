@@ -232,7 +232,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 #else
     tx_unit->out_clk_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &clk_div.integer);
 #endif
-    PARLIO_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         // turn on the tx module clock to sync the clock divider configuration because of the CDC (Cross Domain Crossing)
         parlio_ll_tx_enable_clock(hal->regs, true);
         parlio_ll_tx_set_clock_source(hal->regs, clk_src);
@@ -304,11 +304,11 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     ESP_GOTO_ON_ERROR(parlio_tx_unit_init_dma(unit, config), err, TAG, "install tx DMA failed");
 
     // reset fifo and core clock domain
-    PARLIO_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_reset_clock(hal->regs);
     }
     parlio_ll_tx_reset_fifo(hal->regs);
-    PARLIO_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         // stop output clock
         parlio_ll_tx_enable_clock(hal->regs, false);
     }
@@ -482,11 +482,11 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     // And then switched back to the actual clock after the reset is completed.
     bool switch_clk = tx_unit->clk_src == PARLIO_CLK_SRC_EXTERNAL ? true : false;
     if (switch_clk) {
-        PARLIO_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_XTAL);
         }
     }
-    PARLIO_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_reset_clock(hal->regs);
     }
     // Since the threshold of the clock divider counter is not updated simultaneously with the clock source switching.
@@ -494,11 +494,11 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     // We place parlio_mount_buffer between reset clock and disable clock to ensure enough time for updating the threshold of the clock divider counter.
     parlio_mount_buffer(tx_unit, t);
     if (switch_clk) {
-        PARLIO_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_EXTERNAL);
         }
     }
-    PARLIO_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_enable_clock(hal->regs, false);
     }
     // reset tx fifo after disabling tx core clk to avoid unexpected rempty interrupt
@@ -539,7 +539,7 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     while (parlio_ll_tx_is_ready(hal->regs) == false);
     // turn on the core clock after we start the TX unit
     parlio_ll_tx_start(hal->regs, true);
-    PARLIO_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_enable_clock(hal->regs, true);
     }
 }
@@ -563,7 +563,7 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
     }
 
     // the chip may resumes from light-sleep, in which case the register configuration needs to be resynchronized
-    PARLIO_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_enable_clock(hal->regs, true);
     }
 
@@ -610,10 +610,10 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     // stop the DMA engine, reset the peripheral state
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     // to stop the undergoing transaction, disable and reset clock
-    PARLIO_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_enable_clock(hal->regs, false);
     }
-    PARLIO_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         parlio_ll_tx_reset_clock(hal->regs);
     }
     gdma_stop(tx_unit->dma_chan);

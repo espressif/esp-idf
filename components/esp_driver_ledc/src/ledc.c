@@ -47,18 +47,6 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_CLK_SRC_FREQ_PRECISION     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define LEDC_BUS_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LEDC_BUS_CLOCK_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define LEDC_FUNC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LEDC_FUNC_CLOCK_ATOMIC()
-#endif
-
 #define LEDC_USE_RETENTION_LINK  (SOC_LEDC_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 typedef enum {
@@ -428,12 +416,12 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
         ledc_obj_t *ledc_new_mode_obj = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (ledc_new_mode_obj) {
             new_ctx = true;
-            LEDC_BUS_CLOCK_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 ledc_ll_enable_bus_clock(true);
                 ledc_ll_enable_reset_reg(false);
             }
             // Enable core clock gating at early stage, some LEDC registers and gamma RAM rely on the LEDC core clock existence
-            LEDC_FUNC_CLOCK_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 ledc_ll_enable_clock(LEDC_LL_GET_HW(), true);
             }
             ledc_hal_init(&(ledc_new_mode_obj->ledc_hal), speed_mode);
@@ -711,7 +699,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
             ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)glb_clk, true), LEDC_TAG, "clock source enable failed");
-            LEDC_FUNC_CLOCK_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
             }
         }

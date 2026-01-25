@@ -206,7 +206,7 @@ void adc_apb_periph_claim(void)
     esp_os_enter_critical(&s_spinlock);
     s_adc_digi_ctrlr_cnt++;
     if (s_adc_digi_ctrlr_cnt == 1) {
-        ADC_BUS_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             adc_ll_enable_bus_clock(true);
 #if SOC_RCC_IS_INDEPENDENT
             adc_ll_enable_func_clock(true);
@@ -223,7 +223,7 @@ void adc_apb_periph_free(void)
     esp_os_enter_critical(&s_spinlock);
     s_adc_digi_ctrlr_cnt--;
     if (s_adc_digi_ctrlr_cnt == 0) {
-        ADC_BUS_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             adc_ll_enable_bus_clock(false);
 #if SOC_RCC_IS_INDEPENDENT
             adc_ll_enable_func_clock(false);

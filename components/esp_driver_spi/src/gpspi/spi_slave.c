@@ -378,7 +378,7 @@ esp_err_t spi_slave_enable(spi_host_device_t host)
 
 // If going to TOP_PD power down, the bus_clock is required during reg_dma, and will be disabled by sleep flow then
 #if !CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-    SPI_COMMON_RCC_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         spi_ll_enable_bus_clock(host, true);
     }
 #endif
@@ -398,7 +398,7 @@ esp_err_t spi_slave_disable(spi_host_device_t host)
 
 // same as above
 #if !CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-    SPI_COMMON_RCC_CLOCK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         spi_ll_enable_bus_clock(host, false);
     }
 #endif

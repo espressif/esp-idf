@@ -29,7 +29,7 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
         if (group) {
             new_group = true;
             s_platform.groups[group_id] = group;
-            PARLIO_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 parlio_ll_enable_bus_clock(group_id, true);
                 parlio_ll_reset_register(group_id);
             }
@@ -84,7 +84,7 @@ void parlio_release_group_handle(parlio_group_t *group)
         s_platform.groups[group_id] = NULL;
         // hal layer deinitialize
         parlio_hal_deinit(&group->hal);
-        PARLIO_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             parlio_ll_enable_bus_clock(group_id, false);
         }
     }

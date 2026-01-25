@@ -32,13 +32,6 @@
 
 #define ETM_USE_RETENTION_LINK  (SOC_ETM_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define ETM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define ETM_RCC_ATOMIC()
-#endif
-
 ESP_LOG_ATTR_TAG(TAG, "etm");
 
 typedef struct etm_platform_t etm_platform_t;
@@ -117,7 +110,7 @@ static etm_group_t *etm_acquire_group_handle(int group_id)
             group->group_id = group_id;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable bus clock for the ETM registers
-            ETM_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 etm_ll_enable_bus_clock(group_id, true);
                 etm_ll_reset_register(group_id);
             }
@@ -172,7 +165,7 @@ static void etm_release_group_handle(etm_group_t *group)
         s_platform.groups[group_id] = NULL; // deregister from platform
         etm_hal_deinit(&group->hal);
         // disable the bus clock for the ETM registers
-        ETM_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             etm_ll_enable_bus_clock(group_id, false);
         }
 
