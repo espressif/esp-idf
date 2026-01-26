@@ -598,8 +598,10 @@ examples/peripherals/twai/cybergear:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
-    - *common_components
     - esp_driver_twai
+    - esp_hal_twai
+    - esp_hw_support
+    - soc
 
 examples/peripherals/twai/twai_error_recovery:
   disable:
@@ -609,8 +611,10 @@ examples/peripherals/twai/twai_error_recovery:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
-    - *common_components
     - esp_driver_twai
+    - esp_hal_twai
+    - esp_hw_support
+    - soc
 
 examples/peripherals/twai/twai_network/twai_listen_only:
   disable:
@@ -620,8 +624,10 @@ examples/peripherals/twai/twai_network/twai_listen_only:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
-    - *common_components
     - esp_driver_twai
+    - esp_hal_twai
+    - esp_hw_support
+    - soc
 
 examples/peripherals/twai/twai_network/twai_sender:
   disable:
@@ -631,8 +637,10 @@ examples/peripherals/twai/twai_network/twai_sender:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
-    - *common_components
     - esp_driver_twai
+    - esp_hal_twai
+    - esp_hw_support
+    - soc
 
 examples/peripherals/twai/twai_utils:
   disable:
@@ -642,8 +650,10 @@ examples/peripherals/twai/twai_utils:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
-    - *common_components
     - esp_driver_twai
+    - esp_hal_twai
+    - esp_hw_support
+    - soc
 
 examples/peripherals/uart/uart_dma_ota:
   disable:
