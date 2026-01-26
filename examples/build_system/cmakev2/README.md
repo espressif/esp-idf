@@ -109,13 +109,24 @@ Demonstrates using ESP-IDF component manager with `cmakev2`
 ---
 
 ### import_lib
-**Location:** [import_lib/](.feature/import_lib/)
+**Location:** [import_lib/](./features/import_lib/)
 
 Demonstrates importing external third-party libraries using CMake's `ExternalProject` module.
 
 **Key Concepts:** `ExternalProject_Add()`, cross-compilation, `add_prebuilt_library()`
 
 **When to use:** When you need to download and build external libraries as part of your project.
+
+---
+
+### import_prebuilt
+**Location:** [import_prebuilt/](./features/import_prebuilt/)
+
+Demonstrates importing a prebuilt static library in the ESP-IDF build system with `cmakev2`.
+
+**Key Concepts:** `add_prebuilt_library()`, cross-project component sharing, dependency management
+
+**When to use:** When you have a pre-compiled component library that you want to use in your project.
 
 ---
 
