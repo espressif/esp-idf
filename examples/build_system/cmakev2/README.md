@@ -106,6 +106,19 @@ Demonstrates using ESP-IDF component manager with `cmakev2`
 
 **Key Concepts:** Defining component dependencies for the application using `idf_component.yml`
 
+---
+
+### import_lib
+**Location:** [import_lib/](.feature/import_lib/)
+
+Demonstrates importing external third-party libraries using CMake's `ExternalProject` module.
+
+**Key Concepts:** `ExternalProject_Add()`, cross-compilation, `add_prebuilt_library()`
+
+**When to use:** When you need to download and build external libraries as part of your project.
+
+---
+
 ## Build System v2 API Quick Reference
 
 ### Project Setup
