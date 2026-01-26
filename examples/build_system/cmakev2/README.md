@@ -145,6 +145,19 @@ Demonstrates building multiple configurations of a single application.
 - CMake presets for easy configuration switching
 - Separate build directories for side-by-side builds
 
+---
+
+### plugins
+**Location:** [plugins/](./features/plugins/)
+
+Demonstrates link-time plugin registration using whole-archive linking and constructor functions.
+
+**Key Concepts:** `WHOLE_ARCHIVE`, constructor functions, dynamic registration, static registration
+
+**When to use:** When you need a flexible plugin system that automatically discovers and registers plugins at runtime.
+
+---
+
 ## Build System v2 API Quick Reference
 
 ### Project Setup
