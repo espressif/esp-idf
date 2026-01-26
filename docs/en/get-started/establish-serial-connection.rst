@@ -264,7 +264,9 @@ on Arch Linux this is done by adding the user to ``uucp`` group with the followi
 
     sudo usermod -a -G uucp $USER
 
-Make sure you re-login to enable read and write permissions for the serial port.
+.. note::
+
+    Make sure you re-login to enable read and write permissions for the serial port.
 
 Verify Serial Connection
 ------------------------
