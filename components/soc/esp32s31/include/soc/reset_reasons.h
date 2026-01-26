@@ -1,12 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
-
-// TODO: to be checked IDF-14672
 
 //+-----------------------------------------------Terminology---------------------------------------------+
 //|                                                                                                       |
@@ -33,7 +31,9 @@ typedef enum {
     RESET_REASON_CORE_SW           = 0x03, // Software resets the digital core
     RESET_REASON_CORE_DEEP_SLEEP   = 0x05, // Deep sleep reset the digital core, check when doing sleep bringup
     RESET_REASON_CORE_PMU_PWR_DOWN = 0x05, // PMU HP power down core reset
-    RESET_REASON_CORE_MWDT         = 0x07, // MWDT core reset
+    RESET_REASON_CPU_PMU_PWR_DOWN  = 0x06, // PMU HP CPU power down reset
+    RESET_REASON_CORE_MWDT0        = 0x07, // MWDT0 core reset
+    RESET_REASON_CORE_MWDT1        = 0x08, // MWDT1 core reset
     RESET_REASON_CORE_RWDT         = 0x09, // RWDT core reset
     RESET_REASON_CPU_MWDT          = 0x0B, // MWDT HP CPU 0/1 reset
     RESET_REASON_CPU_SW            = 0x0C, // Software resets HP CPU 0/1

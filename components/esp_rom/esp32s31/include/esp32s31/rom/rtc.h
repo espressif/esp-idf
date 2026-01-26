@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,6 +93,12 @@ extern "C" {
 #define RTC_DEEP_SLEEP_STUB_CHECK_CRC 0x1
 #define RTC_MEMORY_CRC_REG            RTC_CNTL_STORE7_REG
 #define ROM_LOG_CTRL_REG              RTC_XTAL_FREQ_REG
+
+/* Reset reason hint register - same as RTC_ENTRY_ADDR_REG, can be used for both
+ * deep sleep wake stub entry address and reset reason hint, since wake stub
+ * is only used for deep sleep reset.
+ */
+#define RTC_RESET_CAUSE_REG RTC_ENTRY_ADDR_REG
 
 // used to check if app core need hot boot in start.S
 #define APP_CORE_BOOT_ADDR_REG LP_SYS_BOOT_ADDR_HP_CORE1_REG
