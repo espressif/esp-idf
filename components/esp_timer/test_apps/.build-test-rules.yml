@@ -2,8 +2,8 @@
 
 components/esp_timer/test_apps:
   depends_components:
-    - *common_components
     - esp_timer
+    - esp_hal_timg
   disable:
     - if: CONFIG_NAME == "dfs" and SOC_CLK_XTAL32K_SUPPORTED != 1
       reason: The test requires the XTAL32K clock to measure the esp_timer timing accuracy
