@@ -1,5 +1,6 @@
 .spi_depends_default: &spi_depends_default
   depends_components:
+    - *common_components
     - esp_mm  # for cache
     - esp_driver_spi
     - esp_driver_gpio

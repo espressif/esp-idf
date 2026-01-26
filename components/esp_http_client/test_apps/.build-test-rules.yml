@@ -5,4 +5,5 @@ components/esp_http_client/test_apps:
     - if: CONFIG_NAME == "client_only_mbedtls" and IDF_TARGET not in ["esp32c3"]
       reason: Testing on one target is enough
   depends_components:
+    - *common_components
     - esp_http_client

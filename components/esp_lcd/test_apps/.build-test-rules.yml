@@ -4,6 +4,7 @@ components/esp_lcd/test_apps/i2c_lcd:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_lcd
     - esp_driver_i2c
   disable_test:
@@ -13,6 +14,7 @@ components/esp_lcd/test_apps/i2c_lcd:
 
 components/esp_lcd/test_apps/i80_lcd:
   depends_components:
+    - *common_components
     - esp_lcd
     - esp_driver_i2s
   disable:
@@ -20,6 +22,7 @@ components/esp_lcd/test_apps/i80_lcd:
 
 components/esp_lcd/test_apps/mipi_dsi_lcd:
   depends_components:
+    - *common_components
     - esp_lcd
   disable:
     - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
@@ -30,6 +33,7 @@ components/esp_lcd/test_apps/mipi_dsi_lcd:
 
 components/esp_lcd/test_apps/parlio_lcd:
   depends_components:
+    - *common_components
     - esp_lcd
     - esp_driver_parlio
   disable:
@@ -37,12 +41,14 @@ components/esp_lcd/test_apps/parlio_lcd:
 
 components/esp_lcd/test_apps/rgb_lcd:
   depends_components:
+    - *common_components
     - esp_lcd
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
 
 components/esp_lcd/test_apps/spi_lcd:
   depends_components:
+    - *common_components
     - esp_lcd
     - esp_driver_spi
   disable:

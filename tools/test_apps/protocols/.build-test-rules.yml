@@ -6,6 +6,7 @@ tools/test_apps/protocols/esp_netif/build_config:
       temporary: false
       reason: No need to test on all targets
   depends_components:
+    - *common_components
     - esp_netif
 
 tools/test_apps/protocols/netif_components:
@@ -14,5 +15,6 @@ tools/test_apps/protocols/netif_components:
       temporary: true
       reason: one target is enough to verify netif component dependencies
   depends_components:
+    - *common_components
     - esp_netif
     - lwip

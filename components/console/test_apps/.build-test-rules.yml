@@ -5,6 +5,7 @@ components/console/test_apps/console:
     - if: IDF_TARGET in["esp32", "esp32c3", "linux"]
       reason: Testing all major architectures
   depends_components:
+    - *common_components
     - console
     - esp_driver_uart
     - esp_driver_usb_serial_jtag

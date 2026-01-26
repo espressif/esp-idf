@@ -5,5 +5,6 @@ components/espcoredump/test_apps:
     - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c2"]
       reason: Can test one chip per architecture, plus C2 which doesn't have RTC RAM
   depends_components:
+    - *common_components
     - espcoredump
     - esp_system    # for linker scripts

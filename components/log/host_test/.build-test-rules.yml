@@ -5,4 +5,5 @@ components/log/host_test/log_test:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
   depends_components:
+    - *common_components
     - log

@@ -4,5 +4,6 @@ components/esp_driver_ledc/test_apps/ledc:
   disable:
     - if: SOC_LEDC_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_ledc
     - esp_hal_ledc

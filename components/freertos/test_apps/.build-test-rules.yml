@@ -5,6 +5,7 @@ components/freertos/test_apps/build_tests/freertos_build_test:
     - if: CONFIG_NAME == "timers_disabled" and IDF_TARGET != "esp32"
     - if: CONFIG_NAME == "smp" and IDF_TARGET not in ["esp32"]
   depends_components:
+    - *common_components
     - freertos
     - esp_system # trigger on changes to idle / tick hooks, wdt, entry point to freertos code
     - esp_hw_support # trigger on changes to cpu.c
@@ -14,6 +15,7 @@ components/freertos/test_apps/build_tests/orig_inc_path:
     - if: IDF_TARGET in ["esp32"]
       reason: The feature only depends on the build system, nothing target-specific that needs to be tested
   depends_components:
+    - *common_components
     - freertos
 
 components/freertos/test_apps/freertos:
@@ -23,6 +25,7 @@ components/freertos/test_apps/freertos:
       reason: target(s) not supported yet
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
   depends_components:
+    - *common_components
     - freertos
     - esp_system # trigger on changes to idle / tick hooks, wdt, entry point to freertos code
     - esp_hw_support # trigger on changes to cpu.c

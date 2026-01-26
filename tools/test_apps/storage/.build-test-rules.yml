@@ -2,6 +2,7 @@
 
 tools/test_apps/storage/fatfsgen:
   depends_components:
+    - *common_components
     - fatfs
     - vfs
   disable_test:
@@ -17,6 +18,7 @@ tools/test_apps/storage/partition_table_readonly:
       temporary: true
       reason: there are potential bugs with pytest when using flash encryption and NVS partition with nvs_create_partition_image #TODO: IDF-8300
   depends_components:
+    - *common_components
     - partition_table
     - spi_flash
     - esp_partition
@@ -31,6 +33,7 @@ tools/test_apps/storage/sdmmc_console:
       temporary: true
       reason: No runners for other targets yet
   depends_components:
+    - *common_components
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdspi
@@ -43,6 +46,7 @@ tools/test_apps/storage/std_filesystem:
     - if: IDF_TOOLCHAIN == "clang"
       reason: Issue with C++ exceptions on Xtensa, issue with getrandom linking on RISC-V
   depends_components:
+    - *common_components
     - vfs
     - esp_libc
     - fatfs

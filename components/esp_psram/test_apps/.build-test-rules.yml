@@ -5,6 +5,7 @@ components/esp_psram/test_apps/psram:
     - if: SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "xip_psram_no_boot_init" and SOC_SPIRAM_XIP_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_psram
     - esp_mm
     - esp_driver_gpio

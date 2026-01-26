@@ -2,6 +2,7 @@
 
 components/esp_hal_security/test_apps/crypto:
   depends_components:
+    - *common_components
     - efuse
     - mbedtls
     - esp_security

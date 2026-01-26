@@ -2,10 +2,12 @@
 
 examples/storage/custom_flash_driver:
   depends_components:
+    - *common_components
     - spi_flash
 
 examples/storage/emmc:
   depends_components:
+    - *common_components
     - fatfs
     - vfs
     - sdmmc
@@ -17,6 +19,7 @@ examples/storage/emmc:
 
 examples/storage/partition_api/partition_find:
   depends_components:
+    - *common_components
     - esp_partition
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
@@ -24,6 +27,7 @@ examples/storage/partition_api/partition_find:
 
 examples/storage/partition_api/partition_mmap:
   depends_components:
+    - *common_components
     - esp_partition
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
@@ -31,6 +35,7 @@ examples/storage/partition_api/partition_mmap:
 
 examples/storage/partition_api/partition_ops:
   depends_components:
+    - *common_components
     - esp_partition
     - spi_flash
   disable_test:
@@ -39,6 +44,7 @@ examples/storage/partition_api/partition_ops:
 
 examples/storage/parttool:
   depends_components:
+    - *common_components
     - partition_table
   disable_test:
     - if: IDF_TARGET != "esp32"
@@ -46,6 +52,7 @@ examples/storage/parttool:
 
 examples/storage/perf_benchmark:
   depends_components:
+    - *common_components
     - fatfs
     - spi_flash
     - vfs
@@ -65,6 +72,7 @@ examples/storage/perf_benchmark:
 
 examples/storage/sd_card/sdmmc:
   depends_components:
+    - *common_components
     - fatfs
     - vfs
     - sdmmc
@@ -78,6 +86,7 @@ examples/storage/sd_card/sdmmc:
 
 examples/storage/sd_card/sdspi:
   depends_components:
+    - *common_components
     - fatfs
     - vfs
     - sdmmc
@@ -90,6 +99,7 @@ examples/storage/sd_card/sdspi:
 
 examples/storage/semihost_vfs:
   depends_components:
+    - *common_components
     - vfs
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
@@ -98,6 +108,7 @@ examples/storage/semihost_vfs:
 
 examples/storage/spiffs:
   depends_components:
+    - *common_components
     - spiffs
     - vfs
   disable_test:
@@ -106,6 +117,7 @@ examples/storage/spiffs:
 
 examples/storage/spiffsgen:
   depends_components:
+    - *common_components
     - spiffs
     - vfs
     - mbedtls
@@ -115,6 +127,7 @@ examples/storage/spiffsgen:
 
 examples/storage/wear_levelling:
   depends_components:
+    - *common_components
     - vfs
     - wear_levelling
     - fatfs

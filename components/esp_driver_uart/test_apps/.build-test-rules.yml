@@ -11,6 +11,7 @@ components/esp_driver_uart/test_apps/rs485:
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - esp_driver_uart
     - esp_hal_uart
     - esp_driver_gpio
@@ -22,12 +23,14 @@ components/esp_driver_uart/test_apps/uart:
       temporary: true
       reason: not support yet # TODO: [ESP32S31] IDF-14789
   depends_components:
+    - *common_components
     - esp_driver_uart
     - esp_hal_uart
     - esp_driver_gpio
 
 components/esp_driver_uart/test_apps/uart_vfs:
   depends_components:
+    - *common_components
     - esp_driver_uart
     - esp_hal_uart
     - vfs
@@ -36,6 +39,7 @@ components/esp_driver_uart/test_apps/uhci:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_uart
     - esp_hal_uart
     - esp_driver_gpio

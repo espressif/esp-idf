@@ -94,6 +94,7 @@ tools/test_apps/system/init_array:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   depends_components:
+    - *common_components
     - esp_system
   depends_filepatterns:
     - tools/tools.json
@@ -103,6 +104,7 @@ tools/test_apps/system/log:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: test only on esp32 and c3 as other targets are similar
   depends_components:
+    - *common_components
     - log
 
 tools/test_apps/system/longjmp_test:
@@ -122,6 +124,7 @@ tools/test_apps/system/mmu_page_size:
     - if: IDF_TARGET in ["esp32c6", "esp32h2"]
       reason: Coverage for two targets with configurable MMU page size is sufficient
   depends_components:
+    - *common_components
     - esp_app_format
     - bootloader_support
     - esp_mm

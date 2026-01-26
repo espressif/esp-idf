@@ -4,5 +4,6 @@ components/esp_driver_ppa/test_apps:
   disable:
     - if: SOC_PPA_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_ppa
     - esp_hal_ppa

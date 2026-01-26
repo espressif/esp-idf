@@ -6,6 +6,7 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
     - if: CONFIG_NAME == "xtal" and SOC_CLK_LP_FAST_SUPPORT_XTAL != 1
     - if: CONFIG_NAME == "lp_vad" and SOC_LP_VAD_SUPPORTED != 1
   depends_components:
+    - *common_components
     - ulp
     - esp_adc
     - esp_driver_i2s
@@ -20,6 +21,7 @@ components/ulp/test_apps/lp_core/lp_core_hp_uart:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
   depends_components:
+    - *common_components
     - ulp
     - esp_hal_uart
     - esp_hal_pmu
@@ -30,6 +32,7 @@ components/ulp/test_apps/ulp_fsm:
   enable:
     - if: SOC_ULP_FSM_SUPPORTED == 1
   depends_components:
+    - *common_components
     - ulp
     - soc
     - esp_hal_pmu
@@ -40,6 +43,7 @@ components/ulp/test_apps/ulp_riscv:
   disable:
     - if: SOC_RISCV_COPROC_SUPPORTED != 1
   depends_components:
+    - *common_components
     - ulp
     - soc
     - esp_hal_pmu

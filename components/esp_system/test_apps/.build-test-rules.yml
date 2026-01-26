@@ -2,6 +2,7 @@
 
 components/esp_system/test_apps/cache_panic:
   depends_components:
+    - *common_components
     - spi_flash  # esp_system is included by default
 
 components/esp_system/test_apps/esp_system_unity_tests:

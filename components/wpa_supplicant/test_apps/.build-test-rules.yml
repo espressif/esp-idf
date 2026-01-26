@@ -4,6 +4,7 @@ components/wpa_supplicant/test_apps:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_wifi
     - wpa_supplicant
     - mbedtls

@@ -4,5 +4,6 @@ components/esp_driver_tsens/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
   depends_components:
+    - *common_components
     - esp_driver_tsens
     - esp_phy

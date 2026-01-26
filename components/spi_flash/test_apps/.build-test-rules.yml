@@ -8,6 +8,7 @@ components/spi_flash/test_apps/esp_flash:
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
+    - *common_components
     - esp_mm
     - esp_psram
     - spi_flash
@@ -22,12 +23,14 @@ components/spi_flash/test_apps/esp_flash_blockdev:
       temporary: false
       reason: should be sufficient to test on one Xtensa and one RISC-V target
   depends_components:
+    - *common_components
     - spi_flash
 
 components/spi_flash/test_apps/esp_flash_freq_limit:
   enable:
     - if: IDF_TARGET == "esp32c5"
   depends_components:
+    - *common_components
     - spi_flash
     - esp_pm
     - esp_driver_gptimer
@@ -39,6 +42,7 @@ components/spi_flash/test_apps/esp_flash_stress:
       temporary: true
       reason: not support yet # TODO: [ESP32S31] IDF-14777
   depends_components:
+    - *common_components
     - esp_mm
     - spi_flash
     - esp_hal_mspi
@@ -54,12 +58,14 @@ components/spi_flash/test_apps/flash_encryption:
       reason: No runners # IDF-5634
 
   depends_components:
+    - *common_components
     - esp_mm
     - spi_flash
     - esp_hal_mspi
 
 components/spi_flash/test_apps/flash_mmap:
   depends_components:
+    - *common_components
     - esp_mm
     - spi_flash
     - esp_hal_mspi
@@ -84,6 +90,7 @@ components/spi_flash/test_apps/flash_suspend:
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - spi_flash
     - esp_driver_gptimer
     - esp_hal_mspi
@@ -95,6 +102,7 @@ components/spi_flash/test_apps/mspi_test:
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
+    - *common_components
     - esp_mm
     - esp_psram
     - spi_flash

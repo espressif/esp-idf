@@ -2,6 +2,7 @@
 
 components/app_trace/test_apps:
   depends_components:
+    - *common_components
     - esp_trace
     - esp_driver_gptimer
   disable:

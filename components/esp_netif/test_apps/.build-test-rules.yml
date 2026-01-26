@@ -6,6 +6,7 @@ components/esp_netif/test_apps/test_app_esp_netif:
       temporary: false
       reason: Not needed to test on all targets (chosen two, one for each architecture)
   depends_components:
+    - *common_components
     - esp_netif
     - lwip
     - esp_eth
@@ -17,6 +18,7 @@ components/esp_netif/test_apps/test_app_vfs_l2tap:
       temporary: true
       reason: Not needed to test on all targets (chosen two, one for each architecture plus P4 tests time stamping)
   depends_components:
+    - *common_components
     - esp_netif
     - lwip
     - esp_eth

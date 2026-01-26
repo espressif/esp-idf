@@ -2,6 +2,7 @@
 
 .bt_default_depends: &bt_default_depends
   depends_components:
+    - *common_components
     - bt
     - esp_phy
     - esp_coex

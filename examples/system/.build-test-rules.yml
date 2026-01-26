@@ -11,6 +11,7 @@ examples/system/app_trace_basic:
 
 examples/system/base_mac_address:
   depends_components:
+    - *common_components
     - esp_hw_support
 
 examples/system/deep_sleep:
@@ -40,19 +41,23 @@ examples/system/efuse:
       temporary: true
       reason: not support yet # TODO: [ESP32S31] IDF-14688
   depends_components:
+    - *common_components
     - efuse
     - bootloader_support
 
 examples/system/esp_event/default_event_loop:
   depends_components:
+    - *common_components
     - esp_event
 
 examples/system/esp_event/user_event_loops:
   depends_components:
+    - *common_components
     - esp_event
 
 examples/system/esp_timer:
   depends_components:
+    - *common_components
     - esp_timer
 
 examples/system/eventfd:
@@ -60,6 +65,7 @@ examples/system/eventfd:
     - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")) or IDF_TARGET in ["esp32s31"] # TODO: [ESP32S31] IDF-14932
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - vfs
     - esp_driver_gptimer
 
@@ -83,6 +89,7 @@ examples/system/heap_task_tracking:
     - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - heap
 
 examples/system/himem:
@@ -95,6 +102,7 @@ examples/system/ipc/ipc_isr/riscv:
     - if: IDF_TARGET in ["esp32p4"]
       reason: The test is intended only for multi-core chips
   depends_components:
+    - *common_components
     - esp_system
 
 examples/system/ipc/ipc_isr/xtensa:
@@ -102,6 +110,7 @@ examples/system/ipc/ipc_isr/xtensa:
     - if: IDF_TARGET in ["esp32", "esp32s3"]
       reason: The test is intended only for multi-core chips
   depends_components:
+    - *common_components
     - esp_system
 
 examples/system/light_sleep:
@@ -123,6 +132,7 @@ examples/system/ota/advanced_https_ota:
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -143,6 +153,7 @@ examples/system/ota/native_ota_example:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -172,6 +183,7 @@ examples/system/ota/partitions_ota:
       temporary: true
       reason: lack of runners with recovery_bootloader lablel
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -202,6 +214,7 @@ examples/system/ota/simple_ota_example:
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -220,6 +233,7 @@ examples/system/perfmon:
     - if: IDF_TARGET == "esp32"
       reason: testing on a single target is sufficient
   depends_components:
+    - *common_components
     - perfmon
 
 examples/system/pthread:
@@ -227,6 +241,7 @@ examples/system/pthread:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - pthread
 
 examples/system/rt_mqueue:
@@ -234,6 +249,7 @@ examples/system/rt_mqueue:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - rt
 
 examples/system/select:
@@ -241,6 +257,7 @@ examples/system/select:
     - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - vfs
 
 examples/system/sysview_tracing:
@@ -270,6 +287,7 @@ examples/system/task_watchdog:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - esp_system
 
 examples/system/unit_test/:
@@ -277,6 +295,7 @@ examples/system/unit_test/:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - unity
 
 examples/system/xip_from_psram:
