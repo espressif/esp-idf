@@ -51,7 +51,7 @@ Second, the time from powering up to powering down Wi-Fi related modules in a st
   - Time offset caused by clock accuracy. The main reason is that clocks may deviate from ideal time to some extent, and the deviation can be positive or negative.
   - Time spent processing missed beacon frames, such as the duration of continuous listening after a missed beacon, the maximum allowable number of missed beacons, etc. The existence and duration of this period are uncertain but can be configured within a range.
   - Active time added to ensure the reception of burst data packets, which can be determined by configuration.
-  - ILDE time is required for specific power-saving modes to meet entry conditions. Therefore, reducing the working time can improve power performance while meeting communication requirements.
+  - IDLE time is required for specific power-saving modes to meet entry conditions. Therefore, reducing the working time can improve power performance while meeting communication requirements.
 
 .. code-block:: text
 
