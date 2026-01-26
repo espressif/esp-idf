@@ -33,6 +33,10 @@
 
 #include "esp_blufi.h"
 
+#ifndef CONFIG_SOC_BLUFI_SUPPORTED
+#error "This SOC does not support BLUFI"
+#endif
+
 #define EXAMPLE_WIFI_CONNECTION_MAXIMUM_RETRY CONFIG_EXAMPLE_WIFI_CONNECTION_MAXIMUM_RETRY
 #define EXAMPLE_INVALID_REASON                255
 #define EXAMPLE_INVALID_RSSI                  -128
