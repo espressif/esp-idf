@@ -77,6 +77,8 @@ LED blinking example with Kconfig configuration and Component Manager integratio
 
 ## Build System Features Examples
 
+These examples demonstrate the build system capabilities and `cmakev2` features.
+
 ### idf_as_lib
 **Location:** [idf_as_lib/](./features/idf_as_lib/)
 
@@ -97,7 +99,12 @@ cmake -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=...
 ninja -C build
 ```
 
-These examples demonstrate the build system capabilities and some `cmakev2` specific features.
+### component_manager
+**Location:** [component_manager](./features/component_manager)
+
+Demonstrates using ESP-IDF component manager with `cmakev2`
+
+**Key Concepts:** Defining component dependencies for the application using `idf_component.yml`
 
 ## Build System v2 API Quick Reference
 
