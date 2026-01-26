@@ -158,6 +158,15 @@ Demonstrates link-time plugin registration using whole-archive linking and const
 
 ---
 
+### conditional_component
+**Location:** [conditional_component](./features/conditional_component/)
+
+Demonstrates the use of the Kconfig configuration system to conditionally include or exclude components in the build.
+
+**Key Concepts:** Kconfig configuration, `idf_component_include()`
+
+**When to use:** When you need to build applications or components that must conditionally depend on other components based on `sdkconfig` options.
+
 ## Build System v2 API Quick Reference
 
 ### Project Setup
