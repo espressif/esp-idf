@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import subprocess
@@ -17,8 +17,18 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 # ---------------------------------------------------------------------------
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
-@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
+)
 def test_driver_twai_loopbk(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='twai', reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_eco3
+@pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_driver_twai_loopbk_c5eco3(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai', reset=True)
 
 

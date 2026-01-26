@@ -59,7 +59,10 @@ bool peripheral_domain_pd_allowed(void)
     // ESP32C5 supports temperature sensor sleep retention
     RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_TEMP_SENSOR);
 
-    // ESP32C5 does not support TWAI sleep retention yet: IDF-13001
+    // ESP32C5 supports TWAI sleep retention
+    RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_TWAI0);
+    RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_TWAI1);
+    /* ESP32C5 only supports TWAI0 and TWAI1 */
 
     // ESP32C5 supports PARLIO sleep retention
     RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_PARLIO0);

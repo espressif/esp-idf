@@ -398,9 +398,10 @@
 #define SOC_MWDT_SUPPORT_XTAL              (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_CONTROLLER_NUM         1U
-#define SOC_TWAI_MASK_FILTER_NUM        3
-#define SOC_TWAI_RANGE_FILTER_NUM       1U
+#define SOC_TWAI_CONTROLLER_NUM             1U
+#define SOC_TWAI_MASK_FILTER_NUM            3U
+#define SOC_TWAI_RANGE_FILTER_NUM           1U
+#define SOC_TWAI_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 0
