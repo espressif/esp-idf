@@ -130,6 +130,21 @@ Demonstrates importing a prebuilt static library in the ESP-IDF build system wit
 
 ---
 
+### multi_config
+**Location:** [multi_config/](./features/multi_config/)
+
+Demonstrates building multiple configurations of a single application.
+
+**Key Concepts:** CMake presets, multiple `sdkconfig` files, conditional compilation based on configuration
+
+**When to use:** When building binaries for multiple products from a single codebase or different hardware variants.
+
+**Features:**
+- Development and production configurations
+- Product-specific settings via `sdkconfig.defaults.*` files
+- CMake presets for easy configuration switching
+- Separate build directories for side-by-side builds
+
 ## Build System v2 API Quick Reference
 
 ### Project Setup
