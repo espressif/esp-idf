@@ -40,6 +40,10 @@ typedef struct esp_cam_ctlr_dvp_config {
     uint32_t h_res;                             /*!< Input horizontal resolution, i.e. the number of pixels in a line */
     uint32_t v_res;                             /*!< Input vertical resolution, i.e. the number of lines in a frame */
     cam_ctlr_color_t input_data_color_type;     /*!< Input pixel format */
+    cam_ctlr_color_t output_data_color_type;    /*!< Output pixel format */
+    color_conv_std_rgb_yuv_t conv_std;          /*!< Conversion standard */
+    color_range_t input_range;                  /*!< Input color range */
+    color_range_t output_range;                 /*!< Output color range */
     uint32_t cam_data_width;                        /*!< Byte width, 8, 16 or 24 bit, default to 8 */
     struct {
         uint32_t bit_swap_en : 1;               /*!< Enable bit swap */

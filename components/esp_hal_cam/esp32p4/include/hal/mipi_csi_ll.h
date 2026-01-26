@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "hal/mipi_csi_brg_ll.h"
 #include "hal/mipi_csi_phy_ll.h"
 #include "hal/mipi_csi_host_ll.h"
+#include "hal/config.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
@@ -154,6 +155,141 @@ static inline void mipi_csi_ll_reset_host_clock(int group_id)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         mipi_csi_ll_reset_host_clock(__VA_ARGS__); \
     } while(0)
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+
+/**
+ * @brief Set RGB element order for input color data
+ *
+ * @param dev Pointer to the CSI bridge controller register base address
+ * @param rgb_format RGB element order: 0=RGB, 1=BGR, 2=RBG, 3=BRG, 4=GRB, 5=GBR
+ *
+ */
+static inline void mipi_csi_brg_ll_set_input_rgb_format(csi_brg_dev_t *dev, uint32_t rgb_format)
+{
+    dev->host_cm_ctrl.csi_host_cm_rx_rgb_format = rgb_format;
+}
+
+/**
+ * @brief Set the color format for the input color data
+ *
+ * @param dev Pointer to the CSI bridge controller register base address
+ * @param color_format Camera controller color format
+ */
+static inline void mipi_csi_brg_ll_set_input_color_format(csi_brg_dev_t *dev, cam_ctlr_color_t color_format)
+{
+    // Set format type
+    if (color_format == CAM_CTLR_COLOR_RGB888) {
+        dev->host_cm_ctrl.csi_host_cm_rx = 0;
+        mipi_csi_brg_ll_set_input_rgb_format(dev, 0);  // Default: RGB order
+    } else if (color_format == CAM_CTLR_COLOR_RGB565) {
+        dev->host_cm_ctrl.csi_host_cm_rx = 1;
+        mipi_csi_brg_ll_set_input_rgb_format(dev, 0);  // Default: RGB order
+    } else if (color_format == CAM_CTLR_COLOR_YUV420) {
+        dev->host_cm_ctrl.csi_host_cm_rx = 3;
+    } else if (color_format == CAM_CTLR_COLOR_YUV422_YVYU ||
+               color_format == CAM_CTLR_COLOR_YUV422_YUYV ||
+               color_format == CAM_CTLR_COLOR_YUV422_UYVY ||
+               color_format == CAM_CTLR_COLOR_YUV422_VYUY) {
+        dev->host_cm_ctrl.csi_host_cm_rx = 2;
+        // Set YUV422 packing order: YVYU=0, YUYV=1, VYUY=2, UYVY=3
+        if (color_format == CAM_CTLR_COLOR_YUV422_YVYU) {
+            dev->host_cm_ctrl.csi_host_cm_rx_yuv422_format = 0;
+        } else if (color_format == CAM_CTLR_COLOR_YUV422_YUYV) {
+            dev->host_cm_ctrl.csi_host_cm_rx_yuv422_format = 1;
+        } else if (color_format == CAM_CTLR_COLOR_YUV422_VYUY) {
+            dev->host_cm_ctrl.csi_host_cm_rx_yuv422_format = 2;
+        } else if (color_format == CAM_CTLR_COLOR_YUV422_UYVY) {
+            dev->host_cm_ctrl.csi_host_cm_rx_yuv422_format = 3;
+        }
+    } else {
+        HAL_ASSERT(false && "Unsupported input color format");
+    }
+}
+
+/**
+ * @brief Enable or disable color mode conversion output
+ *
+ * @param dev Pointer to the CSI bridge controller register base address
+ * @param en true to enable, false to disable
+ *
+ */
+static inline void mipi_csi_brg_ll_enable_color_conversion(csi_brg_dev_t *dev, bool en)
+{
+    dev->host_cm_ctrl.csi_host_cm_en = en;
+}
+
+/**
+ * @brief Enable or disable color mode conversion bypass
+ *
+ * @param dev Pointer to the CSI bridge controller regihost_cm_ctrlster base address
+ * @param bypass true to bypass (input directly to output), false to enable conversion
+ *
+ */
+static inline void mipi_csi_brg_ll_set_color_mode_bypass(csi_brg_dev_t *dev, bool bypass)
+{
+    dev->host_cm_ctrl.csi_host_cm_bypass = bypass;
+}
+
+/**
+ * @brief Set the color format for the output color data
+ *
+ * @param dev Pointer to the CSI bridge controller register base address
+ * @param color_format Camera controller color format
+ */
+static inline void mipi_csi_brg_ll_set_output_color_format(csi_brg_dev_t *dev, cam_ctlr_color_t color_format)
+{
+    if (color_format == CAM_CTLR_COLOR_RGB888) {
+        dev->host_cm_ctrl.csi_host_cm_tx = 0;
+    } else if (color_format == CAM_CTLR_COLOR_RGB565) {
+        dev->host_cm_ctrl.csi_host_cm_tx = 1;
+    } else if (color_format == CAM_CTLR_COLOR_YUV420) {
+        dev->host_cm_ctrl.csi_host_cm_tx = 3;
+    } else if (color_format == CAM_CTLR_COLOR_YUV422_YVYU ||
+               color_format == CAM_CTLR_COLOR_YUV422_YUYV ||
+               color_format == CAM_CTLR_COLOR_YUV422_UYVY ||
+               color_format == CAM_CTLR_COLOR_YUV422_VYUY) {
+        dev->host_cm_ctrl.csi_host_cm_tx = 2;
+    } else {
+        HAL_ASSERT(false && "Unsupported output color format");
+    }
+}
+#else
+static inline void mipi_csi_brg_ll_set_input_rgb_format(csi_brg_dev_t *dev, uint32_t rgb_format)
+{
+    //for compatibility
+    (void)dev;
+    (void)rgb_format;
+}
+
+static inline void mipi_csi_brg_ll_set_input_color_format(csi_brg_dev_t *dev, cam_ctlr_color_t color_format)
+{
+    //for compatibility
+    (void)dev;
+    (void)color_format;
+}
+
+static inline void mipi_csi_brg_ll_enable_color_conversion(csi_brg_dev_t *dev, bool en)
+{
+    //for compatibility
+    (void)dev;
+    (void)en;
+}
+
+static inline void mipi_csi_brg_ll_set_color_mode_bypass(csi_brg_dev_t *dev, bool bypass)
+{
+    //for compatibility
+    (void)dev;
+    (void)bypass;
+}
+
+static inline void mipi_csi_brg_ll_set_output_color_format(csi_brg_dev_t *dev, cam_ctlr_color_t color_format)
+{
+    //for compatibility
+    (void)dev;
+    (void)color_format;
+}
+#endif // HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 
 #ifdef __cplusplus
 }

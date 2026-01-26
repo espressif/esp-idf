@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "hal/assert.h"
 #include "hal/hal_utils.h"
 #include "hal/mipi_csi_types.h"
+#include "hal/color_types.h"
+#include "hal/cam_ctlr_types.h"
 #include "soc/mipi_csi_bridge_struct.h"
 
 #ifdef __cplusplus

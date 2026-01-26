@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,16 @@ typedef uint32_t esp_color_fourcc_t;
 #define ESP_COLOR_FOURCC_BGR24          ESP_COLOR_FOURCC('B', 'G', 'R', '3') /* 24 bpp BGR-8-8-8 */
 
 /**
+ * RGB24 (RGB888)
+ * Memory Layout:
+ *            | bit7 - bit0 |
+ *    Byte 2: |  B7  -  B0  |
+ *    Byte 1: |  G7  -  G0  |
+ *    Byte 0: |  R7  -  R0  |
+ */
+#define ESP_COLOR_FOURCC_RGB24          ESP_COLOR_FOURCC('R', 'G', 'B', '3') /* 24 bpp RGB-8-8-8 */
+
+/**
  * RGB565
  * Memory Layout:
  *            | bit7 bit6 bit5 bit4 bit3 bit2 bit1 bit0 |
@@ -52,6 +62,15 @@ typedef uint32_t esp_color_fourcc_t;
  *    Byte 0: |  G2   G1   G0 | B4   B3   B2   B1   B0  |
  */
 #define ESP_COLOR_FOURCC_RGB16          ESP_COLOR_FOURCC('R', 'G', 'B', 'L') /* 16 bpp RGB-5-6-5, little endian */
+
+/**
+ * RGB565 (Big Endian)
+ * Memory Layout:
+ *            | bit7 bit6 bit5 bit4 bit3 bit2 bit1 bit0 |
+ *    Byte 1: |  G2   G1   G0 | B4   B3   B2   B1   B0  |
+ *    Byte 0: |  R4   R3   R2   R1   R0 | G5   G4   G3  |
+ */
+#define ESP_COLOR_FOURCC_RGB16_BE       ESP_COLOR_FOURCC('R', 'G', 'B', 'E') /* 16 bpp RGB-5-6-5, big endian */
 
 /**
  * Grey8
@@ -285,113 +304,6 @@ typedef enum {
     COLOR_COMPONENT_B,          /*!< B component */
     COLOR_COMPONENT_INVALID,    /*!< Invalid color component */
 } color_component_t;
-
-///< The following values are deprecated, please use the FOURCC values instead, IDF-14284
-
-/*---------------------------------------------------------------
-                      Color Space
----------------------------------------------------------------*/
-/**
- * @brief Color Space
- *
- * @note Save enum 0 for special purpose
- */
-typedef enum {
-    COLOR_SPACE_RAW = 1,     ///< Color space raw
-    COLOR_SPACE_RGB,         ///< Color space rgb
-    COLOR_SPACE_YUV,         ///< Color space yuv
-    COLOR_SPACE_GRAY,        ///< Color space gray
-    COLOR_SPACE_ARGB,        ///< Color space argb
-    COLOR_SPACE_ALPHA,       ///< Color space alpha (A)
-    COLOR_SPACE_CLUT,        ///< Color look-up table (L)
-} color_space_t;
-
-/*---------------------------------------------------------------
-                      Color Pixel Format
----------------------------------------------------------------*/
-/**
- * @brief Raw Format
- */
-typedef enum {
-    COLOR_PIXEL_RAW8,     ///< 8 bits per pixel
-    COLOR_PIXEL_RAW10,    ///< 10 bits per pixel
-    COLOR_PIXEL_RAW12,    ///< 12 bits per pixel
-} color_pixel_raw_format_t;
-
-/**
- * @brief RGB Format
- */
-typedef enum {
-    COLOR_PIXEL_RGB888,      ///< 24 bits, 8 bits per R/G/B value
-    COLOR_PIXEL_RGB666,      ///< 18 bits, 6 bits per R/G/B value
-    COLOR_PIXEL_RGB565,      ///< 16 bits, 5 bits per R/B value, 6 bits for G value
-} color_pixel_rgb_format_t;
-
-/**
- * @brief YUV Format
- */
-typedef enum {
-    COLOR_PIXEL_YUV444,    ///< 24 bits, 8 bits per Y/U/V value
-    COLOR_PIXEL_YUV422,    ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels
-    COLOR_PIXEL_YUV420,    ///< 12 bits, 8-bit Y per pixel, 8-bit U and V per four pixels
-    COLOR_PIXEL_YUV411,    ///< 12 bits, 8-bit Y per pixel, 8-bit U and V per four pixels
-} color_pixel_yuv_format_t;
-
-/**
- * @brief Gray Format
- */
-typedef enum {
-    COLOR_PIXEL_GRAY4,    ///< 4 bits, grayscale
-    COLOR_PIXEL_GRAY8,    ///< 8 bits, grayscale
-} color_pixel_gray_format_t;
-
-/**
- * @brief ARGB Format
- */
-typedef enum {
-    COLOR_PIXEL_ARGB8888,   ///< 32 bits, 8 bits per A(alpha)/R/G/B value
-} color_pixel_argb_format_t;
-
-/**
- * @brief Alpha(A) Format
- */
-typedef enum {
-    COLOR_PIXEL_A4,   ///< 4 bits, opacity only
-    COLOR_PIXEL_A8,   ///< 8 bits, opacity only
-} color_pixel_alpha_format_t;
-
-/**
- * @brief CLUT(L) Format
- */
-typedef enum {
-    COLOR_PIXEL_L4,   ///< 4 bits, color look-up table
-    COLOR_PIXEL_L8,   ///< 8 bits, color look-up table
-} color_pixel_clut_format_t;
-
-/*---------------------------------------------------------------
-                Color Space Pixel Struct Type
----------------------------------------------------------------*/
-///< Bitwidth of the `color_space_pixel_format_t::color_space` field
-#define COLOR_SPACE_BITWIDTH                 8
-///< Bitwidth of the `color_space_pixel_format_t::pixel_format` field
-#define COLOR_PIXEL_FORMAT_BITWIDTH          24
-///< Helper to get the color_space from a unique color type ID
-#define COLOR_SPACE_TYPE(color_type_id)      (((color_type_id) >> COLOR_PIXEL_FORMAT_BITWIDTH) & ((1 << COLOR_SPACE_BITWIDTH) - 1))
-///< Helper to get the pixel_format from a unique color type ID
-#define COLOR_PIXEL_FORMAT(color_type_id)    ((color_type_id) & ((1 << COLOR_PIXEL_FORMAT_BITWIDTH) - 1))
-///< Make a unique ID of a color based on the value of color space and pixel format
-#define COLOR_TYPE_ID(color_space, pixel_format) (((color_space) << COLOR_PIXEL_FORMAT_BITWIDTH) | (pixel_format))
-
-/**
- * @brief Color Space Info Structure
- */
-typedef union {
-    struct {
-        uint32_t pixel_format: COLOR_PIXEL_FORMAT_BITWIDTH;    ///< Format of a certain color space type
-        uint32_t color_space: COLOR_SPACE_BITWIDTH;            ///< Color space type
-    };
-    uint32_t color_type_id;                                    ///< Unique type of a certain color pixel format
-} color_space_pixel_format_t;
 
 #ifdef __cplusplus
 }
