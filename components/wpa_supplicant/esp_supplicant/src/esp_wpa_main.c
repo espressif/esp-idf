@@ -138,7 +138,7 @@ bool  wpa_attach(void)
     return ret;
 }
 
-uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
+uint8_t  *wpa_ap_get_wpa_ie(size_t *ie_len)
 {
     struct hostapd_data *hapd = (struct hostapd_data *)esp_wifi_get_hostap_private_internal();
 
