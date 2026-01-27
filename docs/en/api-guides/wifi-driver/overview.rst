@@ -513,7 +513,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the station. And 
    * - threshold
      - The threshold is used to filter the found AP. If the RSSI or security mode is less than the configured threshold, the AP will be discarded.
 
-       If the RSSI is set to 0, it means the default threshold and the default RSSI threshold are -127 dBm. If the authmode threshold is set to 0, it means the default threshold and the default authmode threshold are open.
+       If the RSSI is set to 0, it means the default threshold is used, and the default RSSI threshold is -127 dBm. If the authmode threshold is set to 0, it means the default threshold is used, and the default authmode threshold is open.
 
 
 .. attention::

@@ -97,7 +97,7 @@
 
 - :example:`wifi/scan` 演示如何扫描可用的 AP，配置扫描设置，并显示扫描结果。
 
-- :example:`wifi/fast_scan` 演示如何执行快速和全通道扫描，查找附近的 AP，设置信号强度的阈值和认证模式，并根据信号强度和认证模式连接到最合适的 AP。
+- :example:`wifi/fast_scan` 演示如何执行快速和全信道扫描，查找附近的 AP，设置信号强度的阈值和认证模式，并根据信号强度和认证模式连接到最合适的 AP。
 
 - :example:`wifi/wps` 演示如何使用 WPS 入网功能，简化连接 Wi-Fi 路由器的过程，支持 PIN 或 PBC 模式。
 
@@ -513,7 +513,7 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 station。配置的参数�
    * - threshold
      - 该字段用来筛选找到的 AP，如果 AP 的 RSSI 或安全模式小于配置的阈值，则不会被连接。
 
-       如果 RSSI 设置为 0，则表示默认阈值、默认 RSSI 阈值为 -127 dBm。如果 authmode 阈值设置为 0，则表示默认阈值，默认 authmode 阈值为开放模式。
+       如果 RSSI 设置为 0，则表示默认阈值，默认 RSSI 阈值为 -127 dBm。如果 authmode 阈值设置为 0，则表示默认阈值，默认 authmode 阈值为开放模式。
 
 
 .. attention::
