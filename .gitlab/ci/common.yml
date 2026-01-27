@@ -382,7 +382,7 @@ variables:
     - MIRROR_REPO_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"
     - cd "${CI_PROJECT_DIR}"
     # since .cache exists in CI_PROJECT_DIR, so can't direct `git clone .`
-    - git clone -b ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${CI_COMMIT_BRANCH}} --depth=1 --recursive --shallow-submodules "${MIRROR_REPO_URL}" tmp
+    - git clone -b ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${CI_COMMIT_REF_NAME}} --depth=1 --recursive --shallow-submodules "${MIRROR_REPO_URL}" tmp
     - mv tmp/.git ./
     - rm -rf tmp
     - git reset --hard
