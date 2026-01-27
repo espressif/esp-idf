@@ -1,12 +1,12 @@
 # Build System v2 Examples
 
-This directory contains examples demonstrating **ESP-IDF Build System v2** (`cmakev2`). Build System v2 is the next-generation build system for ESP-IDF, offering improved architecture, better CMake integration, and enhanced features. `cmakev2` is backward compatible with projects and components written for Build System v1. The examples in this folder give a preview of how to work with the new build system.
+This directory contains examples demonstrating **ESP-IDF Build System v2** (`cmakev2`). Build System v2 is the next-generation build system for ESP-IDF, offering improved architecture, better CMake integration, and enhanced features. Build System v2 attempts to be backward compatible with Build System v1 applications and components as much as possible. More information about Build System v2 can be found in the ESP-IDF Programming Guide under **API Guides** → **Build System v2**.
 
-> **Note:** Build System v2 is currently a **Technical Preview**. For comprehensive documentation, see the [Build System v2 Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system-v2.html).
+> **Note:** Build System v2 is currently a **Technical Preview**.
 
 ---
 
-## Quick Start
+## Getting Started
 
 ### Migrating an Existing Project
 
@@ -14,7 +14,7 @@ Change your project's `CMakeLists.txt` from:
 
 ```cmake
 # Build System v1
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(my_project)
 ```
@@ -29,14 +29,14 @@ project(my_project C CXX ASM)
 idf_project_default()
 ```
 
-Note: This update should be sufficient for most ESP-IDF projects. Everything else remains unchanged.
+This update is sufficient for most ESP-IDF projects. Components and application code remain unchanged.
 
-### Building any example
+### Building Examples
 
-Building a `cmakev2` example does not involve any new steps.
+Building any `cmakev2` example follows the standard workflow:
 
 ```bash
-cd examples/build_system/cmakev2/<example_name>
+cd examples/build_system/cmakev2/get-started/<example_name>
 idf.py set-target <target>
 idf.py build
 idf.py flash monitor
@@ -44,206 +44,105 @@ idf.py flash monitor
 
 ---
 
-### Examples Overview
+## Get-Started Examples
 
-### Get-Started Examples
+These examples mirror the ones in `examples/get-started/` but use Build System v2.
 
-These examples preview basic ESP-IDF features to get started. These examples are identical to the ones in `./examples/get_started/` but updated to use `cmakev2`:
+### hello_world
 
-#### hello_world
-**Location:** [get-started/hello_world/](./get-started/hello_world/)
+[get-started/hello_world/](./get-started/hello_world/)
 
-The simplest ESP-IDF project with `cmakev2`. Start here to understand the basic structure.
-
-```cmake
-cmake_minimum_required(VERSION 3.22)
-include($ENV{IDF_PATH}/tools/cmakev2/idf.cmake)
-project(hello_world C CXX ASM)
-idf_project_default()
-```
-
-**Key Concepts:** `idf_project_default()`, basic component registration
-
----
-
-### blink
-**Location:** [get-started/blink/](./get-started/blink/)
-
-LED blinking example with Kconfig configuration and Component Manager integration.
-
-**Key Concepts:** Kconfig options, Component Manager with `cmakev2` 
+The simplest ESP-IDF project with `cmakev2`. It prints "Hello World" and demonstrates the minimal project structure required: a `CMakeLists.txt` with `idf_project_default()` and a main component. Start here to understand how a basic v2 project is set up.
 
 ---
 
 ## Build System Features Examples
 
-These examples demonstrate the build system capabilities and `cmakev2` features.
-
-### idf_as_lib
-**Location:** [idf_as_lib/](./features/idf_as_lib/)
-
-Demonstrates using ESP-IDF components as a library in external projects.
-
-```cmake
-idf_build_library(idf_lib COMPONENTS spi_flash)
-target_link_libraries(external_app idf_lib)
-```
-
-**Key Concepts:** `idf_build_library()`, external project integration
-
-**When to use:** When integrating ESP-IDF components into non-IDF build systems or existing CMake projects.
-
-**Build Note:** This example uses direct CMake commands, not `idf.py`:
-```bash
-cmake -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=...
-ninja -C build
-```
+These examples demonstrate advanced build system capabilities unique to or enhanced in `cmakev2`. The components used in the examples in this section are registered with `idf_component_register`, which ensures that newly written components remain compatible with Build System v1.
 
 ### component_manager
-**Location:** [component_manager](./features/component_manager)
 
-Demonstrates using ESP-IDF component manager with `cmakev2`
+[features/component_manager/](./features/component_manager/)
 
-**Key Concepts:** Defining component dependencies for the application using `idf_component.yml`
-
----
+Shows how to use the ESP Component Registry with `cmakev2`. Declares dependencies in `idf_component.yml`, which are automatically downloads from ESP Component Registry during the build.
 
 ### import_lib
-**Location:** [import_lib/](./features/import_lib/)
 
-Demonstrates importing external third-party libraries using CMake's `ExternalProject` module.
+[features/import_lib/](./features/import_lib/)
 
-**Key Concepts:** `ExternalProject_Add()`, cross-compilation, `add_prebuilt_library()`
-
-**When to use:** When you need to download and build external libraries as part of your project.
-
----
+Demonstrates importing third-party CMake libraries using CMake's `ExternalProject_Add()` module. The example downloads and builds [tinyxml2](https://github.com/leethomason/tinyxml2) from GitHub, wraps it as an IDF component, and uses it to parse XML data. This approach is recommended for C++ libraries that use exceptions, as it properly handles ESP-IDF's C++ runtime integration through `PRIV_REQUIRES cxx`. For simpler C libraries, see `import_lib_direct` which demonstrates direct integration without component wrappers.
 
 ### import_prebuilt
-**Location:** [import_prebuilt/](./features/import_prebuilt/)
 
-Demonstrates importing a prebuilt static library in the ESP-IDF build system with `cmakev2`.
+[features/import_prebuilt/](./features/import_prebuilt/)
 
-**Key Concepts:** `add_prebuilt_library()`, cross-project component sharing, dependency management
-
-**When to use:** When you have a pre-compiled component library that you want to use in your project.
-
----
+Shows how to import pre-compiled static libraries into your project using `add_prebuilt_library()`. The example includes a `prebuilt/` directory containing a component that gets compiled separately, with its output (`libprebuilt.a` and headers) consumed by the main application. Useful for distributing proprietary libraries or speeding up builds with pre-compiled components.
 
 ### multi_config
-**Location:** [multi_config/](./features/multi_config/)
 
-Demonstrates building multiple configurations of a single application.
+[features/multi_config/](./features/multi_config/)
 
-**Key Concepts:** CMake presets, multiple `sdkconfig` files, conditional compilation based on configuration
+Demonstrates building multiple configurations of a single application using CMake presets. The example defines development and production presets, each with different `sdkconfig.defaults` files, separate build directories, and conditional source file compilation. Useful for building binaries for different product variants or deployment environments from one codebase.
 
-**When to use:** When building binaries for multiple products from a single codebase or different hardware variants.
-
-**Features:**
-- Development and production configurations
-- Product-specific settings via `sdkconfig.defaults.*` files
-- CMake presets for easy configuration switching
-- Separate build directories for side-by-side builds
-
----
+Build with presets:
+```bash
+idf.py --preset default build    # Development build
+idf.py --preset prod1 build      # Product 1 build
+idf.py --preset prod2 build      # Product 2 build
+```
 
 ### plugins
-**Location:** [plugins/](./features/plugins/)
 
-Demonstrates link-time plugin registration using whole-archive linking and constructor functions.
+[features/plugins/](./features/plugins/)
 
-**Key Concepts:** `WHOLE_ARCHIVE`, constructor functions, dynamic registration, static registration
+Demonstrates link-time plugin registration using the `WHOLE_ARCHIVE` component property. Plugins register themselves automatically at startup using `__attribute__((constructor))` functions, without requiring explicit function calls from the main application. The example shows both dynamic registration (constructor functions) and static registration (linker sections with `KEEP()`). Useful for building extensible applications where plugins can be added or removed by simply including or excluding components.
 
-**When to use:** When you need a flexible plugin system that automatically discovers and registers plugins at runtime.
+### idf_as_lib
+
+[features/idf_as_lib/](./features/idf_as_lib/)
+
+Shows how to use ESP-IDF components as a library in external CMake projects. The example showcases how a non-IDF project can invoke the ESP-IDF build system to create a library which the executable can link against.
 
 ---
+
+## cmakev2-Specific Examples
+
+The following examples demonstrate capabilities that are unique to Build System v2 and cannot be achieved with Build System v1.
 
 ### conditional_component
-**Location:** [conditional_component](./features/conditional_component/)
 
-Demonstrates the use of the Kconfig configuration system to conditionally include or exclude components in the build.
+[features/conditional_component/](./features/conditional_component/)
 
-**Key Concepts:** Kconfig configuration, `idf_component_include()`
-
-**When to use:** When you need to build applications or components that must conditionally depend on other components based on `sdkconfig` options.
-
----
+Demonstrates conditional component inclusion driven by Kconfig options, with all components written as pure CMake static libraries (no `idf_component_register`).
 
 ### multi_binary
-**Location:** [multi_binary](./features/multi_binary/)
 
-Demonstrates building multiple independent firmware binaries from a single project in one build command.
+[features/multi_binary/](./features/multi_binary/)
 
-**Build:** `idf.py build` creates both `app1.bin` and `app2.bin`
-**Flash App1:** `idf.py app1-flash monitor`
-**Flash App2:** `idf.py app2-flash monitor`
+Demonstrates building multiple independent firmware binaries from a single project in one build command. Each binary has its own entry point, component dependencies, and flash target.
 
-**Key Concepts:** `idf_build_executable()`, `idf_build_binary()`, `idf_flash_binary()`, conditional component linking, Kconfig integration, multiple entry points
+The project defines two applications (`app1` and `app2`) with shared and distinct components:
 
-**When to use:** Creating firmware variants with different features, manufacturing test firmware, or developing modular applications with compile-time configurable behavior.
+Build and flash:
+```bash
+idf.py build                # Creates both app1.bin and app2.bin
+idf.py app1-flash monitor   # Flash and monitor app1
+idf.py app2-flash monitor   # Flash and monitor app2
+```
 
-## Build System v2 API Quick Reference
+This is useful for creating firmware variants with different features, manufacturing test firmware alongside production firmware, or modular applications where different binaries serve different purposes.
 
-### Project Setup
+### import_lib_direct
 
-| Function | Use Case |
-|----------|----------|
-| `idf_project_default()` | Simple projects - does everything automatically |
-| `idf_project_init()` | Advanced control - manual component/executable setup |
+[features/import_lib_direct/](./features/import_lib_direct/)
 
-### Build Functions
-
-| Function | Description |
-|----------|-------------|
-| `idf_build_executable(name ...)` | Create an ELF executable |
-| `idf_build_binary(exe ...)` | Generate .bin from executable |
-| `idf_build_library(name ...)` | Create unified library interface |
-| `idf_flash_binary(bin ...)` | Create flash target |
-| `idf_sign_binary(bin ...)` | Sign binary for secure boot |
-| `idf_component_include(name)` | Explicitly include a component |
-
-### Utility Functions
-
-| Function | Description |
-|----------|-------------|
-| `idf_build_generate_metadata(bin)` | Generate project_description.json |
-| `idf_check_binary_size(bin)` | Verify binary fits in partition |
-| `idf_create_menuconfig(exe ...)` | Create menuconfig target |
+Demonstrates a cmakev2-specific capability of importing external CMake libraries directly at the project level using `FetchContent` without wrapping them as IDF components. The example downloads [lwjson](https://github.com/MaJerle/lwjson), a lightweight JSON parser, and links it directly to the main component using standard CMake `target_link_libraries()`. This pattern works well for pure C libraries and simplifies third-party library integration.
 
 ---
 
-## Key Differences from Build System v1
+## Further Reading
 
-| Aspect | Build System v1 | Build System v2 |
-|--------|-----------------|-----------------|
-| **Include** | `tools/cmake/project.cmake` | `tools/cmakev2/idf.cmake` |
-| **CMake Version** | 3.16+ | 3.22+ |
-| **Project Call** | `project(name)` | `project(name C CXX ASM)` |
-| **Initialization** | Implicit | `idf_project_default()` or `idf_project_init()` |
-
----
-
-## Migration Checklist
-
-- [ ] Update `cmake_minimum_required(VERSION 3.22)`
-- [ ] Change include to `$ENV{IDF_PATH}/tools/cmakev2/idf.cmake`
-- [ ] Add languages to project(): `project(name C CXX ASM)`
-- [ ] Add `idf_project_default()` or `idf_project_init()` after project()
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**"CMake version too old"**
-- Build System v2 requires CMake 3.22+. Update your CMake installation.
-
-**"Component validation warnings"**
-- These are informational. They help identify potential dependency issues. Address by adding proper `idf_component_include()` calls and updated `REQUIRES`/`PRIV_REQUIRES` list.
-
-**"Binary too large for partition"**
-- `cmakev2` evaluates components and associated Kconfig options early, leading to some components getting included in the build which were not part of the binary in Build System v1. This is being optimized and it is encouraged to actively include only required components in the build. If you have specific observation regarding, do report to us for further investigation.
+For comprehensive documentation on Build System v2 APIs, migration details, and advanced usage, see the Build System v2 guide in the ESP-IDF Programming Guide under **API Guides** → **Build System v2**.
 
 ---
 
