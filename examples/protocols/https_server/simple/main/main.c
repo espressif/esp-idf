@@ -13,6 +13,9 @@
 #include <esp_system.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "protocol_examples_common.h"
@@ -133,6 +136,29 @@ static void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
             print_peer_cert_info(ssl_ctx);
 #endif
             break;
+
+        case HTTPD_SSL_USER_CB_SESS_ERROR:
+            ESP_LOGD(TAG, "At session error (handshake failed)");
+            // Get socket FD to log failing client IP address
+            sockfd = -1;
+            esp_ret = esp_tls_get_conn_sockfd(user_cb->tls, &sockfd);
+            if (esp_ret == ESP_OK && sockfd >= 0) {
+                struct sockaddr_storage addr;
+                socklen_t len = sizeof(addr);
+                if (getpeername(sockfd, (struct sockaddr*)&addr, &len) == 0) {
+                    char ip_str[INET6_ADDRSTRLEN];
+                    if (addr.ss_family == AF_INET) {
+                        inet_ntop(AF_INET, &((struct sockaddr_in*)&addr)->sin_addr, ip_str, sizeof(ip_str));
+                    } else if (addr.ss_family == AF_INET6) {
+                        inet_ntop(AF_INET6, &((struct sockaddr_in6*)&addr)->sin6_addr, ip_str, sizeof(ip_str));
+                    } else {
+                        strcpy(ip_str, "unknown");
+                    }
+                    ESP_LOGW(TAG, "SSL handshake failed from client IP: %s", ip_str);
+                }
+            }
+            break;
+
         default:
             ESP_LOGE(TAG, "Illegal state!");
             return;
