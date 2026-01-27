@@ -21,6 +21,9 @@
 #include "host/ble_hs.h"
 #include "host/util/util.h"
 #include "console/console.h"
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
+#include "esp_nimble_hci.h"
+#endif
 #endif
 
 #include "esp_ble_mesh_defs.h"
@@ -61,8 +64,12 @@ esp_err_t bluetooth_init(void)
         ESP_LOGE(TAG, "%s enable controller failed", __func__);
         return ret;
     }
-
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+#else
     ret = esp_bluedroid_init();
+#endif /* ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0) */
     if (ret) {
         ESP_LOGE(TAG, "%s init bluetooth failed", __func__);
         return ret;
@@ -78,7 +85,7 @@ esp_err_t bluetooth_init(void)
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
-static SemaphoreHandle_t mesh_sem;
+static SemaphoreHandle_t g_mesh_sem;
 static uint8_t own_addr_type;
 void ble_store_config_init(void);
 static uint8_t addr_val[6] = {0};
@@ -119,7 +126,7 @@ static void mesh_on_sync(void)
 
     rc = ble_hs_id_copy_addr(own_addr_type, addr_val, NULL);
 
-    xSemaphoreGive(mesh_sem);
+    xSemaphoreGive(g_mesh_sem);
 }
 
 void mesh_host_task(void *param)
@@ -133,19 +140,24 @@ void mesh_host_task(void *param)
 
 esp_err_t bluetooth_init(void)
 {
-    esp_err_t ret;
-
-    mesh_sem = xSemaphoreCreateBinary();
-    if (mesh_sem == NULL) {
+    g_mesh_sem = xSemaphoreCreateBinary();
+    if (g_mesh_sem == NULL) {
         ESP_LOGE(TAG, "Failed to create mesh semaphore");
         return ESP_FAIL;
     }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) /* IDF MR 21718 */
+    esp_err_t ret;
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init nimble %d ", ret);
         return ret;
     }
+#else
+    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
+    nimble_port_init();
+#endif
+
 
     /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = mesh_on_reset;
@@ -157,7 +169,7 @@ esp_err_t bluetooth_init(void)
 
     nimble_port_freertos_init(mesh_host_task);
 
-    xSemaphoreTake(mesh_sem, portMAX_DELAY);
+    xSemaphoreTake(g_mesh_sem, portMAX_DELAY);
 
     return ESP_OK;
 }

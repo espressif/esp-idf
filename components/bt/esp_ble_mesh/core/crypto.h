@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,26 +12,17 @@
 
 #include <string.h>
 #include "mesh/buf.h"
+#include "mesh/crypto.h"  /* Include common crypto API */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct bt_mesh_sg {
-    const void *data;
-    size_t len;
-};
+/* Map bt_mesh_aes_cmac to bt_mesh_aes_cmac_raw_key from common crypto module.
+ * struct bt_mesh_sg is defined in mesh/crypto.h */
+#define bt_mesh_aes_cmac bt_mesh_aes_cmac_raw_key
 
-int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
-                     size_t sg_len, uint8_t mac[16]);
-
-static inline int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
-                                       size_t len, uint8_t mac[16])
-{
-    struct bt_mesh_sg sg = { m, len };
-
-    return bt_mesh_aes_cmac(key, &sg, 1, mac);
-}
+/* bt_mesh_aes_cmac_one is defined as inline in mesh/crypto.h */
 
 static inline bool bt_mesh_s1(const char *m, uint8_t salt[16])
 {

@@ -30,6 +30,7 @@
 #endif /* CONFIG_BLE_MESH_V11_SUPPORT */
 
 #include "adv.h"
+#include "scan.h"
 #include "mesh/kernel.h"
 #include "mesh/proxy.h"
 #include "mesh.h"
@@ -3028,6 +3029,9 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
             .ctx.send_tag   = arg->model_send.ctx->send_tag,
             .msg_timeout    = arg->model_send.msg_timeout,
         };
+
+        memcpy(&param.ctx.enh, &arg->model_send.ctx->enh, sizeof(bt_mesh_msg_enh_params_t));
+
         err = bt_mesh_client_send_msg(&param, buf, arg->model_send.need_rsp,
                                       btc_ble_mesh_client_model_timeout_cb);
         bt_mesh_free_buf(buf);

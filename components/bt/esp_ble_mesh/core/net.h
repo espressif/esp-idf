@@ -465,8 +465,25 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
                        struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
 
-void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
-                      enum bt_mesh_net_if net_if);
+void bt_mesh_generic_net_recv(struct net_buf_simple *data,
+                              struct bt_mesh_net_rx *rx,
+                              enum bt_mesh_net_if net_if);
+
+static inline void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
+                                    enum bt_mesh_net_if net_if)
+{
+    struct bt_mesh_net_rx rx = {0};
+    rx.ctx.recv_rssi = rssi;
+#if CONFIG_BLE_MESH_EXT_ADV
+    rx.ctx.enh.adv_cfg_used = false;
+    rx.ctx.enh.ext_adv_cfg_used = false;
+#if CONFIG_BLE_MESH_LONG_PACKET
+    rx.ctx.enh.long_pkt_cfg_used = (data->len >= 29);
+    rx.ctx.enh.long_pkt_cfg = BLE_MESH_LONG_PACKET_FORCE;
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+    bt_mesh_generic_net_recv(data, &rx, net_if);
+}
 
 bool bt_mesh_primary_subnet_exist(void);
 
