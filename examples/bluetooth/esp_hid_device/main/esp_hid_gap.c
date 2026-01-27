@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -1021,6 +1021,44 @@ static esp_err_t init_low_level(uint8_t mode)
 #endif /* CONFIG_BT_BLE_ENABLED */
     return ret;
 }
+
+static esp_err_t deinit_low_level(void)
+{
+    esp_err_t ret;
+
+    if (bt_scan_results) {
+        esp_hid_scan_results_free(bt_scan_results);
+        bt_scan_results = NULL;
+        num_bt_scan_results = 0;
+    }
+    if (ble_scan_results) {
+        esp_hid_scan_results_free(ble_scan_results);
+        ble_scan_results = NULL;
+        num_ble_scan_results = 0;
+    }
+
+    ret = esp_bluedroid_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bluedroid_disable failed: %d", ret);
+    }
+
+    ret = esp_bluedroid_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bluedroid_deinit failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_disable failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_deinit failed: %d", ret);
+    }
+
+    return ret;
+}
 #endif
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -1057,7 +1095,51 @@ static esp_err_t init_low_level(uint8_t mode)
 
     return ret;
 }
+
+static esp_err_t deinit_low_level(void)
+{
+    esp_err_t ret;
+
+    ret = esp_nimble_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_nimble_deinit failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_disable failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_deinit failed: %d", ret);
+    }
+
+    return ret;
+}
 #endif
+
+esp_err_t esp_hid_gap_deinit(void)
+{
+    esp_err_t ret;
+
+    ret = deinit_low_level();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "deinit_low_level failed: %d", ret);
+    }
+
+    if (bt_hidh_cb_semaphore != NULL) {
+        vSemaphoreDelete(bt_hidh_cb_semaphore);
+        bt_hidh_cb_semaphore = NULL;
+    }
+
+    if (ble_hidh_cb_semaphore != NULL) {
+        vSemaphoreDelete(ble_hidh_cb_semaphore);
+        ble_hidh_cb_semaphore = NULL;
+    }
+
+    return ESP_OK;
+}
 
 esp_err_t esp_hid_gap_init(uint8_t mode)
 {

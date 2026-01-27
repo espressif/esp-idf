@@ -74,6 +74,7 @@ void print_uuid(esp_bt_uuid_t *uuid);
 #endif
 
 esp_err_t esp_hid_gap_init(uint8_t mode);
+esp_err_t esp_hid_gap_deinit(void);
 
 esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name);
 esp_err_t esp_hid_ble_gap_adv_start(void);

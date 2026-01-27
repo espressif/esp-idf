@@ -957,6 +957,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(uint8_t *bda, uint8_t address_type)
     dev->report_write = esp_ble_hidh_dev_report_write;
     dev->report_read = esp_ble_hidh_dev_report_read;
     dev->dump = esp_ble_hidh_dev_dump;
+    dev->connected = true;
 
     /* perform service discovery and fill the report maps */
     read_device_services(dev);
