@@ -8,5 +8,4 @@ components/esp_event/test_apps:
     - if: IDF_TARGET != "esp32" and CONFIG_NAME == "ext_ram"
       reason: it is enough to test ext_ram config on esp32
   depends_components:
-    - *common_components
     - esp_event

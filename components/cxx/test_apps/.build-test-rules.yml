@@ -6,7 +6,6 @@ components/cxx/test_apps:
       temporary: true
       reason: the other targets are not tested yet
   depends_components:
-    - *common_components
     - cxx
     - pthread
     - freertos
