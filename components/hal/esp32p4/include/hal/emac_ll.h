@@ -20,6 +20,7 @@
 #include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"
 #include "soc/emac_mac_struct.h"
+#include "soc/clk_tree_defs.h"
 
 #include "soc/hp_system_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
@@ -577,6 +578,12 @@ static inline void emac_ll_receive_poll_demand(emac_dma_dev_t *dma_regs, uint32_
 
 /*************** End of dma regs operation *********************/
 
+
+static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
+{
+    // Source of the ESP32P4 EMAC CRS clock is SYS clock.
+    return SOC_MOD_CLK_SYS;
+}
 
 /**
  * @brief Enable the bus clock for the EMAC module
