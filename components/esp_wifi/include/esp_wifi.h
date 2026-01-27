@@ -1200,7 +1200,7 @@ esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
   *    - ESP_OK: success
   *    - ESP_ERR_WIFI_IF: Invalid interface
   *    - ESP_ERR_INVALID_ARG: Invalid parameter
-  *    - ESP_ERR_WIFI_NO_MEM: out of memory
+  *    - ESP_ERR_NO_MEM: out of memory
   */
 
 esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
