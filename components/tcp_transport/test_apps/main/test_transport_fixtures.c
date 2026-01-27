@@ -19,9 +19,6 @@
 #define CONNECT_TASK_PRIORITY  (LISTENER_TASK_PRIORITY+1)
 #define CONNECT_TASK_PRIORITY_LOWER (LISTENER_TASK_PRIORITY-2)
 
-// This is a private API of the tcp transport, but needed for socket operation tests
-int esp_transport_get_socket(esp_transport_handle_t t);
-
 /**
  * @brief Event flags for synchronization between the listener task, the connection task and the test task
  */
