@@ -1412,7 +1412,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the station. And 
    * - threshold
      - The threshold is used to filter the found AP. If the RSSI or security mode is less than the configured threshold, the AP will be discarded.
 
-       If the RSSI is set to 0, it means the default threshold and the default RSSI threshold are -127 dBm. If the authmode threshold is set to 0, it means the default threshold and the default authmode threshold are open.
+       If the RSSI is set to 0, it means the default threshold is used, and the default RSSI threshold is -127 dBm. If the authmode threshold is set to 0, it means the default threshold is used, and the default authmode threshold is open.
 
 
 .. attention::
@@ -2113,7 +2113,7 @@ Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and 
 
 Fast BSS Transition
 ---------------------------
-Fast BSS transition (802.11R FT), is a standard to permit continuous connectivity aboard wireless devices in motion, with fast and secure client transitions from one Basic Service Set (abbreviated BSS, and also known as a base station or more colloquially, an access point) to another performed in a nearly seamless manner **avoiding 802.1i 4 way handshake** . 802.11R specifies transitions between access points by redefining the security key negotiation protocol, allowing both the negotiation and requests for wireless resources to occur in parallel. The key derived from the server to be cached in the wireless network, so that a reasonable number of future connections can be based on the cached key, avoiding the 802.1X process
+Fast BSS transition (802.11R FT), is a standard to permit continuous connectivity aboard wireless devices in motion, with fast and secure client transitions from one Basic Service Set (abbreviated BSS, and also known as a base station or more colloquially, an access point) to another performed in a nearly seamless manner **avoiding 802.11i 4 way handshake**. 802.11R specifies transitions between access points by redefining the security key negotiation protocol, allowing both the negotiation and requests for wireless resources to occur in parallel. The key derived from the server to be cached in the wireless network, so that a reasonable number of future connections can be based on the cached key, avoiding the 802.1X process.
 
 
 {IDF_TARGET_NAME} station supports FT for WPA2-PSK networks. Do note that {IDF_TARGET_NAME} station only support FT over the air protocol only.
