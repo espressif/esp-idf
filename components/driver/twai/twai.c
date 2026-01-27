@@ -805,7 +805,7 @@ esp_err_t twai_receive_v2(twai_handle_t handle, twai_message_t *message, TickTyp
 
     //Decode frame
     twai_frame_header_t header = {0};
-    twai_hal_parse_frame(&rx_frame, &header, message->data, TWAI_FRAME_MAX_LEN);
+    twai_hal_parse_frame(p_twai_obj->hal, &rx_frame, &header, message->data, TWAI_FRAME_MAX_LEN);
     message->identifier = header.id;
     message->data_length_code = header.dlc;
     message->extd = header.ide;

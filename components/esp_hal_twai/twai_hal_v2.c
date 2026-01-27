@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,10 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     twaifd_ll_enable_rxfifo_auto_increase(hal_ctx->dev, true);
     twaifd_ll_ts_set_sample_point(hal_ctx->dev, TWAIFD_LL_TS_POINT_EOF);
     twaifd_ll_enable_intr(hal_ctx->dev, config->intr_mask);
+    if (config->timer_freq) {
+        twaifd_ll_timer_set_clkdiv(hal_ctx->dev, config->clock_source_hz / config->timer_freq);
+        twaifd_ll_timer_enable_intr(hal_ctx->dev, 1, true);
+    }
     return true;
 }
 
@@ -40,7 +44,6 @@ void twai_hal_deinit(twai_hal_context_t *hal_ctx)
     twaifd_ll_set_operate_cmd(hal_ctx->dev, TWAIFD_LL_HW_CMD_RST_TX_CNT);
     twaifd_ll_set_operate_cmd(hal_ctx->dev, TWAIFD_LL_HW_CMD_RST_RX_CNT);
     memset(hal_ctx, 0, sizeof(twai_hal_context_t));
-    hal_ctx->dev = NULL;
 }
 
 bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp)
@@ -48,7 +51,7 @@ bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp)
     return twaifd_ll_check_brp_validation(brp);
 }
 
-void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config)
+void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config)
 {
     twaifd_ll_set_nominal_bitrate(hal_ctx->dev, t_config);
     if (t_config->ssp_offset) {
@@ -57,7 +60,7 @@ void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_co
     }
 }
 
-void twai_hal_configure_timing_fd(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config_fd)
+void twai_hal_configure_timing_fd(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config_fd)
 {
     twaifd_ll_set_fd_bitrate(hal_ctx->dev, t_config_fd);
     if (t_config_fd->ssp_offset) {
@@ -106,6 +109,20 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx)
     twaifd_ll_enable_hw(hal_ctx->dev, false);
 }
 
+void twai_hal_timer_start_with(twai_hal_context_t *hal_ctx, uint64_t preload_value)
+{
+    hal_ctx->timer_overflow_cnt = preload_value >> 32;
+    twaifd_ll_timer_set_preload_value(hal_ctx->dev, preload_value);
+    twaifd_ll_timer_apply_preload_value(hal_ctx->dev);
+    twaifd_ll_timer_set_preload_value(hal_ctx->dev, 0); // set load value back to 0
+    twaifd_ll_timer_enable(hal_ctx->dev, true);
+}
+
+void twai_hal_timer_stop(twai_hal_context_t *hal_ctx)
+{
+    twaifd_ll_timer_enable(hal_ctx->dev, false);
+}
+
 twai_error_state_t twai_hal_get_err_state(twai_hal_context_t *hal_ctx)
 {
     return twaifd_ll_get_fault_state(hal_ctx->dev);
@@ -126,7 +143,7 @@ uint16_t twai_hal_get_rec(twai_hal_context_t *hal_ctx)
     return twaifd_ll_get_rec((hal_ctx)->dev);
 }
 
-// /* ------------------------------------ IRAM Content ------------------------------------ */
+/* ------------------------------------ IRAM Content ------------------------------------ */
 
 void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_frame_t *frame)
 {
@@ -140,8 +157,11 @@ void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_fra
     }
 }
 
-void twai_hal_parse_frame(const twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len)
+void twai_hal_parse_frame(twai_hal_context_t *hal_ctx, twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len)
 {
+    // compensate the timer overflow before parsing it
+    frame->timestamp_high = hal_ctx->timer_overflow_cnt;
+
     twaifd_ll_parse_frame_header(frame, header);
     if (!header->rtr) {
         int frame_data_len = twaifd_dlc2len(header->dlc);
@@ -166,6 +186,8 @@ uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)
 bool twai_hal_read_rx_fifo(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame)
 {
     twaifd_ll_get_rx_frame(hal_ctx->dev, rx_frame);
+    // 'not_empty' interrupt can only be cleared after reading the frame
+    twaifd_ll_clr_intr_status(hal_ctx->dev, TWAIFD_LL_INTR_RX_NOT_EMPTY);
     return true;
 }
 
@@ -173,10 +195,16 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
 {
     uint32_t hal_events = 0;
     uint32_t int_stat = twaifd_ll_get_intr_status(hal_ctx->dev);
+    uint32_t timer_int_stat = twaifd_ll_timer_get_intr_status(hal_ctx->dev, 0xffffffff);
     uint32_t tec = twaifd_ll_get_tec(hal_ctx->dev);
     uint32_t rec = twaifd_ll_get_rec(hal_ctx->dev);
     twaifd_ll_clr_intr_status(hal_ctx->dev, int_stat);
 
+    // check timer event before other events, to avoid race condition that receive frame right on timer overflow
+    if (timer_int_stat) {
+        twaifd_ll_timer_clr_intr_status(hal_ctx->dev, timer_int_stat);
+        hal_ctx->timer_overflow_cnt ++;
+    }
     if (int_stat & (TWAIFD_LL_INTR_TX_DONE)) {
         hal_events |= TWAI_HAL_EVENT_TX_BUFF_FREE;
         if (int_stat & TWAIFD_LL_INTR_TX_FRAME) {

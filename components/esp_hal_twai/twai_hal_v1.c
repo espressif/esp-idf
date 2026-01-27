@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,15 +98,8 @@ bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp)
 
 void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config)
 {
-    uint32_t brp = t_config->brp;
-    // both quanta_resolution_hz and brp can affect the baud rate
-    // but a non-zero quanta_resolution_hz takes higher priority
-    if (t_config->quanta_resolution_hz) {
-        brp = hal_ctx->clock_source_hz / t_config->quanta_resolution_hz;
-    }
-    //Configure bus timing
-    twai_ll_set_bus_timing(hal_ctx->dev, brp, t_config->sjw, t_config->tseg_1 + t_config->prop_seg, t_config->tseg_2, !!t_config->ssp_offset);
-    twai_ll_set_clkout(hal_ctx->dev, brp);
+    twai_ll_set_bus_timing(hal_ctx->dev, t_config->brp, t_config->sjw, t_config->tseg_1 + t_config->prop_seg, t_config->tseg_2, !!t_config->ssp_offset);
+    twai_ll_set_clkout(hal_ctx->dev, t_config->brp);
 }
 
 void twai_hal_configure_mask_filter(twai_hal_context_t *hal_ctx, uint8_t filter_id, const twai_mask_filter_config_t *f_config)
@@ -383,9 +376,10 @@ void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_fra
     twai_ll_format_frame_buffer(header->id, final_dlc, trans_desc->frame.buffer, msg_flags.flags, frame);
 }
 
-void twai_hal_parse_frame(const twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len)
+void twai_hal_parse_frame(twai_hal_context_t *hal_ctx, twai_hal_frame_t *frame, twai_frame_header_t *header, uint8_t *buffer, uint8_t buffer_len)
 {
     twai_ll_parse_frame_header((const twai_ll_frame_buffer_t *)frame, header);
+    header->timestamp = 0;  // hardware timestamp is not supported in v1
     if (!header->rtr) {
         twai_ll_parse_frame_data((const twai_ll_frame_buffer_t *)frame, buffer, buffer_len);
     }

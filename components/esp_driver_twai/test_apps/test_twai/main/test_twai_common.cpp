@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "test_utils.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
 #include "freertos/FreeRTOS.h"
@@ -745,7 +746,7 @@ static IRAM_ATTR bool test_dlc_range_cb(twai_node_handle_t handle, const twai_rx
 {
     twai_frame_t *rx_frame = (twai_frame_t *)user_ctx;
     if (ESP_OK == twai_node_receive_from_isr(handle, rx_frame)) {
-        esp_rom_printf(DRAM_STR("RX len %d %s\n"), rx_frame->header.dlc, rx_frame->buffer);
+        ESP_EARLY_LOGI("RX", "timestamp %llu frame %x [%d] %s", rx_frame->header.timestamp, rx_frame->header.id, rx_frame->header.dlc, rx_frame->buffer);
     }
     return false;
 }
@@ -791,6 +792,7 @@ TEST_CASE("twai dlc range test", "[twai]")
         TEST_ASSERT_EQUAL(len % 9, rx_frame.header.dlc);
         memset(rx_buffer, 0, sizeof(rx_buffer));
     }
+    TEST_ASSERT_EQUAL(0, rx_frame.header.timestamp); // timestamp should be 0 if not enabled
 
     tx_frame.buffer_len = 9;
     tx_frame.header.dlc = 0;
@@ -802,4 +804,73 @@ TEST_CASE("twai dlc range test", "[twai]")
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));
+}
+
+#define MS_TO_TWAI_TICK(time_ms, resolution) ((time_ms) * (resolution / 1000))
+TEST_CASE("twai rx timestamp", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 800000;
+    node_config.tx_queue_depth = TEST_FRAME_NUM;
+    node_config.flags.enable_loopback = true;
+    node_config.flags.enable_self_test = true;
+
+    bool hw_timer = false;
+#if TWAI_LL_SUPPORT(TIMESTAMP)
+    hw_timer = true;
+#endif
+    for (uint32_t resolution = 1000; resolution <= 10000000; resolution *= 100) {
+        node_config.timestamp_resolution_hz = resolution;
+        printf("\nTesting resolution %ld\n", resolution);
+        if (((resolution < 2000) && hw_timer) || ((resolution > 1000000) && !hw_timer)) {
+            TEST_ESP_ERR(twai_new_node_onchip(&node_config, &node_hdl), ESP_ERR_INVALID_ARG);
+            continue;
+        }
+        TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+        uint8_t rx_buffer[TWAI_FRAME_MAX_LEN] = {0};
+        twai_frame_t rx_frame = {};
+        rx_frame.buffer = rx_buffer;
+        rx_frame.buffer_len = sizeof(rx_buffer);
+
+        twai_event_callbacks_t user_cbs = {};
+        user_cbs.on_rx_done = test_dlc_range_cb;
+        TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &rx_frame));
+        TEST_ESP_OK(twai_node_enable(node_hdl));
+
+        twai_frame_t tx_frame = {};
+        tx_frame.buffer = (uint8_t *)"hi time";
+        tx_frame.buffer_len = strlen((const char *)tx_frame.buffer);
+        uint64_t time_now, time_last = MS_TO_TWAI_TICK(esp_timer_get_time() / 1000, resolution);
+        for (int i = 1; i < 10; i++) {
+            tx_frame.header.id = i;
+            printf("\nwaiting %dms (%ld ticks) ...\n", i * 100, MS_TO_TWAI_TICK(i * 100, resolution));
+            esp_rom_delay_us(i * 100 * 1000);
+            TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 100));
+            TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 100));
+
+            time_now = MS_TO_TWAI_TICK(esp_timer_get_time() / 1000, resolution);
+            printf("esp tick now %llu, diff %u\n", time_now, abs(time_now - rx_frame.header.timestamp));
+            TEST_ASSERT_INT32_WITHIN(MAX(resolution / 100, 5), time_now, rx_frame.header.timestamp);
+            TEST_ASSERT_INT32_WITHIN(MAX(resolution / 100, 5), rx_frame.header.timestamp - time_last, MS_TO_TWAI_TICK(i * 100, resolution));
+            time_last = rx_frame.header.timestamp;
+        }
+
+        printf("\n==============================================\n");
+        printf("Test timestamp still alive during node disable/enable (%ld ticks)\n", MS_TO_TWAI_TICK(1000, resolution));
+        TEST_ESP_OK(twai_node_disable(node_hdl));
+        esp_rom_delay_us(1000 * 1000);
+        TEST_ESP_OK(twai_node_enable(node_hdl));
+        TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 100));
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 100));
+        TEST_ASSERT_INT32_WITHIN(MAX(resolution / 100, 5), rx_frame.header.timestamp - time_last, MS_TO_TWAI_TICK(1000, resolution));
+
+        TEST_ESP_OK(twai_node_disable(node_hdl));
+        TEST_ESP_OK(twai_node_delete(node_hdl));
+    }
 }

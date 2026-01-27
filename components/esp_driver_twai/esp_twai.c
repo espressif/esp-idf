@@ -50,7 +50,6 @@ uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timi
     uint16_t prop = MAX(1, tseg_1 / 4); // prop_seg is usually shorter than tseg_1 and at least 1
     tseg_1 -= prop;
 
-    out_param->quanta_resolution_hz = 0;    // going to deprecated IDF-12725
     out_param->brp = pre_div;
     out_param->prop_seg = prop;
     out_param->tseg_1 = tseg_1;
