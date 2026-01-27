@@ -167,6 +167,21 @@ Demonstrates the use of the Kconfig configuration system to conditionally includ
 
 **When to use:** When you need to build applications or components that must conditionally depend on other components based on `sdkconfig` options.
 
+---
+
+### multi_binary
+**Location:** [multi_binary](./features/multi_binary/)
+
+Demonstrates building multiple independent firmware binaries from a single project in one build command.
+
+**Build:** `idf.py build` creates both `app1.bin` and `app2.bin`
+**Flash App1:** `idf.py app1-flash monitor`
+**Flash App2:** `idf.py app2-flash monitor`
+
+**Key Concepts:** `idf_build_executable()`, `idf_build_binary()`, `idf_flash_binary()`, conditional component linking, Kconfig integration, multiple entry points
+
+**When to use:** Creating firmware variants with different features, manufacturing test firmware, or developing modular applications with compile-time configurable behavior.
+
 ## Build System v2 API Quick Reference
 
 ### Project Setup
