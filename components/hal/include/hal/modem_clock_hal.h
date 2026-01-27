@@ -30,7 +30,9 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
 #endif
 
 void modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_context_t *hal, bool enable);
+bool modem_clock_hal_modem_common_fe_clock_is_enabled(modem_clock_hal_context_t *hal);
 void modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable);
+bool modem_clock_hal_modem_private_fe_clock_is_enabled(modem_clock_hal_context_t *hal);
 
 #if SOC_BT_SUPPORTED
 void modem_clock_hal_set_ble_rtc_timer_divisor_value(modem_clock_hal_context_t *hal, uint32_t divider);

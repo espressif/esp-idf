@@ -332,6 +332,14 @@ menu "Hardware Settings"
             help
                 Place analog i2c master control functions (e.g. regi2c_ctrl_read_reg, regi2c_ctrl_write_reg) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+        config ESP_MODEM_CLOCK_ENABLE_CHECKING
+            bool "Enable modem clock configuration checking"
+            depends on SOC_MODEM_CLOCK_SUPPORTED
+            default n
+            help
+                If enabled, this option will perform additional checks on modem clock configuration
+                to ensure proper operation and detect potential configuration issues.
     endmenu
 
     rsource "./etm/Kconfig.etm"

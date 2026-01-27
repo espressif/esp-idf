@@ -103,6 +103,12 @@ void IRAM_ATTR modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_cont
     }
 }
 
+bool IRAM_ATTR modem_clock_hal_modem_common_fe_clock_is_enabled(modem_clock_hal_context_t *hal)
+{
+    return modem_syscon_ll_fe_apb_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_80m_clock_is_enabled(hal->syscon_dev);
+}
+
 void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     if (enable) {
@@ -111,6 +117,14 @@ void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_con
         modem_syscon_ll_enable_fe_dac_clock(hal->syscon_dev, enable);
         modem_syscon_ll_enable_fe_pwdet_clock(hal->syscon_dev, enable);
     }
+}
+
+bool IRAM_ATTR modem_clock_hal_modem_private_fe_clock_is_enabled(modem_clock_hal_context_t *hal)
+{
+    return modem_syscon_ll_fe_160m_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_adc_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_dac_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_pwdet_clock_is_enabled(hal->syscon_dev);
 }
 
 void modem_clock_hal_set_ble_rtc_timer_divisor_value(modem_clock_hal_context_t *hal, uint32_t  divider)
