@@ -18,8 +18,9 @@ components/driver/test_apps/legacy_twai:
   depends_filepatterns:
     - components/driver/twai/**/*
   depends_components:
-    - *common_components
-    - esp_driver_gpio
+    - esp_hal_twai
+    - esp_hw_support
+    - soc
 
 components/driver/test_apps/touch_element:
   disable:
