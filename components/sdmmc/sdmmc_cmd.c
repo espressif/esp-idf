@@ -144,7 +144,7 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
         }
 
         if (err != ESP_OK) {
-            if (--err_cnt == 0) {
+            if (err != ESP_ERR_TIMEOUT && --err_cnt == 0) {
                 ESP_LOGD(TAG, "%s: sdmmc_send_app_cmd err=0x%x", __func__, err);
                 goto done;
             } else {
