@@ -305,7 +305,7 @@ typedef struct {
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                          \
         .dig_power = {                                                      \
             .peri_pd_en    = ((pd_flags) & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
-            .mem_dslp      = 1                                              \
+            .mem_dslp      = 0                                              \
         },                                                                  \
         .clk_power = {                                                      \
             .xpd_xtal32k   = ((pd_flags) & PMU_SLEEP_PD_XTAL32K) ? 0 : 1,   \
