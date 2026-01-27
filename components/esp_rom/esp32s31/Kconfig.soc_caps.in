@@ -11,6 +11,10 @@ config ESP_ROM_HAS_CRC_BE
     bool
     default y
 
+config ESP_ROM_HAS_JPEG_DECODE
+    bool
+    default y
+
 config ESP_ROM_UART_CLK_IS_XTAL
     bool
     default y
