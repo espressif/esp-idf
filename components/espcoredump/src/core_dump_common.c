@@ -60,6 +60,14 @@ extern int _coredump_rtc_noinit_end;
 extern int _coredump_noinit_start;
 extern int _coredump_noinit_end;
 #endif
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+extern int _coredump_extram_start;
+extern int _coredump_extram_end;
+#endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+extern int _coredump_extram_noinit_start;
+extern int _coredump_extram_noinit_end;
+#endif
 
 static void* s_exc_frame = NULL;
 static uint32_t s_coredump_sp = 0;
@@ -263,6 +271,12 @@ uint32_t esp_core_dump_get_user_ram_segments(void)
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_noinit_end, &_coredump_noinit_start) > 0 ? 1 : 0;
 #endif
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start) > 0 ? 1 : 0;
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_extram_end, &_coredump_extram_start) > 0 ? 1 : 0;
+#endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_extram_noinit_end, &_coredump_extram_noinit_start) > 0 ? 1 : 0;
+#endif
 
     return total_sz;
 }
@@ -291,6 +305,12 @@ static const struct {
     [COREDUMP_MEMORY_NOINIT] = { &_coredump_rtc_noinit_start, &_coredump_rtc_noinit_end },
 #else
     [COREDUMP_MEMORY_NOINIT] = { &_coredump_noinit_start, &_coredump_noinit_end },
+#endif
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    [COREDUMP_MEMORY_EXTRAM] = { &_coredump_extram_start, &_coredump_extram_end },
+#endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    [COREDUMP_MEMORY_EXTRAM_NOINIT] = { &_coredump_extram_noinit_start, &_coredump_extram_noinit_end },
 #endif
 };
 

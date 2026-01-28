@@ -25,6 +25,14 @@ entries:
 entries:
     .noinit.coredump+
 
+[sections:extram_coredump]
+entries:
+    .ext_ram.coredump+
+
+[sections:extram_noinit_coredump]
+entries:
+    .ext_ram_noinit.coredump+
+
 [scheme:coredump_default]
 entries:
     dram_coredump -> dram0_data
@@ -33,6 +41,8 @@ entries:
     rtc_noinit_coredump -> rtc_noinit
     noinit_coredump -> noinit
     iram_coredump -> iram0_data
+    extram_coredump -> extern_ram
+    extram_noinit_coredump -> extram_noinit
 
 [mapping:coredump_default]
 archive: *
@@ -43,7 +53,9 @@ entries:
         rtc_noinit_coredump -> rtc_noinit SURROUND(coredump_rtc_noinit),
         noinit_coredump -> noinit SURROUND(coredump_noinit),
         dram_coredump -> dram0_data SURROUND(coredump_dram),
-        iram_coredump -> iram0_data SURROUND(coredump_iram)
+        iram_coredump -> iram0_data SURROUND(coredump_iram),
+        extram_coredump -> extern_ram SURROUND(coredump_extram),
+        extram_noinit_coredump -> extram_noinit SURROUND(coredump_extram_noinit)
 
 [mapping:espcoredump]
 archive: libespcoredump.a
