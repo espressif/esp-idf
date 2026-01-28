@@ -27,6 +27,7 @@
 #include "soc/soc_caps.h"
 #include "esp_bit_defs.h"
 #include "esp_efuse.h"
+#include "esp_private/sleep_retention.h"
 
 /**
  * The 2D-DMA driver is designed with a pool & client model + queue design pattern.
@@ -351,6 +352,17 @@ static void dma2d_default_isr(void *args)
     }
 }
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t dma2d_create_sleep_retention_link_cb(void *arg)
+{
+    sleep_retention_module_t module = dma2d_reg_retention_info.module;
+    esp_err_t err = sleep_retention_entries_create(dma2d_reg_retention_info.regdma_entry_array,
+                                                   dma2d_reg_retention_info.array_size,
+                                                   REGDMA_LINK_PRI_DMA2D, module);
+    return err;
+}
+#endif
+
 esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handle_t *ret_pool)
 {
     esp_err_t ret = ESP_OK;
@@ -404,6 +416,34 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
             dma2d_hal_init(&pre_alloc_group->hal, group_id); // initialize HAL context
             // Enable 2D-DMA module clock
             dma2d_ll_hw_enable(s_platform.groups[group_id]->hal.dev, true);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            // acquire sleep retention
+            sleep_retention_module_t module = dma2d_reg_retention_info.module;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = dma2d_create_sleep_retention_link_cb,
+                        .arg = NULL,
+                    },
+                },
+                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+            };
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                // even though the sleep retention module init failed, DMA2D driver should still work, so just warning here
+                ESP_LOGW(TAG, "init sleep retention failed, power domain may be turned off during sleep");
+            } else {
+                if (sleep_retention_module_allocate(module) != ESP_OK) {
+                    ESP_LOGW(TAG, "fail to allocate retention link list");
+                    // don't call sleep_retention_module_deinit here, otherwise DMA2D peripheral may be powered off during sleep
+                } else {
+                    if (sleep_retention_module_attach(module) != ESP_OK) {
+                        ESP_LOGW(TAG, "attach retention module failed, power domain can't turn off");
+                    }
+                }
+            }
+#endif
         } else {
             ret = ESP_ERR_NO_MEM;
             free(pre_alloc_tx_channels);
@@ -494,6 +534,19 @@ esp_err_t dma2d_release_pool(dma2d_pool_handle_t dma2d_pool)
         PERIPH_RCC_ATOMIC() {
             dma2d_ll_enable_bus_clock(group_id, false);
         }
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        sleep_retention_module_t module = dma2d_reg_retention_info.module;
+        if (sleep_retention_is_module_attached(module)) {
+            sleep_retention_module_detach(module);
+        }
+        if (sleep_retention_is_module_created(module)) {
+            sleep_retention_module_free(module);
+        }
+        if (sleep_retention_is_module_inited(module)) {
+            sleep_retention_module_deinit(module);
+        }
+#endif
     }
 
     if (do_deinitialize) {
