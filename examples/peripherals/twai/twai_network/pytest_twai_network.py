@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 import subprocess
@@ -8,9 +8,6 @@ import pytest
 from can import Bus
 from can import Message
 from pytest_embedded_idf import IdfDut
-from pytest_embedded_idf.utils import soc_filtered_targets
-
-TWAI_SUPPORTED_TARGETS = soc_filtered_targets('SOC_TWAI_SUPPORTED == 1')
 
 
 # Socket CAN fixture
@@ -28,17 +25,6 @@ def fixture_create_socket_can() -> Bus:
     subprocess.run(stop_command, shell=True, capture_output=True, text=True)
 
 
-# Generate minimal combinations that each target appears in each app
-def generate_target_combinations(target_list: list, count: int = 2) -> list:
-    combinations = []
-    num_targets = len(target_list)
-    for round_num in range(num_targets):
-        selected_targets = [target_list[(round_num + i) % num_targets] for i in range(count)]
-        combinations.append('|'.join(selected_targets))
-
-    return combinations
-
-
 @pytest.mark.twai_std
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.timeout(120)
@@ -50,16 +36,24 @@ def generate_target_combinations(target_list: list, count: int = 2) -> list:
             f'{os.path.join(os.path.dirname(__file__), "twai_sender")}',
             target_combo,
         )
-        for target_combo in generate_target_combinations(TWAI_SUPPORTED_TARGETS)
+        for target_combo in [  # Test each target combination and its reverse
+            'esp32|esp32c6',
+            'esp32c6|esp32',
+            'esp32s2|esp32h2',
+            'esp32h2|esp32s2',
+            'esp32s3|esp32p4',
+            'esp32p4|esp32s3',
+            'esp32c3|esp32c5',
+            'esp32c5|esp32c3',
+        ]
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4,*', '*,esp32p4'], reason='p4 rev3 migration, IDF-14393')
 def test_twai_network_multi(dut: Tuple[IdfDut, IdfDut], socket_can: Bus) -> None:  # type: ignore
     """
     Test TWAI network communication between two nodes:
-    - dut[0]: listener (first chip)  - uses twai_listen_only
-    - dut[1]: sender (second chip)    - uses twai_sender
+    - dut[0]: twai_listen_only
+    - dut[1]: twai_sender
     """
 
     # Print chip information for debugging
