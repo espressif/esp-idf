@@ -243,6 +243,10 @@ config SOC_SDM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_LEDC_CHANNEL_NUM
+    int
+    default 6
+
 config SOC_MMU_PERIPH_NUM
     int
     default 2
@@ -366,6 +370,10 @@ config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
     int
     default 3
+
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
 
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
