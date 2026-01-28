@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <sys/param.h>
 #include "esp_flash_partitions.h"
-#include "esp_flash_internal.h"
 #include "esp_image_format.h"
 #include "esp_flash.h"
 #include "esp_partition.h"
@@ -103,7 +102,13 @@ esp_err_t partition_utils_find_unallocated(esp_flash_t *flash_chip, size_t requi
 
     // Check for unallocated space after the last partition
     last_end_address = MAX(last_end_address, start_offset);
-    size_t unallocated_size = flash_chip->size - last_end_address;
+    uint32_t flash_size = 0;
+    esp_err_t ret = esp_flash_get_size(flash_chip, &flash_size);
+    if (ret != ESP_OK) {
+        free(sorted_partitions);
+        return ret;
+    }
+    size_t unallocated_size = flash_size - last_end_address;
     if (unallocated_size >= required_size) {
         *found_offset = last_end_address;
         if (found_size != NULL) {

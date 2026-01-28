@@ -6,15 +6,15 @@
 
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
-#include "spi_flash_defs.h"
-#include "memspi_host_driver.h"
 #include "string.h"
 #include "esp_log.h"
-#include "esp_private/cache_utils.h"
-#include "esp_flash_partitions.h"
 #include "esp_memory_utils.h"
 #include "hal/mspi_ll.h"
 
+#include "esp_flash_partitions.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_private/cache_utils.h"
+#include "esp_private/memspi_host_driver.h"
 
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
 #define SPI_FLASH_HAL_MAX_READ_BYTES 64

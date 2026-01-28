@@ -26,15 +26,6 @@ components/lwip/lwip/src/include/netif/ppp/
 components/lwip/lwip/src/include/lwip/apps/tftp_server.h
 components/lwip/lwip/src/include/lwip/apps/tftp_client.h
 
-components/spi_flash/include/spi_flash_chip_issi.h
-components/spi_flash/include/spi_flash_chip_mxic.h
-components/spi_flash/include/spi_flash_chip_gd.h
-components/spi_flash/include/spi_flash_chip_winbond.h
-components/spi_flash/include/spi_flash_chip_boya.h
-components/spi_flash/include/spi_flash_chip_th.h
-components/spi_flash/include/memspi_host_driver.h
-components/spi_flash/include/spi_flash_chip_driver.h
-components/spi_flash/include/spi_flash_chip_generic.h
 
 
 components/wpa_supplicant/include/

@@ -8,10 +8,11 @@
 #include <string.h>
 #include <sys/param.h> // For MIN/MAX
 #include "esp_log.h"
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_chip_gd.h"
-#include "spi_flash_defs.h"
 #include "sdkconfig.h"
+
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_flash_chips/spi_flash_chip_gd.h"
 
 #define ADDR_32BIT(addr)            (addr >= (1<<24))
 

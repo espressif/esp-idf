@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include "unity.h"
 #include "esp_flash.h"
+#include "esp_flash_chips/esp_flash_types.h"
 #include "soc/rtc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

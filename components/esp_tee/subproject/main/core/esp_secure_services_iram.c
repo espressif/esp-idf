@@ -16,8 +16,8 @@
 
 #include "hal/spi_flash_hal.h"
 #include "hal/spi_flash_types.h"
-#include "spi_flash_chip_generic.h"
-#include "memspi_host_driver.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_private/memspi_host_driver.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_flash.h"
 #include "riscv/rv_utils.h"

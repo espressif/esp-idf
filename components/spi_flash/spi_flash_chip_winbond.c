@@ -8,8 +8,9 @@
 #include <string.h>
 #include <sys/param.h> // For MIN/MAX
 #include "esp_log.h"
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_defs.h"
+
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
 
 
 #define REGION_32BIT(start, len)    ((start) + (len) > (1<<24))

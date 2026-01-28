@@ -7,9 +7,11 @@
 #pragma once
 #include "esp_flash.h"
 #include "esp_attr.h"
+#include "esp_flash_chips/esp_flash_types.h"
 
-struct esp_flash_t;
-typedef struct esp_flash_t esp_flash_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct spi_flash_chip_t spi_flash_chip_t;
 
@@ -224,3 +226,7 @@ extern const spi_flash_chip_t **esp_flash_registered_chips;
  *                   This ID is used to match the chip against known drivers.
  */
 void spi_flash_chip_list_check(esp_flash_t *chip, uint32_t device_id);
+
+#ifdef __cplusplus
+}
+#endif

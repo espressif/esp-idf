@@ -9,8 +9,6 @@
 #include <sys/param.h>  //For max/min
 #include "esp_attr.h"
 #include "esp_private/system_internal.h"
-#include "esp_flash.h"
-#include "esp_flash_partitions.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/spi_types.h"
@@ -18,6 +16,11 @@
 #include "esp_log.h"
 #include "esp_compiler.h"
 #include "esp_rom_sys.h"
+
+#include "esp_flash.h"
+#include "esp_flash_chips/esp_flash_types.h"
+#include "esp_flash_partitions.h"
+
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_share_hw_ctrl.h"

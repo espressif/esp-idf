@@ -8,9 +8,12 @@
 
 #include <stdint.h>
 #include "esp_flash.h"
-#include "spi_flash_chip_driver.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * ISSI SPI flash chip_drv, uses all the above functions for its operations. In
@@ -25,4 +28,8 @@ esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t
 extern const spi_flash_chip_t esp_flash_chip_issi;
 #else
 extern __attribute__((weak)) const spi_flash_chip_t esp_flash_chip_issi;
+#endif
+
+#ifdef __cplusplus
+}
 #endif

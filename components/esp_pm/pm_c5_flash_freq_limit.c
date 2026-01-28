@@ -16,6 +16,7 @@
 #include "soc/rtc.h"
 #include "hal/efuse_hal.h"
 
+#include "esp_private/startup_internal.h"
 #include "esp_private/pm_impl_freq_limit.h"
 #include "esp_private/spi_flash_freq_limit_cbs.h"
 #include "esp_private/esp_clk_utils.h"
@@ -37,18 +38,6 @@ static uint32_t IRAM_ATTR get_encrypt_lock_freq_limit(void)
     } else {
         return 80;
     }
-}
-
-void esp_pm_flash_freq_limit_init(void)
-{
-    uint32_t limit_freq_mhz = get_encrypt_lock_freq_limit();
-    ESP_EARLY_LOGW("spi_flash", "CPU frequency is set to 240MHz. esp_flash_write_encrypted() will automatically limit CPU frequency to %dMHz during execution.", limit_freq_mhz);
-#ifdef CONFIG_PM_ENABLE
-    /* Pre-calculate and store forced frequency configuration during initialization.
-     * This is done here to avoid runtime calculation overhead in lock/unlock functions.
-     */
-    esp_pm_impl_cpu_max_freq_force_init(limit_freq_mhz);
-#endif
 }
 
 #if !CONFIG_PM_ENABLE
@@ -135,6 +124,24 @@ static void IRAM_ATTR unlimit_cpu_freq(void)
     s_saved_freq_mhz = 0;
 }
 #endif // !CONFIG_PM_ENABLE
+
+ESP_SYSTEM_INIT_FN(init_pm_flash_freq_limit, SECONDARY, BIT(0), 202)
+{
+    uint32_t limit_freq_mhz = get_encrypt_lock_freq_limit();
+    ESP_EARLY_LOGW("spi_flash", "CPU frequency is set to 240MHz. esp_flash_write_encrypted() will automatically limit CPU frequency to %dMHz during execution.", limit_freq_mhz);
+#ifdef CONFIG_PM_ENABLE
+    /* Pre-calculate and store forced frequency configuration during initialization.
+     * This is done here to avoid runtime calculation overhead in lock/unlock functions.
+     */
+    esp_pm_impl_cpu_max_freq_force_init(limit_freq_mhz);
+#endif
+    return ESP_OK;
+}
+
+void pm_c5_flash_freq_limit_init_include_func(void)
+{
+    // Linker hook function, exists to make the linker examine this file
+}
 
 void IRAM_ATTR esp_flash_freq_limit_cb(void)
 {

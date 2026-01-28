@@ -12,22 +12,16 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_system.h"
-#include "esp_private/log_util.h"
 #include "esp_log.h"
-#include "esp_private/cache_utils.h"
-#include "spi_flash_mmap.h"
-#include "esp_flash_internal.h"
-#include "esp_private/mspi_intr.h"
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
 #include "esp_private/startup_internal.h"
+#include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
-#include "hal/mspi_ll.h"
-#include "freertos/FreeRTOS.h"
 
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "private/esp_coexist_internal.h"
@@ -39,7 +33,6 @@
 #endif
 
 #include "esp_private/esp_clk.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
 #include "esp_private/vbat.h"
 
@@ -105,36 +98,6 @@ ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 106)
     esp_libc_time_init();
     return ESP_OK;
 }
-
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-ESP_SYSTEM_INIT_FN(init_flash, CORE, BIT(0), 130)
-{
-#if CONFIG_SPI_FLASH_ROM_IMPL
-    spi_flash_rom_impl_init();
-#endif
-
-    esp_flash_app_init();
-    esp_err_t flash_ret = esp_flash_init_default_chip();
-    assert(flash_ret == ESP_OK);
-    (void)flash_ret;
-#if CONFIG_SPI_FLASH_BROWNOUT_RESET
-    spi_flash_needs_reset_check();
-#endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
-    // The log library will call the registered callback function to check if the cache is disabled.
-    esp_log_util_set_cache_enabled_cb(spi_flash_cache_enabled);
-#if CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
-    esp_pm_flash_freq_limit_init();
-#endif // CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
-
-    // Register MSPI Flash interrupt
-#if MSPI_LL_INTR_EVENT_SUPPORTED && MSPI_LL_INTR_SHARED
-    esp_mspi_register_isr(NULL);
-#endif
-    //else register flash standalone ISR to deal with CPU / API flash access
-
-    return ESP_OK;
-}
-#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if CONFIG_ESP_XT_WDT
 ESP_SYSTEM_INIT_FN(init_xt_wdt, CORE, BIT(0), 170)

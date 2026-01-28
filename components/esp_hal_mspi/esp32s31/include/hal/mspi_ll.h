@@ -44,6 +44,9 @@ extern "C" {
 #define MSPI_TIMING_LL_MSPI_ID_0                      0
 #define MSPI_TIMING_LL_MSPI_ID_1                      1
 
+// PSRAM frequency should be constrained by AXI frequency to avoid FIFO underflow.
+#define MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED     1
+
 #define MSPI_LL_AXI_DISABLE_SUPPORTED                 1
 #define MSPI_LL_INTR_EVENT_SUPPORTED                  1
 

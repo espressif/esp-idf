@@ -54,7 +54,7 @@ g1_g0_components = g1_g0_components_base + get_all_esp_hal_components()
 # Global expected dependency violations that apply to all targets
 expected_dep_violations = {
     'esp_system': ['esp_timer', 'bootloader_support', 'esp_pm', 'esp_usb_cdc_rom_console'],
-    'spi_flash': ['bootloader_support', 'esp_blockdev'],
+    'spi_flash': ['bootloader_support', 'esp_blockdev', 'esp_driver_gpio'],
     'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_pm'],
     'cxx': ['pthread'],
 }

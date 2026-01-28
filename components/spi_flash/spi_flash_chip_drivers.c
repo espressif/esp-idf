@@ -5,17 +5,18 @@
  */
 
 #include <stdlib.h>
-#include "spi_flash_chip_driver.h"
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_chip_issi.h"
-#include "spi_flash_chip_mxic.h"
-#include "spi_flash_chip_gd.h"
-#include "spi_flash_chip_winbond.h"
-#include "spi_flash_chip_boya.h"
-#include "spi_flash_chip_th.h"
-#include "spi_flash_defs.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_flash_chips/spi_flash_chip_issi.h"
+#include "esp_flash_chips/spi_flash_chip_mxic.h"
+#include "esp_flash_chips/spi_flash_chip_gd.h"
+#include "esp_flash_chips/spi_flash_chip_winbond.h"
+#include "esp_flash_chips/spi_flash_chip_boya.h"
+#include "esp_flash_chips/spi_flash_chip_th.h"
 
 ESP_LOG_ATTR_TAG(TAG, "spi_flash");
 

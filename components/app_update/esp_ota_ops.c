@@ -31,7 +31,7 @@
 #include "esp_attr.h"
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
-#include "esp_flash_internal.h"
+#include "esp_private/esp_flash_internal.h" //For dangerous write protection
 
 #define OTA_SLOT(i) (i & 0x0F)
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))

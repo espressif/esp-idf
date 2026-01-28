@@ -5,7 +5,7 @@
  */
 
 #include <stdint.h>
-#include "spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_defs.h"
 
 //MXIC OPI mode needs two bytes of command - 2nd byte is the inversion of the command (1st) byte. S3 HW send LSB first
  #define MXIC_CMD16(cmd8)   ( (uint8_t)(cmd8) | ((uint8_t)(~(cmd8)) << 8) )

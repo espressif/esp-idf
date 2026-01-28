@@ -7,8 +7,7 @@ if(${target} STREQUAL "linux")
                           "linux/flash_mmap.c"
                           "spi_flash_blockdev.c"
                            INCLUDE_DIRS include
-                           REQUIRES esp_hal_mspi esp_blockdev
-                           PRIV_INCLUDE_DIRS include/spi_flash)
+                           REQUIRES esp_hal_mspi esp_blockdev)
     return()
 endif()
 
@@ -60,7 +59,7 @@ else()
         "spi_flash_os_func_noos.c")
 
     list(APPEND srcs ${cache_srcs})
-    set(priv_requires bootloader_support soc esp_hal_gpio esp_mm)
+    set(priv_requires bootloader_support soc esp_hal_gpio esp_driver_gpio esp_mm)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND priv_requires esp_security)
@@ -71,7 +70,6 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES hal esp_hal_mspi esp_blockdev
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS include
-                    PRIV_INCLUDE_DIRS include/spi_flash
                     LDFRAGMENTS linker.lf)
 
 # Avoid cache miss by unexpected inlineing when built by -Os
@@ -88,4 +86,6 @@ if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         # will be replaced with MMU requirements
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
+    # Force linking init_flash ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_flash_spi_init_include_func")
 endif()

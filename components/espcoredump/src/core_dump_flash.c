@@ -10,7 +10,7 @@
 #include "esp_log.h"
 #include "esp_core_dump_types.h"
 #include "core_dump_checksum.h"
-#include "esp_flash_internal.h"
+#include "esp_private/esp_flash_internal.h"
 #include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
 #include "esp_private/spi_flash_os.h"

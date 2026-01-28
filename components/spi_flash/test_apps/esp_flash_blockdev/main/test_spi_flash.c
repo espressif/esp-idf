@@ -9,7 +9,7 @@
 
 #include "esp_log.h"
 #include "unity.h"
-#include "spi_flash_chip_driver.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
 #include "test_flash_utils.h"
 
 TEST_CASE("spi_flash BDL test", "[esp_flash]")

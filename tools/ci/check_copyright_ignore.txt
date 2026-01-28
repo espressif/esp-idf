@@ -490,9 +490,6 @@ components/soc/esp32s2/include/soc/fe_reg.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
-components/spi_flash/include/spi_flash_chip_generic.h
-components/spi_flash/spi_flash_chip_boya.c
-components/spi_flash/spi_flash_chip_issi.c
 components/tcp_transport/include/esp_transport_ws.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
 components/wpa_supplicant/include/utils/wpa_debug.h

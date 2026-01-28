@@ -9,22 +9,23 @@
 #include <sys/param.h>
 #include <string.h>
 
+#include "esp_cpu.h"
 #include "esp_memory_utils.h"
-#include "spi_flash_chip_driver.h"
-#include "memspi_host_driver.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp_flash_internal.h"
-#include "spi_flash_defs.h"
-#include "spi_flash_mmap.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_spiflash.h"
 #include "esp_private/esp_clk.h"
-#include "esp_spi_flash_counters.h"
 #include "esp_check.h"
-#include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
-#include "esp_cpu.h"
+#include "hal/efuse_hal.h"
+
+#include "esp_spi_flash_counters.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
+#include "esp_private/memspi_host_driver.h"
+#include "esp_private/esp_flash_internal.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "spi_flash_mmap.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
@@ -152,8 +153,8 @@ extern rom_spiflash_api_func_t *esp_flash_api_funcs;
 #define rom_spiflash_api_funcs esp_flash_api_funcs_patched_ptr
 #endif
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
-// API funcs case 1 & 2
+#if !CONFIG_SPI_FLASH_ROM_IMPL
+// API funcs case 1: Not using ROM - define our own pointer and all functions
 static esp_err_t spiflash_start_default(esp_flash_t *chip);
 static esp_err_t spiflash_end_default(esp_flash_t *chip, esp_err_t err);
 static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip);
@@ -167,25 +168,13 @@ DRAM_ATTR static rom_spiflash_api_func_t esp_flash_api_funcs_patched = {
     .flash_end_flush_cache = flash_end_flush_cache,
 };
 
-#   if !CONFIG_SPI_FLASH_ROM_IMPL
-// API funcs case 1: Not using ROM - define our own pointer and all functions
 DRAM_ATTR static rom_spiflash_api_func_t *esp_flash_api_funcs_patched_ptr = &esp_flash_api_funcs_patched;
 
-#   else // CONFIG_SPI_FLASH_ROM_IMPL
-// API funcs case 2: Using ROM APIs but patch all api_funcs by updating esp_flash_api_funcs from ROM
-void esp_flash_rom_api_funcs_init(void)
-{
-    // Point esp_flash_api_funcs to our default structure
-    esp_flash_api_funcs = &esp_flash_api_funcs_patched;
-}
-
-#   endif // CONFIG_SPI_FLASH_ROM_IMPL
-
-#else // CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+#else // CONFIG_SPI_FLASH_ROM_IMPL
 // Using ROM implementation
 
 #   if CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
-// API funcs case 3: Using ROM APIs but patch start function to support flags parameter
+// API funcs case 2: Using ROM APIs but patch start function to support flags parameter
 static esp_err_t spiflash_start_default(esp_flash_t *chip);
 DRAM_ATTR static rom_spiflash_api_func_t esp_flash_api_funcs_patched;
 
@@ -198,6 +187,21 @@ void esp_flash_rom_api_funcs_init(void)
     esp_flash_api_funcs = &esp_flash_api_funcs_patched;
 }
 
+#   elif ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+// API funcs case 3: Using ROM APIs but patch flash_end_flush_cache function
+// When ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV, the api_funcs provided by ROM does not have flash_end_flush_cache member.
+static esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
+DRAM_ATTR static rom_spiflash_api_func_t esp_flash_api_funcs_patched;
+
+// Copy ROM structure to RAM and patch flash_end_flush_cache function
+void esp_flash_rom_api_funcs_init(void)
+{
+    rom_spiflash_api_func_t *rom_ptr = esp_flash_api_funcs;
+    memcpy(&esp_flash_api_funcs_patched, rom_ptr, sizeof(rom_spiflash_api_func_t));
+    esp_flash_api_funcs_patched.flash_end_flush_cache = flash_end_flush_cache;
+    esp_flash_api_funcs = &esp_flash_api_funcs_patched;
+}
+
 #   else
 // API funcs case 4: Using All ROM APIs directly
 void esp_flash_rom_api_funcs_init(void)
@@ -206,14 +210,14 @@ void esp_flash_rom_api_funcs_init(void)
 }
 
 #   endif // CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
-#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
 /* Static function to notify OS of a new SPI flash operation.
 
    If returns an error result, caller must abort. If returns ESP_OK, caller must
    call rom_spiflash_api_funcs->end() before returning.
 */
-#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+#if !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
 //Avoid constprop issue that place this function into flash.
 __attribute__((optimize("O0"))) //IDF-14941
 static esp_err_t spiflash_start_core(esp_flash_t *chip, uint32_t flags)
@@ -232,9 +236,9 @@ static esp_err_t spiflash_start_default(esp_flash_t *chip)
 {
     return spiflash_start_core(chip, 0);
 }
-#endif //!CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+#endif //!CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+#if !CONFIG_SPI_FLASH_ROM_IMPL
 /* Static function to notify OS that SPI flash operation is complete.
  */
 static esp_err_t spiflash_end_default(esp_flash_t *chip, esp_err_t err)
@@ -262,7 +266,13 @@ static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip)
     }
     return ESP_OK;
 }
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+/* ROM and patch information
+ * Latest: No change
+ * V1 (!ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV): Added to ROM
+ */
 static esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length)
 {
     if (!bus_acquired) {
@@ -769,7 +779,7 @@ esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len
     if (len == 0) {
         return ESP_OK;
     }
-    if (len > chip->size - start) {
+    if (start > chip->size || len > chip->size - start) {
         return ESP_ERR_INVALID_ARG;
     }
     return rom_esp_flash_erase_region(chip, start, len);
@@ -782,7 +792,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     if (err != ESP_OK) {
         return err;
     }
-    if (len > chip->size - start) {
+    if (start > chip->size || len > chip->size - start) {
         return ESP_ERR_INVALID_ARG;
     }
     return rom_esp_flash_erase_region(chip, start, len);
@@ -1305,7 +1315,7 @@ esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
 }
 #endif //CONFIG_SPI_FLASH_ROM_IMPL
 
-#if !(CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV) || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
 // use `esp_flash_write_encrypted` ROM version on chips later than C3, S3
 // For ESP32-C5, use IDF implementation when CPU frequency is 240MHz (calling start() with arg is required)
 FORCE_INLINE_ATTR esp_err_t s_encryption_write_lock(esp_flash_t *chip)
@@ -1565,12 +1575,12 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     if (err != ESP_OK) {
         return err;
     }
-    if (length > chip->size - address) {
+    if (buffer == NULL || address > chip->size || length > chip->size - address) {
         return ESP_ERR_INVALID_ARG;
     }
     return rom_esp_flash_write_encrypted(chip, address, buffer, length);
 }
-#endif // !(CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV) || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV || CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
 
 //init suspend mode cmd, uses internal.
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
@@ -1610,4 +1620,12 @@ esp_err_t esp_flash_app_disable_protect(bool disable)
     } else {
         return esp_flash_app_enable_os_functions(esp_flash_default_chip);
     }
+}
+
+bool esp_flash_is_quad_mode(const esp_flash_t *chip)
+{
+    if (chip == NULL) {
+        chip = esp_flash_default_chip;
+    }
+    return (chip->read_mode == SPI_FLASH_QIO) || (chip->read_mode == SPI_FLASH_QOUT);
 }

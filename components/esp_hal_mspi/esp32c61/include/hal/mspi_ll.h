@@ -39,6 +39,9 @@ extern "C" {
 #define MSPI_LL_CORE_CLOCK_120_MHZ                    120
 #define MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT         MSPI_LL_CORE_CLOCK_80_MHZ
 
+// PSRAM frequency should be constrained by AXI frequency to avoid FIFO underflow.
+#define MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED     1
+
 #define MSPI_LL_EVENT_SLV_ST_END                      (1<<3)
 #define MSPI_LL_EVENT_MST_ST_END                      (1<<4)
 #define MSPI_LL_EVENT_ECC_ERR                         (1<<5)

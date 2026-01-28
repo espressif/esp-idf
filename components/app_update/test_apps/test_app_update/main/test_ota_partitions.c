@@ -6,7 +6,7 @@
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_flash_partitions.h"
-#include "esp_flash_internal.h"
+#include "esp_flash.h"
 #include "spi_flash_mmap.h"
 #include "esp_image_format.h"
 #include "esp_system.h"
@@ -34,12 +34,9 @@ static uint32_t find_unused_space(size_t required_size)
     esp_partition_iterator_release(it);
     TEST_ASSERT_NOT_NULL(latest_partition);
 
-#if CONFIG_IDF_TARGET_LINUX
     uint32_t flash_chip_size;
-    esp_flash_get_size(NULL, &flash_chip_size);
-#else
-    uint32_t flash_chip_size = esp_flash_default_chip->size;
-#endif // CONFIG_IDF_TARGET_LINUX
+    esp_err_t ret = esp_flash_get_size(esp_flash_default_chip, &flash_chip_size);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
     uint32_t unused_offset = latest_partition->address + latest_partition->size;
     TEST_ASSERT_GREATER_OR_EQUAL_UINT32(required_size, flash_chip_size - unused_offset);
     return unused_offset;

@@ -62,7 +62,7 @@ CORE: 118: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
 CORE: 119: init_vfs_console in components/esp_stdio/stdio_vfs.c on BIT(0)
 CORE: 120: init_libc_stdio in components/esp_libc/src/init.c on BIT(0)
 
-CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 130: init_flash in components/spi_flash/esp_flash_spi_init.c on BIT(0)
 CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
 CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
 
@@ -114,6 +114,7 @@ SECONDARY: 151: nvs_sec_provider_register_hmac_scheme in components/nvs_sec_prov
 # the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components
 SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
+SECONDARY: 202: init_pm_flash_freq_limit in components/esp_pm/pm_c5_flash_freq_limit.c on BIT(0)
 SECONDARY: 203: init_apb_dma in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 204: init_coexist in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 205: init_bootloader_offset in components/esp_system/startup_funcs.c on BIT(0)
