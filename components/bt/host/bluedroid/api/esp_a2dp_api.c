@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -346,6 +346,35 @@ esp_err_t esp_a2d_source_init(void)
 
     /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *pref_mcc)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (g_a2dp_on_deinit || g_a2dp_source_ongoing_deinit) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (conn_hdl == 0 || pref_mcc == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_A2DP;
+    msg.act = BTC_AV_SRC_API_SET_PREF_MCC_EVT;
+
+    btc_av_args_t arg;
+    memset(&arg, 0, sizeof(btc_av_args_t));
+    arg.set_pref_mcc.conn_hdl = conn_hdl;
+    memcpy(&arg.set_pref_mcc.pref_mcc, pref_mcc, sizeof(esp_a2d_mcc_t));
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 

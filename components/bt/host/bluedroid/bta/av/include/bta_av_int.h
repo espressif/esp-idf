@@ -553,6 +553,7 @@ typedef struct {
     BOOLEAN             no_rtp_hdr;     /* TRUE if add no RTP header*/
     UINT8               disc_rsn;       /* disconnection reason */
     UINT16              uuid_int;       /*intended UUID of Initiator to connect to */
+    BOOLEAN             force_incoming; /* TRUE if stream SSM state is force-switched to INCOMING due to CONFIG_IND while in INIT, else FALSE */
 } tBTA_AV_SCB;
 
 #define BTA_AV_RC_ROLE_MASK     0x10

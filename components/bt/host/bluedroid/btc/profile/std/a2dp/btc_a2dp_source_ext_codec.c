@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -230,6 +230,20 @@ void btc_a2dp_source_shutdown(void)
     osi_free(a2dp_source_local_param_ptr);
     a2dp_source_local_param_ptr = NULL;
 #endif
+}
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_set_pref_mcc
+ **
+ ** Description
+ **
+ ** Returns          TRUE if the preferred config is supported, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN btc_a2dp_source_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref_mcc)
+{
+    return bta_av_co_audio_set_pref_mcc(hndl, pref_mcc);
 }
 
 #endif /* (BTC_AV_SRC_INCLUDED == TRUE) && (BTC_AV_EXT_CODEC == TRUE) */

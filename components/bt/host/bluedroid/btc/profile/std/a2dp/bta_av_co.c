@@ -121,6 +121,7 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
 static UINT8 bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static UINT8 bta_av_co_audio_sink_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_src_index);
+static BOOLEAN bta_av_co_audio_src_supports_pref_cfg(void);
 
 
 /*******************************************************************************
@@ -1111,8 +1112,8 @@ static BOOLEAN bta_av_co_audio_codec_cfg_matches_caps(UINT8 codec_id, const UINT
                          p_codec_cfg[BTA_AV_CO_SBC_MAX_BITPOOL_OFF]);
 
         /* Must match all items exactly except bitpool boundaries which can be adjusted */
-        if (!((p_codec_caps[BTA_AV_CO_SBC_FREQ_CHAN_OFF] & p_codec_cfg[BTA_AV_CO_SBC_FREQ_CHAN_OFF]) &&
-                (p_codec_caps[BTA_AV_CO_SBC_BLOCK_BAND_OFF] & p_codec_cfg[BTA_AV_CO_SBC_BLOCK_BAND_OFF]))) {
+        if ((~p_codec_caps[BTA_AV_CO_SBC_FREQ_CHAN_OFF] & p_codec_cfg[BTA_AV_CO_SBC_FREQ_CHAN_OFF]) ||
+            (~p_codec_caps[BTA_AV_CO_SBC_BLOCK_BAND_OFF] & p_codec_cfg[BTA_AV_CO_SBC_BLOCK_BAND_OFF])) {
             APPL_TRACE_EVENT("FALSE %x %x %x %x",
                              p_codec_caps[BTA_AV_CO_SBC_FREQ_CHAN_OFF],
                              p_codec_cfg[BTA_AV_CO_SBC_FREQ_CHAN_OFF],
@@ -1411,6 +1412,28 @@ static UINT8 bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8
 
 /*******************************************************************************
  **
+ ** Function         bta_av_co_audio_src_supports_pref_cfg
+ **
+ ** Description      Check if the media source codec capability supports the preferred configuration
+ **
+ ** Returns          TRUE if the media source supports preferred config, FALSE otherwise
+ **
+ *******************************************************************************/
+static BOOLEAN bta_av_co_audio_src_supports_pref_cfg(void)
+{
+#if (BTC_AV_EXT_CODEC == TRUE)
+    return (bta_av_co_cb.codec_pref_cfg.id == bta_av_co_cb.codec_caps.id &&
+            bta_av_sbc_cfg_in_external_codec_cap((UINT8 *)&bta_av_co_cb.codec_pref_cfg.info,
+                                             (UINT8 *)&bta_av_co_cb.codec_caps.info) == A2D_SUCCESS);
+#else
+    return (bta_av_co_cb.codec_pref_cfg.id == BTC_AV_CODEC_SBC &&
+            bta_av_sbc_cfg_in_cap((UINT8 *)&bta_av_co_cb.codec_pref_cfg.info,
+                                  (tA2D_SBC_CIE *)&bta_av_co_sbc_caps) == A2D_SUCCESS);
+#endif
+}
+
+/*******************************************************************************
+ **
  ** Function         bta_av_co_audio_codec_supported
  **
  ** Description      Check if all opened connections are compatible with a codec
@@ -1495,6 +1518,219 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTC_AV_STATUS *p_status)
 
 /*******************************************************************************
  **
+ ** Function         bta_av_co_audio_set_pref_mcc
+ **
+ ** Description      Set preferred codec configuration for a specific connection
+ **                  and initiate reconfiguration if the connection is open.
+ **
+ **                  Note: This function returns TRUE if the preferred config is
+ **                  supported. The actual success
+ **                  or failure of reconfiguration will be reported asynchronously
+ **                  via BTA_AV_RECONFIG_EVT.
+ **
+ ** Returns          TRUE if the preferred config is supported, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref_mcc)
+{
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+    tBTA_AV_CO_PEER *p_peer;
+    tBTA_AV_CO_SINK *p_sink;
+    UINT8 codec_cfg[AVDT_CODEC_SIZE];
+    UINT8 num_protect = 0;
+    UINT8 snk_index;
+    BOOLEAN pref_cfg_supported = FALSE;
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+    BOOLEAN cp_active;
+#endif
+
+    if (pref_mcc) {
+        bta_av_co_cb.codec_pref_cfg.id = pref_mcc->id;
+        memcpy(bta_av_co_cb.codec_pref_cfg.info, pref_mcc->info, AVDT_CODEC_SIZE);
+        pref_cfg_supported = bta_av_co_audio_src_supports_pref_cfg();
+
+        if (pref_cfg_supported) {
+            /* Retrieve the peer info for the specified handle */
+            p_peer = bta_av_co_get_peer(hndl);
+            if (p_peer == NULL) {
+                APPL_TRACE_ERROR("bta_av_co_audio_set_pref_mcc could not find peer entry for handle 0x%x", hndl);
+                return FALSE;
+            }
+
+            if (!p_peer->opened) {
+                APPL_TRACE_WARNING("bta_av_co_audio_set_pref_mcc connection 0x%x is not opened", hndl);
+                return FALSE;
+            }
+
+            /* Update the current codec configuration */
+            bta_av_co_audio_codec_reset();
+
+            /* Protect access to bta_av_co_cb.codec_cfg */
+            osi_mutex_global_lock();
+
+            /* Try to use the currently selected sink first. */
+            if (p_peer->p_snk != NULL &&
+                p_peer->p_snk->codec_type == bta_av_co_cb.codec_cfg.id &&
+                bta_av_co_audio_codec_match(p_peer->p_snk->codec_caps)) {
+                /* Current sink supports the new preferred config, use it */
+                p_sink = p_peer->p_snk;
+            } else if (bta_av_co_audio_peer_supports_codec(p_peer, &snk_index)) {
+                /* Current sink doesn't support, find another one that does */
+                p_sink = &p_peer->snks[snk_index];
+                /* Check that this sink is compatible with the CP */
+                if (!bta_av_co_audio_sink_supports_cp(p_sink)) {
+                    APPL_TRACE_DEBUG("bta_av_co_audio_set_pref_mcc connection 0x%x sink %d doesn't support cp", hndl, snk_index);
+                    osi_mutex_global_unlock();
+                    bta_av_co_audio_clear_pref_mcc(hndl);
+                    return FALSE;
+                }
+            } else {
+                /* No sink supports the new preferred config */
+                APPL_TRACE_DEBUG("bta_av_co_audio_set_pref_mcc connection 0x%x has no sink supporting preferred config", hndl);
+                osi_mutex_global_unlock();
+                bta_av_co_audio_clear_pref_mcc(hndl);
+                return FALSE;
+            }
+
+            /* Build the codec configuration for this sink */
+            if (bta_av_co_audio_codec_build_config(p_sink->codec_caps, codec_cfg)) {
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+                cp_active = bta_av_co_audio_sink_has_scmst(p_sink);
+#endif
+                /* Check if configuration actually changed:
+                 * 1. Sink changed
+                 * 2. Codec configuration changed
+                 * 3. CP state changed (if applicable)
+                 */
+                if (p_sink != p_peer->p_snk || memcmp(codec_cfg, p_peer->codec_cfg, AVDT_CODEC_SIZE)
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+                    || (p_peer->cp_active != cp_active)
+#endif
+                    ) {
+                    /* Update peer configuration with the new codec config based on preferred config. */
+                    p_peer->p_snk = p_sink;
+                    memcpy(p_peer->codec_cfg, codec_cfg, AVDT_CODEC_SIZE);
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+                    p_peer->cp_active = cp_active;
+                    bta_av_co_cb.cp.active = cp_active;
+                    if (cp_active) {
+                        num_protect = BTA_AV_CP_INFO_LEN;
+                    }
+#endif
+                    /* Reconfigure the connection to apply preferred codec configuration.
+                     * This is an asynchronous operation. Success/failure will be reported
+                     * via BTA_AV_RECONFIG_EVT. */
+                    APPL_TRACE_DEBUG("bta_av_co_audio_set_pref_mcc call BTA_AvReconfig(0x%x) to apply preferred config", hndl);
+                    p_peer->pref_mcc_reconfig_initiated = TRUE;
+                    BTA_AvReconfig(hndl, TRUE, p_sink->sep_info_idx, p_peer->codec_cfg, num_protect, (UINT8 *)bta_av_co_cp_scmst);
+                } else {
+                    /* Configuration hasn't changed, no need to reconfigure. */
+                    APPL_TRACE_DEBUG("bta_av_co_audio_set_pref_mcc no change, hndl:0x%x", hndl);
+                    p_peer->pref_mcc_reconfig_initiated = FALSE;
+                    osi_mutex_global_unlock();
+                    /* Return TRUE to indicate preferred config is set. */
+                    return TRUE;
+                }
+            } else {
+                APPL_TRACE_ERROR("bta_av_co_audio_set_pref_mcc build cfg failed, hndl:0x%x", hndl);
+                osi_mutex_global_unlock();
+                bta_av_co_audio_clear_pref_mcc(hndl);
+                return FALSE;
+            }
+
+            osi_mutex_global_unlock();
+        }
+
+        return pref_cfg_supported;
+    } else {
+        APPL_TRACE_ERROR("bta_av_co_audio_set_pref_mcc pref_mcc NULL");
+        return FALSE;
+    }
+#else
+    UNUSED(hndl);
+    UNUSED(pref_mcc);
+    return FALSE;
+#endif /* BTC_AV_SRC_INCLUDED == TRUE */
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_clear_pref_mcc
+ **
+ ** Description      Clear the preferred codec configuration
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void bta_av_co_audio_clear_pref_mcc(tBTA_AV_HNDL hndl)
+{
+    UNUSED(hndl);
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+    bta_av_co_cb.codec_pref_cfg.id = BTC_AV_CODEC_NONE;
+    memset(bta_av_co_cb.codec_pref_cfg.info, 0, AVDT_CODEC_SIZE);
+    /* reset codec configuration */
+    bta_av_co_audio_codec_reset();
+#endif
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_pref_mcc_reconfig_initiated
+ **
+ ** Description      Check if a reconfig was actually initiated by the last call
+ **                  to bta_av_co_audio_set_pref_mcc(). This is used to determine
+ **                  if we need to wait for BTA_AV_RECONFIG_EVT or can notify
+ **                  immediately (when config unchanged).
+ **
+ ** Returns          TRUE if reconfig was initiated, FALSE if config unchanged
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_pref_mcc_reconfig_initiated(tBTA_AV_HNDL hndl)
+{
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+    tBTA_AV_CO_PEER *p_peer;
+
+    /* Retrieve the peer info for the specified handle */
+    p_peer = bta_av_co_get_peer(hndl);
+    if (p_peer == NULL || !p_peer->opened) {
+        return FALSE;
+    }
+
+    return p_peer->pref_mcc_reconfig_initiated;
+#else
+    UNUSED(hndl);
+    return FALSE;
+#endif /* BTC_AV_SRC_INCLUDED == TRUE */
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_pref_mcc_reconfig_clear
+ **
+ ** Description      Clear the pref_mcc_reconfig_initiated flag. This should be
+ **                  called after processing a BTA_AV_RECONFIG_EVT for preferred
+ **                  codec config change.
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void bta_av_co_audio_pref_mcc_reconfig_clear(tBTA_AV_HNDL hndl)
+{
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+    tBTA_AV_CO_PEER *p_peer;
+
+    /* Retrieve the peer info for the specified handle */
+    p_peer = bta_av_co_get_peer(hndl);
+    if (p_peer != NULL) {
+        p_peer->pref_mcc_reconfig_initiated = FALSE;
+    }
+#else
+    UNUSED(hndl);
+#endif /* BTC_AV_SRC_INCLUDED == TRUE */
+}
+
+/*******************************************************************************
+ **
  ** Function         bta_av_co_audio_codec_reset
  **
  ** Description      Reset the current codec configuration
@@ -1504,19 +1740,47 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTC_AV_STATUS *p_status)
  *******************************************************************************/
 void bta_av_co_audio_codec_reset(void)
 {
+    BOOLEAN pref_cfg_supported;
+
     osi_mutex_global_lock();
     FUNC_TRACE();
 
-#if (BTC_AV_EXT_CODEC == TRUE)
-    bta_av_co_cb.codec_cfg.id = bta_av_co_cb.codec_caps.id;
-    bta_av_build_src_cfg(bta_av_co_cb.codec_cfg.info, bta_av_co_cb.codec_caps.info);
-#else
-    /* Reset the current configuration to SBC */
-    bta_av_co_cb.codec_cfg.id = BTC_AV_CODEC_SBC;
-    if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btc_av_sbc_default_config, bta_av_co_cb.codec_cfg.info) != A2D_SUCCESS) {
-        APPL_TRACE_ERROR("bta_av_co_audio_codec_reset A2D_BldSbcInfo failed");
+    pref_cfg_supported = FALSE;
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+    switch (bta_av_co_cb.codec_pref_cfg.id) {
+    case BTC_AV_CODEC_NONE: {
+        APPL_TRACE_DEBUG("bta_av_co_audio_codec_reset preferred codec configuration is not set");
+        break;
+    }
+    case BTC_AV_CODEC_SBC: {
+        if (bta_av_co_audio_src_supports_pref_cfg()) {
+            pref_cfg_supported = TRUE;
+        } else {
+            APPL_TRACE_ERROR("bta_av_co_audio_codec_reset unsupported pref cfg");
+        }
+        break;
+    }
+
+    default:
+        APPL_TRACE_ERROR("bta_av_co_audio_codec_reset bad pref cfg id %d", bta_av_co_cb.codec_pref_cfg.id);
+        break;
     }
 #endif
+
+    if (pref_cfg_supported) {
+        bta_av_co_cb.codec_cfg = bta_av_co_cb.codec_pref_cfg;
+    } else {
+#if (BTC_AV_EXT_CODEC == TRUE)
+        bta_av_co_cb.codec_cfg.id = bta_av_co_cb.codec_caps.id;
+        bta_av_build_src_cfg(bta_av_co_cb.codec_cfg.info, bta_av_co_cb.codec_caps.info);
+#else
+        /* Reset the current configuration to SBC */
+        bta_av_co_cb.codec_cfg.id = BTC_AV_CODEC_SBC;
+        if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btc_av_sbc_default_config, bta_av_co_cb.codec_cfg.info) != A2D_SUCCESS) {
+            APPL_TRACE_ERROR("bta_av_co_audio_codec_reset A2D_BldSbcInfo failed");
+        }
+#endif
+    }
 
     osi_mutex_global_unlock();
 }
@@ -1549,7 +1813,15 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_
     case BTC_AV_CODEC_PCM:
         new_cfg.id = BTC_AV_CODEC_SBC;
 
-        sbc_config = btc_av_sbc_default_config;
+        if (bta_av_co_audio_src_supports_pref_cfg()) {
+            if (A2D_ParsSbcInfo((tA2D_SBC_CIE *)&sbc_config, bta_av_co_cb.codec_pref_cfg.info, FALSE) != A2D_SUCCESS) {
+                APPL_TRACE_ERROR("bta_av_co_audio_set_codec A2D_ParsSbcInfo failed");
+                return FALSE;
+            }
+        } else {
+            sbc_config = btc_av_sbc_default_config;
+        }
+
         if ((p_feeding->cfg.pcm.num_channel != 1) &&
                 (p_feeding->cfg.pcm.num_channel != 2)) {
             APPL_TRACE_ERROR("bta_av_co_audio_set_codec PCM channel number unsupported");
@@ -1561,11 +1833,16 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_
             return FALSE;
         }
         switch (p_feeding->cfg.pcm.sampling_freq) {
+        /* SBC supports 16/32/44.1/48kHz */
+        case 16000:
+            sbc_config.samp_freq = A2D_SBC_IE_SAMP_FREQ_16;
+            break;
+        case 32000:
+            sbc_config.samp_freq = A2D_SBC_IE_SAMP_FREQ_32;
+            break;
         case 8000:
         case 12000:
-        case 16000:
         case 24000:
-        case 32000:
         case 48000:
             sbc_config.samp_freq = A2D_SBC_IE_SAMP_FREQ_48;
             break;
@@ -1708,6 +1985,7 @@ void bta_av_co_init(tBTC_AV_CODEC_INFO *codec_caps)
     if (codec_caps) {
         memcpy(&bta_av_co_cb.codec_caps, codec_caps, sizeof(tBTC_AV_CODEC_INFO));
     }
+    bta_av_co_cb.codec_pref_cfg.id = BTC_AV_CODEC_NONE;
     bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
 
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
@@ -1776,6 +2054,50 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
 
     *min = bta_av_co_cb.codec_cfg_setconfig.info[BTA_AV_CO_SBC_MIN_BITPOOL_OFF];
     *max = bta_av_co_cb.codec_cfg_setconfig.info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF];
+
+    return TRUE;
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_peer_sink_caps
+ **
+ ** Description      Get the sink codec capabilities of the peer
+ **
+ ** Returns          TRUE if sink capabilities are available, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UINT8 *p_codec_type)
+{
+    tBTA_AV_CO_PEER *p_peer;
+    tBTA_AV_CO_SINK *p_sink;
+
+    FUNC_TRACE();
+
+    /* Find the peer info */
+    p_peer = bta_av_co_get_peer(hndl);
+    if (p_peer == NULL) {
+        APPL_TRACE_ERROR("bta_av_co_get_peer_sink_caps could not find peer entry");
+        return FALSE;
+    }
+
+    /* Check if we have a selected sink */
+    if (p_peer->p_snk == NULL) {
+        APPL_TRACE_ERROR("bta_av_co_get_peer_sink_caps no sink selected");
+        return FALSE;
+    }
+
+    p_sink = p_peer->p_snk;
+
+    /* Copy the codec capabilities */
+    if (p_codec_caps) {
+        memcpy(p_codec_caps, p_sink->codec_caps, AVDT_CODEC_SIZE);
+    }
+
+    /* Copy the codec type */
+    if (p_codec_type) {
+        *p_codec_type = p_sink->codec_type;
+    }
 
     return TRUE;
 }
