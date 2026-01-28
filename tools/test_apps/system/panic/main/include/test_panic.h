@@ -87,6 +87,10 @@ void test_panic_print_backtrace(void);
 void test_panic_halt(void);
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY && CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+void test_panic_extram_attr(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

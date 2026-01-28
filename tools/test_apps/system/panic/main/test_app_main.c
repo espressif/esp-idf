@@ -222,5 +222,9 @@ void app_main(void)
 #endif
 #endif
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY && CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    HANDLE_TEST(test_name, test_panic_extram_attr);
+#endif
+
     die("Unknown test name");
 }
