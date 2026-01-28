@@ -868,6 +868,17 @@ typedef esp_err_t (*esp_vendor_ie_cb_with_ret_t)(void *ctx, wifi_vendor_ie_type_
   */
 esp_err_t esp_wifi_set_vendor_ie_with_ret_cb(esp_vendor_ie_cb_with_ret_t cb, void *ctx);
 
+/**
+ * @brief Weak Wi-Fi assert hook.
+ *
+ * The Wi-Fi library provides a weak default implementation. Applications may
+ * define this symbol to override the default behavior for debugging.
+ *
+ * @note This is intended for diagnostics only and is not part of normal Wi-Fi
+ * operation.
+ */
+void wifi_assert(bool expr, const char *file, const char *func, int line);
+
 #ifdef __cplusplus
 }
 #endif
