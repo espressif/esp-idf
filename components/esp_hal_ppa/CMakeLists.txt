@@ -9,7 +9,7 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
 endif()
 
 if(CONFIG_SOC_PPA_SUPPORTED)
-    list(APPEND srcs "ppa_hal.c")
+    list(APPEND srcs "ppa_hal.c" "${target}/ppa_periph.c")
 endif()
 
 idf_component_register(SRCS ${srcs}

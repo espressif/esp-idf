@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,7 @@ typedef enum {
  *
  * @param enable    Set true to enable, false to disable
  */
-static inline void ppa_ll_enable_bus_clock(bool enable)
+static inline void _ppa_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_ppa_sys_clk_en = enable;
 }
@@ -62,13 +62,13 @@ static inline void ppa_ll_enable_bus_clock(bool enable)
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define ppa_ll_enable_bus_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ppa_ll_enable_bus_clock(__VA_ARGS__); \
+        _ppa_ll_enable_bus_clock(__VA_ARGS__); \
     } while(0)
 
 /**
  * @brief Reset the PPA module
  */
-static inline void ppa_ll_reset_register(void)
+static inline void _ppa_ll_reset_register(void)
 {
     HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_ppa = 1;
     HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_ppa = 0;
@@ -78,7 +78,7 @@ static inline void ppa_ll_reset_register(void)
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define ppa_ll_reset_register(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        ppa_ll_reset_register(__VA_ARGS__); \
+        _ppa_ll_reset_register(__VA_ARGS__); \
     } while(0)
 
 /**
