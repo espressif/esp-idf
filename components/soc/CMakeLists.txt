@@ -68,6 +68,10 @@ if(CONFIG_SOC_DMA2D_SUPPORTED)
     list(APPEND srcs "${target_folder}/dma2d_periph.c")
 endif()
 
+if(CONFIG_SOC_PPA_SUPPORTED)
+    list(APPEND srcs "${target_folder}/ppa_periph.c")
+endif()
+
 if(CONFIG_SOC_GPSPI_SUPPORTED)
     list(APPEND srcs "${target_folder}/spi_periph.c")
 endif()
