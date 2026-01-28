@@ -675,11 +675,8 @@ examples/peripherals/usb/device:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - *common_components
     - fatfs
-    - esp_hw_support # for usb_phy
   depends_filepatterns:
-    - components/soc/esp32*/include/soc/usb_dwc_struct.h
     - components/esp_hw_support/usb_phy/usb_phy.c
     - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/device/**/*
@@ -698,7 +695,6 @@ examples/peripherals/usb/device/tusb_ncm:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - *common_components
     - esp_wifi
   depends_filepatterns:
     - examples/peripherals/usb/device/tusb_ncm/**/*
@@ -711,10 +707,8 @@ examples/peripherals/usb/host:
       temporary: true
       reason: lack of runners with usb_host_flash_disk tag
   depends_components:
-    - *common_components
     - fatfs
     - esp_hal_usb
-    - esp_hw_support # for usb_phy
   depends_filepatterns:
     - components/soc/esp32*/include/soc/usb_dwc_struct.h
     - components/esp_hw_support/usb_phy/usb_phy.c
@@ -737,3 +731,4 @@ examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   depends_components:
     - *common_components
     - esp_driver_usb_serial_jtag
+    - esp_hal_usb
