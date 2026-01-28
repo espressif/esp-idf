@@ -682,7 +682,7 @@ menu "BLE 5.x Features"
         config BT_NIMBLE_EXT_SCAN
             bool "Enable extended scanning"
             depends on BT_NIMBLE_50_FEATURE_SUPPORT
-            default y
+            default y if BT_NIMBLE_EXT_ADV
             help
                 Enable this option to do extended scanning.
 
