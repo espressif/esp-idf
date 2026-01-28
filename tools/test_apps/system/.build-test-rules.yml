@@ -164,10 +164,8 @@ tools/test_apps/system/test_watchpoint:
     - if: IDF_TARGET in ["esp32", "esp32c3"] # Just one test per architecture
 
 tools/test_apps/system/unicore_bootloader:
-  enable:
-    - if: SOC_CPU_CORES_NUM > 1
-      reason: the test should be run on multicore chips
   disable:
-    - if: IDF_TARGET == "esp32s31"
-      temporary: true
-      reason: not supported yet # TODO: IDF-14685
+    - if: SOC_CPU_CORES_NUM == 1
+      reason: the test is only relevant for multicore chips
+    - if: CONFIG_NAME == "unicore_psram" and SOC_PSRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "multicore_psram" and SOC_PSRAM_SUPPORTED != 1

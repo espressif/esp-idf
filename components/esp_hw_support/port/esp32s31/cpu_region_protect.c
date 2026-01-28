@@ -15,7 +15,7 @@
 #include "esp_private/esp_psram_extram.h"
 #endif /* CONFIG_SPIRAM */
 
-/* TODO: [ESP32S31] IDF-14655 */
+/* TODO: [ESP32S31] IDF-15238 */
 
 #ifdef BOOTLOADER_BUILD
 // Without L bit set
@@ -39,5 +39,5 @@
 
 void esp_cpu_configure_region_protection(void)
 {
-    /* TODO: [ESP32S31] IDF-14655 */
+    /* TODO: [ESP32S31] IDF-15238 */
 }
