@@ -289,7 +289,7 @@ desc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
 }
 
 /* this api does the following things :
-** does service, characteristic and discriptor discovery and
+** does service, characteristic and descriptor discovery and
 ** fills the hid device information accordingly in dev */
 static void read_device_services(esp_hidh_dev_t *dev)
 {
@@ -466,7 +466,7 @@ static void read_device_services(esp_hidh_dev_t *dev)
                                                  chr_end_handle, desc_disced, descr_result);
                     WAIT_CB();
                     if (status != 0) {
-                        ESP_LOGE(TAG, "failed to find discriptors for characteristic : %d", c);
+                        ESP_LOGE(TAG, "failed to find descriptors for characteristic : %d", c);
                         assert(status == 0);
                     }
                     dcount = dscs_discovered;
@@ -949,6 +949,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(uint8_t *bda, uint8_t address_type)
     dev->report_write = esp_ble_hidh_dev_report_write;
     dev->report_read = esp_ble_hidh_dev_report_read;
     dev->dump = esp_ble_hidh_dev_dump;
+    dev->connected = true;
 
     /* perform service discovery and fill the report maps */
     read_device_services(dev);
