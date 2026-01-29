@@ -129,6 +129,68 @@ Examples of Authentication Configuration
                 .auth_type = HTTP_AUTH_TYPE_BASIC,
             };
 
+Response Header Access
+----------------------
+
+ESP HTTP Client provides the ability to save and retrieve HTTP response headers from the server. This feature is useful when applications need to access metadata such as content type, cache control directives, custom server headers, or other response information.
+
+Configuration
+^^^^^^^^^^^^^
+
+To enable response header saving, the following Kconfig options must be configured:
+
+    * :ref:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`: Enable saving of response headers (disabled by default to conserve memory).
+    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`: Maximum number of response headers to save (default: 10).
+    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`: Maximum size in bytes for both header key and value (default: 128 bytes each).
+
+Usage
+^^^^^
+
+Once enabled, response headers can be retrieved using the :cpp:func:`esp_http_client_get_response_header` function after performing an HTTP request. The function returns the header value for a given key.
+
+Example:
+
+.. code-block:: c
+
+    #if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        char *content_type = NULL;
+        err = esp_http_client_get_response_header(client, "Content-Type", &content_type);
+        if (err == ESP_OK && content_type != NULL) {
+            ESP_LOGI(TAG, "Content-Type: %s", content_type);
+        } else if (err == ESP_ERR_NOT_FOUND) {
+            ESP_LOGW(TAG, "Content-Type header not found");
+        }
+
+        char *date = NULL;
+        err = esp_http_client_get_response_header(client, "Date", &date);
+        if (err == ESP_OK && date != NULL) {
+            ESP_LOGI(TAG, "Date: %s", date);
+        }
+    }
+
+    esp_http_client_cleanup(client);
+    #endif
+
+Important Limitations
+^^^^^^^^^^^^^^^^^^^^^
+
+When using response header access, be aware of the following limitations:
+
+    * **Header Count Limit**: Only the first ``CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`` headers are saved. Additional headers beyond this limit are discarded with a warning log.
+    * **Size Constraints**: Headers where either the key or value exceeds ``CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`` bytes are discarded with a warning log showing the actual sizes.
+    * **Multi-Value Headers**: For headers that appear multiple times in the response (e.g., ``Set-Cookie``), only the last value is retained.
+    * **Case Sensitivity**: Header lookups are case-insensitive, but the original case is preserved in storage.
+    * **Memory Overhead**: Enabling this feature increases memory consumption. Calculate approximate memory usage as: ``(CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS * CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE * 2)`` bytes per client instance.
+    * **Header Lifecycle**: Response headers are cleared when starting a new request with the same client handle via :cpp:func:`esp_http_client_perform` or :cpp:func:`esp_http_client_prepare`.
+
+.. note::
+
+    The returned header value pointer is managed internally by the HTTP client and must not be freed by the application. The pointer remains valid until the client handle is cleaned up or a new request is initiated.
+
 Event Handling
 --------------
 

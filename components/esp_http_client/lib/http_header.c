@@ -69,6 +69,7 @@ esp_err_t http_header_get(http_header_handle_t header, const char *key, char **v
         *value = item->value;
     } else {
         *value = NULL;
+        return ESP_ERR_NOT_FOUND;
     }
 
     return ESP_OK;

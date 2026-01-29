@@ -48,4 +48,29 @@ menu "ESP HTTP client"
         default y
         help
             Migrate ESP HTTP Client to use PSA Crypto.
+
+    config ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        bool "Save response headers"
+        default n
+        help
+            This option will enable saving of response headers in esp_http_client component.
+            When enabled, upto ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS headers are saved.
+            Enabling this option will increase the memory footprint of the component.
+
+    config ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS
+        depends on ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        int "Maximum number of response headers"
+        default 10
+        help
+            This config option helps in setting the maximum number of response headers that
+            can be saved in esp_http_client component.
+
+    config ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE
+        depends on ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        int "Maximum size of response header"
+        default 128
+        help
+            This config option helps in setting the maximum size of response header that
+            can be saved in esp_http_client component.
+            Note that the same size is used for key and value in the response headers.
 endmenu

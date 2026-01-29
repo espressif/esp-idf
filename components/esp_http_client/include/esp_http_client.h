@@ -444,10 +444,36 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
  * @param[out] value   The header value
  *
  * @return
- *     - ESP_OK
- *     - ESP_FAIL
+ *     - ESP_OK: Header found
+ *     - ESP_ERR_INVALID_ARG: Invalid arguments
+ *     - ESP_ERR_NOT_FOUND: Header not found
  */
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
+
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS || __DOXYGEN__
+/**
+ * @brief Get a response header value by key
+ *        The value parameter will be set to NULL if there is no header which is same as
+ *        the key specified, otherwise the address of header value will be assigned to value parameter.
+ *        This function must be called after `esp_http_client_init`.
+ *
+ * @note Limitations:
+ *       - Only first CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS (default: 10) headers are saved
+ *       - Headers exceeding CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE (default: 128) bytes are discarded
+ *       - Multi-value headers (e.g., Set-Cookie) only retain the last value
+ *       - Headers are case-insensitive for lookup but case-preserving for storage
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[in]  key     The header key
+ * @param[out] value   Pointer to store the header value. This pointer should not be freed by the user.
+ *
+ * @return
+ *     - ESP_OK: Header found
+ *     - ESP_ERR_INVALID_ARG: Invalid arguments
+ *     - ESP_ERR_NOT_FOUND: Header not found
+ */
+esp_err_t esp_http_client_get_response_header(esp_http_client_handle_t client, const char *key, char **value);
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS || __DOXYGEN__
 
 /**
  * @brief      Get http request username.

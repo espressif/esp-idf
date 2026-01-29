@@ -63,7 +63,7 @@ esp_err_t http_header_destroy(http_header_handle_t header);
 esp_err_t http_header_set(http_header_handle_t header, const char *key, const char *value);
 
 /**
- * @brief      Sample as `http_header_set` but the value can be formated
+ * @brief      Sample as `http_header_set` but the value can be formatted
  *
  * @param[in]  header     The header
  * @param[in]  key        The key
@@ -84,7 +84,7 @@ int http_header_set_format(http_header_handle_t header, const char *key, const c
  *
  * @return
  *     - ESP_OK
- *     - ESP_FAIL
+ *     - ESP_ERR_NOT_FOUND
  */
 esp_err_t http_header_get(http_header_handle_t header, const char *key, char **value);
 

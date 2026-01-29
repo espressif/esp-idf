@@ -60,6 +60,9 @@ typedef struct {
  */
 typedef struct {
     http_header_handle_t headers;       /*!< http header */
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+    int saved_response_header_count;
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
     esp_http_buffer_t   *buffer;        /*!< data buffer as linked list */
     int                 status_code;    /*!< status code (integer) */
     int64_t             content_length; /*!< data length */
@@ -249,6 +252,23 @@ static int http_on_header_event(esp_http_client_handle_t client)
         client->event.header_value = client->current_header_value;
         http_dispatch_event(client, HTTP_EVENT_ON_HEADER, NULL, 0);
         http_dispatch_event_to_event_loop(HTTP_EVENT_ON_HEADER, &client, sizeof(esp_http_client_handle_t));
+
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        if (client->response->saved_response_header_count >= CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS) {
+            ESP_LOGW(TAG, "Response header limit (%d) exceeded", CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS);
+        } else {
+            if (strlen(client->current_header_key) > CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE ||
+                strlen(client->current_header_value) > CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE) {
+                ESP_LOGW(TAG, "Header '%s' exceeds max size (%d): key=%zu, value=%zu",
+                    client->current_header_key, CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE,
+                    strlen(client->current_header_key), strlen(client->current_header_value));
+            } else {
+                http_header_set(client->response->headers, client->current_header_key, client->current_header_value);
+                client->response->saved_response_header_count++;
+            }
+        }
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+
         free(client->current_header_key);
         free(client->current_header_value);
         client->current_header_key = NULL;
@@ -408,6 +428,17 @@ esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char
 
     return http_header_get(client->request->headers, key, value);
 }
+
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+esp_err_t esp_http_client_get_response_header(esp_http_client_handle_t client, const char *key, char **value)
+{
+    if (client == NULL || client->response == NULL || client->response->headers == NULL || key == NULL || value == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return http_header_get(client->response->headers, key, value);
+}
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
 
 esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const char *key)
 {
@@ -725,6 +756,12 @@ esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
         free(client->auth_header);
         client->auth_header = NULL;
     }
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+    if (client->response->headers != NULL) {
+        http_header_clean(client->response->headers);
+    }
+    client->response->saved_response_header_count = 0;
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
     http_parser_init(client->parser, HTTP_RESPONSE);
     if (client->connection_info.username) {
         if (client->connection_info.auth_type == HTTP_AUTH_TYPE_BASIC) {
@@ -817,7 +854,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
                    (client->request->headers       = http_header_init())                             &&
                    (client->request->buffer        = calloc(1, sizeof(esp_http_buffer_t)))           &&
                    (client->response               = calloc(1, sizeof(esp_http_data_t)))             &&
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
                    (client->response->headers      = http_header_init())                             &&
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
                    (client->response->buffer       = calloc(1, sizeof(esp_http_buffer_t)))
                );
 
@@ -1068,7 +1107,9 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
         free(client->request);
     }
     if (client->response) {
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
         http_header_destroy(client->response->headers);
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
         if (client->response->buffer) {
             free(client->response->buffer->data);
             esp_http_client_cached_buf_cleanup(client->response->buffer);
@@ -1451,6 +1492,9 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
                     return err;
                 }
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+                client->response->saved_response_header_count = 0;
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
                 /* falls through */
             case HTTP_STATE_REQ_COMPLETE_HEADER:
                 if ((err = esp_http_client_send_post_data(client)) != ESP_OK) {

@@ -129,6 +129,68 @@ ESP HTTP 客户端同时支持 **基本** 和 **摘要** 认证。
                 .auth_type = HTTP_AUTH_TYPE_BASIC,
             };
 
+响应头访问
+----------
+
+ESP HTTP 客户端具有保存和检索来自服务器的 HTTP 响应头的功能。当应用程序需要访问元数据（如内容类型、缓存控制指令、自定义服务器头或其他响应信息）时，此功能会发挥重要作用。
+
+配置
+^^^^^
+
+要启用响应头保存功能，必须配置以下 Kconfig 选项：
+
+    * :ref:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`：启用响应头保存（默认禁用以节省内存）。
+    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`：要保存的响应头的最大数量（默认值：10）。
+    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`：响应头键和值的最大大小（单位：字节，默认值：各 128 字节）。
+
+用法
+^^^^^
+
+启用后，在执行 HTTP 请求后，可以使用 :cpp:func:`esp_http_client_get_response_header` 函数检索响应头。该函数返回给定键对应响应头的值。
+
+示例：
+
+.. code-block:: c
+
+    #if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        char *content_type = NULL;
+        err = esp_http_client_get_response_header(client, "Content-Type", &content_type);
+        if (err == ESP_OK && content_type != NULL) {
+            ESP_LOGI(TAG, "Content-Type: %s", content_type);
+        } else if (err == ESP_ERR_NOT_FOUND) {
+            ESP_LOGW(TAG, "Content-Type header not found");
+        }
+
+        char *date = NULL;
+        err = esp_http_client_get_response_header(client, "Date", &date);
+        if (err == ESP_OK && date != NULL) {
+            ESP_LOGI(TAG, "Date: %s", date);
+        }
+    }
+
+    esp_http_client_cleanup(client);
+    #endif
+
+重要限制
+^^^^^^^^^
+
+使用响应头访问功能时，需注意以下限制：
+
+    * **响应头数量限制**：仅保存前 ``CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`` 个响应头，超出限制的响应头会被丢弃，并产生警告日志。
+    * **大小限制**：若响应头的键或值长度超过 ``CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`` 字节，该头将被丢弃，并记录包含实际长度的警告日志。
+    * **多值响应头**：对于在响应中出现多次的响应头（如 ``Set-Cookie``），仅保存最后一次出现的值。
+    * **大小写敏感性**：查找响应头时不区分大小写，但存储时会保留原始大小写。
+    * **内存开销**：启用此功能会增加内存消耗。每个客户端实例的近似内存使用量为 ``(CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS * CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE * 2)`` 字节。
+    * **响应头生命周期**：当通过 :cpp:func:`esp_http_client_perform` 或 :cpp:func:`esp_http_client_prepare` 用同一客户端句柄发起新请求时，保存的响应头会被清空。
+
+.. note::
+
+    返回的头值指针由 HTTP 客户端内部管理，应用程序不得释放该指针。该指针在客户端句柄被清理或启动新请求之前保持有效。
+
 事件处理
 ---------
 
