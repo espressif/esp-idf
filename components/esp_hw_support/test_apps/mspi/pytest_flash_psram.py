@@ -78,6 +78,7 @@ def test_flash_psram_120sdr_120sdr(dut: IdfDut) -> None:
     'config',
     [
         'generic_timing_tuning_log_safe',
+        'generic_timing_tuning_xip',
     ],
     indirect=True,
 )

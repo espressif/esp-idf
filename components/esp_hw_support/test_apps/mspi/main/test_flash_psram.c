@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "esp32s3/rom/opi_flash.h"
 #endif
 
+__attribute__((unused)) const static char *TAG = "MSPI";
 
 //-----------------------------------------SPI0 PSRAM TEST-----------------------------------------------//
 #if CONFIG_SPIRAM
@@ -143,3 +144,54 @@ TEST_CASE("MSPI: Test_SPI0_Flash", "[mspi]")
     }
     printf(DRAM_STR("----------SPI0 Flash Test Success----------\n\n"));
 }
+
+
+/*---------------------------------------------------------------
+                XIP + PSRAM Stack + Flash API
+---------------------------------------------------------------*/
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
+typedef struct {
+    SemaphoreHandle_t sem;
+    const esp_partition_t *part;
+} test_flash_api_ctx_t;
+
+static void test_flash_api_on_psram_when_xip(void *arg)
+{
+    test_flash_api_ctx_t *ctx = (test_flash_api_ctx_t *)arg;
+    SemaphoreHandle_t test_semphr = ctx->sem;
+
+    TEST_ESP_OK(esp_flash_erase_region(ctx->part->flash_chip, ctx->part->address, ctx->part->size));
+
+    uint32_t test_val = 0x55;
+    uint32_t read_val = 0;
+    TEST_ESP_OK(esp_flash_write(ctx->part->flash_chip, &test_val, ctx->part->address, 4));
+    TEST_ESP_OK(esp_flash_read(ctx->part->flash_chip, &read_val, ctx->part->address, 4));
+    TEST_ASSERT(test_val == read_val);
+
+    xSemaphoreGive(test_semphr);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test Flash API work with PSRAM stack when XIP_PSRAM", "[psram]")
+{
+    SemaphoreHandle_t test_semphr = xSemaphoreCreateBinary();
+    TEST_ASSERT(test_semphr);
+    const esp_partition_t *part = get_test_flash_partition();
+    ESP_LOGI(TAG, "found partition '%s' at offset 0x%"PRIx32" with size 0x%"PRIx32, part->label, part->address, part->size);
+
+    test_flash_api_ctx_t ctx = {
+        .sem = test_semphr,
+        .part = part,
+    };
+
+    int size_stack = 1024 * 4;
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    xTaskCreateStaticPinnedToCore(test_flash_api_on_psram_when_xip, "test_flash_api_on_psram_when_xip", size_stack, &ctx, 5, stack_for_task, &task_buf, 0);
+
+    xSemaphoreTake(test_semphr, portMAX_DELAY);
+    vSemaphoreDelete(test_semphr);
+    free(stack_for_task);
+}
+#endif  //CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
