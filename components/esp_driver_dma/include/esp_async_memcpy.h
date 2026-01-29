@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,21 @@ esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config,
  */
 esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
 #endif // SOC_HAS(AXI_GDMA)
+
+#if SOC_HAS(LP_AHB_GDMA)
+/**
+ * @brief Install async memcpy driver, with LP AHB-GDMA as the backend
+ *
+ * @param[in] config Configuration of async memcpy
+ * @param[out] mcp Returned driver handle
+ * @return
+ *      - ESP_OK: Install async memcpy driver successfully
+ *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
+ *      - ESP_FAIL: Install async memcpy driver failed because of other error
+ */
+esp_err_t esp_async_memcpy_install_gdma_lp_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+#endif // SOC_HAS(LP_AHB_GDMA)
 
 #if SOC_CP_DMA_SUPPORTED
 /**

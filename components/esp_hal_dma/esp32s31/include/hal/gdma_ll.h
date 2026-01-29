@@ -9,20 +9,21 @@
 #include <stdbool.h>
 #include <sys/param.h>
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_peri_clkrst_struct.h"
 #include "soc/soc_etm_source.h"
 
 #define GDMA_LL_GET(_attr)          GDMA_LL_ ## _attr
 
-#define GDMA_LL_INST_NUM            2
+#define GDMA_LL_INST_NUM            3
 
-#define GDMA_LL_PAIRS_PER_INST      MAX(GDMA_LL_AHB_PAIRS_PER_GROUP, GDMA_LL_AXI_PAIRS_PER_GROUP)
+#define GDMA_LL_PAIRS_PER_INST      MAX(MAX(GDMA_LL_AHB_PAIRS_PER_GROUP, GDMA_LL_AXI_PAIRS_PER_GROUP), GDMA_LL_LP_AHB_PAIRS_PER_GROUP)
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
 #define GDMA_LL_RX_EVENT_MASK       (0x7F)
 #define GDMA_LL_TX_EVENT_MASK       (0x3F)
 
-// the following event bits are identical for ahb-dma and axi-dma
+// the following event bits are identical for ahb-dma, axi-dma and lp-ahb-dma
 #define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<5)
 #define GDMA_LL_EVENT_TX_FIFO_OVF   (1<<4)
 #define GDMA_LL_EVENT_TX_TOTAL_EOF  (1<<3)
@@ -45,8 +46,13 @@
 #define GDMA_LL_AXI_NUM_GROUPS        1 // Number of AXI GDMA groups
 #define GDMA_LL_AXI_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AXI group
 
+#define GDMA_LL_LP_AHB_GROUP_START_ID 2 // LP AHB GDMA group ID starts from 2
+#define GDMA_LL_LP_AHB_NUM_GROUPS     1 // Number of LP AHB GDMA groups
+#define GDMA_LL_LP_AHB_PAIRS_PER_GROUP 2 // Number of GDMA pairs in each LP AHB group
+
 #define GDMA_LL_AHB_PSRAM_CAPABLE     1
 #define GDMA_LL_AXI_PSRAM_CAPABLE     1
+#define GDMA_LL_LP_AHB_PSRAM_CAPABLE  1
 
 #define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1  // AHB GDMA supports adjustable burst size
 #define GDMA_LL_AHB_DESC_ALIGNMENT        4
@@ -56,45 +62,58 @@
 
 #define GDMA_LL_AHB_M2M_CAPABLE_PAIR_MASK   0x1F  // pair 0,1,2,3,4 are M2M capable
 #define GDMA_LL_AXI_M2M_CAPABLE_PAIR_MASK   0x07  // pair 0,1,2 are M2M capable
+#define GDMA_LL_LP_AHB_M2M_CAPABLE_PAIR_MASK 0x03 // pair 0,1 are M2M capable
 
-#define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                \
-    (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                \
-        {                                                             \
-            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_OUT_EOF_CH0 + (chan), \
-        },                                                            \
-        {                                                             \
-            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_OUT_EOF_CH0 + (chan), \
-        },                                                            \
-    }[group][event]
-
-#define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                   \
-    (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                   \
+#define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                   \
+    (uint32_t[GDMA_LL_INST_NUM][GDMA_ETM_EVENT_MAX]){                    \
         {                                                                \
-            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_IN_SUC_EOF_CH0 + (chan), \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_OUT_EOF_CH0 + (chan),    \
         },                                                               \
         {                                                                \
-            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_IN_SUC_EOF_CH0 + (chan), \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_OUT_EOF_CH0 + (chan),    \
+        },                                                               \
+        {                                                                \
+            [GDMA_ETM_EVENT_EOF] = LP_PDMA_AHB_EVT_OUT_EOF_CH0 + (chan), \
         },                                                               \
     }[group][event]
 
-#define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                      \
-    (uint32_t[2][GDMA_ETM_TASK_MAX]){                                     \
-        {                                                                 \
-            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_OUT_START_CH0 + (chan), \
-        },                                                                \
-        {                                                                 \
-            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_OUT_START_CH0 + (chan), \
-        },                                                                \
+#define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                      \
+    (uint32_t[GDMA_LL_INST_NUM][GDMA_ETM_EVENT_MAX]){                       \
+        {                                                                   \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_IN_SUC_EOF_CH0 + (chan),    \
+        },                                                                  \
+        {                                                                   \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_IN_SUC_EOF_CH0 + (chan),    \
+        },                                                                  \
+        {                                                                   \
+            [GDMA_ETM_EVENT_EOF] = LP_PDMA_AHB_EVT_IN_SUC_EOF_CH0 + (chan), \
+        },                                                                  \
+    }[group][event]
+
+#define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                         \
+    (uint32_t[GDMA_LL_INST_NUM][GDMA_ETM_TASK_MAX]){                         \
+        {                                                                    \
+            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_OUT_START_CH0 + (chan),    \
+        },                                                                   \
+        {                                                                    \
+            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_OUT_START_CH0 + (chan),    \
+        },                                                                   \
+        {                                                                    \
+            [GDMA_ETM_TASK_START] = LP_PDMA_AHB_TASK_OUT_START_CH0 + (chan), \
+        },                                                                   \
     }[group][task]
 
-#define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                     \
-    (uint32_t[2][GDMA_ETM_TASK_MAX]){                                    \
-        {                                                                \
-            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_IN_START_CH0 + (chan), \
-        },                                                               \
-        {                                                                \
-            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_IN_START_CH0 + (chan), \
-        },                                                               \
+#define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                        \
+    (uint32_t[GDMA_LL_INST_NUM][GDMA_ETM_TASK_MAX]){                        \
+        {                                                                   \
+            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_IN_START_CH0 + (chan),    \
+        },                                                                  \
+        {                                                                   \
+            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_IN_START_CH0 + (chan),    \
+        },                                                                  \
+        {                                                                   \
+            [GDMA_ETM_TASK_START] = LP_PDMA_AHB_TASK_IN_START_CH0 + (chan), \
+        },                                                                  \
     }[group][task]
 
 #ifdef __cplusplus
@@ -108,8 +127,10 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 {
     if (group_id == 0) {
         HP_SYS_CLKRST.ahb_pdma_ctrl0.reg_ahb_pdma_sys_clk_en = enable;
-    } else {
+    } else if (group_id == 1) {
         HP_SYS_CLKRST.axi_pdma_ctrl0.reg_axi_pdma_sys_clk_en = enable;
+    } else { // group_id == 2, LP AHB GDMA
+        LP_PERI_CLKRST.ahb_dma_ctrl.lp_ahb_dma_clk_en = enable;
     }
 }
 
@@ -121,9 +142,12 @@ static inline void _gdma_ll_reset_register(int group_id)
     if (group_id == 0) {
         HP_SYS_CLKRST.ahb_pdma_ctrl0.reg_ahb_pdma_rst_en = 1;
         HP_SYS_CLKRST.ahb_pdma_ctrl0.reg_ahb_pdma_rst_en = 0;
-    } else {
+    } else if (group_id == 1) {
         HP_SYS_CLKRST.axi_pdma_ctrl0.reg_axi_pdma_rst_en = 1;
         HP_SYS_CLKRST.axi_pdma_ctrl0.reg_axi_pdma_rst_en = 0;
+    } else {
+        LP_PERI_CLKRST.ahb_dma_ctrl.lp_ahb_dma_rst_en = 1;
+        LP_PERI_CLKRST.ahb_dma_ctrl.lp_ahb_dma_rst_en = 0;
     }
 }
 

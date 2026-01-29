@@ -141,6 +141,13 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
     test_memory_copy_with_same_buffer(driver, &config);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_CP_DMA_SUPPORTED
+
+#if SOC_HAS(LP_AHB_GDMA)
+    printf("Testing memcpy by LP AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&config, &driver));
+    test_memory_copy_with_same_buffer(driver, &config);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 static bool test_async_memcpy_cb_v1(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
@@ -206,6 +213,13 @@ TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
     test_memory_copy_blocking(driver);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_CP_DMA_SUPPORTED
+
+#if SOC_HAS(LP_AHB_GDMA)
+    printf("Testing memcpy by LP AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&config, &driver));
+    test_memory_copy_blocking(driver);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 [[maybe_unused]] static void test_memcpy_with_dest_addr_unaligned(async_memcpy_handle_t driver, bool src_in_psram, bool dst_in_psram)
@@ -273,6 +287,16 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
 #endif // GDMA_LL_GET(AXI_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_HAS(AXI_GDMA)
+
+#if SOC_HAS(LP_AHB_GDMA) && !CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+    printf("Testing memcpy by LP AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
+    test_memcpy_with_dest_addr_unaligned(driver, false, false);
+#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
+    test_memcpy_with_dest_addr_unaligned(driver, true, true);
+#endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 #define TEST_ASYNC_MEMCPY_BENCH_COUNTS 16
@@ -362,6 +386,13 @@ TEST_CASE("memory copy performance 40KB: SRAM->SRAM", "[async mcp]")
     test_memcpy_performance(driver, 40 * 1024, false, false);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_CP_DMA_SUPPORTED
+
+#if SOC_HAS(LP_AHB_GDMA)
+    printf("Testing memcpy by LP AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, false, false);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 #if SOC_SPIRAM_SUPPORTED
@@ -390,6 +421,15 @@ TEST_CASE("memory copy performance 40KB: PSRAM->PSRAM", "[async mcp]")
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif
 #endif // SOC_HAS(AXI_GDMA)
+
+#if SOC_HAS(LP_AHB_GDMA)
+#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+    printf("Testing memcpy by LP AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, true, true);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 #endif
 

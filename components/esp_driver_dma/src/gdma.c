@@ -264,6 +264,21 @@ esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_c
 }
 #endif // SOC_HAS(AXI_GDMA)
 
+#if SOC_HAS(LP_AHB_GDMA)
+esp_err_t gdma_new_lp_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_tx_chan, gdma_channel_handle_t *ret_rx_chan)
+{
+    gdma_channel_search_info_t search_info = {
+        .bus_id = SOC_GDMA_BUS_LP,
+        .start_group_id = GDMA_LL_LP_AHB_GROUP_START_ID,
+        .end_group_id = GDMA_LL_LP_AHB_GROUP_START_ID + GDMA_LL_LP_AHB_NUM_GROUPS,
+        .pairs_per_group = GDMA_LL_LP_AHB_PAIRS_PER_GROUP,
+        .m2m_capable_mask = GDMA_LL_LP_AHB_M2M_CAPABLE_PAIR_MASK,
+        .hal_init = gdma_lp_ahb_hal_init,
+    };
+    return do_allocate_gdma_channel(&search_info, config, ret_tx_chan, ret_rx_chan);
+}
+#endif // SOC_HAS(LP_AHB_GDMA)
+
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
 {
     if (!dma_chan) {
@@ -400,7 +415,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         // burst size must be power of 2
         ESP_RETURN_ON_FALSE((max_data_burst_size & (max_data_burst_size - 1)) == 0, ESP_ERR_INVALID_ARG,
                             TAG, "invalid max_data_burst_size: %"PRIu32, max_data_burst_size);
-#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) || GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) || GDMA_LL_GET(AXI_PSRAM_CAPABLE) || GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
         if (config->access_ext_mem) {
             ESP_RETURN_ON_FALSE(max_data_burst_size <= GDMA_LL_MAX_BURST_SIZE_PSRAM, ESP_ERR_INVALID_ARG,
                                 TAG, "max_data_burst_size must not exceed %d when accessing external memory", GDMA_LL_MAX_BURST_SIZE_PSRAM);

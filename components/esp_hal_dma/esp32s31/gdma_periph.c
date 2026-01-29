@@ -47,6 +47,18 @@ const gdma_signal_conn_t gdma_periph_signals = {
                     .tx_irq_id = ETS_AXI_PDMA_OUT_CH2_INTR_SOURCE,
                 }
             }
+        },
+        [2] = {
+            .pairs = {
+                [0] = {
+                    .rx_irq_id = ETS_LP_AHB_PDMA_IN_CH0_INTR_SOURCE,
+                    .tx_irq_id = ETS_LP_AHB_PDMA_OUT_CH0_INTR_SOURCE,
+                },
+                [1] = {
+                    .rx_irq_id = ETS_LP_AHB_PDMA_IN_CH1_INTR_SOURCE,
+                    .tx_irq_id = ETS_LP_AHB_PDMA_OUT_CH1_INTR_SOURCE,
+                }
+            }
         }
     }
 };

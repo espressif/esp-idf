@@ -31,6 +31,7 @@
 // #define SOC_UHCI_SUPPORTED              1      // TODO: [ESP32S31] IDF-14791
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_AXI_GDMA_SUPPORTED          1
+#define SOC_LP_AHB_GDMA_SUPPORTED       1
 // #define SOC_DMA2D_SUPPORTED             1      // TODO: [ESP32S31] IDF-14762
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1      // TODO: [ESP32S31] IDF-14699
