@@ -41,10 +41,6 @@ set(ble_mesh_include_dirs
     "esp_ble_mesh/api"
 )
 
-set(ble_mesh_tinycrypt_dirs
-    "esp_ble_mesh/common/tinycrypt/include"
-)
-
 set(ble_mesh_v11_include_dirs
     "esp_ble_mesh/lib/include"
     "esp_ble_mesh/v1.1/api/core/include"
@@ -511,6 +507,13 @@ if(CONFIG_BT_ENABLED)
     endif()
 
     if(CONFIG_BLE_MESH)
+
+        if(CONFIG_BLE_MESH_USE_UNIFIED_CRYPTO)
+            message(WARNING "This configuration path is deprecated and will be removed"
+                            "in a future version. Please use the corresponding Kconfig"
+                            "options under $IDF_PATH/components/bt/common/Kconfig.")
+        endif()
+
         list(APPEND include_dirs ${ble_mesh_include_dirs})
 
         list(APPEND srcs "esp_ble_mesh/api/core/esp_ble_mesh_ble_api.c"
@@ -544,8 +547,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/common/utils.c")
 
         # Select crypto implementation based on config
-        if(CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT OR
-           CONFIG_BT_SMP_CRYPTO_STACK_NATIVE)
+        if(CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT)
             list(APPEND srcs "esp_ble_mesh/common/crypto_tc.c")
         elseif(CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
             if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
@@ -596,26 +598,6 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/models/server/state_binding.c"
                     "esp_ble_mesh/models/server/state_transition.c"
                     "esp_ble_mesh/models/server/time_scene_server.c")
-
-        if(CONFIG_BT_SMP_CRYPTO_STACK_NATIVE)
-            list(APPEND include_dirs ${ble_mesh_tinycrypt_dirs})
-                list(APPEND srcs
-                    "esp_ble_mesh/common/tinycrypt/src/aes_decrypt.c"
-                    "esp_ble_mesh/common/tinycrypt/src/aes_encrypt.c"
-                    "esp_ble_mesh/common/tinycrypt/src/cbc_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ccm_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/cmac_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ctr_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ctr_prng.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc_dh.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc_dsa.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc_platform_specific.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc.c"
-                    "esp_ble_mesh/common/tinycrypt/src/hmac_prng.c"
-                    "esp_ble_mesh/common/tinycrypt/src/hmac.c"
-                    "esp_ble_mesh/common/tinycrypt/src/sha256.c"
-                    "esp_ble_mesh/common/tinycrypt/src/utils.c")
-        endif()
 
         if(CONFIG_BLE_MESH_V11_SUPPORT)
             list(APPEND include_dirs ${ble_mesh_v11_include_dirs})
