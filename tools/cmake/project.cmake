@@ -1,6 +1,12 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
 cmake_minimum_required(VERSION 3.22)
 
+set(CMAKE_LINK_LIBRARY_USING_WHOLE_ARCHIVE "LINKER:--whole-archive"
+                                           "<LINK_ITEM>"
+                                           "LINKER:--no-whole-archive")
+set(CMAKE_LINK_LIBRARY_USING_WHOLE_ARCHIVE_SUPPORTED TRUE)
+set(CMAKE_LINK_LIBRARY_WHOLE_ARCHIVE_ATTRIBUTES LIBRARY_TYPE=STATIC DEDUPLICATION=YES OVERRIDE=DEFAULT)
+
 # Get the currently selected sdkconfig file early, so this doesn't
 # have to be done multiple times on different places.
 if(SDKCONFIG)
