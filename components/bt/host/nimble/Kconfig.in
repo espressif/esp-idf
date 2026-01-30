@@ -164,7 +164,7 @@ menu "Security (SMP)"
                 2(1). Unauthenticated pairing with encryption
                 3(2). Authenticated pairing with encryption
                 4(3). Authenticated LE Secure Connections pairing with encryption using a
-                      128-bit strength encryption key.
+                128-bit strength encryption key.
 
         config BT_NIMBLE_SM_SC_ONLY
             int "Enable Secure Connections Only Mode"
@@ -297,7 +297,7 @@ menu "GAP"
 
     config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
         bool "Override TinyCrypt with mbedTLS for crypto computations"
-        default y
+        default n if CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT
         depends on BT_NIMBLE_ENABLED
         select MBEDTLS_CMAC_C
         help
