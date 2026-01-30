@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +85,40 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MIP,      mip)        /* Machine intr pending */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTTHRESH, mintthresh)  /* Machine intr threshold */
 
+    /* FPU context */
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT0,  fpu_ft0)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT1,  fpu_ft1)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT2,  fpu_ft2)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT3,  fpu_ft3)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT4,  fpu_ft4)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT5,  fpu_ft5)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT6,  fpu_ft6)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT7,  fpu_ft7)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS0,  fpu_fs0)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS1,  fpu_fs1)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA0,  fpu_fa0)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA1,  fpu_fa1)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA2,  fpu_fa2)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA3,  fpu_fa3)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA4,  fpu_fa4)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA5,  fpu_fa5)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA6,  fpu_fa6)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FA7,  fpu_fa7)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS2,  fpu_fs2)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS3,  fpu_fs3)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS4,  fpu_fs4)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS5,  fpu_fs5)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS6,  fpu_fs6)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS7,  fpu_fs7)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS8,  fpu_fs8)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS9,  fpu_fs9)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS10, fpu_fs10)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FS11, fpu_fs11)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT8,  fpu_ft8)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT9,  fpu_ft9)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT10, fpu_ft10)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FT11, fpu_ft11)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_FPU_FCSR, fpu_fcsr)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMUFUNC,  pmufunc)    /* A field is used to identify whether it is going
                                                              * to sleep or has just been awakened. We use the
                                                              * lowest 2 bits as indication information, 3 means

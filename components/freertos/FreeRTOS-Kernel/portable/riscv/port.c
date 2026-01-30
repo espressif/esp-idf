@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -895,3 +895,9 @@ configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
+#if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW
+BaseType_t xPortFPUContextIsDirty(BaseType_t core_id)
+{
+    return (BaseType_t)(port_uxCoprocOwner[core_id][FPU_COPROC_IDX] != NULL);
+}
+#endif /* (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW */
