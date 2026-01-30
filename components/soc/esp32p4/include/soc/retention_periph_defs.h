@@ -60,6 +60,7 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_MCPWM0       = 34,
     SLEEP_RETENTION_MODULE_MCPWM1       = 35,
     SLEEP_RETENTION_MODULE_PCNT0        = 36,
+    SLEEP_RETENTION_MODULE_LCDCAM       = 39,
 
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
@@ -102,6 +103,7 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_MCPWM1)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_PCNT0)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_LCDCAM)       ? true \
     : false)
 
 #ifdef __cplusplus

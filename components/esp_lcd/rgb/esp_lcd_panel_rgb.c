@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,7 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "rgb_lcd_rotation_sw.h"
+#include "esp_private/sleep_retention.h"
 
 // hardware issue workaround
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -250,6 +251,9 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         esp_pm_lock_release(rgb_panel->pm_lock);
         esp_pm_lock_delete(rgb_panel->pm_lock);
     }
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_power_lock_release();
+#endif
     free(rgb_panel);
     return ESP_OK;
 }
@@ -300,6 +304,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         expect_bb_eof_count = fb_size / bb_size;
     }
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    // acquire the retention power lock to prevent the power domain from being turned off during light sleep
+    sleep_retention_power_lock_acquire();
+#endif
+
     // calculate the number of DMA descriptors
     size_t num_dma_nodes = 0;
     // allocate memory for rgb panel
@@ -334,6 +343,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // set clock source
     ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
+
     // reset peripheral and FIFO after we select a correct clock source
     lcd_ll_fifo_reset(rgb_panel->hal.dev);
     lcd_ll_reset(rgb_panel->hal.dev);
