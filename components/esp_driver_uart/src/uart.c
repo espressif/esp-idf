@@ -1771,6 +1771,34 @@ int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, uint32_t t
     return copy_len;
 }
 
+int uart_read_some_bytes(uart_port_t uart_num, void *buf, uint32_t length, TickType_t ticks_to_wait)
+{
+    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE((buf), (-1), UART_TAG, "uart data null");
+    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), (-1), UART_TAG, "uart driver error");
+    uint8_t *data = NULL;
+    size_t size = 0;
+    if (xSemaphoreTake(p_uart_obj[uart_num]->rx_mux, (TickType_t)ticks_to_wait) != pdTRUE) {
+        return -1;
+    }
+
+    data = (uint8_t *) xRingbufferReceiveUpTo(p_uart_obj[uart_num]->rx_ring_buf, &size, (TickType_t) ticks_to_wait, length);
+    if (!data) {
+        xSemaphoreGive(p_uart_obj[uart_num]->rx_mux);
+        return 0;
+    }
+    memcpy((uint8_t *)buf, data, size);
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    p_uart_obj[uart_num]->rx_buffered_len -= size;
+    uart_pattern_queue_update(uart_num, size);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    vRingbufferReturnItem(p_uart_obj[uart_num]->rx_ring_buf, data);
+    uart_check_buf_full(uart_num);
+
+    xSemaphoreGive(p_uart_obj[uart_num]->rx_mux);
+    return size;
+}
+
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t *size)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
