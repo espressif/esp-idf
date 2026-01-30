@@ -170,11 +170,11 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         }
 
         /* Determine key bits based on public key length (RFC7919 key sizes)
-         * Note: Only 2048 and 3072 bit keys are supported due to buffer size constraints
-         * (DH_SELF_PUB_KEY_LEN = 384 bytes = 3072 bits maximum) */
+         * Note: Only 3072 bit keys are supported due to buffer size constraints
+         * (DH_SELF_PUB_KEY_LEN = 384 bytes = 3072 bits) */
         size_t key_bits = pub_len * 8;
-        if (key_bits != 2048 && key_bits != 3072) {
-            BLUFI_ERROR("Unsupported DH key length: %d bytes (only 2048 and 3072 bit keys supported)", pub_len);
+        if (key_bits != 3072) {
+            BLUFI_ERROR("Unsupported DH key length: %d bytes (only 3072 bit keys supported)", pub_len);
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
