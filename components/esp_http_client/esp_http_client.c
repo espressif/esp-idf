@@ -1828,6 +1828,17 @@ esp_err_t esp_http_client_close(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_clear_response_buffer(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (client->response != NULL && client->response->buffer != NULL) {
+        esp_http_client_cached_buf_cleanup(client->response->buffer);
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_http_client_set_post_field(esp_http_client_handle_t client, const char *data, int len)
 {
     esp_err_t err = ESP_OK;

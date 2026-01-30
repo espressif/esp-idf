@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,7 @@ struct esp_https_ota_handle {
     esp_https_ota_state state;
     bool bulk_flash_erase;
     bool partial_http_download;
+    bool ota_resumption;
     int max_authorization_retries;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
@@ -133,12 +134,13 @@ static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, i
     } else if (status_code >= HttpStatus_InternalError) {
         ESP_LOGE(TAG, "Server error (%d)", status_code);
         return ESP_FAIL;
-    } else if (https_ota_handle->binary_file_len > 0
+    } else if (https_ota_handle->ota_resumption
 #if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
         && !https_ota_handle->partial_http_download
 #endif
         && status_code != HttpStatus_PartialContent) {
-        ESP_LOGE(TAG, "Requested range header ignored by server");
+            ESP_LOGW(TAG, "Server ignored the requested Range header");
+            ESP_LOGW(TAG, "OTA resumption requires server with range request support.");
         return ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE;
     }
 
@@ -341,6 +343,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     https_ota_handle->partial_http_download = ota_config->partial_http_download;
     https_ota_handle->max_http_request_size = (ota_config->max_http_request_size == 0) ? DEFAULT_REQUEST_SIZE : ota_config->max_http_request_size;
+    https_ota_handle->ota_resumption = ota_config->ota_resumption;
     https_ota_handle->max_authorization_retries = ota_config->http_config->max_authorization_retries;
 
     if (https_ota_handle->max_authorization_retries == 0) {
@@ -375,12 +378,13 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     }
 
     /*
-     * If OTA resumption is enabled, set the "Range" header to resume downloading the OTA image
-     * from the last written byte. For non-partial cases, the range pattern is 'from-'.
-     * Partial cases ('from-to') are handled separately below based on the remaining data to
-     * be downloaded and the max_http_request_size.
+     * If OTA resumption is enabled, always make a range request first to detect if server
+     * supports range requests. This helps fail early if server doesn't support range requests.
+     * - If resuming from NVS recovered offset: use 'bytes=offset-'
+     * - If starting fresh: use 'bytes=0-'
+     * This applies to both partial and non-partial download cases.
      */
-    if (https_ota_handle->binary_file_len > 0 && !https_ota_handle->partial_http_download) {
+    if (https_ota_handle->ota_resumption && !https_ota_handle->partial_http_download) {
         char *header_val = NULL;
         asprintf(&header_val, "bytes=%d-", https_ota_handle->binary_file_len);
         if (header_val == NULL) {
@@ -436,9 +440,10 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     }
 
     err = _http_connect(https_ota_handle);
-    if (err == ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE && https_ota_handle->binary_file_len > 0) {
-        ESP_LOGE(TAG, "OTA resumption failed with err: %d", err);
-        ESP_LOGI(TAG, "Restarting download from beginning");
+    if (err == ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE && https_ota_handle->ota_resumption) {
+        ESP_LOGE(TAG, "OTA resumption failed with err: %d.", err);
+        ESP_LOGI(TAG, "Falling back to OTA without resumption and restarting download from beginning");
+        https_ota_handle->ota_resumption = false;
         https_ota_handle->binary_file_len = 0;
 
         // If range in request header is not satisfiable, restart download from beginning
@@ -455,6 +460,8 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
             esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
             free(header_val);
         }
+        esp_http_client_close(https_ota_handle->http_client);
+        esp_http_client_clear_response_buffer(https_ota_handle->http_client);
         err = _http_connect(https_ota_handle);
     }
 

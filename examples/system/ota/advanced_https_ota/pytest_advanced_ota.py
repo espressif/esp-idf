@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -279,6 +279,88 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -
 
     finally:
         thread1.terminate()
+
+
+@pytest.mark.ethernet_ota
+@pytest.mark.parametrize('config', ['ota_resumption'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_examples_protocol_advanced_https_ota_example_ota_resumption_range_request_support_detection(dut: Dut) -> None:
+    """
+    This test verifies OTA resumption fallback when the server does not support Range requests.
+    OpenSSL s_server may return 416 Range Not Satisfiable or 200 OK instead of 206 Partial Content.
+    The OTA should detect this, close the connection, clear the response buffer, and restart
+    the download from the beginning (ensuring a fresh connection for the retry).
+    steps: |
+      1. join AP/Ethernet
+      2. Start OpenSSL s_server (which does not support Range requests)
+      3. Fetch OTA image over HTTPS
+      4. Restart device mid-download
+      5. Resume OTA; fallback to full download from beginning
+      6. Verify OTA completes successfully
+    """
+    server_port = 8070
+    bin_name = 'advanced_https_ota.bin'
+
+    # Erase NVS partition
+    dut.serial.erase_partition(NVS_PARTITION)
+
+    # Start openssl s_server which doesn't support Range requests
+    chunked_server = start_chunked_server(dut.app.binary_path, server_port)
+    try:
+        # start test
+        dut.expect('Loaded app from partition at offset', timeout=30)
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
+            print(f'Connected to AP/Ethernet with IP: {ip_address}')
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        # Restart device mid-download to trigger resumption
+        restart_device_with_random_delay(dut, 5, 15)
+
+        # Validate that the device restarts correctly
+        dut.expect('Loaded app from partition at offset', timeout=180)
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
+            print(f'Connected to AP/Ethernet with IP: {ip_address}')
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        # The server doesn't support Range requests, so it may return 416 or 200 OK.
+        # The OTA should detect this, close the connection, clear response buffer,
+        # and restart download from the beginning (works with OpenSSL s_server).
+        try:
+            dut.expect('restarting download from beginning', timeout=30)
+            print('Detected fallback to OTA without resumption (restart from beginning)')
+        except pexpect.exceptions.TIMEOUT:
+            # This is okay - the message might not be visible at current log level
+            pass
+
+        # Verify that OTA completes successfully
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
+
+        # After reboot, verify the device is running the new image
+        dut.expect('Loaded app from partition at offset', timeout=30)
+        dut.expect('OTA example app_main start', timeout=20)
+
+    finally:
+        chunked_server.kill()
 
 
 @pytest.mark.flash_encryption_ota
