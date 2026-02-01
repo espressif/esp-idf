@@ -404,7 +404,7 @@ static void s_configure_psram_ecc(void)
 }
 #endif  //#if CONFIG_SPIRAM_ECC_ENABLE
 
-esp_err_t esp_psram_impl_enable(void)
+esp_err_t esp_psram_hex_enable(void)
 {
 #if SOC_CLK_MPLL_SUPPORTED
     periph_rtc_mpll_acquire();
@@ -474,13 +474,13 @@ esp_err_t esp_psram_impl_enable(void)
     return ESP_OK;
 }
 
-uint8_t esp_psram_impl_get_cs_io(void)
+uint8_t esp_psram_hex_get_cs_io(void)
 {
     ESP_EARLY_LOGI(TAG, "psram CS IO is dedicated");
     return -1;
 }
 
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_hex_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -494,7 +494,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * If ECC is enabled, available PSRAM size will be 7/8 times its physical size.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_hex_get_available_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;

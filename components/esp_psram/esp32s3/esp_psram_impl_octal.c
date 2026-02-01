@@ -106,7 +106,7 @@ static const char* TAG = "octal_psram";
 static uint32_t s_psram_size;   //this stands for physical psram size in bytes
 static void s_config_psram_spi_phases(void);
 
-uint8_t esp_psram_impl_get_cs_io(void)
+uint8_t esp_psram_octal_get_cs_io(void)
 {
     return OCT_PSRAM_CS1_IO;
 }
@@ -336,7 +336,7 @@ static void s_configure_psram_ecc(void)
 #endif
 }
 
-esp_err_t esp_psram_impl_enable(void)
+esp_err_t esp_psram_octal_enable(void)
 {
     s_init_psram_pins();
     s_set_psram_cs_timing();
@@ -429,7 +429,7 @@ static void s_config_psram_spi_phases(void)
  *
  * Consider moving these to another file if this kind of APIs grows dramatically
  *-------------------------------------------------------------------------------*/
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_octal_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -443,7 +443,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * If ECC is enabled, available PSRAM size will be 15/16 times its physical size.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+esp_err_t esp_psram_octal_get_available_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;

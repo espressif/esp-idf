@@ -25,14 +25,14 @@ extern "C" {
  *
  * @param[out] out_size_bytes    physical psram size in bytes.
  */
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes);
+extern esp_err_t (*esp_psram_impl_get_physical_size)(uint32_t *out_size_bytes);
 
 /**
  * @brief To get the available physical psram size in bytes.
  *
  * @param[out] out_size_bytes    available physical psram size in bytes.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes);
+extern esp_err_t (*esp_psram_impl_get_available_size)(uint32_t *out_size_bytes);
 
 /**
  * @brief Enable psram and configure it to a ready state
@@ -49,7 +49,7 @@ esp_err_t esp_psram_impl_enable(void);
  *
  * @return psram CS IO
  */
-uint8_t esp_psram_impl_get_cs_io(void);
+extern uint8_t (*esp_psram_impl_get_cs_io)(void);
 
 #ifdef __cplusplus
 }
