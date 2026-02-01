@@ -22,8 +22,10 @@ extern "C" {
 typedef struct {
     /**
      * @brief Display's height in pixels (64(default) or 32)
+     * @brief Display's contrast (128(default) or 0~255)
      */
     uint8_t height;
+    uint8_t contrast;
 } esp_lcd_panel_ssd1306_config_t;
 
 /**
