@@ -190,6 +190,18 @@ typedef struct {
      * If not set, the command will not be listed in 'help' output.
      */
     const char *help;
+
+#ifdef CONFIG_CONSOLE_COMMAND_ON_TASK
+    /**
+     * Stack size, if command is run on a separate task
+     */
+    size_t stack_size;
+    /**
+     * Task priority, if command is run on a separate task
+     */
+    UBaseType_t priority;
+#endif
+
     /**
      * Hint text, usually lists possible arguments.
      * If set to NULL, and 'argtable' field is non-NULL, hint will be generated
@@ -235,6 +247,29 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG if both func and func_w_context members of cmd are NULL
  */
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
+
+/**
+ * @brief Retrieve a registered console command by its name.
+ *
+ * This function searches for a console command that matches the given name
+ * and returns a pointer to its description structure.
+ *
+ * @param name Name of the command to search for.
+ * @return Pointer to the `esp_console_cmd_t` structure if the command is found,
+ *         or NULL if no command with the given name is registered.
+ */
+const esp_console_cmd_t *esp_console_get_by_name(const char *name);
+
+/**
+ * @brief Iterate through registered console commands.
+ *
+ * This function retrieves the next registered console command in the list.
+ * If `prev` is NULL, it returns the first registered command.
+ *
+ * @param prev Pointer to the previous command. Pass NULL to get the first command.
+ * @return Pointer to the next `esp_console_cmd_t` structure, or NULL if no more commands are available.
+ */
+const esp_console_cmd_t *esp_console_get_iterate(const esp_console_cmd_t *prev);
 
 /**
  * @brief Deregister console command
@@ -467,6 +502,97 @@ esp_err_t esp_console_start_repl(esp_console_repl_t *repl);
  *      - others on failure
  */
 esp_err_t esp_console_stop_repl(esp_console_repl_t *repl);
+
+#ifdef CONFIG_CONSOLE_COMMAND_ON_TASK
+
+/**
+ * @brief Opaque handle for a console task
+ */
+typedef struct esp_console_task_handle esp_console_task_handle_t;
+
+#define ESP_CONSOLE_TASK_CLOSE_STDIN    (1 << 0)    //!< Close stdin pipe when command task ends
+#define ESP_CONSOLE_TASK_CLOSE_STDOUT   (1 << 1)    //!< Close stdout pipe when command task ends
+#define ESP_CONSOLE_TASK_CLOSE_STDERR   (1 << 2)    //!< Close stderr pipe when command task ends
+#define ESP_CONSOLE_TASK_CLOSE_ALL      (ESP_CONSOLE_TASK_CLOSE_STDIN | ESP_CONSOLE_TASK_CLOSE_STDOUT | ESP_CONSOLE_TASK_CLOSE_STDERR)
+
+/**
+ * @brief Run a console command on a separate FreeRTOS task
+ *
+ * This function executes a console command in a new FreeRTOS task, allowing
+ * asynchronous execution with I/O redirection via file pointers.
+ *
+ * @param[in] cmdline Command line string (command name followed by arguments)
+ * @param[in] _stdin FILE pointer for standard input (or NULL to use default)
+ * @param[in] _stdout FILE pointer for standard output (or NULL to use default)
+ * @param[in] _stderr FILE pointer for standard error (or NULL to use default)
+ * @param[in] flags Flags to control the behavior of the task (e.g., close stdin/stdout/stderr)
+ * @param[out] out_task Pointer to receive the task handle. Use this handle with
+ *                      esp_console_task_is_running() and esp_console_wait_task().
+ *                      Must be freed with esp_console_task_free() when done.
+ *
+ * @note The task will run with the stack size and priority specified in the
+ *       command's esp_console_cmd_t structure, or defaults if not specified.
+ * @note The provided file pointers will be closed when the task completes,
+ *       allowing callers to be notified of task completion (e.g., via pipe EOF).
+ * @note The caller is responsible for creating any pipes and managing file descriptors.
+ *
+ * @return
+ *      - ESP_OK on success (task created successfully)
+ *      - ESP_ERR_INVALID_STATE if esp_console_init wasn't called
+ *      - ESP_ERR_INVALID_ARG if the command line is empty or only whitespace
+ *      - ESP_ERR_NOT_FOUND if command with given name wasn't registered
+ *      - ESP_ERR_NO_MEM if out of memory
+ */
+esp_err_t esp_console_run_on_task(const char *cmdline, FILE *_stdin, FILE *_stdout, FILE *_stderr, uint8_t flags, esp_console_task_handle_t **out_task);
+
+/**
+ * @brief Free resources associated with a console task
+ *
+ * This function frees the memory allocated for the task handle and associated
+ * resources. If the task is still running, it will be deleted.
+ *
+ * @param[in] task Task handle returned by esp_console_run_on_task()
+ *
+ * @note Always call this function after you're done with a task handle to
+ *       prevent memory leaks.
+ * @note It's safe to call this on a task that has already finished.
+ */
+void esp_console_task_free(esp_console_task_handle_t *task);
+
+/**
+ * @brief Wait for a console task to complete
+ *
+ * This function blocks until the specified console task has finished execution.
+ *
+ * @param[in] task Task handle returned by esp_console_run_on_task()
+ * @param[out] cmd_ret Pointer to store the command's return code. Can be NULL
+ *                     if return code is not needed.
+ *
+ * @note This function will block until the task completes. Use
+ *       esp_console_task_is_running() for non-blocking status checks.
+ * @note The task handle is not freed by this function, so call
+ *       esp_console_task_free() afterwards.
+ */
+void esp_console_wait_task(esp_console_task_handle_t *task, int *cmd_ret);
+
+/**
+ * @brief Check if a console task is still running
+ *
+ * This function provides a non-blocking way to check the status of a console task.
+ *
+ * @param[in] task Task handle returned by esp_console_run_on_task()
+ *
+ * @return
+ *      - true if the task is still running
+ *      - false if the task has completed or the handle is invalid
+ *
+ * @note This function does not block and returns immediately.
+ * @note Use this in a loop with vTaskDelay() to poll for task completion, or
+ *       use esp_console_wait_task() for blocking wait.
+ */
+bool esp_console_task_is_running(esp_console_task_handle_t *task);
+
+#endif // CONFIG_CONSOLE_COMMAND_ON_TASK
 
 #ifdef __cplusplus
 }

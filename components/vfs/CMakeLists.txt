@@ -38,6 +38,7 @@ endif()
 list(APPEND sources "vfs.c"
                     "vfs_calls.c"
                     "vfs_eventfd.c"
+                    "vfs_pipe.c"
                     "vfs_semihost.c"
                     "nullfs.c"
                     )

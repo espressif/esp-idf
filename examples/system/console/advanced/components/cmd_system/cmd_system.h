@@ -22,6 +22,14 @@ void register_system_common(void);
 void register_system_deep_sleep(void);
 void register_system_light_sleep(void);
 
+// Register common tools used in shell: cat, echo, grep, tail, tee
+void register_system_shell_common(void);
+
+void register_system_shell_tee(void);
+void register_system_shell_cat(void);
+void register_system_shell_grep(void);
+void register_system_shell_echo(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -45,6 +45,10 @@
 typedef struct {
     int fd_primary;
     int fd_secondary;
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    tcflag_t c_lflag;    /** Local modes */
+    cc_t     c_cc[NCCS]; /** Control characters */
+#endif
 } vfs_console_context_t;
 
 #if CONFIG_VFS_SUPPORT_IO
@@ -128,7 +132,26 @@ int console_close(int fd)
 
 ssize_t console_read(int fd, void * dst, size_t size)
 {
-    return read(vfs_console.fd_primary, dst, size);
+    ssize_t ret = read(vfs_console.fd_primary, dst, size);
+
+    // Handle Ctrl+D (EOF) - only in canonical mode
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    if (vfs_console.c_lflag & ICANON) {
+        if (ret > 0) {
+            char *buffer = (char *)dst;
+            char eof_char = vfs_console.c_cc[VEOF];
+            for (ssize_t i = 0; i < ret; i++) {
+                if (buffer[i] == eof_char) { // Check for configured EOF character
+                    // Return EOF by returning 0 bytes read
+                    errno = EPIPE;
+                    return 0;
+                }
+            }
+        }
+    }
+#endif
+
+    return ret;
 }
 
 int console_fcntl(int fd, int cmd, int arg)
@@ -181,12 +204,17 @@ esp_err_t console_end_select(void *end_select_args)
 
 int console_tcsetattr(int fd, int optional_actions, const struct termios *p)
 {
+    vfs_console.c_lflag = p->c_lflag;
+    memcpy(vfs_console.c_cc, p->c_cc, sizeof(vfs_console.c_cc));
     return tcsetattr(vfs_console.fd_primary, optional_actions, p);
 }
 
 int console_tcgetattr(int fd, struct termios *p)
 {
-    return tcgetattr(vfs_console.fd_primary, p);
+    int res = tcgetattr(vfs_console.fd_primary, p);
+    p->c_lflag = vfs_console.c_lflag;
+    memcpy(p->c_cc, vfs_console.c_cc, sizeof(vfs_console.c_cc));
+    return res;
 }
 
 int console_tcdrain(int fd)
