@@ -682,6 +682,15 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
         return ESP_ERR_OTA_VALIDATE_FAILED;
     }
 
+    return esp_ota_set_boot_partition_without_validate(partition);
+}
+
+esp_err_t esp_ota_set_boot_partition_without_validate(const esp_partition_t* partition)
+{
+    if (partition == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     // if set boot partition to factory bin ,just format ota info partition
     if (partition->type == ESP_PARTITION_TYPE_APP) {
         if (partition->subtype == ESP_PARTITION_SUBTYPE_APP_FACTORY) {
