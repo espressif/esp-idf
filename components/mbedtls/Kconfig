@@ -999,6 +999,18 @@ menu "mbedTLS"
             help
                 Enable RSA. Needed to use RSA-xxx TLS ciphersuites.
 
+        config MBEDTLS_PK_RSA_ALT_SUPPORT
+            bool "Support external private RSA keys (eg from a HSM) in the PK layer"
+            default y
+            depends on MBEDTLS_RSA_C && SOC_DIG_SIGN_SUPPORTED
+            help
+                Support external private RSA keys (eg from a HSM) in the PK layer.
+
+                When enabled, the application can use mbedtls_pk_setup_rsa_alt() to
+                register a custom RSA signature callback.
+
+                See ESP-TLS documentation for more details about using DS peripheral.
+
         config MBEDTLS_ECP_C
             bool  "Enable Elliptic Curve Ciphers(ECC) support"
             default y
