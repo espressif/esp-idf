@@ -570,9 +570,9 @@ endfunction()
 
 macro(project project_name)
     # Initialize project, preparing COMPONENTS argument for idf_build_process()
-    # call later using external COMPONENT_DIRS, COMPONENTS_DIRS, EXTRA_COMPONENTS_DIR,
-    # EXTRA_COMPONENTS_DIRS, COMPONENTS, EXLUDE_COMPONENTS, TEST_COMPONENTS,
-    # TEST_EXLUDE_COMPONENTS, TESTS_ALL, BUILD_TESTS
+    # call later using external COMPONENT_DIRS, COMPONENTS_DIRS, EXTRA_COMPONENT_DIRS,
+    # COMPONENTS, EXLUDE_COMPONENTS, TEST_COMPONENTS, TEST_EXLUDE_COMPONENTS,
+    # TESTS_ALL, BUILD_TESTS
     __project_init(components test_components)
 
     __target_set_toolchain()
