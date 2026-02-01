@@ -258,7 +258,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     // select the clock source and set clock resolution
     ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&rx_channel->base, config->clk_src, config->resolution_hz), err, TAG, "set clock resolution failed");
 
-    rx_channel->filter_clock_resolution_hz = group->resolution_hz;
+    rx_channel->filter_clock_resolution_hz = rx_channel->base.resolution_hz;
     // On esp32 and esp32s2, the counting clock used by the RX filter always comes from APB clock
     // no matter what the clock source is used by the RMT channel as the "core" clock
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
