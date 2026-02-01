@@ -1332,6 +1332,51 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
     return ret;
 }
 
+esp_err_t i2c_master_multi_buffer_transmit_receive(i2c_master_dev_handle_t i2c_dev, i2c_master_transmit_multi_buffer_info_t *buffer_info_array, size_t array_size, uint8_t *read_buffer, size_t read_size, int xfer_timeout_ms)
+{
+    ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+    ESP_RETURN_ON_FALSE(array_size <= (SOC_I2C_CMD_REG_NUM - 2 - 3), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
+    ESP_RETURN_ON_FALSE(buffer_info_array != NULL, ESP_ERR_INVALID_ARG, TAG, "buffer info array is empty");
+
+    esp_err_t ret = ESP_OK;
+    size_t op_index = 0;
+    i2c_operation_t i2c_ops[SOC_I2C_CMD_REG_NUM] = {};
+    i2c_ops[op_index++].hw_cmd.op_code = I2C_LL_CMD_RESTART;
+    int i;
+    for (i = 0; i < array_size; i++) {
+        if (buffer_info_array[i].buffer_size == 0) {
+            continue;
+        }
+        i2c_ops[op_index].hw_cmd.ack_en = i2c_dev->ack_check_disable ? false : true;
+        i2c_ops[op_index].hw_cmd.op_code = I2C_LL_CMD_WRITE;
+        i2c_ops[op_index].data = (uint8_t*)buffer_info_array[i].write_buffer;
+        i2c_ops[op_index].total_bytes = buffer_info_array[i].buffer_size;
+        i2c_ops[op_index].bytes_used = 0;
+        op_index++;
+    }
+
+    i2c_ops[op_index++].hw_cmd.op_code = I2C_LL_CMD_RESTART;
+
+    i2c_ops[op_index].hw_cmd.op_code = I2C_LL_CMD_READ;
+    i2c_ops[op_index].hw_cmd.ack_val = I2C_ACK_VAL;
+    i2c_ops[op_index].data = read_buffer;
+    i2c_ops[op_index++].total_bytes = read_size - 1;
+
+    i2c_ops[op_index].hw_cmd.op_code = I2C_LL_CMD_READ;
+    i2c_ops[op_index].hw_cmd.ack_val = I2C_NACK_VAL;
+    i2c_ops[op_index].data = (read_buffer + read_size - 1);
+    i2c_ops[op_index++].total_bytes = 1;
+
+    i2c_ops[op_index++].hw_cmd.op_code = I2C_LL_CMD_STOP;
+
+    if (i2c_dev->master_bus->async_trans == false) {
+        ret = s_i2c_synchronous_transaction(i2c_dev, i2c_ops, op_index, xfer_timeout_ms);
+    } else {
+        ret = s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, op_index, xfer_timeout_ms);
+    }
+    return ret;
+}
+
 esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buffer, size_t read_size, int xfer_timeout_ms)
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
