@@ -47,6 +47,7 @@ def _test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
         assert len(expect_lines) == 0
 
+    time.sleep(1)  # Wait for the USJ port to be ready
     dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
     with openocd_dut.run() as openocd:
         openocd.write('reset run')

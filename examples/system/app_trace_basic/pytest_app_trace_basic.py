@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import time
@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 
 
 def _test_examples_app_trace_basic(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
+    time.sleep(1)  # Wait for the USJ port to be ready
     dut.expect_exact('example: Waiting for OpenOCD connection', timeout=5)
     with openocd_dut.run() as openocd:
         openocd.write('reset run')
@@ -65,15 +66,14 @@ def test_examples_app_trace_basic_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> No
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_examples_app_trace_basic_uart(dut: IdfDut) -> None:
     dut.serial.close()
-    with serial.Serial(dut.serial.port, baudrate=1000000, timeout=10) as ser:
+    with serial.Serial(dut.serial.port, baudrate=1000000, timeout=3) as ser:
         apptrace_log = os.path.join(dut.logdir, 'apptrace_log_uart.txt')  # pylint: disable=protected-access
         with open(apptrace_log, 'w+b') as f:
             start_time = time.time()
             while True:
                 try:
                     if ser.in_waiting:
-                        data = ser.read(100)
-                        f.write(data)
+                        f.write(ser.read(ser.in_waiting))
                     if time.time() - start_time > 5:
                         break
                 except serial.SerialTimeoutException:
