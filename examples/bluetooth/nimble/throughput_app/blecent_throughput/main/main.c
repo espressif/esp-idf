@@ -507,55 +507,70 @@ blecent_scan(void)
  * advertisement.  The function returns a positive result if the device
  * advertises connectability and support for the LE PHY service.
  */
- static int
- ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
- {
-     int offset = 0;
-     int ad_struct_len = 0;
-     uint8_t test_addr[6];
-     uint32_t peer_addr[6];
-
-     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
-             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
-         return 0;
-     }
-     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
-        //  ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-         /* Convert string to address */
-         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
-                &peer_addr[5], &peer_addr[4], &peer_addr[3],
-                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+static int
+ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
+{
+    int offset = 0;
+    int ad_struct_len = 0;
+    uint8_t test_addr[6];
+    uint32_t peer_addr[6];
+    uint8_t phy_uuid_found = 0;
+    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
+            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+        return 0;
+    }
+    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+       //  ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+        /* Convert string to address */
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
+               &peer_addr[5], &peer_addr[4], &peer_addr[3],
+               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
 
         /* Conversion */
         for (int i=0; i<6; i++) {
             test_addr[i] = (uint8_t )peer_addr[i];
         }
-         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
-             return 0;
-         }
-     }
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+            return 0;
+        }
+    }
 
-     /* The device has to advertise support LE PHY UUID (0xABF2).
-     */
-     do {
-         ad_struct_len = disc->data[offset];
+    /* The device has to advertise support LE PHY UUID (0xABF2).
+    */
+    do {
+        ad_struct_len = disc->data[offset];
 
-         if (!ad_struct_len) {
-             break;
+        if (!ad_struct_len) {
+            break;
+        }
+        /* Search for Complete Local Name (AD type 0x09) */
+        if (disc->data[offset + 1] == 0x09 && phy_uuid_found) {
+            int name_len = disc->data[offset] - 1;  /* Length minus type byte */
+            char serv_name[] = "nimble_prph";
+            if (name_len > 0) {
+                ESP_LOGI(tag, "Device Name = %.*s",name_len, (char *)&disc->data[offset + 2]);
+                if (name_len == strlen(serv_name) &&
+                    memcmp(&disc->data[offset + 2], serv_name, name_len) == 0) {
+                    ESP_LOGI(tag, "central connect to `nimble_prph` success");
+                    return 1;
+                }
+                return 0;
+            }
          }
 
          /* Search if LE PHY UUID is advertised */
          if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
              if ( disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2 ) {
-                 return 1;
+                 phy_uuid_found = 1;
              }
          }
 
-         offset += ad_struct_len + 1;
+        offset += ad_struct_len + 1;
 
-     } while ( offset < disc->length_data );
-     return 0;
- }
+    } while ( offset < disc->length_data );
+
+    return phy_uuid_found;
+}
  #else
 /**
  * Indicates whether we should try to connect to the sender of the specified
