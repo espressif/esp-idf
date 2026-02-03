@@ -405,8 +405,8 @@ typedef union {
 #define BTA_AV_Q_TAG_START              0x02 /* before start sending media packets */
 #define BTA_AV_Q_TAG_STREAM             0x03 /* during streaming */
 
-#define BTA_AV_WAIT_ACP_CAPS_ON         0x01 /* retriving the peer capabilities */
-#define BTA_AV_WAIT_ACP_CAPS_STARTED    0x02 /* started while retriving peer capabilities */
+#define BTA_AV_WAIT_ACP_CAPS_ON         0x01 /* retrieving the peer capabilities */
+#define BTA_AV_WAIT_ACP_CAPS_STARTED    0x02 /* started while retrieving peer capabilities */
 #define BTA_AV_WAIT_ROLE_SW_RES_OPEN    0x04 /* waiting for role switch result after API_OPEN, before STR_OPENED */
 #define BTA_AV_WAIT_ROLE_SW_RES_START   0x08 /* waiting for role switch result before streaming */
 #define BTA_AV_WAIT_ROLE_SW_STARTED     0x10 /* started while waiting for role switch result */
@@ -462,7 +462,7 @@ typedef struct {
     BOOLEAN             use_rc;         /* TRUE if AVRCP is allowed */
     BOOLEAN             started;        /* TRUE if stream started */
     UINT8               co_started;     /* non-zero, if stream started from call-out perspective */
-    BOOLEAN             recfg_sup;      /* TRUE if the first attempt to reconfigure the stream was successfull, else False if command fails */
+    BOOLEAN             recfg_sup;      /* TRUE if the first attempt to reconfigure the stream was successful, else False if command fails */
     BOOLEAN             suspend_sup;    /* TRUE if Suspend stream is supported, else FALSE if suspend command fails */
     BOOLEAN             deregistring;   /* TRUE if deregistering */
     BOOLEAN             sco_suspend;    /* TRUE if SUSPEND is issued automatically for SCO */
@@ -471,8 +471,9 @@ typedef struct {
     UINT8               wait;           /* set 0x1, when getting Caps as ACP, set 0x2, when started */
     UINT8               q_tag;          /* identify the associated q_info union member */
     BOOLEAN             no_rtp_hdr;     /* TRUE if add no RTP header*/
-    UINT8               disc_rsn;       /* disconenction reason */
+    UINT8               disc_rsn;       /* disconnection reason */
     UINT16              uuid_int;       /*intended UUID of Initiator to connect to */
+    BOOLEAN             force_incoming; /* TRUE if stream SSM state is force-switched to INCOMING due to CONFIG_IND while in INIT, else FALSE */
 } tBTA_AV_SCB;
 
 #define BTA_AV_RC_ROLE_MASK     0x10
