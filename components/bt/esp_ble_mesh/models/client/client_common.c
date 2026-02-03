@@ -210,6 +210,7 @@ static int32_t client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
     mic_size = (need_seg && ctx->send_szmic == BLE_MESH_SEG_SZMIC_LONG &&
                 net_buf_simple_tailroom(msg) >= BLE_MESH_MIC_LONG) ?
                 BLE_MESH_MIC_LONG : BLE_MESH_MIC_SHORT;
+    ARG_UNUSED(mic_size);
 
     BT_DBG("NeedSeg %u MicSize %u", need_seg, mic_size);
 
@@ -223,11 +224,11 @@ static int32_t client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
 #if CONFIG_BLE_MESH_LONG_PACKET
         if (ctx->enh.long_pkt_cfg &&
             msg->len > BLE_MESH_TX_SDU_MAX) {
-            seg_count = (msg->len + mic_size - 1) / BLE_MESH_EXT_APP_SEG_SDU_MAX + 1U;
+            seg_count = DIV_ROUND_UP(msg->len, BLE_MESH_EXT_APP_SEG_SDU_MAX);
         } else
 #endif
         {
-            seg_count = (msg->len + mic_size - 1) / 12U + 1U;
+            seg_count = DIV_ROUND_UP(msg->len, BLE_MESH_APP_SEG_SDU_MAX);
         }
 
         duration = client_get_adv_duration(ctx);
@@ -272,9 +273,8 @@ static void msg_send_start(uint16_t duration, int err, void *cb_data)
     BT_DBG("MsgSendStart, Duration %u Err %d", duration, err);
 
     if (err) {
-        if (!k_delayed_work_free(&node->timer)) {
-            bt_mesh_client_free_node(node);
-        }
+        k_delayed_work_free(&node->timer);
+        bt_mesh_client_free_node(node);
         return;
     }
 

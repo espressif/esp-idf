@@ -47,17 +47,26 @@ void btc_ble_mesh_rpr_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_RPR_CLIENT_SEND:
+        dst->rpr_send.params = NULL;
+        dst->rpr_send.msg = NULL;
+
         dst->rpr_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->rpr_send.msg = src->rpr_send.msg ? bt_mesh_calloc(sizeof(esp_ble_mesh_rpr_client_msg_t)) : NULL;
-        if (dst->rpr_send.params) {
-            memcpy(dst->rpr_send.params, src->rpr_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            if (dst->rpr_send.msg) {
-                memcpy(dst->rpr_send.msg, src->rpr_send.msg,
-                   sizeof(esp_ble_mesh_rpr_client_msg_t));
-            }
-        } else {
+        if (!dst->rpr_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
+        }
+        memcpy(dst->rpr_send.params, src->rpr_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
+        if (src->rpr_send.msg) {
+            dst->rpr_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_rpr_client_msg_t));
+            if (!dst->rpr_send.msg) {
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->rpr_send.params);
+                dst->rpr_send.params = NULL;
+                break;
+            }
+            memcpy(dst->rpr_send.msg, src->rpr_send.msg, sizeof(esp_ble_mesh_rpr_client_msg_t));
         }
         break;
     case BTC_BLE_MESH_ACT_RPR_CLIENT_ACT:
@@ -90,6 +99,9 @@ void btc_ble_mesh_rpr_client_arg_deep_free(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_RPR_CLIENT_SEND:
         if (arg->rpr_send.params) {
             bt_mesh_free(arg->rpr_send.params);
+        }
+        if (arg->rpr_send.msg) {
+            bt_mesh_free(arg->rpr_send.msg);
         }
         break;
     case BTC_BLE_MESH_ACT_RPR_CLIENT_ACT:
@@ -148,6 +160,9 @@ static void btc_ble_mesh_rpr_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.val.ext_scan_report.adv_structures = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->recv.val.ext_scan_report.adv_structures) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->recv.params);
+                        p_dest_data->recv.params = NULL;
                         return;
                     }
 
@@ -415,9 +430,10 @@ void btc_ble_mesh_rpr_client_call_handler(btc_msg_t *msg)
         btc_ble_mesh_rpr_client_cb(&cb, ESP_BLE_MESH_RPR_CLIENT_SEND_COMP_EVT);
         break;
     case BTC_BLE_MESH_ACT_RPR_CLIENT_ACT:
-        btc_ble_mesh_rpr_client_act(arg->rpr_act.type,
-                                    arg->rpr_act.param, &cb);
-        btc_ble_mesh_rpr_client_cb(&cb, ESP_BLE_MESH_RPR_CLIENT_ACT_COMP_EVT);
+        if (btc_ble_mesh_rpr_client_act(arg->rpr_act.type,
+                                        arg->rpr_act.param, &cb) == 0) {
+            btc_ble_mesh_rpr_client_cb(&cb, ESP_BLE_MESH_RPR_CLIENT_ACT_COMP_EVT);
+        }
         break;
     default:
         break;
@@ -473,7 +489,6 @@ void btc_ble_mesh_rpr_server_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
         } else {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
         }
-        bt_mesh_free(src->set_uuid_match.match_val);
         break;
     default:
         BT_DBG("%s, Unknown act %d", __func__, msg->act);

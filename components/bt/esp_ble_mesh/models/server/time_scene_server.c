@@ -235,6 +235,7 @@ static void time_get(struct bt_mesh_model *model,
             srv->state->time.subsecond = net_buf_simple_pull_u8(buf);
             srv->state->time.uncertainty = net_buf_simple_pull_u8(buf);
             val = net_buf_simple_pull_le16(buf);
+            srv->state->time.time_authority = val & BIT(0);
             srv->state->time.tai_utc_delta_curr = (val >> 1) & BIT_MASK(15);
             srv->state->time.time_zone_offset_curr = net_buf_simple_pull_u8(buf);
         }
@@ -754,6 +755,7 @@ static void scene_action(struct bt_mesh_model *model,
             if (i == srv->state->scene_count) {
                 BT_WARN("Scene Register is full!");
                 srv->state->status_code = SCENE_REG_FULL;
+#if 0
                 /* Get the Scene Number of the currently active scene */
                 for (i = 0; i < srv->state->scene_count; i++) {
                     scene = &srv->state->scenes[i];
@@ -766,10 +768,12 @@ static void scene_action(struct bt_mesh_model *model,
                     /* A value of 0x0000 when no scene is active */
                     srv->state->current_scene = INVALID_SCENE_NUMBER;
                 }
+#endif
             }
         }
 
-        if (srv->state->in_progress == true) {
+        if (srv->state->status_code == SCENE_SUCCESS &&
+            srv->state->in_progress == true) {
             /**
              * When the scene transition is in progress and a new Scene Number is
              * stored in the Scene Register as a result of Scene Store operation,
@@ -940,6 +944,12 @@ static void send_scheduler_act_status(struct bt_mesh_model *model,
     switch (model->id) {
     case BLE_MESH_MODEL_ID_SCHEDULER_SRV: {
         struct bt_mesh_scheduler_srv *srv = model->user_data;
+        if (srv == NULL || srv->state == NULL ||
+            srv->state->schedules == NULL ||
+            index >= srv->state->schedule_count) {
+            BT_ERR("InvalidScheduleSrvParams");
+            return;
+        }
         value = get_schedule_reg_state(srv->state, index);
         net_buf_simple_add_le32(&msg, (uint32_t)value);
         net_buf_simple_add_le32(&msg, (uint32_t)(value >> 32));
@@ -948,6 +958,12 @@ static void send_scheduler_act_status(struct bt_mesh_model *model,
     }
     case BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV: {
         struct bt_mesh_scheduler_setup_srv *srv = model->user_data;
+        if (srv == NULL || srv->state == NULL ||
+            srv->state->schedules == NULL ||
+            index >= srv->state->schedule_count) {
+            BT_ERR("InvalidScheduleSrvParams");
+            return;
+        }
         value = get_schedule_reg_state(srv->state, index);
         net_buf_simple_add_le32(&msg, (uint32_t)value);
         net_buf_simple_add_le32(&msg, (uint32_t)(value >> 32));
@@ -1053,6 +1069,11 @@ static void scheduler_act_set(struct bt_mesh_model *model,
 
     if (index > SCHEDULE_ENTRY_MAX_INDEX) {
         BT_ERR("Invalid Scheduler Register Entry index 0x%02x", index);
+        return;
+    }
+
+    if (index >= srv->state->schedule_count) {
+        BT_ERR("TooLargeScheduleIndex %u/%u", index, srv->state->schedule_count);
         return;
     }
 

@@ -1739,6 +1739,9 @@ uint8_t *bt_mesh_ext_prov_link_get_record(void *link, uint16_t id)
 uint8_t *bt_mesh_ext_prov_link_alloc_record(void *link, uint16_t id, uint16_t len)
 {
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_CERT_BASED_PROV)
+    if (id >= BLE_MESH_REC_MAX_ID) {
+        return NULL;
+    }
     LINK(link)->records[id] = bt_mesh_calloc(len * sizeof(uint8_t));
     return LINK(link)->records[id];
 #else
