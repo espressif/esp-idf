@@ -38,7 +38,10 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_HEALTH_CLIENT_GET_STATE: {
-        dst->health_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        dst->health_client_get_state.params = NULL;
+        dst->health_client_get_state.get_state = NULL;
+
+        dst->health_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->health_client_get_state.params) {
             memcpy(dst->health_client_get_state.params, src->health_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
@@ -47,27 +50,41 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
             break;
         }
         if (src->health_client_get_state.get_state) {
-            dst->health_client_get_state.get_state = (esp_ble_mesh_health_client_get_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_health_client_get_state_t));
+            dst->health_client_get_state.get_state = (esp_ble_mesh_health_client_get_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_health_client_get_state_t));
             if (dst->health_client_get_state.get_state) {
                 memcpy(dst->health_client_get_state.get_state, src->health_client_get_state.get_state,
                     sizeof(esp_ble_mesh_health_client_get_state_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->health_client_get_state.params);
+                dst->health_client_get_state.params = NULL;
             }
         }
         break;
     }
     case BTC_BLE_MESH_ACT_HEALTH_CLIENT_SET_STATE: {
-        dst->health_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->health_client_set_state.set_state = (esp_ble_mesh_health_client_set_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_health_client_set_state_t));
-        if (dst->health_client_set_state.params && dst->health_client_set_state.set_state) {
-            memcpy(dst->health_client_set_state.params, src->health_client_set_state.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->health_client_set_state.set_state, src->health_client_set_state.set_state,
-                   sizeof(esp_ble_mesh_health_client_set_state_t));
-        } else {
+        dst->health_client_set_state.params = NULL;
+        dst->health_client_set_state.set_state = NULL;
+
+        dst->health_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
+        if (!dst->health_client_set_state.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+        memcpy(dst->health_client_set_state.params, src->health_client_set_state.params,
+               sizeof(esp_ble_mesh_client_common_param_t));
+
+        dst->health_client_set_state.set_state = (esp_ble_mesh_health_client_set_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_health_client_set_state_t));
+        if (!dst->health_client_set_state.set_state) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->health_client_set_state.params);
+            dst->health_client_set_state.params = NULL;
+            break;
+        }
+        memcpy(dst->health_client_set_state.set_state, src->health_client_set_state.set_state,
+               sizeof(esp_ble_mesh_health_client_set_state_t));
         break;
     }
     default:
@@ -121,7 +138,7 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
     }
 
     if (p_src_data->params) {
-        p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        p_dest_data->params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             return;
@@ -142,6 +159,9 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
                     p_dest_data->status_cb.current_status.fault_array = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.current_status.fault_array) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.current_status.fault_array,
@@ -158,6 +178,9 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
                     p_dest_data->status_cb.fault_status.fault_array = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.fault_status.fault_array) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.fault_status.fault_array,

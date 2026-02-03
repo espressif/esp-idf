@@ -38,36 +38,53 @@ void btc_ble_mesh_time_scene_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, 
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_TIME_SCENE_CLIENT_GET_STATE: {
-        dst->time_scene_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        if (dst->time_scene_client_get_state.params) {
-            memcpy(dst->time_scene_client_get_state.params, src->time_scene_client_get_state.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-        } else {
+        dst->time_scene_client_get_state.params = NULL;
+        dst->time_scene_client_get_state.get_state = NULL;
+
+        dst->time_scene_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
+        if (!dst->time_scene_client_get_state.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             break;
         }
+        memcpy(dst->time_scene_client_get_state.params, src->time_scene_client_get_state.params,
+               sizeof(esp_ble_mesh_client_common_param_t));
+
         if (src->time_scene_client_get_state.get_state) {
-            dst->time_scene_client_get_state.get_state = (esp_ble_mesh_time_scene_client_get_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_time_scene_client_get_state_t));
-            if (dst->time_scene_client_get_state.get_state) {
-                memcpy(dst->time_scene_client_get_state.get_state, src->time_scene_client_get_state.get_state,
-                    sizeof(esp_ble_mesh_time_scene_client_get_state_t));
-            } else {
+            dst->time_scene_client_get_state.get_state = (esp_ble_mesh_time_scene_client_get_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_time_scene_client_get_state_t));
+            if (!dst->time_scene_client_get_state.get_state) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->time_scene_client_get_state.params);
+                dst->time_scene_client_get_state.params = NULL;
+                break;
             }
+            memcpy(dst->time_scene_client_get_state.get_state, src->time_scene_client_get_state.get_state,
+                   sizeof(esp_ble_mesh_time_scene_client_get_state_t));
         }
         break;
     }
     case BTC_BLE_MESH_ACT_TIME_SCENE_CLIENT_SET_STATE: {
-        dst->time_scene_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->time_scene_client_set_state.set_state = (esp_ble_mesh_time_scene_client_set_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_time_scene_client_set_state_t));
-        if (dst->time_scene_client_set_state.params && dst->time_scene_client_set_state.set_state) {
-            memcpy(dst->time_scene_client_set_state.params, src->time_scene_client_set_state.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->time_scene_client_set_state.set_state, src->time_scene_client_set_state.set_state,
-                   sizeof(esp_ble_mesh_time_scene_client_set_state_t));
-        } else {
+        dst->time_scene_client_set_state.params = NULL;
+        dst->time_scene_client_set_state.set_state = NULL;
+
+        dst->time_scene_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
+        if (!dst->time_scene_client_set_state.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+        memcpy(dst->time_scene_client_set_state.params, src->time_scene_client_set_state.params,
+               sizeof(esp_ble_mesh_client_common_param_t));
+
+        dst->time_scene_client_set_state.set_state = (esp_ble_mesh_time_scene_client_set_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_time_scene_client_set_state_t));
+        if (!dst->time_scene_client_set_state.set_state) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->time_scene_client_set_state.params);
+            dst->time_scene_client_set_state.params = NULL;
+            break;
+        }
+        memcpy(dst->time_scene_client_set_state.set_state, src->time_scene_client_set_state.set_state,
+               sizeof(esp_ble_mesh_time_scene_client_set_state_t));
         break;
     }
     default:
@@ -121,7 +138,7 @@ static void btc_ble_mesh_time_scene_client_copy_req_data(btc_msg_t *msg, void *p
     }
 
     if (p_src_data->params) {
-        p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        p_dest_data->params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             return;
@@ -145,6 +162,9 @@ static void btc_ble_mesh_time_scene_client_copy_req_data(btc_msg_t *msg, void *p
                     p_dest_data->status_cb.scene_register_status.scenes = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.scene_register_status.scenes) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.scene_register_status.scenes,

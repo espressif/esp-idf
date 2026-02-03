@@ -285,6 +285,12 @@ bool bt_mesh_gen_prov_cont(struct bt_mesh_prov_link *link,
             }
             return false;
         }
+    } else if (buf->len > CONT_PAYLOAD_MAX) {
+        BT_ERR("Invalid non-last seg len: %u > %u", buf->len, CONT_PAYLOAD_MAX);
+        if (close) {
+            *close = true;
+        }
+        return false;
     }
 
     if ((link->rx.seg & BIT(seg)) == 0) {
@@ -597,7 +603,7 @@ static uint8_t last_seg(uint8_t len)
 
     len -= START_PAYLOAD_MAX;
 
-    return 1 + (len / CONT_PAYLOAD_MAX);
+    return DIV_ROUND_UP(len, CONT_PAYLOAD_MAX);
 }
 
 int bt_mesh_prov_send_adv(struct bt_mesh_prov_link *link, struct net_buf_simple *msg)

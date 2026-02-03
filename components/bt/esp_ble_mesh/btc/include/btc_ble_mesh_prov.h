@@ -115,7 +115,7 @@ typedef union {
         uint32_t number;
     } input_number;
     struct ble_mesh_node_input_str_args {
-        char string[8];
+        char string[ESP_BLE_MESH_PROV_INPUT_OOB_MAX_LEN + 1];
     } input_string;
     struct ble_mesh_set_device_name_args {
         char name[ESP_BLE_MESH_DEVICE_NAME_MAX_LEN + 1];
@@ -141,7 +141,7 @@ typedef union {
         uint8_t pub_key_y[32];
     } provisioner_read_oob_pub_key;
     struct ble_mesh_provisioner_input_str_args {
-        char string[8];
+        char string[ESP_BLE_MESH_PROV_INPUT_OOB_MAX_LEN + 1];
         uint8_t link_idx;
     } provisioner_input_str;
     struct ble_mesh_provisioner_input_num_args {

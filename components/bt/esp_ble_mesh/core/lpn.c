@@ -758,7 +758,7 @@ static bool sub_update(uint8_t op)
             }
         }
 
-        if (added_count + g >= lpn->queue_size) {
+        if (op == TRANS_CTL_OP_FRIEND_SUB_ADD && added_count + g >= lpn->queue_size) {
             BT_WARN("FrndQueueExceeded, Added %u G %u Size %u",
                     added_count, g, lpn->queue_size);
             break;

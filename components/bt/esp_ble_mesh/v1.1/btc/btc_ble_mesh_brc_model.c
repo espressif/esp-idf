@@ -49,6 +49,9 @@ void btc_ble_mesh_brc_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_BRC_CLIENT_SEND:
+        dst->brc_send.params = NULL;
+        dst->brc_send.msg = NULL;
+
         dst->brc_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->brc_send.params) {
             memcpy(dst->brc_send.params, src->brc_send.params,
@@ -64,6 +67,9 @@ void btc_ble_mesh_brc_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
                        sizeof(esp_ble_mesh_brc_client_msg_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->brc_send.params);
+                dst->brc_send.params = NULL;
             }
         }
         break;
@@ -131,6 +137,9 @@ static void btc_ble_mesh_brc_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.bridged_subnets_list.net_idx_pair = bt_mesh_calloc(length);
                     if (!p_dest_data->recv.bridged_subnets_list.net_idx_pair) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     memcpy(p_dest_data->recv.bridged_subnets_list.net_idx_pair,
@@ -144,6 +153,9 @@ static void btc_ble_mesh_brc_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.bridging_table_list.bridged_addr_list = bt_mesh_calloc(length);
                     if (!p_dest_data->recv.bridging_table_list.bridged_addr_list) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     memcpy(p_dest_data->recv.bridging_table_list.bridged_addr_list,
