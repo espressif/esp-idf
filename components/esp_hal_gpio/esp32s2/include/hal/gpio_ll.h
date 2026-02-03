@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -474,7 +474,12 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    return GET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, BIT(gpio_num - 21));
+    uint64_t bit_mask = 1ULL << gpio_num;
+    if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
+        // GPIO 0-21 are not digital IO pads, 22-25 does not exist
+        abort();
+    }
+    return GET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, bit_mask >> 21);
 }
 
 /**
