@@ -15,11 +15,9 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include "esp_log.h"
-#include "esp_app_trace.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gptimer.h"
-#include "soc/uart_pins.h"
 #include "esp_trace.h"
 
 static const char *TAG = "example";
@@ -127,6 +125,9 @@ static void example_task(void *p)
     }
 }
 
+#if CONFIG_ESP_TRACE_TRANSPORT_APPTRACE
+#include "soc/uart_pins.h"
+#include "esp_app_trace.h"
 esp_trace_open_params_t esp_trace_get_user_params(void)
 {
     static esp_apptrace_config_t app_trace_config = APPTRACE_CONFIG_DEFAULT();
@@ -145,6 +146,19 @@ esp_trace_open_params_t esp_trace_get_user_params(void)
     };
     return trace_params;
 }
+#elif CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+esp_trace_open_params_t esp_trace_get_user_params(void)
+{
+    esp_trace_open_params_t trace_params = {
+        .core_cfg = NULL,
+        .encoder_name = "sysview",
+        .encoder_cfg = NULL,
+        .transport_name = "usb_serial_jtag",
+        .transport_cfg = NULL,
+    };
+    return trace_params;
+}
+#endif
 
 void app_main(void)
 {
