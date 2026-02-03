@@ -97,11 +97,12 @@ tee_sec_stg_encrypt  <key_id> <plaintext>
       <key_id>  TEE Secure storage key ID
    <plaintext>  Plaintext to be encrypted
 
-tee_sec_stg_decrypt  <key_id> <ciphertext> <tag>
+tee_sec_stg_decrypt  <key_id> <ciphertext> <tag> <iv>
   Decrypt data using AES-GCM key with the given ID from secure storage
       <key_id>  TEE Secure storage key ID
   <ciphertext>  Ciphertext to be decrypted
          <tag>  AES-GCM authentication tag
+          <iv>  AES-GCM initialization vector
 
 help  [<string>] [-v <0|1>]
   Print the summary of all registered commands if no arguments are given,
@@ -135,8 +136,8 @@ I (8180) tee_attest: Attestation token - Data:
 - The TEE secure storage service provides the following commands:
     - `tee_sec_stg_gen_key`: Generate and store a new key (ECDSA or AES) in the TEE secure storage with the specified ID
     - `tee_sec_stg_sign`: Sign a message using an ECDSA `secp256r1` key pair with the specified ID and verify the signature
-    - `tee_sec_stg_encrypt`: Encrypt data with AES256-GCM using the key with the specified ID and outputs the ciphertext and tag
-    - `tee_sec_stg_decrypt`: Decrypt ciphertext using key with the specified ID and tag for integrity verification
+    - `tee_sec_stg_encrypt`: Encrypt data with AES256-GCM using the key with the specified ID and outputs the ciphertext, tag and the IV used
+    - `tee_sec_stg_decrypt`: Decrypt ciphertext using key with the specified ID, tag and used IV for integrity verification
 - The `get_msg_sha256` command computes the SHA256 hash of a given message, which can be used as input for the `tee_sec_stg_sign` command.
 
 <details>
@@ -163,14 +164,16 @@ I (6444) tee_sec_stg: Signature verified successfully!
 
 ```log
 esp32c6> tee_sec_stg_gen_key aes256_k0 0
-I (2784) tee_sec_stg: Generated AES256 key with ID key0
+I (2784) tee_sec_stg: Generated AES256 key with ID aes256_k0
 esp32c6> tee_sec_stg_encrypt aes256_k0 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 I (3084) tee_sec_stg: Ciphertext -
-58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1
-I (3594) tee_sec_stg: Tag -
-caeedb43e08dc3b4e35a58b2412908cc
-esp32c6> tee_sec_stg_decrypt aes256_k0 58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1 caeedb43e08dc3b4e35a58b2412908cc
-I (4314) tee_sec_stg: Decrypted plaintext -
+40ff09c61af2f94611fb605806489380132b0000f2c63863366aad56ad327e95
+I (3084) tee_sec_stg: Tag -
+8136e8bfc3c70ca792fa486b3eeca72b
+I (3084) tee_sec_stg: IV -
+0f202954f1a1a138a2ab8b06
+esp32c6> tee_sec_stg_decrypt aes256_k0 40ff09c61af2f94611fb605806489380132b0000f2c63863366aad56ad327e95 8136e8bfc3c70ca792fa486b3eeca72b 0f202954f1a1a138a2ab8b06
+I (3594) tee_sec_stg: Decrypted plaintext -
 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 ```
 

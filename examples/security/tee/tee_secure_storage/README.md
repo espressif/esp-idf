@@ -78,11 +78,12 @@ I (1001) Plaintext: 4c 6f 72 65 6d 20 69 70 73 75 6d 20 64 6f 6c 6f
 I (1001) Plaintext: 72 20 73 69 74 20 61 6d 65 74 2c 20 63 6f 6e 73
 I (1011) Plaintext: 65 63 74 65 74 75 72 20 61 64 69 70 69 73 63 69
 I (1021) Plaintext: 6e 67 20 65 6c 69 74 2e
-I (1111) Encrypted data: 18 85 a2 97 7d 20 be 53 47 b7 3f 6f 52 06 8a 44
-I (1111) Encrypted data: 3b 7e 2e 25 7b 33 5d 4f 2a e5 17 5e bc d7 4e 23
-I (1111) Encrypted data: 2a 8f 89 a1 80 9c 6c 6b 00 e6 c6 39 7b 3f 75 65
-I (1121) Encrypted data: cd d5 f6 f6 3c 9a fb bb
-I (1131) Tag: 6d 7f 1f 8e 1e a9 2c d9 d2 7f 9b db 16 cc 9b 68
+I (1111) Encrypted data: 8a c5 1b cf 9f 5a 7c 73 a6 e7 5a bf 2a 25 bf e2
+I (1111) Encrypted data: 80 8a 2e 3e 7a 26 9a 14 d0 c3 1b c3 f9 48 40 cc
+I (1111) Encrypted data: ea 0b 61 c6 45 8c 39 b6 66 8c 28 5a 10 f3 66 b6
+I (1121) Encrypted data: ce 7d 94 7a d8 ba 18 2a
+I (1131) IV: b9 3f 51 52 f4 0b 32 71 7e 45 56 33
+I (1131) Tag: e8 78 6f 56 0a 14 95 cb b2 c3 ae 14 3c 7c 26 5d
 I (1131) example_tee_sec_stg: Done with encryption/decryption!
 I (1141) main_task: Returned from app_main()
 ```

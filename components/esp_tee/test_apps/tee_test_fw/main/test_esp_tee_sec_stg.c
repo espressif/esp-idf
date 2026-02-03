@@ -246,7 +246,7 @@ TEST_CASE("Test TEE Secure Storage - Operations with invalid/non-existent keys",
         .aad = aad,
         .aad_len = sizeof(aad),
         .input = plaintext,
-        .input_len = SZ
+        .input_len = SZ,
     };
 
     // Test ECDSA key with AES operation

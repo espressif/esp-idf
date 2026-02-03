@@ -28,7 +28,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
     return esp_tee_service_call_with_noniram_intr_disabled(3, SS_ESP_TEE_SEC_STORAGE_ECDSA_GET_PUBKEY, cfg, out_pubkey);
 }
 
-esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
+esp_err_t esp_tee_sec_storage_aead_encrypt(esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
     return esp_tee_service_call_with_noniram_intr_disabled(5, SS_ESP_TEE_SEC_STORAGE_AEAD_ENCRYPT, ctx, tag, tag_len, output);
 }

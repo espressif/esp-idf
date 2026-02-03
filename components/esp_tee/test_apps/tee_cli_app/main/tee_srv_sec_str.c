@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -416,8 +416,12 @@ static int tee_sec_stg_encrypt(int argc, char **argv)
     char tag_hexstr[AES256_GCM_TAG_LEN * 2 + 1];
     hexbuf_to_hexstr(tag, sizeof(tag), tag_hexstr, sizeof(tag_hexstr));
 
+    char iv_hexstr[AES_GCM_SUPPORTED_IV_LEN * 2 + 1];
+    hexbuf_to_hexstr(ctx.iv, sizeof(ctx.iv), iv_hexstr, sizeof(iv_hexstr));
+
     ESP_LOGI(TAG, "Ciphertext -\n%s", ciphertext);
     ESP_LOGI(TAG, "Tag -\n%s", tag_hexstr);
+    ESP_LOGI(TAG, "IV -\n%s", iv_hexstr);
 
     free(plaintext_buf);
     free(ciphertext_buf);
@@ -448,6 +452,7 @@ static struct {
     struct arg_str *key_str_id;
     struct arg_str *ciphertext;
     struct arg_str *tag;
+    struct arg_str *iv;
     struct arg_end *end;
 } tee_sec_stg_decrypt_args;
 
@@ -465,6 +470,10 @@ static int tee_sec_stg_decrypt(int argc, char **argv)
     const char *tag_hexstr = tee_sec_stg_decrypt_args.tag->sval[0];
     uint8_t tag[AES256_GCM_TAG_LEN];
     hexstr_to_hexbuf(tag_hexstr, strlen(tag_hexstr), tag, sizeof(tag));
+
+    const char *iv_hexstr = tee_sec_stg_decrypt_args.iv->sval[0];
+    uint8_t iv[AES_GCM_SUPPORTED_IV_LEN];
+    hexstr_to_hexbuf(iv_hexstr, strlen(iv_hexstr), iv, sizeof(iv));
 
     const char *ciphertext = tee_sec_stg_decrypt_args.ciphertext->sval[0];
     size_t ciphertext_len = strnlen(ciphertext, MAX_AES_PLAINTEXT_LEN);
@@ -499,6 +508,8 @@ static int tee_sec_stg_decrypt(int argc, char **argv)
         .input = (uint8_t *)ciphertext_buf,
         .input_len = ciphertext_buf_len
     };
+    /* Copying the IV generated during encryption */
+    memcpy(ctx.iv, iv, sizeof(iv));
 
     err = esp_tee_sec_storage_aead_decrypt(&ctx, tag, sizeof(tag), plaintext_buf);
     if (err != ESP_OK) {
@@ -528,7 +539,8 @@ void register_srv_sec_stg_decrypt(void)
     tee_sec_stg_decrypt_args.key_str_id = arg_str1(NULL, NULL, "<key_id>", "TEE Secure storage key ID");
     tee_sec_stg_decrypt_args.ciphertext = arg_str1(NULL, NULL, "<ciphertext>", "Ciphertext to be decrypted");
     tee_sec_stg_decrypt_args.tag = arg_str1(NULL, NULL, "<tag>", "AES-GCM authentication tag");
-    tee_sec_stg_decrypt_args.end = arg_end(3);
+    tee_sec_stg_decrypt_args.iv = arg_str1(NULL, NULL, "<iv>", "AES-GCM initialization vector");
+    tee_sec_stg_decrypt_args.end = arg_end(4);
 
     const esp_console_cmd_t tee_sec_stg = {
         .command = "tee_sec_stg_decrypt",

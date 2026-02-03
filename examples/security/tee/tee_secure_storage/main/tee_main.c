@@ -223,6 +223,7 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
         goto exit;
     }
 
+    ESP_LOG_BUFFER_HEX("IV", ctx.iv, AES_GCM_SUPPORTED_IV_LEN);
     ESP_LOG_BUFFER_HEX("Tag", tag, sizeof(tag));
     ESP_LOGI(TAG, "Done with encryption/decryption!");
 
