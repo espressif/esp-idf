@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1480,6 +1480,18 @@ esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_de
 
     // Take mux lock. This protects the client being released or other clients from claiming interfaces
     xSemaphoreTake(p_host_lib_obj->constant.mux_lock, portMAX_DELAY);
+
+    // In case the underlying pipe was halted while having an URB in-flight,
+    // usb_host_client_handle_events() may not have had a chance to process the URB yet,
+    // in case it is handled from low priority task and we are calling this function from a high priority task.
+    HOST_ENTER_CRITICAL();
+    const bool pending_ep = !TAILQ_EMPTY(&client_obj->dynamic.pending_ep_tailq);
+    HOST_EXIT_CRITICAL();
+    if (pending_ep) {
+        // We wait 10 FreeRTOS ticks to give the class driver task chance to run and process the URB.
+        vTaskDelay(10);
+    }
+
     esp_err_t ret = interface_release(client_obj, dev_hdl, bInterfaceNumber);
     xSemaphoreGive(p_host_lib_obj->constant.mux_lock);
 
