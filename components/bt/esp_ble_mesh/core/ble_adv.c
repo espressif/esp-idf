@@ -121,6 +121,9 @@ static void ble_adv_send_end(int err, void *cb_data)
     BT_DBG("Count %u Period %u", tx->param.count, tx->param.period);
 
     if (tx->param.count) {
+        bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(tx->buf), 0);
+        net_buf_unref(tx->buf);
+
         if (tx->param.period) {
             k_delayed_work_submit(&tx->resend, tx->param.period);
         } else {
@@ -278,7 +281,6 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
 int bt_mesh_stop_ble_advertising(uint8_t index)
 {
     struct bt_mesh_ble_adv_tx *tx = NULL;
-    bool unref = true;
 
     BT_DBG("StopBLEAdv, Index %u", index);
 
@@ -298,15 +300,7 @@ int bt_mesh_stop_ble_advertising(uint8_t index)
            !!bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(tx->buf)),
            tx->buf->ref);
 
-    /* busy 1, ref 1; busy 1, ref 2;
-     * busy 0, ref 0; busy 0, ref 1;
-     */
-
-    if (bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(tx->buf)) &&
-        tx->buf->ref == 1U) {
-        unref = false;
-    }
-    ble_adv_tx_reset(tx, unref);
+    ble_adv_tx_reset(tx, true);
 
     return 0;
 }

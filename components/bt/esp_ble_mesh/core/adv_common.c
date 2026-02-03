@@ -919,16 +919,34 @@ void bt_mesh_adv_task_deinit(void)
 {
     BT_DBG("AdvTaskDeinit");
 
-    vTaskDelete(adv_task.handle);
-    adv_task.handle = NULL;
+    if (adv_task.handle) {
+        vTaskDelete(adv_task.handle);
+        adv_task.handle = NULL;
+    }
 
 #if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
     (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && \
      CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
-    heap_caps_free(adv_task.stack);
-    adv_task.stack = NULL;
-    heap_caps_free(adv_task.task);
-    adv_task.task = NULL;
+    /* Under specific configurations, bt_mesh_adv_task_deinit immediately releases
+     * adv_task.stack and adv_task.task (StaticTask_t) using heap_caps_free.
+     * However, vTaskDelete(adv_task.handle) only marks the task for deletion and
+     * adds it to the xTasksWaitingTermination list, which will be processed later
+     * by the Idle task (calling prvDeleteTCB). Even though static tasks are not
+     * automatically released by FreeRTOS, the Idle task will still access the TCB
+     * (checking fields such as ucStaticallyAllocated, resetting states). Premature
+     * release leads to a use-after-free (UAF) by the Idle task.
+     * Additionally, if the task is still running (possible in multi-core scenarios),
+     * releasing the stack may cause the task to execute with an invalid stack.
+     */
+    vTaskDelay(pdMS_TO_TICKS(100));
+    if (adv_task.stack) {
+        heap_caps_free(adv_task.stack);
+        adv_task.stack = NULL;
+    }
+    if (adv_task.task) {
+        heap_caps_free(adv_task.task);
+        adv_task.task = NULL;
+    }
 #endif
 }
 

@@ -18,6 +18,11 @@ void bt_mesh_mutex_create(bt_mesh_mutex_t *mutex)
         return;
     }
 
+    if (mutex->mutex) {
+        BT_INFO("Create, mutex already exist");
+        return;
+    }
+
 #if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
 #if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
     mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
@@ -81,6 +86,11 @@ void bt_mesh_r_mutex_create(bt_mesh_mutex_t *mutex)
         return;
     }
 
+    if (mutex->mutex) {
+        BT_INFO("Create, r mutex already exist");
+        return;
+    }
+
 #if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
 #if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
     mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
@@ -134,6 +144,11 @@ void bt_mesh_c_semaphore_create(bt_mesh_mutex_t *mutex, int max, int init)
 {
     if (!mutex) {
         BT_ERR("Create, invalid mutex");
+        return;
+    }
+
+    if (mutex->mutex) {
+        BT_INFO("Create, sem already exist");
         return;
     }
 

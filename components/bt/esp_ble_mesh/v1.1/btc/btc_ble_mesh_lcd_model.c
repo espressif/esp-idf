@@ -40,16 +40,25 @@ void btc_ble_mesh_lcd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_LCD_CLIENT_SEND:
+        dst->lcd_send.params = NULL;
+        dst->lcd_send.msg = NULL;
+
         dst->lcd_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->lcd_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_lcd_client_msg_t));
-        if (dst->lcd_send.params && dst->lcd_send.msg) {
-            memcpy(dst->lcd_send.params, src->lcd_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->lcd_send.msg, src->lcd_send.msg,
-                   sizeof(esp_ble_mesh_lcd_client_msg_t));
-        } else {
+        if (!dst->lcd_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+        memcpy(dst->lcd_send.params, src->lcd_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
+        dst->lcd_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_lcd_client_msg_t));
+        if (!dst->lcd_send.msg) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->lcd_send.params);
+            dst->lcd_send.params = NULL;
+            break;
+        }
+        memcpy(dst->lcd_send.msg, src->lcd_send.msg, sizeof(esp_ble_mesh_lcd_client_msg_t));
         break;
     default:
         BT_DBG("%s, Unknown act %d", __func__, msg->act);
@@ -115,6 +124,9 @@ static void btc_ble_mesh_lcd_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.large_comp_data_status.data = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->recv.large_comp_data_status.data) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 
@@ -130,6 +142,9 @@ static void btc_ble_mesh_lcd_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.models_metadata_status.data = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->recv.models_metadata_status.data) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 

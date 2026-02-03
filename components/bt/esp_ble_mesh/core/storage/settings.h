@@ -35,7 +35,7 @@ void bt_mesh_store_mod_sub(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_pub(struct bt_mesh_model *mod);
 void bt_mesh_store_label(void);
 
-int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+int bt_mesh_model_data_store(const struct bt_mesh_model *mod, bool vnd,
                              const char *name, const void *data,
                              size_t data_len);
 

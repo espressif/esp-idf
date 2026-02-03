@@ -15,7 +15,7 @@
 #if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
 #include "mesh/time_scene_client.h"
 
-/* The followings are the macro definitions of Time Scene client
+/* The following are the macro definitions of Time Scene client
  * model message length, and a message is composed of 3 parts:
  * Opcode + Payload + MIC
  */
@@ -114,12 +114,20 @@ static void time_scene_status(struct bt_mesh_model *model,
         }
         memcpy(status->tai_seconds, buf->data, 5);
         net_buf_simple_pull(buf, 5);
-        status->sub_second = net_buf_simple_pull_u8(buf);
-        status->uncertainty = net_buf_simple_pull_u8(buf);
-        uint16_t temp = net_buf_simple_pull_le16(buf);
-        status->time_authority = temp & BIT(0);
-        status->tai_utc_delta = temp >> 15;
-        status->time_zone_offset = net_buf_simple_pull_u8(buf);
+        if (buf->len) {
+            status->sub_second = net_buf_simple_pull_u8(buf);
+            status->uncertainty = net_buf_simple_pull_u8(buf);
+            uint16_t temp = net_buf_simple_pull_le16(buf);
+            status->time_authority = temp & BIT(0);
+            status->tai_utc_delta = temp >> 15;
+            status->time_zone_offset = net_buf_simple_pull_u8(buf);
+        } else {
+            status->sub_second = 0;
+            status->uncertainty = 0;
+            status->time_authority = 0;
+            status->tai_utc_delta = 0;
+            status->time_zone_offset = 0;
+        }
         val = (uint8_t *)status;
         len = sizeof(struct bt_mesh_time_status);
         break;

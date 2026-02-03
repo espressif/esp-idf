@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -303,7 +303,11 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
     switch (type) {
 #if (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) && \
      CONFIG_BLE_MESH_PB_GATT
-    case BLE_MESH_UUID_MESH_PROV_VAL:
+    case BLE_MESH_UUID_MESH_PROV_VAL: {
+        struct net_buf_simple_state state = {0};
+
+        net_buf_simple_save(buf, &state);
+
 #if CONFIG_BLE_MESH_PROVISIONER
         if (bt_mesh_is_provisioner_en()) {
             if (buf->len != PROV_SVC_DATA_LEN) {
@@ -316,9 +320,16 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
         }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
+        net_buf_simple_restore(buf, &state);
+
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_is_provisioned()) {
             const bt_mesh_addr_t *addr = NULL;
+
+            if (buf->len != PROV_SVC_DATA_LEN) {
+                BT_WARN("Invalid Mesh Prov Service Data length %d", buf->len);
+                return;
+            }
 
             addr = bt_mesh_get_unprov_dev_addr();
             assert(addr);
@@ -328,12 +339,14 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
             bt_mesh_rpr_srv_unprov_beacon_recv(buf, bt_mesh_get_adv_type(), addr, rssi);
         }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
+
+        break;
+    }
 #endif /* (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) &&
            CONFIG_BLE_MESH_PB_GATT */
-        break;
 
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    case BLE_MESH_UUID_MESH_PROXY_VAL:
+    case BLE_MESH_UUID_MESH_PROXY_VAL: {
         if (buf->len != PROXY_SVC_DATA_LEN_NET_ID &&
             buf->len != PROXY_SVC_DATA_LEN_NODE_ID) {
             /* PROXY_SVC_DATA_LEN_NODE_ID,
@@ -347,10 +360,11 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
         BT_DBG("Start to handle Mesh Proxy Service Data");
         bt_mesh_proxy_client_gatt_adv_recv(buf, addr, rssi);
         break;
+    }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX
-    case BLE_MESH_UUID_MESH_PROXY_SOLIC_VAL:
+    case BLE_MESH_UUID_MESH_PROXY_SOLIC_VAL: {
         if (buf->len != (1 + BLE_MESH_NET_HDR_LEN + 8)) {
             BT_WARN("Invalid Mesh Proxy Solic Service Data length %d", buf->len);
             return;
@@ -359,6 +373,7 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
         BT_DBG("Start to handle Mesh Proxy Solic Service Data");
         bt_mesh_proxy_server_solic_recv(buf, addr, rssi);
         break;
+    }
 #endif /* CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX */
 
     default:

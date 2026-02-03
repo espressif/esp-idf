@@ -65,22 +65,26 @@ static inline uint32_t block_count_get(const struct bt_mesh_blob_srv *srv)
 
 static inline uint32_t max_chunk_size(const struct bt_mesh_blob_srv *srv)
 {
-    return MIN((srv->state.mtu_size - 2 - BLE_MESH_MODEL_OP_LEN(BT_MESH_BLOB_OP_CHUNK)),
-               BLOB_RX_CHUNK_SIZE);
+    uint8_t op_len = BLE_MESH_MODEL_OP_LEN(BT_MESH_BLOB_OP_CHUNK);
+    return ((srv->state.mtu_size >= 2 + op_len) ?
+            MIN((srv->state.mtu_size - 2 - op_len), BLOB_RX_CHUNK_SIZE) : 0);
 }
 
 static inline uint32_t max_chunk_count(const struct bt_mesh_blob_srv *srv)
 {
     return MIN(8 * (srv->state.mtu_size - 6),
-               CONFIG_BLE_MESH_BLOB_CHUNK_COUNT_MAX);
+               MAX(CONFIG_BLE_MESH_BLOB_CHUNK_COUNT_MAX, 1U));
 }
 
 static inline uint32_t missing_chunks(const struct bt_mesh_blob_block *block)
 {
     int i;
     uint32_t count = 0;
+    uint32_t size = 0;
 
-    for (i = 0; i < ARRAY_SIZE(block->missing); ++i) {
+    size = MIN(DIV_ROUND_UP(block->chunk_count, 8), ARRAY_SIZE(block->missing));
+
+    for (i = 0; i < size; ++i) {
         count += popcount(block->missing[i]);
     }
 
@@ -117,7 +121,7 @@ static int io_open(struct bt_mesh_blob_srv *srv)
 
 static void io_close(struct bt_mesh_blob_srv *srv)
 {
-    if (!srv->io->close) {
+    if (!srv->io || !srv->io->close) {
         return;
     }
 
@@ -624,8 +628,8 @@ static int handle_block_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_
         break;
     case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START:
     case BT_MESH_BLOB_XFER_PHASE_INACTIVE:
-        status = BT_MESH_BLOB_ERR_WRONG_PHASE;
-        break;
+        xfer_status_rsp(srv, ctx, BT_MESH_BLOB_ERR_WRONG_PHASE);
+        return 0;
     default:
         status = BT_MESH_BLOB_ERR_INTERNAL;
         break;
@@ -1070,6 +1074,9 @@ uint8_t bt_mesh_blob_srv_progress(const struct bt_mesh_blob_srv *srv)
     }
 
     total = block_count_get(srv);
+    if (total == 0) {
+        return 100U;
+    }
 
     received = 0;
     for (int i = 0; i < total; ++i) {

@@ -327,6 +327,11 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 
     BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
+    if (buf->len < 8 + mic_len) {
+        BT_ERR("TooShortMsgToDecrypt[%u][%u]", buf->len, mic_len);
+        return -EINVAL;
+    }
+
     buf->len -= mic_len;
 
     err = bt_mesh_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7,

@@ -38,7 +38,10 @@ void btc_ble_mesh_lighting_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, vo
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_LIGHTING_CLIENT_GET_STATE: {
-        dst->light_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        dst->light_client_get_state.params = NULL;
+        dst->light_client_get_state.get_state = NULL;
+
+        dst->light_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->light_client_get_state.params) {
             memcpy(dst->light_client_get_state.params, src->light_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
@@ -47,27 +50,42 @@ void btc_ble_mesh_lighting_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, vo
             break;
         }
         if (src->light_client_get_state.get_state) {
-            dst->light_client_get_state.get_state = (esp_ble_mesh_light_client_get_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_light_client_get_state_t));
+            dst->light_client_get_state.get_state = (esp_ble_mesh_light_client_get_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_light_client_get_state_t));
             if (dst->light_client_get_state.get_state) {
                 memcpy(dst->light_client_get_state.get_state, src->light_client_get_state.get_state,
-                    sizeof(esp_ble_mesh_light_client_get_state_t));
+                       sizeof(esp_ble_mesh_light_client_get_state_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->light_client_get_state.params);
+                dst->light_client_get_state.params = NULL;
             }
         }
         break;
     }
     case BTC_BLE_MESH_ACT_LIGHTING_CLIENT_SET_STATE: {
-        dst->light_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->light_client_set_state.set_state = (esp_ble_mesh_light_client_set_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_light_client_set_state_t));
-        if (dst->light_client_set_state.params && dst->light_client_set_state.set_state) {
-            memcpy(dst->light_client_set_state.params, src->light_client_set_state.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->light_client_set_state.set_state, src->light_client_set_state.set_state,
-                   sizeof(esp_ble_mesh_light_client_set_state_t));
-        } else {
+        dst->light_client_set_state.params = NULL;
+        dst->light_client_set_state.set_state = NULL;
+
+        dst->light_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
+        if (!dst->light_client_set_state.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+
+        dst->light_client_set_state.set_state = (esp_ble_mesh_light_client_set_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_light_client_set_state_t));
+        if (!dst->light_client_set_state.set_state) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->light_client_set_state.params);
+            dst->light_client_set_state.params = NULL;
+            break;
+        }
+
+        memcpy(dst->light_client_set_state.params, src->light_client_set_state.params,
+               sizeof(esp_ble_mesh_client_common_param_t));
+        memcpy(dst->light_client_set_state.set_state, src->light_client_set_state.set_state,
+               sizeof(esp_ble_mesh_light_client_set_state_t));
         break;
     }
     default:
@@ -121,7 +139,7 @@ static void btc_ble_mesh_lighting_client_copy_req_data(btc_msg_t *msg, void *p_d
     }
 
     if (p_src_data->params) {
-        p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        p_dest_data->params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             return;
@@ -144,6 +162,9 @@ static void btc_ble_mesh_lighting_client_copy_req_data(btc_msg_t *msg, void *p_d
                     p_dest_data->status_cb.lc_property_status.property_value = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.lc_property_status.property_value) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.lc_property_status.property_value,

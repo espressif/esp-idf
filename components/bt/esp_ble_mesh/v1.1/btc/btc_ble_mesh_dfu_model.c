@@ -41,6 +41,9 @@ void btc_ble_mesh_dfu_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_DFU_CLIENT_GET_STATE: {
+        dst->dfu_get.params = NULL;
+        dst->dfu_get.get = NULL;
+
         dst->dfu_get.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->dfu_get.params) {
             memcpy(dst->dfu_get.params, src->dfu_get.params,
@@ -62,20 +65,28 @@ void btc_ble_mesh_dfu_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
                                                    src->dfu_get.get->dfu_metadata_check.metadata->data,
                                                    src->dfu_get.get->dfu_metadata_check.metadata->len);
                         } else {
+                            /* Free the previously allocated resources */
                             bt_mesh_free(dst->dfu_get.get);
+                            dst->dfu_get.get = NULL;
                             bt_mesh_free(dst->dfu_get.params);
+                            dst->dfu_get.params = NULL;
                             BT_ERR("Out of memory for metadata");
                             return;
                         }
                     } else {
+                        /* Free the previously allocated resources */
                         bt_mesh_free(dst->dfu_get.get);
+                        dst->dfu_get.get = NULL;
                         bt_mesh_free(dst->dfu_get.params);
+                        dst->dfu_get.params = NULL;
                         BT_ERR("Metadata should be exists");
                         return;
                     }
                 }
             } else {
+                /* Free the previously allocated resources */
                 bt_mesh_free(dst->dfu_get.params);
+                dst->dfu_get.params = NULL;
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             }
         }
@@ -105,19 +116,20 @@ void btc_ble_mesh_dfu_client_arg_deep_free(btc_msg_t *msg)
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_DFU_CLIENT_GET_STATE:
-        if (arg->dfu_get.get) {
-            switch (arg->dfu_get.params->opcode) {
-                case ESP_BLE_MESH_DFU_OP_UPDATE_METADATA_CHECK:
-                    if (arg->dfu_get.get->dfu_metadata_check.metadata) {
-                        bt_mesh_free_buf(arg->dfu_get.get->dfu_metadata_check.metadata);
-                    }
-                break;
-                default:
-                break;
-            }
-            bt_mesh_free(arg->dfu_get.get);
-        }
         if (arg->dfu_get.params) {
+            if (arg->dfu_get.get) {
+                switch (arg->dfu_get.params->opcode) {
+                    case ESP_BLE_MESH_DFU_OP_UPDATE_METADATA_CHECK:
+                        if (arg->dfu_get.get->dfu_metadata_check.metadata) {
+                            bt_mesh_free_buf(arg->dfu_get.get->dfu_metadata_check.metadata);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                bt_mesh_free(arg->dfu_get.get);
+            }
+
             bt_mesh_free(arg->dfu_get.params);
         }
         break;
@@ -156,8 +168,10 @@ static void btc_ble_mesh_dfu_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     length = p_src_data->recv.dfu_update_info_status.fw_info_list_cnt * sizeof(esp_ble_mesh_firmware_info_t);
                     p_dest_data->recv.dfu_update_info_status.fw_info_list = bt_mesh_calloc(length);
                     if (!p_dest_data->recv.dfu_update_info_status.fw_info_list) {
-                        bt_mesh_free(p_dest_data->params);
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
                     memcpy(p_dest_data->recv.dfu_update_info_status.fw_info_list,
@@ -595,6 +609,9 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_DFD_CLIENT_GET:
+        dst->dfd_client_get.params = NULL;
+        dst->dfd_client_get.get = NULL;
+
         dst->dfd_client_get.params =
             (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->dfd_client_get.params == NULL) {
@@ -606,9 +623,10 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
         if (src->dfd_client_get.get) {
             dst->dfd_client_get.get = (esp_ble_mesh_dfd_client_get_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_dfd_client_get_param_t));
             if (dst->dfd_client_get.get == NULL) {
+                BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                /* Free the previously allocated resources */
                 bt_mesh_free(dst->dfd_client_get.params);
                 dst->dfd_client_get.params = NULL;
-                BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                 break;
             }
             memcpy(dst->dfd_client_get.get, src->dfd_client_get.get, sizeof(esp_ble_mesh_dfd_client_get_param_t));
@@ -618,6 +636,7 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
             case ESP_BLE_MESH_DFD_OP_FW_GET:
                 if (src->dfd_client_get.get->dist_fw_get.fwid == NULL) {
                     BT_ERR("%s:%d,InvParam", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_get.params);
                     dst->dfd_client_get.params = NULL;
                     bt_mesh_free(dst->dfd_client_get.get);
@@ -628,23 +647,26 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
                 dst->dfd_client_get.get->dist_fw_get.fwid =
                     bt_mesh_alloc_buf(src->dfd_client_get.get->dist_fw_get.fwid->len);
                 if (dst->dfd_client_get.get->dist_fw_get.fwid == NULL) {
+                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_get.params);
                     dst->dfd_client_get.params = NULL;
                     bt_mesh_free(dst->dfd_client_get.get);
                     dst->dfd_client_get.get = NULL;
-                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                     break;
                 }
-                net_buf_simple_add_mem(
-                    dst->dfd_client_get.get->dist_fw_get.fwid,
-                    src->dfd_client_get.get->dist_fw_get.fwid->data,
-                    src->dfd_client_get.get->dist_fw_get.fwid->len);
-            break;
+                net_buf_simple_add_mem(dst->dfd_client_get.get->dist_fw_get.fwid,
+                                       src->dfd_client_get.get->dist_fw_get.fwid->data,
+                                       src->dfd_client_get.get->dist_fw_get.fwid->len);
+                break;
             default:
                 break;
         }
         break;
     case BTC_BLE_MESH_ACT_DFD_CLIENT_SET:
+        dst->dfd_client_set.params = NULL;
+        dst->dfd_client_set.set = NULL;
+
         dst->dfd_client_set.params =
             (esp_ble_mesh_client_common_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->dfd_client_set.params == NULL) {
@@ -656,9 +678,10 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
         if (src->dfd_client_set.set) {
             dst->dfd_client_set.set = (esp_ble_mesh_dfd_client_set_param_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_dfd_client_set_param_t));
             if (dst->dfd_client_set.set == NULL) {
+                BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                /* Free the previously allocated resources */
                 bt_mesh_free(dst->dfd_client_set.params);
                 dst->dfd_client_set.params = NULL;
-                BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                 break;
             }
             memcpy(dst->dfd_client_set.set, src->dfd_client_set.set, sizeof(esp_ble_mesh_dfd_client_set_param_t));
@@ -667,52 +690,55 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
             case ESP_BLE_MESH_DFD_OP_RECEIVERS_ADD:
                 if (src->dfd_client_set.set->receivers_add.receivers_cnt == 0) {
                     dst->dfd_client_set.set->receivers_add.receivers = NULL;
+                    BT_ERR("%s:%d,InvParam", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,InvParam", __func__, __LINE__);
                     break;
                 }
                 dst->dfd_client_set.set->receivers_add.receivers =
                     (esp_ble_mesh_dfd_cli_receiver_entry_t *)bt_mesh_calloc(dst->dfd_client_set.set->receivers_add.receivers_cnt *
                                                                             sizeof(esp_ble_mesh_dfd_cli_receiver_entry_t));
                 if (dst->dfd_client_set.set->receivers_add.receivers == NULL) {
+                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                     break;
                 }
                 memcpy(dst->dfd_client_set.set->receivers_add.receivers, src->dfd_client_set.set->receivers_add.receivers,
                        dst->dfd_client_set.set->receivers_add.receivers_cnt * sizeof(esp_ble_mesh_dfd_cli_receiver_entry_t));
-            break;
+                break;
             case ESP_BLE_MESH_DFD_OP_UPLOAD_START:
                 if (src->dfd_client_set.set->dist_upload_start.fwid == NULL) {
                     dst->dfd_client_set.set->dist_upload_start.fwid = NULL;
+                    BT_ERR("%s:%d,InvParam", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,InvParam", __func__, __LINE__);
                     break;
                 }
 
                 dst->dfd_client_set.set->dist_upload_start.fwid =
                         bt_mesh_alloc_buf(src->dfd_client_set.set->dist_upload_start.fwid->len);
                 if (dst->dfd_client_set.set->dist_upload_start.fwid == NULL) {
+                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                     break;
                 }
-                net_buf_simple_add_mem(
-                    dst->dfd_client_set.set->dist_upload_start.fwid,
-                    src->dfd_client_set.set->dist_upload_start.fwid->data,
-                    src->dfd_client_set.set->dist_upload_start.fwid->len);
+                net_buf_simple_add_mem(dst->dfd_client_set.set->dist_upload_start.fwid,
+                                       src->dfd_client_set.set->dist_upload_start.fwid->data,
+                                       src->dfd_client_set.set->dist_upload_start.fwid->len);
 
                 if (src->dfd_client_set.set->dist_upload_start.fw_metadata->len == 0) {
                     dst->dfd_client_set.set->dist_upload_start.fw_metadata = NULL;
@@ -721,86 +747,88 @@ void btc_ble_mesh_dfd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
                     dst->dfd_client_set.set->dist_upload_start.fw_metadata =
                         bt_mesh_alloc_buf(src->dfd_client_set.set->dist_upload_start.fw_metadata->len);
                     if (dst->dfd_client_set.set->dist_upload_start.fw_metadata == NULL) {
+                        BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free_buf(dst->dfd_client_set.set->dist_upload_start.fwid);
+                        dst->dfd_client_set.set->dist_upload_start.fwid = NULL;
                         bt_mesh_free(dst->dfd_client_set.params);
                         dst->dfd_client_set.params = NULL;
                         bt_mesh_free(dst->dfd_client_set.set);
                         dst->dfd_client_set.set = NULL;
-                        bt_mesh_free_buf(dst->dfd_client_set.set->dist_upload_start.fwid);
-                        dst->dfd_client_set.set->dist_upload_start.fwid = NULL;
-                        BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                         break;
                     }
-                    net_buf_simple_add_mem(
-                        dst->dfd_client_set.set->dist_upload_start.fw_metadata,
-                        src->dfd_client_set.set->dist_upload_start.fw_metadata->data,
-                        src->dfd_client_set.set->dist_upload_start.fw_metadata->len);
+                    net_buf_simple_add_mem(dst->dfd_client_set.set->dist_upload_start.fw_metadata,
+                                           src->dfd_client_set.set->dist_upload_start.fw_metadata->data,
+                                           src->dfd_client_set.set->dist_upload_start.fw_metadata->len);
                 }
-            break;
+                break;
             case ESP_BLE_MESH_DFD_OP_UPLOAD_START_OOB:
                 if (src->dfd_client_set.set->dist_upload_oob_start.url == NULL ||
                     src->dfd_client_set.set->dist_upload_oob_start.fwid == NULL) {
+                    BT_ERR("%s:%d,InvParam", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,InvParam", __func__, __LINE__);
                     break;
                 }
                 dst->dfd_client_set.set->dist_upload_oob_start.url =
                         bt_mesh_alloc_buf(src->dfd_client_set.set->dist_upload_oob_start.url->len);
                 if (dst->dfd_client_set.set->dist_upload_oob_start.url == NULL) {
+                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                     break;
                 }
                 dst->dfd_client_set.set->dist_upload_oob_start.fwid =
                         bt_mesh_alloc_buf(src->dfd_client_set.set->dist_upload_oob_start.fwid->len);
                 if (dst->dfd_client_set.set->dist_upload_oob_start.fwid == NULL) {
-                    bt_mesh_free(dst->dfd_client_set.params);
-                    dst->dfd_client_set.params = NULL;
-                    bt_mesh_free(dst->dfd_client_set.set);
-                    dst->dfd_client_set.set = NULL;
+                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free_buf(dst->dfd_client_set.set->dist_upload_oob_start.url);
                     dst->dfd_client_set.set->dist_upload_oob_start.url = NULL;
-                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
-                    break;
-                }
-                net_buf_simple_add_mem(
-                    dst->dfd_client_set.set->dist_upload_oob_start.url,
-                    src->dfd_client_set.set->dist_upload_oob_start.url->data,
-                    src->dfd_client_set.set->dist_upload_oob_start.url->len);
-                net_buf_simple_add_mem(
-                    dst->dfd_client_set.set->dist_upload_oob_start.fwid,
-                    src->dfd_client_set.set->dist_upload_oob_start.fwid->data,
-                    src->dfd_client_set.set->dist_upload_oob_start.fwid->len);
-            break;
-            case ESP_BLE_MESH_DFD_OP_FW_DELETE:
-                if (src->dfd_client_set.set->dist_fw_del.fwid == NULL) {
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
+                    break;
+                }
+                net_buf_simple_add_mem(dst->dfd_client_set.set->dist_upload_oob_start.url,
+                                       src->dfd_client_set.set->dist_upload_oob_start.url->data,
+                                       src->dfd_client_set.set->dist_upload_oob_start.url->len);
+                net_buf_simple_add_mem(dst->dfd_client_set.set->dist_upload_oob_start.fwid,
+                                       src->dfd_client_set.set->dist_upload_oob_start.fwid->data,
+                                       src->dfd_client_set.set->dist_upload_oob_start.fwid->len);
+                break;
+            case ESP_BLE_MESH_DFD_OP_FW_DELETE:
+                if (src->dfd_client_set.set->dist_fw_del.fwid == NULL) {
                     BT_ERR("%s:%d,InvParam", __func__, __LINE__);
+                    /* Free the previously allocated resources */
+                    bt_mesh_free(dst->dfd_client_set.params);
+                    dst->dfd_client_set.params = NULL;
+                    bt_mesh_free(dst->dfd_client_set.set);
+                    dst->dfd_client_set.set = NULL;
                     break;
                 }
                 dst->dfd_client_set.set->dist_fw_del.fwid =
                         bt_mesh_alloc_buf(src->dfd_client_set.set->dist_fw_del.fwid->len);
                 if (dst->dfd_client_set.set->dist_fw_del.fwid == NULL) {
+                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
+                    /* Free the previously allocated resources */
                     bt_mesh_free(dst->dfd_client_set.params);
                     dst->dfd_client_set.params = NULL;
                     bt_mesh_free(dst->dfd_client_set.set);
                     dst->dfd_client_set.set = NULL;
-                    BT_ERR("%s:%d,OutMem", __func__, __LINE__);
                     break;
                 }
-                net_buf_simple_add_mem(
-                    dst->dfd_client_set.set->dist_fw_del.fwid,
-                    src->dfd_client_set.set->dist_fw_del.fwid->data,
-                    src->dfd_client_set.set->dist_fw_del.fwid->len);
-            break;
+                net_buf_simple_add_mem(dst->dfd_client_set.set->dist_fw_del.fwid,
+                                       src->dfd_client_set.set->dist_fw_del.fwid->data,
+                                       src->dfd_client_set.set->dist_fw_del.fwid->len);
+                break;
             default:
                 break;
         }
@@ -923,133 +951,145 @@ void btc_ble_mesh_dfd_client_rsp_deep_copy(btc_msg_t *msg, void *p_dest, void *p
     }
 
     switch (msg->act) {
-        case ESP_BLE_MESH_EVT_DFD_CLIENT_RECV_RSP:
-            switch(dst->params->opcode) {
-                case BLE_MESH_DFD_OP_RECEIVERS_LIST:
-                    dst->status_cb.receiver_list.first_index = src->status_cb.receiver_list.first_index;
-                    dst->status_cb.receiver_list.entries_cnt = src->status_cb.receiver_list.entries_cnt;
-                    if (dst->status_cb.receiver_list.entries_cnt) {
-                        dst->status_cb.receiver_list.entries = bt_mesh_calloc(sizeof(esp_ble_mesh_dfd_target_node_entry_t) * dst->status_cb.receiver_list.entries_cnt);
-                        if (dst->status_cb.receiver_list.entries == NULL) {
-                            BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
-                            return;
-                        }
-                        memcpy(dst->status_cb.receiver_list.entries, src->status_cb.receiver_list.entries,
-                            sizeof(esp_ble_mesh_dfd_target_node_entry_t) * dst->status_cb.receiver_list.entries_cnt);
-                    } else {
-                        dst->status_cb.receiver_list.entries = NULL;
-                    }
-                break;
-                case BLE_MESH_DFD_OP_CAPABILITIES_STATUS:
-                    dst->status_cb.dist_caps.max_receiver_list_sz = src->status_cb.dist_caps.max_receiver_list_sz;
-                    dst->status_cb.dist_caps.max_fw_list_sz = src->status_cb.dist_caps.max_fw_list_sz;
-                    dst->status_cb.dist_caps.max_fw_sz = src->status_cb.dist_caps.max_fw_sz;
-                    dst->status_cb.dist_caps.max_upload_space = src->status_cb.dist_caps.max_upload_space;
-                    dst->status_cb.dist_caps.remaining_upload_space = src->status_cb.dist_caps.remaining_upload_space;
-                    dst->status_cb.dist_caps.oob_retrieval_supported = src->status_cb.dist_caps.oob_retrieval_supported;
-                    if (src->status_cb.dist_caps.supported_url_scheme_names) {
-                     dst->status_cb.dist_caps.supported_url_scheme_names =
-                        bt_mesh_alloc_buf(src->status_cb.dist_caps.supported_url_scheme_names->len);
-                        if (dst->status_cb.dist_caps.supported_url_scheme_names == NULL) {
-                            BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
-                            return;
-                        }
-                        net_buf_simple_add_mem(
-                            dst->status_cb.dist_caps.supported_url_scheme_names,
-                            src->status_cb.dist_caps.supported_url_scheme_names->data,
-                            src->status_cb.dist_caps.supported_url_scheme_names->len);
-                    } else {
-                        dst->status_cb.dist_caps.supported_url_scheme_names = NULL;
-                    }
-                break;
-                case BLE_MESH_DFD_OP_UPLOAD_STATUS:
-                    dst->status_cb.upload_status.status = src->status_cb.upload_status.status;
-                    dst->status_cb.upload_status.upload_phase = src->status_cb.upload_status.upload_phase;
-                    dst->status_cb.upload_status.upload_progress = src->status_cb.upload_status.upload_progress;
-                    dst->status_cb.upload_status.upload_type = src->status_cb.upload_status.upload_type;
-
-                    if (dst->status_cb.upload_status.upload_progress == ESP_BLE_MESH_DFD_UPLOAD_PROGRESS_UNSET) {
-                        dst->status_cb.upload_status.fwid = NULL;
+    case ESP_BLE_MESH_EVT_DFD_CLIENT_RECV_RSP:
+        if (src->params) {
+            switch(src->params->opcode) {
+            case BLE_MESH_DFD_OP_RECEIVERS_LIST:
+                dst->status_cb.receiver_list.first_index = src->status_cb.receiver_list.first_index;
+                dst->status_cb.receiver_list.entries_cnt = src->status_cb.receiver_list.entries_cnt;
+                if (dst->status_cb.receiver_list.entries_cnt) {
+                    dst->status_cb.receiver_list.entries = bt_mesh_calloc(sizeof(esp_ble_mesh_dfd_target_node_entry_t) * dst->status_cb.receiver_list.entries_cnt);
+                    if (dst->status_cb.receiver_list.entries == NULL) {
+                        BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(dst->params);
+                        dst->params = NULL;
                         return;
                     }
-
-                    if (dst->status_cb.upload_status.upload_type == ESP_BLE_MESH_DFD_UPLOAD_TYPE_INBAND) {
-                        if (src->status_cb.upload_status.fwid) {
-                            dst->status_cb.upload_status.fwid = bt_mesh_alloc_buf(src->status_cb.upload_status.fwid->len);
-                            if (dst->status_cb.upload_status.fwid == NULL) {
-                                BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
-                                return;
-                            }
-                            net_buf_simple_add_mem(
-                                dst->status_cb.upload_status.fwid,
-                                src->status_cb.upload_status.fwid->data,
-                                src->status_cb.upload_status.fwid->len);
-                        } else {
-                            BT_ERR("%s:%d,InvParam", __func__, __LINE__);
-                        }
-                    } else {
-                        if(src->status_cb.upload_status.oob_fwid) {
-                            dst->status_cb.upload_status.oob_fwid = bt_mesh_alloc_buf(src->status_cb.upload_status.oob_fwid->len);
-                            if (dst->status_cb.upload_status.oob_fwid == NULL) {
-                                BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
-                                return;
-                            }
-                            net_buf_simple_add_mem(
-                                dst->status_cb.upload_status.oob_fwid,
-                                src->status_cb.upload_status.oob_fwid->data,
-                                src->status_cb.upload_status.oob_fwid->len);
-                        } else {
-                            BT_ERR("%s:%d,InvParam", __func__, __LINE__);
-                        }
-                    }
+                    memcpy(dst->status_cb.receiver_list.entries, src->status_cb.receiver_list.entries,
+                           sizeof(esp_ble_mesh_dfd_target_node_entry_t) * dst->status_cb.receiver_list.entries_cnt);
+                } else {
+                    dst->status_cb.receiver_list.entries = NULL;
+                }
                 break;
-                case BLE_MESH_DFD_OP_FW_STATUS:
-                    dst->status_cb.firmware_status.status = src->status_cb.firmware_status.status;
-                    dst->status_cb.firmware_status.entry_cnt = src->status_cb.firmware_status.entry_cnt;
-                    dst->status_cb.firmware_status.fw_idx = src->status_cb.firmware_status.fw_idx;
-                    if (src->status_cb.firmware_status.fwid) {
-                        dst->status_cb.firmware_status.fwid = bt_mesh_alloc_buf(src->status_cb.firmware_status.fwid->len);
-                        if (dst->status_cb.firmware_status.fwid == NULL) {
+            case BLE_MESH_DFD_OP_CAPABILITIES_STATUS:
+                dst->status_cb.dist_caps.max_receiver_list_sz = src->status_cb.dist_caps.max_receiver_list_sz;
+                dst->status_cb.dist_caps.max_fw_list_sz = src->status_cb.dist_caps.max_fw_list_sz;
+                dst->status_cb.dist_caps.max_fw_sz = src->status_cb.dist_caps.max_fw_sz;
+                dst->status_cb.dist_caps.max_upload_space = src->status_cb.dist_caps.max_upload_space;
+                dst->status_cb.dist_caps.remaining_upload_space = src->status_cb.dist_caps.remaining_upload_space;
+                dst->status_cb.dist_caps.oob_retrieval_supported = src->status_cb.dist_caps.oob_retrieval_supported;
+                if (src->status_cb.dist_caps.supported_url_scheme_names) {
+                    dst->status_cb.dist_caps.supported_url_scheme_names =
+                    bt_mesh_alloc_buf(src->status_cb.dist_caps.supported_url_scheme_names->len);
+                    if (dst->status_cb.dist_caps.supported_url_scheme_names == NULL) {
+                        BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(dst->params);
+                        dst->params = NULL;
+                        return;
+                    }
+                    net_buf_simple_add_mem(dst->status_cb.dist_caps.supported_url_scheme_names,
+                                           src->status_cb.dist_caps.supported_url_scheme_names->data,
+                                           src->status_cb.dist_caps.supported_url_scheme_names->len);
+                } else {
+                    dst->status_cb.dist_caps.supported_url_scheme_names = NULL;
+                }
+                break;
+            case BLE_MESH_DFD_OP_UPLOAD_STATUS:
+                dst->status_cb.upload_status.status = src->status_cb.upload_status.status;
+                dst->status_cb.upload_status.upload_phase = src->status_cb.upload_status.upload_phase;
+                dst->status_cb.upload_status.upload_progress = src->status_cb.upload_status.upload_progress;
+                dst->status_cb.upload_status.upload_type = src->status_cb.upload_status.upload_type;
+
+                if (dst->status_cb.upload_status.upload_progress == ESP_BLE_MESH_DFD_UPLOAD_PROGRESS_UNSET) {
+                    dst->status_cb.upload_status.fwid = NULL;
+                    return;
+                }
+
+                if (dst->status_cb.upload_status.upload_type == ESP_BLE_MESH_DFD_UPLOAD_TYPE_INBAND) {
+                    if (src->status_cb.upload_status.fwid) {
+                        dst->status_cb.upload_status.fwid = bt_mesh_alloc_buf(src->status_cb.upload_status.fwid->len);
+                        if (dst->status_cb.upload_status.fwid == NULL) {
                             BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
+                            /* Free the previously allocated resources */
+                            bt_mesh_free(dst->params);
+                            dst->params = NULL;
                             return;
                         }
-                        net_buf_simple_add_mem(
-                            dst->status_cb.firmware_status.fwid,
-                            src->status_cb.firmware_status.fwid->data,
-                            src->status_cb.firmware_status.fwid->len);
+                        net_buf_simple_add_mem(dst->status_cb.upload_status.fwid,
+                                               src->status_cb.upload_status.fwid->data,
+                                               src->status_cb.upload_status.fwid->len);
                     } else {
-                        dst->status_cb.firmware_status.fwid = NULL;
+                        BT_ERR("%s:%d,InvParam", __func__, __LINE__);
                     }
+                } else {
+                    if(src->status_cb.upload_status.oob_fwid) {
+                        dst->status_cb.upload_status.oob_fwid = bt_mesh_alloc_buf(src->status_cb.upload_status.oob_fwid->len);
+                        if (dst->status_cb.upload_status.oob_fwid == NULL) {
+                            BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
+                            /* Free the previously allocated resources */
+                            bt_mesh_free(dst->params);
+                            dst->params = NULL;
+                            return;
+                        }
+                        net_buf_simple_add_mem(dst->status_cb.upload_status.oob_fwid,
+                                               src->status_cb.upload_status.oob_fwid->data,
+                                               src->status_cb.upload_status.oob_fwid->len);
+                    } else {
+                        BT_ERR("%s:%d,InvParam", __func__, __LINE__);
+                    }
+                }
                 break;
-                case BLE_MESH_DFD_OP_RECEIVERS_STATUS:
-                    dst->status_cb.receiver_status.status = src->status_cb.receiver_status.status;
-                    dst->status_cb.receiver_status.receiver_list_cnt = src->status_cb.receiver_status.receiver_list_cnt;
+            case BLE_MESH_DFD_OP_FW_STATUS:
+                dst->status_cb.firmware_status.status = src->status_cb.firmware_status.status;
+                dst->status_cb.firmware_status.entry_cnt = src->status_cb.firmware_status.entry_cnt;
+                dst->status_cb.firmware_status.fw_idx = src->status_cb.firmware_status.fw_idx;
+                if (src->status_cb.firmware_status.fwid) {
+                    dst->status_cb.firmware_status.fwid = bt_mesh_alloc_buf(src->status_cb.firmware_status.fwid->len);
+                    if (dst->status_cb.firmware_status.fwid == NULL) {
+                        BT_ERR("%s:%d,OutOfMem", __func__, __LINE__);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(dst->params);
+                        dst->params = NULL;
+                        return;
+                    }
+                    net_buf_simple_add_mem(dst->status_cb.firmware_status.fwid,
+                                           src->status_cb.firmware_status.fwid->data,
+                                           src->status_cb.firmware_status.fwid->len);
+                } else {
+                    dst->status_cb.firmware_status.fwid = NULL;
+                }
                 break;
-                case BLE_MESH_DFD_OP_STATUS:
-                    dst->status_cb.dist_status.status = src->status_cb.dist_status.status;
-                    dst->status_cb.dist_status.dist_phase = src->status_cb.dist_status.dist_phase;
-                    dst->status_cb.dist_status.multicast_address = src->status_cb.dist_status.multicast_address;
-                    dst->status_cb.dist_status.appkey_idx = src->status_cb.dist_status.appkey_idx;
-                    dst->status_cb.dist_status.ttl = src->status_cb.dist_status.ttl;
-                    dst->status_cb.dist_status.timeout_base = src->status_cb.dist_status.timeout_base;
-                    dst->status_cb.dist_status.trans_mode = src->status_cb.dist_status.trans_mode;
-                    dst->status_cb.dist_status.update_policy = src->status_cb.dist_status.update_policy;
-                    dst->status_cb.dist_status.firmware_image_index = src->status_cb.dist_status.firmware_image_index;
+            case BLE_MESH_DFD_OP_RECEIVERS_STATUS:
+                dst->status_cb.receiver_status.status = src->status_cb.receiver_status.status;
+                dst->status_cb.receiver_status.receiver_list_cnt = src->status_cb.receiver_status.receiver_list_cnt;
                 break;
-                default:
-                    BT_ERR("Unknown opcode %04x", dst->params->opcode);
+            case BLE_MESH_DFD_OP_STATUS:
+                dst->status_cb.dist_status.status = src->status_cb.dist_status.status;
+                dst->status_cb.dist_status.dist_phase = src->status_cb.dist_status.dist_phase;
+                dst->status_cb.dist_status.multicast_address = src->status_cb.dist_status.multicast_address;
+                dst->status_cb.dist_status.appkey_idx = src->status_cb.dist_status.appkey_idx;
+                dst->status_cb.dist_status.ttl = src->status_cb.dist_status.ttl;
+                dst->status_cb.dist_status.timeout_base = src->status_cb.dist_status.timeout_base;
+                dst->status_cb.dist_status.trans_mode = src->status_cb.dist_status.trans_mode;
+                dst->status_cb.dist_status.update_policy = src->status_cb.dist_status.update_policy;
+                dst->status_cb.dist_status.firmware_image_index = src->status_cb.dist_status.firmware_image_index;
                 break;
-
+            default:
+                BT_ERR("Unknown opcode %04x", dst->params->opcode);
+                break;
             }
+        }
         break;
-        case ESP_BLE_MESH_EVT_DFD_CLIENT_TIMEOUT:
+    case ESP_BLE_MESH_EVT_DFD_CLIENT_TIMEOUT:
         break;
-        case ESP_BLE_MESH_ACT_DFD_CLIEND_SEND_COMP:
+    case ESP_BLE_MESH_ACT_DFD_CLIEND_SEND_COMP:
         break;
-        default:
-         BT_ERR("Unknown event %d", msg->act);
+    default:
+        BT_ERR("Unknown event %d", msg->act);
+        break;
     }
-
 }
 
 void btc_ble_mesh_dfd_client_rsp_deep_free(btc_msg_t *msg)

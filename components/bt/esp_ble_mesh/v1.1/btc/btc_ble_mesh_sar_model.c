@@ -42,6 +42,9 @@ void btc_ble_mesh_sar_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_SAR_CLIENT_SEND:
+        dst->sar_send.params = NULL;
+        dst->sar_send.msg = NULL;
+
         dst->sar_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->sar_send.params) {
             memcpy(dst->sar_send.params, src->sar_send.params,
@@ -57,6 +60,9 @@ void btc_ble_mesh_sar_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
                        sizeof(esp_ble_mesh_sar_client_msg_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->sar_send.params);
+                dst->sar_send.params = NULL;
             }
         }
         break;

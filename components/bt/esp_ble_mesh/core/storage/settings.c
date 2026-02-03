@@ -1424,7 +1424,7 @@ int settings_core_load(void)
                 break;
             default:
                 BT_ERR("Restored mesh device role: Unknown");
-                return 0;
+                return -EINVAL;
             }
         }
     }
@@ -1826,7 +1826,7 @@ static void store_pending_hb_pub(void)
         return;
     }
 
-    val.indefinite = (hb_pub->count = 0xffff);
+    val.indefinite = (hb_pub->count == 0xffff);
     val.dst = hb_pub->dst;
     val.period = hb_pub->period;
     val.ttl = hb_pub->ttl;
@@ -2524,7 +2524,7 @@ void bt_mesh_clear_rpl(void)
 {
     BT_DBG("ClearRPLSchedule");
 
-    schedule_store(BLE_MESH_RPL_PENDING);
+    clear_rpl();
 }
 
 void bt_mesh_store_mod_bind(struct bt_mesh_model *model)
@@ -2879,8 +2879,7 @@ int settings_core_init(void)
 {
     BT_DBG("SettingsCoreInit");
 
-    k_delayed_work_init(&pending_store, store_pending);
-    return 0;
+    return k_delayed_work_init(&pending_store, store_pending);
 }
 
 int bt_mesh_settings_init(void)
@@ -2942,7 +2941,7 @@ void bt_mesh_settings_reset(bool erase)
 
 #define SETTINGS_MAX_DIR_DEPTH 8
 
-int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+int bt_mesh_model_data_store(const struct bt_mesh_model *mod, bool vnd,
                              const char *name, const void *data,
                              size_t data_len)
 {

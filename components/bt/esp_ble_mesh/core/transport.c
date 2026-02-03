@@ -150,12 +150,12 @@ static inline void bt_mesh_seg_tx_unlock(struct seg_tx *tx)
 
 static inline void bt_mesh_seg_rx_lock(void)
 {
-    bt_mesh_mutex_lock(&seg_rx_lock);
+    bt_mesh_r_mutex_lock(&seg_rx_lock);
 }
 
 static inline void bt_mesh_seg_rx_unlock(void)
 {
-    bt_mesh_mutex_unlock(&seg_rx_lock);
+    bt_mesh_r_mutex_unlock(&seg_rx_lock);
 }
 
 uint8_t bt_mesh_get_seg_rtx_num(void)
@@ -344,6 +344,7 @@ static void seg_tx_done(struct seg_tx *tx, uint8_t seg_idx)
 
 static void seg_tx_reset(struct seg_tx *tx)
 {
+    uint8_t seg_n = 0U;
     int i;
 
     BT_DBG("SegTxReset");
@@ -358,7 +359,8 @@ static void seg_tx_reset(struct seg_tx *tx)
     tx->sub = NULL;
     tx->dst = BLE_MESH_ADDR_UNASSIGNED;
 
-    for (i = 0; i <= tx->seg_n && tx->nack_count; i++) {
+    seg_n = MIN(tx->seg_n, ARRAY_SIZE(tx->seg) - 1);
+    for (i = 0; i <= seg_n && tx->nack_count; i++) {
         if (!tx->seg[i]) {
             continue;
         }
@@ -615,6 +617,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
         tx->seg_n = (sdu->len - 1) / seg_len(&si);
     } else {
         tx->seg_n = 0;
+    }
+    if (tx->seg_n >= ARRAY_SIZE(tx->seg)) {
+        BT_ERR("TooLargeSegNReceived %u/%u", tx->seg_n, ARRAY_SIZE(tx->seg));
+        seg_tx_reset(tx);
+        return -EMSGSIZE;
     }
     tx->nack_count = tx->seg_n + 1;
     tx->seq_auth = SEQ_AUTH(BLE_MESH_NET_IVI_TX, bt_mesh.seq);
@@ -1067,6 +1074,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
                      struct net_buf_simple *buf, uint64_t *seq_auth)
 {
     struct seg_tx *tx = NULL;
+    bool tx_complete = false;
     uint16_t seq_zero = 0U;
     unsigned int bit = 0;
     uint32_t ack = 0U;
@@ -1100,7 +1108,10 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
         return -EINVAL;
     }
 
+    bt_mesh_seg_tx_lock(tx);
+
     if (!BLE_MESH_ADDR_IS_UNICAST(tx->dst)) {
+        bt_mesh_seg_tx_unlock(tx);
         BT_WARN("Received ack for segments to group");
         return -EINVAL;
     }
@@ -1108,12 +1119,14 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
     *seq_auth = tx->seq_auth;
 
     if (!ack) {
+        bt_mesh_seg_tx_unlock(tx);
         BT_WARN("SDU canceled");
         seg_tx_complete(tx, -ECANCELED);
         return 0;
     }
 
     if (find_msb_set(ack) - 1 > tx->seg_n) {
+        bt_mesh_seg_tx_unlock(tx);
         BT_ERR("Too large segment number in ack");
         return -EINVAL;
     }
@@ -1124,15 +1137,17 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
         if (tx->seg[bit - 1]) {
             BT_INFO("Seg %u/%u acked", bit - 1, tx->seg_n);
 
-            bt_mesh_seg_tx_lock(tx);
             seg_tx_done(tx, bit - 1);
-            bt_mesh_seg_tx_unlock(tx);
         }
 
         ack &= ~BIT(bit - 1);
     }
 
-    if (tx->nack_count) {
+    tx_complete = (tx->nack_count == 0);
+
+    bt_mesh_seg_tx_unlock(tx);
+
+    if (tx_complete == false) {
         seg_tx_send_unacked(tx);
     } else {
         BT_DBG("SDU TX complete");
@@ -1593,6 +1608,11 @@ static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
 
         /* Copy the information in seg_rx into ext_seg_rx */
         struct seg_rx *ext_rx = seg_rx_alloc(net_rx, &(rx->hdr), seq_auth, rx->seg_n);
+        if (!ext_rx) {
+            BT_ERR("Failed to alloc ext_rx for long packet");
+            return NULL;
+        }
+
         uint16_t last_seg_len = rx->buf.len - (rx->seg_n * seg_len(&si));
         uint8_t  *last_seg = rx->buf.data + (rx->seg_n * seg_len(&si));
 
@@ -1673,7 +1693,7 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
         rx->seq_auth = *seq_auth;
         rx->seg_n = seg_n;
         rx->hdr = *hdr;
-        rx->ttl = net_rx->ctx.send_ttl;
+        rx->ttl = net_rx->ctx.recv_ttl;
         rx->src = net_rx->ctx.addr;
         rx->dst = net_rx->ctx.recv_dst;
         rx->block = 0U;
@@ -1988,7 +2008,9 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
             return 0;
         }
 
+        bt_mesh_seg_rx_lock();
         err = trans_seg(buf, rx, &pdu_type, &seq_auth, &seg_count);
+        bt_mesh_seg_rx_unlock();
     } else {
         seg_count = 1U;
 
@@ -2036,6 +2058,12 @@ void bt_mesh_rx_reset(void)
     for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
         seg_rx_reset(&seg_rx[i], true);
     }
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    for (i = 0; i < ARRAY_SIZE(ext_seg_rx); i++) {
+        seg_rx_reset(&ext_seg_rx[i], true);
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
 }
 
 void bt_mesh_tx_reset(void)
@@ -2065,6 +2093,15 @@ void bt_mesh_rx_reset_single(uint16_t src)
             seg_rx_reset(rx, true);
         }
     }
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    for (i = 0; i < ARRAY_SIZE(ext_seg_rx); i++) {
+        struct seg_rx *rx = &ext_seg_rx[i];
+        if (src == rx->src) {
+            seg_rx_reset(rx, true);
+        }
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
 }
 
 void bt_mesh_tx_reset_single(uint16_t dst)
@@ -2112,7 +2149,7 @@ void bt_mesh_trans_init(void)
     }
 #endif
 
-    bt_mesh_mutex_create(&seg_rx_lock);
+    bt_mesh_r_mutex_create(&seg_rx_lock);
 }
 
 #if CONFIG_BLE_MESH_DEINIT
@@ -2133,6 +2170,12 @@ void bt_mesh_trans_deinit(bool erase)
         k_delayed_work_free(&seg_rx[i].ack_timer);
     }
 
-    bt_mesh_mutex_free(&seg_rx_lock);
+#if CONFIG_BLE_MESH_LONG_PACKET
+    for (i = 0; i < ARRAY_SIZE(ext_seg_rx); i++) {
+        k_delayed_work_free(&ext_seg_rx[i].ack_timer);
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+    bt_mesh_r_mutex_free(&seg_rx_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
