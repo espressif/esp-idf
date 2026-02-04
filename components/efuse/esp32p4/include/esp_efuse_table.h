@@ -260,6 +260,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_PXA0_TIEH_SEL_1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PXA0_TIEH_SEL_2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PXA0_TIEH_SEL_3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_DISABLE_DEPLOY_MODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_HP_PWR_SRC_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DCDC_VSET_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_WDT[];

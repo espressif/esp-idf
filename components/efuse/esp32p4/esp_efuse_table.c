@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -866,6 +866,12 @@ static const esp_efuse_desc_t PXA0_TIEH_SEL_3[] = {
 static const esp_efuse_desc_t KM_DISABLE_DEPLOY_MODE[] = {
     {EFUSE_BLK0, 168, 4}, 	 // [] TBD,
 };
+
+#ifndef CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+static const esp_efuse_desc_t XTS_DPA_PSEUDO_LEVEL[] = {
+    {EFUSE_BLK0, 176, 2}, 	 // [] Sets this bit to control the xts pseudo-round anti-dpa attack function. 0: controlled by register. 1-3: the higher the value is; the more pseudo-rounds are inserted to the xts-aes calculation,
+};
+#endif
 
 static const esp_efuse_desc_t HP_PWR_SRC_SEL[] = {
     {EFUSE_BLK0, 178, 1}, 	 // [] HP system power source select. 0:LDO. 1: DCDC,
@@ -2228,6 +2234,13 @@ const esp_efuse_desc_t* ESP_EFUSE_KM_DISABLE_DEPLOY_MODE[] = {
     &KM_DISABLE_DEPLOY_MODE[0],    		// [] TBD
     NULL
 };
+
+#ifndef CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[] = {
+    &XTS_DPA_PSEUDO_LEVEL[0],    		// [] Sets this bit to control the xts pseudo-round anti-dpa attack function. 0: controlled by register. 1-3: the higher the value is; the more pseudo-rounds are inserted to the xts-aes calculation
+    NULL
+};
+#endif
 
 const esp_efuse_desc_t* ESP_EFUSE_HP_PWR_SRC_SEL[] = {
     &HP_PWR_SRC_SEL[0],    		// [] HP system power source select. 0:LDO. 1: DCDC
