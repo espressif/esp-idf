@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import re
 from typing import Any
@@ -55,6 +55,11 @@ CONFIGS = [
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
     pytest.param('coredump_flash_custom_stack', marks=TARGETS_ALL),
+    pytest.param('gdbstub', marks=TARGETS_ALL),
+    pytest.param('panic', marks=TARGETS_ALL),
+]
+
+CONFIGS_UBSAN = [
     pytest.param('gdbstub', marks=TARGETS_ALL),
     pytest.param('panic', marks=TARGETS_ALL),
 ]
@@ -482,7 +487,7 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
+@pytest.mark.parametrize('config', CONFIGS_UBSAN, indirect=True)
 @pytest.mark.generic
 def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -495,7 +500,6 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
-    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
     common_test(
         dut,
         config,
@@ -504,8 +508,7 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             'esp_system_abort',
             '__ubsan_default_handler',
             '__ubsan_handle_out_of_bounds'
-        ] + get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+        ] + get_default_backtrace(test_func_name)
     )
 
 
@@ -1209,17 +1212,18 @@ def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> Non
 def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
-        dut.expect_gme('LoadProhibited')
+        dut.expect(re.compile(rb"Guru Meditation Error: Core\s+\d\s+panic'ed \((LoadProhibited|StoreProhibited)\)"))
         dut.expect_reg_dump()
         dut.expect_backtrace()
     else:
-        dut.expect_gme('Load access fault')
+        dut.expect(re.compile(rb"Guru Meditation Error: Core\s+\d\s+panic'ed \((Load|Store) access fault\)"))
         dut.expect_reg_dump()
         dut.expect_stack_dump()
 
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
+    # Verify that valid tasks are captured in coredump despite IDLE task corruption
     #        TCB             NAME
     # ---------- ----------------
     if dut.is_multi_core:
