@@ -387,7 +387,7 @@ void bta_av_build_src_cfg (UINT8 *p_pref_cfg, UINT8 *p_src_cap)
     /* now try to build a preferred one */
     /* parse configuration */
     if ((status = A2D_ParsSbcInfo(&src_cap, p_src_cap, TRUE)) != 0) {
-        APPL_TRACE_DEBUG(" Cant parse src cap ret = %d", status);
+        APPL_TRACE_DEBUG(" Can't parse src cap ret = %d", status);
         return ;
     }
 
@@ -1100,8 +1100,8 @@ static BOOLEAN bta_av_co_audio_codec_cfg_matches_caps(UINT8 codec_id, const UINT
                          p_codec_cfg[BTA_AV_CO_SBC_MAX_BITPOOL_OFF]);
 
         /* Must match all items exactly except bitpool boundaries which can be adjusted */
-        if (!((p_codec_caps[BTA_AV_CO_SBC_FREQ_CHAN_OFF] & p_codec_cfg[BTA_AV_CO_SBC_FREQ_CHAN_OFF]) &&
-                (p_codec_caps[BTA_AV_CO_SBC_BLOCK_BAND_OFF] & p_codec_cfg[BTA_AV_CO_SBC_BLOCK_BAND_OFF]))) {
+        if ((~p_codec_caps[BTA_AV_CO_SBC_FREQ_CHAN_OFF] & p_codec_cfg[BTA_AV_CO_SBC_FREQ_CHAN_OFF]) ||
+            (~p_codec_caps[BTA_AV_CO_SBC_BLOCK_BAND_OFF] & p_codec_cfg[BTA_AV_CO_SBC_BLOCK_BAND_OFF])) {
             APPL_TRACE_EVENT("FALSE %x %x %x %x",
                              p_codec_caps[BTA_AV_CO_SBC_FREQ_CHAN_OFF],
                              p_codec_cfg[BTA_AV_CO_SBC_FREQ_CHAN_OFF],
@@ -1729,7 +1729,7 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl)
  **                  of our exported bitpool range. If set we will set the
  **                  remote preference.
  **
- ** Returns          TRUE if config set, FALSE otherwize
+ ** Returns          TRUE if config set, FALSE otherwise
  **
  *******************************************************************************/
 
