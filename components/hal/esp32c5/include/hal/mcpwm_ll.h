@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_struct.h"
+#include "soc/mcpwm_reg.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/pcr_struct.h"
 #include "hal/mcpwm_types.h"
@@ -53,9 +54,16 @@ extern "C" {
 #define MCPWM_LL_GEN_ACTION_TO_REG_CAL(action) ((uint8_t[]) {0, 1, 2, 3}[(action)])
 #define MCPWM_LL_BRAKE_MODE_TO_REG_VAL(mode)  ((uint8_t[]) {0, 1}[(mode)])
 
+// MCPWM ETM timer event table
+#define MCPWM_LL_TIMER_ETM_EVENT_TABLE(group, timer_id, event)                         \
+    (uint32_t[1][MCPWM_TIMER_ETM_EVENT_MAX]){{                                         \
+        [MCPWM_TIMER_ETM_EVENT_TEZ] = MCPWM0_EVT_TIMER0_TEZ + timer_id,                \
+        [MCPWM_TIMER_ETM_EVENT_TEP] = MCPWM0_EVT_TIMER0_TEP + timer_id,                \
+    }}[group][event]
+
 // MCPWM ETM comparator event table
 #define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)            \
-    (uint32_t[2][MCPWM_CMPR_ETM_EVENT_MAX]){                                           \
+    (uint32_t[1][MCPWM_CMPR_ETM_EVENT_MAX]){                                           \
         {                                                                              \
             [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM0_EVT_OP0_TEA + oper_id + 3 * cmpr_id, \
         },                                                                             \
@@ -63,7 +71,7 @@ extern "C" {
 
 // MCPWM ETM event comparator event table
 #define MCPWM_LL_ETM_EVENT_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)       \
-    (uint32_t[2][MCPWM_CMPR_ETM_EVENT_MAX]){                                            \
+    (uint32_t[1][MCPWM_CMPR_ETM_EVENT_MAX]){                                            \
         {                                                                               \
             [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM0_EVT_OP0_TEE1 + oper_id + 3 * cmpr_id, \
         },                                                                              \
@@ -1683,6 +1691,29 @@ static inline void mcpwm_ll_etm_enable_evt_comparator_event(mcpwm_dev_t *mcpwm, 
     }
 }
 
+/**
+ * @brief Enable timer ETM event
+ *
+ * @param mcpwm Peripheral instance address
+ * @param timer_id Timer ID, index from 0 to 2
+ * @param event_type Timer ETM event type (TEZ or TEP)
+ * @param en True: enable ETM module, False: disable ETM module
+ */
+static inline void mcpwm_ll_etm_enable_timer_event(mcpwm_dev_t *mcpwm, int timer_id, mcpwm_timer_etm_event_type_t event_type, bool en)
+{
+    uint32_t bit_offset;
+    if (event_type == MCPWM_TIMER_ETM_EVENT_TEZ) {
+        bit_offset = timer_id + MCPWM_EVT_TIMER0_TEZ_EN_S;
+    } else {  // MCPWM_TIMER_ETM_EVENT_TEP
+        bit_offset = timer_id + MCPWM_EVT_TIMER0_TEP_EN_S;
+    }
+    if (en) {
+        mcpwm->evt_en.val |= 1 << bit_offset;
+    } else {
+        mcpwm->evt_en.val &= ~(1 << bit_offset);
+    }
+}
+
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
 /////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
@@ -1724,7 +1755,6 @@ static inline void mcpwm_ll_intr_clear_capture_status(mcpwm_dev_t *mcpwm, uint32
 {
     mcpwm->int_clr.val = (capture_mask & 0x07) << 27;
 }
-
 #ifdef __cplusplus
 }
 #endif
