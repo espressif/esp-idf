@@ -120,6 +120,12 @@ void ble_stack_enableVsCmds(bool en)
     log_stack_enableLogsRelatedVsCmd(en);
     hci_stack_enableSetVsEvtMaskVsCmd(en);
     winWiden_stack_enableSetConstPeerScaVsCmd(en);
+#if DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+    scan_stack_enableSetScanADIOnlyFilterVsCmd(en);
+#endif // DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+#if DEFAULT_BT_ADV_SEND_CONSTANT_DID
+    extAdv_stack_setExtAdvConstantDidVsCmd(en);
+#endif // DEFAULT_BT_ADV_SEND_CONSTANT_DID
 }
 
 void ble_stack_enableVsEvents(bool en)
