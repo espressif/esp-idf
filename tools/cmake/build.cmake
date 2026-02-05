@@ -649,6 +649,7 @@ macro(idf_build_process target)
     idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
 
     set(result 0)
+    set(use_sdk_json FALSE)
     if(idf_component_manager EQUAL 1)
         idf_build_get_property(build_dir BUILD_DIR)
         set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
@@ -797,11 +798,23 @@ macro(idf_build_process target)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
 
+    set(sdkconfig_cm "${build_dir}/sdkconfig.cm")
     # add target here since we have all components
     if(result EQUAL 0)
         __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}" CREATE_MENUCONFIG_TARGET)
+        # Delete the sdkconfig.cm backup if the last run of Component Manager was successful (cleanup)
+        if(EXISTS "${sdkconfig_cm}")
+            file(REMOVE "${sdkconfig_cm}")
+        endif()
     else()
-        __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+        # We need to create backup of sdkconfig because the build system may
+        # lacks the Kconfig definitions for managed components.
+        if(EXISTS "${sdkconfig}")
+            file(COPY_FILE "${sdkconfig}" "${sdkconfig_cm}")
+        else()
+            file(REMOVE "${sdkconfig_cm}")
+        endif()
+        __kconfig_generate_config("${sdkconfig_cm}" "${sdkconfig_defaults}")
     endif()
 
     __build_import_configs()
