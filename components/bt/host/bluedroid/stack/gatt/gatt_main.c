@@ -194,6 +194,7 @@ void gatt_free(void)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
         p_tcb->sr_cmd.multi_rsp_q = NULL;
 #endif /* #if (GATTS_INCLUDED == TRUE) */
+        UNUSED(p_tcb);
     }
     list_free(gatt_cb.p_tcb_list);
     list_free(gatt_cb.p_clcb_list);
@@ -1001,7 +1002,9 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
         pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
 
         if (pseudo_op_code < GATT_OP_CODE_MAX) {
+#if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
             GATT_TRACE_DEBUG("%s opcode=%x msg_len=%u", __func__, op_code, msg_len);
+#endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
             if (op_code == GATT_SIGN_CMD_WRITE) {
 #if (SMP_INCLUDED == TRUE)
                 gatt_verify_signature(p_tcb, p_buf);
