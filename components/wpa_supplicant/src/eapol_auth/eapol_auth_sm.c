@@ -327,6 +327,13 @@ SM_STATE(AUTH_PAE, AUTHENTICATING)
 	sm->keyDone = false;
 }
 
+#ifdef ESP_SUPPLICANT
+static void wifi_ap_wps_disable_timeout_handler(void *eloop_ctx, void *user_ctx)
+{
+	extern int wifi_ap_wps_disable_internal(void);
+	wifi_ap_wps_disable_internal();
+}
+#endif
 
 SM_STATE(AUTH_PAE, ABORTING)
 {
@@ -344,6 +351,10 @@ SM_STATE(AUTH_PAE, ABORTING)
 	sm->authAbort = true;
 	sm->keyRun = false;
 	sm->keyDone = false;
+#ifdef ESP_SUPPLICANT
+	sm->exit_sm_step_run = true;
+	eloop_register_timeout(0, 0, wifi_ap_wps_disable_timeout_handler, NULL, NULL);
+#endif
 }
 
 
@@ -920,6 +931,12 @@ restart:
 #endif /* CONFIG_WEP */
 	if (sm->initializing || eapol_sm_sta_entry_alive(eapol, addr))
 		SM_STEP_RUN(CTRL_DIR);
+
+#ifdef ESP_SUPPLICANT
+	if (sm->exit_sm_step_run) {
+		return;
+	}
+#endif
 
 	if (prev_auth_pae != sm->auth_pae_state ||
 	    prev_be_auth != sm->be_auth_state ||
