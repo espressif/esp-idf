@@ -16,92 +16,7 @@ extern "C" {
 #include "hal/apm_ll.h"
 #include "hal/apm_types.h"
 
-#if SOC_IS(ESP32P4)
-
-/**
- * @brief DMA configurable region configuration data.
- */
-typedef struct {
-    apm_ll_dma_master_t dma_master; /* DMA master whose access permission to be configured.*/
-    uint32_t            pms_r_mask; /* Read permission mask. */
-    uint32_t            pms_w_mask; /* Write permission mask. */
-} apm_hal_dma_region_config_data_t;
-
-/**
- * @brief Configure HP peripherals access permission for the HP CPU0/1.
- *
- * @param master_id  HP CPU0/1
- * @param hp_peri    HP peripheral whose access permission to be configured.
- * @param enable     Permission enable/disable
- */
-void apm_hal_hp_peri_access_enable(apm_ll_master_id_t master_id, apm_ll_hp_peri_t hp_peri,
-                                   apm_ll_secure_mode_t sec_mode, bool enable);
-
-/**
- * @brief Configure LP peripherals access permission for the LP CPU.
- *
- * @param lp_peri    LP peripheral whose access permission to be configured.
- * @param enable     Permission enable/disable
- */
-void apm_hal_lp_peri_access_enable(apm_ll_lp_peri_t lp_peri, bool enable);
-
-/**
- * @brief Configure peripherals configurable address ranges.
- *
- * @param regn_num       Configurable address range number.
- * @param regn_low_addr  Configurable address range start address.
- * @param regn_high_addr Configurable address range end address.
- */
-void apm_hal_peri_region_config(uint32_t regn_num, uint32_t regn_low_addr,
-                                uint32_t regn_high_addr);
-
-/**
- * @brief Configure peripherals configurable address ranges.
- *
- * @param master_id  LP CPU and HP CPU0/1
- * @param sec_mode   CPU privilege mode (Machine/User) which corresponds to (TEE/REE).
- * @param regn_num   Configurable address range number.
- * @param regn_pms   Configurable address range permission setting(2-bits field).
- *                   Bit 0: Region 0 permission enable/disable.
- *                   Bit 1: Region 1 permission enable/disable.
- * @return           Configuration performed successfully?
- */
-int apm_hal_peri_region_pms(apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode,
-                            uint32_t regn_num, uint32_t regn_pms);
-
-/**
- * @brief Configure APM controller clock gating.
- *
- * @param apm_ctrl APM controller (LP_PERI/HP_PERI/HP_DMA/LP2HP_PERI/HP2LP_PERI).
- * @param enable   Permission enable/disable.
- *                 enable: Enable automatic clock gating.
- *                 disable: Keep the clock always on.
- * @return         Clock gating set successfully?
- */
-int apm_hal_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable);
-
-/**
- * @brief Configure DMA configurable address range low address.
- *
- * @param regn_num       Configurable DMA address range number.
- * @param regn_low_addr  Configurable DMA address range start address.
- * @param regn_high_addr Configurable DMA address range end address.
- */
-void apm_hal_dma_region_config(uint32_t regn_num, uint32_t regn_low_addr, uint32_t regn_high_addr);
-
-/**
- * @brief Configure DMA configurable address range read permission.
- *
- * @param pms_data DMA configurable region configuration data.
- * @param dma_master DMA master whose access permission to be configured.
- * @param regn_mask  32-bits field, each bit for corresponding DMA configurable address range permission.
- *                   0: Disable read permission.
- *                   1: Enable read permission.
- */
-void apm_hal_dma_region_pms(apm_hal_dma_region_config_data_t *pms_data);
-
-#else
-
+#if SOC_APM_CTRL_FILTER_SUPPORTED
 /**
  * @brief Helper macro to create a region entry configuration
  *
@@ -357,10 +272,225 @@ void apm_hal_enable_reset_event_bypass(bool enable);
  * @param enable True to enable, false to disable
  */
 void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable);
+#else
+/**
+ * @brief HP_PERI_PMS permission configuration structure
+ */
+typedef struct {
+    uint32_t cpu_peri;  /*!< Bitmask for CPU_PERIPH slaves */
+    uint32_t hp_peri0;  /*!< Bitmask for HP_PERIPH0 slaves */
+    uint64_t hp_peri1;  /*!< Bitmask for HP_PERIPH1 slaves */
+} apm_hal_pms_hp_peri_cfg_t;
 
-#endif //SOC_IS(ESP32P4)
+/**
+ * @brief PMS region configuration structure
+ */
+typedef struct {
+    uint32_t regn_num;                      /*!< Region number */
+    uint32_t regn_start_addr;               /*!< Region start address */
+    uint32_t regn_end_addr;                 /*!< Region end address */
+} apm_hal_pms_regn_cfg_t;
 
-#elif SOC_APM_CTRL_FILTER_SUPPORTED //!SOCKconfig_APM_SUPPORTED
+/**
+ * @brief PMS master configuration structure
+ */
+typedef struct {
+    union {
+        struct {
+            apm_master_dma_id_t id;         /*!< DMA master ID */
+            uint32_t regn_pms_rd;           /*!< Bitmask of regions the master is permitted to read */
+            uint32_t regn_pms_wr;           /*!< Bitmask of regions the master is permitted to write */
+        } dma;
+        struct {
+            apm_master_id_t id;             /*!< Master ID */
+            apm_security_mode_t mode;       /*!< Security mode */
+            uint32_t regn_pms;             /*!< Bitmask of regions the master is permitted to access */
+        } lp_peri;
+    };
+} apm_hal_pms_master_cfg_t;
+
+/**
+ * @brief Helper macro to create a PMS region entry configuration
+ */
+#define APM_HAL_PMS_REGION_ENTRY(NUM, START, END)  \
+    {                                              \
+        .regn_num        = (NUM),                  \
+        .regn_start_addr = (START),                \
+        .regn_end_addr   = (END),                  \
+    }
+
+/**
+ * @brief Helper macro to create a DMA_PMS master entry configuration
+ */
+#define APM_HAL_DMA_PMS_MASTER_ENTRY(ID, R_PMS, W_PMS) \
+    {                                                  \
+        .dma = {                                       \
+            .id          = (ID),                       \
+            .regn_pms_rd = (R_PMS),                    \
+            .regn_pms_wr = (W_PMS),                    \
+        },                                             \
+    }
+
+/**
+ * @brief Helper macro to create an LP_PERI_PMS master entry configuration
+ */
+#define APM_HAL_LP_PERI_PMS_MASTER_ENTRY(ID, MODE, REGN_PMS) \
+    {                                                        \
+        .lp_peri = {                                         \
+            .id       = (ID),                                \
+            .mode     = (MODE),                              \
+            .regn_pms = (REGN_PMS),                          \
+        },                                                   \
+    }
+
+/**
+ * @brief Set DMA_PMS region address bounds
+ *
+ * @param regn_num Region number
+ * @param start_addr Region start address
+ * @param end_addr Region end address
+ */
+void apm_hal_dma_pms_set_region_bounds(uint32_t regn_num, uint32_t start_addr, uint32_t end_addr);
+
+/**
+ * @brief Set DMA_PMS read/write region access mask for a DMA master
+ *
+ * @param mid DMA master ID
+ * @param regn_rd_mask Bitmask of regions the master is permitted to read
+ * @param regn_wr_mask Bitmask of regions the master is permitted to write
+ */
+void apm_hal_dma_pms_set_master_region_attr(apm_master_dma_id_t mid, uint32_t regn_rd_mask, uint32_t regn_wr_mask);
+
+/**
+ * @brief Set DMA_PMS region configurations
+ *
+ * @param regn_count Number of regions to configure
+ * @param regn_cfg Array of region configurations
+ */
+void apm_hal_dma_pms_set_region_cfg(uint32_t regn_count, const apm_hal_pms_regn_cfg_t *regn_cfg);
+
+/**
+ * @brief Set DMA_PMS master configurations
+ *
+ * @param master_count Number of masters to configure
+ * @param cfg Array of master configurations
+ */
+void apm_hal_dma_pms_set_master_cfg(uint32_t master_count, const apm_hal_pms_master_cfg_t *cfg);
+
+/**
+ * @brief Set HP2LP_PERI_PMS access permissions for HP CPU
+ *
+ * @param core_id CPU core ID
+ * @param mode Security mode
+ * @param enable_mask Bitmask of LP peripherals to enable access to
+ */
+void apm_hal_hp2lp_peri_pms_set_hpcpu_access(int core_id, apm_security_mode_t mode, uint32_t enable_mask);
+
+/**
+ * @brief Set LP_PERI_PMS access permissions for LP CPU
+ *
+ * @param enable_mask Bitmask of LP peripherals to enable access to
+ */
+void apm_hal_lp_peri_pms_set_lpcpu_access(uint32_t enable_mask);
+
+/**
+ * @brief Set HP_PERI PMS access permissions for HP CPU
+ *
+ * @param core_id CPU core ID
+ * @param mode Security mode
+ * @param cfg HP peripheral permission configuration
+ */
+void apm_hal_hp_peri_pms_set_hpcpu_access(int core_id, apm_security_mode_t mode, const apm_hal_pms_hp_peri_cfg_t *cfg);
+
+/**
+ * @brief Set LP2HP_PERI PMS access permissions for LP CPU
+ *
+ * @param cfg HP peripheral permission configuration
+ */
+void apm_hal_lp2hp_peri_pms_set_lpcpu_access(const apm_hal_pms_hp_peri_cfg_t *cfg);
+
+/**
+ * @brief Set LP_PERI_PMS region address bounds
+ *
+ * @param regn_num Region number
+ * @param start_addr Region start address
+ * @param end_addr Region end address
+ */
+void apm_hal_lp_peri_pms_set_region_bounds(uint32_t regn_num, uint32_t start_addr, uint32_t end_addr);
+
+/**
+ * @brief Set LP_PERI_PMS region access mask for a master
+ *
+ * @param mid Master ID
+ * @param mode Security mode
+ * @param regn_pms_mask Bitmask of regions the master is permitted to access
+ */
+void apm_hal_lp_peri_pms_set_master_region_attr(apm_master_id_t mid, apm_security_mode_t mode, uint32_t regn_pms_mask);
+
+/**
+ * @brief Set LP_PERI_PMS region configurations
+ *
+ * @param regn_count Number of regions to configure
+ * @param regn_cfg Array of region configurations
+ */
+void apm_hal_lp_peri_pms_set_region_cfg(uint32_t regn_count, const apm_hal_pms_regn_cfg_t *regn_cfg);
+
+/**
+ * @brief Set LP_PERI_PMS master configurations
+ *
+ * @param master_count Number of masters to configure
+ * @param master_cfg Array of master configurations
+ */
+void apm_hal_lp_peri_pms_set_master_cfg(uint32_t master_count, const apm_hal_pms_master_cfg_t *master_cfg);
+
+/**
+ * @brief Enable/disable PMS violation interrupt for a controller module
+ *
+ * @param ctrl_mod APM controller module
+ * @param enable True to enable, false to disable
+ */
+void apm_hal_enable_intr(apm_ctrl_module_t ctrl_mod, bool enable);
+
+/**
+ * @brief Clear PMS violation interrupt for a controller module
+ *
+ * @param ctrl_mod APM controller module
+ */
+void apm_hal_clear_intr(apm_ctrl_module_t ctrl_mod);
+
+/**
+ * @brief Get the combined interrupt status for all PMS controller modules
+ *
+ * @return Bitmask of modules with a pending interrupt
+ */
+uint32_t apm_hal_get_intr_status(void);
+
+/**
+ * @brief Get PMS violation exception information
+ *
+ * @param type Exception type identifier
+ * @param excp_info Pointer to structure to fill with exception details
+ */
+void apm_hal_get_exception_info(apm_ctrl_exception_type type, apm_ctrl_exception_info_t *excp_info);
+
+/**
+ * @brief Get interrupt source number for a PMS controller module
+ *
+ * @param ctrl_mod APM controller module
+ * @return Interrupt source number
+ */
+int apm_hal_get_intr_src_num(apm_ctrl_module_t ctrl_mod);
+
+/**
+ * @brief Enable/disable clock gating for a PMS controller module
+ *
+ * @param ctrl_mod APM controller module
+ * @param enable True to enable, false to disable
+ */
+void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable);
+#endif // SOC_APM_CTRL_FILTER_SUPPORTED
+
+#elif SOC_APM_CTRL_FILTER_SUPPORTED // SOC_APM_CTRL_FILTER_SUPPORTED
 
 #if SOC_IS(ESP32H4)
 #include "soc/hp_apm_reg.h"

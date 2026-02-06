@@ -26,6 +26,29 @@ extern "C" {
 #define MEM_AUX_DEEPSLEEP        BIT(2)
 
 /**
+ * @brief LP SYS interrupt types
+ */
+typedef enum {
+    LP_SYS_INTR_LP_ADDRHOLE       = 0,  /*!< LP addrhole interrupt (LP peri, LP RAM TEE APM, LP matrix default slave) */
+    LP_SYS_INTR_IDBUS_ADDRHOLE    = 1,  /*!< IDBUS addrhole interrupt (LP CPU ibus and dbus) */
+    LP_SYS_INTR_LP_CORE_AHB_TOUT  = 2,  /*!< LP core AHB bus timeout interrupt */
+    LP_SYS_INTR_LP_CORE_IBUS_TOUT = 3,  /*!< LP core ibus timeout interrupt */
+    LP_SYS_INTR_LP_CORE_DBUS_TOUT = 4,  /*!< LP core dbus timeout interrupt */
+    LP_SYS_INTR_ETM_TASK_ULP      = 5,  /*!< ETM task ULP interrupt */
+    LP_SYS_INTR_SLOW_CLK_TICK     = 6,  /*!< Slow clock tick interrupt */
+} lp_sys_ll_intr_type_t;
+
+/**
+ * @brief LP SYS addrhole exception info
+ */
+typedef struct {
+    uint32_t addr;      /*!< Faulting address */
+    uint8_t id;         /*!< Master ID */
+    bool is_wr;         /*!< Write access */
+    bool is_secure;     /*!< Secure access */
+} lp_sys_ll_excp_info_t;
+
+/**
  * @brief ROM obtains the wake-up type through LP_SYS_STORE9_REG[0].
  *         Set the flag to inform
  * @param true: deepsleep      false: lightsleep
@@ -98,6 +121,60 @@ static inline void lp_sys_ll_store_wakeup_cause(uint32_t wakeup_cause)
 static inline uint32_t lp_sys_ll_load_wakeup_cause(void)
 {
     return REG_READ(RTC_LP_CORE_STORE_WAKEUP_REG);
+}
+
+FORCE_INLINE_ATTR void lp_sys_ll_enable_intr(uint32_t mask, bool enable)
+{
+    if (enable) {
+        LP_SYS.int_ena.val |= mask;
+    } else {
+        LP_SYS.int_ena.val &= ~mask;
+    }
+}
+
+FORCE_INLINE_ATTR uint32_t lp_sys_ll_get_intr_status(uint32_t mask)
+{
+    return LP_SYS.int_st.val & mask;
+}
+
+FORCE_INLINE_ATTR void lp_sys_ll_clear_intr(uint32_t mask)
+{
+    LP_SYS.int_clr.val = mask;
+}
+
+FORCE_INLINE_ATTR uint32_t lp_sys_ll_get_ahb_excp_addr(void)
+{
+    return LP_SYS.lp_addrhole_addr.lp_addrhole_addr;
+}
+
+FORCE_INLINE_ATTR void lp_sys_ll_get_ahb_excp_info(lp_sys_ll_excp_info_t *info)
+{
+    info->addr = LP_SYS.lp_addrhole_addr.lp_addrhole_addr;
+    info->id = LP_SYS.lp_addrhole_info.lp_addrhole_id;
+    info->is_wr = LP_SYS.lp_addrhole_info.lp_addrhole_wr;
+    info->is_secure = LP_SYS.lp_addrhole_info.lp_addrhole_secure;
+}
+
+FORCE_INLINE_ATTR uint32_t lp_sys_ll_get_idbus_excp_addr(void)
+{
+    return LP_SYS.idbus_addrhole_addr.idbus_addrhole_addr;
+}
+
+FORCE_INLINE_ATTR void lp_sys_ll_get_idbus_excp_info(lp_sys_ll_excp_info_t *info)
+{
+    info->addr = LP_SYS.idbus_addrhole_addr.idbus_addrhole_addr;
+    info->id = LP_SYS.idbus_addrhole_info.idbus_addrhole_id;
+    info->is_wr = LP_SYS.idbus_addrhole_info.idbus_addrhole_wr;
+    info->is_secure = LP_SYS.idbus_addrhole_info.idbus_addrhole_secure;
+}
+
+FORCE_INLINE_ATTR void lp_sys_ll_enable_lp_core_err_resp(bool enable)
+{
+    if (enable) {
+        LP_SYS.lp_core_err_resp_dis.val = 0x00U;
+    } else {
+        LP_SYS.lp_core_err_resp_dis.val = 0x07U;
+    }
 }
 
 #ifdef __cplusplus
