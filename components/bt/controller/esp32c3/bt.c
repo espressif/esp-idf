@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +127,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x0001000A
+#define OSI_VERSION              0x0001000B
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 #define BLE_PWR_HDL_INVL 0xFFFF
@@ -232,6 +232,7 @@ struct osi_funcs_t {
     void (* _esp_hw_power_down)(void);
     void (* _esp_hw_power_up)(void);
     void (* _ets_backup_dma_copy)(uint32_t reg, uint32_t mem_addr, uint32_t num, bool to_rem);
+    void *(* _malloc_retention)(size_t size);
     void (* _ets_delay_us)(uint32_t us);
     void (* _btdm_rom_table_ready)(void);
     bool (* _coex_bt_wakeup_request)(void);
@@ -373,6 +374,7 @@ static int task_create_wrapper(void *task_func, const char *name, uint32_t stack
 static void task_delete_wrapper(void *task_handle);
 static bool is_in_isr_wrapper(void);
 static void *malloc_internal_wrapper(size_t size);
+static void *malloc_retention_wrapper(size_t size);
 static int read_mac_wrapper(uint8_t mac[6]);
 static void srand_wrapper(unsigned int seed);
 static int rand_wrapper(void);
@@ -452,6 +454,7 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._cause_sw_intr_to_core = NULL,
     ._malloc = malloc,
     ._malloc_internal = malloc_internal_wrapper,
+    ._malloc_retention = malloc_retention_wrapper,
     ._free = free,
     ._read_efuse_mac = read_mac_wrapper,
     ._srand = srand_wrapper,
@@ -1053,6 +1056,15 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
 static void *malloc_internal_wrapper(size_t size)
 {
     void *p = heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+    if(p == NULL) {
+        ESP_LOGE(BT_LOG_TAG, "Malloc failed");
+    }
+    return p;
+}
+
+static void *malloc_retention_wrapper(size_t size)
+{
+    void *p = heap_caps_malloc(size, MALLOC_CAP_RETENTION);
     if(p == NULL) {
         ESP_LOGE(BT_LOG_TAG, "Malloc failed");
     }
