@@ -16,10 +16,11 @@ __attribute__((unused)) static const char *TAG = "esp_crypto";
 #define _esp_crypto_sha1 esp_crypto_sha1_mbedtls
 #define _esp_crypto_base64_encode esp_crypto_bas64_encode_mbedtls
 #elif  CONFIG_ESP_TLS_USING_WOLFSSL
-#include "wolfssl/ssl.h" /* SHA functions are listed in wolfssl/ssl.h */
-#include "wolfssl/wolfcrypt/coding.h"
-#define _esp_crypto_sha1 esp_crypto_sha1_wolfSSL
-#define _esp_crypto_base64_encode esp_crypto_base64_encode_woflSSL
+    #include "wolfssl/wolfcrypt/settings.h"
+    #include "wolfssl/ssl.h" /* some SHA functions are listed in wolfssl/ssl.h */
+    #include "wolfssl/wolfcrypt/coding.h"
+    #define _esp_crypto_sha1 esp_crypto_sha1_wolfSSL
+    #define _esp_crypto_base64_encode esp_crypto_base64_encode_wolfSSL
 #endif
 
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
@@ -65,19 +66,48 @@ static int esp_crypto_sha1_wolfSSL( const unsigned char *input,
                                     size_t ilen,
                                     unsigned char output[20])
 {
-    unsigned char *ret = wolfSSL_SHA1(input, ilen, output);
-    if (ret == NULL) {
-        ESP_LOGE(TAG, "Error in calculating sha1 sum");
-        return -1;
-    }
-    return 0;
+#ifndef NO_SHA
+    int ret = 0;
+    if ((ilen > 0 && input == NULL) || output == NULL)
+        return BAD_FUNC_ARG;
+    if (ilen > UINT32_MAX)
+        return BAD_FUNC_ARG;
+
+    ret = wc_ShaHash(input, (word32)ilen, output);
+    return ret;
+#else
+    /* SHA-1 not compiled in this build */
+    (void)input; (void)ilen; (void)output;
+    return NOT_COMPILED_IN;
+#endif
 }
 
-static int esp_crypto_base64_encode_woflSSL(unsigned char *dst, size_t dlen, size_t *olen,
+static int esp_crypto_base64_encode_wolfSSL(unsigned char *dst, size_t dlen, size_t *olen,
         const unsigned char *src, size_t slen)
 {
+    size_t req;
+    if (olen == NULL) {
+        return BAD_FUNC_ARG; /* wolfSSL error code. See error-crypt.h */
+    }
+    if ((slen > UINT32_MAX) || (dlen > UINT32_MAX)) {
+        return BAD_FUNC_ARG; /* wolfSSL error code */
+    }
+    if ((slen > 0 && src == NULL) || (dlen > 0 && dst == NULL)) {
+        return BAD_FUNC_ARG;
+    }
+    req = ((slen + 2u) / 3u) * 4u;
+    if (dlen < req) {
+        *olen = req;     /* tell caller capacity needed */
+        return BUFFER_E; /* buffer too small */
+    }
+#if defined(WOLFSSL_BASE64_ENCODE)
     *olen = dlen;
     return Base64_Encode_NoNl((const byte *) src, (word32) slen, (byte *) dst, (word32 *) olen);
+#else
+    /* WOLFSSL_BASE64_ENCODE is typically enabled with OPENSSL_EXTRA,
+     * or can be manually enabled in user_settings.h   */
+    #error "WOLFSSL_BASE64_ENCODE is missing - Base64_Encode_NoNl() is unavailable."
+#endif
 }
 
 #else
