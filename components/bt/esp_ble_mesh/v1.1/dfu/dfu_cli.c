@@ -341,8 +341,21 @@ static void blob_caps(struct bt_mesh_blob_cli *b,
     }
 
     cli->xfer.blob.block_size_log = caps->max_block_size_log;
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if (cli->xfer.blob.chunk_enh_params.long_pkt_cfg_used) {
+        cli->xfer.blob.chunk_size = MIN(caps->max_chunk_size, BLOB_TX_CHUNK_SIZE);
+    } else {
+#if CONFIG_BLE_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT || \
+        CONFIG_BLE_MESH_TX_BLOB_CHUNK_SIZE > BLOB_CHUNK_SIZE_MAX(BLE_MESH_EXT_TX_SDU_MAX)
+        cli->xfer.blob.chunk_size = MIN(caps->max_chunk_size, BLOB_CHUNK_SIZE_MAX(BLE_MESH_TX_SDU_MAX));
+#else
+        cli->xfer.blob.chunk_size = MIN(caps->max_chunk_size,
+                                        CONFIG_BLE_MESH_TX_BLOB_CHUNK_SIZE);
+#endif
+    }
+#else
     cli->xfer.blob.chunk_size = caps->max_chunk_size;
-
+#endif
     /* If mode is not already set and server reported it supports all modes
      * default to PUSH, otherwise set value reported by server. If mode
      * was set and server supports all modes, keep old value; set
