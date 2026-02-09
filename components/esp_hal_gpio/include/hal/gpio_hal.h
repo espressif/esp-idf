@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,15 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param gpio_num GPIO number
   */
 #define gpio_hal_input_enable(hal, gpio_num) gpio_ll_input_enable((hal)->dev, gpio_num)
+
+/**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+#define gpio_hal_input_is_enabled(hal, gpio_num) gpio_ll_input_is_enabled((hal)->dev, gpio_num)
 
 /**
   * @brief Disable output mode on GPIO.

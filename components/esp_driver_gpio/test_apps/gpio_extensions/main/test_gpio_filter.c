@@ -180,6 +180,7 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
     TEST_ESP_OK(gpio_del_glitch_filter(filter));
     TEST_ESP_OK(dedic_gpio_del_bundle(bundle));
     vSemaphoreDelete(sem);
+    TEST_ESP_OK(gpio_reset_pin(test_gpio));
 }
 
 #endif // SOC_HAS(DEDICATED_GPIO)

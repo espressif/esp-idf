@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -239,6 +239,18 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].fun_ie = 1;
+}
+
+/**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+static inline bool gpio_ll_input_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return IO_MUX.gpio[gpio_num].fun_ie ? true : false;
 }
 
 /**

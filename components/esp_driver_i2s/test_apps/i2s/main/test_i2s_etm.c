@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +90,11 @@ static void s_gpio_init(void)
     TEST_ESP_OK(gpio_set_level(TEST_GPIO_ETM_NUM, 0));
 }
 
+static void s_gpio_deinit(void)
+{
+    TEST_ESP_OK(gpio_reset_pin(TEST_GPIO_ETM_NUM));
+}
+
 TEST_CASE("i2s_etm_event_test", "[etm]")
 {
     uint32_t *buf = calloc(1, TEST_BUFF_SIZE);
@@ -150,6 +155,7 @@ TEST_CASE("i2s_etm_event_test", "[etm]")
     TEST_ESP_OK(esp_etm_del_task(gpio_task_handle));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel));
 
+    s_gpio_deinit();
     s_i2s_deinit();
 }
 
@@ -235,5 +241,6 @@ TEST_CASE("i2s_etm_task_test", "[etm]")
     TEST_ESP_OK(esp_etm_del_channel(i2s_etm_start_chan));
     TEST_ESP_OK(esp_etm_del_channel(i2s_etm_stop_chan));
 
+    s_gpio_deinit();
     s_i2s_deinit();
 }

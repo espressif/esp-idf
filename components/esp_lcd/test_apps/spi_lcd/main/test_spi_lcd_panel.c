@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,6 +133,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 16, 16, false);
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
@@ -142,6 +143,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 
 #if SOC_SPI_SUPPORT_OCT
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 8, 8, true);
@@ -152,6 +154,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 16, 16, true);
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
@@ -161,6 +164,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 #endif // SOC_SPI_SUPPORT_OCT
 }
 
@@ -275,5 +279,6 @@ TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
     free(color_data);
 }
