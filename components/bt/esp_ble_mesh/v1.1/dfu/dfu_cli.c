@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,83 @@ static struct {
     bt_mesh_mutex_t op_lock;
     sys_slist_t list;
 } dfu_req_list;
+
+static struct bt_mesh_blob_cli_inputs cur_targets = {0};
+
+/**
+ * inputs list must point to a list of bt_mesh_dfu_target nodes.
+ * That was required by dfu api
+ */
+void dfu_targets_free(void)
+{
+    sys_snode_t *n, *sn;
+    struct bt_mesh_dfu_target *target;
+    struct bt_mesh_blob_cli_inputs *inputs = &cur_targets;
+
+    if (cur_targets.targets.head == NULL) {
+        return;
+    }
+
+    SYS_SLIST_FOR_EACH_NODE_SAFE(&inputs->targets, n, sn) {
+        target = (struct bt_mesh_dfu_target *)n;
+        if (target->blob.pull) {
+            bt_mesh_free(target->blob.pull);
+        }
+        bt_mesh_free(target);
+    }
+
+    inputs->app_idx = 0;
+    inputs->group = 0;
+    inputs->ttl = 0;
+    inputs->timeout_base = 0;
+
+    sys_slist_init(&inputs->targets);
+}
+
+struct bt_mesh_blob_cli_inputs *dfu_targets_alloc(struct bt_mesh_blob_cli_inputs *src)
+{
+    sys_snode_t *node;
+    struct bt_mesh_dfu_target *target_src = NULL;
+    struct bt_mesh_dfu_target *target_dst = NULL;
+    struct bt_mesh_blob_cli_inputs *dst = &cur_targets;
+
+    if (cur_targets.targets.head != NULL ||
+        cur_targets.targets.tail != NULL) {
+        BT_WARN("DFU targets busy");
+        return NULL;
+    }
+
+    dst->app_idx = src->app_idx;
+    dst->group = src->group;
+    dst->ttl = src->ttl;
+    dst->timeout_base = src->timeout_base;
+
+    sys_slist_init(&dst->targets);
+
+    SYS_SLIST_FOR_EACH_NODE(&src->targets, node) {
+        target_src = (struct bt_mesh_dfu_target *)node;
+        target_dst = bt_mesh_calloc(sizeof(struct bt_mesh_dfu_target));
+        if (!target_dst) {
+            dfu_targets_free();
+            return NULL;
+        }
+        memcpy(target_dst, target_src, sizeof(struct bt_mesh_dfu_target));
+        if (target_dst->blob.pull) {
+            target_dst->blob.pull = bt_mesh_calloc(sizeof(struct bt_mesh_blob_target_pull));
+            if (!target_dst->blob.pull) {
+                dfu_targets_free();
+                return NULL;
+            }
+            memcpy(target_dst->blob.pull, target_src->blob.pull, sizeof(struct bt_mesh_blob_target_pull));
+        } else {
+            target_dst->blob.pull = NULL;
+        }
+        target_dst->blob.n.next = NULL;
+        sys_slist_append(&dst->targets, &target_dst->blob.n);
+    }
+
+    return dst;
+}
 
 static struct bt_mesh_dfu_target *target_get(struct bt_mesh_dfu_cli *cli,
                                              uint16_t addr)
@@ -277,6 +354,8 @@ static void dfu_failed(struct bt_mesh_dfu_cli *cli,
     if (cli->cb && cli->cb->ended) {
         cli->cb->ended(cli, reason);
     }
+
+    dfu_targets_free();
 }
 
 static int req_setup(struct bt_mesh_dfu_cli *cli, enum req type,
@@ -839,6 +918,7 @@ static void confirmed(struct bt_mesh_blob_cli *b)
         if (cli->cb && cli->cb->confirmed) {
             cli->cb->confirmed(cli);
         }
+        dfu_targets_free();
     } else {
         dfu_failed(cli, BLE_MESH_DFU_ERR_INTERNAL);
     }
@@ -1201,6 +1281,12 @@ static int dfu_cli_init(struct bt_mesh_model *mod)
 static void dfu_cli_reset(struct bt_mesh_model *mod)
 {
     struct bt_mesh_dfu_cli *cli = mod->user_data;
+
+    if (cli->xfer.state == STATE_IDLE) {
+        return;
+    }
+
+    dfu_targets_free();
 
     bt_mesh_dfu_req_list_free();
     cli->req = NULL;
