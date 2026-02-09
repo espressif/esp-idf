@@ -476,13 +476,11 @@ function(__project_init components_var test_components_var)
             if(NOT EXISTS ${component_abs_path})
                 message(FATAL_ERROR "Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: ${component_abs_path}")
             endif()
-            # Components from EXTRA_COMPONENT_DIRS should have the same priority as project_components
-            # This allows renaming the main component directory (e.g., from 'main' to 'src')
-            __project_component_dir("${component_dir}" "project_components")
+            # Keep the correct component priority as documented
+            __project_component_dir("${component_dir}" "project_extra_components")
             
-            # If main component doesn't exist, use the first EXTRA_COMPONENT_DIRS entry as the main component
-            # This follows the common use case where EXTRA_COMPONENT_DIRS is used to specify a renamed main component
-            # as documented in https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#renaming-main-component
+            # If main component doesn't exist, track the first EXTRA_COMPONENT_DIRS entry
+            # for MINIMAL_BUILD. This supports the use case of renaming main component.
             if(NOT __main_component_name)
                 get_filename_component(__main_component_name "${component_abs_path}" NAME)
             endif()
@@ -519,10 +517,29 @@ function(__project_init components_var test_components_var)
             set(minimal_build OFF)
             idf_build_set_property(MINIMAL_BUILD OFF)
         else()
-            # Use the detected main component name, defaulting to "main" if not found
+            # Determine the main component name for MINIMAL_BUILD
+            # Priority: detected main component > fallback to "main"
             if(NOT __main_component_name)
                 set(__main_component_name "main")
             endif()
+            
+            # Verify that the main component actually exists in the build
+            set(__found_main_component FALSE)
+            idf_build_get_property(component_targets __COMPONENT_TARGETS)
+            foreach(component_target ${component_targets})
+                __component_get_property(component_name ${component_target} COMPONENT_NAME)
+                if(component_name STREQUAL __main_component_name)
+                    set(__found_main_component TRUE)
+                    break()
+                endif()
+            endforeach()
+            
+            if(NOT __found_main_component)
+                message(FATAL_ERROR "MINIMAL_BUILD is enabled but component '${__main_component_name}' was not found. "
+                    "Please ensure a main component exists (in '${CMAKE_CURRENT_LIST_DIR}/main' or specified via EXTRA_COMPONENT_DIRS), "
+                    "or disable MINIMAL_BUILD, or explicitly set the COMPONENTS variable.")
+            endif()
+            
             set(COMPONENTS ${__main_component_name} ${TEST_COMPONENTS})
             set(minimal_build ON)
         endif()
