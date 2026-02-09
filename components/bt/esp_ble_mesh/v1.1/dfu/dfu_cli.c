@@ -887,15 +887,16 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
                 rsp->timeout_base = net_buf_simple_pull_le16(buf);
                 rsp->blob_id = net_buf_simple_pull_le64(buf);
                 rsp->img_idx = net_buf_simple_pull_u8(buf);
-            } else if (buf->len) {
+            } else if (buf->len == 0) {
+                rsp->ttl = 0U;
+                rsp->effect = BLE_MESH_DFU_EFFECT_NONE;
+                rsp->timeout_base = 0U;
+                rsp->blob_id = 0U;
+                rsp->img_idx = 0U;
+            } else {
                 return -EINVAL;
             }
 
-            rsp->ttl = 0U;
-            rsp->effect = BLE_MESH_DFU_EFFECT_NONE;
-            rsp->timeout_base = 0U;
-            rsp->blob_id = 0U;
-            rsp->img_idx = 0U;
         }
         bt_mesh_dfu_client_cb_evt_to_btc(req->opcode, BTC_BLE_MESH_EVT_DFU_CLIENT_RECV_GET_RSP,
                                          req->dfu_cli->mod, &req->ctx, req->params,
@@ -904,6 +905,7 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
         bt_mesh_dfu_cli_rm_req_from_list(req);
         k_delayed_work_cancel(&req->timer);
         req_free(req);
+        return 0;
     }
 
     if (cli->op != BLE_MESH_DFU_OP_UPDATE_STATUS) {
