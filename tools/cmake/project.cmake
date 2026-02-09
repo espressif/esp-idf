@@ -481,6 +481,8 @@ function(__project_init components_var test_components_var)
             __project_component_dir("${component_dir}" "project_components")
             
             # If main component doesn't exist, use the first EXTRA_COMPONENT_DIRS entry as the main component
+            # This follows the common use case where EXTRA_COMPONENT_DIRS is used to specify a renamed main component
+            # as documented in https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#renaming-main-component
             if(NOT __main_component_name)
                 get_filename_component(__main_component_name "${component_abs_path}" NAME)
             endif()

@@ -54,10 +54,10 @@ def test_component_extra_dirs_with_minimal_build(idf_py: IdfPyFunc, test_app_cop
     logging.info('Renaming main component with EXTRA_COMPONENT_DIRS works with MINIMAL_BUILD')
     # Rename main to src
     shutil.move(test_app_copy / 'main', test_app_copy / 'src')
-    # Set EXTRA_COMPONENT_DIRS to the renamed directory
+    # Set EXTRA_COMPONENT_DIRS to the renamed directory using the placeholder
     replace_in_file((test_app_copy / 'CMakeLists.txt'), 
-                    'cmake_minimum_required(VERSION 3.16)',
-                    'cmake_minimum_required(VERSION 3.16)\n\nset(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/src")')
+                    'include($ENV{IDF_PATH}/tools/cmake/project.cmake)',
+                    'set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/src")\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)')
     # Build should succeed
     ret = idf_py('reconfigure')
     assert ret.returncode == 0
