@@ -131,8 +131,8 @@ typedef enum {
     SAR_TRIG        = BIT9,
     BT_TRIG         = BIT10,
     RISCV_TRIG      = BIT11,
-    XTAL_DEAD_TRIG  = BIT12,
-    RISCV_TRAP_TRIG = BIT13,
+    RISCV_TRAP_TRIG = BIT12,
+    XTAL_DEAD_TRIG  = BIT13,
     USB_TRIG        = BIT14
 } WAKEUP_REASON;
 
@@ -150,8 +150,8 @@ typedef enum {
     SAR_TRIG_EN        = SAR_TRIG,
     BT_TRIG_EN         = BT_TRIG,
     RISCV_TRIG_EN      = RISCV_TRIG,
-    XTAL_DEAD_TRIG_EN  = XTAL_DEAD_TRIG,
     RISCV_TRAP_TRIG_EN = RISCV_TRAP_TRIG,
+    XTAL_DEAD_TRIG_EN  = XTAL_DEAD_TRIG,
     USB_TRIG_EN        = USB_TRIG
 } WAKEUP_ENABLE;
 

@@ -9,5 +9,5 @@
 
 esp_err_t esp_sha_dma_start(const crypto_dma_desc_t *input)
 {
-    return esp_crypto_shared_gdma_start_axi_ahb(input, NULL, GDMA_TRIG_PERIPH_SHA);
+    return esp_crypto_shared_gdma_start_axi_ahb(input, NULL, CRYPTO_DMA_USER_SHA);
 }

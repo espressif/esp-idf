@@ -1,4 +1,4 @@
 idf_component_register(SRCS "test_app_main.c" "test_touch_v1.c"
-                       PRIV_REQUIRES unity driver
+                       PRIV_REQUIRES unity driver esp_pm
                        WHOLE_ARCHIVE
 )

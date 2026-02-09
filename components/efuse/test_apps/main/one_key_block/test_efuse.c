@@ -21,7 +21,7 @@
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
 
-__attribute__((unused)) static const char* TAG = "efuse_test";
+ESP_LOG_ATTR_TAG(TAG, "efuse_test");
 
 
 #ifdef CONFIG_EFUSE_VIRTUAL

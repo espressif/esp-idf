@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,10 @@
 #include "esp_log.h"
 #include "esp_err.h"
 
-#include <mbedtls/sha512.h>
+#include "psa/crypto.h"
 #include "esp_srp_mpi.h"
 #include "esp_srp.h"
+#include "esp_check.h"
 
 #define SHA512_HASH_SZ      64
 
@@ -178,32 +179,62 @@ void esp_srp_free(esp_srp_handle_t *hd)
 
 static esp_mpi_t *calculate_x(char *bytes_salt, int salt_len, const char *username, int username_len, const char *pass, int pass_len)
 {
-    unsigned char digest[SHA512_HASH_SZ];
-    mbedtls_sha512_context ctx;
-    ESP_LOGD(TAG, "Username: %s | Passphrase: %s | Passphrase length: %d", username, pass, pass_len);
-    mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
-    mbedtls_sha512_update(&ctx, (unsigned char *)username, username_len);
-    mbedtls_sha512_update(&ctx, (unsigned char *)":", 1);
-    mbedtls_sha512_update(&ctx, (unsigned char *)pass, pass_len);
-    mbedtls_sha512_finish(&ctx, digest);
+    // ret is unused here as it is required by the esp_check macros, suppressing the unused variable warning
+    __attribute__((unused)) esp_err_t ret = ESP_FAIL;
 
-    mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
-    mbedtls_sha512_update(&ctx, (unsigned char *)bytes_salt, salt_len);
-    mbedtls_sha512_update(&ctx, digest, sizeof(digest));
-    mbedtls_sha512_finish(&ctx, digest);
-    mbedtls_sha512_free(&ctx);
+    unsigned char digest[SHA512_HASH_SZ];
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status;
+
+    /* Add validation for input parameters */
+    if (!bytes_salt || !username || !pass || salt_len <= 0 || username_len <= 0 || pass_len <= 0) {
+        ESP_LOGE(TAG, "Invalid parameters: salt=%p, username=%p, pass=%p, salt_len=%d, username_len=%d, pass_len=%d",
+                 bytes_salt, username, pass, salt_len, username_len, pass_len);
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Username: %s | Passphrase: %s | Passphrase length: %d", username, pass, pass_len);
+
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, NULL, TAG, "Failed to setup hash operation: %d", status);
+    psa_hash_update(&hash_op, (unsigned char *)username, username_len);
+    psa_hash_update(&hash_op, (unsigned char *)":", 1);
+    psa_hash_update(&hash_op, (unsigned char *)pass, pass_len);
+
+    size_t hash_len = 0;
+    status = psa_hash_finish(&hash_op, digest, sizeof(digest), &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, NULL, TAG, "Failed to setup hash operation: %d", status);
+
+    psa_hash_update(&hash_op, (unsigned char *)bytes_salt, salt_len);
+    psa_hash_update(&hash_op, digest, sizeof(digest));
+    status = psa_hash_finish(&hash_op, digest, sizeof(digest), &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                        "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
 
     return esp_mpi_new_from_bin((char *)digest, sizeof(digest));
+error:
+    psa_hash_abort(&hash_op);
+    return NULL;
 }
 
 static esp_mpi_t *calculate_padded_hash(esp_srp_handle_t *hd, const char *a, int len_a, const char *b, int len_b)
 {
     unsigned char digest[SHA512_HASH_SZ];
-    mbedtls_sha512_context ctx;
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status;
     int pad_len;
+    size_t hash_len = 0;
     char *s = NULL;
+
+    /* Add validation for input parameters */
+    if (!hd || !a || !b || len_a <= 0 || len_b <= 0) {
+        ESP_LOGE(TAG, "Invalid parameters: hd=%p, a=%p, b=%p, len_a=%d, len_b=%d",
+                 hd, a, b, len_a, len_b);
+        return NULL;
+    }
 
     if (len_a > len_b) {
         pad_len = hd->len_n - len_b;
@@ -218,27 +249,36 @@ static esp_mpi_t *calculate_padded_hash(esp_srp_handle_t *hd, const char *a, int
         }
     }
 
-    mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
-    /* PAD (a) */
-    if (s && (len_a != hd->len_n)) {
-        mbedtls_sha512_update(&ctx, (unsigned char *)s, hd->len_n - len_a);
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup hash operation: %d", status);
+        if (s) {
+            free(s);
+        }
+        return NULL;
     }
 
-    mbedtls_sha512_update(&ctx, (unsigned char *)a, len_a);
+    /* PAD (a) */
+    if (s && (len_a != hd->len_n)) {
+        psa_hash_update(&hash_op, (unsigned char *)s, hd->len_n - len_a);
+    }
+
+    psa_hash_update(&hash_op, (unsigned char *)a, len_a);
 
     /* PAD (b) */
     if (s && (len_b != hd->len_n)) {
-        mbedtls_sha512_update(&ctx, (unsigned char *)s, hd->len_n - len_b);
+        psa_hash_update(&hash_op, (unsigned char *)s, hd->len_n - len_b);
     }
 
-    mbedtls_sha512_update(&ctx, (unsigned char *)b, len_b);
-
-    mbedtls_sha512_finish(&ctx, digest);
-    mbedtls_sha512_free(&ctx);
-
+    psa_hash_update(&hash_op, (unsigned char *)b, len_b);
+    status = psa_hash_finish(&hash_op, digest, sizeof(digest), &hash_len);
     if (s) {
         free(s);
+    }
+    if (status != PSA_SUCCESS || hash_len != SHA512_HASH_SZ) {
+        psa_hash_abort(&hash_op);
+        ESP_LOGE(TAG, "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
+        return NULL;
     }
 
     return esp_mpi_new_from_bin((char *)digest, sizeof(digest));
@@ -250,24 +290,53 @@ static esp_mpi_t *calculate_padded_hash(esp_srp_handle_t *hd, const char *a, int
  */
 static esp_mpi_t *calculate_k(esp_srp_handle_t *hd)
 {
+    if (!hd) {
+        ESP_LOGE(TAG, "Invalid parameter: hd=%p", hd);
+        return NULL;
+    }
     return calculate_padded_hash(hd, hd->bytes_n, hd->len_n, hd->bytes_g, hd->len_g);
 }
 
 static esp_mpi_t *calculate_u(esp_srp_handle_t *hd, char *A, int len_A)
 {
+    if (!hd || !A || len_A <= 0) {
+        ESP_LOGE(TAG, "Invalid parameters: hd=%p, A=%p, len_A=%d", hd, A, len_A);
+        return NULL;
+    }
     return calculate_padded_hash(hd, A, len_A, hd->bytes_B, hd->len_B);
 }
 
 static esp_err_t __esp_srp_srv_pubkey(esp_srp_handle_t *hd, char **bytes_B, int *len_B)
 {
-    esp_mpi_t *k = calculate_k(hd);
+    esp_mpi_t *k = NULL;
     esp_mpi_t *kv = NULL;
     esp_mpi_t *gb = NULL;
+
+    /* Add validation for input parameters */
+    if (!hd || !bytes_B || !len_B) {
+        ESP_LOGE(TAG, "Invalid parameters: hd=%p, bytes_B=%p, len_B=%p", hd, bytes_B, len_B);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!hd->v) {
+        ESP_LOGE(TAG, "Verifier must be set before generating server public key");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    k = calculate_k(hd);
     if (!k) {
         goto error;
     }
     hexdump_mpi("k", k);
 
+    // At this point hd->b, hd->B must be NULL
+    // If it is not NULL, then free it.
+    if (hd->b || hd->B) {
+        esp_mpi_free(hd->b);
+        hd->b = NULL;
+        esp_mpi_free(hd->B);
+        hd->B = NULL;
+    }
     hd->b = esp_mpi_new();
     if (!hd->b) {
         goto error;
@@ -317,6 +386,18 @@ error:
 static esp_err_t _esp_srp_gen_salt_verifier(esp_srp_handle_t *hd, const char *username, int username_len,
                                             const char *pass, int pass_len, int salt_len)
 {
+    /* Add validation for input parameters */
+    if (!hd || !username || !pass) {
+        ESP_LOGE(TAG, "Invalid parameters: hd=%p, username=%p, pass=%p", hd, username, pass);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (username_len <= 0 || pass_len <= 0 || salt_len <= 0) {
+        ESP_LOGE(TAG, "Invalid length parameters: username_len=%d, pass_len=%d, salt_len=%d",
+                 username_len, pass_len, salt_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     /* Get Salt */
     int str_salt_len;
     esp_mpi_t *x = NULL;
@@ -382,9 +463,16 @@ esp_err_t esp_srp_srv_pubkey(esp_srp_handle_t *hd, const char *username, int use
                              const char *pass, int pass_len, int salt_len,
                              char **bytes_B, int *len_B, char **bytes_salt)
 {
-    if (!hd || !username || !pass) {
+    if (!hd || !username || !pass || !bytes_B || !len_B || !bytes_salt) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    if (username_len <= 0 || pass_len <= 0 || salt_len <= 0) {
+        ESP_LOGE(TAG, "Invalid length parameters: username_len=%d, pass_len=%d, salt_len=%d",
+                 username_len, pass_len, salt_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (ESP_OK != _esp_srp_gen_salt_verifier(hd, username, username_len, pass, pass_len, salt_len)) {
         goto error;
     }
@@ -429,6 +517,19 @@ esp_err_t esp_srp_gen_salt_verifier(const char *username, int username_len,
 {
     esp_err_t ret = ESP_FAIL;
 
+    /* Add validation for input parameters */
+    if (!username || !pass || !bytes_salt || !verifier || !verifier_len) {
+        ESP_LOGE(TAG, "Invalid parameters: username=%p, pass=%p, bytes_salt=%p, verifier=%p, verifier_len=%p",
+                 username, pass, bytes_salt, verifier, verifier_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (username_len <= 0 || pass_len <= 0 || salt_len <= 0) {
+        ESP_LOGE(TAG, "Invalid length parameters: username_len=%d, pass_len=%d, salt_len=%d",
+                 username_len, pass_len, salt_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     /* allocate and init temporary SRP handle */
     esp_srp_handle_t *srp_hd = esp_srp_init(ESP_NG_3072);
     if (!srp_hd) {
@@ -461,6 +562,16 @@ cleanup:
 esp_err_t esp_srp_set_salt_verifier(esp_srp_handle_t *hd, const char *salt, int salt_len,
                                     const char *verifier, int verifier_len)
 {
+    if (!hd || !salt || !verifier) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (salt_len <= 0 || verifier_len <= 0) {
+        ESP_LOGE(TAG, "Invalid length parameters: salt_len=%d, verifier_len=%d",
+                 salt_len, verifier_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     hd->bytes_s = malloc(salt_len);
     if (!hd->bytes_s) {
         goto error;
@@ -498,6 +609,26 @@ error:
 
 esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A, char **bytes_key, uint16_t *len_key)
 {
+    esp_err_t ret = ESP_FAIL;
+
+    /* Add validation for input parameters */
+    if (!hd || !bytes_A || !bytes_key || !len_key) {
+        ESP_LOGE(TAG, "Invalid parameters: hd=%p, bytes_A=%p, bytes_key=%p, len_key=%p",
+                 hd, bytes_A, bytes_key, len_key);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (len_A <= 0) {
+        ESP_LOGE(TAG, "Invalid length parameter: len_A=%d", len_A);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Check if the necessary SRP parameters are initialized */
+    if (!hd->b || !hd->v || !hd->n) {
+        ESP_LOGE(TAG, "SRP parameters not properly initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_mpi_t *u = NULL;
     esp_mpi_t *vu = NULL;
     esp_mpi_t *avu = NULL;
@@ -545,9 +676,16 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
         goto error;
     }
 
-    mbedtls_sha512((unsigned char *)bytes_S, len_S, (unsigned char *)hd->session_key, 0);
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, error, TAG, "Failed to setup hash operation: %d", status);
+    psa_hash_update(&hash_op, (unsigned char *)bytes_S, len_S);
+    size_t hash_len = 0;
+    status = psa_hash_finish(&hash_op, (unsigned char *)hd->session_key, SHA512_HASH_SZ, &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
+    *len_key = hash_len;
     *bytes_key = hd->session_key;
-    *len_key = SHA512_HASH_SZ;
 
     free(bytes_S);
     esp_mpi_free(vu);
@@ -583,73 +721,109 @@ error:
         free(hd->bytes_A);
         hd->bytes_A = NULL;
     }
-    return ESP_FAIL;
+    psa_hash_abort(&hash_op);
+    return ret;
 }
 
 esp_err_t esp_srp_exchange_proofs(esp_srp_handle_t *hd, char *username, uint16_t username_len, char *bytes_user_proof, char *bytes_host_proof)
 {
+    esp_err_t ret = ESP_FAIL;
+
+    /* Add validation for input parameters */
+    if (!hd || !username || !bytes_user_proof || !bytes_host_proof) {
+        ESP_LOGE(TAG, "Invalid parameters: hd=%p, username=%p, bytes_user_proof=%p, bytes_host_proof=%p",
+                 hd, username, bytes_user_proof, bytes_host_proof);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (username_len <= 0) {
+        ESP_LOGE(TAG, "Invalid username length: %d", username_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Check if the necessary SRP parameters and session key are initialized */
+    if (!hd->bytes_A || !hd->bytes_B || !hd->bytes_s || !hd->session_key) {
+        ESP_LOGE(TAG, "SRP exchange not properly initialized: A=%p, B=%p, s=%p, key=%p",
+                 hd->bytes_A, hd->bytes_B, hd->bytes_s, hd->session_key);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     /* First calculate M */
     unsigned char hash_n[SHA512_HASH_SZ];
     unsigned char hash_g[SHA512_HASH_SZ];
     unsigned char hash_n_xor_g[SHA512_HASH_SZ];
     int i;
-
+    char *s = NULL;
     unsigned char hash_I[SHA512_HASH_SZ];
-    mbedtls_sha512((unsigned char *)username, username_len, (unsigned char *)hash_I, 0);
-    mbedtls_sha512((unsigned char *)hd->bytes_n, hd->len_n, (unsigned char *)hash_n, 0);
+    size_t hash_len = 0;
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
 
+    psa_hash_update(&hash_op, (unsigned char *)username, username_len);
+    status = psa_hash_finish(&hash_op, (unsigned char *)hash_I, SHA512_HASH_SZ, &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
+
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
+
+    psa_hash_update(&hash_op, (unsigned char *)hd->bytes_n, hd->len_n);
+    status = psa_hash_finish(&hash_op, (unsigned char *)hash_n, SHA512_HASH_SZ, &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
     int pad_len = hd->len_n - hd->len_g;
-    char *s = calloc(pad_len, sizeof(char));
-    if (!s) {
-        return ESP_ERR_NO_MEM;
-    }
+    s = calloc(pad_len, sizeof(char));
+    ESP_RETURN_ON_FALSE(s, ESP_ERR_NO_MEM, TAG, "Failed to allocate memory");
 
-    mbedtls_sha512_context ctx;
-    mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
-    mbedtls_sha512_update(&ctx, (unsigned char *)s, pad_len);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->bytes_g, hd->len_g);
-    mbedtls_sha512_finish(&ctx, hash_g);
-    mbedtls_sha512_free(&ctx);
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
 
+    psa_hash_update(&hash_op, (unsigned char *)s, pad_len);
+    psa_hash_update(&hash_op, (unsigned char *)hd->bytes_g, hd->len_g);
+    status = psa_hash_finish(&hash_op, (unsigned char *)hash_g, SHA512_HASH_SZ, &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
     for (i = 0; i < SHA512_HASH_SZ; i++) {
         hash_n_xor_g[i] = hash_n[i] ^ hash_g[i];
     }
 
     unsigned char digest[SHA512_HASH_SZ];
-    mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
-    mbedtls_sha512_update(&ctx, hash_n_xor_g, SHA512_HASH_SZ);
-    mbedtls_sha512_update(&ctx, hash_I, SHA512_HASH_SZ);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->bytes_s, hd->len_s);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->bytes_A, hd->len_A);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->bytes_B, hd->len_B);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->session_key, SHA512_HASH_SZ);
-    mbedtls_sha512_finish(&ctx, digest);
-    mbedtls_sha512_free(&ctx);
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
 
+    psa_hash_update(&hash_op, hash_n_xor_g, SHA512_HASH_SZ);
+    psa_hash_update(&hash_op, hash_I, SHA512_HASH_SZ);
+    psa_hash_update(&hash_op, (unsigned char *)hd->bytes_s, hd->len_s);
+    psa_hash_update(&hash_op, (unsigned char *)hd->bytes_A, hd->len_A);
+    psa_hash_update(&hash_op, (unsigned char *)hd->bytes_B, hd->len_B);
+    psa_hash_update(&hash_op, (unsigned char *)hd->session_key, SHA512_HASH_SZ);
+    status = psa_hash_finish(&hash_op, digest, SHA512_HASH_SZ, &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
     ESP_LOGD(TAG, "M ->");
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, (char *)digest, sizeof(digest), ESP_LOG_DEBUG);
 
-    if (memcmp(bytes_user_proof, digest, SHA512_HASH_SZ) != 0) {
-        free(s);
-        return ESP_FAIL;
-    }
+    ESP_GOTO_ON_FALSE(memcmp(bytes_user_proof, digest, SHA512_HASH_SZ) == 0, ESP_FAIL, error, TAG, "Failed to validate user proof");
 
     /* M is now validated, let's proceed to H(AMK) */
-    mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->bytes_A, hd->len_A);
-    mbedtls_sha512_update(&ctx, digest, SHA512_HASH_SZ);
-    mbedtls_sha512_update(&ctx, (unsigned char *)hd->session_key, SHA512_HASH_SZ);
-    mbedtls_sha512_finish(&ctx, (unsigned char *)bytes_host_proof);
-    mbedtls_sha512_free(&ctx);
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
+    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
 
+    psa_hash_update(&hash_op, (unsigned char *)hd->bytes_A, hd->len_A);
+    psa_hash_update(&hash_op, digest, SHA512_HASH_SZ);
+    psa_hash_update(&hash_op, (unsigned char *)hd->session_key, SHA512_HASH_SZ);
+    status = psa_hash_finish(&hash_op, (unsigned char *)bytes_host_proof, SHA512_HASH_SZ, &hash_len);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS && hash_len == SHA512_HASH_SZ, ESP_FAIL, error, TAG,
+                      "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
     ESP_LOGD(TAG, "AMK ->");
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, (char *)bytes_host_proof, SHA512_HASH_SZ, ESP_LOG_DEBUG);
 
+    ret = ESP_OK;
+error:
+    psa_hash_abort(&hash_op);
     if (s) {
         free(s);
     }
-    return ESP_OK;
+    return ret;
 }

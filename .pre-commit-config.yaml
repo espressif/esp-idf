@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: ruff-format
       - id: ruff
-        args: [ "--fix" ]
+        args: [ "--fix", "--show-fixes" ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -31,6 +31,7 @@ repos:
             .*.pb-c.c|
             .*.yuv|
             .*.rgb|
+            .*.gray|
             .*COPYING.*|
             docs/sphinx-known-warnings\.txt
           )$
@@ -115,7 +116,7 @@ repos:
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
         language: python
-        files: '^tools/.+'
+        files: '^(tools/.+|.gitlab/ci/rules\.yml)'
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
@@ -143,7 +144,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.11
+          - idf-build-apps~=2.13
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -226,7 +227,7 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.5.0
+    rev: v3.2.0
     hooks:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options

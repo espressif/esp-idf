@@ -122,3 +122,7 @@ config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
 config ESP_ROM_DELAY_US_PATCH
     bool
     default y
+
+config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+    bool
+    default y

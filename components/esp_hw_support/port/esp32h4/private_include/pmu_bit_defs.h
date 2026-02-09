@@ -16,6 +16,7 @@ extern "C" {
 #define PMU_LP_TIMER_WAKEUP_EN      BIT(4)
 #define PMU_UART0_WAKEUP_EN         BIT(6)
 #define PMU_UART1_WAKEUP_EN         BIT(7)
+#define PMU_TOUCH_WAKEUP_EN         BIT(9)
 #define PMU_BLE_SOC_WAKEUP_EN       BIT(10)
 #define PMU_USB_WAKEUP_EN           BIT(14)
 

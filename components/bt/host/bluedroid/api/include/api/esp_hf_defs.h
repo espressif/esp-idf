@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-typedef uint16_t esp_hf_sync_conn_hdl_t;
+typedef uint16_t esp_hf_sync_conn_hdl_t;    /*!< HFP synchronous connection handle */
 
 /// profile states
 typedef enum {
@@ -27,8 +27,8 @@ typedef enum {
 
 /// in-band ring tone state
 typedef enum {
-    ESP_HF_IN_BAND_RINGTONE_NOT_PROVIDED = 0,
-    ESP_HF_IN_BAND_RINGTONE_PROVIDED,
+    ESP_HF_IN_BAND_RINGTONE_NOT_PROVIDED = 0,   /*!< Indicates that the in-band ringtone is not provided by the Hands-Free device */
+    ESP_HF_IN_BAND_RINGTONE_PROVIDED,           /*!< Indicates that the in-band ringtone is provided by the Hands-Free device */
 } esp_hf_in_band_ring_state_t;
 
 /// voice recognition state
@@ -51,16 +51,17 @@ typedef enum {
     ESP_HF_AUDIO_STATE_CONNECTED_MSBC,            /*!< mSBC audio connection is established */
 } esp_hf_audio_state_t;
 
+/// Bluetooth HFP audio volume type
 typedef enum {
-    ESP_HF_VOLUME_TYPE_SPK = 0,
-    ESP_HF_VOLUME_TYPE_MIC
+    ESP_HF_VOLUME_TYPE_SPK = 0,                 /*!< speaker */
+    ESP_HF_VOLUME_TYPE_MIC                      /*!< microphone */
 } esp_hf_volume_type_t;
 
 /// +CIND network service availability status
 typedef enum
 {
-    ESP_HF_NETWORK_STATE_NOT_AVAILABLE = 0,
-    ESP_HF_NETWORK_STATE_AVAILABLE
+    ESP_HF_NETWORK_STATE_NOT_AVAILABLE = 0,         /*!< Indicates that the network service is not available */
+    ESP_HF_NETWORK_STATE_AVAILABLE                  /*!< Indicates that the network service is available */
 } esp_hf_network_state_t;
 
 /// +CIEV report type
@@ -77,8 +78,8 @@ typedef enum {
 /** +CIEV Service type */
 typedef enum
 {
-    ESP_HF_SERVICE_TYPE_HOME = 0,
-    ESP_HF_SERVICE_TYPE_ROAMING
+    ESP_HF_SERVICE_TYPE_HOME = 0,       /*!< Indicates the service is in the home */
+    ESP_HF_SERVICE_TYPE_ROAMING         /*!< Indicates the service is in roaming */
 } esp_hf_service_type_t;
 
 /// +CIND call status indicator values
@@ -133,9 +134,9 @@ typedef enum {
 
 /// +CLCC call mode
 typedef enum {
-    ESP_HF_CURRENT_CALL_MODE_VOICE = 0,
-    ESP_HF_CURRENT_CALL_MODE_DATA = 1,
-    ESP_HF_CURRENT_CALL_MODE_FAX = 2,
+    ESP_HF_CURRENT_CALL_MODE_VOICE = 0,             /*!< the current call is a voice call */
+    ESP_HF_CURRENT_CALL_MODE_DATA = 1,              /*!< the current call is a data call */
+    ESP_HF_CURRENT_CALL_MODE_FAX = 2,               /*!< the current call is a fax call */
 } esp_hf_current_call_mode_t;
 
 /// +CLCC address type
@@ -168,22 +169,22 @@ typedef enum {
 /* +NREC */
 typedef enum
 {
-    ESP_HF_NREC_STOP = 0,
-    ESP_HF_NREC_START
+    ESP_HF_NREC_STOP = 0,           /*!< Stop the NREC */
+    ESP_HF_NREC_START               /*!< Start the NREC */
 } esp_hf_nrec_t;
 
 ///+CCWA response status
 typedef enum {
-    ESP_HF_CALL_WAITING_INACTIVE,
-    ESP_HF_CALL_WAITING_ACTIVE,
+    ESP_HF_CALL_WAITING_INACTIVE,       /*!< inactive call waiting */
+    ESP_HF_CALL_WAITING_ACTIVE,         /*!< active call waiting */
 } esp_hf_call_waiting_status_t;
 
 /* WBS codec setting */
 typedef enum
 {
-   ESP_HF_WBS_NONE,
-   ESP_HF_WBS_NO,
-   ESP_HF_WBS_YES
+   ESP_HF_WBS_NONE,         /*!< No Wideband Speech (WBS) codec support */
+   ESP_HF_WBS_NO,           /*!< Wideband Speech (WBS) codec is not enabled */
+   ESP_HF_WBS_YES           /*!< Wideband Speech (WBS) codec is enabled */
 }esp_hf_wbs_config_t;
 
 /// Bluetooth HFP RFCOMM connection and service level connection status
@@ -198,11 +199,11 @@ typedef enum {
 /// AT+CHLD command values
 typedef enum {
     ESP_HF_CHLD_TYPE_REL = 0,               /*!< <0>, Terminate all held or set UDUB("busy") to a waiting call */
-    ESP_HF_CHLD_TYPE_REL_ACC,               /*!< <1>, Terminate all active calls and accepts a waiting/held call */
-    ESP_HF_CHLD_TYPE_HOLD_ACC,              /*!< <2>, Hold all active calls and accepts a waiting/held call */
+    ESP_HF_CHLD_TYPE_REL_ACC,               /*!< <1>, Terminate all active calls and accept a waiting/held call */
+    ESP_HF_CHLD_TYPE_HOLD_ACC,              /*!< <2>, Hold all active calls and accept a waiting/held call */
     ESP_HF_CHLD_TYPE_MERGE,                 /*!< <3>, Add all held calls to a conference */
-    ESP_HF_CHLD_TYPE_MERGE_DETACH,          /*!< <4>, connect the two calls and disconnects the subscriber from both calls */
-    ESP_HF_CHLD_TYPE_REL_X,                 /*!< <1x>, releases specified calls only */
+    ESP_HF_CHLD_TYPE_MERGE_DETACH,          /*!< <4>, connect the two calls and disconnect the subscriber from both calls */
+    ESP_HF_CHLD_TYPE_REL_X,                 /*!< <1x>, release specified calls only */
     ESP_HF_CHLD_TYPE_PRIV_X,                /*!< <2x>, request private consultation mode with specified call */
 } esp_hf_chld_type_t;
 
@@ -220,8 +221,8 @@ typedef enum {
 
 /* AT response code - OK/Error */
 typedef enum {
-    ESP_HF_AT_RESPONSE_ERROR = 0,
-    ESP_HF_AT_RESPONSE_OK
+    ESP_HF_AT_RESPONSE_ERROR = 0,       /*!< error in the AT command response */
+    ESP_HF_AT_RESPONSE_OK               /*!< successful AT command response */
 } esp_hf_at_response_t;
 
 /// Extended Audio Gateway Error Result Code Response
@@ -242,7 +243,7 @@ typedef enum {
     ESP_HF_CME_MEMORY_FULL = 20,                  /*!< memory full */
     ESP_HF_CME_INVALID_INDEX = 21,                /*!< invalid index */
     ESP_HF_CME_MEMORY_FAILURE = 23,              /*!< memory failure */
-    ESP_HF_CME_TEXT_STRING_TOO_LONG = 24,         /*!< test string too long */
+    ESP_HF_CME_TEXT_STRING_TOO_LONG = 24,         /*!< text string too long */
     ESP_HF_CME_INVALID_CHARACTERS_IN_TEXT_STRING = 25,  /*!< invalid characters in text string */
     ESP_HF_CME_DIAL_STRING_TOO_LONG = 26,         /*!< dial string too long*/
     ESP_HF_CME_INVALID_CHARACTERS_IN_DIAL_STRING = 27,  /*!< invalid characters in dial string */

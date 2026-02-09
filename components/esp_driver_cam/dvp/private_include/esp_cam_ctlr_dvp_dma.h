@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,11 @@ extern "C" {
 /**
  * @brief DVP DMA description object
  */
-typedef dma_descriptor_align8_t esp_cam_ctlr_dvp_dma_desc_t;
+#if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AHB)
+typedef dma_descriptor_align4_t     esp_cam_ctlr_dvp_dma_desc_t;
+#elif defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AXI)
+typedef dma_descriptor_align8_t     esp_cam_ctlr_dvp_dma_desc_t;
+#endif
 
 /**
  * @brief DVP DMA object

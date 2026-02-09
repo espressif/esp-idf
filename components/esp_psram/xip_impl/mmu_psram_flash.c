@@ -42,7 +42,7 @@
 //page_size - 1, where page_size on s2 and s3 is always 0x10000. To be refactored by MMU driver
 #define INVALID_PHY_PAGE 0xffff
 const static char *TAG = "mmu_psram";
-//TODO IDF-4387
+
 static uint32_t page0_mapped = 0;
 static uint32_t page0_page = INVALID_PHY_PAGE;
 

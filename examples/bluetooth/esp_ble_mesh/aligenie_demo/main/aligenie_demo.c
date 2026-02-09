@@ -16,7 +16,7 @@
 #include "esp_mac.h"
 #include "nvs_flash.h"
 
-#include "mbedtls/sha256.h"
+#include "psa/crypto.h"
 
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -32,6 +32,8 @@
 #include "genie_mesh.h"
 #include "ble_mesh_example_init.h"
 #include "ble_mesh_example_nvs.h"
+#include "psa/crypto_struct.h"
+#include "psa/crypto_values.h"
 
 static const char *TAG  = "genie_demo";
 
@@ -1335,7 +1337,12 @@ void config_triples(void)
     ESP_LOGI(TAG, "authvalue_string: %s", authvalue_string);
 
     uint8_t sha256_out[32] = {0};
-    mbedtls_sha256((const unsigned char *)authvalue_string, strlen(authvalue_string), sha256_out, 0);
+    size_t hash_length = 0;
+    psa_status_t status = psa_hash_compute(PSA_ALG_SHA_256, (const uint8_t *)authvalue_string, strlen(authvalue_string), sha256_out, sizeof(sha256_out), &hash_length);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to compute hash, status: %ld", status);
+        return;
+    }
     memcpy(static_val, sha256_out, 16);
     provision.static_val = static_val;
 

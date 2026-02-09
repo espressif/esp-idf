@@ -116,13 +116,9 @@ Overview of All Modes
 =========  ========  ============  ============  =========  ========  ========  ==========
 ESP32      I2S 0/1      I2S 0          I2S 0      I2S 0/1     none      I2S 0      I2S 0
 ESP32-S2    I2S 0       none           none        none       none      none       I2S 0
-ESP32-C3    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
-ESP32-C6    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
 ESP32-S3   I2S 0/1      I2S 0          I2S 0      I2S 0/1    I2S 0/1    none       none
-ESP32-H2    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
 ESP32-P4   I2S 0~2      I2S 0          I2S 0      I2S 0~2    I2S 0~2    none       none
-ESP32-C5    I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
-ESP32-C61   I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
+others      I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
 =========  ========  ============  ============  =========  ========  ========  ==========
 
 .. note::
@@ -225,11 +221,11 @@ In standard mode, there are always two sound channels, i.e., the left and right 
 
     TDM (Time Division Multiplexing) mode supports up to 16 slots. These slots can be enabled by :cpp:member:`i2s_tdm_slot_config_t::slot_mask`.
 
-    .. only:: SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: not esp32c3 or esp32c6 or esp32s3
 
         Any data bit-width is supported no matter how many slots are enabled, which means there can be up to ``32 bit-width * 16 slots = 512 bit`` data in one frame.
 
-    .. only:: not SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: esp32c3 or esp32c6 or esp32s3
 
         But due to the hardware limitation, only up to 4 slots are supported while the slot is set to 32 bit-width, and 8 slots for 16 bit-width, 16 slots for 8 bit-width. The slot communication format of TDM is almost the same as the standard mode, yet with some small differences.
 
@@ -249,14 +245,14 @@ In standard mode, there are always two sound channels, i.e., the left and right 
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
 
-.. only:: SOC_I2S_SUPPORTS_LCD_CAMERA
+.. only:: esp32 or esp32s2
 
     LCD/Camera Mode
     ^^^^^^^^^^^^^^^
 
     LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd/i80_lcd` for details about the LCD implementation. For more information, see **{IDF_TARGET_NAME} Technical Reference Manual** > **I2S Controller (I2S)** > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
 
-.. only:: SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: esp32
 
     ADC/DAC Mode
     ^^^^^^^^^^^^
@@ -905,7 +901,9 @@ Full-duplex mode registers TX and RX channel in an I2S port at the same time, an
 
 Note that one handle can only stand for one channel. Therefore, it is still necessary to configure the slot and clock for both TX and RX channels one by one.
 
-Here is an example of how to allocate a pair of full-duplex channels:
+There are two methods to allocate a pair of full-duplex channels:
+
+1. Allocate both TX and RX handles in a single call of :cpp:func:`i2s_new_channel`.
 
 .. code-block:: c
 
@@ -945,6 +943,48 @@ Here is an example of how to allocate a pair of full-duplex channels:
 
     ...
 
+2. Allocate TX and RX handles separately, and initialize them with the same configuration.
+
+.. code-block:: c
+
+    #include "driver/i2s_std.h"
+    #include "driver/gpio.h"
+
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    /* Allocate a pair of I2S channels on a same port */
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    /* Allocate for TX and RX channel separately, they are not full-duplex yet */
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+
+    /* Set the configurations for BOTH TWO channels, they will constitute in full-duplex mode automatically */
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = GPIO_NUM_4,
+            .ws = GPIO_NUM_5,
+            .dout = GPIO_NUM_18,
+            .din = GPIO_NUM_19,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
+    };
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    // ...
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
+    ...
+
+
 .. only:: SOC_I2S_HW_VERSION_1
 
     Simplex Mode
@@ -961,7 +1001,7 @@ Here is an example of how to allocate a pair of full-duplex channels:
         i2s_chan_handle_t rx_handle;
 
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -979,12 +1019,12 @@ Here is an example of how to allocate a pair of full-duplex channels:
             },
         };
         /* Initialize the channel */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* RX channel will be registered on another I2S, if no other available I2S unit found
          * it will return ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1001,8 +1041,9 @@ Here is an example of how to allocate a pair of full-duplex channels:
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
 
 .. only:: SOC_I2S_HW_VERSION_2
 
@@ -1021,7 +1062,7 @@ Here is an example of how to allocate a pair of full-duplex channels:
         i2s_chan_handle_t tx_handle;
         i2s_chan_handle_t rx_handle;
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -1039,12 +1080,12 @@ Here is an example of how to allocate a pair of full-duplex channels:
             },
         };
         /* Initialize the channel */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* RX channel will be registered on another I2S, if no other available I2S unit found
          * it will return ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle); // Both RX and TX channel will be registered on I2S0, but they can work with different configurations.
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle)); // Both RX and TX channel will be registered on I2S0, but they can work with different configurations.
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1061,8 +1102,8 @@ Here is an example of how to allocate a pair of full-duplex channels:
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
 .. only:: SOC_I2S_SUPPORTS_ETM
 
@@ -1234,4 +1275,4 @@ I2S Types
 ^^^^^^^^^
 
 .. include-build-file:: inc/components/esp_driver_i2s/include/driver/i2s_types.inc
-.. include-build-file:: inc/components/hal/include/hal/i2s_types.inc
+.. include-build-file:: inc/components/esp_hal_i2s/include/hal/i2s_types.inc

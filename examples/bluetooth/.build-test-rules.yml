@@ -2,6 +2,7 @@
 
 .bt_default_depends: &bt_default_depends
   depends_components:
+    - *common_components
     - bt
     - esp_phy
     - esp_coex
@@ -26,6 +27,16 @@ examples/bluetooth/bluedroid/ble:
     - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble/pytest_ble_test.py
+
+examples/bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+
+examples/bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
 
 examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
   <<: *bt_default_depends
@@ -58,21 +69,79 @@ examples/bluetooth/bluedroid/ble_50:
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
+examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_central:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_peripheral:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_connection_central_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_connection_peripheral_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_synchronizer:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_periodic_adv_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_periodic_sync_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_power_control_central:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_power_control_peripheral:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+
 examples/bluetooth/bluedroid/classic_bt:
   <<: *bt_default_depends
   disable:
     - if: SOC_BT_CLASSIC_SUPPORTED != 1
   depends_components+:
+    - esp_lcd
     - esp_console
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
+    - esp_driver_dac
   depends_components-:
     - mbedtls
   depends_filepatterns:
-    - components/driver/dac/**/*
     - examples/bluetooth/bluedroid/esp_hid_host/**/*
     - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_cover_art/pytest_classic_bt_cover_art_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_metadata/pytest_classic_bt_metadata_test.py
     - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
@@ -83,8 +152,7 @@ examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
       reason: the other targets are not tested yet
   depends_components+:
     - esp_driver_i2s
-  depends_filepatterns:
-    - components/driver/dac/**/*
+    - esp_driver_dac
 
 examples/bluetooth/blufi:
   <<: *bt_default_depends
@@ -94,7 +162,6 @@ examples/bluetooth/blufi:
   depends_components+:
     - esp_console
     - esp_wifi
-    - esp_event
 
 examples/bluetooth/esp_ble_mesh:
   <<: *bt_default_depends
@@ -104,7 +171,6 @@ examples/bluetooth/esp_ble_mesh:
     - if: CI_COMMIT_REF_NAME == "master" and (NIGHTLY_RUN == 0 and CONFIG_NAME not in ["default", "bluedroid", "nimble"])
   depends_components+:
     - esp_console
-    - touch_element
     - esp_driver_gpio
   depends_components-:
     - esp_coex
@@ -141,6 +207,8 @@ examples/bluetooth/esp_hid_host:
     - if: SOC_BT_SUPPORTED != 1
   depends_components+:
     - esp_hid
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
 
 examples/bluetooth/hci/ble_adv_scan_combined:
   <<: *bt_default_depends
@@ -189,6 +257,25 @@ examples/bluetooth/nimble/ble_ancs:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/ble_chan_sound_initiator:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_initiator/**/*
+    - examples/bluetooth/nimble/common/**/*
+
+examples/bluetooth/nimble/ble_chan_sound_reflector:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_reflector/**/*
+    - examples/bluetooth/nimble/common/**/*
 examples/bluetooth/nimble/ble_cte:
   <<: *bt_default_depends
   enable:
@@ -226,12 +313,12 @@ examples/bluetooth/nimble/ble_multi_conn:
 examples/bluetooth/nimble/ble_pawr_adv:
   <<: *bt_default_depends
   enable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
 
 examples/bluetooth/nimble/ble_pawr_adv_conn:
   <<: *bt_default_depends
   enable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
 
 examples/bluetooth/nimble/ble_periodic_adv:
   <<: *bt_default_depends
@@ -265,7 +352,6 @@ examples/bluetooth/nimble/blecent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   depends_components+:
-    - esp_event
     - esp_coex
     - esp_pm
   depends_filepatterns:
@@ -289,7 +375,6 @@ examples/bluetooth/nimble/bleprph_wifi_coex:
     - if: SOC_BLE_SUPPORTED != 1
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components+:
-    - esp_event
     - esp_hid
     - esp_wifi
     - esp_coex
@@ -309,7 +394,6 @@ examples/bluetooth/nimble/power_save:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   depends_components+:
-    - esp_event
     - esp_coex
     - esp_pm
   depends_filepatterns:

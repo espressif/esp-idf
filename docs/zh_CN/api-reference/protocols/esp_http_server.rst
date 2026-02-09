@@ -69,6 +69,38 @@ HTTP 服务器组件提供 websocket 支持。可以在 menuconfig 中使用 :re
 :example:`protocols/http_server/ws_echo_server` 演示了如何使用 HTTP 服务器创建一个 WebSocket 回显服务器，该服务器在本地网络上启动，与 WebSocket 客户端进行交互，回显接收到的 WebSocket 帧。
 
 
+WebSocket 握手前回调
+^^^^^^^^^^^^^^^^^^^^
+
+HTTP 服务器组件为 WebSocket 端点提供了握手前回调 (pre-handshake callback) 的功能。该回调函数会在处理 WebSocket 握手前被调用——此时连接仍然是 HTTP 连接，还未升级为 WebSocket。
+
+握手前回调函数可用于身份认证、权限校验及其他检查。如果回调返回 :c:macro:`ESP_OK`，WebSocket 握手将继续进行；如果返回其他值，则握手中止，连接也会关闭。
+
+要使用 WebSocket 握手前回调，需在项目配置中启用 :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` 选项。
+
+.. code-block:: c
+
+    static esp_err_t ws_auth_handler(httpd_req_t *req)
+    {
+        // 在此处编写认证逻辑
+        // 返回 ESP_OK 允许握手，返回其他值则拒绝握手
+        return ESP_OK;
+    }
+
+    // 注册带有握手前认证的 WebSocket URI 处理程序
+    static const httpd_uri_t ws = {
+        .uri        = "/ws",
+        .method     = HTTP_GET,
+        .handler    = handler,           // WebSocket 数据处理程序
+        .user_ctx   = NULL,
+        .is_websocket = true,
+        .ws_pre_handshake_cb = ws_auth_handler // 设置握手前回调函数
+    };
+
+    // 在启动服务器后注册该处理程序
+    httpd_register_uri_handler(server, &ws);
+
+
 事件处理
 --------------
 

@@ -16,6 +16,7 @@
 #include <soc/soc.h>
 #include <soc/soc_memory_layout.h>
 #include "soc/io_mux_reg.h"
+#include "soc/spi_pins.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_cpu.h"

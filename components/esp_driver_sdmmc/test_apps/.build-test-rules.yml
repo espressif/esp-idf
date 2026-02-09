@@ -5,3 +5,6 @@ components/esp_driver_sdmmc/test_apps/sdmmc:
   depends_components:
     - sdmmc
     - esp_driver_sdmmc
+    - esp_hal_sd
+    - esp_hw_support
+    - soc

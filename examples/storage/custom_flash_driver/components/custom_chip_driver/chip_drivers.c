@@ -12,13 +12,13 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#include "spi_flash_chip_driver.h"
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_chip_issi.h"
-#include "spi_flash_chip_mxic.h"
-#include "spi_flash_chip_gd.h"
-#include "spi_flash_chip_winbond.h"
-#include "spi_flash_chip_boya.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_flash_chips/spi_flash_chip_issi.h"
+#include "esp_flash_chips/spi_flash_chip_mxic.h"
+#include "esp_flash_chips/spi_flash_chip_gd.h"
+#include "esp_flash_chips/spi_flash_chip_winbond.h"
+#include "esp_flash_chips/spi_flash_chip_boya.h"
 // `spi_flash_chip_custom.h` is the header for the structure of customize flash driver,
 // in this example is `esp_flash_chip_eon`.
 #include "spi_flash_chip_custom.h"

@@ -1,5 +1,5 @@
 # This is the project CMakeLists.txt file for the test subproject
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.
 set(COMPONENTS main)
@@ -9,9 +9,15 @@ project(mcpwm_test)
 
 idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    set(MCPWM_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_mcpwm
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_mcpwm
+        ${CMAKE_BINARY_DIR}/esp-idf/hal
+    )
+    string(JOIN "," MCPWM_RTL_DIRS_JOINED ${MCPWM_RTL_DIRS})
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_mcpwm/,${CMAKE_BINARY_DIR}/esp-idf/hal/
+                      --rtl-dirs ${MCPWM_RTL_DIRS_JOINED}
                       --elf-file ${CMAKE_BINARY_DIR}/mcpwm_test.elf
                       find-refs
                       --from-sections=.iram0.text

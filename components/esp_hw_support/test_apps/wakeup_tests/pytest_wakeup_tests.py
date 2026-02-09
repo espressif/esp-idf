@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from time import sleep
-from typing import Tuple
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
@@ -20,6 +19,7 @@ available_gpio_nums = {
     'esp32c6': [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23],
     'esp32h2': [0, 1, 2, 3, 4, 5, 10, 11, 12, 22, 25, 26, 27],
     'esp32p4': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    + [18, 19, 20, 21, 22, 23, 39, 40, 41, 42, 43, 45, 46, 47, 48]
     + [28, 29, 30, 31, 32, 33, 36, 49, 50, 51, 52, 53, 54],
     'esp32c5': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 23, 24, 25, 26],
     'esp32c61': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 22, 23, 24, 25, 26, 27, 28, 29],
@@ -47,7 +47,7 @@ available_rtcio_nums = {
     ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'],
     indirect=['target'],
 )
-def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
 
@@ -98,7 +98,7 @@ def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize('target', ['esp32c2', 'esp32c3', 'esp32c6', 'esp32p4', 'esp32c5'], indirect=['target'])
-def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
 
@@ -143,7 +143,8 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='p4 rev3 migration')
+def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
 

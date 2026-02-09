@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,6 +99,53 @@ storing in efuse (based on ATE 5k ECO3 chips)
 #define V_RTC_MID_MUL10000  10800
 #define V_DIG_MID_MUL10000  10860
 
+#if CONFIG_ESP_ENABLE_PVT
+/*
+set pvt default param
+*/
+#define PVT_CHANNEL0_SEL        33
+#define PVT_CHANNEL1_SEL        37
+#define PVT_CHANNEL0_CFG        0x13e80
+#define PVT_CHANNEL1_CFG        0x13e80
+#define PVT_CHANNEL2_CFG        0x10000
+#define PVT_CMD0                0x24
+#define PVT_CMD1                0x5
+#define PVT_CMD2                0x427
+#define PVT_TARGET              0xffff
+#define PVT_CLK_DIV             1
+#define PVT_DELAY_NUM_HIGH      150
+#define PVT_DELAY_NUM_LOW       143
+#define PVT_PUMP_CHANNEL_CODE   1
+#define PVT_PUMP_BITMAP         22
+#define PVT_PUMP_DRV            0
+#define PVT_DELAY_NUM_PUMP      139
+
+/**
+ * @brief Initialize PVT related parameters
+ */
+void pvt_auto_dbias_init(void);
+
+/**
+ * @brief Enable or disable PVT functions
+ *
+ * @param enable  true to enable, false to disable
+ */
+void pvt_func_enable(bool enable);
+
+/**
+ * @brief Initialize charge pump related parameters
+ */
+void charge_pump_init(void);
+
+/**
+ * @brief Enable or disable charge pump functions
+ *
+ * @param enable  true to enable, false to disable
+ */
+void charge_pump_enable(bool enable);
+
+#endif //#if CONFIG_ESP_ENABLE_PVT
+
 /**
  * @brief CPU clock configuration structure
  */
@@ -114,19 +161,11 @@ typedef struct rtc_cpu_freq_config_s {
 #define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
 #define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
-/**
- * @brief Clock source to be calibrated using rtc_clk_cal function
- *
- * @note On ESP32C5, the enum values somehow reflects the register field values of PCR_32K_SEL.
- */
-typedef enum {
-    RTC_CAL_RTC_MUX = -1,       //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_32K_XTAL = 1,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = 2,   //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
-    RTC_CAL_RC_SLOW = 3,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC_FAST = 4,        //!< Internal 20MHz RC oscillator
-    RTC_CAL_INVALID_CLK,        //!< Clock not available to calibrate
-} rtc_cal_sel_t;
+#define RTC_CAL_RTC_MUX _Pragma ("GCC warning \"'RTC_CAL_RTC_MUX' macro is deprecated\"") CLK_CAL_RTC_SLOW
+#define RTC_CAL_32K_XTAL _Pragma ("GCC warning \"'RTC_CAL_32K_XTAL' macro is deprecated\"") CLK_CAL_32K_XTAL
+#define RTC_CAL_32K_OSC_SLOW _Pragma ("GCC warning \"'RTC_CAL_32K_OSC_SLOW' macro is deprecated\"") CLK_CAL_32K_OSC_SLOW
+#define RTC_CAL_RC_SLOW _Pragma ("GCC warning \"'RTC_CAL_RC_SLOW' macro is deprecated\"") CLK_CAL_RC_SLOW
+#define RTC_CAL_RC_FAST _Pragma ("GCC warning \"'RTC_CAL_RC_FAST' macro is deprecated\"") CLK_CAL_RC_FAST
 
 /**
  * Initialization parameters for rtc_clk_init
@@ -352,12 +391,12 @@ uint32_t rtc_clk_apb_freq_get(void);
  * the check fails, then consider this an invalid 32k clock and return 0. This
  * check can filter some jamming signal.
  *
- * @param cal_clk  clock to be measured
+ * @param cal_clk_sel  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average
  * @return average slow clock period in microseconds, Q13.19 fixed point format,
  *         or 0 if calibration has timed out
  */
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
+uint32_t rtc_clk_cal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles

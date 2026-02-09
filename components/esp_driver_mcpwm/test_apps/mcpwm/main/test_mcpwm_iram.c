@@ -10,7 +10,6 @@
 #include "freertos/event_groups.h"
 #include "unity.h"
 #include "unity_test_utils.h"
-#include "soc/soc_caps.h"
 #include "esp_private/esp_clk.h"
 #include "driver/mcpwm_prelude.h"
 #include "driver/gpio.h"

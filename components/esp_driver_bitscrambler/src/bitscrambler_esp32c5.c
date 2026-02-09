@@ -3,11 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "soc/gdma_channel.h"
+#include "hal/gdma_channel.h"
 #include "bitscrambler_soc_specific.h"
 
-// Note: these are indexed by the values of the SOC_BITSCRAMBLER_ATTACH_ defines
-// in soc/bitscrambler_peri_select.h
+// Note: these are indexed by the values of the SOC_BITSCRAMBLER_ATTACH_ defines in bitscrambler_peri_select.h
 // This map is used by the bitscrambler loopback driver only.
 
 const bitscrambler_periph_desc_t g_bitscrambler_periph_desc[] = {

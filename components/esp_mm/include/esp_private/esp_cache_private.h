@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,16 @@ void esp_cache_freeze_caches_disable_interrupts(void);
  */
 void esp_cache_unfreeze_caches_enable_interrupts(void);
 #endif
+
+/**
+ * @brief Enter critical section for cache sync operations
+ */
+void esp_cache_sync_ops_enter_critical_section(void);
+
+/**
+ * @brief Exit critical section for cache sync operations
+ */
+void esp_cache_sync_ops_exit_critical_section(void);
 
 /**
  * @brief Get Cache alignment requirement for data

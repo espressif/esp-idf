@@ -10,53 +10,60 @@
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
 #include "ulp_main.h"
-#include "driver/touch_sensor.h"
+#include "driver/touch_sens.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "touch_sens_example_config.h"
 
 extern const uint8_t _binary_ulp_main_bin_start[];
 extern const uint8_t _binary_ulp_main_bin_end[];
 
 #define TOUCH_BUTTON_NUM    14U
 
-static const touch_pad_t button[TOUCH_BUTTON_NUM] = {
-    TOUCH_PAD_NUM1,
-    TOUCH_PAD_NUM2,
-    TOUCH_PAD_NUM3,
-    TOUCH_PAD_NUM4,
-    TOUCH_PAD_NUM5,
-    TOUCH_PAD_NUM6,
-    TOUCH_PAD_NUM7,
-    TOUCH_PAD_NUM8,
-    TOUCH_PAD_NUM9,
-    TOUCH_PAD_NUM10,
-    TOUCH_PAD_NUM11,
-    TOUCH_PAD_NUM12,
-    TOUCH_PAD_NUM13,
-    TOUCH_PAD_NUM14
+static const int s_channel_id[TOUCH_BUTTON_NUM] = {
+    TOUCH_MIN_CHAN_ID,
+    TOUCH_MIN_CHAN_ID + 1,
+    TOUCH_MIN_CHAN_ID + 2,
+    TOUCH_MIN_CHAN_ID + 3,
+    TOUCH_MIN_CHAN_ID + 4,
+    TOUCH_MIN_CHAN_ID + 5,
+    TOUCH_MIN_CHAN_ID + 6,
+    TOUCH_MIN_CHAN_ID + 7,
+    TOUCH_MIN_CHAN_ID + 8,
+    TOUCH_MIN_CHAN_ID + 9,
+    TOUCH_MIN_CHAN_ID + 10,
+    TOUCH_MIN_CHAN_ID + 11,
+    TOUCH_MIN_CHAN_ID + 12,
+    TOUCH_MIN_CHAN_ID + 13,
 };
 
-static void init_touch_pad(void)
-{
-    /* Initialize touch pad peripheral. */
-    touch_pad_init();
+/* Handles of touch sensor and its channels*/
+static touch_sensor_handle_t s_sens_handle = NULL;
+static touch_channel_handle_t s_chan_handle[TOUCH_BUTTON_NUM];
 
+static void init_touch_sensor(void)
+{
+    /* Create a new touch sensor controller handle with default sample configuration */
+    touch_sensor_sample_config_t sample_cfg[TOUCH_SAMPLE_CFG_NUM] = EXAMPLE_TOUCH_SAMPLE_CFG_DEFAULT();
+    touch_sensor_config_t sens_cfg = TOUCH_SENSOR_DEFAULT_BASIC_CONFIG(1, sample_cfg);
+    ESP_ERROR_CHECK(touch_sensor_new_controller(&sens_cfg, &s_sens_handle));
+
+    /* Create and enable the new touch channel handles with default configurations */
+    touch_channel_config_t chan_cfg = EXAMPLE_TOUCH_CHAN_CFG_DEFAULT();
+    /* Allocate new touch channel on the touch controller */
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
-        touch_pad_config(button[i]);
+        ESP_ERROR_CHECK(touch_sensor_new_channel(s_sens_handle, s_channel_id[i], &chan_cfg, &s_chan_handle[i]));
     }
 
-    /* Denoise setting at TouchSensor 0. */
-    touch_pad_denoise_t denoise = {
-        /* The bits to be cancelled are determined according to the noise level. */
-        .grade = TOUCH_PAD_DENOISE_BIT4,
-        .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
-    };
-    touch_pad_denoise_set_config(&denoise);
-    touch_pad_denoise_enable();
+    /* Confiture the default filter for the touch sensor (Note: Touch V1 uses software filter) */
+    touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
+    ESP_ERROR_CHECK(touch_sensor_config_filter(s_sens_handle, &filter_cfg));
 
-    /* Enable touch sensor clock. Work mode is "timer trigger". */
-    touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
-    touch_pad_fsm_start();
+    /* Enable the touch sensor */
+    ESP_ERROR_CHECK(touch_sensor_enable(s_sens_handle));
+
+    /* Start continuous scanning, you can also trigger oneshot scanning manually */
+    ESP_ERROR_CHECK(touch_sensor_start_continuous_scanning(s_sens_handle));
 }
 
 static void init_ulp_program(void)
@@ -88,8 +95,8 @@ void app_main(void)
         printf("ULP-RISC-V woke up the main CPU! \n");
         uint32_t touch_data = ulp_touch_data;
         for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
-            if ((touch_data >> button[i]) & 0x1) {
-                printf("T%d touched\n", button[i]);
+            if ((touch_data >> s_channel_id[i]) & 0x1) {
+                printf("T%d touched\n", s_channel_id[i]);
             }
         }
         printf("\n");
@@ -97,7 +104,7 @@ void app_main(void)
         /* not a wakeup from ULP, load the firmware */
         printf("Not a ULP-RISC-V wakeup, initializing ...\n");
         /* Initialize Touch peripheral */
-        init_touch_pad();
+        init_touch_sensor();
 
         /* Initialize ULP core */
         init_ulp_program();

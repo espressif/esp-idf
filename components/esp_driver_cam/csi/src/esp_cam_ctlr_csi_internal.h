@@ -50,8 +50,8 @@ struct csi_controller_t {
     mipi_csi_hal_context_t      hal;                //hal context
     csi_fsm_t                   csi_fsm;            //driver fsm
     portMUX_TYPE                spinlock;           //spinlock
-    color_space_pixel_format_t  in_color_format;    //input color format
-    color_space_pixel_format_t  out_color_format;   //output color format
+    cam_ctlr_color_t            in_color_format;    //input color format
+    cam_ctlr_color_t            out_color_format;   //output color format
     uint32_t                    h_res;              //input horizontal resolution
     uint32_t                    v_res;              //input vertical resolution
     int                         in_bpp;             //input data type, bit per pixel

@@ -6,22 +6,19 @@ Analog to Digital Converter (ADC) Continuous Mode Driver
 Introduction
 ------------
 
-The Analog to Digital Converter is integrated on the chip and is capable of measuring analog signals from specific analog IO pads. Additionally, the Direct Memory Access (DMA) functionality is utilized to efficiently retrieve ADC conversion results.
+This document describes the ADC continuous mode driver on {IDF_TARGET_NAME}.
 
-{IDF_TARGET_NAME} has {IDF_TARGET_SOC_ADC_PERIPH_NUM} ADC unit(s), which can be used in scenarios like:
+In continuous mode, the ADC performs automatic, high-speed sampling on one or more analog input channels, with results efficiently transferred to memory via DMA. This mode is suitable for applications that require periodic or high-frequency data acquisition.
 
-- Generate one-shot ADC conversion result
-- Generate continuous ADC conversion results
-
-This guide introduces ADC continuous mode conversion.
+To perform single, on-demand ADC conversions, check :doc:`ADC Oneshot Mode Driver <adc_oneshot>`.
 
 Driver Concepts
-^^^^^^^^^^^^^^^
+---------------
 
-ADC continuous mode conversion is made up of multiple conversion frames.
+ADC continuous mode organizes data into conversion frames, which consist of multiple conversion results.
 
-- Conversion Frame: One conversion frame contains multiple conversion results. Conversion frame size is configured in :cpp:func:`adc_continuous_new_handle` in bytes.
-- Conversion Result: One conversion result contains multiple bytes, see :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`. Its structure is :cpp:type:`adc_digi_output_data_t`, including ADC unit, ADC channel, and raw data.
+- Conversion Frame: A frame contains multiple conversion results. Conversion frame size is configured with :cpp:func:`adc_continuous_new_handle` in bytes.
+- Conversion Result: A result consists of multiple bytes, as defined by :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`. Its structure is :cpp:type:`adc_digi_output_data_t`, including the ADC unit, ADC channel, and raw data.
 
 .. image:: /../_static/diagrams/adc/adc_conversion_frame.png
     :scale: 100 %
@@ -315,6 +312,71 @@ where:
       - Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where the bitwidth is the :cpp:member:`adc_digi_pattern_config_t::bit_width` configured before.
 
 To do further calibration to convert the ADC raw result to voltage in mV, please refer to :doc:`adc_calibration`.
+
+Parse ADC Raw Data
+~~~~~~~~~~~~~~~~~~~~~
+
+The raw data read from ADC continuous mode needs to be further parsed to obtain usable ADC conversion results. The function :cpp:func:`adc_continuous_parse_data` provides the functionality to parse raw data into structured ADC data.
+
+.. note::
+
+    Input buffer requirements:
+
+    - **Length alignment**: `raw_data_size` must be a multiple of :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`
+    - **Buffer size**: Ensure the `raw_data` buffer is large enough to hold `raw_data_size` bytes of data
+
+.. code:: c
+
+    // Read raw data
+    uint32_t ret_num = 0;
+    esp_err_t ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
+    if (ret == ESP_OK) {
+        // Parse raw data
+        adc_continuous_data_t parsed_data[ret_num / SOC_ADC_DIGI_RESULT_BYTES];
+        uint32_t num_parsed_samples = 0;
+
+        esp_err_t parse_ret = adc_continuous_parse_data(handle, result, ret_num, parsed_data, &num_parsed_samples);
+        if (parse_ret == ESP_OK) {
+            for (int i = 0; i < num_parsed_samples; i++) {
+                if (parsed_data[i].valid) {
+                    ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                             parsed_data[i].unit + 1,
+                             parsed_data[i].channel,
+                             parsed_data[i].raw_data);
+                }
+            }
+        }
+    }
+
+The parsed data structure :cpp:type:`adc_continuous_data_t` contains the following information:
+
+- :cpp:member:`adc_continuous_data_t::unit`：ADC unit (ADC_UNIT_1 or ADC_UNIT_2)
+- :cpp:member:`adc_continuous_data_t::channel`：ADC channel number (0-9)
+- :cpp:member:`adc_continuous_data_t::raw_data`：ADC raw data value (0-4095, 12-bit resolution)
+- :cpp:member:`adc_continuous_data_t::valid`：Whether the data is valid
+
+Read and Parse ADC Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To simplify the usage flow, the function :cpp:func:`adc_continuous_read_parse` is provided, which merges the read and parse operations into a single function call.
+
+.. code:: c
+
+    // Using the read and parse function
+    adc_continuous_data_t parsed_data[64];  // User specifies maximum number of samples
+    uint32_t num_samples = 0;
+
+    esp_err_t ret = adc_continuous_read_parse(handle, parsed_data, 64, &num_samples, 1000);
+    if (ret == ESP_OK) {
+        for (int i = 0; i < num_samples; i++) {
+            if (parsed_data[i].valid) {
+                ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
+                         parsed_data[i].unit + 1,
+                         parsed_data[i].channel,
+                         parsed_data[i].raw_data);
+            }
+        }
+    }
 
 .. _adc-continuous-hardware-limitations:
 

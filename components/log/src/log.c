@@ -83,7 +83,7 @@ void __attribute__((optimize("-O3"))) esp_log(esp_log_config_t config, const cha
 #else // ESP_LOG_VERSION == 2
     if (is_level_loggable(config)) {
 #endif
-        va_list args;
+        va_list args = {0};
         va_start(args, format);
         esp_log_va(config, tag, format, args);
         va_end(args);

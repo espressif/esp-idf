@@ -13,15 +13,17 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     clk_utils (noflash)
-    if PM_SLP_IRAM_OPT = y:
-        rtc_clk (noflash)
-        rtc_time (noflash_text)
+    # TODO: PM-630
+    if IDF_TARGET_ESP32S31 != y:
         esp_clk_tree: esp_clk_tree_enable_src (noflash)
         esp_clk_tree: esp_clk_tree_enable_power (noflash)
         esp_clk_tree: esp_clk_tree_is_power_on (noflash)
+    if RTC_CLK_FUNC_IN_IRAM = y:
+        rtc_clk (noflash)
     if IDF_TARGET_ESP32 = y:
         rtc_clk:rtc_clk_cpu_freq_to_pll_mhz (noflash)
-        rtc_clk:rtc_clk_cpu_freq_to_xtal (noflash)
+    if RTC_TIME_FUNC_IN_IRAM = y:
+        rtc_time (noflash_text)
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
@@ -37,13 +39,17 @@ entries:
         rtc_sleep:rtc_sleep_pu (noflash)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
         pmu_sleep (noflash)
+        sleep_mspi (noflash)
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
             pmu_param (noflash)
         elif PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
-            pmu_param:get_act_hp_dbias (noflash)
             pmu_param:get_act_lp_dbias (noflash)
-    if SOC_PMU_PVT_SUPPORTED = y:
+            if IDF_TARGET_ESP32H4 = y:
+                pmu_param:get_act_hp_drvb (noflash)
+            else:
+                pmu_param:get_act_hp_dbias (noflash)
+    if SOC_PMU_PVT_SUPPORTED = y && ESP_ENABLE_PVT = y:
         pmu_pvt (noflash)
     if PM_SLP_IRAM_OPT = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
@@ -82,10 +88,19 @@ entries:
         sleep_modes: esp_sleep_sub_mode_config (noflash)
         sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
 
+[mapping:hal_gpio_pm]
+archive: libesp_hal_gpio.a
+entries:
+    gpio_hal: gpio_hal_isolate_in_sleep (noflash)
+
 [mapping:soc_pm]
 archive: libsoc.a
 entries:
     if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND:
         gpio_periph: GPIO_HOLD_MASK (noflash)
+
+[mapping:hal_tsens_pm]
+archive: libesp_hal_ana_conv.a
+entries:
     if PM_SLP_IRAM_OPT = y && SOC_TEMP_SENSOR_SUPPORTED = y:
         temperature_sensor_periph:temperature_sensor_attributes (noflash)

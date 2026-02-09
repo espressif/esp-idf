@@ -1,0 +1,8 @@
+menu "AVRCP Cover Art Example Configuration"
+    config EXAMPLE_LCD_FLUSH_PARALLEL_LINES
+        int "LCD flush parallel lines"
+        default 16
+        help
+            To speed up transfers, every SPI transfer sends a bunch of lines.
+
+endmenu

@@ -19,7 +19,6 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
-#include "soc/rtc_periph.h"
 #include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_ll.h"
@@ -37,6 +36,7 @@ void esp_system_reset_modules_on_exit(void)
     }
 
     // Set Peripheral clk rst
+    SET_PERI_REG_MASK(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN); // Must reset mspi AXI before reset mspi core.
     SET_PERI_REG_MASK(PCR_MSPI_CONF_REG, PCR_MSPI_RST_EN);
     SET_PERI_REG_MASK(PCR_UART0_CONF_REG, PCR_UART0_RST_EN);
     SET_PERI_REG_MASK(PCR_UART1_CONF_REG, PCR_UART1_RST_EN);
@@ -45,9 +45,13 @@ void esp_system_reset_modules_on_exit(void)
     SET_PERI_REG_MASK(PCR_MODEM_CONF_REG, PCR_MODEM_RST_EN);
     SET_PERI_REG_MASK(PCR_PWM0_CONF_REG, PCR_PWM0_RST_EN);
     SET_PERI_REG_MASK(PCR_PWM1_CONF_REG, PCR_PWM1_RST_EN);
+    //ETM may directly control the GPIO or other peripherals even after CPU reset. Reset to stop these control.
+    SET_PERI_REG_MASK(PCR_ETM_CONF_REG, PCR_ETM_RST_EN);
+    SET_PERI_REG_MASK(PCR_REGDMA_CONF_REG, PCR_REGDMA_RST_EN);
 
     // Clear Peripheral clk rst
     CLEAR_PERI_REG_MASK(PCR_MSPI_CONF_REG, PCR_MSPI_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN); // Must release mspi core reset before mspi AXI.
     CLEAR_PERI_REG_MASK(PCR_UART0_CONF_REG, PCR_UART0_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_UART1_CONF_REG, PCR_UART1_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SYSTIMER_CONF_REG, PCR_SYSTIMER_RST_EN);
@@ -55,6 +59,8 @@ void esp_system_reset_modules_on_exit(void)
     CLEAR_PERI_REG_MASK(PCR_MODEM_CONF_REG, PCR_MODEM_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_PWM0_CONF_REG, PCR_PWM0_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_PWM1_CONF_REG, PCR_PWM1_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_ETM_CONF_REG, PCR_ETM_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_REGDMA_CONF_REG, PCR_REGDMA_RST_EN);
 
     // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
@@ -98,7 +104,7 @@ void esp_restart_noos(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     const uint32_t core_id = esp_cpu_get_core_id();
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);
     esp_cpu_stall(other_core_id);
@@ -125,15 +131,20 @@ void esp_restart_noos(void)
     rtc_clk_cpu_set_to_default_config();
 #endif
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    // clear entry point for APP CPU
+    ets_set_appcpu_boot_addr(0);
+#endif
+
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         esp_cpu_reset(1);
 #endif
         esp_cpu_reset(0);
     }
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU

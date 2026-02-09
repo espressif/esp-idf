@@ -1,0 +1,29 @@
+[mapping:esp_libc]
+archive: libesp_libc.a
+entries:
+  if LIBC_OPTIMIZED_MISALIGNED_ACCESS = y:
+      memcpy (noflash)
+      memmove (noflash)
+      memcmp (noflash)
+      strcpy  (noflash)
+      strncpy (noflash)
+      strcmp  (noflash)
+      strncmp (noflash)
+  # TODO IDF-15041: remove this block
+  if LIBC_PICOLIBC = y:
+      if SPIRAM_CACHE_WORKAROUND = y:
+          memcpy (noflash)
+          memset (noflash)
+      if SPIRAM_CACHE_LIBSTR_IN_IRAM = y:
+          strcpy  (noflash)
+          strncpy (noflash)
+  if LIBC_MISC_IN_IRAM = y:
+    if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
+      heap (noflash)
+    abort (noflash)
+    assert (noflash)
+    stdatomic (noflash)
+  if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
+    stdatomic_s32c1i (noflash)
+  if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
+    stdatomic_s32c1i (noflash)

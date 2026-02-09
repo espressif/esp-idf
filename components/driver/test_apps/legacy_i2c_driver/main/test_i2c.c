@@ -11,19 +11,18 @@
 #include "driver/i2c.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "soc/gpio_periph.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "esp_system.h"
 #include "soc/uart_struct.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_rom_gpio.h"
-#include "hal/gpio_hal.h"
+#include "hal/gpio_types.h"
 #include "hal/uart_ll.h"
 #include "hal/i2c_types.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "test_utils.h"
 #include "esp_private/gpio.h"
+#include "driver/gpio.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
@@ -679,8 +678,8 @@ static void uart_aut_baud_det_init(int rxd_io_num)
     gpio_func_sel(rxd_io_num, PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
-    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
-    HP_UART_BUS_CLK_ATOMIC() {
+    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_PERIPH_SIGNAL_RX), 0);
+    PERIPH_RCC_ATOMIC() {
         uart_ll_enable_bus_clock(1, true);
         uart_ll_reset_register(1);
     }
@@ -715,7 +714,7 @@ static void i2c_scl_freq_cal(void)
 
     printf("\nSCL high period %.3f (us), SCL low_period %.3f (us)\n\n", (float)(i2c_cource_clk_period * high_period_cnt), (float)(i2c_cource_clk_period * low_period_cnt));
     uart_ll_set_autobaud_en(&UART1, false);
-    HP_UART_BUS_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_enable_bus_clock(1, false);
     }
 }

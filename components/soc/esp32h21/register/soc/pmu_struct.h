@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -960,6 +960,17 @@ typedef union
     uint32_t val;
 } pmu_dcm_ctrl_reg_t;
 
+typedef union {
+    struct {
+        uint32_t reserved0            :24;
+        uint32_t dcdc_boost_ccm_ctrlen:1;
+        uint32_t dcdc_boost_ccm_enb   :1;
+        uint32_t dcdc_boost_en        :1;
+        uint32_t dcdc_boost_dreg      :5;
+    };
+    uint32_t val;
+} pmu_dcm_boost_ctrl_reg_t;
+
 typedef union
 {
     struct
@@ -972,6 +983,15 @@ typedef union
     };
     volatile uint32_t val;
 } pmu_touch_pwr_ctrl_reg_t;
+
+typedef union {
+    struct {
+        uint32_t reserved0      :23;
+        uint32_t ext_ocode      :8;
+        uint32_t ext_force_ocode:1;
+    };
+    uint32_t val;
+} pmu_ble_bandgap_ctrl_reg_t;
 
 typedef struct pmu_dev_t
 {
@@ -993,9 +1013,11 @@ typedef struct pmu_dev_t
     volatile pmu_clk_state2_reg_t       clk_state2;
 
     volatile pmu_dcm_ctrl_reg_t         dcm_ctrl;
+    volatile pmu_dcm_boost_ctrl_reg_t   dcm_boost_ctrl;
     volatile pmu_touch_pwr_ctrl_reg_t   touch_pwr_ctrl;
+    volatile pmu_ble_bandgap_ctrl_reg_t ble_bandgap_ctrl;
 
-    uint32_t reserved[143];
+    uint32_t reserved[141];
 
     union
     {
@@ -1013,7 +1035,7 @@ extern pmu_dev_t PMU;
 #ifndef __cplusplus
 _Static_assert(sizeof(pmu_dev_t) == 0x400, "Invalid size of pmu_dev_t structure");
 
-_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_TOUCH_PWR_CTRL_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure");
+_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_BLE_BANDGAP_CTRL_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure");
 #endif
 
 #ifdef __cplusplus

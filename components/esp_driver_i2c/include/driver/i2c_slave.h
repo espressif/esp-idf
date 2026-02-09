@@ -105,6 +105,22 @@ esp_err_t i2c_slave_register_event_callbacks(i2c_slave_dev_handle_t i2c_slave, c
  */
 esp_err_t i2c_del_slave_device(i2c_slave_dev_handle_t i2c_slave);
 
+#if !CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Reset the transmit (TX) FIFO of the I2C slave device
+ *
+ * This function clears the TX RingBuffer and resets the hardware TX FIFO for the specified I2C slave device.
+ * It is useful when you need to discard all pending data to be sent and restore the TX state.
+ *
+ * @param[in] i2c_slave I2C slave device handle created by `i2c_new_slave_device`.
+ * @return
+ *      - ESP_OK: Reset successfully.
+ *      - ESP_ERR_INVALID_ARG: Invalid argument.
+ *      - ESP_ERR_INVALID_STATE: If the TX buffer is not properly initialized.
+ */
+esp_err_t i2c_slave_reset_tx_fifo(i2c_slave_dev_handle_t i2c_slave);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

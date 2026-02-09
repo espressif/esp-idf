@@ -1,11 +1,11 @@
-{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash", esp32p4="silicon revision v0.0, 2 MB external flash", esp32c5="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v1.0, 2 MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash", esp32p4="silicon revision v0.0, 2 MB external flash", esp32c5="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v1.0, 2 MB external flash", esp32c61="WiFi/BLE, silicon revision v1.0, 2 MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256", esp32p4="618848", esp32c5="348724"}
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256", esp32p4="618848", esp32c5="348724", esp32c61="272868"}
 
-编译工程
+编译项目
 =========================
 
-请使用以下命令，编译烧录工程：
+请使用以下命令，编译烧录项目：
 
 .. code-block:: batch
 
@@ -27,11 +27,14 @@
     ... (more lines of build system output)
 
     [527/527] Generating hello_world.bin
-    esptool.py v2.3.1
+    esptool v5.0.2
 
-    Project build complete. To flash, run this command:
-    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
-    or run 'idf.py -p PORT flash'
+    Project build complete. To flash, run:
+      idf.py flash
+    or
+      idf.py -p PORT flash
+    or
+      esptool -p (PORT) -b 921600 write-flash --flash-mode dio --flash-size detect --flash-freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
 
 如果一切正常，编译完成后将生成 .bin 文件。
 
@@ -51,7 +54,7 @@
 
 .. note::
 
-    勾选 ``flash`` 选项将自动编译并烧录工程，因此无需再运行 ``idf.py build``。
+    勾选 ``flash`` 选项将自动编译并烧录项目，因此无需再运行 ``idf.py build``。
 
 若在烧录过程中遇到问题，请参考下文中的“其他提示”。也可以前往 :doc:`flashing-troubleshooting` 或 :doc:`establish-serial-connection` 获取更多详细信息。
 
@@ -70,7 +73,7 @@
 监视输出
 ===============
 
-可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 工程的运行情况。注意，不要忘记将 PORT 替换为自己的串口名称。
+可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 项目的运行情况。注意，不要忘记将 PORT 替换为自己的串口名称。
 
 运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动。
 
@@ -160,7 +163,7 @@
 兼容的 Python 版本
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF 支持 Python 3.9 及以上版本，建议升级操作系统到最新版本从而更新 Python。也可选择从 `sources <https://www.python.org/downloads/>`_ 安装最新版 Python，或使用 Python 管理系统如 `pyenv <https://github.com/pyenv/pyenv>`_ 对版本进行升级管理。
+ESP-IDF 支持 Python 3.10 及以上版本，建议升级操作系统到最新版本从而更新 Python。也可选择从 `源码 <https://www.python.org/downloads/>`_ 安装最新版 Python，或使用 Python 管理系统如 `pyenv <https://github.com/pyenv/pyenv>`_ 对版本进行升级管理。
 
 .. only:: esp32 or esp32s2 or esp32s3
 
@@ -219,3 +222,17 @@ ESP-IDF 支持擦除 flash。请运行以下命令，擦除整个 flash：
     idf.py -p PORT erase-otadata
 
 擦除 flash 需要一段时间，在擦除过程中，请勿断开设备连接。
+
+
+相关文档
+========
+
+* :doc:`establish-serial-connection`
+* :doc:`../api-guides/tools/idf-monitor`
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+
+    establish-serial-connection
+    flashing-troubleshooting

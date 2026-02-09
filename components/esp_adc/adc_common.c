@@ -16,7 +16,7 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "hal/adc_ll.h"
 
 static const char *TAG = "adc_common";

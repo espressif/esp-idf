@@ -36,8 +36,35 @@
 配置 USB 驱动程序
 ^^^^^^^^^^^^^^^^^
 
-JTAG 通信在所有支持的平台上都可工作。Windows 用户可能会遇到 `LIBUSB_ERROR_NOT_FOUND` 错误。请使用 2.8 版本（或更新版本）的 :ref:`get-started-windows-tools-installer`，并选择驱动程序 “Espressif - WinUSB 支持 JTAG (ESP32-C3/S3)” 以解决此问题。如果您不想重新运行安装程序，则可以通过 `idf-env <https://github.com/espressif/idf-env>`_ 实现相同的效果。请在 PowerShell 运行以下命令::
+JTAG 通信在所有支持的平台上都可工作。Windows 和 Linux 需要额外步骤，具体请参考以下说明。
 
-    Invoke-WebRequest 'https://dl.espressif.com/dl/idf-env/idf-env.exe' -OutFile .\idf-env.exe; .\idf-env.exe driver install --espressif
+Windows
+"""""""
+
+Windows 用户可能会遇到 `LIBUSB_ERROR_NOT_FOUND` 错误，可使用以下任意方法安装驱动程序以解决此问题：
+
+- 在 :doc:`ESP-IDF 安装管理器 (EIM) <../../get-started/windows-setup>` 图形用户界面 (GUI) ，点击 ``管理安装`` 下方的 ``打开管理面板``，之后点击 ``安装驱动程序``：
+
+    .. figure:: ../../../_static/jtag-debugging-install-usb-drivers-eim-zh.png
+      :align: center
+      :alt: 在 EIM GUI 中安装驱动程序
+      :figclass: align-center
+
+      在 EIM GUI 中安装驱动程序
+
+- 在 PowerShell 运行以下命令，通过 EIM 命令行安装驱动程序：
+
+    .. code-block:: bash
+
+      eim install-drivers
+
+- 在 PowerShell 运行以下命令，通过 `idf-env <https://github.com/espressif/idf-env>`_ 安装驱动程序：
+
+    .. code-block:: bash
+
+      Invoke-WebRequest 'https://dl.espressif.com/dl/idf-env/idf-env.exe' -OutFile .\idf-env.exe; .\idf-env.exe driver install --espressif
+
+Linux
+"""""
 
 在 Linux 上，需要添加 OpenOCD udev 规则。方法是将以下 `udev 规则文件 <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ 放置在 ``/etc/udev/rules.d`` 文件夹中。

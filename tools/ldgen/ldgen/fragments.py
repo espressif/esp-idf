@@ -1,34 +1,28 @@
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
-from typing import Union
 
-from pyparsing import alphanums
-from pyparsing import alphas
 from pyparsing import Combine
-from pyparsing import delimited_list
+from pyparsing import DelimitedList
 from pyparsing import Forward
 from pyparsing import Group
 from pyparsing import IndentedBlock
 from pyparsing import Keyword
 from pyparsing import LineEnd
 from pyparsing import Literal
-from pyparsing import nums
 from pyparsing import OneOrMore
 from pyparsing import Opt
 from pyparsing import ParseFatalException
-from pyparsing import rest_of_line
 from pyparsing import SkipTo
 from pyparsing import Suppress
 from pyparsing import Word
 from pyparsing import ZeroOrMore
+from pyparsing import alphanums
+from pyparsing import alphas
+from pyparsing import nums
+from pyparsing import rest_of_line
 
 
 class Empty:
@@ -47,10 +41,11 @@ class Fragment:
     """
     Base class for a fragment that can be parsed from a fragment file.
     """
+
     IDENTIFIER = Word(alphas + '_', alphanums + '_')
     ENTITY = Word(alphanums + '.-_$+')
 
-    def __init__(self, name: str, entries: Set[Union[str, Tuple[str]]]):
+    def __init__(self, name: str, entries: set[str | tuple[str]]):
         self.name = name
         self.entries = entries
         self.path = ''
@@ -69,6 +64,7 @@ class Sections(Fragment):
         .section2
         ...
     """
+
     # Unless quoted, symbol names start with a letter, underscore, or point
     # and may include any letters, underscores, digits, points, and hyphens.
     ENTRY = Combine(Word(alphas + '_.', alphanums + '._-') + Opt('+')) + LineEnd().suppress()
@@ -86,7 +82,7 @@ class Sections(Fragment):
         entries = {entry for entry in this[1] if entry}
 
         if not entries:
-            raise ParseFatalException(s, loc, 'Sections entries shouldn\'t be empty')
+            raise ParseFatalException(s, loc, "Sections entries shouldn't be empty")
 
         return Sections(name, entries)
 
@@ -121,6 +117,7 @@ class Scheme(Fragment):
         sections1 -> target1
         ...
     """
+
     ENTRY = Fragment.IDENTIFIER + Suppress('->') + Fragment.IDENTIFIER + LineEnd().suppress()
 
     @staticmethod
@@ -136,7 +133,7 @@ class Scheme(Fragment):
         entries = {entry for entry in this[1] if entry}
 
         if not entries:
-            raise ParseFatalException(s, loc, 'Scheme entries shouldn\'t be empty')
+            raise ParseFatalException(s, loc, "Scheme entries shouldn't be empty")
 
         return Scheme(name, entries)
 
@@ -153,10 +150,8 @@ class Surround(EntryFlag):
     '__symbol_start', '__symbol_end' is generated before and after
     the corresponding input section description, respectively.
     """
-    SURROUND = (Keyword('SURROUND').suppress()
-                + Suppress('(')
-                + Fragment.IDENTIFIER
-                + Suppress(')'))
+
+    SURROUND = Keyword('SURROUND').suppress() + Suppress('(') + Fragment.IDENTIFIER + Suppress(')')
 
     def __init__(self, symbol: str):
         self.symbol = symbol
@@ -183,15 +178,11 @@ class Align(EntryFlag):
     input section description, depending on whether pre, post or
     both are specified.
     """
+
     PRE = Opt(Suppress(',') + Suppress('pre')).set_results_name('pre')
     POST = Opt(Suppress(',') + Suppress('post')).set_results_name('post')
 
-    ALIGN = (Keyword('ALIGN').suppress()
-             + Suppress('(')
-             + Word(nums)
-             + PRE
-             + POST
-             + Suppress(')'))
+    ALIGN = Keyword('ALIGN').suppress() + Suppress('(') + Word(nums) + PRE + POST + Suppress(')')
 
     def __init__(self, alignment, pre=True, post=False):
         self.alignment = alignment
@@ -223,6 +214,7 @@ class Keep(EntryFlag):
 
     Surrounds input section description with KEEP command.
     """
+
     KEEP = Keyword('KEEP()')
 
     def __eq__(self, other):
@@ -245,14 +237,16 @@ class Sort(EntryFlag):
     Emits SORT_BY_NAME, SORT_BY_ALIGNMENT or SORT_BY_INIT_PRIORITY
     depending on arguments. Nested sort follows linker script rules.
     """
-    _keywords = Keyword('name') | Keyword('alignment') | Keyword('init_priority')
-    SORT = (Keyword('SORT').suppress()
-            + Suppress('(')
-            + Opt(_keywords.set_results_name('first')
-            + Opt(Suppress(',') + _keywords.set_results_name('second')))
-            + Suppress(')'))
 
-    def __init__(self, first: Optional[str] = None, second: Optional[str] = None):
+    _keywords = Keyword('name') | Keyword('alignment') | Keyword('init_priority')
+    SORT = (
+        Keyword('SORT').suppress()
+        + Suppress('(')
+        + Opt(_keywords.set_results_name('first') + Opt(Suppress(',') + _keywords.set_results_name('second')))
+        + Suppress(')')
+    )
+
+    def __init__(self, first: str | None = None, second: str | None = None):
         self.first = first
         self.second = second
 
@@ -270,14 +264,16 @@ class Sort(EntryFlag):
 
 class Flag:
     _section_target = Fragment.IDENTIFIER + Suppress('->') + Fragment.IDENTIFIER
-    _flag = (Surround.SURROUND.set_parse_action(Surround.parse)
-             | Align.ALIGN.set_parse_action(Align.parse)
-             | Keep.KEEP.set_parse_action(Keep.parse)
-             | Sort.SORT.set_parse_action(Sort.parse))
+    _flag = (
+        Surround.SURROUND.set_parse_action(Surround.parse)
+        | Align.ALIGN.set_parse_action(Align.parse)
+        | Keep.KEEP.set_parse_action(Keep.parse)
+        | Sort.SORT.set_parse_action(Sort.parse)
+    )
 
     FLAG = _section_target + OneOrMore(_flag)
 
-    def __init__(self, section: str, target: str, flags: List[EntryFlag]):
+    def __init__(self, section: str, target: str, flags: list[EntryFlag]):
         self.section = section
         self.target = target
         self.flags = flags
@@ -330,10 +326,12 @@ class Mapping(Fragment):
     #       obj:symbol (scheme)
     #       obj (scheme)
     #       * (scheme)
-    _entry = (((_obj + Opt(Suppress(':') + _sym)) | _any.set_results_name('object'))
-              + Suppress('(')
-              + Fragment.IDENTIFIER.set_results_name('section')
-              + Suppress(')'))
+    _entry = (
+        ((_obj + Opt(Suppress(':') + _sym)) | _any.set_results_name('object'))
+        + Suppress('(')
+        + Fragment.IDENTIFIER.set_results_name('section')
+        + Suppress(')')
+    )
 
     ENTRY = _entry + LineEnd().suppress()
     ARCHIVE = (Word(alphanums + '.-_$+') | Literal('*')) + LineEnd().suppress()
@@ -342,10 +340,9 @@ class Mapping(Fragment):
     #       obj (scheme);
     #           section->target SURROUND(symbol),
     #           section2->target2 ALIGN(4)
-    ENTRY_WITH_FLAG = (_entry + Suppress(';')
-                       + delimited_list(Flag.FLAG.set_parse_action(Flag.parse)))
+    ENTRY_WITH_FLAG = _entry + Suppress(';') + DelimitedList(Flag.FLAG.set_parse_action(Flag.parse))
 
-    def __init__(self, archive: str, flags: Dict[Any, Flag], *args, **kwargs):
+    def __init__(self, archive: str, flags: dict[Any, Flag], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.archive = archive
         self.flags = flags
@@ -365,9 +362,7 @@ class Mapping(Fragment):
     @staticmethod
     def parse_entry_with_flag(toks):
         entry = toks.object, toks.symbol or None, toks.section
-        return {
-            entry: [tok for tok in toks if isinstance(tok, Flag)]
-        }
+        return {entry: [tok for tok in toks if isinstance(tok, Flag)]}
 
     @staticmethod
     def parse_entries(toks):
@@ -406,9 +401,9 @@ class FragmentFile:
     see description of Fragment.
     """
 
-    def __init__(self, fragments: List[Fragment]):
+    def __init__(self, fragments: list[Fragment]):
         self.path = None  # assign later, couldn't pass extra argument while parsing
-        self.fragments: List[Fragment] = fragments
+        self.fragments: list[Fragment] = fragments
 
     def __repr__(self):
         return str(self.__dict__)
@@ -441,32 +436,26 @@ def parse_fragment_file(path, sdkconfig):
     def get_suite(_stmt):
         __stmt = Forward()
         __conditional = get_conditional_stmt(__stmt)
-        __stmt <<= (comment
-                    | _stmt
-                    | __conditional)
+        __stmt <<= comment | _stmt | __conditional
         return IndentedBlock(__stmt)
 
     def parse(toks):
         return FragmentFile([tok for tok in toks if not isinstance(tok, Empty)])
 
     # comment
-    comment = (Literal('#') + rest_of_line).set_parse_action(lambda s, l, t: Empty())
+    comment = (Literal('#') + rest_of_line).set_parse_action(lambda s, loc, toks: Empty())
 
     # section
     section_entry = Sections.ENTRY.set_parse_action(Sections.parse_entry)
     section_entries_suite = get_suite(section_entry)
     section_header = Suppress('[sections:') + Fragment.IDENTIFIER + Suppress(']') + LineEnd().suppress()
-    section = Group(section_header
-                    + Suppress('entries:')
-                    + section_entries_suite).set_parse_action(Sections.parse)
+    section = Group(section_header + Suppress('entries:') + section_entries_suite).set_parse_action(Sections.parse)
 
     # scheme
     scheme_entry = Scheme.ENTRY.set_parse_action(Scheme.parse_entry)
     scheme_entries_suite = get_suite(scheme_entry)
     scheme_header = Suppress('[scheme:') + Fragment.IDENTIFIER + Suppress(']') + LineEnd().suppress()
-    scheme = Group(scheme_header
-                   + Suppress('entries:')
-                   + scheme_entries_suite).set_parse_action(Scheme.parse)
+    scheme = Group(scheme_header + Suppress('entries:') + scheme_entries_suite).set_parse_action(Scheme.parse)
     # mapping
     mapping_archive = Mapping.ARCHIVE
     mapping_archive_suite = get_suite(mapping_archive)
@@ -476,18 +465,14 @@ def parse_fragment_file(path, sdkconfig):
     mapping_entries_suite = get_suite(mapping_entry | mapping_entry_with_flag)
 
     mapping_header = Suppress('[mapping:') + Fragment.IDENTIFIER + Suppress(']')
-    mapping = Group(mapping_header
-                    + Group(Suppress('archive:')
-                            + mapping_archive_suite).set_parse_action(Mapping.parse_archive)
-                    + Group(Suppress('entries:')
-                            + mapping_entries_suite).set_parse_action(Mapping.parse_entries)
-                    ).set_parse_action(Mapping.parse)
+    mapping = Group(
+        mapping_header
+        + Group(Suppress('archive:') + mapping_archive_suite).set_parse_action(Mapping.parse_archive)
+        + Group(Suppress('entries:') + mapping_entries_suite).set_parse_action(Mapping.parse_entries)
+    ).set_parse_action(Mapping.parse)
 
     # highest level
-    fragment = (section
-                | scheme
-                | mapping
-                | get_conditional_stmt(section | scheme | mapping))
+    fragment = section | scheme | mapping | get_conditional_stmt(section | scheme | mapping)
     parser = ZeroOrMore(fragment).ignore(comment).set_parse_action(parse)
     fragment_file = parser.parse_file(path, parse_all=True)[0]
     fragment_file.path = path

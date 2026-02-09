@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,6 +126,16 @@ void phy_track_pll_deinit(void)
 }
 #endif
 
+static const char *phy_get_modem_str(esp_phy_modem_t modem)
+{
+    switch (modem) {
+        case PHY_MODEM_WIFI: return "Wi-Fi";
+        case PHY_MODEM_BT: return "Bluetooth";
+        case PHY_MODEM_IEEE802154: return "IEEE 802.15.4";
+        default: return "";
+    }
+}
+
 void phy_set_modem_flag(esp_phy_modem_t modem)
 {
     s_phy_modem_flag |= modem;
@@ -133,6 +143,9 @@ void phy_set_modem_flag(esp_phy_modem_t modem)
 
 void phy_clr_modem_flag(esp_phy_modem_t modem)
 {
+    if ((s_phy_modem_flag & modem) == 0) {
+        ESP_LOGW(TAG, "Clear the flag of %s before it's set", phy_get_modem_str(modem));
+    }
     s_phy_modem_flag &= ~modem;
 }
 
@@ -159,8 +172,8 @@ static void phy_ant_set_gpio_output(uint32_t io_num)
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << io_num);
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
 }
 

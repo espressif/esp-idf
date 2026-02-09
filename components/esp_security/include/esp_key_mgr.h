@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,8 @@ extern "C" {
 #define KEY_MGR_HUK_INFO_SIZE            HUK_INFO_LEN
 #define KEY_MGR_HUK_RISK_ALERT_LEVEL     HUK_RISK_ALERT_LEVEL
 
+#define KEY_MGR_KEY_INFO_SIZE            KEY_INFO_LEN
+
 /* AES deploy mode */
 #define KEY_MGR_K2_INFO_SIZE             64
 #define KEY_MGR_K1_ENCRYPTED_SIZE        32
@@ -33,6 +35,7 @@ extern "C" {
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     bool use_pre_generated_huk_info;
     bool use_pre_generated_sw_init_key;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
@@ -43,6 +46,7 @@ typedef struct {
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     bool use_pre_generated_huk_info;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
     WORD_ALIGNED_ATTR uint8_t k1_G[2][KEY_MGR_ECDH0_INFO_SIZE];
@@ -50,21 +54,30 @@ typedef struct {
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     bool use_pre_generated_huk_info;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
 } esp_key_mgr_random_key_config_t;
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     WORD_ALIGNED_ATTR uint8_t k2_G[2][KEY_MGR_ECDH0_INFO_SIZE];
 } esp_key_mgr_ecdh0_info_t;
+
+/**
+ * @brief Wait for the Key Manager to reach the given state
+ *
+ * @param state The state to wait for
+ */
+void key_mgr_wait_for_state(esp_key_mgr_state_t state);
 
 /**
  * @brief Deploy key in AES deployment mode
  * @input
  *      key_config(input)  AES key configuration
  *      key_info(output)   A writable struct of esp_key_mgr_key_info_t type.
- *                          The recovery information for the the deployed key shall be stored here
+ *                          The recovery information for the the deployed key shall be stored here (Make sure that the memory is valid during the deployment process).
  * @return
  *      ESP_OK for success
  *      ESP_FAIL/relevant error code for failure
@@ -75,7 +88,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
  * @brief Deploy key in ECDH0 deployment mode
  * @input
  *      key_config(input)  ECDH0 key configuration
- *      key_info(output)   A writable struct of esp_key_mgr_key_info_t type. The recovery key info for the deployed key shall be stored here
+ *      key_info(output)   A writable struct of esp_key_mgr_key_info_t type. The recovery key info for the deployed key shall be stored here (Make sure that the memory is valid during the deployment process).
  *      ecdh0_key_info     A writable struct of esp_key_mgr_ecdh0_info_t. The ecdh0 info to recover the actual key shall be stored here.
  * @return
  *      ESP_OK for success
@@ -87,7 +100,7 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
  * @brief Deploy key in Random deployment mode
  * @input
  *      key_config(input)  Random key configuration
- *      key_info(output)   A writable struct of esp_key_mgr_key_info_t type. The recovery key info for the deployed key shall be stored here
+ *      key_info(output)   A writable struct of esp_key_mgr_key_info_t type. The recovery key info for the deployed key shall be stored here (Make sure that the memory is valid during the deployment process).
  * @return
  *      ESP_OK for success
  *      ESP_FAIL/relevant error code for failure

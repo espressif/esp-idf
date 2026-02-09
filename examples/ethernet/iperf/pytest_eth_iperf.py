@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-from pytest_embedded_idf.utils import idf_parametrize
-
 """
 Test case for iperf example.
 
@@ -10,6 +8,7 @@ This test case might have problem running on Windows:
 - use `sudo killall iperf` to force kill iperf, didn't implement windows version
 
 """
+
 import os
 import subprocess
 
@@ -17,14 +16,22 @@ import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from idf_iperf_test_util import IperfUtility
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
-    from typing import Any, Callable, Tuple, Optional
+    from collections.abc import Callable
+    from typing import Any
 except ImportError:
     # Only used for type annotations
     pass
 
 NO_BANDWIDTH_LIMIT = -1  # iperf send bandwidth is not limited
+
+
+def get_ip_and_wait_prompt(dut: Dut) -> Any:
+    dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
+    dut.expect('iperf>')
+    return dut_ip
 
 
 class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
@@ -37,7 +44,7 @@ class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
             self, dut, config_name, 'None', 'None', pc_nic_ip, pc_iperf_log_file, test_result
         )
 
-    def setup(self) -> Tuple[str, int]:
+    def setup(self) -> tuple[str, int]:
         """
         setup iperf test:
 
@@ -49,20 +56,33 @@ class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
         except subprocess.CalledProcessError:
             pass
         self.dut.write('restart')
-        self.dut.expect("Type 'help' to get the list of commands.")
-        self.dut.expect('iperf>')
-        dut_ip = self.dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
+        dut_ip = get_ip_and_wait_prompt(self.dut)
         rssi = 0
         return dut_ip, rssi
+
+
+# Performance thresholds (Mbps)
+ETH_IPERF_THRESHOLDS = {
+    'tcp_tx_eth_throughput': 30,
+    'tcp_rx_eth_throughput': 20,
+    'udp_tx_eth_throughput': 70,
+    'udp_rx_eth_throughput': 50,
+}
+
+ETH_IPERF_THRESHOLDS_SPI_ETH = {
+    'tcp_tx_eth_throughput_spi_eth': 8,
+    'tcp_rx_eth_throughput_spi_eth': 6,
+    'udp_tx_eth_throughput_spi_eth': 10,
+    'udp_rx_eth_throughput_spi_eth': 8,
+}
 
 
 def test_esp_eth_iperf(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
-    udp_tx_bw_lim: Optional[int] = NO_BANDWIDTH_LIMIT,
-    udp_rx_bw_lim: Optional[int] = NO_BANDWIDTH_LIMIT,
-    spi_eth: Optional[bool] = False,
+    udp_tx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
+    udp_rx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
+    spi_eth: bool | None = False,
 ) -> None:
     """
     steps: |
@@ -70,12 +90,11 @@ def test_esp_eth_iperf(
       2. compare with the pre-defined pass standard
     """
 
-    # 1. wait for DUT
-    dut.expect_exact('iperf>')
+    # 1. wait for DUT to be ready
+    dut_ip = get_ip_and_wait_prompt(dut)
 
     # 2. preparing
     pc_iperf_log_file = os.path.join(dut.logdir, 'pc_iperf_log.md')
-    dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
     pc_nic_ip = get_host_ip4_by_dest_ip(dut_ip)
     test_result = {
         'tcp_tx': IperfUtility.TestResult('tcp', 'tx', 'ethernet'),
@@ -92,29 +111,30 @@ def test_esp_eth_iperf(
     test_utility.run_test('udp', 'rx', 0, udp_rx_bw_lim)
 
     # 4. log performance and compare with pass standard
+    thresholds = ETH_IPERF_THRESHOLDS_SPI_ETH if spi_eth else ETH_IPERF_THRESHOLDS
     for throughput_type in test_result:
+        throughput_value = test_result[throughput_type].get_best_throughput()
         log_performance(
-            '{}_throughput'.format(throughput_type),
-            '{:.02f} Mbps'.format(test_result[throughput_type].get_best_throughput()),
+            f'{throughput_type}_throughput',
+            f'{throughput_value:.02f} Mbps',
         )
 
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
         if spi_eth:
-            check_performance(
-                '{}_eth_throughput_spi_eth'.format(throughput_type),
-                test_result[throughput_type].get_best_throughput(),
-                dut.target,
-            )
+            threshold_key = f'{throughput_type}_eth_throughput_spi_eth'
         else:
-            check_performance(
-                '{}_eth_throughput'.format(throughput_type),
-                test_result[throughput_type].get_best_throughput(),
-                dut.target,
-            )
+            threshold_key = f'{throughput_type}_eth_throughput'
+        threshold_value = thresholds.get(threshold_key)
+        if threshold_value is None:
+            raise ValueError(f'No threshold defined for {threshold_key}')
+        throughput_value = test_result[throughput_type].get_best_throughput()
+        assert throughput_value >= threshold_value, (
+            f"[Performance] {threshold_key} value is {throughput_value}, doesn't meet pass standard {threshold_value}"
+        )
 
 
-@pytest.mark.ethernet_router
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [
@@ -126,26 +146,23 @@ def test_esp_eth_iperf(
 def test_esp_eth_iperf_ip101(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
+    test_esp_eth_iperf(dut, log_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        'default_ip101_esp32p4',
+        pytest.param('default_ip101_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default_ip101_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_esp_eth_iperf_ip101_esp32p4(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=96)
+    test_esp_eth_iperf(dut, log_performance, udp_tx_bw_lim=96)
 
 
 @pytest.mark.eth_lan8720
@@ -160,9 +177,8 @@ def test_esp_eth_iperf_ip101_esp32p4(
 def test_esp_eth_iperf_lan8720(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
+    test_esp_eth_iperf(dut, log_performance, udp_tx_bw_lim=90)
 
 
 @pytest.mark.eth_rtl8201
@@ -177,9 +193,8 @@ def test_esp_eth_iperf_lan8720(
 def test_esp_eth_iperf_rtl8201(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
+    test_esp_eth_iperf(dut, log_performance, udp_tx_bw_lim=90)
 
 
 @pytest.mark.eth_dp83848
@@ -194,9 +209,8 @@ def test_esp_eth_iperf_rtl8201(
 def test_esp_eth_iperf_dp83848(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
+    test_esp_eth_iperf(dut, log_performance, udp_tx_bw_lim=90)
 
 
 @pytest.mark.eth_ksz8041
@@ -211,9 +225,8 @@ def test_esp_eth_iperf_dp83848(
 def test_esp_eth_iperf_ksz8041(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
+    test_esp_eth_iperf(dut, log_performance, udp_tx_bw_lim=90)
 
 
 @pytest.mark.eth_dm9051
@@ -228,9 +241,8 @@ def test_esp_eth_iperf_ksz8041(
 def test_esp_eth_iperf_dm9051(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, spi_eth=True, udp_rx_bw_lim=10)
+    test_esp_eth_iperf(dut, log_performance, spi_eth=True, udp_rx_bw_lim=10)
 
 
 @pytest.mark.eth_w5500
@@ -245,9 +257,8 @@ def test_esp_eth_iperf_dm9051(
 def test_esp_eth_iperf_w5500(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, spi_eth=True, udp_rx_bw_lim=10)
+    test_esp_eth_iperf(dut, log_performance, spi_eth=True, udp_rx_bw_lim=10)
 
 
 @pytest.mark.eth_ksz8851snl
@@ -262,6 +273,5 @@ def test_esp_eth_iperf_w5500(
 def test_esp_eth_iperf_ksz8851snl(
     dut: Dut,
     log_performance: Callable[[str, object], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance, check_performance, spi_eth=True, udp_rx_bw_lim=10)
+    test_esp_eth_iperf(dut, log_performance, spi_eth=True, udp_rx_bw_lim=10)

@@ -95,12 +95,18 @@ static void transition_time_values(struct bt_mesh_state_transition *transition,
     transition->trans_time = trans_time;
     transition->delay = delay;
 
-    if (trans_time == 0U) {
+    if ((trans_time & 0x3F) == 0U) {
+        transition->counter = 0U;
+        transition->quo_tt = 0U;
         return;
     }
 
     tt_values_calculator(transition);
-    transition->quo_tt = transition->total_duration / transition->counter;
+    if (transition->counter) {
+        transition->quo_tt = transition->total_duration / transition->counter;
+    } else {
+        transition->quo_tt = 0;
+    }
 }
 
 static void transition_timer_start(struct bt_mesh_state_transition *transition)
@@ -127,16 +133,24 @@ void generic_level_tt_values(struct bt_mesh_gen_level_srv *srv,
                              uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_level =
-        ((float) (srv->state.level - srv->state.target_level) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_level =
+            ((float) (srv->state.level - srv->state.target_level) / srv->transition.counter);
+    } else {
+        srv->tt_delta_level = 0;
+    }
 }
 
 void generic_power_level_tt_values(struct bt_mesh_gen_power_level_srv *srv,
                                    uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_level =
-        ((float) (srv->state->power_actual - srv->state->target_power_actual) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_level =
+            ((float) (srv->state->power_actual - srv->state->target_power_actual) / srv->transition.counter);
+    } else {
+        srv->tt_delta_level = 0;
+    }
 }
 #endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
 
@@ -145,78 +159,117 @@ void light_lightness_actual_tt_values(struct bt_mesh_light_lightness_srv *srv,
                                       uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->actual_transition, trans_time, delay);
-    srv->tt_delta_lightness_actual =
-        ((float) (srv->state->lightness_actual - srv->state->target_lightness_actual) / srv->actual_transition.counter);
+    if (srv->actual_transition.counter) {
+        srv->tt_delta_lightness_actual =
+            ((float) (srv->state->lightness_actual - srv->state->target_lightness_actual) / srv->actual_transition.counter);
+    } else {
+        srv->tt_delta_lightness_actual = 0;
+    }
 }
 
 void light_lightness_linear_tt_values(struct bt_mesh_light_lightness_srv *srv,
                                       uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->linear_transition, trans_time, delay);
-    srv->tt_delta_lightness_linear =
-        ((float) (srv->state->lightness_linear - srv->state->target_lightness_linear) / srv->linear_transition.counter);
+    if (srv->linear_transition.counter) {
+        srv->tt_delta_lightness_linear =
+            ((float) (srv->state->lightness_linear - srv->state->target_lightness_linear) / srv->linear_transition.counter);
+    } else {
+        srv->tt_delta_lightness_linear = 0;
+    }
 }
 
 void light_ctl_tt_values(struct bt_mesh_light_ctl_srv *srv,
                          uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_lightness =
-        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
-    srv->tt_delta_temperature =
-        ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
-    srv->tt_delta_delta_uv =
-        ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_lightness =
+            ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
+        srv->tt_delta_temperature =
+            ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
+        srv->tt_delta_delta_uv =
+            ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
+    } else {
+        srv->tt_delta_lightness = 0;
+        srv->tt_delta_temperature = 0;
+        srv->tt_delta_delta_uv = 0;
+    }
 }
 
 void light_ctl_temp_tt_values(struct bt_mesh_light_ctl_temp_srv *srv,
                               uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_temperature =
-        ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
-    srv->tt_delta_delta_uv =
-        ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_temperature =
+            ((float) (srv->state->temperature - srv->state->target_temperature) / srv->transition.counter);
+        srv->tt_delta_delta_uv =
+            ((float) (srv->state->delta_uv - srv->state->target_delta_uv) / srv->transition.counter);
+    } else {
+        srv->tt_delta_temperature = 0;
+        srv->tt_delta_delta_uv = 0;
+    }
 }
 
 void light_hsl_tt_values(struct bt_mesh_light_hsl_srv *srv,
                          uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_lightness =
-        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
-    srv->tt_delta_hue =
-        ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
-    srv->tt_delta_saturation =
-        ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_lightness =
+            ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
+        srv->tt_delta_hue =
+            ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
+        srv->tt_delta_saturation =
+            ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
+    } else {
+        srv->tt_delta_lightness = 0;
+        srv->tt_delta_hue = 0;
+        srv->tt_delta_saturation = 0;
+    }
 }
 
 void light_hsl_hue_tt_values(struct bt_mesh_light_hsl_hue_srv *srv,
                              uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_hue =
-        ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_hue =
+            ((float) (srv->state->hue - srv->state->target_hue) / srv->transition.counter);
+    } else {
+        srv->tt_delta_hue = 0;
+    }
 }
 
 void light_hsl_sat_tt_values(struct bt_mesh_light_hsl_sat_srv *srv,
                              uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_saturation =
-        ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_saturation =
+            ((float) (srv->state->saturation - srv->state->target_saturation) / srv->transition.counter);
+    } else {
+        srv->tt_delta_saturation = 0;
+    }
 }
 
 void light_xyl_tt_values(struct bt_mesh_light_xyl_srv *srv,
                          uint8_t trans_time, uint8_t delay)
 {
     transition_time_values(&srv->transition, trans_time, delay);
-    srv->tt_delta_lightness =
-        ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
-    srv->tt_delta_x =
-        ((float) (srv->state->x - srv->state->target_x) / srv->transition.counter);
-    srv->tt_delta_y =
-        ((float) (srv->state->y - srv->state->target_y) / srv->transition.counter);
+    if (srv->transition.counter) {
+        srv->tt_delta_lightness =
+            ((float) (srv->state->lightness - srv->state->target_lightness) / srv->transition.counter);
+        srv->tt_delta_x =
+            ((float) (srv->state->x - srv->state->target_x) / srv->transition.counter);
+        srv->tt_delta_y =
+            ((float) (srv->state->y - srv->state->target_y) / srv->transition.counter);
+    } else {
+        srv->tt_delta_lightness = 0;
+        srv->tt_delta_x = 0;
+        srv->tt_delta_y = 0;
+    }
 }
 
 void light_lc_tt_values(struct bt_mesh_light_lc_srv *srv,

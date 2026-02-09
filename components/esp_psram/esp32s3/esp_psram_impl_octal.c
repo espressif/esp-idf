@@ -18,6 +18,7 @@
 #include "esp32s3/rom/cache.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
+#include "soc/spi_pins.h"
 #include "soc/syscon_reg.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/mspi_timing_tuning.h"

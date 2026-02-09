@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,21 +21,21 @@ uint32_t touch_data = 0;
 #define TOUCH_PAD_THRESHOLD 1000U
 #define TOUCH_BUTTON_NUM    14U
 
-static const touch_pad_t button[TOUCH_BUTTON_NUM] = {
-    TOUCH_PAD_NUM1,
-    TOUCH_PAD_NUM2,
-    TOUCH_PAD_NUM3,
-    TOUCH_PAD_NUM4,
-    TOUCH_PAD_NUM5,
-    TOUCH_PAD_NUM6,
-    TOUCH_PAD_NUM7,
-    TOUCH_PAD_NUM8,
-    TOUCH_PAD_NUM9,
-    TOUCH_PAD_NUM10,
-    TOUCH_PAD_NUM11,
-    TOUCH_PAD_NUM12,
-    TOUCH_PAD_NUM13,
-    TOUCH_PAD_NUM14
+static const int button[TOUCH_BUTTON_NUM] = {
+    TOUCH_MIN_CHAN_ID,
+    TOUCH_MIN_CHAN_ID + 1,
+    TOUCH_MIN_CHAN_ID + 2,
+    TOUCH_MIN_CHAN_ID + 3,
+    TOUCH_MIN_CHAN_ID + 4,
+    TOUCH_MIN_CHAN_ID + 5,
+    TOUCH_MIN_CHAN_ID + 6,
+    TOUCH_MIN_CHAN_ID + 7,
+    TOUCH_MIN_CHAN_ID + 8,
+    TOUCH_MIN_CHAN_ID + 9,
+    TOUCH_MIN_CHAN_ID + 10,
+    TOUCH_MIN_CHAN_ID + 11,
+    TOUCH_MIN_CHAN_ID + 12,
+    TOUCH_MIN_CHAN_ID + 13,
 };
 
 int main (void)

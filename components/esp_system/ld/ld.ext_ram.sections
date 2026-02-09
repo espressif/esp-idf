@@ -1,0 +1,43 @@
+#include "sdkconfig.h"
+#include "ld.common"
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY || CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+  /**
+   * Dummy section to skip flash rodata sections in case `ext_ram_seg`
+   * and `flash_rodata_seg` are on the same bus.
+   */
+  .ext_ram.dummy (NOLOAD) :
+  {
+    HIDDEN(_ext_ram_on_same_bus = ORIGIN(ext_ram_seg) == ORIGIN(flash_rodata_seg));
+    . = _ext_ram_on_same_bus ? ORIGIN(ext_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start) : 0;
+    . = ALIGN(_ext_ram_on_same_bus ? _esp_mmu_page_size : 0);
+  } > ext_ram_seg
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+
+    SECTION_MAPPINGS(extern_ram)
+
+    ALIGNED_SYMBOL(4, _ext_ram_bss_end)
+  } > ext_ram_seg
+#endif // CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+  /**
+   * This section holds data that won't be initialized at startup.
+   * This section is located in the External RAM region.
+   */
+  .ext_ram_noinit (NOLOAD) :
+  {
+    _ext_ram_noinit_start = ABSOLUTE(.);
+
+    SECTION_MAPPINGS(extram_noinit)
+    *(.ext_ram_noinit*)
+
+    ALIGNED_SYMBOL(4, _ext_ram_noinit_end)
+  } > ext_ram_seg
+#endif // CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+#endif // CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY || CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY

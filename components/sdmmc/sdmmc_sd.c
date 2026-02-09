@@ -20,6 +20,7 @@
 #include "esp_timer.h"
 #include "esp_cache.h"
 #include "esp_private/sdmmc_common.h"
+#include "freertos/FreeRTOS.h"
 
 #define SDMMC_DELAY_NUMS_MAX 10
 

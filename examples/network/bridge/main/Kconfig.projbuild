@@ -8,7 +8,7 @@ endmenu
 
 menu "Example AP Wifi Configuration"
     config EXAMPLE_BR_WIFI
-        depends on SOC_WIFI_SUPPORTED
+        depends on SOC_WIFI_SUPPORTED || SLAVE_SOC_WIFI_SUPPORTED
         default n
         bool "Bridge WiFi interface"
         help

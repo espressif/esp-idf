@@ -287,6 +287,7 @@ uint8_t bt_mesh_default_ttl_get(void);
 void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store);
 
 struct bt_mesh_app_key *bt_mesh_app_key_alloc(uint16_t app_idx);
+
 void bt_mesh_app_key_del(struct bt_mesh_app_key *key, bool store);
 
 static inline void key_idx_pack(struct net_buf_simple *buf,

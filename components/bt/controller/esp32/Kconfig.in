@@ -195,11 +195,6 @@ config BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF
     default BTDM_CTRL_BR_EDR_MAX_ACL_CONN if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
     default 0
 
-config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF
-    int
-    default BTDM_CTRL_BR_EDR_MAX_SYNC_CONN if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
-    default 0
-
 choice BTDM_CTRL_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
     depends on !FREERTOS_UNICORE

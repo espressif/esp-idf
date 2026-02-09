@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-P4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- |
+
 # SDMMC Protocol Layer Driver
 
 ## SD Host Side Related Component Architecture
@@ -33,3 +36,10 @@
 - `esp_driver_sdmmc` is in driver layer (G2), it relies on `sdmmc`
 - `esp_driver_sdspi` is in driver layer (G2), it relies on `sdmmc`
 - `sdmmc` does not and should not rely on `esp_driver_sdmmc` or `esp_driver_sdspi`. Though `sdmmc` is independent, it still stays in G2.
+
+## Configuration Options
+
+### CONFIG_SD_ENABLE_SDIO_SUPPORT
+
+This configuration option allows you to enable/disable SDIO support. By default this option is enabled.
+Consider disabling SDIO support (`CONFIG_SD_ENABLE_SDIO_SUPPORT=n`) when card is **Memory-only card** and not when **Combo cards** which provide both I/O functionality and memory storage.

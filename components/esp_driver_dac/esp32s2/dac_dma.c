@@ -33,6 +33,7 @@
 #endif
 #include "esp_check.h"
 #include "esp_attr.h"
+#include "esp_heap_caps.h"
 
 #define DAC_DMA_PERIPH_SPI_HOST          SPI3_HOST
 

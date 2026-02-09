@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "rvsleep-frames.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "riscv/csr_clic.h"
 
     .section    .data1,"aw"
     .global     rv_core_critical_regs_frame
@@ -91,6 +92,8 @@ rv_core_critical_regs_save:
     sw      t3, RV_SLP_CTX_MIP(t0)
     csrr    t1, mepc
     sw      t1, RV_SLP_CTX_MEPC(t0)
+    csrr    t2, MINTTHRESH_CSR
+    sw      t2, RV_SLP_CTX_MINTTHRESH(t0)
 
     /*
     !!! Let idf knows it's going to sleep !!!
@@ -162,6 +165,8 @@ rv_core_critical_regs_restore:
     ori     t1, t1, 0x3
     sw      t1, RV_SLP_CTX_PMUFUNC(t0)
 
+    lw      t2, RV_SLP_CTX_MINTTHRESH(t0)
+    csrw    MINTTHRESH_CSR, t2
     lw      t2, RV_SLP_CTX_MEPC(t0)
     csrw    mepc, t2
     lw      t3, RV_SLP_CTX_MIP(t0)

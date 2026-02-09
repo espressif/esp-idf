@@ -20,4 +20,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/components/esp_driver_parlio/include/driver/parlio_types.inc
-.. include-build-file:: inc/components/hal/include/hal/parlio_types.inc
+.. include-build-file:: inc/components/esp_hal_parlio/include/hal/parlio_types.inc

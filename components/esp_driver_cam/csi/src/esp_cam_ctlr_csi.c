@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include "esp_cam_ctlr_csi_internal.h"
 #include "hal/mipi_csi_ll.h"
 #include "hal/color_hal.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mipi_csi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
@@ -52,6 +54,8 @@ static esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t ctlr);
 static esp_err_t s_ctlr_csi_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
 static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
+static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config);
+static bool s_is_color_format_conversion_supported(cam_ctlr_color_t color_format);
 
 static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
 {
@@ -99,6 +103,17 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(config->data_lane_num <= MIPI_CSI_HOST_LL_LANE_NUM_MAX, ESP_ERR_INVALID_ARG, TAG, "lane num should be equal or smaller than %d", MIPI_CSI_HOST_LL_LANE_NUM_MAX);
+    ESP_RETURN_ON_FALSE(config->input_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "input_data_color_type must be specified");
+    ESP_RETURN_ON_FALSE(config->output_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "output_data_color_type must be specified");
+
+    bool is_less_v1 = false;  //version 1 since P4 rev3
+#if CONFIG_IDF_TARGET_ESP32P4
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+        is_less_v1 = true;
+    }
+#endif
+    ESP_RETURN_ON_FALSE(!(is_less_v1 && (config->input_8bit_swap_en || config->input_16bit_swap_en)), ESP_ERR_NOT_SUPPORTED, TAG, "input 8bit or 16bit swap is not supported on this chip");
 
     csi_controller_t *ctlr = heap_caps_calloc(1, sizeof(csi_controller_t), CSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_NO_MEM, TAG, "no mem for csi controller context");
@@ -135,19 +150,17 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ESP_LOGD(TAG, "ctlr->v_res: 0d %"PRId32, ctlr->v_res);
 
     //in color type
-    color_space_pixel_format_t in_color_format = {
-        .color_type_id = config->input_data_color_type,
-    };
-    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_format);
-    ctlr->in_color_format = in_color_format;
+    int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
+    ESP_GOTO_ON_FALSE(in_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported input color format");
+    ctlr->in_color_format = config->input_data_color_type;
     ctlr->in_bpp = in_bits_per_pixel;
     ESP_LOGD(TAG, "ctlr->in_bpp: 0d %d", ctlr->in_bpp);
 
     //out color type
-    color_space_pixel_format_t out_color_format = {
-        .color_type_id = config->output_data_color_type,
-    };
-    int out_bits_per_pixel = color_hal_pixel_format_get_bit_depth(out_color_format);
+    int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->output_data_color_type);
+
+    ESP_GOTO_ON_FALSE(out_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported output color format");
+    ctlr->out_color_format = config->output_data_color_type;
     ctlr->out_bpp = out_bits_per_pixel;
     ESP_LOGD(TAG, "ctlr->out_bpp: 0d %d", ctlr->out_bpp);
 
@@ -179,6 +192,19 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     hal_config.byte_swap_en = config->byte_swap_en;
     mipi_csi_hal_init(&ctlr->hal, &hal_config);
     mipi_csi_brg_ll_set_burst_len(ctlr->hal.bridge_dev, 512);
+
+    cam_ctlr_format_conv_config_t format_conv_config = {
+        .src_format = config->input_data_color_type,
+        .dst_format = config->output_data_color_type,
+    };
+    ESP_GOTO_ON_ERROR(s_csi_ctlr_format_conversion(&(ctlr->base), &format_conv_config), err, TAG, "failed to configure format conversion");
+
+    if (config->input_8bit_swap_en) {
+        mipi_csi_brg_ll_set_8bit_swap(ctlr->hal.bridge_dev, true);
+    }
+    if (config->input_16bit_swap_en) {
+        mipi_csi_brg_ll_set_16bit_swap(ctlr->hal.bridge_dev, true);
+    }
 
     //---------------DWGDMA Init For CSI------------------//
     dw_gdma_channel_handle_t csi_dma_chan = NULL;
@@ -227,6 +253,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ctlr->base.get_internal_buffer = s_csi_ctlr_get_internal_buffer;
     ctlr->base.get_buffer_len = s_csi_ctlr_get_buffer_length;
     ctlr->base.alloc_buffer = s_csi_ctlr_alloc_buffer;
+    ctlr->base.format_conversion = s_csi_ctlr_format_conversion;
 
     *ret_handle = &(ctlr->base);
 
@@ -360,6 +387,10 @@ IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan,
         }
     }
 
+    esp_err_t ret = esp_cache_msync((void *)(new_trans.buffer), new_trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(ret == ESP_OK);
+    (void)ret;
+
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
     dw_gdma_channel_config_transfer(chan, &csi_dma_transfer_config);
     dw_gdma_channel_enable_ctrl(chan, true);
@@ -367,6 +398,7 @@ IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan,
     if ((ctlr->trans.buffer != ctlr->backup_buffer) || ctlr->bk_buffer_exposed) {
         esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
         assert(ctlr->cbs.on_trans_finished);
         if (ctlr->cbs.on_trans_finished) {
             ctlr->trans.received_size = ctlr->fb_size_in_bytes;
@@ -466,6 +498,9 @@ esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle)
         }
     }
 
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)(trans.buffer), trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "failed to sync(M2C) trans buffer");
+
     ESP_LOGD(TAG, "trans.buffer: %p, trans.buflen: %d", trans.buffer, trans.buflen);
     ctlr->trans = trans;
 
@@ -559,4 +594,47 @@ static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32
     ESP_LOGD(TAG, "Allocated camera buffer: %p, size: %zu", buffer, size);
 
     return buffer;
+}
+
+static bool s_is_color_format_conversion_supported(cam_ctlr_color_t color_format)
+{
+    return (color_format == CAM_CTLR_COLOR_RGB888 ||
+            color_format == CAM_CTLR_COLOR_RGB565 ||
+            color_format == CAM_CTLR_COLOR_YUV420 ||
+            color_format == CAM_CTLR_COLOR_YUV422_YVYU ||
+            color_format == CAM_CTLR_COLOR_YUV422_YUYV ||
+            color_format == CAM_CTLR_COLOR_YUV422_UYVY ||
+            color_format == CAM_CTLR_COLOR_YUV422_VYUY);
+}
+
+static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(handle && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
+
+    mipi_csi_brg_ll_enable_color_conversion(ctlr->hal.bridge_dev, true);
+
+    if (config->src_format == config->dst_format) {
+        mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, true);
+        return ESP_OK;
+    } else {
+#if CONFIG_IDF_TARGET_ESP32P4
+        //If ESP32P4 chip version is less than v3.0, not support color format conversion
+        unsigned chip_version = efuse_hal_chip_revision();
+        if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+#endif
+
+        if (!s_is_color_format_conversion_supported(config->src_format) || !s_is_color_format_conversion_supported(config->dst_format)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        } else {
+            mipi_csi_brg_ll_set_input_color_format(ctlr->hal.bridge_dev, config->src_format);
+            mipi_csi_brg_ll_set_output_color_format(ctlr->hal.bridge_dev, config->dst_format);
+            mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, false);
+        }
+        ctlr->in_color_format = config->src_format;
+        ctlr->out_color_format = config->dst_format;
+        return ESP_OK;
+    }
 }

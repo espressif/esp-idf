@@ -1,0 +1,117 @@
+#include "sdkconfig.h"
+#include "ld.common"
+
+  .dram0.dummy (NOLOAD) :
+  {
+    /**
+     * Reserve DRAM space for shared D/IRAM memory configuration.
+     *
+     * On certain ESP chips, the same physical SRAM is accessible via two
+     * different virtual address ranges:
+     *   - IRAM: 0x4xxxxxxx
+     *   - DRAM: 0x3Fxxxxxx
+     *
+     * While the virtual addresses differ, both ranges map to the same physical
+     * memory.
+     *
+     * When `_iram_dram_shared` is defined, it indicates this configuration exists.
+     * We must advance the DRAM location counter past the region used by IRAM code
+     * to prevent DRAM data from physically overwriting executable IRAM code.
+     */
+    . = DEFINED(_iram_dram_shared) ? ORIGIN(dram_seg) + (_iram_end - _iram_start) : .;
+  } > dram_seg
+
+  .dram0.data_start :
+  {
+    _data_start = .;
+  } > dram_seg
+
+#if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
+  /**
+   * This sections MUST be placed at the beginning of the DRAM, which will be
+   * released along with iram0_bt_text when Bluetooth is no longer in use.
+   */
+  .dram0.bt.data :
+  {
+    SECTION_MAPPINGS(dram0_bt_data)
+  } > dram_seg
+
+  .dram0.bt.bss (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(8, _bss_bt_start)
+
+    SECTION_MAPPINGS(dram0_bt_bss)
+
+    _bss_bt_end = ABSOLUTE(.);
+  } > dram_seg
+#endif
+
+  .dram0.data :
+  {
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    __global_pointer$ = . + 0x800;
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.gnu.linkonce.s2.*)
+    *(.jcr)
+
+    SECTION_MAPPINGS_WITH_PADDING(dram0_data)
+
+    _data_end = ABSOLUTE(.);
+  } > dram_seg
+
+  /**
+   * This section holds data that should not be initialized at power up.
+   * The section is located in Internal SRAM memory region. The macro _NOINIT
+   * can be used as attribute to place data into this section.
+   * See the "esp_attr.h" file for more information.
+   */
+  .noinit (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(4, _noinit_start)
+
+    SECTION_MAPPINGS(noinit)
+    *(.noinit .noinit.*)
+
+    ALIGNED_SYMBOL(4, _noinit_end)
+  } > dram_seg
+
+  /* Shared RAM */
+  .dram0.bss (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(8, _bss_start)
+
+    SECTION_MAPPINGS(dram0_bss)
+
+    ALIGNED_SYMBOL(8, _bss_end)
+  } > dram_seg
+
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+  .dram1.data :
+  {
+    _data_start_high = ABSOLUTE(.);
+
+    mapping[dram0_data]
+    mutable[dram0_data]
+    FAST_REFLASHING_PADDING();
+
+    _data_end_high = ABSOLUTE(.);
+  } > dram_high_seg
+
+  .dram1.bss (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(8, _bss_start_high)
+
+    mapping[dram0_bss]
+    mutable[dram0_bss]
+
+    ALIGNED_SYMBOL(8, _bss_end_high)
+  } > dram_high_seg
+
+  .dram1.heap_start (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(16, _heap_start_high)
+  } > dram_high_seg
+#endif

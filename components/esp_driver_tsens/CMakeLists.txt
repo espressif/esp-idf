@@ -10,5 +10,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       REQUIRES esp_hal_ana_conv
                        PRIV_REQUIRES ${priv_req}
                       )

@@ -10,14 +10,13 @@
 #include "lp_core_uart.h"
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "soc/lp_uart_struct.h"
 #include "hal/uart_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "hal/rtc_io_types.h"
 #include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 
 static const char *LP_UART_TAG = "lp_uart";
 
@@ -51,7 +50,7 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     }
 
     // LP UART clock source is mixed with other peripherals in the same register
-    LP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         /* Enable LP UART bus clock */
         lp_uart_ll_enable_bus_clock(0, true);
         lp_uart_ll_set_source_clk(hal.dev, clk_src);
@@ -130,10 +129,10 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     const uart_periph_sig_t *pins = uart_periph_signal[LP_UART_PORT_NUM].pins;
     // LP_UART has its fixed IOs
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.tx_io_num < 0 || (cfg->uart_pin_cfg.tx_io_num == pins[SOC_UART_TX_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "tx_io_num error");
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rx_io_num < 0 || (cfg->uart_pin_cfg.rx_io_num == pins[SOC_UART_RX_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "rx_io_num error");
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rts_io_num < 0 || (cfg->uart_pin_cfg.rts_io_num == pins[SOC_UART_RTS_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "rts_io_num error");
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.cts_io_num < 0 || (cfg->uart_pin_cfg.cts_io_num == pins[SOC_UART_CTS_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "cts_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.tx_io_num < 0 || (cfg->uart_pin_cfg.tx_io_num == pins[SOC_UART_PERIPH_SIGNAL_TX].default_gpio)), ESP_FAIL, LP_UART_TAG, "tx_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rx_io_num < 0 || (cfg->uart_pin_cfg.rx_io_num == pins[SOC_UART_PERIPH_SIGNAL_RX].default_gpio)), ESP_FAIL, LP_UART_TAG, "rx_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rts_io_num < 0 || (cfg->uart_pin_cfg.rts_io_num == pins[SOC_UART_PERIPH_SIGNAL_RTS].default_gpio)), ESP_FAIL, LP_UART_TAG, "rts_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.cts_io_num < 0 || (cfg->uart_pin_cfg.cts_io_num == pins[SOC_UART_PERIPH_SIGNAL_CTS].default_gpio)), ESP_FAIL, LP_UART_TAG, "cts_io_num error");
 #else
     // LP_UART signals can be routed to any LP_IOs
     ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.tx_io_num < 0 || rtc_gpio_is_valid_gpio(cfg->uart_pin_cfg.tx_io_num)), ESP_FAIL, LP_UART_TAG, "tx_io_num error");
@@ -143,13 +142,13 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
 #endif  /* SOC_LP_GPIO_MATRIX_SUPPORTED */
 
     /* Configure Tx Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_TX_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_TX);
     /* Configure Rx Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_RX_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RX);
     /* Configure RTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_RTS_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RTS);
     /* Configure CTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_CTS_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_CTS);
 
     return ret;
 }

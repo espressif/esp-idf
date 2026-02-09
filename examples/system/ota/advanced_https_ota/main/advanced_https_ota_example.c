@@ -236,6 +236,7 @@ void advanced_ota_example_task(void *pvParameter)
 #ifdef CONFIG_EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
         .save_client_session = true,
 #endif
+        .buffer_size = CONFIG_EXAMPLE_OTA_BUF_SIZE,
     };
 
 #ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN

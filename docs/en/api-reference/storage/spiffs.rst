@@ -43,7 +43,7 @@ There are also other arguments that control image generation. Documentation on t
 
 These optional arguments correspond to a possible SPIFFS build configuration. To generate the right image, please make sure that you use the same arguments/configuration as were used to build SPIFFS. As a guide, the help output indicates the SPIFFS build configuration to which the argument corresponds. In cases when these arguments are not specified, the default values shown in the help output will be used.
 
-When the image is created, it can be flashed using ``esptool.py`` or ``parttool.py``.
+When the image is created, it can be flashed using ``esptool`` or ``parttool.py``.
 
 Aside from invoking the ``spiffsgen.py`` standalone by manually running it from the command line or a script, it is also possible to invoke ``spiffsgen.py`` directly from the build system by calling ``spiffs_create_partition_image``::
 
@@ -57,7 +57,7 @@ Optionally, users can opt to have the image automatically flashed together with 
 
     spiffs_create_partition_image(my_spiffs_partition my_folder FLASH_IN_PROJECT)
 
-If FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py``, ``parttool.py``, or a custom build system target.
+If FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool``, ``parttool.py``, or a custom build system target.
 
 There are cases where the contents of the base directory itself is generated at build time. Users can use DEPENDS/SPIFFS_IMAGE_DEPENDS to specify targets that should be executed before generating the image::
 
@@ -70,7 +70,7 @@ For an example, see :example:`storage/spiffsgen`. This example demonstrates how 
 ``mkspiffs``
 ^^^^^^^^^^^^
 
-Another tool for creating SPIFFS partition images is `mkspiffs <https://github.com/igrr/mkspiffs>`_. Similar to ``spiffsgen.py``, it can be used to create an image from a given folder and then flash that image using ``esptool.py``
+Another tool for creating SPIFFS partition images is `mkspiffs <https://github.com/igrr/mkspiffs>`_. Similar to ``spiffsgen.py``, it can be used to create an image from a given folder and then flash that image using ``esptool``
 
 For that, you need to obtain the following parameters:
 
@@ -85,11 +85,11 @@ To pack a folder into a 1-Megabyte image, run::
 
 To flash the image onto {IDF_TARGET_NAME} at offset 0x110000, run::
 
-    python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
+    esptool --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write-flash -z 0x110000 spiffs.bin
 
 .. note::
 
-    You can configure the ``write_flash`` command of ``esptool.py`` to `write the spiffs data to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_ using the ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` option. Just specify the GPIO pins assigned to the external flash, e.g., ``python esptool.py write_flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``.
+    You can configure the ``write-flash`` command of ``esptool`` to `write the spiffs data to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_ using the ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` option. Just specify the GPIO pins assigned to the external flash, e.g., ``esptool write-flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``.
 
 Notes on Which SPIFFS Tool to Use
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -39,32 +39,78 @@ API 及用法
 
     为最大限度地利用 PMF 的额外安全性优势，已弃用 ``pmf_cfg`` 中的 ``capable`` 标志，并在内部设置为 ``true``。
 
+
 企业级 Wi-Fi
----------------------------------
+----------------------
 
 简介
-++++++++++++
+++++++++
 
-企业级安全是企业无线网的安全认证机制，采用 RADIUS 服务器在设备接入到接入点 (AP) 前认证网络用户。该机制基于 802.1X 标准完成认证，并采用多种扩展认证协议 (EAP) 方法，如 TLS、TTLS、PEAP 和 EAP-FAST。RADIUS 服务器根据用户凭证（用户名和密码）、数字证书或两者的组合进行用户认证。
+企业级 Wi-Fi (Wi-Fi Enterprise) 为企业无线网络提供安全认证机制。该机制基于 IEEE 802.1X 标准运作，并依赖 RADIUS 服务器在设备连接到接入点 (AP) 之前进行用户身份验证。根据所使用的可扩展认证协议 (EAP) 方法，认证可以基于用户凭证（用户名和密码）、数字证书，或两者结合。
+
+当 {IDF_TARGET_NAME} 以 station 模式连接企业级 AP 时，会发起认证请求。AP 会将该请求转发给配置的 RADIUS 服务器，由其根据所选 EAP 方法和参数对设备进行验证。
 
 .. note::
 
   {IDF_TARGET_NAME} 仅在 station 模式下支持企业级 Wi-Fi。
 
-{IDF_TARGET_NAME} 支持 **企业级 WPA2** 和 **企业级 WPA3**。企业级 WPA3 构建在企业级 WPA2 的基础之上，并额外要求在所有 WPA3 连接中使用受保护的管理帧 (PMF) 和服务器证书验证。此外，**企业级 WPA3 还提供了一种更安全的模式，使用 192 位最低强度的安全协议和加密工具，更好地保护敏感数据**。企业级 WPA3 的 192 位模式可以确保用户正确使用密码工具组合，并在 WPA3 网络中设立了一致的安全基准。需要注意的是，只有支持 :c:macro:`SOC_WIFI_GCMP_SUPPORT` 的模组才支持企业级 WPA3 的 192 位模式。如需使用该模式，请启用 :ref:`CONFIG_ESP_WIFI_SUITE_B_192` 标志。
+企业级 WPA2 和企业级 WPA3
+++++++++++++++++++++++++++++++
 
-{IDF_TARGET_NAME} 支持以下 EAP 方法：
-  - EAP-TLS：该认证方法基于证书实现，仅需提供 SSID 和 EAP-IDF。
-  - PEAP：该认证方法为受保护的 EAP 方法，必须提供用户名和密码。
-  - EAP-TTLS：该认证方法基于凭证实现，必须提供服务器证书，用户证书为可选项。该方法支持多种第二阶段方法，如：
-     - PAP：密码认证协议
-     - CHAP：挑战握手认证协议
-     - MSCHAP 和 MSCHAP-V2
-  - EAP-FAST：该认证方法基于受保护访问凭证 (PAC) 实现，同时也使用身份和密码。目前，需禁用 :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` 标志以使用此功能。
+{IDF_TARGET_NAME} 支持 **企业级 WPA2 (WPA2-Enterprise)** 和 **企业级 WPA3 (WPA3-Enterprise)**。
 
-- :example:`wifi/wifi_eap_fast` 演示如何使用 EAP-FAST 通过企业级 Wi-Fi 认证将 {IDF_TARGET_NAME} 连接到 AP，包括 CA 证书的安装、用户凭据的设置、启用 Wi-Fi 企业模式以及如何连接到 AP。
+**企业级 WPA2** 使用 802.1X/EAP 进行身份验证，并依赖安全的凭证或证书。为建立安全连接，AP 与 station 会协商并选定适当的加密套件。{IDF_TARGET_NAME} 支持以下内容：
 
-- :example:`wifi/wifi_enterprise` 演示如何使用除 ESP-FAST 之外的其他 EAP 方法（如 EAP-TLS、EAP-PEAP、EAP-TTLS）通过 Wi-Fi 企业认证将 {IDF_TARGET_NAME} 连接到 AP。有关使用 OpenSSL 命令生成证书和运行示例的详细信息，请参阅 :example_file:`wifi/wifi_enterprise/README.md`。
+- 802.1X/EAP（WPA）AKM 方法
+- AES-CCM cipher suite
+- 启用 `USE_MBEDTLS_CRYPTO` 后可使用 mbedtls 支持的其他 cipher suite
+
+**企业级 WPA3** 在企业级 WPA2 的基础上加强了安全性，并对所有 WPA3 连接增加两项强制要求：必须启用受保护管理帧 (PMF)，并强制执行服务器证书验证。
+
+此外，企业级 WPA3 还支持 **192 位最低强度安全模式 (Suite B)**，提供更高的加密强度。
+
+- 企业级 WPA3 的 192 位模式仅适用于支持 :c:macro:`SOC_WIFI_GCMP_SUPPORT` 的芯片。
+- 若需启用该模式，请配置 :ref:`CONFIG_ESP_WIFI_SUITE_B_192`。
+
+支持的 EAP 方法
++++++++++++++++++++++
+
+{IDF_TARGET_NAME} 支持多种企业级认证的 EAP 方法。不同方法可能需要不同的配置参数，如 SSID、身份标识、用户名/密码、CA 证书或客户端证书等。
+
+支持以下 EAP 方法：
+
+- **EAP-TLS**
+
+  基于证书的认证方式，需要提供 SSID 和 EAP 身份；通过客户端证书进行设备认证。
+
+- **PEAP**
+
+  一种受保护的 EAP 方法，需要提供用户名和密码。
+
+- **EAP-TTLS**
+
+  一种基于凭证的认证方式。服务器认证为必选；用户认证取决于 Phase 2 方法。通常需要提供用户名和密码。支持的 Phase 2 方法包括：
+
+  - PAP：密码认证协议
+  - CHAP：挑战握手认证协议
+  - MSCHAP
+  - MSCHAP-V2
+
+- **EAP-FAST**
+
+  基于受保护访问凭证 (PAC) 的认证方法，需要身份标识和密码。使用 EAP-FAST 时需要 **禁用** :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT`。
+
+示例
+++++++++
+
+- :example:`wifi/wifi_eap_fast`
+
+  演示如何使用 EAP-FAST 将 {IDF_TARGET_NAME} 连接到企业级 Wi-Fi，包括 CA 证书安装、凭证配置、启用企业级模式以及连接 AP。
+
+- :example:`wifi/wifi_enterprise`
+
+  演示使用 EAP-TLS、EAP-PEAP 和 EAP-TTLS 连接企业级 Wi-Fi。有关使用 OpenSSL 生成证书及运行示例的说明，请参考 :example_file:`wifi/wifi_enterprise/README.md`。
+
 
 个人级 WPA3
 -------------

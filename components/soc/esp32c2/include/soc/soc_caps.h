@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 /*
@@ -47,6 +47,7 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_BOD_SUPPORTED               1
+#define SOC_RTC_TIMER_V1_SUPPORTED      1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
@@ -56,6 +57,7 @@
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_LP_PERIPH_SHARE_INTERRUPT   1   // LP peripherals sharing the same interrupt source
 #define SOC_PM_SUPPORTED                1
+#define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_26M            1
@@ -118,31 +120,28 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION            1U
-#define SOC_GDMA_NUM_GROUPS_MAX         1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    1U
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 21
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
-#define SOC_GPIO_FILTER_CLK_SUPPORT_APB    1
 
-// Target has no full RTC IO subsystem, GPIO0~5 remain RTC function (powered by VDD3V3_RTC, and can be used as deep-sleep wakeup pins)
+// Target has no full RTC IO subsystem, GPIO0~5 remain RTC function (powered by VDD3V3_RTC, and can be used as HP peripheral powerdown-ed sleep wakeup pins)
 
 // Force hold is a new function of ESP32-C2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
-// GPIO0~5 on ESP32-C2 can support chip deep sleep wakeup
-#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
-
+// GPIO0~5 on ESP32-C2 can support chip HP peripheral powerdown-ed sleep wakeup
+#define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1)
+#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP           SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 
 #define SOC_GPIO_IN_RANGE_MAX           20
 #define SOC_GPIO_OUT_RANGE_MAX          20
 
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
-#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (6)
+#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK          (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
+#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT       (6)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_6~GPIO_NUM_20)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000001FFFC0ULL
@@ -151,24 +150,9 @@
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
-// "RTC"_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
-
-/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
-
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-C2 has 1 I2C
 #define SOC_I2C_NUM                 (1U)
 #define SOC_HP_I2C_NUM              (1U)
-
-#define SOC_I2C_FIFO_LEN            (16) /*!< I2C hardware FIFO depth */
-#define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
-
-// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
-#define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
 #define SOC_I2C_SUPPORT_XTAL        (1)
 #define SOC_I2C_SUPPORT_RTC         (1)
@@ -221,35 +205,13 @@
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_PERIPH_NUM          2
-#define SOC_SPI_PERIPH_CS_NUM(i)    6
-#define SOC_SPI_MAX_CS_NUM          6
+#define SOC_SPI_PERIPH_NUM              2
+#define SOC_SPI_PERIPH_CS_NUM(i)        6
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
-
-#define SOC_SPI_SUPPORT_DDRCLK              1
-#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
-#define SOC_SPI_SUPPORT_CD_SIG              1
-#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
-#define SOC_SPI_SUPPORT_CLK_XTAL            1
-#define SOC_SPI_SUPPORT_CLK_PLL_F40M        1
-
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-// host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
-
-// Peripheral supports output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT 1
-
-#define SOC_SPI_SCT_SUPPORTED                     1
-#define SOC_SPI_SCT_SUPPORTED_PERIPH(PERIPH_NUM)  ((PERIPH_NUM==1) ? 1 : 0)    //Support Segmented-Configure-Transfer
-#define SOC_SPI_SCT_REG_NUM                       14
-#define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 14-word-regs
-#define SOC_SPI_SCT_CONF_BITLEN_MAX               0x3FFFA       //18 bits wide reg
-
-#define SOC_MEMSPI_IS_INDEPENDENT 1
-#define SOC_SPI_MAX_PRE_DIVIDER 16
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2   1
+#define SOC_SPI_MAX_BITWIDTH(host_id)   (4) // Supported line mode: SPI2: 1, 2, 4
+#define SOC_SPI_SCT_SUPPORTED(host_id)  ((host_id) == 1)
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
@@ -260,10 +222,9 @@
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 
-#define SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED         1
-#define SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED         1
-#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
-#define SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED         1
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
+#define SOC_MEMSPI_IS_INDEPENDENT                 1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
@@ -277,6 +238,7 @@
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V1_SUPPORTED
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
@@ -285,6 +247,7 @@
 #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_PAD_JTAG 1
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
@@ -307,9 +270,6 @@
 #define SOC_UART_SUPPORT_PLL_F40M_CLK (1)   /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
-
-// UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
-#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
 
@@ -347,6 +307,7 @@
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                           (1)    /*!< Support hardware TSF */
 #define SOC_WIFI_FTM_SUPPORT                      (1)    /*!< Support FTM */
+#define SOC_WIFI_TXOP_SUPPORT                     (1)    /*!< Support TXOP */
 #define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
 #define SOC_WIFI_PHY_NEEDS_USB_WORKAROUND         (1)    /*!< SoC has WiFi and USB PHYs interference, needs a workaround */
 

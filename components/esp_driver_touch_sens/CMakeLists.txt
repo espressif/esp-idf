@@ -22,5 +22,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     PRIV_REQUIRES ${priv_require}
+                    REQUIRES esp_hal_touch_sens  # public require because hal/touch_sens_type.h needs to be public
                     INCLUDE_DIRS ${public_inc}
                     )

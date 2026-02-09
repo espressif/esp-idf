@@ -27,13 +27,13 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
-#include "soc/lcd_periph.h"
+#include "hal/lcd_periph.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"
 #include "driver/parlio_types.h"
 #include "esp_private/gpio.h"
-#include "esp_private/parlio_private.h"
+#include "esp_private/parlio_tx_private.h"
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_common.h"
@@ -62,11 +62,11 @@ struct lcd_panel_io_parlio_t {
     esp_lcd_panel_io_t base;   // Base class of generic lcd panel io
     parlio_tx_unit_handle_t tx_unit; // Parlio TX unit
     size_t data_width;      // Number of data lines
-    int dc_gpio_num;       // GPIO used for DC line
-    int cs_gpio_num;           // GPIO used for CS line
-    int lcd_cmd_bits;          // Bit width of LCD command
-    int lcd_param_bits;        // Bit width of LCD parameter
-    void *user_ctx;            // private data used when transfer color data
+    gpio_num_t dc_gpio_num; // GPIO used for DC line
+    gpio_num_t cs_gpio_num; // GPIO used for CS line
+    int lcd_cmd_bits;       // Bit width of LCD command
+    int lcd_param_bits;     // Bit width of LCD parameter
+    void *user_ctx;         // private data used when transfer color data
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // color data trans done callback
     struct {
         unsigned int dc_cmd_level: 1;  // Level of DC line in CMD phase

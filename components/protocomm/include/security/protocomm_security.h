@@ -41,7 +41,6 @@ typedef struct protocomm_security1_params {
     uint16_t len;
 } protocomm_security1_params_t;
 
-typedef protocomm_security1_params_t  protocomm_security_pop_t __attribute__((deprecated("Use protocomm_security1_params_t instead")));
 
 /**
  * @brief Protocomm Security 2 parameters: Salt and Verifier

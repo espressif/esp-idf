@@ -6,8 +6,9 @@ Migration from 5.4 to 5.5
 .. toctree::
     :maxdepth: 1
 
+    build-system
     security
     system
     peripherals
     protocols
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi

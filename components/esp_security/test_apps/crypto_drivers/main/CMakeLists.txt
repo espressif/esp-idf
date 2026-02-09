@@ -8,7 +8,7 @@ if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
     list(APPEND srcs "test_ds.c")
 endif()
 
-if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+if(CONFIG_ESP_SECURITY_IS_KEY_MANAGER_SUPPORTED)
     list(APPEND srcs "test_key_mgr.c")
 endif()
 

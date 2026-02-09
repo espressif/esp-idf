@@ -37,32 +37,29 @@ CUSTOM_SECURE_VERSION,            EFUSE_BLK3,    78, 16,    Custom secure versio
 To run this example, you need to use the ESP32 developer board. If your ESP32 has the `None` coding scheme of eFuse, then write and read operations have no limitations. But if it has the `3/4` or `RS` coding scheme, the writing may lead to an error due to the fact that some coded value was written earlier. A simple way to find out what coding scheme your chip has, you can see in the log while esptool is working or the log of the program:
 
 ```
-esptool.py v2.7-dev
-Serial port /dev/ttyUSB0
-Connecting........_____.....__
-Detecting chip type... ESP32
-Chip is ESP32-PICO-D4 (revision 1)
-Features: WiFi, BT, Dual Core, Embedded Flash, Coding Scheme None
-MAC: d8:a0:1d:40:ac:90
+esptool v5.0.2
+Connected to ESP32 on /dev/ttyUSB0
+Chip type:          ESP32-U4WDH (revision v3.0)
+Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Embedded Flash, Vref calibration in eFuse, Coding Scheme None
+Crystal frequency:  40MHz
+MAC:                d8:a0:1d:40:ac:90
 ```
 
-The esptool also has a command to get general information about the chip `esptool.py chip_id`:
+The esptool also has a command to get general information about the chip `esptool chip-id`:
 
 ```
-esptool.py v2.8-dev
-Found 1 serial ports
-Serial port /dev/ttyUSB0
-Connecting........_
-Detecting chip type... ESP32
-Chip is ESP32-PICO-D4 (revision 1)
-Features: WiFi, BT, Dual Core, Embedded Flash, Coding Scheme None
-Crystal is 40MHz
-MAC: d8:a0:1d:40:ac:90
-Uploading stub...
-Running stub...
-Stub running...
-Warning: ESP32 has no Chip ID. Reading MAC instead.
-MAC: d8:a0:1d:40:ac:90
+esptool v5.0.2
+Connected to ESP32 on /dev/ttyUSB0
+Chip type:          ESP32-U4WDH (revision v3.0)
+Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Embedded Flash, Vref calibration in eFuse, Coding Scheme None
+Crystal frequency:  40MHz
+MAC:                d8:a0:1d:40:ac:90
+
+Stub flasher running.
+
+Warning: ESP32 has no chip ID. Reading MAC address instead.
+MAC:                d8:a0:1d:40:ac:90
+
 Hard resetting via RTS pin...
 ```
 

@@ -18,7 +18,6 @@ typedef struct {
     spi_host_device_t host_id;      ///< Bus to use
     int cs_io_num;                  ///< GPIO pin to output the CS signal
     esp_flash_io_mode_t io_mode;    ///< IO mode to read from the Flash
-    enum esp_flash_speed_s speed __attribute__((deprecated));        ///< Speed of the Flash clock. Replaced by freq_mhz
     int input_delay_ns;             ///< Input delay of the data pins, in ns. Set to 0 if unknown.
     /**
      * CS line ID, ignored when not `host_id` is not SPI1_HOST, or

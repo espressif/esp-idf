@@ -16,7 +16,7 @@
 #include "freertos/queue.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "soc/rtc_io_periph.h"
+#include "hal/rtc_io_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/rtc_io_ll.h"
 
@@ -235,7 +235,7 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
 }
 #endif //SOC_RTCIO_HOLD_SUPPORTED
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
 /*
  * test interrupt functionality
  */
@@ -275,10 +275,10 @@ TEST_CASE("RTCIO_interrupt_test", "[rtcio]")
     rtcio_ll_intr_enable(test_io, GPIO_INTR_DISABLE);
     TEST_ESP_OK(rtc_gpio_deinit(test_io));
 }
-#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+#endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-#if SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+#if SOC_DEEP_SLEEP_SUPPORTED
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
 // The default configuration of these pads is low level
@@ -294,8 +294,8 @@ static void rtcio_deep_sleep_hold_test_first_stage(void)
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT_OUTPUT,
         .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = 0,
-        .pull_up_en = 0,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&io_conf);
 
@@ -311,8 +311,10 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
     int io_num = s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX];
     // Check reset reason is waking up from deepsleep
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3 // DIG-399
     // Pin should stay at high level after the deep sleep
     TEST_ASSERT_EQUAL_INT(1, gpio_get_level(io_num));
+#endif
 
     gpio_hold_dis(io_num);
 }
@@ -326,4 +328,4 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
 TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
                           rtcio_deep_sleep_hold_test_first_stage,
                           rtcio_deep_sleep_hold_test_second_stage)
-#endif // SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+#endif // SOC_DEEP_SLEEP_SUPPORTED

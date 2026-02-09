@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "esp_private/gpio.h"
 #include "driver/touch_sens.h"
 #include "esp_private/esp_gpio_reserve.h"
@@ -43,10 +43,20 @@ static void touch_channel_pin_init(int id)
 {
     gpio_num_t pin = touch_sensor_channel_io_map[id];
     assert(pin >= 0);
+    /* Touch pad will output the sawtooth wave on the pin,
+       so it needs to be reserved, in case of conflict with other output signals */
     if (esp_gpio_reserve(BIT64(pin)) & BIT64(pin)) {
         ESP_LOGW(TAG, "The GPIO%d is conflict with other module", (int)pin);
     }
     gpio_config_as_analog(pin);
+}
+
+static void touch_channel_pin_deinit(int id)
+{
+    gpio_num_t pin = touch_sensor_channel_io_map[id];
+    assert(pin >= 0);
+    /* esp_gpio_revoke is called in gpio_reset_pin */
+    gpio_reset_pin(pin);
 }
 
 static void s_touch_free_resource(touch_sensor_handle_t sens_handle)
@@ -83,7 +93,7 @@ esp_err_t touch_sensor_new_controller(const touch_sensor_config_t *sens_cfg, tou
 #if SOC_TOUCH_SENSOR_VERSION <= 2
     ESP_GOTO_ON_ERROR(rtc_isr_register(touch_priv_default_intr_handler, NULL, TOUCH_LL_INTR_MASK_ALL, 0), err, TAG, "Failed to register interrupt handler");
 #else
-    ESP_GOTO_ON_ERROR(esp_intr_alloc(ETS_LP_TOUCH_INTR_SOURCE, TOUCH_INTR_ALLOC_FLAGS, touch_priv_default_intr_handler, NULL, &(g_touch->intr_handle)),
+    ESP_GOTO_ON_ERROR(esp_intr_alloc(TOUCH_LL_INTR_SOURCE, TOUCH_INTR_ALLOC_FLAGS, touch_priv_default_intr_handler, NULL, &(g_touch->intr_handle)),
                       err, TAG, "Failed to register interrupt handler");
 #endif
     *ret_sens_handle = g_touch;
@@ -211,6 +221,7 @@ esp_err_t touch_sensor_del_channel(touch_channel_handle_t chan_handle)
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->chan_mask &= ~(1UL << chan_handle->id);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+    touch_channel_pin_deinit(chan_handle->id);
 
     free(g_touch->ch[ch_offset]);
     g_touch->ch[ch_offset] = NULL;

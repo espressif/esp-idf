@@ -1,1 +1,0 @@
--B build-debug -DSDKCONFIG=build-debug/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.debug"

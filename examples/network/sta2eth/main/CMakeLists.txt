@@ -14,5 +14,5 @@ idf_component_register(SRCS sta2eth_main.c
                             ${wired_iface}
                             ${config_method}
                        PRIV_REQUIRES esp_wifi esp_timer esp_eth esp_http_server
-                                     nvs_flash esp_driver_gpio wifi_provisioning
+                                     nvs_flash esp_driver_gpio
                        INCLUDE_DIRS "")

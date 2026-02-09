@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,13 +69,6 @@ esp_err_t esp_netif_remove_from_list_unsafe(esp_netif_t *netif)
 size_t esp_netif_get_nr_of_ifs(void)
 {
     return s_esp_netif_counter;
-}
-
-// This API is inherently unsafe
-// suggest that users call from esp_netif_tcpip_exec()
-esp_netif_t* esp_netif_next(esp_netif_t* netif)
-{
-    return esp_netif_next_unsafe(netif);
 }
 
 esp_netif_t* esp_netif_next_unsafe(esp_netif_t* netif)

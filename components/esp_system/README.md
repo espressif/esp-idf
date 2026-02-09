@@ -17,12 +17,12 @@ should maintain the definition of having the origin point at `g_startup_time`.
 This is the time read from an underlying hardware timer, controlled through config. Origin 
 is at the point where the underlying timer starts counting.
 
-3. `newlib` time (`gettimeofday`)
+3. `esp_libc` time (`gettimeofday`)
 
 Timekeeping function in standard library. Can be set (`settimeofday`) or moved forward/backward (`adjtime`);
 with the possibility of the changes being made persistent through config.
 Currently implemented in terms of system time, as the point of origin is fixed.
-If persistence is enabled, RTC time is also used in conjuction with system time.
+If persistence is enabled, RTC time is also used in conjunction with system time.
 
 4. RTC time (`esp_rtc_get_time_us`)
 

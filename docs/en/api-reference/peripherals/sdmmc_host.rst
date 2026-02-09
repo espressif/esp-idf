@@ -74,7 +74,7 @@ Overview
 .. only:: esp32p4
 
     - :c:macro:`SDMMC_HOST_SLOT_1` is routed via GPIO Matrix. This means that any GPIO may be used for each of the SD card signals. It is for non UHS-I usage.
-    - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode, which is not yet supported in the driver.
+    - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode.
 
     On {IDF_TARGET_NAME}, SDMMC host requires an external power supply for the IO voltage. Please refer to :ref:`pwr-ctrl` for details.
 
@@ -87,6 +87,7 @@ SDMMC Host driver supports the following speed modes:
 
   - Default Speed (20 MHz): 1-line or 4-line with SD cards, and 1-line, 4-line, or 8-line with 3.3 V eMMC
   - High Speed (40 MHz): 1-line or 4-line with SD cards, and 1-line, 4-line, or 8-line with 3.3 V eMMC
+  :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, SDR104 (200 MHz): 4-line with SD cards
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, SDR50 (100 MHz): 4-line with SD cards
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, DDR50 (50 MHz): 4-line with SD cards
   - High Speed DDR (40 MHz): 4-line with 3.3 V eMMC
@@ -176,8 +177,8 @@ To configure the bus width, set the ``width`` field of :cpp:class:`sdmmc_slot_co
 
     If the design does require higher speed SD modes (which only work at 1.8V IO levels), there are two options available:
 
-    - Use the on-chip programmable LDO. In this case, connect the desired LDO output channel to VDDPST_5 (SD_VREF) pin. Call :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` to initialize the SD power control driver, then set :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` to the resulting handle.
-    - Use an external programmable LDO. Likewise, connect the LDO output to the VDDPST_5 (SD_VREF) pin. Then implement a custom `sd_pwr_ctrl` driver to control your LDO. Finally, assign :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` to the handle of your driver instance.
+    - Use the on-chip programmable LDO. In this case, connect the desired LDO output channel to VDDPST_5 (SD_VREF) pin. Call :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` to initialize the SD power control driver, then set :cpp:member:`sdmmc_host_t::pwr_ctrl_handle` to the resulting handle.
+    - Use an external programmable LDO. Likewise, connect the LDO output to the VDDPST_5 (SD_VREF) pin. Then implement a custom `sd_pwr_ctrl` driver to control your LDO. Finally, assign :cpp:member:`sdmmc_host_t::pwr_ctrl_handle` to the handle of your driver instance.
 
 
 DDR Mode for eMMC Chips
@@ -209,3 +210,7 @@ API Reference
 -------------
 
 .. include-build-file:: inc/sdmmc_host.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl_by_on_chip_ldo.inc

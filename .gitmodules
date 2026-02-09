@@ -26,6 +26,7 @@
 [submodule "components/bt/controller/lib_esp32"]
 	path = components/bt/controller/lib_esp32
 	url = ../../espressif/esp32-bt-lib.git
+	shallow = true
 
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
@@ -46,19 +47,6 @@
 	sbom-description = Wear-leveled SPI flash file system for embedded devices
 	sbom-hash = 0dbb3f71c5f6fae3747a9d935372773762baf852
 
-[submodule "components/json/cJSON"]
-	path = components/json/cJSON
-	url = ../../DaveGamble/cJSON.git
-	sbom-version = 1.7.18
-	sbom-cpe = cpe:2.3:a:cjson_project:cjson:{}:*:*:*:*:*:*:*
-	sbom-supplier = Person: Dave Gamble
-	sbom-url = https://github.com/DaveGamble/cJSON
-	sbom-description = Ultralightweight JSON parser in ANSI C
-	sbom-hash = 8f2beb57ddad1f94bed899790b00f46df893ccac
-	sbom-cve-exclude-list = CVE-2024-31755 Resolved in v1.7.18
-	sbom-cve-exclude-list = CVE-2023-26819 Resolved in commit a328d65ad490b64da8c87523cbbfe16050ba5bf6
-	sbom-cve-exclude-list = CVE-2023-53154 Resolved in v1.7.18
-
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
 	url = ../../espressif/mbedtls.git
@@ -66,10 +54,6 @@
 [submodule "components/lwip/lwip"]
 	path = components/lwip/lwip
 	url = ../../espressif/esp-lwip.git
-
-[submodule "components/mqtt/esp-mqtt"]
-	path = components/mqtt/esp-mqtt
-	url = ../../espressif/esp-mqtt.git
 
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
@@ -97,6 +81,7 @@
 [submodule "components/esp_wifi/lib"]
 	path = components/esp_wifi/lib
 	url = ../../espressif/esp32-wifi-lib.git
+	shallow = true
 
 [submodule "components/cmock/CMock"]
 	path = components/cmock/CMock
@@ -114,30 +99,37 @@
 [submodule "components/bt/controller/lib_esp32c3_family"]
 	path = components/bt/controller/lib_esp32c3_family
 	url = ../../espressif/esp32c3-bt-lib.git
+	shallow = true
 
 [submodule "components/esp_phy/lib"]
 	path = components/esp_phy/lib
 	url = ../../espressif/esp-phy-lib.git
+	shallow = true
 
 [submodule "components/openthread/lib"]
 	path = components/openthread/lib
 	url = ../../espressif/esp-thread-lib.git
+	shallow = true
 
 [submodule "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"]
 	path = components/bt/controller/lib_esp32h2/esp32h2-bt-lib
 	url = ../../espressif/esp32h2-bt-lib.git
+	shallow = true
 
 [submodule "components/bt/controller/lib_esp32c2/esp32c2-bt-lib"]
 	path = components/bt/controller/lib_esp32c2/esp32c2-bt-lib
 	url = ../../espressif/esp32c2-bt-lib.git
+	shallow = true
 
 [submodule "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"]
 	path = components/bt/controller/lib_esp32c6/esp32c6-bt-lib
 	url = ../../espressif/esp32c6-bt-lib.git
+	shallow = true
 
 [submodule "components/bt/controller/lib_esp32c5/esp32c5-bt-lib"]
 	path = components/bt/controller/lib_esp32c5/esp32c5-bt-lib
 	url = ../../espressif/esp32c5-bt-lib.git
+	shallow = true
 
 [submodule "components/heap/tlsf"]
 	path = components/heap/tlsf
@@ -146,7 +138,9 @@
 [submodule "components/esp_coex/lib"]
 	path = components/esp_coex/lib
 	url = ../../espressif/esp-coex-lib.git
+	shallow = true
 
 [submodule "components/bt/esp_ble_mesh/lib/lib"]
 	path = components/bt/esp_ble_mesh/lib/lib
 	url = ../../espressif/esp-ble-mesh-lib.git
+	shallow = true

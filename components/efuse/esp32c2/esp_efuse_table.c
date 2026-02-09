@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 439495cbc35dc68d7566e05ac3dbb248
+// md5_digest_table 066deaa9a981a1c5cd33c78803ad1d45
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -185,6 +185,18 @@ static const esp_efuse_desc_t WR_DIS_RTC_LDO_ACT_DBIAS13[] = {
 
 static const esp_efuse_desc_t WR_DIS_ADC_CALIBRATION_3[] = {
     {EFUSE_BLK0, 6, 1}, 	 // [] wr_dis of ADC_CALIBRATION_3,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_VENDOR[] = {
+    {EFUSE_BLK0, 6, 1}, 	 // [] wr_dis of FLASH_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_TEMP[] = {
+    {EFUSE_BLK0, 6, 1}, 	 // [] wr_dis of FLASH_TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
+    {EFUSE_BLK0, 6, 1}, 	 // [] wr_dis of FLASH_CAP,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_KEY0[] = {
@@ -378,6 +390,18 @@ static const esp_efuse_desc_t RTC_LDO_ACT_DBIAS13[] = {
 
 static const esp_efuse_desc_t ADC_CALIBRATION_3[] = {
     {EFUSE_BLK2, 192, 11}, 	 // [] Store the bit [86:96] of ADC calibration data,
+};
+
+static const esp_efuse_desc_t FLASH_VENDOR[] = {
+    {EFUSE_BLK2, 248, 3}, 	 // [] Flash vendor,
+};
+
+static const esp_efuse_desc_t FLASH_TEMP[] = {
+    {EFUSE_BLK2, 251, 2}, 	 // [] Flash temperature rating,
+};
+
+static const esp_efuse_desc_t FLASH_CAP[] = {
+    {EFUSE_BLK2, 253, 3}, 	 // [] Flash capacity,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -612,6 +636,21 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RTC_LDO_ACT_DBIAS13[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC_CALIBRATION_3[] = {
     &WR_DIS_ADC_CALIBRATION_3[0],    		// [] wr_dis of ADC_CALIBRATION_3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[] = {
+    &WR_DIS_FLASH_VENDOR[0],    		// [] wr_dis of FLASH_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[] = {
+    &WR_DIS_FLASH_TEMP[0],    		// [] wr_dis of FLASH_TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[] = {
+    &WR_DIS_FLASH_CAP[0],    		// [] wr_dis of FLASH_CAP
     NULL
 };
 
@@ -852,6 +891,21 @@ const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS13[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_3[] = {
     &ADC_CALIBRATION_3[0],    		// [] Store the bit [86:96] of ADC calibration data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
+    &FLASH_VENDOR[0],    		// [] Flash vendor
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[] = {
+    &FLASH_TEMP[0],    		// [] Flash temperature rating
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
+    &FLASH_CAP[0],    		// [] Flash capacity
     NULL
 };
 

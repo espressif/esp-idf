@@ -120,7 +120,7 @@
  *
  * If CONFIG_FREERTOS_UNICORE is enabled, this function simply returns 0.
  *
- * [refactor-todo] See if this needs to be deprecated (IDF-8145)(IDF-8164)
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)
  *
  * @note If CONFIG_FREERTOS_SMP is enabled, please call vTaskCoreAffinityGet()
  * instead.

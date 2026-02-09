@@ -13,7 +13,9 @@
 
 #define TAG                     "NimBLE_BLE_PAwR"
 #define TARGET_NAME             "Nimble_PAwR"
+#define BLE_PAWR_RSP_DATA_IDX   (2)
 #define BLE_PAWR_RSP_DATA_LEN   (16)
+
 static uint8_t sub_data_pattern[BLE_PAWR_RSP_DATA_LEN] = {0};
 
 static int create_periodic_sync(struct ble_gap_ext_disc_desc *disc);
@@ -60,7 +62,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             .request_event = event->periodic_report.event_counter,
             .request_subevent = event->periodic_report.subevent,
             .response_subevent = event->periodic_report.subevent,
-            .response_slot = 2,
+            .response_slot = BLE_PAWR_RSP_DATA_IDX,
         };
 
         struct os_mbuf *data = os_msys_get_pkthdr(BLE_PAWR_RSP_DATA_LEN, 0);

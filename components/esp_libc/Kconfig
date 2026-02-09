@@ -1,0 +1,213 @@
+menu "LibC"
+
+    choice LIBC
+        prompt "LibC to build application with"
+        default LIBC_NEWLIB if IDF_TOOLCHAIN_CLANG
+        default LIBC_PICOLIBC
+
+        config LIBC_NEWLIB
+            bool "NewLib"
+        config LIBC_PICOLIBC
+            bool "Picolibc"
+            depends on !IDF_TOOLCHAIN_CLANG
+    endchoice
+
+    config LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+        bool "Provides limited interoperability with libraries built using Newlib headers"
+        default y
+        depends on LIBC_PICOLIBC
+        help
+            This option provides limited compatibility with libraries built using Newlib headers by:
+
+            Enabling hidden system-header inclusions that exist in Newlib.
+            Adding tls_stdio, tls_stdout, and tls_stderr variables to Thread Local Storage
+            to allow prebuilt libraries to access them via getreent().
+            Providing an implementation of getreent() that returns the value of the thread-pointer register.
+
+            Limitations:
+
+            1. If your application or an external prebuilt library accesses Newlib "struct _reent" implicitly,
+            this may cause memory corruption on the task stack. You have two options:
+
+            - Use libc API calls instead of directly accessing "struct _reent" fields.
+            - Switch ESP-IDF to use the Newlib implementation by setting CONFIG_LIBC_NEWLIB=y in sdkconfig.
+
+            2. If your application uses a prebuilt library built with Newlib headers, you may encounter
+            unexpected behavior when overriding stdin, stdout, and stderr. External prebuilt libraries
+            can only read these streams, so overriding them will not affect as it was for Newlib.
+            You have two options to fix this:
+
+            - Rebuild the library with Picolibc headers that follow POSIX-standardized stdin, stdout,
+              and stderr declarations.
+            - Switch ESP-IDF to use the Newlib implementation by setting CONFIG_LIBC_NEWLIB=y in sdkconfig.
+
+
+    config LIBC_MISC_IN_IRAM
+        bool "Place misc libc functions (abort/assert/stdatomics) in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
+    config LIBC_LOCKS_PLACE_IN_IRAM
+        bool "Place lock API in IRAM"
+        default y
+        help
+            Enable this option to include be able to call the lock API from
+            code that runs while cache is disabled, e.g. IRAM interrupts.
+
+    choice LIBC_STDOUT_LINE_ENDING
+        prompt "Line ending for console output"
+        default LIBC_STDOUT_LINE_ENDING_CRLF
+        depends on VFS_SUPPORT_IO
+        help
+            This option allows configuring the desired line endings sent to console
+            when a newline ('\n', LF) appears on stdout.
+            Three options are possible:
+
+            CRLF: whenever LF is encountered, prepend it with CR
+
+            LF: no modification is applied, stdout is sent as is
+
+            CR: each occurrence of LF is replaced with CR
+
+            This option doesn't affect behavior of the UART driver (drivers/uart.h).
+
+        config LIBC_STDOUT_LINE_ENDING_CRLF
+            bool "CRLF"
+        config LIBC_STDOUT_LINE_ENDING_LF
+            bool "LF"
+        config LIBC_STDOUT_LINE_ENDING_CR
+            bool "CR"
+    endchoice
+
+    choice LIBC_STDIN_LINE_ENDING
+        prompt "Line ending for console input"
+        default LIBC_STDIN_LINE_ENDING_CR
+        depends on VFS_SUPPORT_IO
+        help
+            This option allows configuring which input sequence on console produces
+            a newline ('\n', LF) on stdin.
+            Three options are possible:
+
+            CRLF: CRLF is converted to LF
+
+            LF: no modification is applied, input is sent to stdin as is
+
+            CR: each occurrence of CR is replaced with LF
+
+            This option doesn't affect behavior of the UART driver (drivers/uart.h).
+
+        config LIBC_STDIN_LINE_ENDING_CRLF
+            bool "CRLF"
+        config LIBC_STDIN_LINE_ENDING_LF
+            bool "LF"
+        config LIBC_STDIN_LINE_ENDING_CR
+            bool "CR"
+    endchoice
+
+    config LIBC_NEWLIB_NANO_FORMAT
+        bool "Enable 'nano' formatting options for printf/scanf family"
+        default y if IDF_TARGET_ESP32C2
+        depends on LIBC_NEWLIB
+        help
+            In most chips the ROM contains parts of newlib C library, including printf/scanf family
+            of functions. These functions have been compiled with so-called "nano"
+            formatting option. This option doesn't support 64-bit integer formats and C99
+            features, such as positional arguments.
+
+            For more details about "nano" formatting option, please see newlib readme file,
+            search for '--enable-newlib-nano-formatted-io':
+            https://sourceware.org/git/?p=newlib-cygwin.git;a=blob_plain;f=newlib/README;hb=HEAD
+
+            If this option is enabled and the ROM contains functions from newlib-nano, the build system
+            will use functions available in ROM, reducing the application binary size.
+            Functions available in ROM run faster than functions which run from flash. Functions available
+            in ROM can also run when flash instruction cache is disabled.
+
+            Some chips (e.g. ESP32-C6) has the full formatting versions of printf/scanf in ROM instead of
+            the nano versions and in this building with newlib nano might actually increase the size of
+            the binary. Which functions are present in ROM can be seen from ROM caps:
+            ESP_ROM_HAS_NEWLIB_NANO_FORMAT and ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT.
+
+            If you need 64-bit integer formatting support or C99 features, keep this
+            option disabled.
+
+    choice LIBC_TIME_SYSCALL
+        prompt "Timers used for gettimeofday function"
+        default LIBC_TIME_SYSCALL_USE_RTC_HRT
+        help
+            This setting defines which hardware timers are used to
+            implement 'gettimeofday' and 'time' functions in C library.
+
+            - If both high-resolution (systimer for all targets except ESP32)
+                and RTC timers are used, timekeeping will continue in deep sleep.
+                Time will be reported at 1 microsecond resolution.
+                This is the default, and the recommended option.
+            - If only high-resolution timer (systimer) is used, gettimeofday will
+                provide time at microsecond resolution.
+                Time will not be preserved when going into deep sleep mode.
+            - If only RTC timer is used, timekeeping will continue in
+                deep sleep, but time will be measured at 6.(6) microsecond
+                resolution. Also the gettimeofday function itself may take
+                longer to run.
+            - If no timers are used, gettimeofday and time functions
+                return -1 and set errno to ENOSYS; they are defined as weak,
+                so they could be overridden.
+                If you want to customize gettimeofday() and other time functions,
+                please choose this option and refer to the 'time.c' source file
+                for the exact prototypes of these functions.
+
+            - When RTC is used for timekeeping, two RTC_STORE registers are
+                used to keep time in deep sleep mode.
+
+        config LIBC_TIME_SYSCALL_USE_RTC_HRT
+            bool "RTC and high-resolution timer"
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
+        config LIBC_TIME_SYSCALL_USE_RTC
+            bool "RTC"
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+        config LIBC_TIME_SYSCALL_USE_HRT
+            bool "High-resolution timer"
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
+        config LIBC_TIME_SYSCALL_USE_NONE
+            bool "None"
+            select ESP_TIME_FUNCS_USE_NONE
+    endchoice
+
+    config LIBC_OPTIMIZED_MISALIGNED_ACCESS
+        bool "Use performance-optimized memXXX/strXXX functions on misaligned memory access"
+        default y
+        depends on ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+        help
+            Enables performance-optimized implementations of memory and string functions
+            when handling misaligned memory.
+
+            Require approximately 800–1000 bytes of IRAM.
+
+            Optimized functions include:
+                - memcpy
+                - memset
+                - memmove
+                - str[n]cpy
+                - str[n]cmp
+
+    config LIBC_ASSERT_BUFFER_SIZE
+        int "Assert message buffer size"
+        range 100 2048
+        default 200
+        help
+            Size of the buffer used to format assert failure messages.
+
+            When assertions fail, the system formats a message containing the function name,
+            file name, line number, and the failed expression. This option controls the
+            maximum length of this message.
+
+            If you encounter truncated assert messages (especially with C++ templates or
+            long function names), increase this value. The default value of 200 bytes
+            should be sufficient for most cases, but complex template expressions may
+            require larger buffers.
+
+endmenu # LibC
+
+config STDATOMIC_S32C1I_SPIRAM_WORKAROUND
+    bool
+    default SPIRAM && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3) && !IDF_TOOLCHAIN_CLANG # TODO IDF-9032

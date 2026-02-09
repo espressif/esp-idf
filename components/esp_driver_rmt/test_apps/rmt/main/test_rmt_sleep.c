@@ -94,20 +94,20 @@ static void test_rmt_tx_rx_sleep_retention(bool allow_pd)
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
     printf("go to light sleep for 2 seconds\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
     printf("Waked up! Let's see if RMT driver can still work...\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_RMT_SUPPORT_SLEEP_RETENTION && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif

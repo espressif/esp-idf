@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
  * SPDX-FileCopyrightText: 2015-2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "mesh/utils.h"
 #include "mesh/uuid.h"
 #include "mesh/buf.h"
+#include "mesh/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,21 +38,12 @@ extern "C" {
 */
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #if CONFIG_IDF_TARGET_ESP32
-#define BLE_MESH_MAX_CONN   1
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
 #elif (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
-/* @todo: must ensure CONFIG_BT_CTRL_BLE_MAX_ACT is greater than 2 */
-#if CONFIG_BT_ACL_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
-/* decrease the adv,scan */
-#define BLE_MESH_MAX_CONN   (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
-#else
-#define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
-#endif /* CONFIG_BT_ACL_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2) */
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
-#if CONFIG_BT_ACL_CONNECTIONS > CONFIG_BT_LE_MAX_CONNECTIONS
-#define BLE_MESH_MAX_CONN   CONFIG_BT_LE_MAX_CONNECTIONS
-#else
-#define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
-#endif /* CONFIG_BT_ACL_CONNECTIONS > CONFIG_BT_LE_MAX_CONNECTIONS */
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, (CONFIG_BT_CTRL_BLE_MAX_ACT - 2))
+#elif (CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || \
+       CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61)
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BT_LE_MAX_CONNECTIONS)
 #else
 /* default setting */
 #define BLE_MESH_MAX_CONN   1
@@ -60,16 +52,11 @@ extern "C" {
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 #if CONFIG_IDF_TARGET_ESP32
-#define BLE_MESH_MAX_CONN   1
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
 #elif (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
-/* @todo: must ensure CONFIG_BT_CTRL_BLE_MAX_ACT is greater than 2 */
-#if CONFIG_BT_NIMBLE_MAX_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
-/* decrease the adv,scan */
-#define BLE_MESH_MAX_CONN   (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
-#else
-#define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
-#endif /* CONFIG_BT_NIMBLE_MAX_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2) */
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, (CONFIG_BT_CTRL_BLE_MAX_ACT - 2))
+#elif (CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || \
+       CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61)
 #define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
 #else
 /* default setting */
@@ -77,11 +64,17 @@ extern "C" {
 #endif
 #endif /* CONFIG_BT_NIMBLE_ENABLED */
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+#define BLE_MESH_GAP_ADV_MAX_LEN    (2 + CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN)
+#else
 #define BLE_MESH_GAP_ADV_MAX_LEN    31
+#endif
 
 #define BLE_MESH_GATT_DEF_MTU_SIZE  23
 
 #if CONFIG_BLE_MESH_USE_BLE_50
+#define BLE_MESH_TX_POWER_INCLUDE_DEFAULT                           false
+#define BLE_MESH_TX_POWER_DEFAULT                                   0x7f
 #define BLE_MESH_ADV_PHY_UNASSIGNED                                 0
 #define BLE_MESH_ADV_PHY_1M                                         1
 #define BLE_MESH_ADV_PHY_2M                                         2
@@ -91,6 +84,8 @@ extern "C" {
 #define BLE_MESH_ADV_PHY_OPTION_PREFER_S8                           2
 #define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S2                          3
 #define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S8                          4
+#define BLE_MESH_ADV_PRI_PHY_DEFAULT              BLE_MESH_ADV_PHY_1M
+#define BLE_MESH_ADV_SEC_PHY_DEFAULT              BLE_MESH_ADV_PHY_1M
 #endif
 
 /* BD ADDR types */
@@ -112,6 +107,9 @@ extern "C" {
 #define BLE_MESH_ADV_SCAN_RSP               0x04
 #else
 /* Bluetooth Core Spec 6.0, Vol 4, Part E, 7.7.65.13 */
+#if CONFIG_BLE_MESH_EXT_ADV
+#define BLE_MESH_EXT_ADV_NONCONN_IND       (0)
+#endif
 #define BLE_MESH_ADV_IND                   (0x13)
 #define BLE_MESH_ADV_DIRECT_IND            (0x15)
 #define BLE_MESH_ADV_SCAN_IND              (0x12)
@@ -120,10 +118,15 @@ extern "C" {
 #define BLE_MESH_ADV_SCAN_RSP              (0x1b)
 #endif
 
+#define BLE_MESH_ADV_ITVL_DEFAULT          (0)
+#define BLE_MESH_ADV_CNT_DEFAULT           (0)
+
 /* advertising channel map */
-#define BLE_MESH_ADV_CHNL_37                BIT(0)
-#define BLE_MESH_ADV_CHNL_38                BIT(1)
-#define BLE_MESH_ADV_CHNL_39                BIT(2)
+#define BLE_MESH_ADV_CHAN_UNASSIGNED        (0)
+#define BLE_MESH_ADV_CHAN_37                BIT(0)
+#define BLE_MESH_ADV_CHAN_38                BIT(1)
+#define BLE_MESH_ADV_CHAN_39                BIT(2)
+#define BLE_MESH_ADV_CHAN_DEFAULT           (BLE_MESH_ADV_CHAN_39|BLE_MESH_ADV_CHAN_38|BLE_MESH_ADV_CHAN_37)
 
 /* Advertising filter policy */
 #define BLE_MESH_AP_SCAN_CONN_ALL           0x00
@@ -472,6 +475,8 @@ struct bt_mesh_adv_param {
     /** Maximum Advertising Interval (N * 0.625) */
     uint16_t interval_max;
 
+    uint8_t channel_map;
+
 #if CONFIG_BLE_MESH_USE_BLE_50
     /** Maximum Advertising Duration (N * 0.625) */
     uint16_t adv_duration;
@@ -484,26 +489,30 @@ struct bt_mesh_adv_param {
 
     /** Advertising Secondary PHY */
     uint8_t secondary_phy;
+
+    int8_t tx_power;
+
+    uint8_t include_tx_power : 1;
 #endif
 };
 
 #define ADV_TASK_ADV_INST_EVT(inst_id) BIT(inst_id)
 
 enum bt_mesh_adv_inst_type {
-    BLE_MESH_ADV_INS,
+    BLE_MESH_ADV_INST,
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_SERVER
-    BLE_MESH_ADV_PROXY_INS,
+    BLE_MESH_ADV_PROXY_INST,
 #endif
 #if CONFIG_BLE_MESH_SEPARATE_RELAY_ADV_INSTANCE
-    BLE_MESH_RELAY_ADV_INS,
+    BLE_MESH_RELAY_ADV_INST,
 #endif
 #if CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
-    BLE_MESH_BLE_ADV_INS,
+    BLE_MESH_BLE_ADV_INST,
 #endif
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
-    BLE_MESH_ADV_INS_TYPES_NUM,
+    BLE_MESH_ADV_INST_TYPES_NUM,
 };
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
@@ -577,6 +586,8 @@ struct bt_mesh_adv_report {
 
     /* Secondary advertising PHY */
     uint8_t secondary_phy;
+
+    uint8_t tx_power;
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 };
 
@@ -921,20 +932,6 @@ void bt_mesh_gatt_init(void);
 void bt_mesh_gatt_deinit(void);
 
 void bt_mesh_adapt_init(void);
-
-void bt_mesh_set_private_key(const uint8_t pri_key[32]);
-
-const uint8_t *bt_mesh_pub_key_get(void);
-
-bool bt_mesh_check_public_key(const uint8_t key[64]);
-
-int bt_mesh_dh_key_gen(const uint8_t remote_pub_key[64], uint8_t dhkey[32]);
-
-int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
-
-int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
 
 enum {
     BLE_MESH_EXCEP_LIST_SUB_CODE_ADD = 0,

@@ -15,7 +15,7 @@
 #include "freertos/semphr.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "soc/rtc.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
@@ -63,6 +63,10 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
     int ch_offset = touch_ll_get_current_meas_channel() - TOUCH_MIN_CHAN_ID;
+    if (ch_offset < 0 || ch_offset >= (int)TOUCH_LL_GET(CHAN_NUM)) {
+        /* Not a valid channel */
+        return;
+    }
     data.chan = g_touch->ch[ch_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
@@ -137,7 +141,13 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
                         "at least one sample configuration required");
     ESP_RETURN_ON_FALSE(sens_cfg->sample_cfg_num <= TOUCH_SAMPLE_CFG_NUM, ESP_ERR_INVALID_ARG, TAG,
                         "at most %d sample configurations supported", (int)(TOUCH_SAMPLE_CFG_NUM));
-
+    ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt <= sens_cfg->sample_cfg_num, ESP_ERR_INVALID_ARG, TAG,
+                        "trigger_rise_cnt should within 0 ~ sample_cfg_num");
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL < 300
+    ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt < 2, ESP_ERR_INVALID_ARG, TAG,
+                        "this target do not support trigger_rise_cnt > 1");
+#endif
+    esp_err_t ret = ESP_OK;
     /* Get the source clock frequency for the first time */
     if (!sens_handle->src_freq_hz) {
         /* Touch sensor actually uses dynamic fast clock LP_DYN_FAST_CLK, but it will only switch to the slow clock during sleep,
@@ -147,8 +157,12 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
         ESP_LOGD(TAG, "touch rtc clock source: RTC_FAST, frequency: %"PRIu32" Hz", sens_handle->src_freq_hz);
     }
     if (!sens_handle->interval_freq_hz) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->interval_freq_hz),
-                            TAG, "get interval clock frequency failed");
+        ret = esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->interval_freq_hz);
+        if (ret != ESP_OK) {
+            ESP_LOGW(TAG, "get cached interval clock frequency failed, try to get approximate frequency");
+            ret = esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &sens_handle->interval_freq_hz);
+        }
+        ESP_RETURN_ON_ERROR(ret, TAG, "get interval clock frequency failed");
     }
 
     uint32_t src_freq_hz = sens_handle->src_freq_hz;
@@ -161,6 +175,7 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
     ESP_RETURN_ON_FALSE(hal_cfg->timeout_ticks <= TOUCH_LL_TIMEOUT_MAX, ESP_ERR_INVALID_ARG, TAG,
                         "max_meas_time_ms should within %"PRIu32, TOUCH_LL_TIMEOUT_MAX / src_freq_mhz);
     hal_cfg->sample_cfg_num = sens_cfg->sample_cfg_num;
+    hal_cfg->trigger_rise_cnt = sens_cfg->trigger_rise_cnt ? sens_cfg->trigger_rise_cnt : (sens_cfg->sample_cfg_num == 1 ? 1 : 2);
     hal_cfg->output_mode = sens_cfg->output_mode;
 
     for (uint32_t smp_cfg_id = 0; smp_cfg_id < sens_cfg->sample_cfg_num; smp_cfg_id++) {
@@ -317,8 +332,16 @@ esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, con
 {
     TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
     TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL < 300
+    ESP_RETURN_ON_FALSE_ISR(!benchmark_cfg->do_force_update, ESP_ERR_INVALID_ARG, TAG, "this target do not support force update benchmark");
+#else
+    ESP_RETURN_ON_FALSE_ISR(benchmark_cfg->do_reset != benchmark_cfg->do_force_update, ESP_ERR_INVALID_ARG, TAG, "do_reset and do_force_update cannot be both true");
+#endif
     if (benchmark_cfg->do_reset) {
         touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
+    }
+    if (benchmark_cfg->do_force_update) {
+        touch_ll_force_update_benchmark(chan_handle->id, benchmark_cfg->sample_cfg_id, benchmark_cfg->benchmark);
     }
     return ESP_OK;
 }
@@ -405,8 +428,8 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
     esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_RTC_PERIPH;
 #else
-#warning "RTC_PERIPH power domain is not supported"
     esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_MAX;
+    ESP_LOGW(TAG, "RTC_PERIPH power domain is not supported");
 #endif  // SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_GOTO_ON_ERROR(esp_sleep_pd_config(pd_domain, slp_opt), err, TAG, "Failed to set RTC_PERIPH power domain");
 

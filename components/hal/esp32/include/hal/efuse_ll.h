@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 
@@ -207,27 +208,27 @@ __attribute__((always_inline)) static inline void efuse_ll_set_pgm_cmd(void)
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code(void)
 {
-    EFUSE.conf.op_code = EFUSE_READ_OP_CODE;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_READ_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
-    EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_WRITE_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint32_t value)
 {
-    EFUSE.dac_conf.dac_clk_div = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.dac_conf, dac_clk_div, value);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_sel0(uint32_t value)
 {
-    EFUSE.clk.clk_sel0 = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.clk, clk_sel0, value);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_sel1(uint32_t value)
 {
-    EFUSE.clk.clk_sel1 = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.clk, clk_sel1, value);
 }
 
 /******************* eFuse control functions *************************/

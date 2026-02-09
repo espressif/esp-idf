@@ -1,0 +1,18 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+components/esp_stdio/test_apps/stdio:
+  disable:
+    - if: CONFIG_NAME == "serial_jtag_only" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: CONFIG_NAME == "serial_jtag_only_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: CONFIG_NAME == "stdio_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4" # TODO: IDF-14364
+  disable_test:
+    - if: CONFIG_NAME == "simple" and IDF_TARGET != "esp32"
+  depends_components:
+    - esp_stdio
+    - esp_driver_uart
+    - esp_driver_usb_serial_jtag
+    - esp_usb_cdc_rom_console
+    - vfs
+    - esp_rom
+    - esp_hal_uart
+    - esp_hal_usb

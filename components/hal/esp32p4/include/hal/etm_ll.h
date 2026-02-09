@@ -14,11 +14,21 @@
 #include "soc/soc_etm_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
+#define ETM_LL_GET(_attr) ETM_LL_ ## _attr
+#define ETM_LL_SUPPORT(_feat) ETM_LL_SUPPORT_ ## _feat
+
+// Number of ETM instances
+#define ETM_LL_INST_NUM 1
+
+// Number of channels in each ETM instance
+#define ETM_LL_CHANS_PER_INST 50
+
+// Support to get and clear the status of the ETM event and task
+#define ETM_LL_SUPPORT_STATUS_REG  1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ETM_LL_SUPPORT_STATUS          1   // Support to get and clear the status of the ETM event and task
 
 /**
  * @brief Enable the bus clock for ETM module

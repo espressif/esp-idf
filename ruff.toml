@@ -1,5 +1,5 @@
 line-length = 120
-target-version = "py38"
+target-version = "py310"
 
 [format]
     quote-style = "single"
@@ -12,6 +12,7 @@ target-version = "py38"
         "F",    # pyflakes
         "W",    # pycodestyle
         "I",    # reorder-imports
+        "UP",   # pyupgrade
     ]
     ignore = [
         "E203", # whitespace before ':'
@@ -40,10 +41,6 @@ target-version = "py38"
         "components/protocomm/python/sec1_pb2.py",
         "components/protocomm/python/sec2_pb2.py",
         "components/protocomm/python/session_pb2.py",
-        "components/wifi_provisioning/python/wifi_ctrl_pb2.py",
-        "components/wifi_provisioning/python/wifi_scan_pb2.py",
-        "components/wifi_provisioning/python/wifi_config_pb2.py",
-        "components/wifi_provisioning/python/wifi_constants_pb2.py",
         "components/esp_local_ctrl/python/esp_local_ctrl_pb2.py",
     ]
 

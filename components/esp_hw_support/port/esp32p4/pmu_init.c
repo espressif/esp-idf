@@ -14,14 +14,17 @@
 #include "soc/pmu_struct.h"
 #include "hal/efuse_hal.h"
 #include "hal/pmu_hal.h"
+#include "hal/lp_sys_ll.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
+#include "soc/lp_system_reg.h"
 #include "regi2c_ctrl.h"
 #include "esp_rom_sys.h"
 #include "soc/rtc.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -88,7 +91,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, mode, anlg->bias.bias_sleep);
     pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, mode, anlg->regulator0.slp_mem_xpd);
     pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, mode, anlg->regulator0.slp_logic_xpd);
-    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100) && (mode == PMU_MODE_HP_SLEEP)) {
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300) && (mode == PMU_MODE_HP_SLEEP)) {
         pmu_ll_hp_enable_sleep_flash_ldo_channel(ctx->hal->dev, anlg->regulator0.xpd_0p1a);
     }
     pmu_ll_hp_set_regulator_sleep_logic_dbias (ctx->hal->dev, mode, anlg->regulator0.slp_logic_dbias);
@@ -132,6 +135,7 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
         PMU_HP_PD_TOP,
         PMU_HP_PD_CNNT,
         PMU_HP_PD_HPMEM,
+        PMU_HP_PD_CPU
     };
 
     for (uint8_t idx = 0; idx < (sizeof(pmu_hp_domains) / sizeof(pmu_hp_power_domain_t)); idx++) {
@@ -173,6 +177,9 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
         pmu_hp_system_param_default(mode, &param);
         pmu_hp_system_init(ctx, mode, &param);
     }
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    lp_sys_ll_set_hp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
+#endif
 }
 
 static inline void pmu_lp_system_param_default(pmu_lp_mode_t mode, pmu_lp_system_param_t *param)
@@ -189,6 +196,9 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    lp_sys_ll_set_lp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
+#endif
 }
 
 void pmu_init(void)

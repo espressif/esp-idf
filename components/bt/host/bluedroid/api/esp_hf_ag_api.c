@@ -234,35 +234,6 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_addr, esp_hf_at_response_code
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr,
-                                            esp_hf_call_status_t call_state,
-                                            esp_hf_call_setup_status_t call_setup_state,
-                                            esp_hf_network_state_t ntk_state, int signal)
-{
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    if (signal < 0 || signal > 5) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_HF;
-    msg.act = BTC_HF_IND_NOTIFICATION_EVT;
-
-    btc_hf_args_t arg;
-    memset(&arg, 0, sizeof(btc_hf_args_t));
-    memcpy(&(arg.ind_change.remote_addr), remote_addr, sizeof(esp_bd_addr_t));
-    arg.ind_change.call_state = call_state;
-    arg.ind_change.call_setup_state = call_setup_state;
-    arg.ind_change.ntk_state = ntk_state;
-    arg.ind_change.signal = signal;
-
-    /* Switch to BTC context */
-    bt_status_t state = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL, NULL);
-    return (state == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
-}
-
 esp_err_t esp_hf_ag_ciev_report(esp_bd_addr_t remote_addr, esp_hf_ciev_report_type_t ind_type, int value)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {

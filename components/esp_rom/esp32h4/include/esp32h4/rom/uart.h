@@ -17,8 +17,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12398 inherit from verification branch, need check
-
 /** \defgroup uart_apis, uart configuration and communication related apis
   * @brief uart apis
   */
@@ -27,8 +25,9 @@ extern "C" {
   * @{
   */
 
-#define RX_BUFF_SIZE                     0x400
-#define TX_BUFF_SIZE                     100
+/*It is found that when the buf is only 0x400, and the baud rate is set to 921600, the download is likely to fail */
+#define RX_BUFF_SIZE 0x800
+#define TX_BUFF_SIZE 100
 
 //uart int enable register ctrl bits
 #define UART_RCV_INTEN                   BIT0
@@ -292,7 +291,7 @@ void uart_rx_intr_handler(void *para);
   * @return OK for successful.
   *         FAIL for failed.
   */
-ETS_STATUS uart_rx_readbuff( RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
+ETS_STATUS uart_rx_readbuff(RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
 
 /**
   * @brief Get all chars from receive buffer.

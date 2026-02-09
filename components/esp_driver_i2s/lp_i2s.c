@@ -28,7 +28,7 @@
 #include "esp_private/i2s_platform.h"
 #include "esp_private/lp_i2s_private.h"
 #include "i2s_private.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 
 #define LP_I2S_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 
@@ -169,7 +169,8 @@ esp_err_t lp_i2s_channel_read(lp_i2s_chan_handle_t chan, lp_i2s_trans_t *trans, 
         return ESP_ERR_TIMEOUT;
     }
 
-    size_t len = MIN(lp_i2s_ll_get_rx_mem_fifo_cnt(chan->ctlr->hal.dev), trans->buflen);
+    size_t fifo_cnt = lp_i2s_ll_get_rx_mem_fifo_cnt(chan->ctlr->hal.dev);
+    size_t len = MIN(fifo_cnt, trans->buflen);
     lp_i2s_ll_read_buffer(chan->ctlr->hal.dev, trans->buffer, len);
     trans->received_size = len;
     portENTER_CRITICAL(&g_i2s.spinlock);
@@ -305,7 +306,8 @@ static void IRAM_ATTR s_i2s_default_isr(void *arg)
     ESP_DRAM_LOGD(TAG, "in isr, rx_mem_fifo_cnt: %d bytes", lp_i2s_ll_get_rx_mem_fifo_cnt(ctlr->hal.dev));
 
     if (ctlr->rx_chan->cbs.on_request_new_trans) {
-        size_t len = MIN(lp_i2s_ll_get_rx_mem_fifo_cnt(ctlr->hal.dev), ctlr->rx_chan->trans.buflen);
+        size_t fifo_cnt = lp_i2s_ll_get_rx_mem_fifo_cnt(ctlr->hal.dev);
+        size_t len = MIN(fifo_cnt, ctlr->rx_chan->trans.buflen);
         ESP_DRAM_LOGD(TAG, "len: %d", len);
         lp_i2s_ll_read_buffer(ctlr->hal.dev, ctlr->rx_chan->trans.buffer, len);
         lp_i2s_ll_rx_clear_interrupt_status(ctlr->hal.dev, LP_I2S_LL_EVENT_RX_MEM_THRESHOLD_INT);

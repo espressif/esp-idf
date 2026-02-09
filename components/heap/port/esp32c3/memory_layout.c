@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ enum {
 };
 
 /* COMMON_CAPS is the set of attributes common to all types of memory on this chip */
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT
 #define ESP32C3_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 #else
 #define ESP32C3_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_EXEC)
@@ -43,11 +43,11 @@ enum {
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    /*                                   Mem Type Name   | High Priority Matching                  | Medium Priorty Matching                 | Low Priority Matching */
+    /*                                   Mem Type Name   | High Priority Matching                  | Medium Priority Matching                 | Low Priority Matching */
     [SOC_MEMORY_TYPE_RAM]           = { "RAM",           { ESP32C3_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0 ,                                       0}},
     [SOC_MEMORY_TYPE_RETENTION_RAM] = { "Retention RAM", { MALLOC_CAP_RETENTION,                     ESP32C3_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0}},
     [SOC_MEMORY_TYPE_RTCRAM]        = { "RTCRAM",        { MALLOC_CAP_RTCRAM,                        0,                                        ESP32C3_MEM_COMMON_CAPS }},

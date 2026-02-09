@@ -18,6 +18,7 @@
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_rw_common.h"
+#include "freertos/FreeRTOS.h"
 
 static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
                                    size_t block_count, size_t alignment, FILE* performance_log,

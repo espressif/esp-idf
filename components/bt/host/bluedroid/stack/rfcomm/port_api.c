@@ -181,7 +181,7 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
     /* If the MTU is not specified (0), keep MTU decision until the
      * PN frame has to be send
      * at that time connection should be established and we
-     * will know for sure our prefered MTU
+     * will know for sure our preferred MTU
      */
 
     rfcomm_mtu = L2CAP_MTU_SIZE - RFCOMM_DATA_OVERHEAD;
@@ -298,12 +298,12 @@ int RFCOMM_RemoveServer (UINT16 handle)
 **
 ** Description      This function is called to provide an address of the
 **                  function which will be called when one of the events
-**                  specified in the mask occures.
+**                  specified in the mask occurs.
 **
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
 **                  p_callback - address of the callback function which should
 **                               be called from the RFCOMM when an event
-**                               specified in the mask occures.
+**                               specified in the mask occurs.
 **
 **
 *******************************************************************************/
@@ -537,8 +537,7 @@ BOOLEAN PORT_IsOpening (BD_ADDR bd_addr)
                 }
             }
 
-            if ((!found_port) ||
-                    (found_port && (p_port->rfc.state < RFC_STATE_OPENED))) {
+            if ((!found_port) || (p_port->rfc.state < RFC_STATE_OPENED)) {
                 /* Port is not established yet. */
                 memcpy (bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
                 return TRUE;
@@ -641,7 +640,7 @@ int PORT_GetRxQueueCnt (UINT16 handle, UINT16 *p_rx_queue_count)
 ** Function         PORT_GetState
 **
 ** Description      This function is called to fill tPORT_STATE structure
-**                  with the curremt control settings for the port
+**                  with the current control settings for the port
 **
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
 **                  p_settings - Pointer to a tPORT_STATE structure in which
@@ -1009,15 +1008,15 @@ int PORT_GetModemStatus (UINT16 handle, UINT8 *p_signal)
 **
 ** Function         PORT_ClearError
 **
-** Description      This function retreives information about a communications
+** Description      This function retrieves information about a communications
 **                  error and reports current status of a connection.  The
-**                  function should be called when an error occures to clear
+**                  function should be called when an error occurs to clear
 **                  the connection error flag and to enable additional read
 **                  and write operations.
 **
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
 **                  p_errors   - pointer of the variable to receive error codes
-**                  p_status   - pointer to the tPORT_STATUS structur to receive
+**                  p_status   - pointer to the tPORT_STATUS structure to receive
 **                               connection status
 **
 *******************************************************************************/
@@ -1090,7 +1089,7 @@ int PORT_SendError (UINT16 handle, UINT8 errors)
 ** Description      This function reports current status of a connection.
 **
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
-**                  p_status   - pointer to the tPORT_STATUS structur to receive
+**                  p_status   - pointer to the tPORT_STATUS structure to receive
 **                               connection status
 **
 *******************************************************************************/
@@ -1700,7 +1699,7 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
 
         rc = port_write (p_port, p_buf);
 
-        /* If queue went below the threashold need to send flow control */
+        /* If queue went below the threshold need to send flow control */
         event |= port_flow_control_user (p_port);
 
         if (rc == PORT_SUCCESS) {

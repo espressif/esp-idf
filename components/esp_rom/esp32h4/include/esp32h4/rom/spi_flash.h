@@ -15,8 +15,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12388 inherit from verification branch, need check
-
 #define PERIPHS_SPI_FLASH_CMD                 SPI_MEM_CMD_REG(1)
 #define PERIPHS_SPI_FLASH_ADDR                SPI_MEM_ADDR_REG(1)
 #define PERIPHS_SPI_FLASH_CTRL                SPI_MEM_CTRL_REG(1)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
  * @file
  * @brief Core dump port implementation for Xtensa based boards.
  */
+
+#include "sdkconfig.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -120,8 +122,6 @@ typedef struct {
     // but gdb complains when it less than 129
     uint32_t reserved;
 } __attribute__((packed)) xtensa_elf_reg_dump_t;
-
-#if CONFIG_ESP_COREDUMP_ENABLE
 
 static XtExcFrame s_fake_stack_frame = {
     .pc   = (UBaseType_t) COREDUMP_FAKE_STACK_START,                        // task entrypoint fake_ptr
@@ -470,7 +470,7 @@ uint32_t esp_core_dump_get_extra_info(void **info)
     return sizeof(s_extra_info);
 }
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, void *ei_data)
 {
@@ -563,6 +563,16 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     bt_info->corrupted = corrupted;
 }
 
-#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
-#endif
+#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
+
+/* Helper function defined in core_dump_stack_switch.S */
+void esp_core_dump_port_write_on_new_stack(uint32_t new_sp);
+
+void esp_core_dump_port_write(uint32_t new_stack, uint32_t new_sp)
+{
+    (void)new_stack;
+    esp_core_dump_port_write_on_new_stack(new_sp);
+}
+#endif // CONFIG_ESP_COREDUMP_STACK_SIZE > 0

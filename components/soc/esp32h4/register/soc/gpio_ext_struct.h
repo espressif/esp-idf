@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -53,13 +53,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ext_filter_ch0_en : R/W; bitpos: [0]; default: 0;
+        /** ext_filter_chn_en : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable channel n of Glitch Filter.
          *  0: Not enable
          *  1: Enable
          */
-        uint32_t ext_filter_ch0_en:1;
-        /** ext_filter_ch0_input_io_num : R/W; bitpos: [6:1]; default: 0;
+        uint32_t ext_filter_chn_en:1;
+        /** ext_filter_chn_input_io_num : R/W; bitpos: [6:1]; default: 0;
          *  Configures to select the input GPIO for Glitch Filter.
          *  0: Select GPIO0
          *  1: Select GPIO1
@@ -68,21 +68,21 @@ typedef union {
          *  39: Select GPIO39
          *  40 ~ 63: Reserved
          */
-        uint32_t ext_filter_ch0_input_io_num:6;
+        uint32_t ext_filter_chn_input_io_num:6;
         uint32_t reserved_7:1;
-        /** ext_filter_ch0_window_thres : R/W; bitpos: [13:8]; default: 0;
+        /** ext_filter_chn_window_thres : R/W; bitpos: [13:8]; default: 0;
          *  Configures the window threshold for Glitch Filter. The window threshold should be
          *  less than or equal to GPIOSD_FILTER_CHn_WINDOW_WIDTH.
          *  %see DOC-4768
          *  Measurement unit: IO MUX operating clock cycle
          */
-        uint32_t ext_filter_ch0_window_thres:6;
-        /** ext_filter_ch0_window_width : R/W; bitpos: [19:14]; default: 0;
+        uint32_t ext_filter_chn_window_thres:6;
+        /** ext_filter_chn_window_width : R/W; bitpos: [19:14]; default: 0;
          *  Configures the window width for Glitch Filter. The effective value of window width
          *  is 0 ~ 63.
          *  Measurement unit: IO MUX operating clock cycle
          */
-        uint32_t ext_filter_ch0_window_width:6;
+        uint32_t ext_filter_chn_window_width:6;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -202,6 +202,31 @@ typedef union {
     uint32_t val;
 } gpio_ext_etm_task_pn_cfg_reg_t;
 
+/** Group: Pin Control Register */
+/** Type of pin_ctrl register
+ *  Clock Output Configuration Register
+ */
+ typedef union {
+    struct {
+        /** clk_out1 : R/W; bitpos: [4:0]; default: 0;
+         *  If you want to output clock for I2S to CLK_OUT_out1, set this register to 0x0.
+         *  CLK_OUT_out1 can be found in peripheral output signals.
+         */
+        uint32_t clk_out1:5;
+        /** clk_out2 : R/W; bitpos: [9:5]; default: 0;
+         *  If you want to output clock for I2S to CLK_OUT_out2, set this register to 0x0.
+         *  CLK_OUT_out2 can be found in peripheral output signals.
+         */
+        uint32_t clk_out2:5;
+        /** clk_out3 : R/W; bitpos: [14:10]; default: 0;
+         *  If you want to output clock for I2S to CLK_OUT_out3, set this register to 0x0.
+         *  CLK_OUT_out3 can be found in peripheral output signals.
+         */
+        uint32_t clk_out3:5;
+        uint32_t reserved_15:17;
+    };
+    uint32_t val;
+} gpio_ext_pin_ctrl_reg_t;
 
 /** Group: Version Register */
 /** Type of ext_version register
@@ -218,6 +243,12 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
+typedef struct gpio_sd_dev_t {
+    volatile uint32_t reserved;
+    volatile gpio_ext_sigmadelta_misc_reg_t misc;
+    volatile gpio_ext_sigmadeltan_reg_t channel[4];
+} gpio_sd_dev_t;
+
 typedef struct gpio_etm_dev_t {
     volatile gpio_ext_etm_event_chn_cfg_reg_t etm_event_chn_cfg[8];
     uint32_t reserved_080[8];
@@ -225,17 +256,22 @@ typedef struct gpio_etm_dev_t {
 } gpio_etm_dev_t;
 
 typedef struct {
-    uint32_t reserved_000;
-    volatile gpio_ext_sigmadelta_misc_reg_t ext_sigmadelta_misc;
-    volatile gpio_ext_sigmadeltan_reg_t ext_sigmadeltan[4];
+    volatile gpio_ext_glitch_filter_chn_reg_t glitch_filter_chn[8];
+} gpio_glitch_filter_dev_t;
+
+typedef struct {
+    volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_018[48];
-    volatile gpio_ext_glitch_filter_chn_reg_t ext_glitch_filter_chn[8];
+    volatile gpio_glitch_filter_dev_t ext_glitch_filter;
     uint32_t reserved_0f8[8];
     volatile gpio_etm_dev_t etm;
-    uint32_t reserved_178[33];
+    uint32_t reserved_178[32];
+    volatile gpio_ext_pin_ctrl_reg_t pin_ctrl;
     volatile gpio_ext_version_reg_t ext_version;
 } gpio_ext_dev_t;
 
+extern gpio_sd_dev_t SDM;
+extern gpio_glitch_filter_dev_t GLITCH_FILTER;
 extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -195,6 +195,54 @@ esp_err_t esp_pm_lock_delete(esp_pm_lock_handle_t handle);
  *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
  */
 esp_err_t esp_pm_dump_locks(FILE* stream);
+
+/**
+ * @brief Structure to store PM lock statistics for each lock type
+ */
+typedef struct {
+    size_t created;     /*!< Number of locks of this type that have been created */
+    size_t acquired;    /*!< Total number of times locks of this type have been acquired */
+} esp_pm_lock_stats_t;
+
+/**
+ * @brief Structure to store statistics for a single PM lock instance
+ */
+typedef struct {
+    size_t acquired;    /*!< Current reference count of the lock (number of times it has been acquired without corresponding release) */
+#ifdef CONFIG_PM_PROFILING
+    size_t times_taken; /*!< Number of times the lock has been taken (from not held to held state) */
+    int64_t time_held;  /*!< Total time the lock has been held (in microseconds) */
+#endif
+} esp_pm_lock_instance_stats_t;
+
+/**
+ * @brief Get statistics for all PM lock types
+ *
+ * This function returns the number of locks created for each lock type
+ * and the total number of times locks of each type have been acquired.
+ *
+ * @param stats pointer to array of esp_pm_lock_stats_t with ESP_PM_LOCK_MAX elements
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if stats pointer is invalid
+ *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
+ */
+esp_err_t esp_pm_get_lock_stats_all(esp_pm_lock_stats_t stats[ESP_PM_LOCK_MAX]);
+
+/**
+ * @brief Get statistics for a single PM lock instance
+ *
+ * This function returns statistics for a specific lock instance,
+ * including the number of times it has been acquired and released.
+ *
+ * @param handle handle of the lock to get statistics for
+ * @param stats pointer to esp_pm_lock_instance_stats_t structure to fill
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if handle or stats pointer is invalid
+ *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
+ */
+esp_err_t esp_pm_lock_get_stats(esp_pm_lock_handle_t handle, esp_pm_lock_instance_stats_t *stats);
 
 #if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
 /**

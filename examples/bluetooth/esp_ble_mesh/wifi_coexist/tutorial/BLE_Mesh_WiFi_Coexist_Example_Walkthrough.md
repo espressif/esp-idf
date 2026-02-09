@@ -173,7 +173,7 @@ This demo calls the `bluetooth_init` function to:
 	After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 	```
-	ret = esp_bluedroid_init();
+	ret = esp_bluedroid_init_with_cfg(&cfg);
 	ret = esp_bluedroid_enable();
 	```
 

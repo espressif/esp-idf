@@ -4,15 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/soc_caps.h"
+#include "esp_attr.h"
+
+#if SOC_AES_SUPPORTED
 #include "soc/aes_reg.h"
+#endif
+#if SOC_HMAC_SUPPORTED
 #include "soc/hmac_reg.h"
+#endif
+#if SOC_DIG_SIGN_SUPPORTED
 #include "soc/ds_reg.h"
+#endif
 #include "soc/efuse_reg.h"
 #include "soc/pcr_reg.h"
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/lp_wdt_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/ext_mem_defs.h"
+#include "soc/assist_debug_reg.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -35,98 +45,116 @@ extern uint32_t _instruction_reserved_start;
 #define TEST_APM_EFUSE_PROT_REG EFUSE_RD_KEY5_DATA0_REG
 #endif
 
-TEST_CASE("Test APM violation interrupt: eFuse", "[apm_violation]")
+TEST_CASE("Test APM violation: eFuse", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
     val = REG_READ(TEST_APM_EFUSE_PROT_REG);
     TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
 
-TEST_CASE("Test APM violation interrupt: MMU", "[apm_violation]")
+TEST_CASE("Test APM violation: MMU", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), SOC_MMU_ENTRY_NUM - 2);
     val = REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0));
     TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
 
-TEST_CASE("Test APM violation interrupt: AES", "[apm_violation]")
+#if SOC_AES_SUPPORTED
+TEST_CASE("Test APM violation: AES", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
     val = REG_READ(AES_KEY_2_REG);
     TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
+#endif
 
-TEST_CASE("Test APM violation interrupt: HMAC", "[apm_violation]")
+#if SOC_AES_SUPPORTED
+TEST_CASE("Test APM violation: HMAC", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
     val = REG_READ(HMAC_SET_PARA_KEY_REG);
     TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
+#endif
 
-TEST_CASE("Test APM violation interrupt: DS", "[apm_violation]")
+#if SOC_DIG_SIGN_SUPPORTED
+TEST_CASE("Test APM violation: DS", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
     val = REG_READ(DS_Z_MEM);
     TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
+#endif
 
-TEST_CASE("Test APM violation interrupt: SHA PCR", "[apm_violation]")
+TEST_CASE("Test APM violation: SHA PCR", "[apm_violation]")
 {
     uint32_t val = 0;
     REG_WRITE(PCR_SHA_CONF_REG, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
 
-TEST_CASE("Test APM violation interrupt: ECC PCR", "[apm_violation]")
+TEST_CASE("Test APM violation: ECC PCR", "[apm_violation]")
 {
     uint32_t val = 0;
     REG_WRITE(PCR_ECC_CONF_REG, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
 
-/* TEE IRAM: Reserved/Vector-table boundary */
-TEST_CASE("Test TEE-TEE violation: IRAM (W1)", "[exception]")
+// NOTE: For C6/H2, SWDT and BOD are protected using PMP, thus this test
+// generates a store access fault instead of APM violation
+TEST_CASE("Test APM violation: SWDT/BOD", "[exception]")
 {
-    esp_tee_service_call(1, SS_ESP_TEE_TEST_IRAM_REG1_WRITE_VIOLATION);
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    REG_WRITE(LP_ANALOG_PERI_LP_ANA_FIB_ENABLE_REG, 0);
+#else
+    REG_WRITE(LP_ANA_FIB_ENABLE_REG, 0);
+#endif
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* Illegal memory space: Write */
-TEST_CASE("Test TEE-TEE violation: Reserved (W1)", "[exception]")
+TEST_CASE("Test TEE-TEE violation: Reserved-W1", "[exception]")
 {
     esp_tee_service_call(1, SS_ESP_TEE_TEST_RESV_REG1_WRITE_VIOLATION);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* Illegal memory space: Execution */
-TEST_CASE("Test TEE-TEE violation: Reserved (X1)", "[exception]")
+TEST_CASE("Test TEE-TEE violation: Reserved-X1", "[exception]")
 {
     esp_tee_service_call(1, SS_ESP_TEE_TEST_RESV_REG1_EXEC_VIOLATION);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
+/* TEE IRAM: Reserved/Vector-table boundary */
+TEST_CASE("Test TEE-TEE violation: IRAM-W1", "[exception]")
+{
+    esp_tee_service_call(1, SS_ESP_TEE_TEST_IRAM_REG1_WRITE_VIOLATION);
+    TEST_FAIL_MESSAGE("Exception should have been generated");
+}
+
 /* TEE IRAM: Vector table region */
-TEST_CASE("Test TEE-TEE violation: IRAM (W2)", "[exception]")
+TEST_CASE("Test TEE-TEE violation: IRAM-W2", "[exception]")
 {
     esp_tee_service_call(1, SS_ESP_TEE_TEST_IRAM_REG2_WRITE_VIOLATION);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* TEE DRAM: Stack region */
-TEST_CASE("Test TEE-TEE violation: DRAM (X1)", "[exception]")
+TEST_CASE("Test TEE-TEE violation: DRAM-X1", "[exception]")
 {
     esp_tee_service_call(1, SS_ESP_TEE_TEST_DRAM_REG1_EXEC_VIOLATION);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* TEE DRAM: Heap region */
-TEST_CASE("Test TEE-TEE violation: DRAM (X2)", "[exception]")
+TEST_CASE("Test TEE-TEE violation: DRAM-X2", "[exception]")
 {
     esp_tee_service_call(1, SS_ESP_TEE_TEST_DRAM_REG2_EXEC_VIOLATION);
     TEST_FAIL_MESSAGE("Exception should have been generated");
@@ -140,7 +168,7 @@ TEST_CASE("Test TEE-TEE violation: Illegal Instruction", "[exception]")
 }
 
 /* TEE DRAM -REE IRAM Boundary */
-TEST_CASE("Test REE-TEE isolation: DRAM (R1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: DRAM-R1", "[exception]")
 {
     uint32_t* val = (uint32_t *)(&_iram_start - 0x04);
     TEST_ASSERT_EQUAL(0, *val);
@@ -148,14 +176,14 @@ TEST_CASE("Test REE-TEE isolation: DRAM (R1)", "[exception]")
 }
 
 /* TEE DRAM -REE IRAM Boundary */
-TEST_CASE("Test REE-TEE isolation: DRAM (W1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: DRAM-W1", "[exception]")
 {
     *(uint32_t *)(&_iram_start - 0x04) = 0xbadc0de;
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* TEE IRAM region */
-TEST_CASE("Test REE-TEE isolation: IRAM (R1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: IRAM-R1", "[exception]")
 {
     uint32_t *val = (uint32_t *)(&_iram_start - (CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE) + 0x04);
     TEST_ASSERT_EQUAL(0, *val);
@@ -163,14 +191,14 @@ TEST_CASE("Test REE-TEE isolation: IRAM (R1)", "[exception]")
 }
 
 /* TEE IRAM region */
-TEST_CASE("Test REE-TEE isolation: IRAM (W1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: IRAM-W1", "[exception]")
 {
     *(uint32_t *)(&_iram_start - (CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE) + 0x04) = 0xbadc0de;
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* TEE IROM region */
-TEST_CASE("Test REE-TEE isolation: IROM (R1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: IROM-R1", "[exception]")
 {
     uint32_t *val = (uint32_t *)(SOC_IROM_LOW + 0x04);
     TEST_ASSERT_EQUAL(0, *val);
@@ -178,14 +206,14 @@ TEST_CASE("Test REE-TEE isolation: IROM (R1)", "[exception]")
 }
 
 /* TEE IROM region */
-TEST_CASE("Test REE-TEE isolation: IROM (W1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: IROM-W1", "[exception]")
 {
     *(uint32_t *)(SOC_IROM_LOW + 0x04) = 0xbadc0de;
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
 /* TEE DROM - REE IROM boundary */
-TEST_CASE("Test REE-TEE isolation: DROM (R1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: DROM-R1", "[exception]")
 {
     const uint32_t test_addr = ALIGN_DOWN_TO_MMU_PAGE_SIZE((uint32_t)&_instruction_reserved_start);
     uint32_t *val = (uint32_t *)(test_addr - 0x04);
@@ -194,16 +222,94 @@ TEST_CASE("Test REE-TEE isolation: DROM (R1)", "[exception]")
 }
 
 /* TEE DROM - REE IROM boundary */
-TEST_CASE("Test REE-TEE isolation: DROM (W1)", "[exception]")
+TEST_CASE("Test REE-TEE isolation: DROM-W1", "[exception]")
 {
     const uint32_t test_addr = ALIGN_DOWN_TO_MMU_PAGE_SIZE((uint32_t)&_instruction_reserved_start);
     *(uint32_t *)(test_addr - 0x04) = 0xbadc0de;
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
-/* SWDT/BOD Reset register */
-TEST_CASE("Test REE-TEE isolation: SWDT/BOD (W)", "[exception]")
+static void do_stack_overflow(int depth, volatile uint8_t *sink)
 {
-    REG_WRITE(LP_ANALOG_PERI_LP_ANA_FIB_ENABLE_REG, 0);
+    if (depth == -1) {
+        return; // unreachable
+    }
+
+    uint8_t buffer[1024];
+    buffer[0] = (uint8_t)depth;
+    *sink = buffer[0];
+
+    do_stack_overflow(depth + 1, sink);
+}
+
+static void do_stack_underflow(void *underflow)
+{
+    __asm__ __volatile__(
+        "mv sp, %0\n" :: "r"(underflow)
+    );
+
+    /* The blocking delay ensures that the stack protection fault interrupt is
+     * captured and handled by the CPU before the current function returns.
+     */
+    esp_rom_delay_us(10);
+}
+
+typedef struct {
+    bool    underflow;
+    StackType_t *underflow_stack;
+} StackProtectionTaskArgs;
+
+static void tStackProtection(void *pvParameters)
+{
+    StackProtectionTaskArgs *tArgs = (StackProtectionTaskArgs *)pvParameters;
+
+    if (!tArgs->underflow) { /* Overflow path */
+        volatile uint8_t sink = 0;
+        do_stack_overflow(1, &sink);
+    } else { /* Underflow path */
+        do_stack_underflow((void *)tArgs->underflow_stack);
+    }
+}
+
+static void do_stack_smash(bool underflow)
+{
+    static struct {
+        StackType_t StackBuffer[2048];
+
+        StackType_t UnderflowStart[0];
+        StackType_t Underflow[1024];
+        StackType_t UnderflowEnd[0];
+    } tData;
+
+    static StaticTask_t TaskBuffer;
+    static StackProtectionTaskArgs taskArgs;
+    taskArgs.underflow = underflow;
+    taskArgs.underflow_stack = tData.UnderflowEnd;
+
+    TaskHandle_t handle = xTaskCreateStatic(tStackProtection, "tt", sizeof(tData.StackBuffer), &taskArgs, 10, tData.StackBuffer, &TaskBuffer);
+    assert(handle != NULL);
+}
+
+TEST_CASE("Test REE stack overflow", "[exception]")
+{
+    do_stack_smash(false);
+    TEST_FAIL_MESSAGE("Exception should have been generated");
+}
+
+TEST_CASE("Test REE stack underflow", "[exception]")
+{
+    do_stack_smash(true);
+    TEST_FAIL_MESSAGE("Exception should have been generated");
+}
+
+TEST_CASE("Test TEE stack overflow", "[exception]")
+{
+    esp_tee_service_call(1, SS_ESP_TEE_TEST_STACK_OVERFLOW);
+    TEST_FAIL_MESSAGE("Exception should have been generated");
+}
+
+TEST_CASE("Test TEE stack underflow", "[exception]")
+{
+    esp_tee_service_call(1, SS_ESP_TEE_TEST_STACK_UNDERFLOW);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }

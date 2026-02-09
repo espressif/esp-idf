@@ -1,3 +1,14 @@
+comment "NOTE! Support of ESP32-H21 MP is mutually exclusive"
+comment "Read the help text of the option below for explanation"
+
+config ESP32H21_SELECTS_REV_MP
+    bool "Select ESP32-H21 MP version"
+    default n
+    help
+        Enable this option to select ESP32-H21 MP revision.
+        MP revisions have some hardware differences with Beta revision.
+        MP revisions is not compatible with Beta revision.
+
 choice ESP32H21_REV_MIN
     prompt "Minimum Supported ESP32-H21 Revision"
     default ESP32H21_REV_MIN_0

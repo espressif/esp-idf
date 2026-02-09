@@ -22,6 +22,7 @@
 #endif
 
 #include "esp_private/esp_mmu_map_private.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_mmu_map.h"
 #include "esp_rom_spiflash.h"
 #if CONFIG_SPIRAM
@@ -315,7 +316,9 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
             return true;
 #else // CONFIG_IDF_TARGET_ESP32
             if (vaddr != NULL) {
+                esp_cache_sync_ops_enter_critical_section();
                 cache_hal_invalidate_addr((uint32_t)vaddr, SPI_FLASH_MMU_PAGE_SIZE);
+                esp_cache_sync_ops_exit_critical_section();
                 ret = true;
             }
 #endif // CONFIG_IDF_TARGET_ESP32

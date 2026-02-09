@@ -29,10 +29,48 @@ menu "ESP HTTP client"
             This option will enable injection of a custom tcp_transport handle, so the http operation
             will be performed on top of the user defined transport abstraction (if configured)
 
+    config ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
+        bool "Enable content range functionality"
+        default n
+        help
+            This enables use of content range header in esp_http_client component.
+
     config ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT
         int "Time in millisecond to wait for posting event"
         default 2000
         help
             This config option helps in setting the time in millisecond to wait for event to be posted to the
             system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
+    config ESP_HTTP_CLIENT_PSA_CRYPTO_MIGRATE
+        depends on MBEDTLS_VER_4_X_SUPPORT
+        bool "Migrate ESP HTTP Client to use PSA Crypto"
+        default y
+        help
+            Migrate ESP HTTP Client to use PSA Crypto.
+
+    config ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        bool "Save response headers"
+        default n
+        help
+            This option will enable saving of response headers in esp_http_client component.
+            When enabled, upto ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS headers are saved.
+            Enabling this option will increase the memory footprint of the component.
+
+    config ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS
+        depends on ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        int "Maximum number of response headers"
+        default 10
+        help
+            This config option helps in setting the maximum number of response headers that
+            can be saved in esp_http_client component.
+
+    config ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE
+        depends on ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        int "Maximum size of response header"
+        default 128
+        help
+            This config option helps in setting the maximum size of response header that
+            can be saved in esp_http_client component.
+            Note that the same size is used for key and value in the response headers.
 endmenu

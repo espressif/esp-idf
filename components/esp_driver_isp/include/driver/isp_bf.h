@@ -24,6 +24,9 @@ typedef struct {
     uint8_t denoising_level;                                                 ///< BF denoising level, from 2 to 20, the bigger the better denoising performance, but the worse detailed
     uint8_t padding_line_tail_valid_start_pixel;                             ///< BF edge padding line tail valid start pixel, padding data will only be valid between the valid start pixel and the valid end pixel. Set both the start and end pixel to 0 to make all padding pixel valid
     uint8_t padding_line_tail_valid_end_pixel;                               ///< BF edge padding line tail valid end pixel, padding data will only be valid between the valid start pixel and the valid end pixel. Set both the start and end pixel to 0 to make all padding pixel valid
+    struct {
+        uint32_t update_once_configured : 1;                                 ///< If set, apply configuration to hardware immediately; otherwise defer to frame boundary
+    } flags;                                                                 ///< Driver behaviour flags
 } esp_isp_bf_config_t;
 
 /**

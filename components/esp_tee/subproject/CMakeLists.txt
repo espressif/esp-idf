@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(ESP_TEE_VERSION_MAJOR 1)
 set(ESP_TEE_VERSION_MINOR 0)
@@ -25,16 +25,16 @@ set(ESP_TEE_BUILD 1)
 set(NON_OS_BUILD 1)
 
 # Additional components
-list(APPEND COMPONENTS bootloader_support efuse esp_security mbedtls)
+list(APPEND COMPONENTS bootloader_support efuse esp_hal_mspi esp_hal_wdt
+     esp_hal_security esp_security mbedtls esp_stdio)
 
 # TEE-specific components
-list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation)
+list(APPEND COMPONENTS attestation tee_flash_mgr tee_ota_ops tee_sec_storage)
 
-# Include sdkconfig.h derived from the parent build.
-include_directories(${CONFIG_DIR})
+include_directories("${SECURE_SERVICE_HEADERS_DIR}")
 
 include("${IDF_PATH}/tools/cmake/project.cmake")
-set(common_req esp_common esp_hw_support esp_rom freertos hal log newlib soc spi_flash)
+set(common_req esp_common esp_hw_support esp_rom freertos hal log esp_libc soc spi_flash)
 
 if(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND common_req riscv)
@@ -82,7 +82,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
                 "Secure Boot Signing Key Not found."
                 "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
                 "\nTo generate one, you can use this command:"
-                "\n\t${espsecure_py_cmd} generate_signing_key --version 2 your_key.pem"
+                "\n\t${espsecure_py_cmd} generate-signing-key --version 2 your_key.pem"
             )
         endif()
 
@@ -98,4 +98,18 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
         COMMENT "${comment}"
         ${key_arg}
     )
+endif()
+
+# Generate TEE post-build check of the TEE size against the partition
+partition_table_add_check_tee_size_target(esp_tee_check_size
+    DEPENDS gen_esp_tee_binary
+    TEE_BINARY_PATH "${CMAKE_BINARY_DIR}/${esp_tee_unsigned_bin}")
+add_dependencies(app esp_tee_check_size)
+
+if(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    # Check the size of the TEE + signature block.
+    partition_table_add_check_tee_size_target(esp_tee_check_size_signed
+        DEPENDS gen_signed_esp_tee_binary
+        TEE_BINARY_PATH "${CMAKE_BINARY_DIR}/${project_bin}")
+    add_dependencies(app esp_tee_check_size_signed)
 endif()

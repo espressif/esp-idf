@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,6 +142,16 @@ uint8_t ieee802154_frame_get_version(const uint8_t *frame);
 bool ieee802154_frame_is_ack_required(const uint8_t *frame);
 
 /**
+ * @brief  Is the frame security enabled.
+ *
+ * @param[in]  frame  The pointer to the frame.
+ *
+ * @return
+ *      - True if the frame is security enabled, otherwise false.
+ *
+ */
+bool ieee802154_frame_is_security_enabled(const uint8_t *frame);
+/**
  * @brief  Get the destination address of the frame.
  *
  * @param[in]  frame  The pointer to the frame.
@@ -203,6 +213,15 @@ esp_err_t ieee802154_frame_get_dest_panid(const uint8_t *frame, uint8_t *panid);
  *
  */
 esp_err_t ieee802154_frame_get_src_panid(const uint8_t *frame, uint8_t *panid);
+
+/**
+ * @brief Check whether the given frame is a MAC Data Request command.
+ *
+ * @param[in] frame Pointer to the raw MAC frame buffer.
+ *
+ * @return true if the frame is a Data Request command, false otherwise.
+ */
+bool ieee802154_is_data_request(const uint8_t *frame);
 #ifdef __cplusplus
 }
 #endif

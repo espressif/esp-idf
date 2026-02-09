@@ -10,7 +10,7 @@
 #include "lp_core_test_app_adc.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_lp_adc_shared.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "driver/temperature_sensor.h"
@@ -22,7 +22,7 @@ extern const uint8_t lp_core_main_adc_bin_end[]   asm("_binary_lp_core_test_app_
 
 #if CONFIG_IDF_TARGET_ESP32P4
 // Threshold values picked up empirically after manual testing
-#define ADC_TEST_LOW_VAL         2160
+#define ADC_TEST_LOW_VAL         2200
 #define ADC_TEST_HIGH_VAL        4090
 #else
 #error "ADC threshold values not defined"

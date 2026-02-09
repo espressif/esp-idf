@@ -8,6 +8,7 @@
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
@@ -15,7 +16,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
                                        uint32_t *freq_value)
@@ -31,6 +32,12 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
         break;
     case SOC_MOD_CLK_XTAL:
         clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
+        break;
+    case SOC_MOD_CLK_SYS:
+        clk_src_freq = clk_hal_sys_get_freq_hz();
+        break;
+    case SOC_MOD_CLK_APB:
+        clk_src_freq = clk_hal_apb_get_freq_hz();
         break;
     case SOC_MOD_CLK_PLL_F20M:
         clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ / clk_ll_pll_f20m_get_divider() * MHZ;
@@ -102,10 +109,10 @@ bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
     return false;
 }
 
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
     (void)clk_circuit; (void)enable;
-    return ESP_OK; // TODO: PM-354
+    return false; // TODO: PM-653
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)

@@ -30,4 +30,15 @@ menu "Example Configuration"
         int
         default 480 if EXAMPLE_CAM_VRES_480
         default 240 if EXAMPLE_CAM_VRES_240
+
+    choice EXAMPLE_CAM_INPUT_FORMAT
+        bool "Set camera input format"
+        default EXAMPLE_CAM_INPUT_FORMAT_YUV422
+
+        config EXAMPLE_CAM_INPUT_FORMAT_RGB565
+            bool "RGB565"
+        config EXAMPLE_CAM_INPUT_FORMAT_YUV422
+            bool "YUV422"
+    endchoice
+
 endmenu

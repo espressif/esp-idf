@@ -14,8 +14,45 @@ Bluetooth\ :sup:`®` wireless technology is a short-range communication standard
    {IDF_TARGET_NAME} supports dual-mode Bluetooth, enabling both Bluetooth Classic and Bluetooth LE functionalities.
 
 
+Chip Bluetooth Capability
+----------------------------------
+
+The following table summarizes the ESP chips that support Bluetooth in ESP-IDF, and their support for Bluetooth types (Y = supported, N = not supported).
+
+.. list-table::
+    :header-rows: 1
+
+    * - Chip Series
+      - Bluetooth Classic (BR/EDR)
+      - Bluetooth LE
+    * - ESP32
+      - Y
+      - Y
+    * - ESP32-S3
+      - N
+      - Y
+    * - ESP32-C2
+      - N
+      - Y
+    * - ESP32-C3
+      - N
+      - Y
+    * - ESP32-C5
+      - N
+      - Y
+    * - ESP32-C6
+      - N
+      - Y
+    * - ESP32-C61
+      - N
+      - Y
+    * - ESP32-H2
+      - N
+      - Y
+
+
 Bluetooth Protocol Stack
-=============================
+------------------------
 
 The Bluetooth protocol stack is a layered communication architecture that defines how Bluetooth devices discover each other, establish connections, exchange data, and ensure secure and reliable communication. As shown in Figure :ref:`bluetooth-core-system-architecture`, The stack consists of two main parts: the Controller Stack and the Host Stack, which communicate via the HCI (Host Controller Interface).
 
@@ -87,7 +124,7 @@ The Host Stack implements high-level protocols for application interaction. It i
 
 
 Bluetooth Operating Environment
-===================================
+-------------------------------
 
 The ESP-IDF Bluetooth implementation operates within a FreeRTOS environment, where Bluetooth tasks are assigned based on function and priority. Controller tasks have the highest priority due to their real-time requirements, except for certain inter-process communication (IPC) tasks that coordinate operations between CPU cores.
 
@@ -97,7 +134,7 @@ The ESP-IDF Bluetooth implementation operates within a FreeRTOS environment, whe
 
 
 Bluedroid
-==============
+---------
 
 ESP-Bluedroid is a modified version of Android’s Bluedroid stack, supporting both Bluetooth Classic and Bluetooth LE. It consists of two layers:
 
@@ -108,7 +145,7 @@ ESP-Bluedroid is a modified version of Android’s Bluedroid stack, supporting b
 
 
 OS Adaptation
------------------
+^^^^^^^^^^^^^
 
 Bluedroid integrates with FreeRTOS by adapting system-related functions:
 
@@ -122,7 +159,7 @@ Bluedroid integrates with FreeRTOS by adapting system-related functions:
 
 
 Bluedroid Directory Structure
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ESP-IDF directory *component/bt/host/bluedroid* contains the following sub-folders:
 

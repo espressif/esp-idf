@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "esp_err.h"
 
-#include "hal/touch_sensor_legacy_types.h"
 #include "hal/gpio_types.h"
 
 #include "soc/soc_caps.h"
@@ -42,11 +41,11 @@ typedef enum {
 #endif
 #endif
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 typedef enum {
     ESP_GPIO_WAKEUP_GPIO_LOW = 0,
     ESP_GPIO_WAKEUP_GPIO_HIGH = 1
-} esp_deepsleep_gpio_wake_up_mode_t;
+} esp_sleep_gpio_wake_up_mode_t;
 #endif
 
 /**
@@ -72,7 +71,7 @@ typedef enum {
 #if SOC_PM_SUPPORT_RC_FAST_PD
     ESP_PD_DOMAIN_RC_FAST,         //!< Internal Fast oscillator
 #endif
-#if SOC_PM_SUPPORT_CPU_PD
+#if SOC_PM_SUPPORT_CPU_PD && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif
 #if SOC_PM_SUPPORT_VDDSDIO_PD
@@ -140,7 +139,20 @@ enum {
     ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
 };
 
-#define ESP_SLEEP_POWER_DOWN_CPU (CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || (SOC_CPU_IN_TOP_DOMAIN && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
+/**
+ * @brief UART handling mode before entering sleep
+ *
+ * These modes define how UARTs are handled when the chip enters sleep mode.
+ * The behavior affects data integrity, power consumption, and sleep entry time.
+ */
+typedef enum {
+    ESP_SLEEP_AUTO_FLUSH_SUSPEND_UART,  //!< Automatically select flush or suspend based on sleep type and power domain configuration. For deep sleep, always flush. For light sleep, suspend if UART remains powered, flush/discard if UART power domain is powered down.
+    ESP_SLEEP_ALWAYS_FLUSH_UART,        //!< Always wait for all data in TX FIFO to be transmitted before sleep. Ensures data integrity but increases power consumption and sleep entry time.
+    ESP_SLEEP_ALWAYS_SUSPEND_UART,      //!< Suspend UART transmission after current frame completes. If UART remains powered during sleep, transmission resumes after wake. If UART power domain is powered down, unsent data will be lost.
+    ESP_SLEEP_ALWAYS_DISCARD_UART,      //!< Discard all data in TX/RX FIFOs and enter sleep immediately. Fastest sleep entry and lowest power, but all unsent data is lost.
+    ESP_SLEEP_NO_HANDLING,              //!< Do not perform any UART handling before sleep. UART state is not modified.
+} esp_sleep_uart_handling_mode_t;
+
 
 /**
  * @brief Disable wakeup source
@@ -440,14 +452,15 @@ __attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 /**
  * @brief Enable wakeup using specific gpio pins
  *
- * This function enables an IO pin to wake up the chip from deep sleep.
+ * This function enables an IO pin to wake up the chip from peripheral powerdowned sleep.
+ * (including deepsleep and peripheral powerdowned lightsleep).
  *
  * @note 1.This function does not modify pin configuration. The pins are configured
- *          inside `esp_deep_sleep_start`, immediately before entering sleep mode.
+ *          inside `esp_sleep_start`, immediately before entering sleep mode.
  *       2.This function is also applicable to waking up the lightsleep when the peripheral
  *         power domain is powered off, see PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP in menuconfig.
  *
@@ -467,9 +480,9 @@ __attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp
  *            - ESP_GPIO_WAKEUP_GPIO_HIGH: wake up when the gpio turn to high.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if the mask contains any invalid deep sleep wakeup pin or wakeup mode is invalid
+ *      - ESP_ERR_INVALID_ARG if the mask contains any invalid wakeup pin or wakeup mode is invalid
  */
-esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode);
+esp_err_t esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(uint64_t gpio_pin_mask, esp_sleep_gpio_wake_up_mode_t mode);
 #endif
 
 /**
@@ -487,7 +500,7 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
  * @note 1. On ESP32, GPIO wakeup source can not be used together with touch or ULP wakeup sources.
  *       2. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
  *          this API is unavailable since the GPIO module is powered down during sleep.
- *          You can use `esp_deep_sleep_enable_gpio_wakeup` instead, or use EXT1 wakeup source
+ *          You can use `esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` instead, or use EXT1 wakeup source
  *          by `esp_sleep_enable_ext1_wakeup_io` to achieve the same function.
  *          (Only GPIOs which have RTC functionality can be used)
  *
@@ -569,7 +582,7 @@ esp_err_t esp_sleep_disable_wifi_beacon_wakeup(void);
  */
 uint64_t esp_sleep_get_ext1_wakeup_status(void);
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 /**
  * @brief Get the bit mask of GPIOs which caused wakeup (gpio)
  *
@@ -578,12 +591,23 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void);
  * @return bit mask, if GPIOn caused wakeup, BIT(n) will be set
  */
 uint64_t esp_sleep_get_gpio_wakeup_status(void);
-#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
 /**
- * @brief Set power down mode for an RTC power domain in sleep mode
+ * @brief Configure power domain options for sleep mode
  *
- * If not set set using this API, all power domains default to ESP_PD_OPTION_AUTO.
+ * This function provides power domain management for sleep mode, allowing users
+ * to control which power domains remain active during sleep to maintain required
+ * functionality. The function supports:
+ *  - Automatic power management (ESP_PD_OPTION_AUTO): Power domains are controlled
+ *    automatically based on system requirements and other peripheral usage.
+ *  - Manual power control (ESP_PD_OPTION_ON/ESP_PD_OPTION_OFF): User can force
+ *    specific power domains to stay on or off during sleep.
+ *
+ * The management strategy uses reference counting when in manual mode, allowing
+ * multiple subsystems to request and release power domain resources safely without
+ * interfering with each other. Power domains will only change state when all
+ * users have released their requirements.
  *
  * @param domain  power domain to configure
  * @param option  power down option (ESP_PD_OPTION_OFF, ESP_PD_OPTION_ON, or ESP_PD_OPTION_AUTO)
@@ -604,6 +628,8 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
  *
  * @return
  *  - No return - If the sleep is not rejected.
+ *  - ESP_ERR_NOT_ALLOWED  Since the sleep process disables the cache, the task requesting to enter sleep must have its
+ *                         stack located in internal RAM. Tasks with their stacks in PSRAM are not allowed to request sleep.
  *  - ESP_ERR_INVALID_STATE VBAT power does not meet the requirements for entering deepsleep
  *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
  */
@@ -622,6 +648,8 @@ void esp_deep_sleep_start(void) __attribute__((__noreturn__));
  *
  * @return
  *  - ESP_OK on success (returned after wakeup)
+ *  - ESP_ERR_NOT_ALLOWED  Since the sleep process disables the cache, the task requesting to enter sleep must have its
+ *                         stack located in internal RAM. Tasks with their stacks in PSRAM are not allowed to request sleep.
  *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
  *  - ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION after deducting the sleep flow overhead, the final sleep duration
  *                                           is too short to cover the minimum sleep duration of the chip, when
@@ -767,6 +795,43 @@ void esp_default_wake_deep_sleep(void);
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
+/**
+ * @brief Configure how the console UART is handled when entering sleep
+ *
+ * This function configures the handling behavior for the console UART (CONFIG_ESP_CONSOLE_UART_NUM)
+ * during sleep modes. The console UART is typically used for debug output, so its handling mode
+ * affects whether debug messages are preserved or discarded before sleep.
+ *
+ * @param handling_mode Handling method, one of the following strategies:
+ *  - ESP_SLEEP_AUTO_FLUSH_SUSPEND_UART (default):
+ *      Automatically selects the appropriate strategy based on sleep type and power domain:
+ *      - Deep sleep: Always flush to avoid data loss
+ *      - Light sleep: Suspend if UART remains powered, flush if UART power domain is powered down
+ *  - ESP_SLEEP_ALWAYS_FLUSH_UART:
+ *      Wait for all data in TX FIFO to be fully transmitted before entering sleep.
+ *      Ensures all debug output is visible but increases sleep entry time and power consumption.
+ *  - ESP_SLEEP_ALWAYS_SUSPEND_UART:
+ *      Wait for current UART frame to complete, then suspend the UART state machine.
+ *      If UART remains powered during light sleep, transmission resumes after wake.
+ *      If UART power domain is powered down, unsent data will be lost.
+ *  - ESP_SLEEP_ALWAYS_DISCARD_UART:
+ *      Discard all unsent data in UART FIFO and enter sleep immediately.
+ *      Fastest sleep entry and lowest power, but all unsent debug output is lost.
+ *  - ESP_SLEEP_NO_HANDLING:
+ *      Do not perform any handling on the console UART before sleep.
+ *      Can be used to disable the default UART handling behavior.
+ *
+ * @note When CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION is enabled, the console UART
+ *       will always be flushed regardless of the configured mode to ensure debug
+ *       output is visible even when cache is disabled.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if handling_mode is not valid
+ *      - ESP_ERR_NOT_SUPPORTED if no console UART is configured (CONFIG_ESP_CONSOLE_UART_NUM == -1)
+ */
+esp_err_t esp_sleep_set_console_uart_handling_mode(esp_sleep_uart_handling_mode_t handling_mode);
+
 #if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief If analog-related peripherals(ADC, TOUCH) is not used in monitor mode, analog low power mode
@@ -777,7 +842,7 @@ void esp_deep_sleep_disable_rom_logging(void);
 void esp_sleep_enable_lowpower_analog_mode(bool enable);
 #endif
 
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 
 #if SOC_PM_CPU_RETENTION_BY_RTCCNTL
 /**
@@ -816,7 +881,7 @@ esp_err_t esp_sleep_cpu_retention_init(void);
  * Release system retention memory.
  */
 esp_err_t esp_sleep_cpu_retention_deinit(void);
-#endif // ESP_SLEEP_POWER_DOWN_CPU
+#endif // CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 
 /**
  * @brief Configure to isolate all GPIO pins in sleep state

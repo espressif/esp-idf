@@ -12,6 +12,7 @@
 #include "esp_pm.h"
 #include "esp_rtc_time.h"
 #include "esp_sleep.h"
+#include "freertos/FreeRTOS.h"
 
 void app_main(void)
 {

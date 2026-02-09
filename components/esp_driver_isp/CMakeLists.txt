@@ -6,7 +6,7 @@ set(public_include "include")
 
 set(priv_requires "esp_driver_gpio")
 
-set(requires)
+set(requires "esp_hal_cam")
 
 if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "src/isp_core.c"
@@ -20,6 +20,10 @@ endif()
 
 if(CONFIG_SOC_ISP_BF_SUPPORTED)
     list(APPEND srcs "src/isp_bf.c")
+endif()
+
+if(CONFIG_SOC_ISP_BLC_SUPPORTED)
+    list(APPEND srcs "src/isp_blc.c")
 endif()
 
 if(CONFIG_SOC_ISP_DEMOSAIC_SUPPORTED)
@@ -36,6 +40,14 @@ endif()
 
 if(CONFIG_SOC_ISP_LSC_SUPPORTED)
     list(APPEND srcs "src/isp_lsc.c")
+endif()
+
+if(CONFIG_SOC_ISP_WBG_SUPPORTED)
+    list(APPEND srcs "src/isp_wbg.c")
+endif()
+
+if(CONFIG_SOC_ISP_CROP_SUPPORTED)
+    list(APPEND srcs "src/isp_crop.c")
 endif()
 
 if(NOT ${target} STREQUAL "linux")

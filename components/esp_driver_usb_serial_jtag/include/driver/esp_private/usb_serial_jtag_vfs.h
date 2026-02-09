@@ -18,7 +18,7 @@ extern "C" {
  * This function is called in vfs_console in order to get the vfs implementation
  * of usb_serial_jtag.
  *
- * @return pointer to structure esp_vfs_t
+ * @return pointer to structure esp_vfs_fs_ops_t
  */
 const esp_vfs_fs_ops_t *esp_vfs_usb_serial_jtag_get_vfs(void);
 

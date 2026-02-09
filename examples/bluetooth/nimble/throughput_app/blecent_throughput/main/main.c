@@ -945,6 +945,7 @@ app_main(void)
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
 #endif
+
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("gattc-throughput");
     assert(rc == 0);

@@ -17,7 +17,10 @@ This example is based on console component. For more information about console, 
 
 ### Hardware Required
 
-To run this example with WiFi interface, you should have one ESP32 dev board integrated with a SD card slot (e.g. [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1)) or just connect [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) to a SD card breakout board. To run this example with Ethernet interface option, you should have one ESP32 dev board with physical layer Ethernet support (e.g. [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-ethernet-kit.html#)) or connect SPI-Ethernet module (e.g. DM9051) to your dev board.
+To run this example with the WiFi interface, use an ESP32 development board with an integrated SD card slot (for example, [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/v4.4/esp32/hw-reference/esp32/get-started-wrover-kit.html)), or connect an SD card breakout board to your dev kit. Verify that the default SD pins are available on your board; if not, update the pin assignments in the project configuration.
+
+To run this example with the Ethernet interface, use an ESP32 development board with a physical layer Ethernet (PHY) interface (for example, [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-ethernet-kit.html#)), or connect an SPI-Ethernet module (for example, DM9051) to your board.
+
 If you want to send packets to host, make sure to connect ESP32 to some kind of [JTAG adapter](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-selecting-jtag-adapter).
 
 #### Ethernet Pin Assignment

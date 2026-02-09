@@ -1,4 +1,5 @@
 CONFIG_IDF_TARGET="linux"
+CONFIG_VFS_SUPPORT_IO=n
 
 # enable sorted commands in the help command
 CONFIG_CONSOLE_SORTED_HELP=y

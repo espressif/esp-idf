@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,19 +64,11 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
     TEST_ESP_OK(sleep_cpu_configure(true));
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
-#if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
-    /* There is a bug that PD TOP will reset mmu table, so we add mmu table retention during sleep,
-       and it will increase time overhead before entering sleep */
-    esp_sleep_enable_timer_wakeup(100 * 1000);
-#else
     esp_sleep_enable_timer_wakeup(10 * 1000);
-#endif
 
     esp_light_sleep_start();
 
-#if !SOC_PM_TOP_PD_NOT_ALLOWED
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
-#endif
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
     esp_sleep_set_sleep_context(NULL);
 

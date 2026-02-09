@@ -56,7 +56,7 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
 
 此外，请注意，如果您使用的是 ESP-IDF 中的 FreeRTOS 模拟组件（``tools/mocks/freertos``），这些限制不会影响程序运行。但是，该模拟组件也无法执行任何调度。
 
-.. only:: not esp32p4 and not esp32h4
+.. only:: not esp32p4 and not esp32h4 and not esp32s31
 
     .. note::
 

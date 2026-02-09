@@ -7,10 +7,14 @@
 #pragma once
 
 #include <stdbool.h>
+#include "esp_etm.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_MODEM_SUPPORT_ETM
 
 /**
  * @brief Modem ETM event type
@@ -80,6 +84,8 @@ esp_err_t modem_new_etm_event(const modem_etm_event_config_t *config, esp_etm_ev
  *   - ESP_ERR_NO_MEM: No memory
  */
 esp_err_t modem_new_etm_task(const modem_etm_task_config_t *config, esp_etm_task_handle_t *out_task);
+
+#endif /* SOC_MODEM_SUPPORT_ETM */
 
 #ifdef __cplusplus
 }

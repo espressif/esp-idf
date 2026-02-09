@@ -31,7 +31,7 @@
 #include "esp_app_desc.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "efuse_init";
+ESP_LOG_ATTR_TAG(TAG, "efuse_init");
 
 ESP_SYSTEM_INIT_FN(init_efuse_check, CORE, BIT(0), 1)
 {
@@ -48,7 +48,7 @@ ESP_SYSTEM_INIT_FN(init_efuse_show_app_info, CORE, BIT(0), 21)
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
         ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s", CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
-                        efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
+                        efuse_hal_get_disable_wafer_version_major() ? ESP_LOG_ATTR_STR("(constraint ignored)") : "");
         unsigned revision = efuse_hal_chip_revision();
         ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
     }

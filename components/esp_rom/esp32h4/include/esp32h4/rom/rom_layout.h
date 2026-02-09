@@ -12,13 +12,11 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12321 inherit from verification branch, need check
-
 #define SUPPORT_BTDM            0
 #define SUPPORT_BTBB            0
-#define SUPPORT_WIFI            1
+#define SUPPORT_WIFI            0
 #define SUPPORT_USB_DWCOTG      0
-#define SUPPORT_COEXIST         1
+#define SUPPORT_COEXIST         0
 #define SUPPORT_MBEDTLS         0
 
 /* Structure and functions for returning ROM global layout
@@ -30,6 +28,8 @@ typedef struct {
     void *dram0_rtos_reserved_start;
     void *stack_sentry;
     void *stack;
+    void *stack_sentry_app;
+    void *stack_app;
 
 #if SUPPORT_BTDM
     void *data_start_btdm;

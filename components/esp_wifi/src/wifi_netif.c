@@ -46,7 +46,7 @@ static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
 }
 #endif
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 static esp_err_t wifi_nan_receive(void *buffer, uint16_t len, void *eb)
 {
     return s_wifi_rxcbs[WIFI_IF_NAN](s_wifi_netifs[WIFI_IF_NAN], buffer, len, eb);
@@ -158,7 +158,7 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
         break;
 #endif
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     case WIFI_IF_NAN:
         rxcb = wifi_nan_receive;
         break;

@@ -1,7 +1,5 @@
 tools/ble/**/*
-tools/bt/README.md
-tools/bt/bt_hci_to_btsnoop.py
-tools/catch/**/*
+tools/bt/**/*
 tools/check_term.py
 tools/ci/*exclude*.txt
 tools/ci/astyle-rules.yml
@@ -19,6 +17,7 @@ tools/ci/dynamic_pipelines/**/*
 tools/ci/envsubst.py
 tools/ci/executable-list.txt
 tools/ci/fix_empty_prototypes.sh
+tools/ci/gen_disabled_report.py
 tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_all_test_results.py
@@ -28,6 +27,9 @@ tools/ci/idf_build_apps_dump_soc_caps.py
 tools/ci/idf_ci_local/**/*
 tools/ci/idf_ci_utils.py
 tools/ci/idf_pytest/**/*
+tools/ci/metrics/examples_count/example.metrics.json
+tools/ci/metrics/examples_count/generate_metrics.py
+tools/ci/metrics/examples_count/schema.yaml
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/mypy_ignore_list.txt
@@ -41,14 +43,10 @@ tools/ci/python_packages/wifi_tools.py
 tools/ci/sg_rules/*
 tools/ci/sort_yaml.py
 tools/ci/utils.sh
+tools/docs/gen_version_specific_includes.py
 tools/eclipse-code-style.xml
-tools/esp_prov/**/*
 tools/format.sh
 tools/gdb_panic_server.py
-tools/legacy_exports/export_legacy.bat
-tools/legacy_exports/export_legacy.fish
-tools/legacy_exports/export_legacy.ps1
-tools/legacy_exports/export_legacy.sh
 tools/mocks/**/*
 tools/python_version_checker.py
 tools/set-submodules-to-github.sh
@@ -58,4 +56,3 @@ tools/templates/sample_component/main.c
 tools/templates/sample_project/CMakeLists.txt
 tools/templates/sample_project/main/CMakeLists.txt
 tools/templates/sample_project/main/main.c
-tools/unit-test-app/**/*

@@ -377,6 +377,9 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 #endif  ///BLE_INCLUDED == TRUE
         status = FALSE;
     } else {
+#if (BLE_INCLUDED == TRUE)
+        tL2C_LINK_STATE     link_state_temp = p_lcb->link_state;
+#endif // (BLE_INCLUDED == TRUE)
         /* There can be a case when we rejected PIN code authentication */
         /* otherwise save a new reason */
         if (btm_cb.acl_disc_reason != HCI_ERR_HOST_REJECT_SECURITY) {
@@ -389,10 +392,12 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
         p_lcb->link_state = LST_DISCONNECTING;
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_TOPOLOGY_CHECK == TRUE)
         /* Check for BLE and handle that differently */
         if (p_lcb->transport == BT_TRANSPORT_LE) {
             btm_ble_update_link_topology_mask(p_lcb->link_role, FALSE);
         }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Link is disconnected. For all channels, send the event through */
@@ -471,46 +476,54 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 
         p_lcb->p_pending_ccb = NULL;
 #if (BLE_INCLUDED == TRUE)
-        if(reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT && p_lcb->transport == BT_TRANSPORT_LE) {
-            #if (GATTC_CONNECT_RETRY_EN == TRUE)
-            if(p_lcb->link_role == HCI_ROLE_MASTER && p_lcb->retry_create_con < GATTC_CONNECT_RETRY_COUNT) {
-                L2CAP_TRACE_DEBUG("master retry connect, retry count %d reason 0x%x\n",  p_lcb->retry_create_con, reason);
-                p_lcb->retry_create_con ++;
-                // create connection retry
-                if (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE)) {
-                    btm_acl_removed (p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
-                    lcb_is_free = FALSE;    /* still using this lcb */
-                } else {
-                    L2CAP_TRACE_ERROR("master retry connect failed");
-                }
-            }
-            #endif // (GATTC_CONNECT_RETRY_EN == TRUE)
+        if(p_lcb->transport == BT_TRANSPORT_LE) {
+            // for legacy adv, adv restart in gatt_le_connect_cback->gatt_cleanup_upon_disc->BTM_Recovery_Pre_State
+            if (reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) {
 
-            #if (BLE_50_FEATURE_SUPPORT == TRUE)
-            #if (BLE_50_EXTEND_ADV_EN == TRUE)
-            if(btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
-                p_lcb->retry_create_con ++;
-                L2CAP_TRACE_DEBUG("slave restart extend adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
-                tBTM_STATUS start_adv_status = BTM_BleStartExtAdvRestart(handle);
-                if (start_adv_status != BTM_SUCCESS) {
-                    L2CAP_TRACE_ERROR("slave restart extend adv failed (err 0x%x)", start_adv_status);
+                #if (BLE_42_FEATURE_SUPPORT == TRUE)
+                #if (BLE_42_ADV_EN == TRUE)
+                if(!btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
+                    L2CAP_TRACE_DEBUG("slave resatrt adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
+                    tBTM_STATUS start_adv_status = btm_ble_start_adv();
+                    if (start_adv_status != BTM_SUCCESS) {
+                        L2CAP_TRACE_ERROR("slave resatrt adv failed (err 0x%x)", start_adv_status);
+                    }
                 }
+                #endif // #if (BLE_42_ADV_EN == TRUE)
+                #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
             }
-            #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
-            #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+            // try to reconnect for master
+            if ((reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) || (link_state_temp == LST_CONNECTING)) {
 
-            #if (BLE_42_FEATURE_SUPPORT == TRUE)
-            #if (BLE_42_ADV_EN == TRUE)
-            if(!btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
-                p_lcb->retry_create_con ++;
-                L2CAP_TRACE_DEBUG("slave resatrt adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
-                tBTM_STATUS start_adv_status = btm_ble_start_adv();
-                if (start_adv_status != BTM_SUCCESS) {
-                    L2CAP_TRACE_ERROR("slave resatrt adv failed (err 0x%x)", start_adv_status);
+                #if (GATTC_CONNECT_RETRY_EN == TRUE)
+                if(p_lcb->link_role == HCI_ROLE_MASTER && p_lcb->retry_create_con < GATTC_CONNECT_RETRY_COUNT) {
+                    L2CAP_TRACE_DEBUG("master retry connect, retry count %d reason 0x%x\n",  p_lcb->retry_create_con, reason);
+                    p_lcb->retry_create_con ++;
+                    // create connection retry
+                    if (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE)) {
+                        btm_acl_removed (p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
+                        lcb_is_free = FALSE;    /* still using this lcb */
+                    } else {
+                        L2CAP_TRACE_ERROR("master retry connect failed");
+                    }
                 }
+                #endif // (GATTC_CONNECT_RETRY_EN == TRUE)
             }
-            #endif // #if (BLE_42_ADV_EN == TRUE)
-            #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+            // try to restart extended adv for slave
+            if ((reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) || (link_state_temp == LST_DISCONNECTED)) {
+                #if (BLE_50_FEATURE_SUPPORT == TRUE)
+                    #if (BLE_50_EXTEND_ADV_EN == TRUE)
+                    if(btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
+                        L2CAP_TRACE_DEBUG("slave restart extend adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
+                        tBTM_STATUS start_adv_status = BTM_BleStartExtAdvRestart(handle);
+                        if (start_adv_status != BTM_SUCCESS) {
+                            L2CAP_TRACE_ERROR("slave restart extend adv failed (err 0x%x)", start_adv_status);
+                        }
+                    }
+                #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+                #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+            }
+
         }
 
 
@@ -723,7 +736,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_adjust_allocation
@@ -844,7 +857,7 @@ void l2c_link_adjust_allocation (void)
     }
 
 }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_adjust_chnl_allocation
@@ -925,6 +938,7 @@ UINT8 l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles)
     return (num_found);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_link_role_changed
@@ -962,6 +976,7 @@ void l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status)
         }
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -998,7 +1013,9 @@ void l2c_pin_code_request (BD_ADDR bd_addr)
 *******************************************************************************/
 BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_PM_MODE     mode;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB    *p_ccb;
     BOOLEAN need_to_active = FALSE;
 
@@ -1018,6 +1035,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
 
     /* if we have packets to send */
     if ( need_to_active ) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* check power mode */
         if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode) == BTM_SUCCESS) {
             if ( mode == BTM_PM_STS_PENDING ) {
@@ -1026,6 +1044,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
                 return TRUE;
             }
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
     return FALSE;
 }
@@ -1077,32 +1096,34 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
         L2CAP_TRACE_ERROR("l2cab is_cong_cback_context");
         return;
     }
-
+    list_node_t* start_p_node = NULL;
     /* If we are in a scenario where there are not enough buffers for each link to
     ** have at least 1, then do a round-robin for all the LCBs
     */
     if ( (p_lcb == NULL) || (p_lcb->link_xmit_quota == 0) ) {
         list_node_t *p_node   = NULL;
-	tL2C_LCB    *p_lcb_cur = NULL;
+        tL2C_LCB    *p_lcb_cur = NULL;
         if (p_lcb == NULL) {
             p_node = list_begin(l2cb.p_lcb_pool);
-	    p_lcb = list_node(p_node);
+            p_lcb = list_node(p_node);
         } else if (!single_write) {
-	    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
-	        p_lcb_cur = list_node(p_node);
-		if (p_lcb_cur == p_lcb) {
-		    p_node = list_next(p_node);
-		    if (p_node) {
-		        p_lcb = list_node(p_node);
-		    }
-		    break;
-		}
-	    }
+            for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+                p_lcb_cur = list_node(p_node);
+                if (p_lcb_cur == p_lcb) {
+                    p_node = list_next(p_node);
+                    start_p_node = p_node;
+                    break;
+                }
+            }
         }
 
         /* Loop through, starting at the next */
-        for ( ; p_node; p_node = list_next(p_node)) {
-	    p_lcb = list_node(p_node);
+        do {
+            /* Check for wraparound */
+            if (p_node == list_end(l2cb.p_lcb_pool)) {
+                p_node = list_begin(l2cb.p_lcb_pool);
+            }
+            p_lcb = list_node(p_node);
 #if (BLE_INCLUDED == TRUE)
             L2CAP_TRACE_DEBUG("window = %d,robin_unacked = %d,robin_quota=%d",l2cb.controller_le_xmit_window,l2cb.ble_round_robin_unacked,l2cb.ble_round_robin_quota);
 #endif  ///BLE_INCLUDED == TRUE
@@ -1118,20 +1139,22 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 #else
                 ))
 #endif  ///BLE_INCLUDED == TRUE
+            {
                 break;
-
-
+            }
             /* Check for wraparound */
-	    if (p_node == list_end(l2cb.p_lcb_pool)) {
+            if (p_node == list_end(l2cb.p_lcb_pool)) {
                 p_node = list_begin(l2cb.p_lcb_pool);
-		p_lcb = list_node(p_node);
-	    }
+                p_lcb = list_node(p_node);
+            }
+
             L2CAP_TRACE_DEBUG("in_use=%d,segment_being_sent=%d,link_state=%d,link_xmit_quota=%d",p_lcb->in_use,p_lcb->partial_segment_being_sent,p_lcb->link_state,p_lcb->link_xmit_quota);
             if ( (!p_lcb->in_use)
                     || (p_lcb->partial_segment_being_sent)
                     || (p_lcb->link_state != LST_CONNECTED)
                     || (p_lcb->link_xmit_quota != 0)
                     || (L2C_LINK_CHECK_POWER_MODE (p_lcb)) ) {
+                p_node = list_next(p_node);
                 continue;
             }
 
@@ -1148,7 +1171,8 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
             else if ((p_buf = l2cu_get_next_buffer_to_send (p_lcb)) != NULL) {
                 l2c_link_send_to_lower (p_lcb, p_buf);
             }
-        }
+            p_node = list_next(p_node);
+        } while (p_node != start_p_node);
 
         /* If we finished without using up our quota, no need for a safety check */
         if ( (l2cb.controller_xmit_window > 0)

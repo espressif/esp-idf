@@ -34,6 +34,22 @@ RTC_DATA_ATTR static int boot_count = 0;
 
 static void obtain_time(void);
 
+static void sntp_event_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+    (void)arg; (void)base; (void)id;
+    const esp_netif_sntp_time_sync_t *evt = (const esp_netif_sntp_time_sync_t *)data;
+    if (evt) {
+        char ts[64];
+        time_t t = evt->tv.tv_sec;
+        struct tm tm_utc;
+        gmtime_r(&t, &tm_utc);
+        strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm_utc);
+        ESP_LOGI(TAG, "SNTP event: time synced (UTC): %s.%06ld", ts, (long)evt->tv.tv_usec);
+    } else {
+        ESP_LOGI(TAG, "SNTP event: time synced (no timeval provided)");
+    }
+}
+
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_CUSTOM
 void sntp_sync_time(struct timeval *tv)
 {
@@ -140,6 +156,8 @@ static void obtain_time(void)
     ESP_ERROR_CHECK( nvs_flash_init() );
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
+    // Register handler to log SNTP event with timeval payload
+    ESP_ERROR_CHECK(esp_event_handler_register(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &sntp_event_handler, NULL));
 
 #if LWIP_DHCP_GET_NTP_SRV
     /**
@@ -223,4 +241,5 @@ static void obtain_time(void)
 
     ESP_ERROR_CHECK( example_disconnect() );
     esp_netif_sntp_deinit();
+    ESP_ERROR_CHECK(esp_event_handler_unregister(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &sntp_event_handler));
 }

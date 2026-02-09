@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -20,6 +20,3 @@
 
 #define ADC1_GPIO4_CHANNEL      4
 #define ADC1_CHANNEL_4_GPIO_NUM 4
-
-#define ADC2_GPIO5_CHANNEL      0
-#define ADC2_CHANNEL_0_GPIO_NUM 5

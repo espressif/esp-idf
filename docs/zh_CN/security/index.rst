@@ -10,6 +10,6 @@
    flash-encryption
    :esp32: secure-boot-v1
    secure-boot-v2
-   :esp32c6: tee/index
+   :TARGET_SUPPORT_ESP_TEE: tee/index
    security-features-enablement-workflows
    vulnerabilities

@@ -444,6 +444,8 @@ void bta_gattc_co_cache_addr_init(void)
 
 void bta_gattc_co_cache_addr_deinit(void)
 {
+    APPL_TRACE_DEBUG("%s is_open=%d", __func__, cache_env->is_open);
+
     if(!cache_env->is_open) {
         return;
     }
@@ -553,7 +555,7 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
         memcpy(cache_env->cache_addr[new_index].addr, bd_addr, sizeof(BD_ADDR));
         memcpy(cache_env->cache_addr[new_index].hash_key, hash_key, sizeof(hash_key_t));
         cache_env->num_addr++;
-        APPL_TRACE_DEBUG("%s(), num = %d", __func__, cache_env->num_addr);
+        APPL_TRACE_DEBUG("%s bd_addr="MACSTR" num=%d", __func__, MAC2STR(bd_addr), cache_env->num_addr);
     }
 
     nvs_handle_t *fp = &cache_env->addr_fp;

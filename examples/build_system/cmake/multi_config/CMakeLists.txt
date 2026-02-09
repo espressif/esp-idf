@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # In this example, sdkconfig file is placed into the build directory.
 # This allows building development and production configs side by side,

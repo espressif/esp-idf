@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "osi/allocator.h"
 #include "device/controller.h"
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
@@ -36,6 +35,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include "stack/hcidefs.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
 
@@ -67,7 +67,8 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
     /* Check if peer device's and our BD_ADDR is same or not. It
        should be different to avoid 'Impersonation in the Pin Pairing
        Protocol' (CVE-2020-26555) vulnerability. */
-    if (memcmp((uint8_t *)p_bd_addr, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0) {
+    if ((transport == BT_TRANSPORT_BR_EDR) &&
+        (memcmp((uint8_t *)p_bd_addr, (uint8_t *)&controller_get_interface()->get_address()->address, sizeof (BD_ADDR)) == 0)) {
         L2CAP_TRACE_ERROR ("%s connection rejected due to same BD ADDR", __func__);
         return (NULL);
     }
@@ -112,8 +113,10 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             } else
 #endif
             {
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 l2cb.num_links_active++;
                 l2c_link_adjust_allocation();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
             }
             p_lcb->link_xmit_data_q = list_new(NULL);
             return (p_lcb);
@@ -156,6 +159,9 @@ void l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding)
 void l2cu_release_lcb (tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
+
+    L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
+        __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
 
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
@@ -257,11 +263,13 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     } else
 #endif
     {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         if (l2cb.num_links_active >= 1) {
             l2cb.num_links_active--;
         }
 
         l2c_link_adjust_allocation();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 
     /* Check for ping outstanding */
@@ -344,6 +352,15 @@ uint8_t l2cu_ble_plcb_active_count(void)
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
         p_lcb = list_node(p_node);
         if (p_lcb && p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_LE) {
+            L2CAP_TRACE_DEBUG("%s LE PLCB active #%d: remote_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+                              __func__,
+                              active_count,
+                              p_lcb->remote_bd_addr[0],
+                              p_lcb->remote_bd_addr[1],
+                              p_lcb->remote_bd_addr[2],
+                              p_lcb->remote_bd_addr[3],
+                              p_lcb->remote_bd_addr[4],
+                              p_lcb->remote_bd_addr[5]);
             active_count ++;
         }
     }
@@ -356,6 +373,7 @@ uint8_t l2cu_ble_plcb_active_count(void)
 
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_get_conn_role
@@ -372,6 +390,7 @@ UINT8 l2cu_get_conn_role (tL2C_LCB *p_this_lcb)
 {
     return l2cb.desire_role;
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1784,6 +1803,7 @@ tL2C_CCB *l2cu_find_ccb_by_remote_cid (tL2C_LCB *p_lcb, UINT16 remote_cid)
     return (NULL);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_allocate_rcb
@@ -1813,6 +1833,7 @@ tL2C_RCB *l2cu_allocate_rcb (UINT16 psm)
     /* If here, no free RCB found */
     return (NULL);
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
@@ -1892,7 +1913,7 @@ void l2cu_disconnect_chnl (tL2C_CCB *p_ccb)
     }
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_find_rcb_by_psm
@@ -1917,6 +1938,7 @@ tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm)
     /* If here, no match found */
     return (NULL);
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
@@ -2261,8 +2283,11 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 #if BTM_SCO_INCLUDED == TRUE
     BOOLEAN         is_sco_active;
 #endif
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
     list_node_t *p_node     = NULL;
     tL2C_LCB    *p_lcb_cur  = NULL;
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
     tBT_DEVICE_TYPE     dev_type;
@@ -2285,6 +2310,7 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
     }
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If there is a connection where we perform as a slave, try to switch roles
        for this connection */
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
@@ -2328,6 +2354,8 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
     p_lcb->link_state = LST_CONNECTING;
 
     return (l2cu_create_conn_after_switch (p_lcb));
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
+    return false;
 }
 
 /*******************************************************************************
@@ -2354,7 +2382,7 @@ UINT8 l2cu_get_num_hi_priority (void)
     return no_hi;
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_create_conn_after_switch
@@ -2429,7 +2457,7 @@ BOOLEAN l2cu_create_conn_after_switch (tL2C_LCB *p_lcb)
 
     return (TRUE);
 }
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **

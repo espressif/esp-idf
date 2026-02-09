@@ -92,7 +92,8 @@ void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_i
 {
     int64_t offset = hal->us_to_ticks(1) * 2;
     uint64_t now_time = systimer_hal_get_counter_value(hal, 0);
-    systimer_counter_value_t alarm = { .val = MAX(hal->us_to_ticks(timestamp), now_time + offset) };
+    uint64_t timestamp_ticks = hal->us_to_ticks(timestamp);
+    systimer_counter_value_t alarm = { .val = MAX(timestamp_ticks, now_time + offset) };
     do {
         systimer_ll_enable_alarm(hal->dev, alarm_id, false);
         systimer_ll_set_alarm_target(hal->dev, alarm_id, alarm.val);

@@ -89,8 +89,8 @@ int ble_direction_finding_antenna_init(uint8_t* gpio_array,uint8_t gpio_array_le
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = gpio_pin_maks,
-        .pull_down_en = false,
-        .pull_up_en = true,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
     rc = gpio_config(&gpio_conf);
     if(rc != 0) {

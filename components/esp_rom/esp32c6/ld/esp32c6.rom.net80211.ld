@@ -64,4 +64,3 @@ s_netstack_free = 0x4087ff94;
 mesh_rxcb = 0x4087ff90;
 sta_rxcb = 0x4087ff8c;
 g_itwt_fid = 0x4087ff88;
-esp_test_tx_addba_request = 0x4087ff84;

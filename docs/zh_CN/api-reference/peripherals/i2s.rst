@@ -116,13 +116,9 @@ I2S 通信模式
 =========  ========  ==========  ==========  ===========  ==========  ========  ===========
 ESP32      I2S 0/1     I2S 0       I2S 0       I2S 0/1        无        I2S 0      I2S 0
 ESP32-S2    I2S 0        无         无           无           无         无        I2S 0
-ESP32-C3    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
-ESP32-C6    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 ESP32-S3   I2S 0/1     I2S 0       I2S 0       I2S 0/1      I2S 0/1      无         无
-ESP32-H2    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 ESP32-P4   I2S 0~2     I2S 0       I2S 0       I2S 0~2      I2S 0~2      无         无
-ESP32-C5    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
-ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+others      I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 =========  ========  ==========  ==========  ===========  ==========  ========  ===========
 
 .. note::
@@ -225,11 +221,11 @@ ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无   
 
     TDM（Time Division Multiplexing，时分多路复用）模式最多支持 16 个声道，可通过 :cpp:member:`i2s_tdm_slot_config_t::slot_mask` 启用通道。
 
-    .. only:: SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: not esp32c3 or esp32c6 or esp32s3
 
         该模式下无论启用多少声道，都支持任意数据位宽，也即一个帧中最多可以有 ``32 位宽 * 16 个声道 = 512 位`` 的数据。
 
-    .. only:: not SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: esp32c3 or esp32c6 or esp32s3
 
         但由于硬件限制，声道设置为 32 位宽时最多只能支持 4 个声道，16 位宽时最多只能支持 8 个声道，8 位宽时最多只能支持 16 个声道。TDM 的声道通信格式与标准模式基本相同，但有一些细微差别。
 
@@ -249,14 +245,14 @@ ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无   
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
 
-.. only:: SOC_I2S_SUPPORTS_LCD_CAMERA
+.. only:: esp32 or esp32s2
 
     LCD/摄像头模式
     ^^^^^^^^^^^^^^^
 
     LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd/i80_lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
 
-.. only:: SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: esp32
 
     ADC/DAC 模式
     ^^^^^^^^^^^^^
@@ -905,7 +901,9 @@ STD RX 模式
 
 请注意，一个句柄只能代表一个通道，因此仍然需要对 TX 和 RX 通道逐个进行声道和时钟配置。
 
-以下示例展示了如何分配两个全双工通道：
+驱动支持两种分配全双工通道的方法：
+
+1. 在调用 :cpp:func:`i2s_new_channel` 函数时，同时分配 TX 和 RX 通道两个通道。
 
 .. code-block:: c
 
@@ -945,6 +943,48 @@ STD RX 模式
 
     ...
 
+2. 调用两次 :cpp:func:`i2s_new_channel` 函数分别分配 TX 和 RX 通道，但使用相同配置初始化 TX 和 RX 通道。
+
+.. code-block:: c
+
+    #include "driver/i2s_std.h"
+    #include "driver/gpio.h"
+
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    /* 分配两个 I2S 通道 */
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    /* 分别分配给 TX 和 RX 通道 */
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+
+    /* 为两个通道设置完全相同的配置，TX 和 RX 将自动组成全双工模式 */
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = GPIO_NUM_4,
+            .ws = GPIO_NUM_5,
+            .dout = GPIO_NUM_18,
+            .din = GPIO_NUM_19,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
+    };
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    // ...
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
+    ...
+
+
 .. only:: SOC_I2S_HW_VERSION_1
 
     单工模式
@@ -961,7 +1001,7 @@ STD RX 模式
         i2s_chan_handle_t rx_handle;
 
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -979,12 +1019,12 @@ STD RX 模式
             },
         };
         /* 初始化通道 */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* 如果没有找到其他可用的 I2S 设备，RX 通道将被注册在另一个 I2S 上
          * 并返回 ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1001,8 +1041,9 @@ STD RX 模式
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
 
 .. only:: SOC_I2S_HW_VERSION_2
 
@@ -1021,7 +1062,7 @@ STD RX 模式
         i2s_chan_handle_t tx_handle;
         i2s_chan_handle_t rx_handle;
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -1039,12 +1080,12 @@ STD RX 模式
             },
         };
         /* 初始化通道 */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* 如果没有找到其他可用的 I2S 设备，RX 通道将被注册在另一个 I2S 上
          * 并返回 ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle); // RX 和 TX 通道都将注册在 I2S0 上，但配置可以不同
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle)); // RX 和 TX 通道都将注册在 I2S0 上，但配置可以不同
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1061,8 +1102,8 @@ STD RX 模式
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
 .. only:: SOC_I2S_SUPPORTS_ETM
 
@@ -1234,4 +1275,4 @@ I2S 类型
 ^^^^^^^^
 
 .. include-build-file:: inc/components/esp_driver_i2s/include/driver/i2s_types.inc
-.. include-build-file:: inc/components/hal/include/hal/i2s_types.inc
+.. include-build-file:: inc/components/esp_hal_i2s/include/hal/i2s_types.inc

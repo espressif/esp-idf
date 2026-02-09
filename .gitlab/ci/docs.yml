@@ -8,7 +8,7 @@
 
 .patterns-docs-partial: &patterns-docs-partial
   - "components/**/*.h"
-  - "components/**/CMakeList.txt"
+  - "components/**/CMakeLists.txt"
   - "components/**/sdkconfig*"
   - "tools/tools.json"
   - "tools/idf_tools.py"
@@ -58,7 +58,9 @@
 check_readme_links:
   extends:
     - .pre_check_template
-  tags: ["amd64", "brew"]
+  variables:
+    GIT_STRATEGY: "fetch"
+  tags: ["check_doc_links"]
   allow_failure: true
   rules:
     - <<: *if-protected-check
@@ -93,13 +95,16 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5", "esp32h2", "esp32h4", "esp32h21", "esp32p4"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32s31", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5", "esp32h2", "esp32h4", "esp32h21", "esp32p4"]
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
   extends:
     - .pre_check_template
     - .doc-rules:build:docs-full
+  variables:
+    GIT_STRATEGY: "fetch"
+  tags: ["check_doc_links"]
   script:
     - cd docs
     - build-docs gh-linkcheck
@@ -138,77 +143,6 @@ build_docs_html_partial:
       - DOCLANG: "zh_CN"
         DOCTGT: "esp32p4"
 
-.deploy_docs_template:
-  image: $ESP_IDF_DOC_ENV_IMAGE
-  variables:
-    DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
-    PYTHONUNBUFFERED: 1
-    # ensure all tags are fetched, need to know the latest/stable tag for the docs
-    GIT_STRATEGY: clone
-    GIT_DEPTH: 0
-  stage: test_deploy
-  tags:
-    - deploy
-    - shiny
-  script:
-    # ensure all tags are fetched, need to know the latest/stable tag for the docs
-    - git fetch --tags --prune
-    - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
-    - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
-    - deploy-docs
-
-# stage: test_deploy
-deploy_docs_preview:
-  extends:
-    - .deploy_docs_template
-  rules:
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs_full
-    - <<: *if-dev-push
-      changes: *patterns-docs-preview
-  needs:
-    - job: build_docs_html_partial
-      optional: true
-    - job: build_docs_html_full
-      optional: true
-  variables:
-    TYPE: "preview"
-    # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
-    DOCS_DEPLOY_PRIVATEKEY: "$DOCS_DEPLOY_KEY"
-    DOCS_DEPLOY_SERVER: "$DOCS_SERVER"
-    DOCS_DEPLOY_SERVER_USER: "$DOCS_SERVER_USER"
-    DOCS_DEPLOY_PATH: "$DOCS_PATH"
-    DOCS_DEPLOY_URL_BASE: "https://$DOCS_PREVIEW_SERVER_URL/docs/esp-idf"
-  environment:
-    name: deploy_docs_preview
-    deployment_tier: staging
-    url: "https://$DOCS_PREVIEW_SERVER_URL/docs/esp-idf"
-
-# stage: post_deploy
-deploy_docs_production:
-  # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
-  extends:
-    - .deploy_docs_template
-    - .rules:protected:deploy
-  stage: post_deploy
-  dependencies:  # set dependencies to null to avoid missing artifacts issue
-  needs: # ensure runs after push_to_github succeeded
-    - build_docs_html_full
-    - job: push_to_github
-      artifacts: false
-  variables:
-    TYPE: "preview"
-    DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
-    DOCS_DEPLOY_SERVER: "$DOCS_PROD_SERVER"
-    DOCS_DEPLOY_SERVER_USER: "$DOCS_PROD_SERVER_USER"
-    DOCS_DEPLOY_PATH: "$DOCS_PROD_PATH"
-    DOCS_DEPLOY_URL_BASE: "https://docs.espressif.com/projects/esp-idf"
-    DEPLOY_STABLE: 1
-  environment:
-    name: deploy_docs_production
-    deployment_tier: production
-    url: "https://docs.espressif.com/projects/esp-idf"
-
 check_doc_links:
   extends:
     - .build_docs_template
@@ -217,7 +151,9 @@ check_doc_links:
   needs:
     - job: deploy_docs_production
       artifacts: false
-  tags: ["build", "amd64", "internet"]
+  variables:
+    GIT_STRATEGY: "fetch"
+  tags: ["check_doc_links"]
   artifacts:
     when: always
     paths:

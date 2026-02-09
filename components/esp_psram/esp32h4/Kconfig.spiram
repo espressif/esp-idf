@@ -19,17 +19,19 @@ menu "SPI RAM config"
 
     choice SPIRAM_SPEED
         prompt "Set RAM clock speed"
-        default SPIRAM_SPEED_48M
+        default SPIRAM_SPEED_64M
         help
             Select the speed for the SPI RAM chip.
 
-        config SPIRAM_SPEED_48M
-            bool "48Mhz clock speed"
+        config SPIRAM_SPEED_64M
+            bool "64Mhz clock speed"
+        config SPIRAM_SPEED_32M
+            bool "32Mhz clock speed"
     endchoice
 
     config SPIRAM_SPEED
         int
-        default 48 if SPIRAM_SPEED_48M
+        default 32 if SPIRAM_SPEED_32M
         default 64 if SPIRAM_SPEED_64M
 
     config SPIRAM_FETCH_INSTRUCTIONS

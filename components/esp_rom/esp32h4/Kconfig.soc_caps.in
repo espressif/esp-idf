@@ -51,10 +51,6 @@ config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
 
-config ESP_ROM_HAS_SPI_FLASH
-    bool
-    default y
-
 config ESP_ROM_WITHOUT_REGI2C
     bool
     default y

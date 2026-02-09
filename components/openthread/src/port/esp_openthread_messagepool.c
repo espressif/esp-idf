@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 
 int s_buffer_pool_head = -1;
 otMessageBuffer **s_buffer_pool_pointer = NULL;
+otMessageBuffer *s_buffer_pool = NULL;
 
 void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, size_t aBufferSize)
 {
@@ -27,6 +28,7 @@ void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, s
         s_buffer_pool_pointer[i] = buffer_pool + i * aBufferSize / sizeof(otMessageBuffer);
     }
     s_buffer_pool_head = aMinNumFreeBuffers - 1;
+    s_buffer_pool = buffer_pool;
     ESP_LOGI(OT_PLAT_LOG_TAG, "Create message buffer pool successfully, size %d", aMinNumFreeBuffers*aBufferSize);
 }
 
@@ -49,4 +51,17 @@ void otPlatMessagePoolFree(otInstance *aInstance, otMessageBuffer *aBuffer)
 uint16_t otPlatMessagePoolNumFreeBuffers(otInstance *aInstance)
 {
     return s_buffer_pool_head + 1;
+}
+
+void otPlatMessagePoolDeinit(otInstance *aInstance)
+{
+    if (s_buffer_pool_pointer != NULL) {
+        heap_caps_free(s_buffer_pool_pointer);
+        s_buffer_pool_pointer = NULL;
+    }
+    if (s_buffer_pool != NULL) {
+        heap_caps_free(s_buffer_pool);
+        s_buffer_pool = NULL;
+    }
+    s_buffer_pool_head = -1;
 }

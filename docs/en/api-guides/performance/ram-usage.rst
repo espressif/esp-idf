@@ -83,7 +83,7 @@ The Stack Canary Bytes feature adds a set of magic bytes at the end of each task
 Run-time Methods to Determine Stack Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- The :cpp:func:`uxTaskGetStackHighWaterMark` returns the minimum free stack memory of a task throughout the task's lifetime, which gives a good indication of how much stack memory is left unused by a task.
+- The :cpp:func:`uxTaskGetStackHighWaterMark` returns the minimum free stack memory of a task throughout the task's lifetime in bytes, which gives a good indication of how much stack memory is left unused by a task. Note that on {IDF_TARGET_NAME}, the function returns the value in bytes (not words as stated in the standard FreeRTOS documentation).
 
   - The easiest time to call :cpp:func:`uxTaskGetStackHighWaterMark` is from the task itself: call ``uxTaskGetStackHighWaterMark(NULL)`` to get the current task's high water mark after the time that the task has achieved its peak stack usage, i.e., if there is a main loop, execute the main loop a number of times with all possible states, and then call :cpp:func:`uxTaskGetStackHighWaterMark`.
   - Often, it is possible to subtract almost the entire value returned here from the total stack size of a task, but allow some safety margin to account for unexpected small increases in stack usage at runtime.
@@ -132,7 +132,6 @@ The default stack sizes for these tasks are usually set conservatively high to a
    :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`.
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
    - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
-   - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with stack size configured by :ref:`CONFIG_MQTT_TASK_STACK_SIZE`. MQTT stack size can also be configured using ``task_stack`` field of :cpp:class:`esp_mqtt_client_config_t`.
    - To see how to optimize RAM usage when using ``mDNS``, please check `Minimizing RAM Usage <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__.
 
 .. note::
@@ -179,12 +178,11 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
 .. list::
 
-    - Enable :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
-    - Enable :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
+    - Disable :ref:`CONFIG_FREERTOS_IN_IRAM` if enabled to place FreeRTOS functions in flash instead of IRAM. By default, FreeRTOS functions are already placed in Flash to save IRAM.
+    - Disable :ref:`CONFIG_RINGBUF_IN_IRAM` if enabled to place ring buffer functions in Flash instead of IRAM. By default, ring buffer functions are already placed in Flash to save IRAM.
     - Enable :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g., if :ref:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the ESP-IDF drivers where this is the case, you can get an error at run-time when installing the driver in question.
     :SOC_WIFI_SUPPORTED: - Disabling Wi-Fi options :ref:`CONFIG_ESP_WIFI_IRAM_OPT` and/or :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` options frees available IRAM at the cost of Wi-Fi performance.
     :CONFIG_ESP_ROM_HAS_SPI_FLASH: - Enabling :ref:`CONFIG_SPI_FLASH_ROM_IMPL` frees some IRAM but means that esp_flash bugfixes and new flash chip support are not available, see :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom` for details.
-    :esp32: - Disabling :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` frees some IRAM but is only available in some flash configurations, see the configuration item help text.
     :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :ref:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, saving 10 KB or more of IRAM.
     - Disabling :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` prevents posting ``esp_event`` events from :ref:`iram-safe-interrupt-handlers` but saves some IRAM.
     :SOC_GPSPI_SUPPORTED: - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but saves some IRAM.
@@ -194,6 +192,8 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
     - Disable :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM` if no ISRs that run while cache is disabled (i.e. IRAM ISRs) use libc lock APIs.
+    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - Disable :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` to save approximately 1000 bytes of IRAM, at the cost of reduced performance.
+    :SOC_SPIRAM_SUPPORTED: - Enable :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM` to force esp_event to place event loop related allocations in external RAM instead of internal RAM.
 
 .. only:: esp32
 

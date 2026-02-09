@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -49,8 +49,8 @@ static uint8_t sec_service_uuid[16] = {
 static esp_ble_adv_data_t heart_rate_adv_config = {
     .set_scan_rsp = false,
     .include_txpower = true,
-    .min_interval = 0x0006, //slave connection min interval, Time = min_interval * 1.25 msec
-    .max_interval = 0x0010, //slave connection max interval, Time = max_interval * 1.25 msec
+    .min_interval = ESP_BLE_GAP_CONN_ITVL_MS(7.5), //slave connection min interval
+    .max_interval = ESP_BLE_GAP_CONN_ITVL_MS(20), //slave connection max interval
     .appearance = 0x00,
     .manufacturer_len = 0, //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data =  NULL, //&test_manufacturer[0],
@@ -69,8 +69,8 @@ static esp_ble_adv_data_t heart_rate_scan_rsp_config = {
 };
 
 static esp_ble_adv_params_t heart_rate_adv_params = {
-    .adv_int_min        = 0x100,
-    .adv_int_max        = 0x100,
+    .adv_int_min        = ESP_BLE_GAP_ADV_ITVL_MS(160),
+    .adv_int_max        = ESP_BLE_GAP_ADV_ITVL_MS(160),
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RPA_PUBLIC,
     .channel_map        = ADV_CHNL_ALL,
@@ -543,7 +543,8 @@ void app_main(void)
 
     ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth", __func__);
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

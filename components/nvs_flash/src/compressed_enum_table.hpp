@@ -1,11 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef compressed_enum_table_h
-#define compressed_enum_table_h
+#pragma once
 
 #include <cstdint>
 #include <cassert>
@@ -71,5 +69,3 @@ protected:
     static const uint32_t VALUE_MASK = (1 << Nbits) - 1;
     uint32_t mData[WORD_COUNT];
 };
-
-#endif /* compressed_enum_table_h */

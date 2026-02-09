@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,14 @@
 #include "sdkconfig.h"
 #include "esp_rom_spiflash.h"
 #include "esp_err.h"
-#include "esp_flash.h"
-#include "hal/spi_flash_hal.h"
-#include "spi_flash_override.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+
+#include "hal/spi_flash_hal.h"
+
+#include "esp_flash.h"
+#include "esp_flash_chips/esp_flash_types.h"
+#include "esp_flash_chips/spi_flash_override.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,6 +158,34 @@ const spi_flash_hpm_dummy_conf_t *spi_flash_hpm_get_dummy(void);
  */
 bool spi_flash_hpm_dummy_adjust(void);
 #endif //CONFIG_SPI_FLASH_HPM_ON
+
+#if CONFIG_ESP_SLEEP_SET_FLASH_DPD
+
+/**
+ * @brief Get the duration of entering deep power-down mode.
+ *
+ * @return Entering deep power-down mode time(tDp), in microseconds.
+ */
+uint32_t spi_flash_dpd_get_enter_duration(void);
+
+/**
+ * @brief Get the duration of exiting deep power-down mode.
+ *
+ * @return Exiting deep power-down mode time(tRES1), in microseconds.
+ */
+uint32_t spi_flash_dpd_get_exit_duration(void);
+
+/**
+ * @brief Enable or disable SPI flash deep power-down mode.
+ *
+ * @param bool status. True: flash enable deep power-down mode. False: flash disable deep power-down mode.
+ *
+ * @note If using self-provided flash (not the chip’s factory-default flash), consult its datasheet to use this API safely.
+ *
+ * @return ESP_OK if success.
+ */
+esp_err_t spi_flash_enable_deep_power_down_mode(bool enable);
+#endif
 
 #if SOC_SPI_MEM_SUPPORT_WRAP
 /**

@@ -19,12 +19,12 @@ def get_sdk_path() -> str:
     return idf_path
 
 
-class CustomProcess(object):
+class CustomProcess:
     def __init__(self, cmd: str, logfile: str, verbose: bool = True) -> None:
         self.verbose = verbose
         self.f = open(logfile, 'w', encoding='utf-8')
         if self.verbose:
-            logging.info('Starting {} > {}'.format(cmd, self.f.name))
+            logging.info(f'Starting {cmd} > {self.f.name}')
         self.pexpect_proc = pexpect.spawn(cmd, timeout=60, logfile=self.f, encoding='utf-8', codec_errors='ignore')
 
     def __enter__(self):  # type: ignore
@@ -33,7 +33,7 @@ class CustomProcess(object):
     def close(self) -> None:
         self.pexpect_proc.terminate(force=True)
 
-    def __exit__(self, type, value, traceback):  # type: ignore
+    def __exit__(self, type, value, traceback):  # type: ignore  # noqa
         self.close()
         self.f.close()
 
@@ -58,7 +58,7 @@ def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]')[1].decode()
+    dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     if config == 'default':
         dut.expect('esp_https_server: Starting server')
         dut.expect('esp_https_server: Server listening on port 443')
@@ -73,28 +73,32 @@ def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
     # Running mDNS services in docker is not a trivial task. Therefore, the script won't connect to the host name but
     # to IP address. However, the certificates were generated for the host name and will be rejected.
     if config == 'default':
-        cmd = ' '.join([
-            sys.executable,
-            os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-            '--sec_ver 2',
-            '--sec2_username wifiprov',
-            '--sec2_pwd abcd1234',
-            '--name',
-            dut_ip,
-            '--dont-check-hostname',
-        ])  # don't reject the certificate because of the hostname
+        cmd = ' '.join(
+            [
+                sys.executable,
+                os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
+                '--sec_ver 2',
+                '--sec2_username wifiprov',
+                '--sec2_pwd abcd1234',
+                '--name',
+                dut_ip,
+                '--dont-check-hostname',
+            ]
+        )  # don't reject the certificate because of the hostname
     elif config == 'http':
-        cmd = ' '.join([
-            sys.executable,
-            os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-            '--sec_ver 2',
-            '--transport http',
-            '--sec2_username wifiprov',
-            '--sec2_pwd abcd1234',
-            '--name',
-            dut_ip,
-            '--dont-check-hostname',
-        ])
+        cmd = ' '.join(
+            [
+                sys.executable,
+                os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
+                '--sec_ver 2',
+                '--transport http',
+                '--sec2_username wifiprov',
+                '--sec2_pwd abcd1234',
+                '--name',
+                dut_ip,
+                '--dont-check-hostname',
+            ]
+        )
     esp_local_ctrl_log = os.path.join(idf_path, rel_project_path, 'esp_local_ctrl.log')
     with CustomProcess(cmd, esp_local_ctrl_log) as ctrl_py:
 
@@ -103,15 +107,15 @@ def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
             ctrl_py.pexpect_proc.expect_exact('==== Available Properties ====')
             ctrl_py.pexpect_proc.expect(re.compile(r'S.N. Name\s+Type\s+Flags\s+Value'))
             ctrl_py.pexpect_proc.expect(re.compile(r'\[ 1\] timestamp \(us\)\s+TIME\(us\)\s+Read-Only\s+\d+'))
-            ctrl_py.pexpect_proc.expect(re.compile(r'\[ 2\] property1\s+INT32\s+{}'.format(prop1)))
+            ctrl_py.pexpect_proc.expect(re.compile(rf'\[ 2\] property1\s+INT32\s+{prop1}'))
             ctrl_py.pexpect_proc.expect(re.compile(r'\[ 3\] property2\s+BOOLEAN\s+Read-Only\s+(True)|(False)'))
-            ctrl_py.pexpect_proc.expect(re.compile(r'\[ 4\] property3\s+STRING\s+{}'.format(prop3)))
+            ctrl_py.pexpect_proc.expect(re.compile(rf'\[ 4\] property3\s+STRING\s+{prop3}'))
             ctrl_py.pexpect_proc.expect_exact("Select properties to set (0 to re-read, 'q' to quit) :")
 
         property1 = 123456789
         property3 = ''
 
-        ctrl_py.pexpect_proc.expect_exact('Connecting to {}'.format(dut_ip))
+        ctrl_py.pexpect_proc.expect_exact(f'Connecting to {dut_ip}')
         if config == 'default':
             dut.expect('esp_https_server: performing session handshake', timeout=60)
         expect_properties(property1, property3)
@@ -127,14 +131,14 @@ def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
         ctrl_py.pexpect_proc.sendline('2')
         ctrl_py.pexpect_proc.expect_exact('Enter value to set for property (property1) :')
         ctrl_py.pexpect_proc.sendline(str(property1))
-        dut.expect_exact('control: Setting property1 value to {}'.format(property1))
+        dut.expect_exact(f'control: Setting property1 value to {property1}')
         expect_properties(property1, property3)
 
         property3 = 'test'
         ctrl_py.pexpect_proc.sendline('4')
         ctrl_py.pexpect_proc.expect_exact('Enter value to set for property (property3) :')
         ctrl_py.pexpect_proc.sendline(property3)
-        dut.expect_exact('control: Setting property3 value to {}'.format(property3))
+        dut.expect_exact(f'control: Setting property3 value to {property3}')
         expect_properties(property1, property3)
 
         ctrl_py.pexpect_proc.sendline('q')

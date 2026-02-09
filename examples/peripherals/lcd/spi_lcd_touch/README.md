@@ -1,100 +1,157 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # SPI LCD and Touch Panel Example
 
-[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd/spi_lcd.html) provides several panel drivers out-of box, e.g. ST7789, SSD1306, NT35510. However, there're a lot of other panels on the market, it's beyond `esp_lcd` component's responsibility to include them all.
+This example demonstrates how to interface an ESP32 development board with an SPI LCD display and optional touch controller using the ESP-IDF framework. The example creates an animated user interface using the LVGL graphics library. The touch controller and the LCD display share the same SPI bus, allowing for efficient communication and resource usage.
 
-`esp_lcd` allows user to add their own panel drivers in the project scope (i.e. panel driver can live outside of esp-idf), so that the upper layer code like LVGL porting code can be reused without any modifications, as long as user-implemented panel driver follows the interface defined in the `esp_lcd` component.
+## What This Example Does
 
-This example shows how to use GC9A01 or ILI9341 display driver from Component manager in esp-idf project. These components are using API provided by `esp_lcd` component. This example will draw a fancy dash board with the LVGL library.
+This example:
 
-This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL porting doc](https://docs.lvgl.io/master/porting/index.html).
+-   Initializes an ST7789 LCD display connected via SPI interface
+-   Sets up LVGL (Light and Versatile Graphics Library) for creating user interfaces
+-   Displays an animated arc widget that continuously rotates
+-   Includes a button that allows you to rotate the screen orientation
+-   Optionally supports touch input through STMPE610 or XPT2046 touch controllers
 
-## Touch controller STMPE610
+## Key Components Used
 
-In this example you can enable touch controller STMPE610 connected via SPI. The SPI connection is shared with LCD screen.
+### ESP-IDF Components
+
+-   **esp_lcd**: Provides the abstracted LCD panel driver interface and ST7789 device driver
+-   **esp_timer**: Generates periodic ticks required by LVGL for animations
+-   **driver/spi_master**: Creates and manages the SPI bus for communication with the LCD and touch controller
+
+### External Components (from Component Registry)
+
+-   **LVGL**: Modern graphics library for creating user interfaces
+-   **esp_lcd_touch_stmpe610**: Touch controller driver for STMPE610
+-   **esp_lcd_touch_xpt2046**: Touch controller driver for XPT2046
+
+## Technical Implementation
+
+The example implements several important concepts:
+
+-   **Thread Safety**: Uses mutex locks to protect LVGL API calls since LVGL is not thread-safe
+-   **Double Buffering**: Implements efficient display updates using dual display buffers
+-   **Memory Management**: Uses DMA-capable memory allocation for optimal performance
+-   **Event Handling**: Demonstrates proper callback registration for display and touch events
 
 ## How to use the example
 
-### Hardware Required
+### Hardware Requirements
 
-* An ESP development board
-* An GC9A01 or ILI9341 LCD panel, with SPI interface (with/without STMPE610 SPI touch)
-* An USB cable for power supply and programming
+To run this example, you will need:
 
-### Hardware Connection
+-   **ESP Development Board**: Any compatible board, the supported ESP chips are listed in the table above.
+-   **ST7789 LCD Display**: 240x320 pixel TFT display with SPI interface
+-   **USB Cable**: For power supply and programming
+-   **Jumper Wires**: For connecting the display to your ESP board
+-   **Touch Controller**: STMPE610 or XPT2046 touch controller (if you want touch functionality)
 
-The connection between ESP Board and the LCD is as follows:
+### Hardware Connections
 
+Connect your ESP development board to the ST7789 LCD display as shown below. Make sure to power off your board before making any connections.
+
+### Wiring Diagram
+
+```text
+ESP Development Board                    ST7789 LCD Display
++----------------------+              +--------------------+
+|             GND      +------------->| GND                |
+|                      |              |                    |
+|             3V3      +------------->| VCC                |
+|                      |              |                    |
+|             PCLK     +------------->| SCL                |
+|                      |              |                    |
+|             MOSI     +------------->| MOSI               |
+|                      |              |                    |
+|             MISO     |<-------------+ MISO               |
+|                      |              |                    |
+|             RST      +------------->| RES                |
+|                      |              |                    |
+|             DC       +------------->| DC                 |
+|                      |              |                    |
+|             LCD CS   +------------->| LCD CS             |
+|                      |              |                    |
+|             TOUCH CS +------------->| TOUCH CS           |
+|                      |              |                    |
+|             BK_LIGHT +------------->| BLK                |
++----------------------+              +--------------------+
 ```
-       ESP Board                       GC9A01/ILI9341 Panel + TOUCH
-┌──────────────────────┐              ┌────────────────────┐
-│             GND      ├─────────────►│ GND                │
-│                      │              │                    │
-│             3V3      ├─────────────►│ VCC                │
-│                      │              │                    │
-│             PCLK     ├─────────────►│ SCL                │
-│                      │              │                    │
-│             MOSI     ├─────────────►│ MOSI               │
-│                      │              │                    │
-│             MISO     |◄─────────────┤ MISO               │
-│                      │              │                    │
-│             RST      ├─────────────►│ RES                │
-│                      │              │                    │
-│             DC       ├─────────────►│ DC                 │
-│                      │              │                    │
-│             LCD CS   ├─────────────►│ LCD CS             │
-│                      │              │                    │
-│             TOUCH CS ├─────────────►│ TOUCH CS           │
-│                      │              │                    │
-│             BK_LIGHT ├─────────────►│ BLK                │
-└──────────────────────┘              └────────────────────┘
+
+### Pin Configuration Notes
+
+-   **GPIO Pin Numbers**: The pin assignments shown above are the default values defined in the example code. You can modify these in the [main.c](main/spi_lcd_touch_example_main.c) file if needed.
+-   **SPI Interface**: This example uses SPI2 by default. The MISO pin (GPIO 21) is optional and only needed if you use the touch controller to read the touch coordinates.
+-   **Backlight Control**: The backlight pin controls the display brightness. The example uses active-low logic by default (set `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` to 1 if your display requires active-high).
+-   **Touch Controller**: If using a touch controller, it shares the same SPI bus but uses a separate chip select pin.
+
+## Getting Started
+
+### Configuration Options
+
+This example provides several configuration options through the ESP-IDF configuration system:
+
+```bash
+idf.py menuconfig
 ```
 
-The GPIO number used by this example can be changed in [lvgl_example_main.c](main/spi_lcd_touch_example_main.c).
-Especially, please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lvgl_example_main.c](main/spi_lcd_touch_example_main.c).
+Navigate to "Example Configuration" to find:
 
-### Build and Flash
+-   **Enable LCD touch**: Toggle touch controller support on/off
+-   **LCD touch controller model**: Choose between STMPE610 and XPT2046
+-   **Display mirroring options**: Adjust for different touch controller orientations
 
-Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
+### Exiting the Monitor
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from the ESP Component Registry into `managed_components` folder.
-
-(To exit the serial monitor, type ``Ctrl-]``.)
+To exit the serial monitor, press `Ctrl+]`.
 
 See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
 
-### Example Output
+## What to Expect
 
-```bash
-...
-I (409) cpu_start: Starting scheduler on APP CPU.
-I (419) example: Turn off LCD backlight
-I (419) gpio: GPIO[2]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (429) example: Initialize SPI bus
-I (439) example: Install panel IO
-I (439) gpio: GPIO[5]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (449) example: Install GC9A01 panel driver
-I (459) gpio: GPIO[3]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (589) gpio: GPIO[0]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (589) example: Initialize touch controller STMPE610
-I (589) STMPE610: TouchPad ID: 0x0811
-I (589) STMPE610: TouchPad Ver: 0x03
-I (599) example: Turn on LCD backlight
-I (599) example: Initialize LVGL library
-I (609) example: Register display driver to LVGL
-I (619) example: Install LVGL tick timer
-I (619) example: Starting LVGL task
-I (619) example: Display LVGL animation
-I (619) example: Display LVGL Meter Widget
-...
+When the example runs successfully, you should see:
+
+### Visual Output
+
+-   **LCD Display**: The screen will show an animated rotating arc (progress bar style)
+-   **Rotate Button**: A button labeled "ROTATE" in the bottom-left corner
+-   **Smooth Animation**: The arc continuously rotates, demonstrating LVGL's animation capabilities
+
+### Touch Interaction (if enabled)
+
+-   **Screen Rotation**: Tap the "ROTATE" button to cycle through different screen orientations (0°, 90°, 180°, 270°)
+-   **Touch Feedback**: The display responds immediately to touch input
+
+### Console Output
+
+```text
+I (307) main_task: Started on CPU0
+I (307) main_task: Calling app_main()
+I (307) example: Turn off LCD backlight
+I (307) example: Initialize SPI bus
+I (317) example: Install panel IO
+I (317) example: Install ST7789 panel driver
+I (447) example: Turn on LCD backlight
+I (447) example: Initialize LVGL library
+I (457) example: Install LVGL tick timer
+I (457) example: Register io panel event callback for LVGL flush ready notification
+I (457) example: Create LVGL task
+I (467) example: Starting LVGL task
+I (547) example: Display LVGL Meter Widget
+I (557) main_task: Returned from app_main()
 ```
 
+## Learning Resources
+
+### Documentation Links
+
+-   [ESP-IDF SPI LCD Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd/spi_lcd.html)
+-   [LVGL Documentation](https://docs.lvgl.io/master/)
+-   [ESP Component Registry](https://components.espressif.com/)
 
 ## Troubleshooting
 
-* Why the LCD doesn't light up?
-  * Check the backlight's turn-on level, and update it in `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL`
-
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

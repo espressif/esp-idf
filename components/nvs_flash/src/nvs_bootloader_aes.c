@@ -70,7 +70,9 @@ int nvs_bootloader_aes_crypt_ecb(enum AES_TYPE mode,
 }
 #endif /* CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB */
 #else /* BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER */
-#include "mbedtls/aes.h"
+#include "psa/crypto.h"
+
+static const char *TAG = "nvs_bootloader_aes";
 
 int nvs_bootloader_aes_crypt_ecb(enum AES_TYPE mode,
                                 const unsigned char *key,
@@ -78,34 +80,66 @@ int nvs_bootloader_aes_crypt_ecb(enum AES_TYPE mode,
                                 const unsigned char input[16],
                                 unsigned char output[16])
 {
-    int ret = -1;
-
+    psa_status_t status;
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECB_NO_PADDING);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
     uint16_t keybits = key_bits == AES256 ? 256 : key_bits == AES192 ? 192 : 128;
-    int mbedtls_aes_mode = mode == AES_ENC ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT;
-
-    mbedtls_aes_context ctx;
-    mbedtls_aes_init(&ctx);
+    psa_set_key_bits(&key_attributes, keybits);
+    status = psa_import_key(&key_attributes, key, keybits / 8, &key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to import key: %d", status);
+        return -1;
+    }
+    psa_reset_key_attributes(&key_attributes);
 
     if (mode == AES_ENC) {
-        ret = mbedtls_aes_setkey_enc(&ctx, key, keybits);
+        status = psa_cipher_encrypt_setup(&operation, key_id, PSA_ALG_ECB_NO_PADDING);
     } else {
-        ret = mbedtls_aes_setkey_dec(&ctx, key, keybits);
+        status = psa_cipher_decrypt_setup(&operation, key_id, PSA_ALG_ECB_NO_PADDING);
+    }
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup cipher operation: %d", status);
+        psa_destroy_key(key_id);
+        return -1;
     }
 
-    if (ret != 0) {
-        mbedtls_aes_free(&ctx);
-        return ret;
+    size_t output_len = 0;
+    status = psa_cipher_update(&operation, input, 16, output, 16, &output_len);
+    if (status != PSA_SUCCESS || output_len != 16) {
+        ESP_LOGE(TAG, "Failed to update cipher operation: %d", status);
+        psa_cipher_abort(&operation);
+        psa_destroy_key(key_id);
+        return -1;
     }
 
-    ret = mbedtls_aes_crypt_ecb(&ctx, mbedtls_aes_mode, input, output);
-
-    if (ret != 0) {
-        mbedtls_aes_free(&ctx);
-        return ret;
+    status = psa_cipher_finish(&operation, output + output_len, 16 - output_len, &output_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to finish cipher operation: %d", status);
+        psa_cipher_abort(&operation);
+        psa_destroy_key(key_id);
+        return -1;
     }
 
-    mbedtls_aes_free(&ctx);
-    return ret;
+    if (output_len != 0) {
+        ESP_LOGE(TAG, "Output length mismatch: expected 0, got %zu", output_len);
+        psa_cipher_abort(&operation);
+        psa_destroy_key(key_id);
+        return -1;
+    }
+
+    status = psa_cipher_finish(&operation, output, 16, &output_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to finish cipher operation: %d", status);
+        psa_destroy_key(key_id);
+        return -1;
+    }
+
+    psa_destroy_key(key_id);
+    return 0;
 }
 #endif /* !(BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER) */
 #endif /* !SOC_AES_SUPPORTED */

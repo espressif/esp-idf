@@ -1,5 +1,5 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Get the currently selected sdkconfig file early, so this doesn't
 # have to be done multiple times on different places.
@@ -263,6 +263,7 @@ function(__all_component_info output)
         __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
         __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
         __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+        __component_get_property(component_source ${target} COMPONENT_SOURCE)
 
         if(prefix STREQUAL build_prefix)
             set(name ${name})
@@ -282,6 +283,7 @@ function(__all_component_info output)
             "            \"target\": \"${target}\","
             "            \"prefix\": \"${prefix}\","
             "            \"dir\": \"${dir}\","
+            "            \"source\": \"${component_source}\","
             "            \"lib\": \"${lib}\","
             "            \"reqs\": ${reqs},"
             "            \"priv_reqs\": ${priv_reqs},"
@@ -351,7 +353,6 @@ function(__project_info test_components)
     include(${sdkconfig_cmake})
     idf_build_get_property(COMPONENT_KCONFIGS KCONFIGS)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
-    idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
     __generate_gdbinit()
     idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
@@ -503,6 +504,7 @@ function(__project_init components_var test_components_var)
         if(DEFINED COMPONENTS)
             message(WARNING "The MINIMAL_BUILD property is disregarded because the COMPONENTS variable is defined.")
             set(minimal_build OFF)
+            idf_build_set_property(MINIMAL_BUILD OFF)
         else()
             set(COMPONENTS main ${TEST_COMPONENTS})
             set(minimal_build ON)
@@ -607,7 +609,7 @@ macro(project project_name)
         # Set the variables that project() normally sets, documented in the
         # command's docs.
         #
-        # https://cmake.org/cmake/help/v3.16/command/project.html
+        # https://cmake.org/cmake/help/v3.22/command/project.html
         #
         # There is some nuance when it comes to setting version variables in terms of whether
         # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original
@@ -884,13 +886,6 @@ macro(project project_name)
             target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=error")
         endif()
         unset(idf_target)
-    endif()
-
-
-    if(CONFIG_LIBC_PICOLIBC)
-        idf_build_set_property(C_COMPILE_OPTIONS "-specs=picolibc.specs" APPEND)
-        idf_build_set_property(CXX_COMPILE_OPTIONS "-specs=picolibcpp.specs" APPEND)
-        idf_build_set_property(LINK_OPTIONS "-specs=picolibc.specs" APPEND)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY

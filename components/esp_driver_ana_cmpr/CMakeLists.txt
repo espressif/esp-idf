@@ -19,5 +19,6 @@ endif()
 idf_component_register(SRCS ${srcs}
                            INCLUDE_DIRS "include"
                            PRIV_REQUIRES "${priv_requires}"
+                           REQUIRES esp_hal_ana_cmpr
                            LDFRAGMENTS "linker.lf"
                           )

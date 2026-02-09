@@ -12,14 +12,6 @@ The async memcpy API wraps all DMA configurations and operations. The signature 
 
 The DMA allows multiple memory copy requests to be queued up before the first one is completed, which allows overlap of computation and memory copy. Moreover, it is still possible to know the exact time when a memory copy request is completed by registering an event callback.
 
-.. only:: SOC_AHB_GDMA_SUPPORT_PSRAM
-
-    If the async memcpy is constructed upon the AHB GDMA, it is also possible to copy data from/to PSRAM with a proper alignment.
-
-.. only:: SOC_AXI_GDMA_SUPPORT_PSRAM
-
-    If the async memcpy is constructed upon the AXI GDMA, it is also possible to copy data from/to PSRAM with a proper alignment.
-
 
 Configure and Install Driver
 ----------------------------

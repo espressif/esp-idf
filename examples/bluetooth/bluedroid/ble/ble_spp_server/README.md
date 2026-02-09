@@ -5,6 +5,42 @@
 
 For description of this application please refer to [ESP-IDF GATT CLIENT SPP Example](../ble_spp_client/README.md)
 
+## Flow Diagram
+
+```
+   SPP Server                                              SPP Client
+ ┌───────────┐                                           ┌───────────┐
+ │   UART    │                                           │   UART    │
+ │ Terminal  │                                           │ Terminal  │
+ └─────┬─────┘                                           └─────┬─────┘
+       │                                                       │
+       │  ─────────── Initialization ───────────               │
+       │                                                       │
+       │  1. Create SPP Service (UUID: 0xABF0)                 │
+       │  2. Add Characteristics                               │
+       │  3. Start Advertising                                 │
+       │                                                       │
+       │  ─────────── Connection ───────────                   │
+       │                                                       │
+       │                          Scan & Connect               │
+       │ <───────────────────────────────────────────────────  │
+       │                                                       │
+       │  Connection Established                               │
+       │ ─────────────────────────────────────────────────────>│
+       │                                                       │
+       │  ─────────── Data Exchange ───────────                │
+       │                                                       │
+       │  UART Input ──> Notification (SPP_DATA_NOTIFY_CHAR)   │
+       │ ─────────────────────────────────────────────────────>│──> UART Output
+       │                                                       │
+       │  UART Output <── WriteNoRsp (SPP_DATA_RECV_CHAR)      │
+       │ <───────────────────────────────────────────────────  │<── UART Input
+       │                                                       │
+ ┌─────┴─────┐                                           ┌─────┴─────┐
+ │SPP Server │                                           │ SPP Client│
+ └───────────┘                                           └───────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

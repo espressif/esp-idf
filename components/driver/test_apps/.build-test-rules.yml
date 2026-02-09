@@ -7,26 +7,54 @@ components/driver/test_apps/legacy_i2c_driver:
     - if: IDF_TARGET != "none"
       temporary: false
       reason: disable target test for legacy i2c driver.
-
-components/driver/test_apps/legacy_rmt_driver:
-  disable:
-    - if: SOC_RMT_SUPPORTED != 1
   depends_filepatterns:
-    - components/driver/deprecated/**/*rmt*
+    - components/driver/i2c/**/*
+  depends_components:
+    - soc
+    - esp_hal_i2c
+    - esp_hw_support
 
 components/driver/test_apps/legacy_twai:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_FD_SUPPORTED == 1
       reason: legacy driver doesn't support FD
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_filepatterns:
     - components/driver/twai/**/*
   depends_components:
-    - esp_driver_gpio
+    - soc
+    - esp_hal_twai
+    - esp_hw_support
+
+components/driver/test_apps/touch_element:
+  disable:
+    - if: IDF_TARGET not in ["esp32s2", "esp32s3"]
+      reason: only supports esp32s2 and esp32s3
+  depends_filepatterns:
+    - components/driver/touch_sensor/**/*
+  depends_components:
+    - soc
+    - esp_hal_touch_sens
+    - esp_hw_support
 
 components/driver/test_apps/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1
+  depends_filepatterns:
+    - components/driver/touch_sensor/**/*
+  depends_components:
+    - soc
+    - esp_hal_touch_sens
+    - esp_hw_support
 
 components/driver/test_apps/touch_sensor_v2:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 2
+  depends_filepatterns:
+    - components/driver/touch_sensor/**/*
+  depends_components:
+    - soc
+    - esp_hal_touch_sens
+    - esp_hw_support

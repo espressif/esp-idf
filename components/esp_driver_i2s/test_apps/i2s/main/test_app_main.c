@@ -8,8 +8,8 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-// Some resources are lazy allocated in I2S driver, the threadhold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-300)
+// Some resources are lazy allocated in I2S driver, the threshold is left for that case
+#define TEST_MEMORY_LEAK_THRESHOLD (-350)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

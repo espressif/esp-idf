@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -269,13 +269,13 @@ typedef union {
          *  1: Allowed
          */
         uint32_t lp_mm_hp_rmt_allow:1;
-        /** lp_mm_hp_bitsrambler_allow : R/W; bitpos: [23]; default: 1;
+        /** lp_mm_hp_bitscrambler_allow : R/W; bitpos: [23]; default: 1;
          *  Configures whether the LP CPU in machine mode has permission to access HP bit
          *  scrambler.
          *  0: Not allowed
          *  1: Allowed
          */
-        uint32_t lp_mm_hp_bitsrambler_allow:1;
+        uint32_t lp_mm_hp_bitscrambler_allow:1;
         /** lp_mm_hp_axi_icm_allow : R/W; bitpos: [24]; default: 1;
          *  Configures whether the LP CPU in machine mode has permission to access HP AXI ICM.
          *  0: Not allowed

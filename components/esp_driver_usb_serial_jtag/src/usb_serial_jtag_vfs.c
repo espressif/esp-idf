@@ -17,7 +17,6 @@
 #include "esp_timer.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
-#include "esp_vfs_usb_serial_jtag.h" // Old headers for the aliasing functions
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -182,6 +181,10 @@ static int usb_serial_jtag_rx_char_no_driver(int fd)
 
 static ssize_t usb_serial_jtag_write(int fd, const void * data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated lock if two streams (stdout and stderr) point to the
@@ -226,6 +229,10 @@ static void usb_serial_jtag_return_char(int fd, int c)
 
 static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     assert(fd == USJ_LOCAL_FD);
     char *data_c = (char *) data;
     size_t received = 0;
@@ -349,6 +356,10 @@ static int usb_serial_jtag_wait_tx_done_no_driver(int fd)
 
 static int usb_serial_jtag_fsync(int fd)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     _lock_acquire_recursive(&s_ctx.write_lock);
     int r = s_ctx.fsync_func(fd);
     _lock_release_recursive(&s_ctx.write_lock);
@@ -362,7 +373,7 @@ static int usb_serial_jtag_fsync(int fd)
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
-static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, BaseType_t *task_woken)
+static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, int *task_woken)
 {
     portENTER_CRITICAL_ISR(&s_registered_select_lock);
     for (int i = 0; i < s_registered_select_num; ++i) {
@@ -429,24 +440,38 @@ static esp_err_t unregister_select(usb_serial_jtag_select_args_t *args)
         for (int i = 0; i < s_registered_select_num; ++i) {
             if (s_registered_selects[i] == args) {
                 const int new_size = s_registered_select_num - 1;
-                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
-                // last item.
-                s_registered_selects[i] = s_registered_selects[new_size];
-                usb_serial_jtag_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
-                if (new_selects == NULL && new_size > 0) {
-                    ret = ESP_ERR_NO_MEM;
-                } else {
-                    s_registered_selects = new_selects;
+                // Move last element to fill gap (only if not removing the last element)
+                if (i < new_size) {
+                    s_registered_selects[i] = s_registered_selects[new_size];
                 }
-                // Shrinking a buffer with realloc is guaranteed to succeed.
-                s_registered_select_num = new_size;
+                if (new_size == 0) {
+                    // Free the entire array
+                    free(s_registered_selects);
+                    s_registered_selects = NULL;
+                    s_registered_select_num = 0;
+                    ret = ESP_OK;
+                } else {
+                    // Shrink the array
+                    usb_serial_jtag_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
+                    if (new_selects == NULL) {
+                        // Realloc failed - restore moved element
+                        if (i < new_size) {
+                            s_registered_selects[new_size] = s_registered_selects[i];
+                        }
+                        ret = ESP_ERR_NO_MEM;
+                    } else {
+                        // Success - update pointer
+                        s_registered_selects = new_selects;
+                        s_registered_select_num = new_size;
+                        ret = ESP_OK;
+                    }
+                }
 
                 /* when the last select is unregistered, also unregister the callback  */
                 if (s_registered_select_num == 0) {
                     usb_serial_jtag_set_select_notif_callback(NULL);
                 }
 
-                ret = ESP_OK;
                 break;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,3 +39,16 @@ __swhatbuf_r = 0x400005bc;
 __swbuf_r = 0x400005c0;
 __swbuf = 0x400005c4;
 __swsetup_r = 0x400005c8;
+toupper = 0x40000504;
+tolower = 0x40000508;
+isalnum = 0x400004d4;
+isalpha = 0x400004d8;
+isdigit = 0x400004e8;
+islower = 0x400004ec;
+isspace = 0x400004fc;
+isupper = 0x40000500;
+strcasecmp = 0x4000051c;
+strcoll = 0x40000534;
+strlwr = 0x40000540;
+strncasecmp = 0x40000544;
+strupr = 0x40000564;

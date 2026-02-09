@@ -1,1 +1,0 @@
--B build-production -DSDKCONFIG=build-production/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.prod"

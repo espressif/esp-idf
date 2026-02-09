@@ -79,6 +79,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
         else {
             esp_err_t msync_ret = esp_cache_msync((void *)finished_buffer, finished_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
             assert(msync_ret == ESP_OK);
+            (void)msync_ret;
         }
 #endif
 
@@ -126,6 +127,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t msync_ret = esp_cache_msync((void *)(adc_digi_ctx->hal.rx_desc), adc_digi_ctx->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(msync_ret == ESP_OK);
+    (void)msync_ret;
 #endif
     return need_yield;
 }
@@ -260,9 +262,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     ANALOG_CLOCK_ENABLE();
 
     //reset ADC digital part to reset ADC sampling EOF counter
-    ADC_BUS_CLK_ATOMIC() {
-        adc_ll_reset_register();
-    }
+    sar_periph_ctrl_adc_reset();
 
 #if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
@@ -337,11 +337,16 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t ret = esp_cache_msync(handle->hal.rx_desc, handle->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     assert(ret == ESP_OK);
+    (void)ret;
 #endif
 
     adc_dma_start(handle->adc_dma, handle->hal.rx_desc);
     adc_hal_digi_connect(true);
     adc_hal_digi_enable(true);
+
+#if ADC_LL_DEFAULT_CONV_LIMIT_EN
+    adc_ll_digi_convert_limit_enable(false);
+#endif
 
     return ESP_OK;
 }
@@ -357,7 +362,7 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     adc_hal_digi_enable(false);
     adc_hal_digi_connect(false);
 #if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    sar_periph_ctrl_adc_reset();
     adc_hal_digi_clr_eof();
 #endif
 
@@ -477,17 +482,16 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
     }
 
     ESP_RETURN_ON_FALSE(config->sample_freq_hz <= SOC_ADC_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= SOC_ADC_SAMPLE_FREQ_THRES_LOW, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC sampling frequency out of range");
-
 #if CONFIG_IDF_TARGET_ESP32
-    ESP_RETURN_ON_FALSE(config->format == ADC_DIGI_OUTPUT_FORMAT_TYPE1, ESP_ERR_INVALID_ARG, ADC_TAG, "Please use type1");
+    handle->format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
 #elif CONFIG_IDF_TARGET_ESP32S2
     if (config->conv_mode == ADC_CONV_BOTH_UNIT || config->conv_mode == ADC_CONV_ALTER_UNIT) {
-        ESP_RETURN_ON_FALSE(config->format == ADC_DIGI_OUTPUT_FORMAT_TYPE2, ESP_ERR_INVALID_ARG, ADC_TAG, "Please use type2");
+        handle->format = ADC_DIGI_OUTPUT_FORMAT_TYPE2;
     } else if (config->conv_mode == ADC_CONV_SINGLE_UNIT_1 || config->conv_mode == ADC_CONV_SINGLE_UNIT_2) {
-        ESP_RETURN_ON_FALSE(config->format == ADC_DIGI_OUTPUT_FORMAT_TYPE1, ESP_ERR_INVALID_ARG, ADC_TAG, "Please use type1");
+        handle->format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
     }
 #else
-    ESP_RETURN_ON_FALSE(config->format == ADC_DIGI_OUTPUT_FORMAT_TYPE2, ESP_ERR_INVALID_ARG, ADC_TAG, "Please use type2");
+    handle->format = ADC_DIGI_OUTPUT_FORMAT_TYPE2;
 #endif
 
     uint32_t clk_src_freq_hz = 0;
@@ -584,4 +588,89 @@ esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t *const unit_id, ad
 esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *const io_num)
 {
     return adc_channel_to_io(unit_id, channel, io_num);
+}
+
+esp_err_t adc_continuous_parse_data(adc_continuous_handle_t handle,
+                                    const uint8_t *raw_data,
+                                    uint32_t raw_data_size,
+                                    adc_continuous_data_t *parsed_data,
+                                    uint32_t *num_parsed_samples)
+{
+    // Parameter validation
+    ESP_RETURN_ON_FALSE(handle && raw_data && parsed_data && num_parsed_samples, ESP_ERR_INVALID_ARG, ADC_TAG, "invalid argument");
+
+    // Buffer size validation
+    if (raw_data_size == 0 || raw_data_size % SOC_ADC_DIGI_RESULT_BYTES != 0) {
+        *num_parsed_samples = 0;
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    // Calculate number of samples
+    uint32_t samples_to_parse = raw_data_size / SOC_ADC_DIGI_RESULT_BYTES;
+
+    for (uint32_t i = 0; i < samples_to_parse; i++) {
+        adc_digi_output_data_t *p = (adc_digi_output_data_t*)&raw_data[i * SOC_ADC_DIGI_RESULT_BYTES];
+#if CONFIG_IDF_TARGET_ESP32
+        parsed_data[i].unit = ADC_UNIT_1;
+        parsed_data[i].channel = p->type1.channel;
+        parsed_data[i].raw_data = p->type1.data;
+        parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+#elif CONFIG_IDF_TARGET_ESP32S2
+        if (handle->format == ADC_DIGI_OUTPUT_FORMAT_TYPE2) {
+            parsed_data[i].unit = p->type2.unit ? ADC_UNIT_2 : ADC_UNIT_1;
+            parsed_data[i].channel = p->type2.channel;
+            parsed_data[i].raw_data = p->type2.data;
+            parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+        } else if (handle->format == ADC_DIGI_OUTPUT_FORMAT_TYPE1) {
+            parsed_data[i].unit = handle->use_adc1 ? ADC_UNIT_1 : ADC_UNIT_2;
+            parsed_data[i].channel = p->type1.channel;
+            parsed_data[i].raw_data = p->type1.data;
+            parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+        }
+#else
+#if CONFIG_SOC_ADC_PERIPH_NUM == 1
+        parsed_data[i].unit = ADC_UNIT_1;
+#else
+        parsed_data[i].unit = p->type2.unit ? ADC_UNIT_2 : ADC_UNIT_1;
+#endif
+        parsed_data[i].channel = (parsed_data[i].unit == ADC_UNIT_2) ? p->type2.channel - ADC_LL_UNIT2_CHANNEL_SUBSTRATION : p->type2.channel;
+        parsed_data[i].raw_data = p->type2.data;
+        parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+#endif
+    }
+
+    *num_parsed_samples = samples_to_parse;
+    return ESP_OK;
+}
+
+esp_err_t adc_continuous_read_parse(adc_continuous_handle_t handle,
+                                    adc_continuous_data_t *parsed_data,
+                                    uint32_t max_samples,
+                                    uint32_t *num_samples,
+                                    uint32_t timeout_ms)
+{
+    // Parameter validation
+    ESP_RETURN_ON_FALSE(handle && parsed_data && num_samples, ESP_ERR_INVALID_ARG, ADC_TAG, "invalid argument");
+
+    // Allocate raw data buffer based on max_samples
+    uint32_t raw_buffer_size = max_samples * SOC_ADC_DIGI_RESULT_BYTES;
+    uint8_t *raw_data = malloc(raw_buffer_size);
+    if (raw_data == NULL) {
+        *num_samples = 0;
+        return ESP_ERR_NO_MEM;
+    }
+
+    uint32_t out_length = 0;
+    esp_err_t read_ret = adc_continuous_read(handle, raw_data, raw_buffer_size, &out_length, timeout_ms);
+    if (read_ret != ESP_OK) {
+        free(raw_data);
+        *num_samples = 0;
+        return read_ret;
+    }
+
+    esp_err_t parse_ret = adc_continuous_parse_data(handle, raw_data, out_length, parsed_data, num_samples);
+
+    free(raw_data);
+
+    return parse_ret;
 }

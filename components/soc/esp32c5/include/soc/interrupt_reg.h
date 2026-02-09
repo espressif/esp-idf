@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/clic_reg.h"
@@ -18,6 +18,8 @@ extern "C" {
 
 /* We only have a single core on the C5, CORE0 */
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG      INTERRUPT_CURRENT_CORE_INT_THRESH_REG
+
+#define INTTHRESH_STANDARD  1
 
 #ifdef __cplusplus
 }

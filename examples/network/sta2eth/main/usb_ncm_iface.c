@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -12,6 +12,7 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "tinyusb.h"
+#include "tinyusb_default_config.h"
 #include "tinyusb_net.h"
 #include "wired_iface.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -44,9 +45,7 @@ void mac_spoof(mac_spoof_direction_t direction, uint8_t *buffer, uint16_t len, u
 
 esp_err_t wired_bridge_init(wired_rx_cb_t rx_cb, wired_free_cb_t free_cb)
 {
-    const tinyusb_config_t tusb_cfg = {
-        .external_phy = false,
-    };
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_net_config_t net_config = {
@@ -56,7 +55,7 @@ esp_err_t wired_bridge_init(wired_rx_cb_t rx_cb, wired_free_cb_t free_cb)
 
     esp_read_mac(net_config.mac_addr, ESP_MAC_WIFI_STA);
 
-    esp_err_t ret = tinyusb_net_init(TINYUSB_USBDEV_0, &net_config);
+    esp_err_t ret = tinyusb_net_init(&net_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "USB net init but not connect wifi");
         return ret;
@@ -113,9 +112,7 @@ static esp_err_t netif_recv_callback(void *buffer, uint16_t len, void *ctx)
  */
 esp_err_t wired_netif_init(void)
 {
-    const tinyusb_config_t tusb_cfg = {
-        .external_phy = false,
-    };
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     const tinyusb_net_config_t net_config = {
@@ -125,7 +122,7 @@ esp_err_t wired_netif_init(void)
         .on_recv_callback = netif_recv_callback,
     };
 
-    esp_err_t ret = tinyusb_net_init(TINYUSB_USBDEV_0, &net_config);
+    esp_err_t ret = tinyusb_net_init(&net_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Cannot initialize USB Net device");
         return ret;

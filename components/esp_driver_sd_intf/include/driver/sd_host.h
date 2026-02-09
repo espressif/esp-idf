@@ -102,7 +102,7 @@ esp_err_t sd_host_slot_enable_io_int(sd_host_slot_handle_t slot);
  *        - ESP_ERR_INVALID_ARG:    Invalid argument
  *        - ESP_ERR_TIMEOUT:        Timeout
  */
-esp_err_t sd_host_slot_wait_io_int(sd_host_slot_handle_t slot, TickType_t timeout_ticks);
+esp_err_t sd_host_slot_wait_io_int(sd_host_slot_handle_t slot, uint32_t timeout_ticks);
 
 /**
  * @brief Get slot info

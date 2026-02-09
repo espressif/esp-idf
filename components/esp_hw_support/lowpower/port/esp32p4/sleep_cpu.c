@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 #include "esp_rom_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_heap_caps.h"
 #include "riscv/csr.h"
 #include "soc/clic_reg.h"
 #include "soc/rtc_periph.h"
@@ -32,6 +31,7 @@
 #include "esp32p4/rom/ets_sys.h"
 #include "esp32p4/rom/rtc.h"
 #include "rvsleep-frames.h"
+#include "sleep_cpu_retention.h"
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
 #include "esp_private/system_internal.h"
@@ -39,142 +39,16 @@
 #endif
 
 
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-#include <stdatomic.h>
-#include "soc/hp_system_reg.h"
-typedef enum {
-    SMP_IDLE,
-    SMP_BACKUP_START,
-    SMP_BACKUP_DONE,
-    SMP_RESTORE_START,
-    SMP_RESTORE_DONE,
-    SMP_SKIP_RETENTION,
-} smp_retention_state_t;
-
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
 static TCM_DRAM_ATTR smp_retention_state_t s_smp_retention_state[portNUM_PROCESSORS];
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep";
 
-typedef struct {
-    uint32_t start;
-    uint32_t end;
-} cpu_domain_dev_regs_region_t;
-
-typedef struct {
-    cpu_domain_dev_regs_region_t *region;
-    int region_num;
-    uint32_t *regs_frame;
-} cpu_domain_dev_sleep_frame_t;
-
-/**
- * Internal structure which holds all requested light sleep cpu retention parameters
- */
-typedef struct {
-    struct {
-        RvCoreCriticalSleepFrame *critical_frame[portNUM_PROCESSORS];
-        RvCoreNonCriticalSleepFrame *non_critical_frame[portNUM_PROCESSORS];
-        cpu_domain_dev_sleep_frame_t *clic_frame[portNUM_PROCESSORS];
-    } retent;
-} sleep_cpu_retention_t;
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 static TCM_DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 
 extern RvCoreCriticalSleepFrame *rv_core_critical_regs_frame[portNUM_PROCESSORS];
-
-static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_regs_region_t *regions, const int region_num)
-{
-    const int region_sz = sizeof(cpu_domain_dev_regs_region_t) * region_num;
-    int regs_frame_sz = 0;
-    for (int num = 0; num < region_num; num++) {
-        regs_frame_sz += regions[num].end - regions[num].start;
-    }
-    void *frame = heap_caps_malloc(sizeof(cpu_domain_dev_sleep_frame_t) + region_sz + regs_frame_sz, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL);
-    if (frame) {
-        cpu_domain_dev_regs_region_t *region = (cpu_domain_dev_regs_region_t *)(frame + sizeof(cpu_domain_dev_sleep_frame_t));
-        memcpy(region, regions, region_num * sizeof(cpu_domain_dev_regs_region_t));
-        void *regs_frame = frame + sizeof(cpu_domain_dev_sleep_frame_t) + region_sz;
-        memset(regs_frame, 0, regs_frame_sz);
-        *(cpu_domain_dev_sleep_frame_t *)frame = (cpu_domain_dev_sleep_frame_t) {
-            .region = region,
-            .region_num = region_num,
-            .regs_frame = (uint32_t *)regs_frame
-        };
-    }
-    return frame;
-}
-
-static inline void * cpu_domain_clic_sleep_frame_alloc_and_init(uint8_t core_id)
-{
-    const static cpu_domain_dev_regs_region_t regions[portNUM_PROCESSORS][2] = {
-       [0 ... portNUM_PROCESSORS - 1] = {
-            { .start = CLIC_INT_CONFIG_REG, .end = CLIC_INT_THRESH_REG + 4 },
-            { .start = CLIC_INT_CTRL_REG(0), .end = CLIC_INT_CTRL_REG(47) + 4 },
-        }
-    };
-    return cpu_domain_dev_sleep_frame_alloc_and_init(regions[core_id], sizeof(regions[core_id]) / sizeof(cpu_domain_dev_regs_region_t));
-}
-
-static esp_err_t esp_sleep_cpu_retention_init_impl(void)
-{
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.critical_frame[core_id] == NULL) {
-            void *frame = heap_caps_calloc(1, RV_SLEEP_CTX_FRMSZ, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL);
-            if (frame == NULL) {
-                goto err;
-            }
-            s_cpu_retention.retent.critical_frame[core_id] = (RvCoreCriticalSleepFrame *)frame;
-            rv_core_critical_regs_frame[core_id] = (RvCoreCriticalSleepFrame *)frame;
-        }
-        if (s_cpu_retention.retent.non_critical_frame[core_id] == NULL) {
-            void *frame = heap_caps_calloc(1, sizeof(RvCoreNonCriticalSleepFrame), MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL);
-            if (frame == NULL) {
-                goto err;
-            }
-            s_cpu_retention.retent.non_critical_frame[core_id] = (RvCoreNonCriticalSleepFrame *)frame;
-        }
-    }
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.clic_frame[core_id] == NULL) {
-            void *frame = cpu_domain_clic_sleep_frame_alloc_and_init(core_id);
-            if (frame == NULL) {
-                goto err;
-            }
-            s_cpu_retention.retent.clic_frame[core_id] = (cpu_domain_dev_sleep_frame_t *)frame;
-        }
-    }
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        atomic_init(&s_smp_retention_state[core_id], SMP_IDLE);
-    }
-#endif
-    return ESP_OK;
-err:
-    esp_sleep_cpu_retention_deinit();
-    return ESP_ERR_NO_MEM;
-}
-
-static esp_err_t esp_sleep_cpu_retention_deinit_impl(void)
-{
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.critical_frame[core_id]) {
-            heap_caps_free((void *)s_cpu_retention.retent.critical_frame[core_id]);
-            s_cpu_retention.retent.critical_frame[core_id] = NULL;
-            rv_core_critical_regs_frame[core_id] = NULL;
-        }
-        if (s_cpu_retention.retent.non_critical_frame[core_id]) {
-            heap_caps_free((void *)s_cpu_retention.retent.non_critical_frame[core_id]);
-            s_cpu_retention.retent.non_critical_frame[core_id] = NULL;
-        }
-    }
-    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
-        if (s_cpu_retention.retent.clic_frame[core_id]) {
-            heap_caps_free((void *)s_cpu_retention.retent.clic_frame[core_id]);
-            s_cpu_retention.retent.clic_frame[core_id] = NULL;
-        }
-    }
-    return ESP_OK;
-}
 
 FORCE_INLINE_ATTR uint32_t save_mstatus_and_disable_global_int(void)
 {
@@ -382,6 +256,7 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     uint8_t core_id = esp_cpu_get_core_id();
+    bool reject = false;
     /* mstatus is core privated CSR, do it near the core critical regs restore */
     uint32_t mstatus = save_mstatus_and_disable_global_int();
     rv_core_critical_regs_save();
@@ -395,14 +270,14 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
 #endif
         REG_WRITE(RTC_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
 
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_DONE);
         while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_BACKUP_DONE) {
             ;
         }
 #endif
 
-        return (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+        reject =  (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
     }
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     else {
@@ -410,7 +285,7 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
     }
 #endif
     restore_mstatus(mstatus);
-    return pmu_sleep_finish(dslp);
+    return reject ? reject : pmu_sleep_finish(dslp);
 }
 
 esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),
@@ -418,7 +293,7 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
 {
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_START, (void *)0);
     uint8_t core_id = esp_cpu_get_core_id();
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
 #endif
     cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
@@ -432,11 +307,12 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
 
     esp_err_t err = do_cpu_retention(goto_sleep, wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
 
+    if (err == ESP_OK) {
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
-    validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+        validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
 #endif
-
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    }
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     // Start core1
     if (core_id == 0) {
         REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
@@ -445,11 +321,12 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
 
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
 #endif
+    if (err == ESP_OK) {
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
+        rv_core_noncritical_regs_restore();
+    }
 
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
-    rv_core_noncritical_regs_restore();
-
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
 #endif
     return err;
@@ -457,12 +334,16 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
 
 esp_err_t esp_sleep_cpu_retention_init(void)
 {
-    return esp_sleep_cpu_retention_init_impl();
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    return esp_sleep_cpu_retention_init_impl(& s_cpu_retention, s_smp_retention_state);
+#else
+    return esp_sleep_cpu_retention_init_impl(& s_cpu_retention);
+#endif
 }
 
 esp_err_t esp_sleep_cpu_retention_deinit(void)
 {
-    return esp_sleep_cpu_retention_deinit_impl();
+    return esp_sleep_cpu_retention_deinit_impl(& s_cpu_retention);
 }
 
 bool cpu_domain_pd_allowed(void)
@@ -480,7 +361,7 @@ bool cpu_domain_pd_allowed(void)
 
 esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 {
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     if (light_sleep_enable) {
         ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_init(), TAG, "Failed to enable CPU power down during light sleep.");
     } else {
@@ -491,7 +372,7 @@ esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 }
 
 #if !CONFIG_FREERTOS_UNICORE
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 static TCM_IRAM_ATTR void smp_core_do_retention(void)
 {
     uint8_t core_id = esp_cpu_get_core_id();
@@ -505,6 +386,7 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
     // Wait another core start to do retention
     bool smp_skip_retention = false;
     smp_retention_state_t another_core_state;
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (1) {
         another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
         if (another_core_state == SMP_SKIP_RETENTION) {
@@ -515,6 +397,7 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
             break;
         }
     }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
 
     if (!smp_skip_retention) {
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
@@ -561,7 +444,7 @@ TCM_IRAM_ATTR void esp_sleep_cpu_skip_retention(void) {
 
 void sleep_smp_cpu_sleep_prepare(void)
 {
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     while (atomic_load(&s_smp_retention_state[!esp_cpu_get_core_id()]) != SMP_IDLE) {
         ;
     }
@@ -573,12 +456,14 @@ void sleep_smp_cpu_sleep_prepare(void)
 
 void sleep_smp_cpu_wakeup_prepare(void)
 {
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     uint8_t core_id = esp_cpu_get_core_id();
     if (atomic_load(&s_smp_retention_state[core_id]) == SMP_RESTORE_DONE) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
         while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_RESTORE_DONE) {
             ;
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
     }
     atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
 #else

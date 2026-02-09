@@ -15,23 +15,6 @@
 extern "C" {
 #endif
 
-/** \defgroup WiFi_APIs WiFi Related APIs
-  * @brief WiFi APIs
-  */
-
-/** @addtogroup WiFi_APIs
-  * @{
-  */
-
-/** \defgroup ESPNOW_APIs  ESPNOW APIs
-  * @brief ESP32 ESPNOW APIs
-  *
-  */
-
-/** @addtogroup ESPNOW_APIs
-  * @{
-  */
-
 #define ESP_ERR_ESPNOW_BASE         (ESP_ERR_WIFI_BASE + 100) /*!< ESPNOW error number base. */
 #define ESP_ERR_ESPNOW_NOT_INIT     (ESP_ERR_ESPNOW_BASE + 1) /*!< ESPNOW is not initialized. */
 #define ESP_ERR_ESPNOW_ARG          (ESP_ERR_ESPNOW_BASE + 2) /*!< Invalid argument */
@@ -101,6 +84,31 @@ typedef wifi_tx_info_t esp_now_send_info_t;
  * @brief ESPNOW rate config
  */
 typedef wifi_tx_rate_config_t esp_now_rate_config_t;
+
+/**
+ * @brief ESPNOW switch channel information
+ */
+typedef struct {
+    wifi_action_tx_t type;          /**< ACTION TX operation type */
+    uint8_t channel;                /**< Channel on which to perform ESPNOW TX Operation */
+    wifi_second_chan_t sec_channel; /**< Secondary channel */
+    uint32_t wait_time_ms;          /**< Duration to wait for on target channel */
+    uint8_t op_id;                  /**< Unique Identifier for operation provided by wifi driver */
+    uint8_t dest_mac[6];            /**< Destination MAC address */
+    uint16_t data_len;              /**< Length of the appended Data */
+    uint8_t data[0];                /**< Appended Data payload */
+} esp_now_switch_channel_t;
+
+/**
+ * @brief ESPNOW remain on channel information
+ */
+typedef struct {
+    wifi_roc_t type;                 /**< ROC operation type */
+    uint8_t channel;                 /**< Channel on which to perform ESPNOW ROC Operation */
+    wifi_second_chan_t sec_channel;  /**< Secondary channel */
+    uint32_t wait_time_ms;           /**< Duration to wait for on target channel */
+    uint8_t op_id;                   /**< ID of this specific ROC operation provided by wifi driver */
+} esp_now_remain_on_channel_t;
 
 /**
   * @brief     Callback function of receiving ESPNOW data
@@ -259,25 +267,6 @@ esp_err_t esp_now_del_peer(const uint8_t *peer_addr);
 esp_err_t esp_now_mod_peer(const esp_now_peer_info_t *peer);
 
 /**
-  * @brief      Config ESPNOW rate of specified interface
-  *
-  * @deprecated please use esp_now_set_peer_rate_config() instead.
-  *
-  * @attention  1. This API should be called after esp_wifi_start().
-  * @attention  2. This API only work when not use Wi-Fi 6 and esp_now_set_peer_rate_config() not called.
-  *
-  * @param      ifx  Interface to be configured.
-  * @param      rate Phy rate to be configured.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - others: failed
-  */
-esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate)
-__attribute__((deprecated("This API can be only used when rate is non-HE rate, \
-                                please use esp_now_set_peer_rate_config if you want full support of the rate.")));
-
-/**
   * @brief      Set ESPNOW rate config for each peer
   *
   * @attention  1. This API should be called after esp_wifi_start() and esp_now_init().
@@ -395,12 +384,30 @@ esp_err_t esp_now_set_user_oui(uint8_t *oui);
 esp_err_t esp_now_get_user_oui(uint8_t *oui);
 
 /**
-  * @}
+  * @brief     ESPNOW switch to a specific channel for a required duration, and send one ESPNOW data.
+  *
+  * @param     config  ESPNOW switch channel relevant information
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_NO_MEM: failed to allocate memory
+  *          - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *          - ESP_FAIL: failed to send frame
   */
+esp_err_t esp_now_switch_channel_tx(esp_now_switch_channel_t *config);
 
 /**
-  * @}
+  * @brief     ESPNOW remain on the target channel for required duration.
+  *
+  * @param     config  ESPNOW remain on channel relevant information
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_NO_MEM: failed to allocate memory
+  *          - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *          - ESP_FAIL: failed to perform roc operation
   */
+esp_err_t esp_now_remain_on_channel(esp_now_remain_on_channel_t *config);
 
 #ifdef __cplusplus
 }

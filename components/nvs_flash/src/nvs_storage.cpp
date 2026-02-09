@@ -407,6 +407,27 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
         if(err == ESP_OK && findPage != nullptr) {
             matchedTypePageFound = true;
         }
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+        // In legacy mode, we also try to find the item as BLOB if not found as BLOB_INDEX.
+        // In this mode, it is possible to have multiple active values under the same (logical) key.
+        // For BLOBs (which may have different physical representations in V1 it is BLOB, in V2 it is BLOB_INDEX) it in turn means
+        // that we have to check both datatypes to find the old value.
+        // The general case for compatibility flag disabled is below and handles all datatypes including BLOB.
+        // To save some cycles, we do not compile both findItem calls in this case.
+        if(err == ESP_ERR_NVS_NOT_FOUND) {
+            // If not found as BLOB_INDEX, try to find it as BLOB (legacy support).
+            err = findItem(nsIndex, ItemType::BLOB, key, findPage, item, Page::CHUNK_ANY, VerOffset::VER_ANY, &itemIndex);
+            if(err == ESP_OK && findPage != nullptr) {
+                matchedTypePageFound = false;   // datatype does not match, we cannot extract chunkStart from the item
+
+                // keep the sequence number of the page where the item was found for later check of relocation
+                err = findPage->getSeqNumber(findPageSeqNumber);
+                if(err != ESP_OK) {
+                    return err;
+                }
+            }
+        }
+#endif
     } else {
         // Handle all other data types than BLOB
         err = findItem(nsIndex, datatype, key, findPage, item, Page::CHUNK_ANY, VerOffset::VER_ANY, &itemIndex);

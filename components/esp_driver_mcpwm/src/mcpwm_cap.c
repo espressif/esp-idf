@@ -68,7 +68,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     esp_err_t ret = ESP_OK;
     mcpwm_cap_timer_t *cap_timer = NULL;
     ESP_GOTO_ON_FALSE(config && ret_cap_timer, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
+    ESP_GOTO_ON_FALSE(config->group_id < MCPWM_LL_GET(GROUP_NUM) && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
 
 #if !SOC_MCPWM_SUPPORT_SLEEP_RETENTION
@@ -96,7 +96,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     uint32_t cap_timer_prescale = group->prescale > 0 ? group->prescale : MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE;
     uint32_t resolution_hz = config->resolution_hz ? config->resolution_hz : periph_src_clk_hz / cap_timer_prescale;
 
-    ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, resolution_hz, MCPWM_LL_MAX_CAPTURE_TIMER_PRESCALE, NULL), err, TAG, "set prescale failed");
+    ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, resolution_hz, MCPWM_LL_GET(MAX_CAPTURE_TIMER_PRESCALE), NULL), err, TAG, "set prescale failed");
     cap_timer->resolution_hz = group->resolution_hz;
     if (cap_timer->resolution_hz != resolution_hz) {
         ESP_LOGW(TAG, "adjust cap_timer resolution to %"PRIu32"Hz", cap_timer->resolution_hz);
@@ -144,7 +144,7 @@ esp_err_t mcpwm_del_capture_timer(mcpwm_cap_timer_handle_t cap_timer)
 {
     ESP_RETURN_ON_FALSE(cap_timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(cap_timer->fsm == MCPWM_CAP_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
-    for (int i = 0; i < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER); i++) {
         ESP_RETURN_ON_FALSE(!cap_timer->cap_channels[i], ESP_ERR_INVALID_STATE, TAG, "cap channel still in working");
     }
     mcpwm_group_t *group = cap_timer->group;
@@ -218,7 +218,7 @@ static esp_err_t mcpwm_capture_channel_register_to_timer(mcpwm_cap_channel_t *ca
 {
     int cap_chan_id = -1;
     portENTER_CRITICAL(&cap_timer->spinlock);
-    for (int i = 0; i < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER); i++) {
         if (!cap_timer->cap_channels[i]) {
             cap_timer->cap_channels[i] = cap_channel;
             cap_chan_id = i;
@@ -260,7 +260,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     esp_err_t ret = ESP_OK;
     mcpwm_cap_channel_t *cap_chan = NULL;
     ESP_GOTO_ON_FALSE(cap_timer && config && ret_cap_channel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->prescale && config->prescale <= MCPWM_LL_MAX_CAPTURE_PRESCALE, ESP_ERR_INVALID_ARG, err, TAG, "invalid prescale");
+    ESP_GOTO_ON_FALSE(config->prescale && config->prescale <= MCPWM_LL_GET(MAX_CAPTURE_PRESCALE), ESP_ERR_INVALID_ARG, err, TAG, "invalid prescale");
     if (config->intr_priority) {
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
                           TAG, "invalid interrupt priority:%d", config->intr_priority);
@@ -288,7 +288,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
         // GPIO configuration
         gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->gpio_num);
-        esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group->group_id].captures[cap_chan_id].cap_sig, 0);
+        esp_rom_gpio_connect_in_signal(config->gpio_num, soc_mcpwm_signals[group->group_id].captures[cap_chan_id].cap_sig, 0);
     }
 
     cap_chan->gpio_num = config->gpio_num;
@@ -322,7 +322,7 @@ esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel)
 
     // disconnect signal from the GPIO pin
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
-                                   mcpwm_periph_signals.groups[group->group_id].captures[cap_chan_id].cap_sig, 0);
+                                   soc_mcpwm_signals[group->group_id].captures[cap_chan_id].cap_sig, 0);
 
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_capture_channel_destroy(cap_channel), TAG, "destroy capture channel failed");
@@ -386,7 +386,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
         ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
         int isr_flags = MCPWM_INTR_ALLOC_FLAG;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_mcpwm_signals[group_id].irq_id, isr_flags,
                                                       (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
                                                       mcpwm_capture_default_isr, cap_channel, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");
     }

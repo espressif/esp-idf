@@ -65,12 +65,6 @@ The table below shows whether the Bluetooth LE modules are supported in a specif
       - Y
       - Y
       - Y
-    * - ESP32-S2
-      - \–
-      - \–
-      - \–
-      - \–
-      - \–
     * - ESP32-S3
       - Y
       - Y
@@ -89,7 +83,19 @@ The table below shows whether the Bluetooth LE modules are supported in a specif
       - Y
       - Y
       - Y
+    * - ESP32-C5
+      - Y
+      - Y
+      - Y
+      - Y
+      - Y
     * - ESP32-C6
+      - Y
+      - Y
+      - Y
+      - Y
+      - Y
+    * - ESP32-C61
       - Y
       - Y
       - Y

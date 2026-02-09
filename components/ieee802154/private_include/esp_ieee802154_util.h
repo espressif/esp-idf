@@ -78,7 +78,7 @@ typedef struct {
 #if CONFIG_IEEE802154_RECORD_STATE
 #define IEEE802154_ASSERT_RECORD_STATE_SIZE CONFIG_IEEE802154_RECORD_STATE_SIZE
 #define ieee802154_set_state(a) do { s_ieee802154_state = a; \
-            sprintf(g_ieee802154_probe.state[g_ieee802154_probe.state_index].line_str, "%d", __LINE__); \
+            g_ieee802154_probe.state[g_ieee802154_probe.state_index].line = __LINE__; \
             g_ieee802154_probe.state[g_ieee802154_probe.state_index].timestamp = esp_timer_get_time(); \
             g_ieee802154_probe.state[g_ieee802154_probe.state_index++].state = a; \
             g_ieee802154_probe.state_index = \
@@ -89,7 +89,7 @@ typedef struct {
  * @brief The table of recording IEEE802154 state command.
  */
 typedef struct {
-    char line_str[5];           /*!< record which line in esp_ieee802154_dev.c changes the state */
+    uint32_t line;           /*!< record which line in esp_ieee802154_dev.c changes the state */
     ieee802154_state_t state;   /*!< record current radio state */
     uint64_t timestamp;         /*!< record timestamp */
 } ieee802154_state_info_t;
@@ -100,7 +100,7 @@ typedef struct {
 #if CONFIG_IEEE802154_RECORD_CMD
 #define IEEE802154_ASSERT_RECORD_CMD_SIZE CONFIG_IEEE802154_RECORD_CMD_SIZE
 #define ieee802154_set_cmd(a) do { ieee802154_ll_set_cmd(a); \
-            sprintf(g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index].line_str, "%d", __LINE__); \
+            g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index].line = __LINE__; \
             g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index].timestamp = esp_timer_get_time(); \
             g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index++].cmd = a; \
             g_ieee802154_probe.cmd_index = \
@@ -111,7 +111,7 @@ typedef struct {
  * @brief The table of recording IEEE802154 radio command.
  */
 typedef struct {
-    char line_str[5];           /*!< record which line in esp_ieee802154_dev.c set the command */
+    uint32_t line;           /*!< record which line in esp_ieee802154_dev.c set the command */
     ieee802154_ll_cmd_t cmd;    /*!< record current command */
     uint64_t timestamp;         /*!< record timestamp */
 } ieee802154_cmd_info_t;

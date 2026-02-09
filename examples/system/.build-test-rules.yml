@@ -11,23 +11,8 @@ examples/system/app_trace_basic:
 
 examples/system/base_mac_address:
   depends_components:
+    - *common_components
     - esp_hw_support
-
-examples/system/console/advanced:
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"] # IDF-9120 and IDF-9133
-      reason: Sufficient to run this app on one chip with each architecture
-  depends_components:
-    - console
-    - vfs
-
-examples/system/console/basic:
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      reason: Sufficient to run this app on one chip with each architecture
-  depends_components:
-    - console
-    - vfs
 
 examples/system/deep_sleep:
   disable:
@@ -52,9 +37,21 @@ examples/system/efuse:
       reason: Security features are not yet supported for Linux.
     - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
       reason: Secure Boot V2 with ECDSA P384 is not supported.
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14688
   depends_components:
+    - *common_components
     - efuse
     - bootloader_support
+
+examples/system/esp_event/default_event_loop:
+  depends_components:
+    - esp_event
+
+examples/system/esp_event/user_event_loops:
+  depends_components:
+    - esp_event
 
 examples/system/esp_timer:
   depends_components:
@@ -74,22 +71,6 @@ examples/system/flash_suspend:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/freertos/basic_freertos_smp_usage:
-  enable:
-    - if: IDF_TARGET == "esp32c3" or IDF_TARGET == "esp32s3"
-      reason: no target specific functionality, testing on a single core target and a multiple core target is sufficient
-  depends_components:
-    - freertos
-    - console
-    - esp_timer
-
-examples/system/freertos/real_time_stats:
-  disable:
-    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
-      reason: no target specific functionality, testing on a single target is sufficient
-  depends_components:
-    - freertos
-
 examples/system/gcov:
   disable_test:
     - if: IDF_TARGET == "esp32h21"
@@ -98,12 +79,6 @@ examples/system/gcov:
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1138
-
-examples/system/gdbstub:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported yet #TODO: IDF-7510
 
 examples/system/heap_task_tracking:
   disable:
@@ -139,17 +114,21 @@ examples/system/nmi_isr:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       reason: test NMI for Xtensa targets only
+  depends_components:
+    - esp_system
+    - xtensa
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet
+      reason: not supported yet # TODO: [ESP32S31,ESP32H4,ESP32H21] IDF-14944
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -159,16 +138,18 @@ examples/system/ota/advanced_https_ota:
     - esp_phy
     - bt
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet
+      reason: not supported yet # TODO: [ESP32S31,ESP32H4,ESP32H21] IDF-14944
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -176,6 +157,7 @@ examples/system/ota/native_ota_example:
     - esp_driver_gpio
     - bootloader_support
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/otatool:
   enable:
@@ -183,7 +165,7 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # TODO: [ESP32S31] IDF-14944
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
@@ -197,6 +179,7 @@ examples/system/ota/partitions_ota:
       temporary: true
       reason: lack of runners with recovery_bootloader lablel
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -205,18 +188,29 @@ examples/system/ota/partitions_ota:
     - esp_wifi
     - esp_phy
     - mbedtls
+    - protocol_examples_common
+    - openthread
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # TODO: [ESP32S31] IDF-14944
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p256" and SOC_SECURE_BOOT_V2_ECC != 1
+      reason: Secure Boot V2 with ECDSA signatures is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p384" and SOC_ECDSA_SUPPORT_CURVE_P384 != 1
+      reason: Secure Boot V2 with ECDSA P384 signatures is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_esp32" and SOC_SECURE_BOOT_V1 != 1
+      reason: Secure Boot V1 is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_rsa" and SOC_SECURE_BOOT_V2_RSA != 1
+      reason: Secure Boot V2 with RSA signatures is not supported.
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3", "esp32c5"]
       temporary: true
       reason: lack of runners
   depends_components:
+    - *common_components
     - app_update
     - esp_https_ota
     - esp_http_client
@@ -225,6 +219,8 @@ examples/system/ota/simple_ota_example:
     - esp_wifi
     - esp_phy
     - mbedtls
+    - protocol_examples_common
+    - openthread
 
 examples/system/perfmon:
   enable:
@@ -234,6 +230,7 @@ examples/system/perfmon:
       reason: testing on a single target is sufficient
   depends_components:
     - perfmon
+    - xtensa
 
 examples/system/pthread:
   disable:
@@ -254,6 +251,7 @@ examples/system/select:
     - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - vfs
 
 examples/system/sysview_tracing:
@@ -284,174 +282,6 @@ examples/system/task_watchdog:
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
     - esp_system
-
-examples/system/ulp/lp_core/build_system:
-  enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/debugging:
-  enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
-  disable:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: binary size too large TODO IDF-13063
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/gpio:
-  disable:
-    - if: SOC_DEEP_SLEEP_SUPPORTED != 1
-  enable:
-    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/gpio_intr_pulse_counter:
-  disable:
-    - if: IDF_TARGET == "esp32c5" # TODO: IDF-10918
-      temporary: true
-      reason: unknown error
-  enable:
-    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/gpio_wakeup:
-  enable:
-    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/inter_cpu_critical_section/:
-  enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/interrupt:
-  enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_adc:
-  disable:
-    - if: (SOC_LP_ADC_SUPPORTED != 1)
-  depends_components:
-    - ulp, esp_adc
-
-examples/system/ulp/lp_core/lp_i2c:
-  enable:
-    - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet, TODO IDF-9581
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_spi:
-  enable:
-    - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_timer_interrupt:
-  disable:
-    - if: (SOC_LP_CORE_SUPPORTED != 1) or (SOC_LP_TIMER_SUPPORTED != 1)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_touch:
-  enable:
-    - if: SOC_TOUCH_SENSOR_SUPPORTED == 1 and (SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LP_CORE_SUPPORTED == 1)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
-  disable:
-    - if: (SOC_ULP_LP_UART_SUPPORTED != 1)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
-  disable:
-    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
-  depends_components:
-    - ulp
-
-examples/system/ulp/lp_core/lp_uart/lp_uart_print:
-  disable:
-    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_fsm/ulp:
-  disable:
-    - if: SOC_ULP_FSM_SUPPORTED != 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_fsm/ulp_adc:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32s3"]
-      temporary: true
-      reason: the other targets are not tested yet
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/adc:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/ds18b20_onewire:
-  enable:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: the other targets are not tested yet
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/gpio:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/gpio_interrupt:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/i2c:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/interrupts:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/touch:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
-
-examples/system/ulp/ulp_riscv/uart_print:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
-  depends_components:
-    - ulp
 
 examples/system/unit_test/:
   disable:

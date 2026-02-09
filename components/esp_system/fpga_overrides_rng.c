@@ -7,7 +7,7 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 
-static const char *TAG = "fpga_rng";
+ESP_LOG_ATTR_TAG(TAG, "fpga_rng");
 
 /* Placed in IRAM since test_apps expects it to be */
 void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)

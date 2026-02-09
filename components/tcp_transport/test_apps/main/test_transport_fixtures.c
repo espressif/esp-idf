@@ -259,17 +259,17 @@ void tcp_transport_test_connection_timeout(esp_transport_handle_t transport_unde
     TEST_ASSERT_NOT_NULL(test);
 
     // Roughly measure tick-time spent while trying to connect
-#if !CONFIG_FREERTOS_SMP // IDF-5225 - timeout is several times shorter than expected, probably not measured correctly
+#if !CONFIG_FREERTOS_SMP // IDF-5826 - timeout is several times shorter than expected, probably not measured correctly
     TickType_t start = xTaskGetTickCount();
 #endif
     EventBits_t bits = xEventGroupWaitBits(test->tcp_connect_done, TCP_CONNECT_DONE, true, true, test->max_wait);
-#if !CONFIG_FREERTOS_SMP // IDF-5225 - timeout is several times shorter than expected, probably not measured correctly
+#if !CONFIG_FREERTOS_SMP // IDF-5826 - timeout is several times shorter than expected, probably not measured correctly
     TickType_t end = xTaskGetTickCount();
 #endif
 
     TEST_ASSERT_EQUAL(TCP_CONNECT_DONE, TCP_CONNECT_DONE & bits);       // Connection has finished
 
-#if !CONFIG_FREERTOS_SMP // IDF-5225 - timeout is several times shorter than expected, probably not measured correctly
+#if !CONFIG_FREERTOS_SMP // IDF-5826 - timeout is several times shorter than expected, probably not measured correctly
     TEST_ASSERT_EQUAL(-1, test->connect_return_value);          // Connection failed with -1
     // Test connection attempt took expected timeout value
     TEST_ASSERT_INT_WITHIN(pdMS_TO_TICKS(params.timeout_ms/5), pdMS_TO_TICKS(params.timeout_ms), end-start);

@@ -10,12 +10,20 @@
 #include "esp_macros.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_serial_output.h"
-#include "rom/cache.h"
 
 #include "riscv/rv_utils.h"
 #include "riscv/rvruntime-frames.h"
 
+#include "hal/cache_types.h"
+#include "hal/cache_ll.h"
+#include "hal/cache_hal.h"
 #include "hal/apm_hal.h"
+
+#if SOC_INT_PLIC_SUPPORTED
+#include "soc/plic_reg.h"
+#elif SOC_INT_CLIC_SUPPORTED
+#include "soc/clic_reg.h"
+#endif
 
 #include "esp_tee.h"
 #include "esp_tee_apm_intr.h"
@@ -32,11 +40,16 @@ static void tee_panic_end(void)
     rv_utils_tee_intr_global_disable();
 
     // Disable the cache
-    Cache_Disable_ICache();
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 
     // Clear the interrupt controller configurations
+#if SOC_INT_PLIC_SUPPORTED
     memset((void *)DR_REG_PLIC_MX_BASE, 0x00, (PLIC_MXINT_CLAIM_REG + 4 - DR_REG_PLIC_MX_BASE));
     memset((void *)DR_REG_PLIC_UX_BASE, 0x00, (PLIC_UXINT_CLAIM_REG + 4 - DR_REG_PLIC_UX_BASE));
+#elif SOC_INT_CLIC_SUPPORTED
+    memset((void *)DR_REG_CLIC_CTRL_BASE, 0x00, (REG_GET_FIELD(CLIC_INT_INFO_REG, CLIC_INT_INFO_NUM_INT)) * 4);
+    REG_WRITE(CLIC_INT_THRESH_REG, 0x00);
+#endif
 
     // Make sure all the panic handler output is sent from UART FIFO
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {

@@ -3,8 +3,8 @@ USB Device Stack
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
-{IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
+{IDF_TARGET_USB_DP_GPIO_NUM:default="20", esp32h4="22"}
+{IDF_TARGET_USB_DM_GPIO_NUM:default="19", esp32h4="21"}
 {IDF_TARGET_USB_EP_NUM: default="6", esp32p4="15"}
 {IDF_TARGET_USB_EP_NUM_INOUT:default="5", esp32p4="8"}
 {IDF_TARGET_USB_EP_NUM_IN:default="1", esp32p4="7"}
@@ -34,7 +34,7 @@ Features
 Hardware Connection
 -------------------
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     The {IDF_TARGET_NAME} routes the USB D+ and D- signals to GPIOs {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} respectively. For USB device functionality, these GPIOs should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
 
@@ -47,7 +47,7 @@ Hardware Connection
     :alt: Connection of an USB GPIOs directly to a USB standard-A plug
     :figclass: align-center
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     .. note::
 
@@ -56,6 +56,89 @@ Hardware Connection
 .. note::
 
     Self-powered devices must also connect VBUS through a voltage divider or comparator. For more details, please refer to :ref:`self-powered-device`.
+
+.. only:: esp32s3
+
+    External PHY Configuration
+    --------------------------
+
+    The {IDF_TARGET_NAME} contains two USB controllers: USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Device functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
+
+    .. note::
+        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to document :doc:`JTAG Debugging <../../api-guides/jtag-debugging/index>` in ESP-IDF Programming Guide for your target.
+
+    {IDF_TARGET_NAME} supports connecting external PHY ICs. This becomes especially relevant when full-speed USB device functionality is needed while the USB-Serial-JTAG controller is also in use. Various external PHY ICs may require different hardware modifications. Please refer to each IC's datasheet for specifics. A general connection diagram below is provided for reference. For more information, please refer to `Use an external PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__.
+
+    .. figure:: ../../../_static/usb_device/usb_fs_phy_sp5301.png
+       :align: center
+       :alt: usb_fs_phy_sp5301
+
+       A typical circuit diagram for an external PHY
+
+    **List of Tested External PHY ICs:**
+
+    - **SP5301** — Directly supported by {IDF_TARGET_NAME}. See the guide above for schematic and routing information.
+    - **TUSB1106** — Directly supported by {IDF_TARGET_NAME}. Works with the external-PHY driver via GPIO mapping. Follow the reference wiring in the TUSB1106 datasheet (power-supply options and recommended series resistors on D+/D–).
+    - **STUSB03E** — Requires signal routing using an analog switch. See example below.
+
+    .. figure:: ../../../_static/usb_device/ext_phy_schematic_stusb03e.png
+       :align: center
+       :alt: External PHY with Analog Switch Schematic (Device mode)
+
+       Example connection using STUSB03E and analog switch (Device mode)
+
+    .. note::
+        This schematic is a minimal example intended only to demonstrate the external PHY connection. It omits other essential components and signals (e.g., VCC, GND, RESET) required for a complete, functional {IDF_TARGET_NAME} design.
+        The schematic includes both a +5 V rail (usually from USB VBUS) and a VCC rail. VCC should match the chip supply voltage (usually 3.3 V). Ensure that the external PHY and the chip are powered from the same voltage domain. If designing a self-powered USB device, connect VBUSDET signal from the external PHY to {IDF_TARGET_NAME} for mandatory VBUS monitoring.
+
+    Hardware configuration is handled via GPIO mapping to the PHY's pins. Any unused pins (e.g., :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`, :cpp:member:`usb_phy_ext_io_conf_t::fs_edge_sel_io_num`) **must be set to -1**.
+
+    .. note::
+        The :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` pin is **currently not supported** and does not need to be connected.
+        The :cpp:member:`usb_phy_ext_io_conf_t::fs_edge_sel_io_num` pin is optional and only required if switching between low-speed and full-speed modes is needed.
+
+    Starting from version 2.0, the ESP TinyUSB Device Stack supports external PHY usage. To use an external PHY in device mode:
+
+    1. Configure the GPIO mapping and PHY using :cpp:type:`usb_phy_config_t`.
+    2. Create the PHY using :cpp:func:`usb_new_phy()`.
+    3. Use :cpp:func:`TINYUSB_DEFAULT_CONFIG()` to initialize :cpp:type:`tinyusb_config_t`.
+    4. Set the `phy.skip_setup` field of :cpp:type:`tinyusb_config_t` to ``true`` to bypass PHY reinitialization and use the externally configured PHY.
+
+    **Example Code:**
+
+    .. code-block:: c
+
+        // GPIO configuration for external PHY
+        const usb_phy_ext_io_conf_t ext_io_conf = {
+            .vp_io_num  = 8,
+            .vm_io_num  = 5,
+            .rcv_io_num = 11,
+            .oen_io_num = 17,
+            .vpo_io_num = 4,
+            .vmo_io_num = 46,
+            .suspend_n_io_num = -1,
+            .fs_edge_sel_io_num = -1,
+        };
+
+        // Configuration and initialization of external PHY for OTG controller (Device mode)
+        const usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_EXT,
+            .otg_mode = USB_OTG_MODE_DEVICE,
+            .otg_speed = USB_PHY_SPEED_FULL,
+            .ext_io_conf = &ext_io_conf
+        };
+
+        usb_phy_handle_t phy_hdl;
+        ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
+
+        // Initialize TinyUSB with default configuration (event handler can be set if needed)
+        tinyusb_config_t config = TINYUSB_DEFAULT_CONFIG();
+        config.phy.skip_setup = true;
+
+        tinyusb_driver_install(&config);
+
+    This setup ensures that the USB Device stack uses the **external PHY** instead of attempting to configure the internal one.
 
 Device Stack Structure
 ----------------------
@@ -145,7 +228,7 @@ To install the Device Stack, please call :cpp:func:`tinyusb_driver_install`. The
     const tinyusb_config_t partial_init = {
         .device_descriptor = NULL,  // Use the default device descriptor specified in Menuconfig
         .string_descriptor = NULL,  // Use the default string descriptors specified in Menuconfig
-        .external_phy = false,      // Use internal USB PHY
+        .external_phy = false,      // Use internal PHY
     #if (TUD_OPT_HIGH_SPEED)
         .fs_configuration_descriptor = NULL, // Use the default full-speed configuration descriptor according to settings in Menuconfig
         .hs_configuration_descriptor = NULL, // Use the default high-speed configuration descriptor according to settings in Menuconfig
@@ -323,7 +406,7 @@ This approach ensures that USB transactions remain fast while avoiding potential
 
     .. note::
 
-        SD card support is not available for ESP32-S2 in MSC device mode.
+        SD card support is not available for {IDF_TARGET_NAME} in MSC device mode.
 
     **SPI Flash Performance:**
 
@@ -339,6 +422,27 @@ This approach ensures that USB transactions remain fast while avoiding potential
 
         * - 8192 B
           - 21.54 KB/s
+
+.. only:: esp32h4
+
+    .. note::
+
+        SD card support is not available for {IDF_TARGET_NAME} in MSC device mode.
+
+    **SPI Flash Performance:**
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20
+
+        * - FIFO Size
+          - Write Speed
+
+        * - 512 B
+          - 4.48 KB/s
+
+        * - 8192 B
+          - 22.33 KB/s
 
 Performance Limitations:
 
@@ -361,6 +465,6 @@ The examples can be found in the directory :example:`peripherals/usb/device`.
 - :example:`peripherals/usb/device/tusb_msc` demonstrates how to use the USB capabilities to create a Mass Storage Device that can be recognized by USB-hosts, allowing access to its internal data storage, with support for SPI Flash and SD MMC Card storage media.
 - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice` demonstrates how to set up {IDF_TARGET_NAME} to function simultaneously as both a USB Serial Device and an MSC device (SPI-Flash as the storage media) using the TinyUSB component.
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
   - :example:`peripherals/usb/device/tusb_ncm` demonstrates how to transmit Wi-Fi data to a Linux or Windows host via USB using the Network Control Model (NCM), a sub-class of Communication Device Class (CDC) USB Device for Ethernet-over-USB applications, with the help of a TinyUSB component.

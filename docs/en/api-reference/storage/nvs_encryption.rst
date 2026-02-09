@@ -219,6 +219,9 @@ The component :component:`nvs_sec_provider` stores all the implementation-specif
 
     This component offers factory functions with which a particular security scheme can be registered without having to worry about the APIs to generate and read the encryption keys (e.g., :cpp:func:`nvs_sec_provider_register_hmac`). Refer to the :example:`security/nvs_encryption_hmac` example for API usage.
 
+.. note::
+
+    To use a custom implementation for NVS encryption key derivation or protection (instead of the ones provided by the :component:`nvs_sec_provider` component), select the :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` configuration option.
 
 API Reference
 -------------

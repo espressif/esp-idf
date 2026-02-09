@@ -40,6 +40,7 @@ typedef struct {
     esp_apptrace_mem_block_t                blocks[2];   // memory blocks
     // ring buffer control struct for data from host (down buffer)
     esp_apptrace_rb_t                       rb_down;
+    int                                     header_size; ///< Size of the trace header (2 or 4 bytes)
 } esp_apptrace_membufs_proto_data_t;
 
 esp_err_t esp_apptrace_membufs_init(esp_apptrace_membufs_proto_data_t *proto, const esp_apptrace_mem_block_t blocks_cfg[2]);

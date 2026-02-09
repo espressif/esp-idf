@@ -283,6 +283,11 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(BD_ADDR bd_addr, UINT16 num_uuid,
     tBTA_JV_API_START_DISCOVERY *p_msg;
 
     APPL_TRACE_API( "BTA_JvStartDiscovery");
+    if ((num_uuid > BTA_JV_MAX_UUIDS) || ((num_uuid > 0) && (p_uuid_list == NULL))) {
+        APPL_TRACE_ERROR("invalid uuid list: num_uuid=%u", num_uuid);
+        return BTA_JV_FAILURE;
+    }
+
     if ((p_msg = (tBTA_JV_API_START_DISCOVERY *)osi_malloc(sizeof(tBTA_JV_API_START_DISCOVERY))) != NULL) {
         p_msg->hdr.event = BTA_JV_API_START_DISCOVERY_EVT;
         bdcpy(p_msg->bd_addr, bd_addr);
@@ -696,7 +701,7 @@ on
 *******************************************************************************/
 int BTA_JvL2capRead(UINT32 handle, UINT32 req_id, UINT8 *p_data, UINT16 len)
 {
-    tBTA_JV_L2CAP_READ evt_data;
+    tBTA_JV_L2CAP_READ evt_data = {0};
 
     APPL_TRACE_API( "%s", __func__);
 

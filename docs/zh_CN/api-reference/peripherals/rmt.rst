@@ -246,18 +246,17 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
 - :cpp:member:`rmt_transmit_config_t::loop_count` 设置发送的循环次数。在发射器完成一轮发送后，如果该值未设置为零，则再次启动相同的发送程序。由于循环由硬件控制，RMT 通道可以在几乎不需要 CPU 干预的情况下，生成许多周期性序列。
 
     - 将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为 ``-1``，会启用无限循环发送机制，此时，除非手动调用 :cpp:func:`rmt_disable`，否则通道不会停止，也不会生成“完成发送”事件。
-    - 将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为正数，意味着迭代次数有限。此时，“完成发送”事件在指定的迭代次数完成后发生。
 
-    .. note::
+    .. only:: not esp32
 
-        注意，不是所有 ESP 芯片都支持 **循环发送** 功能，在配置此选项前，请参阅 [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__]。若所选芯片不支持配置此选项，可能会报告 :c:macro:`ESP_ERR_NOT_SUPPORTED` 错误。
+        - 将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为正数，意味着迭代次数有限。此时，“完成发送”事件在指定的迭代次数完成后发生。
 
 - :cpp:member:`rmt_transmit_config_t::eot_level` 设置发射器完成工作时的输出电平，该设置同时适用于调用 :cpp:func:`rmt_disable` 停止发射器工作时的输出电平。
 - :cpp:member:`rmt_transmit_config_t::queue_nonblocking` 设置当传输队列满的时候该函数是否需要等待。如果该值设置为 ``true`` 那么当遇到队列满的时候，该函数会立即返回错误代码 :c:macro:`ESP_ERR_INVALID_STATE`。否则，函数会阻塞当前线程，直到传输队列有空档。
 
 .. note::
 
-    如果将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为非零值，即启用循环功能，则传输的大小将受到限制。编码的 RMT 符号不应超过 RMT 硬件内存块容量，否则会出现类似 ``encoding artifacts can't exceed hw memory block for loop transmission`` 的报错信息。如需通过循环启动大型事务，请尝试以下任一方法：
+    如果将 :cpp:member:`rmt_transmit_config_t::loop_count` 设置为非零值，即启用循环功能，则传输的大小将受到限制。编码器返回的符号总量不能超过 :c:macro:`SOC_RMT_MEM_WORDS_PER_CHANNEL`，否则会出现类似 ``encoding artifacts can't exceed hw memory block for loop transmission`` 的报错信息。如需通过循环启动大型事务，请尝试以下任一方法：
 
     - 增加 :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`。若此时启用了 DMA 后端，该方法将失效。
     - 自定义编码器，并在编码函数中构造一个无限循环，详情请参阅 :ref:`rmt-rmt-encoder`。
@@ -654,7 +653,7 @@ API 参考
 .. include-build-file:: inc/rmt_common.inc
 .. include-build-file:: inc/rmt_encoder.inc
 .. include-build-file:: inc/components/esp_driver_rmt/include/driver/rmt_types.inc
-.. include-build-file:: inc/components/hal/include/hal/rmt_types.inc
+.. include-build-file:: inc/components/esp_hal_rmt/include/hal/rmt_types.inc
 
 
 .. [1]

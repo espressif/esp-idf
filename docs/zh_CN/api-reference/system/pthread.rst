@@ -29,7 +29,7 @@ RTOS 集成
 
 .. note::
 
-    POSIX 的 ``errno`` 由 ESP-IDF 中的 newlib 提供。因此，配置项 ``configUSE_POSIX_ERRNO`` 并未被使用，应该保持禁用状态。
+    POSIX 的 ``errno`` 由 ESP-IDF 中的 esp_libc 提供。因此，配置项 ``configUSE_POSIX_ERRNO`` 并未被使用，应该保持禁用状态。
 
 默认情况下，所有 pthread 具有相同的 RTOS 优先级，但可以通过调用 :ref:`ESP-IDF 提供的扩展 API <esp-pthread>` 对此优先级进行更改。
 
@@ -154,6 +154,8 @@ ESP-IDF 中实现了 POSIX 读写锁规范的以下 API 函数：
 * `pthread_rwlock_wrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_wrlock.html>`_
 * `pthread_rwlock_trywrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_trywrlock.html>`_
 * `pthread_rwlock_unlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_unlock.html>`_
+* `pthread_rwlock_timedwrlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_timedwrlock.html>`_
+* `pthread_rwlock_timedrdlock() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_rwlock_timedrdlock.html>`_
 
 支持静态初始化器常量 ``PTHREAD_RWLOCK_INITIALIZER``。
 

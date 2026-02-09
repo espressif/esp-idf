@@ -73,9 +73,11 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
         /* There is no device record, allocate one.
          * If we can not find an empty spot for this one, let it fail. */
         if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS) {
-	    p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
-	    if(p_dev_rec) {
-	        list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
+            p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
+            if(p_dev_rec) {
+                BTM_TRACE_DEBUG("%s alloc a new dev rec %p bd_addr="MACSTR"",
+                    __func__, p_dev_rec, MAC2STR(bd_addr));
+                list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
                 /* Mark this record as in use and initialize */
                 memset (p_dev_rec, 0, sizeof (tBTM_SEC_DEV_REC));
                 p_dev_rec->sec_flags = BTM_SEC_IN_USE;
@@ -335,7 +337,8 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
     BOOLEAN           new_entry_found  = FALSE;
     BOOLEAN           old_entry_found  = FALSE;
     BOOLEAN           malloc_new_entry = FALSE;
-    BTM_TRACE_EVENT ("btm_sec_alloc_dev\n");
+    BTM_TRACE_EVENT ("btm_sec_alloc_dev - start alloc for device %02x:%02x:%02x:%02x:%02x:%02x",
+                     bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev_old_rec = list_node(p_node);
         /* look for old entry which match the bd_addr and the BTM_SEC_IN_USE is cleared */
@@ -359,6 +362,8 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
         if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS){
             p_dev_new_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
             if (p_dev_new_rec) {
+                BTM_TRACE_DEBUG("%s alloc a new dev rec %p bd_addr="MACSTR"",
+                    __func__, p_dev_new_rec, MAC2STR(bd_addr));
                 new_entry_found = TRUE;
                 malloc_new_entry = TRUE;
             } else {
@@ -691,6 +696,14 @@ tBTM_SEC_DEV_REC *btm_find_oldest_dev (void)
             old_ts   = p_dev_rec->timestamp;
         }
     }
+
+    if (p_oldest) {
+        BTM_TRACE_EVENT("oldest paired device found: bd_addr=%02x:%02x:%02x:%02x:%02x:%02x, timestamp=%u",
+                         p_oldest->bd_addr[0], p_oldest->bd_addr[1], p_oldest->bd_addr[2],
+                         p_oldest->bd_addr[3], p_oldest->bd_addr[4], p_oldest->bd_addr[5],
+                         p_oldest->timestamp);
+    }
+
     return (p_oldest);
 }
 /*******************************************************************************

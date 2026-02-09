@@ -31,10 +31,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x10, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'c', 's', 'c','-', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x10, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'c', 's', 'c','-', 'e',
 };
 #endif
 
@@ -324,12 +324,14 @@ app_main(void)
     rc = ble_npl_callout_reset(&blecsc_measure_timer, portTICK_PERIOD_MS * 100);
     assert(rc == 0);
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init(&csc_measurement_state);
     assert(rc == 0);
 
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     nimble_port_freertos_init(blecsc_host_task);
 

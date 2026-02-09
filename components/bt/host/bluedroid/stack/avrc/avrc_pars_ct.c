@@ -55,13 +55,27 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
     if (p_msg->p_vendor_data == NULL) {
         return AVRC_STS_INTERNAL_ERR;
     }
+    if (p_msg->vendor_len < 4) {
+        AVRC_TRACE_WARNING("message length %u too short: must be at least 4", p_msg->vendor_len);
+        return AVRC_STS_INTERNAL_ERR;
+    }
 
     p = p_msg->p_vendor_data;
     BE_STREAM_TO_UINT8 (p_result->pdu, p);
     p++; /* skip the reserved/packe_type byte */
     BE_STREAM_TO_UINT16 (len, p);
     AVRC_TRACE_DEBUG("avrc_pars_vendor_rsp() ctype:0x%x pdu:0x%x, len:%d/0x%x", p_msg->hdr.ctype, p_result->pdu, len, len);
+
+    if (p_msg->vendor_len < len + 4) {
+        AVRC_TRACE_WARNING("message length %u too short: must be at least %u", p_msg->vendor_len, len + 4);
+        return AVRC_STS_INTERNAL_ERR;
+    }
+
     if (p_msg->hdr.ctype == AVRC_RSP_REJ) {
+        if (len < 1) {
+            AVRC_TRACE_WARNING("invalid message length %u: must be at least 1", len);
+            return AVRC_STS_INTERNAL_ERR;
+        }
         p_result->rsp.status = *p;
         return p_result->rsp.status;
     }
@@ -82,10 +96,18 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
 
     case AVRC_PDU_REGISTER_NOTIFICATION:    /* 0x31 */
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
+        if (len < 1) {
+            AVRC_TRACE_WARNING("invalid message length %u: must be at least 1", len);
+            return AVRC_STS_INTERNAL_ERR;
+        }
         BE_STREAM_TO_UINT8 (eventid, p);
         if (AVRC_EVT_VOLUME_CHANGE == eventid
                 && (AVRC_RSP_CHANGED == p_msg->hdr.ctype || AVRC_RSP_INTERIM == p_msg->hdr.ctype
                     || AVRC_RSP_REJ == p_msg->hdr.ctype || AVRC_RSP_NOT_IMPL == p_msg->hdr.ctype)) {
+            if (len < 2) {
+                AVRC_TRACE_WARNING("invalid message length %u: must be at least 2", len);
+                return AVRC_STS_INTERNAL_ERR;
+            }
             p_result->reg_notif.status = p_msg->hdr.ctype;
             p_result->reg_notif.event_id = eventid;
             BE_STREAM_TO_UINT8 (p_result->reg_notif.param.volume, p);
@@ -95,18 +117,30 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
         break;
 #endif /* (AVRC_ADV_CTRL_INCLUDED == TRUE) */
     case AVRC_PDU_GET_CAPABILITIES:        /* 0x10 */
+        if (len < 2) {
+            AVRC_TRACE_WARNING("invalid message length %u: must be at least 2", len);
+            return AVRC_STS_INTERNAL_ERR;
+        }
         BE_STREAM_TO_UINT8 (p_result->get_caps.capability_id, p);
         BE_STREAM_TO_UINT8 (p_result->get_caps.count, p);
         if (p_result->get_caps.capability_id == AVRC_CAP_EVENTS_SUPPORTED) {
             if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_EVT_ID) {
                 status = AVRC_STS_INTERNAL_ERR;
             } else {
+                if (len < 2 + p_result->get_caps.count) {
+                    AVRC_TRACE_WARNING("invalid message length %u: must be at least %d", len, 2 + p_result->get_caps.count);
+                    return AVRC_STS_INTERNAL_ERR;
+                }
                 BE_STREAM_TO_ARRAY(p, p_result->get_caps.param.event_id, p_result->get_caps.count);
             }
         } else if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID) {
             if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_COMP_ID) {
                 status = AVRC_STS_INTERNAL_ERR;
             } else {
+                if (len < 2 + p_result->get_caps.count * 6) {
+                    AVRC_TRACE_WARNING("invalid message length %u: must be at least %d", len, 2 + p_result->get_caps.count * 6);
+                    return AVRC_STS_INTERNAL_ERR;
+                }
                 for (int i = 0; i < p_result->get_caps.count; ++i) {
                     BE_STREAM_TO_UINT24(p_result->get_caps.param.company_id[i], p);
                 }
@@ -115,6 +149,10 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
         break;
     case AVRC_PDU_GET_PLAY_STATUS:
         if (p_msg->hdr.ctype == AVRC_RSP_IMPL_STBL) {
+            if (len < 9) {
+                AVRC_TRACE_WARNING("invalid message length %u: must be at least 9", len);
+                return AVRC_STS_INTERNAL_ERR;
+            }
             BE_STREAM_TO_UINT32(p_result->get_play_status.song_len, p);
             BE_STREAM_TO_UINT32(p_result->get_play_status.song_pos, p);
             BE_STREAM_TO_UINT8(p_result->get_play_status.play_status, p);

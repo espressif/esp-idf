@@ -148,7 +148,7 @@ UINT16 GAP_ConnOpen (const char *p_serv_name, UINT8 service_id, BOOLEAN is_serve
 
         memcpy (&p_ccb->rem_dev_address[0], p_rem_bda, BD_ADDR_LEN);
     } else if (!is_server) {
-        /* remore addr is not specified and is not a server -> bad */
+        /* remote addr is not specified and is not a server -> bad */
         return (GAP_INVALID_HANDLE);
     }
 
@@ -510,18 +510,19 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
     }
 
     while (max_len) {
+        UINT16 length = (p_ccb->rem_mtu_size < max_len) ? p_ccb->rem_mtu_size : max_len;
         if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-            if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_FCR_ERTM_BUF_SIZE)) == NULL) {
+            if ((p_buf = (BT_HDR *)osi_malloc(BT_HDR_SIZE + length + L2CAP_MIN_OFFSET + L2CAP_FCS_LEN)) == NULL) {
                 return (GAP_ERR_CONGESTED);
             }
         } else {
-            if ((p_buf = (BT_HDR *)osi_malloc(GAP_DATA_BUF_SIZE)) == NULL) {
+            if ((p_buf = (BT_HDR *)osi_malloc(BT_HDR_SIZE + length + L2CAP_MIN_OFFSET)) == NULL) {
                 return (GAP_ERR_CONGESTED);
             }
         }
 
         p_buf->offset = L2CAP_MIN_OFFSET;
-        p_buf->len = (p_ccb->rem_mtu_size < max_len) ? p_ccb->rem_mtu_size : max_len;
+        p_buf->len = length;
         p_buf->event = BT_EVT_TO_BTU_SP_DATA;
 
         memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset, p_data, p_buf->len);
@@ -775,7 +776,9 @@ static void gap_checks_con_flags (tGAP_CCB    *p_ccb)
     if ((p_ccb->con_flags & GAP_CCB_FLAGS_CONN_DONE) == GAP_CCB_FLAGS_CONN_DONE) {
         p_ccb->con_state = GAP_CCB_STATE_CONNECTED;
 
-        p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_OPENED);
+        if (p_ccb->p_callback) {
+            p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_OPENED);
+        }
     }
 }
 
@@ -933,7 +936,9 @@ static void gap_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 
         gap_checks_con_flags (p_ccb);
     } else {
-        p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_CLOSED);
+        if (p_ccb->p_callback) {
+            p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_CLOSED);
+        }
         gap_release_ccb (p_ccb);
     }
 }
@@ -964,7 +969,9 @@ static void gap_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
         L2CA_DISCONNECT_RSP (l2cap_cid);
     }
 
-    p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_CLOSED);
+    if (p_ccb->p_callback) {
+        p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_CLOSED);
+    }
     gap_release_ccb (p_ccb);
 }
 
@@ -997,7 +1004,9 @@ static void gap_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
                                        p_ccb->rx_queue_size, p_msg->len);
          */
 
-        p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_DATA_AVAIL);
+        if (p_ccb->p_callback) {
+            p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_DATA_AVAIL);
+        }
     } else {
         osi_free (p_msg);
     }
@@ -1030,7 +1039,9 @@ static void gap_congestion_ind (UINT16 lcid, BOOLEAN is_congested)
     p_ccb->is_congested = is_congested;
 
     event = (is_congested) ? GAP_EVT_CONN_CONGESTED : GAP_EVT_CONN_UNCONGESTED;
-    p_ccb->p_callback (p_ccb->gap_handle, event);
+    if (p_ccb->p_callback) {
+        p_ccb->p_callback (p_ccb->gap_handle, event);
+    }
 
     if (!is_congested) {
         while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->tx_queue, 0)) != NULL) {

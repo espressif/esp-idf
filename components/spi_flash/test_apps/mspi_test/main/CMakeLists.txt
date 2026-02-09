@@ -4,5 +4,5 @@ set(srcs "test_out_of_bounds_write.c"
          "test_app_main.c")
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity spi_flash driver esp_partition bootloader_support app_update
+                       PRIV_REQUIRES unity spi_flash esp_partition bootloader_support app_update esp_hal_timg
                        WHOLE_ARCHIVE)

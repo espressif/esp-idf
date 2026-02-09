@@ -36,7 +36,7 @@
 #define BROWNOUT_DET_LVL 0
 #endif
 
-static __attribute__((unused)) DRAM_ATTR const char TAG[] = "BOD";
+ESP_LOG_ATTR_TAG_DRAM(TAG, "BOD");
 
 static brownout_callback_t s_brownout_callback = NULL;
 

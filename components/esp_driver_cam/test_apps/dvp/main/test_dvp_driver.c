@@ -18,6 +18,7 @@ TEST_CASE("TEST DVP driver allocation", "[DVP]")
         .h_res = 800,
         .v_res = 640,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 64,
         .byte_swap_en = false,
         .pin_dont_init = true,
@@ -70,6 +71,7 @@ TEST_CASE("TEST DVP driver no backup buffer usage", "[DVP]")
         .h_res = 800,
         .v_res = 640,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 64,
         .byte_swap_en = false,
         .bk_buffer_dis = true,
@@ -97,6 +99,7 @@ TEST_CASE("TEST DVP driver intern/extern init", "[DVP]")
         .h_res = 800,
         .v_res = 640,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 64,
         .byte_swap_en = false,
         .external_xtal = true,
@@ -129,6 +132,7 @@ TEST_CASE("TEST DVP driver intern/extern generate xclk", "[DVP]")
         .h_res = 800,
         .v_res = 640,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 64,
         .byte_swap_en = false,
         .external_xtal = true,
@@ -167,7 +171,7 @@ TEST_CASE("TEST DVP driver intern/extern generate xclk", "[DVP]")
     dvp_config.external_xtal = false;
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_cam_new_dvp_ctlr(&dvp_config, &handle));
 
-    pin_cfg.xclk_io = 20;
+    pin_cfg.xclk_io = 15;
     dvp_config.pin = &pin_cfg;
     TEST_ESP_OK(esp_cam_new_dvp_ctlr(&dvp_config, &handle));
     TEST_ESP_OK(esp_cam_ctlr_del(handle));
@@ -175,11 +179,11 @@ TEST_CASE("TEST DVP driver intern/extern generate xclk", "[DVP]")
 
 TEST_CASE("TEST DVP driver only output xclk signal", "[DVP]")
 {
-    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 20, CAM_CLK_SRC_DEFAULT, 20000000));
+    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 15, CAM_CLK_SRC_DEFAULT, 20000000));
     TEST_ESP_OK(esp_cam_ctlr_dvp_deinit(0));
 
 #if CONFIG_IDF_TARGET_ESP32S3
-    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 20, CAM_CLK_SRC_PLL240M, 24000000));
+    TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 15, CAM_CLK_SRC_PLL240M, 24000000));
     TEST_ESP_OK(esp_cam_ctlr_dvp_deinit(0));
 #endif
 }

@@ -11,11 +11,14 @@ choice ESP32C61_REV_MIN
 
     config ESP32C61_REV_MIN_100
         bool "Rev v1.0"
+    config ESP32C61_REV_MIN_101
+        bool "Rev v1.1"
 endchoice
 
 config ESP32C61_REV_MIN_FULL
     int
     default 100 if ESP32C61_REV_MIN_100
+    default 101 if ESP32C61_REV_MIN_101
 
 config ESP_REV_MIN_FULL
     int

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-#include <wifi_provisioning/manager.h>
+#include <network_provisioning/manager.h>
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_event.h"
@@ -93,10 +93,10 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 {
     struct events *handler_args = arg;
     switch (event_id) {
-    case WIFI_PROV_START:
+    case NETWORK_PROV_START:
         ESP_LOGI(TAG, "Provisioning started");
         break;
-    case WIFI_PROV_CRED_RECV: {
+    case NETWORK_PROV_WIFI_CRED_RECV: {
         wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *) event_data;
         ESP_LOGI(TAG, "Received Wi-Fi credentials"
                  "\n\tSSID     : %s\n\tPassword : %s",
@@ -104,26 +104,23 @@ static void event_handler(void *arg, esp_event_base_t event_base,
                  (const char *) wifi_sta_cfg->password);
         break;
     }
-    case WIFI_PROV_CRED_FAIL: {
-        wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *) event_data;
+    case NETWORK_PROV_WIFI_CRED_FAIL: {
+        network_prov_wifi_sta_fail_reason_t *reason = (network_prov_wifi_sta_fail_reason_t *) event_data;
         ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
                  "\n\tPlease reset to factory and retry provisioning",
-                 (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
+                 (*reason == NETWORK_PROV_WIFI_STA_AUTH_ERROR) ?
                  "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
         handler_args->success = false;
 
         break;
     }
-    case WIFI_PROV_CRED_SUCCESS:
+    case NETWORK_PROV_WIFI_CRED_SUCCESS:
         ESP_LOGI(TAG, "Provisioning successful");
         handler_args->success = true;
         break;
-    case WIFI_PROV_END:
+    case NETWORK_PROV_END:
         /* De-initialize manager once provisioning is finished */
-        esp_err_t err = wifi_prov_mgr_deinit();
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to de-initialize provisioning manager: %s", esp_err_to_name(err));
-        }
+        network_prov_mgr_deinit();
         xEventGroupSetBits(*handler_args->flags, handler_args->success ? handler_args->success_bit : handler_args->fail_bit);
         free(handler_args);
         break;
@@ -132,7 +129,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-extern const wifi_prov_scheme_t wifi_prov_scheme_httpd;
+extern const network_prov_scheme_t network_prov_scheme_httpd;
 
 esp_err_t start_provisioning(EventGroupHandle_t *flags, int success_bit, int fail_bit)
 {
@@ -143,32 +140,32 @@ esp_err_t start_provisioning(EventGroupHandle_t *flags, int success_bit, int fai
     handler_args->flags = flags;
     handler_args->success_bit = success_bit;
     handler_args->fail_bit = fail_bit;
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, event_handler, handler_args));
+    ESP_ERROR_CHECK(esp_event_handler_register(NETWORK_PROV_EVENT, ESP_EVENT_ANY_ID, event_handler, handler_args));
     /* Configuration for the provisioning manager */
-    wifi_prov_mgr_config_t config = {
-        .scheme = wifi_prov_scheme_httpd,
+    network_prov_mgr_config_t config = {
+        .scheme = network_prov_scheme_httpd,
     };
 
     /* Initialize provisioning manager with the
      * configuration parameters set above */
-    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+    ESP_ERROR_CHECK(network_prov_mgr_init(config));
 
     /* What is the security level that we want (0, 1, 2):
-     *      - WIFI_PROV_SECURITY_0 is simply plain text communication.
-     *      - WIFI_PROV_SECURITY_1 is secure communication which consists of secure handshake
-     *      - WIFI_PROV_SECURITY_2 SRP6a based authentication and key exchange
+     *      - NETWORK_PROV_SECURITY_0 is simply plain text communication.
+     *      - NETWORK_PROV_SECURITY_1 is secure communication which consists of secure handshake
+     *      - NETWORK_PROV_SECURITY_2 SRP6a based authentication and key exchange
      *  Please check unified provisioning documentation for more details
      */
 
 #ifdef CONFIG_EXAMPLE_PROV_SECURITY_VERSION_0
-    wifi_prov_security_t security = WIFI_PROV_SECURITY_0;
+    network_prov_security_t security = NETWORK_PROV_SECURITY_0;
 #elif CONFIG_EXAMPLE_PROV_SECURITY_VERSION_1
-    wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
+    network_prov_security_t security = NETWORK_PROV_SECURITY_1;
     const char *pop = "abcd1234"; /* Proof of possession */
-    wifi_prov_security1_params_t *sec_params = pop;
+    network_prov_security1_params_t *sec_params = pop;
 
 #elif CONFIG_EXAMPLE_PROV_SECURITY_VERSION_2
-    wifi_prov_security_t security = WIFI_PROV_SECURITY_2;
+    network_prov_security_t security = NETWORK_PROV_SECURITY_2;
     /* The username must be the same one, which has been used in the generation of salt and verifier */
 
 #if CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE
@@ -185,23 +182,23 @@ esp_err_t start_provisioning(EventGroupHandle_t *flags, int success_bit, int fai
     /* This is the structure for passing security parameters
      * for the protocomm security 2.
      * If dynamically allocated, sec2_params pointer and its content
-     * must be valid till WIFI_PROV_END event is triggered.
+     * must be valid till NETWORK_PROV_END event is triggered.
      */
-    wifi_prov_security2_params_t sec2_params = {};
+    network_prov_security2_params_t sec2_params = {};
 
     ESP_ERROR_CHECK(example_get_sec2_salt(&sec2_params.salt, &sec2_params.salt_len));
     ESP_ERROR_CHECK(example_get_sec2_verifier(&sec2_params.verifier, &sec2_params.verifier_len));
 
-    wifi_prov_security2_params_t *sec_params = &sec2_params;
+    network_prov_security2_params_t *sec_params = &sec2_params;
 #endif // CONFIG_EXAMPLE_PROV_SECURITY_VERSION_0 (VERSION_1, VERSION_2)
 
-    ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) sec_params, NULL, NULL)); // service name and key could be NULL
+    ESP_ERROR_CHECK(network_prov_mgr_start_provisioning(security, (const void *) sec_params, NULL, NULL)); // service name and key could be NULL
     return ESP_OK;
 }
 
 bool is_provisioned(void)
 {
     bool provisioned = false;
-    ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+    ESP_ERROR_CHECK(network_prov_mgr_is_wifi_provisioned(&provisioned));
     return provisioned;
 }

@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_partition/test_apps:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      temporary: false
+      reason: sufficient to test on one Xtensa and one RISC-V target

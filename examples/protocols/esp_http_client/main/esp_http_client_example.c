@@ -45,9 +45,6 @@ static const char *TAG = "HTTP_CLIENT";
 extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
 extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
 
-extern const char postman_root_cert_pem_start[] asm("_binary_postman_root_cert_pem_start");
-extern const char postman_root_cert_pem_end[]   asm("_binary_postman_root_cert_pem_end");
-
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     static char *output_buffer;  // Buffer to store response of http request from event handler
@@ -443,6 +440,28 @@ static void https_with_url(void)
         ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %"PRId64,
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        ESP_LOGI(TAG, "Response headers: ");
+        char *header_value = NULL;
+        esp_err_t err = esp_http_client_get_response_header(client, "Content-Length", &header_value);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Content-Length: %s", header_value);
+        } else {
+            ESP_LOGE(TAG, "Error getting Content-Length header: %s", esp_err_to_name(err));
+        }
+        err = esp_http_client_get_response_header(client, "Date", &header_value);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Date: %s", header_value);
+        } else {
+            ESP_LOGE(TAG, "Error getting Date header: %s", esp_err_to_name(err));
+        }
+        err = esp_http_client_get_response_header(client, "Server", &header_value);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Server: %s", header_value);
+        } else {
+            ESP_LOGE(TAG, "Error getting Server header: %s", esp_err_to_name(err));
+        }
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
     } else {
         ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
     }
@@ -641,12 +660,13 @@ static void http_perform_as_stream_reader(void)
     free(buffer);
 }
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void https_async(void)
 {
     esp_http_client_config_t config = {
         .url = "https://postman-echo.com/post",
         .event_handler = _http_event_handler,
-        .cert_pem = postman_root_cert_pem_start,
+        .crt_bundle_attach = esp_crt_bundle_attach,
         .is_async = true,
         .timeout_ms = 5000,
     };
@@ -699,6 +719,7 @@ static void https_async(void)
     }
     esp_http_client_cleanup(client);
 }
+#endif
 
 static void https_with_invalid_url(void)
 {
@@ -863,7 +884,9 @@ static void http_test_task(void *pvParameters)
     http_redirect_to_https();
     http_download_chunk();
     http_perform_as_stream_reader();
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_async();
+#endif
     https_with_invalid_url();
     http_native_request();
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE

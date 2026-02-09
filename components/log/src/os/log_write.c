@@ -37,7 +37,7 @@ void esp_log_write(esp_log_level_t level,
                    const char *tag,
                    const char *format, ...)
 {
-    va_list list;
+    va_list list = {0};
     va_start(list, format);
     esp_log_va(ESP_LOG_CONFIG_INIT(level), tag, format, list);
     va_end(list);

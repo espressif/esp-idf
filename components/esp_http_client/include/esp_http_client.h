@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,7 @@ typedef enum {
     HTTP_EVENT_ON_HEADERS_COMPLETE, /*!< Occurs when all headers are received on the client side */
     HTTP_EVENT_ON_STATUS_CODE,  /*!< Occurs when receiving the HTTP status code from the server */
     HTTP_EVENT_ON_DATA,         /*!< Occurs when receiving data from the server, possibly multiple portions of the packet */
-    HTTP_EVENT_ON_FINISH,       /*!< Occurs when finish a HTTP session */
+    HTTP_EVENT_ON_FINISH,       /*!< Occurs when complete data is received */
     HTTP_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
     HTTP_EVENT_REDIRECT,        /*!< Intercepting HTTP redirects to handle them manually */
 } esp_http_client_event_id_t;
@@ -98,6 +98,17 @@ typedef enum {
 typedef esp_err_t (*http_event_handle_cb)(esp_http_client_event_t *evt);
 
 /**
+ * @brief ECDSA curve options for TLS connections
+ */
+typedef enum {
+    ESP_HTTP_CLIENT_ECDSA_CURVE_SECP256R1 = 0,   /*!< Use SECP256R1 curve */
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    ESP_HTTP_CLIENT_ECDSA_CURVE_SECP384R1,       /*!< Use SECP384R1 curve */
+#endif
+    ESP_HTTP_CLIENT_ECDSA_CURVE_MAX,            /*!< to indicate max */
+} esp_http_client_ecdsa_curve_t;
+
+/**
  * @brief HTTP method
  */
 typedef enum {
@@ -146,6 +157,22 @@ typedef enum {
 } esp_http_client_tls_dyn_buf_strategy_t;
 
 /**
+ * @brief HTTP Client states
+ */
+typedef enum {
+    HTTP_STATE_UNINIT = 0,              /*!< HTTP client uninitialized */
+    HTTP_STATE_INIT,                    /*!< HTTP client initialized */
+    HTTP_STATE_CONNECTING,              /*!< HTTP client connecting to server */
+    HTTP_STATE_CONNECTED,               /*!< HTTP client connected to server */
+    HTTP_STATE_REQ_COMPLETE_HEADER,     /*!< HTTP request headers sent */
+    HTTP_STATE_REQ_COMPLETE_DATA,       /*!< HTTP request data sent */
+    HTTP_STATE_RES_COMPLETE_HEADER,     /*!< HTTP response headers received */
+    HTTP_STATE_RES_ON_DATA_START,       /*!< HTTP response data started */
+    HTTP_STATE_RES_COMPLETE_DATA,       /*!< HTTP response data completed */
+    HTTP_STATE_CLOSE                    /*!< HTTP client connection closed */
+} esp_http_state_t;
+
+/**
  * @brief HTTP configuration
  */
 typedef struct {
@@ -178,11 +205,13 @@ typedef struct {
     esp_http_client_proto_ver_t tls_version;         /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool                        use_ecdsa_peripheral;       /*!< Use ECDSA peripheral to use private key. */
-    uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored. */
+    uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
+    uint8_t                     ecdsa_key_efuse_blk_high;   /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
+    esp_http_client_ecdsa_curve_t       ecdsa_curve;        /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 #endif
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
-    int                         timeout_ms;               /*!< Network timeout in milliseconds */
+    int                         timeout_ms;               /*!< Network timeout in milliseconds. 0 defaults to 5 seconds */
     bool                        disable_auto_redirect;    /*!< Disable HTTP automatic redirects */
     int                         max_redirection_count;    /*!< Max number of redirections on receiving HTTP redirect status code, using default value if zero*/
     int                         max_authorization_retries;    /*!< Max connection retries on receiving HTTP unauthorized status code, using default value if zero. Disables authorization retry if -1*/
@@ -266,6 +295,8 @@ typedef enum {
 #define ESP_ERR_HTTP_CONNECTION_CLOSED  (ESP_ERR_HTTP_BASE + 8)     /*!< Read FIN from peer and the connection closed */
 #define ESP_ERR_HTTP_NOT_MODIFIED       (ESP_ERR_HTTP_BASE + 9)     /*!< HTTP 304 Not Modified, no update available */
 #define ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE (ESP_ERR_HTTP_BASE + 10) /*!< HTTP 416 Range Not Satisfiable, requested range in header is incorrect */
+#define ESP_ERR_HTTP_READ_TIMEOUT       (ESP_ERR_HTTP_BASE + 11)    /*!< HTTP data read timeout */
+#define ESP_ERR_HTTP_INCOMPLETE_DATA    (ESP_ERR_HTTP_BASE + 12)    /*!< Incomplete data received, less than Content-Length or last chunk */
 
 /**
  * @brief      Start a HTTP session
@@ -306,8 +337,38 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
  *  - ESP_ERR_HTTP_CONNECTING is timed-out before connection is made
  *  - ESP_ERR_HTTP_WRITE_DATA is timed-out before request fully sent
  *  - ESP_ERR_HTTP_EAGAIN is timed-out before any data was ready
+ *  - ESP_ERR_HTTP_READ_TIMEOUT if read operation times out
+ *  - ESP_ERR_HTTP_INCOMPLETE_DATA if read operation returns less data than expected
+ *  - ESP_ERR_HTTP_CONNECTION_CLOSED if server closes the connection
  */
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
+
+/**
+ * @brief      Prepare HTTP client for a new request
+ *             This function initializes the client state and prepares authentication if needed.
+ *             It should be called before sending a request.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *  - ESP_OK on successful
+ *  - ESP_FAIL on error
+ */
+esp_err_t esp_http_client_prepare(esp_http_client_handle_t client);
+
+/**
+ * @brief      Send HTTP request headers and data
+ *             This function sends the HTTP request line, headers, and any post data to the server.
+ *
+ * @param[in]  client     The esp_http_client handle
+ * @param[in]  write_len  Length of data to write (for POST/PUT requests)
+ *
+ * @return
+ *  - ESP_OK on successful
+ *  - ESP_FAIL on error
+ *  - ESP_ERR_HTTP_WRITE_DATA if write operation fails
+ */
+esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 
 /**
  * @brief       Cancel an ongoing HTTP request. This API closes the current socket and opens a new socket with the same esp_http_client context.
@@ -335,7 +396,8 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
 /**
  * @brief      Set post data, this function must be called before `esp_http_client_perform`.
- *             Note: The data parameter passed to this function is a pointer and this function will not copy the data
+ *             Note: Post data persists between requests and must be cleared manually.
+ *             To avoid post data carryover, set the post data to NULL before starting any subsequent requests.
  *
  * @param[in]  client  The esp_http_client handle
  * @param[in]  data    post data pointer
@@ -382,10 +444,36 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
  * @param[out] value   The header value
  *
  * @return
- *     - ESP_OK
- *     - ESP_FAIL
+ *     - ESP_OK: Header found
+ *     - ESP_ERR_INVALID_ARG: Invalid arguments
+ *     - ESP_ERR_NOT_FOUND: Header not found
  */
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
+
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS || __DOXYGEN__
+/**
+ * @brief Get a response header value by key
+ *        The value parameter will be set to NULL if there is no header which is same as
+ *        the key specified, otherwise the address of header value will be assigned to value parameter.
+ *        This function must be called after `esp_http_client_init`.
+ *
+ * @note Limitations:
+ *       - Only first CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS (default: 10) headers are saved
+ *       - Headers exceeding CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE (default: 128) bytes are discarded
+ *       - Multi-value headers (e.g., Set-Cookie) only retain the last value
+ *       - Headers are case-insensitive for lookup but case-preserving for storage
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[in]  key     The header key
+ * @param[out] value   Pointer to store the header value. This pointer should not be freed by the user.
+ *
+ * @return
+ *     - ESP_OK: Header found
+ *     - ESP_ERR_INVALID_ARG: Invalid arguments
+ *     - ESP_ERR_NOT_FOUND: Header not found
+ */
+esp_err_t esp_http_client_get_response_header(esp_http_client_handle_t client, const char *key, char **value);
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS || __DOXYGEN__
 
 /**
  * @brief      Get http request username.
@@ -644,6 +732,7 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
  */
 int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
 
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE || __DOXYGEN__
 /**
  * @brief      Get http response content range (from header Content-Range)
  *             The returned value is valid only if this function is invoked after
@@ -656,6 +745,7 @@ int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
  *     - Content-Range value as bytes
  */
 int64_t esp_http_client_get_content_range(esp_http_client_handle_t client);
+#endif
 
 /**
  * @brief      Close http connection, still kept all http request resources
@@ -819,6 +909,35 @@ esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, co
  *     - ESP_ERR_INVALID_ARG    If the client or len are NULL
  */
 esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int *len);
+
+/**
+ * @brief      Get the current state of the HTTP client
+ *
+ * @param[in]  client  The HTTP client handle
+ *
+ * @return     Current state of the HTTP client
+ */
+esp_http_state_t esp_http_client_get_state(esp_http_client_handle_t client);
+
+/**
+ * @brief      Check if persistent connection is supported by the server
+ *
+ * @param[in]  client  The HTTP client handle
+ *
+ * @return     true if persistent connection is supported, false otherwise
+ */
+bool esp_http_client_is_persistent_connection(esp_http_client_handle_t client);
+
+/**
+ * @brief       Get the socket from the underlying transport
+ *
+ * @param client The HTTP client handle
+ *
+ * @return
+ *     - -1 if the client is NULL or the transport is not initialized
+ *     - The socket file descriptor if successful
+ */
+int esp_http_client_get_socket(esp_http_client_handle_t client);
 
 #ifdef __cplusplus
 }

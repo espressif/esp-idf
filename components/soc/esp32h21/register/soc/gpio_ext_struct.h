@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -113,23 +113,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ext_filter_ch0_en : R/W; bitpos: [0]; default: 0;
+        /** ext_filter_chn_en : R/W; bitpos: [0]; default: 0;
          *  Glitch Filter channel enable bit.
          */
-        uint32_t ext_filter_ch0_en:1;
-        /** ext_filter_ch0_input_io_num : R/W; bitpos: [5:1]; default: 0;
+        uint32_t ext_filter_chn_en:1;
+        /** ext_filter_chn_input_io_num : R/W; bitpos: [5:1]; default: 0;
          *  Glitch Filter input io number.
          */
-        uint32_t ext_filter_ch0_input_io_num:5;
+        uint32_t ext_filter_chn_input_io_num:5;
         uint32_t reserved_6:2;
-        /** ext_filter_ch0_window_thres : R/W; bitpos: [13:8]; default: 0;
+        /** ext_filter_chn_window_thres : R/W; bitpos: [13:8]; default: 0;
          *  Glitch Filter window threshold.
          */
-        uint32_t ext_filter_ch0_window_thres:6;
-        /** ext_filter_ch0_window_width : R/W; bitpos: [19:14]; default: 0;
+        uint32_t ext_filter_chn_window_thres:6;
+        /** ext_filter_chn_window_width : R/W; bitpos: [19:14]; default: 0;
          *  Glitch Filter window width.
          */
-        uint32_t ext_filter_ch0_window_width:6;
+        uint32_t ext_filter_chn_window_width:6;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -145,12 +145,12 @@ typedef union {
         /** ext_etm_ch0_event_sel : R/W; bitpos: [4:0]; default: 0;
          *  Etm event channel select gpio.
          */
-        uint32_t ext_etm_ch0_event_sel:5;
+        uint32_t ext_etm_chn_event_sel:5;
         uint32_t reserved_5:2;
         /** ext_etm_ch0_event_en : R/W; bitpos: [7]; default: 0;
          *  Etm event send enable bit.
          */
-        uint32_t ext_etm_ch0_event_en:1;
+        uint32_t ext_etm_chn_event_en:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -556,25 +556,31 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
+typedef struct gpio_sd_dev_t {
+    volatile gpio_ext_sigmadelta_misc_reg_t misc;
+    volatile gpio_ext_sigmadeltan_reg_t channel[4];
+} gpio_sd_dev_t;
+
+typedef struct {
+    volatile gpio_ext_glitch_filter_chn_reg_t ext_glitch_filter_chn[8];
+} gpio_glitch_filter_dev_t;
+
+typedef struct {
+    volatile gpio_ext_etm_event_chn_cfg_reg_t etm_event_chn_cfg[8];
+    uint32_t reserved_080[8];
+    volatile uint32_t etm_task_pn_cfg[6];
+} gpio_etm_dev_t;
 
 typedef struct {
     uint32_t reserved_000;
-    volatile gpio_ext_sigmadelta_misc_reg_t ext_sigmadelta_misc;
-    volatile gpio_ext_sigmadeltan_reg_t ext_sigmadeltan[4];
+    volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_018[16];
     volatile gpio_ext_pad_comp_config_0_reg_t ext_pad_comp_config_0;
     volatile gpio_ext_pad_comp_filter_0_reg_t ext_pad_comp_filter_0;
     uint32_t reserved_060[30];
-    volatile gpio_ext_glitch_filter_chn_reg_t ext_glitch_filter_chn[8];
+    volatile gpio_glitch_filter_dev_t glitch_filter;
     uint32_t reserved_0f8[8];
-    volatile gpio_ext_etm_event_chn_cfg_reg_t ext_etm_event_chn_cfg[8];
-    uint32_t reserved_138[8];
-    volatile gpio_ext_etm_task_p0_cfg_reg_t ext_etm_task_p0_cfg;
-    volatile gpio_ext_etm_task_p1_cfg_reg_t ext_etm_task_p1_cfg;
-    volatile gpio_ext_etm_task_p2_cfg_reg_t ext_etm_task_p2_cfg;
-    volatile gpio_ext_etm_task_p3_cfg_reg_t ext_etm_task_p3_cfg;
-    volatile gpio_ext_etm_task_p4_cfg_reg_t ext_etm_task_p4_cfg;
-    volatile gpio_ext_etm_task_p5_cfg_reg_t ext_etm_task_p5_cfg;
+    volatile gpio_etm_dev_t etm;
     uint32_t reserved_170[24];
     volatile gpio_ext_int_raw_reg_t ext_int_raw;
     volatile gpio_ext_int_st_reg_t ext_int_st;
@@ -585,6 +591,9 @@ typedef struct {
     volatile gpio_ext_version_reg_t ext_version;
 } gpio_ext_dev_t;
 
+extern gpio_sd_dev_t SDM;
+extern gpio_glitch_filter_dev_t GLITCH_FILTER;
+extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
 
 #ifndef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +55,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
  * @return
  *     - The number of bytes read from USB_SERIAL FIFO
  */
-int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_wait);
+int usb_serial_jtag_read_bytes(void* buf, uint32_t length, uint32_t ticks_to_wait);
 
 /**
  * @brief Send data to the USB-UART port from a given buffer and length,
@@ -72,7 +70,7 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
  * @return
  *     - The number of bytes pushed to the TX FIFO
  */
-int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait);
+int usb_serial_jtag_write_bytes(const void* src, size_t size, uint32_t ticks_to_wait);
 
 /**
  * @brief Blocks until all data written using `usb_serial_jtag_write_bytes` is sent to the host, or until timeout.
@@ -81,7 +79,7 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
  *
  * @return ESP_OK when flushed, ESP_ERR_TIMEOUT on timeout.
  */
-esp_err_t usb_serial_jtag_wait_tx_done(TickType_t ticks_to_wait);
+esp_err_t usb_serial_jtag_wait_tx_done(uint32_t ticks_to_wait);
 
 /**
  * @brief Uninstall USB-SERIAL-JTAG driver.

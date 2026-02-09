@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -66,32 +66,32 @@ static esp_ble_ext_scan_params_t ext_scan_params = {
 };
 
 const esp_ble_conn_params_t phy_1m_conn_params = {
-    .scan_interval = 0x40,
-    .scan_window = 0x40,
+    .scan_interval = ESP_BLE_GAP_SCAN_ITVL_MS(40),
+    .scan_window = ESP_BLE_GAP_SCAN_WIN_MS(40),
     .interval_min = 320,
     .interval_max = 320,
     .latency = 0,
-    .supervision_timeout = 600,
+    .supervision_timeout = ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(6000),
     .min_ce_len  = 0,
     .max_ce_len = 0,
 };
 const esp_ble_conn_params_t phy_2m_conn_params = {
-    .scan_interval = 0x40,
-    .scan_window = 0x40,
+    .scan_interval = ESP_BLE_GAP_SCAN_ITVL_MS(40),
+    .scan_window = ESP_BLE_GAP_SCAN_WIN_MS(40),
     .interval_min = 320,
     .interval_max = 320,
     .latency = 0,
-    .supervision_timeout = 600,
+    .supervision_timeout = ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(6000),
     .min_ce_len  = 0,
     .max_ce_len = 0,
 };
 const esp_ble_conn_params_t phy_coded_conn_params = {
-    .scan_interval = 0x40,
-    .scan_window = 0x40,
+    .scan_interval = ESP_BLE_GAP_SCAN_ITVL_MS(40),
+    .scan_window = ESP_BLE_GAP_SCAN_WIN_MS(40),
     .interval_min = 320, // 306-> 362Kbps
     .interval_max = 320,
     .latency = 0,
-    .supervision_timeout = 600,
+    .supervision_timeout = ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(6000),
     .min_ce_len  = 0,
     .max_ce_len = 0,
 };
@@ -589,7 +589,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

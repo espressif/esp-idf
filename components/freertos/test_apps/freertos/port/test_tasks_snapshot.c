@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_cpu.h"
 #include "esp_rom_sys.h"
 #include "unity.h"
@@ -126,7 +126,7 @@ static void teardown(TaskHandle_t *task_list, int num_tasks, UBaseType_t old_pri
     // Signal to the other core that it can exit the loop
     stop_flag = true;
 #endif // !CONFIG_FREERTOS_UNICORE
-    // Reenable interrupts on the current core.
+    // Re-enable interrupts on the current core.
     taskENABLE_INTERRUPTS();
 
     for (int i = 0; i < num_tasks; i++) {

@@ -9,7 +9,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_err.h"
 #include "esp_private/esp_system_attr.h"
 #include "esp_private/esp_cpu_internal.h"

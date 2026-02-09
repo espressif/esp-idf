@@ -1,24 +1,25 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-import os.path
-from typing import Tuple
+from pathlib import Path
 
 import pexpect
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+
+CUR_DIR = Path(__file__).parent.resolve()
+
+
 # Case 1: gatt client and gatt server test
 # EXAMPLE_CI_ID=3
-
-
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
+            f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}',
             'name',
             'y',
         ),
@@ -28,7 +29,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target']
 )
-def test_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_gatt_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     gatt_client = dut[1]
     gatt_server = dut[0]
     gatt_client_addr = (
@@ -61,7 +62,7 @@ def test_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: gatt client and gatt server test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=3
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -70,14 +71,14 @@ def test_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
+            f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}',
             'esp32c2_xtal26m',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     gatt_client = dut[1]
     gatt_server = dut[0]
     gatt_client_addr = (
@@ -110,13 +111,13 @@ def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> N
 
 # Case 3: gatt security server and gatt security client test
 # EXAMPLE_CI_ID=5
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "gatt_security_server")}|{os.path.join(os.path.dirname(__file__), "gatt_security_client")}',
+            f'{str(CUR_DIR / "gatt_security_server")}|{str(CUR_DIR / "gatt_security_client")}',
             'name',
             'y',
         ),
@@ -126,7 +127,7 @@ def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> N
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target']
 )
-def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: Tuple) -> None:
+def test_gatt_security_func(app_path: str, dut: tuple[IdfDut, IdfDut], target: tuple) -> None:
     gatt_security_client = dut[1]
     gatt_security_server = dut[0]
     gatt_security_client_addr = (
@@ -143,9 +144,9 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
     gatt_security_client.expect_exact('Scanning start successfully', timeout=30)
     gatt_security_client.expect_exact('Device found BE', timeout=30)
     # can not get rpa_address, so not check server address
-    gatt_security_client.expect_exact(f'Connected, conn_id 0, remote ', timeout=30)
+    gatt_security_client.expect_exact('Connected, conn_id 0, remote ', timeout=30)
     if target == ('esp32', 'esp32'):
-        gatt_security_server.expect_exact(f'Connected, conn_id 0, remote', timeout=30)
+        gatt_security_server.expect_exact('Connected, conn_id 0, remote', timeout=30)
     else:
         gatt_security_server.expect_exact(f'Connected, conn_id 0, remote {gatt_security_client_addr}', timeout=30)
     gatt_security_client.expect_exact('Key exchanged, key_type ESP_LE_KEY_PID', timeout=30)
@@ -158,12 +159,12 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
     gatt_security_server.expect_exact('Key exchanged, key_type ESP_LE_KEY_LID', timeout=30)
     gatt_security_server.expect_exact('Key exchanged, key_type ESP_LE_KEY_PID', timeout=30)
     if target == ('esp32', 'esp32'):
-        gatt_security_server.expect_exact(f'Authentication complete, addr_type 1, addr ', timeout=30)
+        gatt_security_server.expect_exact('Authentication complete, addr_type 1, addr ', timeout=30)
     else:
         gatt_security_server.expect_exact(
             f'Authentication complete, addr_type 0, addr {gatt_security_client_addr}', timeout=30
         )
-    gatt_security_client.expect_exact(f'Authentication complete, addr_type 1, addr ', timeout=30)
+    gatt_security_client.expect_exact('Authentication complete, addr_type 1, addr ', timeout=30)
     gatt_security_server.expect_exact('Pairing successfully', timeout=30)
     gatt_security_server.expect_exact('Bonded devices number 1', timeout=30)
     gatt_security_client.expect_exact('Pairing successfully', timeout=30)
@@ -178,7 +179,7 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
 
 # Case 4: gatt security server and gatt security client test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=5
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -187,14 +188,14 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "gatt_security_server")}|{os.path.join(os.path.dirname(__file__), "gatt_security_client")}',
+            f'{str(CUR_DIR / "gatt_security_server")}|{str(CUR_DIR / "gatt_security_client")}',
             'esp32c2_xtal26m',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     gatt_security_client = dut[1]
     gatt_security_server = dut[0]
     gatt_security_client_addr = (
@@ -211,7 +212,7 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
     gatt_security_client.expect_exact('Scanning start successfully', timeout=30)
     gatt_security_client.expect_exact('Device found BE', timeout=30)
     # can not get rpa_address, so not check server address
-    gatt_security_client.expect_exact(f'Connected, conn_id 0, remote ', timeout=30)
+    gatt_security_client.expect_exact('Connected, conn_id 0, remote ', timeout=30)
     gatt_security_server.expect_exact(f'Connected, conn_id 0, remote {gatt_security_client_addr}', timeout=30)
     gatt_security_client.expect_exact('Key exchanged, key_type ESP_LE_KEY_PID', timeout=30)
     gatt_security_client.expect_exact('Key exchanged, key_type ESP_LE_KEY_LENC', timeout=30)
@@ -225,7 +226,7 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
     gatt_security_server.expect_exact(
         f'Authentication complete, addr_type 0, addr {gatt_security_client_addr}', timeout=30
     )
-    gatt_security_client.expect_exact(f'Authentication complete, addr_type 1, addr ', timeout=30)
+    gatt_security_client.expect_exact('Authentication complete, addr_type 1, addr ', timeout=30)
     gatt_security_server.expect_exact('Pairing successfully', timeout=30)
     gatt_security_server.expect_exact('Bonded devices number 1', timeout=30)
     gatt_security_client.expect_exact('Pairing successfully', timeout=30)
@@ -239,13 +240,13 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
 
 
 # Case 5: ble ibeacon test
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}|{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}',
+            f'{str(CUR_DIR / "ble_ibeacon")}|{str(CUR_DIR / "ble_ibeacon")}',
             'sender|receiver',
             'y',
         ),
@@ -255,7 +256,7 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target']
 )
-def test_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     ibeacon_sender = dut[0]
     ibeacon_receiver = dut[1]
 
@@ -277,7 +278,7 @@ def test_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 5: ble ibeacon test for ESP32C2 26mhz xtal
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -286,14 +287,14 @@ def test_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}|{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}',
+            f'{str(CUR_DIR / "ble_ibeacon")}|{str(CUR_DIR / "ble_ibeacon")}',
             'esp32c2_xtal26m_sender|esp32c2_xtal26m_receiver',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     ibeacon_sender = dut[0]
     ibeacon_receiver = dut[1]
 
@@ -316,13 +317,13 @@ def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) ->
 
 # Case 6: gatt client and gatt server config test
 # EXAMPLE_CI_ID=4
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
+            f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}',
             'cfg_test',
             'y',
         ),
@@ -332,7 +333,7 @@ def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) ->
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target']
 )
-def test_gatt_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_gatt_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     gatt_client = dut[1]
     gatt_server = dut[0]
     gatt_client_addr = (
@@ -365,7 +366,7 @@ def test_gatt_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 7: gatt client and gatt server config test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=3
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -374,14 +375,14 @@ def test_gatt_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
+            f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}',
             'esp32c2_cfg_test',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_gatt_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_gatt_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     gatt_client = dut[1]
     gatt_server = dut[0]
     gatt_client_addr = (
@@ -414,9 +415,7 @@ def test_c2_26mhz_xtal_gatt_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut
 
 # Case 8: BLE init deinit loop test
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'config, app_path', [('init_deinit', f'{os.path.join(os.path.dirname(__file__), "gatt_client")}')], indirect=True
-)
+@pytest.mark.parametrize('config, app_path', [('init_deinit', f'{str(CUR_DIR / "gatt_client")}')], indirect=True)
 @idf_parametrize(
     'target', ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32'], indirect=['target']
 )
@@ -431,12 +430,12 @@ def test_bluedroid_host_init_deinit(dut: Dut) -> None:
 
 
 # # Case 9: BLE init deinit loop test for ESP32C2 26mhz xtal
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'baud, app_path, config',
     [
-        ('74880', f'{os.path.join(os.path.dirname(__file__), "gatt_client")}', 'esp32c2_init_deinit'),
+        ('74880', f'{str(CUR_DIR / "gatt_client")}', 'esp32c2_init_deinit'),
     ],
     indirect=True,
 )

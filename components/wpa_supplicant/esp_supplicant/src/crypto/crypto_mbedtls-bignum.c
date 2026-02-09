@@ -3,10 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
+#include "mbedtls/esp_mbedtls_random.h"
 #endif
 
 #include "utils/includes.h"
@@ -15,11 +16,7 @@
 #include "random.h"
 #include "sha256.h"
 #include "mbedtls/pk.h"
-
-static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
-{
-    return random_get_bytes(buf, len);
-}
+#include "mbedtls/psa_util.h"
 
 struct crypto_bignum *crypto_bignum_init(void)
 {
@@ -41,10 +38,12 @@ struct crypto_bignum *crypto_bignum_init_set(const u8 *buf, size_t len)
         return NULL;
     }
 
+    mbedtls_mpi_init(bn);
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(bn, buf, len));
     return (struct crypto_bignum *) bn;
 
 cleanup:
+    mbedtls_mpi_free(bn);
     os_free(bn);
     return NULL;
 }
@@ -220,7 +219,7 @@ int crypto_bignum_is_odd(const struct crypto_bignum *a)
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
     return ((mbedtls_mpi_random((mbedtls_mpi *) r, 0, (const mbedtls_mpi *) m,
-                                crypto_rng_wrapper, NULL) != 0) ? -1 : 0);
+                                mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) != 0) ? -1 : 0);
 }
 
 int crypto_bignum_legendre(const struct crypto_bignum *a,
@@ -254,31 +253,6 @@ cleanup:
     mbedtls_mpi_free(&tmp);
     mbedtls_mpi_free(&exp);
     return res;
-}
-
-int crypto_bignum_to_string(const struct crypto_bignum *a,
-                            u8 *buf, size_t buflen, size_t padlen)
-{
-    int num_bytes, offset;
-    size_t outlen;
-
-    if (padlen > buflen) {
-        return -1;
-    }
-
-    num_bytes = mbedtls_mpi_size((mbedtls_mpi *) a);
-
-    if (padlen > (size_t) num_bytes) {
-        offset = padlen - num_bytes;
-    } else {
-        offset = 0;
-    }
-
-    os_memset(buf, 0, offset);
-    mbedtls_mpi_write_string((mbedtls_mpi *) a, 16, (char *)(buf + offset),
-                             mbedtls_mpi_size((mbedtls_mpi *)a), &outlen);
-
-    return outlen;
 }
 
 int crypto_bignum_addmod(const struct crypto_bignum *a,

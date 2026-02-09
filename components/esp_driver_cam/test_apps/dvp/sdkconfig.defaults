@@ -2,3 +2,4 @@
 # Espressif IoT Development Framework (ESP-IDF) 5.4.0 Project Minimal Configuration
 #
 CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_CAM_CTRL_SPI_ENABLE=n

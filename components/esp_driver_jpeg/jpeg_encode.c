@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,6 +126,12 @@ esp_err_t jpeg_new_encoder_engine(const jpeg_encode_engine_cfg_t *enc_eng_cfg, j
     encoder_engine->header_info = (jpeg_enc_header_info_t*)heap_caps_calloc(1, sizeof(jpeg_enc_header_info_t), JPEG_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(encoder_engine->header_info, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg header information structure");
 
+#if JPEG_USE_RETENTION_LINK
+    if (enc_eng_cfg->flags.allow_pd != 0) {
+        jpeg_create_retention_module(encoder_engine->codec_base);
+    }
+#endif // JPEG_USE_RETENTION_LINK
+
     *ret_encoder = encoder_engine;
     return ESP_OK;
 err:
@@ -165,8 +171,6 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     jpeg_enc_format_hb_t best_hb_idx = 0;
 
     encoder_engine->picture_format = encode_cfg->src_type;
-    color_space_pixel_format_t picture_format;
-    picture_format.color_type_id = encoder_engine->picture_format;
 
     switch (encode_cfg->src_type) {
     case JPEG_ENCODE_IN_FORMAT_RGB888:
@@ -185,6 +189,16 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
         encoder_engine->color_space = JPEG_ENC_SRC_YUV422;
         best_hb_idx = JPEG_ENC_SRC_YUV422_HB;
         break;
+#if !(CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4))
+    case JPEG_ENCODE_IN_FORMAT_YUV444:
+        encoder_engine->color_space = JPEG_ENC_SRC_YUV444;
+        best_hb_idx = JPEG_ENC_SRC_YUV444_HB;
+        break;
+    case JPEG_ENCODE_IN_FORMAT_YUV420:
+        encoder_engine->color_space = JPEG_ENC_SRC_YUV420;
+        best_hb_idx = JPEG_ENC_SRC_YUV420_HB;
+        break;
+#endif
     default:
         ESP_LOGE(TAG, "wrong, we don't support encode from such format.");
         ret = ESP_ERR_NOT_SUPPORTED;
@@ -237,7 +251,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
 
     // 2D direction
     memset(encoder_engine->txlink, 0, sizeof(dma2d_descriptor_t));
-    s_cfg_desc(encoder_engine, encoder_engine->txlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value(picture_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, encoder_engine->header_info->origin_v, encoder_engine->header_info->origin_h, raw_buffer, NULL);
+    s_cfg_desc(encoder_engine, encoder_engine->txlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value(encoder_engine->picture_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, encoder_engine->header_info->origin_v, encoder_engine->header_info->origin_h, raw_buffer, NULL);
 
     ret = esp_cache_msync((void*)raw_buffer, inbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     assert(ret == ESP_OK);
@@ -496,15 +510,14 @@ static void s_cfg_desc(jpeg_encoder_handle_t encoder_engine, dma2d_descriptor_t 
     dsc->next       = next_dsc;
     esp_err_t ret = esp_cache_msync((void*)dsc, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(ret == ESP_OK);
+    (void)ret;
 }
 
 static void s_jpeg_enc_config_picture_color_space(jpeg_encoder_handle_t encoder_engine)
 {
     jpeg_hal_context_t *hal = &encoder_engine->codec_base->hal;
-    color_space_pixel_format_t picture_format;
     jpeg_ll_config_picture_pixel_format(hal->dev, encoder_engine->color_space);
-    picture_format.color_type_id = encoder_engine->picture_format;
-    encoder_engine->bytes_per_pixel = color_hal_pixel_format_get_bit_depth(picture_format);
+    encoder_engine->bytes_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(encoder_engine->picture_format);
     if (encoder_engine->color_space == JPEG_ENC_SRC_GRAY) {
         encoder_engine->header_info->num_components = 1;
     } else {

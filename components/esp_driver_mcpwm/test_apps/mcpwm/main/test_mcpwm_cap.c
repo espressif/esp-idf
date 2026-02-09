@@ -9,7 +9,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "esp_private/esp_clk.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_sync.h"
@@ -22,12 +22,12 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
     mcpwm_capture_timer_config_t cap_timer_config = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
     };
-    int total_cap_timers = SOC_MCPWM_GROUPS * SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP;
+    int total_cap_timers = MCPWM_LL_GET(GROUP_NUM) * MCPWM_LL_GET(CAPTURE_TIMERS_PER_GROUP);
     mcpwm_cap_timer_handle_t cap_timers[total_cap_timers];
     int k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         cap_timer_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(CAPTURE_TIMERS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timers[k++]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_capture_timer(&cap_timer_config, &cap_timers[0]));
@@ -39,9 +39,9 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
         .prescale = 2,
         .flags.pos_edge = true,
     };
-    mcpwm_cap_channel_handle_t cap_channels[total_cap_timers][SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER];
+    mcpwm_cap_channel_handle_t cap_channels[total_cap_timers][MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER)];
     for (int i = 0; i < total_cap_timers; i++) {
-        for (int j = 0; j < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER); j++) {
             TEST_ESP_OK(mcpwm_new_capture_channel(cap_timers[i], &cap_chan_config, &cap_channels[i][j]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_capture_channel(cap_timers[i], &cap_chan_config, &cap_channels[i][0]));
@@ -49,7 +49,7 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
 
     printf("uninstall mcpwm capture channels and timers\r\n");
     for (int i = 0; i < total_cap_timers; i++) {
-        for (int j = 0; j < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER); j++) {
             TEST_ESP_OK(mcpwm_del_capture_channel(cap_channels[i][j]));
         }
         TEST_ESP_OK(mcpwm_del_capture_timer(cap_timers[i]));

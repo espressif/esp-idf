@@ -26,7 +26,7 @@
 #include "esp_pau.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep_modem";
+ESP_LOG_ATTR_TAG(TAG, "sleep_modem");
 
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
 static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
@@ -39,7 +39,7 @@ static _lock_t s_modem_prepare_lock;
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
 #if CONFIG_MAC_BB_PD
-#define MAC_BB_POWER_DOWN_CB_NO     (3)
+#define MAC_BB_POWER_DOWN_CB_NO     (4)
 #define MAC_BB_POWER_UP_CB_NO       (3)
 
 static DRAM_ATTR mac_bb_power_down_cb_t s_mac_bb_power_down_cb[MAC_BB_POWER_DOWN_CB_NO];
@@ -173,10 +173,8 @@ __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
 
 void IRAM_ATTR sleep_modem_wifi_do_phy_retention(bool restore)
 {
-    if (restore) {
-        pau_regdma_trigger_modem_link_restore();
-    } else {
-        pau_regdma_trigger_modem_link_backup();
+    sleep_retention_do_phy_retention(!restore);
+    if (!restore) {
         s_sleep_modem.wifi.modem_state_phy_done = 1;
     }
 }
@@ -195,7 +193,7 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 
 bool modem_domain_pd_allowed(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && SOC_PAU_SUPPORTED
     const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
     const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
 

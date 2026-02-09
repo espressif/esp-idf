@@ -6,3 +6,4 @@ CONFIG_ESP_TASK_WDT_INIT=n
 
 # SMP FreeRTOS currently does not support power management IDF-4997
 CONFIG_FREERTOS_SMP=n
+CONFIG_PM_PROFILING=y

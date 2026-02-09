@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,14 +16,16 @@
 #include "esp_attr.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
+#include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_attr.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // CPLL frequency option, in 360/400MHz. Zero if CPLL is not enabled.
 static int s_cur_cpll_freq = 0;
@@ -99,6 +101,18 @@ void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
     clk_ll_rtc_slow_set_src(clk_src);
     esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
+#ifndef BOOTLOADER_BUILD
+    if (clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+    }
+    if (clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_ON);
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
+    }
+#endif
 }
 
 soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void)
@@ -166,7 +180,7 @@ static void rtc_clk_cpll_configure(soc_xtal_freq_t xtal_freq, int cpll_freq)
  * If to_default is set, then will configure CPU - MEM - SYS - APB frequencies back to power-on reset configuration (40 - 20 - 20 - 10)
  * If to_default is not set, then will configure to 40 - 40 - 40 - 40
  */
-static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
+static FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
 {
     // let f_cpu = f_mem = f_sys = f_apb
     uint32_t mem_divider = 1;
@@ -224,6 +238,7 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
     uint32_t mem_divider = 1;
     uint32_t sys_divider = 1; // We are not going to change this
     uint32_t apb_divider = 1;
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     switch (cpu_freq_mhz) {
     case 360:
         mem_divider = 2;
@@ -244,6 +259,28 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
         // To avoid such case, we will strictly do abort here.
         abort();
     }
+#else
+    switch (cpu_freq_mhz) {
+    case 400:
+        mem_divider = 2;
+        apb_divider = 2;
+        break;
+    case 200:
+        mem_divider = 1;
+        apb_divider = 2;
+        break;
+    case 100:
+        mem_divider = 1;
+        apb_divider = 1;
+        break;
+    default:
+        // Unsupported configuration
+        // This is dangerous to modify dividers. Hardware could automatically correct the divider, and it won't be
+        // reflected to the registers. Therefore, you won't even be able to calculate out the real mem_clk, apb_clk freq.
+        // To avoid such case, we will strictly do abort here.
+        abort();
+    }
+#endif
 
     // If it's upscaling, the divider of MEM/SYS/APB needs to be increased, to avoid illegal intermediate states,
     // the clock divider should be updated in the order from the APB_CLK to CPU_CLK.
@@ -289,6 +326,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
 
     // Keep default CPLL at 360MHz
     uint32_t xtal_freq = (uint32_t)rtc_clk_xtal_freq_get();
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if (freq_mhz <= xtal_freq && freq_mhz != 0) {
         divider.integer = xtal_freq / freq_mhz;
         real_freq_mhz = (xtal_freq + divider.integer / 2) / divider.integer; /* round */
@@ -296,7 +334,6 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
             // no suitable divider
             return false;
         }
-
         source_freq_mhz = xtal_freq;
         source = SOC_CPU_CLK_SRC_XTAL;
     } else if (freq_mhz == 90) {
@@ -314,6 +351,30 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         source = SOC_CPU_CLK_SRC_CPLL;
         source_freq_mhz = CLK_LL_PLL_360M_FREQ_MHZ;
         divider.integer = 1;
+    } else {
+        // unsupported frequency
+        return false;
+    }
+#else
+    if (freq_mhz <= xtal_freq && freq_mhz != 0) {
+        divider.integer = xtal_freq / freq_mhz;
+        real_freq_mhz = (xtal_freq + divider.integer / 2) / divider.integer; /* round */
+        if (real_freq_mhz != freq_mhz) {
+            // no suitable divider
+            return false;
+        }
+        source_freq_mhz = xtal_freq;
+        source = SOC_CPU_CLK_SRC_XTAL;
+    } else if (freq_mhz == 100) {
+        real_freq_mhz = freq_mhz;
+        source = SOC_CPU_CLK_SRC_CPLL;
+        source_freq_mhz = CLK_LL_PLL_400M_FREQ_MHZ;
+        divider.integer = 4;
+    } else if (freq_mhz == 200) {
+        real_freq_mhz = freq_mhz;
+        source = SOC_CPU_CLK_SRC_CPLL;
+        source_freq_mhz = CLK_LL_PLL_400M_FREQ_MHZ;
+        divider.integer = 2;
     } else if (freq_mhz == 400) {
         // If CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ selects 400MHz, then at app startup stage will need a CPLL calibration to raise its freq from 360MHz to 400MHz
         real_freq_mhz = freq_mhz;
@@ -324,6 +385,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         // unsupported frequency
         return false;
     }
+#endif
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
         .div = divider,
@@ -433,7 +495,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_cpll_disable();
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
@@ -448,7 +510,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
     s_cur_cpll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }
 
-soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+FORCE_IRAM_ATTR soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {

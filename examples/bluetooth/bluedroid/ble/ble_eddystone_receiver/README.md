@@ -5,10 +5,42 @@
 
 This example demonstrates Eddystone-compatible BLE scanning of eddystone frame, including UID and URL.
 
-Eddystone is an open beacon protocol specification from Google aimed at improving “proximity-based experiences”
+Eddystone is an open beacon protocol specification from Google aimed at improving "proximity-based experiences"
 with support for both Android and iOS smart device platforms.
 
 Learn more on [Beacons](https://developers.google.com/nearby/notifications/get-started) and [Eddystone](https://github.com/google/eddystone).
+
+## Flow Diagram
+
+```
+    ┌──────────────────┐                           ┌──────────────────┐
+    │ Eddystone Sender │                           │Eddystone Receiver│
+    │   (Advertiser)   │                           │   (this example) │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  Broadcasting Eddystone Frames               │  1. Initialize BLE
+             │                                              │  2. Start Scanning
+             │                                              │
+             │  ─────────── Scanning ───────────            │
+             │                                              │
+             │     Eddystone UID Frame                      │
+             │  ═══════════════════════════════════════════>│
+             │                                              │  3. Detect Eddystone
+             │                                              │  4. Parse UID Frame:
+             │                                              │     - Namespace ID
+             │                                              │     - Instance ID
+             │                                              │     - RSSI
+             │                                              │
+             │     Eddystone URL Frame                      │
+             │  ═══════════════════════════════════════════>│
+             │                                              │  5. Parse URL Frame:
+             │                                              │     - Decode URL
+             │                                              │     - TX Power
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │ Eddystone Sender │                           │Eddystone Receiver│
+    └──────────────────┘                           └──────────────────┘
+```
 
 ## How to Use Example
 

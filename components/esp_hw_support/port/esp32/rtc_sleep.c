@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,14 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/i2s_periph.h"
-#include "soc/timer_periph.h"
+#include "soc/i2s_reg.h"
 #include "soc/bb_reg.h"
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
 #include "hal/rtc_cntl_ll.h"
+#include "hal/rwdt_ll.h"
 #include "esp_rom_sys.h"
 
 #define MHZ (1000000)
@@ -122,6 +122,12 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
     } else {
         // make sure voltage is raised when RTC 8MCLK is enabled
         out_config->dbias_follow_8m = 1;
+    }
+
+    if (sleep_flags & RTC_SLEEP_USE_RTC_WDT) {
+        out_config->rtc_wdt_en = 1;
+    } else {
+        out_config->rtc_wdt_en = 0;
     }
 }
 
@@ -238,6 +244,11 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
     }
 
+    /* enable rtc wdt during sleep */
+    rwdt_ll_write_protect_disable(RWDT_DEV_GET());
+    rwdt_ll_set_pause_in_sleep_en(RWDT_DEV_GET(), !cfg.rtc_wdt_en);
+    rwdt_ll_write_protect_enable(RWDT_DEV_GET());
+
     /* enable VDDSDIO control by state machine */
     REG_CLR_BIT(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_FORCE);
     REG_SET_FIELD(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_PD_EN, cfg.vddsdio_pd_en);
@@ -266,7 +277,13 @@ static uint32_t rtc_sleep_finish(void);
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
-    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+    /* In ESP32, only GPIO and SDIO can be as reject source during light sleep. */
+    if (reject_opt & RTC_GPIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_GPIO_REJECT_EN);
+    };
+    if (reject_opt & RTC_SDIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SDIO_REJECT_EN);
+    };
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);
@@ -288,7 +305,13 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
-    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+    /* In ESP32, only GPIO and SDIO can be as reject source during deep sleep. */
+    if (reject_opt & RTC_GPIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_GPIO_REJECT_EN);
+    };
+    if (reject_opt & RTC_SDIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SDIO_REJECT_EN);
+    };
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);

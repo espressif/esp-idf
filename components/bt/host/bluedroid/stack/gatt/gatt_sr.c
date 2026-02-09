@@ -405,7 +405,7 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
     tGATT_STATUS    ret_code = GATT_SUCCESS;
     UNUSED(trans_id);
 
-    GATT_TRACE_DEBUG("gatt_sr_process_app_rsp gatt_if=%d\n", gatt_if);
+    GATT_TRACE_DEBUG("gatt_sr_process_app_rsp gatt_if=%d opcode=%x\n", gatt_if, op_code);
 
     gatt_sr_update_cback_cnt(p_tcb, gatt_if, FALSE, FALSE);
 
@@ -479,7 +479,13 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
     BOOLEAN is_need_dequeue_sr_cmd = FALSE;
     tGATT_PREPARE_WRITE_RECORD *prepare_record = NULL;
     tGATT_PREPARE_WRITE_QUEUE_DATA * queue_data = NULL;
-    UNUSED(len);
+
+    /* Fix: Validate minimum length (flags: 1 byte) */
+    if (len < 1) {
+        GATT_TRACE_ERROR("invalid exec write req len: %d", len);
+        gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, op_code, 0, FALSE);
+        return;
+    }
 
 #if GATT_CONFORMANCE_TESTING == TRUE
     if (gatt_cb.enable_err_rsp && gatt_cb.req_op_code == op_code) {
@@ -1234,10 +1240,13 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
 
     switch (op_code) {
     case GATT_SIGN_CMD_WRITE:
-        if (op_code == GATT_SIGN_CMD_WRITE) {
-            GATT_TRACE_DEBUG("Write CMD with data signing" );
-            len -= GATT_AUTH_SIGN_LEN;
+        /* Fix: Validate length before subtraction to prevent underflow */
+        if (len < GATT_AUTH_SIGN_LEN) {
+            GATT_TRACE_ERROR("signed write len too short: %d", len);
+            return;  /* GATT_SIGN_CMD_WRITE has no response */
         }
+        GATT_TRACE_DEBUG("Write CMD with data signing" );
+        len -= GATT_AUTH_SIGN_LEN;
     /* fall through */
     case GATT_CMD_WRITE:
     case GATT_REQ_WRITE:
@@ -1473,7 +1482,13 @@ static void gatts_process_read_req(tGATT_TCB *p_tcb, tGATT_SR_REG *p_rcb, UINT8 
     UINT8        sec_flag, key_size, *p;
     UINT16       offset = 0, value_len = 0;
 
-    UNUSED (len);
+    /* Fix: Validate length for GATT_REQ_READ_BLOB (needs offset: 2 bytes) */
+    if (op_code == GATT_REQ_READ_BLOB && len < 2) {
+        GATT_TRACE_ERROR("invalid read blob req len: %d", len);
+        gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, op_code, handle, FALSE);
+        return;
+    }
+
     if ((p_msg =  (BT_HDR *)osi_calloc(buf_len)) == NULL) {
         GATT_TRACE_ERROR("gatts_process_find_info failed. no resources.\n");
 
@@ -1635,33 +1650,6 @@ static void gatts_proc_srv_chg_ind_ack(tGATT_TCB *p_tcb )
 
 /*******************************************************************************
 **
-** Function         gatts_chk_pending_ind
-**
-** Description      This function check any pending indication needs to be sent if
-**                  there is a pending indication then sent the indication
-**
-** Returns          void
-**
-*******************************************************************************/
-static void gatts_chk_pending_ind(tGATT_TCB *p_tcb )
-{
-#if (GATTS_INCLUDED == TRUE)
-    tGATT_VALUE *p_buf = (tGATT_VALUE *)fixed_queue_try_peek_first(p_tcb->pending_ind_q);
-    GATT_TRACE_DEBUG("gatts_chk_pending_ind");
-
-    if (p_buf ) {
-        GATTS_HandleValueIndication (p_buf->conn_id,
-                                     p_buf->handle,
-                                     p_buf->len,
-                                     p_buf->value);
-        osi_free(fixed_queue_try_remove_from_queue(p_tcb->pending_ind_q,
-                                                      p_buf));
-    }
-#endif  ///GATTS_INCLUDED == TRUE
-}
-
-/*******************************************************************************
-**
 ** Function         gatts_proc_ind_ack
 **
 ** Description      This function process the Indication ack
@@ -1686,7 +1674,6 @@ static BOOLEAN gatts_proc_ind_ack(tGATT_TCB *p_tcb, UINT16 ack_handle)
 #endif /* GATTS_ROBUST_CACHING_ENABLED */
     }
 
-    gatts_chk_pending_ind(p_tcb);
     return continue_processing;
 }
 
@@ -1827,6 +1814,7 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
 {
     /* there is pending command, discard this one */
     if (!gatt_sr_cmd_empty(p_tcb) && op_code != GATT_HANDLE_VALUE_CONF) {
+        GATT_TRACE_WARNING("%s discard command opcode=%02x", __func__, op_code);
         return;
     }
 
@@ -1891,6 +1879,7 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
             break;
 
         default:
+            GATT_TRACE_ERROR("%s unknown command opcode=%02x", __func__, op_code);
             break;
         }
     }

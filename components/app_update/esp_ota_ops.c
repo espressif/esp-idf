@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@
 #include "esp_attr.h"
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
-#include "esp_flash_internal.h"
+#include "esp_private/esp_flash_internal.h" //For dangerous write protection
 
 #define OTA_SLOT(i) (i & 0x0F)
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
@@ -672,16 +672,8 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
     return rewrite_ota_seq(otadata, new_seq, next_otadata, otadata_partition);
 }
 
-esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
+static esp_err_t esp_ota_set_boot_partition_internal(const esp_partition_t* partition)
 {
-    if (partition == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (image_validate(partition, ESP_IMAGE_VERIFY) != ESP_OK) {
-        return ESP_ERR_OTA_VALIDATE_FAILED;
-    }
-
     // if set boot partition to factory bin ,just format ota info partition
     if (partition->type == ESP_PARTITION_TYPE_APP) {
         if (partition->subtype == ESP_PARTITION_SUBTYPE_APP_FACTORY) {
@@ -713,6 +705,28 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
     } else {
         return ESP_ERR_INVALID_ARG;
     }
+}
+
+esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
+{
+    if (partition == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (image_validate(partition, ESP_IMAGE_VERIFY) != ESP_OK) {
+        return ESP_ERR_OTA_VALIDATE_FAILED;
+    }
+
+    return esp_ota_set_boot_partition_internal(partition);
+}
+
+esp_err_t esp_ota_set_boot_partition_skip_validate(const esp_partition_t *partition)
+{
+    if (partition == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return esp_ota_set_boot_partition_internal(partition);
 }
 
 static const esp_partition_t *find_default_boot_partition(void)

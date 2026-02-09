@@ -3,19 +3,48 @@
 tools/test_apps/system/bootloader_sections:
   disable:
     - if: CONFIG_NAME == "rtc_retain" and SOC_RTC_FAST_MEM_SUPPORTED != 1
+    - if: CONFIG_NAME == "flash_encryption_key_mgr" and (SOC_KEY_MANAGER_FE_KEY_DEPLOY != 1 or IDF_TARGET == "esp32p4")
+    - if: CONFIG_NAME == "flash_encryption_key_mgr_esp32p4" and IDF_TARGET != "esp32p4"
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: cannot pass build because flash encryption is not supported yet # TODO: [ESP32S31] IDF-14628
 
-tools/test_apps/system/build_test:
+tools/test_apps/system/build_tests/client_only_mbedtls:
   disable:
-    - if: CONFIG_NAME == "no_rvfplib" and ESP_ROM_HAS_RVFPLIB != 1
-    - if: CONFIG_NAME == "usb_serial_jtag" AND SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-    - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
-    - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
+
+tools/test_apps/system/build_tests/custom_mac:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
+
+tools/test_apps/system/build_tests/no_esp_cert_bundle:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
+
+tools/test_apps/system/build_tests/no_hwsg:
+  disable:
+    - if: SOC_ASSIST_DEBUG_SUPPORTED != 1
+
+tools/test_apps/system/build_tests/panic_silent_reboot:
+  disable:
+    - if: IDF_TARGET != "esp32"
+
+tools/test_apps/system/build_tests/trax_esp32:
+  disable:
+    - if: IDF_TARGET != "esp32"
+
+tools/test_apps/system/build_tests/trax_esp32s2:
+  disable:
+    - if: IDF_TARGET != "esp32s2"
 
 tools/test_apps/system/clang_build_test:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2"]
       temporary: true
-      reason: the other targets are not supported yet
+      reason: the other targets are not supported yet, esp32p4 # TODO: IDF-14355
 
 tools/test_apps/system/cxx_no_except:
   enable:
@@ -41,7 +70,7 @@ tools/test_apps/system/flash_auto_suspend_iram_reduction:
 
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # preview targets
 
 tools/test_apps/system/g1_components:
 
@@ -61,21 +90,28 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
+tools/test_apps/system/init_array:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - *common_components
+    - esp_system
+  depends_filepatterns:
+    - tools/tools.json
+
 tools/test_apps/system/log:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      temporary: true
-      reason: test only on esp32 as other targets are similar
+      reason: test only on esp32 and c3 as other targets are similar
+  depends_components:
+    - *common_components
+    - log
 
 tools/test_apps/system/longjmp_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: lack of runners
 
 tools/test_apps/system/memprot:
   enable:
@@ -88,6 +124,7 @@ tools/test_apps/system/mmu_page_size:
     - if: IDF_TARGET in ["esp32c6", "esp32h2"]
       reason: Coverage for two targets with configurable MMU page size is sufficient
   depends_components:
+    - *common_components
     - esp_app_format
     - bootloader_support
     - esp_mm
@@ -100,7 +137,18 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61", "esp32h21"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+  disable:
+    - if: IDF_TARGET == "esp32p4" # TODO: IDF-14348
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: cannot pass build because flash encryption is not supported yet # TODO: [ESP32S31] IDF-14628
+
+tools/test_apps/system/ram_loadable_app:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14370
 
 tools/test_apps/system/rtc_mem_reserve:
   enable:
@@ -116,10 +164,8 @@ tools/test_apps/system/test_watchpoint:
     - if: IDF_TARGET in ["esp32", "esp32c3"] # Just one test per architecture
 
 tools/test_apps/system/unicore_bootloader:
-  enable:
-    - if: SOC_CPU_CORES_NUM > 1
-      reason: the test should be run on multicore chips
   disable:
-    - if: IDF_TARGET in ["esp32h4"]
-      temporary: true
-      reason: not supported yet  # TODO: [ESP32H4] IDF-12300
+    - if: SOC_CPU_CORES_NUM == 1
+      reason: the test is only relevant for multicore chips
+    - if: CONFIG_NAME == "unicore_psram" and SOC_PSRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "multicore_psram" and SOC_PSRAM_SUPPORTED != 1

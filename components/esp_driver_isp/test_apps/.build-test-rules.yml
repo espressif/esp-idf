@@ -3,3 +3,7 @@ components/esp_driver_isp/test_apps/isp:
     - if: SOC_ISP_SUPPORTED != 1
   depends_components:
     - esp_driver_isp
+    - esp_driver_dma
+    - esp_hal_cam
+    - esp_hw_support
+    - soc

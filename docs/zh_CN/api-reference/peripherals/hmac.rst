@@ -71,7 +71,7 @@ HMAC 支持软件使用
 
 在此情况下，HMAC 支持软件使用，如验证消息真实性等。
 
-API :cpp:func:`esp_hmac_calculate` 用于计算 HMAC。输入参数包括消息、消息长度以及包含密钥的 eFuse 密钥块 ID，且该密钥块的 eFuse 密钥功能设置为上行模式。
+:cpp:func:`psa_mac_compute` 用于计算 HMAC，该函数接收一个不透明的 PSA 密钥，该密钥引用了包含密钥机密的 eFuse 密钥块，并且该密钥块的用途被设置为上行模式。
 
 HMAC 用作数字签名 (DS) 的密钥
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -160,20 +160,53 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
         // 密钥写入失败，可能已写入过
     }
 
-接下来可以使用已存储的密钥来计算 HMAC，供软件使用。
+接下来可以通过 PSA Crypto API，使用已存储的密钥来计算供软件使用的 HMAC。
 
 .. code-block:: c
 
-    #include "esp_hmac.h"
+    #include "psa/crypto.h"
+    #include "psa_crypto_driver_esp_hmac_opaque.h"
 
     uint8_t hmac[32];
+    size_t hmac_length = 0;
 
     const char *message = "Hello, HMAC!";
     const size_t msg_len = 12;
 
-    esp_err_t result = esp_hmac_calculate(HMAC_KEY4, message, msg_len, hmac);
+    // 为 ESP-HMAC 不透明驱动设置密钥属性
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_algorithm(&attributes, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+    psa_set_key_bits(&attributes, 256);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_HMAC_VOLATILE);
 
-    if (result == ESP_OK) {
+    // 创建不透明密钥引用
+    esp_hmac_opaque_key_t opaque_key = {
+        .use_km_key = false,
+        .efuse_block = EFUSE_BLK_KEY4,
+    };
+
+    // 导入不透明密钥
+    psa_key_id_t key_id = 0;
+    psa_status_t status = psa_import_key(&attributes, (uint8_t *)&opaque_key,
+                                         sizeof(opaque_key), &key_id);
+    if (status != PSA_SUCCESS) {
+        // 导入密钥失败
+        psa_reset_key_attributes(&attributes);
+        return;
+    }
+
+    // 计算 HMAC
+    status = psa_mac_compute(key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256),
+                             (uint8_t *)message, msg_len,
+                             hmac, sizeof(hmac), &hmac_length);
+
+    // 清理
+    psa_destroy_key(key_id);
+    psa_reset_key_attributes(&attributes);
+
+    if (status == PSA_SUCCESS) {
         // HMAC 已写入 hmac 数组
     } else {
         // 计算 HMAC 失败
@@ -182,4 +215,4 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
 API 参考
 -------------
 
-.. include-build-file:: inc/esp_hmac.inc
+.. include-build-file:: inc/psa_crypto_driver_esp_hmac_opaque_contexts.inc

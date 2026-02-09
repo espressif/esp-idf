@@ -12,18 +12,12 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_system.h"
-#include "esp_private/log_util.h"
 #include "esp_log.h"
-#include "esp_private/cache_utils.h"
-#include "spi_flash_mmap.h"
-#include "esp_flash_internal.h"
-#if CONFIG_NEWLIB_ENABLED
-#include "esp_newlib.h"
-#endif
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
 #include "esp_private/startup_internal.h"
+#include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
@@ -33,13 +27,12 @@
 #include "private/esp_coexist_internal.h"
 #endif
 
-#if CONFIG_PM_ENABLE
+#if CONFIG_PM_ENABLE || CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #endif
 
 #include "esp_private/esp_clk.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
 #include "esp_private/vbat.h"
 
@@ -51,7 +44,7 @@
 #endif
 
 // Using the same tag as in startup.c to keep the logs unchanged
-static const char* TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 // Hook to force the linker to include this file
 void esp_system_include_startup_funcs(void)
@@ -75,10 +68,10 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
  * as it is a critical module for device functioning.
  */
 #if SOC_BOD_SUPPORTED && !CONFIG_SECURE_ENABLE_TEE
-ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
+ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 105)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
-    // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
+    // malloc (esp_libc) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_err_t ret = ESP_OK;
     // BOD and VBAT share the same interrupt number. To avoid blocking the system in an intermediate state
     // where an interrupt occurs and the interrupt number is enabled, but the ISR is not configured, enable
@@ -100,31 +93,11 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 }
 #endif
 
-ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
+ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 106)
 {
     esp_libc_time_init();
     return ESP_OK;
 }
-
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-ESP_SYSTEM_INIT_FN(init_flash, CORE, BIT(0), 130)
-{
-#if CONFIG_SPI_FLASH_ROM_IMPL
-    spi_flash_rom_impl_init();
-#endif
-
-    esp_flash_app_init();
-    esp_err_t flash_ret = esp_flash_init_default_chip();
-    assert(flash_ret == ESP_OK);
-    (void)flash_ret;
-#if CONFIG_SPI_FLASH_BROWNOUT_RESET
-    spi_flash_needs_reset_check();
-#endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
-    // The log library will call the registered callback function to check if the cache is disabled.
-    esp_log_util_set_cache_enabled_cb(spi_flash_cache_enabled);
-    return ESP_OK;
-}
-#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if CONFIG_ESP_XT_WDT
 ESP_SYSTEM_INIT_FN(init_xt_wdt, CORE, BIT(0), 170)

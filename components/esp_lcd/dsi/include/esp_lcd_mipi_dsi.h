@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_lcd_types.h"
+#include "hal/mipi_dsi_types.h"
 
 typedef struct esp_lcd_dsi_bus_t *esp_lcd_dsi_bus_handle_t;   /*!< Type of MIPI DSI bus handle */
 
@@ -22,8 +23,8 @@ extern "C" {
 typedef struct {
     int bus_id;                              /*!< Select which DSI controller, index from 0 */
     uint8_t num_data_lanes;                  /*!< Number of data lanes, if set to 0, the driver will fallback to use maximum number of lanes */
-    mipi_dsi_phy_clock_source_t phy_clk_src; /*!< MIPI DSI PHY clock source */
-    uint32_t lane_bit_rate_mbps;             /*!< Lane bit rate in Mbps */
+    mipi_dsi_phy_pllref_clock_source_t phy_clk_src; /*!< The clock source for the PHY PLL */
+    float lane_bit_rate_mbps;                /*!< Lane bit rate in Mbps */
 } esp_lcd_dsi_bus_config_t;
 
 /**
@@ -82,8 +83,7 @@ esp_err_t esp_lcd_new_panel_io_dbi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_d
 typedef struct {
     uint8_t virtual_channel;                   /*!< Virtual channel ID, index from 0 */
     mipi_dsi_dpi_clock_source_t dpi_clk_src;   /*!< MIPI DSI DPI clock source */
-    uint32_t dpi_clock_freq_mhz;               /*!< DPI clock frequency in MHz */
-    lcd_color_rgb_pixel_format_t pixel_format; /*!< Pixel format that used by the MIPI LCD device */
+    float dpi_clock_freq_mhz;                  /*!< Pixel clock frequency in MHz */
     lcd_color_format_t in_color_format;        /*!< Format of the input data (color space and pixel format),
                                                     which is the format stored in the frame buffer */
     lcd_color_format_t out_color_format;       /*!< Format of the output data (color space and pixel format),
@@ -93,7 +93,6 @@ typedef struct {
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
     /// Extra configuration flags for MIPI DSI DPI panel
     struct extra_dpi_panel_flags {
-        uint32_t use_dma2d: 1; /*!< Use DMA2D to copy user buffer to the frame buffer when necessary */
         uint32_t disable_lp: 1;/*!< Disable low-power for DPI */
     } flags;                   /*!< Extra configuration flags */
 } esp_lcd_dpi_panel_config_t;
@@ -139,7 +138,7 @@ esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t dpi_panel, u
 esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dpi_panel, mipi_dsi_pattern_type_t pattern);
 
 /**
- * @brief Set color conversion configuration for DPI panel
+ * @brief Set color conversion (YUV<->RGB) configuration for DPI panel
  *
  * @param[in] dpi_panel MIPI DPI panel handle, returned from esp_lcd_new_panel_dpi()
  * @param[in] config Color conversion configuration
@@ -148,7 +147,7 @@ esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dpi_panel, mipi_d
  *      - ESP_ERR_INVALID_ARG: Set color conversion configuration failed because of invalid argument
  *      - ESP_FAIL: Set color conversion configuration failed because of other error
  */
-esp_err_t esp_lcd_dpi_panel_set_color_conversion(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_color_conv_config_t *config);
+esp_err_t esp_lcd_dpi_panel_set_yuv_conversion(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_color_conv_yuv_config_t *config);
 
 /**
  * @brief Type of LCD DPI panel event data
@@ -199,6 +198,92 @@ typedef struct {
  *      - ESP_OK: Register callbacks successfully
  */
 esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_dpi_panel_event_callbacks_t *cbs, void *user_ctx);
+
+/**
+ * @brief Type of draw bitmap hook data
+ */
+typedef struct {
+    void *dst_data;       /*!< Destination buffer (usually frame buffer) */
+    int dst_x_size;       /*!< Destination bitmap width */
+    int dst_y_size;       /*!< Destination bitmap height */
+    int dst_x_start;      /*!< Destination start x coordinate */
+    int dst_y_start;      /*!< Destination start y coordinate */
+    int dst_x_end;        /*!< Destination end x coordinate (exclusive) */
+    int dst_y_end;        /*!< Destination end y coordinate (exclusive) */
+    const void *src_data; /*!< Source bitmap data */
+    int src_x_size;       /*!< Source bitmap width */
+    int src_y_size;       /*!< Source bitmap height */
+    int src_x_start;      /*!< Source start x coordinate */
+    int src_y_start;      /*!< Source start y coordinate */
+    int src_x_end;        /*!< Source end x coordinate (exclusive) */
+    int src_y_end;        /*!< Source end y coordinate (exclusive) */
+    int bits_per_pixel;   /*!< Bits per pixel */
+    bool (*on_hook_end)(esp_lcd_panel_handle_t panel); /*!< Callback to be invoked when the hook completes its operation */
+} esp_lcd_draw_bitmap_hook_data_t;
+
+/**
+ * @brief draw bitmap hook function type for custom pixel processing operations
+ *
+ * This hook allows users to implement custom operations like scaling, rotation,
+ * color space conversion, etc. using hardware accelerators like PPA or DMA2D.
+ *
+ * @note The hook should ensure the synchronization of draw operations on its own.
+ *
+ * @param[in] panel LCD panel handle
+ * @param[in] hook_data Hook data
+ * @param[in] hook_ctx Hook context
+ * @return
+ *          - ESP_OK on success
+ *          - Other error codes on failure
+ */
+typedef esp_err_t (*esp_lcd_panel_draw_bitmap_hook_t)(esp_lcd_panel_handle_t panel, const esp_lcd_draw_bitmap_hook_data_t *hook_data, void* hook_ctx);
+
+/**
+ * @brief Type of LCD panel hooks
+ */
+typedef struct {
+    esp_lcd_panel_draw_bitmap_hook_t draw_bitmap_hook; /*!< Draw bitmap hook function */
+} esp_lcd_panel_hooks_t;
+
+/**
+ * @brief Register panel hooks to the DPI panel
+ *
+ * @note You can register panel hooks to implement custom operations like scaling, rotation, color space conversion, etc.
+ *       with hardware accelerators like PPA or DMA2D.
+ *       The hook will be overridden when this function is called multiple times.
+ *
+ * @param[in] dpi_panel LCD DPI panel handle, which is returned from esp_lcd_new_panel_dpi()
+ * @param[in] hooks Panel hooks
+ * @param[in] hook_ctx Hook context
+ * @return
+ *      - ESP_OK: Register hooks successfully
+ *      - Other error codes on failure
+ */
+esp_err_t esp_lcd_dpi_panel_register_hooks(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_panel_hooks_t *hooks, void *hook_ctx);
+
+/**
+ * @brief Enable DMA2D for DPI panel
+ *
+ * @note The function will register a built-in DMA2D draw bitmap hook to perform draw bitmap operations using DMA2D.
+ *
+ * @param[in] dpi_panel LCD DPI panel handle, which is returned from esp_lcd_new_panel_dpi()
+ * @return
+ *      - ESP_OK: Enable DMA2D successfully
+ *      - Other error codes on failure
+ */
+esp_err_t esp_lcd_dpi_panel_enable_dma2d(esp_lcd_panel_handle_t dpi_panel);
+
+/**
+ * @brief Disable DMA2D for DPI panel
+ *
+ * @note The function will unregister the built-in DMA2D draw bitmap hook.
+ *
+ * @param[in] dpi_panel LCD DPI panel handle, which is returned from esp_lcd_new_panel_dpi()
+ * @return
+ *      - ESP_OK: Disable DMA2D successfully
+ *      - Other error codes on failure
+ */
+esp_err_t esp_lcd_dpi_panel_disable_dma2d(esp_lcd_panel_handle_t dpi_panel);
 
 #ifdef __cplusplus
 }

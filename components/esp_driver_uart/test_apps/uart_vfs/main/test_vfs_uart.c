@@ -81,7 +81,7 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs_uart]")
     // If there is data available at the moment, read() also returns directly with the currently available size
 
     const char* send_str = "1234567890\n\r123\r\n4\n";
-    /* with CONFIG_NEWLIB_STDOUT_ADDCR, the following will be sent on the wire.
+    /* with CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF, the following will be sent on the wire.
      * (last character of each part is marked with a hat)
      *
      *                      1234567890\r\n\r123\r\r\n4\r\n

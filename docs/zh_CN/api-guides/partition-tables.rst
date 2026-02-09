@@ -311,14 +311,14 @@ MD5 校验和
 烧写分区表
 ----------
 
-* ``idf.py partition-table-flash`` ：使用 esptool.py 工具烧写分区表。
+* ``idf.py partition-table-flash`` ：使用 esptool 工具烧写分区表。
 * ``idf.py flash`` ：会烧写所有内容，包括分区表。
 
 在执行 ``idf.py partition-table`` 命令时，手动烧写分区表的命令也将打印在终端上。
 
 .. note::
 
-    分区表的更新并不会擦除根据旧分区表存储的数据。此时，可以使用 ``idf.py erase-flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
+    分区表的更新并不会擦除根据旧分区表存储的数据。此时，可以使用 ``idf.py erase-flash`` 命令或者 ``esptool erase-flash`` 命令来擦除 flash 中的所有内容。
 
 
 分区工具 (``parttool.py``)
@@ -406,13 +406,13 @@ Python API
 
 .. note::
 
-    如果设备启用了 ``Flash Encryption`` 或 ``Secure Boot``，尝试使用修改 flash 内容的命令（如 ``erase_partition`` 或 ``write_partition``）会导致错误。这是因为 ``esptool.py`` 的擦除命令会在写入之前先被调用。这个“错误”实际上是一个用来防止设备变砖的安全措施。
+    如果设备启用了 ``Flash Encryption`` 或 ``Secure Boot``，尝试使用修改 flash 内容的命令（如 ``erase_partition`` 或 ``write_partition``）会导致错误。这是因为 ``esptool`` 的擦除命令会在写入之前先被调用。这个“错误”实际上是一个用来防止设备变砖的安全措施。
 
     .. code-block:: none
 
         A fatal error occurred: Active security features detected, erasing flash is disabled as a safety measure. Use --force to override, please use with caution, otherwise it may brick your device!
 
-    要解决此问题，需在运行 ``esptool.py`` 时使用 ``--force`` 参数。具体而言，``parttool.py`` 提供了 ``--esptool-erase-args`` 参数，用来将 ``--force`` 参数传递给 ``esptool.py``。
+    要解决此问题，需在运行 ``esptool`` 时使用 ``--force`` 参数。具体而言，``parttool.py`` 提供了 ``--esptool-erase-args`` 参数，用来将 ``--force`` 参数传递给 ``esptool``。
 
     .. code-block:: bash
 

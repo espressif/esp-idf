@@ -5,6 +5,55 @@
 
 The purpose of the Apple Notification Center Service (ANCS) is to give Bluetooth accessories (that connect to iOS devices through a Bluetooth low-energy link) a simple and convenient way to access many kinds of notifications that are generated on iOS devices.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │    ESP32     │                                    │  iOS Device  │
+    │ (ANCS Client)│                                    │ (ANCS Server)│
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Connection ───────────               │
+           │                                                   │
+           │  1. Start Advertising                             │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  2. iOS connects & pairs                          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── Service Discovery ───────────        │
+           │                                                   │
+           │  3. Discover ANCS Service                         │
+           │     (UUID: 7905F431-B5CE-4E99-A40F-4B1E122D00D0)  │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  4. Subscribe to Notification Source              │
+           │     (UUID: 9FBF120D-6301-42D9-8C58-25E699A21DBD)  │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  5. Subscribe to Data Source                      │
+           │     (UUID: 22EAC6E9-24D6-4BB5-BE44-B36ACE7C7BFB)  │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Notification Flow ───────────        │
+           │                                                   │
+           │  6. New notification on iOS                       │
+           │     (Call, SMS, Email, App, etc.)                 │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  7. Request notification details                  │
+           │     (Write to Control Point)                      │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  8. Receive notification attributes               │
+           │     (Title, Message, App, etc.)                   │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │    ESP32     │                                    │  iOS Device  │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

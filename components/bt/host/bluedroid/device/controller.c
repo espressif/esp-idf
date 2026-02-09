@@ -31,7 +31,7 @@
 #include "osi/future.h"
 #include "config/stack_config.h"
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x07\xff\xff\xff\xff" };
+const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\xff\xff\xff\xff\xff" };
 #else
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -87,7 +87,7 @@ typedef struct {
     uint16_t ble_ext_adv_data_max_len;
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
-    uint16_t get_ble_periodic_advertiser_list_size;
+    uint8_t get_ble_periodic_advertiser_list_size;
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 } controller_local_param_t;

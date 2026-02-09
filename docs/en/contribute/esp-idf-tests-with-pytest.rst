@@ -91,17 +91,26 @@ Getting Started
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('target', [
-        'esp32',
-        'esp32s2',
-    ], indirect=True)
+    @idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
     @pytest.mark.generic
     def test_hello_world(dut) -> None:
         dut.expect('Hello world!')
 
 This is a simple test script that could run with the ESP-IDF getting-started example :example:`get-started/hello_world`.
 
-In this test script, the ``@pytest.mark.parametrize`` decorator is used to parameterize the test case. The ``target`` parameter is a special parameter that indicates the target board type. The ``indirect=True`` argument indicates that this parameter is pre-calculated before other fixtures.
+``idf_parametrize`` is a wrapper around ``pytest.mark.parametrize`` that simplifies and extends string-based test parameterization. It provides greater flexibility and improves the maintainability of parameterized tests.
+
+In this test script, the ``idf_parametrize`` decorator is used to parameterize the test case. The ``target`` parameter is a special parameter that indicates the target board type. The ``indirect=['target']`` argument indicates that this parameter is pre-calculated before other fixtures.
+
+In this example, the target is set to ``esp32`` and ``esp32s2``, so the test will be run on both the ESP32 and the ESP32-S2.
+
+.. note::
+
+    If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use the special parameter ``supported_targets`` to apply all of them in one line. We also support ``preview_targets`` and ``all`` as special values (call ``idf.py --list-targets --preview`` for the full list of targets, including preview targets). For example: ``@idf_parametrize('target', ['supported_targets'], indirect=['target'])``.
+
+.. note::
+
+    If the target should be specified by ``soc_caps``, it is possible to filter them using ``soc_filtered_targets``. For example: ``@idf_parametrize('target', soc_filtered_targets('SOC_ULP_SUPPORTED != 1'), indirect=['target'])``.
 
 Next is the environment marker. The ``@pytest.mark.generic`` marker indicates that this test case should run on the generic board type.
 
@@ -133,11 +142,11 @@ If the test case needs to run all supported targets with these two sdkconfig fil
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('target', [
-        'esp32',                            # <-- run with esp32 target
-        'esp32s2',                          # <-- run with esp32s2 target
-    ], indirect=True)
-    @pytest.mark.parametrize('config', [    # <-- parameterize the sdkconfig file
+    @idf_parametrize('target', [
+        'esp32',                      # <-- run with esp32 target
+        'esp32s2'                     # <-- run with esp32s2 target
+    ], indirect=['target'])
+    @pytest.mark.parametrize('config', [    # <-- use this marker to specify the sdkconfig file; if you don't use it, it uses ``default`` (built from ``sdkconfig.ci`` or ``sdkconfig.ci.default``); if you use it, it uses the specified ``sdkconfig.ci.<config>`` (e.g. ``sdkconfig.ci.foo``, ``sdkconfig.ci.bar``)
         'foo',                              # <-- run with sdkconfig.ci.foo
         'bar',                              # <-- run with sdkconfig.ci.bar
     ], indirect=True)                       # <-- `indirect=True` is required, indicates this param is pre-calculated before other fixtures
@@ -176,14 +185,18 @@ The test case ID is used to identify the test case in the JUnit report.
 Same App With Different sdkconfig Files, Different Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For some test cases, you may need to run the same app with different sdkconfig files. These sdkconfig files supports different targets. We may use ``pytest.param`` to achieve this. Let's use the same folder structure as above.
+For some test cases, you may need to run the same app with different sdkconfig files. These sdkconfig files supports different targets. We may use ``idf_parametrize`` to achieve this. Let's use the same folder structure as above.
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('config, target', [
-        pytest.param('foo', 'esp32'),
-        pytest.param('bar', 'esp32s2'),
-    ], indirect=True)
+    @idf_parametrize(
+        'target, config',
+        [
+            ('esp32', 'foo'),
+            ('esp32s2', 'bar')
+        ],
+        indirect=['target', 'config']
+    )
 
 Now this test function would be replicated to 2 test cases (represented as test case IDs):
 
@@ -422,6 +435,30 @@ For ``build_test_related_apps``, all the built binaries will be uploaded to our 
 
 For ``build_non_test_related_apps``, all the built binaries will be removed after the build job is finished. Only the build log files will be uploaded to our internal MinIO server. You may also find the download link in the build report posted in the internal MR.
 
+Dependency-driven builds
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To optimize CI build time, we use the dependency-driven build feature from idf-build-apps. It helps us build only the apps that are affected by the changed components.
+
+Dependency-driven build rules are defined in per-folder manifest files (``.build-test-rules.yml``), where each app may define ``depends_components``.
+
+.. code-block:: yaml
+
+    examples/foo/bar:
+      depends_components:
+        - esp_eth
+        - esp_netif
+
+
+We also have a set of common components (defined as ``common_components`` in :idf_file:`.idf_build_apps.toml`). ``common_components`` is a list of baseline (core) components that are used by many apps. In general, if one of these components changes, you usually want to rebuild and retest the apps that depend on it.
+
+The app maintainer should decide which components are important for their app. If the app should depend on a ``common_components``, add it to ``depends_components``. If not, specify only the important components.
+
+If ``depends_components`` is not specified, we use the calculated components (``project_description.json``) and check whether the app is affected by the changed components.
+
+Deprecated (prefer using ``depends_components`` / ``common_components`` instead):
+``deactivate_dependency_driven_build_by_components`` disables the dependency-driven checks if certain components change.
+
 Target Test Jobs
 ----------------
 
@@ -645,7 +682,9 @@ This marker means that the test case could still be run locally with ``pytest --
 Add New Markers
 ---------------
 
-You can add new markers by adding one line under the :idf_file:`pytest.ini`. If it is a marker that specifies a type of test environment, it should be added into ``env_markers`` section. Otherwise it should be added into ``markers`` section. The syntax should be: ``<marker_name>: <marker_description>``.
+We currently use two types of custom markers. The target marker indicates which target chips the test case supports, and the env marker specifies that the test case should be assigned to a CI runner with the corresponding tag.
+
+You can add new markers by adding one line under the :idf_file:`pytest.ini`. If it is a marker that specifies a type of test environment, it should be added into ``env_markers`` section. Otherwise, it should be added into ``markers`` section. The syntax should be: ``<marker_name>: <marker_description>``.
 
 Skip Auto Flash Binary
 ----------------------
@@ -706,7 +745,7 @@ We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATE
         check_performance('RSA_2048KEY_PUBLIC_OP', 123, 'esp32')
         check_performance('RSA_2048KEY_PUBLIC_OP', 19001, 'esp32')
 
-The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from :idf_file:`components/idf_test/include/idf_performance.h` and the target-specific one :idf_file:`components/idf_test/include/esp32/idf_performance_target.h`, then check if the value reached the minimum limit or exceeded the maximum limit.
+The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from the component-specific performance header files (e.g., :idf_file:`components/esp_adc/test_apps/adc/include/adc_performance.h` for ADC performance tests), then check if the value reached the minimum limit or exceeded the maximum limit.
 
 Let us assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 19000. so the first ``check_performance`` line would pass and the second one would fail with warning: ``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``.
 

@@ -1,20 +1,20 @@
 # SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import binascii
-from collections import namedtuple
 from io import BytesIO
 
 import espsecure
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # To prepare a test runner for this example:
 # 1. Generate zero flash encryption key:
 #   dd if=/dev/zero of=key.bin bs=1 count=32
 # 2.Burn Efuses:
-#   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CONFIG 0xf
-#   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CNT 0x1
-#   espefuse.py --do-not-confirm -p $ESPPORT burn_key flash_encryption key.bin
+#   espefuse --do-not-confirm -p $ESPPORT burn-efuse FLASH_CRYPT_CONFIG 0xf
+#   espefuse --do-not-confirm -p $ESPPORT burn-efuse FLASH_CRYPT_CNT 0x1
+#   espefuse --do-not-confirm -p $ESPPORT burn-key flash_encryption key.bin
 
 
 def _test_flash_encryption(dut: Dut) -> None:
@@ -35,14 +35,17 @@ def _test_flash_encryption(dut: Dut) -> None:
         key_bytes = b'\xff' + b'\x00' * 31
         aes_xts = True
 
-    # Emulate espsecure encrypt_flash_data command
-    EncryptFlashDataArgs = namedtuple(
-        'EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf', 'aes_xts']
+    output = BytesIO()
+    espsecure.encrypt_flash_data(
+        output=output,
+        plaintext_file=BytesIO(plain_data),
+        address=flash_addr,
+        keyfile=BytesIO(key_bytes),
+        flash_crypt_conf=0xF,
+        aes_xts=aes_xts,
     )
-    args = EncryptFlashDataArgs(BytesIO(), BytesIO(plain_data), flash_addr, BytesIO(key_bytes), 0xF, aes_xts)
-    espsecure.encrypt_flash_data(args)
 
-    expected_ciphertext = args.output.getvalue()
+    expected_ciphertext = output.getvalue()
     hex_ciphertext = binascii.hexlify(expected_ciphertext).decode('ascii')
     expected_str = (
         ' '.join(hex_ciphertext[i : i + 2] for i in range(0, 16, 2))
@@ -75,7 +78,8 @@ def _test_flash_encryption(dut: Dut) -> None:
 
 
 @pytest.mark.flash_encryption
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_examples_security_flash_encryption(dut: Dut) -> None:
     _test_flash_encryption(dut)
 
@@ -90,4 +94,31 @@ def test_examples_security_flash_encryption(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_examples_security_flash_encryption_rom_impl(dut: Dut) -> None:
+    _test_flash_encryption(dut)
+
+
+@pytest.mark.flash_encryption_psram
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_examples_security_flash_encryption_psram_esp32(dut: Dut) -> None:
+    _test_flash_encryption(dut)
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+def test_examples_security_flash_encryption_psram(dut: Dut) -> None:
     _test_flash_encryption(dut)

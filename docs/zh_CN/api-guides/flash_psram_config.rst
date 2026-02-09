@@ -241,7 +241,7 @@ F4R4 硬件
         load:0x3fcd0108,len:0x171c
         ets_loader.c 78
 
-   这可能意味着必要的 efuse 未得到正确烧录。请使用命令 ``espefuse.py summary``，检查芯片的 eFuse 位。
+   这可能意味着必要的 efuse 未得到正确烧录。请使用命令 ``idf.py efuse-summary``，检查芯片的 eFuse 位。
 
    一级 (ROM) 引导加载程序可通过 eFuse 位 ``FLASH_TYPE`` 将 flash 复位为默认模式（SPI 模式）。如果未烧录此位，且 flash 处于 OPI 模式，则一级 (ROM) 引导加载程序可能无法从 flash 中读取并加载以下图像。
 

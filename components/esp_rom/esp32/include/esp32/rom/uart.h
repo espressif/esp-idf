@@ -9,7 +9,6 @@
 #include "esp_attr.h"
 #include "ets_sys.h"
 #include "soc/soc.h"
-#include "soc/uart_periph.h"
 #include "soc/uart_reg.h"
 
 #ifdef __cplusplus

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -64,8 +64,6 @@ extern "C" {
 
 #define SOC_MMU_FLASH_SENSITIVE             BIT(13)
 #define SOC_MMU_PSRAM_SENSITIVE             BIT(12)
-
-#define SOC_NON_CACHEABLE_OFFSET            0x40000000
 
 /**
  * MMU entry valid bit mask for mapping value.

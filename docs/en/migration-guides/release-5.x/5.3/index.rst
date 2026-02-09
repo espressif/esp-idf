@@ -6,7 +6,7 @@ Migration from 5.2 to 5.3
 .. toctree::
     :maxdepth: 1
 
-    bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
     gcc
     peripherals
     protocols

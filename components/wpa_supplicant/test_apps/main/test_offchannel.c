@@ -28,15 +28,12 @@
 #include "test_wpa_supplicant_common.h"
 #include "sdkconfig.h"
 
-#define WIFI_START_EVENT        0x00000001
-#define WIFI_ROC_DONE_EVENT     0x00000002
-#define WIFI_ACTION_RX_EVENT    0x00000003
-#define WIFI_SCAN_DONE_EVENT    0x00000004
+#define WIFI_START_EVENT        BIT(0)
+#define WIFI_ROC_DONE_EVENT     BIT(1)
+#define WIFI_ACTION_RX_EVENT    BIT(2)
+#define WIFI_SCAN_DONE_EVENT    BIT(3)
 
 #define TEST_LISTEN_CHANNEL     6
-
-/* No runners; IDF-5046 */
-#if CONFIG_IDF_TARGET_ESP32
 
 static const char *TAG = "test_offchan";
 esp_netif_t *wifi_netif;
@@ -138,6 +135,7 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
     req->data_len = len;
     req->rx_cb = dummy_rx_action;
     req->channel = channel;
+    req->sec_channel = WIFI_SECOND_CHAN_NONE;
     req->wait_time_ms = wait_time_ms;
     req->type = WIFI_OFFCHAN_TX_REQ;
 
@@ -254,9 +252,9 @@ static void test_wifi_roc(void)
                                pdTRUE, pdFALSE, portMAX_DELAY);
     /* Confirm that Frame has been received successfully */
     if (bits == WIFI_ACTION_RX_EVENT) {
-        wifi_roc_req_t req = {0};
-        req.ifx = WIFI_IF_STA;
+        /* op_id is retained from previous ROC request */
         req.type = WIFI_ROC_CANCEL;
+        req.rx_cb = NULL;
         TEST_ESP_OK(esp_wifi_remain_on_channel(&req));
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -267,6 +265,4 @@ static void test_wifi_roc(void)
     }
 }
 
-TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=wifi_two_dut][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);
-
-#endif //CONFIG_IDF_TARGET_ESP32
+TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=two_duts][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);

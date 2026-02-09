@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,8 @@
 
 static const char *TAG = "esp_netif_sntp";
 
+ESP_EVENT_DEFINE_BASE(NETIF_SNTP_EVENT);
+
 typedef struct sntp_storage {
     esp_sntp_time_cb_t sync_cb;
     SemaphoreHandle_t sync_sem;
@@ -37,6 +39,14 @@ static void sync_time_cb(struct timeval *tv)
     }
     if (s_storage && s_storage->sync_cb) {
         s_storage->sync_cb(tv);
+    }
+    // Post event with the timeval payload
+    esp_netif_sntp_time_sync_t evt = {0};
+    if (tv) {
+        evt.tv = *tv;
+    }
+    if (esp_event_post(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &evt, sizeof(evt), 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Error posting SNTP time sync");
     }
 }
 

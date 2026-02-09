@@ -8,6 +8,7 @@
 
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "driver/ledc_etm.h"
 #include "hal/ledc_types.h"
 
 #ifdef __cplusplus
@@ -41,10 +42,13 @@ typedef struct {
     uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
     int hpoint;                     /*!< LEDC channel hpoint value, the range is [0, (2**duty_resolution)-1] */
     ledc_sleep_mode_t sleep_mode;   /*!< choose the desired behavior for the LEDC channel in Light-sleep */
-    struct {
-        unsigned int output_invert: 1;/*!< Enable (1) or disable (0) gpio output invert */
-    } flags;                        /*!< LEDC flags */
-
+    /// Extra configuration flags for LEDC channel
+    struct ledc_channel_flags {
+        unsigned int output_invert: 1; /*!< Enable (1) or disable (0) gpio output invert */
+    } flags;                        /*!< Extra configuration flags for LEDC channel */
+    bool deconfigure;               /*!< Set this field to de-configure a LEDC channel which has been configured before
+                                         The driver only does limited action to release the pins occupied by this channel only.
+                                         When this field is set, gpio_num, timer_sel, duty, hpoint, sleep_mode, flags fields are ignored. */
 } ledc_channel_config_t;
 
 /**
@@ -381,6 +385,25 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel);
  *     - ESP_OK Success
  */
 esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_timer_t timer_sel);
+
+#if SOC_LEDC_SUPPORT_ETM
+/**
+ * @brief Configure the maximum timer overflow times for the LEDC channel to be used to trigger `LEDC_ETM_EVENT_CHANNEL_REACH_MAX_OVF_CNT` ETM event
+ *
+ * When the overflow counter maximum value is re-configured, the counter will also be reset.
+ * Timer can be paused before calling this API by calling `ledc_timer_pause()`, and resumed afterwards by calling `ledc_timer_resume()`.
+ *
+ * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param max_ovf_cnt The timer overflow counter maximum value. To disable the timer overflow count, set this parameter to 0.
+ *
+ * @return
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Channel not initialized
+ *     - ESP_OK Success
+ */
+esp_err_t ledc_channel_configure_maximum_timer_ovf_cnt(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t max_ovf_cnt);
+#endif
 
 /**
  * @brief Set LEDC fade function.

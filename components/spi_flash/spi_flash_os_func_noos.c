@@ -6,16 +6,18 @@
 
 #include <stdarg.h>
 #include "sdkconfig.h"
-#include "esp_flash.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 #include "rom/cache.h"
+#include "soc/soc_caps.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-#include "soc/soc_caps.h"
 
-static IRAM_ATTR esp_err_t start(void *arg)
+#include "esp_flash.h"
+#include "esp_flash_chips/esp_flash_types.h"
+
+static IRAM_ATTR esp_err_t start(void *arg, uint32_t flags)
 {
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     //branch predictor will start cache request as well

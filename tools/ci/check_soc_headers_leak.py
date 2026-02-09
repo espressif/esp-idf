@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # This check script is used to ensure the public APIs won't expose the unstable soc files like register files
 # public API header files are those taken by doxygen and have full documented docs
@@ -18,8 +18,7 @@ allowed_soc_headers = (
     'soc/reset_reasons.h',
     'soc/reg_base.h',
     'soc/clk_tree_defs.h',
-    'soc/uart_channel.h',
-    'soc/bitscrambler_peri_select.h',
+    'soc/uart_pins.h',
 )
 
 include_header_pattern = re.compile(r'[\s]*#[\s]*include ["<](.*)[">].*')
@@ -33,12 +32,12 @@ class PublicAPIVisits:
         self._idf_path = idf_path
 
     def __iter__(self) -> typing.Generator:
-        with open(self.doxyfile_path, 'r', encoding='utf8') as f:
+        with open(self.doxyfile_path, encoding='utf8') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('$(PROJECT_PATH)'):
-                    # $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
-                    # -> ${PROJECT_PATH}/components/soc/${IDF_TARGET}/include/soc/uart_channel.h
+                    # $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_pins.h \
+                    # -> ${PROJECT_PATH}/components/soc/${IDF_TARGET}/include/soc/uart_pins.h
                     line = line.replace('(', '{').replace(')', '}').rstrip('\\ ')
                     file_path = Template(line).substitute(PROJECT_PATH=self._idf_path, IDF_TARGET=self._target)
                     yield file_path
@@ -48,10 +47,10 @@ def check_soc_not_in(
     idf_path: str,
     target: str,
     doxyfile_path: str,
-    violation_dict: typing.Dict[str, set],
+    violation_dict: dict[str, set],
 ) -> None:
     for file_path in PublicAPIVisits(os.path.join(idf_path, doxyfile_path), idf_path, target):
-        with open(file_path, 'r', encoding='utf8') as f:
+        with open(file_path, encoding='utf8') as f:
             for line in f:
                 match_data = re.match(include_header_pattern, line)
                 if match_data:
@@ -82,7 +81,7 @@ def main() -> None:
         print('No targets found', file=sys.stderr)
         sys.exit(1)
 
-    soc_violation_dict: typing.Dict[str, set] = {}
+    soc_violation_dict: dict[str, set] = {}
     for target in targets:
         check_soc_not_in(
             idf_path,

@@ -28,7 +28,7 @@ extern esp_image_metadata_t tee_data;
 #endif
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-static const char *TAG = "secure_boot_v2";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block, int block_num, const uint8_t *image_digest)
@@ -363,6 +363,12 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         ESP_LOGI(TAG, "secure boot v2 is already enabled, continuing..");
         return ESP_OK;
     }
+#if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+    else {
+        ESP_LOGE(TAG, "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif // CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
 
     esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */
 

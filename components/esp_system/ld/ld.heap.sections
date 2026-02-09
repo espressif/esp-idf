@@ -1,0 +1,8 @@
+#include "sdkconfig.h"
+
+  .dram0.heap_start (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(16, _heap_start)
+  } > dram_seg
+  ASSERT(((_heap_start - ORIGIN(dram_seg)) <= LENGTH(dram_seg)),
+          "DRAM segment data does not fit.")

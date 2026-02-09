@@ -1,5 +1,10 @@
-SPP API
-=======
+Bluetooth® SPP API
+==================
+
+Overview
+--------
+
+SPP (Serial Port Profile) enables serial communication between Bluetooth devices, allowing them to exchange data over a virtual serial link. SPP API provides functionality to create both SPP initiators (clients) and acceptors (servers), enabling operation under different security requirements.
 
 Application Examples
 --------------------

@@ -1,0 +1,3 @@
+components/heap/test_multi_heap_host:
+  enable:
+    - if: IDF_TARGET == "linux"

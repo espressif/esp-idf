@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -73,18 +73,18 @@ static pcap_cmd_runtime_t pcap_cmd_rt = {0};
 #if CONFIG_SNIFFER_PCAP_DESTINATION_JTAG
 static int trace_writefun(void *cookie, const char *buf, int len)
 {
-    return esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, len, SNIFFER_PROCESS_APPTRACE_TIMEOUT_US) ==
+    return esp_apptrace_write(buf, len, SNIFFER_PROCESS_APPTRACE_TIMEOUT_US) ==
            ESP_OK ? len : -1;
 }
 
 static int trace_closefun(void *cookie)
 {
-    return esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, ESP_APPTRACE_TMO_INFINITE) == ESP_OK ? 0 : -1;
+    return esp_apptrace_flush(ESP_APPTRACE_TMO_INFINITE) == ESP_OK ? 0 : -1;
 }
 
 void pcap_flush_apptrace_timer_cb(TimerHandle_t pxTimer)
 {
-    esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, pdMS_TO_TICKS(10));
+    esp_apptrace_flush(pdMS_TO_TICKS(10));
 }
 #endif // CONFIG_SNIFFER_PCAP_DESTINATION_JTAG
 
@@ -155,8 +155,9 @@ esp_err_t sniff_packet_start(pcap_link_type_t link_type)
     esp_err_t ret = ESP_OK;
 #if CONFIG_SNIFFER_PCAP_DESTINATION_JTAG
     uint32_t retry = 0;
+
     /* wait until apptrace communication established or timeout */
-    while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_JTAG) && (retry < SNIFFER_APPTRACE_RETRY)) {
+    while (!esp_apptrace_host_is_connected() && (retry < SNIFFER_APPTRACE_RETRY)) {
         retry++;
         ESP_LOGW(CMD_PCAP_TAG, "waiting for apptrace established");
         vTaskDelay(pdMS_TO_TICKS(1000));

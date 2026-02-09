@@ -11,12 +11,15 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
-#include "hal/key_mgr_ll.h"
+#include "esp_crypto_periph_clk.h"
+#include "esp_key_mgr.h"
+#include "hal/key_mgr_hal.h"
 #include "hal/mspi_ll.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "hal/key_mgr_ll.h"
 
-static __attribute__((unused)) const char *TAG = "flash_encrypt";
+ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 
 esp_err_t esp_flash_encryption_enable_secure_features(void)
 {
@@ -44,7 +47,7 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DIRECT_BOOT);
 
-#if defined(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE) && defined(SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND)
+#if CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC
     ESP_LOGI(TAG, "Enable XTS-AES pseudo rounds function...");
     uint8_t xts_pseudo_level = CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH;
     esp_efuse_write_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
@@ -69,18 +72,12 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     return ESP_OK;
 }
 
-esp_err_t esp_flash_encryption_enable_key_mgr(void)
+esp_err_t esp_flash_encryption_use_efuse_key(void)
 {
-    _key_mgr_ll_enable_bus_clock(true);
-    _key_mgr_ll_enable_peripheral_clock(true);
-    _key_mgr_ll_reset_register();
-
-    while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
-    };
+    esp_crypto_key_mgr_enable_periph_clk(true);
 
     // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
-    _mspi_timing_ll_reset_mspi();
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_FLASH_XTS_AES_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 
     return ESP_OK;
 }

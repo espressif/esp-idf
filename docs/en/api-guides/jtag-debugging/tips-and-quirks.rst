@@ -63,7 +63,7 @@ ESP-IDF has some support options for OpenOCD debugging which can be set at compi
 
 * :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` (disabled by default) sets watchpoint index 1 (the second of two) at the end of any task stack. This is the most accurate way to debug task stack overflows. Click the link for more details.
 
-Please see the :ref:`project configuration menu <get-started-configure>` menu for more details on setting compile-time options.
+Please see the :ref:`project configuration menu for Windows <get-started-configure>`, :ref:`Linux, or macOS <get-started-configure-linux-macos>`  menu for more details on setting compile-time options.
 
 .. _jtag-debugging-tip-freertos-support:
 

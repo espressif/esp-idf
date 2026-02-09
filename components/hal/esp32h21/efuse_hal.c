@@ -91,7 +91,7 @@ bool efuse_hal_is_coding_error_in_block(unsigned block)
 {
     if (block == 0) {
         for (unsigned i = 0; i < 5; i++) {
-            if (REG_READ(EFUSE_RD_REPEAT_ERR0_REG + i * 4)) {
+            if (REG_READ(EFUSE_RD_REPEAT_DATA_ERR0_REG + i * 4)) {
                 return true;
             }
         }
@@ -99,7 +99,7 @@ bool efuse_hal_is_coding_error_in_block(unsigned block)
         // EFUSE_RD_RS_ERR0_REG: (hi) BLOCK8, BLOCK7, BLOCK6, BLOCK5, BLOCK4, BLOCK3, BLOCK2, BLOCK1 (low)
         // EFUSE_RD_RS_ERR1_REG:                                                     BLOCK10, BLOCK9
         block--;
-        uint32_t error_reg = REG_READ(EFUSE_RD_RS_ERR0_REG + (block / 8) * 4);
+        uint32_t error_reg = REG_READ(EFUSE_RD_RS_DATA_ERR0_REG + (block / 8) * 4);
         return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block % 8) != 0;
     }
     return false;

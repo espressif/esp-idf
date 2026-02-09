@@ -14,6 +14,8 @@
 #include "esp_ble_mesh_ble_api.h"
 
 #if (CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50)
+static inline void btc_ble_mesh_ble_cb_to_app(esp_ble_mesh_ble_cb_event_t event,
+                                              esp_ble_mesh_ble_cb_param_t *param);
 static void btc_ble_mesh_ble_copy_req_data(btc_msg_t *msg, void *p_dst, void *p_src)
 {
 #if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
@@ -99,7 +101,7 @@ void bt_mesh_ble_nimble_evt_to_btc(struct ble_gap_event *event, void *arg)
     memcpy(&param.nimble_gap_evt.event, event, sizeof(struct ble_gap_event));
     param.nimble_gap_evt.arg = arg;
 
-    btc_ble_mesh_ble_callback(&param, ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT);
+    btc_ble_mesh_ble_cb_to_app(ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT, &param);
 }
 #endif /* CONFIG_BT_NIMBLE_ENABLED && CONFIG_BLE_MESH_USE_BLE_50 */
 

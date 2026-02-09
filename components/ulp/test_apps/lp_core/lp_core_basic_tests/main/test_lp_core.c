@@ -13,7 +13,7 @@
 #include "lp_core_test_app_counter.h"
 #include "lp_core_test_app_isr.h"
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 #include "lp_core_test_app_set_timer_wakeup.h"
 #endif
 
@@ -45,6 +45,9 @@ extern const uint8_t lp_core_main_gpio_bin_end[]   asm("_binary_lp_core_test_app
 
 extern const uint8_t lp_core_main_isr_bin_start[] asm("_binary_lp_core_test_app_isr_bin_start");
 extern const uint8_t lp_core_main_isr_bin_end[]   asm("_binary_lp_core_test_app_isr_bin_end");
+
+extern const uint8_t lp_core_main_exception_bin_start[] asm("_binary_lp_core_test_app_exception_bin_start");
+extern const uint8_t lp_core_main_exception_bin_end[]   asm("_binary_lp_core_test_app_exception_bin_end");
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
@@ -292,7 +295,7 @@ TEST_CASE("LP core can be stopped and and started again from main CPU", "[ulp]")
     }
 }
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
 {
     int64_t start, test_duration;
@@ -339,7 +342,7 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 }
 #endif //SOC_RTCIO_PIN_COUNT > 0
 
-#endif //SOC_LP_TIMER_SUPPORTED
+#endif // SOC_RTC_TIMER_V2_SUPPORTED
 
 #define ISR_TEST_ITERATIONS 100
 #define IO_TEST_PIN 0
@@ -383,3 +386,32 @@ TEST_CASE("LP core ISR tests", "[ulp]")
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_io_isr_counter);
 #endif //SOC_RTCIO_PIN_COUNT > 0
 }
+
+#if SOC_DEEP_SLEEP_SUPPORTED
+
+void lp_core_prep_exception_wakeup(void)
+{
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+
+    load_and_start_lp_core_firmware(&cfg, lp_core_main_exception_bin_start, lp_core_main_exception_bin_end);
+
+    TEST_ASSERT(esp_sleep_enable_ulp_wakeup() == ESP_OK);
+    /* Setup test data */
+
+    /* Enter Deep Sleep */
+    esp_deep_sleep_start();
+}
+
+static void check_reset_reason_ulp_trap_wakeup(void)
+{
+    printf("Wakeup cause: 0x%"PRIx32"\n", esp_sleep_get_wakeup_causes());
+    TEST_ASSERT(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG));
+}
+
+TEST_CASE_MULTIPLE_STAGES("LP-core exception can wakeup main cpu", "[ulp]",
+                          lp_core_prep_exception_wakeup,
+                          check_reset_reason_ulp_trap_wakeup);
+#endif //SOC_DEEP_SLEEP_SUPPORTED

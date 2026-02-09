@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 
 #include "soc/rtc.h"
 #include "esp_pm.h"
-#include "esp_timer.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -26,11 +25,11 @@ extern "C" {
  * This is an enum of possible power modes supported by the implementation
  */
 typedef enum {
-    PM_MODE_LIGHT_SLEEP,//!< Light sleep
-    PM_MODE_APB_MIN,    //!< Idle (no CPU frequency or APB frequency locks)
-    PM_MODE_APB_MAX,    //!< Maximum APB frequency mode
-    PM_MODE_CPU_MAX,    //!< Maximum CPU frequency mode
-    PM_MODE_COUNT       //!< Number of items
+    PM_MODE_LIGHT_SLEEP,      //!< Light sleep
+    PM_MODE_APB_MIN,          //!< Idle (no CPU frequency or APB frequency locks)
+    PM_MODE_APB_MAX,          //!< Maximum APB frequency mode
+    PM_MODE_CPU_MAX,          //!< Maximum CPU frequency mode
+    PM_MODE_COUNT             //!< Number of items
 } pm_mode_t;
 
 /**
@@ -143,6 +142,7 @@ esp_err_t esp_pm_unregister_skip_light_sleep_callback(skip_light_sleep_cb_t cb);
 
 #ifdef CONFIG_PM_PROFILING
 #define WITH_PROFILING
+#include "esp_timer.h"
 #endif
 
 #ifdef WITH_PROFILING

@@ -4,6 +4,10 @@ components/esp_driver_dac/test_apps/dac:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
   depends_components:
+    - esp_driver_dac
     - esp_driver_i2s
     - esp_driver_spi
     - esp_adc
+    - esp_hw_support
+    - esp_hal_ana_conv
+    - soc

@@ -92,6 +92,8 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
 {
     tL2C_LCB *p_lcb;
 
+    L2CAP_TRACE_DEBUG("%s rem_bda="MACSTR"", __func__, MAC2STR(rem_bda));
+
     /* There can be only one BLE connection request outstanding at a time */
     if (btm_ble_get_conn_st() == BLE_CONN_IDLE) {
         L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - no connection pending");
@@ -99,10 +101,8 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
     }
 
     if (memcmp (rem_bda, l2cb.ble_connecting_bda, BD_ADDR_LEN)) {
-        L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - different  BDA Connecting: %08x%04x  Cancel: %08x%04x",
-                             (l2cb.ble_connecting_bda[0] << 24) + (l2cb.ble_connecting_bda[1] << 16) + (l2cb.ble_connecting_bda[2] << 8) + l2cb.ble_connecting_bda[3],
-                             (l2cb.ble_connecting_bda[4] << 8) + l2cb.ble_connecting_bda[5],
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3], (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - different BDA Connecting: "MACSTR" Cancel: "MACSTR"",
+                             MAC2STR(l2cb.ble_connecting_bda), MAC2STR(rem_bda));
 
         return (FALSE);
     }
@@ -148,16 +148,12 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
 
     /* If we don't have one, create one and accept the connection. */
     if (!p_lcb || !p_acl_cb) {
-        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - unknown BD_ADDR %08x%04x",
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - unknown BD_ADDR "MACSTR"", MAC2STR(rem_bda));
         return (FALSE);
     }
 
     if (p_lcb->transport != BT_TRANSPORT_LE) {
-        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - BD_ADDR %08x%04x not LE",
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - BD_ADDR "MACSTR" not LE", MAC2STR(rem_bda));
         return (FALSE);
     }
 
@@ -172,7 +168,7 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
     if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL){
         status = HCI_ERR_ILLEGAL_COMMAND;
         need_cb = true;
-        L2CAP_TRACE_ERROR("There are two connection parameter requests that are being updated, please try later ");
+        L2CAP_TRACE_ERROR("%s connection parameter update in progress, please try later", __func__);
     }
 
     if ((need_cb == TRUE) && (conn_callback_func.update_conn_param_cb != NULL)) {
@@ -221,20 +217,16 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
     p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_LE);
 
     if (!p_lcb) {
-        L2CAP_TRACE_WARNING ("L2CA_EnableUpdateBleConnParams - unknown BD_ADDR %08x%04x",
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5]);
+        L2CAP_TRACE_WARNING ("L2CA_EnableUpdateBleConnParams - unknown BD_ADDR "MACSTR"", MAC2STR(rem_bda));
         return (FALSE);
     }
 
-    L2CAP_TRACE_API ("%s - BD_ADDR %08x%04x enable %d current upd state 0x%02x", __FUNCTION__,
-                     (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                     (rem_bda[4] << 8) + rem_bda[5], enable, p_lcb->conn_update_mask);
+    L2CAP_TRACE_API ("%s - BD_ADDR "MACSTR" enable %d current upd state 0x%02x",
+        __func__, MAC2STR(rem_bda), enable, p_lcb->conn_update_mask);
 
     if (p_lcb->transport != BT_TRANSPORT_LE) {
-        L2CAP_TRACE_WARNING ("%s - BD_ADDR %08x%04x not LE (link role %d)", __FUNCTION__,
-                             (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
-                             (rem_bda[4] << 8) + rem_bda[5], p_lcb->link_role);
+        L2CAP_TRACE_WARNING ("%s - BD_ADDR "MACSTR" not LE (link role %d)",
+            __func__, MAC2STR(rem_bda), p_lcb->link_role);
         return (FALSE);
     }
 
@@ -514,8 +506,13 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
 void l2cble_conn_comp(UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE type,
                       UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
 {
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     btm_ble_update_link_topology_mask(role, TRUE);
-
+#else
+    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
+    /* make device fall back into undirected adv mode by default */
+    btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
     if (role == HCI_ROLE_MASTER) {
         l2cble_scanner_conn_comp(handle, bda, type, conn_interval, conn_latency, conn_timeout);
     } else {
@@ -718,6 +715,11 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     UINT16          cmd_len;
     UINT16          min_interval, max_interval, latency, timeout;
 
+    if (pkt_len < L2CAP_CMD_OVERHEAD) {
+        L2CAP_TRACE_WARNING ("L2CAP - LE - pkt too short: %d", pkt_len);
+        return;
+    }
+
     p_pkt_end = p + pkt_len;
 
     STREAM_TO_UINT8  (cmd_code, p);
@@ -734,6 +736,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     case L2CAP_CMD_REJECT:
     case L2CAP_CMD_ECHO_RSP:
     case L2CAP_CMD_INFO_RSP:
+        if (cmd_len < 2) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         p += 2;
         break;
     case L2CAP_CMD_ECHO_REQ:
@@ -742,6 +748,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
 
     case L2CAP_CMD_BLE_UPDATE_REQ:
+        if (cmd_len < 8) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         STREAM_TO_UINT16 (min_interval, p); /* 0x0006 - 0x0C80 */
         STREAM_TO_UINT16 (max_interval, p); /* 0x0006 - 0x0C80 */
         STREAM_TO_UINT16 (latency, p);  /* 0x0000 - 0x03E8 */
@@ -784,6 +794,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
 
     case L2CAP_CMD_BLE_UPDATE_RSP: {
+        if (cmd_len < 2) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         UINT16 result = 0;
         STREAM_TO_UINT16(result, p); //result = 0 connection param accepted, result = 1 connection param rejected.
         UINT8 status = (result == 0) ? HCI_SUCCESS : HCI_ERR_PARAM_OUT_OF_RANGE;
@@ -796,6 +810,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
     }
     case L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ: {
+        if (cmd_len < 10) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         tL2C_CCB *p_ccb = NULL;
         tL2C_RCB *p_rcb = NULL;
         UINT16 spsm;
@@ -844,6 +862,10 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
     }
     case L2CAP_CMD_DISC_REQ: {
+        if (cmd_len < 4) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
         tL2C_CCB *p_ccb = NULL;
         UINT16 lcid;
         UINT16 rcid;
@@ -953,11 +975,14 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #endif // CONTROLLER_RPA_LIST_ENABLE
 #endif // (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE)
 
+#if (BLE_TOPOLOGY_CHECK == TRUE)
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
         l2cu_release_lcb (p_lcb);
         L2CAP_TRACE_ERROR("initiate direct connection fail, topology limitation");
         return FALSE;
     }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+
     uint32_t link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
     if(GATTC_CONNECT_RETRY_COUNT) {
         if(!p_lcb->retry_create_con) {
@@ -1020,6 +1045,10 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         }
 
         tHCI_CreatExtConn aux_conn = {0};
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        aux_conn.adv_handle = p_lcb->adv_handle;
+        aux_conn.subevent = p_lcb->subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         aux_conn.filter_policy = FALSE;
         aux_conn.own_addr_type = own_addr_type;
         aux_conn.peer_addr_type = peer_addr_type;
@@ -1041,9 +1070,19 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         memcpy (l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN);
         btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, link_timeout);
         btm_ble_set_conn_st (BLE_DIR_CONN);
-        if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
-            l2cu_release_lcb (p_lcb);
-            L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        if (p_lcb->is_pawr_synced) {
+            if(!btsnd_hcic_ble_create_ext_conn_v2(&aux_conn)) {
+                l2cu_release_lcb (p_lcb);
+                L2CAP_TRACE_ERROR("initiate pawr sync connection failed, no resources");
+            }
+        } else
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
+        {
+            if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
+                l2cu_release_lcb (p_lcb);
+                L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
+            }
         }
 #else
     L2CAP_TRACE_ERROR("BLE 5.0 not support!\n");
@@ -1073,11 +1112,11 @@ BOOLEAN l2cble_create_conn (tL2C_LCB *p_lcb)
         L2CAP_TRACE_WARNING ("L2CAP - LE - cannot start new connection at conn st: %d", conn_st);
 
         btm_ble_enqueue_direct_conn_req(p_lcb);
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
         if (conn_st == BLE_BG_CONN) {
             btm_ble_suspend_bg_conn();
         }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
         rt = TRUE;
     }
     return rt;
@@ -1104,6 +1143,7 @@ void l2c_link_processs_ble_num_bufs (UINT16 num_lm_ble_bufs)
     l2cb.num_lm_ble_bufs = l2cb.controller_le_xmit_window = num_lm_ble_bufs;
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2c_ble_link_adjust_allocation
@@ -1223,6 +1263,7 @@ void l2c_ble_link_adjust_allocation (void)
         }
     }
 }
+#endif // #if (BLE_INCLUDED == TRUE)
 
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
 /*******************************************************************************

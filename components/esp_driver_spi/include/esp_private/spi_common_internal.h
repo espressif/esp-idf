@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,17 +9,14 @@
 #pragma once
 
 #include <esp_intr_alloc.h>
+#include "esp_pm.h"
+#include "soc/soc.h"   //for SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "driver/spi_common.h"
-#include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
-#include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
 #include "esp_private/spi_dma.h"
-#include "esp_pm.h"
-#include "esp_private/spi_share_hw_ctrl.h"
-#if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
-#endif
+#include "esp_private/spi_share_hw_ctrl.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -35,7 +32,7 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 typedef dma_descriptor_align4_t spi_dma_desc_t;
 #endif
 
-#if SOC_NON_CACHEABLE_OFFSET
+#if SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "hal/cache_ll.h"
 #define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
 #define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))
@@ -53,11 +50,12 @@ typedef enum {
 /// Attributes of an SPI bus
 typedef struct {
     spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus
-    uint64_t gpio_reserve;              ///< reserved output gpio bit mask
-    uint32_t flags;                     ///< Flags (attributes) of the bus
+    uint64_t gpio_reserve;              ///< reserved gpio matrix output pins and all iomux pins bit mask
+    uint32_t flags;                     ///< Flags (SPICOMMON_BUSFLAG_* flag combination of bus abilities) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
-    size_t internal_mem_align_size;     ///< Buffer align byte requirement for internal memory
+    size_t cache_align_int;             ///< Internal memory align byte requirement
+    size_t cache_align_ext;             ///< External memory align byte requirement
     spi_bus_lock_handle_t lock;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;       ///< Power management lock
@@ -72,13 +70,34 @@ typedef struct {
     spi_dma_chan_handle_t tx_dma_chan;  ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
     spi_dma_chan_handle_t rx_dma_chan;  ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
 #endif
-    int dma_desc_num;               ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
-    spi_dma_desc_t *dmadesc_tx;     ///< DMA descriptor array for TX
-    spi_dma_desc_t *dmadesc_rx;     ///< DMA descriptor array for RX
+    size_t dma_align_tx_int;            ///< Internal memory align byte requirement for TX
+    size_t dma_align_tx_ext;            ///< External memory align byte requirement for TX
+    size_t dma_align_rx_int;            ///< Internal memory align byte requirement for RX
+    size_t dma_align_rx_ext;            ///< External memory align byte requirement for RX
+    int dma_desc_num;                   ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
+    spi_dma_desc_t *dmadesc_tx;         ///< DMA descriptor array for TX
+    spi_dma_desc_t *dmadesc_rx;         ///< DMA descriptor array for RX
 } spi_dma_ctx_t;
 
 /// Destructor called when a bus is deinitialized.
 typedef esp_err_t (*spi_destroy_func_t)(void*);
+
+/**
+ * @brief Allocate a SPI bus
+ *
+ * @param host_id SPI host ID
+ * @param name Name of the bus
+ * @return ESP_OK on success, ESP_ERR_NO_MEM if no memory is available
+ */
+esp_err_t spicommon_bus_alloc(spi_host_device_t host_id, const char *name);
+
+/**
+ * @brief Free a SPI bus
+ *
+ * @param host_id SPI host ID
+ * @return ESP_OK on success, ESP_ERR_INVALID_STATE if the bus is not allocated
+ */
+esp_err_t spicommon_bus_free(spi_host_device_t host_id);
 
 /**
  * @brief Alloc DMA channel for SPI
@@ -157,24 +176,22 @@ esp_err_t spicommon_dma_chan_free(spi_dma_ctx_t *dma_ctx);
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
  *              - ``SPICOMMON_BUSFLAG_IO4_IO7``: The bus has spi data4 ~ spi data7 connected.
  *              - ``SPICOMMON_BUSFLAG_OCTAL``: Combination of ``SPICOMMON_BUSFLAG_QUAL`` and ``SPICOMMON_BUSFLAG_IO4_IO7``.
- * @param[out] io_reserved Output the reserved gpio map
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o,  uint64_t *io_reserved);
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o, uint64_t *io_reserved);
 
 /**
  * @brief Free the IO used by a SPI peripheral
  *
- * @param bus_cfg Bus config struct which defines which pins to be used.
- * @param io_reserved Bitmap indicate which pin is reserved
+ * @param host SPI peripheral
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg, uint64_t *io_reserved);
+esp_err_t spicommon_bus_free_io_cfg(spi_host_device_t host);
 
 /**
  * @brief Initialize a Chip Select pin for a specific SPI peripheral
@@ -184,7 +201,6 @@ esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg, uint64_t *i
  * @param cs_id Hardware CS id to route
  * @param force_gpio_matrix If true, CS will always be routed through the GPIO matrix. If false,
  *                          if the GPIO number allows it, the routing will happen through the IO_mux.
- * @param[out] io_reserved Output the reserved gpio map
  */
 void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_id, int force_gpio_matrix, uint64_t *io_reserved);
 

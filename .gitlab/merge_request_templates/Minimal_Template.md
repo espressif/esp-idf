@@ -9,11 +9,6 @@
 ## Related <!-- Optional -->
 <!-- Related Jira issues and Github issues or write "No related issues"-->
 
-## Release notes <!-- Mandatory -->
-<!-- Either state release notes or write "No release notes" -->
-
-<!-- ## Breaking change notes --><!-- Optional -->
-
 <!-- ## Dynamic Pipeline Configuration
 ```yaml
 Test Case Filters:

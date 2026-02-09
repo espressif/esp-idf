@@ -14,7 +14,7 @@ extern "C" {
 #include "esp_heap_caps.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
-#include "soc/uart_channel.h"
+#include "soc/uart_pins.h"
 
 // Forward declaration. Definition in linenoise/linenoise.h.
 typedef struct linenoiseCompletions linenoiseCompletions;
@@ -89,8 +89,8 @@ typedef struct {
 {                                                   \
     .channel = CONFIG_ESP_CONSOLE_UART_NUM,         \
     .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,  \
-    .tx_gpio_num = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM, \
-    .rx_gpio_num = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM, \
+    .tx_gpio_num = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM, \
+    .rx_gpio_num = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM, \
 }
 #else
 #define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT()      \

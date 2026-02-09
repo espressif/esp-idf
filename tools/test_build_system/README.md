@@ -131,6 +131,24 @@ def test_idf_copy(idf_copy):
     run_idf_py('build', env=env)
 ```
 
+### `buildv2_skip` marker
+
+This marker enables the skipping of tests that, for any reason, cannot be
+executed with the IDF build system version 2. It accepts an optional string
+argument that explains why the test cannot be run with version 2. If no
+explanation is provided, a default message is used. This marker is used in
+the `pytest_collection_modifyitems` hook to skip tests marked with it when the
+`--buildv2` pytest command line option is used. For implementation details,
+please refer to `conftest.py`.
+
+```python
+@pytest.mark.buildv2_skip
+def test_target_guessing()
+
+@pytest.mark.buildv2_skip('This functionality has not been implemented in cmakev2 yet.')
+def test_target_guessing()
+```
+
 ### Build snapshots
 
 `get_snapshot(list_of_globs)` function takes a list of glob expressions, finds the files matching these expressions, and returns a `Snapshot` instance. `Snapshot` instances record file names and their modification timestamps. Two `Snapshot` instances can be compared using `assert_same` and `assert_different` methods:

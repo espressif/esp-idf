@@ -84,7 +84,7 @@ menu "SPI RAM config"
             default SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
             help
                 Select the workaround strategy. Note that the strategy for precompiled
-                libraries (libgcc, newlib, bt, wifi) is not affected by this selection.
+                libraries (libgcc, libc, bt, wifi) is not affected by this selection.
 
                 Unless you know you need a different strategy, it's suggested you stay
                 with the default MEMW strategy. Note that DUPLDST can interfere with hardware

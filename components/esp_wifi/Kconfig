@@ -1,4 +1,3 @@
-
 menu "Wi-Fi"
     visible if (SOC_WIFI_SUPPORTED || SOC_WIRELESS_HOST_SUPPORTED)
 
@@ -308,19 +307,19 @@ menu "Wi-Fi"
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
 
-        config ESP_WIFI_ENABLE_SAE_PK
-            bool "Enable SAE-PK"
-            default y
-            depends on (ESP_WIFI_ENABLE_WPA3_SAE && ESP_WIFI_ENABLE_SAE_H2E)
-            help
-                Select this option to enable SAE-PK
-
         config ESP_WIFI_ENABLE_SAE_H2E
             bool "Enable SAE-H2E"
             default y
             depends on ESP_WIFI_ENABLE_WPA3_SAE
             help
                 Select this option to enable SAE-H2E
+
+        config ESP_WIFI_ENABLE_SAE_PK
+            bool "Enable SAE-PK"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to enable SAE-PK
 
         config ESP_WIFI_SOFTAP_SAE_SUPPORT
             bool "Enable WPA3 Personal(SAE) SoftAP"
@@ -339,6 +338,13 @@ menu "Wi-Fi"
                 PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
+
+        config ESP_WIFI_WPA3_COMPATIBLE_SUPPORT
+            bool "Enable WPA3 Compatible support"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to support wpa3_compatible mode for station and AP
 
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"
@@ -570,13 +576,20 @@ menu "Wi-Fi"
                 Maximum espnow encrypted peers number + maximum number of connections of SoftAP = Max hardware
                 keys number. When using ESP mesh, this value should be set to a maximum of 6.
 
-        config ESP_WIFI_NAN_ENABLE
-            bool "WiFi Aware"
+        config ESP_WIFI_NAN_SYNC_ENABLE
+            bool "Enable Wi-Fi Aware: Synchronization (NAN-Sync)"
             default n
             depends on SOC_WIFI_NAN_SUPPORT
             select LWIP_IPV6
             help
-                Enable WiFi Aware (NAN) feature.
+                Enable Wi-Fi Aware: Synchronization feature (NAN-Sync).
+
+        config ESP_WIFI_NAN_USD_ENABLE
+            bool "Enable Wi-Fi Aware: Unsynchronized service discovery (NAN-USD)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            default n
+            help
+                Enable Wi-Fi Aware: Unsynchronized service discovery (NAN-USD)
 
         config ESP_WIFI_MBEDTLS_CRYPTO
             bool "Use MbedTLS crypto APIs"
@@ -635,6 +648,7 @@ menu "Wi-Fi"
         config ESP_WIFI_SUITE_B_192
             bool "Enable NSA suite B support with 192 bit key"
             default n
+            depends on ESP_WIFI_ENTERPRISE_SUPPORT
             depends on SOC_WIFI_GCMP_SUPPORT
             select ESP_WIFI_GCMP_SUPPORT
             select ESP_WIFI_GMAC_SUPPORT
@@ -813,6 +827,14 @@ menu "Wi-Fi"
                     be shared to other devices, making it in readable format increases
                     that risk, also passphrase requires pbkdf2 to convert in psk.
 
+            config ESP_WIFI_WPS_RECONNECT_ON_FAIL
+                bool "Reconnect to previous SSID if WPS failed"
+                default n
+                help
+                    Select this option to enable reconnection to previous SSID if WPS fails.
+                    This option will only work if station was connected to a network
+                    when WPS was started.
+
         endmenu # "WPS Configuration Options"
 
 
@@ -826,12 +848,6 @@ menu "Wi-Fi"
 
                 Enabling this could increase the build size ~60kb
                 depending on the project logging level.
-
-        config ESP_WIFI_TESTING_OPTIONS
-            bool "Add DPP testing code"
-            default n
-            help
-                Select this to enable unity test for DPP.
 
         config ESP_WIFI_ENTERPRISE_SUPPORT
             bool "Enable enterprise option"
@@ -855,6 +871,15 @@ menu "Wi-Fi"
             help
                 Select this configuration to free dynamic buffers during WiFi enterprise connection.
                 This will enable chip to reduce heap consumption during WiFi enterprise connection.
+
+        config ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG
+            bool "Enable debug assertions for modem RF flag update"
+            depends on ESP_WIFI_ENHANCED_LIGHT_SLEEP
+            default n
+            help
+                Enable debug assertions to verify modem RF flag update operations.
+                This option enables assert checks to verify that modem RF power state
+                is correctly cleared before pmu sleep.
 
     endif # wifi enabled
 

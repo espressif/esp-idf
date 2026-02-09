@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@
 #if !NON_OS_BUILD
 /* Normal app version maps to spi_flash_mmap.h operations...
  */
-static const char *TAG = "bootloader_mmap";
+ESP_LOG_ATTR_TAG(TAG, "bootloader_mmap");
 
 static spi_flash_mmap_handle_t map;
 
@@ -131,17 +131,17 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/opi_flash.h"
 #endif
-#include "spi_flash/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_defs.h"
 
 #if ESP_TEE_BUILD
 #include "esp_fault.h"
 #include "esp_flash_partitions.h"
 #include "rom/spi_flash.h"
 
-extern bool esp_tee_flash_check_paddr_in_active_tee_part(size_t paddr);
+extern bool esp_tee_flash_check_prange_in_active_tee_part(const size_t paddr, const size_t len);
 #endif
 
-static const char *TAG = "bootloader_flash";
+ESP_LOG_ATTR_TAG(TAG, "bootloader_flash");
 
 /*
  * NOTE: Memory mapping strategy
@@ -217,13 +217,10 @@ static uint32_t current_mapped_size;
 // Current bootloader mapping (ab)used for bootloader_read()
 static uint32_t current_read_mapping = UINT32_MAX;
 
-#if ESP_TEE_BUILD && CONFIG_IDF_TARGET_ESP32C6
-extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
-extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
-
-/* TODO: [ESP-TEE] Workarounds for the ROM read API
- *
- * The esp_rom_spiflash_read API requires two workarounds on ESP32-C6 ECO0:
+#if ESP_TEE_BUILD
+/* [ESP-TEE] Workarounds for the ROM SPI flash APIs */
+/*
+ * TODO: The esp_rom_spiflash_read API requires two workarounds on ESP32-C6 ECO0 -
  *
  * 1. [IDF-7199] Call esp_rom_spiflash_write API once before reading.
  *    Without this, reads return corrupted data.
@@ -231,19 +228,24 @@ extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
  * 2. Configure ROM flash parameters before each read using the function below.
  *    Without this, the first byte read is corrupted.
  *
- * Note: These workarounds are not needed for ESP32-C6 ECO1 and later versions.
+ * NOTE: These workarounds are not needed for ESP32-C6 ECO1 and later versions.
  */
 static void rom_read_api_workaround(void)
 {
-    static bool is_first_call = true;
-    if (is_first_call) {
-        uint32_t dummy_val = UINT32_MAX;
-        uint32_t dest_addr = ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN;
-        esp_rom_spiflash_write(dest_addr, &dummy_val, sizeof(dummy_val));
-        is_first_call = false;
-    }
+#if CONFIG_ESP32C6_REV_MIN_FULL == 0
+    if (efuse_hal_chip_revision() == 0) {
+        extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
+        extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 
-    uint32_t freqdiv = 0;
+        static bool is_first_call = true;
+        if (is_first_call) {
+            uint32_t dummy_val = UINT32_MAX;
+            uint32_t dest_addr = ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN;
+            esp_rom_spiflash_write(dest_addr, &dummy_val, sizeof(dummy_val));
+            is_first_call = false;
+        }
+
+        uint32_t freqdiv = 0;
 
 #if CONFIG_ESPTOOLPY_FLASHFREQ_80M
     freqdiv = 1;
@@ -264,10 +266,48 @@ static void rom_read_api_workaround(void)
     read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
 #endif
 
-    esp_rom_spiflash_config_clk(freqdiv, 1);
-    spi_dummy_len_fix(1, freqdiv);
-    esp_rom_spiflash_config_readmode(read_mode);
-    spi_common_set_dummy_output(read_mode);
+        esp_rom_spiflash_config_clk(freqdiv, 1);
+        spi_dummy_len_fix(1, freqdiv);
+        esp_rom_spiflash_config_readmode(read_mode);
+        spi_common_set_dummy_output(read_mode);
+    }
+#endif
+}
+
+/*
+ * TODO: [IDF-13582]
+ *
+ * When `esp_flash_read()` is invoked from REE, it enables SPI1 WB (write-back) mode
+ * via `spi_flash_ll_wb_mode_enable()`. The ROM flash APIs used by TEE do not support
+ * WB mode, causing failures when TEE later accesses flash.
+ *
+ * Workaround applied in TEE flash layer:
+ * 1. Save the current WB mode state.
+ * 2. Temporarily disable WB mode before calling ROM flash APIs.
+ * 3. Restore WB mode state after the ROM API call completes.
+ *
+ * NOTE: This workaround will become removed once IDF-13582 is implemented.
+ */
+static inline bool spi1_wb_mode_save_and_disable(void)
+{
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    if (REG_GET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN)) {
+        REG_CLR_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
+        return true;
+    }
+#endif
+    return false;
+}
+
+static inline void spi1_wb_mode_restore(bool saved_state)
+{
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    if (saved_state) {
+        REG_SET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
+    }
+#else
+    (void)saved_state;
+#endif
 }
 #endif
 
@@ -416,8 +456,9 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #else
 #if !ESP_TEE_BUILD
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
-#elif CONFIG_ESP32C6_REV_MIN_0
+#else
     rom_read_api_workaround();
+    bool is_wb_saved = spi1_wb_mode_save_and_disable();
 #endif
 #endif
 
@@ -428,6 +469,8 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #else
 #if !ESP_TEE_BUILD
     cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#else
+    spi1_wb_mode_restore(is_wb_saved);
 #endif
 #endif
 
@@ -478,7 +521,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             Cache_Read_Enable(0);
 #else
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-            cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, FLASH_MMAP_VADDR, actual_mapped_len);
+            cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, FLASH_READ_VADDR, actual_mapped_len);
 #endif
 #if !ESP_TEE_BUILD
             cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
@@ -496,16 +539,8 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 
 esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool allow_decrypt)
 {
-    if (src_addr & 3) {
-        ESP_EARLY_LOGE(TAG, "bootloader_flash_read src_addr 0x%x not 4-byte aligned", src_addr);
-        return ESP_FAIL;
-    }
-    if (size & 3) {
-        ESP_EARLY_LOGE(TAG, "bootloader_flash_read size 0x%x not 4-byte aligned", size);
-        return ESP_FAIL;
-    }
-    if ((intptr_t)dest & 3) {
-        ESP_EARLY_LOGE(TAG, "bootloader_flash_read dest 0x%x not 4-byte aligned", (intptr_t)dest);
+    if ((src_addr & 3) || (size & 3) || ((intptr_t)dest & 3)) {
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_read src_addr 0x%x, size 0x%x or dest 0x%x not 4-byte aligned", src_addr, size, (intptr_t)dest);
         return ESP_FAIL;
     }
 
@@ -524,7 +559,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
      * by validating the address before proceeding.
      */
 #if ESP_TEE_BUILD
-    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(dest_addr);
+    bool addr_chk = esp_tee_flash_check_prange_in_active_tee_part(dest_addr, size);
     if (addr_chk) {
         ESP_EARLY_LOGE(TAG, "bootloader_flash_write invalid dest_addr");
         return ESP_FAIL;
@@ -550,6 +585,10 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
         return err;
     }
 
+#if ESP_TEE_BUILD
+    bool is_wb_saved = spi1_wb_mode_save_and_disable();
+#endif
+
     esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
 
     if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
@@ -564,6 +603,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
      * from being read from already memory-mapped addresses that were modified.
      */
 #if ESP_TEE_BUILD
+    spi1_wb_mode_restore(is_wb_saved);
     spi_flash_check_and_flush_cache(dest_addr, size);
 #endif
 
@@ -578,7 +618,7 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
 #if ESP_TEE_BUILD
-    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(start_addr);
+    bool addr_chk = esp_tee_flash_check_prange_in_active_tee_part(start_addr, size);
     if (addr_chk) {
         return ESP_ERR_INVALID_ARG;
     }

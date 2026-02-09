@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "esp_err.h"
+#include "esp_memory_utils.h"
 
 #ifdef __cplusplus
 extern "C" {

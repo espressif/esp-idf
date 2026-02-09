@@ -5,6 +5,52 @@
 
 This example is to test the Bluetooth compatibility and mobile phones.
 
+## Flow Diagram
+
+```
+    ┌──────────────────┐                           ┌──────────────────┐
+    │    ESP32 BLE     │                           │   Mobile Phone   │
+    │ (Compatibility)  │                           │  (LightBlue App) │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  1. Initialize BLE                           │
+             │  2. Create GATT Services                     │
+             │  3. Start Advertising                        │
+             │                                              │
+             │  ─────────── Test Scenarios ───────────      │
+             │                                              │
+             │         Scan & Discover                      │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │         Connection Request                   │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │         Service Discovery                    │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │         Read Characteristic                  │
+             │ <════════════════════════════════════════════│
+             │         Read Response                        │
+             │ ════════════════════════════════════════════>│
+             │                                              │
+             │         Write Characteristic                 │
+             │ <════════════════════════════════════════════│
+             │         Write Confirmation                   │
+             │ ════════════════════════════════════════════>│
+             │                                              │
+             │         Enable Notification                  │
+             │ <════════════════════════════════════════════│
+             │         Notification Data                    │
+             │ ════════════════════════════════════════════>│
+             │                                              │
+             │         Disconnection                        │
+             │ <═══════════════════════════════════════════>│
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │    ESP32 BLE     │                           │   Mobile Phone   │
+    └──────────────────┘                           └──────────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

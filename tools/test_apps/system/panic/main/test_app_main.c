@@ -126,10 +126,13 @@ void app_main(void)
     HANDLE_TEST(test_name, test_tcb_corrupted);
     HANDLE_TEST(test_name, test_panic_handler_stuck0);
     HANDLE_TEST(test_name, test_panic_handler_crash0);
+#if CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT
+    HANDLE_TEST(test_name, test_panic_halt);
+#endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */
 #if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
     HANDLE_TEST(test_name, test_panic_print_backtrace);
 #endif
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
     HANDLE_TEST(test_name, test_setup_coredump_summary);
     HANDLE_TEST(test_name, test_coredump_summary);
 #endif
@@ -143,6 +146,13 @@ void app_main(void)
     HANDLE_TEST(test_name, test_iram_reg2_write_violation);
     HANDLE_TEST(test_name, test_iram_reg3_write_violation);
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    HANDLE_TEST(test_name, test_non_cache_iram_reg1_write_violation);
+    HANDLE_TEST(test_name, test_non_cache_iram_reg2_write_violation);
+    HANDLE_TEST(test_name, test_non_cache_iram_reg3_write_violation);
+    HANDLE_TEST(test_name, test_non_cache_iram_reg4_write_violation);
+#endif
+
     /* TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception */
     HANDLE_TEST(test_name, test_iram_reg4_write_violation);
 
@@ -150,6 +160,11 @@ void app_main(void)
     HANDLE_TEST(test_name, test_dram_reg1_execute_violation);
 
     HANDLE_TEST(test_name, test_dram_reg2_execute_violation);
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    HANDLE_TEST(test_name, test_non_cache_dram_reg1_execute_violation);
+    HANDLE_TEST(test_name, test_non_cache_dram_reg2_execute_violation);
+#endif
 
 #if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
     HANDLE_TEST(test_name, test_rtc_fast_reg1_execute_violation);
@@ -171,23 +186,40 @@ void app_main(void)
     HANDLE_TEST(test_name, test_rtc_slow_reg2_execute_violation);
 #endif
 
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#if CONFIG_ESP_SYSTEM_MEMPROT
     HANDLE_TEST(test_name, test_irom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_execute_violation);
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    HANDLE_TEST(test_name, test_non_cache_irom_reg_write_violation);
+    HANDLE_TEST(test_name, test_non_cache_drom_reg_write_violation);
+    HANDLE_TEST(test_name, test_non_cache_drom_reg_execute_violation);
+#endif
+
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
     HANDLE_TEST(test_name, test_spiram_xip_irom_alignment_reg_execute_violation);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    HANDLE_TEST(test_name, test_non_cache_spiram_xip_irom_alignment_reg_execute_violation);
+#endif
 #endif
 #endif
 
 #if CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2
     HANDLE_TEST(test_name, test_spiram_xip_drom_alignment_reg_execute_violation);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    HANDLE_TEST(test_name, test_non_cache_spiram_xip_drom_alignment_reg_execute_violation);
+#endif
 #endif
 
 #ifdef CONFIG_SOC_CPU_HAS_PMA
     HANDLE_TEST(test_name, test_invalid_memory_region_write_violation);
     HANDLE_TEST(test_name, test_invalid_memory_region_execute_violation);
 #endif
+#endif
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY && CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    HANDLE_TEST(test_name, test_panic_extram_attr);
 #endif
 
     die("Unknown test name");

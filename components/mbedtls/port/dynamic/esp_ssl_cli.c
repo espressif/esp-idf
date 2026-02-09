@@ -153,7 +153,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
             } else {
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-                esp_mbedtls_free_dhm(ssl);
                 esp_mbedtls_free_keycert_key(ssl);
                 esp_mbedtls_free_keycert(ssl);
 #endif

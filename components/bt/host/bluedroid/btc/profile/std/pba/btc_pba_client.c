@@ -392,7 +392,7 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
 
         if (include_app_param) {
             uint8_t search_value_len = 0;
-            if (app_param->include_search_value) {
+            if (app_param->include_search_value && app_param->search_value) {
                 search_value_len = strlen(app_param->search_value) + 1;
             }
             app_param_buff = osi_malloc(BTA_PBAP_PULL_VCARD_LISTING_APP_PARAM_BUFF_SIZE_MIN + search_value_len);

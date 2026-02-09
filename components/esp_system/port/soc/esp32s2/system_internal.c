@@ -20,7 +20,6 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/syscon_reg.h"
-#include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_memory_layout.h"
@@ -48,10 +47,10 @@ void esp_system_reset_modules_on_exit(void)
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG,
                             DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_SPI2_RST | DPORT_SPI3_RST |
                             DPORT_SPI2_DMA_RST | DPORT_SPI3_DMA_RST | DPORT_UART_RST);
-    DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN0_REG, 0);
 
     // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
@@ -98,7 +97,7 @@ void esp_restart_noos(void)
         // If stack_addr is from External Memory (CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM is used)
         // then need to switch SP to Internal Memory otherwise
         // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
-        uint32_t new_sp = ALIGN_DOWN(_bss_end, 16);
+        uint32_t new_sp = ALIGN_DOWN((uint32_t)&_bss_end, 16);
         SET_STACK(new_sp);
     }
 #endif

@@ -72,7 +72,7 @@ menu "Virtual file system"
 
     config VFS_SUPPORT_TERMIOS
         bool "Provide termios.h functions"
-        default y
+        default n
         # Very likely, only makes sense for UART VFS driver, which itself depends on VFS_SUPPORT_IO
         depends on VFS_SUPPORT_IO
         help

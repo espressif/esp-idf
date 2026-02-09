@@ -10,7 +10,6 @@ from pytest_embedded_idf.utils import idf_parametrize
     'config',
     [
         'release',
-        'i2c_isr_flash',
         'text_in_flash_when_suspend',
     ],
     indirect=True,

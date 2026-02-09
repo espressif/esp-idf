@@ -775,6 +775,7 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type, uint8_t param
             }
             return HID_SUCCESS;
         }
+        osi_free(p_buf);
         return HID_ERR_NO_CONNECTION;
     }
 #ifdef REPORT_TRANSFER_TIMESTAMP

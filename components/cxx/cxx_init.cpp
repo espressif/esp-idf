@@ -6,7 +6,6 @@
 
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "esp_private/startup_internal.h"
 
 namespace {
 const char *TAG = "C++ init";
@@ -27,6 +26,11 @@ extern "C" size_t __cxx_eh_arena_size_get(void)
     ESP_EARLY_LOGD(TAG, "Setting C++ exception emergency pool to 0.");
     return 0;
 #endif
+}
+
+extern "C" void __esp_idf_pthread_rwlock_lazy_allocation(void)
+{
+    /* TODO IDF-14862: remove */
 }
 
 /**

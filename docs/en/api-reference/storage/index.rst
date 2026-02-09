@@ -53,6 +53,10 @@ Examples
       - Shows the use of the C-style API to read and write integer data types in NVS flash.
     * - :example:`nvs_rw_value_cxx <storage/nvs/nvs_rw_value_cxx>`
       - Shows the use of the C++-style API to read and write integer data types in NVS flash.
+    * - :example:`nvs_statistics <storage/nvs/nvs_statistics>`
+      - Shows the use of the C-style API to obtain NVS usage statistics: free/used/available/total number of entries and number of namespaces in given NVS partition.
+    * - :example:`nvs_iteration <storage/nvs/nvs_iteration>`
+      - Shows the use of the C-style API to iterate over entries of specific (or any) NVS data type and how to obtain info about such entries.
     * - :example:`nvs_bootloader <storage/nvs/nvs_bootloader>`
       - Shows the use of the API available to the bootloader code to read NVS data.
     * - :example:`nvsgen <storage/nvs/nvsgen>`

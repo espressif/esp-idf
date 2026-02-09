@@ -150,6 +150,48 @@ To prevent tearing effects, the simplest method is to use two screen-sized frame
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 
+.. _user_custom_frame_buffer:
+
+User Custom Frame Buffer
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+User can provide their own frame buffer instead of letting the driver allocate it. In this mode, user needs to manage the lifecycle of the frame buffer by themselves.
+
+.. code:: c
+
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    esp_lcd_rgb_panel_config_t panel_config = {
+        .data_width = 16, // RGB565 in parallel mode, thus 16 bits in width
+        .clk_src = LCD_CLK_SRC_DEFAULT,
+        .disp_gpio_num = EXAMPLE_PIN_NUM_DISP_EN,
+        .pclk_gpio_num = EXAMPLE_PIN_NUM_PCLK,
+        .vsync_gpio_num = EXAMPLE_PIN_NUM_VSYNC,
+        .hsync_gpio_num = EXAMPLE_PIN_NUM_HSYNC,
+        .de_gpio_num = EXAMPLE_PIN_NUM_DE,
+        .data_gpio_nums = {
+            EXAMPLE_PIN_NUM_DATA0,
+            EXAMPLE_PIN_NUM_DATA1,
+            EXAMPLE_PIN_NUM_DATA2,
+            // other GPIOs
+            // The number of GPIOs here should be the same to the value of "data_width" above
+            ...
+        },
+        // The timing parameters should refer to your LCD spec
+        .timings = {
+            .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+            .h_res = EXAMPLE_LCD_H_RES,
+            .v_res = EXAMPLE_LCD_V_RES,
+            .hsync_back_porch = 40,
+            .hsync_front_porch = 20,
+            .hsync_pulse_width = 1,
+            .vsync_back_porch = 8,
+            .vsync_front_porch = 4,
+            .vsync_pulse_width = 1,
+        },
+        .user_fbs[0] = user_frame_buffer, // use user custom frame buffer
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
+
 .. _bounce_buffer_with_single_psram_frame_buffer:
 
 Bounce Buffer with Single PSRAM Frame Buffer

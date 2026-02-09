@@ -1,7 +1,0 @@
-CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=n
-CONFIG_ESPTOOLPY_FLASHSIZE_2MB=y
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partition_table_unit_test_app_2m.csv"
-CONFIG_PARTITION_TABLE_FILENAME="partition_table_unit_test_app_2m.csv"
-
-# 2MB partition table has a FAT partition too small for 4k sectors
-CONFIG_WL_SECTOR_SIZE_512=y

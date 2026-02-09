@@ -2,7 +2,7 @@
 # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html
 # The following five lines of boilerplate have to be in your project's
 # CMakeLists in this exact order for cmake to work correctly
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
@@ -10,9 +10,17 @@ project(touch_sens)
 
 idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    # Collect RTL directories in a variable for readability. Join them
+    # with commas so they are passed as a single --rtl-dirs argument to the script.
+    set(TOUCH_SENS_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_touch_sens
+        ${CMAKE_BINARY_DIR}/esp-idf/hal
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_touch_sens
+    )
+    string(JOIN "," TOUCH_SENS_RTL_DIRS_JOINED ${TOUCH_SENS_RTL_DIRS})
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_touch_sens/,${CMAKE_BINARY_DIR}/esp-idf/hal/
+                      --rtl-dirs ${TOUCH_SENS_RTL_DIRS_JOINED}
                       --elf-file ${CMAKE_BINARY_DIR}/touch_sens.elf
                       find-refs
                       --from-sections=.iram0.text

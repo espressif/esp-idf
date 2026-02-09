@@ -1,3 +1,0 @@
-dependencies:
-  tee_attestation:
-    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_attestation

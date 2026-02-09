@@ -1,6 +1,6 @@
 /* SPIFFS Image Generation on Build Example
  *
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense or CC0-1.0
  */
@@ -11,7 +11,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_spiffs.h"
-#include "mbedtls/md5.h"
+#include "psa/crypto.h"
 
 static const char *TAG = "example";
 
@@ -50,20 +50,36 @@ static void compute_alice_txt_md5(void)
     #define MD5_MAX_LEN 16
 
     char buf[64];
-    mbedtls_md5_context ctx;
-    unsigned char digest[MD5_MAX_LEN];
+    psa_status_t status;
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+    psa_algorithm_t alg = PSA_ALG_MD5;
+    status = psa_hash_setup(&operation, alg);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup hash operation");
+        return;
+    }
 
-    mbedtls_md5_init(&ctx);
-    mbedtls_md5_starts(&ctx);
+    size_t md5_len = PSA_HASH_LENGTH(alg);
+
+    unsigned char digest[md5_len];
 
     size_t read;
 
     do {
         read = fread((void*) buf, 1, sizeof(buf), f);
-        mbedtls_md5_update(&ctx, (unsigned const char*) buf, read);
+        status = psa_hash_update(&operation, (unsigned const char*) buf, read);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "Failed to update hash operation");
+            return;
+        }
     } while(read == sizeof(buf));
 
-    mbedtls_md5_finish(&ctx, digest);
+    size_t md5len = 0;
+    status = psa_hash_finish(&operation, digest, md5_len, &md5len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to finish hash operation");
+        return;
+    }
 
     // Create a string of the digest
     char digest_str[MD5_MAX_LEN * 2];

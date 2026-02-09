@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 |
+| ----------------- | -------- | -------- | --------- | -------- |
 
 # TEE CLI Application: Secure Services Demonstration
 
@@ -17,20 +17,35 @@ This example can be executed on any development board with a Espressif SOC chip 
 
 - Configure the secure storage key ID for generating/fetching the ECDSA keypair for attestation token signing at `ESP-TEE (Trusted Execution Environment) → Secure Services → Attestation: Secure Storage key ID for EAT signing`.
 
-Configure the Secure Storage mode for determining how the NVS XTS encryption keys are derived at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode`
+Configure the Secure Storage mode for determining how the NVS XTS-AES encryption keys are derived at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode`
 
   - **Development** Mode: Encryption keys are embedded in the ESP-TEE firmware (identical across all instances).
-  - **Release** Mode: Encryption keys are derived via the HMAC peripheral using a key stored in eFuse.
-    - Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID`.
-    - Snippet for burning the secure storage key in eFuse is given below.
+  - **Release** Mode: Encryption keys are derived using a key stored in eFuse, specified by `CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
+    - Set the eFuse key ID at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID for storage encryption keys`.
+    - Before running the application, users must program the required key into the configured eFuse block - refer to the instructions below.
 
-    ```shell
-    # Generate a random 32-byte HMAC key
-    openssl rand -out hmac_key_file.bin 32
-    # Programming the HMAC key (256-bit) in eFuse
-    # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
-    espefuse.py -p PORT burn_key BLOCK_KEYx hmac_key_file.bin HMAC_UP
-    ```
+**For targets without HMAC peripheral (ESP32-C61):**
+
+```shell
+# Generate a random 32-byte key
+openssl rand -out hmac_key_file.bin 32
+# Program the USER purpose key (256-bit) in eFuse
+# Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
+espefuse -p PORT burn-key --no-read-protect BLOCK_KEYx hmac_key_file.bin USER
+```
+
+> [!IMPORTANT]
+> When programming the key into eFuse for targets without HMAC peripheral, ensure that it is **NOT** marked as read-protected (use the `--no-read-protect` flag). If the key is read-protected, the TEE will be unable to access it. However, this does not weaken security: the APM peripheral already blocks software access to the key, and any illegal read or write attempt from the REE triggers a fault.
+
+**For targets with HMAC peripheral:**
+
+```shell
+# Generate a random 32-byte HMAC key
+openssl rand -out hmac_key_file.bin 32
+# Program the HMAC key (256-bit) in eFuse
+# Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
+espefuse -p PORT burn-key BLOCK_KEYx hmac_key_file.bin HMAC_UP
+```
 
 ### Build and Flash
 
@@ -122,10 +137,9 @@ help  [<string>] [-v <0|1>]
 
 ```log
 esp32c6> tee_att_info
-I (8180) tee_attest: Attestation token - Length: 1455
+I (8180) tee_attest: Attestation token - Length: 1587
 I (8180) tee_attest: Attestation token - Data:
-'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":"tee_att_key0"},"eat":{"nonce":-1582119980,"client_id":262974944,"device_ver":0,"device_id":"cd9c173cb3675c7adfae243f0cd9841e4bce003237cb5321927a85a86cb4b32e","instance_id":"9616ef0ecf02cdc89a3749f8fc16b3103d5100bd42d9312fcd04593baa7bac64","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"v0.3.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"94536998e1dcb2a036477cb2feb01ed4fff67ba6208f30482346c62bca64b280","digest_validated":true,"sign_verified":true}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"3d4c038fcec76852b4d07acb9e94afaf5fca69fc2eb212a32032d09ce5b4f2b3","digest_validated":true,"sign_verified":true,"secure_padding":true}},"bootloader":{"type":0,"ver":"","idf_ver":"","secure_ver":-1,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"1bef421beb1a4642c6fcefb3e37fd4afad60cb4074e538f42605b012c482b946","digest_validated":true,"sign_verified":true}}}},"public_key":{"compressed":"02039c4bfab0762af1aff2fe5596b037f629cf839da8c4a9c0018afedfccf519a6"},"sign":{"r":"915e749f5a780bc21a2b21821cfeb54286dc742e9f12f2387e3de9b8b1a70bc9","s":"1e583236f2630b0fe8e291645ffa35d429f14035182e19868508d4dac0e1a441"}}'
-
+'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":"tee_att_key0"},"eat":{"auth_challenge":"dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678","client_id":262974944,"device_ver":0,"device_id":"cd9c173cb3675c7adfae243f0cd9841e4bce003237cb5321927a85a86cb4b32e","instance_id":"9616ef0ecf02cdc89a3749f8fc16b3103d5100bd42d9312fcd04593baa7bac64","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"v0.3.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"94536998e1dcb2a036477cb2feb01ed4fff67ba6208f30482346c62bca64b280","digest_validated":true,"sign_verified":true}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"3d4c038fcec76852b4d07acb9e94afaf5fca69fc2eb212a32032d09ce5b4f2b3","digest_validated":true,"sign_verified":true,"secure_padding":true}},"bootloader":{"type":0,"ver":"","idf_ver":"","secure_ver":-1,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"1bef421beb1a4642c6fcefb3e37fd4afad60cb4074e538f42605b012c482b946","digest_validated":true,"sign_verified":true}}}},"public_key":{"compressed":"02039c4bfab0762af1aff2fe5596b037f629cf839da8c4a9c0018afedfccf519a6"},"sign":{"r":"915e749f5a780bc21a2b21821cfeb54286dc742e9f12f2387e3de9b8b1a70bc9","s":"1e583236f2630b0fe8e291645ffa35d429f14035182e19868508d4dac0e1a441"}}'
 ```
 
 </details>

@@ -9,6 +9,7 @@
 #include "esp_cam_ctlr_isp_dvp.h"
 #include "esp_cam_ctlr.h"
 #include "driver/isp.h"
+#include "hal/isp_ll.h"
 
 TEST_CASE("ISP DVP controller exhausted allocation", "[isp]")
 {
@@ -35,14 +36,14 @@ TEST_CASE("ISP DVP controller exhausted allocation", "[isp]")
         .io_flags.vsync_invert = 1,
         .queue_items = 10,
     };
-    esp_cam_ctlr_handle_t dvp_ctrlr[SOC_ISP_DVP_CTLR_NUMS + 1] = {};
-    for (int i = 0; i < SOC_ISP_DVP_CTLR_NUMS; i++) {
+    esp_cam_ctlr_handle_t dvp_ctrlr[ISP_LL_DVP_CTLR_NUMS + 1] = {};
+    for (int i = 0; i < ISP_LL_DVP_CTLR_NUMS; i++) {
         TEST_ESP_OK(esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_ctlr_config, &dvp_ctrlr[i]));
     }
 
-    TEST_ASSERT(esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_ctlr_config, &dvp_ctrlr[SOC_ISP_DVP_CTLR_NUMS]) == ESP_ERR_NOT_FOUND);
+    TEST_ASSERT(esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_ctlr_config, &dvp_ctrlr[ISP_LL_DVP_CTLR_NUMS]) == ESP_ERR_NOT_FOUND);
 
-    for (int i = 0; i < SOC_ISP_DVP_CTLR_NUMS; i++) {
+    for (int i = 0; i < ISP_LL_DVP_CTLR_NUMS; i++) {
         TEST_ESP_OK(esp_cam_ctlr_del(dvp_ctrlr[i]));
     }
     TEST_ESP_OK(esp_isp_del_processor(isp_proc));

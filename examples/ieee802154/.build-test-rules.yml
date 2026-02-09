@@ -2,6 +2,7 @@
 
 .ieee802154_dependencies: &ieee802154_dependencies
   depends_components:
+    - *common_components
     - esp_coex
     - esp_phy
     - ieee802154

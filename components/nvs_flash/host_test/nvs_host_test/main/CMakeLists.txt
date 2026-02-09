@@ -1,9 +1,11 @@
-idf_component_register(SRCS "test_nvs.cpp"
+idf_component_register(SRCS "bdl_ramdisk.cpp" "test_nvs.cpp"
                             "test_partition_manager.cpp"
                             "test_nvs_cxx_api.cpp"
                             "test_nvs_handle.cpp"
                             "test_nvs_initialization.cpp"
                             "test_nvs_storage.cpp"
+                            "test_fixtures.cpp"
+                            "bdl_ramdisk.cpp"
                        INCLUDE_DIRS
                             "../../../src"
                             "../../../private_include"

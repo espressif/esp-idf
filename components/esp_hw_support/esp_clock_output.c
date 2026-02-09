@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "esp_clock_output.h"
 #include "esp_check.h"
 #include "esp_rom_gpio.h"
-#include "soc/clkout_channel.h"
+#include "hal/clkout_channel.h"
 #include "hal/gpio_hal.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
@@ -38,7 +38,7 @@ typedef struct esp_clock_output_mapping {
     SLIST_ENTRY(esp_clock_output_mapping) next;
 } esp_clock_output_mapping_t;
 
-static const char *TAG = "esp_clock_output";
+ESP_LOG_ATTR_TAG(TAG, "esp_clock_output");
 
 static SLIST_HEAD(esp_clock_output_mapping_head, esp_clock_output_mapping) s_mapping_list = SLIST_HEAD_INITIALIZER(s_mapping_list_head);
 static portMUX_TYPE __attribute__((unused)) s_mapping_list_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -233,7 +233,7 @@ esp_err_t esp_clock_output_set_divider(esp_clock_output_mapping_handle_t clkout_
     ESP_RETURN_ON_FALSE(((div_num > 0) && (div_num <= 256)), ESP_ERR_INVALID_ARG, TAG, "Divider number must be in the range of [1,  256]");
     ESP_RETURN_ON_FALSE((clkout_mapping_hdl != NULL), ESP_ERR_INVALID_ARG, TAG, "Clock out mapping handle passed in is invalid");
     esp_os_enter_critical(&clkout_mapping_hdl->clkout_mapping_lock);
-    clk_hal_clock_output_set_divider(clkout_mapping_hdl->clkout_channel_hdl->channel_id, div_num);
+    clk_ll_set_output_channel_divider(clkout_mapping_hdl->clkout_channel_hdl->channel_id, div_num);
     esp_os_exit_critical(&clkout_mapping_hdl->clkout_mapping_lock);
     return ESP_OK;
 }
@@ -244,8 +244,8 @@ esp_err_t esp_clock_output_set_divider(esp_clock_output_mapping_handle_t clkout_
 __attribute__((constructor))
 static void esp_clock_output_pin_ctrl_init(void)
 {
-    gpio_ll_set_pin_ctrl(0, CLK_OUT1, CLK_OUT1_S);
-    gpio_ll_set_pin_ctrl(0, CLK_OUT2, CLK_OUT2_S);
-    gpio_ll_set_pin_ctrl(0, CLK_OUT3, CLK_OUT3_S);
+    clk_ll_bind_output_channel(0, CLKOUT_CHANNEL_1);
+    clk_ll_bind_output_channel(0, CLKOUT_CHANNEL_2);
+    clk_ll_bind_output_channel(0, CLKOUT_CHANNEL_3);
 }
 #endif

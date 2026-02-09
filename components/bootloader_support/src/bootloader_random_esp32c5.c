@@ -8,18 +8,34 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
+#include "hal/rng_ll.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "soc/lpperi_reg.h"
+#include "hal/temperature_sensor_ll.h"
+#include "esp_private/sar_periph_ctrl.h"
 
-#define I2C_SAR_ADC_INIT_CODE_VAL 2150
+#define I2C_SAR_ADC_INIT_CODE_VAL       2150
+#define ADC_RNG_CLKM_DIV_NUM            0
+#define ADC_RNG_CLKM_DIV_B              0
+#define ADC_RNG_CLKM_DIV_A              0
 
 void bootloader_random_enable(void)
 {
+#ifndef BOOTLOADER_BUILD
+    sar_periph_ctrl_adc_reset();
+#else
+    // Save temperature sensor related register values before ADC reset
+    tsens_ll_reg_values_t saved_tsens_regs = {};
+    tsens_ll_backup_registers(&saved_tsens_regs);
     adc_ll_reset_register();
+    // Restore temperature sensor related register values after ADC reset
+    temperature_sensor_ll_reset_module();
+    tsens_ll_restore_registers(&saved_tsens_regs);
+#endif
+
     adc_ll_enable_bus_clock(true);
     adc_ll_enable_func_clock(true);
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
-    adc_ll_digi_controller_clk_div(0, 0, 0);
+    adc_ll_digi_controller_clk_div(ADC_RNG_CLKM_DIV_NUM, ADC_RNG_CLKM_DIV_B, ADC_RNG_CLKM_DIV_A);
 
     // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
 #ifndef BOOTLOADER_BUILD
@@ -51,9 +67,9 @@ void bootloader_random_enable(void)
     adc_ll_digi_set_trigger_interval(200);
     adc_ll_digi_trigger_enable();
 
-    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_SAMPLE_ENABLE);
-    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RTC_TIMER_EN, 0x3);
-    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN);
+    rng_ll_enable_sample(true);
+    rng_ll_enable_rtc_timer(true);
+    rng_ll_enable_rng_timer(true);
 }
 
 void bootloader_random_disable(void)

@@ -1,0 +1,258 @@
+#include "sdkconfig.h"
+#include "ld.common"
+
+  .flash.text :
+  {
+    _stext = .;
+
+    /**
+     * Mark the start of flash.text.
+     * This can be used by the MMU driver to maintain the virtual address.
+     */
+    _instruction_reserved_start = ABSOLUTE(.);
+    _text_start = ABSOLUTE(.);
+
+    SECTION_MAPPINGS_WITH_PADDING(flash_text)
+
+    *(.stub)
+    *(.gnu.linkonce.t.*)
+    *(.gnu.warning)
+    *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+
+    /**
+     * CPU will try to prefetch up to 16 bytes of instructions.
+     * This means that any configuration (e.g. MMU, PMS) must allow
+     * safe access to up to 16 bytes after the last real instruction.
+     * Add dummy bytes to ensure this.
+     */
+    . += _esp_flash_mmap_prefetch_pad_size;
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /**
+     * Align the end of flash text region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+
+    _text_end = ABSOLUTE(.);
+
+    /**
+     * Mark the flash.text end.
+     * This can be used for MMU driver to maintain virtual address.
+     */
+    _instruction_reserved_end = ABSOLUTE(.);
+    _etext = .;
+
+    /**
+     * Similar to _iram_start, this symbol goes here so it is
+     * resolved by addr2line in preference to the first symbol in
+     * the flash.text segment.
+     */
+    _flash_cache_start = ABSOLUTE(0);
+  } > flash_text_seg
+
+  /**
+   * Dummy section represents the .flash.text section but in flash_rodata_seg.
+   * Thus, it must have its alignment and (at least) its size.
+   */
+  .flash_rodata_dummy (NOLOAD) :
+  {
+    _flash_rodata_dummy_start = .;
+
+    . = ALIGN(ALIGNOF(.flash.text)) + SIZEOF(.flash.text);
+
+    /* Add alignment of MMU page size + 0x20 bytes for the mapping header */
+    . = ALIGN(_esp_mmu_page_size) + 0x20;
+  } > flash_rodata_seg
+
+  .flash.appdesc : ALIGN(0x10)
+  {
+    /**
+     * Mark flash.rodata start.
+     * This can be used for MMU driver to maintain virtual address.
+     */
+    _rodata_reserved_start = ABSOLUTE(.);
+    _rodata_start = ABSOLUTE(.);
+
+    /* !DO NOT PUT ANYTHING BEFORE THIS! */
+
+    /* Should be the first: App version info */
+    *(.rodata_desc .rodata_desc.*)
+
+    /* Should be the second: Custom app version info */
+    *(.rodata_custom_desc .rodata_custom_desc.*)
+
+    /**
+     * Create an empty gap within this section. Thanks to this, the end of this
+     * section will match .flash.rodata's begin address. Thus, both sections
+     * will be merged when creating the final bin image.
+     */
+    . = ALIGN(ALIGNOF(.flash.rodata));
+  } > flash_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.appdesc, .flash.rodata)
+
+  .flash.rodata : ALIGN(0x10)
+  {
+    _flash_rodata_start = ABSOLUTE(.);
+
+    SECTION_MAPPINGS_WITH_PADDING(flash_rodata)
+
+#if CONFIG_LIBC_PICOLIBC
+    *(.got .got.plt) /* TODO: GCC-439 */
+#endif
+    *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.gnu.linkonce.r.*)
+    *(.rodata1)
+
+    *(.gcc_except_table .gcc_except_table.*)
+    *(.gnu.linkonce.e.*)
+
+    . = ALIGN(ALIGNOF(.flash.init_array));
+  } > flash_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.rodata, .flash.init_array)
+
+  .flash.init_array :
+  {
+    /**
+     * C++ constructor tables.
+     *
+     * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
+     */
+    ALIGNED_SYMBOL(4, __preinit_array_start)
+    ALIGNED_SYMBOL(4, __bothinit_array_start)
+    KEEP (*(.preinit_array))
+    __preinit_array_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, __init_array_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
+    __init_array_end = ABSOLUTE(.);
+    __bothinit_array_end = ABSOLUTE(.);
+
+    /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
+    ALIGNED_SYMBOL(4, soc_reserved_memory_region_start)
+    KEEP (*(.reserved_memory_address))
+    soc_reserved_memory_region_end = ABSOLUTE(.);
+
+    /* System init functions registered via ESP_SYSTEM_INIT_FN */
+    ALIGNED_SYMBOL(4, _esp_system_init_fn_array_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
+
+    _rodata_end = ABSOLUTE(.);
+    . = ALIGN(ALIGNOF(SECTION_AFTER_FLASH_RODATA));
+  } > flash_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.init_array, SECTION_AFTER_FLASH_RODATA)
+
+#if EH_FRAME_LINKING_ENABLED
+  .eh_frame_hdr :
+  {
+    ALIGNED_SYMBOL(4, __eh_frame_hdr)
+
+    KEEP (*(.eh_frame_hdr))
+
+    __eh_frame_hdr_end = ABSOLUTE(.);
+
+    . = ALIGN(ALIGNOF(.eh_frame));
+  } > flash_rodata_seg
+  ASSERT_SECTIONS_GAP(.eh_frame_hdr, .eh_frame)
+
+  .eh_frame :
+  {
+    ALIGNED_SYMBOL(4, __eh_frame)
+
+    KEEP (*(.eh_frame))
+
+    /**
+     * As we are not linking with crtend.o, which includes the CIE terminator
+     * (see __FRAME_END__ in libgcc sources), it is manually provided here.
+     */
+    LONG(0);
+
+    __eh_frame_end = ABSOLUTE(.);
+
+    . = ALIGN(ALIGNOF(.flash.tdata));
+  } > flash_rodata_seg
+  ASSERT_SECTIONS_GAP(.eh_frame, .flash.tdata)
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+  ASSERT((__eh_frame_hdr_end > __eh_frame_hdr), "eh_frame_hdr size is 0")
+  ASSERT((__eh_frame_end > __eh_frame), "eh_frame size is 0")
+#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#endif // EH_FRAME_LINKING_ENABLED
+
+  .flash.tdata :
+  {
+    /**
+     * IMPORTANT: Keep tdata and tbss sections contiguous (no gaps between them).
+     * The TLS runtime code calculates offsets assuming these sections are
+     * adjacent. Gaps would cause incorrect address calculations, leading
+     * to accessing wrong memory.
+     */
+
+    /* Thread-local data sections */
+    _thread_local_data_start = ABSOLUTE(.);
+
+#if CONFIG_LIBC_PICOLIBC
+    _picolibc_reent_stub_start = ABSOLUTE(.);
+    KEEP(*(.tdata.errno))
+
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    /* Reproduce the public fields from struct _reent */
+    KEEP(*(.tdata.tls_stdin))
+    KEEP(*(.tdata.tls_stdout))
+    KEEP(*(.tdata.tls_stderr))
+#endif // CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+
+    _picolibc_reent_stub_end = ABSOLUTE(.);
+#endif // CONFIG_LIBC_PICOLIBC
+
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
+
+    . = ALIGN(ALIGNOF(.flash.tbss));
+    _thread_local_data_end = ABSOLUTE(.);
+  } > flash_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.tdata, .flash.tbss)
+  ASSERT_PICOLIBC_REENT_STUB()
+
+  .flash.tbss (NOLOAD) :
+  {
+    /* Thread-local BSS sections */
+    _thread_local_bss_start = ABSOLUTE(.);
+    *(.tbss .tbss.* .gnu.linkonce.tb.*)
+    *(.tcommon .tcommon.*)
+    _thread_local_bss_end = ABSOLUTE(.);
+  } > flash_rodata_seg
+  ASSERT(_thread_local_data_end == _thread_local_bss_start,
+         "tdata and tbss must be contiguous.")
+
+  /**
+   * This section contains all the rodata that is not used at runtime,
+   * helping to avoid an increase in binary size.
+   */
+  .flash.rodata_noload (NOLOAD) :
+  {
+#if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /**
+     * Align the end of flash rodata region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /**
+     * This symbol marks the end of flash.rodata. It can be utilized by the MMU
+     * driver to maintain the virtual address.
+     * NOLOAD rodata may not be included in this section.
+     */
+    _rodata_reserved_end = .;
+
+    SECTION_MAPPINGS(rodata_noload)
+  } > flash_rodata_seg
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  /**
+   * If rodata default segment is placed in `flash_rodata_seg`, then flash's first
+   * rodata section must also be first in the segment.
+   */
+  ASSERT(_flash_rodata_dummy_start == ORIGIN(flash_rodata_seg),
+         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
+#endif

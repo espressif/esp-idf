@@ -9,13 +9,54 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "hal/usb_phy_types.h"
 
 #define USB_PHY_SUPPORTS_P4_OTG11 1 // This version of usb_phy supports P4 OTG1.1 PHY
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief USB PHY target
+ */
+typedef enum {
+    USB_PHY_TARGET_INT,              /**< USB target is internal FSLS PHY */
+    USB_PHY_TARGET_UTMI,             /**< USB target is internal UTMI PHY */
+    USB_PHY_TARGET_EXT,              /**< USB target is external PHY */
+    USB_PHY_TARGET_MAX,
+} usb_phy_target_t;
+
+/**
+ * @brief USB PHY source
+ */
+typedef enum {
+    USB_PHY_CTRL_OTG,                /**< PHY controller is USB OTG */
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+    USB_PHY_CTRL_SERIAL_JTAG,        /**< PHY controller is USB Serial JTAG */
+#endif
+    USB_PHY_CTRL_MAX,
+} usb_phy_controller_t;
+
+/**
+ * @brief USB OTG mode
+ */
+typedef enum {
+    USB_PHY_MODE_DEFAULT,            /**< USB OTG default mode */
+    USB_OTG_MODE_HOST,               /**< USB OTG host mode */
+    USB_OTG_MODE_DEVICE,             /**< USB OTG device mode */
+    USB_OTG_MODE_MAX,
+} usb_otg_mode_t;
+
+/**
+ * @brief USB speed
+ */
+typedef enum {
+    USB_PHY_SPEED_UNDEFINED,
+    USB_PHY_SPEED_LOW,              /**< USB Low Speed (1.5 Mbit/s)  */
+    USB_PHY_SPEED_FULL,             /**< USB Full Speed (12 Mbit/s)  */
+    USB_PHY_SPEED_HIGH,             /**< USB High Speed (480 Mbit/s) */
+    USB_PHY_SPEED_MAX,
+} usb_phy_speed_t;
 
 /**
  * @brief Initialization for usb_phy_otg_io_conf_t: Self-powered device

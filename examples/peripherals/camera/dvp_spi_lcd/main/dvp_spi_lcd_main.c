@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "hal/cam_ctlr_types.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -24,7 +25,7 @@
 
 static const char *TAG = "dvp_spi_lcd";
 
-#define BUFFER_SIZE         (CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8)
+#define BUFFER_SIZE         (CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL)
 
 typedef struct {
     esp_lcd_panel_handle_t panel_hdl;
@@ -91,7 +92,7 @@ static void lcd_display_init(esp_lcd_panel_handle_t *lcd_panel_hdl, esp_lcd_pane
     ESP_LOGI(TAG, "New ST7789 panel");
     const esp_lcd_panel_dev_config_t panel_dev_cfg = {
         .reset_gpio_num   = EXAMPLE_LCD_RST,
-        .color_space      = ESP_LCD_COLOR_SPACE_RGB,
+        .rgb_ele_order    = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel   = EXAMPLE_RGB565_BITS_PER_PIXEL,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(lcd_io_hdl, &panel_dev_cfg, &panel_handle));
@@ -146,7 +147,16 @@ void app_main(void)
         .clk_src = CAM_CLK_SRC_DEFAULT,
         .h_res = CONFIG_EXAMPLE_CAM_HRES,
         .v_res = CONFIG_EXAMPLE_CAM_VRES,
+#if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
+        .input_data_color_type = CAM_CTLR_COLOR_YUV422_UYVY,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
+#else
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
+#endif
+        .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
+        .input_range = COLOR_RANGE_LIMIT,
+        .output_range = COLOR_RANGE_LIMIT,
         .dma_burst_size = 64,
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,
@@ -160,7 +170,7 @@ void app_main(void)
     }
 
     //--------Allocate Camera Buffer----------//
-    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL;
     void *cam_buffer = NULL;
 
     cam_buffer = esp_cam_ctlr_alloc_buffer(cam_handle, cam_buffer_size, EXAMPLE_DVP_CAM_BUF_ALLOC_CAPS);
@@ -199,6 +209,20 @@ void app_main(void)
 
     //--------Enable and start Camera Controller----------//
     ESP_ERROR_CHECK(esp_cam_ctlr_enable(cam_handle));
+
+#if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
+    ESP_LOGI(TAG, "Configure format conversion: YUV422 -> RGB565");
+    // Configure format conversion
+    const cam_ctlr_format_conv_config_t conv_cfg = {
+        .src_format = CAM_CTLR_COLOR_YUV422_UYVY,       // Source format: YUV422
+        .dst_format = CAM_CTLR_COLOR_RGB565,            // Destination format: RGB565
+        .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
+        .data_width = 8,
+        .input_range = COLOR_RANGE_LIMIT,
+        .output_range = COLOR_RANGE_LIMIT,
+    };
+    ESP_ERROR_CHECK(esp_cam_ctlr_format_conversion(cam_handle, &conv_cfg));
+#endif
 
     if (esp_cam_ctlr_start(cam_handle) != ESP_OK) {
         ESP_LOGE(TAG, "Driver start fail");

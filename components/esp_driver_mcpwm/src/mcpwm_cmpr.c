@@ -17,7 +17,7 @@ static esp_err_t mcpwm_comparator_register_to_operator(mcpwm_cmpr_t *cmpr, mcpwm
     switch (cmpr->type) {
     case MCPWM_OPERATOR_COMPARATOR: {
         mcpwm_oper_cmpr_t *oper_cmpr = __containerof(cmpr, mcpwm_oper_cmpr_t, base);
-        for (int i = 0; i < SOC_MCPWM_COMPARATORS_PER_OPERATOR; i++) {
+        for (int i = 0; i < MCPWM_LL_GET(COMPARATORS_PER_OPERATOR); i++) {
             if (!oper->comparators[i]) {
                 oper->comparators[i] = oper_cmpr;
                 cmpr_id = i;
@@ -29,7 +29,7 @@ static esp_err_t mcpwm_comparator_register_to_operator(mcpwm_cmpr_t *cmpr, mcpwm
 #if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
     case MCPWM_EVENT_COMPARATOR: {
         mcpwm_evt_cmpr_t *evt_cmpr = __containerof(cmpr, mcpwm_evt_cmpr_t, base);
-        for (int i = 0; i < SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR; i++) {
+        for (int i = 0; i < MCPWM_LL_GET(EVENT_COMPARATORS_PER_OPERATOR); i++) {
             if (!oper->event_comparators[i]) {
                 oper->event_comparators[i] = evt_cmpr;
                 cmpr_id = i;
@@ -235,7 +235,7 @@ esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, co
         // we want the interrupt service to be enabled after allocation successfully
         int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ ESP_INTR_FLAG_INTRDISABLED;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_mcpwm_signals[group_id].irq_id, isr_flags,
                                                       (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id),
                                                       mcpwm_comparator_default_isr, oper_cmpr, &oper_cmpr->intr), TAG, "install interrupt service for comparator failed");
     }

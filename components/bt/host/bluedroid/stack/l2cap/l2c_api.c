@@ -215,7 +215,7 @@ UINT16 L2CA_ConnectReq (UINT16 psm, BD_ADDR p_bd_addr)
 **
 **  Parameters:       PSM: L2CAP PSM for the connection
 **                    BD address of the peer
-**                   Enhaced retransmission mode configurations
+**                   Enhanced retransmission mode configurations
 
 ** Returns          the CID of the connection, or 0 if it failed to start
 **
@@ -760,7 +760,7 @@ bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t *rcid, uint16_t *handle)
 **
 ** NOTE             This timeout takes effect after at least 1 channel has been
 **                  established and removed. L2CAP maintains its own timer from
-**                  whan a connection is established till the first channel is
+**                  when a connection is established till the first channel is
 **                  set up.
 *******************************************************************************/
 BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout, BOOLEAN is_global)
@@ -863,7 +863,7 @@ UINT8 L2CA_SetTraceLevel (UINT8 new_level)
     return (l2cb.l2cap_trace_level);
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     L2CA_SetDesireRole
@@ -901,6 +901,7 @@ UINT8 L2CA_SetDesireRole (UINT8 new_role)
 
     return (l2cb.desire_role);
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -1649,7 +1650,8 @@ BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_REG *p_f
 **  Return value:   TRUE if connection started
 **
 *******************************************************************************/
-BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux)
+BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux,
+                                BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent)
 {
     tL2C_LCB *p_lcb;
     tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1738,6 +1740,11 @@ BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE
 #if (BLE_INCLUDED == TRUE)
     p_lcb->is_aux = is_aux;
     p_lcb->open_addr_type = bd_addr_type;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    p_lcb->is_pawr_synced = is_pawr_synced;
+    p_lcb->adv_handle = adv_handle;
+    p_lcb->subevent = subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 #endif
     if (!l2cu_create_conn(p_lcb, transport)) {
         L2CAP_TRACE_WARNING ("%s() - create_conn failed", __func__);
@@ -1900,6 +1907,8 @@ BOOLEAN L2CA_RemoveFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda)
     tL2C_LCB    *p_lcb;
     tL2C_CCB    *p_ccb;
     tBT_TRANSPORT   transport = BT_TRANSPORT_BR_EDR;
+
+    L2CAP_TRACE_DEBUG("%s cid=%04x bda="MACSTR"", __func__, fixed_cid, MAC2STR(rem_bda));
 
     /* Check CID is valid and registered */
     if ( (fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL)

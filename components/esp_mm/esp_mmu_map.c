@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -404,7 +404,9 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
      */
     cache_sync();
 #else   //Other chips
+    esp_cache_sync_ops_enter_critical_section();
     cache_hal_invalidate_addr(vaddr_start, size);
+    esp_cache_sync_ops_exit_critical_section();
 #endif // CONFIG_IDF_TARGET_ESP32
 }
 
@@ -775,13 +777,11 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
 /*---------------------------------------------------------------
     Helper APIs for conversion between vaddr and paddr
 ---------------------------------------------------------------*/
-static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
+static bool s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
 {
     uint32_t mmu_id = 0;
-    /**
-     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     */
-    s_stop_cache();
+
+    _lock_acquire(&s_mmu_ctx.mutex);
 
 #if SOC_MMU_PER_EXT_MEM_TARGET
     mmu_id = mmu_hal_get_id_from_vaddr(vaddr);
@@ -793,8 +793,7 @@ static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t
     }
 #endif
 
-    //enable Cache, after this function, internal RAM access is no longer mandatory
-    s_start_cache();
+    _lock_release(&s_mmu_ctx.mutex);
 
     return is_mapped;
 }
@@ -816,12 +815,9 @@ esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target
     return ESP_OK;
 }
 
-static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
+static bool s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
 {
-    /**
-     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     */
-    s_stop_cache();
+    _lock_acquire(&s_mmu_ctx.mutex);
 
     uint32_t mmu_id = 0;
 #if SOC_MMU_PER_EXT_MEM_TARGET
@@ -829,8 +825,7 @@ static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_targ
 #endif
     bool found = mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
 
-    //enable Cache, after this function, internal RAM access is no longer mandatory
-    s_start_cache();
+    _lock_release(&s_mmu_ctx.mutex);
 
     return found;
 }

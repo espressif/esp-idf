@@ -240,11 +240,21 @@ else()
     set(wps_registrar_src "")
 endif()
 
+if(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
+    set(usd_src
+    "src/common/nan_de.c"
+    "esp_supplicant/src/esp_nan_usd.c")
+else()
+    set(usd_src "")
+endif()
+
 idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}"
-                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
+                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}" "${usd_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
                                       ../esp_wifi/wifi_apps/roaming_app/include
+                                      ../esp_wifi/wifi_apps/roaming_app/src
+                                      esp_supplicant/include/esp_private
                     LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
@@ -264,7 +274,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_PEAP
     USE_WPA2_TASK
     CONFIG_WPS
-    USE_WPS_TASK
     ESPRESSIF_USE
     CONFIG_ECC
     CONFIG_IEEE80211W
@@ -288,8 +297,14 @@ endif()
 if(CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE)
 endif()
+if(CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPA3_COMPAT)
+endif()
 if(CONFIG_ESP_WIFI_WPS_STRICT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_STRICT)
+endif()
+if(CONFIG_ESP_WIFI_WPS_RECONNECT_ON_FAIL)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_RECONNECT_ON_FAIL)
 endif()
 if(CONFIG_ESP_WIFI_SUITE_B_192)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SUITEB192)
@@ -342,6 +357,9 @@ if(CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA)
 endif()
 if(CONFIG_ESP_WIFI_EAP_TLS1_3)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TLSV13)
+endif()
+if(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_NAN_USD)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 

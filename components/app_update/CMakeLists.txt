@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-idf_component_register(SRCS "esp_ota_ops.c" "esp_ota_app_desc.c"
+idf_component_register(SRCS "esp_ota_ops.c"
                     INCLUDE_DIRS "include"
                     REQUIRES partition_table bootloader_support esp_app_format esp_bootloader_format esp_partition
                     PRIV_REQUIRES esptool_py efuse spi_flash)

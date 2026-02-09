@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
@@ -168,42 +169,42 @@ __attribute__((always_inline)) static inline void efuse_ll_set_read_cmd(void)
 __attribute__((always_inline)) static inline void efuse_ll_set_pgm_cmd(uint32_t block)
 {
     HAL_ASSERT(block < ETS_EFUSE_BLOCK_MAX);
-    EFUSE.cmd.val = ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.cmd, val, ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code(void)
 {
-    EFUSE.conf.op_code = EFUSE_READ_OP_CODE;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_READ_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
-    EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_WRITE_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_num(uint8_t val)
 {
-    EFUSE.dac_conf.dac_num = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.dac_conf, dac_num, val);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint8_t val)
 {
-    EFUSE.dac_conf.dac_clk_div = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.dac_conf, dac_clk_div, val);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16_t val)
 {
-    EFUSE.wr_tim_conf1.pwr_on_num = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf1, pwr_on_num, val);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
-    EFUSE.wr_tim_conf2.pwr_off_num = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf2, pwr_off_num, value);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_tpgm_inactive(uint8_t value)
 {
-    EFUSE.wr_tim_conf0.tpgm_inactive = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf0, tpgm_inactive, value);
 }
 /******************* eFuse control functions *************************/
 

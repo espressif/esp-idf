@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -1306,6 +1306,7 @@ typedef struct {
     volatile assist_debug_date_reg_t date;
 } assist_debug_dev_t;
 
+extern assist_debug_dev_t ASSIST_DEBUG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(assist_debug_dev_t) == 0x400, "Invalid size of assist_debug_dev_t structure");

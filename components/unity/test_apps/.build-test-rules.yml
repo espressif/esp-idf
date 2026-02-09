@@ -5,4 +5,5 @@ components/unity/test_apps:
     - if: IDF_TARGET in["esp32", "linux"]
       reason: need to test on a chip and linux targets
   depends_components:
+    - *common_components
     - unity

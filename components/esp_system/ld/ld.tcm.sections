@@ -1,0 +1,15 @@
+#include "ld.common"
+  .tcm.text :
+  {
+    /* Code marked as running out of TCM */
+    _tcm_text_start = ABSOLUTE(.);
+    SECTION_MAPPINGS(tcm_text)
+    _tcm_text_end = ABSOLUTE(.);
+  } > tcm_idram_seg
+
+  .tcm.data :
+  {
+    _tcm_data_start = ABSOLUTE(.);
+    SECTION_MAPPINGS(tcm_data)
+    _tcm_data_end = ABSOLUTE(.);
+  } > tcm_idram_seg

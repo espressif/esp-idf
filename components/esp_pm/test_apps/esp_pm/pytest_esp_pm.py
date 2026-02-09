@@ -6,7 +6,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='not supported yet')  # TODO: [ESP32C61] IDF-9250 IDF-10985
 @pytest.mark.parametrize(
     'config',
     [

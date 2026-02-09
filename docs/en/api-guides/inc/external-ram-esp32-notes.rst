@@ -15,7 +15,7 @@ ESP-IDF has no workaround for the bugs in this revision of silicon, and it canno
 
 ESP32 Rev v1.0
 --------------
-The bugs in this revision of silicon cause issues if certain sequences of machine instructions operate on external memory. (`ESP32 Series SoC Errata`_ 3.2). As a workaround, the ``-mfix-esp32-psram-cache-issue`` flag has been added to the ESP32 GCC compiler such that these sequences are filtered out. As a result, the compiler only outputs code that can safely be executed. The :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` option can be used to enable this workaround.
+The bugs in this revision of silicon cause issues if certain sequences of machine instructions operate on external memory. (`ESP32 Series SoC Errata`_ > CPU-3.2). As a workaround, the ``-mfix-esp32-psram-cache-issue`` flag has been added to the ESP32 GCC compiler such that these sequences are filtered out. As a result, the compiler only outputs code that can safely be executed. The :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` option can be used to enable this workaround.
 
 Aside from linking to a recompiled version of Newlib with the additional flag, ESP-IDF also does the following:
 

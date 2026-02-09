@@ -5,7 +5,6 @@
  */
 /* Includes */
 #include "led.h"
-#include "common.h"
 
 /* Private variables */
 static uint8_t led_state;

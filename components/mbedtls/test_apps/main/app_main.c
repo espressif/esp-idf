@@ -1,15 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <string.h>
+#include "psa/crypto.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "mbedtls/aes.h"
 #include "memory_checks.h"
 #include "soc/soc_caps.h"
 #include "esp_newlib.h"
+#include "esp_random.h"
+
+#define CALL_SZ (32 * 1024)
 
 /* setUp runs before every test */
 void setUp(void)
@@ -17,8 +21,25 @@ void setUp(void)
     // Execute mbedtls_aes_init operation to allocate AES interrupt
     // allocation memory which is considered as leak otherwise
 #if SOC_AES_SUPPORTED
-    mbedtls_aes_context ctx;
-    mbedtls_aes_init(&ctx);
+    uint8_t iv[16];
+    uint8_t key[16];
+    memset(iv, 0xEE, 16);
+    memset(key, 0x44, 16);
+
+    uint8_t *buf = heap_caps_malloc(CALL_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(buf);
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    psa_import_key(&attributes, key, sizeof(key), &key_id);
+
+    size_t output_length = 0;
+    psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, buf, CALL_SZ, buf, CALL_SZ, &output_length);
+    heap_caps_free(buf);
+    psa_destroy_key(key_id);
 #endif // SOC_AES_SUPPORTED
 
     test_utils_record_free_mem();

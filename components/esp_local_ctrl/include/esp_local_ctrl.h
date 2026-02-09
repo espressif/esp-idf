@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -260,22 +260,14 @@ typedef struct esp_local_ctrl_proto_sec_cfg {
      */
     void *custom_handle;
 
-    /* Anonymous union */
-    union {
-        /**
-         * Proof of possession to be used for local control. Could be NULL.
-         */
-        const void *pop __attribute__((deprecated("use sec_params field instead")));
-
-        /**
-         * Pointer to security params (NULL if not needed).
-         * This is not needed for protocomm security 0
-         * This pointer should hold the struct of type
-         * esp_local_ctrl_security1_params_t for protocomm security 1
-         * and esp_local_ctrl_security2_params_t for protocomm security 2 respectively. Could be NULL.
-         */
-        const void *sec_params;
-    };
+    /**
+     * Pointer to security params (NULL if not needed).
+     * This is not needed for protocomm security 0
+     * This pointer should hold the struct of type
+     * esp_local_ctrl_security1_params_t for protocomm security 1
+     * and esp_local_ctrl_security2_params_t for protocomm security 2 respectively. Could be NULL.
+     */
+    const void *sec_params;
 } esp_local_ctrl_proto_sec_cfg_t;
 
 /**

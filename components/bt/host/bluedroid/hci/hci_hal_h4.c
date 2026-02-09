@@ -25,6 +25,7 @@
 #include "hci/hci_trans_int.h"
 #include "osi/thread.h"
 #include "osi/pkt_queue.h"
+#include "esp_bt_main.h"
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 #include "osi/mutex.h"
 #include "osi/alarm.h"
@@ -44,6 +45,9 @@
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
@@ -184,6 +188,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thre
 
     //register vhci host cb
     if (hci_host_register_callback(&hci_host_cb) != ESP_OK) {
+        hci_hal_env_deinit();  // Clean up allocated resources on failure
         return false;
     }
 
@@ -356,7 +361,7 @@ int hci_adv_credits_prep_to_release(uint16_t num)
     hci_hal_env.adv_credits_to_release = credits_to_release;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
-    if (credits_to_release == num && num != 0) {
+    if (credits_to_release == num) {
         osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
         osi_alarm_set(hci_hal_env.adv_flow_monitor, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
     }
@@ -477,6 +482,10 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     packet->len--;
     if (type == HCI_BLE_EVENT) {
 #if (!CONFIG_BT_STACK_NO_LOG)
+        if (packet->len < 1) {
+            osi_free(packet);
+            return;
+        }
         uint8_t len = 0;
         STREAM_TO_UINT8(len, stream);
 #endif
@@ -507,9 +516,10 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         STREAM_TO_UINT8(length, stream);
     }
 
-    if ((length + hdr_size) != packet->len) {
-        HCI_TRACE_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
-                  "pkt_len=%d", type, hdr_size, length, packet->len);
+    // Prevents integer wrap-around when calculating (length + hdr_size).
+    if (length != (packet->len - hdr_size)) {
+        HCI_TRACE_ERROR("%s: SECURITY: parameter length (%d) exceeds packet bounds (%d)",
+                        __func__, length, packet->len - hdr_size);
         osi_free(packet);
         return;
     }
@@ -603,6 +613,9 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+    ble_log_write_hex(BLE_LOG_SRC_HCI, data, len);
+#endif /* CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED */
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
 #if (BLE_42_SCAN_EN == TRUE)
@@ -645,6 +658,11 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
             fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
         }
     } else {
+        if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+            // Prevent race condition during host deinit/disable
+            // Host not ready, dropped advertising report
+            return 0;
+        }
 #if (BLE_42_SCAN_EN == TRUE)
 #if !BLE_ADV_REPORT_FLOW_CONTROL
         // drop the packets if pkt_queue length goes beyond upper limit
@@ -653,7 +671,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         }
 #endif
         pkt_size = BT_PKT_LINKED_HDR_SIZE + BT_HDR_SIZE + len;
-        #if HEAP_MEMORY_DEBUG
+        #if (HEAP_MEMORY_DEBUG || HEAP_MEMORY_STATS)
         linked_pkt = (pkt_linked_item_t *) osi_calloc(pkt_size);
         #else
         linked_pkt = (pkt_linked_item_t *) osi_calloc_base(pkt_size);

@@ -32,39 +32,16 @@ typedef enum dpp_bootstrap_type {
     DPP_BOOTSTRAP_NFC_URI,  /**< NFC URI record Method */
 } esp_supp_dpp_bootstrap_t;
 
-/** @brief Types of Callback Events received from DPP Supplicant. */
-typedef enum {
-    ESP_SUPP_DPP_URI_READY,     /**< URI is ready through Bootstrapping */
-    ESP_SUPP_DPP_CFG_RECVD,     /**< Config received via DPP Authentication */
-    ESP_SUPP_DPP_PDR_RECVD,     /**< Peer Discovery Response is received */
-    ESP_SUPP_DPP_FAIL,          /**< DPP Authentication failure */
-} esp_supp_dpp_event_t;
-
-/**
-  * @brief Callback function for receiving DPP Events from Supplicant.
-  *
-  *        Callback function will be called with DPP related information.
-  *
-  * @param evt DPP event ID
-  * @param data Event data payload
-  */
-typedef void (*esp_supp_dpp_event_cb_t)(esp_supp_dpp_event_t evt, void *data);
-
 /**
   * @brief Initialize DPP Supplicant
   *
   *        Starts DPP Supplicant and initializes related Data Structures.
   *
-  * @note The `evt_cb` parameter is deprecated and will be ignored in future IDF versions.
-  *       Directly register for WiFi events to get DPP events.
-  *
-  * @param evt_cb (Deprecated) Callback function to receive DPP related events
-  *
   * return
   *    - ESP_OK: Success
   *    - ESP_FAIL: Failure
   */
-esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t evt_cb);
+esp_err_t esp_supp_dpp_init(void);
 
 /**
   * @brief De-initialize DPP Supplicant

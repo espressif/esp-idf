@@ -21,13 +21,6 @@ static const char *TAG = "bitscrambler";
 #define BITSCRAMBLER_MEM_ALLOC_CAPS  MALLOC_CAP_DEFAULT
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define BS_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define BS_RCC_ATOMIC()
-#endif
-
 #define BITSCRAMBLER_BINARY_VER 1 //max version we're compatible with
 #define BITSCRAMBLER_HW_REV 0
 
@@ -71,7 +64,7 @@ static bool claim_channel(bitscrambler_direction_t dir)
 {
     int old_use_count = atomic_fetch_add(&group_ref_count, 1);
     if (old_use_count == 0) {
-        BS_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             // This is the first client using the module, so we need to enable the sys clock
             bitscrambler_ll_set_bus_clock_sys_enable(true);
             bitscrambler_ll_reset_sys();
@@ -84,7 +77,7 @@ static bool claim_channel(bitscrambler_direction_t dir)
         if (old_val) {
             goto err;
         } else {
-            BS_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 bitscrambler_ll_set_bus_clock_tx_enable(true);
                 bitscrambler_ll_reset_tx();
             }
@@ -94,7 +87,7 @@ static bool claim_channel(bitscrambler_direction_t dir)
         if (old_val) {
             goto err;
         } else {
-            BS_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 bitscrambler_ll_set_bus_clock_rx_enable(true);
                 bitscrambler_ll_reset_rx();
             }
@@ -117,7 +110,7 @@ static void release_channel(bitscrambler_direction_t dir)
     int old_use_count = atomic_fetch_sub(&group_ref_count, 1);
     if (old_use_count == 1) {
         // This is the last client using the module, so we need to disable the sys clock
-        BS_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             bitscrambler_ll_set_bus_clock_sys_enable(false);
             bitscrambler_ll_mem_force_power_off();
         }

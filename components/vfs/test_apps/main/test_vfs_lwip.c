@@ -8,6 +8,7 @@
 #include <sys/fcntl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include "unity.h"
 #include "test_utils.h"
 

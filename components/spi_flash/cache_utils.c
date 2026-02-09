@@ -32,19 +32,16 @@
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
-#include "spi_flash_override.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 #include "esp_log.h"
 
-static __attribute__((unused)) const char *TAG = "cache";
+ESP_LOG_ATTR_TAG(TAG, "cache");
 
 // Used only on ROM impl. in idf, this param unused, cache status hold by hal
 static uint32_t s_flash_op_cache_state[2];
-
-
 #ifndef CONFIG_FREERTOS_UNICORE
 static SemaphoreHandle_t s_flash_op_mutex;
 static volatile bool s_flash_op_can_start = false;
@@ -52,17 +49,6 @@ static volatile bool s_flash_op_complete = false;
 #ifndef NDEBUG
 static volatile int s_flash_op_cpu = -1;
 #endif
-
-static inline bool esp_task_stack_is_sane_cache_disabled(void)
-{
-    const void *sp = (const void *)esp_cpu_get_sp();
-
-    return esp_ptr_in_dram(sp)
-#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-           || esp_ptr_in_rtc_dram_fast(sp)
-#endif
-           ;
-}
 
 void spi_flash_init_lock(void)
 {
@@ -124,7 +110,9 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
     assert(esp_task_stack_is_sane_cache_disabled());
+#endif
 
     spi_flash_op_lock();
 

@@ -177,14 +177,15 @@ esp_err_t spi_bus_free(spi_host_device_t host_id);
 /**
  * @brief Helper function for malloc DMA capable memory for SPI driver
  *
- * @note This API will take care of the cache and hardware alignment internally.
- *       To free/release memory allocated by this helper function, simply calling `free()`
+ * @note Using this API AFTER spi_bus_initialize() is called, this API will take care of the cache and hardware
+ *       alignment internally. To free/release memory allocated by this helper function, simply calling `free()`.
  *
  * @param[in]  host_id          SPI peripheral who will using the memory
  * @param[in]  size             Size in bytes, the amount of memory to allocate
  * @param[in]  extra_heap_caps  Extra heap caps based on MALLOC_CAP_DMA
  *
  * @return                      Pointer to the memory if allocated successfully
+ *         - NULL               If allocation failed or bus not initialized
  */
 void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps);
 

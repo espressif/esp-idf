@@ -98,7 +98,7 @@ UINT16 gatt_profile_find_conn_id_by_bd_addr(BD_ADDR remote_bda)
 **
 ** Description      find clcb by Connection ID
 **
-** Returns          Pointer to the found link conenction control block.
+** Returns          Pointer to the found link connection control block.
 **
 *******************************************************************************/
 static tGATT_PROFILE_CLCB *gatt_profile_find_clcb_by_conn_id(UINT16 conn_id)
@@ -119,9 +119,9 @@ static tGATT_PROFILE_CLCB *gatt_profile_find_clcb_by_conn_id(UINT16 conn_id)
 **
 ** Function         gatt_profile_find_clcb_by_bd_addr
 **
-** Description      The function searches all LCBs with macthing bd address.
+** Description      The function searches all LCBs with matching bd address.
 **
-** Returns          Pointer to the found link conenction control block.
+** Returns          Pointer to the found link connection control block.
 **
 *******************************************************************************/
 static tGATT_PROFILE_CLCB *gatt_profile_find_clcb_by_bd_addr(BD_ADDR bda, tBT_TRANSPORT transport)
@@ -148,7 +148,7 @@ static tGATT_PROFILE_CLCB *gatt_profile_find_clcb_by_bd_addr(BD_ADDR bda, tBT_TR
 ** Returns           NULL if not found. Otherwise pointer to the connection link block.
 **
 *******************************************************************************/
-tGATT_PROFILE_CLCB *gatt_profile_clcb_alloc (UINT16 conn_id, BD_ADDR bda, tBT_TRANSPORT tranport)
+tGATT_PROFILE_CLCB *gatt_profile_clcb_alloc (UINT16 conn_id, BD_ADDR bda, tBT_TRANSPORT transport)
 {
     UINT8                   i_clcb = 0;
     tGATT_PROFILE_CLCB      *p_clcb = NULL;
@@ -158,7 +158,7 @@ tGATT_PROFILE_CLCB *gatt_profile_clcb_alloc (UINT16 conn_id, BD_ADDR bda, tBT_TR
             p_clcb->in_use      = TRUE;
             p_clcb->conn_id     = conn_id;
             p_clcb->connected   = TRUE;
-            p_clcb->transport   = tranport;
+            p_clcb->transport   = transport;
             memcpy (p_clcb->bda, bda, BD_ADDR_LEN);
             break;
         }
@@ -435,7 +435,7 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
 **
 ** Function         gatt_profile_db_init
 **
-** Description      Initializa the GATT profile attribute database.
+** Description      Initialize the GATT profile attribute database.
 **
 *******************************************************************************/
 void gatt_profile_db_init (void)
@@ -684,7 +684,7 @@ void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSP
         p_clcb->connected = TRUE;
     }
     /* hold the link here */
-    GATT_Connect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, transport, FALSE);
+    GATT_Connect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, transport, FALSE, FALSE, 0xFF, 0xFF);
     p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
 
     if (!p_clcb->connected) {

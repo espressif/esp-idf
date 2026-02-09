@@ -18,10 +18,6 @@ extern "C" {
 
 #define ESP_SPINEL_LOG_TAG "ESP_RADIO_SPINEL"
 
-#define SPINEL_PROP_VENDOR_ESP_SET_COORDINATOR (SPINEL_PROP_VENDOR_ESP__BEGIN + 1)  /* Vendor command for coordinator.*/
-
-#define SPINEL_PROP_VENDOR_ESP_SET_PENDINGMODE (SPINEL_PROP_VENDOR_ESP__BEGIN + 2)  /* Vendor command for pending mode.*/
-
 typedef enum {
     ESP_RADIO_SPINEL_ZIGBEE = 0x0,      /* The index of Zigbee.*/
     ESP_RADIO_SPINEL_OPENTHREAD = 0x1,  /* The index of OpenThread.*/
@@ -57,12 +53,6 @@ typedef struct
     void (*energy_scan_done)(int8_t max_rssi);                                                                      /* Callback for Energy Scan Done.*/
     void (*transmit_started)(const uint8_t *frame);                                                                 /* Callback for Transmit Started.*/
     void (*switchover_done)(bool success);                                                                          /* Callback for Switchover Done.*/
-
-#if CONFIG_OPENTHREAD_DIAG
-    void (*diag_receive_done)(const uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);                       /* Callback for Receive Done (diag).*/
-    void (*diag_transmit_done)(const uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);                      /* Callback for Transmit Done (diag).*/
-    void (*diag_transmit_failed)(esp_ieee802154_tx_error_t error);                                                  /* Callback for Transmit Failed (diag).*/
-#endif // CONFIG_OPENTHREAD_DIAG
 } esp_radio_spinel_callbacks_t;                                                                                     /* ESP Radio Spinel Callbacks.*/
 
 /**

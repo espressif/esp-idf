@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,7 +80,7 @@ esp_partition_info_t *esp_tee_flash_get_running_ree_partition(void);
 /**
  * @brief Check if the given virtual address falls within the TEE flash protected region
  *
- * @param addr Virtual address to check
+ * @param vaddr Virtual address to check
  *
  * @return bool true if address is within protected region, false otherwise
  */
@@ -89,7 +89,7 @@ bool esp_tee_flash_check_vaddr_in_tee_region(const size_t vaddr);
 /**
  * @brief Check if the given physical address falls within the TEE flash protected region
  *
- * @param addr Physical address to check
+ * @param paddr Physical address to check
  *
  * @return bool true if address is within protected region, false otherwise
  */
@@ -98,8 +98,38 @@ bool esp_tee_flash_check_paddr_in_tee_region(const size_t paddr);
 /**
  * @brief Check if the given physical address falls within the active TEE partition
  *
- * @param dest_addr Physical address to check
+ * @param paddr Physical address to check
  *
  * @return bool true if address is within active TEE partition, false otherwise
  */
 bool esp_tee_flash_check_paddr_in_active_tee_part(const size_t paddr);
+
+/**
+ * @brief Check if the given virtual address range overlaps with TEE flash protected regions
+ *
+ * @param vaddr Starting virtual address of the range to check
+ * @param len   Length of the address range in bytes
+ *
+ * @return bool true if any part of the range overlaps with protected regions, false otherwise
+ */
+bool esp_tee_flash_check_vrange_in_tee_region(const size_t vaddr, const size_t len);
+
+/**
+ * @brief Check if the given physical address range overlaps with TEE flash protected region
+ *
+ * @param paddr Starting physical address of the range to check
+ * @param len   Length of the address range in bytes
+ *
+ * @return bool true if any part of the range overlaps with TEE protected region, false otherwise
+ */
+bool esp_tee_flash_check_prange_in_tee_region(const size_t paddr, const size_t len);
+
+/**
+ * @brief Check if the given physical address range overlaps with active TEE partition
+ *
+ * @param paddr Starting physical address of the range to check
+ * @param len   Length of the address range in bytes
+ *
+ * @return bool true if any part of the range overlaps with active TEE partition, false otherwise
+ */
+bool esp_tee_flash_check_prange_in_active_tee_part(const size_t paddr, const size_t len);

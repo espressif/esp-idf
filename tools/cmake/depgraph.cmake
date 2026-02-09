@@ -35,10 +35,10 @@ function(depgraph_add_edge dep_from dep_to)
         # However, show which components are "common" by adding an edge from a node named "common".
         # If necessary, add a new build property to customize this behavior.
         if(NOT dep_from IN_LIST common_reqs)
-            idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH "common -> ${dep_to}" APPEND)
+            idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH "\"common\" -> \"${dep_to}\"" APPEND)
         endif()
     else()
-        idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH "${dep_from} -> ${dep_to} ${attr}" APPEND)
+        idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH "\"${dep_from}\" -> \"${dep_to}\" ${attr}" APPEND)
     endif()
 endfunction()
 

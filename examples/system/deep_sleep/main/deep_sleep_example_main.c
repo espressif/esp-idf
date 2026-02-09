@@ -18,7 +18,11 @@
 #include "nvs.h"
 #include "deep_sleep_example.h"
 
-RTC_SLOW_ATTR static struct timeval sleep_enter_time;
+// For chips not support RTC memory, sleep_enter_time is stored in NVS Flash
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+RTC_SLOW_ATTR
+#endif
+static struct timeval sleep_enter_time;
 
 static void deep_sleep_task(void *args)
 {

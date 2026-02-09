@@ -84,6 +84,4 @@ menu "ADC and ADC Calibration"
         help
             whether to enable the debug log message for ADC driver.
             Note that this option only controls the ADC driver log, will not affect other drivers.
-
-            note: This cannot be used in the ADC legacy driver.
 endmenu

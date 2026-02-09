@@ -168,7 +168,6 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 50 * 1000,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     adc_pattern[0].atten = ADC_ATTEN_DB_12;
@@ -226,7 +225,6 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][manual][ignore
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 50 * 1000,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     adc_pattern[0].atten = ADC_ATTEN_DB_12;
@@ -279,7 +277,6 @@ TEST_CASE("ADC continuous test after restarting", "[adc_continuous][ignore]")
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 50 * 1000,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     adc_pattern[0].atten = ADC_ATTEN_DB_12;

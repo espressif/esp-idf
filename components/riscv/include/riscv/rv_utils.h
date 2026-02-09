@@ -14,6 +14,7 @@
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
 #include "riscv/csr_pie.h"
+#include "riscv/csr_dsp.h"
 #include "sdkconfig.h"
 
 #if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
@@ -117,7 +118,11 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_cou
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
 #if !SOC_CPU_HAS_CSR_PC
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_SET_CYCLE_COUNT, ccount);
+#else
     RV_WRITE_CSR(mcycle, ccount);
+#endif
 #else
     if (IS_PRV_M_MODE()) {
         RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
@@ -125,6 +130,18 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
         RV_WRITE_CSR(CSR_PCCR_USER, ccount);
     }
 #endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_set_threadptr(void *ptr)
+{
+    asm volatile("mv tp, %0" :: "r"(ptr));
+}
+
+FORCE_INLINE_ATTR void *rv_utils_get_threadptr(void)
+{
+    void *thread_ptr;
+    asm volatile("mv %0, tp" : "=r"(thread_ptr));
+    return thread_ptr;
 }
 
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
@@ -234,10 +251,13 @@ FORCE_INLINE_ATTR void rv_utils_intr_set_threshold(int priority_threshold)
 
 #if SOC_CPU_HAS_FPU
 
-FORCE_INLINE_ATTR bool rv_utils_enable_fpu(void)
+FORCE_INLINE_ATTR void rv_utils_enable_fpu(void)
 {
-    /* Set mstatus[14:13] to 0b01 to start the floating-point unit initialization */
+    /* Set mstatus[14:13] to 0b01 to enable the floating-point unit */
     RV_SET_CSR(mstatus, CSR_MSTATUS_FPU_ENA);
+}
+
+FORCE_INLINE_ATTR bool rv_utils_clear_fpu(void) {
     /* On the ESP32-P4, the FPU can be used directly after setting `mstatus` bit 13.
      * Since the interrupt handler expects the FPU states to be either 0b10 or 0b11,
      * let's write the FPU CSR and clear the dirty bit afterwards. */
@@ -275,7 +295,27 @@ FORCE_INLINE_ATTR void rv_utils_disable_pie(void)
     RV_WRITE_CSR(CSR_PIE_STATE_REG, 0);
 }
 
-#endif /* SOC_CPU_HAS_FPU */
+#endif /* SOC_CPU_HAS_PIE */
+
+
+/* ------------------------------------------------- DSP Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_CPU_HAS_DSP
+
+FORCE_INLINE_ATTR void rv_utils_enable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 1);
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 0);
+}
+
+#endif /* SOC_CPU_HAS_DSP */
 
 
 
@@ -383,8 +423,8 @@ FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
 {
     RV_WRITE_CSR(tselect, bp_num);
     /* tdata1 is a WARL(write any read legal) register
-     * We can just write 0 to it
-     */
+    * We can just write 0 to it
+    */
     RV_WRITE_CSR(tdata1, 0);
 }
 
@@ -460,12 +500,20 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
 FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_EN_BRANCH_PREDICTOR);
+#else
     RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_dis_branch_predictor(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_DIS_BRANCH_PREDICTOR);
+#else
     RV_CLEAR_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 #endif
 

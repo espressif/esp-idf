@@ -6,8 +6,6 @@
 
 setuptools
 packaging
-# importlib_metadata: is part of python3.8 and newer as importlib.metadata
-importlib_metadata; python_version < "3.8"
 click
 pyserial
 cryptography
@@ -26,6 +24,10 @@ pyclang
 construct
 rich
 psutil
+
+# ble's compressed log testing tool
+tree_sitter
+tree_sitter_c
 
 # gdb extensions dependencies
 freertos_gdb

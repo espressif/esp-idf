@@ -12,11 +12,7 @@
 #include "btc/btc_task.h"
 
 typedef enum {
-    BTC_DEV_ACT_SET_DEVICE_NAME,
-    BTC_DEV_ACT_GET_DEVICE_NAME,
-#if (ESP_COEX_VSC_INCLUDED == TRUE)
     BTC_DEV_ACT_CFG_COEX_STATUS,
-#endif
 } btc_dev_act_t;
 
 /* btc_dev_args_t */

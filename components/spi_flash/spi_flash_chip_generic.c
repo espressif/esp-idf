@@ -7,13 +7,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h> // For MIN/MAX
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_defs.h"
-#include "hal/spi_flash_encrypt_hal.h"
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_rom_caps.h"
+
+#include "hal/spi_flash_encrypt_hal.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_private/spi_flash_os.h"
 
 #define IS_REGION_32BIT(start, len)    ((start) + (len) > (1<<24))
 #define IS_ADDR_32BIT(addr)            (addr >= (1<<24))
@@ -53,12 +54,14 @@ DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy_hpm = (flash_chip_dummy_t *)&
 
 // These are the pointer to HW flash encryption. Default using hardware encryption.
 DRAM_ATTR static spi_flash_encryption_t esp_flash_encryption_default __attribute__((__unused__)) = {
+#if SOC_FLASH_ENC_SUPPORTED
     .flash_encryption_enable = spi_flash_encryption_hal_enable,
     .flash_encryption_disable = spi_flash_encryption_hal_disable,
     .flash_encryption_data_prepare = spi_flash_encryption_hal_prepare,
     .flash_encryption_done = spi_flash_encryption_hal_done,
     .flash_encryption_destroy = spi_flash_encryption_hal_destroy,
     .flash_encryption_check = spi_flash_encryption_hal_check,
+#endif
 };
 
 #define SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS           200

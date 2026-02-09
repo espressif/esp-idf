@@ -3,7 +3,7 @@ Capacitive Touch Sensor
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3"}
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3", esp32h4="v3"}
 
 Introduction
 ---------------
@@ -30,6 +30,7 @@ Overview of Capacitive Touch Sensor Versions
 |                  | ESP32-S3  | Version 2, support proximity measurement done interrupt                               |
 +------------------+-----------+---------------------------------------------------------------------------------------+
 | V3               | ESP32-P4  | Version 3, support frequency hopping                                                  |
+|                  | ESP32-H4  |                                                                                       |
 +------------------+-----------+---------------------------------------------------------------------------------------+
 
 Measurement Principle
@@ -72,11 +73,11 @@ Terminology in the Driver
 - **Touch Sensor Controller**: The controller of the touch sensor, responsible for configuring and managing the touch sensor.
 - **Touch Sensor Channel**: A specific touch sensor sampling channel. A touch sensor module has multiple touch channels, which are usually connected to the touch pad for measuring the capacitance change. In the driver, sampling of **one** channel is called one ``measurement`` and the scanning of **all** registered channels is called one ``scan``.
 
-.. only:: SOC_TOUCH_SUPPORT_FREQ_HOP
+.. only:: not esp32 and not esp32s2 and not esp32s3
 
   - **Touch Sensor Sampling Configuration**: Touch sensor sampling configuration refers to all the hardware configurations that related to the sampling. It can  determine how the touch channels sample by setting the number of charging times, charging frequency, measurement interval, etc. The {IDF_TARGET_NAME} supports multiple sets of sample configuration, which means it can support frequency hopping.
 
-.. only:: not SOC_TOUCH_SUPPORT_FREQ_HOP
+.. only:: esp32 or esp32s2 or esp32s3
 
   - **Touch Sensor Sampling Configuration**: Touch sensor sampling configuration refers to all the hardware configurations that related to the sampling. It can  determine how the touch channels sample by setting the number of charging times, charging frequency, measurement interval, etc. The {IDF_TARGET_NAME} only support one set of sample configuration, so it doesn't support frequency hopping.
 
@@ -310,7 +311,7 @@ Read Measurement Data
 
 Call :cpp:func:`touch_channel_read_data` to read the data with different types. Like, benchmark, smooth data, etc. You can refer to :cpp:type:`touch_chan_data_type_t` for the supported data types.
 
-.. only:: SOC_TOUCH_SUPPORT_FREQ_HOP
+.. only:: not esp32 and not esp32s2 and not esp32s3
 
     The {IDF_TARGET_NAME} supports frequency hopping by configuring multiple set of sample configurations, :cpp:func:`touch_channel_read_data` can read out the data of each sample configuration in a single call, you can determine the sample configuration number by  :cpp:member:`touch_sensor_config_t::sample_cfg_num`, and pass an array (which length is not smaller than the configuration number) to the third parameter ``*data``, so that all the measured data of this channel will be stored in the array.
 
@@ -373,11 +374,11 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
 
     The {IDF_TARGET_NAME} supports proximity sensing. Proximity sensing can be registered by calling :cpp:func:`touch_sensor_config_proximity_sensing` and specify the configurations :cpp:type:`touch_proximity_config_t`.
 
-    .. only:: esp32p4
+    .. only:: not esp32s2 and not esp32s3
 
         Since the capacitance change caused by proximity sensing is far less than that caused by physical touch, large area of copper foil is often used on PCB to increase the sensing area. In addition, multiple rounds of scans are needed and the result of each scan will be accumulated in the driver to improve the measurement sensitivity. The scan times (rounds) can be determined by :cpp:member:`touch_proximity_config_t::scan_times` and the charging times of the proximity channel in one scan can be determined by :cpp:member:`touch_proximity_config_t::charge_times`. Generally, the larger the scan times and charging times is, the higher the sensitivity will be, however, the read data will be unstable if the sensitivity is too high. Proper parameters should be determined regarding the application.
 
-    .. only:: not esp32p4
+    .. only:: esp32s2 or esp32s3
 
         Since the capacitance change caused by proximity sensing is far less than that caused by physical touch, large area of copper foil is often used on PCB to increase the sensing area. In addition, multiple rounds of scans are needed and the result of each scan will be accumulated in the driver to improve the measurement sensitivity. The scan times (rounds) can be determined by :cpp:member:`touch_proximity_config_t::scan_times`. Generally, the larger the scan times and charging times is, the higher the sensitivity will be, however, the read data will be unstable if the sensitivity is too high. Proper parameters should be determined regarding the application.
 
@@ -495,7 +496,7 @@ Due to the capacitive charging and discharging operation in the touch sensor mea
     :esp32s2 or esp32s3: - Set the current bias type to self-bias: By configuring :cpp:member:`touch_sensor_sample_config_t::bias_type` to :cpp:enumerator:`touch_bias_type_t::TOUCH_BIAS_TYPE_SELF` to use self-bias, which is more power-saving but less stable.
     :esp32 or esp32s2 or esp32s3: - Lower down the charging and discharging amplitudes: :cpp:member:`touch_sensor_sample_config_t::charge_volt_lim_l` and :cpp:member:`touch_sensor_sample_config_t::charge_volt_lim_h` can specify the lower voltage limit during the discharging and the upper voltage limit during the charging. Reducing both voltage limitations and the voltage error between them can also decrease the power consumption.
     :esp32 or esp32s2 or esp32s3: - Reduce the current bias intensity: Lowering down :cpp:member:`touch_channel_config_t::charge_speed` (i.e., the current magnitude of the current bias) can help to reduce the power consumption.
-    :esp32p4: - Lower down the LDO voltage biasing intensity: Decreasing :cpp:member:`touch_channel_config_t::bias_volt` can reduce the power consumption.
+    :not esp32 and not esp32s2 and not esp32s3: - Lower down the LDO voltage biasing intensity: Decreasing :cpp:member:`touch_channel_config_t::bias_volt` can reduce the power consumption.
 
 API Reference
 -------------

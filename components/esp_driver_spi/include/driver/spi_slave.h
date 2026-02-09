@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,6 @@
 #define _DRIVER_SPI_SLAVE_H_
 
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "driver/spi_common.h"
 
 #ifdef __cplusplus
@@ -167,7 +165,7 @@ esp_err_t spi_slave_disable(spi_host_device_t host);
  *         - ESP_ERR_INVALID_STATE if sync data between Cache and memory failed
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Get the result of a SPI transaction queued earlier
@@ -189,7 +187,7 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
  *         - ESP_ERR_NOT_SUPPORTED if flag `SPI_SLAVE_NO_RETURN_RESULT` is set
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Do a SPI transaction
@@ -208,7 +206,7 @@ esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transacti
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 #ifdef __cplusplus
 }

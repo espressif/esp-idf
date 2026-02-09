@@ -15,7 +15,8 @@
 #include "esp_timer.h"
 #include "esp_memory_utils.h"
 #include "soc/chip_revision.h"
-#include "soc/sdmmc_periph.h"
+#include "soc/sdmmc_pins.h"
+#include "hal/sdmmc_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/efuse_hal.h"
 #include "hal/sd_types.h"
@@ -29,6 +30,7 @@
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sd_host_private.h"
+#include "freertos/FreeRTOS.h"
 
 typedef struct sd_platform_t {
     _lock_t              mutex;
@@ -82,19 +84,8 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
         ESP_RETURN_ON_ERROR(ret, TAG, "no available sd host controller");
     }
 
-    size_t alignment = 0;
-    size_t cache_alignment_bytes = 0;
-    ret = esp_cache_get_alignment(0, &cache_alignment_bytes);
-    assert(ret == ESP_OK);
-    if (cache_alignment_bytes != 0) {
-        alignment = cache_alignment_bytes;
-    } else {
-        alignment = 4;
-    }
-
-    ESP_LOGD(TAG, "size: %d, alignment: %d", sizeof(sdmmc_desc_t), alignment);
     ctlr->dma_desc_num = config->dma_desc_num ? config->dma_desc_num : SD_HOST_SDMMC_DMA_DESC_CNT;
-    ctlr->dma_desc = heap_caps_aligned_calloc(alignment, 1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_DMA_ALLOC_CAPS);
+    ctlr->dma_desc = heap_caps_calloc(1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_DMA_ALLOC_CAPS);
     ESP_LOGD(TAG, "ctlr->dma_desc addr: %p", ctlr->dma_desc);
     ESP_RETURN_ON_FALSE(ctlr->dma_desc, ESP_ERR_NO_MEM, TAG, "no mem for dma descriptors");
 
@@ -217,8 +208,8 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
     if (config->freq_hz == SDMMC_FREQ_SDR104 * 1000) {
         unsigned chip_version = efuse_hal_chip_revision();
         ESP_LOGD(TAG, "chip_version: %d", chip_version);
-        if (!ESP_CHIP_REV_ABOVE(chip_version, 200)) {
-            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I SDR104 is not supported on ESP32P4 chips prior than v2.0");
+        if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I SDR104 is not supported on ESP32P4 chips prior than v3.0");
         }
     }
 #endif
@@ -477,6 +468,7 @@ bool sd_host_check_buffer_alignment(sd_host_sdmmc_slot_t *slot, const void *buf,
     }
     ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
+    (void)ret;
 
     bool is_aligned = false;
     size_t alignment = 0;
@@ -671,7 +663,7 @@ esp_err_t sd_host_set_delay_phase(sd_host_sdmmc_slot_t *slot)
         delay_phase_num = 0;
         break;
     }
-    SD_HOST_SDMMC_CLK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdmmc_ll_set_din_delay_phase(slot->ctlr->hal.dev, phase, speed_mode);
         sdmmc_ll_set_dout_delay_phase(slot->ctlr->hal.dev, phase, speed_mode);
     }
@@ -761,7 +753,7 @@ static esp_err_t sd_host_claim_controller(sd_host_sdmmc_ctlr_t *controller)
         if (found) {
             s_platform.controllers[i] = controller;
             controller->host_id = i;
-            SD_HOST_SDMMC_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 sdmmc_ll_enable_bus_clock(i, true);
                 sdmmc_ll_reset_register(i);
             }
@@ -782,7 +774,7 @@ static esp_err_t sd_host_declaim_controller(sd_host_sdmmc_ctlr_t *controller)
 
     _lock_acquire(&s_platform.mutex);
     s_platform.controllers[controller->host_id] = NULL;
-    SD_HOST_SDMMC_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(0, false);
     }
     _lock_release(&s_platform.mutex);
@@ -988,11 +980,11 @@ static esp_err_t sd_host_reset(sd_host_sdmmc_ctlr_t *ctlr)
 static void sd_host_set_clk_div(sd_host_sdmmc_ctlr_t *ctlr, soc_periph_sdmmc_clk_src_t src, int div)
 {
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)src, true));
-    SD_HOST_SDMMC_CLK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         sdmmc_ll_set_clock_div(ctlr->hal.dev, div);
         sdmmc_ll_select_clk_source(ctlr->hal.dev, src);
         sdmmc_ll_init_phase_delay(ctlr->hal.dev);
-#if SOC_CLK_SDIO_PLL_SUPPORTED
+#if SDMMC_LL_SDIO_PLL_SUPPORTED
         if (src == SDMMC_CLK_SRC_SDIO_200M) {
             sdmmc_ll_enable_sdio_pll(ctlr->hal.dev, true);
         }
@@ -1019,6 +1011,7 @@ static void sd_host_slot_get_clk_dividers(sd_host_sdmmc_slot_t *slot, uint32_t f
 
     esp_err_t ret = esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     assert(ret == ESP_OK);
+    (void)ret;
     ESP_LOGD(TAG, "clk_src_freq_hz: %"PRId32" hz", clk_src_freq_hz);
 
 #if SDMMC_LL_MAX_FREQ_KHZ_FPGA
@@ -1073,6 +1066,7 @@ static int sd_host_calc_freq(soc_periph_sdmmc_clk_src_t src, const int host_div,
     uint32_t clk_src_freq_hz = 0;
     esp_err_t ret = esp_clk_tree_src_get_freq_hz(src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     assert(ret == ESP_OK);
+    (void)ret;
 
     return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }
@@ -1291,8 +1285,8 @@ static esp_err_t sdmmc_slot_io_config(sd_host_sdmmc_slot_t *slot, const sd_host_
                 gpio_config_t gpio_conf = {
                     .pin_bit_mask = BIT64(slot_gpio->d3_io),
                     .mode = GPIO_MODE_OUTPUT,
-                    .pull_up_en = 0,
-                    .pull_down_en = 0,
+                    .pull_up_en = GPIO_PULLUP_DISABLE,
+                    .pull_down_en = GPIO_PULLDOWN_DISABLE,
                     .intr_type = GPIO_INTR_DISABLE,
                 };
                 gpio_config(&gpio_conf);

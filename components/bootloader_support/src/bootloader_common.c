@@ -17,7 +17,7 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
-#include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
 #include "hal/gpio_ll.h"
@@ -27,7 +27,7 @@
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 
-static const char* TAG = "boot_comm";
+ESP_LOG_ATTR_TAG(TAG, "boot_comm");
 
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec)
 {

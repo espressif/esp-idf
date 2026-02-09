@@ -119,7 +119,7 @@ esp_err_t console_uart_init(void)
 
     uart_set_pin(CONSOLE_UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     uart_driver_install(CONSOLE_UART_NUM, 1024, 1024, 8, &uart_queue, 0);
-    xTaskCreate(console_uart_task, "uTask", 2048, NULL, 8, NULL);
+    xTaskCreate(console_uart_task, "uTask", 4 * 1024, NULL, 8, NULL);
 
     return ESP_OK;
 }

@@ -19,11 +19,10 @@ extern "C" {
  *
  * @param input     Input linked list descriptor (crypto_dma_desc_t *)
  * @param output    Output linked list descriptor (crypto_dma_desc_t *)
- * @param periph    Crypto peripheral to connect the DMA to, either GDMA_TRIG_PERIPH_AES or
- *                  GDMA_TRIG_PERIPH_SHA
+ * @param periph    Crypto peripheral to connect the DMA to, either CRYPTO_DMA_USER_AES or CRYPTO_DMA_USER_SHA
  * @return esp_err_t ESP_OK on success, ESP_ERR_INVALID_ARG if invalid peripheral specified
  */
-esp_err_t esp_tee_crypto_shared_gdma_start(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t periph);
+esp_err_t esp_tee_crypto_shared_gdma_start(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, crypto_dma_user_t periph);
 
 /**
  * @brief Frees the TEE-specific shared crypto DMA channel.

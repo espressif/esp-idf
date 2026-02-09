@@ -14,6 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421')
 def test_pthread(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='!thread-specific', timeout=300)
 

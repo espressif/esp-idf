@@ -8,13 +8,18 @@
 
 This example demonstrates how to use the ISP (image signal processor) to work with esp_driver_cam component. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor/versions/0.5.3) and capture camera sensor signals via CSI interface and display it via DSI interface. This example enables following ISP functions:
 
+- ISP AWB (auto white balance) & WBG (white balance gain) feature
 - ISP AF (auto-focus) feature
 - ISP BF (bayer denoise) feature
+- ISP BLC (black level correction) feature
 - ISP Sharpen feature
 - ISP Demosaic feature
 - ISP GAMMA feature
 - ISP Color feature
 - ISP LSC feature
+- ISP Crop feature (need to enable in `idf.py menuconfig`)
+
+Additionally, this example also implements **Dual Frame Buffer (Ping-Pong Buffering)**, which eliminates screen tearing for smooth video display
 
 ## Usage
 
@@ -29,7 +34,7 @@ This example requires:
 - EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
 
-**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected.
+**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected. The [esp-video](https://github.com/espressif/esp-video-components/tree/master/esp_video) component provides support for the ISP control algorithms, and some examples can be found in [esp_video/examples](https://github.com/espressif/esp-video-components/tree/master/esp_video/examples).
 
 **Note:** For EK79007 you will need to connect following pins:
 - 5V - 5V
@@ -120,6 +125,21 @@ Remember to select the LCD screen model and set corresponding correct horizontal
 
 Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``. Note that the horizontal resolution for the camera should be the same as the LCD screen horizontal resolution.
 
+#### Optional: Image Cropping Configuration
+
+This example supports optional image cropping, which allows you to capture and display a specific region of the camera output. To enable this feature:
+
+1. Navigate to `menuconfig` > `Example Configuration`
+2. Enable `Enable ISP Image Cropping`
+3. Configure the crop region:
+   - `ISP Crop Top-Left Horizontal`: X coordinate of top-left corner
+   - `ISP Crop Top-Left Vertical`: Y coordinate of top-left corner
+   - `ISP Crop Bottom-Right Horizontal`: X coordinate of bottom-right corner
+   - `ISP Crop Bottom-Right Vertical`: Y coordinate of bottom-right corner
+
+**Note**: When cropping is enabled:
+- The cropped image maintains its relative position on the screen
+- A dedicated frame processing task handles the image transformation
 
 ### Build and Flash
 
@@ -141,15 +161,37 @@ To exit the serial monitor, use `Ctrl` + `]`.
 If you see the following console output, your example should be running correctly:
 
 ```
-I (1085) main_task: Calling app_main()
-I (1095) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
-I (1125) gpio: GPIO[31]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
-I (1125) gpio: GPIO[34]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
-I (1295) ov5647: Detected Camera sensor PID=0x5647 with index 0
-I (1305) cam_dsi: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
-I (1305) cam_dsi: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
-I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
-I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1457) main_task: Calling app_main()
+I (1457) example_dsi_init: Allocating DSI resources with 2 frame buffer(s)
+I (1517) isp_dsi: Original CSI resolution: 800x640
+I (1517) isp_dsi: Display resolution: 800x640, bits per pixel: 16
+I (1517) isp_dsi: Frame buffers: fb0=0x48000a40, fb1=0x481f4a80
+I (1517) ov5647: Detected Camera sensor PID=0x5647
+I (1537) sensor_init: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
+I (1537) sensor_init: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1537) sensor_init: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
+I (1547) sensor_init: fmt[3].name:MIPI_2lane_24Minput_RAW10_1920x1080_30fps
+I (1547) sensor_init: fmt[4].name:MIPI_2lane_24Minput_RAW10_1280x960_binning_45fps
+I (1617) sensor_init: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1627) isp_pipeline: ISP processor initialized
+I (1627) isp_pipeline: BLC module configured
+I (1627) isp_pipeline: BF module configured
+I (1627) isp_pipeline: LSC module configured
+I (1627) isp_pipeline: DEMOSAIC module configured
+I (1637) isp_pipeline: CCM module configured
+I (1637) isp_pipeline: GAMMA module configured
+I (1637) isp_pipeline: SHARPEN module configured
+I (1647) isp_pipeline: COLOR module configured
+I (1647) isp_pipeline: All ISP pipeline modules initialized
+W (1657) ISP_AWB: subwindow size (480 x 384) is not divisible by AWB subwindow blocks grid (5 x 5).                     Resolution will be floored to the nearest divisible value.
+I (1667) isp_wb: AWB and WBG module initialized
+I (1677) isp_wb: White balance task started
+I (1677) isp_wb: WB enabled: AWB statistics started, WBG module enabled, processing task created
+I (1687) isp_af: AF module initialized
+I (1687) isp_af: AF task started
+I (1697) isp_af: AF task created
+I (1757) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
+I (1877) isp_dsi: ISP DSI example started
 ```
 
 Below picture is from the video stream of OV5647 and ILI9881C. The camera module is auto-focused and calibrated by ESP on-chip ISP hardware. The edge is over-sharpened as example code configured.

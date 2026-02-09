@@ -227,6 +227,13 @@ config BT_LE_POWER_CONTROL_ENABLED
     help
         Set this option to enable the Power Control feature on controller
 
+config BT_LE_SUBRATE_ENABLED
+    bool "Enable BLE connection subrating"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && !BT_BLUEDROID_ENABLED && SOC_BLE_SUBRATE_SUPPORTED
+    default n
+    help
+        Set this option to enable the Connection Subrating feature on controller
+
 config BT_LE_CTE_FEATURE_ENABLED
     bool "Enable Bluetooth LE Direction Finding (AoA/AoD)"
     depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED && !(BT_LE_SECURITY_ENABLE)
@@ -239,6 +246,13 @@ config BT_LE_CTE_FEATURE_ENABLED
         In chip esp32h2, Direction Finding is not supported in encrypted
         communication scenarios. If you are using chip esp32h2, ensure that encryption is
         disabled when using this feature.
+
+config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
+    bool "Enable BLE periodic advertising with response"
+    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
+    default n
+    help
+        This enables BLE periodic advertising with response feature
 
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
@@ -325,84 +339,93 @@ menu "Controller debug features"
         help
             Enable controller log
 
-    config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-        bool "enable controller log module"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
+    config BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        bool "Utilize BLE Log v2 for controller log"
+        depends on BLE_LOG_ENABLED
         default y
         help
-            Enable controller log module
+            Utilize BLE Log v2 for controller log
 
-    config BT_LE_CONTROLLER_LOG_HCI_ENABLED
-        bool "enable HCI log module"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default y
-        help
-            Enable hci log module
+    if !BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+            bool "enable controller log module"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                Enable controller log module
 
-    config BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        bool "Controller log dump mode only"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default y
-        help
-            Only operate in dump mode
+        config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+            bool "enable HCI log module"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                Enable hci log module
 
-    config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-        bool "Output ble controller logs to SPI bus (Experimental)"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        select BT_BLE_LOG_SPI_OUT_ENABLED
-        default n
-        help
-            Output ble controller logs to SPI bus
+        config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            bool "Controller log dump mode only"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                Only operate in dump mode
 
-    config BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
-        bool "Output ble controller logs via UART DMA (Experimental)"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        depends on !BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-        select BT_BLE_LOG_UHCI_OUT_ENABLED
-        default y
-        help
-            Output ble controller logs via UART DMA
+        config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            bool "Output ble controller logs to SPI bus (Experimental)"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            select BT_BLE_LOG_SPI_OUT_ENABLED
+            default n
+            help
+                Output ble controller logs to SPI bus
 
-    config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-        bool "Store ble controller logs to flash(Experimental)"
-        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default n
-        help
-            Store ble controller logs to flash memory.
+        config BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
+            bool "Output ble controller logs via UART DMA (Experimental)"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            depends on !BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            select BT_BLE_LOG_UHCI_OUT_ENABLED
+            default y
+            help
+                Output ble controller logs via UART DMA
 
-    config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
-        int "size of ble controller log partition(Multiples of 4K)"
-        depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-        default 65536
-        help
-            The size of ble controller log partition shall be a multiples of 4K.
-            The name of log partition shall be "bt_ctrl_log".
-            The partition type shall be ESP_PARTITION_TYPE_DATA.
-            The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+        config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            bool "Store ble controller logs to flash(Experimental)"
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                Store ble controller logs to flash memory.
 
-    config BT_LE_LOG_CTRL_BUF1_SIZE
-        int "size of the first BLE controller LOG buffer"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default 4096
-        help
-            Configure the size of the first BLE controller LOG buffer.
+        config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+            int "size of ble controller log partition(Multiples of 4K)"
+            depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            default 65536
+            help
+                The size of ble controller log partition shall be a multiples of 4K.
+                The name of log partition shall be "bt_ctrl_log".
+                The partition type shall be ESP_PARTITION_TYPE_DATA.
+                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
 
-    config BT_LE_LOG_CTRL_BUF2_SIZE
-        int "size of the second BLE controller LOG buffer"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default 1024
-        help
-            Configure the size of the second BLE controller LOG buffer.
+        config BT_LE_LOG_CTRL_BUF1_SIZE
+            int "size of the first BLE controller LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 4096
+            help
+                Configure the size of the first BLE controller LOG buffer.
 
-    config BT_LE_LOG_HCI_BUF_SIZE
-        int "size of the BLE HCI LOG buffer"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default 4096
-        help
-            Configure the size of the BLE HCI LOG buffer.
+        config BT_LE_LOG_CTRL_BUF2_SIZE
+            int "size of the second BLE controller LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 1024
+            help
+                Configure the size of the second BLE controller LOG buffer.
+
+        config BT_LE_LOG_HCI_BUF_SIZE
+            int "size of the BLE HCI LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 4096
+            help
+                Configure the size of the BLE HCI LOG buffer.
+    endif
 
     config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
         bool "Enable wrap panic handler"
@@ -530,10 +553,12 @@ config BT_LE_LL_DUP_SCAN_LIST_COUNT
 
 config BT_LE_LL_SCA
     int "BLE Sleep clock accuracy"
-    range 0 500
+    range 0 3000
     default 60
     help
         Sleep clock accuracy of our device (in ppm)
+        The Bluetooth LE spec requires a Sleep Clock Accuracy (SCA) of < ±500 ppm.
+        This options allows for a larger value to enable the use of less accurate clock sources.
 
 config BT_LE_LL_PEER_SCA_SET_ENABLE
     bool "Enable to set constant peer SCA"
@@ -555,7 +580,7 @@ config BT_LE_LL_PEER_SCA
 config BT_LE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     depends on !BT_NIMBLE_ENABLED
-    range 1 35
+    range 1 70
     default 3
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
@@ -897,3 +922,94 @@ menu "Reserved Memory Config"
             The actual reserved memory count will be the minimum value between the maximum connection instances and
             the BT_LE_CONN_RESERVED_MEMORY_COUNT.
 endmenu
+
+config BT_LE_DTM_ENABLED
+    bool "Enable Direct Test Mode (DTM) feature"
+    default n
+
+menu "Scheduling Priority Level Config"
+    choice BT_LE_ADV_SCHED_PRIO_LEVEL
+        prompt "The Adv scheduling priority level"
+        default BT_LE_ADV_SCHED_PRIO_LOW_LEVEL
+        help
+            The Adv scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_ADV_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_ADV_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_ADV_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_ADV_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_ADV_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_ADV_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_ADV_SCHED_PRIO_HIGH_LEVEL
+        default 0
+
+    choice BT_LE_PERIODIC_ADV_SCHED_PRIO_LEVEL
+        prompt "The Periodic Adv scheduling priority level"
+        default BT_LE_PERIODIC_ADV_SCHED_PRIO_MID_LEVEL
+        help
+            The Periodic Adv scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_PERIODIC_ADV_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_PERIODIC_ADV_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_PERIODIC_ADV_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_PERIODIC_ADV_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_PERIODIC_ADV_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_PERIODIC_ADV_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_PERIODIC_ADV_SCHED_PRIO_HIGH_LEVEL
+        default 1
+
+    choice BT_LE_SYNC_SCHED_PRIO_LEVEL
+        prompt "The Sync scheduling priority level"
+        default BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
+        help
+            The SYNC scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_SYNC_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_SYNC_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_SYNC_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_SYNC_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_SYNC_SCHED_PRIO_HIGH_LEVEL
+        default 1
+endmenu
+
+config BT_LE_CTRL_SLV_FAST_RX_CONN_DATA_EN
+    bool "Enable Peripheral fast PDU reception during latency"
+    default n
+    help
+        When this option is enabled, the Controller continues receiving PDUs
+        In the next connection event instead of entering latency
+        After a data packet is received.
+
+config BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN
+    bool "Enables the automatic initiation of a data length update(Experimental)."
+    default n
+    help
+        When this option is enabled, the Controller automatically initiates a data length update
+        Using the appropriate data length parameters
+        When a PHY update or a connection interval update occurs.
+
+config BT_LE_CTRL_ADV_FAST_TX_EN
+    bool "Reduce adv enable-to-air latency (READ DOCS FIRST) (EXPERIMENTAL)"
+    default n
+    help
+        Reduce the latency between issuing the advertising enable command
+        and the actual on-air transmission by executing the advertising TX
+        path from IRAM.
+        Note: Enabling this option increases IRAM usage.

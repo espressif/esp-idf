@@ -362,6 +362,10 @@ static void bta_hf_client_handle_cind_list_item(char *name, UINT32 min, UINT32 m
 
     APPL_TRACE_DEBUG("%s %u.%s <%u:%u>", __FUNCTION__, index, name, min, max);
 
+    if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
+        return;
+    }
+
     /* look for a matching indicator on list of supported ones */
     for (i = 0; i < BTA_HF_CLIENT_AT_SUPPORTED_INDICATOR_COUNT; i++) {
         if (strcmp(name, BTA_HF_CLIENT_INDICATOR_SERVICE) == 0) {
@@ -591,7 +595,7 @@ while (*buf == ' ') buf++;
     buf += sizeof("\r\n") - 1;
 
 /* skip rest of AT string up to <cr> */
-#define AT_SKIP_REST(buf) while(*buf != '\r') buf++;
+#define AT_SKIP_REST(buf) while((*buf != '\r') && (*buf != '\0')) buf++;
 
 static char *bta_hf_client_parse_ok(char *buffer)
 {
@@ -1018,7 +1022,7 @@ static char *bta_hf_client_parse_clcc(char *buffer)
         }
     }
 
-    /* Skip any remaing param,as they are not defined by BT HFP spec */
+    /* Skip any remaining param,as they are not defined by BT HFP spec */
     AT_SKIP_REST(buffer);
     AT_CHECK_RN(buffer);
 
@@ -1374,6 +1378,11 @@ void bta_hf_client_at_parse(char *buf, unsigned int len)
         osi_free(tmp_buff);
     }
 
+    /* prevent buffer overflow in cases where LEN exceeds available buffer space */
+    if (len > BTA_HF_CLIENT_AT_PARSER_MAX_LEN - bta_hf_client_cb.scb.at_cb.offset) {
+        return;
+    }
+
     memcpy(bta_hf_client_cb.scb.at_cb.buf + bta_hf_client_cb.scb.at_cb.offset, buf, len);
     bta_hf_client_cb.scb.at_cb.offset += len;
 
@@ -1571,7 +1580,7 @@ void bta_hf_client_send_at_xapl(char *information, UINT32 features)
         *vendorID: A string representation of the hex value of the vendor ID from the manufacturer, without the 0x prefix.
         *productID: A string representation of the hex value of the product ID from the manufacturer, without the 0x prefix.
         *version: The revision of the software.
-        *Fatures: A base-10 representation of a bit field. Available features are:
+        *Features: A base-10 representation of a bit field. Available features are:
             *Bit 0 = reserved
             *Bit 1 = The accessory supports battery reporting (reserved only for battery operated accessories).
             *Bit 2 = The accessory is docked or powered (reserved only for battery operated accessories).
@@ -1827,7 +1836,7 @@ void bta_hf_client_send_at_bia(void)
     for (i = 0; i < BTA_HF_CLIENT_AT_INDICATOR_COUNT; i++) {
         int sup = bta_hf_client_cb.scb.at_cb.indicator_lookup[i] == -1 ? 0 : 1;
 
-        at_len += snprintf(buf + at_len, BTA_HF_CLIENT_AT_MAX_LEN - at_len, "%u,", sup);
+        at_len += snprintf(buf + at_len, BTA_HF_CLIENT_AT_MAX_LEN - at_len, "%d,", sup);
     }
 
     buf[at_len - 1] = '\r';

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -101,8 +101,8 @@ static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp        = false,
     .include_name        = true,
     .include_txpower     = true,
-    .min_interval        = 0x20,
-    .max_interval        = 0x40,
+    .min_interval        = ESP_BLE_GAP_CONN_ITVL_MS(40),
+    .max_interval        = ESP_BLE_GAP_CONN_ITVL_MS(80),
     .appearance          = 0x00,
     .manufacturer_len    = 0,    //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data = NULL, //test_manufacturer,
@@ -118,8 +118,8 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .set_scan_rsp        = true,
     .include_name        = true,
     .include_txpower     = true,
-    .min_interval        = 0x20,
-    .max_interval        = 0x40,
+    .min_interval        = ESP_BLE_GAP_CONN_ITVL_MS(40),
+    .max_interval        = ESP_BLE_GAP_CONN_ITVL_MS(80),
     .appearance          = 0x00,
     .manufacturer_len    = 0, //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data = NULL, //&test_manufacturer[0],
@@ -132,8 +132,8 @@ static esp_ble_adv_data_t scan_rsp_data = {
 #endif /* CONFIG_SET_RAW_ADV_DATA */
 
 static esp_ble_adv_params_t adv_params = {
-    .adv_int_min         = 0x40,
-    .adv_int_max         = 0x40,
+    .adv_int_min         = ESP_BLE_GAP_ADV_ITVL_MS(40),
+    .adv_int_max         = ESP_BLE_GAP_ADV_ITVL_MS(40),
     .adv_type            = ADV_TYPE_IND,
     .own_addr_type       = BLE_ADDR_TYPE_PUBLIC,
     .channel_map         = ADV_CHNL_ALL,
@@ -658,7 +658,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(EXAMPLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -695,7 +696,7 @@ void app_main(void)
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
     esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;     //bonding with peer device after authentication
-    esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;           //set the IO capability to No output No input
+    esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;           //set the IO capability to DisplayOnly
     uint8_t key_size = 16;      //the key size should be 7~16 bytes
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;

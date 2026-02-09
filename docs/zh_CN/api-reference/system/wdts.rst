@@ -3,6 +3,8 @@
 
 :link_to_translation:`en:[English]`
 
+看门狗定时器的目的是监控系统的运行状态，并在系统变得无响应时，通过重新启动系统来自动从软件或硬件故障中恢复。
+
 概述
 --------
 
@@ -10,12 +12,16 @@ ESP-IDF 支持以下类型的看门狗定时器：
 
 .. list::
 
-    - 硬件看门狗定时器
     - 中断看门狗定时器 (IWDT)
     - 任务看门狗定时器 (TWDT)
+    - RTC/LP 看门狗定时器 (RTC_WDT/LP_WDT)
     :SOC_XT_WDT_SUPPORTED: - XTAL32K 看门狗定时器 (Crystal 32K 看门狗定时器，即 XTWDT)
 
-中断看门狗负责确保 ISR（中断服务程序）不被长时间阻塞，TWDT 负责检测任务长时间运行而不让步的情况。
+中断看门狗定时器负责确保中断服务程序 (ISR) 不被长时间阻塞，同时也防止 ISR 在执行过程中卡住。
+
+任务看门狗定时器负责检测任务长时间未让出 CPU 的情况。
+
+RTC/LP 看门狗定时器用于追踪从上电到用户主函数执行的启动时间。它还可以在紧急处理程序工作期间以及低功耗模式下使用。
 
 通过 :ref:`project-configuration-menu` 可启用各种看门狗定时器。其中，TWDT 也可以在程序运行时启用。
 
@@ -69,7 +75,7 @@ IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的 MWDT_WDT 看门狗定时器作�
 - 通过 :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 选项设置 IWDT 超时。
 
     - 注意，如果启用了 PSRAM 支持，那么默认的超时时间会更长，因为在某些情况下，临界区或中断例程访问大量 PSRAM 需要更长时间。
-    - 超时时间至少应是 FreeRTOS tick 周期的两倍时长（参见 :ref:`CONFIG_FREERTOS_HZ`）。
+    - IWDT 的配置超时时间应至少为 FreeRTOS tick 周期的两倍时长。例如，如果 FreeRTOS tick 周期间隔为 10 毫秒，则 IWDT 的超时时间应至少为 20 毫秒（参见 :ref:`CONFIG_FREERTOS_HZ`）。
 
 调优
 ^^^^^^
@@ -86,7 +92,7 @@ IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的 MWDT_WDT 看门狗定时器作�
 任务看门狗定时器 (TWDT)
 --------------------------
 
-任务看门狗定时器 (TWDT) 用于监视特定任务，确保任务在配置的超时时间内执行。TWDT 主要监视每个 CPU 的空闲任务，但其他任务也可以订阅 TWDT 监视。通过监视每个 CPU 的空闲任务，TWDT 可以检测到任务长时间运行没有让出的情况。这可能表明代码编写不当，在外设上自旋循环，或者任务陷入了无限循环。
+任务看门狗定时器 (TWDT) 用于监视特定任务，确保任务在配置的超时时间内执行。TWDT 默认监视每个 CPU 的空闲任务，但其他任务也可以订阅 TWDT 监视。通过监视每个 CPU 的空闲任务，TWDT 可以检测到任务长时间运行没有让出的情况。这可能表明代码编写不当，在外设上自旋循环，或者任务陷入了无限循环。
 
 .. only:: not esp32c2
 
@@ -127,7 +133,7 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
     擦除较大的 flash 区域可能会非常耗时，并可能导致任务连续运行，触发 TWDT 超时。以下两种方法可以避免这种情况：
 
     - 在 menuconfig 中增加 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S`，延长看门狗超时时间。
-    - 在擦除 flash 区域前，调用 :cpp:func:`esp_task_wdt_init` 增加看门狗超时时间。
+    - 在擦除 flash 区域前，再次调用 :cpp:func:`esp_task_wdt_init` 增加看门狗超时时间。
 
     如需了解更多信息，请参考 :doc:`../peripherals/spi_flash/index`。
 
@@ -139,7 +145,7 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
 
     - :ref:`CONFIG_ESP_TASK_WDT_EN` - 启用 TWDT 功能。如果禁用此选项， TWDT 即使运行时已初始化也无法使用。
     - :ref:`CONFIG_ESP_TASK_WDT_INIT` - TWDT 在启动期间自动初始化。禁用此选项时，仍可以调用 :cpp:func:`esp_task_wdt_init` 在运行时初始化 TWDT。
-    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - {IDF_TARGET_IDLE_TASK}在启动时订阅了 TWDT。如果此选项被禁用，仍可以调用 :cpp:func:`esp_task_wdt_init` 再次订阅。
+    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - 在启动期间将 {IDF_TARGET_IDLE_TASK}注册到 TWDT。如果禁用此选项。如果禁用此选项，仍然可以通过再次调用 :cpp:func:`esp_task_wdt_init`，或者使用 :cpp:func:`esp_task_wdt_add` 并传入通过 :cpp:func:`xTaskGetIdleTaskHandleForCore` 获取的空闲任务句柄来订阅空闲任务。
     :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 空闲任务在启动时订阅了 TWDT。
 
 
@@ -168,11 +174,34 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
     - 设置 :ref:`CONFIG_ESP_XT_WDT_TIMEOUT` 选项来配置超时时间。
     - 通过 :ref:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` 配置选项启用自动切换备用时钟功能。
 
+超时阶段
+--------
+
+ESP-IDF 中的硬件看门狗定时器具有四个超时阶段。如果在前一个阶段配置的超时时间内没有对 WDT 进行喂狗操作，则会触发下一个阶段。每个阶段在超时后都可以配置执行以下操作之一：
+
+- 触发中断。当该阶段超时时，会触发一次中断。
+- 复位某个 CPU 核心。当该阶段超时时，指定的 CPU 核心将被复位。
+- 复位主系统。当该阶段超时时，包括 MWDT 在内的主系统将被复位。主系统包括 CPU 和所有外设。RTC 是例外，不会被复位。
+- 复位主系统和 RTC。当该阶段超时时，主系统和 RTC 都将被复位。该操作仅在 RTC_WDT 中可用。
+- 禁用。该阶段不会对系统产生任何影响。
+
+通常的阶段配置方式是：在较早的阶段设置触发中断，并在后续阶段逐步升级处理措施，最终阶段执行系统复位操作。
+
+各个阶段可以通过 :cpp:func:`wdt_hal_config_stage` （或等效 API）进行配置，根据应用行为为每个阶段选择合适的操作。
 
 JTAG & 看门狗
 ----------------
 
 在使用 OpenOCD 进行调试时，CPU 会在每次达到断点时停止运行。然而，如果遇到断点后看门狗定时器继续运行，就会最终触发复位，为调试代码带来巨大的困难。因此， OpenOCD 会在每个断点处禁用中断和任务的看门狗的硬件定时器。此外，在离开断点时，OpenOCD 也不会重新启用定时器，也就是说，中断看门狗和任务看门狗实际上被禁用。当 {IDF_TARGET_NAME} 通过 JTAG 连接到 OpenOCD 时，看门狗不会打印任何警告或出现严重错误。
+
+WDT 触发时的常见错误日志及可能的解决方法
+----------------------------------------
+
+- ``Guru Meditation Error: Core  0 panic'ed (Interrupt wdt timeout on CPU0).``，并伴随回溯信息：表示 IWDT 检测到 CPU 0 上的中断被阻塞，且阻塞时间超过了所配置的超时时间。可以通过缩短 ISR 或临界区的持续时间、或者增加 IWDT 的超时时间来解决该问题。
+- ``Task watchdog got triggered. The following tasks/users did not reset the watchdog in time: - IDLE0 (CPU 0), Tasks currently running: CPU 0: main, CPU 1: IDLE1``：表示 TWDT 检测到一个或多个任务在所配置的超时时间内没有让出 CPU，导致空闲任务无法及时对 TWDT 进行喂狗。可以通过确保任务能够适当让出 CPU、缩短长时间运行任务的执行时间，或者增加 TWDT 的超时时间来解决该问题。用户还可以使用 :cpp:func:`esp_task_wdt_add`、:cpp:func:`esp_task_wdt_add_user` 以及 :cpp:func:`esp_task_wdt_reset_user` 等 API 来定位哪个任务以及该任务中的哪段代码执行时间最长，从而导致 TWDT 超时。
+- 启用了 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 并导致 WDT 超时：请确保在用户代码中及时对 RTC WDT 进行喂狗。
+- 在启动过程中发生 WDT 复位：请确保已正确烧录有效的二级引导加载程序，并检查是否存在与外部 flash 通信相关的问题。
+- 在系统运行过程中发生 WDT 复位：请尝试确定复位发生的具体时机，例如是否发生在系统严重错误 (panic)、重启，或进入/退出 Light-sleep 的过程中。如果是在这些系统操作期间发生，则可能由 ESP-IDF 内部的问题引起。
 
 应用示例
 --------------------

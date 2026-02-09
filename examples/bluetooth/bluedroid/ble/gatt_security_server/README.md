@@ -9,6 +9,56 @@ To test this example, you can run [gatt_security_client_demo](../gatt_security_c
 
 Please, check this [tutorial](tutorial/Gatt_Security_Server_Example_Walkthrough.md) for more information about this example.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │   Security   │                                    │   Security   │
+    │    Server    │                                    │    Client    │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Initialization ───────────           │
+           │                                                   │
+           │  1. Set Security Parameters                       │
+           │     - IO Capability                               │
+           │     - Auth Requirements                           │
+           │     - Key Size                                    │
+           │  2. Create GATT Service                           │
+           │  3. Start Advertising                             │
+           │                                                   │
+           │  ─────────── Connection ───────────               │
+           │                                                   │
+           │                          Scan & Connect           │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── Security Request ───────────         │
+           │                                                   │
+           │  ESP_GAP_BLE_SEC_REQ_EVT                          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Send Security Response                           │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Pairing Process ───────────          │
+           │                                                   │
+           │  Exchange Pairing Features                        │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  Key Generation & Distribution                    │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  Link Encrypted                                   │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  ESP_GAP_BLE_AUTH_CMPL_EVT                        │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │   Security   │                                    │   Security   │
+    │    Server    │                                    │    Client    │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -175,15 +175,6 @@ typedef enum {
     GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F40M,  /*!< Select PLL_F40M as the default choice */
 } soc_periph_gptimer_clk_src_t;
 
-/**
- * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
- */
-typedef enum {
-    TIMER_SRC_CLK_PLL_F40M = SOC_MOD_CLK_PLL_F40M, /*!< Timer group clock source is PLL_F40M */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,         /*!< Timer group clock source is XTAL */
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F40M,  /*!< Timer group clock source default choice is PLL_F40M */
-} soc_periph_tg_clk_src_legacy_t;
-
 //////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
 
 /**
@@ -311,8 +302,6 @@ typedef enum {
     LEDC_USE_PLL_DIV_CLK = SOC_MOD_CLK_PLL_F60M,    /*!< Select PLL_F60M as the source clock */
     LEDC_USE_RC_FAST_CLK = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     LEDC_USE_XTAL_CLK = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-
-    LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
@@ -324,6 +313,17 @@ typedef enum {
     CLKOUT_SIG_RC_FAST  = 14,   /*!< RC fast clock, about 8MHz */
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
+
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calculation source selection
+ */
+typedef enum {
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_RC_FAST_D256,                            /*!< Select to calculate frequency of RC_FAST_D256_CLK */
+    CLK_CAL_32K_OSC_SLOW,                            /*!< Select to calculate frequency of OSC_SLOW_CLK (external slow clock) */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }

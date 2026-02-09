@@ -1,13 +1,15 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
 import subprocess
-import typing
 from pathlib import Path
 
 import pytest
-from test_build_system_helpers import EnvDict, IdfPyFunc, append_to_file, replace_in_file
+from test_build_system_helpers import EnvDict
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import append_to_file
+from test_build_system_helpers import replace_in_file
 
 
 #############################################################################################
@@ -38,16 +40,20 @@ def test_versions_get_default_version(idf_py: IdfPyFunc, test_app_copy: Path) ->
 #   4. Verify that the app version is picked up from the git describe command
 #
 #############################################################################################
-def test_versions_get_version_from_git_describe(idf_py: IdfPyFunc,
-                                                test_git_template_app: Path,
-                                                env: typing.Optional[EnvDict] = None) -> None:
+def test_versions_get_version_from_git_describe(
+    idf_py: IdfPyFunc, test_git_template_app: Path, env: EnvDict | None = None
+) -> None:
     logging.info('Verify that the version of app can be set from git describe')
     idf_ret = idf_py('reconfigure')
     env_dict = dict(**os.environ)
     if env:
         env_dict.update(env)
-    git_ret = subprocess.run(['git', 'describe', '--always', '--tags', '--dirty'],
-                             cwd=test_git_template_app, env=env_dict, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    git_ret = subprocess.run(
+        ['git', 'describe', '--always', '--tags', '--dirty'],
+        cwd=test_git_template_app,
+        env=env_dict,
+        capture_output=True,
+    )
     assert f'App "app-template" version: {git_ret.stdout.decode("utf-8")}' in idf_ret.stdout
 
 
@@ -64,40 +70,52 @@ def test_versions_get_version_from_git_describe(idf_py: IdfPyFunc,
 #   6. Verify that cmake correctly flags invalid inputs for the VERSION argument and accepts valid inputs for the same
 #
 #############################################################################################
+@pytest.mark.buildv2_skip('cmakev2 does not need to parse the VERSION argument in the build system')
 def test_versions_get_version_from_version_arg(idf_py: IdfPyFunc, test_git_template_app: Path) -> None:
     logging.info('Verify that the VERSION argument in project() is correctly parsed by cmake')
 
     # empty VERSION argument
-    replace_in_file((test_git_template_app / 'CMakeLists.txt'), 'project(app-template)',
-                    '__parse_and_store_version_arg(app-template VERSION)')
+    replace_in_file(
+        (test_git_template_app / 'CMakeLists.txt'),
+        'project(app-template)',
+        '__parse_and_store_version_arg(app-template VERSION)',
+    )
     # Invalid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-tempplate VERSION 1..2)')
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-tempplate VERSION 1..2)'
+    )
     # Invalid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-template VERSION version_text)')
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-template VERSION version_text)'
+    )
     # Invalid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-template VERSION 1.2.3.4.5)')
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-template VERSION 0)')
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-template VERSION 1.2.3.4.5)'
+    )
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-template VERSION 0)'
+    )
     # Valid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-template VERSION 0.1)')
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-template VERSION 0.1)'
+    )
     # Valid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-template VERSION 0.1.2)')
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-template VERSION 0.1.2)'
+    )
     # Valid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\n__parse_and_store_version_arg(app-template VERSION 0.1.2.3)')
+    append_to_file(
+        (test_git_template_app / 'CMakeLists.txt'), '\n__parse_and_store_version_arg(app-template VERSION 0.1.2.3)'
+    )
     # project() call with valid VERSION argument format
-    append_to_file((test_git_template_app / 'CMakeLists.txt'),
-                   '\nproject(app-template VERSION 0.1.2.3)')
+    append_to_file((test_git_template_app / 'CMakeLists.txt'), '\nproject(app-template VERSION 0.1.2.3)')
 
     with pytest.raises(subprocess.CalledProcessError) as e:
         idf_py('reconfigure')
 
-        assert 'VERSION keyword not followed by a value or was followed by a value that expanded to nothing.' in e.stdout
+        assert (
+            'VERSION keyword not followed by a value or was followed by a value that expanded to nothing.' in e.stdout
+        )
         assert 'Version "1..2" format invalid' in e.stderr
         assert 'Version "version_text" format invalid' in e.stderr
         assert 'Version "1.2.3.4.5" format invalid' in e.stderr
@@ -123,12 +141,13 @@ def test_versions_get_version_from_version_arg(idf_py: IdfPyFunc, test_git_templ
 #############################################################################################
 def test_versions_get_version_from_version_file(idf_py: IdfPyFunc, test_git_template_app: Path) -> None:
     logging.info('Verify that the version of app can be set from version.txt file')
-    replace_in_file((test_git_template_app / 'CMakeLists.txt'), 'project(app-template)',
-                    'project(app-template VERSION 0.1.2.3)')
+    replace_in_file(
+        (test_git_template_app / 'CMakeLists.txt'), 'project(app-template)', 'project(app-template VERSION 0.1.2.3)'
+    )
     (test_git_template_app / 'version.txt').write_text('project_version_from_txt')
     idf_ret = idf_py('reconfigure')
 
-    assert f'App "app-template" version: project_version_from_txt' in idf_ret.stdout
+    assert 'App "app-template" version: project_version_from_txt' in idf_ret.stdout
 
 
 #############################################################################################
@@ -146,13 +165,16 @@ def test_versions_get_version_from_version_file(idf_py: IdfPyFunc, test_git_temp
 #############################################################################################
 def test_versions_get_version_from_top_level_cmake(idf_py: IdfPyFunc, test_git_template_app: Path) -> None:
     logging.info('Verify that the version of app can be set from PROJECT_VER in CMakeLists.txt')
-    replace_in_file((test_git_template_app / 'CMakeLists.txt'), 'project(app-template)',
-                    'set(PROJECT_VER project_version_from_CMakeLists)')
+    replace_in_file(
+        (test_git_template_app / 'CMakeLists.txt'),
+        'project(app-template)',
+        'set(PROJECT_VER project_version_from_CMakeLists)',
+    )
     append_to_file((test_git_template_app / 'CMakeLists.txt'), 'project(app-template VERSION 0.1.2.3)')
     (test_git_template_app / 'version.txt').write_text('project_version_from_txt')
     idf_ret = idf_py('reconfigure')
 
-    assert f'App "app-template" version: project_version_from_CMakeLists' in idf_ret.stdout
+    assert 'App "app-template" version: project_version_from_CMakeLists' in idf_ret.stdout
 
 
 #############################################################################################
@@ -172,11 +194,15 @@ def test_versions_get_version_from_top_level_cmake(idf_py: IdfPyFunc, test_git_t
 #############################################################################################
 def test_versions_get_version_from_kconfig_option(idf_py: IdfPyFunc, test_git_template_app: Path) -> None:
     logging.info('Verify that the version of app can be set from Kconfig option')
-    replace_in_file((test_git_template_app / 'CMakeLists.txt'), 'project(app-template)',
-                    'set(PROJECT_VER project_version_from_CMakeLists)')
+    replace_in_file(
+        (test_git_template_app / 'CMakeLists.txt'),
+        'project(app-template)',
+        'set(PROJECT_VER project_version_from_CMakeLists)',
+    )
     append_to_file((test_git_template_app / 'CMakeLists.txt'), 'project(app-template VERSION 0.1.2.3)')
-    (test_git_template_app / 'sdkconfig.defaults').write_text('\n'.join(['CONFIG_APP_PROJECT_VER_FROM_CONFIG=y',
-                                                              'CONFIG_APP_PROJECT_VER="project_version_from_Kconfig"']))
+    (test_git_template_app / 'sdkconfig.defaults').write_text(
+        '\n'.join(['CONFIG_APP_PROJECT_VER_FROM_CONFIG=y', 'CONFIG_APP_PROJECT_VER="project_version_from_Kconfig"'])
+    )
     idf_ret = idf_py('reconfigure')
 
-    assert f'App "app-template" version: project_version_from_Kconfig' in idf_ret.stdout
+    assert 'App "app-template" version: project_version_from_Kconfig' in idf_ret.stdout

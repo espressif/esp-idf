@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,15 +81,48 @@ static int test_vfs_closedir(void* ctx, DIR* pdir)
 TEST_CASE("std::filesystem status functions")
 {
     test_vfs_ctx_t test_ctx = {};
-    esp_vfs_t desc = {};
-    desc.flags = ESP_VFS_FLAG_CONTEXT_PTR;
-    desc.open_p = test_vfs_open;
-    desc.stat_p = test_vfs_stat;
-    desc.opendir_p = test_vfs_opendir;
-    desc.readdir_p = test_vfs_readdir;
-    desc.closedir_p = test_vfs_closedir;
+    esp_vfs_dir_ops_t dir_desc = {
+        .stat_p      = test_vfs_stat,
+        .link_p      = nullptr,
+        .unlink_p    = nullptr,
+        .rename_p    = nullptr,
+        .opendir_p   = test_vfs_opendir,
+        .readdir_p   = test_vfs_readdir,
+        .readdir_r_p = nullptr,
+        .telldir_p   = nullptr,
+        .seekdir_p   = nullptr,
+        .closedir_p  = test_vfs_closedir,
+        .mkdir_p     = nullptr,
+        .rmdir_p     = nullptr,
+        .access_p    = nullptr,
+        .truncate_p  = nullptr,
+        .ftruncate_p = nullptr,
+        .utime_p     = nullptr,
+    };
 
-    REQUIRE(esp_vfs_register("/test", &desc, &test_ctx) == ESP_OK);
+    esp_vfs_fs_ops_t desc = {
+        .write_p  = nullptr,
+        .lseek_p  = nullptr,
+        .read_p   = nullptr,
+        .pread_p  = nullptr,
+        .pwrite_p = nullptr,
+        .open_p   = test_vfs_open,
+        .close_p  = nullptr,
+        .fstat_p  = nullptr,
+        .fcntl_p  = nullptr,
+        .ioctl_p  = nullptr,
+        .fsync_p  = nullptr,
+        .dir = &dir_desc,
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+        .termios = nullptr,
+#endif
+
+#if CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
+        .select = nullptr,
+#endif
+    };
+
+    REQUIRE(esp_vfs_register_fs("/test", &desc, ESP_VFS_FLAG_CONTEXT_PTR, &test_ctx) == ESP_OK);
 
     SECTION("Test file exists") {
         test_ctx.cmp_path = "/file.txt";

@@ -46,6 +46,37 @@ menu "Example Configuration"
                 help
                     Use SPI mode.
         endchoice
+        menu "SD card pin configuration (SPI)"
+            depends on SNIFFER_SD_SPI_MODE
+
+            config SNIFFER_PIN_MOSI
+                int "MOSI GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 15
+                help
+                    GPIO pin number for SPI MOSI (Master Out Slave In).
+
+            config SNIFFER_PIN_MISO
+                int "MISO GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 2
+                help
+                    GPIO pin number for SPI MISO (Master In Slave Out).
+
+            config SNIFFER_PIN_CLK
+                int "CLK GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 14
+                help
+                    GPIO pin number for SPI Clock.
+
+            config SNIFFER_PIN_CS
+                int "CS GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 13
+                help
+                    GPIO pin number for SPI Chip Select.
+        endmenu
         config SNIFFER_MOUNT_POINT
             string "SD card mount point in the filesystem"
             default "/sdcard"

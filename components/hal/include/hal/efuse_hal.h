@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc_caps.h"
-#include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,17 +74,6 @@ uint32_t efuse_hal_get_minor_chip_version(void);
  */
 uint32_t efuse_hal_get_chip_ver_pkg(void);
 
-#if SOC_EFUSE_ECDSA_KEY
-/**
- * @brief Set the efuse block that should be used as ECDSA private key
- *
- * @note The efuse block must be burnt with key purpose ECDSA_KEY
- *
- * @param curve ECDSA curve type
- * @param efuse_key_blk Efuse key block number (Must be in [EFUSE_BLK_KEY0...EFUSE_BLK_KEY_MAX - 1] range)
- */
-void efuse_hal_set_ecdsa_key(ecdsa_curve_t curve, int efuse_key_blk);
-#endif
 
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
 

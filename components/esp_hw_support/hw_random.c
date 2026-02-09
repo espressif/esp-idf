@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,17 +14,19 @@
 #include "soc/wdev_reg.h"
 #include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
+#include "esp_log.h"
 
 #if !ESP_TEE_BUILD
 #include "esp_private/startup_internal.h"
 #endif
 
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_hal.h"
-#endif
+#include "hal/rtc_timer_hal.h"
 
 #if SOC_RNG_CLOCK_IS_INDEPENDENT
 #include "hal/lp_clkrst_ll.h"
+#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE || SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
+#include "hal/rng_ll.h"
+#endif
 #endif
 
 #if defined CONFIG_IDF_TARGET_ESP32S3
@@ -46,8 +48,20 @@
 #define APB_CYCLE_WAIT_NUM (16)
 #endif
 
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
+static bool s_random_warning_printed = false;
+#endif
+
 uint32_t IRAM_ATTR esp_random(void)
 {
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
+    if (!s_random_warning_printed) {
+        ESP_LOGW("esp_random", "esp_random is not yet supported and will not give proper random values");
+        s_random_warning_printed = true;
+    }
+    // Return a fixed pattern for bringup purposes
+    return 0x5A5A5A5A;
+#else
     /* The PRNG which implements WDEV_RANDOM register gets 2 bits
      * of extra entropy from a hardware randomness source every APB clock cycle
      * (provided WiFi or BT are enabled). To make sure entropy is not drained
@@ -71,23 +85,19 @@ uint32_t IRAM_ATTR esp_random(void)
     static uint32_t last_ccount = 0;
     uint32_t ccount;
     uint32_t result = 0;
-#if SOC_LP_TIMER_SUPPORTED
     for (size_t i = 0; i < sizeof(result); i++) {
         do {
             ccount = esp_cpu_get_cycle_count();
             result ^= REG_READ(WDEV_RND_REG);
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
-        uint32_t current_rtc_timer_counter = (lp_timer_hal_get_cycle_count() & 0xFF);
-        result ^= ((result ^ current_rtc_timer_counter) & 0xFF) << (i * 8);
-    }
-#else
-    do {
-        ccount = esp_cpu_get_cycle_count();
-        result ^= REG_READ(WDEV_RND_REG);
-    } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
+#if SOC_RTC_TIMER_SUPPORTED
+        uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
+        result ^= (current_rtc_timer_counter << (i * 8));
 #endif
+    }
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
+#endif // CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
 }
 
 void esp_fill_random(void *buf, size_t len)
@@ -106,15 +116,10 @@ void esp_fill_random(void *buf, size_t len)
 #if SOC_RNG_CLOCK_IS_INDEPENDENT && !ESP_TEE_BUILD
 ESP_SYSTEM_INIT_FN(init_rng, SECONDARY, BIT(0), 102)
 {
+#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE || SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
+    rng_ll_enable();
+#else
     _lp_clkrst_ll_enable_rng_clock(true);
-#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE
-    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_SAMPLE_ENABLE);
-#endif
-
-#if SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
-    // This would only be effective if the RTC clock is enabled
-    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RTC_TIMER_EN, 0x3);
-    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN);
 #endif
     return ESP_OK;
 }

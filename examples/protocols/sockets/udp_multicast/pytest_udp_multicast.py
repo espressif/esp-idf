@@ -11,7 +11,6 @@ import netifaces
 import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
-from pytest_embedded_idf.utils import idf_parametrize
 
 PORT = 3333
 IPV6_REGEX = (
@@ -36,14 +35,16 @@ def find_target_if(my_if: str = '') -> str:
     netifs.sort(reverse=True)
     logging.info('detected interfaces: %s', str(netifs))
 
-    for netif in netifs:
-        # if no interface defined, try to find it automatically
-        if my_if == '':
-            if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
-                return netif
+    if my_if == '':
+        if 'dut_p1' in netifs:
+            return 'dut_p1'
         else:
-            if netif.find(my_if) == 0:
-                return my_if
+            for netif in netifs:
+                # if no interface defined, try to find it automatically
+                if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
+                    return netif
+    elif my_if in netifs:
+        return my_if
 
     raise RuntimeError('network interface not found')
 
@@ -135,7 +136,7 @@ def test_examples_udp_multicast_proto(dut: Dut, ip_version: str = 'ipv4', nic: s
     try:
         data, recv_addr = sock.recvfrom(1024)
         logging.info(f'Received {len(data)} bytes from {recv_addr}')
-    except socket.timeout:
+    except TimeoutError:
         raise RuntimeError(f'Timeout waiting for {ip_version} multicast message from ESP32')
 
     # Check if received from expected source
@@ -143,7 +144,7 @@ def test_examples_udp_multicast_proto(dut: Dut, ip_version: str = 'ipv4', nic: s
         raise RuntimeError(f'Received {ip_version} multicast message from unexpected source')
 
     # Send multicast message
-    message = '!!! Multicast test message from host !!!'.encode()
+    message = b'!!! Multicast test message from host !!!'
     logging.info(f'Sending {ip_version} multicast message to {multicast_addr}:{PORT}')
     sock.sendto(message, (multicast_addr, PORT))
     if ip_version == 'ipv4_mapped':
@@ -154,10 +155,12 @@ def test_examples_udp_multicast_proto(dut: Dut, ip_version: str = 'ipv4', nic: s
     sock.close()
 
 
-@pytest.mark.eth_ip101
-@idf_parametrize(
-    'target',
-    ['esp32', 'esp32p4'],
+@pytest.mark.parametrize(
+    'config, target',
+    [
+        pytest.param('default', 'esp32', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+    ],
     indirect=['target'],
 )
 def test_examples_udp_multicast(dut: Dut) -> None:

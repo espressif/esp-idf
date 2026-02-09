@@ -64,9 +64,12 @@ void btm_init (void)
 #endif /* #if BTM_DYNAMIC_MEMORY */
     /* All fields are cleared; nonzero fields are reinitialized in appropriate function */
     memset(&btm_cb, 0, sizeof(tBTM_CB));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.page_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE)
     btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
-
+#endif // (SMP_INCLUDED == TRUE)
 #if defined(BTM_INITIAL_TRACE_LEVEL)
     btm_cb.trace_level = BTM_INITIAL_TRACE_LEVEL;
 #else
@@ -86,7 +89,9 @@ void btm_init (void)
 #if BLE_INCLUDED == TRUE
     btm_ble_lock_init();
     btm_ble_sem_init();
+#if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
     btm_cb.addr_res_en = TRUE;
+#endif // ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 #endif
     btm_sec_dev_init();
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -110,8 +115,12 @@ void btm_init (void)
 *******************************************************************************/
 void btm_free(void)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     fixed_queue_free(btm_cb.page_queue, osi_free_func);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE)
     fixed_queue_free(btm_cb.sec_pending_q, osi_free_func);
+#endif // (SMP_INCLUDED == TRUE)
     btm_acl_free();
     btm_sec_dev_free();
 #if BTM_SCO_INCLUDED == TRUE
@@ -136,13 +145,22 @@ uint8_t btm_ble_acl_active_count(void)
     for (p_node = list_begin(btm_cb.p_acl_db_list); p_node; p_node = list_next(p_node)) {
         p_acl_conn = list_node(p_node);
         if (p_acl_conn && p_acl_conn->in_use && p_acl_conn->transport == BT_TRANSPORT_LE) {
+            BTM_TRACE_DEBUG("%s LE ACL active #%d: remote_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+                            __func__,
+                            count,
+                            p_acl_conn->remote_addr[0],
+                            p_acl_conn->remote_addr[1],
+                            p_acl_conn->remote_addr[2],
+                            p_acl_conn->remote_addr[3],
+                            p_acl_conn->remote_addr[4],
+                            p_acl_conn->remote_addr[5]);
             count++;
         }
     }
 
     return count;
 }
-
+#if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 // Address resolution status
 uint8_t btm_get_ble_addr_resolve_disable_status(void)
 {
@@ -154,4 +172,5 @@ void btm_ble_addr_resolve_enable(bool enable)
 {
     btm_cb.addr_res_en = enable;
 }
+#endif // ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 #endif /*BLE_INCLUDED*/

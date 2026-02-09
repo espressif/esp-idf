@@ -48,7 +48,7 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
             "src/smartconfig_ack.c")
     endif()
 
-    if(CONFIG_ESP_WIFI_NAN_ENABLE)
+    if(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE OR CONFIG_ESP_WIFI_NAN_USD_ENABLE)
         list(APPEND srcs "wifi_apps/nan_app/src/nan_app.c")
     endif()
     if(CONFIG_ESP_WIFI_ENABLE_ROAMING_APP)
@@ -63,7 +63,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip esp_coex
                     PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
-                                  wifi_apps/roaming_app/include
+                                  wifi_apps/roaming_app/include wifi_apps/roaming_app/src
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
@@ -88,13 +88,18 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
             endif()
         endif()
 
+        # Since some blob names are very generic, add an "esp_wifi_" prefix when creating target names,
+        # to avoid conflicts with other libraries.
+        set(blob_targets ${blobs})
+        list(TRANSFORM blob_targets PREPEND "esp_wifi_")
         foreach(blob ${blobs})
-            add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
+            set(blob_target "esp_wifi_${blob}")
+            add_prebuilt_library(${blob_target} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                                 REQUIRES ${COMPONENT_NAME})
-            set(blob_reqs ${blobs})
-            list(REMOVE_ITEM blob_reqs ${blob}) # remove itself from requirements
-            set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
-            target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
+            set(blob_reqs ${blob_targets})
+            list(REMOVE_ITEM blob_reqs ${blob_target}) # remove itself from requirements
+            set_property(TARGET ${blob_target} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
+            target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob_target})
         endforeach()
     endif()
     # TODO IDF-13365: remove the following lines

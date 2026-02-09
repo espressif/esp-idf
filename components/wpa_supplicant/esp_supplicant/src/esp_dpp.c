@@ -70,29 +70,6 @@ static esp_err_t dpp_api_unlock(void)
     return ESP_OK;
 }
 
-static void dpp_event_handler(void *arg, esp_event_base_t event_base,
-                              int32_t event_id, void *event_data)
-{
-    if (!s_dpp_ctx.dpp_event_cb) {
-        return;
-    }
-    switch (event_id) {
-    case WIFI_EVENT_DPP_URI_READY:
-        wifi_event_dpp_uri_ready_t *event = (wifi_event_dpp_uri_ready_t *) event_data;
-        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_URI_READY, (void *)(event->uri));
-        break;
-    case WIFI_EVENT_DPP_CFG_RECVD:
-        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_CFG_RECVD, (wifi_config_t *)event_data);
-        break;
-    case WIFI_EVENT_DPP_FAILED:
-        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_FAIL, (void *)event_data);
-        break;
-    default:
-        break;
-    }
-    return;
-}
-
 static uint8_t dpp_deinit_auth(void)
 {
     if (s_dpp_ctx.dpp_auth) {
@@ -162,6 +139,7 @@ esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint3
     req->data_len = len;
     req->rx_cb = s_action_rx_cb;
     req->channel = channel;
+    req->sec_channel = WIFI_SECOND_CHAN_NONE;
     req->wait_time_ms = wait_time_ms;
     req->type = WIFI_OFFCHAN_TX_REQ;
     os_memcpy(req->data, buf, req->data_len);
@@ -263,7 +241,7 @@ static void gas_query_timeout(void *eloop_data, void *user_ctx)
 {
     struct dpp_authentication *auth = user_ctx;
 
-    if (!auth || !auth->auth_success) {
+    if (!s_dpp_ctx.dpp_auth || !s_dpp_ctx.dpp_auth->auth_success || (s_dpp_ctx.dpp_auth != auth)) {
         wpa_printf(MSG_INFO, "DPP-GAS: Auth %p state not correct", auth);
         return;
     }
@@ -407,6 +385,10 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (rx_param->vendor_data_len < 2) {
+        wpa_printf(MSG_INFO, "DPP: Too short vendor specific data");
+        return ESP_FAIL;
+    }
     size_t len = rx_param->vendor_data_len - 2;
 
     buf = rx_param->action_frm->u.public_action.v.pa_vendor_spec.vendor_data;
@@ -541,28 +523,38 @@ static esp_err_t gas_query_resp_rx(struct action_rx_param *rx_param)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
     uint8_t *pos = rx_param->action_frm->u.public_action.v.pa_gas_resp.data;
-    uint8_t *resp = &pos[10];
+    uint8_t *resp = &pos[10];  /* first byte of DPP attributes */
+    size_t vendor_len = rx_param->vendor_data_len;
     int i, res;
 
-    if (pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
-            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth) {
+    /* Basic structural checks on the Advertisement Protocol payload */
+    if (!(pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
+            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth)) {
+        wpa_hexdump(MSG_INFO, "DPP: Failed, Configuration Response adv_proto", pos, 8);
+        return ESP_OK;
+    }
 
-        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
-        if (dpp_conf_resp_rx(auth, resp, rx_param->vendor_data_len - 2) < 0) {
-            wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
+    /* DPP attribute length = vendor_data_len - 2, caller validated vendor_data_len
+     * (we skip the 2-byte length field and pass only the attributes). */
+    size_t dpp_data_len = vendor_len - 2;
+
+    eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+
+    if (dpp_conf_resp_rx(auth, resp, dpp_data_len) < 0) {
+        wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
+        goto fail;
+    }
+
+    for (i = 0; i < auth->num_conf_obj; i++) {
+        res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
+        if (res < 0) {
+            wpa_printf(MSG_INFO, "DPP: Configuration parsing failed");
             goto fail;
-        }
-
-        for (i = 0; i < auth->num_conf_obj; i++) {
-            res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
-            if (res < 0) {
-                wpa_printf(MSG_INFO, "DPP: Configuration parsing failed");
-                goto fail;
-            }
         }
     }
 
     return ESP_OK;
+
 fail:
     return ESP_FAIL;
 }
@@ -651,6 +643,7 @@ static void dpp_listen_next_channel(void *data, void *user_ctx)
         wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
         return;
     }
+    atomic_store(&roc_in_progress, true);
     os_event_group_clear_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED);
 }
 
@@ -701,14 +694,6 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                  &roc_status_handler);
 
-    if (s_dpp_ctx.dpp_event_cb) {
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY,
-                                     &dpp_event_handler);
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD,
-                                     &dpp_event_handler);
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_FAILED,
-                                     &dpp_event_handler);
-    }
     if (params->info) {
         os_free(params->info);
         params->info = NULL;
@@ -724,7 +709,6 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     }
     s_dpp_ctx.dpp_init_done = false;
     s_dpp_ctx.bootstrap_done = false;
-    s_dpp_ctx.dpp_event_cb = NULL;
     if (s_dpp_event_group) {
         os_event_group_delete(s_dpp_event_group);
         s_dpp_event_group = NULL;
@@ -823,7 +807,6 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
             eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth);
         }
     }
-    atomic_store(&roc_in_progress, true);
 }
 
 static void roc_status_handler(void *arg, esp_event_base_t event_base,
@@ -852,11 +835,17 @@ static char *esp_dpp_parse_chan_list(const char *chan_list)
     }
 
     char *uri_ptr = uri_channels;
+    size_t current_offset = 0; // Use an offset to track current position
     params->num_chan = 0;
 
     /* Append " chan=" at the beginning of the URI */
-    strcpy(uri_ptr, " chan=");
-    uri_ptr += strlen(" chan=");
+    int written = os_snprintf(uri_ptr + current_offset, max_uri_len - current_offset, " chan=");
+    if (written < 0 || written >= max_uri_len - current_offset) { // Check for error or truncation
+        wpa_printf(MSG_ERROR, "DPP: URI buffer too small for initial string");
+        os_free(uri_channels);
+        return NULL;
+    }
+    current_offset += written;
 
     while (*chan_list && params->num_chan < ESP_DPP_MAX_CHAN_COUNT) {
         int channel = 0;
@@ -891,16 +880,23 @@ static char *esp_dpp_parse_chan_list(const char *chan_list)
         /* Add the valid channel to the list */
         params->chan_list[params->num_chan++] = channel;
 
-        /* Check if there's space left in uri_channels buffer */
-        size_t remaining_space = max_uri_len - (uri_ptr - uri_channels);
-        if (remaining_space <= 8) {  // Oper class + "/" + channel + "," + null terminator
-            wpa_printf(MSG_ERROR, "DPP: Not enough space in URI buffer");
+        // Calculate space needed for current channel string (e.g., "81/1,")
+        int needed_for_channel = os_snprintf(NULL, 0, "%d/%d,", oper_class, channel);
+
+        if (current_offset + needed_for_channel + 1 > max_uri_len) { // +1 for null terminator
+            wpa_printf(MSG_ERROR, "DPP: Not enough space in URI buffer for channel %d", channel);
             os_free(uri_channels);
             return NULL;
         }
 
         /* Append the operating class and channel to the URI */
-        uri_ptr += sprintf(uri_ptr, "%d/%d,", oper_class, channel);
+        written = os_snprintf(uri_ptr + current_offset, max_uri_len - current_offset, "%d/%d,", oper_class, channel);
+        if (written < 0 || written >= max_uri_len - current_offset) { // Check for error or truncation
+            wpa_printf(MSG_ERROR, "DPP: Error writing channel %d to URI buffer", channel);
+            os_free(uri_channels);
+            return NULL;
+        }
+        current_offset += written;
 
         /* Skip any delimiters (comma or space) */
         while (*chan_list == ',' || *chan_list == ' ') {
@@ -915,8 +911,8 @@ static char *esp_dpp_parse_chan_list(const char *chan_list)
     }
 
     /* Replace the last comma with a space if there was content added */
-    if (uri_ptr > uri_channels && *(uri_ptr - 1) == ',') {
-        *(uri_ptr - 1) = ' ';
+    if (current_offset > strlen(" chan=") && uri_ptr[current_offset - 1] == ',') {
+        uri_ptr[current_offset - 1] = ' ';
     }
 
     return uri_channels;
@@ -1060,7 +1056,6 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
 {
     struct dpp_global_config cfg = {0};
     int ret;
-    esp_supp_dpp_event_cb_t cb = user_ctx;
 
     cfg.cb_ctx = &s_dpp_ctx;
     cfg.msg_ctx = &s_dpp_ctx;
@@ -1073,16 +1068,6 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
         goto init_fail;
     }
 
-    s_dpp_ctx.dpp_event_cb = cb;
-
-    if (cb) {
-        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY,
-                                   &dpp_event_handler, NULL);
-        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD,
-                                   &dpp_event_handler, NULL);
-        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_FAILED,
-                                   &dpp_event_handler, NULL);
-    }
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &tx_status_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
@@ -1102,7 +1087,7 @@ init_fail:
 
 }
 
-esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
+esp_err_t esp_supp_dpp_init(void)
 {
     esp_err_t ret = ESP_OK;
 
@@ -1126,7 +1111,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
         dpp_api_unlock();
         return ESP_FAIL;
     }
-    ret = eloop_register_timeout_blocking(esp_dpp_init, NULL, cb);
+    ret = eloop_register_timeout_blocking(esp_dpp_init, NULL, NULL);
     dpp_api_unlock();
     return ret;
 }

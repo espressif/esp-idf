@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 #include "esp_eth_com.h"
 #include "esp_eth_mac.h"
 #include "sdkconfig.h"
@@ -23,19 +24,9 @@ extern "C" {
  */
 typedef enum {
     /**
-     * @brief Default values configured using Kconfig are going to be used when "Default" selected.
-     *
-     * @warning Deprecated option. Clock configuration using Kconfig is limitedly supported only for ESP32 SoC via @c ETH_ESP32_EMAC_DEFAULT_CONFIG
-     * and is going to be reevaluated in the next major release.
-     * Clock mode and clock GPIO number is supposed to be defined in `EMAC specific configuration` structure from user's code.
-     *
-     */
-    EMAC_CLK_DEFAULT __attribute__((deprecated)), // IDF-9724
-
-    /**
      * @brief Input RMII Clock from external. EMAC Clock GPIO number needs to be configured when this option is selected.
      *
-     * @note MAC will get RMII clock from outside. Note that ESP32 only supports GPIO0 to input the RMII clock.
+     * @note See components/esp_hal_emac/esp32(*)/emac_periph.c for available GPIO numbers.
      *
      */
     EMAC_CLK_EXT_IN,
@@ -43,54 +34,14 @@ typedef enum {
     /**
      * @brief Output RMII Clock from internal (A/M)PLL Clock. EMAC Clock GPIO number needs to be configured when this option is selected.
      *
+     * @warning ESP32 Errata: If you want the Ethernet to work with Wi-Fi or BT, don’t select ESP32 as RMII CLK output as it would result in clock instability.
+     *                        Applicable only to ESP32, other ESP32 SoCs are not affected.
+     *
+     * @note See components/esp_hal_emac/esp32(*)/emac_periph.c for available GPIO numbers.
+     *
      */
     EMAC_CLK_OUT
 } emac_rmii_clock_mode_t;
-
-#if CONFIG_IDF_TARGET_ESP32
-/**
- * @brief RMII Clock GPIO number Options for ESP32
- *
- * @warning If you want the Ethernet to work with WiFi, don’t select ESP32 as RMII CLK output as it would result in clock instability.
- *
- */
-typedef enum {
-    /**
-     * @brief MAC will get RMII clock from outside at this GPIO.
-     *
-     * @note ESP32 only supports GPIO0 to input the RMII clock.
-     *
-     */
-    EMAC_CLK_IN_GPIO = 0,
-
-    /**
-     * @brief Output RMII Clock from internal APLL Clock available at GPIO0
-     *
-     * @note GPIO0 can be set to output a pre-divided PLL clock. Enabling this option will configure GPIO0 to output a 50MHz clock.
-     * In fact this clock doesn’t have directly relationship with EMAC peripheral. Sometimes this clock may not work well with your PHY chip.
-     *
-     */
-    EMAC_APPL_CLK_OUT_GPIO = 0,
-
-    /**
-     * @brief Output RMII Clock from internal APLL Clock available at GPIO16
-     *
-     */
-    EMAC_CLK_OUT_GPIO = 16,
-
-    /**
-     * @brief Inverted Output RMII Clock from internal APLL Clock available at GPIO17
-     *
-     */
-    EMAC_CLK_OUT_180_GPIO = 17
-} emac_rmii_clock_gpio_t;
-#else
-/**
- * @brief RMII Clock GPIO number
- *
- */
-typedef int emac_rmii_clock_gpio_t;
-#endif // CONFIG_IDF_TARGET_ESP32
 
 /**
  * @brief Ethernet MAC Clock Configuration
@@ -102,8 +53,8 @@ typedef union {
         // Reserved for GPIO number, clock source, etc. in MII mode
     } mii; /*!< EMAC MII Clock Configuration */
     struct {
-        emac_rmii_clock_mode_t clock_mode; /*!< RMII Clock Mode Configuration */
-        emac_rmii_clock_gpio_t clock_gpio; /*!< RMII Clock GPIO Configuration */
+        emac_rmii_clock_mode_t clock_mode;  /*!< RMII Clock Mode Configuration */
+        int                    clock_gpio;  /*!< RMII Clock GPIO Configuration */
     } rmii; /*!< EMAC RMII Clock Configuration */
 } eth_mac_clock_config_t;
 
@@ -165,13 +116,7 @@ typedef union {
 *
 */
 typedef struct {
-    union {
-        emac_esp_smi_gpio_config_t smi_gpio;            /*!< SMI GPIO numbers */
-        struct {
-            int smi_mdc_gpio_num __attribute__((deprecated("Please use smi_gpio instead")));  /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
-            int smi_mdio_gpio_num __attribute__((deprecated("Please use smi_gpio instead"))); /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
-        };
-    };
+    emac_esp_smi_gpio_config_t smi_gpio;            /*!< SMI GPIO numbers */
     eth_data_interface_t interface;                 /*!< EMAC Data interface to PHY (MII/RMII) */
     eth_mac_clock_config_t clock_config;            /*!< EMAC Interface clock configuration */
     eth_mac_dma_burst_len_t dma_burst_len;          /*!< EMAC DMA burst length for both Tx and Rx */
@@ -182,6 +127,7 @@ typedef struct {
 #if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     eth_mac_clock_config_t clock_config_out_in;     /*!< EMAC input clock configuration for internally generated output clock (when output clock is looped back externally) */
 #endif //SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+    int32_t mdc_freq_hz;                            /*!< EMAC MDC frequency range limit, if set to 0 or a negative value, the driver will set the CSR clock range up to 2.5 MHz */
 } eth_esp32_emac_config_t;
 
 /**
@@ -191,17 +137,23 @@ typedef struct {
 typedef enum {
     ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS = ETH_CMD_CUSTOM_MAC_CMDS_OFFSET,    /*!< Set Transmit Descriptor Word 0 control bit mask (debug option)*/
     ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS,                                   /*!< Clear Transmit Descriptor Word 0 control bit mask (debug option)*/
-    ETH_MAC_ESP_CMD_PTP_ENABLE,                                             /*!< Enable IEEE1588 Time stamping */
-    ETH_MAC_ESP_CMD_S_PTP_TIME,                                             /*!< Set PTP time in the module */
-    ETH_MAC_ESP_CMD_G_PTP_TIME,                                             /*!< Get PTP time from the module */
-    ETH_MAC_ESP_CMD_ADJ_PTP_FREQ,                                           /*!< Adjust current PTP time frequency increment by scale factor */
-    ETH_MAC_ESP_CMD_ADJ_PTP_TIME,                                           /*!< Adjust base PTP time frequency increment by PPS */
-    ETH_MAC_ESP_CMD_S_TARGET_TIME,                                          /*!< Set Target Time at which interrupt is invoked when PTP time exceeds this value*/
-    ETH_MAC_ESP_CMD_S_TARGET_CB,                                            /*!< Set pointer to a callback function invoked when PTP time exceeds Target Time */
-    ETH_MAC_ESP_CMD_ENABLE_TS4ALL                                           /*!< Enable timestamp for all received frames */
+    ETH_MAC_ESP_CMD_DUMP_REGS,                                              /*!< Dump EMAC registers (debug option) */
 } eth_mac_esp_io_cmd_t;
 
 #ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+/**
+ * @brief Configuration of PTP module
+ *
+ * @warning Time stamping is currently Experimental Feature! Be aware that API may change.
+ *
+ */
+typedef struct {
+    soc_periph_emac_ptp_clk_src_t clk_src;  /*!< Clock source for PTP */
+    float clk_src_period_ns;                /*!< Period of the clock source for PTP in nanoseconds*/
+    float required_accuracy_ns;             /*!< Required accuracy for PTP in nanoseconds (must be worse than clock source for PTP)*/
+    eth_mac_ptp_roll_type_t roll_type;      /*!< Rollover mode (digital or binary) for subseconds register */
+} eth_mac_ptp_config_t;
+
 /**
  * @brief Type of callback function invoked under Time Stamp target time exceeded interrupt
  *
@@ -215,6 +167,18 @@ typedef enum {
  *          - FALSE no high priority task was woken by this function
  */
 typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *user_args);
+
+/**
+ * @brief Default configuration for PTP module
+ *
+ */
+#define ETH_MAC_ESP_PTP_DEFAULT_CONFIG()                                      \
+    {                                                                         \
+        .clk_src = EMAC_PTP_CLK_SRC_XTAL,                                     \
+        .clk_src_period_ns = 25,                                              \
+        .required_accuracy_ns = 40,                                           \
+        .roll_type = ETH_PTP_BINARY_ROLLOVER,                                 \
+    }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 /**
@@ -222,24 +186,6 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
  *
  */
 #if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ETH_RMII_CLK_INPUT // IDF-9724
-    #define DEFAULT_RMII_CLK_MODE EMAC_CLK_EXT_IN
-#if CONFIG_ETH_RMII_CLK_IN_GPIO == 0
-    #define DEFAULT_RMII_CLK_GPIO CONFIG_ETH_RMII_CLK_IN_GPIO
-#else
-    #error "ESP32 EMAC only support input RMII clock to GPIO0"
-#endif // CONFIG_ETH_RMII_CLK_IN_GPIO == 0
-#elif CONFIG_ETH_RMII_CLK_OUTPUT
-    #define DEFAULT_RMII_CLK_MODE EMAC_CLK_OUT
-#if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
-    #define DEFAULT_RMII_CLK_GPIO EMAC_APPL_CLK_OUT_GPIO
-#else
-    #define DEFAULT_RMII_CLK_GPIO CONFIG_ETH_RMII_CLK_OUT_GPIO
-#endif // CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
-#else
-#error "Unsupported RMII clock mode"
-#endif // CONFIG_ETH_RMII_CLK_INPUT
-
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
     {                                                                         \
         .smi_gpio =                                                           \
@@ -252,12 +198,13 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         {                                                                     \
             .rmii =                                                           \
             {                                                                 \
-                .clock_mode = DEFAULT_RMII_CLK_MODE,                          \
-                .clock_gpio = (emac_rmii_clock_gpio_t) DEFAULT_RMII_CLK_GPIO  \
+                .clock_mode = EMAC_CLK_EXT_IN,                                \
+                .clock_gpio = 0                                               \
             }                                                                 \
         },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
+        .mdc_freq_hz = 0,                                                     \
     }
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
@@ -273,11 +220,12 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
             .rmii =                                                           \
             {                                                                 \
                 .clock_mode = EMAC_CLK_EXT_IN,                                \
-                .clock_gpio = (emac_rmii_clock_gpio_t) 50                     \
+                .clock_gpio = 50                                              \
             }                                                                 \
         },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
+        .mdc_freq_hz = 0,                                                     \
         .emac_dataif_gpio =                                                   \
         {                                                                     \
             .rmii =                                                           \
@@ -295,7 +243,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
             .rmii =                                                           \
             {                                                                 \
                 .clock_mode = EMAC_CLK_EXT_IN,                                \
-                .clock_gpio = (emac_rmii_clock_gpio_t) -1                     \
+                .clock_gpio = -1                                              \
             }                                                                 \
         },                                                                    \
     }
@@ -312,6 +260,152 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
 *      - NULL: create MAC instance failed because some error occurred
 */
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config, const eth_mac_config_t *config);
+
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+/**
+ * @brief Enable/Disable PTP module
+ *
+ * @param mac: Ethernet MAC instance
+ * @param config: PTP configuration
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_ptp_enable(esp_eth_mac_t *mac, const eth_mac_ptp_config_t *config);
+
+/**
+ * @brief Disable PTP module
+ *
+ * @param mac: Ethernet MAC instance
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_ptp_disable(esp_eth_mac_t *mac);
+
+/**
+ * @brief Set PTP time
+ *
+ * @param mac: Ethernet MAC instance
+ * @param time: PTP time
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_ptp_time(esp_eth_mac_t *mac, const eth_mac_time_t *time);
+
+/**
+ * @brief Get PTP time
+ *
+ * @param mac: Ethernet MAC instance
+ * @param time: PTP time
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_get_ptp_time(esp_eth_mac_t *mac, eth_mac_time_t *time);
+
+/**
+ * @brief Adjust PTP time frequency increment by scale factor
+ *
+ * @param mac: Ethernet MAC instance
+ * @param scale_factor: frequency scale factor
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_adj_ptp_freq(esp_eth_mac_t *mac, double scale_factor);
+
+/**
+ * @brief Adjust base PTP time frequency increment by PPS
+ *
+ * @param mac: Ethernet MAC instance
+ * @param adj_ppb: adjustment in ppb
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_adj_ptp_time(esp_eth_mac_t *mac, int32_t adj_ppb);
+
+/**
+ * @brief Set Target Time at which interrupt is invoked when PTP time exceeds this value
+ *
+ * @param mac: Ethernet MAC instance
+ * @param target: target time
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_target_time(esp_eth_mac_t *mac, const eth_mac_time_t *target);
+
+/**
+ * @brief Set pointer to a callback function invoked when PTP time exceeds Target Time
+ *
+ * @param mac: Ethernet MAC instance
+ * @param cb: callback function
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_target_time_cb(esp_eth_mac_t *mac, ts_target_exceed_cb_from_isr_t cb);
+
+/**
+ * @brief Enable timestamp for all received frames
+ *
+ * @param mac: Ethernet MAC instance
+ * @param enable: enable or disable
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_enable_ts4all(esp_eth_mac_t *mac, bool enable);
+
+/**
+ * @brief Set PPS0 output at GPIO
+ *
+ * @param mac: Ethernet MAC instance
+ * @param gpio_num: GPIO number
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_pps_out_gpio(esp_eth_mac_t *mac, int gpio_num);
+
+/**
+ * @brief Set PPS0 output frequency
+ *
+ * @param mac: Ethernet MAC instance
+ * @param freq_hz: Supported frequencies: 0 = 1PPS (narrow pulse), other values generate square clock signal.
+ *                 The clock frequency must be power of two and less than or equal to 16384 Hz.
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_set_pps_out_freq(esp_eth_mac_t *mac, uint32_t freq_hz);
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
+
 #endif // CONFIG_ETH_USE_ESP32_EMAC
 
 #ifdef __cplusplus

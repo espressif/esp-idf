@@ -1,0 +1,7 @@
+name: 'esp_libc'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Espressif Systems (Shanghai) CO LTD'
+description: An open-source C standard library implementation with additional features and patches from Espressif.
+virtpackages:
+  - sbom_newlibc.yml
+  - sbom_picolibc.yml

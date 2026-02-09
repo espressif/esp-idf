@@ -1,15 +1,17 @@
 [mapping:openthread]
 archive: libopenthread.a
 entries:
-  if OPENTHREAD_CSL_ENABLE = y || OPENTHREAD_LINK_METRICS = y:
-    csl_tx_scheduler (noflash)
+  if OPENTHREAD_TIMING_OPTIMIZATION = y:
     link_metrics (noflash)
     link_quality (noflash)
-    mac (noflash)
     mac_frame (noflash)
-    mesh_forwarder (noflash)
     radio (noflash)
     sub_mac (noflash)
+
+  if OPENTHREAD_TIMING_OPTIMIZATION = y && OPENTHREAD_RADIO = n:
+    mesh_forwarder (noflash)
+    csl_tx_scheduler (noflash)
+    mac (noflash)
 
   if OPENTHREAD_RCP_SPI = y:
     ncp_spi (noflash)

@@ -1,6 +1,0 @@
-# Config to test that console can build with all outputs set to none (both primary and secondary)
-
-# Using ESP32-C3 because it supports a secondary console output (i.e., USJ)
-CONFIG_IDF_TARGET="esp32c3"
-CONFIG_ESP_CONSOLE_NONE=y
-CONFIG_ESP_CONSOLE_SECONDARY_NONE=y

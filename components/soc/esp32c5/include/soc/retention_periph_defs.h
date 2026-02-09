@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -43,8 +43,8 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_PARLIO0      = 19,
     SLEEP_RETENTION_MODULE_GPSPI2       = 20,
     SLEEP_RETENTION_MODULE_LEDC         = 21,
-    SLEEP_RETENTION_MODULE_PCNT0        = 22,
-    SLEEP_RETENTION_MODULE_MCPWM0       = 23,
+    SLEEP_RETENTION_MODULE_MCPWM0       = 22,
+    SLEEP_RETENTION_MODULE_SDM0         = 23,
 
     /* modem module, which includes WiFi, BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_WIFI_MAC     = 26,
@@ -80,8 +80,8 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_PARLIO0)      ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_PCNT0)        ? true \
     : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_SDM0)         ? true \
     : false)
 
 #ifdef __cplusplus

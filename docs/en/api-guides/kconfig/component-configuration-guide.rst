@@ -5,9 +5,10 @@ Component Configuration Guide
 
 This guide is intended to describe how to define configuration options for components in ESP-IDF. Following topics will be covered:
 
-- How to define new configuration options for components.
-- Basic syntax of Kconfig language.
-- How to ensure backward compatibility.
+- How to define new configuration options for components
+- Basic syntax of Kconfig language
+- How to ensure backward compatibility
+- How to suppress certain warnings regarding Kconfig options
 
 How Configuration Works in ESP-IDF
 ----------------------------------
@@ -97,3 +98,33 @@ This behavior is suppressed in ESP-IDF by the the configuration tool (invoked by
 1. Configuration tool searches the whole ESP-IDF folder for ``sdkconfig.rename`` files. If the project target (``<chip>``) matches the last suffix of any ``sdkconfig.rename.<chip>`` file, the file will be used in the next step as well.
 
 2. After collecting all the relevant files, the ``sdkconfig`` file (and ``sdkconfig.h/json/cmake`` files if any) is post-processed. A block of compatibility statements for all the renamed options is added during the post-process to the end of the file(s). The block starts with ``# Deprecated options for backward compatibility`` and ends with ``# End of deprecated options``.
+
+.. _supressing-kconfig-messages:
+
+Suppressing Info/Warning Messages in Kconfig
+--------------------------------------------
+
+In some situations, it may be desirable to suppress specific info or warning messages in the configuration report. The ``# ignore: <ignore-code>`` pragma allows you to do this, where ``<ignore-code>`` refers to the report area of the message in the configuration report (e.g., ``multiple-definition`` ignore code for ``Multiple Symbol/Choice Definitions`` area). Each ignore code has both long and short form.
+
+.. note::
+
+    For more information about report areas or the configuration report, please refer to the :ref:`configuration-report` section of the Project Configuration Guide.
+
+Currently, the following ignore code is supported:
+
+* ``multiple-definition``/``MD``: Suppresses the message for all occurrences of a given configuration option in the ``Multiple Symbol/Choice Definitions`` report area. It is sufficient to place the pragma on just one of the definitions.
+
+Example:
+
+.. code-block:: kconfig
+
+    # Even though the LED_PIN option is defined multiple times, the info message about this will be suppressed
+    config LED_PIN # ignore: multiple-definition
+        int "Pin for LED"
+        default 1
+
+    # (...)
+
+    config LED_PIN # here, the pragma is not needed (but it is allowed)
+        int "Pin for LED"
+        default 3

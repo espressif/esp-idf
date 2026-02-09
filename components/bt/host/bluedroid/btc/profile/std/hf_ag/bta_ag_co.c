@@ -567,6 +567,8 @@ uint32_t bta_ag_sco_co_out_data(UINT8 *p_buf)
     return 0;
 }
 
+#endif
+
 /*******************************************************************************
 **
 ** Function         bta_ag_sco_co_in_data
@@ -618,7 +620,6 @@ void bta_ag_sco_co_in_data(BT_HDR *p_buf, tBTM_SCO_DATA_FLAG status)
                 }
                 btc_hf_audio_data_cb_to_app((uint8_t *)p_new_buf, (uint8_t *)p_data, BTM_MSBC_FRAME_SIZE, bta_ag_co_cb.is_bad_frame);
                 bta_ag_co_cb.is_bad_frame = false;
-                memset(bta_ag_co_cb.decode_msbc_data, 0, BTM_MSBC_FRAME_SIZE);
             }
             bta_ag_co_cb.rx_first_pkt = !bta_ag_co_cb.rx_first_pkt;
         }
@@ -684,7 +685,6 @@ void bta_ag_sco_co_in_data(BT_HDR *p_buf, tBTM_SCO_DATA_FLAG status)
     osi_free(p_buf);
 #endif
 }
-#endif
 
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
 #endif /* #if (BTA_AG_INCLUDED == TRUE) */

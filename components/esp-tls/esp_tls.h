@@ -15,8 +15,6 @@
 #include "mbedtls/x509_crt.h"
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
@@ -96,6 +94,16 @@ typedef enum {
     ESP_TLS_DYN_BUF_STRATEGY_MAX,     /*!< to indicate max */
 } esp_tls_dyn_buf_strategy_t;
 
+/**
+ * @brief ECDSA curve options for TLS connections
+ */
+typedef enum {
+    ESP_TLS_ECDSA_CURVE_SECP256R1 = 0,   /*!< Use SECP256R1 curve */
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    ESP_TLS_ECDSA_CURVE_SECP384R1,       /*!< Use SECP384R1 curve */
+#endif
+    ESP_TLS_ECDSA_CURVE_MAX,            /*!< to indicate max */
+} esp_tls_ecdsa_curve_t;
 
 /**
  * @brief      ESP-TLS configuration parameters
@@ -169,7 +177,11 @@ typedef struct esp_tls_cfg {
 
     bool use_ecdsa_peripheral;              /*!< Use the ECDSA peripheral for the private key operations */
 
-    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where the ECDSA key is stored */
+    uint8_t ecdsa_key_efuse_blk;            /*!< The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
+
+    uint8_t ecdsa_key_efuse_blk_high;       /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
+
+    esp_tls_ecdsa_curve_t ecdsa_curve;      /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the
                                                  underneath socket will be configured in non
@@ -189,7 +201,8 @@ typedef struct esp_tls_cfg {
     const char *common_name;                /*!< If non-NULL, server certificate CN must match this name.
                                                  If NULL, server certificate CN must match hostname. */
 
-    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field */
+    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field.
+                                                 This field should be set to false for SNI to function correctly. */
 
     tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 
@@ -231,11 +244,6 @@ typedef struct esp_tls_cfg {
  * @brief Data structures necessary to support TLS session tickets according to RFC5077
  */
 typedef struct esp_tls_server_session_ticket_ctx {
-    mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
-
-    mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
-                                                                                     CTR_DRBG is deterministic random
-                                                                                     bit generation based on AES-256 */
     mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
 } esp_tls_server_session_ticket_ctx_t;
 #endif
@@ -282,6 +290,10 @@ typedef struct esp_tls_cfg_server {
     unsigned int cacert_pem_bytes;          /*!< Size of client CA certificate legacy name */
     };
 
+#ifdef CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+    bool client_cert_authmode_optional;              /*!< Set client certificate authentication mode to optional.
+                                                     By default, client certificate authentication mode is set to required */
+#endif // CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
     union {
     const unsigned char *servercert_buf;        /*!< Server certificate in a buffer
                                                      This buffer should be NULL terminated */
@@ -313,7 +325,11 @@ typedef struct esp_tls_cfg_server {
 
     bool use_ecdsa_peripheral;                  /*!< Use ECDSA peripheral to use private key */
 
-    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored */
+    uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored. For SECP384R1 curve, if two blocks are used, set this to the low block and use ecdsa_key_efuse_blk_high for the high block. */
+
+    uint8_t ecdsa_key_efuse_blk_high;           /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
+
+    esp_tls_ecdsa_curve_t ecdsa_curve;          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 
     bool use_secure_element;                    /*!< Enable this option to use secure element or
                                                  atecc608a chip */
@@ -345,6 +361,12 @@ typedef struct esp_tls_cfg_server {
                                                   Important note: the pointer must be valid for connection */
 #endif
 
+    esp_tls_proto_ver_t tls_version;            /*!< TLS protocol version for this server, e.g., TLS 1.2, TLS 1.3
+                                                     (default - no preference). Enables TLS version control per server instance. */
+
+    const int *ciphersuites_list;               /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
+                                                     Please check the list validity by esp_tls_get_ciphersuites_list() API.
+                                                     This allows per-server cipher suite configuration. */
 } esp_tls_cfg_server_t;
 
 /**
@@ -384,21 +406,6 @@ typedef struct esp_tls esp_tls_t;
  */
 esp_tls_t *esp_tls_init(void);
 
-/**
- * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
- *
- * Note: This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_tls_conn_http_new_sync` (and its asynchronous version
- * `esp_tls_conn_http_new_async`)
- *
- * @param[in]  url  url of host.
- * @param[in]  cfg  TLS configuration as esp_tls_cfg_t. If you wish to open
- *                  non-TLS connection, keep this NULL. For TLS connection,
- *                  a pass pointer to 'esp_tls_cfg_t'. At a minimum, this
- *                  structure should be zero-initialized.
- * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
- */
-esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg) __attribute__((deprecated("Please use esp_tls_conn_http_new_sync (or its asynchronous version esp_tls_conn_http_new_async) instead")));
 
 /**
  * @brief      Create a new blocking TLS/SSL connection
@@ -408,10 +415,12 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg) __at
  * @param[in]  hostname  Hostname of the host.
  * @param[in]  hostlen   Length of hostname.
  * @param[in]  port      Port number of the host.
- * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open
- *                       non-TLS connection, keep this NULL. For TLS connection,
- *                       a pass pointer to esp_tls_cfg_t. At a minimum, this
- *                       structure should be zero-initialized.
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. For a TLS
+ *                       connection, pass a pointer to a esp_tls_cfg_t. For a
+ *                       plain TCP connection, pass a pointer to a
+ *                       esp_tls_cfg_t with is_plain_tcp set to true. At a
+ *                       minimum, this pointer should be not NULL and the
+ *                       structure should be zero-initialized
  * @param[in]  tls       Pointer to esp-tls as esp-tls handle.
  *
  * @return

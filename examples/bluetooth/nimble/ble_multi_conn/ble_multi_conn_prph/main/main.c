@@ -15,10 +15,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x11, 0X09, 'e', 's', 'p', '-', 'm', 'u', 'l', 't', 'i', '-', 'c', 'o', 'n', 'n', '-', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x11, BLE_HS_ADV_TYPE_COMP_NAME, 'e', 's', 'p', '-', 'm', 'u', 'l', 't', 'i', '-', 'c', 'o', 'n', 'n', '-', 'e',
 };
 #endif
 
@@ -287,12 +287,14 @@ app_main(void)
     ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("esp-multi-conn");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

@@ -56,8 +56,8 @@ typedef struct {
     tBTA_SYS_HW_STATE state;
     tBTA_SYS_HW_CBACK *sys_hw_cback[BTA_SYS_MAX_HW_MODULES];    /* enable callback for each HW modules */
     UINT32                  sys_hw_module_active;   /* bitmask of all active modules */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16                  sys_features;           /* Bitmask of sys features */
-
     tBTA_SYS_CONN_CBACK     *prm_cb;                 /* role management callback registered by DM */
     tBTA_SYS_CONN_CBACK     *ppm_cb;                 /* low power management callback registered by DM */
     tBTA_SYS_CONN_CBACK     *p_policy_cb;            /* link policy change callback registered by DM */
@@ -72,6 +72,7 @@ typedef struct {
 #endif
     /* VS event handler */
     tBTA_SYS_VS_EVT_HDLR   *p_vs_evt_hdlr;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 } tBTA_SYS_CB;
 

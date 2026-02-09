@@ -1922,7 +1922,7 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
     return ESP_OK;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) //TODO: IDF-5218
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) //TODO: IDF-14963
 
 #include <sys/time.h>
 #include "esp_sleep.h"

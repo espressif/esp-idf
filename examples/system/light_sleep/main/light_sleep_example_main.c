@@ -50,7 +50,7 @@ static void light_sleep_task(void *args)
         } else {
             wakeup_reason = "other";
         }
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_LIBC_NEWLIB_NANO_FORMAT
         /* printf in newlib-nano does not support %ll format, causing example test fail */
         printf("Returned from light sleep, reason: %s, t=%d ms, slept for %d ms\n",
                 wakeup_reason, (int) (t_after_us / 1000), (int) ((t_after_us - t_before_us) / 1000));

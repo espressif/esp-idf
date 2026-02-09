@@ -387,6 +387,16 @@ void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem);
 void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, BaseType_t *pxHigherPriorityTaskWoken);
 
 /**
+ * @brief   Reset a ring buffer back to its original empty state
+ *
+ * @param[in]   xRingbuffer     Ring buffer to reset
+ *
+ * @return ESP_ERR_INVALID_STATE if one or more items are not sent, completed or returned
+ *         ESP_OK if the operation was successful
+ */
+esp_err_t vRingbufferReset(RingbufHandle_t xRingbuffer);
+
+/**
  * @brief   Delete a ring buffer
  *
  * @param[in]   xRingbuffer     Ring buffer to delete

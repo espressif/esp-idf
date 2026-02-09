@@ -10,13 +10,17 @@
 extern "C" {
 #endif
 
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
 /* Declarations used inside TEE binary, only */
 
 #define portNUM_PROCESSORS (1)
 #define configNUM_CORES    (portNUM_PROCESSORS)
-#define TEE_SECURE_INUM    (14)
+#define TEE_SECURE_INUM    (31)
+#if SOC_INT_CLIC_SUPPORTED
+#define TEE_PASS_INUM      (30)
+#endif
 
 #define ESP_TEE_M2U_SWITCH_MAGIC  0xfedef
 

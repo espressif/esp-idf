@@ -111,7 +111,6 @@ static void tee_ota_task(void *pvParameter)
             task_fatal_error();
         } else if (data_read > 0) {
             if (image_header_was_checked == false) {
-                /* TODO: TEE image header is missing the `esp_app_desc_t` configuration structure */
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)) {
                     esp_image_header_t img_hdr;
                     memcpy(&img_hdr, ota_write_data, sizeof(esp_image_header_t));
@@ -231,7 +230,7 @@ static void init_ota_sem(void)
 static int create_ota_task(const char *url, const char *task_name, void (*ota_task)(void *))
 {
     init_ota_sem();
-    if (xTaskCreate(ota_task, task_name, configMINIMAL_STACK_SIZE * 3, (void *)url, 5, NULL) != pdPASS) {
+    if (xTaskCreate(ota_task, task_name, configMINIMAL_STACK_SIZE * 4, (void *)url, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Task creation failed for %s", task_name);
         return ESP_FAIL;
     }

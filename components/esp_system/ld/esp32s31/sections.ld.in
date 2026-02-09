@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Default entry point */
+ENTRY(call_start_cpu0);
+
+SECTIONS
+{
+  /**
+   * RTC memory should be implemented here TODO: [ESP32S31] IDF-14640
+   */
+#include "ld.iram.sections"
+
+#include "ld.dram.sections"
+
+#include "ld.flash.sections"
+
+#include "ld.ext_ram.sections"
+
+#include "ld.heap.sections"
+
+#include "ld.debug.sections"
+#include "ld.discard.sections"
+}

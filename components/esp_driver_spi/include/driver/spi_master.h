@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 //for spi_bus_initialization functions. to be back-compatible
 #include "driver/spi_common.h"
@@ -104,6 +103,7 @@ typedef struct {
                                  */
 } spi_device_interface_config_t;
 
+// Input flags
 #define SPI_TRANS_MODE_DIO            (1<<0)  ///< Transmit/receive data in 2-bit mode
 #define SPI_TRANS_MODE_QIO            (1<<1)  ///< Transmit/receive data in 4-bit mode
 #define SPI_TRANS_USE_RXDATA          (1<<2)  ///< Receive into rx_data member of spi_transaction_t instead into memory at rx_buffer.
@@ -117,6 +117,11 @@ typedef struct {
 #define SPI_TRANS_MODE_OCT            (1<<10) ///< Transmit/receive data in 8-bit mode
 #define SPI_TRANS_MULTILINE_ADDR      SPI_TRANS_MODE_DIOQIO_ADDR ///< The data lines used at address phase is the same as data phase (otherwise, only one data line is used at address phase)
 #define SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL   (1<<11) ///< By default driver will automatically re-alloc dma buffer if it doesn't meet hardware alignment or dma_capable requirements, this flag is for you to disable this feature, you will need to take care of the alignment otherwise driver will return you error ESP_ERR_INVALID_ARG
+#define SPI_TRANS_DMA_USE_PSRAM       (1<<12) ///< Use PSRAM for DMA buffer directly, has speed limit, but no temp buffer and save memory
+
+// Output flags
+#define SPI_TRANS_DMA_RX_FAIL         (1<<30) ///< RX transaction data lose flag, indicate DMA RX overflow
+#define SPI_TRANS_DMA_TX_FAIL         (1<<31) ///< TX transaction data lose flag, indicate DMA TX underflow
 
 /**
  * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.
@@ -219,7 +224,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Get the result of a SPI transaction queued earlier by ``spi_device_queue_trans``.
@@ -241,7 +246,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
  *         - ESP_ERR_TIMEOUT       if there was no completed transaction before ticks_to_wait expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Send a SPI transaction, wait for it to complete, and return the result
@@ -282,7 +287,7 @@ esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *tra
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Poll until the polling transaction ends.
@@ -299,7 +304,7 @@ esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t
  *         - ESP_ERR_TIMEOUT       if the transaction cannot finish before ticks_to_wait expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_polling_end(spi_device_handle_t handle, TickType_t ticks_to_wait);
+esp_err_t spi_device_polling_end(spi_device_handle_t handle, uint32_t ticks_to_wait);
 
 /**
  * @brief Send a polling transaction, wait for it to complete, and return the result
@@ -336,7 +341,7 @@ esp_err_t spi_device_polling_transmit(spi_device_handle_t handle, spi_transactio
  *      - ESP_ERR_INVALID_ARG : ``wait`` is not set to portMAX_DELAY.
  *      - ESP_OK : Success.
  */
-esp_err_t spi_device_acquire_bus(spi_device_handle_t device, TickType_t wait);
+esp_err_t spi_device_acquire_bus(spi_device_handle_t device, uint32_t wait);
 
 /**
  * @brief Release the SPI bus occupied by the device. All other devices can start sending transactions.

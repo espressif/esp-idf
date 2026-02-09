@@ -5,6 +5,65 @@
 
 This example shows how to use ESP APIs to create a GATT Client.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  GATT Client │                                    │  GATT Server │
+    │ (this example)│                                    │(gatt_server) │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Scanning Phase ───────────           │
+           │                                                   │
+           │  1. Start Scan                                    │  Advertising
+           │ ───────────────────────────────────────────────>  │  "ESP_GATTS_DEMO"
+           │                                                   │
+           │  2. Found "ESP_GATTS_DEMO"                        │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── Connection Phase ───────────         │
+           │                                                   │
+           │  3. Connect                                       │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  4. Connection Established                        │
+           │ <─────────────────────────────────────────────────│
+           │                                                   │
+           │  5. MTU Exchange                                  │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  ─────────── Service Discovery ───────────        │
+           │                                                   │
+           │  6. Discover Service (UUID: 0x00FF)               │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  7. Service Found                                 │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  8. Get Characteristic (UUID: 0xFF01)             │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Enable Notification ───────────      │
+           │                                                   │
+           │  9. Register for Notify                           │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │ 10. Write CCCD (Enable Notify)                    │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Data Exchange ───────────            │
+           │                                                   │
+           │ 11. Write Characteristic                          │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │ 12. Receive Notification                          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  GATT Client │                                    │  GATT Server │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

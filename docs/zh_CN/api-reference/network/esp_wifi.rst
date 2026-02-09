@@ -9,8 +9,8 @@ Wi-Fi 库
 Wi-Fi 库支持配置及监控 {IDF_TARGET_NAME} Wi-Fi 连网功能。支持配置：
 
 - station 模式（即 STA 模式或 Wi-Fi 客户端模式），此时 {IDF_TARGET_NAME} 连接到接入点 (AP)。
-- AP 模式（即 Soft-AP 模式或接入点模式），此时基站连接到 {IDF_TARGET_NAME}。
-- station/AP 共存模式（{IDF_TARGET_NAME} 既是接入点，同时又作为基站连接到另外一个接入点）。
+- AP 模式（即 Soft-AP 模式或接入点模式），此时 station 连接到 {IDF_TARGET_NAME}。
+- station/AP 共存模式（{IDF_TARGET_NAME} 既是接入点，同时又作为 station 连接到另外一个接入点）。
 
 - 上述模式的各种安全模式（WPA、WPA2、WPA3 等）。
 - 扫描接入点（包括主动扫描及被动扫描）。

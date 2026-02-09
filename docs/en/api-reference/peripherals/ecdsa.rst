@@ -12,15 +12,44 @@ ECDSA peripheral can help to establish **Secure Device Identity** for TLS mutual
 Supported Features
 ------------------
 
-- ECDSA digital signature generation and verification
-- Two different elliptic curves, namely P-192 and P-256 (FIPS 186-3 specification)
-- Two hash algorithms for message hash in the ECDSA operation, namely SHA-224 and SHA-256 (FIPS PUB 180-4 specification)
+.. list::
+
+    - ECDSA digital signature generation and verification
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - Three different elliptic curves, namely P-192, P-256 and P-384 (FIPS 186-3 specification)
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - Two different elliptic curves, namely P-192 and P-256 (FIPS 186-3 specification)
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - Three hash algorithms for message hash in the ECDSA operation, namely SHA-224, SHA-256 and SHA-384 (FIPS PUB 180-4 specification)
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - Two hash algorithms for message hash in the ECDSA operation, namely SHA-224 and SHA-256 (FIPS PUB 180-4 specification)
 
 
 ECDSA on {IDF_TARGET_NAME}
 --------------------------
 
 On {IDF_TARGET_NAME}, the ECDSA module works with a secret key burnt into an eFuse block. This eFuse key is made completely inaccessible (default mode) for any resources outside the cryptographic modules, thus avoiding key leakage.
+
+ECDSA Key Storage
+^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA private keys are stored in eFuse key blocks. The number of key blocks required depends on the curve size:
+
+    - **P-256 curve**: Require one eFuse key block (256 bits)
+    - **P-384 curve**: Requires two eFuse key blocks (512 bits total)
+
+    For curves requiring two key blocks (like P-384), configure the following fields:
+
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the low block number
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` to the high block number
+
+    For single-block curves (like P-256), only set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
+
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA private keys are stored in eFuse key blocks. One eFuse key block (256 bits) is required for P-256 curve.
+
+    Configure the following field:
+
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the block number and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
 
 ECDSA key can be programmed externally through ``idf.py`` script. Here is an example of how to program the ECDSA key:
 
@@ -105,7 +134,8 @@ The ECDSA peripheral in Mbed TLS stack is integrated by overriding the ECDSA sig
 
 For a particular TLS context, additional APIs have been supplied to populate certain fields (e.g., private key ctx) to differentiate routing to hardware. ESP-TLS layer integrates these APIs internally and hence no additional work is required at the application layer. However, for custom use-cases please refer to API details below.
 
+
 API Reference
 -------------
 
-.. include-build-file:: inc/ecdsa_alt.inc
+.. include-build-file:: inc/psa_crypto_driver_esp_ecdsa_contexts.inc

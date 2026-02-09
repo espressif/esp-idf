@@ -85,7 +85,7 @@ static void heart_rate_task(void *param) {
 
 void app_main(void) {
     /* Local variables */
-    int rc;
+    int rc = 0;
     uint32_t seed = esp_random();
     esp_err_t ret;
 
@@ -118,12 +118,14 @@ void app_main(void) {
         return;
     }
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* GAP service initialization */
     rc = gap_init();
     if (rc != 0) {
         ESP_LOGE(TAG, "failed to initialize GAP service, error code: %d", rc);
         return;
     }
+#endif
 
     /* GATT server initialization */
     rc = gatt_svc_init();

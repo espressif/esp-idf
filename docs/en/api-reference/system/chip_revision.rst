@@ -179,7 +179,7 @@ Backward Compatibility with Bootloaders Built by Older ESP-IDF Versions
 
     {IDF_TARGET_NAME} chip support was added in ESP-IDF v4.2. {IDF_TARGET_NAME} chips have ``rev_min`` in :cpp:type:`esp_image_header_t` header set to ``0`` because ``Minimum Supported ESP32-S2 Revision`` Kconfig option was not introduced, which means that the old bootloader does not check the chip revision. Any app can be loaded by such bootloader in range ``v0.0`` to ``v3.15``.
 
-Please check the chip version using ``esptool chip_id`` command.
+Please check the chip version using ``esptool chip-id`` command.
 
 References
 ----------

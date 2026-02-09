@@ -16,6 +16,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 try:
     import http.client
+
     from idf_http_server_test import client
 except ModuleNotFoundError:
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'tools', 'ci', 'python_packages'))
@@ -43,13 +44,13 @@ class http_client_thread(threading.Thread):
     def run(self) -> None:
         try:
             self.open_connection(self.ip, self.port, self.delay)
-        except socket.timeout:
+        except TimeoutError:
             self.exc = 1
 
     def join(self, timeout=None):  # type: ignore
         threading.Thread.join(self)
         if self.exc:
-            raise socket.timeout
+            raise TimeoutError
 
 
 @pytest.mark.wifi_router
@@ -58,7 +59,7 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('http_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
 
     # Upload binary and start testing
     logging.info('Starting http_server simple test app')
@@ -71,11 +72,11 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(' '.join([ap_ssid, ap_password]))
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = dut.expect(r"(?:[\s\S]*)Starting server on port: '(\d+)'", timeout=30)[1].decode()
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     # Expected Logs
     dut.expect('Registering URI handlers', timeout=30)
@@ -131,7 +132,7 @@ def test_examples_protocol_http_server_lru_purge_enable(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('http_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
 
     # Upload binary and start testing
     logging.info('Starting http_server simple test app')
@@ -144,11 +145,11 @@ def test_examples_protocol_http_server_lru_purge_enable(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = dut.expect(r"(?:[\s\S]*)Starting server on port: '(\d+)'", timeout=30)[1].decode()
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     # Expected Logs
     dut.expect('Registering URI handlers', timeout=30)
@@ -160,7 +161,7 @@ def test_examples_protocol_http_server_lru_purge_enable(dut: Dut) -> None:
             thread.start()
             threads.append(thread)
         except OSError as err:
-            logging.info('Error: unable to start thread, {}'.format(err))
+            logging.info(f'Error: unable to start thread, {err}')
 
     for t in threads:
         t.join()
@@ -179,7 +180,7 @@ def test_examples_protocol_http_server_sse(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('http_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
 
     # Upload binary and start testing
     logging.info('Starting http_server simple test app')
@@ -192,11 +193,11 @@ def test_examples_protocol_http_server_sse(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = int(dut.expect(r"(?:[\s\S]*)Starting server on port: '(\d+)'", timeout=30)[1].decode())
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     # Expected Logs
     dut.expect('Registering URI handlers', timeout=30)

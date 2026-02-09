@@ -67,6 +67,14 @@ If you want to enable the security features on a target which has been virtually
 
 The detailed instructions on how to use QEMU can be found in the [QEMU documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/qemu.html).
 
+For QEMU emulation, the eFuses are emulated and are saved in a file. The default location for this file is `build/qemu_efuse.bin`. 
+
+It is possible to save the eFuses in a different location by specifying the `--efuse-file` option when running QEMU commands. This is useful as the build directory may get modified and the flashed eFuse context may get reset.
+
+```sh
+idf.py qemu --efuse-file <path_to_efuse.bin>
+```
+
 <details>
 <summary>Target specific documentation</summary>
 
@@ -121,7 +129,7 @@ Please follow below steps to enable Secure Boot V2:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn-key BLOCK_KEY0 digest.bin SECURE_BOOT_DIGEST0
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY0 digest.bin SECURE_BOOT_DIGEST0
 	```
 	</details>
 
@@ -141,7 +149,7 @@ Please follow below steps to enable Secure Boot V2:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn SECURE_BOOT_EN
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn SECURE_BOOT_EN
 	```
 	</details>
 
@@ -202,10 +210,10 @@ Follow below steps to enable Flash Encryption:
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn-key BLOCK_KEY1 my_flash_encryption_key.bin XTS_AES_128_KEY
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY1 my_flash_encryption_key.bin XTS_AES_128_KEY
 	```
 	</details>
-	
+
 
     We have used `BLOCK_KEY1` here to store the Flash Encryption key. Generally, the `BLOCK` can be a free key block from `BLOCK_KE0` to `BLOCK_KEY4`.
 
@@ -214,16 +222,16 @@ Follow below steps to enable Flash Encryption:
 	```
 	idf.py --port $ESPPORT efuse-burn SPI_BOOT_CRYPT_CNT 7
 	```
-	
+
 	<details>
 	<summary>Enable Flash Encryption for QEMU</summary>
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn SPI_BOOT_CRYPT_CNT 7
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn SPI_BOOT_CRYPT_CNT 7
 	```
 	</details>
-    
+
 At this point the Flash Encryption feature is enabled for the device. The necessary `security eFuses` shall be enabled by the `security_features_app` firmware.
 
 #### Encrypting the partitions
@@ -306,10 +314,10 @@ We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partit
 	For QEMU emulation, the above command can be updated as follows:
 
 	```
-	idf.py qemu efuse-burn-key BLOCK_KEY2 keys/hmac_key.bin HMAC_UP
+	idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY2 keys/hmac_key.bin HMAC_UP
 	```
 	</details>
-    
+
     We have used `BLOCK_KEY2` here to store the HMAC key. Generally, `BLOCK` can be a free keyblock between `BLOCK_KEY0` and `BLOCK_KEY5`.
 
 	If you want to change the value of the eFuse key block for this example, make sure to update the same value in `menuconfig → Component config → NVS Security Provider → eFuse key ID storing the HMAC key`.
@@ -363,7 +371,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 3. Burn the key in the eFuse
 
     ```shell
-    idf.py --port $ESPPORT efuse-burn-key BLOCK_KEY3 secure_jtag_hmac_key.bin HMAC_DOWN_JTAG 
+    idf.py --port $ESPPORT efuse-burn-key BLOCK_KEY3 secure_jtag_hmac_key.bin HMAC_DOWN_JTAG
     ```
 
 	<details>
@@ -371,7 +379,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 	For QEMU emulation, the above command can be updated as follows:
 
     ```shell
-    idf.py qemu efuse-burn-key BLOCK_KEY3 secure_jtag_hmac_key.bin HMAC_DOWN_JTAG
+    idf.py qemu --efuse-file qemu_efuse.bin efuse-burn-key BLOCK_KEY3 secure_jtag_hmac_key.bin HMAC_DOWN_JTAG
     ```
 
 	</details>
@@ -389,7 +397,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 	For QEMU emulation, the above command can be updated as follows:
 
     ```shell
-    idf.py qemu efuse-burn SOFT_DIS_JTAG 7
+    idf.py qemu --efuse-file qemu_efuse.bin efuse-burn SOFT_DIS_JTAG 7
     ```
 
 	</details>
@@ -431,7 +439,7 @@ The offsets at which the partitions need to be flashed can be found out by execu
 The partitions can be flashed with help of the `esptool` utility.
 
 ```sh
-esptool.py -p $ESPPORT write_flash /* Placeholder for offset */ /* Placeholder for file name */
+esptool -p $ESPPORT write-flash /* Placeholder for offset */ /* Placeholder for file name */
 ```
 
 Along with these, esptool command may need some additional options.
@@ -440,7 +448,7 @@ Please check the output of `idf.py build` command executed earlier for all the n
 For this example the following command can be used
 
 ```sh
-esptool.py --chip <chip_name> -b 115200 --before default_reset --after no_reset --no-stub -p $ESPPORT write_flash 0x0 build/encrypted_data/bootloader-enc.bin 0xd000 build/encrypted_data/partition-table-enc.bin 0x20000 build/encrypted_data/security_features-enc.bin --force
+esptool --chip <chip_name> -b 115200 --before default-reset --after no-reset --no-stub -p $ESPPORT write-flash 0x0 build/encrypted_data/bootloader-enc.bin 0xd000 build/encrypted_data/partition-table-enc.bin 0x20000 build/encrypted_data/security_features-enc.bin --force
 ```
 
 </details>
@@ -599,20 +607,26 @@ Below are the commands that can be used to to emulate the target device on host 
 
 2. Build qemu image
 
+	First create a directory to store the merged binary
+
+	```sh
+	mkdir -p build/qemu
+	```
+
     The qemu image can be built with following command
 
     ```sh
-	idf.py merge-bin --merge-args ../qemu/qemu_flash_args -o qemu/security_features_flash_image.bin
+	idf.py merge-bin -o qemu/security_features_flash_image.bin --fill-flash-size 4MB @qemu/qemu_flash_args 
     ```
 
-**NOTE: The `idf.py merge-bin` command runs with `build` as the working directory. Make sure the relative path provided are relative to the `build` directory
+	**NOTE: The `idf.py merge-bin` command runs with `build` as the working directory. Make sure the relative path provided are relative to the `build` directory**
 
 ### Run example on QEMU
 
 The following command can be used to run example on qemu
 
 ```sh
-idf.py qemu --flash-file build/qemu/security_features_flash_image.bin monitor
+idf.py qemu --efuse-file qemu_efuse.bin --flash-file build/qemu/security_features_flash_image.bin monitor
 ```
 
 The qemu session can be closed by pressing `CTRL+ ]`.

@@ -422,6 +422,17 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
         //eapol_sm_notify_cached(sm->eapol);
 #ifdef CONFIG_IEEE80211R
         sm->xxkey_len = 0;
+#ifdef CONFIG_WPA3_SAE
+        if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE && sm->pmk_len == PMK_LEN) {
+            /* Need to allow FT key derivation to proceed with
+             * PMK from SAE being used as the XXKey in cases where
+             * the PMKID in msg 1/4 matches the PMKSA entry that was
+             * just added based on SAE authentication for the
+             * initial mobility domain association. */
+            os_memcpy(sm->xxkey, sm->pmk, sm->pmk_len);
+            sm->xxkey_len = sm->pmk_len;
+        }
+#endif
 #endif /* CONFIG_IEEE80211R */
     } else if (wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
         int res = 0, pmk_len;
@@ -537,6 +548,9 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     struct wpa_eapol_key *reply;
     struct wpa_eapol_key_192 *reply192;
     u8 *rsn_ie_buf = NULL;
+#ifdef CONFIG_WPA3_COMPAT
+    u8 *buf2 = NULL;
+#endif
     u8 *rbuf, *key_mic;
 
     if (wpa_ie == NULL) {
@@ -582,6 +596,36 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
         wpa_ie = rsn_ie_buf;
     }
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_WPA3_COMPAT
+    if (sm->rsn_override != RSN_OVERRIDE_NOT_USED) {
+        u8 *pos;
+
+        buf2 = os_malloc(wpa_ie_len + 2 + 4 + 1);
+        if (!buf2) {
+            os_free(rsn_ie_buf);
+            return -1;
+        }
+        os_memcpy(buf2, wpa_ie, wpa_ie_len);
+        pos = buf2 + wpa_ie_len;
+        *pos++ = WLAN_EID_VENDOR_SPECIFIC;
+        *pos++ = 4 + 1;
+        WPA_PUT_BE32(pos, RSN_SELECTION_IE_VENDOR_TYPE);
+        pos += 4;
+        if (sm->rsn_override == RSN_OVERRIDE_RSNE) {
+            *pos++ = RSN_SELECTION_RSNE;
+        } else if (sm->rsn_override == RSN_OVERRIDE_RSNE_OVERRIDE) {
+            *pos++ = RSN_SELECTION_RSNE_OVERRIDE;
+        } else {
+            os_free(rsn_ie_buf);
+            os_free(buf2);
+            return -1;
+        }
+
+        wpa_ie = buf2;
+        wpa_ie_len += 2 + 4 + 1;
+
+    }
+#endif
     wpa_hexdump(MSG_MSGDUMP, "WPA: WPA IE for msg 2/4\n", wpa_ie, wpa_ie_len);
 
     mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
@@ -591,6 +635,9 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
                   &rlen, (void *) &reply);
     if (rbuf == NULL) {
         os_free(rsn_ie_buf);
+#ifdef CONFIG_WPA3_COMPAT
+        os_free(buf2);
+#endif
         return -1;
     }
     reply192 = (struct wpa_eapol_key_192 *) reply;
@@ -617,6 +664,9 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     }
 
     os_free(rsn_ie_buf);
+#ifdef CONFIG_WPA3_COMPAT
+    os_free(buf2);
+#endif
     os_memcpy(reply->key_nonce, nonce, WPA_NONCE_LEN);
 
     wpa_printf(MSG_DEBUG, "WPA Send EAPOL-Key 2/4");
@@ -702,7 +752,10 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
             wpa_printf(MSG_DEBUG, "WPA: Failed to get random data for SNonce");
             goto failed;
         }
-
+#ifdef CONFIG_WPA3_COMPAT
+        if (wpa_sm_rsn_overriding_supported(sm))
+            rsn_set_snonce_cookie(sm->snonce);
+#endif
         sm->renew_snonce = 0;
         wpa_hexdump(MSG_DEBUG, "WPA: Renewed SNonce",
                 sm->snonce, WPA_NONCE_LEN);
@@ -1183,6 +1236,49 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
         return -1;
     }
 
+#ifdef CONFIG_WPA3_COMPAT
+    if (sm->proto == WPA_PROTO_RSN && wpa_sm_rsn_overriding_supported(sm)) {
+        if ((sm->ap_rsne_override && !ie->rsne_override) ||
+                (!sm->ap_rsne_override && ie->rsne_override) ||
+                (sm->ap_rsne_override && ie->rsne_override &&
+                 (sm->ap_rsne_override_len != ie->rsne_override_len ||
+                  os_memcmp(sm->ap_rsne_override, ie->rsne_override,
+                      sm->ap_rsne_override_len) != 0))) {
+            wpa_msg(sm->ctx->msg_ctx, MSG_INFO,
+                    "RSN: RSNE Override element mismatch between Beacon/ProbeResp and EAPOL-Key msg 3/4");
+            wpa_hexdump(MSG_INFO,
+                    "RSNE Override element in Beacon/ProbeResp",
+                    sm->ap_rsne_override,
+                    sm->ap_rsne_override_len);
+            wpa_hexdump(MSG_INFO,
+                    "RSNE Override element in EAPOL-Key msg 3/4",
+                    ie->rsne_override, ie->rsne_override_len);
+            wpa_sm_deauthenticate(sm,
+                    WLAN_REASON_IE_IN_4WAY_DIFFERS);
+            return -1;
+        }
+
+        if ((sm->ap_rsnxe_override && !ie->rsnxe_override) ||
+                (!sm->ap_rsnxe_override && ie->rsnxe_override) ||
+                (sm->ap_rsnxe_override && ie->rsnxe_override &&
+                 (sm->ap_rsnxe_override_len != ie->rsnxe_override_len ||
+                  os_memcmp(sm->ap_rsnxe_override, ie->rsnxe_override,
+                      sm->ap_rsnxe_override_len) != 0))) {
+            wpa_msg(sm->ctx->msg_ctx, MSG_INFO,
+                    "RSN: RSNXE Override element mismatch between Beacon/ProbeResp and EAPOL-Key msg 3/4");
+            wpa_hexdump(MSG_INFO,
+                    "RSNXE Override element in Beacon/ProbeResp",
+                    sm->ap_rsnxe_override,
+                    sm->ap_rsnxe_override_len);
+            wpa_hexdump(MSG_INFO,
+                    "RSNXE Override element in EAPOL-Key msg 3/4",
+                    ie->rsnxe_override, ie->rsnxe_override_len);
+            wpa_sm_deauthenticate(sm,
+                    WLAN_REASON_IE_IN_4WAY_DIFFERS);
+            return -1;
+        }
+    }
+#endif
     return 0;
 }
 
@@ -1263,6 +1359,133 @@ static void wpa_sm_set_seq(struct wpa_sm *sm, struct wpa_eapol_key *key, u8 ispt
     memcpy(seq, key_rsc, WPA_KEY_RSC_LEN);
 }
 
+#ifdef CONFIG_IEEE80211R
+
+static int ft_validate_mdie(struct wpa_sm *sm,
+                            const unsigned char *src_addr,
+                            struct wpa_eapol_ie_parse *ie,
+                            const u8 *assoc_resp_mdie)
+{
+        struct rsn_mdie *mdie;
+
+        mdie = (struct rsn_mdie *) (ie->mdie + 2);
+        if (ie->mdie == NULL || ie->mdie_len < 2 + sizeof(*mdie) ||
+            os_memcmp(mdie->mobility_domain, sm->mobility_domain,
+                      MOBILITY_DOMAIN_ID_LEN) != 0) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: MDIE in msg 3/4 did "
+                        "not match with the current mobility domain");
+                return -1;
+        }
+
+        if (assoc_resp_mdie &&
+            (assoc_resp_mdie[1] != ie->mdie[1] ||
+             os_memcmp(assoc_resp_mdie, ie->mdie, 2 + ie->mdie[1]) != 0)) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: MDIE mismatch");
+                wpa_hexdump(MSG_DEBUG, "FT: MDIE in EAPOL-Key msg 3/4",
+                            ie->mdie, 2 + ie->mdie[1]);
+                wpa_hexdump(MSG_DEBUG, "FT: MDIE in (Re)Association Response",
+                            assoc_resp_mdie, 2 + assoc_resp_mdie[1]);
+                return -1;
+        }
+
+        return 0;
+}
+
+
+static int ft_validate_ftie(struct wpa_sm *sm,
+                            const unsigned char *src_addr,
+                            struct wpa_eapol_ie_parse *ie,
+                            const u8 *assoc_resp_ftie)
+{
+        if (ie->ftie == NULL) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                        "FT: No FTIE in EAPOL-Key msg 3/4");
+                return -1;
+        }
+
+        if (assoc_resp_ftie == NULL)
+                return 0;
+
+        if (assoc_resp_ftie[1] != ie->ftie[1] ||
+            os_memcmp(assoc_resp_ftie, ie->ftie, 2 + ie->ftie[1]) != 0) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: FTIE mismatch");
+                wpa_hexdump(MSG_DEBUG, "FT: FTIE in EAPOL-Key msg 3/4",
+                            ie->ftie, 2 + ie->ftie[1]);
+                wpa_hexdump(MSG_DEBUG, "FT: FTIE in (Re)Association Response",
+                            assoc_resp_ftie, 2 + assoc_resp_ftie[1]);
+                return -1;
+        }
+
+        return 0;
+}
+
+
+static int ft_validate_rsnie(struct wpa_sm *sm,
+                             const unsigned char *src_addr,
+                             struct wpa_eapol_ie_parse *ie)
+{
+        struct wpa_ie_data rsn;
+
+        if (!ie->rsn_ie)
+                return 0;
+
+        /*
+         * Verify that PMKR1Name from EAPOL-Key message 3/4
+         * matches with the value we derived.
+         */
+        if (wpa_parse_wpa_ie_rsn(ie->rsn_ie, ie->rsn_ie_len, &rsn) < 0 ||
+            rsn.num_pmkid != 1 || rsn.pmkid == NULL) {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "FT: No PMKR1Name in "
+                        "FT 4-way handshake message 3/4");
+                return -1;
+        }
+
+        if (os_memcmp_const(rsn.pmkid, sm->pmk_r1_name, WPA_PMK_NAME_LEN) != 0)
+        {
+                wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                        "FT: PMKR1Name mismatch in "
+                        "FT 4-way handshake message 3/4");
+                wpa_hexdump(MSG_DEBUG, "FT: PMKR1Name from Authenticator",
+                            rsn.pmkid, WPA_PMK_NAME_LEN);
+                wpa_hexdump(MSG_DEBUG, "FT: Derived PMKR1Name",
+                            sm->pmk_r1_name, WPA_PMK_NAME_LEN);
+                return -1;
+        }
+
+        return 0;
+}
+
+static int wpa_supplicant_validate_ie_ft(struct wpa_sm *sm,
+                                         const unsigned char *src_addr,
+                                         struct wpa_eapol_ie_parse *ie)
+{
+    const u8 *pos, *end, *mdie = NULL, *ftie = NULL;
+
+    if (sm->assoc_resp_ies) {
+        pos = sm->assoc_resp_ies;
+        end = pos + sm->assoc_resp_ies_len;
+        while (end - pos > 2) {
+               if (2 + pos[1] > end -pos)
+                   break;
+               switch (*pos) {
+               case WLAN_EID_MOBILITY_DOMAIN:
+                       mdie = pos;
+                       break;
+               case WLAN_EID_FAST_BSS_TRANSITION:
+                       ftie = pos;
+                       break;
+               }
+               pos += 2 + pos[1];
+        }
+    }
+    if (ft_validate_mdie(sm, src_addr, ie, mdie) < 0 ||
+        ft_validate_ftie(sm, src_addr, ie, ftie) < 0 ||
+        ft_validate_rsnie(sm, src_addr, ie) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#endif /* CONFIG_IEEE80211R */
 static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
                       struct wpa_eapol_key *key,
                       u16 ver, const u8 *key_data,
@@ -1276,10 +1499,24 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 
     key_info = WPA_GET_BE16(key->key_info);
 
-    if (wpa_supplicant_parse_ies(key_data, key_data_len, &ie) < 0)
+    if (wpa_supplicant_parse_ies(key_data, key_data_len, &ie) < 0) {
         goto failed;
-    if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0)
+    }
+#ifdef CONFIG_IEEE80211R
+    if (wpa_key_mgmt_ft(sm->key_mgmt) && wpa_supplicant_validate_ie_ft(sm, sm->bssid, &ie) < 0) {
         goto failed;
+    }
+#endif /* CONFIG_IEEE80211R */
+    if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0) {
+        goto failed;
+    }
+
+    if (os_memcmp(sm->anonce, key->key_nonce, WPA_NONCE_LEN) != 0) {
+        wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+                "WPA: ANonce from message 1 of 4-Way Handshake differs from 3 of 4-Way Handshake - drop packet (src="
+                MACSTR ")", MAC2STR(sm->bssid));
+        goto failed;
+    }
 
     if (ie.gtk && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
         wpa_printf(MSG_DEBUG, "WPA: GTK IE in unencrypted key data");
@@ -1326,10 +1563,10 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
     (sm->gd).gtk_len=0; //used as flag if gtk is installed in callback
     if (ie.gtk) {
         wpa_sm_set_seq(sm, key, 0);
-           if (wpa_supplicant_pairwise_gtk(sm,
+        if (wpa_supplicant_pairwise_gtk(sm,
                     ie.gtk, ie.gtk_len, key_info) < 0) {
-        wpa_printf(MSG_DEBUG, "RSN: Failed to configure GTK");
-        goto failed;
+            wpa_printf(MSG_DEBUG, "RSN: Failed to configure GTK");
+            goto failed;
         }
     }
 
@@ -1340,6 +1577,7 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 
     if (ie.transition_disable) {
         wpa_supplicant_transition_disable(sm, ie.transition_disable[0]);
+	sm->transition_disable = ie.transition_disable[0];
     }
 
     if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL && sm->use_ext_key_id) {
@@ -1355,6 +1593,11 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 
 failed:
     wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
+}
+
+u8 wpa_sm_get_transition_disable(struct wpa_sm *sm)
+{
+    return sm->transition_disable;
 }
 
 static int wpa_supplicant_activate_ptk(struct wpa_sm *sm)
@@ -1388,7 +1631,7 @@ static int wpa_supplicant_activate_ptk(struct wpa_sm *sm)
 
 static int wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
 {
-       u16 key_info=sm->key_info;
+    u16 key_info = sm->key_info;
 
     if (sm->key_install && key_info & WPA_KEY_INFO_INSTALL) {
         if (sm->use_ext_key_id) {
@@ -1447,7 +1690,7 @@ static int wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
     return 0;
 
 failed:
-       return WLAN_REASON_UNSPECIFIED;
+    return WLAN_REASON_UNSPECIFIED;
 }
 
 static int wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm,
@@ -1766,7 +2009,7 @@ static int wpa_supplicant_decrypt_key_data(struct wpa_sm *sm,
         *key_data_len -= 8; /* AES-WRAP adds 8 bytes */
         /*replaced by xxx to remove malloc*/
         buf = ((u8 *) (key+1))+ 8;
-             /*
+        /*
         buf = os_wifi_malloc(keydatalen);
         if (buf == NULL) {
             wpa_printf(MSG_DEBUG, "WPA: No memory for "
@@ -1873,8 +2116,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
 
     hdr = (struct ieee802_1x_hdr *) tmp;
     key = (struct wpa_eapol_key *) (hdr + 1);
-    key192 = (struct wpa_eapol_key_192 *)
-            (tmp + sizeof(struct ieee802_1x_hdr));
+    key192 = (struct wpa_eapol_key_192 *)(tmp + sizeof(struct ieee802_1x_hdr));
     if (mic_len == 24)
         key_data = (u8 *) (key192 + 1);
     else
@@ -2089,7 +2331,7 @@ void wpa_sm_set_state(enum wpa_states state)
 {
     struct wpa_sm *sm = &gWpaSm;
     if(WPA_MIC_FAILURE==WPA_SM_STATE(sm))
-    eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
     sm->wpa_state= state;
 }
 
@@ -2180,14 +2422,75 @@ void wpa_sm_deinit(void)
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
     sm->pmksa = NULL;
+    os_free(sm->assoc_rsnxe);
+    sm->assoc_rsnxe = NULL;
+    os_free(sm->ap_rsn_ie);
+    sm->ap_rsn_ie = NULL;
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
-    os_free(sm->assoc_rsnxe);
+#ifdef CONFIG_WPA3_COMPAT
+    os_free(sm->ap_rsne_override);
+    sm->ap_rsne_override = NULL;
+    os_free(sm->ap_rsnxe_override);
+    sm->ap_rsnxe_override = NULL;
+#endif
     wpa_sm_drop_sa(sm);
-    sm->assoc_rsnxe = NULL;
     memset(sm, 0, sizeof(*sm));
 }
 
+/**
+ * wpa_sm_set_param - Set WPA state machine parameters
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @param: Parameter field
+ * @value: Parameter value
+ * Returns: 0 on success, -1 on failure
+ */
+#ifdef CONFIG_WPA3_COMPAT
+int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
+        unsigned int value)
+{
+    int ret = 0;
+
+    if (sm == NULL)
+        return -1;
+
+    switch (param) {
+    case WPA_PARAM_RSN_OVERRIDE:
+        sm->rsn_override = value;
+        break;
+    case WPA_PARAM_RSN_OVERRIDE_SUPPORT:
+        sm->rsn_override_support = value;
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+#endif
+
+#ifdef CONFIG_WPA3_COMPAT
+static const u8 * wpa_sm_get_ap_rsne(struct wpa_sm *sm, size_t *len)
+{
+    if (sm->rsn_override == RSN_OVERRIDE_RSNE_OVERRIDE) {
+        *len = sm->ap_rsne_override_len;
+        return sm->ap_rsne_override;
+    }
+    *len = sm->ap_rsn_ie_len;
+    return sm->ap_rsn_ie;
+}
+#endif
+
+#ifdef CONFIG_WPA3_COMPAT
+bool wpa_sm_rsn_overriding_supported(struct wpa_sm *sm)
+{
+    const u8 *rsne;
+    size_t rsne_len;
+
+    rsne = wpa_sm_get_ap_rsne(sm, &rsne_len);
+
+    return sm->rsn_override_support && rsne;
+}
+#endif
 
 #ifdef ESP_SUPPLICANT
 /**
@@ -2293,6 +2596,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
         sm->key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY; /* for WPA3 PSK */
     } else if (auth_mode == WPA3_AUTH_DPP) {
         sm->key_mgmt = WPA_KEY_MGMT_DPP;
+    } else if (auth_mode == WPA3_AUTH_FT_SAE) {
+        sm->key_mgmt = WPA_KEY_MGMT_FT_SAE;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2320,22 +2625,24 @@ void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pm
     }
 }
 
-int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
+int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_t group_cipher, char *passphrase, uint8_t *ssid, int ssid_len)
 {
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
     bool use_pmk_cache = !esp_wifi_skip_supp_pmkcaching();
-    u8 assoc_rsnxe[20];
-    size_t assoc_rsnxe_len = sizeof(assoc_rsnxe);
+    uint8_t assoc_ie[128] = {0};
+    uint16_t assoc_ie_len = sizeof(assoc_ie);
     bool reassoc_same_ess = false;
     int try_opportunistic = 0;
+    const u8 *ie = NULL;
+    uint8_t *pos = NULL;
 
     /* Incase AP has changed it's SSID, don't try with PMK caching for SAE connection */
     /* Ideally we should use network_ctx for this purpose however currently network profile block
      * is part of libraries,
      * TODO Correct this in future during NVS restructuring */
     if ((sm->key_mgmt == WPA_KEY_MGMT_SAE ||
-         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) &&
+         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) &&
         (os_memcmp(sm->bssid, bssid, ETH_ALEN) == 0) &&
         (os_memcmp(sm->ssid, ssid, ssid_len) != 0)) {
         use_pmk_cache = false;
@@ -2367,11 +2674,11 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         }
     }
     if (wpa_key_mgmt_supports_caching(sm->key_mgmt) && use_pmk_cache) {
-	if (reassoc_same_ess && wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
+        if (reassoc_same_ess && wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
             pmksa_cache_set_current(sm, NULL, (const u8*) bssid, (void*)sm->network_ctx, try_opportunistic);
-	} else {
+        } else {
             pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, try_opportunistic);
-	}
+        }
         wpa_sm_set_pmk_from_pmksa(sm);
     } else {
         if (pmksa) {
@@ -2388,9 +2695,9 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         sm->pmf_cfg = wifi_cfg.sta.pmf_cfg;
         sm->mgmt_group_cipher = cipher_type_map_public_to_supp(mgmt_cipher);
         if (sm->mgmt_group_cipher == WPA_CIPHER_NONE) {
-                wpa_printf(MSG_ERROR, "mgmt_cipher %d not supported", mgmt_cipher);
-                return -1;
-	}
+            wpa_printf(MSG_ERROR, "mgmt_cipher %d not supported", mgmt_cipher);
+            return -1;
+        }
 #ifdef CONFIG_SUITEB192
         extern bool g_wpa_suiteb_certification;
         if (is_wpa2_enterprise_connection() && g_wpa_suiteb_certification) {
@@ -2418,9 +2725,9 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     }
 #endif
 #ifdef CONFIG_IEEE80211R
-    if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+    if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) {
         const u8 *ie, *md = NULL;
-        struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, (uint8_t *)bssid);
+        struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
         if (!bss) {
             return -1;
         }
@@ -2447,24 +2754,80 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         return -1;
     sm->assoc_wpa_ie_len = res;
 
-    const u8 *rsnxe;
-    rsnxe = esp_wifi_sta_get_rsnxe((u8*)bssid);
-    wpa_sm_set_ap_rsnxe(rsnxe, rsnxe ? (rsnxe[1] + 2) : 0);
+    ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
+    wpa_sm_set_ap_rsn_ie(sm, ie, ie ? (ie[1] + 2) : 0);
+    ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSNX);
+    wpa_sm_set_ap_rsnxe(sm, ie, ie ? (ie[1] + 2) : 0);
 
-    res = wpa_gen_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
+#ifdef CONFIG_WPA3_COMPAT
+    ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
+    wpa_sm_set_ap_rsne_override(sm, ie, ie ? (ie[1] + 2) : 0);
+    ie = esp_wifi_sta_get_ie(bssid, WFA_RSNXE_OVERRIDE_OUI_TYPE);
+    wpa_sm_set_ap_rsnxe_override(sm, ie, ie ? (ie[1] + 2) : 0);
+#endif
+
+    pos = assoc_ie;
+    res = wpa_gen_rsnxe(sm, pos, assoc_ie_len);
     if (res < 0)
         return -1;
-    assoc_rsnxe_len = res;
-    res = wpa_sm_set_assoc_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
-    if (res < 0)
+
+    assoc_ie_len = res;
+    res = wpa_sm_set_assoc_rsnxe(sm, pos, assoc_ie_len);
+    if (res < 0) {
         return -1;
-    esp_set_assoc_ie((uint8_t *)bssid, assoc_rsnxe, assoc_rsnxe_len, true);
+    }
+    pos += assoc_ie_len;
+
+#ifdef CONFIG_WPA3_COMPAT
+    wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE_SUPPORT,
+            esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_STA));
+    wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE,
+            RSN_OVERRIDE_NOT_USED);
+    ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
+
+    if (esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_STA) && ie) {
+        enum rsn_selection_variant variant = RSN_SELECTION_RSNE;
+
+        if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4) {
+            u32 type;
+
+            type = WPA_GET_BE32(&ie[2]);
+            if (type == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
+                variant = RSN_SELECTION_RSNE_OVERRIDE;
+                wpa_sm_set_param(sm,
+                        WPA_PARAM_RSN_OVERRIDE,
+                        RSN_OVERRIDE_RSNE_OVERRIDE);
+            }
+        }
+        /* Indicate support for RSN overriding */
+        *pos++ = WLAN_EID_VENDOR_SPECIFIC;
+        *pos++ = 4 + 1;
+        WPA_PUT_BE32(pos, RSN_SELECTION_IE_VENDOR_TYPE);
+        pos += 4;
+        *pos = variant;
+        assoc_ie_len += 2 + 4 + 1;
+    }
+#endif
+
+    wpa_hexdump(MSG_DEBUG, "WPA: ASSOC IE LEN", assoc_ie, assoc_ie_len);
+    esp_set_assoc_ie(bssid, assoc_ie, assoc_ie_len, true);
+
+    if (sm->ap_rsnxe != NULL) {
+#ifdef CONFIG_SAE_PK
+        const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
+        if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
+                sae_pk_valid_password((const char*)pw)) {
+            sm->sae_pk = true;
+        }
+#endif /* CONFIG_SAE_PK */
+    }
+
     os_memset(sm->ssid, 0, sizeof(sm->ssid));
     os_memcpy(sm->ssid, ssid, ssid_len);
     sm->ssid_len = ssid_len;
     wpa_set_passphrase(passphrase, ssid, ssid_len);
 #ifdef CONFIG_MBO
-    if (!mbo_bss_profile_match((u8 *)bssid))
+    if (!mbo_bss_profile_match(bssid))
         return -1;
 #endif
 
@@ -2477,8 +2840,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 /*
  *  Call after set ssid since we calc pmk inside this routine directly
  */
-  void
-wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
+void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
 {
     struct wifi_ssid *sta_ssid = esp_wifi_sta_get_prof_ssid_internal();
     struct wpa_sm *sm = &gWpaSm;
@@ -2492,7 +2854,8 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         sm->key_mgmt == WPA_KEY_MGMT_OWE ||
         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY ||
-        sm->key_mgmt == WPA_KEY_MGMT_DPP)
+        sm->key_mgmt == WPA_KEY_MGMT_DPP ||
+        sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */
@@ -2511,7 +2874,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     }
 
     if (sm->key_mgmt == WPA_KEY_MGMT_IEEE8021X) {
-    /* TODO nothing */
+        /* TODO nothing */
     } else {
         memcpy(sm->pmk, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         sm->pmk_len = PMK_LEN;
@@ -2523,18 +2886,17 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
 #endif /* CONFIG_IEEE80211R */
 }
 
-  void
-set_assoc_ie(u8 * assoc_buf)
+void set_assoc_ie(u8 * assoc_buf)
 {
     struct wpa_sm *sm = &gWpaSm;
 
     sm->assoc_wpa_ie = assoc_buf + 2;
     //wpa_ie insert OUI 4 byte before ver, but RSN have 2 bytes of RSN capability,
     // so wpa_ie have two more bytes than rsn_ie
-    if ( sm->proto == WPA_PROTO_WPA)
-         sm->assoc_wpa_ie_len = ASSOC_IE_LEN;
+    if (sm->proto == WPA_PROTO_WPA)
+        sm->assoc_wpa_ie_len = ASSOC_IE_LEN;
     else
-         sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
+        sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
 
     wpa_config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
 }
@@ -2616,7 +2978,7 @@ int wpa_michael_mic_failure(u16 isunicast)
          * Need to wait for completion of request frame. We do not get
          * any callback for the message completion, so just wait a
          * short while and hope for the best. */
-         os_sleep(0, 10000);
+        os_sleep(0, 10000);
 
         /*deauthenticate AP*/
 
@@ -2740,13 +3102,57 @@ struct wpa_sm * get_wpa_sm(void)
     return &gWpaSm;
 }
 
-int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
+/**
+ * wpa_sm_set_ap_rsn_ie - Set AP RSN IE from Beacon/ProbeResp
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @ie: Pointer to IE data (starting from id)
+ * @len: IE length
+ * Returns: 0 on success, -1 on failure
+ *
+ * Inform WPA state machine about the RSN IE used in Beacon / Probe Response
+ * frame.
+ */
+int wpa_sm_set_ap_rsn_ie(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
-    struct wpa_sm *sm = &gWpaSm;
+    if (sm == NULL)
+        return -1;
+
+    os_free(sm->ap_rsn_ie);
+    if (ie == NULL || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                "WPA: clearing AP RSN IE");
+        sm->ap_rsn_ie = NULL;
+        sm->ap_rsn_ie_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSN IE", ie, len);
+        sm->ap_rsn_ie = os_memdup(ie, len);
+        if (sm->ap_rsn_ie == NULL)
+            return -1;
+
+        sm->ap_rsn_ie_len = len;
+    }
+
+    return 0;
+}
+
+/**
+ * wpa_sm_set_ap_rsnxe - Set AP RSNXE from Beacon/ProbeResp
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @ie: Pointer to IE data (starting from id)
+ * @len: IE length
+ * Returns: 0 on success, -1 on failure
+ *
+ * Inform WPA state machine about the RSNXE used in Beacon / Probe Response
+ * frame.
+ */
+int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
 
     os_free(sm->ap_rsnxe);
     if (!ie || len == 0) {
-        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: clearing AP RSNXE");
         sm->ap_rsnxe = NULL;
         sm->ap_rsnxe_len = 0;
     } else {
@@ -2758,18 +3164,62 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
         sm->ap_rsnxe_len = len;
     }
 
-    if (sm->ap_rsnxe != NULL) {
-        sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
-#ifdef CONFIG_SAE_PK
-        const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
-        if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
-                sae_pk_valid_password((const char*)pw)) {
-            sm->sae_pk = true;
-        }
-#endif /* CONFIG_SAE_PK */
-    }
     return 0;
 }
+
+
+#ifdef CONFIG_WPA3_COMPAT
+int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
+
+    os_free(sm->ap_rsne_override);
+    if (!ie || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                "RSN: Clearing AP RSNE Override element");
+        sm->ap_rsne_override = NULL;
+        sm->ap_rsne_override_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "RSN: Set AP RSNE Override element",
+                ie, len);
+        sm->ap_rsne_override = os_memdup(ie, len);
+        if (!sm->ap_rsne_override)
+            return -1;
+
+        sm->ap_rsne_override_len = len;
+    }
+
+    return 0;
+}
+#endif
+
+
+#ifdef CONFIG_WPA3_COMPAT
+int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
+
+    os_free(sm->ap_rsnxe_override);
+    if (!ie || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                "RSN: Clearing AP RSNXE Override element");
+        sm->ap_rsnxe_override = NULL;
+        sm->ap_rsnxe_override_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "RSN: Set AP RSNXE Override element",
+                ie, len);
+        sm->ap_rsnxe_override = os_memdup(ie, len);
+        if (!sm->ap_rsnxe_override)
+            return -1;
+
+        sm->ap_rsnxe_override_len = len;
+    }
+
+    return 0;
+}
+#endif
 
 
 int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)

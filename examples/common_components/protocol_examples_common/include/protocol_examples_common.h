@@ -13,9 +13,6 @@
 #include "esp_err.h"
 #if !CONFIG_IDF_TARGET_LINUX
 #include "esp_netif.h"
-#if CONFIG_EXAMPLE_CONNECT_ETHERNET
-#include "esp_eth.h"
-#endif
 #endif // !CONFIG_IDF_TARGET_LINUX
 
 #ifdef __cplusplus
@@ -111,7 +108,7 @@ esp_err_t example_disconnect(void);
 /**
  * @brief Configure stdin and stdout to use blocking I/O
  *
- * This helper function is used in ASIO examples. It wraps installing the
+ * This helper function is used in some examples. It wraps installing the
  * UART driver and configuring VFS layer to use UART driver for console I/O.
  */
 esp_err_t example_configure_stdin_stdout(void);
@@ -135,15 +132,6 @@ esp_netif_t *get_example_netif_from_desc(const char *desc);
  */
 void example_register_wifi_connect_commands(void);
 #endif
-
-#if CONFIG_EXAMPLE_CONNECT_ETHERNET
-/**
- * @brief Get the example Ethernet driver handle
- *
- * @return esp_eth_handle_t
- */
-esp_eth_handle_t get_example_eth_handle(void);
-#endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
 
 #else
 static inline esp_err_t example_connect(void) {return ESP_OK;}

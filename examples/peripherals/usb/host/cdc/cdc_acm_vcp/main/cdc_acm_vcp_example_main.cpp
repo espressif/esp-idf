@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -111,7 +111,7 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Installing USB Host");
     usb_host_config_t host_config = {};
     host_config.skip_phy_setup = false;
-    host_config.intr_flags = ESP_INTR_FLAG_LEVEL1;
+    host_config.intr_flags = ESP_INTR_FLAG_LOWMED;
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 
     // Create a task that will handle USB library events

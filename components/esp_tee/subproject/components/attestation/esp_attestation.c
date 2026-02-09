@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "hal/efuse_hal.h"
-
-#include "mbedtls/sha256.h"
-
+#include "psa/crypto.h"
 #include "esp_attestation.h"
 #include "esp_attestation_utils.h"
 
@@ -63,33 +61,28 @@ static esp_err_t fetch_device_id(uint8_t *devid_buf)
         goto exit;
     }
 
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-
-    int ret = mbedtls_sha256_starts(&ctx, false);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)mac_addr, sizeof(mac_addr));
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    status = psa_hash_update(&hash_op, mac_addr, sizeof(mac_addr));
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    uint8_t digest[SHA256_DIGEST_SZ] = {0};
-    ret = mbedtls_sha256_finish(&ctx, digest);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    size_t digest_len = 0;
+    status = psa_hash_finish(&hash_op, devid_buf, SHA256_DIGEST_SZ, &digest_len);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    memcpy(devid_buf, digest, SHA256_DIGEST_SZ);
-    mbedtls_sha256_free(&ctx);
+    if (digest_len != SHA256_DIGEST_SZ) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    return ESP_OK;
 
 exit:
     return err;
@@ -172,10 +165,17 @@ exit:
     return err;
 }
 
-esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id, const char *psa_cert_ref,
-                                 uint8_t *token_buf, const size_t token_buf_size, uint32_t *token_len)
+esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge_size,
+                                 uint8_t *token_buf, size_t token_buf_size, size_t *token_size)
 {
-    if (token_buf == NULL || token_len == NULL || psa_cert_ref == NULL) {
+    if (auth_challenge == NULL || token_buf == NULL || token_buf_size == 0 || token_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (challenge_size != PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32 &&
+            challenge_size != PSA_INITIAL_ATTEST_CHALLENGE_SIZE_48 &&
+            challenge_size != PSA_INITIAL_ATTEST_CHALLENGE_SIZE_64) {
+        ESP_LOGE(TAG, "Invalid challenge size");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -198,10 +198,13 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
 
     esp_att_token_cfg_t cfg = {
-        .nonce = nonce,
-        .client_id = client_id,
+        .auth_challenge = (uint8_t *)auth_challenge,
+        .challenge_size = challenge_size,
+        /* TODO: client_id should point to the API caller (REE or TEE) */
+        .client_id = 0x0FACADE0,
+        /* TODO: PSA cert ref should be configurable or derived from system config */
+        .psa_cert_ref = ESP_ATT_TK_PSA_CERT_REF,
     };
-    memcpy(cfg.psa_cert_ref, psa_cert_ref, sizeof(cfg.psa_cert_ref));
 
     err = populate_att_token_cfg(&cfg, &keypair);
     if (err != ESP_OK) {
@@ -211,12 +214,9 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
 
     memset(token_buf, 0x00, token_buf_size);
 
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-
-    int ret = mbedtls_sha256_starts(&ctx, false);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
         return ESP_FAIL;
     }
 
@@ -236,9 +236,9 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
     json_gen_push_object_str(&jstr, "header", hdr_json);
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)hdr_json, hdr_len - 1);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    status = psa_hash_update(&hash_op, (const unsigned char *)hdr_json, hdr_len - 1);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
     free(hdr_json);
@@ -253,9 +253,9 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
     json_gen_push_object_str(&jstr, "eat", eat_json);
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)eat_json, eat_len - 1);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    status = psa_hash_update(&hash_op, (const unsigned char *)eat_json, eat_len - 1);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
     free(eat_json);
@@ -269,20 +269,20 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
     json_gen_push_object_str(&jstr, "public_key", pubkey_json);
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)pubkey_json, pubkey_len - 1);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    status = psa_hash_update(&hash_op, (const unsigned char *)pubkey_json, pubkey_len - 1);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
     free(pubkey_json);
 
     uint8_t digest[SHA256_DIGEST_SZ] = {0};
-    ret = mbedtls_sha256_finish(&ctx, digest);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
+    size_t digest_len = 0;
+    status = psa_hash_finish(&hash_op, digest, sizeof(digest), &digest_len);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
         return ESP_FAIL;
     }
-    mbedtls_sha256_free(&ctx);
 
     char *sign_json = NULL;
     int sign_len = -1;
@@ -295,10 +295,30 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     free(sign_json);
 
     json_gen_end_object(&jstr);
-    *token_len = json_gen_str_end(&jstr);
+    *token_size = json_gen_str_end(&jstr);
     err = ESP_OK;
 
 exit:
     free_sw_claim_list();
     return err;
+}
+
+esp_err_t esp_att_get_token_size(size_t challenge_size, size_t *token_size)
+{
+    if (token_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    switch (challenge_size) {
+    case PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32:
+    case PSA_INITIAL_ATTEST_CHALLENGE_SIZE_48:
+    case PSA_INITIAL_ATTEST_CHALLENGE_SIZE_64:
+        *token_size = ESP_ATT_TK_MIN_SIZE;
+        break;
+    default:
+        *token_size = UINT32_MAX;
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
 }

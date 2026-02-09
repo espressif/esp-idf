@@ -5,3 +5,8 @@ components/esp_driver_i3c/test_apps/i3c_test_apps:
     - if: SOC_I3C_MASTER_SUPPORTED != 1
   depends_components:
     - esp_driver_i3c
+    - esp_driver_dma
+    - esp_driver_gpio
+    - esp_hw_support
+    - esp_hal_i3c
+    - soc

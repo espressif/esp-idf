@@ -7,6 +7,56 @@ This example shows how to create a GATT service with an attribute table defined 
 
 Please, check this [tutorial](tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md) for more information about this example.
 
+## Flow Diagram
+
+```
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                    GATT Server Initialization Flow                       │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+    ┌───────────────────┐
+    │   GATT Server     │
+    └─────────┬─────────┘
+              │
+              │  1. Define Attribute Table (gatt_db[])
+              │     ┌─────────────────────────────────────┐
+              │     │  [0] Service Declaration            │
+              │     │  [1] Char Declaration               │
+              │     │  [2] Char Value                     │
+              │     │  [3] CCCD (Notify Enable)           │
+              │     │  ...                                │
+              │     └─────────────────────────────────────┘
+              │
+              │  2. esp_ble_gatts_create_attr_tab()
+              │     - Create all attributes at once
+              │
+              │  3. ESP_GATTS_CREAT_ATTR_TAB_EVT
+              │     - Receive handle table
+              │
+              │  4. esp_ble_gatts_start_service()
+              │
+              │  5. Start Advertising
+              │
+              ▼
+    ┌───────────────────┐                         ┌───────────────────┐
+    │   GATT Server     │                         │   GATT Client     │
+    │   (Advertising)   │                         │                   │
+    └─────────┬─────────┘                         └─────────┬─────────┘
+              │                                             │
+              │                      Scan & Connect         │
+              │ <───────────────────────────────────────────│
+              │                                             │
+              │  Service Discovery                          │
+              │ ───────────────────────────────────────────>│
+              │                                             │
+              │  Read/Write/Notify Operations               │
+              │ <──────────────────────────────────────────>│
+              │                                             │
+    ┌─────────┴─────────┐                         ┌─────────┴─────────┐
+    │   GATT Server     │                         │   GATT Client     │
+    └───────────────────┘                         └───────────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

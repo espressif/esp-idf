@@ -23,5 +23,19 @@ def test_dvp(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
-def test_dvp_octal(dut: Dut) -> None:
+def test_dvp_driver(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'TEST DVP camera on esp32s3_eye' in case.name:
+            continue
+        case_tester.run_normal_case(case=case, reset=True)
+
+
+@pytest.mark.esp32s3_eye
+@pytest.mark.parametrize(
+    'config',
+    ['esp32s3_eye'],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_dvp_s3eye(dut: Dut) -> None:
     dut.run_all_single_board_cases()

@@ -11,7 +11,7 @@
 #include <sys/random.h>
 #include <esp_log.h>
 #include <esp_err.h>
-#include <mbedtls/sha1.h>
+#include <psa/crypto.h>
 #include <mbedtls/base64.h>
 #include <mbedtls/error.h>
 
@@ -143,37 +143,29 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     ESP_LOGD(TAG, LOG_FMT("Server key before encoding: %s"), server_raw_text);
 
-    /* Generate SHA-1 first and then encode to Base64 */
-    size_t key_len = strlen(server_raw_text);
-
-#if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    mbedtls_sha1_context ctx;
-    mbedtls_sha1_init(&ctx);
-
-    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
-        goto sha_end;
-    }
-
-    if ((ret = mbedtls_sha1_update(&ctx, (uint8_t *)server_raw_text, key_len)) != 0) {
-        goto sha_end;
-    }
-
-    if ((ret = mbedtls_sha1_finish(&ctx, server_key_hash)) != 0) {
-        goto sha_end;
-    }
-
-sha_end:
-    mbedtls_sha1_free(&ctx);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in calculating SHA1 sum , returned 0x%02X", ret);
+    /* Generate SHA-1 hash */
+    psa_hash_operation_t sha1_operation = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&sha1_operation, PSA_ALG_SHA_1);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup SHA-1 operation");
         return ESP_FAIL;
     }
-#else
-    ESP_LOGE(TAG, "Please enable CONFIG_MBEDTLS_SHA1_C or CONFIG_MBEDTLS_HARDWARE_SHA to support SHA1 operations");
-    return ESP_FAIL;
-#endif /* CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA */
 
+    status = psa_hash_update(&sha1_operation, (uint8_t *)server_raw_text, strlen(server_raw_text));
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to update SHA-1 hash");
+        psa_hash_abort(&sha1_operation);
+        return ESP_FAIL;
+    }
+
+    size_t hash_length;
+    status = psa_hash_finish(&sha1_operation, server_key_hash, sizeof(server_key_hash), &hash_length);
+    if (status != PSA_SUCCESS || hash_length != sizeof(server_key_hash)) {
+        ESP_LOGE(TAG, "Failed to finish SHA-1 hash");
+        return ESP_FAIL;
+    }
+
+    /* Encode to Base64 */
     size_t encoded_len = 0;
     mbedtls_base64_encode((uint8_t *)server_key_encoded, sizeof(server_key_encoded), &encoded_len,
                           server_key_hash, sizeof(server_key_hash));
@@ -257,7 +249,7 @@ static esp_err_t httpd_ws_check_req(httpd_req_t *req)
     return ESP_OK;
 }
 
-static esp_err_t httpd_ws_unmask_payload(uint8_t *payload, size_t len, const uint8_t *mask_key)
+static esp_err_t httpd_ws_unmask_payload(uint8_t *payload, size_t len, const uint8_t *mask_key, size_t mask_offset)
 {
     if (len < 1 || !payload) {
         ESP_LOGW(TAG, LOG_FMT("Invalid payload provided"));
@@ -265,13 +257,13 @@ static esp_err_t httpd_ws_unmask_payload(uint8_t *payload, size_t len, const uin
     }
 
     for (size_t idx = 0; idx < len; idx++) {
-        payload[idx] = (payload[idx] ^ mask_key[idx % 4]);
+        payload[idx] = (payload[idx] ^ mask_key[(idx + mask_offset) % 4]);
     }
 
     return ESP_OK;
 }
 
-esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t max_len)
+static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t *frame, size_t max_len, bool partial)
 {
     esp_err_t ret = httpd_ws_check_req(req);
     if (ret != ESP_OK) {
@@ -336,6 +328,8 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
                     ((uint64_t)length_bytes[6] <<  8U) |
                     ((uint64_t)length_bytes[7]));
         }
+        frame->left_len = frame->len;
+
         /* If this frame is masked, dump the mask as well */
         if (masked) {
             if (httpd_recv_with_opt(req, (char *)aux->mask_key, sizeof(aux->mask_key), HTTPD_RECV_OPT_BLOCKING) < sizeof(aux->mask_key)) {
@@ -349,20 +343,23 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
             return ESP_ERR_INVALID_STATE;
         }
     }
-    /* We only accept the incoming packet length that is smaller than the max_len (or it will overflow the buffer!) */
     /* If max_len is 0, regard it OK for userspace to get frame len */
+    if (max_len == 0) {
+        ESP_LOGD(TAG, "regard max_len == 0 is OK for user to get frame len");
+        return ESP_OK;
+    }
     if (frame->len > max_len) {
-        if (max_len == 0) {
-            ESP_LOGD(TAG, "regard max_len == 0 is OK for user to get frame len");
-            return ESP_OK;
+        /* When reading entire packet at once, we only accept the incoming packet length that is smaller than the max_len (or it will overflow the buffer!) */
+        if (!partial) {
+            ESP_LOGW(TAG, LOG_FMT("WS Message too long"));
+            return ESP_ERR_INVALID_SIZE;
         }
-        ESP_LOGW(TAG, LOG_FMT("WS Message too long"));
-        return ESP_ERR_INVALID_SIZE;
+        ESP_LOGD(TAG, LOG_FMT("WS Message too long. User will have to call read again"));
     }
 
     /* Receive buffer */
     /* If there's nothing to receive, return and stop here. */
-    if (frame->len == 0) {
+    if (frame->left_len == 0) {
         return ESP_OK;
     }
 
@@ -371,7 +368,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         return ESP_FAIL;
     }
 
-    size_t left_len = frame->len;
+    size_t left_len = (max_len < frame->left_len) ? max_len : frame->left_len;
     size_t offset = 0;
 
     while (left_len > 0) {
@@ -386,10 +383,21 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         ESP_LOGD(TAG, "Frame length: %"NEWLIB_NANO_COMPAT_FORMAT", Bytes Read: %"NEWLIB_NANO_COMPAT_FORMAT, NEWLIB_NANO_COMPAT_CAST(frame->len), NEWLIB_NANO_COMPAT_CAST(offset));
     }
 
+    size_t mask_offset = frame->len - frame->left_len;
+    frame->left_len -= offset;
+
     /* Unmask payload */
-    httpd_ws_unmask_payload(frame->payload, frame->len, aux->mask_key);
+    httpd_ws_unmask_payload(frame->payload, offset, aux->mask_key, mask_offset);
 
     return ESP_OK;
+}
+
+esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t max_len) {
+    return httpd_ws_recv_frame_internal(req, frame, max_len, false);
+}
+
+esp_err_t httpd_ws_recv_frame_part(httpd_req_t *req, httpd_ws_frame_t *frame, size_t max_len) {
+    return httpd_ws_recv_frame_internal(req, frame, max_len, true);
 }
 
 esp_err_t httpd_ws_send_frame(httpd_req_t *req, httpd_ws_frame_t *frame)

@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include "soc/cache_reg.h"
+#include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
@@ -758,6 +759,35 @@ static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask
 }
 
 /**
+ * Returns enabled buses for a given core
+ *
+ * @param cache_id    cache ID (when l1 cache is per core)
+ *
+ * @return State of enabled buses
+ */
+__attribute__((always_inline))
+static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
+{
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
+
+    uint32_t ibus_mask = REG_READ(CACHE_L1_ICACHE_CTRL_REG);
+    if (cache_id == 0) {
+        mask = (cache_bus_mask_t)(mask | ((!(ibus_mask & CACHE_L1_ICACHE_SHUT_IBUS0)) ? CACHE_BUS_IBUS0 : 0));
+    } else if (cache_id == 1) {
+        mask = (cache_bus_mask_t)(mask | ((!(ibus_mask & CACHE_L1_ICACHE_SHUT_IBUS1)) ? CACHE_BUS_IBUS0 : 0));
+    }
+
+    uint32_t dbus_mask = REG_READ(CACHE_L1_DCACHE_CTRL_REG);
+    if (cache_id == 0) {
+        mask = (cache_bus_mask_t)(mask | ((!(dbus_mask & CACHE_L1_DCACHE_SHUT_DBUS0)) ? CACHE_BUS_DBUS0 : 0));
+    } else if (cache_id == 1) {
+        mask = (cache_bus_mask_t)(mask | ((!(dbus_mask & CACHE_L1_DCACHE_SHUT_DBUS1)) ? CACHE_BUS_DBUS0 : 0));
+    }
+
+    return mask;
+}
+
+/**
  * Disable the Cache Buses
  *
  * @param bus_id      bus ID
@@ -813,42 +843,53 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     return valid;
 }
 
+/**
+ * Enable the Cache fail tracer
+ *
+ * @param cache_id    cache ID
+ * @param en          enable / disable
+ */
+static inline void cache_ll_l1_enable_fail_tracer(uint32_t cache_id, bool en)
+{
+    CACHE.trace_ena.l1_cache_trace_ena = en;
+}
+
 /*------------------------------------------------------------------------------
  * Interrupt
  *----------------------------------------------------------------------------*/
 /**
  * @brief Enable Cache access error interrupt
  *
- * @param cache_id    Cache ID, not used on C3. For compabitlity
+ * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  */
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
-    SET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG, mask);
+    CACHE.l1_cache_acs_fail_int_ena.val |= mask;
 }
 
 /**
  * @brief Clear Cache access error interrupt status
  *
- * @param cache_id    Cache ID, not used on C3. For compabitlity
+ * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  */
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
-    SET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_CLR_REG, mask);
+    CACHE.l1_cache_acs_fail_int_clr.val = mask;
 }
 
 /**
  * @brief Get Cache access error interrupt status
  *
- * @param cache_id    Cache ID, not used on C3. For compabitlity
+ * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  *
  * @return            Status mask
  */
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
-    return GET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_ST_REG, mask);
+    return CACHE.l1_cache_acs_fail_int_st.val & mask;
 }
 
 #ifdef __cplusplus

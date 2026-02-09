@@ -6,19 +6,22 @@
 
 #pragma once
 
-#include "hal/dma_types.h"
 #include "soc/soc_caps.h"
+#include "hal/dma_types.h"
+#include "hal/gdma_types.h"
 
 #if SOC_GDMA_SUPPORTED
-#include "soc/gdma_channel.h"
 #include "hal/gdma_ll.h"
 #endif /* SOC_GDMA_SUPPORTED */
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
+typedef enum {
+    CRYPTO_DMA_USER_AES, // DMA user for AES peripheral
+    CRYPTO_DMA_USER_SHA, // DMA user for SHA peripheral
+} crypto_dma_user_t;
 
 #if (SOC_AES_SUPPORT_DMA) || (SOC_SHA_SUPPORT_DMA)
 

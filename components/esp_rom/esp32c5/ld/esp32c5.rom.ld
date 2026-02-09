@@ -219,7 +219,7 @@ Cache_Suspend_Cache = 0x400006b4;
 Cache_Resume_Cache = 0x400006b8;
 Cache_Freeze_Enable = 0x400006bc;
 Cache_Freeze_Disable = 0x400006c0;
-Cache_Set_IDROM_MMU_Size = 0x400006c4;
+PROVIDE ( Cache_Set_IDROM_MMU_Size = 0x400006c4 );
 Cache_Get_IROM_MMU_End = 0x400006c8;
 Cache_Get_DROM_MMU_End = 0x400006cc;
 Cache_MMU_Init = 0x400006d0;
@@ -253,21 +253,21 @@ ets_clk_get_cpu_freq = 0x40000704;
  ***************************************/
 
 /* Functions */
-gpio_set_output_level = 0x40000708;
-gpio_get_input_level = 0x4000070c;
-gpio_matrix_in = 0x40000710;
-gpio_matrix_out = 0x40000714;
-gpio_bypass_matrix_in = 0x40000718;
-/* gpio_output_disable = 0x4000071c; */
-/* gpio_output_enable = 0x40000720; */
-gpio_pad_input_disable = 0x40000724;
-gpio_pad_input_enable = 0x40000728;
-gpio_pad_pulldown = 0x4000072c;
-gpio_pad_pullup = 0x40000730;
-gpio_pad_select_gpio = 0x40000734;
-gpio_pad_set_drv = 0x40000738;
-gpio_pad_unhold = 0x4000073c;
-gpio_pad_hold = 0x40000740;
+rom_gpio_set_output_level = 0x40000708;
+rom_gpio_get_input_level = 0x4000070c;
+rom_gpio_matrix_in = 0x40000710;
+rom_gpio_matrix_out = 0x40000714;
+rom_gpio_bypass_matrix_in = 0x40000718;
+rom_gpio_output_disable = 0x4000071c;
+rom_gpio_output_enable = 0x40000720;
+rom_gpio_pad_input_disable = 0x40000724;
+rom_gpio_pad_input_enable = 0x40000728;
+rom_gpio_pad_pulldown = 0x4000072c;
+rom_gpio_pad_pullup = 0x40000730;
+rom_gpio_pad_select_gpio = 0x40000734;
+rom_gpio_pad_set_drv = 0x40000738;
+rom_gpio_pad_unhold = 0x4000073c;
+rom_gpio_pad_hold = 0x40000740;
 
 
 /***************************************

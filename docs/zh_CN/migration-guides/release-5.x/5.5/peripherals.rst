@@ -1,17 +1,17 @@
-Peripherals
+外设
 ===========
 
-:link_to_translation:`zh_CN:[中文]`
+:link_to_translation:`en:[English]`
 
 .. only:: SOC_TOUCH_SENSOR_SUPPORTED
 
-    Touch Sensor
+    触摸传感器
     ------------
 
-    电容式触摸传感器的驱动已更新为 :doc:`Capacitive Touch Sensor <../../../api-reference/peripherals/cap_touch_sens>`.
+    电容式触摸传感器的驱动已更新为 :doc:`Capacitive Touch Sensor <../../../api-reference/peripherals/cap_touch_sens>`。
 
-    - The new driver is in ``esp_driver_touch_sens`` component and the include path is ``driver/touch_sens.h``.
-    - The legacy driver is still available in the previous include path ``driver/touch_sensor.h``.
+    - 新的驱动位于 ``esp_driver_touch_sens`` 组件中，包含路径为 ``driver/touch_sens.h``。
+    - 旧版驱动仍然可用，其包含路径为 ``driver/touch_sensor.h``。
 
     尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/touch_sensor.h``。但是，引用 ``driver/touch_sensor.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
 

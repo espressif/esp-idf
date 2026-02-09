@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3"}
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3", esp32h4="v3"}
 
 概述
 ------
@@ -30,6 +30,7 @@
 |           |  ESP32-S3    | 第二代触摸传感器，新增接近感应测量完成中断                             |
 +-----------+--------------+------------------------------------------------------------------------+
 |     V3    |  ESP32-P4    | 第三代触摸传感器，新增跳频扫描                                         |
+|           |  ESP32-H4    |                                                                        |
 +-----------+--------------+------------------------------------------------------------------------+
 
 测量原理
@@ -72,11 +73,11 @@
 - **触摸传感器控制器**：触摸传感器驱动的控制器，负责触摸传感器的配置和管理。
 - **触摸传感器通道**：具体的一路触摸传感器采样通道。一个触摸传感器模块具有多个通道，一般连接到触摸板上，用于测量该触摸板电容的变化。驱动中把对 **一个** 通道的采样称为 ``测量``，而对 **所有** 注册通道的 ``测量`` 称为一次 ``扫描``。
 
-.. only:: IDF_TARGET_TOUCH_SAMPLE_CFG_DESC
+.. only:: not esp32 and not esp32s2 and not esp32s3
 
   - **触摸传感器采样配置**：触摸传感器采样配置是驱动中对采样有关的硬件配置的统称。采样配置负责触摸传感器通道的采样，其配置决定了触摸通道的充放电次数、充放电频率、测量间隔等。{IDF_TARGET_NAME} 支持多套采样配置，支持跳频采样。
 
-.. only:: not IDF_TARGET_TOUCH_SAMPLE_CFG_DESC
+.. only:: esp32 or esp32s2 or esp32s3
 
   - **触摸传感器采样配置**：触摸传感器采样配置是驱动中对采样有关的硬件配置的统称。采样配置负责触摸传感器通道的采样，其配置决定了触摸通道的充放电次数、充放电频率、测量间隔等。{IDF_TARGET_NAME} 仅支持一套采样配置，不支持跳频采样。
 
@@ -310,7 +311,7 @@
 
 调用 :cpp:func:`touch_channel_read_data` 可读取每个通道不同种类的数据，例如基线值、经过滤波后的平滑值等。支持的数据类型请参考 :cpp:type:`touch_chan_data_type_t`。
 
-.. only:: SOC_TOUCH_SUPPORT_FREQ_HOP
+.. only:: not esp32 and not esp32s2 and not esp32s3
 
     {IDF_TARGET_NAME} 支持通过配置多套采样配置来实现跳频采样，:cpp:func:`touch_channel_read_data` 可一次性读出一个通道所有采样配置的测量值。根据配置的 :cpp:member:`touch_sensor_config_t::sample_cfg_num` 采样配置数量，第三个参数 (``*data``) 数据指针传入数组长度大于等于采样配置数量的数组指针即可，该函数会将所指定通道的所有采样配置的测量值存入该数组中。
 
@@ -373,11 +374,11 @@
 
     {IDF_TARGET_NAME} 支持接近感应功能。可通过调用 :cpp:func:`touch_sensor_config_proximity_sensing` 并配置 :cpp:type:`touch_proximity_config_t` 来注册接近感应功能。
 
-    .. only:: esp32p4
+    .. only:: not esp32s2 and not esp32s3
 
         由于接近感应引起的电容变化远小于物理触摸，PCB 上常用较大面积的铺铜来增大触摸通道的感应面积，另外需要在硬件上对接近感应通道进行多轮扫描并在驱动中进行累加来提高测量灵敏度。接近感应的灵敏度由测量轮数 :cpp:member:`touch_proximity_config_t::scan_times` 以及单次测量的充放电次数 :cpp:member:`touch_proximity_config_t::charge_times` 决定。测量轮数以及充放电次数越高，灵敏度越高，但是过高的灵敏度容易导致误触发，请选择适当的灵敏度来保证触发的稳定性。
 
-    .. only:: not esp32p4
+    .. only:: esp32s2 or esp32s3
 
         由于接近感应引起的电容变化远小于物理触摸，PCB 上常用较大面积的铺铜来增大触摸通道的感应面积，另外需要在硬件上对接近感应通道进行多轮扫描并在驱动中进行累加来提高测量灵敏度。接近感应的灵敏度由测量轮数 :cpp:member:`touch_proximity_config_t::scan_times` 决定。测量轮数以及充放电次数越高，灵敏度越高，但是过高的灵敏度容易导致误触发，请选择适当的灵敏度来保证触发的稳定性。
 
@@ -495,7 +496,7 @@
     :esp32s2 or esp32s3: - 电流偏置类型设为自偏置：通过设置 :cpp:member:`touch_sensor_sample_config_t::bias_type` 为 :cpp:enumerator:`touch_bias_type_t::TOUCH_BIAS_TYPE_SELF` 来使用功耗更低的自偏置。
     :esp32 or esp32s2 or esp32s3: - 降低充放电幅度：:cpp:member:`touch_sensor_sample_config_t::charge_volt_lim_l` 和 :cpp:member:`touch_sensor_sample_config_t::charge_volt_lim_h` 用于指定放电时的电压下限和充电时的电压上限，同时降低这两个电压值以及上下限之间的压差可降低功耗。
     :esp32 or esp32s2 or esp32s3: - 降低电流偏置强度：降低 :cpp:member:`touch_channel_config_t::charge_speed` 充放电速度（即电流偏置的电流大小）从而降低功耗。
-    :esp32p4: - 降低 LDO 电压偏置强度：降低 :cpp:member:`touch_channel_config_t::bias_volt` 从而降低功耗。
+    :not esp32 and not esp32s2 and not esp32s3: - 降低 LDO 电压偏置强度：降低 :cpp:member:`touch_channel_config_t::bias_volt` 从而降低功耗。
 
 API 参考
 ----------

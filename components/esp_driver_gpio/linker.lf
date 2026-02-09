@@ -7,7 +7,7 @@ entries:
         gpio: gpio_get_level (noflash)
 
 [mapping:gpio_hal]
-archive: libhal.a
+archive: libesp_hal_gpio.a
 entries:
     if GPIO_CTRL_FUNC_IN_IRAM = y:
         gpio_hal: gpio_hal_intr_disable (noflash)

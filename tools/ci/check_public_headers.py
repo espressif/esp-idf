@@ -11,14 +11,11 @@ import json
 import os
 import queue
 import re
+import shutil
 import subprocess
 import tempfile
 from threading import Event
 from threading import Thread
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
 from typing import Union
 
 
@@ -38,7 +35,7 @@ class HeaderFailedBuildError(HeaderFailed):
         self.compiler = compiler
 
     def __str__(self) -> str:
-        return 'Header Build Error with {}'.format(self.compiler)
+        return f'Header Build Error with {self.compiler}'
 
 
 class HeaderFailedPreprocessError(HeaderFailed):
@@ -61,19 +58,24 @@ class HeaderFailedContainsStaticAssert(HeaderFailed):
         return 'Header uses _Static_assert or static_assert instead of ESP_STATIC_ASSERT'
 
 
+class HeaderFailedForbiddenFreertosInclude(HeaderFailed):
+    def __str__(self) -> str:
+        return 'Header includes forbidden "freertos/*" dependency'
+
+
 #   Creates a temp file and returns both output as a string and a file name
 #
-def exec_cmd_to_temp_file(what: List, suffix: str = '') -> Tuple[int, str, str, str, str]:
+def exec_cmd_to_temp_file(what: list, suffix: str = '') -> tuple[int, str, str, str, str]:
     out_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     rc, out, err, cmd = exec_cmd(what, out_file)
-    with open(out_file.name, 'r', encoding='utf-8') as f:
+    with open(out_file.name, encoding='utf-8') as f:
         out = f.read()
     return rc, out, err, out_file.name, cmd
 
 
 def exec_cmd(
-    what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]', int] = subprocess.PIPE
-) -> Tuple[int, str, str, str]:
+    what: list, out_file: Union['tempfile._TemporaryFileWrapper[bytes]', int] = subprocess.PIPE
+) -> tuple[int, str, str, str]:
     p = subprocess.Popen(what, stdin=subprocess.PIPE, stdout=out_file, stderr=subprocess.PIPE)
     output_b, err_b = p.communicate()
     rc = p.returncode
@@ -87,9 +89,9 @@ class PublicHeaderChecker:
         if self.verbose or debug:
             print(message)
 
-    def __init__(self, verbose: bool = False, jobs: int = 1, prefix: Optional[str] = None) -> None:
-        self.gcc = '{}gcc'.format(prefix)
-        self.gpp = '{}g++'.format(prefix)
+    def __init__(self, libc_type: str, verbose: bool = False, jobs: int = 1, prefix: str | None = None) -> None:
+        self.gcc = f'{prefix}gcc'
+        self.gpp = f'{prefix}g++'
         self.verbose = verbose
         self.jobs = jobs
         self.prefix = prefix
@@ -100,16 +102,38 @@ class PublicHeaderChecker:
         self.static_assert = re.compile(r'(_Static_assert|static_assert)')
         self.defines_assert = re.compile(r'#define[ \t]+ESP_STATIC_ASSERT')
         self.auto_soc_header = re.compile(
-            r'components/soc/esp[a-z0-9_]+(?:/\w+)?/(include|register)/(soc|modem|hw_ver\d+/soc)/[a-zA-Z0-9_]+.h'
+            r'components/soc/esp[a-z0-9_]+(?:/\w+)?/'
+            r'(include|register)/'
+            r'(soc|modem|hw_ver(?:\d+|_[A-Za-z0-9]+)/soc)/'
+            r'[a-zA-Z0-9_]+\.h$'
+        )
+        self.freertos_forbidden_include = re.compile(r'(?m)^\s*#\s*include\s*"freertos/[^"]+"')
+        # Scope for enforcing freertos include rule:
+        # - components/esp_adc/**
+        # - components/esp_driver_*/**
+        # - components/esp_hw_support/**
+        # - components/sdmmc/**
+        # - components/ieee802154/**
+        # - components/esp_eth/**
+        # - components/esp_lcd/**
+        self.freertos_scope = re.compile(
+            r'^(components/(esp_adc|esp_hw_support|sdmmc|ieee802154|esp_eth|esp_lcd)/|components/esp_driver_[^/]+/)'
         )
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute|(\.section)?).*$'
-        self.check_threads: List[Thread] = []
+        self.check_threads: list[Thread] = []
         self.stdc = '--std=c99'
         self.stdcpp = '--std=c++17'
+        self.libc_type = libc_type
 
         self.job_queue: queue.Queue = queue.Queue()
         self.failed_queue: queue.Queue = queue.Queue()
         self.terminate = Event()
+        # Get IDF_PATH early to avoid dependency on method execution order
+        idf_path = os.getenv('IDF_PATH')
+        if idf_path is None:
+            raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
+        self.idf_path = idf_path
+        self.build_dir = tempfile.mkdtemp()
 
     def __enter__(self) -> 'PublicHeaderChecker':
         for i in range(self.jobs):
@@ -122,6 +146,7 @@ class PublicHeaderChecker:
         self.terminate.set()
         for t in self.check_threads:
             t.join()
+        shutil.rmtree(self.build_dir)
 
     # thread function process incoming header file from a queue
     def check_headers(self, num: int) -> None:
@@ -134,14 +159,14 @@ class PublicHeaderChecker:
                     try:
                         self.check_one_header(task, num)
                     except HeaderFailed as e:
-                        self.failed_queue.put('{}: Failed! {}'.format(task, e))
+                        self.failed_queue.put(f'{task}: Failed! {e}')
                     except Exception as e:
                         # Makes sure any unexpected exceptions causes the program to terminate
-                        self.failed_queue.put('{}: Failed! {}'.format(task, e))
+                        self.failed_queue.put(f'{task}: Failed! {e}')
                         self.terminate.set()
                         raise
 
-    def get_failed(self) -> List:
+    def get_failed(self) -> list:
         return list(self.failed_queue.queue)
 
     def join(self) -> None:
@@ -154,21 +179,40 @@ class PublicHeaderChecker:
     # - Compile the header with both C and C++ compiler
     def check_one_header(self, header: str, num: int) -> None:
         self.preprocess_one_header(header, num)
-        self.compile_one_header_with(self.gcc, self.stdc, header)
-        self.compile_one_header_with(self.gpp, self.stdcpp, header)
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.c', dir=self.build_dir, delete=False)
+        compile_file = temp_file.name
+        with temp_file:
+            # There can not `-include {header}` be used because in this case system headers
+            # which are overridden in ESP-IDF have wrong include_next behavior.
+            # This happens because file was already included but search paths are:
+            #   - components/esp_libc/platform_include
+            #   - toolchain_system_include_path
+            # So, when checking headers from platform_include directory,
+            # they will not include system headers by include_next.
+            # To fix this, header is included to the source file.
+            if 'platform_include' in header:
+                sys_header = header.split('platform_include/')[1]
+                temp_file.write(f'#include <{sys_header}>\n')
+            else:
+                temp_file.write(f'#include "{header}"\n')
+            temp_file.write(f'#include "{self.main_c}"\n')
+        self.compile_one_header_with(self.gcc, self.stdc, header, compile_file)
+        self.compile_one_header_with(self.gpp, self.stdcpp, header, compile_file)
 
     # Checks if the header contains some assembly code and whether it is compilable
-    def compile_one_header_with(self, compiler: str, std_flags: str, header: str) -> None:
-        rc, out, err, cmd = exec_cmd(
-            [compiler, std_flags, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags
-        )
+    def compile_one_header_with(self, compiler: str, std_flags: str, header: str, compile_file: str) -> None:
+        cmd_list = [compiler, std_flags, '-S', '-o-', compile_file] + self.include_dir_flags
+        if self.libc_type == 'picolibc':
+            cmd_list.append('-specs=picolibc.specs')
+
+        rc, out, err, cmd = exec_cmd(cmd_list)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
             return  # Header OK: produced zero code
-        self.log('{}: FAILED: compilation issue'.format(header), True)
+        self.log(f'{header}: FAILED: compilation issue', True)
         self.log(err, True)
-        self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
+        self.log(f'\nCompilation command failed:\n{cmd}\n', True)
         raise HeaderFailedBuildError(compiler)
 
     # Checks one header using preprocessing and parsing
@@ -200,11 +244,26 @@ class PublicHeaderChecker:
             header,
             self.main_c,
         ] + self.include_dir_flags
+        if self.libc_type == 'picolibc':
+            all_compilation_flags.append('-specs=picolibc.specs')
+
         # just strip comments to check for CONFIG_... macros or static asserts
         rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD', '-P', '-E', header] + self.include_dir_flags)
         # we ignore the rc here, as the `-fpreprocessed` flag expects the file to have macros already expanded,
         # so we might get some errors here we use it only to remove comments (even if the command returns non-zero
         # code it produces the correct output)
+        # forbid direct inclusion of FreeRTOS headers via quotes (only in scoped components)
+        if re.search(self.freertos_forbidden_include, out):
+            # Determine if current header is inside the scoped component folders
+            rel_path_for_scope = os.path.normpath(header)
+            try:
+                # self.idf_path is set in list_public_headers
+                rel_path_for_scope = os.path.relpath(rel_path_for_scope, self.idf_path)
+            except Exception:
+                pass
+            if re.search(self.freertos_scope, rel_path_for_scope):
+                # Raise, let final summary print the failure; avoid noisy intermediate logs
+                raise HeaderFailedForbiddenFreertosInclude()
         if re.search(self.kconfig_macro, out):
             # enable defined #error if sdkconfig.h not included
             all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
@@ -214,7 +273,7 @@ class PublicHeaderChecker:
         # Normalize the potential A//B, A/./B, A/../A, from the name
         normalized_path = os.path.normpath(header)
         if grp and not re.search(self.defines_assert, out) and not re.search(self.auto_soc_header, normalized_path):
-            self.log('{}: FAILED: contains {}. Please use ESP_STATIC_ASSERT'.format(header, grp.group(1)), True)
+            self.log(f'{header}: FAILED: contains {grp.group(1)}. Please use ESP_STATIC_ASSERT', True)
             raise HeaderFailedContainsStaticAssert()
         try:
             # compile with C++, check for errors, outputs for a temp file
@@ -222,32 +281,32 @@ class PublicHeaderChecker:
             if rc != 0:
                 if re.search(self.error_macro, err):
                     if re.search(self.error_orphan_kconfig, err):
-                        self.log('{}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED'.format(header), True)
+                        self.log(f'{header}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED', True)
                         raise HeaderFailedSdkconfig()
-                    self.log('{}: Error directive failure: OK'.format(header))
+                    self.log(f'{header}: Error directive failure: OK')
                     return
-                self.log('{}: FAILED: compilation issue'.format(header), True)
+                self.log(f'{header}: FAILED: compilation issue', True)
                 self.log(err, True)
-                self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
+                self.log(f'\nCompilation command failed:\n{cmd}\n', True)
                 raise HeaderFailedPreprocessError()
             # compile with C compiler, outputs to another temp file
             rc, _, err, c_out_file, _ = exec_cmd_to_temp_file([self.gcc, self.stdc] + all_compilation_flags)
             if rc != 0:
-                self.log('{} FAILED: compilation in C (while C++ compilation passes)'.format(header))
+                self.log(f'{header} FAILED: compilation in C (while C++ compilation passes)')
                 raise HeaderFailedPreprocessError()
             # diff the two outputs
             rc, diff, err, _ = exec_cmd(['diff', c_out_file, cpp_out_file])
             if not diff or diff.isspace():
                 if not cpp_out or cpp_out.isspace():
-                    self.log('{} The same, but empty out - OK'.format(header))
+                    self.log(f'{header} The same, but empty out - OK')
                     return
-                self.log('{} FAILED C and C++ preprocessor output is the same!'.format(header), True)
+                self.log(f'{header} FAILED C and C++ preprocessor output is the same!', True)
                 raise HeaderFailedCppGuardMissing()
             if re.search(self.extern_c, diff):
-                self.log('{} extern C present in the diff'.format(header))
+                self.log(f'{header} extern C present in the diff')
                 # now check the extern "C" is really in the unprocessed header
                 if re.search(self.extern_c, out):
-                    self.log('{} extern C present in the actual header, too - OK'.format(header))
+                    self.log(f'{header} extern C present in the actual header, too - OK')
                     return
                 # at this point we know that the header itself is missing extern-C, so we need to check if it
                 # contains an actual *code* we remove all preprocessor's directive to check if there's any code
@@ -255,19 +314,17 @@ class PublicHeaderChecker:
                 macros = re.compile(r'(?m)^\s*#(?:.*\\\r?\n)*.*$')  # Matches multiline preprocessor directives
                 without_macros = macros.sub('', out)
                 if without_macros.isspace():
-                    self.log("{} Header doesn't need extern-C, it's all just macros - OK".format(header))
+                    self.log(f"{header} Header doesn't need extern-C, it's all just macros - OK")
                     return
                 # at this point we know that the header is not only composed of macro definitions, but could
                 # just contain some "harmless" macro calls let's remove them and check again
                 macros_calls = r'(.*?)ESP_STATIC_ASSERT[^;]+;'  # static assert macro only, we could add more if needed
                 without_macros = re.sub(macros_calls, '', without_macros, flags=re.DOTALL)
                 if without_macros.isspace():
-                    self.log(
-                        "{} Header doesn't need extern-C, it's all macros definitions and calls - OK".format(header)
-                    )
+                    self.log(f"{header} Header doesn't need extern-C, it's all macros definitions and calls - OK")
                     return
 
-            self.log('{} Different but no extern C - FAILED'.format(header), True)
+            self.log(f'{header} Different but no extern C - FAILED', True)
             raise HeaderFailedCppGuardMissing()
         finally:
             os.unlink(cpp_out_file)
@@ -277,30 +334,29 @@ class PublicHeaderChecker:
                 pass
 
     # Get compilation data from an example to list all public header files
-    def list_public_headers(
-        self, ignore_dirs: List, ignore_files: Union[List, Set], only_dir: Optional[str] = None
-    ) -> None:
-        idf_path = os.getenv('IDF_PATH')
-        if idf_path is None:
-            raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
+    def list_public_headers(self, ignore_dirs: list, ignore_files: list | set, only_dir: str | None = None) -> None:
+        idf_path = self.idf_path
         project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
-        build_dir = tempfile.mkdtemp()
-        sdkconfig = os.path.join(build_dir, 'sdkconfig')
+        sdkconfig = os.path.join(self.build_dir, 'sdkconfig')
+        if self.libc_type == 'newlib':
+            with open(sdkconfig, 'w') as f:
+                f.write('CONFIG_LIBC_NEWLIB=y\n')
         try:
             os.unlink(os.path.join(project_dir, 'sdkconfig'))
         except FileNotFoundError:
             pass
         subprocess.check_call(
-            ['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'], cwd=project_dir
+            ['idf.py', '-B', self.build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'],
+            cwd=project_dir,
         )
 
-        def get_std(json: List, extension: str) -> str:
+        def get_std(json: list, extension: str) -> str:
             # compile commands for the files with specified extension, containing C(XX) standard flag
             command = [c for c in j if c['file'].endswith('.' + extension) and '-std=' in c['command']][0]
             return str([s for s in command['command'].split() if 'std=' in s][0])  # grab the std flag
 
-        build_commands_json = os.path.join(build_dir, 'compile_commands.json')
-        with open(build_commands_json, 'r', encoding='utf-8') as f:
+        build_commands_json = os.path.join(self.build_dir, 'compile_commands.json')
+        with open(build_commands_json, encoding='utf-8') as f:
             j = json.load(f)
             self.stdc = get_std(j, 'c')
             self.stdcpp = get_std(j, 'cpp')
@@ -317,13 +373,13 @@ class PublicHeaderChecker:
                 include_dir_flags.append(
                     item.replace('\\', '')
                 )  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
-        include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
+        include_dir_flags.append('-I' + os.path.join(self.build_dir, 'config'))
         include_dir_flags.append('-DCI_HEADER_CHECK')
-        sdkconfig_h = os.path.join(build_dir, 'config', 'sdkconfig.h')
+        sdkconfig_h = os.path.join(self.build_dir, 'config', 'sdkconfig.h')
         # prepares a main_c file for easier sdkconfig checks and avoid compilers warning when compiling headers directly
         with open(sdkconfig_h, 'a') as f:
             f.write('#define IDF_SDKCONFIG_INCLUDED')
-        main_c = os.path.join(build_dir, 'compile.c')
+        main_c = os.path.join(self.build_dir, 'compile.c')
         with open(main_c, 'w') as f:
             f.write(
                 '#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
@@ -337,10 +393,10 @@ class PublicHeaderChecker:
             if only_dir is not None and not os.path.relpath(d, idf_path).startswith(
                 os.path.relpath(only_dir, idf_path)
             ):
-                self.log('{} - directory ignored (not in "{}")'.format(d, only_dir))
+                self.log(f'{d} - directory ignored (not in "{only_dir}")')
                 continue
             if os.path.relpath(d, idf_path).startswith(tuple(ignore_dirs)):
-                self.log('{} - directory ignored'.format(d))
+                self.log(f'{d} - directory ignored')
                 continue
             for root, dirnames, filenames in os.walk(d):
                 for filename in fnmatch.filter(filenames, '*.h'):
@@ -352,10 +408,10 @@ class PublicHeaderChecker:
         for file_name in all_include_files:
             rel_path_file = os.path.relpath(file_name, idf_path)
             if any([os.path.commonprefix([d, rel_path_file]) == d for d in ignore_dirs]):
-                self.log('{} - file ignored (inside ignore dir)'.format(file_name))
+                self.log(f'{file_name} - file ignored (inside ignore dir)')
                 continue
             if rel_path_file in ignore_files:
-                self.log('{} - file ignored'.format(file_name))
+                self.log(f'{file_name} - file ignored')
                 continue
             files_to_check.append(file_name)
         # removes duplicates and places headers to a work queue
@@ -386,6 +442,8 @@ def check_all_headers() -> None:
         * Check if no definition is present in the offending header file
     5) "Header contains _Static_assert or static_assert": Makes the use of _Static_assert or static_assert
         functions instead of using ESP_STATIC_ASSERT macro
+    6) "Header includes forbidden \\"freertos/*\\" dependency": Using #include "freertos/..." inside
+        * public headers is not allowed
 
     Notes:
     * The script validates *all* header files (recursively) in public folders for all components.
@@ -406,11 +464,14 @@ def check_all_headers() -> None:
         '--exclude-file', '-e', help='exception file', default='check_public_headers_exceptions.txt', type=str
     )
     parser.add_argument('--only-dir', '-d', help='reduce the analysis to this directory only', default=None, type=str)
+    parser.add_argument(
+        '--libc-type', '-l', help='type of libc to use', default='picolibc', choices=['picolibc', 'newlib'], type=str
+    )
     args = parser.parse_args()
 
     # process excluded files and dirs
     exclude_file = os.path.join(os.path.dirname(__file__), args.exclude_file)
-    with open(exclude_file, 'r', encoding='utf-8') as f:
+    with open(exclude_file, encoding='utf-8') as f:
         lines = [line.rstrip() for line in f]
     ignore_files = []
     ignore_dirs = []
@@ -423,7 +484,7 @@ def check_all_headers() -> None:
             ignore_files.append(line)
 
     # start header check
-    with PublicHeaderChecker(args.verbose, args.jobs, args.prefix) as header_check:
+    with PublicHeaderChecker(args.libc_type, args.verbose, args.jobs, args.prefix) as header_check:
         header_check.list_public_headers(ignore_dirs, ignore_files, only_dir=args.only_dir)
         try:
             header_check.join()

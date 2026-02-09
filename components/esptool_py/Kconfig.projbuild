@@ -73,7 +73,7 @@ menu "Serial flasher config"
             bool "DTR Mode"
     endchoice
 
-    # Note: we use esptool.py to flash bootloader in
+    # Note: we use esptool to flash bootloader in
     # dio mode for QIO/QOUT, bootloader then upgrades
     # itself to quad mode during initialisation
     config ESPTOOLPY_FLASHMODE
@@ -160,7 +160,7 @@ menu "Serial flasher config"
         prompt "Before flashing"
         default ESPTOOLPY_BEFORE_RESET
         help
-            Configure whether esptool.py should reset the ESP32 before flashing.
+            Configure whether esptool should reset the ESP32 before flashing.
 
             Automatic resetting depends on the RTS & DTR signals being
             wired from the serial port to the ESP32. Most USB development
@@ -174,14 +174,14 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_BEFORE
         string
-        default "default_reset" if ESPTOOLPY_BEFORE_RESET
-        default "no_reset" if ESPTOOLPY_BEFORE_NORESET
+        default "default-reset" if ESPTOOLPY_BEFORE_RESET
+        default "no-reset" if ESPTOOLPY_BEFORE_NORESET
 
     choice ESPTOOLPY_AFTER
         prompt "After flashing"
         default ESPTOOLPY_AFTER_RESET
         help
-            Configure whether esptool.py should reset the ESP32 after flashing.
+            Configure whether esptool should reset the ESP32 after flashing.
 
             Automatic resetting depends on the RTS & DTR signals being
             wired from the serial port to the ESP32. Most USB development
@@ -195,11 +195,72 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_AFTER
         string
-        default "hard_reset" if ESPTOOLPY_AFTER_RESET
-        default "no_reset" if ESPTOOLPY_AFTER_NORESET
+        default "hard-reset" if ESPTOOLPY_AFTER_RESET
+        default "no-reset" if ESPTOOLPY_AFTER_NORESET
 
     config ESPTOOLPY_MONITOR_BAUD
         int
         default ESP_CONSOLE_UART_BAUDRATE if ESP_CONSOLE_UART
         default 115200 if !ESP_CONSOLE_UART
+
+    menu "Fast Reflashing"
+
+        config ESPTOOLPY_FAST_REFLASHING
+            bool "Enable fast reflashing (Experimental)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            select COMPILER_NO_MERGE_CONSTANTS if IDF_TOOLCHAIN_GCC
+            help
+                Enabling this option classifies component libraries into two
+                categories: mutable and immutable. Mutable libraries are
+                expected to change frequently during development, while
+                immutable libraries are considered stable. All project
+                component libraries are treated as mutable; all other libraries
+                are treated as immutable.
+
+                In the generated linker script, input sections from immutable
+                libraries are placed before those from mutable libraries. This
+                layout helps localize changes in the output sections of the ELF
+                file, so that recompilation primarily affects a confined area
+                associated with the mutable libraries.
+
+                This enables the generation of binary images with large
+                unmodified regions across recompilations, allowing to flash
+                only the parts that have changed.
+
+                To support this, some compiler optimizations, such as constant
+                merging, are disabled, which helps minimize differences in the
+                binary image between builds.  However, this may increase the
+                overall image size and flash usage.
+
+                Additionally, this option inserts a padding, defined by the
+                ESPTOOLPY_FAST_REFLASHING_PADDING option, after the input
+                sections of mutable libraries. This allows further isolate
+                changes but also increases the size of the binary image and
+                flash consumption.
+
+        choice ESPTOOLPY_FAST_REFLASHING_PADDING_SIZE
+            prompt "Padding size"
+            default ESPTOOLPY_FAST_REFLASHING_PADDING_4KB
+            depends on ESPTOOLPY_FAST_REFLASHING
+            help
+                Selects the amount of padding (in kilobytes) to add after input
+                sections of mutable libraries when fast reflashing is enabled.
+
+            config ESPTOOLPY_FAST_REFLASHING_PADDING_2KB
+                bool "2 KB"
+            config ESPTOOLPY_FAST_REFLASHING_PADDING_4KB
+                bool "4 KB"
+            config ESPTOOLPY_FAST_REFLASHING_PADDING_8KB
+                bool "8 KB"
+        endchoice
+
+        config ESPTOOLPY_FAST_REFLASHING_PADDING
+            int
+            depends on ESPTOOLPY_FAST_REFLASHING
+            default 2048 if ESPTOOLPY_FAST_REFLASHING_PADDING_2KB
+            default 4096 if ESPTOOLPY_FAST_REFLASHING_PADDING_4KB
+            default 8192 if ESPTOOLPY_FAST_REFLASHING_PADDING_8KB
+
+    endmenu
+
 endmenu

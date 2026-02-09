@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -7,13 +7,35 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32', 'esp32s2', 'esp32c3'], indirect=['target'])
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+        'no_isr_post',
+    ],
+    indirect=True,
+)
 def test_esp_event(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+@pytest.mark.parametrize('config', ['ext_ram'], indirect=True)
+def test_esp_event_ext_ram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
 @pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.xfail('config.getvalue("target") == "esp32c3"', reason='Unstable on QEMU, needs investigation')
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_esp_event_qemu(dut: Dut) -> None:
     for case in dut.test_menu:
@@ -23,6 +45,13 @@ def test_esp_event_qemu(dut: Dut) -> None:
 
 @pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
 def test_esp_event_posix_simulator(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('*')
@@ -31,6 +60,13 @@ def test_esp_event_posix_simulator(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32'], indirect=['target'])
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
 def test_esp_event_profiling(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('"profiling reports valid values"')

@@ -163,6 +163,8 @@ static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, 
     uint32_t digi = 0;
     ret = esp_efuse_rtc_calib_get_cal_voltage(version_num, unit_id, (int)atten, &digi, &voltage);
     assert(ret == ESP_OK);
+    (void)ret;
+
     calib_info->ref_data.ver1.voltage = voltage;
     calib_info->ref_data.ver1.digi = digi;
 }

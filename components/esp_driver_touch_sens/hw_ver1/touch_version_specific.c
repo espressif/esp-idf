@@ -15,7 +15,7 @@
 #include "freertos/semphr.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "soc/rtc.h"
 #include "hal/hal_utils.h"
 #include "driver/touch_sens.h"

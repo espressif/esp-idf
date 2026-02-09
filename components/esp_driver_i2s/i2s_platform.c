@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@ static const char *TAG = "i2s_platform";
  */
 i2s_platform_t g_i2s = {
     .spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
-    .controller[0 ...(SOC_I2S_NUM - 1)] = NULL,  // groups will be lazy installed
-    .comp_name[0 ...(SOC_I2S_NUM - 1)] = NULL,
+    .controller[0 ...(I2S_LL_GET(INST_NUM) - 1)] = NULL,  // groups will be lazy installed
+    .comp_name[0 ...(I2S_LL_GET(INST_NUM) - 1)] = NULL,
 #if SOC_LP_I2S_SUPPORTED
     .lp_controller[0 ...(SOC_LP_I2S_NUM - 1)] = NULL,
     .lp_comp_name[0 ...(SOC_LP_I2S_NUM - 1)] = NULL,
@@ -34,14 +34,14 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
 {
     esp_err_t ret = ESP_OK;
     const char *occupied_comp = NULL;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
+    ESP_RETURN_ON_FALSE(id < I2S_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
 
     if (type == I2S_CTLR_HP) {
         portENTER_CRITICAL(&g_i2s.spinlock);
         if ((!g_i2s.controller[id]) && (g_i2s.comp_name[id] == NULL)) {
             g_i2s.comp_name[id] = comp_name;
             /* Enable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_enable_bus_clock(id, true);
                 i2s_ll_reset_register(id);
                 i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), true);
@@ -58,7 +58,7 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
         if ((!g_i2s.lp_controller[id]) && (g_i2s.lp_comp_name[id] == NULL)) {
             g_i2s.lp_comp_name[id] = comp_name;
             /* Enable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 lp_i2s_ll_enable_module_clock(id, true);
                 lp_i2s_ll_reset_module_clock(id);
                 lp_i2s_ll_enable_rx_module_clock(id, true);
@@ -79,14 +79,14 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
 esp_err_t i2s_platform_release_occupation(i2s_ctlr_t type, int id)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
+    ESP_RETURN_ON_FALSE(id < I2S_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
 
     if (type == I2S_CTLR_HP) {
         portENTER_CRITICAL(&g_i2s.spinlock);
         if (!g_i2s.controller[id]) {
             g_i2s.comp_name[id] = NULL;
             /* Disable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_enable_bus_clock(id, false);
                 i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), false);
             }
@@ -101,7 +101,7 @@ esp_err_t i2s_platform_release_occupation(i2s_ctlr_t type, int id)
         if (!g_i2s.lp_controller[id]) {
             g_i2s.lp_comp_name[id] = NULL;
             /* Disable module clock */
-            I2S_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 lp_i2s_ll_enable_module_clock(id, false);
                 lp_i2s_ll_enable_rx_module_clock(id, false);
             }

@@ -13,6 +13,62 @@ To test this demo, we can run the [gatt_client_demo](../gatt_client), which can 
 
 Please, check this [tutorial](tutorial/Gatt_Server_Example_Walkthrough.md) for more information about this example.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  GATT Server │                                    │  GATT Client │
+    │(this example)│                                    │(gatt_client) │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Initialization ───────────           │
+           │                                                   │
+           │  1. Register GATT Server App                      │
+           │  2. Create Service (UUID: 0x00FF)                 │
+           │  3. Add Characteristic (UUID: 0xFF01)             │
+           │  4. Add Descriptor (CCCD)                         │
+           │  5. Start Service                                 │
+           │  6. Start Advertising "ESP_GATTS_DEMO"            │
+           │                                                   │
+           │  ─────────── Connection Phase ───────────         │
+           │                                                   │
+           │                        Scan & Connect             │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Connection Established                           │
+           │ ─────────────────────────────────────────────────>│
+           │                                                   │
+           │  MTU Exchange                                     │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  ─────────── Service Discovery ───────────        │
+           │                                                   │
+           │                        Service Discovery          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Return Service Info                              │
+           │ ─────────────────────────────────────────────────>│
+           │                                                   │
+           │  ─────────── Enable Notification ───────────      │
+           │                                                   │
+           │                        Write CCCD (0x0001)        │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Notification Enabled                             │
+           │                                                   │
+           │  ─────────── Data Exchange ───────────            │
+           │                                                   │
+           │                        Write Request              │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Send Notification                                │
+           │ ─────────────────────────────────────────────────>│
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  GATT Server │                                    │  GATT Client │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

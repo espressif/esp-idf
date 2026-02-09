@@ -1,4 +1,13 @@
 preserve_non_test_related_apps = false
+exclude_dirs = [
+    'tools/test_mkdfu',
+    'tools/test_idf_size',
+    'tools/test_idf_py',
+    'tools/test_idf_diag',
+    'tools/test_bsasm',
+    'tools/ci/test_autocomplete',
+    'tools/test_build_system',
+]
 
 [local_runtime_envs]
 EXTRA_CFLAGS = "-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes"
@@ -39,7 +48,6 @@ pre_yaml_jinja = """
 include:
   - .gitlab/ci/common.yml
   - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
-  - tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml
 """
 
 [gitlab.artifacts.s3.debug]
@@ -80,18 +88,19 @@ patterns = [
 [gitlab.artifacts.s3.junit]
 bucket = "idf-artifacts"
 patterns = [
-    'XUNIT_RESULT_*.xml',
+    '**/XUNIT_RESULT_*.xml',
+    '**/build_summary_*.xml',
 ]
 
 [gitlab.artifacts.s3.env]
 bucket = "idf-artifacts"
 patterns = [
-    'pipeline.env',
+    '**/pipeline.env',
 ]
 
 [gitlab.artifacts.s3.longterm]
 bucket = "longterm"
-if_clause = '"$CI_COMMIT_REF_NAME" == "master"'
+if_clause = 'CI_COMMIT_REF_NAME == "master"'
 patterns = [
-    '**/build*/size.json',
+    '**/build*/size*.json',
 ]

@@ -246,18 +246,17 @@ Once you created an encoder, you can initiate a TX transaction by calling :cpp:f
 - :cpp:member:`rmt_transmit_config_t::loop_count` sets the number of transmission loops. After the transmitter has finished one round of transmission, it can restart the same transmission again if this value is not set to zero. As the loop is controlled by hardware, the RMT channel can be used to generate many periodic sequences with minimal CPU intervention.
 
     - Setting :cpp:member:`rmt_transmit_config_t::loop_count` to `-1` means an infinite loop transmission. In this case, the channel does not stop until :cpp:func:`rmt_disable` is called. The "trans-done" event is not generated as well.
-    - Setting :cpp:member:`rmt_transmit_config_t::loop_count` to a positive number means finite number of iterations. In this case, the "trans-done" event is when the specified number of iterations have completed.
 
-    .. note::
+    .. only:: not esp32
 
-        The **loop transmit** feature is not supported on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you configure this option, or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
+        - Setting :cpp:member:`rmt_transmit_config_t::loop_count` to a positive number means finite number of iterations. In this case, the "trans-done" event is when the specified number of iterations have completed.
 
 - :cpp:member:`rmt_transmit_config_t::eot_level` sets the output level when the transmitter finishes working or stops working by calling :cpp:func:`rmt_disable`.
 - :cpp:member:`rmt_transmit_config_t::queue_nonblocking` sets whether to wait for a free slot in the transaction queue when it is full. If this value is set to ``true``, then the function will return with an error code :c:macro:`ESP_ERR_INVALID_STATE` when the queue is full. Otherwise, the function will block until a free slot is available in the queue.
 
 .. note::
 
-    There is a limitation in the transmission size if the :cpp:member:`rmt_transmit_config_t::loop_count` is set to non-zero, i.e., to enable the loop feature. The encoded RMT symbols should not exceed the capacity of the RMT hardware memory block size, or you might see an error message like ``encoding artifacts can't exceed hw memory block for loop transmission``. If you have to start a large transaction by loop, you can try either of the following methods.
+    There is a limitation in the transmission size if the :cpp:member:`rmt_transmit_config_t::loop_count` is set to non-zero, i.e., to enable the loop feature. The total amount of symbols returned by the encoder should not exceed the capacity of :c:macro:`SOC_RMT_MEM_WORDS_PER_CHANNEL`, or you might see an error message like ``encoding artifacts can't exceed hw memory block for loop transmission``. If you have to start a large transaction by loop, you can try either of the following methods.
 
     - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`. This approach does not work if the DMA backend is also enabled.
     - Customize an encoder and construct an infinite loop in the encoding function. See also :ref:`rmt-rmt-encoder`.
@@ -654,7 +653,7 @@ API Reference
 .. include-build-file:: inc/rmt_common.inc
 .. include-build-file:: inc/rmt_encoder.inc
 .. include-build-file:: inc/components/esp_driver_rmt/include/driver/rmt_types.inc
-.. include-build-file:: inc/components/hal/include/hal/rmt_types.inc
+.. include-build-file:: inc/components/esp_hal_rmt/include/hal/rmt_types.inc
 
 
 .. [1]

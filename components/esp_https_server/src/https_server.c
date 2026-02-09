@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@ typedef struct httpd_ssl_transport_ctx {
     httpd_ssl_ctx_t *global_ctx;
 } httpd_ssl_transport_ctx_t;
 
+#ifdef CONFIG_ESP_HTTPS_SERVER_EVENTS
 ESP_EVENT_DEFINE_BASE(ESP_HTTPS_SERVER_EVENT);
 
 #if CONFIG_ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT == -1
@@ -31,7 +32,6 @@ ESP_EVENT_DEFINE_BASE(ESP_HTTPS_SERVER_EVENT);
 #define ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT pdMS_TO_TICKS(CONFIG_ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT)
 #endif
 
-
 static void http_dispatch_event_to_event_loop(int32_t event_id, const void* event_data, size_t event_data_size)
 {
     esp_err_t err = esp_event_post(ESP_HTTPS_SERVER_EVENT, event_id, event_data, event_data_size, ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT);
@@ -39,6 +39,15 @@ static void http_dispatch_event_to_event_loop(int32_t event_id, const void* even
         ESP_LOGE(TAG, "Failed to post http_client event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
     }
 }
+#else // CONFIG_ESP_HTTPS_SERVER_EVENTS
+static void http_dispatch_event_to_event_loop(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    // Events disabled, do nothing
+    (void) event_id;
+    (void) event_data;
+    (void) event_data_size;
+}
+#endif // CONFIG_ESP_HTTPS_SERVER_EVENTS
 
 /**
  * SSL socket close handler
@@ -225,6 +234,13 @@ fail:
             last_error.last_error = esp_tls_get_and_clear_last_error(error_handle, &last_error.esp_tls_error_code, &last_error.esp_tls_flags);
             http_dispatch_event_to_event_loop(HTTPS_SERVER_EVENT_ERROR, &last_error, sizeof(last_error));
         }
+        // Call user callback if configured, allowing user to log failures
+        if (global_ctx->user_cb) {
+            esp_https_server_user_cb_arg_t user_cb_data = {0};
+            user_cb_data.user_cb_state = HTTPD_SSL_USER_CB_SESS_ERROR;
+            user_cb_data.tls = tls;
+            (global_ctx->user_cb)((void *)&user_cb_data);
+        }
         esp_tls_server_session_delete(tls);
     }
     return ESP_FAIL;
@@ -278,6 +294,12 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
     cfg->userdata = config->ssl_userdata;
     cfg->alpn_protos = config->alpn_protos;
     cfg->tls_handshake_timeout_ms = config->tls_handshake_timeout_ms;
+#ifdef CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+    cfg->client_cert_authmode_optional = config->client_cert_authmode_optional;
+#endif // CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+
+    cfg->tls_version = config->tls_version;
+    cfg->ciphersuites_list = config->ciphersuites_list;
 
 #if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
     cfg->cert_select_cb = config->cert_select_cb;
@@ -333,6 +355,10 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
             (*ssl_ctx)->tls_cfg->use_ecdsa_peripheral = config->use_ecdsa_peripheral;
             (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk = config->ecdsa_key_efuse_blk;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+            (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk_high = config->ecdsa_key_efuse_blk_high;
+#endif
+            (*ssl_ctx)->tls_cfg->ecdsa_curve = config->ecdsa_curve;
 #else
             ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
             ret = ESP_ERR_NOT_SUPPORTED;

@@ -60,7 +60,8 @@ typedef struct {
 
     uint32_t val_scale_cfg           : 4;   /**< value 0-8 */
     uint32_t dump_ack_en             : 1;   /**< enable to dump 802.11 ACK frame, default disabled */
-    uint32_t reserved                : 15;  /**< reserved */
+    uint32_t lltf_bit_mode           : 1;   /**< LLTF bit width mode for I/Q components, 0 : 12-bit, 1 : 8-bit, default : 12-bit */
+    uint32_t reserved                : 14;  /**< reserved */
 } wifi_csi_acquire_config_t;
 #else
 typedef struct {

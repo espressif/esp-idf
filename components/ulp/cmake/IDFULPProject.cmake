@@ -119,8 +119,8 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
 
-        "${IDF_PATH}/components/hal/uart_hal_iram.c"
-        "${IDF_PATH}/components/hal/uart_hal.c"
+        "${IDF_PATH}/components/esp_hal_uart/uart_hal_iram.c"
+        "${IDF_PATH}/components/esp_hal_uart/uart_hal.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_uart.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"
@@ -128,9 +128,18 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_ubsan.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_mailbox.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_adc_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_vad_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_critical_section_shared.c")
+
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_sw.c")
+        endif()
 
         if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
             list(APPEND ULP_S_SOURCES

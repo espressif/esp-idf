@@ -125,11 +125,6 @@ esp_err_t esp_wifi_wps_disable(void);
   *
   * @attention WPS can only be used when station is enabled. WPS needs to be enabled first for using this API.
   *
-  * @param     timeout_ms : deprecated: This argument's value will have not effect in functionality of API.
-  *                         The argument will be removed in future.
-  *                         The app should start WPS and register for WIFI events to get the status.
-  *                         WPS status is updated through WPS events. See wifi_event_t enum for more info.
-  *
   * @return
   *          - ESP_OK : succeed
   *          - ESP_ERR_WIFI_WPS_TYPE : wps type is invalid
@@ -137,7 +132,7 @@ esp_err_t esp_wifi_wps_disable(void);
   *          - ESP_ERR_WIFI_WPS_SM : wps state machine is not initialized
   *          - ESP_FAIL : wps initialization fails
   */
-esp_err_t esp_wifi_wps_start(int timeout_ms);
+esp_err_t esp_wifi_wps_start(void);
 
 /**
   * @brief     Enable Wi-Fi AP WPS function.

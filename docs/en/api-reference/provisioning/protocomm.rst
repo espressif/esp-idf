@@ -54,7 +54,7 @@ The protocomm component provides a project configuration menu to enable/disable 
     SoftAP + HTTP Transport Example with Security 2
     -----------------------------------------------
 
-    For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`.
+    For sample usage, see `network_provisioning/src/scheme_softap.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_softap.c>`_.
 
     .. highlight:: c
 
@@ -161,7 +161,7 @@ The protocomm component provides a project configuration menu to enable/disable 
     SoftAP + HTTP Transport Example with Security 1
     -----------------------------------------------
 
-    For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`.
+    For sample usage, see `network_provisioning/src/scheme_softap.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_softap.c>`_.
 
     .. highlight:: c
 
@@ -245,7 +245,7 @@ The protocomm component provides a project configuration menu to enable/disable 
     Bluetooth LE Transport Example with Security 0
     ----------------------------------------------
 
-    For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`.
+    For sample usage, see `network_provisioning/src/scheme_ble.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_ble.c>`_.
 
     .. highlight:: c
 

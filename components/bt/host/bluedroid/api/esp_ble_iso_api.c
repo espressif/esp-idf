@@ -37,6 +37,10 @@ esp_err_t esp_ble_iso_create_big(esp_ble_iso_big_creat_params_t *big_creat_param
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (big_creat_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_ISO_BLE;
     msg.act = BTC_ISO_ACT_BIG_CREATE;
@@ -55,6 +59,10 @@ esp_err_t esp_ble_iso_create_big_test(esp_ble_iso_big_creat_test_params_t *big_c
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (big_creat_test_param == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (big_creat_test_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
 

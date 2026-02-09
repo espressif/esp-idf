@@ -18,7 +18,6 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
-#include "soc/rtc_periph.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
 #include "hal/wdt_hal.h"

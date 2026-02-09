@@ -95,7 +95,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
 用于可恢复错误的宏
 ----------------------
 
-ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`` 头文件中。 **ESP_RETURN_ON_...**、 **ESP_GOTO_ON_...** 和 **ESP_RETURN_VOID_ON_...** 系列宏可简洁、一致地处理错误，提升代码的可读性与可维护性。与 ``ESP_ERROR_CHECK`` 不同，这些宏不会终止程序，而是在检测到错误时打印错误信息并执行返回或跳转。针对中断服务例程 (ISR) 场景，还提供了相应的 ``_ISR`` 版本（如 :c:macro:`ESP_RETURN_ON_ERROR_ISR`），确保中断上下文的安全性。
+ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`` 头文件中。 **ESP_RETURN_ON_...**、 **ESP_GOTO_ON_...**、 **ESP_RETURN_VOID_ON_...** 和 **ESP_RETURN_ON_ERROR_CLEANUP** 系列宏可简洁、一致地处理错误，提升代码的可读性与可维护性。与 ``ESP_ERROR_CHECK`` 不同，这些宏不会终止程序，而是在检测到错误时打印错误信息并执行返回或跳转。针对中断服务例程 (ISR) 场景，还提供了相应的 ``_ISR`` 版本（如 :c:macro:`ESP_RETURN_ON_ERROR_ISR`），确保中断上下文的安全性。
 
 这些宏的定义如下：
 
@@ -120,6 +120,8 @@ ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`
     - :c:macro:`ESP_RETURN_VOID_ON_ERROR_ISR` - 适用于中断服务例程 (ISR) 上下文。
     - :c:macro:`ESP_RETURN_VOID_ON_FALSE_ISR` - 适用于中断服务例程 (ISR) 上下文。
 
+- **ESP_RETURN_ON_ERROR_CLEANUP**：检测到错误时，在执行清理代码后从函数返回。该宏尤其适用于在返回错误码之前需要释放资源的情况。该宏会对返回 :cpp:type:`esp_err_t` 的表达式进行求值；若结果不为 :c:macro:`ESP_OK`，则会先执行可变参数提供的清理代码（例如释放资源或记录日志），然后从当前函数返回该错误码。
+
 这些宏的默认行为可通过 Kconfig 进行配置：如果启用了 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项，错误信息将不会被包含在应用程序二进制文件中，也不会被打印出来。
 
 .. _check_macros_examples:
@@ -143,6 +145,19 @@ ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`
         ESP_GOTO_ON_ERROR(x, err, TAG, "fail reason 2");            // 如果错误码不等于 `ESP_OK`，则打印错误信息，将局部变量 `ret` 赋值为该错误码，并使原函数跳转至 `err`。
         ESP_RETURN_ON_FALSE(a, err_code, TAG, "fail reason 3");     // 如果给定条件不等于 `true`，则打印错误信息，并使原函数立刻返回，返回值为给定的错误码。
         ESP_GOTO_ON_FALSE(a, err_code, err, TAG, "fail reason 4");  // 如果给定条件不等于 `true`，该宏会打印错误信息，将局部变量 `ret` 赋值为给定的 `err_code`，并使原函数跳转至 `err`。
+
+        ESP_RETURN_ON_ERROR_CLEANUP(init_resource(), free_mem(), deinit_resource()); // 如果失败，通过调用 `free_mem()` 和 `deinit_resource()` 清理资源，然后返回错误码。
+
+        ESP_RETURN_ON_ERROR_CLEANUP(                                // 如果需要更复杂的清理操作，可以使用 `do {...} while(0)` 代码块（使用 ESP_LOG 时需要）。
+            sensor_calibrate(),
+            do {
+                if (err_rc_ == ESP_ERR_TIMEOUT) {
+                    ESP_LOGE(TAG, "Sensor calibration timeout");
+                }
+                sensor_deinit();
+                ESP_LOGE(TAG, "Sensor cleanup completed");
+            } while (0)
+        );
 
     err:
         // clean up

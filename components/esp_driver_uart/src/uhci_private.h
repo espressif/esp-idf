@@ -32,18 +32,6 @@ typedef struct uhci_controller_t uhci_controller_t;
 #define UHCI_MEM_ALLOC_CAPS     (MALLOC_CAP_DEFAULT)
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define UHCI_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define UHCI_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define UHCI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define UHCI_RCC_ATOMIC()
-#endif
-
 typedef struct {
     void *buffer;               // buffer for saving the received symbols
     size_t buffer_size;         // size of the buffer, in bytes

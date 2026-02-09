@@ -7,7 +7,9 @@ generate_failed_jobs_report:
     - .post_deploy_template
   tags: [build, shiny]
   when: always
-  dependencies: []  # Do not download artifacts from the previous stages
+  dependencies: # Do not download artifacts from the previous stages
+  needs:
+    - pipeline_variables
   artifacts:
     expire_in: 2 week
     when: always

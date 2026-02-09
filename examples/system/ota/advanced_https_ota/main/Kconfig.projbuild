@@ -31,6 +31,7 @@ menu "Example Configuration"
     config EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
         bool "Enable partial HTTP download"
         default n
+        select ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
         select ESP_TLS_CLIENT_SESSION_TICKETS
         help
             This enables use of Range header in esp_https_ota component.
@@ -52,6 +53,13 @@ menu "Example Configuration"
             This enables the OTA resumption feature.
             This option allows one to configure the OTA process to resume downloading the OTA image
             from where it left off in case of an error or reboot.
+
+    config EXAMPLE_OTA_BUF_SIZE
+        int "OTA buffer size"
+        default 1024
+        range 1024 65536
+        help
+            Buffer size for OTA data transfers in bytes.
 
     config EXAMPLE_USE_CERT_BUNDLE
         bool "Enable certificate bundle"

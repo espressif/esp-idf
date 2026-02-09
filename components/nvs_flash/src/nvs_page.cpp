@@ -9,13 +9,11 @@
 #include <cstdio>
 #include <cstring>
 #include "nvs_internal.h"
-#include "esp_partition.h"
+#include "nvs_memory_management.hpp"
 
 namespace nvs {
 
 Page::Page() : mPartition(nullptr) { }
-
-const uint32_t nvs::Page::SEC_SIZE = 4096;
 
 uint32_t Page::Header::calculateCrc32()
 {

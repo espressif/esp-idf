@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -10,6 +10,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define REG_TIMG_BASE(i)  (DR_REG_TIMG0_BASE + (i) * 0x1000)
 
 /** TIMG_T0CONFIG_REG register
  *  Timer 0 configuration register

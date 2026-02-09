@@ -1,5 +1,5 @@
 I80 接口的 LCD
----------------
+==============
 
 :link_to_translation:`en:[English]`
 

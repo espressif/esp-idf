@@ -7,7 +7,7 @@ idf_component_register(
         app_update
         bootloader_support
         nvs_flash
-        driver
+        esp_driver_gpio
         spi_flash
         esp_psram
         efuse

@@ -3,15 +3,27 @@ components/esp_driver_cam/test_apps/csi:
     - if: SOC_MIPI_CSI_SUPPORTED != 1
   depends_components:
     - esp_driver_cam
+    - esp_driver_dma
+    - esp_hal_cam
+    - esp_hw_support
+    - soc
 
 components/esp_driver_cam/test_apps/dvp:
   disable:
     - if: SOC_LCDCAM_CAM_SUPPORTED != 1
   depends_components:
     - esp_driver_cam
+    - esp_driver_dma
+    - esp_hal_cam
+    - esp_hw_support
+    - soc
 
 components/esp_driver_cam/test_apps/isp_dvp:
   disable:
     - if: SOC_ISP_DVP_SUPPORTED != 1
   depends_components:
     - esp_driver_cam
+    - esp_driver_dma
+    - esp_hal_cam
+    - esp_hw_support
+    - soc

@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -482,7 +482,7 @@ typedef union {
          *  Configures the clock source of LEDC.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F48M_CLK
+         *  2: PLL_F96M_CLK
          */
         uint32_t ledc_sclk_sel:2;
         /** ledc_sclk_en : R/W; bitpos: [22]; default: 0;
@@ -1178,7 +1178,7 @@ typedef union {
          *  Configures the clock source of Paraller IO RX
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F240M_CLK
+         *  2: PLL_F96M_CLK
          *  3: Use the clock from chip pin
          */
         uint32_t parl_clk_tx_sel:2;
@@ -1304,9 +1304,8 @@ typedef union {
         /** spi2_clkm_sel : R/W; bitpos: [21:20]; default: 0;
          *  Configures the clock source of SPI2.
          *  0 (default): XTAL_CLK
-         *  1: PLL_F160M_CLK
+         *  1: PLL_F48M_CLK
          *  2: RC_FAST_CLK
-         *  3: PLL_F120M_CLK
          */
         uint32_t spi2_clkm_sel:2;
         /** spi2_clkm_en : R/W; bitpos: [22]; default: 1;
@@ -2452,9 +2451,8 @@ typedef union {
         /** spi3_clkm_sel : R/W; bitpos: [21:20]; default: 0;
          *  Configures the clock source of SPI3.
          *  0 (default): XTAL_CLK
-         *  1: PLL_F160M_CLK
+         *  1: PLL_F48M_CLK
          *  2: RC_FAST_CLK
-         *  3: PLL_F120M_CLK
          */
         uint32_t spi3_clkm_sel:2;
         /** spi3_clkm_en : R/W; bitpos: [22]; default: 0;

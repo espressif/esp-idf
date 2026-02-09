@@ -15,7 +15,7 @@
 #include "utils_update.h"
 #include "sdkconfig.h"
 
-static const char *TAG = "ota_test";
+ESP_LOG_ATTR_TAG(TAG, "ota_test");
 
 
 /* @brief Checks and prepares the partition so that the factory app is launched after that.

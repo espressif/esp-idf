@@ -24,6 +24,7 @@ static void blecent_scan(void);
 static uint8_t s_current_phy;
 void ble_store_config_init(void);
 
+#if MYNEWT_VAL(BLE_GATTC)
 /**
  * Performs GATT operation against the specified peer:
  * 1. Reads the Supported LE PHY characteristic.
@@ -167,6 +168,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
     blecent_read(peer);
 
 }
+#endif
 
 /* Set default LE PHY before establishing connection */
 void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
@@ -388,6 +390,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery. */
             rc = peer_disc_all(event->connect.conn_handle,
                                blecent_on_disc_complete, NULL);
@@ -395,6 +398,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,6 @@
     .global _u2m_switch
     .type   _u2m_switch, @function
 _u2m_switch:
-     ecall
-     fence
-     ret
+    ecall
+    fence
+    ret

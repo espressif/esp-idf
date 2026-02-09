@@ -208,3 +208,36 @@ bool esp_tee_flash_check_paddr_in_active_tee_part(const size_t paddr)
 {
     return ((paddr >= tee_prot_ctx.active_part_start_paddr) && (paddr < tee_prot_ctx.active_part_end_paddr));
 }
+
+bool esp_tee_flash_check_vrange_in_tee_region(const size_t vaddr, const size_t len)
+{
+    size_t vaddr_end = vaddr + len;
+    if (vaddr_end < vaddr) {
+        return true;
+    }
+
+    bool prot_reg1_overlap = ((vaddr < SOC_S_IROM_HIGH) && (vaddr_end > SOC_S_DROM_LOW));
+    bool prot_reg2_overlap = ((vaddr < SOC_MMU_END_VADDR) && (vaddr_end > SOC_S_MMU_MMAP_RESV_START_VADDR));
+
+    return (prot_reg1_overlap || prot_reg2_overlap);
+}
+
+bool esp_tee_flash_check_prange_in_tee_region(const size_t paddr, const size_t len)
+{
+    size_t paddr_end = paddr + len;
+    if (paddr_end < paddr) {
+        return true;
+    }
+
+    return ((paddr < tee_prot_ctx.flash_reg_end_paddr) && (paddr_end > tee_prot_ctx.flash_reg_start_paddr));
+}
+
+bool esp_tee_flash_check_prange_in_active_tee_part(const size_t paddr, const size_t len)
+{
+    size_t paddr_end = paddr + len;
+    if (paddr_end < paddr) {
+        return true;
+    }
+
+    return ((paddr < tee_prot_ctx.active_part_end_paddr) && (paddr_end > tee_prot_ctx.active_part_start_paddr));
+}

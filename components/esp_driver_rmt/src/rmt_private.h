@@ -26,8 +26,7 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "soc/gdma_channel.h"
-#include "soc/rmt_periph.h"
+#include "hal/rmt_periph.h"
 #include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
@@ -41,11 +40,13 @@
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_private/gdma.h"
+#include "esp_private/gdma_link.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/esp_dma_utils.h"
 #include "driver/rmt_types.h"
 
 #ifdef __cplusplus
@@ -73,7 +74,7 @@ extern "C" {
 
 // Hopefully the channel offset won't change in other targets
 #define RMT_TX_CHANNEL_OFFSET_IN_GROUP 0
-#define RMT_RX_CHANNEL_OFFSET_IN_GROUP (SOC_RMT_CHANNELS_PER_GROUP - SOC_RMT_TX_CANDIDATES_PER_GROUP)
+#define RMT_RX_CHANNEL_OFFSET_IN_GROUP (RMT_LL_GET(CHANS_PER_INST) - RMT_LL_GET(TX_CANDIDATES_PER_INST))
 
 #define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
@@ -83,7 +84,6 @@ extern "C" {
 
 // RMT is a slow peripheral, it only supports AHB-GDMA
 #define RMT_DMA_DESC_ALIGN      4
-typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
 #define RMT_GET_NON_CACHE_ADDR(addr) (CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
@@ -102,7 +102,7 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 typedef struct {
     struct {
         rmt_symbol_word_t symbols[SOC_RMT_MEM_WORDS_PER_CHANNEL];
-    } channels[SOC_RMT_CHANNELS_PER_GROUP];
+    } channels[RMT_LL_GET(CHANS_PER_INST)];
 } rmt_block_mem_t;
 
 // RMTMEM address is declared in <target>.peripherals.ld
@@ -140,8 +140,8 @@ struct rmt_group_t {
     rmt_clock_source_t clk_src; // record the group clock source, group clock is shared by all channels
     uint32_t resolution_hz;     // resolution of group clock. clk_src_hz / prescale = resolution_hz
     uint32_t occupy_mask;       // a set bit in the mask indicates the channel is not available
-    rmt_tx_channel_t *tx_channels[SOC_RMT_TX_CANDIDATES_PER_GROUP]; // array of RMT TX channels
-    rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
+    rmt_tx_channel_t *tx_channels[RMT_LL_GET(TX_CANDIDATES_PER_INST)]; // array of RMT TX channels
+    rmt_rx_channel_t *rx_channels[RMT_LL_GET(RX_CANDIDATES_PER_INST)]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
     int intr_priority;     // RMT interrupt priority
 };
@@ -199,8 +199,7 @@ struct rmt_tx_channel_t {
     rmt_tx_trans_desc_t *cur_trans; // points to current transaction
     void *user_data;                // user context
     rmt_tx_done_callback_t on_trans_done; // callback, invoked on trans done
-    rmt_dma_descriptor_t *dma_nodes;    // DMA descriptor nodes
-    rmt_dma_descriptor_t *dma_nodes_nc; // DMA descriptor nodes accessed in non-cached way
+    gdma_link_list_handle_t dma_link;    // DMA link list handle
     rmt_tx_trans_desc_t trans_desc_pool[];   // transfer descriptor pool
 };
 
@@ -224,9 +223,9 @@ struct rmt_rx_channel_t {
     void *user_data;                     // user context
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
-    size_t dma_int_mem_alignment;         // DMA buffer alignment (both in size and address) for internal RX memory
-    rmt_dma_descriptor_t *dma_nodes;     // DMA link nodes
-    rmt_dma_descriptor_t *dma_nodes_nc;  // DMA descriptor nodes accessed in non-cached way
+    size_t dma_int_mem_alignment;        // DMA buffer alignment (both in size and address) for internal RX memory
+    size_t dma_ext_mem_alignment;        // DMA buffer alignment (both in size and address) for external RX memory
+    gdma_link_list_handle_t dma_link;    // DMA link list handle
 };
 
 /**

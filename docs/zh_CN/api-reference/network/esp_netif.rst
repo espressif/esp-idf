@@ -137,7 +137,9 @@ IP 事件
 
 .. note::
 
-    丢失 IP 事件由一个可配置的定时器触发，配置项为 :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`。当 IP 地址丢失时定时器启动，事件将在配置的时间间隔后触发，默认值为 120 秒。将时间间隔设置为 0 时可禁用该事件。
+    丢失 IP 事件由一个可配置的定时器触发，可通过 :ref:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE` 启用或禁用，
+    延迟由 :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL` 配置。当 IP 地址丢失时定时器启动，事件将在配置的
+    时间间隔后触发（默认 120 秒）。为保持向后兼容，将时间间隔设置为 0 也会禁用该定时器。
 
 .. _esp-netif structure:
 

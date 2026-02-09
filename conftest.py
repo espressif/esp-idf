@@ -91,11 +91,11 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 
 @pytest.fixture(scope='session')
-def pipeline_id(request: FixtureRequest) -> t.Optional[str]:
+def pipeline_id(request: FixtureRequest) -> str | None:
     return request.config.getoption('pipeline_id', None) or os.getenv('PARENT_PIPELINE_ID', None)  # type: ignore
 
 
-def get_pipeline_commit_sha_by_pipeline_id(pipeline_id: str) -> t.Optional[str]:
+def get_pipeline_commit_sha_by_pipeline_id(pipeline_id: str) -> str | None:
     gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
     pipeline = gl.project.pipelines.get(pipeline_id)
     if not pipeline:
@@ -120,12 +120,12 @@ class AppDownloader:
     def __init__(
         self,
         commit_sha: str,
-        pipeline_id: t.Optional[str] = None,
+        pipeline_id: str | None = None,
     ) -> None:
         self.commit_sha = commit_sha
         self.pipeline_id = pipeline_id
 
-    def download_app(self, app_build_path: str, artifact_type: t.Optional[str] = None) -> None:
+    def download_app(self, app_build_path: str, artifact_type: str | None = None) -> None:
         args = [
             'idf-ci',
             'gitlab',
@@ -155,9 +155,9 @@ class OpenOCD:
         self.RETRY_DELAY = 1
         self.TELNET_PORT = 4444
         self.dut = dut
-        self.telnet: t.Optional[Telnet] = None
+        self.telnet: Telnet | None = None
         self.log_file = os.path.join(self.dut.logdir, 'ocd.txt')
-        self.proc: t.Optional[pexpect.spawn] = None
+        self.proc: pexpect.spawn | None = None
 
     def __enter__(self) -> 'OpenOCD':
         return self
@@ -169,7 +169,7 @@ class OpenOCD:
         desc_path = os.path.join(self.dut.app.binary_path, 'project_description.json')
 
         try:
-            with open(desc_path, 'r') as f:
+            with open(desc_path) as f:
                 project_desc = json.load(f)
         except FileNotFoundError:
             logging.error('Project description file not found at %s', desc_path)
@@ -187,7 +187,7 @@ class OpenOCD:
         ocd_env = os.environ.copy()
         ocd_env['LIBUSB_DEBUG'] = '1'
 
-        for _ in range(1, self.MAX_RETRIES + 1):
+        for attempt in range(1, self.MAX_RETRIES + 1):
             try:
                 self.proc = pexpect.spawn(
                     command='openocd',
@@ -200,10 +200,12 @@ class OpenOCD:
                 if self.proc and self.proc.isalive():
                     self.proc.expect_exact('Info : Listening on port 3333 for gdb connections', timeout=5)
                     self.connect_telnet()
-                    self.write('log_output {}'.format(self.log_file))
+                    self.write(f'log_output {self.log_file}')
                     return self
             except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, ConnectionRefusedError) as e:
-                logging.error('Error running OpenOCD: %s', str(e))
+                logging.error(
+                    'OpenOCD connection attempt %d/%d failed. Error: %s', attempt, self.MAX_RETRIES, type(e).__name__
+                )
                 self.kill()
             time.sleep(self.RETRY_DELAY)
 
@@ -220,13 +222,15 @@ class OpenOCD:
         else:
             raise ConnectionRefusedError
 
-    def write(self, s: str) -> t.Any:
+    def write(self, s: str, timeout: int = 30) -> t.Any:
         if self.telnet is None:
             logging.error('Telnet connection is not established.')
             return ''
         resp = self.telnet.read_very_eager()
         self.telnet.write(to_bytes(s, '\n'))
-        resp += self.telnet.read_until(b'>')
+        resp += self.telnet.read_until(b'>', timeout=timeout)
+        if not resp.endswith(b'>'):
+            return ''
         return to_str(resp)
 
     def apptrace_wait_stop(self, timeout: int = 30) -> None:
@@ -241,6 +245,17 @@ class OpenOCD:
             if not stopped and time.time() > end_before:
                 raise pexpect.TIMEOUT('Failed to wait for apptrace stop!')
             time.sleep(1)
+
+    def gcov_dump(self, on_the_fly: bool = True) -> t.Any:
+        cmd = 'esp gcov'
+        if not on_the_fly:
+            cmd += ' dump'
+        cmd_out = self.write(cmd)
+        if 'Targets connected.' not in cmd_out:
+            raise pexpect.TIMEOUT('Failed to start gcov dump!')
+        if 'Targets disconnected.' not in cmd_out:
+            raise pexpect.TIMEOUT('Failed to stop gcov dump!')
+        return cmd_out
 
     def kill(self) -> None:
         # Check if the process is still running
@@ -258,8 +273,8 @@ def openocd_dut(dut: IdfDut) -> OpenOCD:
 
 @pytest.fixture(scope='session')
 def app_downloader(
-    pipeline_id: t.Optional[str],
-) -> t.Optional[AppDownloader]:
+    pipeline_id: str | None,
+) -> AppDownloader | None:
     if commit_sha := os.getenv('PIPELINE_COMMIT_SHA'):
         logging.debug('pipeline commit sha from CI env is %s', commit_sha)
         return AppDownloader(commit_sha, None)
@@ -283,9 +298,9 @@ def app_downloader(
 def build_dir(
     request: FixtureRequest,
     app_path: str,
-    target: t.Optional[str],
-    config: t.Optional[str],
-    app_downloader: t.Optional[AppDownloader],
+    target: str | None,
+    config: str | None,
+    app_downloader: AppDownloader | None,
 ) -> str:
     """
     Check local build dir with the following priority:
@@ -366,27 +381,33 @@ def set_dut_log_url(record_xml_attribute: t.Callable[[str, object], None], _pexp
     # Record the "dut_log_url" attribute in the XML report once test execution finished
     yield
 
-    if not isinstance(_pexpect_logfile, str):
-        record_xml_attribute('dut_log_url', 'No log URL found')
-        return
+    def _attach_log_url_to_xml_attribute(log_file_path: str) -> str:
+        if not isinstance(log_file_path, str):
+            return 'No log URL found'
 
-    ci_pages_url = os.getenv('CI_PAGES_URL')
-    logdir_pattern = re.compile(rf'({DEFAULT_LOGDIR}/.*)')
-    match = logdir_pattern.search(_pexpect_logfile)
+        ci_pages_url = os.getenv('CI_PAGES_URL')
+        logdir_pattern = re.compile(rf'({DEFAULT_LOGDIR}/.*)')
+        match = logdir_pattern.search(log_file_path)
 
-    if not match:
-        record_xml_attribute('dut_log_url', 'No log URL found')
-        return
+        if not match:
+            return 'No log URL found'
 
-    if not ci_pages_url:
-        record_xml_attribute('dut_log_url', _pexpect_logfile)
-        return
+        if not ci_pages_url:
+            return log_file_path
 
-    job_id = os.getenv('CI_JOB_ID', '0')
-    modified_ci_pages_url = ci_pages_url.replace('esp-idf', '-/esp-idf')
-    log_url = f'{modified_ci_pages_url}/-/jobs/{job_id}/artifacts/{match.group(1)}'
+        job_id = os.getenv('CI_JOB_ID', '0')
+        modified_ci_pages_url = ci_pages_url.replace('esp-idf', '-/esp-idf')
+        log_url = f'{modified_ci_pages_url}/-/jobs/{job_id}/artifacts/{match.group(1)}'
 
-    record_xml_attribute('dut_log_url', log_url)
+        return log_url
+
+    xml_attribute = []
+    if isinstance(_pexpect_logfile, str):
+        xml_attribute.append(_attach_log_url_to_xml_attribute(_pexpect_logfile))
+    if isinstance(_pexpect_logfile, tuple):
+        for i, log_file in enumerate(_pexpect_logfile):
+            xml_attribute.append(_attach_log_url_to_xml_attribute(log_file))
+    record_xml_attribute('dut_log_url', ';'.join(xml_attribute))
 
 
 ######################
@@ -406,61 +427,6 @@ def log_performance(record_property: t.Callable[[str, object], None]) -> t.Calla
         """
         logging.info('[Performance][%s]: %s', item, value)
         record_property(item, value)
-
-    return real_func
-
-
-@pytest.fixture
-def check_performance(idf_path: str) -> t.Callable[[str, float, str], None]:
-    """
-    check if the given performance item meets the passing standard or not
-    """
-
-    def real_func(item: str, value: float, target: str) -> None:
-        """
-        :param item: performance item name
-        :param value: performance item value
-        :param target: target chip
-        :raise: AssertionError: if check fails
-        """
-
-        def _find_perf_item(operator: str, path: str) -> float:
-            with open(path, encoding='utf-8') as f:
-                data = f.read()
-            match = re.search(rf'#define\s+IDF_PERFORMANCE_{operator}_{item.upper()}\s+([\d.]+)', data)
-            return float(match.group(1))  # type: ignore
-
-        def _check_perf(operator: str, standard_value: float) -> None:
-            if operator == 'MAX':
-                ret = value <= standard_value
-            else:
-                ret = value >= standard_value
-            if not ret:
-                raise AssertionError(
-                    f"[Performance] {item} value is {value}, doesn't meet pass standard {standard_value}"
-                )
-
-        path_prefix = os.path.join(idf_path, 'components', 'idf_test', 'include')
-        performance_files = (
-            os.path.join(path_prefix, target, 'idf_performance_target.h'),
-            os.path.join(path_prefix, 'idf_performance.h'),
-        )
-
-        found_item = False
-        for op in ['MIN', 'MAX']:
-            for performance_file in performance_files:
-                try:
-                    standard = _find_perf_item(op, performance_file)
-                except (OSError, AttributeError):
-                    # performance file doesn't exist or match is not found in it
-                    continue
-
-                _check_perf(op, standard)
-                found_item = True
-                break
-
-        if not found_item:
-            raise AssertionError(f'Failed to get performance standard for {item}')
 
     return real_func
 
@@ -561,10 +527,10 @@ def pytest_runtest_makereport(item, call):  # type: ignore
 
         if isinstance(_dut, list):
             logs_files.extend([template.format(get_path(d.logfile)) for d in _dut])
-            dut_artifacts_url.append('{}:'.format(_dut[0].test_case_name))
+            dut_artifacts_url.append(f'{_dut[0].test_case_name}:')
         else:
             logs_files.append(template.format(get_path(_dut.logfile)))
-            dut_artifacts_url.append('{}:'.format(_dut.test_case_name))
+            dut_artifacts_url.append(f'{_dut.test_case_name}:')
 
         for file in logs_files:
             dut_artifacts_url.append('    - {}'.format(quote(file, safe=':/')))

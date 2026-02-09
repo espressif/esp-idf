@@ -189,4 +189,9 @@ void  wpa_sm_disassociate(struct wpa_sm *sm, int reason_code)
 {
     /*check if need clear internal state and data value*/
 }
+
+u8 wpa_supplicant_get_transition_disable(void)
+{
+    return wpa_sm_get_transition_disable(&gWpaSm);
+}
 #endif

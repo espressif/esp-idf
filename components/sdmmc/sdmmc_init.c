@@ -51,7 +51,11 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 
     const bool is_spi = host_is_spi(card);
     const bool always = true;
+#if !CONFIG_SD_ENABLE_SDIO_SUPPORT
+    card->is_mem = 1;
+#else
     const bool io_supported = true;
+#endif
 
     if (config->pwr_ctrl_handle) {
         int voltage_mv = config->io_voltage * 1000;
@@ -71,8 +75,10 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* Check if host function pointers are correctly initialised */
     SDMMC_INIT_STEP(always, sdmmc_check_host_function_ptr_integrity);
 
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
     /* Reset SDIO (CMD52, RES) before re-initializing IO (CMD5). */
     SDMMC_INIT_STEP(io_supported, sdmmc_io_reset);
+#endif
 
     /* GO_IDLE_STATE (CMD0) command resets the card */
     SDMMC_INIT_STEP(always, sdmmc_send_cmd_go_idle_state);
@@ -80,8 +86,10 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* SEND_IF_COND (CMD8) command is used to identify SDHC/SDXC cards. */
     SDMMC_INIT_STEP(always, sdmmc_init_sd_if_cond);
 
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
     /* IO_SEND_OP_COND(CMD5), Determine if the card is an IO card. */
     SDMMC_INIT_STEP(io_supported, sdmmc_init_io);
+#endif
 
     const bool is_mem = card->is_mem;
     const bool is_sdio = !is_mem;
@@ -133,9 +141,11 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* MMC cards: read CXD */
     SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_read_ext_csd);
 
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
     /* SDIO cards: read CCCR card capabilities */
     uint8_t card_cap = 0;
     SDMMC_INIT_STEP_PARAM(is_sdio, sdmmc_io_init_read_card_cap, &card_cap);
+#endif
 
     /* Try to switch card to HS mode if the card supports it.
      * Set card->max_freq_khz value accordingly.
@@ -145,7 +155,9 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* Set bus width. One call for every kind of card, then one for the host */
     if (!is_spi) {
         SDMMC_INIT_STEP(is_sdmem, sdmmc_init_sd_bus_width);
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
         SDMMC_INIT_STEP(is_sdio, sdmmc_init_io_bus_width);
+#endif
         SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_bus_width);
         SDMMC_INIT_STEP(always, sdmmc_init_host_bus_width);
     }
@@ -169,8 +181,10 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);
     /* Sanity check after eMMC switch to HS mode */
     SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_check_ext_csd);
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
     /* Sanity check for SDIO after switching the frequency */
     SDMMC_INIT_STEP_PARAM(is_sdio, sdmmc_io_init_check_card_cap, &card_cap);
+#endif
 
     return ESP_OK;
 }

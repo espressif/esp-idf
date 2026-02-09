@@ -21,6 +21,7 @@ extern "C" {
 #define PMU_SDIO_WAKEUP_EN          BIT(8)
 #define PMU_BLE_SOC_WAKEUP_EN       BIT(10)
 #define PMU_LP_CORE_WAKEUP_EN       BIT(11)
+#define PMU_LP_CORE_TRAP_WAKEUP_EN  BIT(12)
 #define PMU_USB_WAKEUP_EN           BIT(14)
 
 #ifdef __cplusplus

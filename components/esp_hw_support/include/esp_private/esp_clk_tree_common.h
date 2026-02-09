@@ -101,13 +101,14 @@ void esp_clk_tree_initialize(void);
 /**
  * @brief Enable / Disable the power of the clock circuit
  *
+ *        This function is only used in rtc_clk.c for now.
+ *
  * @param[in] clk_circuit Clock circuits, in soc_root_clk_circuit_t
  * @param[in] enable  Enable / Disable the power of the clock circuit
  *
- * @return
- *      - ESP_OK               Success
+ * @return True if power control is truly toggled, false otherwise
  */
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable);
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable);
 
 /**
  * @brief Get the power status of the clock circuit

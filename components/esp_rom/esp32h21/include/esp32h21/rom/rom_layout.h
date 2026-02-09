@@ -7,8 +7,7 @@
 #pragma once
 
 #include <stdint.h>
-
-//TODO: [ESP32H21] IDF-11555
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,6 +87,10 @@ typedef struct {
 
     void *dram_start_uart_rom;
     void *dram_end_uart_rom;
+
+#if CONFIG_ESP32H21_SELECTS_REV_MP
+    void *drom_start;
+#endif
 } ets_rom_layout_t;
 
 extern const ets_rom_layout_t * const ets_rom_layout_p;

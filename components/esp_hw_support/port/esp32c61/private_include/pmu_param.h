@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32C61] IDF-9250
-
 #define HP_CALI_DBIAS_DEFAULT   26
 #define LP_CALI_DBIAS_DEFAULT   25
 #define HP_CALI_DBIAS_SLP_1V1   22
@@ -328,6 +326,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
     .icg_func = clk_flags                                               \
 }
@@ -335,6 +334,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 1,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
     .icg_func = 0                                                       \
 }
@@ -486,7 +486,7 @@ typedef struct pmu_sleep_machine_constant {
         .power_supply_wait_time_us      = 20,   \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 270,  \
-        .regdma_s2a_work_time_us        = 666,  \
+        .regdma_s2a_work_time_us        = 800,  \
         .regdma_m2a_work_time_us        = 296,  \
         .regdma_a2s_work_time_us        = 586,  \
         .regdma_rf_on_work_time_us      = 138,  \

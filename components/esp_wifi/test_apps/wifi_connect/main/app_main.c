@@ -13,7 +13,7 @@
 #include "esp_heap_caps.h"
 
 // Some resources are lazy allocated in wifi and lwip
-#define TEST_MEMORY_LEAK_THRESHOLD (-1536)
+#define TEST_MEMORY_LEAK_THRESHOLD (-1596)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

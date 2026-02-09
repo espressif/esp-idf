@@ -404,6 +404,11 @@ void bta_ag_do_disc(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK service)
         return;
     }
 
+    if (p_scb->p_disc_db) {
+        APPL_TRACE_ERROR("Discovery already in progress... returning.");
+        return;
+    }
+
     /* allocate buffer for sdp database */
     p_scb->p_disc_db = (tSDP_DISCOVERY_DB *) osi_malloc(BTA_AG_DISC_BUF_SIZE);
     if(p_scb->p_disc_db) {

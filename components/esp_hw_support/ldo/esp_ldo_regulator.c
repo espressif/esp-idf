@@ -16,7 +16,7 @@
 #include "esp_ldo_regulator.h"
 #include "esp_private/critical_section.h"
 
-static const char *TAG = "ldo";
+ESP_LOG_ATTR_TAG(TAG, "ldo");
 
 typedef struct ldo_regulator_channel_t {
     int chan_id;

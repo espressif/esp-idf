@@ -19,16 +19,15 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x05, 0x18,
-    0x12, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'c', 't', 's', '-', 'p', 'r', 'p', 'h', '-', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x05, 0x18,
+    0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'c', 't', 's', '-', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
 
 static const char *tag = "NimBLE_CTS_PRPH";
 static const char *device_name = "ble_cts_prph";
-
 static int ble_cts_prph_gap_event(struct ble_gap_event *event, void *arg);
 
 static uint8_t ble_cts_prph_addr_type;
@@ -274,8 +273,6 @@ void ble_cts_prph_host_task(void *param)
 
 void app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -302,12 +299,15 @@ void app_main(void)
     ble_hs_cfg.sm_sc = 1;
     ble_hs_cfg.sm_mitm = 1;
 
+#if MYNEWT_VAL(BLE_GATTS)
+    int rc;
     rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     /* Start the task */
     nimble_port_freertos_init(ble_cts_prph_host_task);

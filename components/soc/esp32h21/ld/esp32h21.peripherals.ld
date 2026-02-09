@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 PROVIDE ( UART0               = 0x60000000 );
@@ -39,6 +39,9 @@ PROVIDE ( ECDSA               = 0x6008E000 );
 PROVIDE ( IO_MUX              = 0x60090000 );
 PROVIDE ( GPIO                = 0x60091000 );
 PROVIDE ( GPIO_EXT            = 0x60091E00 );
+PROVIDE ( SDM                 = 0x60091E04 );
+PROVIDE ( GLITCH_FILTER       = 0x60091ED8 );
+PROVIDE ( GPIO_ETM            = 0x60091F18 );
 PROVIDE ( MEM_MONITOR         = 0x60092000 );
 PROVIDE ( PAU                 = 0x60093000 );
 PROVIDE ( HP_SYSTEM           = 0x60095000 );

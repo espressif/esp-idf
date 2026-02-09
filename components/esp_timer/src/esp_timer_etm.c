@@ -14,7 +14,7 @@
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
-static const char *TAG = "esptimer-etm";
+ESP_LOG_ATTR_TAG(TAG, "esptimer-etm");
 
 static esp_err_t esp_timer_etm_event_del(esp_etm_event_t *event)
 {

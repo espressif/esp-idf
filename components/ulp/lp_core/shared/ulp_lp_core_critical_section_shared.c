@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,8 +106,12 @@ static void ulp_lp_core_spinlock_acquire(ulp_lp_core_spinlock_t *lock)
     for (lv = 0; lv < (int)LOCK_CANDIDATE_NUM_MAX - 1; lv++) {
         /* Each candidate has to go through all the levels in order to get the spinlock. Start by notifying other candidates, we have reached level `lv` */
         lock->level[lock_candidate_id] = lv;
+        /* Fence instruction to ensure ordering of memory operations */
+        __asm__ volatile("fence rw, rw" ::: "memory");
         /* Notify other candidates we are the latest one who entered level `lv` */
         lock->last_to_enter[lv] = lock_candidate_id;
+        /* Fence instruction to ensure ordering of memory operations */
+        __asm__ volatile("fence rw, rw" ::: "memory");
         /* If there is any candidate that reached the same or a higher level than this candidate, wait for it to finish. Advance to the next level if another candidate becomes the latest one to arrive at our current level */
         for (candidate = 0; candidate < (int)LOCK_CANDIDATE_NUM_MAX; candidate++) {
             while ((candidate != lock_candidate_id) && (lock->level[candidate] >= lv && lock->last_to_enter[lv] == lock_candidate_id)) {
@@ -128,6 +132,8 @@ static void ulp_lp_core_spinlock_release(ulp_lp_core_spinlock_t *lock)
     int lock_candidate_id = ulp_lp_core_spinlock_get_candidate_id();
 
     lock->level[lock_candidate_id] = -1;
+    /* Fence instruction to ensure ordering of memory operations */
+    __asm__ volatile("fence rw, rw" ::: "memory");
 }
 #endif
 

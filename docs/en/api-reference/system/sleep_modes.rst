@@ -4,6 +4,7 @@ Sleep Modes
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_SPI_POWER_DOMAIN:default="VDD_SPI", esp32="VDD_SDIO"}
+{IDF_TARGET_RTC_POWER_DOMAIN:default="VDD3P3_RTC", esp32c5="VDDPST1", esp32c6="VDDPST1", esp32c61="VDDPST1", esp32p4="VDD_LP"}
 
 Overview
 --------
@@ -283,7 +284,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
 .. only:: SOC_RTCIO_WAKE_SUPPORTED
 
-    GPIO Wakeup (Light-sleep Only)
+    GPIO Wakeup from Light-sleep
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     .. only:: (SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP)
@@ -308,32 +309,55 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
        .. note::
 
-            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+            .. only::  SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
                 In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
 
-                Alternatively，you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly in that condition for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
+                Alternatively，you can use :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` directly in that condition for GPIO wakeup, because the digital IO power domain is being powered off.
 
-            .. only::  not SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+            .. only::  not SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
                 In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+
+    .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+
+        .. _deep_sleep_gpio_wakeup:
+
+        GPIO Wakeup from Deep-sleep
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        In addition to the GPIO wakeup mechanism available in Light-sleep mode, {IDF_TARGET_NAME} also supports waking up from Deep-sleep using GPIOs.
+
+        This wakeup source is implemented by :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`, which allows selecting one or more GPIOs and the wakeup level (high or low). Only GPIOs powered by the {IDF_TARGET_RTC_POWER_DOMAIN} power domain can be used as Deep-sleep GPIO wakeup sources. The exact set of supported pins can be checked in the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Section IO Pins.
+
+        .. note::
+            This API also works for Light-sleep mode when the peripheral power domain is powered down (see :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`). In this case, it should be used instead of :cpp:func:`esp_sleep_enable_gpio_wakeup` because the GPIO module is powered down during sleep.
+
+        For a complete example of using GPIO to wake up from Deep-sleep, see :example:`system/deep_sleep`.
 
 .. only:: not SOC_RTCIO_WAKE_SUPPORTED and not esp32h2
 
     GPIO Wakeup
     ^^^^^^^^^^^
 
-    Any IO can be used as the external input to wake up the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using the :cpp:func:`gpio_wakeup_enable` function. Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
+    There are two GPIO wakeup APIs available, each designed for different sleep scenarios:
 
-    Additionally, IOs that are powered by the VDD3P3_RTC power domain can be used to wake up the chip from Deep-sleep. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_deep_sleep_enable_gpio_wakeup`. The function will enable the Deep-sleep wakeup for the selected pin.
+    **1. :cpp:func:`esp_sleep_enable_gpio_wakeup` - For Light-sleep (GPIO module powered on)**
 
-    .. only:: SOC_PM_SUPPORT_TOP_PD
+        Any IO can be used as the external input to wake up the chip from Light-sleep when the GPIO module remains powered on. Each pin can be individually configured to trigger wakeup on high or low level using the :cpp:func:`gpio_wakeup_enable` function. Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
 
         .. note::
+            This API is **not available** when :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, because the GPIO module is powered down during sleep in this case. Use :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` instead.
 
-            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+    **2. :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` - For Deep-sleep and Light-sleep (peripheral powerdown)**
 
-                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
+        IOs that are powered by the VDD3P3_RTC power domain can be used to wake up the chip from Deep-sleep or Light-sleep when the peripheral power domain is powered down. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`. This function works for:
+
+        - Deep-sleep mode (always)
+        - Light-sleep mode when :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled
+
+        .. note::
+            Only GPIOs powered by the VDD3P3_RTC power domain (RTC IOs) can be used with this API. The exact set of supported pins can be checked in the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Section IO Pins.
 
 .. only:: esp32h2
 
@@ -420,6 +444,17 @@ However, for those who have fully understood the risk and are still willing to p
         - ESP-IDF does not provide any mechanism that can power down the flash in all conditions when Light-sleep.
         - :cpp:func:`esp_deep_sleep_start` function forces power down flash regardless of user configuration.
 
+Flash Entering Deep Power-Down Mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to reducing power consumption by completely powering off the flash, you can further lower flash power usage during sleep by enabling the Kconfig option :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`. Compared with fully cutting off the flash power, this feature avoids the extra delay caused by re-powering the flash when the chip wakes up from sleep, while still achieving extremely low power consumption. Most flashes draw less than 1 µA when entering Deep Power-Down (DPD) mode.
+
+In almost all use cases, using DPD mode provides better overall benefits than fully powering off the flash, offering both improved safety and lower power consumption.
+
+.. warning::
+
+    Before using this feature, check the datasheet of the flash device used on your chip to ensure it supports the Deep Power-Down mode.
+
 Configuring IOs (Deep-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -451,6 +486,10 @@ Entering Sleep
 :cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start` functions can be used to enter Light-sleep or Deep-sleep modes correspondingly. After that, the system configures the parameters of RTC controller according to the requested wakeup sources and power-down options.
 
 It is also possible to enter sleep modes with no wakeup sources configured. In this case, the chip will be in sleep modes indefinitely until external reset is applied.
+
+.. note::
+
+    The sleep process will disable the cache, so the task stack of the task requesting sleep must be located in internal memory (DRAM or RTC fast memory). If a task with its stack in PSRAM requests Light-sleep or Deep-sleep, it will be rejected and an error will be returned.
 
 UART Output Handling
 ^^^^^^^^^^^^^^^^^^^^

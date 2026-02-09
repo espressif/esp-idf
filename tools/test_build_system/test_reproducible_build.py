@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # This test checks the behavior of reproducible builds option.
 import logging
@@ -8,17 +8,18 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from test_build_system_helpers import append_to_file
-from test_build_system_helpers import bin_files_differ
 from test_build_system_helpers import BOOTLOADER_BINS
 from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import append_to_file
+from test_build_system_helpers import bin_files_differ
 
 
 @pytest.mark.parametrize(
-    'app_name', [
+    'app_name',
+    [
         pytest.param('blink', marks=[pytest.mark.test_app_copy('examples/get-started/blink')]),
         pytest.param('blecent', marks=[pytest.mark.test_app_copy('examples/bluetooth/nimble/blecent')]),
-    ]
+    ],
 )
 def test_reproducible_builds(app_name: str, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     append_to_file(test_app_copy / 'sdkconfig', 'CONFIG_APP_REPRODUCIBLE_BUILD=y')
@@ -29,11 +30,8 @@ def test_reproducible_builds(app_name: str, idf_py: IdfPyFunc, test_app_copy: Pa
     idf_py('-B', str(build_first), 'build')
 
     elf_file = build_first / f'{app_name}.elf'
-    logging.info(f'Checking that various paths are not included in the ELF file')
-    strings_output = subprocess.check_output(
-        ['xtensa-esp32-elf-strings', str(elf_file)],
-        encoding='utf-8'
-    )
+    logging.info('Checking that various paths are not included in the ELF file')
+    strings_output = subprocess.check_output(['xtensa-esp32-elf-strings', str(elf_file)], encoding='utf-8')
     idf_path = os.environ['IDF_PATH']
     assert str(idf_path) not in strings_output, f'{idf_path} found in {elf_file}'
     assert str(test_app_copy) not in strings_output, f'{test_app_copy} found in {elf_file}'
@@ -45,7 +43,7 @@ def test_reproducible_builds(app_name: str, idf_py: IdfPyFunc, test_app_copy: Pa
     logging.info(f'Building in {build_second} directory')
     idf_py('-B', str(build_second), 'build')
 
-    logging.info(f'Comparing build artifacts')
+    logging.info('Comparing build artifacts')
     artifacts_to_check = [
         f'build/{app_name}.map',
         f'build/{app_name}.elf',
@@ -58,15 +56,25 @@ def test_reproducible_builds(app_name: str, idf_py: IdfPyFunc, test_app_copy: Pa
 
         assert not bin_files_differ(path_first, path_second), f'{path_first} and {path_second} differ'
 
-    logging.info(f'Checking that GDB works with CONFIG_APP_REPRODUCIBLE_BUILD=y')
-    gdb_output = subprocess.check_output([
-        'xtensa-esp32-elf-gdb',
-        '--batch', '--quiet',
-        '-x', f'{build_first}/prefix_map_gdbinit',
-        '-ex', 'set logging enabled',
-        '-ex', 'set pagination off',
-        '-ex', 'list app_main',
-        str(elf_file)
-    ], encoding='utf-8', stderr=subprocess.STDOUT, cwd=str(build_first))
+    logging.info('Checking that GDB works with CONFIG_APP_REPRODUCIBLE_BUILD=y')
+    gdb_output = subprocess.check_output(
+        [
+            'xtensa-esp32-elf-gdb',
+            '--batch',
+            '--quiet',
+            '-x',
+            f'{build_first}/gdbinit/prefix_map',
+            '-ex',
+            'set logging enabled',
+            '-ex',
+            'set pagination off',
+            '-ex',
+            'list app_main',
+            str(elf_file),
+        ],
+        encoding='utf-8',
+        stderr=subprocess.STDOUT,
+        cwd=str(build_first),
+    )
 
     assert 'No such file or directory' not in gdb_output, f'GDB failed to find app_main in {elf_file}:\n{gdb_output}'

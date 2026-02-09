@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -174,15 +174,6 @@ typedef enum {
     GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default choice */
 } soc_periph_gptimer_clk_src_t;
 
-/**
- * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
- */
-typedef enum {
-    TIMER_SRC_CLK_APB = SOC_MOD_CLK_APB,     /*!< Timer group source clock is APB */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< Timer group source clock is XTAL */
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_APB, /*!< Timer group source clock default choice is APB */
-} soc_periph_tg_clk_src_legacy_t;
-
 //////////////////////////////////////////////////LCD///////////////////////////////////////////////////////////////////
 
 /**
@@ -214,14 +205,20 @@ typedef enum {
     RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
 } soc_periph_rmt_clk_src_t;
 
+//////////////////////////////////////////////////PCNT//////////////////////////////////////////////////////////////////
+
 /**
- * @brief Type of RMT clock source, reserved for the legacy RMT driver
+ * @brief Array initializer for all supported clock sources of PCNT
+ */
+#define SOC_PCNT_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Type of PCNT clock source
  */
 typedef enum {
-    RMT_BASECLK_APB = SOC_MOD_CLK_APB,      /*!< RMT source clock is APB CLK */
-    RMT_BASECLK_REF = SOC_MOD_CLK_REF_TICK, /*!< RMT source clock is REF_TICK */
-    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB,  /*!< RMT source clock default choice is APB */
-} soc_periph_rmt_clk_src_legacy_t;
+    PCNT_CLK_SRC_APB = SOC_MOD_CLK_APB,           /*!< Select APB as the source clock */
+    PCNT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
+} soc_periph_pcnt_clk_src_t;
 
 //////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
 
@@ -368,7 +365,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of TWAI
  */
-#define SOC_TWAI_CLKS {SOC_MOD_CLK_APB}
+#define SOC_TWAI_CLKS {(soc_periph_twai_clk_src_t)SOC_MOD_CLK_APB}
 
 /**
  * @brief TWAI clock source
@@ -438,8 +435,6 @@ typedef enum {
     LEDC_USE_RC_FAST_CLK = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     LEDC_USE_REF_TICK = SOC_MOD_CLK_REF_TICK,       /*!< Select REF_TICK as the source clock */
     LEDC_USE_XTAL_CLK = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-
-    LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
@@ -453,6 +448,17 @@ typedef enum {
     CLKOUT_SIG_RC_FAST  = 14,   /*!< RC fast clock, about 17.5MHz */
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
+
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calculation source selection
+ */
+typedef enum {
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_RC_FAST_D256,                            /*!< Select to calculate frequency of RC_FAST_D256_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }

@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_caps.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
 #include "bootloader_hooks.h"
 
-static const char *TAG = "boot";
+ESP_LOG_ATTR_TAG(TAG, "boot");
 
 static int select_partition_number(bootloader_state_t *bs);
 static int selected_boot_partition(const bootloader_state_t *bs);

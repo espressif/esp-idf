@@ -13,7 +13,7 @@
  * we can reuse the Wifi interrupt source for ethernet, since QEMU doesn't emulate Wifi (yet).
  * We also map the EMAC registers to an unused address range.
  */
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+ #if SOC_WIFI_SUPPORTED && !SOC_EMAC_SUPPORTED
 #define ETS_ETH_MAC_INTR_SOURCE     ETS_WIFI_MAC_INTR_SOURCE
 #define DR_REG_EMAC_BASE            0x600CD000
 #endif

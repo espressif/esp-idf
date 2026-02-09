@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,13 @@ extern "C" {
 
 #define P256_LEN        (256/8)
 #define P192_LEN        (192/8)
+#define P384_LEN        (384/8)
+
+#if SOC_ECC_SUPPORT_CURVE_P384
+#define MAX_SIZE P384_LEN
+#else
+#define MAX_SIZE P256_LEN
+#endif
 
 /* Note: x & y are stored in little endian order (same as CPU byte order, and order used internally by most libraries).
 
@@ -22,9 +29,9 @@ extern "C" {
    Note this is opposite to most byte string formats used to represent keys, which are often big endian
 */
 typedef struct {
-    uint8_t x[P256_LEN]; /* Little endian order */
-    uint8_t y[P256_LEN]; /* Little endian order */
-    unsigned len;        /* P192_LEN or P256_LEN */
+    uint8_t x[MAX_SIZE]; /* Little endian order */
+    uint8_t y[MAX_SIZE]; /* Little endian order */
+    unsigned len;        /* P192_LEN, P256_LEN, or P384_LEN */
 } ecc_point_t;
 
 /**

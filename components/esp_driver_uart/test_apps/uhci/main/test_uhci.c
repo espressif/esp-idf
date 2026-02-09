@@ -10,6 +10,7 @@
 #include "test_utils.h"
 #include "driver/uart.h"
 #include "driver/uhci.h"
+#include "hal/gdma_periph.h"
 
 #define DATA_LENGTH 1024
 #define EX_UART_NUM 1
@@ -246,7 +247,7 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
 }
 
 #if CONFIG_SPIRAM
-#if SOC_AHB_GDMA_SUPPORT_PSRAM
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
 static void uhci_receive_test_in_psram(void *arg)
 {
     uhci_controller_handle_t uhci_ctrl = ((uhci_controller_handle_t *)arg)[0];

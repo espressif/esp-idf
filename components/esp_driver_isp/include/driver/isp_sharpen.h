@@ -27,6 +27,9 @@ typedef struct {
     uint8_t sharpen_template[ISP_SHARPEN_TEMPLATE_X_NUMS][ISP_SHARPEN_TEMPLATE_Y_NUMS];     ///< Sharpen template data
     uint8_t padding_line_tail_valid_start_pixel;                                            ///< Sharpen edge padding line tail valid start pixel, padding data will only be valid between the valid start pixel and the valid end pixel. Set both the start and end pixel to 0 to make all padding pixel valid
     uint8_t padding_line_tail_valid_end_pixel;                                              ///< Sharpen edge padding line tail valid end pixel, padding data will only be valid between the valid start pixel and the valid end pixel. Set both the start and end pixel to 0 to make all padding pixel valid
+    struct {
+        uint32_t update_once_configured : 1;                                                ///< If set, apply configuration to hardware immediately; otherwise defer to frame boundary
+    } flags;                                                                                ///< Driver behaviour flags
 } esp_isp_sharpen_config_t;
 
 /**

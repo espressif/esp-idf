@@ -65,12 +65,6 @@ ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET
       - Y
       - Y
       - Y
-    * - ESP32-S2
-      - \–
-      - \–
-      - \–
-      - \–
-      - \–
     * - ESP32-S3
       - Y
       - Y
@@ -89,7 +83,19 @@ ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET
       - Y
       - Y
       - Y
+    * - ESP32-C5
+      - Y
+      - Y
+      - Y
+      - Y
+      - Y
     * - ESP32-C6
+      - Y
+      - Y
+      - Y
+      - Y
+      - Y
+    * - ESP32-C61
       - Y
       - Y
       - Y

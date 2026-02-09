@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,6 @@
 
 #include "esp_types.h"
 #include "soc/soc_caps.h"
-#include "freertos/FreeRTOS.h"
-
 #include "hal/spi_types.h"
 #include "driver/spi_common.h"
 #include "sdkconfig.h"
@@ -41,7 +39,7 @@ typedef struct {
 } spi_slave_hd_event_t;
 
 /// Callback for SPI Slave HD
-typedef bool (*slave_cb_t)(void* arg, spi_slave_hd_event_t* event, BaseType_t* awoken);
+typedef bool (*slave_cb_t)(void* arg, spi_slave_hd_event_t* event, int* awoken);
 
 /// Channel of SPI Slave HD to do data transaction
 typedef enum {
@@ -153,7 +151,7 @@ esp_err_t spi_slave_hd_disable(spi_host_device_t host_id);
  *  - ESP_ERR_TIMEOUT: Cannot queue the data before timeout. Master is still processing previous transaction.
  *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under segment mode.
  */
-esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t* trans, TickType_t timeout);
+esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t* trans, uint32_t timeout);
 
 /**
  * @brief Get the result of a data transaction (segment mode)
@@ -170,7 +168,7 @@ esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t c
  *  - ESP_ERR_TIMEOUT: There's no transaction done before timeout
  *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under segment mode.
  */
-esp_err_t spi_slave_hd_get_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout);
+esp_err_t spi_slave_hd_get_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, uint32_t timeout);
 
 /**
  * @brief Read the shared registers
@@ -210,7 +208,7 @@ void spi_slave_hd_write_buffer(spi_host_device_t host_id, int addr, uint8_t *dat
  *  - ESP_ERR_TIMEOUT: Master is still processing previous transaction. There is no available transaction for slave to load
  *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under append mode.
  */
-esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, TickType_t timeout);
+esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, uint32_t timeout);
 
 /**
  * @brief Get the result of a data transaction (append mode)
@@ -227,7 +225,7 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
  *  - ESP_ERR_TIMEOUT: There's no transaction done before timeout
  *  - ESP_ERR_INVALID_STATE: Function called in invalid state. This API should be called under append mode.
  */
-esp_err_t spi_slave_hd_get_append_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout);
+esp_err_t spi_slave_hd_get_append_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, uint32_t timeout);
 
 #ifdef __cplusplus
 }

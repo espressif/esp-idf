@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_timer.h"
 #include "esp_private/sdmmc_common.h"
 
@@ -180,8 +181,10 @@ esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card)
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
     if (card->is_mem && !card->is_mmc) {
         err = sdmmc_enable_hs_mode_and_check(card);
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
     } else if (card->is_sdio) {
         err = sdmmc_io_enable_hs_mode(card);
+#endif
     } else if (card->is_mmc){
         err = sdmmc_mmc_enable_hs_mode(card);
     }
@@ -410,6 +413,7 @@ esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
         actual_size = heap_caps_get_allocated_size(buf);
 
         assert(actual_size == SDMMC_IO_BLOCK_SIZE);
+        (void)actual_size;
         card->host.dma_aligned_buffer = buf;
     }
     return ESP_OK;

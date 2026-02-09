@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,7 +58,10 @@ TEST_CASE("stress test psram heap allocable", "[psram][manual][ignore]")
     }
 }
 
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
+#if CONFIG_SPIRAM_XIP_FROM_PSRAM
+/*---------------------------------------------------------------
+                    SPI1 with XIP
+---------------------------------------------------------------*/
 #include "esp_partition.h"
 #include "driver/gptimer.h"
 #include "esp_rom_spiflash.h"

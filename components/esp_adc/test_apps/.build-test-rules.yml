@@ -8,6 +8,8 @@ components/esp_adc/test_apps/adc:
     - esp_adc
     - esp_driver_gpio
     - esp_driver_i2s  # ADC continuous driver relies on I2S on ESP32
-    - efuse
     - esp_driver_spi  # ADC continuous driver relies on SPI on ESP32S2
     - esp_driver_tsens
+    - esp_hw_support
+    - esp_hal_ana_conv
+    - soc

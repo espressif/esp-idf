@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------/
-/  Low level disk interface modlue include file   (C)ChaN, 2019          /
+/  Low level disk interface modlue include file   (C)ChaN, 2025          /
 /-----------------------------------------------------------------------*/
 
 #ifndef _DISKIO_DEFINED
@@ -57,7 +57,7 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
 #define CTRL_EJECT			7	/* Eject media */
 #define CTRL_FORMAT			8	/* Create physical format on the media */
 
-/* MMC/SDC specific ioctl command */
+/* MMC/SDC specific ioctl command (Not used by FatFs) */
 #define MMC_GET_TYPE		10	/* Get card type */
 #define MMC_GET_CSD			11	/* Get CSD */
 #define MMC_GET_CID			12	/* Get CID */
@@ -67,7 +67,7 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
 #define ISDIO_WRITE			56	/* Write data to SD iSDIO register */
 #define ISDIO_MRITE			57	/* Masked write data to SD iSDIO register */
 
-/* ATA/CF specific ioctl command */
+/* ATA/CF specific ioctl command (Not used by FatFs) */
 #define ATA_GET_REV			20	/* Get F/W revision */
 #define ATA_GET_MODEL		21	/* Get model name */
 #define ATA_GET_SN			22	/* Get serial number */

@@ -11,7 +11,7 @@
 #include "hal/dma_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
-#if SOC_LCDCAM_SUPPORTED
+#if SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 #include "hal/lcd_hal.h"
 #endif
 
@@ -27,15 +27,9 @@ extern "C" {
 
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define LCD_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LCD_CLOCK_SRC_ATOMIC()
-#endif
-
 #define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
-#if SOC_LCDCAM_SUPPORTED
+#if SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 
 typedef enum {
     LCD_COM_DEVICE_TYPE_I80,
@@ -58,7 +52,7 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
  * @param member_id member ID
  */
 void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id);
-#endif // SOC_LCDCAM_SUPPORTED
+#endif // SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 
 /**
  * @brief Reverse the bytes in the buffer

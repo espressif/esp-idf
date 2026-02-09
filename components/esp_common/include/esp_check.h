@@ -435,6 +435,55 @@ extern "C" {
 
 #endif // !CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT
 
+/**
+ * @brief Evaluate an esp_err_t expression, run cleanup on error, and return.
+ *
+ * Evaluates @p x once and stores the result in a local variable `err_rc_`.
+ * If the result is not ESP_OK, the macro:
+ *   - executes the code passed in `__VA_ARGS__` (e.g., cleanup functions or logging),
+ *   - returns `err_rc_` from the current function.
+ * The cleanup code can freely use `err_rc_`.
+ *
+ * Example:
+ * @code{c}
+ * esp_err_t initialize_device(void)
+ * {
+ *     // Simple case: single cleanup action
+ *     ESP_RETURN_ON_ERROR_CLEANUP(open_device("/dev/adc0"), close_device());
+ *
+ *     // Multiple cleanup actions
+ *     ESP_RETURN_ON_ERROR_CLEANUP(
+ *         allocate_buffer(4096),
+ *         free_buffer(),
+ *         close_device(),
+ *         printf("Failed to initialize sensor: %s\n", esp_err_to_name(err_rc_))
+ *     );
+ *
+ *     // Complex cleanup with conditional logic and ESP_LOG logging
+ *     ESP_RETURN_ON_ERROR_CLEANUP(
+ *         calibrate_sensor(),
+ *         do {
+ *             if (err_rc_ == ESP_ERR_INVALID_STATE) {
+ *                ESP_LOGE(TAG, "Sensor in invalid state during calibration");}
+ *             }
+ *             free_buffer();
+ *             close_device();
+ *             ESP_LOGE(TAG, "Drop connection");
+ *         } while (0)
+ *     );
+ *
+ *     return ESP_OK;
+ * }
+ * @endcode
+ */
+#define ESP_RETURN_ON_ERROR_CLEANUP(x, ...) do { \
+        esp_err_t err_rc_ = (x);                \
+        if (unlikely(err_rc_ != ESP_OK)) {      \
+            __VA_ARGS__;                        \
+            return err_rc_;                     \
+        }                                       \
+    } while (0)
+
 #ifdef __cplusplus
 }
 #endif

@@ -88,6 +88,8 @@ uint32_t panic_get_cause(const void* frame);
 
 void panic_prepare_frame_from_ctx(void* frame);
 
+void panic_clear_active_interrupts(const void* frame);
+
 #ifdef __cplusplus
 }
 #endif

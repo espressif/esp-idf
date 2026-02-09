@@ -173,15 +173,14 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	/* initialize STA info data */
 	os_memcpy(sta->addr, addr, ETH_ALEN);
 	sta->next = hapd->sta_list;
-	hapd->sta_list = sta;
-	hapd->num_sta++;
-	ap_sta_hash_add(hapd, sta);
 #ifdef CONFIG_SAE
 	sta->sae_commit_processing = false;
 	sta->remove_pending = false;
 	sta->lock = os_semphr_create(1, 1);
 #endif /* CONFIG_SAE */
-
+	hapd->sta_list = sta;
+	hapd->num_sta++;
+	ap_sta_hash_add(hapd, sta);
 	return sta;
 }
 

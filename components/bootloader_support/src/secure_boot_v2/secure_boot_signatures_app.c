@@ -11,12 +11,6 @@
 #include "bootloader_signature.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/md.h"
-#include "mbedtls/platform.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include <string.h>
 #include <sys/param.h>
 #include "esp_secure_boot.h"
@@ -34,7 +28,7 @@ _Static_assert(SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == SECURE_BOOT_NUM_BLOCKS,
 
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
-static const char *TAG = "secure_boot_v2";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 /* A signature block is valid when it has correct magic byte, crc. */

@@ -293,7 +293,7 @@ API Reference
 
 .. include-build-file:: inc/uhci.inc
 .. include-build-file:: inc/components/esp_driver_uart/include/driver/uhci_types.inc
-.. include-build-file:: inc/components/hal/include/hal/uhci_types.inc
+.. include-build-file:: inc/components/esp_hal_uart/include/hal/uhci_types.inc
 
 .. [1]
    The callback function, e.g., :cpp:member:`uhci_event_callbacks_t::on_tx_trans_done`, :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` and the functions invoked by itself should also reside in IRAM, users need to take care of this by themselves.

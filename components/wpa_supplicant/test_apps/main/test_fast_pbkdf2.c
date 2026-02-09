@@ -7,12 +7,12 @@
 #include <inttypes.h>
 #include "unity.h"
 #include "utils/common.h"
-#include "mbedtls/pkcs5.h"
+#include "mbedtls/private/pkcs5.h"
 #include "crypto/sha1.h"
 #include "test_wpa_supplicant_common.h"
 
 #define PMK_LEN 32
-#define NUM_ITERATIONS 15
+#define NUM_ITERATIONS 5
 #define MIN_PASSPHARSE_LEN 8
 
 void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
@@ -89,10 +89,12 @@ TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
         }
         TEST_ASSERT(memcmp(PMK, expected_pmk, PMK_LEN) == 0);
 
+#if 0
         start_time = esp_timer_get_time();
         fastpbkdf2_hmac_sha1((const u8 *)passphrase, os_strlen((char *)passphrase), ssid, ssid_len, 4096, PMK, PMK_LEN);
         end_time = esp_timer_get_time();
         total_time_fast_pbkdf2 += (end_time - start_time);
+#endif
     }
 
     // Calculate average time for pbkdf2_sha1

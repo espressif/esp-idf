@@ -14,6 +14,7 @@
 #include <sys/param.h>
 #include <inttypes.h>
 #include "esp_check.h"
+#include "esp_flash_encrypt.h"
 #include "hal/efuse_hal.h"
 
 ESP_EVENT_DEFINE_BASE(ESP_HTTPS_OTA_EVENT);
@@ -52,10 +53,12 @@ struct esp_https_ota_handle {
     size_t ota_upgrade_buf_size;
     int binary_file_len;
     int image_length;
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     int max_http_request_size;
+    bool partial_http_download;
+#endif
     esp_https_ota_state state;
     bool bulk_flash_erase;
-    bool partial_http_download;
     int max_authorization_retries;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
@@ -162,7 +165,22 @@ static esp_err_t _http_connect(esp_https_ota_t *https_ota_handle)
          * is enabled
          */
         int post_len = esp_http_client_get_post_field(https_ota_handle->http_client, &post_data);
-        err = esp_http_client_open(https_ota_handle->http_client, post_len);
+
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        // If support_persistent_connection is enabled and this is a subsequent request, skip connection
+        if (esp_http_client_is_persistent_connection(https_ota_handle->http_client) && https_ota_handle->state == ESP_HTTPS_OTA_IN_PROGRESS) {
+            ESP_LOGD(TAG, "Using existing connection for partial download");
+            err = esp_http_client_prepare(https_ota_handle->http_client);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to reset HTTP client response state: %s", esp_err_to_name(err));
+                return err;
+            }
+            err = esp_http_client_request_send(https_ota_handle->http_client, post_len);
+        } else
+#endif
+        {
+            err = esp_http_client_open(https_ota_handle->http_client, post_len);
+        }
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
             return err;
@@ -316,8 +334,10 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         return ESP_ERR_NO_MEM;
     }
 
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     https_ota_handle->partial_http_download = ota_config->partial_http_download;
     https_ota_handle->max_http_request_size = (ota_config->max_http_request_size == 0) ? DEFAULT_REQUEST_SIZE : ota_config->max_http_request_size;
+#endif
     https_ota_handle->max_authorization_retries = ota_config->http_config->max_authorization_retries;
 
     if (https_ota_handle->max_authorization_retries == 0) {
@@ -329,8 +349,9 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     if (ota_config->ota_resumption) {
         // We allow resumption only if we have minimum buffer size already written to flash
         if (ota_config->ota_image_bytes_written >= DEFAULT_OTA_BUF_SIZE) {
-            ESP_LOGI(TAG, "Valid OTA resumption case, offset %d", ota_config->ota_image_bytes_written);
-            https_ota_handle->binary_file_len = ota_config->ota_image_bytes_written;
+            // For FE case the flash is written in multiples of 16 bytes. So, we need to align the offset to 16 bytes.
+            https_ota_handle->binary_file_len = esp_flash_encryption_enabled() ? (ota_config->ota_image_bytes_written & ~0xF) : ota_config->ota_image_bytes_written;
+            ESP_LOGD(TAG, "Resuming OTA from offset: %d", https_ota_handle->binary_file_len);
         }
     }
 
@@ -356,13 +377,23 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
      * Partial cases ('from-to') are handled separately below based on the remaining data to
      * be downloaded and the max_http_request_size.
      */
-    if (https_ota_handle->binary_file_len > 0 && !https_ota_handle->partial_http_download) {
+    if (https_ota_handle->binary_file_len > 0
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        && !https_ota_handle->partial_http_download
+#endif
+    ) {
         char *header_val = NULL;
         asprintf(&header_val, "bytes=%d-", https_ota_handle->binary_file_len);
+        if (header_val == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");
+            err = ESP_ERR_NO_MEM;
+            goto http_cleanup;
+        }
         esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
         free(header_val);
     }
 
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (https_ota_handle->partial_http_download) {
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_HEAD);
 
@@ -435,6 +466,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         }
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
     }
+#endif
 
     err = _http_connect(https_ota_handle);
     if (err == ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE && https_ota_handle->binary_file_len > 0) {
@@ -445,6 +477,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         // If range in request header is not satisfiable, restart download from beginning
         esp_http_client_delete_header(https_ota_handle->http_client, "Range");
 
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
         if (https_ota_handle->partial_http_download && https_ota_handle->image_length > https_ota_handle->max_http_request_size) {
             char *header_val = NULL;
             asprintf(&header_val, "bytes=0-%d", https_ota_handle->max_http_request_size - 1);
@@ -456,6 +489,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
             esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
             free(header_val);
         }
+#endif
         err = _http_connect(https_ota_handle);
     }
 
@@ -468,7 +502,10 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         esp_https_ota_dispatch_event(ESP_HTTPS_OTA_CONNECTED, NULL, 0);
     }
 
-    if (!https_ota_handle->partial_http_download) {
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+    if (!https_ota_handle->partial_http_download)
+#endif
+    {
         https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
         /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
@@ -783,7 +820,10 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 ESP_LOGE(TAG, "data read %d, errno %d", data_read, errno);
                 return ESP_FAIL;
             }
-            if (!handle->partial_http_download || (handle->partial_http_download && handle->image_length == handle->binary_file_len)) {
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+            if (!handle->partial_http_download || (handle->partial_http_download && handle->image_length == handle->binary_file_len))
+#endif
+            {
                 handle->state = ESP_HTTPS_OTA_SUCCESS;
             }
             break;
@@ -792,9 +832,13 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             return ESP_FAIL;
             break;
     }
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (handle->partial_http_download) {
         if (handle->state == ESP_HTTPS_OTA_IN_PROGRESS && handle->image_length > handle->binary_file_len) {
-            esp_http_client_close(handle->http_client);
+            // Only close connection if support_persistent_connection is not enabled
+            if (!esp_http_client_is_persistent_connection(handle->http_client)) {
+                esp_http_client_close(handle->http_client);
+            }
             char *header_val = NULL;
             int header_size = 0;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
@@ -820,6 +864,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
         }
     }
+#endif
     return ESP_OK;
 }
 
@@ -827,9 +872,12 @@ bool esp_https_ota_is_complete_data_received(esp_https_ota_handle_t https_ota_ha
 {
     bool ret = false;
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (handle->partial_http_download) {
         ret = (handle->image_length == handle->binary_file_len);
-    } else {
+    } else
+#endif
+    {
         ret = esp_http_client_is_complete_data_received(handle->http_client);
     }
     return ret;

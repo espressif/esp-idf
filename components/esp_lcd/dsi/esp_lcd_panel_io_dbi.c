@@ -1,17 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "soc/soc_caps.h"
-#include "esp_check.h"
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "mipi_dsi_priv.h"
-
-static const char *TAG = "lcd.dsi.dbi";
 
 typedef struct esp_lcd_dbi_io_t esp_lcd_dbi_io_t;
 

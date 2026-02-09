@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,6 +378,25 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, e
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gattc_aux_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+/**
+ * @brief  Open an auxiliary connection with PAwR synced parameters
+ *
+ * @param[in]       gattc_if          GATT Client access interface
+ * @param[in]       pawr_conn_params  PAwR connection parameters
+ *
+ * @note
+ *      1. This function is used to establish a connection with a device that is synchronized to a PAwR advertiser.
+ *      2. The function always triggers `ESP_GATTC_CONNECT_EVT` and `ESP_GATTC_OPEN_EVT`.
+ *
+ * @return
+ *       - ESP_OK: Success
+ *       - ESP_ERR_INVALID_ARG: Invalid argument
+ *       - ESP_FAIL: Failure
+ */
+esp_err_t esp_ble_gattc_aux_open_with_pawr_synced(esp_gatt_if_t gattc_if, esp_ble_gatt_pawr_conn_params_t *pawr_conn_params);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 /**
  * @brief  Close the virtual GATT Client connection

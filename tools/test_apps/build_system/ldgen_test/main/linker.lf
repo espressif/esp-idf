@@ -10,3 +10,8 @@ entries:
     if SOC_RTC_MEM_SUPPORTED = y:
         src1:func2 (rtc)
     consts : const_array (noflash)
+
+[mapping:prebuilt]
+archive: libprebuilt.a
+entries:
+    prebuilt:prebuilt_func (noflash)

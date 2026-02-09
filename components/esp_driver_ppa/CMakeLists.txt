@@ -12,11 +12,12 @@ endif()
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
-    set(priv_requires esp_mm esp_pm)
+    set(priv_requires esp_mm esp_pm esp_driver_dma)
 endif()
 
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       REQUIRES esp_hal_ppa
                        PRIV_REQUIRES "${priv_requires}"
                       )

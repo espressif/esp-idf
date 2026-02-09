@@ -19,16 +19,16 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0xAB, 0xF2,
-    0x0e, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h'
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h'
 };
 
 static uint8_t s_current_phy;
-#else
-static const char *device_name = "nimble_prph";
 #endif
+
+static const char *device_name = "nimble_prph";
 
 #define NOTIFY_THROUGHPUT_PAYLOAD 495
 #define MIN_REQUIRED_MBUF         2 /* Assuming payload of 500Bytes and each mbuf can take 292Bytes.  */
@@ -509,10 +509,10 @@ void app_main(void)
     /* Initialize Notify Task */
     xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, NULL);
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
 
-#if !(CONFIG_EXAMPLE_EXTENDED_ADV)
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);

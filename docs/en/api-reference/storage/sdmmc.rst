@@ -130,4 +130,6 @@ API Reference
 
 .. include-build-file:: inc/sdmmc_cmd.inc
 
+.. include-build-file:: inc/sd_protocol_types.inc
+
 .. include-build-file:: inc/sdmmc_types.inc

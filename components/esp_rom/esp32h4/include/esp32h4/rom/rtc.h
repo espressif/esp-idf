@@ -100,7 +100,8 @@ typedef enum {
     USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core (hp system)*/
     USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core (hp system)*/
     JTAG_RESET             = 24,    /**<24, jtag reset CPU*/
-    CPU_LOCKUP_RESET       = 25,    /**<25, cpu lockup reset*/
+    RTC_PWR_GLITCH_RESET   = 25,    /**<25, RTC power glitch reset system*/
+    CPU_LOCKUP_RESET       = 26,    /**<26, cpu lockup reset*/
 } RESET_REASON;
 
 // Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h

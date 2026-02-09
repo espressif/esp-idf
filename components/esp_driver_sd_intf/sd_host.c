@@ -7,6 +7,7 @@
 #include <string.h>
 #include "esp_types.h"
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -85,7 +86,7 @@ esp_err_t sd_host_slot_enable_io_int(sd_host_slot_handle_t slot)
     return slot->enable_io_int(slot);
 }
 
-esp_err_t sd_host_slot_wait_io_int(sd_host_slot_handle_t slot, TickType_t timeout_ticks)
+esp_err_t sd_host_slot_wait_io_int(sd_host_slot_handle_t slot, uint32_t timeout_ticks)
 {
     SD_HOST_ARG_CHECK(slot);
     SD_HOST_FUNC_CHECK(slot->wait_io_int);

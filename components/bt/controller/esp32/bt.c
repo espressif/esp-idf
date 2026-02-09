@@ -48,9 +48,13 @@
 #include "esp_rom_sys.h"
 #include "hli_api.h"
 
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 #if CONFIG_BT_ENABLED
 
@@ -878,9 +882,22 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 #if CONFIG_FREERTOS_UNICORE
     cause_sw_intr((void *)intr_no);
 #else /* CONFIG_FREERTOS_UNICORE */
+#if CONFIG_FREERTOS_SMP
+    uint32_t state = portDISABLE_INTERRUPTS();
+#else
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
     if (xPortGetCoreID() == core_id) {
         cause_sw_intr((void *)intr_no);
+#if CONFIG_FREERTOS_SMP
+        portRESTORE_INTERRUPTS(state);
     } else {
+        portRESTORE_INTERRUPTS(state);
+#else
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+    } else {
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+#endif
         err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
     }
 #endif /* !CONFIG_FREERTOS_UNICORE */
@@ -1501,11 +1518,7 @@ static void hli_queue_setup_pinned_to_core(int core_id)
 #if CONFIG_FREERTOS_UNICORE
     hli_queue_setup_cb(NULL);
 #else /* CONFIG_FREERTOS_UNICORE */
-    if (xPortGetCoreID() == core_id) {
-        hli_queue_setup_cb(NULL);
-    } else {
-        esp_ipc_call(core_id, hli_queue_setup_cb, NULL);
-    }
+    esp_ipc_call_blocking(core_id, hli_queue_setup_cb, NULL);
 #endif /* !CONFIG_FREERTOS_UNICORE */
 }
 #endif /* CONFIG_BTDM_CTRL_HLI */
@@ -1661,7 +1674,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     //overwrite some parameters
-    cfg->bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF;
+    cfg->bt_max_sync_conn = UT_BR_EDR_CTRL_MAX_SYNC_CONN_EFF;
     cfg->magic  = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL;
 
     if (((cfg->mode & ESP_BT_MODE_BLE) && (cfg->ble_max_conn <= 0 || cfg->ble_max_conn > BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT))
@@ -1702,6 +1715,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     coex_init();
 #endif
 
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(BTDM_LOG_TAG, "BLE Log v2 init failed");
+        err = ESP_ERR_NO_MEM;
+        goto error;
+    }
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     if (ble_log_spi_out_init() != 0) {
         ESP_LOGE(BTDM_LOG_TAG, "BLE Log SPI output init failed");
@@ -1709,6 +1729,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     btdm_cfg_mask = btdm_config_mask_load();
 
@@ -1737,9 +1758,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 error:
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     bt_controller_deinit_internal();
 
@@ -1752,9 +1777,13 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     btdm_controller_deinit();
 
@@ -1943,6 +1972,7 @@ esp_err_t esp_bt_controller_disable(void)
 #endif
 
     esp_phy_disable(PHY_MODEM_BT);
+    s_time_phy_rf_just_enabled = 0;
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     esp_unregister_shutdown_handler(bt_shutdown);
 

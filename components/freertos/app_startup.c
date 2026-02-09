@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,6 @@
 /* Required by esp_psram_extram_reserve_dma_pool() */
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
-#endif
-#ifdef CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
 #endif
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #include "esp_gdbstub.h"                    /* Required by esp_gdbstub_init() */
@@ -57,7 +54,7 @@ CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE should be identic
 // -------------------- Declarations -----------------------
 
 static void main_task(void* args);
-static const char* APP_START_TAG = "app_start";
+ESP_LOG_ATTR_TAG(APP_START_TAG, "app_start");
 
 // ------------------ CPU0 App Startup ---------------------
 
@@ -116,12 +113,6 @@ void esp_startup_start_app_other_cores(void)
         ;
     }
 
-#if CONFIG_APPTRACE_ENABLE
-    // [refactor-todo] move to esp_system initialization
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
-#endif
-
 #if CONFIG_ESP_INT_WDT
     // Initialize the interrupt watch dog for CPU1.
     esp_int_wdt_cpu_init();
@@ -144,7 +135,7 @@ void esp_startup_start_app_other_cores(void)
  * - main_task will self delete if app_main returns
  * ------------------------------------------------------------------------------------------------------------------ */
 
-static const char* MAIN_TAG = "main_task";
+ESP_LOG_ATTR_TAG(MAIN_TAG, "main_task");
 
 #if !CONFIG_FREERTOS_UNICORE
 static volatile bool s_other_cpu_startup_done = false;

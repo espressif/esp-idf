@@ -15,9 +15,6 @@
 #include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"
 
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define PSRAM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-
 #define AP_HEX_PSRAM_SYNC_READ             0x0000
 #define AP_HEX_PSRAM_SYNC_WRITE            0x8080
 #define AP_HEX_PSRAM_BURST_READ            0x2020
@@ -57,6 +54,8 @@
 
 #if CONFIG_SPIRAM_SPEED_80M
 #define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 320
+#elif CONFIG_SPIRAM_SPEED_250M
+#define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 500
 #else
 #define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 400
 #endif
@@ -391,8 +390,6 @@ static void s_configure_psram_ecc(void)
 {
     psram_ctrlr_ll_enable_16to18_ecc(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_enable_skip_page_corner(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
     psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
 
     /**
@@ -416,7 +413,7 @@ esp_err_t esp_psram_impl_enable(void)
     ESP_EARLY_LOGD(TAG, "real_mpll_freq: %d", real_mpll_freq);
 #endif
 
-    PSRAM_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
         psram_ctrlr_ll_reset_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2);
         psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_MPLL);
@@ -427,6 +424,8 @@ esp_err_t esp_psram_impl_enable(void)
     mspi_timing_ll_enable_dqs(true);
 
     s_set_psram_cs_timing();
+    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
 #if CONFIG_SPIRAM_ECC_ENABLE
     s_configure_psram_ecc();
 #endif
@@ -466,13 +465,6 @@ esp_err_t esp_psram_impl_enable(void)
                    mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_16MB :
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_32MB :
                    mode_reg.mr2.density == 0x6 ? PSRAM_SIZE_64MB : 0;
-
-#if CONFIG_SPIRAM_SPEED_250M
-    if (mode_reg.mr2.density == 0x7) {
-        ESP_EARLY_LOGE(TAG, "PSRAM Not support 250MHz speed");
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-#endif
 
     s_config_mspi_for_psram();
     mspi_timing_psram_tuning();

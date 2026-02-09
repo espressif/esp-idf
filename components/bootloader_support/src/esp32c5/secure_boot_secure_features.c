@@ -12,7 +12,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-static __attribute__((unused)) const char *TAG = "secure_boot";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot");
 
 esp_err_t esp_secure_boot_enable_secure_features(void)
 {
@@ -52,8 +52,6 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
 #if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_SHA384_EN);
 #endif
-
-    esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_SECURE_BOOT_SHA384_EN);
 
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
 

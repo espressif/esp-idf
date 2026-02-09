@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +97,16 @@
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 1
 #else
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 0
+#endif // CONFIG_OPENTHREAD_RADIO_TREL
+
+#if CONFIG_OPENTHREAD_RADIO_TREL
+/**
+ * @def OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE
+ *
+ * Set to 1 to allow TREL modules to use heap allocated objects (e.g. for the TREL peer table).
+ *
+ */
+#define OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE 1
 #endif // CONFIG_OPENTHREAD_RADIO_TREL
 
 /**
@@ -455,6 +465,36 @@
  */
 #ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE
 #define OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE
+ *
+ * Define to 1 to enable Border Routing DHCPv6 PD.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_ENABLE
+ *
+ * Define to 1 to enable Border Routing DHCPv6 client.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_MIN_LIFETIME
+ *
+ * This parameter sets the minimum preferred lifetime (in seconds) for the Border Router's built-in OpenThread
+ * DHCPv6 Prefix Delegation (PD) client feature. The default value is set to 30 to pass the certification case.
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_MIN_LIFETIME
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_MIN_LIFETIME 30
 #endif
 
 /**
@@ -861,3 +901,7 @@
 #ifndef OPENTHREAD_CONFIG_THREAD_VERSION
 #define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
 #endif
+
+#define OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE 1
+
+#define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_PSA

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 /* Internal error codes used by the routines that parse the incoming gdb packet */
@@ -91,6 +91,13 @@ void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame);
  * @param dst  pointer to the GDB register file
  */
 void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst);
+
+/**
+ * Find the TCB that owns the given exception frame
+ * @param frame  pointer to the exception frame
+ * @return pointer to the TCB, or NULL if not found
+ */
+const StaticTask_t *esp_gdbstub_find_tcb_by_frame(const esp_gdbstub_frame_t *frame);
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 
@@ -133,6 +140,9 @@ void esp_gdbstub_send_char(char c);
 /** Send a string as part of the packet */
 void esp_gdbstub_send_str(const char *s);
 
+/** Send a string of limited length as part of a packet */
+void esp_gdbstub_send_str_n(const char *c, size_t len);
+
 /** Send a hex value as part of the packet */
 void esp_gdbstub_send_hex(int val, int bits);
 
@@ -165,4 +175,4 @@ void esp_gdbstub_trigger_cpu(void);
  * @param reg_index  register index, depends on architecture
  * @param value  32 bit data value
  */
-void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value);
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr);

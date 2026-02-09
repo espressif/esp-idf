@@ -1,3 +1,4 @@
+====================================
 Two-Wire Automotive Interface (TWAI)
 ====================================
 
@@ -10,15 +11,15 @@ This document introduces the features of the Two-Wire Automotive Interface (TWAI
     :depth: 2
 
 Overview
---------
+========
 
 TWAI is a highly reliable, multi-master, real-time, serial asynchronous communication protocol designed for automotive and industrial applications. It is compatible with the frame structure defined in the ISO 11898-1 standard and supports both standard frames with 11-bit identifiers and extended frames with 29-bit identifiers. The protocol supports message prioritization with lossless arbitration, automatic retransmission, and fault confinement mechanisms. The {IDF_TARGET_NAME} includes {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} TWAI controllers, allowing for the creation of {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} driver instances.
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
-    The TWAI controllers on the {IDF_TARGET_NAME} also compatible with FD format frames defined in ISO 11898-1, and can transmit and receive both classic and FD format frames.
+    The TWAI controllers on the {IDF_TARGET_NAME} also compatible with FD format (a.k.a. CAN FD) frames defined in ISO 11898-1, and can transmit and receive both classic and FD format frames.
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     The TWAI controllers on the {IDF_TARGET_NAME} are **not compatible with FD format frames and will interpret such frames as errors.**
 
@@ -30,7 +31,7 @@ Thanks to its hardware-based fault tolerance and multi-master architecture, the 
 - Acting as a bridging node alongside other communication protocols
 
 Getting Started
----------------
+===============
 
 This section provides a quick overview of how to use the TWAI driver. Through simple examples, it demonstrates how to create a TWAI node instance, transmit and receive messages on the bus, and safely stop and uninstall the driver. The general usage flow is as follows:
 
@@ -38,7 +39,7 @@ This section provides a quick overview of how to use the TWAI driver. Through si
     :align: center
 
 Hardware Connection
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 The {IDF_TARGET_NAME} does not integrate an internal TWAI transceiver. Therefore, an external transceiver is required to connect to a TWAI bus. The model of the external transceiver depends on the physical layer standard used in your specific application. For example, a TJA105x transceiver can be used to comply with the ISO 11898-2 standard.
 
@@ -53,7 +54,7 @@ Specifically:
 - CLK_OUT (optional): Outputs the time quantum clock of the controller, which is a divided version of the source clock.
 
 Creating and Starting a TWAI Node
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 First, we need to create a TWAI instance. The following code demonstrates how to create a TWAI node with a baud rate of 200 kHz:
 
@@ -90,25 +91,24 @@ Below are additional configuration fields of the :cpp:type:`twai_onchip_node_con
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only`: Configures the node in listen-only mode. In this mode, the node only receives and does not transmit any dominant bits, including ACK and error frames.
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr`: When using filters, determines whether remote frames matching the ID pattern should be filtered out.
 
-.. only:: esp32c5
-
-    .. note::
-
-        Note: The listen-only mode on ESP32C5 can't work properly when there are multiple nodes on the bus that are sending ACKs to each other. An alternative is to use transceiver which supports listen-only mode itself (e.g. TJA1145), and combine it with self-test mode enabled.
-
 The :cpp:func:`twai_node_enable` function starts the TWAI controller. Once enabled, the controller is connected to the bus and can transmit messages. It also generates events upon receiving messages from other nodes on the bus or when bus errors are detected.
 
 The corresponding function, :cpp:func:`twai_node_disable`, immediately stops the node and disconnects it from the bus. Any ongoing transmissions will be aborted. When the node is re-enabled later, if there are pending transmissions in the queue, the driver will immediately initiate a new transmission attempt.
 
 Transmitting Messages
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 TWAI messages come in various types, which are specified by their headers. A typical data frame consists primarily of a header and data payload, with a structure similar to the following:
 
 .. image:: ../../../_static/diagrams/twai/frame_struct.svg
     :align: center
 
-To reduce performance overhead caused by memory copying, the TWAI driver uses pointers to pass messages. The following code demonstrates how to transmit a typical data frame:
+To reduce performance overhead caused by memory copying, the TWAI driver uses pointers to pass messages. The driver is designed to operate in asynchronous mode, so the :cpp:type:`twai_frame_t` structure and the memory pointed to by :cpp:member:`twai_frame_t::buffer` must remain valid until the transmission is actually complete. You can determine when transmission is complete in the following ways:
+
+- Call the :cpp:func:`twai_node_transmit_wait_all_done` function to wait for all transmissions to complete.
+- Register the :cpp:member:`twai_event_callbacks_t::on_tx_done` event callback function to receive a notification when transmission is complete.
+
+The following code demonstrates how to transmit a typical data frame:
 
 .. code:: c
 
@@ -120,8 +120,9 @@ To reduce performance overhead caused by memory copying, the TWAI driver uses po
         .buffer_len = sizeof(send_buff),  // Length of data to transmit
     };
     ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_msg, 0));  // Timeout = 0: returns immediately if queue is full
+    ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(node_hdl, -1));  // Wait for transmission to finish
 
-In this example, :cpp:member:`twai_frame_t::header::id` specifies the ID of the message as 0x01. Message IDs are typically used to indicate the type of message in an application and also play a role in bus arbitration during transmission—lower values indicate higher priority on the bus. :cpp:member:`twai_frame_t::buffer` points to the memory address where the data to be transmitted is stored, and :cpp:member:`twai_frame_t::buffer_len` specifies the length of that data.
+In this example, :cpp:member:`twai_frame_t::header::id` specifies the ID of the message as 0x01. Message IDs are typically used to indicate the type of message in an application and also play a role in bus arbitration during transmission—lower values indicate higher priority on the bus. :cpp:member:`twai_frame_t::buffer` points to the memory address where the data to be transmitted is stored, and :cpp:member:`twai_frame_t::buffer_len` specifies the length of that data. The :cpp:func:`twai_node_transmit` function is thread-safe and can also be called from an ISR. When called from an ISR, the ``timeout`` parameter is ignored, and the function will not block.
 
 Note that :cpp:member:`twai_frame_t::header::dlc` can also specify the length of the data in the frame. The DLC (Data Length Code) is mapped to the actual data length as defined in ISO 11898-1. You can use either :cpp:func:`twaifd_dlc2len` or :cpp:func:`twaifd_len2dlc` for conversion. If both dlc and buffer_len are non-zero, they must represent the same length.
 
@@ -135,7 +136,7 @@ The :cpp:type:`twai_frame_t` message structure also includes other configuration
 - :cpp:member:`twai_frame_t::header::esi`: For received frames, indicates the error state of the transmitting node.
 
 Receiving Messages
-^^^^^^^^^^^^^^^^^^
+------------------
 
 Receiving messages must be done within a receive event callback. Therefore, to receive messages, you need to register a receive event callback via :cpp:member:`twai_event_callbacks_t::on_rx_done` before starting the controller. This enables the controller to deliver received messages via the callback when events occur. The following code snippets demonstrate how to register the receive event callback and how to handle message reception inside the callback:
 
@@ -167,21 +168,54 @@ Receiving messages inside the callback:
 
 Similarly, since the driver uses pointers for message passing, you must configure the pointer :cpp:member:`twai_frame_t::buffer` and its memory length :cpp:member:`twai_frame_t::buffer_len` before receiving.
 
+Frame Timestamp
+---------------
+
+The TWAI driver supports creating a 64-bit timestamp for each successfully received frame, enabling this feature by configuring the :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz` field when creating the node. The timestamp is stored in the :cpp:member:`twai_frame_t::header::timestamp` field of the received frame.
+
+The node time inherits from the system time, i.e. the time starts from the power-on of the chip, and is not affected by the stop/restart/BUS_OFF state during the node's lifetime.
+
 Stopping and Deleting the Node
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
 When the TWAI node is no longer needed, you should call :cpp:func:`twai_node_delete` to release software and hardware resources. Make sure the TWAI controller is stopped before deleting the node.
 
 Advanced Features
------------------
+=================
 
 After understanding the basic usage, you can further explore more advanced capabilities of the TWAI driver. The driver supports more detailed controller configuration and error feedback features. The complete driver feature diagram is shown below:
 
 .. image:: ../../../_static/diagrams/twai/full_flow.drawio.svg
     :align: center
 
+Transmit from ISR
+-----------------
+
+The TWAI driver supports transmitting messages from an Interrupt Service Routine (ISR). This is particularly useful for applications requiring low-latency responses or periodic transmissions triggered by hardware timers. For example, you can trigger a new transmission from within the ``on_tx_done`` callback, which is executed in an ISR context.
+
+.. code:: c
+
+    static bool twai_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+    {
+        // A frame has been successfully transmitted. Queue another one.
+        // The frame and its data buffer must be valid until transmission is complete.
+        static const uint8_t data_buffer[] = {1, 2, 3, 4};
+        static const twai_frame_t tx_frame = {
+            .header.id = 0x2,
+            .buffer = (uint8_t *)data_buffer,
+            .buffer_len = sizeof(data_buffer),
+        };
+
+        // The `twai_node_transmit` is safe to be called in an ISR context
+        twai_node_transmit(handle, &tx_frame, 0);
+        return false;
+    }
+
+.. note::
+    When calling :cpp:func:`twai_node_transmit` from an ISR, the ``timeout`` parameter is ignored, and the function will not block. If the transmit queue is full, the function will return immediately with an error. It is the application's responsibility to handle cases where the queue is full. Similarly, the ``twai_frame_t`` structure and the memory pointed to by ``buffer`` must remain valid until the transmission is complete. You can get the completed frame by the :cpp:member:`twai_tx_done_event_data_t::done_tx_frame` pointer.
+
 Bit Timing Customization
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 Unlike other asynchronous communication protocols, the TWAI controller performs counting and sampling within one bit time in units of **Time Quanta (Tq)**. The number of time quanta per bit determines the final baud rate and the sample point position. When signal quality is poor, you can manually fine-tune these timing segments to meet specific requirements. The time quanta within a bit time are divided into different segments, as illustrated below:
 
@@ -226,10 +260,10 @@ When manually configuring these timing segments, it is important to pay attentio
     Different combinations of ``brp``, ``prop_seg``, ``tseg_1``, ``tseg_2``, and ``sjw`` can achieve the same baud rate. Users should consider factors such as **propagation delay, node processing time, and phase errors**, and adjust the timing parameters based on the physical characteristics of the bus.
 
 Filter Configuration
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 Mask Filters
-""""""""""""
+^^^^^^^^^^^^
 
 The TWAI controller hardware can filter messages based on their ID to reduce software and hardware overhead, thereby improving node efficiency. Nodes that filter out certain messages will **not receive those messages, but will still send acknowledgments (ACKs)**.
 
@@ -255,10 +289,10 @@ The following code demonstrates how to calculate the MASK and configure a filter
     };
     ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &mfilter_cfg));   // Configure on filter 0
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     Dual Filter Mode
-    """"""""""""""""
+    ^^^^^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} supports dual filter mode, which allows the hardware to be configured as two parallel independent 16-bit mask filters. By enabling this, more IDs can be received. Note that using dual filter mode to filter 29-bit extended IDs, each filter can only filter the upper 16 bits of the ID, while the remaining 13 bits are not filtered. The following code demonstrates how to configure dual filter mode using the function :cpp:func:`twai_make_dual_filter`:
 
@@ -269,10 +303,10 @@ The following code demonstrates how to calculate the MASK and configure a filter
         twai_mask_filter_config_t dual_config = twai_make_dual_filter(0x020, 0x7f0, 0x013, 0x7f8, false); // id1, mask1, id2, mask2, no extend ID
         ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &dual_config));
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
     Range Filter
-    """"""""""""
+    ^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} also includes 1 range filter, which exists alongside the mask filters. You can configure the desired ID reception range directly using the function :cpp:func:`twai_node_config_range_filter`. The details are as follows:
 
@@ -280,7 +314,7 @@ The following code demonstrates how to calculate the MASK and configure a filter
     - Configuring an invalid range means no messages will be received.
 
 Bus Errors and Recovery
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 The TWAI controller can detect errors caused by bus interference or corrupted frames that do not conform to the frame format. It implements a fault isolation mechanism using transmit and receive error counters (TEC and REC). The values of these counters determine the node's error state: Error Active, Error Warning, Error Passive, and Bus Off. This mechanism ensures that nodes with persistent errors eventually disconnect themselves from the bus.
 
@@ -289,19 +323,19 @@ The TWAI controller can detect errors caused by bus interference or corrupted fr
 - **Error Passive**: When either TEC or REC is greater than or equal to 128, the node enters the passive error state. It can still communicate on the bus but sends only one **passive error flag** when detecting errors.
 - **Bus Off**: When **TEC** is greater than or equal to 256, the node enters the bus off (offline) state. The node is effectively disconnected and does not affect the bus. It remains offline until recovery is triggered by software.
 
-Software can retrieve the node status anytime via the function :cpp:func:`twai_node_get_info`. When the controller detects errors, it triggers the :cpp:member:`twai_event_callbacks_t::on_error` callback, where the error data provides detailed information.
+Software can retrieve the node status from tasks via the function :cpp:func:`twai_node_get_info`. When the controller detects errors, it triggers the :cpp:member:`twai_event_callbacks_t::on_error` callback, where the error data provides detailed information.
 
 When the node’s error state changes, the :cpp:member:`twai_event_callbacks_t::on_state_change` callback is triggered, allowing the application to respond to the state transition. If the node is offline and needs recovery, call :cpp:func:`twai_node_recover` from a task context. **Note that recovery is not immediate; the controller will automatically reconnect to the bus only after detecting 129 consecutive recessive bits (11 bits each).**
 
 When recovery completes, the :cpp:member:`twai_event_callbacks_t::on_state_change` callback will be triggered again, the node changes its state from :cpp:enumerator:`TWAI_ERROR_BUS_OFF` to :cpp:enumerator:`TWAI_ERROR_ACTIVE`. A recovered node can immediately resume transmissions; if there are pending tasks in the transmit queue, the driver will start transmitting them right away.
 
 Power Management
-^^^^^^^^^^^^^^^^
+----------------
 
 When power management is enabled via :ref:`CONFIG_PM_ENABLE`, the system may adjust or disable clock sources before entering sleep mode, which could cause TWAI to malfunction. To prevent this, the driver manages a power management lock internally. This lock is acquired when calling :cpp:func:`twai_node_enable`, ensuring the system does not enter sleep mode and TWAI remains functional. To allow the system to enter a low-power state, call :cpp:func:`twai_node_disable` to release the lock. During sleep, the TWAI controller will also stop functioning.
 
 Cache Safety
-^^^^^^^^^^^^
+------------
 
 During Flash write operations, the system temporarily disables cache to prevent instruction and data fetch errors from Flash. This can cause interrupt handlers stored in Flash to become unresponsive. If you want interrupt routines to remain operational during cache-disabled periods, enable the :ref:`CONFIG_TWAI_ISR_CACHE_SAFE` option.
 
@@ -310,21 +344,23 @@ During Flash write operations, the system temporarily disables cache to prevent 
     When this option is enabled, **all interrupt callback functions and their context data must reside in internal memory**, because the system cannot fetch instructions or data from Flash while the cache is disabled.
 
 Thread Safety
-^^^^^^^^^^^^^
+-------------
 
 The driver guarantees thread safety for all public TWAI APIs. You can safely call these APIs from different RTOS tasks without requiring additional synchronization or locking mechanisms.
 
 Performance
-^^^^^^^^^^^
+-----------
 
-To improve the real-time performance of interrupt handling, the driver provides the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option. When enabled, the TWAI ISR (Interrupt Service Routine) is placed in internal RAM, reducing latency caused by instruction fetching from Flash.
+To improve the real-time performance of interrupt handling, the driver provides the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option. When enabled, the TWAI ISR (Interrupt Service Routine) and receive operations are placed in internal RAM, reducing latency caused by instruction fetching from Flash.
+
+For applications that require high-performance transmit operations, the driver provides the :ref:`CONFIG_TWAI_IO_FUNC_IN_IRAM` option to place transmit functions in IRAM. This is particularly beneficial for time-critical applications that frequently call :cpp:func:`twai_node_transmit` from user tasks.
 
 .. note::
 
     However, user-defined callback functions and context data invoked by the ISR may still reside in Flash. To fully eliminate Flash latency, users must place these functions and data into internal RAM using macros such as :c:macro:`IRAM_ATTR` for functions and :c:macro:`DRAM_ATTR` for data.
 
 Resource Usage
-^^^^^^^^^^^^^^
+--------------
 
 You can inspect the Flash and memory usage of the TWAI driver using the :doc:`/api-guides/tools/idf-size` tool. Below are the test conditions (based on the ESP32-C6 as an example):
 
@@ -362,21 +398,39 @@ Resource Usage with :ref:`CONFIG_TWAI_ISR_IN_IRAM` Enabled:
 Additionally, each TWAI handle dynamically allocates approximately ``168`` + 4 * :cpp:member:`twai_onchip_node_config_t::tx_queue_depth` bytes of memory from the heap.
 
 Other Kconfig Options
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 - :ref:`CONFIG_TWAI_ENABLE_DEBUG_LOG`: This option forces all debug logs of the TWAI driver to be enabled regardless of the global log level settings. Enabling this can help developers obtain more detailed log information during debugging, making it easier to locate and resolve issues.
 
 Application Examples
---------------------
+====================
 
 .. list::
 
-    - Temporary no.
+    - :example:`peripherals/twai/twai_utils` demonstrates how to use the TWAI (Two-Wire Automotive Interface) APIs to create a command-line interface for TWAI bus communication, supporting frame transmission/reception, filtering, monitoring, and both classic and FD formats for testing and debugging TWAI networks.
+    - :example:`peripherals/twai/twai_error_recovery` demonstrates how to recover nodes from the bus-off state and resume communication, as well as bus error reporting, node state changes, and other event information.
+    - :example:`peripherals/twai/twai_network` using 2 nodes with different roles: transmitting and listening, demonstrates how to use the driver for single and bulk data transmission, as well as configure filters to receive these data.
+    - :example:`peripherals/twai/cybergear` demonstrates how to control XiaoMi CyberGear motors via TWAI interface.
 
 API Reference
--------------
+=============
+
+On-Chip TWAI APIs
+-----------------
 
 .. include-build-file:: inc/esp_twai_onchip.inc
+
+TWAI Driver APIs
+----------------
+
 .. include-build-file:: inc/esp_twai.inc
+
+TWAI Driver Types
+-----------------
+
 .. include-build-file:: inc/esp_twai_types.inc
+
+TWAI HAL Types
+--------------
+
 .. include-build-file:: inc/twai_types.inc

@@ -12,7 +12,7 @@
 #include "hal/spi_ll.h"
 #include "esp_log.h"
 
-static const char* SPI_TAG = "spi_share_hw_ctrl";
+ESP_LOG_ATTR_TAG(SPI_TAG, "spi_share_hw_ctrl");
 
 //Periph 1 is 'claimed' by SPI flash code.
 static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false),
@@ -34,7 +34,7 @@ bool spicommon_periph_claim(spi_host_device_t host, const char* source)
     bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &false_var, true);
     if (ret) {
         spi_claiming_func[host] = source;
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             spi_ll_enable_bus_clock(host, true);
             spi_ll_reset_register(host);
         }
@@ -55,7 +55,7 @@ bool spicommon_periph_free(spi_host_device_t host)
     bool true_var = true;
     bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &true_var, false);
     if (ret) {
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             spi_ll_enable_bus_clock(host, false);
         }
     }

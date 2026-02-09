@@ -18,10 +18,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x03,
-    0x13, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'p', 'r', 'o', 'x', '-', 'p', 'r', 'p', 'h', '-', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x03,
+    0x13, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'p', 'r', 'o', 'x', '-', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
 
@@ -270,8 +270,6 @@ void ble_prox_prph_host_task(void *param)
 
 void app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -286,9 +284,10 @@ void app_main(void)
         return;
     }
 
+#if CONFIG_BT_NIMBLE_PROX_SERVICE
     /* Initialize a task to keep checking path loss of the link */
     ble_svc_prox_init();
-
+#endif
     /* Initialize the NimBLE host configuration */
     ble_hs_cfg.sync_cb = ble_prox_prph_on_sync;
     ble_hs_cfg.reset_cb = ble_prox_prph_on_reset;
@@ -301,6 +300,7 @@ void app_main(void)
     ble_hs_cfg.sm_sc = 1;
     ble_hs_cfg.sm_mitm = 1;
 
+    int rc;
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);

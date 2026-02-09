@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/spi_periph.h"
 #include "soc/extmem_reg.h"
 
 #include "esp_rom_gpio.h"
@@ -44,7 +43,7 @@
 #include "xt_instr_macros.h"
 
 
-static const char *TAG = "boot.esp32s3";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s3");
 
 static void wdt_reset_cpu0_info_enable(void)
 {
@@ -58,7 +57,7 @@ static void wdt_reset_info_dump(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
-    const char *cpu_name = cpu ? "APP" : "PRO";
+    const char *cpu_name = cpu ? ESP_LOG_ATTR_STR("APP") : ESP_LOG_ATTR_STR("PRO");
 
     stat = 0xdeadbeef;
     pid = 0;
@@ -180,10 +179,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow

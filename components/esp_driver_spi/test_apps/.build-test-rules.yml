@@ -3,6 +3,9 @@
     - esp_mm  # for cache
     - esp_driver_spi
     - esp_driver_gpio
+    - esp_hal_spi
+    - esp_hw_support
+    - soc
   depends_filepatterns:
     - components/driver/test_apps/components/test_driver_utils/**/*
 

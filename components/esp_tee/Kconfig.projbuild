@@ -1,9 +1,8 @@
 menu "ESP-TEE (Trusted Execution Environment)"
-    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
 
     config SECURE_ENABLE_TEE
         bool "Enable the ESP-TEE framework"
-        select ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE
         help
             This configuration enables the Trusted Execution Environment (TEE) feature.
 
@@ -13,21 +12,22 @@ menu "ESP-TEE (Trusted Execution Environment)"
         config SECURE_TEE_IRAM_SIZE
             hex "IRAM region size"
             default 0x8000
-            range 0x7000 0xA000
+            range 0x5000 0xF000
             help
                 This configuration sets the IRAM size for the TEE module.
                 This should be 256-byte (0x100) aligned.
 
         config SECURE_TEE_DRAM_SIZE
             hex "DRAM region size"
-            default 0x6000
-            range 0x5000 0x7000
+            default 0x5000
+            range 0x3000 0x7000
             help
                 This configuration sets the DRAM size for the TEE module.
                 This should be 256-byte (0x100) aligned.
 
         config SECURE_TEE_STACK_SIZE
             hex "Stack size"
+            default 0x1000 if SECURE_BOOT
             default 0xc00
             range 0x800 0x1000
             help
@@ -46,7 +46,7 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
         config SECURE_TEE_IROM_SIZE
             hex
-            default 0x10000
+            default 0x20000
             help
                 This should be a multiple of MMU_PAGE_SIZE.
 
@@ -82,18 +82,30 @@ menu "ESP-TEE (Trusted Execution Environment)"
         endchoice
 
         config SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID
-            int "Secure Storage: eFuse HMAC key ID"
+            int "Secure Storage: eFuse HMAC key ID for storage encryption keys"
             depends on SECURE_TEE_SEC_STG_MODE_RELEASE
             range -1 5
             default -1
             help
                 eFuse block key ID storing the HMAC key for deriving the TEE secure storage encryption keys
 
-        config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-            bool "Secure Storage: Support signing with the ECDSA SECP192R1 curve"
-            default n
+        config SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
+            int "Secure Storage: eFuse HMAC key ID for PBKDF2 key derivation"
+            depends on SOC_HMAC_SUPPORTED
+            range -1 5
+            default -1
             help
-                Enable ECDSA signing with the SECP192R1 curve using the TEE secure storage.
+                eFuse block key ID storing the HMAC key for deriving PBKDF2-based ECDSA keys
+
+        menu "Secure Storage: Additional supported curves for ECDSA signing"
+
+            config SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+                bool "SECP384R1"
+                depends on SOC_ECDSA_SUPPORT_CURVE_P384
+                help
+                    Enable ECDSA signing with the SECP384R1 curve using TEE secure storage
+
+        endmenu
 
         config SECURE_TEE_ATTESTATION
             bool "Enable Attestation"
@@ -110,6 +122,15 @@ menu "ESP-TEE (Trusted Execution Environment)"
                 This configuration sets the key ID from the TEE secure storage
                 storing the ECDSA keypair for executing sign/verify operations
                 from the TEE side for attestation.
+
+        config SECURE_TEE_ATT_PSA_CERT_REF
+            depends on SECURE_TEE_ATTESTATION
+            string
+            default "0632793520245-10010" if IDF_TARGET_ESP32C6
+            default "0632793520351-10100" if IDF_TARGET_ESP32H2
+            default "XXXXXXXXXXXXX-XXXXX"
+            help
+                PSA certification ID string for the attestation token
 
     endmenu
 
@@ -141,6 +162,20 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
             Note: All accesses to the TEE partitions over SPI0 (i.e. the MMU) are blocked
             unconditionally.
+
+    choice SECURE_TEE_LIBC
+        prompt "LibC to build the TEE application with"
+        depends on SECURE_ENABLE_TEE
+        default SECURE_TEE_LIBC_NEWLIB if IDF_TOOLCHAIN_CLANG
+        default SECURE_TEE_LIBC_PICOLIBC
+
+        config SECURE_TEE_LIBC_PICOLIBC
+            bool "Picolibc"
+            depends on !IDF_TOOLCHAIN_CLANG
+        config SECURE_TEE_LIBC_NEWLIB
+            bool "NewLib"
+
+    endchoice
 
     config SECURE_TEE_DEBUG_MODE
         bool "Enable Debug Mode"

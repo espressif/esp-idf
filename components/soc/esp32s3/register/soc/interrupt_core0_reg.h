@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #ifndef _SOC_INTERRUPT_CORE0_REG_H_
 #define _SOC_INTERRUPT_CORE0_REG_H_

@@ -12,6 +12,7 @@
 #include "soc/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "modem/modem_lpcon_struct.h"
+#include "modem/modem_syscon_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +66,7 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_force_en
  */
 static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_configure_clock(void)
 {
-    // Nothing to configure
+    MODEM_SYSCON.clk_conf.clk_i2c_mst_sel_160m = 1;
 }
 
 /**
@@ -110,6 +111,38 @@ static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
     CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+}
+
+/**
+ * @brief Enable the RF TX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rftx_periph_enable(void)
+{
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFTX_I2C);
+}
+
+/**
+ * @brief Disable the RF TX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rftx_periph_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFTX_I2C);
+}
+
+/**
+ * @brief Enable the RF RX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rfrx_periph_enable(void)
+{
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFRX_I2C);
+}
+
+/**
+ * @brief Disable the RF RX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rfrx_periph_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFRX_I2C);
 }
 
 #ifdef __cplusplus

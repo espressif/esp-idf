@@ -34,9 +34,10 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
     uint32_t slot_bits = (slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO) ||
                          ((int)slot_cfg->slot_bit_width < (int)slot_cfg->data_bit_width) ?
                          slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
+    slot_cfg->slot_bit_width = slot_bits;
     /* Calculate multiple
      * Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a) */
-    if (handle->role == I2S_ROLE_MASTER) {
+    if (handle->role == I2S_ROLE_MASTER || handle->full_duplex_slave) {
         clk_info->bclk = rate * handle->total_slot * slot_bits;
         clk_info->mclk = rate * clk_cfg->mclk_multiple;
         clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
@@ -84,7 +85,7 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         if (handle->dir == I2S_DIR_TX) {
             i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src, &ret_mclk_div);
         } else {
@@ -92,13 +93,16 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
         }
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
+    uint64_t tmp_div = (uint64_t)ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator;
+    ESP_RETURN_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, TAG, "invalid mclk division result");
 
     /* Update the mode info: clock configuration */
     memcpy(&(tdm_cfg->clk_cfg), clk_cfg, sizeof(i2s_tdm_clk_config_t));
     handle->clk_src = clk_cfg->clk_src;
     handle->sclk_hz = clk_info.sclk;
-    handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / (ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator);
+    handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
+    handle->bclk_hz = clk_info.bclk;
 
     ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %"PRIu32" %"PRIu32"/%"PRIu32" [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
@@ -106,38 +110,53 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     return ret;
 }
 
+static i2s_tdm_slot_config_t s_i2s_tdm_normalize_slot_config(const i2s_tdm_slot_config_t *slot_cfg)
+{
+    i2s_tdm_slot_config_t normalized_slot_cfg = *slot_cfg;
+    uint32_t max_slot_num = 32 - __builtin_clz(normalized_slot_cfg.slot_mask);
+    /* 1. Normalize the ws width */
+    normalized_slot_cfg.ws_width = normalized_slot_cfg.ws_width == I2S_TDM_AUTO_WS_WIDTH ?
+                                   normalized_slot_cfg.total_slot * normalized_slot_cfg.slot_bit_width / 2 : normalized_slot_cfg.ws_width;
+
+    /* 2. Normalize the total slot number */
+    normalized_slot_cfg.total_slot = normalized_slot_cfg.total_slot < max_slot_num ? max_slot_num : normalized_slot_cfg.total_slot;
+    // At least two slots in a frame if not using PCM short format
+    normalized_slot_cfg.total_slot = ((normalized_slot_cfg.total_slot < 2) && (normalized_slot_cfg.ws_width != 1)) ? 2 : normalized_slot_cfg.total_slot;
+
+    /* 3. Normalize the slot bit width */
+    normalized_slot_cfg.slot_bit_width = normalized_slot_cfg.slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ?
+                                         normalized_slot_cfg.data_bit_width : normalized_slot_cfg.slot_bit_width;
+    return normalized_slot_cfg;
+}
+
 static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_config_t *slot_cfg)
 {
     ESP_RETURN_ON_FALSE(slot_cfg->slot_mask, ESP_ERR_INVALID_ARG, TAG, "At least one channel should be enabled");
+
+    i2s_tdm_slot_config_t norm_slot_cfg = s_i2s_tdm_normalize_slot_config(slot_cfg);
     /* Update the total slot num and active slot num */
-    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(slot_cfg->slot_mask);
-    uint32_t max_slot_num = 32 - __builtin_clz(slot_cfg->slot_mask);
-    handle->total_slot = slot_cfg->total_slot < max_slot_num ? max_slot_num : slot_cfg->total_slot;
+    handle->active_slot = norm_slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(norm_slot_cfg.slot_mask);
+    handle->total_slot = norm_slot_cfg.total_slot;
     // At least two slots in a frame if not using PCM short format
-    handle->total_slot = ((handle->total_slot < 2) && (slot_cfg->ws_width != 1)) ? 2 : handle->total_slot;
-    uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
+    uint32_t slot_bits = norm_slot_cfg.slot_bit_width;
     ESP_RETURN_ON_FALSE(handle->total_slot * slot_bits <= I2S_LL_SLOT_FRAME_BIT_MAX, ESP_ERR_INVALID_ARG, TAG,
                         "total slots(%"PRIu32") * slot_bit_width(%"PRIu32") exceeds the maximum %d",
                         handle->total_slot, slot_bits, (int)I2S_LL_SLOT_FRAME_BIT_MAX);
-    uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
+    uint32_t buf_size = i2s_get_buf_size(handle, norm_slot_cfg.data_bit_width, handle->dma.frame_num);
+    ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
         ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
                             TAG, "allocate memory for dma descriptor failed");
     }
-    bool is_slave = handle->role == I2S_ROLE_SLAVE;
     /* Share bck and ws signal in full-duplex mode */
     if (handle->controller->full_duplex) {
         i2s_ll_share_bck_ws(handle->controller->hal.dev, true);
-        /* Since bck and ws are shared, only tx or rx can be master
-           Force to set rx as slave to avoid conflict of clock signal */
-        if (handle->dir == I2S_DIR_RX) {
-            is_slave = true;
-        }
     } else {
         i2s_ll_share_bck_ws(handle->controller->hal.dev, false);
     }
+    bool is_slave = handle->role == I2S_ROLE_SLAVE;
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Configure the hardware to apply TDM format */
@@ -150,10 +169,7 @@ static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_c
 
     /* Update the mode info: slot configuration */
     i2s_tdm_config_t *tdm_cfg = (i2s_tdm_config_t *)(handle->mode_info);
-    memcpy(&(tdm_cfg->slot_cfg), slot_cfg, sizeof(i2s_tdm_slot_config_t));
-    /* Update the slot bit width to the actual slot bit width */
-    tdm_cfg->slot_cfg.slot_bit_width = (int)tdm_cfg->slot_cfg.slot_bit_width < (int)tdm_cfg->slot_cfg.data_bit_width ?
-                                       tdm_cfg->slot_cfg.data_bit_width : tdm_cfg->slot_cfg.slot_bit_width;
+    memcpy(&(tdm_cfg->slot_cfg), &norm_slot_cfg, sizeof(i2s_tdm_slot_config_t));
 
     return ESP_OK;
 }
@@ -183,41 +199,91 @@ static esp_err_t i2s_tdm_set_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_c
     /* Set mclk pin */
     ESP_RETURN_ON_ERROR(i2s_check_set_mclk(handle, id, gpio_cfg->mclk, tdm_cfg->clk_cfg.clk_src, gpio_cfg->invert_flags.mclk_inv), TAG, "mclk config failed");
 
-    if (handle->role == I2S_ROLE_SLAVE) {
-        /* For "tx + slave" mode, select TX signal index for ws and bck */
-        if (handle->dir == I2S_DIR_TX && !handle->controller->full_duplex) {
 #if SOC_I2S_HW_VERSION_2
-            I2S_CLOCK_SRC_ATOMIC() {
+    /* Bind the MCLK signal to the TX or RX clock source */
+    if (!handle->controller->full_duplex) {
+        if (handle->dir == I2S_DIR_TX) {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
             }
-#endif
-            i2s_gpio_check_and_set(handle, gpio_cfg->ws, i2s_periph_signal[id].s_tx_ws_sig, true, gpio_cfg->invert_flags.ws_inv);
-            i2s_gpio_check_and_set(handle, gpio_cfg->bclk, i2s_periph_signal[id].s_tx_bck_sig, true, gpio_cfg->invert_flags.bclk_inv);
-            /* For "tx + rx + slave" or "rx + slave" mode, select RX signal index for ws and bck */
         } else {
-            i2s_gpio_check_and_set(handle, gpio_cfg->ws, i2s_periph_signal[id].s_rx_ws_sig, true, gpio_cfg->invert_flags.ws_inv);
-            i2s_gpio_check_and_set(handle, gpio_cfg->bclk, i2s_periph_signal[id].s_rx_bck_sig, true, gpio_cfg->invert_flags.bclk_inv);
-        }
-    } else {
-        /* For "rx + master" mode, select RX signal index for ws and bck */
-        if (handle->dir == I2S_DIR_RX && !handle->controller->full_duplex) {
-#if SOC_I2S_HW_VERSION_2
-            I2S_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
             }
-#endif
-            i2s_gpio_check_and_set(handle, gpio_cfg->ws, i2s_periph_signal[id].m_rx_ws_sig, false, gpio_cfg->invert_flags.ws_inv);
-            i2s_gpio_check_and_set(handle, gpio_cfg->bclk, i2s_periph_signal[id].m_rx_bck_sig, false, gpio_cfg->invert_flags.bclk_inv);
-            /* For "tx + rx + master" or "tx + master" mode, select TX signal index for ws and bck */
+        }
+    } else if (handle->role == I2S_ROLE_MASTER) {
+        if (handle->dir == I2S_DIR_TX) {
+            PERIPH_RCC_ATOMIC() {
+                i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
+            }
         } else {
-            i2s_gpio_check_and_set(handle, gpio_cfg->ws, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.ws_inv);
-            i2s_gpio_check_and_set(handle, gpio_cfg->bclk, i2s_periph_signal[id].m_tx_bck_sig, false, gpio_cfg->invert_flags.bclk_inv);
+            PERIPH_RCC_ATOMIC() {
+                i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
+            }
         }
     }
+#endif
+
+    uint32_t ws_sig = 0;
+    uint32_t bck_sig = 0;
+    bool is_input = handle->role == I2S_ROLE_SLAVE;
+    if (handle->role == I2S_ROLE_SLAVE) {
+        // Assign slave signals
+        if (handle->dir == I2S_DIR_TX) {
+            ws_sig = i2s_periph_signal[id].s_tx_ws_sig;
+            bck_sig = i2s_periph_signal[id].s_tx_bck_sig;
+        } else {
+            ws_sig = i2s_periph_signal[id].s_rx_ws_sig;
+            bck_sig = i2s_periph_signal[id].s_rx_bck_sig;
+        }
+    } else {
+        // Assign master signals
+        if (handle->dir == I2S_DIR_TX) {
+            ws_sig = i2s_periph_signal[id].m_tx_ws_sig;
+            bck_sig = i2s_periph_signal[id].m_tx_bck_sig;
+        } else {
+            ws_sig = i2s_periph_signal[id].m_rx_ws_sig;
+            bck_sig = i2s_periph_signal[id].m_rx_bck_sig;
+        }
+    }
+    i2s_gpio_check_and_set(handle, gpio_cfg->ws, ws_sig, is_input, gpio_cfg->invert_flags.ws_inv);
+    i2s_gpio_check_and_set(handle, gpio_cfg->bclk, bck_sig, is_input, gpio_cfg->invert_flags.bclk_inv);
+
     /* Update the mode info: gpio configuration */
     memcpy(&(tdm_cfg->gpio_cfg), gpio_cfg, sizeof(i2s_tdm_gpio_config_t));
 
     return ESP_OK;
+}
+
+static void s_i2s_channel_try_to_constitude_tdm_duplex(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg)
+{
+    /* Get another direction handle */
+    i2s_chan_handle_t another_handle = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
+    /* Condition: 1. Another direction channel is registered
+     *            2. Not a full-duplex channel yet
+     *            3. Another channel is initialized, try to compare the configurations */
+    if (another_handle && another_handle->state >= I2S_CHAN_STATE_READY) {
+        if (!handle->controller->full_duplex) {
+            i2s_tdm_config_t curr_cfg = *tdm_cfg;
+            i2s_tdm_slot_config_t norm_slot_cfg = s_i2s_tdm_normalize_slot_config(&(tdm_cfg->slot_cfg));
+            memcpy(&curr_cfg.slot_cfg, &norm_slot_cfg, sizeof(i2s_tdm_slot_config_t));
+            /* Compare the hardware configurations of the two channels, constitute the full-duplex if they are the same */
+            if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_tdm_config_t)) == 0) {
+                handle->controller->full_duplex = true;
+                ESP_LOGD(TAG, "Constitude full-duplex on port %d", handle->controller->id);
+            } else {
+                ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
+            }
+        }
+        /* Switch to the slave role if needed */
+        if (handle->controller->full_duplex &&
+                handle->role == I2S_ROLE_MASTER &&
+                another_handle->role == I2S_ROLE_MASTER) {
+            /* The later initialized channel must be slave for full duplex */
+            handle->role = I2S_ROLE_SLAVE;
+            handle->full_duplex_slave = true;
+        }
+    }
 }
 
 esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg)
@@ -237,6 +303,8 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     }
     handle->mode_info = calloc(1, sizeof(i2s_tdm_config_t));
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
+    /* Try to constitute full-duplex mode if the TDM configuration is totally same as another channel */
+    s_i2s_channel_try_to_constitude_tdm_duplex(handle, tdm_cfg);
     /* i2s_set_tdm_slot should be called before i2s_set_tdm_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_tdm_set_slot(handle, &tdm_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
 #if SOC_I2S_SUPPORTS_APLL

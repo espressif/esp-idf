@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,16 +46,6 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     }
     assert(dma2d_tx_bg_chan && dma2d_tx_fg_chan && dma2d_rx_chan);
 
-    color_space_pixel_format_t in_bg_pixel_format = {
-        .color_type_id = blend_trans_desc->in_bg.blend_cm,
-    };
-    color_space_pixel_format_t in_fg_pixel_format = {
-        .color_type_id = blend_trans_desc->in_fg.blend_cm,
-    };
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = blend_trans_desc->out.blend_cm,
-    };
-
     // Fill 2D-DMA descriptors
     blend_engine->dma_tx_bg_desc->vb_size = blend_trans_desc->in_bg.block_h;
     blend_engine->dma_tx_bg_desc->hb_length = blend_trans_desc->in_bg.block_w;
@@ -65,7 +55,7 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     blend_engine->dma_tx_bg_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
     blend_engine->dma_tx_bg_desc->va_size = blend_trans_desc->in_bg.pic_h;
     blend_engine->dma_tx_bg_desc->ha_length = blend_trans_desc->in_bg.pic_w;
-    blend_engine->dma_tx_bg_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_bg_pixel_format);
+    blend_engine->dma_tx_bg_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value((esp_color_fourcc_t)blend_trans_desc->in_bg.blend_cm);
     blend_engine->dma_tx_bg_desc->y = blend_trans_desc->in_bg.block_offset_y;
     blend_engine->dma_tx_bg_desc->x = blend_trans_desc->in_bg.block_offset_x;
     blend_engine->dma_tx_bg_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
@@ -80,7 +70,7 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     blend_engine->dma_tx_fg_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
     blend_engine->dma_tx_fg_desc->va_size = blend_trans_desc->in_fg.pic_h;
     blend_engine->dma_tx_fg_desc->ha_length = blend_trans_desc->in_fg.pic_w;
-    blend_engine->dma_tx_fg_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_fg_pixel_format);
+    blend_engine->dma_tx_fg_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value((esp_color_fourcc_t)blend_trans_desc->in_fg.blend_cm);
     blend_engine->dma_tx_fg_desc->y = blend_trans_desc->in_fg.block_offset_y;
     blend_engine->dma_tx_fg_desc->x = blend_trans_desc->in_fg.block_offset_x;
     blend_engine->dma_tx_fg_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
@@ -95,7 +85,7 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     blend_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
     blend_engine->dma_rx_desc->va_size = blend_trans_desc->out.pic_h;
     blend_engine->dma_rx_desc->ha_length = blend_trans_desc->out.pic_w;
-    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(out_pixel_format);
+    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value((esp_color_fourcc_t)blend_trans_desc->out.blend_cm);
     blend_engine->dma_rx_desc->y = blend_trans_desc->out.block_offset_y;
     blend_engine->dma_rx_desc->x = blend_trans_desc->out.block_offset_x;
     blend_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
@@ -140,12 +130,16 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
 
     // Configure PPA Blending engine
     ppa_ll_blend_set_rx_bg_color_mode(platform->hal.dev, blend_trans_desc->in_bg.blend_cm);
+    if (PPA_IS_CM_YUV(blend_trans_desc->in_bg.blend_cm)) {
+        ppa_ll_blend_set_rx_bg_yuv_range(platform->hal.dev, blend_trans_desc->in_bg.yuv_range);
+        ppa_ll_blend_set_rx_bg_yuv2rgb_std(platform->hal.dev, blend_trans_desc->in_bg.yuv_std);
+    }
     ppa_ll_blend_enable_rx_bg_byte_swap(platform->hal.dev, blend_trans_desc->bg_byte_swap);
     ppa_ll_blend_enable_rx_bg_rgb_swap(platform->hal.dev, blend_trans_desc->bg_rgb_swap);
     ppa_ll_blend_configure_rx_bg_alpha(platform->hal.dev, blend_trans_desc->bg_alpha_update_mode, blend_trans_desc->bg_alpha_value);
 
     ppa_ll_blend_set_rx_fg_color_mode(platform->hal.dev, blend_trans_desc->in_fg.blend_cm);
-    if (COLOR_SPACE_TYPE((uint32_t)blend_trans_desc->in_fg.blend_cm) == COLOR_SPACE_ALPHA) {
+    if (PPA_IS_CM_ALPHA(blend_trans_desc->in_fg.blend_cm)) {
         ppa_ll_blend_set_rx_fg_fix_rgb(platform->hal.dev, &blend_trans_desc->fg_fix_rgb_val);
     }
     ppa_ll_blend_enable_rx_fg_byte_swap(platform->hal.dev, blend_trans_desc->fg_byte_swap);
@@ -153,6 +147,10 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     ppa_ll_blend_configure_rx_fg_alpha(platform->hal.dev, blend_trans_desc->fg_alpha_update_mode, blend_trans_desc->fg_alpha_value);
 
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, blend_trans_desc->out.blend_cm);
+    if (PPA_IS_CM_YUV(blend_trans_desc->out.blend_cm)) {
+        ppa_ll_blend_set_tx_yuv_range(platform->hal.dev, blend_trans_desc->out.yuv_range);
+        ppa_ll_blend_set_tx_rgb2yuv_std(platform->hal.dev, blend_trans_desc->out.yuv_std);
+    }
 
     // Color keying
     color_pixel_rgb888_data_t rgb888_min = {.b = 0x00, .g = 0x00, .r = 0x00};
@@ -182,14 +180,49 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = config->out.blend_cm,
-    };
-    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
+    ESP_RETURN_ON_FALSE(ppa_ll_blend_is_color_mode_supported(config->in_bg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->in_fg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->out.blend_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    // For YUV420 input/output: in desc, ha/hb/va/vb/x/y must be even number
+    // For YUV422 input/output: in desc, ha/hb/x must be even number
+    if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(config->in_bg.pic_h % 2 == 0 && config->in_bg.pic_w % 2 == 0 &&
+                            config->in_bg.block_h % 2 == 0 && config->in_bg.block_w % 2 == 0 &&
+                            config->in_bg.block_offset_x % 2 == 0 && config->in_bg.block_offset_y % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 input does not support odd h/w/offset_x/offset_y");
+    } else if (PPA_IS_CM_YUV422(config->in_bg.blend_cm)) {
+        ESP_RETURN_ON_FALSE(config->in_bg.pic_w % 2 == 0 && config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
+    }
+    // TODO: Support CLUT to support L4/L8 color mode
+    // else if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+    //     ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+    //                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
+    // }
+    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4) { // || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4
+        ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
+    }
+    if (config->out.blend_cm == PPA_BLEND_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
+                            config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
+    } else if (PPA_IS_CM_YUV422(config->out.blend_cm)) {
+        ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
+    }
+    ESP_RETURN_ON_FALSE(config->in_bg.block_w <= (config->in_bg.pic_w - config->in_bg.block_offset_x) &&
+                        config->in_bg.block_h <= (config->in_bg.pic_h - config->in_bg.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h + in_bg.block_offset_x/y does not fit in the in pic");
+    ESP_RETURN_ON_FALSE(config->in_fg.block_w <= (config->in_fg.pic_w - config->in_fg.block_offset_x) &&
+                        config->in_fg.block_h <= (config->in_fg.pic_h - config->in_fg.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w/h + in_fg.block_offset_x/y does not fit in the in pic");
+    uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->out.blend_cm); // bits
     uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     ESP_RETURN_ON_FALSE(config->in_bg.block_w == config->in_fg.block_w && config->in_bg.block_h == config->in_fg.block_h,
                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h must be equal to in_fg.block_w/h");
+    ESP_RETURN_ON_FALSE(config->in_fg.block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        config->in_fg.block_h <= (config->out.pic_h - config->out.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "block does not fit in the out pic");
     if (config->bg_byte_swap) {
         PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in_bg.blend", (uint32_t)config->in_bg.blend_cm);
     }
@@ -218,22 +251,11 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
         ESP_RETURN_ON_FALSE(config->fg_alpha_scale_ratio > 0 && config->fg_alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid fg_alpha_scale_ratio");
         new_fg_alpha_value = (uint32_t)(config->fg_alpha_scale_ratio * 256);
     }
-    // if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
-    //     ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
-    //                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
-    // }
-    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4) { // || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4
-        ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
-                            ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
-    }
-    // To reduce complexity, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
+    // To reduce complexity, specific color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back in_bg_buffer, in_fg_buffer extended windows (alignment not necessary on C2M direction)
-    color_space_pixel_format_t in_bg_pixel_format = {
-        .color_type_id = config->in_bg.blend_cm,
-    };
-    uint32_t in_bg_pixel_depth = color_hal_pixel_format_get_bit_depth(in_bg_pixel_format); // bits
+    uint32_t in_bg_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->in_bg.blend_cm); // bits
     // Usually C2M can let the msync do alignment internally, however, it only do L1-cacheline-size alignment for L1->L2, and then L2-cacheline-size alignment for L2->mem
     // While M2C direction manual alignment is L2-cacheline-size alignment for mem->L2->L1
     // Mismatching writeback and invalidate data size could cause synchronization error if in_bg/fg_buffer and out_buffer are the same one
@@ -241,10 +263,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     uint32_t in_bg_ext_window_aligned = PPA_ALIGN_DOWN(in_bg_ext_window, buf_alignment_size);
     uint32_t in_bg_ext_window_len = config->in_bg.pic_w * config->in_bg.block_h * in_bg_pixel_depth / 8;
     esp_cache_msync((void *)in_bg_ext_window_aligned, PPA_ALIGN_UP(in_bg_ext_window_len + (in_bg_ext_window - in_bg_ext_window_aligned), buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-    color_space_pixel_format_t in_fg_pixel_format = {
-        .color_type_id = config->in_fg.blend_cm,
-    };
-    uint32_t in_fg_pixel_depth = color_hal_pixel_format_get_bit_depth(in_fg_pixel_format); // bits
+    uint32_t in_fg_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->in_fg.blend_cm); // bits
     uint32_t in_fg_ext_window = (uint32_t)config->in_fg.buffer + config->in_fg.block_offset_y * config->in_fg.pic_w * in_fg_pixel_depth / 8;
     // Same for fg_buffer msync, do manual alignment
     uint32_t in_fg_ext_window_aligned = PPA_ALIGN_DOWN(in_fg_ext_window, buf_alignment_size);

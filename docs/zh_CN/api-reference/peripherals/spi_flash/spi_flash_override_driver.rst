@@ -149,7 +149,12 @@
 应用程序中的 flash 驱动程序用于读取、写入、擦除、保存数据等操作，且支持 OTA 等高级功能。可参考下列指南，为你的 flash 芯片自定义驱动程序。
 
 - 步骤 1：`default_registered_chips` 的最后一项应为 `通用芯片驱动程序 <https://github.com/espressif/esp-idf/blob/master/components/spi_flash/spi_flash_chip_generic.c>`_。如果你的 flash 芯片无法匹配以上列出的任何一个芯片驱动程序，则将使用通用驱动。请检查你的 flash 芯片行为与通用驱动是否存在差异，包括但不限于不同的命令、dummy 周期、数据字节以及状态寄存器。
-- 步骤 2：如果你的 flash 芯片行为与通用驱动存在差异，则需要实现自定义的芯片驱动程序。请创建一个名为 ``spi_flash_chip_<vendor>.c`` 的新文件，在其中实现特定行为。可以将 ``esp_flash_chip_generic`` 结构体复制到文件中进行修改。记得在文件中包含 ``spi_flash_chip_generic.h``。详情请参阅示例 `esp_flash_nor <https://github.com/espressif/esp-flash-drivers/tree/main/esp_flash_nor/>`_。
+- 步骤 2：如果你的 flash 芯片行为与通用驱动存在差异，则需要实现自定义的芯片驱动程序。请创建一个名为 ``spi_flash_chip_<vendor>.c`` 的新文件，在其中实现特定行为。可以将 ``esp_flash_chip_generic`` 结构体复制到文件中进行修改。记得在文件中包含 ``esp_flash_chips/spi_flash_chip_generic.h``。详情请参阅示例 `esp_flash_nor <https://github.com/espressif/esp-flash-drivers/tree/main/esp_flash_nor/>`_。
+
+  .. note::
+
+      芯片驱动程序头文件位于 ``esp_flash_chips/`` 目录中（例如 ``components/spi_flash/include/esp_flash_chips/``）。这些头文件是**半公开的** - 它们面向需要实现自定义芯片驱动程序的高级用户，但**不被视为稳定的 API**，可能会在未通知的情况下更改。
+
 - 步骤 3：实现与通用驱动程序存在差异的函数，并从 ``spi_flash_chip_t`` 结构体中指向这些函数。注意：如果 flash 芯片的某些行为与通用驱动相同，那么可以保留通用驱动程序的函数，无需自定义，只要为与通用驱动不同的部分编写自定义函数即可。请参考以下示例：
 
 .. important::
@@ -231,16 +236,14 @@
 
 - 步骤 7：构建项目，你将看到新的 flash 驱动程序。
 
-.. only:: SOC_MEMSPI_SRC_FREQ_120M
+高性能 flash 实现
+~~~~~~~~~~~~~~~~~
 
-    高性能 flash 实现
-    ~~~~~~~~~~~~~~~~~
+高性能模式在高于 80 MHz 的频率下运行。请查阅 *直流电气特性* 章节，判断芯片是否支持在高于 80 MHz 的频率下工作。`高性能文件 <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ 中已经预定义了部分高性能模式下的行为，如果你的 flash 芯片符合指定行为，请按照 ``bootloader_flash_unlock`` 部分介绍的方法扩展列表。如果你的 flash 芯片有不同的行为，请添加新行为并覆盖 ``spi_flash_hpm_enable_list`` 行为表。
 
-    高性能模式在高于 80 MHz 的频率下运行。请查阅 *直流电气特性* 章节，判断芯片是否支持在高于 80 MHz 的频率下工作。`高性能文件 <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ 中已经预定义了部分高性能模式下的行为，如果你的 flash 芯片符合指定行为，请按照 ``bootloader_flash_unlock`` 部分介绍的方法扩展列表。如果你的 flash 芯片有不同的行为，请添加新行为并覆盖 ``spi_flash_hpm_enable_list`` 行为表。
+.. important::
 
-    .. important::
-
-        频率设置为 80 MHz 以上的 flash 芯片应进行仔细的测试，因为此时系统对于时序的要求非常严格。如果想在量产过程中使用高性能模式的功能，请联系 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+    频率设置为 80 MHz 以上的 flash 芯片应进行仔细的测试，因为此时系统对于时序的要求非常严格。如果想在量产过程中使用高性能模式的功能，请联系 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
 
 示例
 ----

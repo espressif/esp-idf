@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/soc_caps.h"
@@ -14,3 +14,5 @@
 #define INTERRUPT_CURRENT_CORE_INT_THRESH_REG   (CLIC_INT_THRESH_REG)
 
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG INTERRUPT_CURRENT_CORE_INT_THRESH_REG
+
+#define INTTHRESH_STANDARD  1

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -19,13 +19,11 @@
 #define REG_UHCI_BASE(i)                        (DR_REG_UHCI0_BASE)                      // only one UHCI on C6
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x1000)        // UART0 and UART1
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_BASE(i) + 0x0)
-#define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_FLASH_SPI0_BASE + (i) * 0x1000)  // SPIMEM0 and SPIMEM1
 #define REG_SPI_BASE(i)                         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE + (i) * 0x1000)
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x1000)       // TWAI0 and TWAI1
-#define REG_TRACE_BASE(i)                       (DR_REG_TRACE_BASE + (i) * 0x1000)
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -222,6 +220,10 @@
 #define SOC_ROM_STACK_START_REV2    0x4ffbcfc0
 #define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
+
+// non-cacheable offset for memory behind the cache
+#define SOC_NON_CACHEABLE_OFFSET_SRAM        0x40000000
+#define SOC_NON_CACHEABLE_OFFSET_PSRAM       0x40000000
 
 #define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
 #define LP_RAM_END        0x50110000

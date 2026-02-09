@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -149,6 +149,17 @@ void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av);
  **
  *******************************************************************************/
 void btc_a2dp_source_set_tx_flush(BOOLEAN enable);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_set_pref_mcc
+ **
+ ** Description      set preferred codec configuration
+ **
+ ** Returns          TRUE if the preferred config is supported, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN btc_a2dp_source_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref_mcc);
 
 #if (BTC_AV_EXT_CODEC == FALSE)
 

@@ -7,10 +7,7 @@
 #include "esp_system.h"
 #include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
-#include "soc/rtc_periph.h"
 #include "esp32c61/rom/rtc.h"
-
-// TODO: [ESP32C61] IDF-9267
 
 static void esp_reset_reason_clear_hint(void);
 

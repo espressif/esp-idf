@@ -56,6 +56,7 @@ TEST_CASE("wifi set country code", "[wifi_init]")
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
+    vTaskDelay(1);
 
     ESP_LOGI(TAG, "test passed...");
 }

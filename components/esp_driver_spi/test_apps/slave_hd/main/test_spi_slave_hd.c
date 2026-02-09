@@ -19,6 +19,7 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
+#include "spi_performance.h"
 #include "esp_rom_gpio.h"
 
 #define TEST_BUFFER_SIZE    256     ///< buffer size of each wrdma buffer in fifo mode
@@ -433,6 +434,27 @@ static void test_hd_loop(const void* arg1, void* arg2)
     }
 }
 
+//test low frequency, high frequency until freq limit for worst case (both GPIO)
+static int test_freq_default[] = {
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 100,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 50,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 10,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 7,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 4,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 2,
+    IDF_TARGET_MAX_SPI_CLK_FREQ,
+    0,
+};
+
+static void spitest_def_param(void* arg)
+{
+    spitest_param_set_t *param_set = (spitest_param_set_t*)arg;
+    param_set->test_size = 8;
+    if (param_set->freq_list == NULL) {
+        param_set->freq_list = test_freq_default;
+    }
+}
+
 static const ptest_func_t hd_test_func = {
     .pre_test = test_hd_init,
     .post_test = test_hd_deinit,
@@ -446,9 +468,8 @@ static const ptest_func_t hd_test_func = {
 
 static int test_freq_hd[] = {
     500 * 1000,
-    10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    // 40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    10 * 1000 * 1000,               //maximum freq MISO stable before next latch edge
+    IDF_TARGET_MAX_SPI_CLK_FREQ,    //maximum freq MISO stable before next latch edge
     0,
 };
 
@@ -909,7 +930,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     sleep_cpu_configure(true);
 #endif
     esp_sleep_context_t sleep_ctx;
@@ -945,7 +966,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
             printf("Waked up!\n");
             // check if the sleep happened as expected
             TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
             // check if the power domain also is powered down
             TEST_ASSERT_EQUAL((bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
@@ -981,7 +1002,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
     }
 
     esp_sleep_set_sleep_context(NULL);
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }
@@ -991,7 +1012,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     sleep_cpu_configure(true);
 #endif
     esp_sleep_context_t sleep_ctx;
@@ -1023,7 +1044,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
         printf("Waked up!\n");
         // check if the sleep happened as expected
         TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         // check if the power domain also is powered down
         TEST_ASSERT_EQUAL((bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
@@ -1059,7 +1080,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     }
     spi_slave_hd_deinit(TEST_SLAVE_HOST);
     esp_sleep_set_sleep_context(NULL);
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }

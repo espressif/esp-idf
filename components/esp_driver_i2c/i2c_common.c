@@ -23,7 +23,7 @@
 #include "i2c_private.h"
 #include "driver/gpio.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/gpio.h"
@@ -113,21 +113,21 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
 
             // Enable the I2C module
             if (!bus->is_lp_i2c) {
-                I2C_RCC_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     i2c_ll_enable_bus_clock(bus->port_num, true);
                     i2c_ll_reset_register(bus->port_num);
                 }
             }
 #if SOC_LP_I2C_SUPPORTED
             else {
-                LP_I2C_BUS_CLK_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     lp_i2c_ll_enable_bus_clock(bus->port_num - SOC_HP_I2C_NUM, true);
                     lp_i2c_ll_reset_register(bus->port_num - SOC_HP_I2C_NUM);
                 }
             }
 #endif
 
-            I2C_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 i2c_hal_init(&bus->hal, port_num);
             }
         }
@@ -217,13 +217,13 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
 #endif
             // Disable I2C module
             if (!i2c_bus->is_lp_i2c) {
-                I2C_RCC_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     i2c_ll_enable_bus_clock(port_num, false);
                 }
             }
 #if SOC_LP_I2C_SUPPORTED
             else {
-                LP_I2C_BUS_CLK_ATOMIC() {
+                PERIPH_RCC_ATOMIC() {
                     lp_i2c_ll_enable_bus_clock(port_num - SOC_HP_I2C_NUM, false);
                 }
             }
@@ -446,10 +446,12 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
     esp_gpio_revoke(BIT64(handle->scl_num));
 
     if (handle->is_lp_i2c == false) {
-        ESP_RETURN_ON_ERROR(gpio_output_disable(handle->sda_num), TAG, "disable i2c pins failed");
+        gpio_od_disable(handle->sda_num);
+        gpio_output_disable(handle->sda_num);
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
 
-        ESP_RETURN_ON_ERROR(gpio_output_disable(handle->scl_num), TAG, "disable i2c pins failed");
+        gpio_od_disable(handle->scl_num);
+        gpio_output_disable(handle->scl_num);
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
     }
 #if SOC_LP_I2C_SUPPORTED
@@ -457,8 +459,8 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
-        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
-        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+        ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0), TAG, "failed to connect lp gpio to zero");
+        ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0), TAG, "failed to connect lp gpio to zero");
 #endif
     }
 #endif

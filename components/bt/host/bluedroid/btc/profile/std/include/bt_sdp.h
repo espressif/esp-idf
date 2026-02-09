@@ -52,8 +52,6 @@ typedef struct _bluetooth_sdp_hdr_overlay {
     int32_t             profile_version;
     int                 user1_ptr_len;
     uint8_t            *user1_ptr;
-    int                 user2_ptr_len; // not used
-    uint8_t            *user2_ptr;     // not used
 } bluetooth_sdp_hdr_overlay;
 
 typedef struct _bluetooth_sdp_raw_record {

@@ -1,61 +1,35 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import re
 from enum import Enum
-from typing import Dict
-from typing import Tuple
 
 import pytest
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from tee_exception_cfg import TEE_EXCEPTION_TEST_MAP
 
 # ---------------- Pytest build parameters ----------------
 
-SUPPORTED_TARGETS = ['esp32c6', 'esp32h2']
+TESTING_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
 
 CONFIG_DEFAULT = [
     # 'config, target, markers',
-    ('default', target, (pytest.mark.generic,))
-    for target in SUPPORTED_TARGETS
+    ('tee_default', target, (pytest.mark.generic,))
+    for target in TESTING_TARGETS
 ]
 
 CONFIG_OTA = [
     # 'config, target, skip_autoflash, markers',
-    ('ota', target, 'y', (pytest.mark.generic,))
-    for target in SUPPORTED_TARGETS
+    ('tee_ota', target, 'y', (pytest.mark.generic,))
+    for target in TESTING_TARGETS
 ]
 
 CONFIG_ALL = [
     # 'config, target, markers',
     (config, target, (pytest.mark.generic,))
-    for config in ['default', 'ota']
-    for target in SUPPORTED_TARGETS
+    for config in ['tee_default', 'tee_ota']
+    for target in TESTING_TARGETS
 ]
-
-# ---------------- Exception test-cases reasons  ----------------
-
-TEE_VIOLATION_TEST_EXC_RSN: Dict[Tuple[str, str], str] = {
-    ('Reserved', 'W1'): 'Store access fault',
-    ('Reserved', 'X1'): 'Instruction access fault',
-    ('IRAM', 'W1'): 'Store access fault',
-    ('IRAM', 'W2'): 'Store access fault',
-    ('DRAM', 'X1'): 'Instruction access fault',
-    ('DRAM', 'X2'): 'Instruction access fault',
-}
-
-REE_ISOLATION_TEST_EXC_RSN: Dict[Tuple[str, str], str] = {
-    ('DRAM', 'R1'): 'Load access fault',
-    ('DRAM', 'W1'): 'Store access fault',
-    ('IRAM', 'R1'): 'Load access fault',
-    ('IRAM', 'W1'): 'Store access fault',
-    ('IROM', 'R1'): 'Load access fault',
-    ('IROM', 'W1'): 'Store access fault',
-    ('DROM', 'R1'): 'Load access fault',
-    ('DROM', 'W1'): 'Store access fault',
-    ('SWDT/BOD', 'W'): 'Store access fault',
-}
-
-TEE_APM_VIOLATION_EXC_CHK = ['eFuse', 'MMU', 'AES', 'HMAC', 'DS', 'SHA PCR', 'ECC PCR']
 
 # ---------------- TEE default tests ----------------
 
@@ -75,6 +49,7 @@ def test_esp_tee(dut: IdfDut) -> None:
     CONFIG_ALL,
     indirect=['config', 'target'],
 )
+@pytest.mark.skipif(targets=['esp32c61'], reason='Not supported')
 def test_esp_tee_crypto_aes(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='aes')
     dut.run_all_single_board_cases(group='aes-gcm')
@@ -96,49 +71,27 @@ def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
     CONFIG_ALL,
     indirect=['config', 'target'],
 )
+@pytest.mark.skipif(targets=['esp32c61'], reason='Not supported')
 def test_esp_tee_aes_perf(dut: IdfDut) -> None:
-    # start test
-    for i in range(24):
-        if not i:
-            dut.expect_exact('Press ENTER to see the list of tests')
-        else:
-            dut.expect_exact("Enter next test, or 'enter' to see menu")
-        dut.write('"mbedtls AES performance"')
-        dut.expect_unity_test_output(timeout=60)
+    for i in range(10):
+        dut.run_all_single_board_cases(name=['mbedtls AES performance'])
 
 
 # ---------------- TEE Exceptions generation Tests ----------------
 
 
-@idf_parametrize(
-    'config, target, markers',
-    CONFIG_DEFAULT,
-    indirect=['config', 'target'],
-)
-def test_esp_tee_apm_violation(dut: IdfDut) -> None:
-    for check in TEE_APM_VIOLATION_EXC_CHK:
-        dut.expect_exact('Press ENTER to see the list of tests')
-        dut.write(f'"Test APM violation interrupt: {check}"')
-        exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-        if dut.target == 'esp32h2' and check == 'eFuse':
-            exp_str = 'APM - Space exception'
-        else:
-            exp_str = 'APM - Authority exception'
-        if exc != exp_str:
-            raise RuntimeError('Incorrect exception received!')
-
-
-@idf_parametrize(
-    'config, target, markers',
-    CONFIG_DEFAULT,
-    indirect=['config', 'target'],
-)
-def test_esp_tee_illegal_instruction(dut: IdfDut) -> None:
+def run_exception_case(
+    dut: IdfDut, menu_prefix: str, test_name: str, expected: str, check_origin: bool = False
+) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"Test TEE-TEE violation: Illegal Instruction"')
-    exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-    if exc != 'Illegal instruction':
-        raise RuntimeError('Incorrect exception received!')
+    dut.write(f'"{menu_prefix}: {test_name}"')
+
+    actual = dut.expect(r"Core ([01]) panic'ed \(([^)]+)\)", timeout=10).group(2).decode()
+    if actual != expected:
+        raise RuntimeError(f"{menu_prefix} / {test_name}: expected '{expected}', got '{actual}'")
+
+    if check_origin:
+        dut.expect('Origin: U-mode')
 
 
 @idf_parametrize(
@@ -147,17 +100,10 @@ def test_esp_tee_illegal_instruction(dut: IdfDut) -> None:
     indirect=['config', 'target'],
 )
 def test_esp_tee_violation_checks(dut: IdfDut) -> None:
-    checks_list = TEE_VIOLATION_TEST_EXC_RSN
-    for test in checks_list:
-        memory, access_type = test
-        expected_exc = checks_list[test]
-        if expected_exc is None:
-            continue
-        dut.expect_exact('Press ENTER to see the list of tests')
-        dut.write(f'"Test TEE-TEE violation: {memory} ({access_type})"')
-        actual_exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-        if actual_exc != expected_exc:
-            raise RuntimeError('Incorrect exception received!')
+    cfg = TEE_EXCEPTION_TEST_MAP[dut.target]['tee_violation']
+
+    for test_name, expected in cfg.items():
+        run_exception_case(dut, 'Test TEE-TEE violation', test_name, expected)
 
 
 @idf_parametrize(
@@ -166,18 +112,39 @@ def test_esp_tee_violation_checks(dut: IdfDut) -> None:
     indirect=['config', 'target'],
 )
 def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
-    checks_list = REE_ISOLATION_TEST_EXC_RSN
-    for test in checks_list:
-        memory, access_type = test
-        expected_exc = checks_list[test]
-        if expected_exc is None:
-            continue
-        dut.expect_exact('Press ENTER to see the list of tests')
-        dut.write(f'"Test REE-TEE isolation: {memory} ({access_type})"')
-        actual_exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-        if actual_exc != expected_exc:
-            raise RuntimeError('Incorrect exception received!')
-        dut.expect('Origin: U-mode')
+    cfg = TEE_EXCEPTION_TEST_MAP[dut.target]['ree_isolation']
+
+    for test_name, expected in cfg.items():
+        run_exception_case(dut, 'Test REE-TEE isolation', test_name, expected, check_origin=True)
+
+
+@idf_parametrize(
+    'config, target, markers',
+    CONFIG_DEFAULT,
+    indirect=['config', 'target'],
+)
+def test_esp_tee_apm_violation(dut: IdfDut) -> None:
+    cfg = TEE_EXCEPTION_TEST_MAP[dut.target]['apm_violation']
+
+    for test_name, expected in cfg.items():
+        run_exception_case(dut, 'Test APM violation', test_name, expected)
+
+
+@idf_parametrize(
+    'config, target, markers',
+    CONFIG_DEFAULT,
+    indirect=['config', 'target'],
+)
+def test_esp_tee_stack_smashing(dut: IdfDut) -> None:
+    for env in ('REE', 'TEE'):
+        for case in ('overflow', 'underflow'):
+            dut.expect_exact('Press ENTER to see the list of tests')
+            dut.write(f'"Test {env} stack {case}"')
+
+            match = dut.expect(r"Core ([01]) panic'ed \(([^)]+)\)", timeout=10)
+            exc = match.group(2).decode()
+            if exc != 'Stack protection fault':
+                raise RuntimeError('Incorrect exception received!')
 
 
 # ---------------- TEE Flash Protection Tests ----------------
@@ -198,51 +165,78 @@ def expect_panic_rsn(dut: IdfDut, expected_rsn: str) -> None:
 
 
 def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFlashAccessApi) -> None:
-    expected_ops = {
-        TeeFlashAccessApi.ESP_PARTITION: [
+    # Constants
+    SOC_TEE_FLASH_OP_FAIL_FAULT = ('esp32c6', 'esp32h2')
+    INVALID_MMU_ACCESS_ERR = re.compile(r'\[_ss_mmu_hal_map_region] Illegal flash access at\s+\S+\s*\|\s*\S+')
+    INVALID_SPI1_ACCESS_ERR = re.compile(r'\[_ss_spi_flash_hal_(\w+)\] Illegal flash access at \s*(0x[0-9a-fA-F]+)')
+    EXPECTED_OPS_MAP = {
+        TeeFlashAccessApi.ESP_PARTITION: (
             'read',
             'program_page|common_command',
             'program_page|common_command',
             'erase_sector|common_command',
-        ],
-        TeeFlashAccessApi.ESP_FLASH: [
+        ),
+        TeeFlashAccessApi.ESP_FLASH: (
             'program_page|common_command',
             'read',
             'erase_sector|common_command',
             'program_page|common_command',
-        ],
+        ),
     }
 
     flash_enc_enabled = dut.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', True)
+    target_mmu_fault = dut.target in SOC_TEE_FLASH_OP_FAIL_FAULT
+
+    expected_ops = EXPECTED_OPS_MAP.get(api)
 
     for stage in range(1, stages + 1):
         dut.write(str(test_case_num))
-        dut.expect(r'\s+\((\d+)\)\s+"([^"]+)"\r?\n', timeout=30)
+        dut.expect(r'\s+\((\d+)\)\s+"([^"]+)"\r?\n', timeout=10)
         dut.write(str(stage))
 
         if stage > 1:
-            if api in {TeeFlashAccessApi.ESP_PARTITION_MMAP, TeeFlashAccessApi.SPI_FLASH_MMAP}:
-                expect_panic_rsn(dut, 'Cache error')
-            elif api in {TeeFlashAccessApi.ESP_PARTITION, TeeFlashAccessApi.ESP_FLASH}:
-                op_index = stage - 2
-                curr_op = expected_ops[api][op_index]
-                if api == TeeFlashAccessApi.ESP_PARTITION and curr_op == 'read' and flash_enc_enabled:
-                    # NOTE: The esp_partition_read API handles both decrypted
-                    # and plaintext reads. When flash encryption is enabled,
-                    # it uses the MMU HAL instead of the SPI flash HAL.
+            if api in (TeeFlashAccessApi.ESP_PARTITION_MMAP, TeeFlashAccessApi.SPI_FLASH_MMAP):
+                if target_mmu_fault:
                     expect_panic_rsn(dut, 'Cache error')
                 else:
-                    match = dut.expect(
-                        r'\[_ss_spi_flash_hal_(\w+)\] Illegal flash access at \s*(0x[0-9a-fA-F]+)', timeout=10
-                    )
+                    dut.expect(INVALID_MMU_ACCESS_ERR, timeout=10)
+            elif api == TeeFlashAccessApi.ESP_ROM_SPIFLASH:
+                # NOTE: ROM flash APIs are not supported with ESP-TEE,
+                # thus using them results in APM violations
+                expected_rsn = 'APM - Authority exception' if target_mmu_fault else 'APM - Space exception'
+                expect_panic_rsn(dut, expected_rsn)
+            elif api in (TeeFlashAccessApi.ESP_PARTITION, TeeFlashAccessApi.ESP_FLASH):
+                assert expected_ops is not None
+                op_index = stage - 2
+                curr_op = expected_ops[op_index]
+                # NOTE: The esp_partition_read API handles both decrypted
+                # and plaintext reads. When flash encryption is enabled,
+                # it uses the MMU HAL instead of the SPI flash HAL.
+                if flash_enc_enabled and api == TeeFlashAccessApi.ESP_PARTITION and curr_op == 'read':
+                    if target_mmu_fault:
+                        expect_panic_rsn(dut, 'Cache error')
+                    else:
+                        dut.expect(INVALID_MMU_ACCESS_ERR, timeout=10)
+                else:
+                    match = dut.expect(INVALID_SPI1_ACCESS_ERR, timeout=10)
                     actual_op = match.group(1).decode()
                     if not re.fullmatch(curr_op, actual_op):
                         raise RuntimeError(f'Unexpected flash operation: {actual_op} (expected: {curr_op})')
-            elif api == TeeFlashAccessApi.ESP_ROM_SPIFLASH:
-                expect_panic_rsn(dut, 'APM - Authority exception')
 
         if stage != stages:
             dut.expect_exact('Press ENTER to see the list of tests.')
+
+
+def run_flash_access_test(dut: IdfDut, api: TeeFlashAccessApi, test_name: str) -> None:
+    dut.serial.custom_flash()
+
+    extra_data = dut._parse_test_menu()
+    test_case = next((tc for tc in extra_data if tc.name == test_name), None)
+
+    if not test_case:
+        raise RuntimeError(f"Test case '{test_name}' not found")
+
+    run_multiple_stages(dut, test_case.index, len(test_case.subcases), api)
 
 
 @idf_parametrize(
@@ -251,16 +245,9 @@ def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFl
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
-    # Flash the bootloader, TEE and REE firmware
-    dut.serial.custom_flash()
-
-    # start test
-    extra_data = dut.parse_test_menu()
-    for test_case in extra_data:
-        if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (esp_partition_mmap)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_PARTITION_MMAP)
-        else:
-            continue
+    run_flash_access_test(
+        dut, TeeFlashAccessApi.ESP_PARTITION_MMAP, 'Test REE-TEE isolation: Flash - SPI0 (esp_partition_mmap)'
+    )
 
 
 @idf_parametrize(
@@ -269,16 +256,9 @@ def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
-    # Flash the bootloader, TEE and REE firmware
-    dut.serial.custom_flash()
-
-    # start test
-    extra_data = dut.parse_test_menu()
-    for test_case in extra_data:
-        if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (spi_flash_mmap)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.SPI_FLASH_MMAP)
-        else:
-            continue
+    run_flash_access_test(
+        dut, TeeFlashAccessApi.SPI_FLASH_MMAP, 'Test REE-TEE isolation: Flash - SPI0 (spi_flash_mmap)'
+    )
 
 
 @idf_parametrize(
@@ -287,16 +267,9 @@ def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
-    # Flash the bootloader, TEE and REE firmware
-    dut.serial.custom_flash()
-
-    # start test
-    extra_data = dut.parse_test_menu()
-    for test_case in extra_data:
-        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_rom_spiflash)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_ROM_SPIFLASH)
-        else:
-            continue
+    run_flash_access_test(
+        dut, TeeFlashAccessApi.ESP_ROM_SPIFLASH, 'Test REE-TEE isolation: Flash - SPI1 (esp_rom_spiflash)'
+    )
 
 
 @idf_parametrize(
@@ -305,16 +278,7 @@ def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_flash_prot_esp_partition(dut: IdfDut) -> None:
-    # Flash the bootloader, TEE and REE firmware
-    dut.serial.custom_flash()
-
-    # start test
-    extra_data = dut.parse_test_menu()
-    for test_case in extra_data:
-        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_partition)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_PARTITION)
-        else:
-            continue
+    run_flash_access_test(dut, TeeFlashAccessApi.ESP_PARTITION, 'Test REE-TEE isolation: Flash - SPI1 (esp_partition)')
 
 
 @idf_parametrize(
@@ -323,32 +287,18 @@ def test_esp_tee_flash_prot_esp_partition(dut: IdfDut) -> None:
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
-    # Flash the bootloader, TEE and REE firmware
-    dut.serial.custom_flash()
-
-    # start test
-    extra_data = dut.parse_test_menu()
-    for test_case in extra_data:
-        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_flash)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_FLASH)
-        else:
-            continue
+    run_flash_access_test(dut, TeeFlashAccessApi.ESP_FLASH, 'Test REE-TEE isolation: Flash - SPI1 (esp_flash)')
 
 
 # ---------------- TEE Local OTA tests ----------------
 
 
 @pytest.mark.generic
-@idf_parametrize('config', ['ota'], indirect=['config'])
-@idf_parametrize('target', ['esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('config', ['tee_ota'], indirect=['config'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
 def test_esp_tee_ota_negative(dut: IdfDut) -> None:
     # start test
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[ota_neg_1]')
-    dut.expect_unity_test_output(timeout=120)
-
-    # erasing TEE otadata
-    dut.serial.erase_partition('tee_otadata')
+    dut.run_all_single_board_cases(group='ota_neg_1', timeout=10)
 
 
 @idf_parametrize(
@@ -361,12 +311,7 @@ def test_esp_tee_ota_corrupted_img(dut: IdfDut) -> None:
     dut.serial.custom_flash_w_test_tee_img_gen()
 
     # start test
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"Test TEE OTA - Corrupted image"')
-    dut.expect_unity_test_output(timeout=120)
-
-    # erasing TEE otadata
-    dut.serial.erase_partition('tee_otadata')
+    dut.run_all_single_board_cases(name=['Test TEE OTA - Corrupted image'], timeout=10)
 
 
 class TeeOtaStage(Enum):
@@ -377,14 +322,14 @@ class TeeOtaStage(Enum):
 
 def tee_ota_stage_checks(dut: IdfDut, stage: TeeOtaStage, offset: str) -> None:
     if stage == TeeOtaStage.PRE:
-        dut.expect(f'Loaded TEE app from partition at offset {offset}', timeout=30)
-        dut.expect('Current image already has been marked VALID', timeout=30)
+        dut.expect(f'Loaded TEE app from partition at offset {offset}', timeout=10)
+        dut.expect('Current image already has been marked VALID', timeout=10)
     elif stage == TeeOtaStage.BEGIN:
-        dut.expect('Starting TEE OTA...', timeout=30)
-        dut.expect('Running partition - Subtype: 0x30', timeout=30)
-        dut.expect_exact(f'Next partition - Subtype: 0x31 (Offset: {offset})', timeout=30)
+        dut.expect('Starting TEE OTA...', timeout=10)
+        dut.expect('Running partition - Subtype: 0x30', timeout=10)
+        dut.expect_exact(f'Next partition - Subtype: 0x31 (Offset: {offset})', timeout=10)
     elif stage == TeeOtaStage.REBOOT:
-        dut.expect(f'Loaded TEE app from partition at offset {offset}', timeout=30)
+        dut.expect(f'Loaded TEE app from partition at offset {offset}', timeout=10)
         dut.expect_exact('Press ENTER to see the list of tests')
     else:
         raise ValueError('Undefined stage!')
@@ -407,13 +352,10 @@ def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Reboot without ending OTA"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
 
     # after reboot
     tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x10000')
-
-    # erasing TEE otadata
-    dut.serial.erase_partition('tee_otadata')
 
 
 @idf_parametrize(
@@ -430,24 +372,21 @@ def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
 
     # start test
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[ota_valid_img]')
+    dut.write('"Test TEE OTA - Valid image"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
-    dut.expect('TEE OTA update successful!', timeout=30)
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
+    dut.expect('TEE OTA update successful!', timeout=10)
 
     # after reboot 1
-    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
     # resetting device to check for image validity
     dut.serial.hard_reset()
 
     # after reboot 2
-    dut.expect('TEE otadata - Current image state: VALID', timeout=30)
-    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x40000')
-
-    # erasing TEE otadata
-    dut.serial.erase_partition('tee_otadata')
+    dut.expect('TEE otadata - Current image state: VALID', timeout=10)
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
 
 @idf_parametrize(
@@ -464,26 +403,23 @@ def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
 
     # start test
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[ota_rollback]')
+    dut.write('"Test TEE OTA - Rollback"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
-    dut.expect('TEE OTA update successful!', timeout=30)
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
+    dut.expect('TEE OTA update successful!', timeout=10)
 
     # after reboot 1
     dut.expect('TEE otadata - Current image state: NEW', timeout=10)
-    dut.expect('Loaded TEE app from partition at offset 0x40000', timeout=10)
-    rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=30).group(2).decode()
-    # NOTE: LP_WDT_SYS is for ESP32-C6 case as bootloader fails to load the dummy TEE app
-    if rst_rsn != 'LP_WDT_SYS':
+    dut.expect('Loaded TEE app from partition at offset 0x50000', timeout=10)
+    rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=10).group(2).decode()
+    # NOTE: LP_WDT_SYS (C6/H2) and RTC_WDT_SYS (C5) are expected as bootloader fails to load the dummy TEE app
+    if rst_rsn not in {'LP_WDT_SYS', 'RTC_WDT_SYS'}:
         raise RuntimeError('Incorrect reset reason observed after TEE image failure!')
 
     # after rollback
-    dut.expect('TEE otadata - Current image state: PENDING_VERIFY', timeout=30)
+    dut.expect('TEE otadata - Current image state: PENDING_VERIFY', timeout=10)
     tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x10000')
-
-    # erasing TEE otadata
-    dut.serial.erase_partition('tee_otadata')
 
 
 # ---------------- TEE Secure Storage tests ----------------

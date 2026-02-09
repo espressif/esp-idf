@@ -22,7 +22,10 @@ static struct km_peer kmp[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1] = {0};
 
 static const char *tag = "ENC_ADV_DATA_CENT";
 static int enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg);
+
+#if MYNEWT_VAL(BLE_GATTC)
 static int mtu_def = 512;
+#endif
 
 void ble_store_config_init(void);
 
@@ -37,6 +40,7 @@ enc_adv_data_find_peer(const uint8_t *peer_addr)
     return -1;
 }
 
+#if MYNEWT_VAL(BLE_GATTC)
 static int
 enc_adv_data_set_km_exist(const uint8_t *peer_addr)
 {
@@ -47,6 +51,7 @@ enc_adv_data_set_km_exist(const uint8_t *peer_addr)
     kmp[ind].key_material_exist = true;
     return 0;
 }
+#endif
 
 static bool
 enc_adv_data_check_km_exist(const uint8_t *peer_addr)
@@ -60,6 +65,7 @@ enc_adv_data_check_km_exist(const uint8_t *peer_addr)
     return kmp[ind].key_material_exist;
 }
 
+#if MYNEWT_VAL(BLE_GATTC)
 /**
  * Application callback.  Called when the read has completed.
  */
@@ -175,6 +181,7 @@ enc_adv_data_cent_on_disc_complete(const struct peer *peer, int status, void *ar
         enc_adv_data_cent_read(peer);
     }
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -444,6 +451,7 @@ enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg)
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "");
 
+#if MYNEWT_VAL(BLE_GATTC)
             rc = ble_att_set_preferred_mtu(mtu_def);
             if (rc != 0) {
                 ESP_LOGE(tag, "Failed to set preferred MTU; rc = %d", rc);
@@ -453,6 +461,7 @@ enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg)
             if (rc != 0) {
                 ESP_LOGE(tag, "Failed to negotiate MTU; rc = %d", rc);
             }
+#endif
 
             /* Remember peer. */
             rc = peer_add(event->connect.conn_handle);
@@ -511,12 +520,14 @@ enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 
+#if MYNEWT_VAL(BLE_GATTC)
         /* Perform service discovery */
         rc = peer_disc_all(event->enc_change.conn_handle,
                            enc_adv_data_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
         }
+#endif
         return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:

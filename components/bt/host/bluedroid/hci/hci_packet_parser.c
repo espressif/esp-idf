@@ -164,7 +164,7 @@ static void parse_ble_read_buffer_size_response_v2 (
     uint8_t *iso_pkt_num_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_BUFFER_SZIE_V2, 3 /* bytes after */);
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_BUFFER_SZIE_V2, 6 /* bytes after: 2+1+2+1 */);
     assert(stream != NULL);
     STREAM_TO_UINT16(*data_size_ptr, stream);
     STREAM_TO_UINT8(*acl_buffer_count_ptr, stream);
@@ -219,7 +219,7 @@ static void parse_ble_read_suggested_default_data_length_response(
     uint16_t *ble_default_packet_txtime_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_DEFAULT_DATA_LENGTH, 2 /* bytes after */);
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_DEFAULT_DATA_LENGTH, 4 /* bytes after: 2+2 */);
     if (stream) {
         STREAM_TO_UINT16(*ble_default_packet_length_ptr, stream);
         STREAM_TO_UINT16(*ble_default_packet_txtime_ptr, stream);
@@ -235,7 +235,7 @@ static void parse_ble_read_adv_max_len_response(
     uint16_t *adv_max_len_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_MAX_ADV_DATA_LEN, 1 /* bytes after */);
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_MAX_ADV_DATA_LEN, 2 /* bytes after */);
     if (stream) {
         // Size: 2 Octets ; Value: 0x001F – 0x0672 ; Maximum supported advertising data length
         STREAM_TO_UINT16(*adv_max_len_ptr, stream);
@@ -246,7 +246,7 @@ static void parse_ble_read_adv_max_len_response(
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void parse_ble_read_periodic_adv_list_size_response(
     BT_HDR *response,
-    uint16_t *periodic_adv_list_size_ptr)
+    uint8_t *periodic_adv_list_size_ptr)
 {
 
     uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_PERIOD_ADV_LIST_SIZE, 1 /* bytes after */);

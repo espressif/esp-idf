@@ -14,7 +14,6 @@ extern "C" {
 
 #include <stdbool.h>
 #include "sdkconfig.h"
-#include "soc/soc.h"  // [refactor-todo] IDF-2297
 #include "esp_err.h"
 #include "esp_cpu.h"
 

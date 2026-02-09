@@ -6,6 +6,14 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.sdcard
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+        'nosdio',
+    ],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_sdmmc(dut: IdfDut) -> None:
     # SDMMC driver can't be reinitialized if the test fails,

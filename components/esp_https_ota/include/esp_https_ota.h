@@ -62,8 +62,10 @@ typedef struct {
     const esp_http_client_config_t *http_config;   /*!< ESP HTTP client configuration */
     http_client_init_cb_t http_client_init_cb;     /*!< Callback after ESP HTTP client is initialised */
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD || __DOXYGEN__
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
+#endif
     uint32_t buffer_caps;                          /*!< The memory capability to use when allocating the buffer for OTA update. Default capability is MALLOC_CAP_DEFAULT */
     bool ota_resumption;                           /*!< Enable resumption in downloading of OTA image between reboots */
     size_t ota_image_bytes_written;                /*!< Number of OTA image bytes written to flash so far, updated by the application when OTA data is written successfully in the target OTA partition. */

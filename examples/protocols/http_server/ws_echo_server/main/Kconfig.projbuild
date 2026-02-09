@@ -1,0 +1,12 @@
+menu "Example Configuration"
+
+    config EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
+        bool "Enable WebSocket pre-handshake callback"
+        select HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT
+        default y
+        help
+            Enable this option to use WebSocket pre-handshake callback.
+            This will allow the server to register a callback function that will be
+            called before the WebSocket handshake is processed.
+
+endmenu

@@ -43,7 +43,7 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 
 上述可选参数对应 SPIFFS 构建配置选项。若想顺利生成可用的镜像，请确保使用的参数或配置与构建 SPIFFS 时所用的参数或配置相同。运行帮助命令将显示参数所对应的 SPIFFS 构建配置。如未指定参数，将使用帮助信息中的默认值。
 
-镜像生成后，用户可以使用 ``esptool.py`` 或 ``parttool.py`` 烧录镜像。
+镜像生成后，用户可以使用 ``esptool`` 或 ``parttool.py`` 烧录镜像。
 
 用户可以在命令行或脚本中手动单独调用 ``spiffsgen.py``，也可以直接从构建系统调用 ``spiffs_create_partition_image`` 来使用 ``spiffsgen.py``::
 
@@ -57,7 +57,7 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 
     spiffs_create_partition_image(my_spiffs_partition my_folder FLASH_IN_PROJECT)
 
-不指定 FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT 也可以生成镜像，但须使用 ``esptool.py``、``parttool.py`` 或自定义构建系统目标手动烧录。
+不指定 FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT 也可以生成镜像，但须使用 ``esptool``、``parttool.py`` 或自定义构建系统目标手动烧录。
 
 有时基本目录中的内容是在构建时生成的，用户可以使用 DEPENDS/SPIFFS_IMAGE_DEPENDS 指定目标，因此可以在生成镜像之前执行此目标::
 
@@ -70,7 +70,7 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 ``mkspiffs``
 ^^^^^^^^^^^^
 
-用户也可以使用 `mkspiffs <https://github.com/igrr/mkspiffs>`_ 工具创建 SPIFFS 分区镜像。与 ``spiffsgen.py`` 相似，`mkspiffs <https://github.com/igrr/mkspiffs>`_ 也可以用于从指定文件夹中生成镜像，然后使用 ``esptool.py`` 烧录镜像。
+用户也可以使用 `mkspiffs <https://github.com/igrr/mkspiffs>`_ 工具创建 SPIFFS 分区镜像。与 ``spiffsgen.py`` 相似，`mkspiffs <https://github.com/igrr/mkspiffs>`_ 也可以用于从指定文件夹中生成镜像，然后使用 ``esptool`` 烧录镜像。
 
 该工具需要获取以下参数：
 
@@ -85,11 +85,11 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 
 运行以下命令，将镜像烧录到 {IDF_TARGET_NAME}（偏移量：0x110000）::
 
-    python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
+    esptool --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write-flash -z 0x110000 spiffs.bin
 
 .. note::
 
-    可以使用 ``esptool.py`` 的 ``write_flash`` 命令，通过 ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` 选项 `将 spiffs 数据写入外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_。只需指定分配给外部 flash 的 GPIO 管脚，如 ``python esptool.py write_flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``。
+    可以使用 ``esptool`` 的 ``write-flash`` 命令，通过 ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` 选项 `将 spiffs 数据写入外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_。只需指定分配给外部 flash 的 GPIO 管脚，如 ``esptool write-flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``。
 
 选择合适的 SPIFFS 工具
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

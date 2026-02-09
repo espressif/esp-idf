@@ -202,7 +202,7 @@ TEST_CASE("parlio_tx_bitscrambler_test", "[parlio_bitscrambler]")
     test_parlio_bitscrambler();
 }
 
-#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#if PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
 static void test_parlio_bitscrambler_different_input_output_sizes(void)
 {
     parlio_tx_unit_handle_t tx_unit = NULL;
@@ -353,4 +353,4 @@ TEST_CASE("parlio_tx_bitscrambler_different_input_output_sizes_test", "[parlio_b
 {
     test_parlio_bitscrambler_different_input_output_sizes();
 }
-#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#endif // PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)

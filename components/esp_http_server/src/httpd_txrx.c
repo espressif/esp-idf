@@ -12,6 +12,7 @@
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
 #include <netinet/tcp.h>
+#include "ctrl_sock.h"
 
 static const char *TAG = "httpd_txrx";
 
@@ -121,7 +122,7 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, httpd_recv_op
     size_t recv_len = pending_len;
     do {
         int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
-        if (ret < 0) {
+        if (ret <= 0) {
             ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
             if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
                 /* If recv() timeout occurred, but pending data is
@@ -675,6 +676,7 @@ esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
 
     async_aux->resp_hdrs = calloc(hd->config.max_resp_headers, sizeof(struct resp_hdr));
     if (async_aux->resp_hdrs == NULL) {
+        free(async_aux->scratch);
         free(async_aux);
         free(async);
         return ESP_ERR_NO_MEM;
@@ -698,6 +700,11 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
         return ESP_ERR_INVALID_ARG;
     }
 
+    // Get server handle and control socket info before freeing the request
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    int msg_fd = hd->msg_fd;
+    int port = hd->config.ctrl_port;
+
     struct httpd_req_aux *ra = r->aux;
     ra->sd->for_async_req = false;
     free(ra->scratch);
@@ -708,6 +715,18 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
     free(r->aux);
     free(r);
 
+    // Send a dummy control message(httpd_ctrl_data) to unblock the main HTTP server task from the select() call.
+    // Since the current connection FD was marked as inactive for async requests, the main task
+    // will now re-add this FD to its select() descriptor list. This ensures that subsequent requests
+    // on the same FD are processed correctly
+    struct httpd_ctrl_data msg = {.hc_msg = HTTPD_CTRL_MAX};
+    int ret = cs_send_to_ctrl_sock(msg_fd, port, &msg, sizeof(msg));
+    if (ret < 0) {
+        ESP_LOGW(TAG, LOG_FMT("failed to send socket notification"));
+        return ESP_FAIL;
+    }
+
+    ESP_LOGD(TAG, LOG_FMT("socket notification sent"));
     return ESP_OK;
 }
 

@@ -20,6 +20,7 @@
 #include "esp_private/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_clk_tree.h"
+#include "esp_sleep.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/regi2c_ctrl.h"
@@ -29,7 +30,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "soc/soc_caps.h"
 
 #if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM
@@ -121,6 +122,9 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         .unit = init_config->unit_id,
         .clk_src = clk_src,
         .clk_src_freq_hz = clk_src_freq_hz,
+#if CONFIG_ADC_DISABLE_DAC_OUTPUT
+        .disable_dac_output = true,
+#endif
     };
 
     switch (init_config->ulp_mode) {
@@ -170,6 +174,16 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
     *ret_unit = unit;
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    //TODO: IDF-8475: Depends to SLEEP_RETENTION_MODULE_CLOCK_MODEM retention module after ADC retention supported.
+#if SOC_PM_SUPPORT_MODEM_PD
+    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_ON));
+    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON));
+#endif
+#elif ADC_LL_ADC_FE_ON_MODEM_DOMAIN
+    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_ON));
+#endif
     return ESP_OK;
 
 err:
@@ -304,6 +318,15 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 
     free(handle);
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    //TODO: IDF-8475: Depends to SLEEP_RETENTION_MODULE_CLOCK_MODEM retention module after ADC retention supported.
+#if SOC_PM_SUPPORT_MODEM_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_OFF);
+#endif
+#elif ADC_LL_ADC_FE_ON_MODEM_DOMAIN
+    esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_OFF);
+#endif
     return ESP_OK;
 }
 

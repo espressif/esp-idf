@@ -1,18 +1,5 @@
 menu "Example Configuration"
 
-    choice EXAMPLE_LCD_CONTROLLER
-        prompt "LCD controller model"
-        default EXAMPLE_LCD_CONTROLLER_ILI9341
-        help
-            Select LCD controller model
-
-        config EXAMPLE_LCD_CONTROLLER_ILI9341
-            bool "ILI9341"
-
-        config EXAMPLE_LCD_CONTROLLER_GC9A01
-            bool "GC9A01"
-    endchoice
-
     config EXAMPLE_LCD_TOUCH_ENABLED
         bool "Enable LCD touch"
         default n

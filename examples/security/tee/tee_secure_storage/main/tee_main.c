@@ -1,7 +1,7 @@
 /*
  * TEE Secure Storage example
  *
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,9 +15,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "mbedtls/ecp.h"
-#include "mbedtls/ecdsa.h"
-#include "mbedtls/sha256.h"
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_ecdsa.h"
 
 #include "esp_tee_sec_storage.h"
 #include "secure_service_num.h"
@@ -28,93 +27,66 @@
 #define AES256_GCM_TAG_LEN       (16)
 #define AES256_GCM_AAD_LEN       (16)
 
-#define KEY_STR_ID               (CONFIG_EXAMPLE_TEE_SEC_STG_KEY_STR_ID)
+#define SIGN_KEY_STR_ID          (CONFIG_EXAMPLE_TEE_SEC_STG_SIGN_KEY_STR_ID)
+#define ENC_KEY_STR_ID           (CONFIG_EXAMPLE_TEE_SEC_STG_ENC_KEY_STR_ID)
 #define MAX_AES_PLAINTEXT_LEN    (128)
 
 static const char *message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
 
 static const char *TAG = "example_tee_sec_stg";
 
-static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign)
+static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const uint8_t *pub_key, size_t pub_key_len, const uint8_t *signature, size_t signature_len)
 {
-    if (pubkey == NULL || digest == NULL || sign == NULL) {
+    if (pub_key == NULL || pub_key_len == 0 || digest == NULL || len == 0 || signature == NULL || signature_len == 0) {
         return ESP_ERR_INVALID_ARG;
-    }
-
-    if (len == 0) {
-        return ESP_ERR_INVALID_SIZE;
     }
 
     esp_err_t err = ESP_FAIL;
 
-    mbedtls_mpi r, s;
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
+    psa_key_id_t pub_key_id = 0;
+    psa_key_attributes_t pub_key_attr = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&pub_key_attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_usage_flags(&pub_key_attr, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&pub_key_attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
-    mbedtls_ecdsa_context ecdsa_context;
-    mbedtls_ecdsa_init(&ecdsa_context);
-
-    int ret = mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
-    if (ret != 0) {
+    psa_status_t status = psa_import_key(&pub_key_attr, pub_key, pub_key_len, &pub_key_id);
+    if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    size_t plen = mbedtls_mpi_size(&ecdsa_context.MBEDTLS_PRIVATE(grp).P);
-
-    ret = mbedtls_mpi_read_binary(&r, sign->sign_r, plen);
-    if (ret != 0) {
+    status = psa_verify_hash(pub_key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), digest, len, signature, signature_len);
+    if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    ret = mbedtls_mpi_read_binary(&s, sign->sign_s, plen);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X), pubkey->pub_x, plen);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), pubkey->pub_y, plen);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_lset(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 1);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    ret = mbedtls_ecdsa_verify(&ecdsa_context.MBEDTLS_PRIVATE(grp), digest, len, &ecdsa_context.MBEDTLS_PRIVATE(Q), &r, &s);
-    if (ret != 0) {
-        goto exit;
-    }
+    psa_destroy_key(pub_key_id);
+    psa_reset_key_attributes(&pub_key_attr);
 
     err = ESP_OK;
 
 exit:
-    mbedtls_mpi_free(&r);
-    mbedtls_mpi_free(&s);
-    mbedtls_ecdsa_free(&ecdsa_context);
 
     return err;
 }
 
 static void example_tee_sec_stg_sign_verify(void *pvParameter)
 {
+    psa_key_id_t priv_key_id = 0;
+    psa_key_attributes_t priv_key_attr = PSA_KEY_ATTRIBUTES_INIT;
+
     char *msg = (char *)pvParameter;
     ESP_LOGI(TAG, "Message-to-be-signed: %s", msg);
 
     uint8_t msg_digest[SHA256_DIGEST_SZ];
-    int ret = mbedtls_sha256((const unsigned char *)msg, strlen(msg), msg_digest, false);
-    if (ret != 0) {
+    size_t msg_digest_len = 0;
+    psa_status_t status = psa_hash_compute(PSA_ALG_SHA_256, (const uint8_t *)msg, strlen(msg), msg_digest, sizeof(msg_digest), &msg_digest_len);
+    if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to calculate message hash!");
         goto exit;
     }
 
     esp_tee_sec_storage_key_cfg_t cfg = {
-        .id = (const char *)(KEY_STR_ID),
+        .id = (const char *)(SIGN_KEY_STR_ID),
         .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1
     };
 
@@ -130,31 +102,55 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
         goto exit;
     }
 
-    esp_tee_sec_storage_ecdsa_sign_t sign = {};
-    err = esp_tee_sec_storage_ecdsa_sign(&cfg, msg_digest, sizeof(msg_digest), &sign);
-    if (err != ESP_OK) {
+    esp_ecdsa_opaque_key_t opaque_key = {
+        .curve = ESP_ECDSA_CURVE_SECP256R1,
+        .tee_key_id = cfg.id,
+    };
+
+    psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
+    psa_set_key_type(&priv_key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&priv_key_attr, ECDSA_SECP256R1_KEY_LEN * 8);
+    psa_set_key_usage_flags(&priv_key_attr, PSA_KEY_USAGE_SIGN_HASH);
+    psa_set_key_algorithm(&priv_key_attr, alg);
+    psa_set_key_lifetime(&priv_key_attr, PSA_KEY_LIFETIME_ESP_ECDSA_VOLATILE);
+
+    status = psa_import_key(&priv_key_attr, (uint8_t*) &opaque_key, sizeof(opaque_key), &priv_key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to import private key!");
+        goto exit;
+    }
+
+    uint8_t signature[2 * ECDSA_SECP256R1_KEY_LEN];
+    size_t signature_len = 0;
+    status = psa_sign_hash(priv_key_id, alg, msg_digest, msg_digest_len, signature, sizeof(signature), &signature_len);
+    if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to generate signature!");
+        psa_destroy_key(priv_key_id);
         goto exit;
     }
 
-    ESP_LOG_BUFFER_HEX("Signature", &sign, sizeof(sign));
+    ESP_LOG_BUFFER_HEX("Signature", signature, signature_len);
 
-    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
-    err = esp_tee_sec_storage_ecdsa_get_pubkey(&cfg, &pubkey);
-    if (err != ESP_OK) {
+    uint8_t pub_key[2 * ECDSA_SECP256R1_KEY_LEN + 1];
+    size_t pub_key_len = 0;
+    status = psa_export_public_key(priv_key_id, pub_key, sizeof(pub_key), &pub_key_len);
+    if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to fetch public-key!");
+        psa_destroy_key(priv_key_id);
         goto exit;
     }
 
-    err = verify_ecdsa_secp256r1_sign(msg_digest, sizeof(msg_digest), &pubkey, &sign);
+    err = verify_ecdsa_secp256r1_sign(msg_digest, msg_digest_len, pub_key, pub_key_len, signature, signature_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify signature!");
+        psa_destroy_key(priv_key_id);
         goto exit;
     }
 
     ESP_LOGI(TAG, "Signature verified successfully!");
 
 exit:
+    psa_reset_key_attributes(&priv_key_attr);
     vTaskDelete(NULL);
 }
 
@@ -182,7 +178,7 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
     }
 
     esp_tee_sec_storage_key_cfg_t cfg = {
-        .id = (const char *)(KEY_STR_ID),
+        .id = (const char *)(ENC_KEY_STR_ID),
         .type = ESP_SEC_STG_KEY_AES256
     };
 

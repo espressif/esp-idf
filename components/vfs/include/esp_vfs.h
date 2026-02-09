@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,11 +21,7 @@
 #include <sys/time.h>
 #include <sys/termios.h>
 #include <sys/poll.h>
-#ifdef __clang__ // TODO LLVM-330
-#include <sys/dirent.h>
-#else
 #include <dirent.h>
-#endif
 #include <string.h>
 #include "sdkconfig.h"
 
@@ -35,8 +31,10 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 #ifndef _SYS_TYPES_FD_SET
 #error "VFS should be used with FD_SETSIZE and FD_SET from sys/types.h"
+#endif
 #endif
 
 /**
@@ -50,7 +48,7 @@ extern "C" {
 #define ESP_VFS_PATH_MAX 15
 
 /**
- * Default value of flags member in esp_vfs_t structure.
+ * Default value of flags member in esp_vfs_fs_ops_t structure.
  */
 #define ESP_VFS_FLAG_DEFAULT (1 << 0)
 
@@ -72,6 +70,7 @@ extern "C" {
 
 /**
  * @brief VFS definition structure
+ * @note Prefer using esp_vfs_fs_ops_t with esp_vfs_register_fs*() instead.
  *
  * This structure should be filled with pointers to corresponding
  * FS driver functions.
@@ -252,8 +251,6 @@ typedef struct
 #endif // CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
 } esp_vfs_t;
 
-
-
 /**
  * Register a virtual filesystem for given path prefix.
  *
@@ -281,23 +278,6 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 
 /**
  * Special case function for registering a VFS that uses a method other than
- * open() to open new file descriptors from the interval <min_fd; max_fd).
- *
- * This is a special-purpose function intended for registering LWIP sockets to VFS.
- *
- * @param vfs Pointer to esp_vfs_t. Meaning is the same as for esp_vfs_register().
- * @param ctx Pointer to context structure. Meaning is the same as for esp_vfs_register().
- * @param min_fd The smallest file descriptor this VFS will use.
- * @param max_fd Upper boundary for file descriptors this VFS will use (the biggest file descriptor plus one).
- *
- * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
- *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
- *          are incorrect.
- */
-esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd);
-
-/**
- * Special case function for registering a VFS that uses a method other than
  * open() to open new file descriptors. In comparison with
  * esp_vfs_register_fd_range, this function doesn't pre-registers an interval
  * of file descriptors. File descriptors can be registered later, by using
@@ -312,7 +292,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
  *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
  *          are incorrect.
  */
-esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id);
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id) __attribute__((deprecated("Use esp_vfs_register_fs_with_id() instead")));
 
 /**
  * Unregister a virtual filesystem for given path prefix
@@ -374,8 +354,8 @@ esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, b
 esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd);
 
 /**
- * These functions are to be used in newlib syscall table. They will be called by
- * newlib when it needs to use any of the syscalls.
+ * These functions are to be used in esp_libc syscall table. They will be called by
+ * esp_libc when it needs to use any of the syscalls.
  */
 /**@{*/
 ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size);
@@ -389,6 +369,25 @@ int esp_vfs_link(struct _reent *r, const char* n1, const char* n2);
 int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
 int esp_vfs_utime(const char *path, const struct utimbuf *times);
+int esp_vfs_fsync(int fd);
+int esp_vfs_fcntl_r(struct _reent *r, int fd, int cmd, int arg);
+int esp_vfs_ioctl(int fd, int cmd, ...);
+
+/* Directory related functions */
+int esp_vfs_stat(struct _reent *r, const char *path, struct stat *st);
+int esp_vfs_truncate(const char *path, off_t length);
+int esp_vfs_ftruncate(int fd, off_t length);
+int esp_vfs_access(const char *path, int amode);
+int esp_vfs_utime(const char *path, const struct utimbuf *times);
+int esp_vfs_rmdir(const char* name);
+int esp_vfs_mkdir(const char* name, mode_t mode);
+DIR* esp_vfs_opendir(const char* name);
+int esp_vfs_closedir(DIR* pdir);
+int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+struct dirent* esp_vfs_readdir(DIR* pdir);
+long esp_vfs_telldir(DIR* pdir);
+void esp_vfs_seekdir(DIR* pdir, long loc);
+void esp_vfs_rewinddir(DIR* pdir);
 /**@}*/
 
 /**

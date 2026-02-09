@@ -53,6 +53,10 @@
       - 演示了如何在 NVS flash 中使用 C 语言 API 读写整数数据类型。
     * - :example:`nvs_rw_value <storage/nvs/nvs_rw_value_cxx>`
       - 演示了如何在 NVS flash 中使用 C++ 语言 API 读写整数数据类型。
+    * - :example:`nvs_statistics <storage/nvs/nvs_statistics>`
+      - 演示了如何使用 C 风格 API 获取 NVS 使用情况统计信息，包括指定 NVS 分区中的空闲、已用、可用、总条目数、以及命名空间数量。
+    * - :example:`nvs_iteration <storage/nvs/nvs_iteration>`
+      - 演示了如何使用 C 风格 API 遍历特定（或任意）NVS 数据类型的条目，以及如何获取这些条目的相关信息。
     * - :example:`nvs_bootloader <storage/nvs/nvs_bootloader>`
       - 演示了如何使用引导加载程序代码中可用的 API 来读取 NVS 数据。
     * - :example:`nvsgen <storage/nvs/nvsgen>`

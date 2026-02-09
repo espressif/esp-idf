@@ -9,7 +9,7 @@
 
 [I2C Tools](https://i2c.wiki.kernel.org/index.php/I2C_Tools) is a simple but very useful tool for developing I2C related applications, which is also famous in Linux platform. This example just implements some of basic features of [I2C Tools](https://i2c.wiki.kernel.org/index.php/I2C_Tools) based on [esp32 console component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html). As follows, this example supports five command-line tools:
 
-1. `i2cconfig`: It will configure the I2C bus with specific GPIO number, port number and frequency.
+1. `i2cconfig`: It will configure the I2C bus with specific GPIO number and frequency.
 2. `i2cdetect`: It will scan an I2C bus for devices and output a table with the list of detected devices on the bus.
 3. `i2cget`: It will read registers visible through the I2C bus.
 4. `i2cset`: It will set registers visible through the I2C bus.
@@ -25,25 +25,8 @@ To run this example, you should have any ESP32, ESP32-S, ESP32-C, ESP32-H, ESP32
 
 #### Pin Assignment:
 
-**Note:** The following pin assignments are used by default according to `CONFIG_I2C_MASTER_SCL` and `CONFIG_I2C_MASTER_SDA` , you can change them with `i2cconfig` command at any time.
-
-|                     | SDA    | SCL    | GND  | Other | VCC  |
-| ------------------- | ------ | ------ | ---- | ----- | ---- |
-| ESP32 I2C Master    | GPIO18 | GPIO19 | GND  | GND   | 3.3V |
-| ESP32-S2 I2C Master | GPIO5  | GPIO4  | GND  | GND   | 3.3V |
-| ESP32-S3 I2C Master | GPIO5  | GPIO4  | GND  | GND   | 3.3V |
-| ESP32-C3 I2C Master | GPIO5  | GPIO4  | GND  | GND   | 3.3V |
-| ESP32-C2 I2C Master | GPIO5  | GPIO4  | GND  | GND   | 3.3V |
-| ESP32-H2 I2C Master | GPIO5  | GPIO4  | GND  | GND   | 3.3V |
-| Sensor              | SDA    | SCL    | GND  | WAK   | VCC  |
-
+**Note:** You must run the `i2cconfig` command first to setup the I2C bus with proper GPIOs.
 **Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
-
-### Configure the project
-
-Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
-
-- You can choose whether or not to save command history into flash in `Store command history in flash` option.
 
 ### Build and Flash
 
@@ -58,33 +41,21 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 ### Check all supported commands and their usages
 
 ```bash
- ==============================================================
- |             Steps to Use i2c-tools                         |
- |                                                            |
- |  1. Try 'help', check all supported commands               |
- |  2. Try 'i2cconfig' to configure your I2C bus              |
- |  3. Try 'i2cdetect' to scan devices on the bus             |
- |  4. Try 'i2cget' to get the content of specific register   |
- |  5. Try 'i2cset' to set the value of specific register     |
- |  6. Try 'i2cdump' to dump all the register (Experiment)    |
- |                                                            |
- ==============================================================
-
-
 Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
-I (379) main_task: Returned from app_main()
 i2c-tools> help
-help
-  Print the list of registered commands
+help  [<string>] [-v <0|1>]
+  Print the summary of all registered commands if no arguments are given,
+  otherwise print summary of given command.
+      <string>  Name of command
+  -v, --verbose=<0|1>  If specified, list console commands with given verbose level
 
-i2cconfig  [--port=<0|1>] [--freq=<Hz>] --sda=<gpio> --scl=<gpio>
-  Config I2C bus
-  --port=<0|1>  Set the I2C bus port number
-   --freq=<Hz>  Set the frequency(Hz) of I2C bus
-  --sda=<gpio>  Set the gpio for I2C SDA
+i2cconfig  --scl=<gpio> --sda=<gpio> [--freq=<Hz>]
+  Config I2C bus frequency and IOs
   --scl=<gpio>  Set the gpio for I2C SCL
+  --sda=<gpio>  Set the gpio for I2C SDA
+  --freq=<Hz>  Set the frequency(Hz) of I2C bus
 
 i2cdetect
   Scan I2C bus for devices
@@ -105,46 +76,17 @@ i2cdump  -c <chip_addr> [-s <size>]
   Examine registers visible through the I2C bus
   -c, --chip=<chip_addr>  Specify the address of the chip on that bus
   -s, --size=<size>  Specify the size of each read
-
-free
-  Get the current size of free heap memory
-
-heap
-  Get minimum size of free heap memory that was available during program execu
-  tion
-
-version
-  Get version of chip and SDK
-
-restart
-  Software reset of the chip
-
-deep_sleep  [-t <t>] [--io=<n>] [--io_level=<0|1>]
-  Enter deep sleep mode. Two wakeup modes are supported: timer and GPIO. If no
-  wakeup option is specified, will sleep indefinitely.
-  -t, --time=<t>  Wake up time, ms
-      --io=<n>  If specified, wakeup using GPIO with given number
-  --io_level=<0|1>  GPIO level to trigger wakeup
-
-light_sleep  [-t <t>] [--io=<n>]... [--io_level=<0|1>]...
-  Enter light sleep mode. Two wakeup modes are supported: timer and GPIO. Mult
-  iple GPIO pins can be specified using pairs of 'io' and 'io_level' arguments
-  . Will also wake up on UART input.
-  -t, --time=<t>  Wake up time, ms
-      --io=<n>  If specified, wakeup using GPIO with given number
-  --io_level=<0|1>  GPIO level to trigger wakeup
-
-tasks
-  Get information about running tasks
 ```
 
 ### Configure the I2C bus
 
+> [!IMPORTANT]
+> You must run the `i2cconfig` command before using other I2C commands.
+
 ```bash
-i2c-tools> i2cconfig --port=0 --sda=18 --scl=19 --freq=100000
+i2c-tools> i2cconfig --sda=18 --scl=19 --freq=100000
 ```
 
-* `--port` option to specify the port of I2C, here we choose port 0 for test.
 * `--sda` and `--scl` options to specify the gpio number used by I2C bus, here we choose GPIO18 as the SDA and GPIO19 as the SCL.
 * `--freq` option to specify the frequency of I2C bus, here we set to 100KHz.
 

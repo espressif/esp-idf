@@ -200,6 +200,6 @@
     - GPI：GPIO34-39 只能设置为输入模式，不具备软件使能的上拉或下拉功能。
     - TXD & RXD 通常用于烧录和调试。
     - ADC2：使用 Wi-Fi 时不能使用 ADC2 管脚。因此，如果您在使用 Wi-Fi 时无法从 ADC2 GPIO 获取值，可以考虑使用 ADC1 GPIO 来解决该问题。更多详情请参考 :ref:`ADC 连续转换模式下的硬件限制 <hardware_limitations_adc_continuous>` 以及 :ref:`ADC 单次转换模式下的硬件限制<hardware_limitations_adc_oneshot>`。
-    - 使用 ADC 或睡眠模式下使用 Wi-Fi 和蓝牙时，请不要使用 GPIO36 和 GPIO39 的中断。有关问题的详细描述，请参考 `ESP32 ECO 和 Bug 解决方法 <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_cn.pdf>`_ > 中的第 3.11 节。
+    - 使用 ADC 或睡眠模式下使用 Wi-Fi 和蓝牙时，请不要使用 GPIO36 和 GPIO39 的中断。有关问题的详细描述，请参考 `ESP32 ECO 和 Bug 解决方法 <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_cn.pdf>`_ > 中的 GPIO-3.11 节。
 
 ---

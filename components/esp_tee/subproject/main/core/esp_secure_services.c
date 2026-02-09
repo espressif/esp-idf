@@ -1,20 +1,32 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
 
+#include "esp_err.h"
 #include "esp_fault.h"
 #include "soc/soc_caps.h"
 
-#include "hal/sha_hal.h"
+#if SOC_AES_SUPPORTED
 #include "aes/esp_aes.h"
+#endif
+#if SOC_SHA_SUPPORTED
+#include "hal/sha_hal.h"
 #include "sha/sha_core.h"
+#endif
+#if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
+#endif
+#if SOC_DIG_SIGN_SUPPORTED
 #include "esp_ds.h"
-#include "esp_crypto_periph_clk.h"
+#endif
+#if SOC_ECC_SUPPORTED
 #include "ecc_impl.h"
+#endif
+#include "psa/initial_attestation.h"
+#include "esp_crypto_periph_clk.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -22,6 +34,9 @@
 
 #include "esp_tee_sec_storage.h"
 #include "esp_tee_ota_ops.h"
+#include "esp_attestation.h"
+
+#include "sdkconfig.h"
 
 static __attribute__((unused)) const char *TAG = "esp_tee_sec_srv";
 
@@ -32,6 +47,7 @@ void _ss_invalid_secure_service(void)
 
 /* ---------------------------------------------- AES ------------------------------------------------- */
 
+#if SOC_AES_SUPPORTED
 void _ss_esp_aes_intr_alloc(void)
 {
     esp_tee_aes_intr_alloc();
@@ -144,9 +160,11 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
 
     return esp_aes_crypt_ofb(ctx, length, iv_off, iv, input, output);
 }
+#endif
 
 /* ---------------------------------------------- SHA ------------------------------------------------- */
 
+#if SOC_SHA_SUPPORTED
 void _ss_esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
@@ -203,8 +221,17 @@ void _ss_esp_crypto_sha_enable_periph_clk(bool enable)
     esp_crypto_sha_enable_periph_clk(enable);
 }
 
+#if SOC_SHA_SUPPORT_SHA512_T
+int _ss_esp_sha_512_t_init_hash(uint16_t t)
+{
+    return esp_sha_512_t_init_hash(t);
+}
+#endif
+#endif
+
 /* ---------------------------------------------- HMAC ------------------------------------------------- */
 
+#if SOC_HMAC_SUPPORTED
 esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
 {
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)message) && esp_tee_ptr_in_ree((void *)hmac)) &&
@@ -213,6 +240,7 @@ esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -229,6 +257,7 @@ esp_err_t _ss_esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -242,7 +271,9 @@ esp_err_t _ss_esp_hmac_jtag_disable(void)
 {
     return esp_hmac_jtag_disable();
 }
+#endif
 
+#if SOC_DIG_SIGN_SUPPORTED
 esp_err_t _ss_esp_ds_sign(const void *message,
                           const esp_ds_data_t *data,
                           hmac_key_id_t key_id,
@@ -255,6 +286,7 @@ esp_err_t _ss_esp_ds_sign(const void *message,
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -276,6 +308,7 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -322,16 +355,20 @@ esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
 
     return esp_ds_encrypt_params(data, iv, p_data, key);
 }
+#endif
 
 /* ---------------------------------------------- MPI ------------------------------------------------- */
 
+#if SOC_MPI_SUPPORTED
 void _ss_esp_crypto_mpi_enable_periph_clk(bool enable)
 {
     esp_crypto_mpi_enable_periph_clk(enable);
 }
+#endif
 
 /* ---------------------------------------------- ECC ------------------------------------------------- */
 
+#if SOC_ECC_SUPPORTED
 int _ss_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
 {
     bool valid_addr = (esp_tee_ptr_in_ree((void *)result)) &&
@@ -349,11 +386,14 @@ int _ss_esp_ecc_point_verify(const ecc_point_t *point)
 {
     return esp_ecc_point_verify(point);
 }
+#endif
 
+#if SOC_ECC_SUPPORTED && SOC_ECDSA_SUPPORTED
 void _ss_esp_crypto_ecc_enable_periph_clk(bool enable)
 {
     esp_crypto_ecc_enable_periph_clk(enable);
 }
+#endif
 
 /* ---------------------------------------------- OTA ------------------------------------------------- */
 
@@ -390,4 +430,50 @@ esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 esp_err_t _ss_esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 {
     return esp_tee_sec_storage_gen_key(cfg);
+}
+
+/* ---------------------------------------------- PSA Attestation ------------------------------------------------- */
+
+__attribute__((unused)) static psa_status_t esp_err_to_psa_status(esp_err_t err)
+{
+    switch (err) {
+    case ESP_OK:
+        return PSA_SUCCESS;
+    case ESP_ERR_INVALID_ARG:
+        return PSA_ERROR_INVALID_ARGUMENT;
+    case ESP_ERR_INVALID_SIZE:
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    default:
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+}
+
+psa_status_t _ss_psa_initial_attest_get_token(const uint8_t *auth_challenge, size_t challenge_size,
+                                              uint8_t *token_buf, size_t token_buf_size, size_t *token_size)
+{
+#if CONFIG_SECURE_TEE_ATTESTATION
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)auth_challenge) &&
+                       esp_tee_ptr_in_ree((void *)token_buf) &&
+                       esp_tee_ptr_in_ree((void *)token_size));
+    valid_addr &= (esp_tee_ptr_in_ree((void *)((uint8_t *)auth_challenge + challenge_size)) &&
+                   esp_tee_ptr_in_ree((void *)((uint8_t *)token_buf + token_buf_size)));
+
+    if (!valid_addr) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_err_to_psa_status(esp_att_generate_token(auth_challenge, challenge_size, token_buf, token_buf_size, token_size));
+#else
+    return PSA_ERROR_NOT_SUPPORTED;
+#endif
+}
+
+psa_status_t _ss_psa_initial_attest_get_token_size(size_t challenge_size, size_t *token_size)
+{
+#if CONFIG_SECURE_TEE_ATTESTATION
+    return esp_err_to_psa_status(esp_att_get_token_size(challenge_size, token_size));
+#else
+    return PSA_ERROR_NOT_SUPPORTED;
+#endif
 }

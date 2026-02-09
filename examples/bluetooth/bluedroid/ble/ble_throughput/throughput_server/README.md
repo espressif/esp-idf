@@ -6,6 +6,48 @@
 This is the demo used to test the BLE throughput, this demo should used with throughput client demo together.
 The throughput of BLE can up to 720-767 Kbps between to ESP32 board.
 
+## Flow Diagram
+
+```
+    ┌──────────────────┐                           ┌──────────────────┐
+    │ Throughput Server│                           │ Throughput Client│
+    │   (this example) │                           │                  │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  1. Initialize BLE                           │
+             │  2. Create GATT Service                      │
+             │  3. Add Characteristic (Notify)              │
+             │  4. Start Advertising                        │
+             │                                              │
+             │  ─────────── Connection Setup ───────────    │
+             │                                              │
+             │         Connection Request                   │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │  5. Accept Connection                        │
+             │                                              │
+             │         MTU Exchange (517 bytes)             │
+             │ <═══════════════════════════════════════════>│
+             │                                              │
+             │         Enable Notification                  │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │  ─────────── Throughput Test ───────────     │
+             │                                              │
+             │      Notification Data (large packets)       │
+             │ ════════════════════════════════════════════>│
+             │      Notification Data (large packets)       │
+             │ ════════════════════════════════════════════>│
+             │      ... (continuous data stream) ...        │
+             │ ════════════════════════════════════════════>│
+             │                                              │  Calculate
+             │                                              │  Throughput
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │ Throughput Server│                           │ Throughput Client│
+    └──────────────────┘                           └──────────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

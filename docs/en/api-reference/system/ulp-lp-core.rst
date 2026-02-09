@@ -68,7 +68,7 @@ Create a folder which contains your ULP project files and a ``CMakeLists.txt`` f
 
 .. code-block:: cmake
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
 
     # Project/target name is passed from the main project to allow IDF to have a dependency on this target
     # as well as embed the binary into the main app
@@ -210,8 +210,8 @@ How the ULP LP core coprocessor is started depends on the wake-up source selecte
 The ULP has the following wake-up sources:
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU` - LP core can be woken up by the HP CPU.
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER` - LP core can be woken up by the LP timer.
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP core can be woken up by a ETM event. (Not yet supported)
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - LP core can be woken up when LP IO level changes. (Not yet supported)
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP core can be woken up by an ETM event.
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - LP core can be woken up when LP IO level changes.
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - LP core can be woken up when LP UART receives wakeup data based on different modes.
 
 When the ULP is woken up, it will go through the following steps:
@@ -237,6 +237,7 @@ To enhance the capabilities of the ULP LP core coprocessor, it has access to per
     * LP I2C
     * LP UART
     :SOC_LP_SPI_SUPPORTED: * LP SPI
+    :SOC_LP_MAILBOX_SUPPORTED: * LP Mailbox
 
 .. only:: CONFIG_ESP_ROM_HAS_LP_ROM
 
@@ -391,6 +392,7 @@ Application Examples
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup` shows how to trigger a wakeup using the LP UART specific character sequence wakeup mode.
+    - :example:`system/ulp/lp_core/lp_mailbox` shows how to use the mailbox for both synchronous and asynchronous communication between the HP and LP cores. Depending on the target, the implementation may use the hardware mailbox controller (if available) or a software-only implementation using interrupts.
     - :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
     - :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
     - :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom ``CMakeLists.txt`` file for the ULP app.
@@ -423,6 +425,7 @@ LP Core API Reference
 .. include-build-file:: inc/ulp_lp_core_gpio.inc
 .. include-build-file:: inc/ulp_lp_core_i2c.inc
 .. include-build-file:: inc/ulp_lp_core_uart.inc
+.. include-build-file:: inc/ulp_lp_core_mailbox.inc
 .. include-build-file:: inc/ulp_lp_core_print.inc
 .. include-build-file:: inc/ulp_lp_core_interrupts.inc
 

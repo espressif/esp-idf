@@ -543,6 +543,23 @@ int os_reltime_initialized(struct os_reltime *t)
 	return t->sec != 0 || t->usec != 0;
 }
 
+void os_reltime_add_ms(struct os_reltime *ts, int ms)
+{
+        ts->usec += ms * 1000;
+        while (ts->usec >= 1000000) {
+                ts->sec++;
+                ts->usec -= 1000000;
+        }
+        while (ts->usec < 0) {
+                ts->sec--;
+                ts->usec += 1000000;
+        }
+}
+
+int os_reltime_in_ms(struct os_reltime *ts)
+{
+        return ts->sec * 1000 + ts->usec / 1000;
+}
 
 u8 rssi_to_rcpi(int rssi)
 {

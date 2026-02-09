@@ -19,7 +19,7 @@
 
 .. note::
 
-    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
 背景信息
 ----------
@@ -105,7 +105,7 @@
 
    在生产环境下，建议使用 OpenSSL 或其他行业标准的加密程序生成密钥对，详情请参阅 :ref:`secure-boot-generate-key`。
 
-5. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中包含一个使用 ``esptool.py write_flash`` 烧录命令的提示。
+5. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中包含一个使用 ``esptool write-flash`` 烧录命令的提示。
 
 .. _secure-boot-resume-normal-flashing:
 
@@ -149,7 +149,7 @@
 
 1. 在 :ref:`project-configuration-menu` 中，选择 ``Bootloader Config`` > :ref:`CONFIG_SECURE_BOOT` > ``CONFIG_SECURE_BOOT_V1_ENABLED`` > :ref:`CONFIG_SECURE_BOOTLOADER_MODE` > ``Reflashable``。
 
-2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool.py`` 连接到芯片时显示在 ``Features`` 行中，或在 ``idf.py efuse-summary`` 输出中显示。
+2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool`` 连接到芯片时显示在 ``Features`` 行中，或在 ``idf.py efuse-summary`` 输出中显示。
 
 3. 请按 :ref:`secure-boot-generate-key` 中的步骤生成签名密钥。生成的密钥文件路径必须在 ``Secure Boot Configuration`` 菜单中指定。
 
@@ -181,7 +181,7 @@
 远程镜像签名
 ------------------------
 
-生产构建中，建议使用远程签名服务器，而非将签名密钥存储在构建机器上，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure.py`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
+生产构建中，建议使用远程签名服务器，而非将签名密钥存储在构建机器上，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
 
 使用远程签名时，请禁用选项 ``Sign binaries during build``。此时，签名私钥无需存在于构建系统，但签名公钥必须存在，它会编译到引导加载程序中，并在 OTA 更新期间验证镜像签名。
 
@@ -189,7 +189,7 @@
 
 .. code-block::
 
-  espsecure.py extract_public_key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
+  espsecure extract-public-key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
 
 请在 ``Secure boot public signature verification key`` 下的 menuconfig 中指定公共签名验证密钥的路径，构建安全引导加载程序。
 
@@ -211,7 +211,7 @@
 
 * 在具备高质量熵源的系统上生成签名密钥。
 * 时刻对签名密钥保密，泄漏此密钥将危及安全启动系统。
-* 不允许第三方使用 ``espsecure.py`` 命令或 ``idf.py secure-`` 子命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
+* 不允许第三方使用 ``espsecure`` 命令或 ``idf.py secure-`` 子命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
 * 在安全启动配置中启用所有安全启动选项，包括 flash 加密、禁用 JTAG、禁用 BASIC ROM 解释器和禁用 UART 引导加载程序的加密 flash 访问。
 * 结合 :doc:`flash-encryption` 使用安全启动，防止本地读取 flash 内容。
 
@@ -245,7 +245,7 @@
 
 输入二进制数据镜像，该算法会生成并输出摘要 (digest)，此摘要在硬件文档中有时也称摘要 (abstract)。
 
-请前往 :component:`/esptool_py` 目录，查看 ``espsecure.py`` 工具，了解算法使用的 Python 版本。具体而言，请查看 ``digest_secure_bootloader`` 命令。
+请前往 :component:`/esptool_py` 目录，查看 ``espsecure`` 工具，了解算法使用的 Python 版本。具体而言，请查看 ``digest-secure-bootloader`` 命令。
 
 以下带有 (^) 标记的项目用于满足硬件限制，而非密码学限制。
 
@@ -309,7 +309,7 @@ keyfile 是设备的 32 字节原始安全启动密钥。
 
 .. code-block::
 
-  esptool.py write_flash 0x0 bootloader-digest.bin
+  esptool write-flash 0x0 bootloader-digest.bin
 
 
 .. _secure-boot-and-flash-encr:

@@ -252,3 +252,53 @@ TEST_CASE("touch_sens_active_inactive_test", "[touch]")
     TEST_ASSERT_EQUAL_INT32(touch_cnt, cb_data.active_count);
     TEST_ASSERT_EQUAL_INT32(touch_cnt, cb_data.inactive_count);
 }
+
+#if SOC_TOUCH_SENSOR_VERSION > 1
+TEST_CASE("touch_sens_current_meas_channel_test", "[touch]")
+{
+    touch_sensor_handle_t touch = NULL;
+    touch_channel_handle_t touch_chan = NULL;
+
+    touch_sensor_config_t sens_cfg = TOUCH_SENSOR_DEFAULT_BASIC_CONFIG(TOUCH_SAMPLE_CFG_NUM, s_sample_cfg);
+    TEST_ESP_OK(touch_sensor_new_controller(&sens_cfg, &touch));
+
+    /* Configuring the filter */
+    touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
+    TEST_ESP_OK(touch_sensor_config_filter(touch, &filter_cfg));
+
+    int err_chan[TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID + 1] = {[0 ...(TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID)] = -1};
+    int scan_times = 100;
+    uint32_t curr_chan[scan_times];
+    /* Loop all channels */
+    for (int ch_id = TOUCH_MIN_CHAN_ID; ch_id <= TOUCH_MAX_CHAN_ID; ch_id++) {
+        /* New a channel */
+        TEST_ESP_OK(touch_sensor_new_channel(touch, ch_id, &s_chan_cfg, &touch_chan));
+        TEST_ESP_OK(touch_sensor_enable(touch));
+        /* Trigger one-shot scanning to update the current measuring channel */
+        touch_sensor_trigger_oneshot_scanning(touch, 2000);
+
+        /* Read the current measuring channel for several times */
+        for (int i = 0; i < scan_times; i++) {
+            curr_chan[i] = touch_ll_get_current_meas_channel();
+            /* Check if the current measuring channel is the same as the channel id */
+            if (curr_chan[i] != ch_id) {
+                err_chan[ch_id - TOUCH_MIN_CHAN_ID] = curr_chan[i];
+            }
+        }
+        /* Check if there is any error */
+        TEST_ESP_OK(touch_sensor_disable(touch));
+        TEST_ESP_OK(touch_sensor_del_channel(touch_chan));
+    }
+    TEST_ESP_OK(touch_sensor_del_controller(touch));
+
+    /* Check if there is any error in the current measuring channel from any channel */
+    bool has_error = false;
+    for (int i = 0; i < TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID + 1; i++) {
+        if (err_chan[i] >= 0) {
+            ESP_LOGE("TOUCH_TEST", "actual channel is %d, but current measuring channel reads %d", i + TOUCH_MIN_CHAN_ID, err_chan[i]);
+            has_error = true;
+        }
+    }
+    TEST_ASSERT_FALSE(has_error);
+}
+#endif  // SOC_TOUCH_SENSOR_VERSION > 1

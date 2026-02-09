@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,21 +8,22 @@
 #include <string.h>
 #include "nvs_flash.h"
 #include "esp_bt.h"
-#include "soc/uhci_periph.h"
+#include "hal/uhci_ll.h"
+#include "hal/uart_ll.h"
 #include "driver/uart.h"
-#include "esp_private/periph_ctrl.h" // for enabling UHCI module, remove it after UHCI driver is released
 #include "esp_log.h"
 
 static const char *tag = "CONTROLLER_UART_HCI";
 
+#define UHCI_PORT_NUM (0)
+
 static void uart_gpio_reset(void)
 {
-#if CONFIG_BTDM_CTRL_HCI_UART_NO == 1
-    periph_module_enable(PERIPH_UART1_MODULE);
-#elif CONFIG_BTDM_CTRL_HCI_UART_NO == 2
-    periph_module_enable(PERIPH_UART2_MODULE);
-#endif
-    periph_module_enable(PERIPH_UHCI0_MODULE);
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused)); // To avoid build errors/warnings about __DECLARE_RCC_ATOMIC_ENV
+    uart_ll_enable_bus_clock(CONFIG_BTDM_CTRL_HCI_UART_NO, true);
+    uart_ll_reset_register(CONFIG_BTDM_CTRL_HCI_UART_NO);
+    uhci_ll_enable_bus_clock(UHCI_PORT_NUM, true);
+    uhci_ll_reset_register(UHCI_PORT_NUM);
 
 #ifdef CONFIG_BTDM_CTRL_HCI_UART_NO
     ESP_LOGI(tag, "HCI UART%d Pin select: TX 5, RX 18, CTS 23, RTS 19 Baudrate:%d", CONFIG_BTDM_CTRL_HCI_UART_NO, CONFIG_BTDM_CTRL_HCI_UART_BAUDRATE);

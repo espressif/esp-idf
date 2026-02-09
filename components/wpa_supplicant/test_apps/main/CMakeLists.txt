@@ -4,6 +4,7 @@ idf_component_register(SRCS
                         "test_eloop.c"
                         "test_fast_pbkdf2.c"
                         "test_offchannel.c"
+                        "test_rom_md5.c"
                         "test_sae.c"
                         "test_sae_h2e.c"
                         "test_wpa_supplicant_main.c"

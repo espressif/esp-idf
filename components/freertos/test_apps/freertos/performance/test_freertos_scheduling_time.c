@@ -15,6 +15,7 @@
 #include "esp_cpu.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "freertos_performance.h"
 
 #define NUMBER_OF_ITERATIONS 1023
 

@@ -35,7 +35,9 @@
 #include "stack/hcimsgs.h"
 
 #include "stack/btu.h"
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 #include "p_256_ecc_pp.h"
+#endif
 #include "osi/allocator.h"
 
 /*******************************************************************************
@@ -51,12 +53,16 @@ void SMP_Init(void)
 {
 #if SMP_DYNAMIC_MEMORY
     smp_cb_ptr = (tSMP_CB *)osi_malloc(sizeof(tSMP_CB));
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
     curve_ptr = (elliptic_curve_t *)osi_malloc(sizeof(elliptic_curve_t));
     curve_p256_ptr = (elliptic_curve_t *)osi_malloc(sizeof(elliptic_curve_t));
 #endif
+#endif
     memset(&smp_cb, 0, sizeof(tSMP_CB));
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
     memset(&curve, 0, sizeof(elliptic_curve_t));
     memset(&curve_p256, 0, sizeof(elliptic_curve_t));
+#endif
 
 #if defined(SMP_INITIAL_TRACE_LEVEL)
     smp_cb.trace_level = SMP_INITIAL_TRACE_LEVEL;
@@ -66,8 +72,10 @@ void SMP_Init(void)
     SMP_TRACE_EVENT ("%s", __FUNCTION__);
 
     smp_l2cap_if_init();
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
     /* initialization of P-256 parameters */
     p_256_init_curve(KEY_LENGTH_DWORDS_P256);
+#endif
 }
 
 void SMP_Free(void)
@@ -75,8 +83,10 @@ void SMP_Free(void)
     memset(&smp_cb, 0, sizeof(tSMP_CB));
 #if SMP_DYNAMIC_MEMORY
     FREE_AND_RESET(smp_cb_ptr);
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
     FREE_AND_RESET(curve_ptr);
     FREE_AND_RESET(curve_p256_ptr);
+#endif
 #endif /* #if SMP_DYNAMIC_MEMORY */
 }
 
@@ -161,7 +171,7 @@ tSMP_STATUS SMP_Pair (BD_ADDR bd_addr)
 
         memcpy (p_cb->pairing_bda, bd_addr, BD_ADDR_LEN);
 
-        if (!L2CA_ConnectFixedChnl (L2CAP_SMP_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
+        if (!L2CA_ConnectFixedChnl (L2CAP_SMP_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE, FALSE, 0xFF, 0xFF)) {
             SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.\n", __FUNCTION__);
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
             return status;
@@ -205,7 +215,7 @@ tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
 
     memcpy (p_cb->pairing_bda, bd_addr, BD_ADDR_LEN);
 
-    if (!L2CA_ConnectFixedChnl (L2CAP_SMP_BR_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
+    if (!L2CA_ConnectFixedChnl (L2CAP_SMP_BR_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE, FALSE, 0xFF, 0xFF)) {
         SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.", __FUNCTION__);
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
         return status;
@@ -236,7 +246,7 @@ BOOLEAN SMP_PairCancel (BD_ADDR bd_addr)
     if ( (p_cb->state != SMP_STATE_IDLE)  &&
             (!memcmp (p_cb->pairing_bda, bd_addr, BD_ADDR_LEN)) ) {
         p_cb->is_pair_cancel = TRUE;
-        SMP_TRACE_DEBUG("Cancel Pairing: set fail reason Unknown");
+        SMP_TRACE_ERROR("%s Cancel Pairing: set fail reason Unknown", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &err_code);
         status = TRUE;
     }
@@ -434,6 +444,8 @@ void SMP_OobDataReply(BD_ADDR bd_addr, tSMP_STATUS res, UINT8 len, UINT8 *p_data
     }
 
     if (res != SMP_SUCCESS || len == 0 || !p_data) {
+        SMP_TRACE_ERROR("%s pairing failed, res=0x%x len=%u p_data=%p",
+            __func__, res, len, p_data);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &failure);
     } else {
         if (len > BT_OCTET16_LEN) {
@@ -524,10 +536,10 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
 ** Description      This function is called to encrypt the data with the specified
 **                  key
 **
-** Parameters:      key                 - Pointer to key key[0] conatins the MSB
+** Parameters:      key                 - Pointer to key key[0] contains the MSB
 **                  key_len             - key length
 **                  plain_text          - Pointer to data to be encrypted
-**                                        plain_text[0] conatins the MSB
+**                                        plain_text[0] contains the MSB
 **                  pt_len              - plain text length
 **                  p_out                - output of the encrypted texts
 **

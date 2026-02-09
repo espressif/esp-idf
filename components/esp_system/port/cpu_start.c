@@ -96,6 +96,7 @@
 #include "soc/rtc.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/mmu_hal.h"
 #include "hal/efuse_ll.h"
 #include "hal/uart_ll.h"
 #include "soc/uart_pins.h"
@@ -124,13 +125,13 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
 
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _bss_start_low, _bss_start_high;
 extern int _bss_end_low, _bss_end_high;
 #else
 extern int _bss_start;
 extern int _bss_end;
-#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
@@ -156,7 +157,7 @@ extern int _vector_table;
 extern int _mtvt_table;
 #endif
 
-static const char *TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 extern int _iram_bss_start;
@@ -172,8 +173,13 @@ static volatile bool s_resume_cores;
 
 static void core_intr_matrix_clear(void)
 {
-    uint32_t core_id = esp_cpu_get_core_id();
+    __attribute__((unused)) uint32_t core_id = esp_cpu_get_core_id();
 
+    /* NOTE: With ESP-TEE enabled, each iteration in this loop results in a service call.
+    * To accelerate the boot-up process, the interrupt configuration is pre-cleared in the TEE,
+    * allowing this step to be safely skipped here.
+    */
+#if !CONFIG_SECURE_ENABLE_TEE
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
 #if SOC_INT_CLIC_SUPPORTED
         interrupt_clic_ll_route(core_id, i, ETS_INVALID_INUM);
@@ -181,6 +187,7 @@ static void core_intr_matrix_clear(void)
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
 #endif  // SOC_INT_CLIC_SUPPORTED
     }
+#endif  // !CONFIG_SECURE_ENABLE_TEE
 
 #if SOC_INT_CLIC_SUPPORTED
     for (int i = 0; i < 32; i++) {
@@ -189,6 +196,21 @@ static void core_intr_matrix_clear(void)
     }
 #endif // SOC_INT_CLIC_SUPPORTED
 }
+
+#if CONFIG_LIBC_PICOLIBC
+FORCE_INLINE_ATTR IRAM_ATTR void init_pre_rtos_tls_area(int cpu_num)
+{
+    /**
+     * Initialize the TLS area before RTOS starts, in case any code tries to access
+     * TLS variables.
+     *
+     * TODO IDF-14914: Currently, we only initialize errno, which is the first TLS
+     * variable as guaranteed by the linker script.
+     */
+    static int s_errno_array[SOC_CPU_CORES_NUM];
+    esp_cpu_set_threadptr(&s_errno_array[cpu_num]);
+}
+#endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void)
@@ -209,6 +231,10 @@ void ESP_SYSTEM_IRAM_ATTR call_start_cpu1(void)
         ".option pop"
     );
 #endif  //#ifdef __riscv
+
+#if CONFIG_LIBC_PICOLIBC
+    init_pre_rtos_tls_area(1);
+#endif
 
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
@@ -314,7 +340,7 @@ static void start_other_core(void)
     }
 }
 
-#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #if CONFIG_IDF_TARGET_ESP32
 static void restore_app_mmu_from_pro_mmu(void)
 {
@@ -382,6 +408,15 @@ FORCE_INLINE_ATTR IRAM_ATTR void init_cpu(void)
     );
 #endif
 
+    /* NOTE: When ESP-TEE is enabled, this sets up the callback function
+     * which redirects all the interrupt management for the REE (user app)
+     * to the TEE by raising the appropriate service calls.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    extern uint32_t esp_tee_service_call(int argc, ...);
+    esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
+#endif
+
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
 #endif
@@ -391,19 +426,12 @@ FORCE_INLINE_ATTR IRAM_ATTR void init_cpu(void)
     /* When hardware vectored interrupts are enabled in CLIC,
      * the CPU jumps to this base address + 4 * interrupt_id.
      */
-    esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
+    /* NOTE: When ESP-TEE is enabled, this sets up the U-mode
+     * interrupt vector table (UTVT) */
+    esp_cpu_intr_set_xtvt_addr(&_mtvt_table);
 #endif
 #if SOC_CPU_SUPPORT_WFE
-    rv_utils_disable_wfe_mode();
-#endif
-
-    /* NOTE: When ESP-TEE is enabled, this sets up the callback function
-     * which redirects all the interrupt management for the REE (user app)
-     * to the TEE by raising the appropriate service calls.
-     */
-#if CONFIG_SECURE_ENABLE_TEE
-    extern uint32_t esp_tee_service_call(int argc, ...);
-    esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
+    esp_cpu_disable_wfe_mode();
 #endif
 }
 
@@ -418,12 +446,12 @@ FORCE_INLINE_ATTR IRAM_ATTR void get_reset_reason(soc_reset_reason_t *rst_reas)
 
 FORCE_INLINE_ATTR IRAM_ATTR void init_bss(const soc_reset_reason_t *rst_reas)
 {
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     memset(&_bss_start_low, 0, (uintptr_t)&_bss_end_low - (uintptr_t)&_bss_start_low);
     memset(&_bss_start_high, 0, (uintptr_t)&_bss_end_high - (uintptr_t)&_bss_start_high);
 #else
     memset(&_bss_start, 0, (uintptr_t)&_bss_end - (uintptr_t)&_bss_start);
-#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V2
+#endif // CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 
 #if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
     // Clear Bluetooth bss
@@ -455,15 +483,35 @@ FORCE_INLINE_ATTR IRAM_ATTR void ram_app_init(void)
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 //Keep this static, the compiler will check output parameters are initialized.
-FORCE_INLINE_ATTR IRAM_ATTR void cache_init(void)
+FORCE_INLINE_ATTR IRAM_ATTR void ext_mem_init(void)
 {
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
 #endif
 
+    cache_hal_config_t config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        .l2_cache_size = CONFIG_CACHE_L2_CACHE_SIZE,
+        .l2_cache_line_size = CONFIG_CACHE_L2_CACHE_LINE_SIZE,
+#endif
+    };
     //cache hal ctx needs to be initialised
-    cache_hal_init();
+    cache_hal_init(&config);
+    //mmu hal ctx needs to be initialised
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
@@ -542,7 +590,8 @@ MSPI_INIT_ATTR void sys_rtc_init(const soc_reset_reason_t *rst_reas)
     esp_rtc_init();
 }
 
-NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+static NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
 {
     /**
      * This function initialise the Flash chip to the user-defined settings.
@@ -552,14 +601,11 @@ NOINLINE_ATTR IRAM_ATTR void flash_init_state(void)
      * In this stage, we re-configure the Flash (and MSPI) to required configuration
      */
     spi_flash_init_chip_state();
-#if SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
     // This function needs to be called when PLL is enabled. Needs to be called after spi_flash_init_chip_state in case
     // some state of flash is modified.
     mspi_timing_flash_tuning();
-#endif
 }
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 MSPI_INIT_ATTR void mspi_init(void)
 {
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
@@ -607,6 +653,20 @@ MSPI_INIT_ATTR void mspi_init(void)
 }
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
+#if CONFIG_IDF_TARGET_ESP32 && !CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_SPIRAM_BOOT_HW_INIT
+/*
+ * Adjust flash configuration. This must be placed in IRAM because running from flash,
+ * while it is being reconfigured, will result in corrupt data being read.
+ */
+NOINLINE_ATTR IRAM_ATTR static void configure_flash(esp_image_header_t *fhdr)
+{
+    bootloader_flash_gpio_config(fhdr);
+    bootloader_flash_dummy_config(fhdr);
+    bootloader_flash_clock_config(fhdr);
+    bootloader_flash_cs_timing_config();
+}
+#endif // CONFIG_IDF_TARGET_ESP32 && !CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_SPIRAM_BOOT_HW_INIT
+
 /*
  * Initialize other parts of the system, including other CPUs.
  * As CPU0 needs to disable the cache in system_early_init function, the other cores are not allowed to run with the
@@ -638,6 +698,10 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
 
 #if SOC_CPU_CORES_NUM > 1 // there is no 'single-core mode' for natively single-core processors
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    // Ensure autoclock gating mode for core1 is enabled, it gets disabled in single-core mode.
+    REG_SET_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
+#endif
     start_other_core();
 #else
     ESP_EARLY_LOGI(TAG, "Single core mode");
@@ -652,8 +716,15 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
 #endif
 #elif CONFIG_IDF_TARGET_ESP32P4
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    // In single core mode, the CPU system should ignore the WFI state of core1 when entering WFI autoclock gating mode.
+    REG_CLR_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
+#endif
     REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
     REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
+#elif CONFIG_IDF_TARGET_ESP32H4
+    REG_CLR_BIT(PCR_CORE1_CONF_REG, PCR_CORE1_CLK_EN);
+    REG_SET_BIT(PCR_CORE1_CONF_REG, PCR_CORE1_RST_EN);
 #endif // CONFIG_IDF_TARGET_ESP32
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #endif // SOC_CPU_CORES_NUM > 1
@@ -761,7 +832,6 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
 
     _uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, clock_hz);
-#endif
     int console_uart_tx_pin = U0TXD_GPIO_NUM;
     int console_uart_rx_pin = U0RXD_GPIO_NUM;
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -769,7 +839,8 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     console_uart_rx_pin = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
 #endif
     ESP_EARLY_LOGI(TAG, "GPIO %d and %d are used as console UART I/O pins", console_uart_rx_pin, console_uart_tx_pin);
-#endif
+#endif // CONFIG_ESP_CONSOLE_UART
+#endif // !CONFIG_IDF_ENV_FPGA
 
 #if SOC_DEEP_SLEEP_SUPPORTED
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
@@ -782,7 +853,7 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     esp_cache_err_int_init();
 #endif
 
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && !CONFIG_ESP_SYSTEM_MEMPROT_PMS_TEST
     // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
     // If such a situation appears, it is likely an malicious attempt to bypass the system safety setup -> print error & reset
 
@@ -799,14 +870,14 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     //default configuration of PMS Memprot
     esp_err_t memp_err = ESP_OK;
 #if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMS_LOCK
     memp_err = esp_memprot_set_prot(PANIC_HNDL_ON, MEMPROT_LOCK, NULL);
 #else
     memp_err = esp_memprot_set_prot(PANIC_HNDL_ON, MEMPROT_UNLOCK, NULL);
 #endif
 #else //CONFIG_IDF_TARGET_ESP32S2 specific end
     esp_memp_config_t memp_cfg = ESP_MEMPROT_DEFAULT_CONFIG();
-#if !CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+#if !CONFIG_ESP_SYSTEM_MEMPROT_PMS_LOCK
     memp_cfg.lock_feature = false;
 #endif
     memp_err = esp_mprot_set_prot(&memp_cfg);
@@ -816,7 +887,7 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
         ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (0x%08X: %s), rebooting.", memp_err, esp_err_to_name(memp_err));
         esp_restart_noos();
     }
-#endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
+#endif //CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && !CONFIG_ESP_SYSTEM_MEMPROT_PMS_TEST
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     // External devices (including SPI0/1, cache) should be initialized
@@ -838,10 +909,7 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
 #if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_SPIRAM_BOOT_HW_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
-    bootloader_flash_clock_config(&fhdr);
-    bootloader_flash_gpio_config(&fhdr);
-    bootloader_flash_dummy_config(&fhdr);
-    bootloader_flash_cs_timing_config();
+    configure_flash(&fhdr);
 #endif //!CONFIG_SPIRAM_BOOT_HW_INIT
 #endif //CONFIG_IDF_TARGET_ESP32
 
@@ -907,15 +975,19 @@ void IRAM_ATTR call_start_cpu0(void)
     // Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     init_bss(rst_reas);
 
+#if CONFIG_LIBC_PICOLIBC
+    init_pre_rtos_tls_area(0);
+#endif
+
     // When the APP is loaded into ram for execution, some hardware initialization steps used to be executed in the
     // bootloader are done here.
 #if CONFIG_APP_BUILD_TYPE_RAM
     ram_app_init();
 #endif  //CONFIG_APP_BUILD_TYPE_RAM
 
-    // Initialize the cache.
+    // Initialize the cache and mmu.
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    cache_init();
+    ext_mem_init();
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     sys_rtc_init(rst_reas);

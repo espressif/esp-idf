@@ -43,7 +43,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
     set(exclude_srcs
         "openthread/examples/platforms/utils/logging_rtt.c"
         "openthread/examples/platforms/utils/soft_source_match_table.c"
-        "openthread/src/core/instance/extension_example.cpp")
+        "openthread/src/core/instance/extension_example.cpp"
+        "openthread/src/core/crypto/crypto_platform_mbedtls.cpp"
+        "openthread/src/core/api/random_crypto_api.cpp"
+        )
+
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs
@@ -102,6 +106,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/announce_begin_server.cpp"
             "openthread/src/core/thread/announce_sender.cpp"
             "openthread/src/core/thread/address_resolver.cpp"
+            "openthread/src/core/thread/child.cpp"
             "openthread/src/core/thread/child_supervision.cpp"
             "openthread/src/core/thread/csl_tx_scheduler.cpp"
             "openthread/src/core/thread/discover_scanner.cpp"
@@ -113,7 +118,10 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/mesh_forwarder.cpp"
             "openthread/src/core/thread/mesh_forwarder_ftd.cpp"
             "openthread/src/core/thread/mesh_forwarder_mtd.cpp"
+            "openthread/src/core/thread/message_framer.cpp"
             "openthread/src/core/thread/mle.cpp"
+            "openthread/src/core/thread/mle_ftd.cpp"
+            "openthread/src/core/thread/mle_p2p.cpp"
             "openthread/src/core/thread/mle_router.cpp"
             "openthread/src/core/thread/mle_types.cpp"
             "openthread/src/core/thread/neighbor.cpp"
@@ -124,7 +132,9 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/network_data_types.cpp"
             "openthread/src/core/thread/network_data_service.cpp"
             "openthread/src/core/thread/network_diagnostic.cpp"
+            "openthread/src/core/thread/network_diagnostic_tlvs.cpp"
             "openthread/src/core/thread/panid_query_server.cpp"
+            "openthread/src/core/thread/router.cpp"
             "openthread/src/core/thread/thread_netif.cpp"
             "openthread/src/core/thread/time_sync_service.cpp"
             "openthread/src/core/thread/tmf.cpp"
@@ -193,6 +203,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
     if(NOT CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT)
         list(APPEND exclude_srcs
             "src/port/esp_openthread_messagepool.c")
+    endif()
+
+    if(NOT CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE)
+        list(APPEND exclude_srcs
+            "src/ncp/esp_openthread_ncp_console.cpp")
     endif()
 
     if(CONFIG_OPENTHREAD_FTD)
@@ -276,7 +291,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES esp_netif lwip esp_driver_uart driver
+                       REQUIRES esp_netif lwip esp_driver_uart esp_driver_gpio esp_driver_spi esp_driver_usb_serial_jtag
                        LDFRAGMENTS linker.lf
                        PRIV_REQUIRES console esp_coex esp_event esp_partition esp_timer
                                      ieee802154 mbedtls nvs_flash)

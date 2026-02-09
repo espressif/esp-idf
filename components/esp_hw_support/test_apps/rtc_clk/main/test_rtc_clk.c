@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,6 @@
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
-#include "soc/rtc_periph.h"
-#include "soc/gpio_periph.h"
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "driver/rtc_io.h"
@@ -31,7 +29,7 @@
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 
-static uint32_t calibrate_one(rtc_cal_sel_t cal_clk, const char* name)
+static uint32_t calibrate_one(soc_clk_freq_calculation_src_t cal_clk, const char* name)
 {
     const uint32_t cal_count = 1000;
     const float factor = (1 << 19) * 1000.0f;
@@ -52,15 +50,19 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     rtc_clk_32k_enable(true);
 #endif
 
+#if SOC_CLK_RC_FAST_D256_SUPPORTED
+    rtc_clk_8m_enable(true, true);
+#endif
+
     // By default Kconfig, RTC_SLOW_CLK source is RC_SLOW
     soc_rtc_slow_clk_src_t default_rtc_slow_clk_src = rtc_clk_slow_src_get();
-    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+    TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-    CALIBRATE_ONE(RTC_CAL_8MD256);
+    CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
 
 #if SOC_CLK_XTAL32K_SUPPORTED
-    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+    uint32_t cal_32k = CALIBRATE_ONE(CLK_CAL_32K_XTAL);
     if (cal_32k == 0) {
         printf("32K XTAL OSC has not started up\n");
     } else {
@@ -68,11 +70,11 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
         rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
         printf("done\n");
 
-        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-        CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
-        CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+        CALIBRATE_ONE(CLK_CAL_32K_XTAL);
     }
 #endif
 
@@ -81,16 +83,16 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
     printf("done\n");
 
-    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
-    CALIBRATE_ONE(RTC_CAL_8MD256);
+    TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
+    CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #if SOC_CLK_XTAL32K_SUPPORTED
-    CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+    CALIBRATE_ONE(CLK_CAL_32K_XTAL);
 #endif
 #endif
 
 #if SOC_CLK_OSC_SLOW_SUPPORTED
     rtc_clk_32k_enable_external();
-    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
+    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(CLK_CAL_32K_OSC_SLOW);
     if (cal_ext_slow_clk == 0) {
         printf("EXT CLOCK by PIN has not started up\n");
     } else {
@@ -98,11 +100,11 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
         rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
         printf("done\n");
 
-        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-        CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
-        CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
+        CALIBRATE_ONE(CLK_CAL_32K_OSC_SLOW);
     }
 #endif
 
@@ -245,7 +247,7 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
             printf("PASS. Time measurement...");
         }
         uint32_t fail_measure = 0;
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
         uint64_t clk_rtc_time;
         for (int j = 0; j < 3; ++j) {
             clk_rtc_time = esp_clk_rtc_time();
@@ -263,6 +265,7 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
             printf("PASS");
         }
         printf(" [calibration val = %"PRIu32"] \n", esp_clk_slowclk_cal_get());
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_DEFAULT);
         stop_rtc_external_quartz();
         esp_rom_delay_us(500000);
     }
@@ -304,6 +307,7 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=xtal32k]")
         } else {
             printf("PASS\n");
         }
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_DEFAULT);
         stop_rtc_external_quartz();
         esp_rom_delay_us(100000);
     }
@@ -334,7 +338,7 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
 #endif // !defined(CONFIG_IDF_CI_BUILD) || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
 #endif // SOC_CLK_XTAL32K_SUPPORTED
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 {
     int64_t t1 = esp_rtc_get_time_us();
@@ -364,7 +368,22 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 #endif
 
 #if SOC_DEEP_SLEEP_SUPPORTED
-static RTC_NOINIT_ATTR int64_t start = 0;
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+RTC_NOINIT_ATTR
+#else
+#if CONFIG_IDF_TARGET_ESP32C2
+#define TEMP_RTC_STORE_REG          RTC_CNTL_DATE_REG
+#define TEMP_RTC_STORE_REG_M        RTC_CNTL_DATE_M
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define TEMP_RTC_STORE_REG          LP_AON_DATE_REG
+#define TEMP_RTC_STORE_REG_M        LP_AON_DATE_M
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "soc/pmu_reg.h"
+#define TEMP_RTC_STORE_REG          PMU_DATE_REG
+#define TEMP_RTC_STORE_REG_M        PMU_PMU_DATE_M
+#endif
+#endif
+static int64_t start = 0;
 
 static void trigger_deepsleep(void)
 {
@@ -379,6 +398,11 @@ static void trigger_deepsleep(void)
 
     // Save start time. Deep sleep.
     start = esp_rtc_get_time_us();
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    // Store start timestamp in RTC_CNTL_DATE reg if RTC MEM is not supported
+    TEST_ASSERT(start <= TEMP_RTC_STORE_REG_M);
+    REG_WRITE(TEMP_RTC_STORE_REG, start & TEMP_RTC_STORE_REG_M);
+#endif
     esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
@@ -390,6 +414,9 @@ static void check_time_deepsleep_1(void)
     soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
     TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     int64_t end = esp_rtc_get_time_us();
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    start  = REG_READ(TEMP_RTC_STORE_REG);
+#endif
     TEST_ASSERT_GREATER_THAN(start, end);
 
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
@@ -398,7 +425,10 @@ static void check_time_deepsleep_1(void)
     vTaskDelay(pdMS_TO_TICKS(10*1000));
 
     start = esp_rtc_get_time_us();
-
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    TEST_ASSERT(start <= TEMP_RTC_STORE_REG_M);
+    REG_WRITE(TEMP_RTC_STORE_REG, start & TEMP_RTC_STORE_REG_M);
+#endif
     esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
@@ -410,6 +440,9 @@ static void check_time_deepsleep_2(void)
     soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
     TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     int64_t end = esp_rtc_get_time_us();
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    start  = REG_READ(TEMP_RTC_STORE_REG);
+#endif
     TEST_ASSERT_GREATER_THAN(start, end);
 }
 
@@ -421,7 +454,7 @@ TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sle
  * output either 150k, 32k, 8M clock to GPIO25.
  */
 #if CONFIG_IDF_TARGET_ESP32
-
+#include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 
 static void pull_out_clk(int sel)

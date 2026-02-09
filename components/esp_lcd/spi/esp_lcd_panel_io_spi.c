@@ -24,6 +24,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
+#include "freertos/FreeRTOS.h"
 
 static const char *TAG = "lcd_panel.io.spi";
 
@@ -47,7 +48,7 @@ typedef struct {
     esp_lcd_panel_io_t base;     // Base class of generic lcd panel io
     spi_device_handle_t spi_dev; // SPI device handle
     size_t spi_trans_max_bytes;  // Maximum bytes that can be transmitted in one spi transaction
-    int dc_gpio_num;             // D/C line GPIO number
+    gpio_num_t dc_gpio_num;      // D/C line GPIO number
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
     void *user_ctx;           // User's private data, passed directly to callback on_color_trans_done
     size_t queue_size;         // Size of transaction queue
@@ -97,21 +98,14 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     // if the DC line is not encoded into any spi transaction phase or it's not controlled by SPI peripheral
     if (io_config->dc_gpio_num >= 0) {
         gpio_set_level(io_config->dc_gpio_num, 0);
-        gpio_func_sel(io_config->dc_gpio_num, PIN_FUNC_GPIO);
         gpio_output_enable(io_config->dc_gpio_num);
-    }
-
-    const spi_bus_attr_t* bus_attr = spi_bus_get_attr((spi_host_device_t)bus);
-    uint32_t flags = bus_attr->bus_cfg.flags;
-    if ((flags & SPICOMMON_BUSFLAG_QUAD) == SPICOMMON_BUSFLAG_QUAD) {
-        spi_panel_io->flags.quad_mode = 1;
-    } else if ((flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL) {
-        spi_panel_io->flags.octal_mode = 1;
     }
 
     spi_panel_io->flags.dc_cmd_level = io_config->flags.dc_high_on_cmd;
     spi_panel_io->flags.dc_data_level = !io_config->flags.dc_low_on_data;
     spi_panel_io->flags.dc_param_level = !io_config->flags.dc_low_on_param;
+    spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
+    spi_panel_io->flags.quad_mode = io_config->flags.quad_mode;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
     spi_panel_io->user_ctx = io_config->user_ctx;
     spi_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
@@ -419,6 +413,9 @@ IRAM_ATTR static void lcd_spi_pre_trans_cb(spi_transaction_t *trans)
     if (spi_panel_io->dc_gpio_num >= 0) { // set D/C line level if necessary
         // use ll function to speed up
         gpio_ll_set_level(&GPIO, spi_panel_io->dc_gpio_num, lcd_trans->flags.dc_gpio_level);
+
+        // ensure the D/C output is enabled
+        gpio_ll_output_enable(&GPIO, spi_panel_io->dc_gpio_num);
     }
 }
 
@@ -426,6 +423,12 @@ static void lcd_spi_post_trans_color_cb(spi_transaction_t *trans)
 {
     esp_lcd_panel_io_spi_t *spi_panel_io = trans->user;
     lcd_spi_trans_descriptor_t *lcd_trans = __containerof(trans, lcd_spi_trans_descriptor_t, base);
+
+    // disable the D/C output as we no longer need it
+    if (spi_panel_io->dc_gpio_num >= 0) {
+        gpio_ll_output_disable(&GPIO, spi_panel_io->dc_gpio_num);
+    }
+
     if (lcd_trans->flags.en_trans_done_cb) {
         if (spi_panel_io->on_color_trans_done) {
             spi_panel_io->on_color_trans_done(&spi_panel_io->base, NULL, spi_panel_io->user_ctx);

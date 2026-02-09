@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "esp_err.h"
-#include "hal/ldo_types.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,17 +6,13 @@ Analog to Digital Converter (ADC) Oneshot Mode Driver
 Introduction
 ------------
 
-The Analog to Digital Converter is integrated on the chip and is capable of measuring analog signals from specific analog IO pins.
+This document describes the ADC oneshot mode driver on {IDF_TARGET_NAME}.
 
-{IDF_TARGET_NAME} has {IDF_TARGET_SOC_ADC_PERIPH_NUM} ADC unit(s), which can be used in scenario(s) like:
+Oneshot mode allows you to perform single, on-demand ADC conversions on selected analog input channels. It is suitable for applications that require infrequent or triggered sampling, as opposed to continuous data acquisition.
 
-.. list::
+.. only:: SOC_ADC_DMA_SUPPORTED
 
-    - Generate one-shot ADC conversion result
-    :SOC_ADC_DMA_SUPPORTED: - Generate continuous ADC conversion results
-
-This guide introduces ADC oneshot mode conversion.
-
+    To perform continuous data acquisition, {IDF_TARGET_NAME} provides :doc:`ADC Continuous Mode Driver <adc_continuous>`.
 
 Functional Overview
 -------------------

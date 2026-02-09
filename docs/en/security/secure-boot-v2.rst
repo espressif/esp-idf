@@ -50,7 +50,7 @@ Secure Boot v2
 
 .. note::
 
-    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure`` based counterparts.
 
 Background
 ----------
@@ -350,7 +350,7 @@ In the Secure Boot v2 scheme, the application image is padded to the flash MMU p
 
     - Default flash MMU page size is 64 KB
     :SOC_MMU_PAGE_SIZE_CONFIGURABLE: - {IDF_TARGET_NAME} supports configurable flash MMU page size, and ``CONFIG_MMU_PAGE_SIZE`` gets set based on the :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`
-    - Secure padding is applied through the option ``--secure-pad-v2`` in the ``elf2image`` conversion using ``esptool.py``
+    - Secure padding is applied through the option ``--secure-pad-v2`` in the ``elf2image`` conversion using ``esptool``
 
 The following table explains the Secure Boot v2 signed image with secure padding and signature block appended:
 
@@ -441,7 +441,7 @@ eFuse Usage
 
     - KEY_PURPOSE_X - Set the purpose of the key block on {IDF_TARGET_NAME} by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot v2 public key digest. The write-protection bit must be set, and this field does not have a read-protection bit.
 
-    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key is written to an eFuse key block. This digest is represented as 776 bytes, with offsets of 36 to 812, as per the :ref:`signature-block-format`. The write-protection bit must be set, but the read-protection bit must not.
+    - BLOCK_KEYX - The block contains the data corresponding to its function programmed in KEY_PURPOSE_X and stores the SHA-256 digest of the public key. The digest is 32 bytes in size. This digest is calculated from the 776-byte signature block (offset 36 to 812, including the public key modulus, exponent, and the precomputed R and M' values), as specified in the :ref:`signature-block-format`. The write-protection bit must be set, but the read-protection bit must not be set.
 
     - KEY_REVOKEX - The revocation bits corresponding to each of the 3 key blocks. E.g., setting KEY_REVOKE2 revokes the key block whose key purpose is SECURE_BOOT_DIGEST2.
 
@@ -487,7 +487,7 @@ How To Enable Secure Boot v2
 
     For production environments, we recommend generating the key pair using OpenSSL or another industry-standard encryption program. See :ref:`secure-boot-v2-generate-key` for more details.
 
-7. Run ``idf.py bootloader`` to build a Secure Boot-enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool.py write_flash``.
+7. Run ``idf.py bootloader`` to build a Secure Boot-enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool write-flash``.
 
 8. When you are ready to flash the bootloader, run the specified command and then wait for flashing to complete. You have to enter it yourself, this step is not performed by the build system.
 
@@ -621,7 +621,7 @@ Remote Signing of Images
 Signing Using ``idf.py``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default ESP-IDF Secure Boot configuration). The ``espsecure.py`` command line program can be used to sign app images and partition table data for Secure Boot, on a remote system.
+For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default ESP-IDF Secure Boot configuration). The ``espsecure`` command line program can be used to sign app images and partition table data for Secure Boot, on a remote system.
 
 To use remote signing, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. The private signing key does not need to be present on the build system.
 
@@ -663,7 +663,7 @@ In such cases, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 
     .. note::
 
-        For all the above three remote signing workflows, the signed binary is written to the filename provided to the ``--output`` argument, and the option ``--append_signatures`` allows us to append multiple signatures (up to 3) to the image.
+        For all the above three remote signing workflows, the signed binary is written to the filename provided to the ``--output`` argument, and the option ``--append-signatures`` allows us to append multiple signatures (up to 3) to the image.
 
 .. only:: not SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -689,7 +689,7 @@ Secure Boot Best Practices
     * Between 1 and 3 {IDF_TARGET_SBV2_KEY} public key pairs (Keys #0, #1, #2) should be computed independently and stored separately.
     * The KEY_DIGEST eFuses should be write-protected after being programmed.
     * The unused KEY_DIGEST slots must have their corresponding KEY_REVOKE eFuse burned to permanently disable them. This must happen before the device leaves the factory.
-    * The eFuses can either be written by the second stage bootloader during first boot after enabling ``Secure Boot v2`` from menuconfig or can be done using ``espefuse.py`` which communicates with the serial bootloader program in ROM.
+    * The eFuses can either be written by the second stage bootloader during first boot after enabling ``Secure Boot v2`` from menuconfig or can be done using ``espefuse`` which communicates with the serial bootloader program in ROM.
     * The KEY_DIGESTs should be numbered sequentially beginning at key digest #0. If key digest #1 is used, key digest #0 should be used. If key digest #2 is used, key digest #0 & #1 must be used.
     * The second stage bootloader is non-OTA upgradeable, and is signed using at least one, possibly all three, private keys and flashed in the factory.
     * Apps should only be signed with a single private key, with the others being stored securely elsewhere. However, they may be signed with multiple private keys if some are being revoked, see :ref:`secure-boot-v2-key-revocation` below.
@@ -704,14 +704,14 @@ Secure Boot Best Practices
 
     .. code-block::
 
-        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
+        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append-signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
 
     * While signing with multiple private keys, it is recommended that the private keys be signed independently, if possible on different servers and stored separately.
     * You can check the signatures attached to a binary using:
 
     .. code-block::
 
-        espsecure.py signature_info_v2 datafile.bin
+        espsecure signature-info-v2 datafile.bin
 
     .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 

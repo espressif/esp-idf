@@ -28,7 +28,8 @@ TEST_CASE("lcd_rgb_panel_yuv422_conversion", "[lcd]")
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16,
         .dma_burst_size = 64,
-        .bits_per_pixel = 16, // YUV422: 16bits per pixel
+        .in_color_format = LCD_COLOR_FMT_YUV422_UYVY,
+        .out_color_format = LCD_COLOR_FMT_RGB565,
         .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
         .pclk_gpio_num = TEST_LCD_PCLK_GPIO,
@@ -72,21 +73,11 @@ TEST_CASE("lcd_rgb_panel_yuv422_conversion", "[lcd]")
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
 
     printf("Set YUV-RGB conversion profile\r\n");
-    esp_lcd_yuv_conv_config_t conv_config = {
-        .std = LCD_YUV_CONV_STD_BT601,
-        .src = {
-            .color_range = LCD_COLOR_RANGE_FULL,
-            .color_space = LCD_COLOR_SPACE_RGB,
-        },
-        .dst = {
-            .color_range = LCD_COLOR_RANGE_FULL,
-            .color_space = LCD_COLOR_SPACE_RGB,
-        },
+    esp_lcd_color_conv_yuv_config_t conv_config = {
+        .conv_std = LCD_YUV_CONV_STD_BT601,
+        .in_color_range = LCD_COLOR_RANGE_FULL,
+        .out_color_range = LCD_COLOR_RANGE_FULL,
     };
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_lcd_rgb_panel_set_yuv_conversion(panel_handle, &conv_config));
-
-    conv_config.src.color_space = LCD_COLOR_SPACE_YUV;
-    conv_config.src.yuv_sample = LCD_YUV_SAMPLE_422;
     TEST_ESP_OK(esp_lcd_rgb_panel_set_yuv_conversion(panel_handle, &conv_config));
 
     TEST_ESP_OK(esp_lcd_panel_init(panel_handle));

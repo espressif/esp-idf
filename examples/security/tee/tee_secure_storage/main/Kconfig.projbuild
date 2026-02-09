@@ -1,11 +1,17 @@
 menu "Example Configuration"
 
-    config EXAMPLE_TEE_SEC_STG_KEY_STR_ID
-        string "TEE: Secure Storage Key ID"
-        default "key_id_0"
+    config EXAMPLE_TEE_SEC_STG_SIGN_KEY_STR_ID
+        string "TEE: Secure Storage Key ID for signing"
+        default "sign_key_id_0"
         help
-            This configuration sets the key string identifier from the TEE secure storage
-            storing the ECDSA keypair for executing sign/verify operations
-            from the TEE side
+            Identifier for the ECDSA keypair stored in secure storage and used for
+            sign/verify operations in this example.
+
+    config EXAMPLE_TEE_SEC_STG_ENC_KEY_STR_ID
+        string "TEE: Secure Storage Key ID for encryption"
+        default "aes_key_id_0"
+        help
+            Identifier for the AES-256 key stored in secure storage and used for
+            the AEAD encryption/decryption part of this example.
 
 endmenu

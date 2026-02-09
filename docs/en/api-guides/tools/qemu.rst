@@ -117,7 +117,7 @@ To use the virtual framebuffer device in your application, you can add the `espr
 Efuse Emulation
 ~~~~~~~~~~~~~~~
 
-QEMU supports emulation of eFuses. This can be a convenient way to test security-related features, such as secure boot and flash encryption, without having to perform irreversible operations on real hardware.
+QEMU supports emulation of eFuses. This can be a convenient way to test security-related features, such as secure boot and flash encryption, without having to perform irreversible operations on real hardware. For more detailed information, refer to the `QEMU documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#specifying-efuse-storage>`_.
 
 You can use :doc:`idf.py<idf-py>` eFuse-related commands to program eFuses. When you run any of these commands together with ``qemu`` command, the eFuses are programmed in QEMU, and the ``qemu_efuse.bin`` file is updated. For example,
 
@@ -164,6 +164,20 @@ The provided flash image must meet the following requirements for proper emulati
 
 - The flash file size matches the value specified by :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 - The flash file includes all required binaries, such as the bootloader, partition table, and application firmware, placed at their respective memory offsets.
+
+
+Passing Extra Arguments to QEMU
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the ``--qemu-extra-args`` option to pass additional arguments directly to QEMU. This is useful when you need to enable advanced QEMU features or debugging options. For example:
+
+.. code-block:: console
+
+    idf.py qemu --qemu-extra-args="-d in_asm,cpu" monitor
+
+This command starts QEMU with the specified extra arguments. You can use this option to pass any valid QEMU command-line arguments, such as enabling debug output, configuring devices, or other advanced features.
+
+For more available QEMU options, please refer to the `official QEMU documentation <https://www.qemu.org/docs/master/>`_ or run ``idf.py qemu --help``.
 
 
 Emulating Secure Boot

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,7 @@
 #include "soc/assist_debug_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
 #include "soc/extmem_reg.h"
-#include "soc/io_mux_reg.h"
 #include "soc/system_reg.h"
 #include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/rtc.h"
@@ -39,7 +37,7 @@
 #include "hal/rwdt_ll.h"
 #include "hal/brownout_ll.h"
 
-static const char *TAG = "boot.esp32c2";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32c2");
 
 static void wdt_reset_cpu0_info_enable(void)
 {
@@ -119,10 +117,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // update flash ID
     bootloader_flash_update_id();
     // read bootloader header

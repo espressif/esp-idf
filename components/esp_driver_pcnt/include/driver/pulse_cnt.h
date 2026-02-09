@@ -59,11 +59,13 @@ typedef struct {
  * @brief PCNT unit configuration
  */
 typedef struct {
+    pcnt_clock_source_t clk_src; /*!< Clock source for PCNT unit */
     int low_limit;      /*!< Low limitation of the count unit, should be lower than 0 */
     int high_limit;     /*!< High limitation of the count unit, should be higher than 0 */
     int intr_priority;  /*!< PCNT interrupt priority,
                             if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-    struct {
+    /// Extra configuration flags for PCNT unit
+    struct extra_pcnt_unit_flags {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
         uint32_t en_step_notify_up: 1;   /*!< Enable step notify in the positive direction */
@@ -78,7 +80,8 @@ typedef struct {
 typedef struct {
     int edge_gpio_num;  /*!< GPIO number used by the edge signal. Set to -1 if unused */
     int level_gpio_num; /*!< GPIO number used by the level signal. Set to -1 if unused */
-    struct {
+    /// Extra configuration flags for PCNT channel
+    struct extra_pcnt_chan_flags {
         uint32_t invert_edge_input: 1;   /*!< Invert the input edge signal */
         uint32_t invert_level_input: 1;  /*!< Invert the input level signal */
         uint32_t virt_edge_io_level: 1;  /*!< Virtual edge IO level, 0: low, 1: high. Only valid when edge_gpio_num is set to -1 */
@@ -145,7 +148,8 @@ esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch
  */
 typedef struct {
     int clear_signal_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high */
-    struct {
+    /// Extra configuration flags for PCNT clear signal
+    struct extra_pcnt_clear_signal_flags {
         uint32_t invert_clear_signal: 1;  /*!< Invert the clear input signal */
     } flags;                              /*!< clear signal config flags */
 } pcnt_clear_signal_config_t;

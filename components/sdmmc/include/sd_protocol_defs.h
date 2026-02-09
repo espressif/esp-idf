@@ -25,6 +25,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

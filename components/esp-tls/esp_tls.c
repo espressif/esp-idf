@@ -603,28 +603,6 @@ static int get_port(const char *url, struct http_parser_url *u)
     return 0;
 }
 
-esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
-{
-    if (!url || !cfg) {
-        return NULL;
-    }
-
-    /* Parse URI */
-    struct http_parser_url u;
-    http_parser_url_init(&u);
-    http_parser_parse_url(url, strlen(url), 0, &u);
-    esp_tls_t *tls = esp_tls_init();
-    if (!tls) {
-        return NULL;
-    }
-    /* Connect to host */
-    if (esp_tls_conn_new_sync(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
-                              get_port(url, &u), cfg, tls) == 1) {
-        return tls;
-    }
-    esp_tls_conn_destroy(tls);
-    return NULL;
-}
 
 /**
  * @brief      Create a new TLS/SSL connection with a given "HTTP" url

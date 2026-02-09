@@ -21,7 +21,7 @@
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_sleep";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -241,6 +241,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = get_dslp_dbg();
         analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_dslp_lp_dbias();
+
         config->analog = analog_default;
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
@@ -279,6 +280,12 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
     }
 
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_RC_FAST) {
+        config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+        config->analog.lp_sys[LP(SLEEP)].analog.dbg_atten = PMU_DBG_ATTEN_LIGHTSLEEP_NODROP;
+        config->analog.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
+    }
+
     return config;
 }
 
@@ -300,6 +307,7 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 {
     pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), (dig->icg_func != 0));
     pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func);
+    pmu_ll_hp_set_pause_watchdog(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pause_wdt);
     if (!dslp) {
         pmu_ll_hp_set_dig_pad_slp_sel(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     }
@@ -314,6 +322,10 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_hp_set_regulator_xpd               (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
     pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar        (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
+#if CONFIG_ESP_ENABLE_PVT
+    uint32_t pvt_hp_dbias = GET_PERI_REG_BITS2(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_DBIAS_VOL_V, PMU_HP_DBIAS_VOL_S);
+    pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(MODEM), pvt_hp_dbias);
+#endif
 
     pmu_ll_lp_set_dbg_atten            (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbg_atten);
     pmu_ll_lp_set_current_power_off    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.pd_cur);

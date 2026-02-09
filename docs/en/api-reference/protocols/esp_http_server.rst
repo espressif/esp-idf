@@ -69,6 +69,38 @@ The HTTP server component provides WebSocket support. The WebSocket feature can 
 :example:`protocols/http_server/ws_echo_server` demonstrates how to create a WebSocket echo server using the HTTP server, which starts on a local network and requires a WebSocket client for interaction, echoing back received WebSocket frames.
 
 
+WebSocket Pre-Handshake Callback
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The HTTP server component provides a pre-handshake callback for WebSocket endpoints. This callback is invoked before the WebSocket handshake is processed—at this point, the connection is still an HTTP connection and has not yet been upgraded to WebSocket.
+
+The pre-handshake callback can be used for authentication, authorization, or other checks. If the callback returns :c:macro:`ESP_OK`, the WebSocket handshake will proceed. If the callback returns any other value, the handshake will be aborted and the connection will be closed.
+
+To use the WebSocket pre-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` in your project configuration.
+
+.. code-block:: c
+
+    static esp_err_t ws_auth_handler(httpd_req_t *req)
+    {
+        // Your authentication logic here
+        // return ESP_OK to allow the handshake, or another value to reject.
+        return ESP_OK;
+    }
+
+    // Registering a WebSocket URI handler with pre-handshake authentication
+    static const httpd_uri_t ws = {
+        .uri        = "/ws",
+        .method     = HTTP_GET,
+        .handler    = handler,           // Your WebSocket data handler
+        .user_ctx   = NULL,
+        .is_websocket = true,
+        .ws_pre_handshake_cb = ws_auth_handler // Set the pre-handshake callback
+    };
+
+    // Register the handler after starting the server:
+    httpd_register_uri_handler(server, &ws);
+
+
 Event Handling
 --------------
 

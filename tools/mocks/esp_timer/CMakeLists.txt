@@ -3,11 +3,12 @@
 message(STATUS "building ESP TIMER MOCKS")
 
 idf_component_get_property(original_esp_timer_dir esp_timer COMPONENT_OVERRIDEN_DIR)
+idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_OVERRIDEN_DIR)
+if(NOT original_esp_hw_support_dir)
+    idf_component_get_property(original_esp_hw_support_dir esp_hw_support COMPONENT_DIR)
+endif()
 
-set(include_dirs
-    "${original_esp_timer_dir}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../esp_hw_support/include")
-
-idf_component_mock(INCLUDE_DIRS ${include_dirs}
-    REQUIRES esp_common
-    MOCK_HEADER_FILES ${original_esp_timer_dir}/include/esp_timer.h)
+idf_component_mock(INCLUDE_DIRS "${original_esp_timer_dir}/include"
+                                "${original_esp_hw_support_dir}/etm/include"
+                   REQUIRES esp_common
+                   MOCK_HEADER_FILES ${original_esp_timer_dir}/include/esp_timer.h)

@@ -1,16 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
 #include <stdint.h>
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_struct.h"
-#include "soc/gpio_reg.h"
 #include "soc/soc_caps.h"
-#include "soc/gpio_sig_map.h"
 
 #ifdef __cplusplus
 extern "C" {

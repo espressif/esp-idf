@@ -8,7 +8,7 @@
 #include "soc/soc.h"
 #include "soc/lp_analog_peri_reg.h"
 
-//TODO: [ESP32H4] IDF-12300 inherited from verification branch, need check
+//TODO: [ESP32H4] IDF-12313 inherited from verification branch, need check
 
 void bootloader_ana_super_wdt_reset_config(bool enable)
 {

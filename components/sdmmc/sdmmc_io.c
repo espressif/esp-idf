@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include "esp_private/sdmmc_common.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "esp_compiler.h"
 
@@ -497,7 +498,7 @@ esp_err_t sdmmc_io_enable_int(sdmmc_card_t* card)
     return (*card->host.io_int_enable)(card->host.slot);
 }
 
-esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, TickType_t timeout_ticks)
+esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, uint32_t timeout_ticks)
 {
     if (card->host.io_int_wait == NULL) {
         return ESP_ERR_NOT_SUPPORTED;

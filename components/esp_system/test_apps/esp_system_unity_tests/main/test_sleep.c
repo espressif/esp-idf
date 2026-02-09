@@ -9,10 +9,10 @@
 #include <sys/param.h>
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "soc/gpio_periph.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "driver/uart.h"
@@ -30,7 +30,6 @@
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -184,12 +183,12 @@ TEST_CASE("light sleep and frequency switching", "[lightsleep]")
     clk_source = UART_SCLK_XTAL;
 #endif
     esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
     TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif
@@ -323,7 +322,7 @@ static void test_psram_accessible_after_lightsleep(void)
     esp_light_sleep_start();
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif

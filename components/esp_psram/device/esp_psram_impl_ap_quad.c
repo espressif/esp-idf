@@ -233,8 +233,6 @@ static void s_configure_psram_ecc(void)
 {
     psram_ctrlr_ll_set_ecc_mode(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_LL_ECC_MODE_16TO18);
     psram_ctrlr_ll_enable_skip_page_corner(PSRAM_CTRLR_LL_MSPI_ID_0, true);
-    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_0, true);
-    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_PAGE_SIZE);
     psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_0, true);
 
     /**
@@ -293,10 +291,9 @@ static void s_config_psram_clock(bool init_state)
     } else {
         // This function can be extended if we have other psram frequency
 
-#if (CONFIG_SPIRAM_SPEED == 80) || (CONFIG_SPIRAM_SPEED == 48)
-        // IDF-13632, update 48M to 64M
+#if (CONFIG_SPIRAM_SPEED == 80) || (CONFIG_SPIRAM_SPEED == 64)
         clock_conf = psram_ctrlr_ll_calculate_clock_reg(1);
-#elif (CONFIG_SPIRAM_SPEED == 40)
+#elif (CONFIG_SPIRAM_SPEED == 40) || (CONFIG_SPIRAM_SPEED == 32)
         clock_conf = psram_ctrlr_ll_calculate_clock_reg(2);
 #endif
         psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_0, clock_conf);
@@ -399,6 +396,15 @@ esp_err_t esp_psram_impl_enable(void)
     psram_reset_mode(PSRAM_CTRLR_LL_MSPI_ID_1);
     //SPI1: send QPI enable command
     psram_enable_qio_mode(PSRAM_CTRLR_LL_MSPI_ID_1);
+    //MSPI cross page configs
+    uint32_t page_size = 0;
+    if (s_psram_size == PSRAM_SIZE_2MB) {
+        page_size = 512;
+    } else {
+        page_size = 1024;
+    }
+    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_1, true);
+    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_1, page_size);
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly

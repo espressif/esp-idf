@@ -66,7 +66,7 @@ typedef struct isp_dvp_controller_t {
 
 typedef struct isp_dvp_ctx_t {
     _lock_t              mutex;
-    isp_dvp_controller_t *dvp_ctlr[SOC_ISP_DVP_CTLR_NUMS];
+    isp_dvp_controller_t *dvp_ctlr[ISP_LL_DVP_CTLR_NUMS];
 } isp_dvp_ctx_t;
 
 static const char *TAG = "ISP_DVP";
@@ -86,6 +86,7 @@ static esp_err_t s_isp_dvp_stop(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_isp_dvp_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
 static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data);
 static void *s_isp_dvp_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
+static esp_err_t s_isp_dvp_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config);
 
 esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctlr_isp_dvp_cfg_t *ctlr_config, esp_cam_ctlr_handle_t *ret_handle)
 {
@@ -109,12 +110,12 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     dvp_ctlr->trans_que = xQueueCreateWithCaps(ctlr_config->queue_items, sizeof(esp_cam_ctlr_trans_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(dvp_ctlr->trans_que, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction queue");
     //in color type
-    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(isp_proc->in_color_format);
+    int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(isp_proc->in_color_format);
     dvp_ctlr->in_bpp = in_bits_per_pixel;
     ESP_LOGD(TAG, "dvp_ctlr->in_bpp: 0d %d", dvp_ctlr->in_bpp);
 
     //out color type
-    int out_bits_per_pixel = color_hal_pixel_format_get_bit_depth(isp_proc->out_color_format);
+    int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(isp_proc->out_color_format);
     dvp_ctlr->out_bpp = out_bits_per_pixel;
     ESP_LOGD(TAG, "dvp_ctlr->out_bpp: 0d %d", dvp_ctlr->out_bpp);
 
@@ -202,6 +203,7 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     cam_ctlr->get_internal_buffer = s_isp_dvp_get_frame_buffer;
     cam_ctlr->get_buffer_len = s_isp_dvp_get_frame_buffer_length;
     cam_ctlr->alloc_buffer = s_isp_dvp_alloc_buffer;
+    cam_ctlr->format_conversion = s_isp_dvp_format_conversion;
     *ret_handle = cam_ctlr;
 
     return ESP_OK;
@@ -371,6 +373,9 @@ static esp_err_t s_isp_dvp_start(esp_cam_ctlr_handle_t handle)
         }
     }
 
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)(trans.buffer), trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "failed to sync(M2C) trans buffer");
+
     ESP_LOGD(TAG, "trans.buffer: %p, trans.buflen: %d", trans.buffer, trans.buflen);
     dvp_ctlr->trans = trans;
 
@@ -494,6 +499,10 @@ IRAM_ATTR static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t cha
         }
     }
 
+    esp_err_t ret = esp_cache_msync((void *)(new_trans.buffer), new_trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(ret == ESP_OK);
+    (void)ret;
+
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
     dw_gdma_channel_config_transfer(chan, &dvp_dma_transfer_config);
     dw_gdma_channel_enable_ctrl(chan, true);
@@ -501,6 +510,7 @@ IRAM_ATTR static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t cha
     if ((dvp_ctlr->trans.buffer != dvp_ctlr->backup_buffer) || dvp_ctlr->bk_buffer_exposed) {
         esp_err_t ret = esp_cache_msync((void *)(dvp_ctlr->trans.buffer), dvp_ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
         assert(dvp_ctlr->cbs.on_trans_finished);
         if (dvp_ctlr->cbs.on_trans_finished) {
             dvp_ctlr->trans.received_size = dvp_ctlr->fb_size_in_bytes;
@@ -521,8 +531,8 @@ static esp_err_t s_isp_io_init(isp_dvp_controller_t *dvp_ctlr, const esp_cam_ctl
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT,
-        .pull_down_en = false,
-        .pull_up_en = true,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
 
     if (ctlr_config->pclk_io >= 0) {
@@ -569,7 +579,7 @@ static esp_err_t s_isp_claim_dvp_controller(isp_proc_handle_t isp_proc, isp_dvp_
 
     _lock_acquire(&s_ctx.mutex);
     bool found = false;
-    for (int i = 0; i < SOC_ISP_DVP_CTLR_NUMS; i++) {
+    for (int i = 0; i < ISP_LL_DVP_CTLR_NUMS; i++) {
         found = !s_ctx.dvp_ctlr[i];
         if (found) {
             s_ctx.dvp_ctlr[i] = dvp_ctlr;
@@ -615,4 +625,11 @@ static void *s_isp_dvp_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_
     ESP_LOGD(TAG, "Allocated camera buffer: %p, size: %zu", buffer, size);
 
     return buffer;
+}
+
+static esp_err_t s_isp_dvp_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    // ISP DVP controller doesn't support format conversion yet
+    return ESP_ERR_NOT_SUPPORTED;
 }

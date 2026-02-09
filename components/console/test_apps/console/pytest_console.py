@@ -19,7 +19,7 @@ def do_test_repl_deinit(dut: Dut) -> None:
 
 def do_test_help_generic(dut: Dut, registration_order: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.confirm_write('"esp console help command - {} registration"'.format(registration_order), expect_str='esp>')
+    dut.confirm_write(f'"esp console help command - {registration_order} registration"', expect_str='esp>')
 
     dut.confirm_write('help', expect_str='aaa')
 
@@ -269,3 +269,21 @@ def test_console_help_re_register(dut: Dut, test_on: str) -> None:
 
     dut.expect_exact('should appear last in help')
     dut.expect_exact('should appear first in help')
+
+
+@idf_parametrize('config', ['defaults'], indirect=['config'])
+@idf_parametrize(
+    'target,test_on,markers',
+    [
+        ('esp32', 'target', (pytest.mark.generic,)),
+        ('esp32c3', 'target', (pytest.mark.generic,)),
+        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+    ],
+    indirect=['target'],
+)
+def test_console_custom_uart_repl(dut: Dut, test_on: str) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.confirm_write('"esp console repl custom_uart test"', expect_str='Running repl on UART1')
+
+    # make sure that global stdout has not been changed
+    dut.expect_exact('ByeBye')

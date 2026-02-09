@@ -267,8 +267,13 @@ typedef UINT8 tBTA_AV_GET_TYPE;
 #define BTA_AV_CA_STATUS_EVT    26  /* Cover Art Client status event */
 #define BTA_AV_CA_DATA_EVT      27  /* Cover Art response body data */
 
+/* Incoming stream configuration indication received while local stream SSM is in INIT state.
+ * This is used to notify upper layers (BTC) that the stream state was force-switched to INCOMING
+ * to handle the new signalling/configuration. */
+#define BTA_AV_INCOMING_CFG_EVT 28
+
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          28
+#define BTA_AV_MAX_EVT          29
 
 
 /* function types for call-out functions */
@@ -502,6 +507,10 @@ typedef struct {
     UINT16          psc_mask;
 } tBTA_AV_SNK_PSC_CFG;
 
+/* data associated with BTA_AV_INCOMING_CFG_EVT */
+typedef struct {
+    BD_ADDR         bd_addr;
+} tBTA_AV_INCOMING;
 
 #if BTA_AV_CA_INCLUDED
 
@@ -547,6 +556,7 @@ typedef union {
     tBTA_AV_RC_FEAT     rc_feat;
     tBTA_AV_DELAY       delay;
     tBTA_AV_SNK_PSC_CFG psc;
+    tBTA_AV_INCOMING    incoming;
 #if BTA_AV_CA_INCLUDED
     tBTA_AV_CA_STATUS   ca_status;
     tBTA_AV_CA_DATA     ca_data;

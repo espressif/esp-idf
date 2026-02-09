@@ -1,5 +1,5 @@
 # This is the project CMakeLists.txt file for the test subproject
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.
 set(COMPONENTS main)
@@ -9,9 +9,17 @@ project(test_ana_cmpr)
 
 idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    # Collect RTL directories in a variable for readability. Join them
+    # with commas so they are passed as a single --rtl-dirs argument to the script.
+    set(ANA_CMPR_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_ana_cmpr
+        ${CMAKE_BINARY_DIR}/esp-idf/hal
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_ana_cmpr
+    )
+    string(JOIN "," ANA_CMPR_RTL_DIRS_JOINED ${ANA_CMPR_RTL_DIRS})
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_ana_cmpr/,${CMAKE_BINARY_DIR}/esp-idf/hal/
+                      --rtl-dirs ${ANA_CMPR_RTL_DIRS_JOINED}
                       --elf-file ${CMAKE_BINARY_DIR}/test_ana_cmpr.elf
                       find-refs
                       --from-sections=.iram0.text

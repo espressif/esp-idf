@@ -13,8 +13,6 @@
 #include "rsa_pss.h"
 #include "esp_assert.h"
 
-//TODO: [ESP32H21] IDF-11500
-
 #ifdef __cplusplus
 extern "C" {
 #endif

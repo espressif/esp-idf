@@ -1,5 +1,0 @@
-## IDF Component Manager Manifest File
-dependencies:
-  espressif/esp_secure_cert_mgr: "^2.0.2"
-  protocol_examples_common:
-    path: ${IDF_PATH}/examples/common_components/protocol_examples_common

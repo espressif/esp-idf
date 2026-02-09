@@ -1,11 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_tee/test_apps/tee_cli_app:
-  disable:
-    - if: IDF_TARGET not in ["esp32c6"]
-      reason: only supported with esp32c6 for now
+  enable:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32c5", "esp32c61"]
+      reason: supported only the above targets
 
 components/esp_tee/test_apps/tee_test_fw:
-  disable:
-    - if: IDF_TARGET not in ["esp32c6", "esp32h2"]
-      reason: only supported with esp32c6 and esp32h2 for now
+  enable:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32c5", "esp32c61"]
+      reason: supported only the above targets

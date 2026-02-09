@@ -90,6 +90,7 @@ size_t sd_host_get_free_descriptors_count(sd_host_sdmmc_slot_t *slot)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
         if (desc->owned_by_idmac) {
             break;
@@ -134,6 +135,7 @@ void sd_host_fill_dma_descriptors(sd_host_sdmmc_slot_t *slot, size_t num_desc)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
 }

@@ -56,6 +56,9 @@
 #include "portmacro.h"
 #include "port_systick.h"
 #include "esp_memory_utils.h"
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 
 #if SOC_CPU_HAS_HWLOOP
 #include "riscv/csr.h"
@@ -136,7 +139,11 @@ BaseType_t xPortStartScheduler(void)
 #if SOC_CPU_HAS_PIE
     /* Similarly, disable PIE */
     rv_utils_disable_pie();
-#endif /* SOC_CPU_HAS_FPU */
+#endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_DSP
+    rv_utils_disable_dsp();
+#endif /* SOC_CPU_HAS_DSP */
 
 #if SOC_CPU_HAS_HWLOOP
     /* Initialize the Hardware loop feature */
@@ -469,7 +476,7 @@ void vPortAssertIfInISR(void)
     configASSERT(xPortInIsrContext() == 0);
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+BaseType_t xPortInterruptedFromISRContext(void)
 {
     /* Return the interrupt nesting counter for this core */
     return port_uxInterruptNesting[xPortGetCoreID()];
@@ -593,7 +600,7 @@ void vPortExitCriticalCompliance(portMUX_TYPE *mux)
 void vPortEnterCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortEnterCritical(void) is not supported on single-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortEnterCritical(void) is not supported on multi-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
     BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -607,7 +614,7 @@ void vPortEnterCritical(void)
 void vPortExitCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortExitCritical(void) is not supported on single-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortExitCritical(void) is not supported on multi-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
 
@@ -731,16 +738,6 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         extern void vTaskPreDeletionHook( void * pxTCB );
         vTaskPreDeletionHook( pxTCB );
     #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
-
-    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-        /*
-         * If the user is using the legacy task pre-deletion hook, call it.
-         * Todo: Will be removed in IDF-8097
-         */
-        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
-        extern void vPortCleanUpTCB( void * pxTCB );
-        vPortCleanUpTCB( pxTCB );
-    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 
     #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
         /* Call TLS pointers deletion callbacks */
@@ -879,6 +876,21 @@ void vPortCoprocUsedInISR(void* frame)
 }
 
 #endif /* SOC_CPU_COPROC_NUM > 0 */
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else
+    return 0;
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,7 @@ typedef struct {
 
 static const char *TAG = "httpd";
 
+#ifdef CONFIG_HTTPD_ENABLE_EVENTS
 ESP_EVENT_DEFINE_BASE(ESP_HTTP_SERVER_EVENT);
 
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
@@ -47,6 +48,7 @@ void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, si
         ESP_LOGE(TAG, "Failed to post esp_http_server event: %s", esp_err_to_name(err));
     }
 }
+#endif // CONFIG_HTTPD_ENABLE_EVENTS
 
 static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
 {
@@ -54,7 +56,12 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     if (hd->config.lru_purge_enable == true) {
         if (!httpd_is_sess_available(hd)) {
             /* Queue asynchronous closure of the least recently used session */
+#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
+            /* In case of blocking mode, close the least recently used session directly */
+            return httpd_sess_close_lru_direct(hd);
+#else
             return httpd_sess_close_lru(hd);
+#endif /* CONFIG_HTTPD_QUEUE_WORK_BLOCKING */
             /* Returning from this allows the main server thread to process
              * the queued asynchronous control message for closing LRU session.
              * Since connection request hasn't been addressed yet using accept()
@@ -133,15 +140,6 @@ exit:
     close(new_fd);
     return ESP_FAIL;
 }
-
-struct httpd_ctrl_data {
-    enum httpd_ctrl_msg {
-        HTTPD_CTRL_SHUTDOWN,
-        HTTPD_CTRL_WORK,
-    } hc_msg;
-    httpd_work_fn_t hc_work;
-    void *hc_work_arg;
-};
 
 esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *arg)
 {

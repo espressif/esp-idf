@@ -26,6 +26,7 @@ uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 static void ble_spp_client_scan(void);
 static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 
+#if MYNEWT_VAL(BLE_GATTC)
 static void ble_spp_client_write_subscribe(const struct peer *peer)
 {
   uint8_t value[2];
@@ -90,7 +91,6 @@ ble_spp_client_set_handle(const struct peer *peer)
                             value, sizeof(value), NULL, NULL);
 }
 
-
 /**
  * Called when service discovery of the specified peer has completed.
  */
@@ -119,6 +119,7 @@ ble_spp_client_on_disc_complete(const struct peer *peer, int status, void *arg)
     ble_spp_client_scan();
 #endif
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -306,6 +307,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery. */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_spp_client_on_disc_complete, NULL);
@@ -313,6 +315,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
@@ -421,12 +424,14 @@ void ble_client_uart_task(void *pvParameters)
                     uart_read_bytes(UART_NUM_0, temp, event.size, portMAX_DELAY);
                     for ( i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
                         if (attribute_handle[i] != 0) {
+#if MYNEWT_VAL(BLE_GATTC)
                             rc = ble_gattc_write_flat(i, attribute_handle[i], temp, event.size, NULL, NULL);
                             if (rc == 0) {
                                 ESP_LOGI(tag, "Write in uart task success!");
                             } else {
                                 ESP_LOGI(tag, "Error in writing characteristic rc=%d", rc);
                             }
+#endif
                             vTaskDelay(10);
                         }
                     }

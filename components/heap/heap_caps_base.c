@@ -116,7 +116,9 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
         return NULL;
     }
 
-    if (caps & MALLOC_CAP_EXEC) {
+#if CONFIG_HEAP_HAS_EXEC_HEAP
+    const bool exec_in_caps = caps & MALLOC_CAP_EXEC;
+    if (exec_in_caps) {
         //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following
         //caps, but the following caps are not possible for IRAM.  Thus, the combination is impossible and we return
         //NULL directly, even although our heap capabilities (based on soc_memory_tags & soc_memory_regions) would
@@ -126,6 +128,9 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
         }
         caps |= MALLOC_CAP_32BIT; // IRAM is 32-bit accessible RAM
     }
+#else
+    const bool exec_in_caps = false;
+#endif
 
     if (caps & MALLOC_CAP_32BIT) {
         /* 32-bit accessible RAM should allocated in 4 byte aligned sizes
@@ -148,7 +153,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     // If MALLOC_CAP_EXEC is requested but the DRAM and IRAM are on the same addresses (like on esp32c6)
                     // proceed as for a default allocation.
-                    if ((caps & MALLOC_CAP_EXEC) &&
+                    if (exec_in_caps &&
                         ((!esp_dram_match_iram() && esp_ptr_in_diram_dram((void *)heap->start)) ||
                          (!esp_rtc_dram_match_rtc_iram() && esp_ptr_in_rtc_dram_fast((void *)heap->start)))) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,

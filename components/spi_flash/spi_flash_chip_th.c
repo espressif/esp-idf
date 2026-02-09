@@ -5,8 +5,8 @@
  */
 
 #include <stdlib.h>
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
 
 esp_err_t spi_flash_chip_th_probe(esp_flash_t *chip, uint32_t flash_id)
 {

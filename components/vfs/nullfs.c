@@ -318,7 +318,7 @@ static int vfs_null_fsync(int fd)
 }
 
 #if defined(CONFIG_VFS_INITIALIZE_DEV_NULL) || defined(CONFIG_ESP_CONSOLE_NONE)
-ESP_SYSTEM_INIT_FN(init_vfs_nullfs, CORE, BIT(0), 113)
+ESP_SYSTEM_INIT_FN(init_vfs_nullfs, CORE, BIT(0), 118)
 {
     return esp_vfs_null_register();
 }

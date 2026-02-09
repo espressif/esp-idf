@@ -7,6 +7,14 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'deep_sleep',
+        'light_sleep',
+    ],
+    indirect=True,
+)
 @idf_parametrize(
     'target',
     soc_filtered_targets('SOC_TOUCH_SENSOR_SUPPORTED == 1 and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP == 1'),

@@ -23,6 +23,8 @@ menu "SPI RAM config"
         help
             Select the speed for the SPI RAM chip.
 
+        config SPIRAM_SPEED_120M
+            bool "120MHz clock speed"
         config SPIRAM_SPEED_80M
             bool "80MHz clock speed"
         config SPIRAM_SPEED_40M
@@ -31,6 +33,7 @@ menu "SPI RAM config"
 
     config SPIRAM_SPEED
         int
+        default 120 if SPIRAM_SPEED_120M
         default 80 if SPIRAM_SPEED_80M
         default 40 if SPIRAM_SPEED_40M
 

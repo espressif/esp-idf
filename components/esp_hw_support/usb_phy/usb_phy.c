@@ -25,12 +25,6 @@
 #include "esp_sleep.h"
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define USB_PHY_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define USB_PHY_RCC_ATOMIC()
-#endif
-
 static const char *USBPHY_TAG = "usb_phy";
 
 #define USBPHY_NOT_INIT_ERR_STR    "USB_PHY is not initialized"
@@ -145,7 +139,22 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
     // USB-DWC2.0 <-> UTMI PHY
     // USB-DWC1.1 <-> FSLS PHY
     if (handle->target == USB_PHY_TARGET_UTMI) {
-        return ESP_OK; // No need to configure anything for UTMI PHY
+        // ESP32-P4 v3 changed connection between USB-OTG peripheral and UTMI PHY.
+        // On v3 the 15k pulldown resistors on D+/D- are no longer controlled by USB-OTG,
+        // but must be controlled directly by this software driver.
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#include "soc/lp_system_struct.h"
+        if (mode == USB_OTG_MODE_HOST) {
+            // Host must connect 15k pulldown resistors on D+ / D-
+            LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dppulldown = 1;
+            LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dmpulldown = 1;
+        } else {
+            // Device must not connect any pulldown resistors on D+ / D-
+            LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dppulldown = 0;
+            LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dmpulldown = 0;
+        }
+#endif // !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+        return ESP_OK;
     }
 
     const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[otg11_index].otg_signals;
@@ -268,13 +277,13 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     phy_context->status = USB_PHY_STATUS_IN_USE;
 
     if (phy_target != USB_PHY_TARGET_UTMI) {
-        USB_PHY_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             usb_wrap_hal_init(&phy_context->wrap_hal);
         }
     } else {
 #if (SOC_USB_UTMI_PHY_NUM > 0)
         usb_utmi_hal_context_t utmi_hal_context; // Unused for now
-        USB_PHY_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             usb_utmi_hal_init(&utmi_hal_context);
         }
 #endif
@@ -334,7 +343,7 @@ static void phy_uninstall(void)
     if (p_phy_ctrl_obj->ref_count == 0) {
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
-        USB_PHY_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             // Disable USB peripheral without reset the module
             usb_wrap_hal_disable();
 #if (SOC_USB_UTMI_PHY_NUM > 0)

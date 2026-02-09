@@ -14,13 +14,73 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "mbedtls/build_info.h"
-#include "mbedtls/rsa.h"
-#include "mbedtls/oid.h"
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+#include "mbedtls/private/rsa.h"
+#include "mbedtls/pk.h"
 #include "mbedtls/platform_util.h"
+#include "mbedtls/asn1.h"
+#include "mbedtls/md.h"
 #include <string.h>
 
 static const char *TAG = "ESP_RSA_SIGN_ALT";
+
+/*
+ * Local OID lookup table for hash algorithms
+ * This replicates the OID data needed for PKCS#1 v1.5 DigestInfo encoding
+ * Since OID access has moved to internal driver headers in PSA transition,
+ * we maintain this local table for the hardware accelerator implementation.
+ */
+typedef struct {
+    mbedtls_md_type_t md_alg;
+    const char *oid;
+    size_t oid_len;
+} oid_md_mapping_t;
+
+static const oid_md_mapping_t oid_md_table[] = {
+#if defined(PSA_WANT_ALG_MD5)
+    { MBEDTLS_MD_MD5, "\x2a\x86\x48\x86\xf7\x0d\x02\x05", 8 },
+#endif
+#if defined(PSA_WANT_ALG_SHA_1)
+    { MBEDTLS_MD_SHA1, "\x2b\x0e\x03\x02\x1a", 5 },
+#endif
+#if defined(PSA_WANT_ALG_SHA_224)
+    { MBEDTLS_MD_SHA224, "\x60\x86\x48\x01\x65\x03\x04\x02\x04", 9 },
+#endif
+#if defined(PSA_WANT_ALG_SHA_256)
+    { MBEDTLS_MD_SHA256, "\x60\x86\x48\x01\x65\x03\x04\x02\x01", 9 },
+#endif
+#if defined(PSA_WANT_ALG_SHA_384)
+    { MBEDTLS_MD_SHA384, "\x60\x86\x48\x01\x65\x03\x04\x02\x02", 9 },
+#endif
+#if defined(PSA_WANT_ALG_SHA_512)
+    { MBEDTLS_MD_SHA512, "\x60\x86\x48\x01\x65\x03\x04\x02\x03", 9 },
+#endif
+#if defined(PSA_WANT_ALG_RIPEMD160)
+    { MBEDTLS_MD_RIPEMD160, "\x2b\x24\x03\x02\x01", 5 },
+#endif
+    { MBEDTLS_MD_NONE, NULL, 0 }
+};
+
+/**
+ * @brief Get OID for hash algorithm (local implementation)
+ *
+ * @param md_alg Hash algorithm type
+ * @param oid Output pointer for OID string
+ * @param olen Output pointer for OID length
+ * @return 0 on success, PSA_ERROR_NOT_SUPPORTED if not found
+ */
+static int esp_ds_get_oid_by_md(mbedtls_md_type_t md_alg, const char **oid, size_t *olen)
+{
+    for (size_t i = 0; oid_md_table[i].md_alg != MBEDTLS_MD_NONE; i++) {
+        if (oid_md_table[i].md_alg == md_alg) {
+            *oid = oid_md_table[i].oid;
+            *olen = oid_md_table[i].oid_len;
+            return 0;
+        }
+    }
+    return PSA_ERROR_NOT_SUPPORTED;
+}
 
 static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
                                         unsigned int hashlen,
@@ -37,11 +97,11 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
     if ( md_alg != MBEDTLS_MD_NONE ) {
         const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type( md_alg );
         if ( md_info == NULL ) {
-            return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+            return ( PSA_ERROR_INVALID_ARGUMENT );
         }
 
-        if ( mbedtls_oid_get_oid_by_md( md_alg, &oid, &oid_size ) != 0 ) {
-            return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        if ( esp_ds_get_oid_by_md( md_alg, &oid, &oid_size ) != 0 ) {
+            return ( PSA_ERROR_INVALID_ARGUMENT );
         }
 
         hashlen = mbedtls_md_get_size( md_info );
@@ -51,7 +111,7 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
         if ( 8 + hashlen + oid_size  >= 0x80         ||
                 10 + hashlen            <  hashlen      ||
                 10 + hashlen + oid_size <  10 + hashlen ) {
-            return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+            return ( PSA_ERROR_INVALID_ARGUMENT );
         }
 
         /*
@@ -63,12 +123,12 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
          * - Need oid_size bytes for hash alg OID.
          */
         if ( nb_pad < 10 + hashlen + oid_size ) {
-            return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+            return ( PSA_ERROR_INVALID_ARGUMENT );
         }
         nb_pad -= 10 + hashlen + oid_size;
     } else {
         if ( nb_pad < hashlen ) {
-            return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+            return ( PSA_ERROR_INVALID_ARGUMENT );
         }
 
         nb_pad -= hashlen;
@@ -77,7 +137,7 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
     /* Need space for signature header and padding delimiter (3 bytes),
      * and 8 bytes for the minimal padding */
     if ( nb_pad < 3 + 8 ) {
-        return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
     nb_pad -= 3;
 
@@ -86,7 +146,7 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
 
     /* Write signature header and padding */
     *p++ = 0;
-    *p++ = MBEDTLS_RSA_SIGN;
+    *p++ = 1; //MBEDTLS_RSA_SIGN;
     memset( p, 0xFF, nb_pad );
     p += nb_pad;
     *p++ = 0;
@@ -129,7 +189,7 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
      * after the initial bounds check. */
     if ( p != dst + dst_len ) {
         mbedtls_platform_zeroize( dst, dst_len );
-        return ( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
 
     return ( 0 );
@@ -147,15 +207,15 @@ static int rsa_rsassa_pss_pkcs1_v21_encode( int (*f_rng)(void *, unsigned char *
     unsigned char *p = sig;
     unsigned char *salt = NULL;
     size_t slen, min_slen, hlen, offset = 0;
-    int ret = MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    int ret = PSA_ERROR_INVALID_ARGUMENT;
     size_t msb;
 
     if ((md_alg != MBEDTLS_MD_NONE || hashlen != 0) && hash == NULL) {
-        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     if (f_rng == NULL) {
-        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     olen = dst_len;
@@ -164,20 +224,20 @@ static int rsa_rsassa_pss_pkcs1_v21_encode( int (*f_rng)(void *, unsigned char *
         /* Gather length of hash to sign */
         size_t exp_hashlen = mbedtls_md_get_size_from_type(md_alg);
         if (exp_hashlen == 0) {
-            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+            return PSA_ERROR_INVALID_ARGUMENT;
         }
 
         if (hashlen != exp_hashlen) {
-            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+            return PSA_ERROR_INVALID_ARGUMENT;
         }
     }
 
     hlen = mbedtls_md_get_size_from_type(md_alg);
     if (hlen == 0) {
-        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (saltlen == MBEDTLS_RSA_SALT_LEN_ANY) {
+    if (saltlen == -1) {
         /* Calculate the largest possible salt length, up to the hash size.
         * Normally this is the hash length, which is the maximum salt length
         * according to FIPS 185-4 �5.5 (e) and common practice. If there is not
@@ -187,14 +247,14 @@ static int rsa_rsassa_pss_pkcs1_v21_encode( int (*f_rng)(void *, unsigned char *
         * (PKCS#1 v2.2) �9.1.1 step 3. */
         min_slen = hlen - 2;
         if (olen < hlen + min_slen + 2) {
-            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+            return PSA_ERROR_INVALID_ARGUMENT;
         } else if (olen >= hlen + hlen + 2) {
             slen = hlen;
         } else {
             slen = olen - hlen - 2;
         }
     } else if ((saltlen < 0) || (saltlen + hlen + 2 > olen)) {
-        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        return PSA_ERROR_INVALID_ARGUMENT;
     } else {
         slen = (size_t) saltlen;
     }
@@ -210,7 +270,7 @@ static int rsa_rsassa_pss_pkcs1_v21_encode( int (*f_rng)(void *, unsigned char *
     /* Generate salt of length slen in place in the encoded message */
     salt = p;
     if ((ret = f_rng(p_rng, salt, slen)) != 0) {
-        return MBEDTLS_ERR_RSA_RNG_FAILED;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
     p += slen;
 
@@ -246,7 +306,7 @@ static int rsa_rsassa_pkcs1_v21_encode(int (*f_rng)(void *, unsigned char *, siz
                                         size_t dst_len,
                                         unsigned char *dst )
 {
-    return rsa_rsassa_pss_pkcs1_v21_encode(f_rng, p_rng, md_alg, hashlen, hash, MBEDTLS_RSA_SALT_LEN_ANY, dst, dst_len);
+    return rsa_rsassa_pss_pkcs1_v21_encode(f_rng, p_rng, md_alg, hashlen, hash, -1, dst, dst_len);
 }
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
@@ -254,6 +314,15 @@ int esp_ds_rsa_sign( void *ctx,
                     int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
                     mbedtls_md_type_t md_alg, unsigned int hashlen,
                     const unsigned char *hash, unsigned char *sig )
+{
+    mbedtls_pk_context *pk = (mbedtls_pk_context *)ctx;
+    size_t sig_len = 0;
+    return esp_ds_rsa_sign_alt(pk, md_alg, hash, hashlen, sig, 0, &sig_len);
+}
+
+int esp_ds_rsa_sign_alt(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
+                     const unsigned char *hash, size_t hash_len,
+                     unsigned char *sig, size_t sig_size, size_t *sig_len)
 {
     esp_ds_context_t *esp_ds_ctx = NULL;
     esp_err_t ds_r;
@@ -263,7 +332,11 @@ int esp_ds_rsa_sign( void *ctx,
      * which allows NULL ctx. If ctx is NULL, then the default padding
      * MBEDTLS_RSA_PKCS_V15 is used.
      */
-    int padding = MBEDTLS_RSA_PKCS_V15;
+    int padding = MBEDTLS_PK_RSA_PKCS_V15;
+    void *ctx = NULL;
+    if (pk != NULL) {
+        ctx = pk->MBEDTLS_PRIVATE(pk_ctx);
+    }
     if (ctx != NULL) {
         mbedtls_rsa_context *rsa_ctx = (mbedtls_rsa_context *)ctx;
         padding = rsa_ctx->MBEDTLS_PRIVATE(padding);
@@ -274,11 +347,11 @@ int esp_ds_rsa_sign( void *ctx,
         return -1;
     }
     const size_t data_len = s_ds_data->rsa_length + 1;
-    const size_t sig_len = data_len * FACTOR_KEYLEN_IN_BYTES;
+    const size_t _sig_len = data_len * FACTOR_KEYLEN_IN_BYTES;
 
-    if (padding == MBEDTLS_RSA_PKCS_V21) {
+    if (padding == MBEDTLS_PK_RSA_PKCS_V21) {
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-        if ((ret = (rsa_rsassa_pkcs1_v21_encode(f_rng, p_rng ,md_alg, hashlen, hash, sig_len, sig ))) != 0) {
+        if ((ret = (rsa_rsassa_pkcs1_v21_encode(mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE ,md_alg, hash_len, hash, _sig_len, sig ))) != 0) {
             ESP_LOGE(TAG, "Error in pkcs1_v21 encoding, returned %d", ret);
             return -1;
         }
@@ -287,13 +360,13 @@ int esp_ds_rsa_sign( void *ctx,
         return -1;
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
     } else {
-        if ((ret = (rsa_rsassa_pkcs1_v15_encode(md_alg, hashlen, hash, sig_len, sig ))) != 0) {
+        if ((ret = (rsa_rsassa_pkcs1_v15_encode(md_alg, hash_len, hash, _sig_len, sig ))) != 0) {
             ESP_LOGE(TAG, "Error in pkcs1_v15 encoding, returned %d", ret);
             return -1;
         }
     }
 
-    uint32_t *signature = heap_caps_malloc_prefer(sig_len, 2, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    uint32_t *signature = heap_caps_malloc_prefer(_sig_len, 2, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     if (signature == NULL) {
         ESP_LOGE(TAG, "Could not allocate memory for internal DS operations");
         return -1;
@@ -330,5 +403,6 @@ int esp_ds_rsa_sign( void *ctx,
         ((uint32_t *)sig)[i] = SWAP_INT32(((uint32_t *)signature)[(data_len) - (i + 1)]);
     }
     heap_caps_free(signature);
+    *sig_len = _sig_len;
     return 0;
 }

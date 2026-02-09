@@ -21,7 +21,6 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/syscon_reg.h"
-#include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_memory_layout.h"
@@ -58,7 +57,9 @@ void esp_system_reset_modules_on_exit(void)
     // Reset dma and crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST | SYSTEM_CRYPTO_AES_RST | SYSTEM_CRYPTO_DS_RST |
-                      SYSTEM_CRYPTO_HMAC_RST | SYSTEM_CRYPTO_RSA_RST | SYSTEM_CRYPTO_SHA_RST);
+                      SYSTEM_CRYPTO_HMAC_RST | SYSTEM_CRYPTO_RSA_RST | SYSTEM_CRYPTO_SHA_RST |
+                      // The DMA inside SDMMC Host needs to be reset to avoid memory corruption after restart.
+                      SYSTEM_SDIO_HOST_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
 
     SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
@@ -101,7 +102,7 @@ void esp_restart_noos(void)
         // If stack_addr is from External Memory (CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM is used)
         // then need to switch SP to Internal Memory otherwise
         // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
-        uint32_t new_sp = ALIGN_DOWN(_bss_end, 16);
+        uint32_t new_sp = ALIGN_DOWN((uint32_t)&_bss_end, 16);
         SET_STACK(new_sp);
     }
 #endif

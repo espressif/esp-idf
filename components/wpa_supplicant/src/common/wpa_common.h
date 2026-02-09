@@ -137,6 +137,17 @@ RSN_SELECTOR(0x00, 0x0f, 0xac, 13)
 #define FT_R1KH_ID_LEN 6
 #define WPA_PMK_NAME_LEN 16
 
+/* FTE - MIC Control - RSNXE Used */
+#define FTE_MIC_CTRL_RSNXE_USED BIT(0)
+#define FTE_MIC_CTRL_MIC_LEN_MASK (BIT(1) | BIT(2) | BIT(3))
+#define FTE_MIC_CTRL_MIC_LEN_SHIFT 1
+
+/* FTE - MIC Length subfield values */
+enum ft_mic_len_subfield {
+        FTE_MIC_LEN_16 = 0,
+        FTE_MIC_LEN_24 = 1,
+        FTE_MIC_LEN_32 = 2,
+};
 
 /* IEEE 802.11, 8.5.2 EAPOL-Key frames */
 #define WPA_KEY_INFO_TYPE_MASK ((u16) (BIT(0) | BIT(1) | BIT(2)))
@@ -337,6 +348,7 @@ int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
                const u8 *mdie, size_t mdie_len,
 	       const u8 *ftie, size_t ftie_len,
 	       const u8 *rsnie, size_t rsnie_len,
+               const u8 *rsnxe, size_t rsnxe_len,
 	       const u8 *ric, size_t ric_len, u8 *mic);
 void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 		       const u8 *ssid, size_t ssid_len,
@@ -425,7 +437,16 @@ struct wpa_ft_ies {
 	size_t igtk_len;
 	const u8 *ric;
 	size_t ric_len;
+        const u8 *rsnxe;
+        size_t rsnxe_len;
 };
+
+/* WPA3 specification - RSN Selection element */
+enum rsn_selection_variant {
+    RSN_SELECTION_RSNE = 0,
+    RSN_SELECTION_RSNE_OVERRIDE = 1,
+};
+
 
 int wpa_ft_parse_ies(const u8 *ies, size_t ies_len, struct wpa_ft_ies *parse);
 
@@ -438,6 +459,48 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 
 void rsn_pmkid(const u8 *pmk, size_t pmk_len, const u8 *aa, const u8 *spa,
 	       u8 *pmkid, int akmp);
+
+struct wpa_eapol_ie_parse {
+	const u8 *wpa_ie;
+	size_t wpa_ie_len;
+	const u8 *rsn_ie;
+	size_t rsn_ie_len;
+	const u8 *pmkid;
+	const u8 *gtk;
+	size_t gtk_len;
+	const u8 *mac_addr;
+	size_t mac_addr_len;
+#ifdef CONFIG_IEEE80211W
+	const u8 *igtk;
+	size_t igtk_len;
+#endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_IEEE80211R
+	const u8 *mdie;
+	size_t mdie_len;
+	const u8 *ftie;
+	size_t ftie_len;
+	const u8 *reassoc_deadline;
+	const u8 *key_lifetime;
+#endif /* CONFIG_IEEE80211R */
+	const u8 *transition_disable;
+	size_t transition_disable_len;
+	const u8 *rsnxe;
+	size_t rsnxe_len;
+#ifdef CONFIG_WPA3_COMPAT
+	const u8 *rsn_selection;
+	size_t rsn_selection_len;
+	const u8 *rsne_override;
+	size_t rsne_override_len;
+	const u8 *rsnxe_override;
+	size_t rsnxe_override_len;
+#endif
+};
+int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie);
+static inline int wpa_supplicant_parse_ies(const u8 *buf, size_t len,
+					   struct wpa_eapol_ie_parse *ie)
+{
+	return wpa_parse_kde_ies(buf, len, ie);
+}
 
 int wpa_cipher_key_len(int cipher);
 int wpa_cipher_rsc_len(int cipher);
@@ -455,5 +518,8 @@ int rsn_cipher_put_suites(u8 *pos, int ciphers);
 unsigned int wpa_mic_len(int akmp, size_t pmk_len);
 int wpa_use_akm_defined(int akmp);
 int wpa_use_aes_key_wrap(int akmp);
+
+void rsn_set_snonce_cookie(u8 *snonce);
+bool rsn_is_snonce_cookie(const u8 *snonce);
 
 #endif /* WPA_COMMON_H */

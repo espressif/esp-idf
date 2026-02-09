@@ -11,7 +11,7 @@
 #include "sdkconfig.h"
 #include "esp_efuse_table.h"
 
-const static char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 #ifdef NON_OS_BUILD
 #define EFUSE_LOCK_ACQUIRE_RECURSIVE()

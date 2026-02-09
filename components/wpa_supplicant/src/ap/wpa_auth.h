@@ -127,6 +127,9 @@ struct ft_remote_r1kh {
 struct wpa_auth_config {
 	int wpa;
 	int wpa_key_mgmt;
+#ifdef CONFIG_WPA3_COMPAT
+	int rsn_override_key_mgmt;
+#endif
 	int wpa_pairwise;
 	int wpa_group;
 	int wpa_group_rekey;
@@ -134,6 +137,9 @@ struct wpa_auth_config {
 	int wpa_gmk_rekey;
 	int wpa_ptk_rekey;
 	int rsn_pairwise;
+#ifdef CONFIG_WPA3_COMPAT
+	int rsn_override_pairwise;
+#endif
 	int rsn_preauth;
 	int eapol_version;
 	int wmm_enabled;
@@ -143,6 +149,9 @@ struct wpa_auth_config {
 	int tx_status;
 #ifdef CONFIG_IEEE80211W
 	enum mfp_options ieee80211w;
+#ifdef CONFIG_WPA3_COMPAT
+	enum mfp_options rsn_override_mfp;
+#endif
 #endif /* CONFIG_IEEE80211W */
 	int group_mgmt_cipher;
 #ifdef CONFIG_SAE
@@ -168,6 +177,9 @@ struct wpa_auth_config {
 	enum sae_pwe sae_pwe;
 	struct rsn_sppamsdu_sup spp_sup;
 	u8 transition_disable;
+#ifdef CONFIG_WPA3_COMPAT
+	int rsn_override_omit_rsnxe;
+#endif
 };
 
 typedef enum {
@@ -304,5 +316,16 @@ int wpa_auth_pmksa_add_sae(struct wpa_authenticator *wpa_auth, const u8 *addr,
 void wpa_auth_add_sae_pmkid(struct wpa_state_machine *sm, const u8 *pmkid);
 void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
 			    const u8 *sta_addr);
+void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
+                               size_t len);
+static inline bool wpa_auth_pmf_enabled(struct wpa_auth_config *conf)
+{
+#ifdef CONFIG_WPA3_COMPAT
+       return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION ||
+               conf->rsn_override_mfp != NO_MGMT_FRAME_PROTECTION;
+#else
+       return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION;
+#endif
+}
 
 #endif /* WPA_AUTH_H */

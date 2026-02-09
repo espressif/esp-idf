@@ -58,18 +58,4 @@ menu "Unity unit testing library"
             jumping back to the test menu. The jumping is usually occurs in assert
             functions such as TEST_ASSERT, TEST_FAIL etc.
 
-    config UNITY_TEST_ORDER_BY_FILE_PATH_AND_LINE
-        bool "Order unit tests by file path and line number"
-        default n
-        help
-            If enabled, the Unity test framework will automatically insert test cases
-            in a sorted order at registration time (during constructor execution),
-            based on their source file path and line number.
-
-            This ensures consistent execution order across platforms (e.g., Linux vs. on-chip),
-            preserving the logical order in which tests are written in the source files.
-
-            Note, the file path used for sorting follows the full absolute path format.
-            /IDF/examples/system/unit_test/components/testable/test/test_mean.c
-
 endmenu # "Unity unit testing library"

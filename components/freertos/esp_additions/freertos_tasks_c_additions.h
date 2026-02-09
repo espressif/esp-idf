@@ -9,9 +9,7 @@
 #include "esp_heap_caps.h"
 #include "esp_compiler.h"
 #include "freertos/idf_additions.h"
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-    #include "esp_private/freertos_debug.h"
-#endif /* CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT */
+#include "freertos/freertos_debug.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 
 /**
@@ -426,7 +424,6 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         #else /* CONFIG_FREERTOS_SMP */
             TCB_t * pxTCB;
 
-            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
             pxTCB = prvGetTCBFromHandle( xTask );
 
             xReturn = pxTCB->xCoreID;
@@ -1125,6 +1122,8 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         ESP_FREERTOS_DEBUG_LIST_END_PREV,
         ESP_FREERTOS_DEBUG_LIST_ITEM_PREV,
         ESP_FREERTOS_DEBUG_LIST_ITEM_OWNER,
+        ESP_FREERTOS_DEBUG_TASK_COUNT_WIDTH,
+        ESP_FREERTOS_DEBUG_PTR_WIDTH,
         /* New entries must be inserted here */
         ESP_FREERTOS_DEBUG_TABLE_END,
     };
@@ -1144,7 +1143,9 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         offsetof( List_t, xListEnd ),               /* list_end_offset */
         offsetof( List_t, xListEnd.pxPrevious ),    /* list_next_offset */
         offsetof( ListItem_t, pxPrevious ),         /* list_elem_next_offset */
-        offsetof( ListItem_t, pvOwner )             /* list_elem_content_offset */
+        offsetof( ListItem_t, pvOwner ),            /* list_elem_content_offset */
+        sizeof( UBaseType_t ),                      /* task_count_width */
+        sizeof( void * )                            /* ptr_width */
     };
 
 #endif /* CONFIG_FREERTOS_DEBUG_OCDAWARE */

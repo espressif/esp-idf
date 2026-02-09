@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +28,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "bignum_impl.h"
 
 #include "mbedtls/bignum.h"
@@ -54,89 +54,6 @@ static const __attribute__((unused)) char *TAG = "bignum";
 #define ciL    (sizeof(mbedtls_mpi_uint))         /* chars in limb  */
 #define biL    (ciL << 3)                         /* bits  in limb  */
 
-#if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
-static SemaphoreHandle_t op_complete_sem;
-#if defined(CONFIG_PM_ENABLE)
-static esp_pm_lock_handle_t s_pm_cpu_lock;
-static esp_pm_lock_handle_t s_pm_sleep_lock;
-#endif
-
-static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
-{
-    BaseType_t higher_woken;
-    mpi_hal_clear_interrupt();
-
-    xSemaphoreGiveFromISR(op_complete_sem, &higher_woken);
-    if (higher_woken) {
-        portYIELD_FROM_ISR();
-    }
-}
-
-
-static esp_err_t esp_mpi_isr_initialise(void)
-{
-    mpi_hal_clear_interrupt();
-    mpi_hal_interrupt_enable(true);
-    if (op_complete_sem == NULL) {
-        static StaticSemaphore_t op_sem_buf;
-        op_complete_sem = xSemaphoreCreateBinaryStatic(&op_sem_buf);
-        if (op_complete_sem == NULL) {
-            ESP_LOGE(TAG, "Failed to create intr semaphore");
-            return ESP_FAIL;
-        }
-
-        const int isr_flags = esp_intr_level_to_flags(CONFIG_MBEDTLS_MPI_INTERRUPT_LEVEL);
-
-        esp_err_t ret;
-        ret = esp_intr_alloc(ETS_RSA_INTR_SOURCE, isr_flags, esp_mpi_complete_isr, NULL, NULL);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to allocate RSA interrupt %d", ret);
-
-            // This should be treated as fatal error as this API would mostly
-            // be invoked within mbedTLS interface. There is no way for the system
-            // to proceed if the MPI interrupt allocation fails here.
-            abort();
-        }
-    }
-
-    /* MPI is clocked proportionally to CPU clock, take power management lock */
-#ifdef CONFIG_PM_ENABLE
-    if (s_pm_cpu_lock == NULL) {
-        if (esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "mpi_sleep", &s_pm_sleep_lock) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to create PM sleep lock");
-            return ESP_FAIL;
-        }
-        if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "mpi_cpu", &s_pm_cpu_lock) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to create PM CPU lock");
-            return ESP_FAIL;
-        }
-    }
-    esp_pm_lock_acquire(s_pm_cpu_lock);
-    esp_pm_lock_acquire(s_pm_sleep_lock);
-#endif
-
-    return ESP_OK;
-}
-
-static int esp_mpi_wait_intr(void)
-{
-    if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
-        ESP_LOGE("MPI", "Timed out waiting for completion of MPI Interrupt");
-        return -1;
-    }
-
-#ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_release(s_pm_cpu_lock);
-    esp_pm_lock_release(s_pm_sleep_lock);
-#endif  // CONFIG_PM_ENABLE
-
-    mpi_hal_interrupt_enable(false);
-
-    return 0;
-}
-
-#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT
-
 /* Convert bit count to word count
  */
 static inline size_t bits_to_words(size_t bits)
@@ -148,6 +65,15 @@ static inline size_t bits_to_words(size_t bits)
    number.
 */
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+
+#if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
+static SemaphoreHandle_t op_complete_sem;
+#if defined(CONFIG_PM_ENABLE)
+static esp_pm_lock_handle_t s_pm_cpu_lock;
+static esp_pm_lock_handle_t s_pm_sleep_lock;
+#endif
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+
 static size_t mpi_words(const mbedtls_mpi *mpi)
 {
     for (size_t i = mpi->MBEDTLS_PRIVATE(n); i > 0; i--) {
@@ -261,6 +187,82 @@ cleanup:
 }
 
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+
+#if defined (CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
+
+static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
+{
+    BaseType_t higher_woken;
+    mpi_hal_clear_interrupt();
+
+    xSemaphoreGiveFromISR(op_complete_sem, &higher_woken);
+    if (higher_woken) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+static esp_err_t esp_mpi_isr_initialise(void)
+{
+    mpi_hal_clear_interrupt();
+    mpi_hal_interrupt_enable(true);
+    if (op_complete_sem == NULL) {
+        static StaticSemaphore_t op_sem_buf;
+        op_complete_sem = xSemaphoreCreateBinaryStatic(&op_sem_buf);
+        if (op_complete_sem == NULL) {
+            ESP_LOGE(TAG, "Failed to create intr semaphore");
+            return ESP_FAIL;
+        }
+
+        const int isr_flags = esp_intr_level_to_flags(CONFIG_MBEDTLS_MPI_INTERRUPT_LEVEL);
+
+        esp_err_t ret;
+        ret = esp_intr_alloc(ETS_RSA_INTR_SOURCE, isr_flags, esp_mpi_complete_isr, NULL, NULL);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to allocate RSA interrupt %d", ret);
+
+            // This should be treated as fatal error as this API would mostly
+            // be invoked within mbedTLS interface. There is no way for the system
+            // to proceed if the MPI interrupt allocation fails here.
+            abort();
+        }
+    }
+
+    /* MPI is clocked proportionally to CPU clock, take power management lock */
+#ifdef CONFIG_PM_ENABLE
+    if (s_pm_cpu_lock == NULL) {
+        if (esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "mpi_sleep", &s_pm_sleep_lock) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to create PM sleep lock");
+            return ESP_FAIL;
+        }
+        if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "mpi_cpu", &s_pm_cpu_lock) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to create PM CPU lock");
+            return ESP_FAIL;
+        }
+    }
+    esp_pm_lock_acquire(s_pm_cpu_lock);
+    esp_pm_lock_acquire(s_pm_sleep_lock);
+#endif
+
+    return ESP_OK;
+}
+
+static int esp_mpi_wait_intr(void)
+{
+    if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
+        ESP_LOGE("MPI", "Timed out waiting for completion of MPI Interrupt");
+        return -1;
+    }
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_cpu_lock);
+    esp_pm_lock_release(s_pm_sleep_lock);
+#endif  // CONFIG_PM_ENABLE
+
+    mpi_hal_interrupt_enable(false);
+
+    return 0;
+}
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
 #ifdef ESP_MPI_USE_MONT_EXP
 /*
@@ -452,8 +454,6 @@ cleanup:
     return ret;
 }
 
-#endif /* (MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK) */
-
 /*
  * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
  */
@@ -463,7 +463,6 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 {
     int ret;
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
-    /* Try hardware API first and then fallback to software */
     ret = esp_mpi_exp_mod( X, A, E, N, _RR );
     if( ret == MBEDTLS_ERR_MPI_NOT_ACCEPTABLE ) {
         ret = mbedtls_mpi_exp_mod_soft( X, A, E, N, _RR );
@@ -477,6 +476,8 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 
     return ret;
 }
+
+#endif /* (MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK) */
 
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
 
@@ -493,7 +494,6 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     size_t y_words = bits_to_words(y_bits);
     size_t z_words = bits_to_words(x_bits + y_bits);
     size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
-
     /* Short-circuit eval if either argument is 0 or 1.
 
        This is needed as the mpi modular division

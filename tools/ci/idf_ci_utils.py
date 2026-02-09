@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # internal use only for CI
 # some CI related util functions
@@ -13,7 +13,7 @@ from functools import cached_property
 IDF_PATH: str = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
-def get_submodule_dirs(full_path: bool = False) -> t.List[str]:
+def get_submodule_dirs(full_path: bool = False) -> list[str]:
     """
     To avoid issue could be introduced by multi-os or additional dependency,
     we use python and git to get this output
@@ -71,7 +71,7 @@ def is_executable(full_path: str) -> bool:
     return os.access(full_path, os.X_OK)
 
 
-def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> t.List[str]:
+def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> list[str]:
     """
     Get the result of git ls-files
     :param path: path to run git ls-files
@@ -98,11 +98,11 @@ def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> t.List[str]:
     return [os.path.join(path, f) for f in files] if full_path else files
 
 
-def to_list(s: t.Any) -> t.List[t.Any]:
+def to_list(s: t.Any) -> list[t.Any]:
     if not s:
         return []
 
-    if isinstance(s, (set, tuple)):
+    if isinstance(s, set | tuple):
         return list(s)
 
     if isinstance(s, list):
@@ -113,8 +113,8 @@ def to_list(s: t.Any) -> t.List[t.Any]:
 
 class GitlabYmlConfig:
     def __init__(self, root_yml_filepath: str = os.path.join(IDF_PATH, '.gitlab-ci.yml')) -> None:
-        self._config: t.Dict[str, t.Any] = {}
-        self._defaults: t.Dict[str, t.Any] = {}
+        self._config: dict[str, t.Any] = {}
+        self._defaults: dict[str, t.Any] = {}
 
         self._load(root_yml_filepath)
 
@@ -127,6 +127,14 @@ class GitlabYmlConfig:
 
         # expanding "include"
         for item in root_yml.pop('include', []) or []:
+            if isinstance(item, dict):
+                if 'project' in item:
+                    continue
+                elif 'local' in item:
+                    item = item['local']
+                else:
+                    continue
+
             all_config.update(yaml.load(open(os.path.join(IDF_PATH, item)), Loader=yaml.FullLoader))
 
         if 'default' in all_config:
@@ -135,41 +143,41 @@ class GitlabYmlConfig:
         self._config = all_config
 
         # anchor is the string that will be reused in templates
-        self._anchor_keys: t.Set[str] = set()
+        self._anchor_keys: set[str] = set()
         # template is a dict that will be extended
-        self._template_keys: t.Set[str] = set()
-        self._used_template_keys: t.Set[str] = set()  # tracing the used templates
+        self._template_keys: set[str] = set()
+        self._used_template_keys: set[str] = set()  # tracing the used templates
         # job is a dict that will be executed
-        self._job_keys: t.Set[str] = set()
+        self._job_keys: set[str] = set()
 
         self.expand_extends()
 
     @property
-    def default(self) -> t.Dict[str, t.Any]:
+    def default(self) -> dict[str, t.Any]:
         return self._defaults
 
     @property
-    def config(self) -> t.Dict[str, t.Any]:
+    def config(self) -> dict[str, t.Any]:
         return self._config
 
     @cached_property
-    def global_keys(self) -> t.List[str]:
+    def global_keys(self) -> list[str]:
         return ['default', 'include', 'workflow', 'variables', 'stages']
 
     @cached_property
-    def anchors(self) -> t.Dict[str, t.Any]:
+    def anchors(self) -> dict[str, t.Any]:
         return {k: v for k, v in self.config.items() if k in self._anchor_keys}
 
     @cached_property
-    def jobs(self) -> t.Dict[str, t.Any]:
+    def jobs(self) -> dict[str, t.Any]:
         return {k: v for k, v in self.config.items() if k in self._job_keys}
 
     @cached_property
-    def templates(self) -> t.Dict[str, t.Any]:
+    def templates(self) -> dict[str, t.Any]:
         return {k: v for k, v in self.config.items() if k in self._template_keys}
 
     @cached_property
-    def used_templates(self) -> t.Set[str]:
+    def used_templates(self) -> set[str]:
         return self._used_template_keys
 
     def expand_extends(self) -> None:
@@ -180,7 +188,7 @@ class GitlabYmlConfig:
             if k in self.global_keys:
                 continue
 
-            if isinstance(v, (str, list)):
+            if isinstance(v, str | list):
                 self._anchor_keys.add(k)
             elif k.startswith('.if-'):
                 self._anchor_keys.add(k)
@@ -201,7 +209,7 @@ class GitlabYmlConfig:
         for k in self._job_keys:
             self._expand_extends(k)
 
-    def _merge_dict(self, d1: t.Dict[str, t.Any], d2: t.Dict[str, t.Any]) -> t.Any:
+    def _merge_dict(self, d1: dict[str, t.Any], d2: dict[str, t.Any]) -> t.Any:
         for k, v in d2.items():
             if k in d1:
                 if isinstance(v, dict) and isinstance(d1[k], dict):
@@ -213,7 +221,7 @@ class GitlabYmlConfig:
 
         return d1
 
-    def _expand_extends(self, name: str) -> t.Dict[str, t.Any]:
+    def _expand_extends(self, name: str) -> dict[str, t.Any]:
         extends = to_list(self.config[name].pop('extends', None))
         if not extends:
             return self.config[name]  # type: ignore

@@ -67,6 +67,26 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
     return ret;
 }
 
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
+static esp_err_t ws_pre_handshake_cb(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "=== ws_pre_handshake_cb called ===");
+
+    // Get the URI with query string
+    const char *uri = req->uri;
+    ESP_LOGI(TAG, "Requested URI: %s", uri ? uri : "NULL");
+
+    // Check if the query string contains token=valid
+    if (uri && strstr(uri, "token=valid") != NULL) {
+        ESP_LOGI(TAG, "Valid token found, accepting handshake");
+        return ESP_OK;
+    } else {
+        ESP_LOGI(TAG, "No valid token found, rejecting handshake");
+        return ESP_FAIL;
+    }
+}
+#endif
+
 /*
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
@@ -107,6 +127,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
     }
     ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
+        ws_pkt.payload != NULL &&
         strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
         free(buf);
         return trigger_async_send(req->handle, req);
@@ -120,12 +141,115 @@ static esp_err_t echo_handler(httpd_req_t *req)
     return ret;
 }
 
+/*
+ * This handler demonstrates partial frame reading using httpd_ws_recv_frame_part()
+ * It reads frames in small chunks and sends them immediately in fragmented mode.
+ * This approach avoids allocating a large buffer equal to the frame length.
+ */
+static esp_err_t echo_partial_handler(httpd_req_t *req)
+{
+    if (req->method == HTTP_GET) {
+        ESP_LOGI(TAG, "Handshake done, the new connection was opened (partial)");
+        return ESP_OK;
+    }
+    httpd_ws_frame_t ws_pkt;
+    uint8_t *chunk_buf = NULL;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+
+    /* Set max_len = 0 to get the frame len */
+    esp_err_t ret = httpd_ws_recv_frame_part(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "httpd_ws_recv_frame_part failed to get frame len with %d", ret);
+        return ret;
+    }
+    ESP_LOGI(TAG, "Frame len is %d", ws_pkt.len);
+
+    if (ws_pkt.len) {
+        /* Allocate only a small chunk buffer instead of full frame length */
+        /* Use a small chunk size (64 bytes) to demonstrate memory efficiency */
+        #define CHUNK_SIZE 64
+        chunk_buf = calloc(1, CHUNK_SIZE);
+        if (chunk_buf == NULL) {
+            ESP_LOGE(TAG, "Failed to calloc memory for chunk buffer");
+            return ESP_ERR_NO_MEM;
+        }
+        ws_pkt.payload = chunk_buf;
+        ws_pkt.fragmented = true;
+        bool is_first_chunk = true;
+
+        /* Read and send frame in chunks using partial read API */
+        while (ws_pkt.left_len > 0) {
+            size_t chunk_size = (ws_pkt.left_len < CHUNK_SIZE) ? ws_pkt.left_len : CHUNK_SIZE;
+            ESP_LOGI(TAG, "Reading chunk: left_len=%d, chunk_size=%d", ws_pkt.left_len, chunk_size);
+
+            /* Read chunk into small buffer */
+            /* Note: ws_pkt.len remains the total frame length, chunk_size is what we read now */
+            ret = httpd_ws_recv_frame_part(req, &ws_pkt, chunk_size);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "httpd_ws_recv_frame_part failed with %d", ret);
+                free(chunk_buf);
+                return ret;
+            }
+
+            /* Prepare frame for sending - use chunk_size for the send length */
+            httpd_ws_frame_t send_pkt;
+            memset(&send_pkt, 0, sizeof(httpd_ws_frame_t));
+            send_pkt.payload = chunk_buf;
+            send_pkt.len = chunk_size;
+            send_pkt.fragmented = true;
+
+            if (is_first_chunk) {
+                /* First chunk: use original frame type (TEXT or BINARY) */
+                send_pkt.type = HTTPD_WS_TYPE_TEXT;
+                send_pkt.final = (ws_pkt.left_len == 0);  /* Final if this is the only chunk */
+                is_first_chunk = false;
+            } else {
+                /* Subsequent chunks: use CONTINUE frame type */
+                send_pkt.type = HTTPD_WS_TYPE_CONTINUE;
+                send_pkt.final = (ws_pkt.left_len == 0);  /* Final if this is the last chunk */
+            }
+
+            ret = httpd_ws_send_frame(req, &send_pkt);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+                free(chunk_buf);
+                return ret;
+            }
+            ESP_LOGI(TAG, "Sent fragmented chunk: len=%d, final=%d", chunk_size, send_pkt.final);
+        }
+    }
+    ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
+
+    free(chunk_buf);
+    return ESP_OK;
+}
+
 static const httpd_uri_t ws = {
         .uri        = "/ws",
         .method     = HTTP_GET,
         .handler    = echo_handler,
         .user_ctx   = NULL,
         .is_websocket = true
+};
+
+static const httpd_uri_t ws_partial = {
+    .uri        = "/ws_partial",
+    .method     = HTTP_GET,
+    .handler    = echo_partial_handler,
+    .user_ctx   = NULL,
+    .is_websocket = true
+};
+
+static const httpd_uri_t ws_auth = {
+        .uri        = "/auth",
+        .method     = HTTP_GET,
+        .handler    = echo_handler,
+        .user_ctx   = NULL,
+        .is_websocket = true,
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
+        .ws_pre_handshake_cb = ws_pre_handshake_cb
+#endif
 };
 
 
@@ -140,6 +264,8 @@ static httpd_handle_t start_webserver(void)
         // Registering the ws handler
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);
+        httpd_register_uri_handler(server, &ws_partial);
+        httpd_register_uri_handler(server, &ws_auth);
         return server;
     }
 

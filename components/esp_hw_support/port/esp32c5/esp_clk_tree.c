@@ -16,7 +16,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_rom_sys.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
 uint32_t *freq_value)
@@ -111,10 +111,10 @@ bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
     return false;
 }
 
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
     (void)clk_circuit; (void)enable;
-    return ESP_OK; // TODO: PM-354
+    return false; // TODO: PM-653
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)

@@ -91,13 +91,14 @@ void app_main(void) {
 }
 ```
 
-Then, call `esp_bluedroid_init` and `esp_bluedroid_enable` function to initialize Bluedroid host stack. 
+Then, call `esp_bluedroid_init_with_cfg` and `esp_bluedroid_enable` function to initialize Bluedroid host stack.
 
 ``` C
 void app_main(void) {
     ...
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(DEMO_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -118,7 +119,7 @@ After that, call `esp_ble_gap_register_callback` to register `esp_gap_cb` functi
 ``` C
 void app_main(void) {
     ...
-    
+
     ret = esp_ble_gap_register_callback(esp_gap_cb);
     if (ret) {
         ESP_LOGE(DEMO_TAG, "gap register error, error code = %x", ret);
@@ -174,7 +175,7 @@ static uint8_t scan_rsp_raw_data[] = {
 ``` C
 void app_main(void) {
     ...
-    
+
     adv_config_done |= ADV_CONFIG_FLAG;
     adv_config_done |= SCAN_RSP_CONFIG_FLAG;
     ret = esp_ble_gap_config_adv_data_raw(adv_raw_data, sizeof(adv_raw_data));

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,7 @@
 #include "soc/assist_debug_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
 #include "soc/cache_reg.h"
-#include "soc/io_mux_reg.h"
 #include "soc/pcr_reg.h"
 #include "rom/ets_sys.h"
 #include "bootloader_common.h"
@@ -44,7 +42,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/regi2c_ctrl_ll.h"
 
-static const char *TAG = "boot.esp32h21";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32h21");
 
 static void wdt_reset_cpu0_info_enable(void)
 {
@@ -136,10 +134,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow

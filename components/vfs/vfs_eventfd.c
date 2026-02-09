@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -351,6 +351,22 @@ static int event_close(int fd)
     return ret;
 }
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_vfs_eventfd_select = {
+    .start_select = &event_start_select,
+    .end_select   = &event_end_select,
+};
+#endif
+
+static const esp_vfs_fs_ops_t s_vfs_eventfd = {
+    .write = &event_write,
+    .read = &event_read,
+    .close = &event_close,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    .select = &s_vfs_eventfd_select,
+#endif
+};
+
 esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
 {
     if (config == NULL || config->max_fds >= MAX_FDS) {
@@ -367,17 +383,7 @@ esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
         s_events[i].fd = FD_INVALID;
     }
 
-    esp_vfs_t vfs = {
-        .flags        = ESP_VFS_FLAG_DEFAULT,
-        .write        = &event_write,
-        .close        = &event_close,
-        .read         = &event_read,
-#ifdef CONFIG_VFS_SUPPORT_SELECT
-        .start_select = &event_start_select,
-        .end_select   = &event_end_select,
-#endif
-    };
-    return esp_vfs_register_with_id(&vfs, NULL, &s_eventfd_vfs_id);
+    return esp_vfs_register_fs_with_id(&s_vfs_eventfd, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_STATIC, NULL, &s_eventfd_vfs_id);
 }
 
 esp_err_t esp_vfs_eventfd_unregister(void)

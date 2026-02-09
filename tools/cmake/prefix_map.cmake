@@ -45,13 +45,10 @@ function(__generate_prefix_map compile_options_var)
         get_filename_component(compiler_sysroot "${compiler_sysroot}/.." REALPATH)
         list(APPEND compile_options "-fdebug-prefix-map=${compiler_sysroot}=/TOOLCHAIN")
         string(APPEND gdbinit_file_lines "set substitute-path /TOOLCHAIN ${compiler_sysroot}\n")
-
-        file(WRITE "${BUILD_DIR}/prefix_map_gdbinit" "${gdbinit_file_lines}")  # TODO IDF-11667
-        idf_build_set_property(DEBUG_PREFIX_MAP_GDBINIT "${gdbinit_path}")
     else()
         set(gdbinit_file_lines "# There is no prefix map defined for the project.\n")
     endif()
-    # Write prefix_map_gdbinit file even it is empty.
+    # Write prefix_map file even it is empty.
     file(MAKE_DIRECTORY ${gdbinit_dir})
     file(WRITE "${gdbinit_path}" "${gdbinit_file_lines}")
     idf_build_set_property(GDBINIT_FILES_PREFIX_MAP "${gdbinit_path}")

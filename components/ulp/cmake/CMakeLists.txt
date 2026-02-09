@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include(${IDF_PATH}/tools/cmake/idf.cmake)
 project(${ULP_APP_NAME})

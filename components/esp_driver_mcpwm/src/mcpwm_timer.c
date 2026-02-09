@@ -19,7 +19,7 @@ static esp_err_t mcpwm_timer_register_to_group(mcpwm_timer_t *timer, int group_i
 
     int timer_id = -1;
     portENTER_CRITICAL(&group->spinlock);
-    for (int i = 0; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         if (!group->timers[i]) {
             timer_id = i;
             group->timers[i] = timer;
@@ -68,7 +68,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     esp_err_t ret = ESP_OK;
     mcpwm_timer_t *timer = NULL;
     ESP_GOTO_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
+    ESP_GOTO_ON_FALSE(config->group_id < MCPWM_LL_GET(GROUP_NUM) && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
     if (config->intr_priority) {
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
@@ -79,7 +79,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     if (config->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) {
         peak_ticks /= 2; // in symmetric mode, peak_ticks = period_ticks / 2
     }
-    ESP_GOTO_ON_FALSE(peak_ticks > 0 && peak_ticks < MCPWM_LL_MAX_COUNT_VALUE, ESP_ERR_INVALID_ARG, err, TAG, "invalid period ticks");
+    ESP_GOTO_ON_FALSE(peak_ticks > 0 && peak_ticks < MCPWM_LL_GET(MAX_COUNT_VALUE), ESP_ERR_INVALID_ARG, err, TAG, "invalid period ticks");
 
 #if !SOC_MCPWM_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
@@ -105,7 +105,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     mcpwm_hal_timer_reset(hal, timer_id);
     // set timer resolution
     uint32_t prescale = 0;
-    ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, config->resolution_hz, MCPWM_LL_MAX_TIMER_PRESCALE, &prescale), err, TAG, "set prescale failed");
+    ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, config->resolution_hz, MCPWM_LL_GET(MAX_TIMER_PRESCALE), &prescale), err, TAG, "set prescale failed");
     mcpwm_ll_timer_set_clock_prescale(hal->dev, timer_id, prescale);
     timer->resolution_hz = group->resolution_hz / prescale;
     if (timer->resolution_hz != config->resolution_hz) {
@@ -176,7 +176,7 @@ esp_err_t mcpwm_timer_set_period(mcpwm_timer_handle_t timer, uint32_t period_tic
     if (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) {
         peak_ticks /= 2; // in symmetric mode, peak_ticks = period_ticks / 2
     }
-    ESP_RETURN_ON_FALSE_ISR(peak_ticks > 0 && peak_ticks < MCPWM_LL_MAX_COUNT_VALUE, ESP_ERR_INVALID_ARG, TAG, "invalid period ticks");
+    ESP_RETURN_ON_FALSE_ISR(peak_ticks > 0 && peak_ticks < MCPWM_LL_GET(MAX_COUNT_VALUE), ESP_ERR_INVALID_ARG, TAG, "invalid period ticks");
     mcpwm_ll_timer_set_peak(hal->dev, timer_id, peak_ticks, timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN);
     timer->peak_ticks = peak_ticks;
     return ESP_OK;
@@ -210,7 +210,7 @@ esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const
         ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
         int isr_flags = MCPWM_INTR_ALLOC_FLAG;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_mcpwm_signals[group_id].irq_id, isr_flags,
                                                       (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_TIMER_MASK(timer_id),
                                                       mcpwm_timer_default_isr, timer, &timer->intr), TAG, "install interrupt service for timer failed");
     }
@@ -312,7 +312,7 @@ esp_err_t mcpwm_timer_set_phase_on_sync(mcpwm_timer_handle_t timer, const mcpwm_
 
     // enable sync feature and set sync phase
     if (sync_source) {
-        ESP_RETURN_ON_FALSE(config->count_value < MCPWM_LL_MAX_COUNT_VALUE, ESP_ERR_INVALID_ARG, TAG, "invalid sync count value");
+        ESP_RETURN_ON_FALSE(config->count_value < MCPWM_LL_GET(MAX_COUNT_VALUE), ESP_ERR_INVALID_ARG, TAG, "invalid sync count value");
         switch (sync_source->type) {
         case MCPWM_SYNC_TYPE_TIMER: {
             ESP_RETURN_ON_FALSE(group == sync_source->group, ESP_ERR_INVALID_ARG, TAG, "timer and sync source are not in the same group");

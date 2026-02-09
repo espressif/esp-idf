@@ -25,4 +25,12 @@ menu "ESP HTTPS OTA"
             This config option helps in setting the time in millisecond to wait for event to be posted to the
             system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
 
+    config ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        bool "Enable partial HTTP download for OTA"
+        default n
+        select ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
+        help
+            This enables use of range header in esp_https_ota component.
+            The firmware image will be downloaded over multiple HTTP requests.
+
 endmenu

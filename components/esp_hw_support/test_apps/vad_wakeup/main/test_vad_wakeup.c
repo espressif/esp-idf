@@ -28,7 +28,7 @@
 
 extern const uint8_t test_vad_pcm_start[]            asm("_binary_test_vad_8k_pcm_start");
 extern const uint8_t test_vad_pcm_end[]              asm("_binary_test_vad_8k_pcm_end");
-static const char *TAG = "TEST_VAD";
+ESP_LOG_ATTR_TAG(TAG, "TEST_VAD");
 
 static void s_hp_i2s_config(void)
 {

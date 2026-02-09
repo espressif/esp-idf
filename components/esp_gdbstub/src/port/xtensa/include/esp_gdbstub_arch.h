@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,19 +9,19 @@
 #include "xtensa_context.h"
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#define GDBSTUB_EXTRA_TIE_SIZE 0
-#elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
-#define GDBSTUB_EXTRA_TIE_SIZE 1
-#else
-#error "Unknown Xtensa chip"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef XtExcFrame esp_gdbstub_frame_t;
+
+#if XCHAL_HAVE_FP
+typedef struct {
+    uint32_t f[16];
+    uint32_t fcr;
+    uint32_t fsr;
+} xtensa_fpu_regs_t;
+#endif
 
 /* GDB regfile structure, configuration dependent */
 typedef struct {
@@ -73,14 +73,12 @@ typedef struct {
     uint32_t f64s;
 #endif
 
-#if XCHAL_HAVE_FP
-    uint32_t f[16];
-    uint32_t fcr;
-    uint32_t fsr;
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    uint32_t gpio_out;
 #endif
 
-#if GDBSTUB_EXTRA_TIE_SIZE > 0
-    uint32_t tie[GDBSTUB_EXTRA_TIE_SIZE];
+#if XCHAL_HAVE_FP
+    xtensa_fpu_regs_t fpu;
 #endif
 
 } esp_gdbstub_gdb_regfile_t;

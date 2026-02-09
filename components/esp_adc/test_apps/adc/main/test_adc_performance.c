@@ -11,14 +11,15 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_cpu.h"
-#include "soc/adc_periph.h"
+#include "esp_heap_caps.h"
+#include "hal/adc_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_continuous.h"
 #include "esp_adc/adc_filter.h"
 #include "test_common_adc.h"
-#include "idf_performance.h"
+#include "adc_performance.h"
 
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
 
@@ -182,7 +183,6 @@ static float test_adc_continuous_std(adc_atten_t atten, bool filter_en, int filt
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = ADC_TEST_FREQ_HZ,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     adc_pattern[0].atten = atten;

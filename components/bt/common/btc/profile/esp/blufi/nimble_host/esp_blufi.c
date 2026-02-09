@@ -468,6 +468,15 @@ void esp_blufi_adv_start(void)
     }
 }
 
+void esp_blufi_adv_start_with_name(const char *name)
+{
+    if (name != NULL) {
+        ble_svc_gap_device_name_set(name);
+    }
+
+    esp_blufi_adv_start();
+}
+
 uint8_t esp_blufi_init(void)
 {
     blufi_env.enabled = true;

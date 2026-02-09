@@ -12,7 +12,7 @@ The `soc` component provides register-level descriptions for targets supported b
 
 ## The SoC Capabilities
 
-There are two documents describing SoC capabilities, `soc_caps.h` and `soc_caps_full.h`. The former is a public header file, and the information in it is coarse-grained. The latter is a header file for internal developers that contains fine-grained module information. To used the soc capability macros, you should use the macro functions offered by `soc/soc_caps_eval.h`.
+`soc_caps.h` file describes the SoC capabilities. To used the soc capability macros, you should use the macro functions offered by `soc/soc_caps_eval.h`.
 
 | Macro function | Description | Example |
 |----------------|-------------|---------|

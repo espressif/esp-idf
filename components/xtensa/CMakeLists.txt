@@ -13,7 +13,7 @@
 # The porting layer sources files are OS agnostic, thus are common across multiple Xtensa RTOS ports (e.g., FreeRTOS,
 # ThreadX). The Xtensa RTOS Porting Layer...
 #   - interfaces with an RTOS port via the "xtensa_rtos.h" header provided by the RTOS port
-#   - expected `#include <...h>` as the incldue path to the porting layer's headers
+#   - expected `#include <...h>` as the include path to the porting layer's headers
 
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
@@ -63,4 +63,6 @@ idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include_dirs}
                     LDFRAGMENTS linker.lf)
 
-target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a")
+add_prebuilt_library(xtensa_xt_hal "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a"
+                                REQUIRES ${COMPONENT_NAME})
+target_link_libraries(${COMPONENT_LIB} PUBLIC xtensa_xt_hal)

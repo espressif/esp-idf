@@ -19,7 +19,7 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _rtc_text_start)
 
-    mapping[rtc_text]
+    SECTION_MAPPINGS(rtc_text)
 
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
 
@@ -49,7 +49,7 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _rtc_force_fast_start)
 
-    mapping[rtc_force_fast]
+    SECTION_MAPPINGS(rtc_force_fast)
 
     *(.rtc.force_fast .rtc.force_fast.*)
 
@@ -68,7 +68,7 @@ SECTIONS
   {
     _rtc_data_start = ABSOLUTE(.);
 
-    mapping[rtc_data]
+    SECTION_MAPPINGS(rtc_data)
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
 
@@ -83,7 +83,7 @@ SECTIONS
     *rtc_wake_stub*.*(.bss .bss.*)
     *rtc_wake_stub*.*(COMMON)
 
-    mapping[rtc_bss]
+    SECTION_MAPPINGS(rtc_bss)
 
     _rtc_bss_end = ABSOLUTE(.);
   } > rtc_data_location
@@ -99,6 +99,8 @@ SECTIONS
   .rtc_noinit (NOLOAD):
   {
     ALIGNED_SYMBOL(4, _rtc_noinit_start)
+
+    SECTION_MAPPINGS(rtc_noinit)
 
     *(.rtc_noinit .rtc_noinit.*)
 
@@ -222,8 +224,7 @@ SECTIONS
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
 
-    mapping[iram0_text]
-
+    SECTION_MAPPINGS_WITH_PADDING(iram0_text)
   } > iram0_0_seg
 
   .dram0.data :
@@ -237,7 +238,7 @@ SECTIONS
     *(.gnu.linkonce.s2.*)
     *(.jcr)
 
-    mapping[dram0_data]
+    SECTION_MAPPINGS_WITH_PADDING(dram0_data)
 
     _data_end = ABSOLUTE(.);
   } > dram0_0_seg
@@ -250,6 +251,7 @@ SECTIONS
   {
     _ext_ram_noinit_start = ABSOLUTE(.);
 
+    SECTION_MAPPINGS(extram_noinit)
     *(.ext_ram_noinit*)
 
     ALIGNED_SYMBOL(4, _ext_ram_noinit_end)
@@ -275,7 +277,7 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _ext_ram_bss_start)
 
-    mapping[extern_ram]
+    SECTION_MAPPINGS(extern_ram)
 
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > extern_ram_seg
@@ -285,11 +287,7 @@ SECTIONS
   {
     ALIGNED_SYMBOL(8, _bss_start)
 
-    /**
-     * ldgen places all bss-related data to mapping[dram0_bss]
-     * (See components/esp_system/app.lf).
-     */
-    mapping[dram0_bss]
+    SECTION_MAPPINGS(dram0_bss)
 
     ALIGNED_SYMBOL(8, _bss_end)
   } > dram0_0_seg
@@ -326,7 +324,7 @@ SECTIONS
   {
     _flash_rodata_start = ABSOLUTE(.);
 
-    mapping[flash_rodata]
+    SECTION_MAPPINGS_WITH_PADDING(flash_rodata)
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
@@ -344,24 +342,20 @@ SECTIONS
     __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
     *(.xt_except_desc_end)
 
-#if EH_FRAME_LINKING_ENABLED
-    ALIGNED_SYMBOL(4, __eh_frame)
-    KEEP(*(.eh_frame))
-    /**
-     * As we are not linking with crtend.o, which includes the CIE terminator
-     * (see __FRAME_END__ in libgcc sources), it is manually provided here.
-     */
-    LONG(0);
-#endif // EH_FRAME_LINKING_ENABLED
-
     /**
      * C++ constructor tables.
      *
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
      */
+    ALIGNED_SYMBOL(4, __preinit_array_start)
+    ALIGNED_SYMBOL(4, __bothinit_array_start)
+    KEEP (*(.preinit_array))
+    __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors SORT(.ctors.*)))
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors.*)))
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors))
     __init_array_end = ABSOLUTE(.);
+    __bothinit_array_end = ABSOLUTE(.);
 
     /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
     ALIGNED_SYMBOL(4, soc_reserved_memory_region_start)
@@ -381,17 +375,60 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
-
-    /* TLS data. */
-    ALIGNED_SYMBOL(4, _thread_local_start)
-    *(.tdata)
-    *(.tdata.*)
-    *(.tbss)
-    *(.tbss.*)
-    _thread_local_end = ABSOLUTE(.);
+    . = ALIGN(ALIGNOF(SECTION_AFTER_FLASH_RODATA));
   } > default_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.rodata, SECTION_AFTER_FLASH_RODATA)
 
-  _flash_rodata_align = ALIGNOF(.flash.rodata);
+#if EH_FRAME_LINKING_ENABLED
+  .eh_frame :
+  {
+    ALIGNED_SYMBOL(4, __eh_frame)
+
+    KEEP (*(.eh_frame))
+    /**
+     * As we are not linking with crtend.o, which includes the CIE terminator
+     * (see __FRAME_END__ in libgcc sources), it is manually provided here.
+     */
+    LONG(0);
+
+    __eh_frame_end = ABSOLUTE(.);
+
+    . = ALIGN(ALIGNOF(.flash.tdata));
+  } > default_rodata_seg
+#endif // EH_FRAME_LINKING_ENABLED
+
+  .flash.tdata :
+  {
+    /* Keep tdata and tbss sections contiguous (no gaps between them).
+     * The TLS runtime code calculates offsets assuming these sections are
+     * adjacent. Gaps would cause incorrect address calculations, leading
+     * to accessing wrong memory.
+     */
+    /* tdata sections */
+    _thread_local_data_start = ABSOLUTE(.);
+#if CONFIG_LIBC_PICOLIBC
+    _picolibc_reent_stub_start = ABSOLUTE(.);
+    KEEP(*(.tdata.errno))
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    /* Reproduce the public fields from struct _reent. */
+    KEEP(*(.tdata.tls_stdin))
+    KEEP(*(.tdata.tls_stdout))
+    KEEP(*(.tdata.tls_stderr))
+#endif // CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    _picolibc_reent_stub_end = ABSOLUTE(.);
+#endif // CONFIG_LIBC_PICOLIBC
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
+    _thread_local_data_end = ABSOLUTE(.);
+    /* tbss sections */
+    _thread_local_bss_start = ABSOLUTE(.);
+    *(.tbss .tbss.* .gnu.linkonce.tb.*)
+    *(.tcommon .tcommon.*)
+    _thread_local_bss_end = ABSOLUTE(.);
+  } > default_rodata_seg
+  _tls_section_alignment = ALIGNOF(.flash.tdata);
+  ASSERT_PICOLIBC_REENT_STUB()
+  ASSERT(_thread_local_data_end == _thread_local_bss_start,
+         "tdata and tbss must be contiguous.")
 
   /**
    * This section contains all the rodata that is not used
@@ -406,7 +443,7 @@ SECTIONS
      */
     _rodata_reserved_end = ABSOLUTE(.);
 
-    mapping[rodata_noload]
+    SECTION_MAPPINGS(rodata_noload)
   } > default_rodata_seg
 
   .flash.text :
@@ -419,7 +456,7 @@ SECTIONS
     _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
 
-    mapping[flash_text]
+    SECTION_MAPPINGS_WITH_PADDING(flash_text)
 
     *(.stub)
     *(.gnu.warning)
@@ -460,7 +497,7 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _iram_data_start)
 
-    mapping[iram0_data]
+    SECTION_MAPPINGS(iram0_data)
 
     _iram_data_end = ABSOLUTE(.);
   } > iram0_0_seg
@@ -469,7 +506,7 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _iram_bss_start)
 
-    mapping[iram0_bss]
+    SECTION_MAPPINGS(iram0_bss)
 
     _iram_bss_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, _iram_end)
@@ -482,7 +519,8 @@ SECTIONS
     ALIGNED_SYMBOL(8, _heap_low_start)
   } > dram0_0_seg
 
-#include "elf_misc.ld.in"
+#include "ld.debug.sections"
+#include "ld.discard.sections"
 }
 
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),

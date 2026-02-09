@@ -468,6 +468,10 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
                  * from the 2nd SEP.                                                                */
                 if ((bta_av_find_lcb(bd_addr, BTA_AV_LCB_FIND) != NULL) && (bta_av_is_scb_init(p_scb))) {
                     bta_av_set_scb_sst_incoming (p_scb);
+                    /* Mark this forced switch so we can notify upper layers (BTC) from BTA thread
+                     * when handling STR_CONFIG_IND_EVT. */
+                    p_scb->force_incoming = TRUE;
+                    APPL_TRACE_DEBUG("change state to incoming");
 
                     /* When ACP_CONNECT_EVT was received, we put first available scb to incoming state.
                      * Later when we receive AVDT_CONFIG_IND_EVT, we use a new p_scb and set its state to
@@ -1123,6 +1127,16 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     tBTA_AV_STR_MSG  *p_msg = (tBTA_AV_STR_MSG *)p_data;
     UNUSED(p_data);
 
+    /* If stream SSM was force-switched to INCOMING due to CONFIG_IND while in INIT,
+     * notify upper layers early so BTC can move to OPENING and handle upcoming config/open events. */
+    if (p_scb->force_incoming) {
+        tBTA_AV evt;
+        memset(&evt, 0, sizeof(evt));
+        bdcpy(evt.incoming.bd_addr, p_data->str_msg.bd_addr);
+        (*bta_av_cb.p_cback)(BTA_AV_INCOMING_CFG_EVT, &evt);
+        p_scb->force_incoming = FALSE;
+    }
+
     local_sep = bta_av_get_scb_sep_type(p_scb, p_msg->handle);
     p_scb->avdt_label = p_data->str_msg.msg.hdr.label;
     memcpy(p_scb->cfg.codec_info, p_evt_cfg->codec_info, AVDT_CODEC_SIZE);
@@ -1277,18 +1291,18 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     bta_av_adjust_seps_idx(p_scb, avdt_handle);
     APPL_TRACE_DEBUG("bta_av_setconfig_rsp: sep_idx: %d cur_psc_mask:0x%x", p_scb->sep_idx, p_scb->cur_psc_mask);
 
+    if ((p_data->ci_setconfig.err_code == AVDT_SUCCESS) &&
+        (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL)) {
+            p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
+                    (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
+    }
+
     if (AVDT_TSEP_SNK == local_sep) {
-        if ((p_data->ci_setconfig.err_code == AVDT_SUCCESS) &&
-            (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL)) {
-                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
-                        (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
-        }
         if (p_scb->cur_psc_mask & AVDT_PSC_DELAY_RPT) {
             psc_cfg.psc_mask |= BTA_AV_PSC_DEALY_RPT;
         }
         (*bta_av_cb.p_cback)(BTA_AV_SNK_PSC_CFG_EVT, (tBTA_AV *)&psc_cfg);
     }
-
 
     AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, p_data->ci_setconfig.err_code,
                    p_data->ci_setconfig.category);
@@ -1908,23 +1922,17 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         cfg.psc_mask &= p_scb->p_cap->psc_mask;
         p_scb->cur_psc_mask = cfg.psc_mask;
 
+        if (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL) {
+            APPL_TRACE_DEBUG(" Configure Deoder for A2DP Connection ");
+            p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
+                    (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
+        }
+
         if (uuid_int == UUID_SERVCLASS_AUDIO_SINK) {
-            if (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL) {
-                APPL_TRACE_DEBUG(" Configure Deoder for Sink Connection ");
-                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
-                        (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
-            }
             if (p_scb->cur_psc_mask & AVDT_PSC_DELAY_RPT) {
                 psc_cfg.psc_mask |= BTA_AV_PSC_DEALY_RPT;
             }
             (*bta_av_cb.p_cback)(BTA_AV_SNK_PSC_CFG_EVT, (tBTA_AV *)&psc_cfg);
-        }
-        else {
-            /* UUID_SERVCLASS_AUDIO_SOURCE */
-            if (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL) {
-                p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
-                        (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
-            }
         }
 
         /* open the stream */
@@ -1954,13 +1962,17 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 void bta_av_setconfig_rej (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     tBTA_AV_REJECT reject;
-    UINT8   avdt_handle = p_data->ci_setconfig.avdt_handle;
+    UINT8 err_code = p_data->ci_setconfig.err_code;
 
-    bta_av_adjust_seps_idx(p_scb, avdt_handle);
+    if (err_code == AVDT_SUCCESS) {
+        err_code = AVDT_ERR_UNSUP_CFG;
+    }
+
+    bta_av_adjust_seps_idx(p_scb, p_scb->avdt_handle);
     APPL_TRACE_DEBUG("bta_av_setconfig_rej: sep_idx: %d", p_scb->sep_idx);
-    AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, p_data->ci_setconfig.err_code, 0);
+    AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, err_code, 0);
 
-    bdcpy(reject.bd_addr, p_data->str_msg.bd_addr);
+    bdcpy(reject.bd_addr, p_scb->peer_addr);
     reject.hndl = p_scb->hndl;
     (*bta_av_cb.p_cback)(BTA_AV_REJECT_EVT, (tBTA_AV *) &reject);
 }

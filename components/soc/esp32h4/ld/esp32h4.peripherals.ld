@@ -1,12 +1,12 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 PROVIDE ( TRACE0              = 0x60000000 );
 PROVIDE ( TRACE1              = 0x60001000 );
-PROVIDE ( ASSIST_DEBUG        = 0x60002000 );
+PROVIDE ( BUS_MONITOR         = 0x60002000 );
 PROVIDE ( INTPRI              = 0x60005000 );
 PROVIDE ( CACHE               = 0x60008000 );
 PROVIDE ( GPSPI2              = 0x60010000 );
@@ -38,12 +38,15 @@ PROVIDE ( SAMPLE_RATE_CONVERTER = 0x60028000 );
 PROVIDE ( ZERO_DET            = 0x60029000 );
 PROVIDE ( USB_OTG_FS_CORE0    = 0x60040000 );
 PROVIDE ( USB_OTG_FS_CORE1    = 0x6007F000 );
-PROVIDE ( USB_OTG_FS_PHY      = 0x60080000 );
+PROVIDE ( USB_DWC             = 0x60040000 );
+PROVIDE ( USB_WRAP            = 0x60080000 );
 PROVIDE ( TIMERG0             = 0x60090000 );
 PROVIDE ( TIMERG1             = 0x60091000 );
 PROVIDE ( IO_MUX              = 0x60092000 );
 PROVIDE ( GPIO                = 0x60093000 );
 PROVIDE ( GPIO_EXT            = 0x60093E00 );
+PROVIDE ( SDM                 = 0x60093E00 );
+PROVIDE ( GLITCH_FILTER       = 0x60093ED8 );
 PROVIDE ( GPIO_ETM            = 0x60093F18 );
 PROVIDE ( PCR                 = 0x60094000 );
 PROVIDE ( SPIMEM0             = 0x60098000 );
@@ -52,7 +55,8 @@ PROVIDE ( INTMTX0             = 0x6009A000 );
 PROVIDE ( INTMTX1             = 0x6009B000 );
 PROVIDE ( HP_SYSTEM           = 0x6009C000 );
 PROVIDE ( HP_APM              = 0x6009D000 );
-PROVIDE ( CPU_APM             = 0x6009E000 );
+PROVIDE ( HP_MEM_APM_REG      = 0x6009E000 );
+PROVIDE ( CPU_APM             = 0x6009E800 );
 PROVIDE ( TEE                 = 0x6009F000 );
 PROVIDE ( KEYMNG              = 0x600A5000 );
 PROVIDE ( AES                 = 0x600A6000 );
@@ -76,5 +80,6 @@ PROVIDE ( LP_TIMER            = 0x600B5000 );
 PROVIDE ( LP_WDT              = 0x600B5400 );
 PROVIDE ( TOUCH_SENS          = 0x600B5800 );
 PROVIDE ( TOUCH_AON           = 0x600B5C00 );
+PROVIDE ( IEEE802154          = 0x600C3000 );
 PROVIDE ( MODEM_SYSCON        = 0x600C9C00 );
 PROVIDE ( MODEM_LPCON         = 0x600CF000 );

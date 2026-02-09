@@ -116,7 +116,7 @@ The DWC_OTG IP is configurable. The notable host related configurations of the {
         * - Only 4 periodic and 4 non-periodic transactions per microframe
           - ``OTG_NPERIO_TX_QUEUE_DEPTH = 4``, ``OTG_PERIO_TX_QUEUE_DEPTH = 4``
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     .. list-table:: {IDF_TARGET_NAME}'s DWC_OTG Configuration
         :widths: 70 30

@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config EXAMPLE_PROBE_HOST
+        string "Probe Hostname/IP"
+        default "www.espressif.com"
+        help
+            Hostname or IPv4 address to probe for MTU.
+
+endmenu

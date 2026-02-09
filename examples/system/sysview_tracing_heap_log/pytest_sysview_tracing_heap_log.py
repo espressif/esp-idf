@@ -25,7 +25,7 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
     gdb_logfile = os.path.join(dut.logdir, 'gdb.txt')
     gdbinit_orig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gdbinit')
     gdbinit = os.path.join(dut.logdir, 'gdbinit')
-    with open(gdbinit_orig, 'r') as f_r, open(gdbinit, 'w') as f_w:
+    with open(gdbinit_orig) as f_r, open(gdbinit, 'w') as f_w:
         for line in f_r:
             if line.startswith('mon esp sysview start'):
                 f_w.write(f'mon esp sysview start {trace_files}\n')
@@ -36,13 +36,16 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
     with openocd_dut.run() as oocd:
         if dut.target == 'esp32p4':
             oocd.write('esp appimage_offset 0x20000')
-        with open(gdb_logfile, 'w') as gdb_log, pexpect.spawn(
-            f'idf.py -B {dut.app.binary_path} gdb --batch -x {gdbinit}',
-            timeout=60,
-            logfile=gdb_log,
-            encoding='utf-8',
-            codec_errors='ignore',
-        ) as p:
+        with (
+            open(gdb_logfile, 'w') as gdb_log,
+            pexpect.spawn(
+                f'idf.py -B {dut.app.binary_path} gdb --batch -x {gdbinit}',
+                timeout=60,
+                logfile=gdb_log,
+                encoding='utf-8',
+                codec_errors='ignore',
+            ) as p,
+        ):
             # Wait for sysview files to be generated
             p.expect_exact('Tracing is STOPPED')
 

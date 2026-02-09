@@ -10,7 +10,6 @@ if(CONFIG_LWIP_ENABLE)
     set(include_dirs
         include
         include/apps
-        include/apps/sntp
         lwip/src/include
         port/include
         port/freertos/include/
@@ -159,8 +158,6 @@ if(NOT ${target} STREQUAL "linux")
 
     if(CONFIG_LWIP_ICMP)
         list(APPEND srcs
-            "apps/ping/esp_ping.c"
-            "apps/ping/ping.c"
             "apps/ping/ping_sock.c")
     endif()
 

@@ -9,7 +9,8 @@
 #include "soc/sens_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/i2s_periph.h"
+#include "soc/i2s_reg.h"
+#include "soc/periph_defs.h"
 #include "esp_log.h"
 #include "soc/io_mux_reg.h"
 

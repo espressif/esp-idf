@@ -81,7 +81,6 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
     size_t alignment_size;
 
     gdma_channel_alloc_config_t rx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
 #if CONFIG_CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE
         .flags.isr_cache_safe = true,
 #endif
@@ -89,7 +88,7 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
 
     ESP_RETURN_ON_ERROR(esp_cache_get_alignment(DVP_GDMA_DESC_ALLOC_CAPS, &alignment_size), TAG, "failed to get cache alignment");
 
-    ESP_RETURN_ON_ERROR(DVP_GDMA_NEW_CHANNEL(&rx_alloc_config, &dma->dma_chan), TAG, "new channel failed");
+    ESP_RETURN_ON_ERROR(DVP_GDMA_NEW_CHANNEL(&rx_alloc_config, NULL, &dma->dma_chan), TAG, "new channel failed");
 
     ESP_GOTO_ON_ERROR(gdma_connect(dma->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_CAM, 0)), fail0, TAG, "connect failed");
 
@@ -101,7 +100,7 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
     ESP_GOTO_ON_ERROR(gdma_apply_strategy(dma->dma_chan, &strategy_config), fail1, TAG, "apply strategy failed");
     // set DMA transfer ability
     gdma_transfer_config_t transfer_config = {
-        .max_data_burst_size = burst_size,
+        .max_data_burst_size = burst_size ? burst_size : 32, // Enable DMA burst transfer for better performance
         .access_ext_mem = true,
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma->dma_chan, &transfer_config), fail1, TAG, "set trans ability failed");
@@ -170,6 +169,7 @@ esp_err_t IRAM_ATTR esp_cam_ctlr_dvp_dma_start(esp_cam_ctlr_dvp_dma_t *dma, uint
     if (esp_ptr_external_ram(dma->desc)) {
         esp_err_t ret = esp_cache_msync(dma->desc, dma->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
         assert(ret == ESP_OK);
+        (void)ret;
     }
 
     return gdma_start(dma->dma_chan, (intptr_t)dma->desc);

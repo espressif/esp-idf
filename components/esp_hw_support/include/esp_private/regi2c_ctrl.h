@@ -27,6 +27,7 @@ extern "C" {
 // For bootloader, the strategy is to keep the analog i2c master clock always enabled if ANA_I2C_MST_CLK_HAS_ROOT_GATING (in bootloader_hardware_init())
 #define ANALOG_CLOCK_ENABLE()
 #define ANALOG_CLOCK_DISABLE()
+#define ANALOG_CLOCK_IS_ENABLED()
 
 #else // !BOOTLOADER_BUILD
 
@@ -57,9 +58,11 @@ static inline __attribute__((always_inline)) void ANA_I2C_SRC_CLOCK_ENABLE(bool 
       ANA_I2C_SRC_CLOCK_ENABLE(false); \
    }
 
+#define ANALOG_CLOCK_IS_ENABLED() regi2c_ctrl_ll_master_is_clock_enabled()
 #else
 #define ANALOG_CLOCK_ENABLE()
 #define ANALOG_CLOCK_DISABLE()
+#define ANALOG_CLOCK_IS_ENABLED()
 #endif
 
 #endif // BOOTLOADER_BUILD

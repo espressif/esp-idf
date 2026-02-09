@@ -7,6 +7,7 @@
 #include "unity.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_spi.h"
+#include "esp_heap_caps.h"
 
 #define SDMMC_FREQ_CUSTOM_10M    10000
 
@@ -14,7 +15,7 @@ static void do_one_sdspi_probe(int slot, int freq_khz)
 {
     sdmmc_card_t card;
     sdmmc_test_spi_skip_if_board_incompatible(slot, freq_khz);
-    sdmmc_test_spi_begin(slot, freq_khz, &card);
+    sdmmc_test_spi_begin(slot, freq_khz, &card, NULL, NULL, NULL);
     sdmmc_card_print_info(stdout, &card);
     uint8_t* buffer = heap_caps_calloc(512, 1, MALLOC_CAP_DMA);
     TEST_ESP_OK(sdmmc_read_sectors(&card, buffer, 0, 1));

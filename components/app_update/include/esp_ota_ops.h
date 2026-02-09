@@ -42,30 +42,6 @@ extern "C"
  */
 typedef uint32_t esp_ota_handle_t;
 
-/**
- * @brief   Return esp_app_desc structure. This structure includes app version.
- *
- * @note This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_app_get_description`
- *
- * Return description for running app.
- * @return Pointer to esp_app_desc structure.
- */
-const esp_app_desc_t *esp_ota_get_app_description(void) __attribute__((deprecated("Please use esp_app_get_description instead")));
-
-/**
- * @brief   Fill the provided buffer with SHA256 of the ELF file, formatted as hexadecimal, null-terminated.
- * If the buffer size is not sufficient to fit the entire SHA256 in hex plus a null terminator,
- * the largest possible number of bytes will be written followed by a null.
- *
-* @note This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_app_get_elf_sha256`
- *
- * @param dst   Destination buffer
- * @param size  Size of the buffer
- * @return      Number of bytes written to dst (including null terminator)
- */
-int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated("Please use esp_app_get_elf_sha256 instead")));
 
 /**
  * @brief   Commence an OTA update writing to the specified partition.
@@ -233,6 +209,8 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle);
 /**
  * @brief Configure OTA data for a new boot partition
  *
+ * Equivalent to esp_image_verify() followed by esp_ota_set_boot_partition_skip_validate().
+ *
  * @note If this function returns ESP_OK, calling esp_restart() will boot the newly configured app partition.
  *
  * @param partition Pointer to info for partition containing app image to boot.
@@ -245,6 +223,21 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle);
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash erase or write failed.
  */
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t* partition);
+
+/**
+ * @brief Configure OTA data for a new boot partition without validating the image
+ *
+ * @note If this function returns ESP_OK, calling esp_restart() will boot the newly configured app partition.
+ *
+ * @param partition Pointer to info for partition containing app image to boot.
+ *
+ * @return
+ *    - ESP_OK: OTA data updated, next reboot will use specified partition.
+ *    - ESP_ERR_INVALID_ARG: partition argument was NULL or didn't point to a valid OTA partition of type "app".
+ *    - ESP_ERR_NOT_FOUND: OTA data partition not found.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash erase or write failed.
+ */
+esp_err_t esp_ota_set_boot_partition_skip_validate(const esp_partition_t* partition);
 
 /**
  * @brief Get partition info of currently configured boot app
@@ -386,7 +379,7 @@ esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot(void);
 /**
  * @brief Returns last partition with invalid state (ESP_OTA_IMG_INVALID or ESP_OTA_IMG_ABORTED).
  *
- * @return partition.
+ * @return Pointer to the last invalid partition, or NULL if no invalid partition is recorded.
  */
 const esp_partition_t* esp_ota_get_last_invalid_partition(void);
 

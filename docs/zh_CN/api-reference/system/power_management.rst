@@ -55,7 +55,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 电源管理锁
 ----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz"}
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz, 或 240 MHz", esp32c61="80 MHz 或 160 MHz"}
 
 应用程序可以通过获取或释放管理锁来控制电源管理算法。应用程序获取电源管理锁后，电源管理算法的操作将受到下面的限制。释放电源管理锁后，限制解除。
 
@@ -92,6 +92,43 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 为了跳过不必要的唤醒，可以将 ``skip_unhandled_events`` 选项设置为 ``true`` 来初始化 ``esp_timer``。带有此标志的定时器不会唤醒系统，有助于减少功耗。
 
+自动 Light-sleep 时间补偿机制
+---------------------------------------
+
+ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会在每次 Light-sleep 周期后测量实际的唤醒开销，并使用该测量值来预测下一次睡眠周期的唤醒开销。
+
+系统根据下一个计划事件计算睡眠持续时间，并减去预测的唤醒开销（来自上一周期）来设置唤醒定时器。唤醒后，由于睡眠期间 FreeRTOS systick 中断被暂停，系统需要调用 :cpp:func:`vTaskStepTick()` 来补偿睡眠期间经过的 tick 数，以保持 FreeRTOS tick 计数的准确性。同时，系统测量实际开销并记录，用于下次预测，形成自适应系统行为的反馈循环。
+
+但实际开销可能因缓存未命中、CPU 频率变化、Flash 延迟变化或硬件状态恢复时间而有所不同。当实际开销超过预测值时，实际睡眠时间可能超过预期，导致 :cpp:func:`vTaskStepTick()` 接收到的 tick 补偿值过大，触发断言失败。
+
+:ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION` 选项提供了一个安全机制，用于在唤醒开销超过预测时防止断言失败。启用后，系统会限制 tick 补偿值以防止溢出。在 menuconfig 中可通过 ``Component config`` > ``Power Management`` > ``Enable light sleep tick overflow protection`` 启用此选项。
+
+启用该选项时，系统对睡过超时情况的处理如下：
+- 如果睡过超时在容忍范围内（可通过 :ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE` 配置，默认：2 个 tick），系统会静默地将 ``slept_ticks`` 限制为 ``xExpectedIdleTime``，防止断言失败
+- 如果睡过超时超过容忍范围（可能存在 bug），系统不会限制 tick，会抛出错误日志，并触发断言失败
+- 在极少数边缘场景下可能会丢失 tick，导致 FreeRTOS tick 计数（``xTickCount``）落后于真实时间（``esp_timer``），使用 :cpp:func:`vTaskDelay()` 的任务可能比预期延迟稍长，FreeRTOS 软件定时器精度可能降低。
+
+禁用该选项时（默认），可以获得准确的 tick 补偿，对时间关键应用具有更好的精度。在边缘情况下, 如果唤醒开销估算不足导致 Light-sleep 睡过超时时，可能会触发断言失败导致系统崩溃。
+
+建议默认保持禁用状态以维持 tick 精度。仅在遇到与 :cpp:func:`vTaskStepTick()` 相关的断言失败，且可以接受 RTOS tick 时间相较于真实时间轻微不准时启用。
+
+调试和性能分析
+-----------------------
+
+电源管理子系统提供了几个函数来帮助调试和分析应用程序中的电源管理锁使用情况：
+
+- :cpp:func:`esp_pm_dump_locks` - 将所有当前创建的锁列表转储到指定流，显示其类型、名称和当前获取状态。
+- :cpp:func:`esp_pm_get_lock_stats_all` - 获取所有 PM 锁类型的统计信息，包括创建的锁数量和当前持有数。
+- :cpp:func:`esp_pm_lock_get_stats` - 获取特定锁实例的详细统计信息，包括获取计数（如果启用性能分析）和总占用时间。
+
+这些函数特别适用于：
+
+1. 识别获取但从未释放的锁导致的泄漏
+2. 了解哪些组件阻止了节能
+3. 通过分析锁使用模式来优化功耗
+4. 调试与应用程序中锁管理相关的问题
+
+要启用性能分析功能（单个锁的计时信息），请在 menuconfig 中启用 :ref:`CONFIG_PM_PROFILING` 选项。
 
 动态调频和外设驱动
 ------------------------------------------------
@@ -102,10 +139,13 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 目前以下外设驱动程序可感知动态调频，并在调频期间使用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
-- SPI master
-- I2C
-- I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
-- SDMMC
+.. list::
+
+  - SPI master
+  - I2C
+  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
+  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
+  - SDMMC
 
 启用以下驱动程序时，将占用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
@@ -121,16 +161,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     :SOC_PCNT_SUPPORTED: - **PCNT**：从调用 :cpp:func:`pcnt_unit_enable` 至 :cpp:func:`pcnt_unit_disable` 期间。
     :SOC_SDM_SUPPORTED: - **Sigma-delta**：从调用 :cpp:func:`sdm_channel_enable` 至 :cpp:func:`sdm_channel_disable` 期间。
     :SOC_MCPWM_SUPPORTED: - **MCPWM**: 从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
-
-以下外设驱动程序无法感知动态调频，应用程序需自己获取/释放管理锁：
-
-.. list::
-
-    :SOC_PCNT_SUPPORTED: - 旧版 PCNT 驱动
-    :SOC_SDM_SUPPORTED: - 旧版 Sigma-delta 驱动
-    - 旧版定时器驱动 (Timer Group)
-    :SOC_MCPWM_SUPPORTED: - 旧版 MCPWM 驱动
-
 
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
@@ -162,6 +192,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
+            :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
 
         一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
 

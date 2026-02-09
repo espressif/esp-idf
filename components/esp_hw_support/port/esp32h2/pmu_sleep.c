@@ -23,7 +23,7 @@
 #include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_sleep";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -198,6 +198,7 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 {
     pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), (dig->icg_func != 0));
     pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func);
+    pmu_ll_hp_set_pause_watchdog(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pause_wdt);
     if (!dslp) {
         pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     }

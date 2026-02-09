@@ -20,7 +20,7 @@ The ESP-TEE framework on {IDF_TARGET_NAME} utilizes the inherent features of the
 
 Together, these components enable the {IDF_TARGET_NAME} SoC to allocate the chip's hardware resources (internal memory, external memory, and peripherals) and software resources into two modes - Machine (M) mode and User (U) mode. The CPU can switch between these modes, with the TEE running in the higher privilege M-mode and the REE running in the lower privilege U-mode.
 
-    .. figure:: ../../../_static/esp_tee/{IDF_TARGET_PATH_NAME}/esp_tee_arch.png
+    .. figure:: ../../../_static/esp_tee/esp_tee_arch.png
         :align: center
         :scale: 90%
         :alt: ESP TEE Architecture for {IDF_TARGET_NAME}
@@ -87,7 +87,7 @@ A region at the top of the HP SRAM is reserved for the TEE, allocated for TEE co
 The REE memory is partitioned into IRAM (text: Read/Execute) and DRAM (data: Read/Write) sections, with the division controlled by the PMP.
 However, the TEE memory is divided into IRAM and DRAM sections, with division enforced by the PMA.
 
-    .. figure:: ../../../_static/esp_tee/{IDF_TARGET_PATH_NAME}/esp_tee_memory_layout.png
+    .. figure:: ../../../_static/esp_tee/esp_tee_memory_layout.png
         :align: center
         :scale: 80%
         :alt: ESP TEE Memory Map for {IDF_TARGET_NAME}
@@ -100,7 +100,7 @@ External Memory (Flash)
 
 Designated partitions in the external flash are reserved for the TEE, serving various purposes, including TEE code execution via XIP, secure storage, and OTA data. The PMS safeguards these partitions from unauthorized access, with the APM module protecting the MMU and SPI1 controller registers, and the PMP securing the cache.
 
-.. figure:: ../../../_static/esp_tee/{IDF_TARGET_PATH_NAME}/esp_tee_flash_layout.png
+.. figure:: ../../../_static/esp_tee/esp_tee_flash_layout.png
     :align: center
     :scale: 80%
     :alt: ESP TEE Flash Memory Map for {IDF_TARGET_NAME}
@@ -163,20 +163,24 @@ The following peripherals are protected using the APM module and accessible only
 .. list::
 
     - Access Permission Management (APM) peripheral
-    - AES, SHA accelerators
-    - ECC accelerator
-    - Hash-Based Message Authentication Code (HMAC) module
-    - Digital Signature module
-    - eFuse Controller
     - Interrupt Controller
+    - eFuse Controller
     - Brownout Detector
     - Super Watchdog Timer (SWDT)
+    :SOC_AES_SUPPORTED: - AES accelerator
+    :SOC_SHA_SUPPORTED: - SHA accelerator
+    :SOC_ECC_SUPPORTED: - ECC accelerator
+    :SOC_HMAC_SUPPORTED: - Hash-Based Message Authentication Code (HMAC) module
+    :SOC_DIG_SIGN_SUPPORTED: - Digital Signature module
 
 .. note::
 
-  -  The following peripherals will be secured in future releases -
+  The following peripherals will be secured in future releases:
 
-     - MPI accelerator (RSA)
+    .. list::
+
+      :SOC_MPI_SUPPORTED: - MPI accelerator (RSA)
+      :SOC_ECDSA_SUPPORTED: - ECDSA accelerator
 
 Firmware
 ^^^^^^^^
@@ -245,7 +249,7 @@ Once the interrupt is handled in the other execution environment, execution retu
     }
 
 
-.. figure:: ../../../_static/esp_tee/{IDF_TARGET_PATH_NAME}/esp_tee_intr_handling.png
+.. figure:: ../../../_static/esp_tee/esp_tee_intr_handling.png
     :align: center
     :alt: ESP-TEE: Interrupt Handling
     :figclass: align-center

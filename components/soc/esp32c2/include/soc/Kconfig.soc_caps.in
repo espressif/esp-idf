@@ -99,6 +99,10 @@ config SOC_BOD_SUPPORTED
     bool
     default y
 
+config SOC_RTC_TIMER_V1_SUPPORTED
+    bool
+    default y
+
 config SOC_CLK_TREE_SUPPORTED
     bool
     default y
@@ -132,6 +136,10 @@ config SOC_LP_PERIPH_SHARE_INTERRUPT
     default y
 
 config SOC_PM_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED
     bool
     default y
 
@@ -271,14 +279,6 @@ config SOC_AHB_GDMA_VERSION
     int
     default 1
 
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 1
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 1
-
 config SOC_GPIO_PORT
     int
     default 1
@@ -291,15 +291,11 @@ config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
     bool
     default y
 
-config SOC_GPIO_FILTER_CLK_SUPPORT_APB
-    bool
-    default y
-
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
 
-config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
     bool
     default y
 
@@ -311,11 +307,11 @@ config SOC_GPIO_OUT_RANGE_MAX
     int
     default 20
 
-config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
+config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
     int
     default 0
 
-config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
+config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT
     int
     default 6
 
@@ -331,22 +327,6 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
 
-config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
-    bool
-    default y
-
-config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-    bool
-    default y
-
 config SOC_I2C_NUM
     int
     default 1
@@ -354,18 +334,6 @@ config SOC_I2C_NUM
 config SOC_HP_I2C_NUM
     int
     default 1
-
-config SOC_I2C_FIFO_LEN
-    int
-    default 16
-
-config SOC_I2C_CMD_REG_NUM
-    int
-    default 8
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
 
 config SOC_I2C_SUPPORT_XTAL
     bool
@@ -467,69 +435,13 @@ config SOC_SPI_PERIPH_NUM
     int
     default 2
 
-config SOC_SPI_MAX_CS_NUM
-    int
-    default 6
-
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
 
-config SOC_SPI_SUPPORT_DDRCLK
-    bool
-    default y
-
-config SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CD_SIG
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
-    bool
-    default y
-
 config SOC_SPI_SUPPORT_SLAVE_HD_VER2
     bool
     default y
-
-config SOC_SPI_SUPPORT_CLK_XTAL
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CLK_PLL_F40M
-    bool
-    default y
-
-config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
-    bool
-    default y
-
-config SOC_SPI_SCT_SUPPORTED
-    bool
-    default y
-
-config SOC_SPI_SCT_REG_NUM
-    int
-    default 14
-
-config SOC_SPI_SCT_BUFFER_NUM_MAX
-    bool
-    default y
-
-config SOC_SPI_SCT_CONF_BITLEN_MAX
-    hex
-    default 0x3FFFA
-
-config SOC_MEMSPI_IS_INDEPENDENT
-    bool
-    default y
-
-config SOC_SPI_MAX_PRE_DIVIDER
-    int
-    default 16
 
 config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
@@ -559,19 +471,11 @@ config SOC_SPI_MEM_SUPPORT_WRAP
     bool
     default y
 
-config SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
+config SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
 
-config SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
+config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
@@ -624,6 +528,10 @@ config SOC_EFUSE_DIS_PAD_JTAG
     default y
 
 config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_XTS_AES_KEY_128
     bool
     default y
 
@@ -684,10 +592,6 @@ config SOC_UART_SUPPORT_RTC_CLK
     default y
 
 config SOC_UART_SUPPORT_XTAL_CLK
-    bool
-    default y
-
-config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
@@ -760,6 +664,10 @@ config SOC_WIFI_HW_TSF
     default y
 
 config SOC_WIFI_FTM_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_TXOP_SUPPORT
     bool
     default y
 

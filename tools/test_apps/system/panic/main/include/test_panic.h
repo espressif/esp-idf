@@ -76,12 +76,20 @@ void test_capture_dram(void);
 
 void test_tcb_corrupted(void);
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 void test_setup_coredump_summary(void);
 void test_coredump_summary(void);
 #endif
 
 void test_panic_print_backtrace(void);
+
+#if CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT
+void test_panic_halt(void);
+#endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY && CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+void test_panic_extram_attr(void);
+#endif
 
 #ifdef __cplusplus
 }

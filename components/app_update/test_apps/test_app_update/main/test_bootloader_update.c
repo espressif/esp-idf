@@ -10,7 +10,7 @@
 #include "unity.h"
 #include "esp_log.h"
 #include "esp_efuse.h"
-#include "esp_flash_internal.h"
+#include "esp_private/esp_flash_internal.h" //For dangerous write protection
 #include "esp_rom_sys.h"
 #include "utils_update.h"
 #include "sdkconfig.h"

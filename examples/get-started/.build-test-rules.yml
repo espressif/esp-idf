@@ -4,6 +4,7 @@ examples/get-started/blink:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1 and SOC_RMT_SUPPORTED != 1 # The blink example relies on the RMT or GPSPI to drive the led strip
   depends_components:
+    - *common_components
     - esp_driver_gpio
     - esp_driver_spi
     - esp_driver_rmt

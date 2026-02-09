@@ -41,19 +41,19 @@ _Static_assert(offsetof(bitscrambler_loopback_t, bs) == 0, "bs needs to be 1st m
 static void bitscrambler_loopback_free(bitscrambler_loopback_t *bsl);
 static esp_err_t bitscrambler_loopback_cleanup(bitscrambler_handle_t bs, void* user_ctx);
 
-static esp_err_t new_dma_channel(const gdma_channel_alloc_config_t *cfg, gdma_channel_handle_t *handle, int bus)
+static esp_err_t new_dma_channel(const gdma_channel_alloc_config_t *cfg, gdma_channel_handle_t *tx_handle, gdma_channel_handle_t *rx_handle, int bus)
 {
     esp_err_t ret = ESP_OK;
     //Note that there are chips that do not have SOC_GDMA_BUS_* defined, but those chips also do
     //not have a BitScrambler.
 #ifdef SOC_GDMA_BUS_AHB
-    if (bus == SOC_GDMA_BUS_AHB || bus == SOC_GDMA_BUS_ANY) {
-        ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(cfg, handle), TAG, "alloc AHB DMA channel failed");
+    if (bus == SOC_GDMA_BUS_AHB) {
+        ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(cfg, tx_handle, rx_handle), TAG, "alloc AHB DMA channel failed");
     }
 #endif
 #ifdef SOC_GDMA_BUS_AXI
     if (bus == SOC_GDMA_BUS_AXI) {
-        ESP_RETURN_ON_ERROR(gdma_new_axi_channel(cfg, handle), TAG, "alloc AXI DMA channel failed");
+        ESP_RETURN_ON_ERROR(gdma_new_axi_channel(cfg, tx_handle, rx_handle), TAG, "alloc AXI DMA channel failed");
     }
 #endif
     return ret;
@@ -108,7 +108,6 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
 
     // create DMA link list for TX and RX
     gdma_link_list_config_t dma_link_cfg = {
-        .buffer_alignment = 4,
         .item_alignment = align,
         .num_items = desc_ct,
     };
@@ -116,16 +115,8 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&dma_link_cfg, &bs->rx_link_list), err, TAG, "failed to create RX link list");
 
     // create TX channel and RX channel, they should reside in the same DMA pair
-    gdma_channel_alloc_config_t tx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-        .flags.reserve_sibling = 1,
-    };
-    ESP_GOTO_ON_ERROR(new_dma_channel(&tx_alloc_config, &bs->tx_channel, bus), err, TAG, "failed to create GDMA TX channel");
-    gdma_channel_alloc_config_t rx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = bs->tx_channel,
-    };
-    ESP_GOTO_ON_ERROR(new_dma_channel(&rx_alloc_config, &bs->rx_channel, bus), err, TAG, "failed to create GDMA RX channel");
+    gdma_channel_alloc_config_t alloc_config = {0};
+    ESP_GOTO_ON_ERROR(new_dma_channel(&alloc_config, &bs->tx_channel, &bs->rx_channel, bus), err, TAG, "failed to create GDMA channels");
 
     gdma_connect(bs->rx_channel, g_bitscrambler_periph_desc[attach_to].dma_trigger);
     gdma_connect(bs->tx_channel, g_bitscrambler_periph_desc[attach_to].dma_trigger);
@@ -229,19 +220,21 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     // mount in and out buffer to the DMA link list
     gdma_buffer_mount_config_t in_buf_mount_config = {
         .buffer = buffer_in,
+        .buffer_alignment = 4,
         .length = length_bytes_in,
         .flags = {
             .mark_eof = true,
-            .mark_final = true,
+            .mark_final = GDMA_FINAL_LINK_TO_NULL,
         }
     };
     gdma_link_mount_buffers(bsl->tx_link_list, 0, &in_buf_mount_config, 1, NULL);
     gdma_buffer_mount_config_t out_buf_mount_config = {
         .buffer = buffer_out,
+        .buffer_alignment = 4,
         .length = length_bytes_out,
         .flags = {
             .mark_eof = false,
-            .mark_final = true,
+            .mark_final = GDMA_FINAL_LINK_TO_NULL,
         }
     };
     gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);

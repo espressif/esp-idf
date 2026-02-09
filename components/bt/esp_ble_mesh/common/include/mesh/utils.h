@@ -15,6 +15,8 @@
 #define _BLE_MESH_UTILS_H_
 
 #include <stddef.h>
+#include <sys/cdefs.h>
+#include <errno.h>
 #include "esp_bit_defs.h"
 #include "mesh/types.h"
 #include "utils_loops.h"
@@ -94,6 +96,81 @@ extern "C" {
 #define WB_DN(x) ROUND_DOWN(x, sizeof(void *))
 #endif
 
+/**
+ * @brief Whether @p ptr is an element of @p array
+ *
+ * This macro can be seen as a slightly stricter version of @ref PART_OF_ARRAY
+ * in that it also ensures that @p ptr is aligned to an array-element boundary
+ * of @p array.
+ *
+ * In C, passing a pointer as @p array causes a compile error.
+ *
+ * @param array the array in question
+ * @param ptr the pointer to check
+ *
+ * @return 1 if @p ptr is part of @p array, 0 otherwise
+ */
+#define IS_ARRAY_ELEMENT(array, ptr)                                                               \
+         ((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                          \
+         POINTER_TO_UINT(ptr) < POINTER_TO_UINT(&(array)[ARRAY_SIZE(array)]) &&                    \
+         (POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) % sizeof((array)[0]) == 0)
+
+/**
+ * @brief Index of @p ptr within @p array
+ *
+ * With `CONFIG_ASSERT=y`, this macro will trigger a runtime assertion
+ * when @p ptr does not fall into the range of @p array or when @p ptr
+ * is not aligned to an array-element boundary of @p array.
+ *
+ * In C, passing a pointer as @p array causes a compile error.
+ *
+ * @param array the array in question
+ * @param ptr pointer to an element of @p array
+ *
+ * @return the array index of @p ptr within @p array, on success
+ */
+#define ARRAY_INDEX(array, ptr)                                                                    \
+        ({                                                                                         \
+                __ASSERT_NO_MSG(IS_ARRAY_ELEMENT(array, ptr));                                     \
+                (__typeof__((array)[0]) *)(ptr) - (array);                                         \
+        })
+
+
+/**
+ * @brief Divide and round up.
+ *
+ * Example:
+ * @code{.c}
+ * DIV_ROUND_UP(1, 2); // 1
+ * DIV_ROUND_UP(3, 2); // 2
+ * @endcode
+ *
+ * @param n Numerator.
+ * @param d Denominator.
+ *
+ * @return The result of @p n / @p d, rounded up.
+ */
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+
+/**
+ * @brief Divide and round to the nearest integer.
+ *
+ * Example:
+ * @code{.c}
+ * DIV_ROUND_CLOSEST(5, 2); // 3
+ * DIV_ROUND_CLOSEST(5, -2); // -3
+ * DIV_ROUND_CLOSEST(5, 3); // 2
+ * @endcode
+ *
+ * @param n Numerator.
+ * @param d Denominator.
+ *
+ * @return The result of @p n / @p d, rounded to the nearest integer.
+ */
+#define DIV_ROUND_CLOSEST(n, d) \
+        ((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
+        ((n) + ((d) / 2)) / (d))
+
 #ifndef ceiling_fraction
 #define ceiling_fraction(numerator, divider) \
         (((numerator) + ((divider) - 1)) / (divider))
@@ -123,6 +200,21 @@ extern "C" {
 
 #ifndef BIT
 #define BIT(n)          (1UL << (n))
+#endif
+
+/**
+ * @brief Set or clear a bit depending on a boolean value
+ *
+ * The argument @p var is a variable whose value is written to as a
+ * side effect.
+ *
+ * @param var Variable to be altered
+ * @param bit Bit number
+ * @param set if 0, clears @p bit in @p var; any other value sets @p bit
+ */
+#ifndef WRITE_BIT
+#define WRITE_BIT(var, bit, set) \
+                 ((var) = (set) ? ((var) | BIT(bit)) : ((var) & ~BIT(bit)))
 #endif
 
 #ifndef BIT_MASK
@@ -218,6 +310,20 @@ extern "C" {
 const char *bt_hex(const void *buf, size_t len);
 
 void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len);
+
+/**
+ * @brief Checks if a value is within range.
+ *
+ * @note @p val is evaluated twice.
+ *
+ * @param val Value to be checked.
+ * @param min Lower bound (inclusive).
+ * @param max Upper bound (inclusive).
+ *
+ * @retval true If value is within range
+ * @retval false If the value is not within range
+ */
+#define IN_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
 #ifdef __cplusplus
 }

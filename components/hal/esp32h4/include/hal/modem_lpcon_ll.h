@@ -26,6 +26,12 @@ static inline void modem_lpcon_ll_enable_test_clk(modem_lpcon_dev_t *hw, bool en
 }
 
 __attribute__((always_inline))
+static inline bool modem_lpcon_ll_test_clk_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->test_conf.clk_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_coex_lpclk_slow_osc(modem_lpcon_dev_t *hw, bool en)
 {
     hw->coex_lp_clk_conf.clk_coex_lp_sel_osc_slow = en;
@@ -68,8 +74,20 @@ static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool 
 }
 
 __attribute__((always_inline))
+static inline bool modem_lpcon_ll_coex_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf.clk_coex_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_fe_mem_clock(modem_lpcon_dev_t *hw, bool en)
 {
+}
+
+__attribute__((always_inline))
+static inline bool modem_lpcon_ll_fe_mem_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return true;
 }
 
 __attribute__((always_inline))
@@ -90,6 +108,54 @@ static inline void modem_lpcon_ll_reset_all(modem_lpcon_dev_t *hw)
 {
     hw->rst_conf.val = 0xf;
     hw->rst_conf.val = 0;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_lpcon_ll_get_wifipwr_icg_bitmap(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_wifipwr_st_map;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_set_wifipwr_icg_bitmap(modem_lpcon_dev_t *hw, uint32_t bitmap)
+{
+    hw->clk_conf_power_st.clk_wifipwr_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_lpcon_ll_get_coex_icg_bitmap(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_coex_st_map;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_set_coex_icg_bitmap(modem_lpcon_dev_t *hw, uint32_t bitmap)
+{
+    hw->clk_conf_power_st.clk_coex_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_lpcon_ll_get_i2c_master_icg_bitmap(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_i2c_mst_st_map;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_set_i2c_master_icg_bitmap(modem_lpcon_dev_t *hw, uint32_t bitmap)
+{
+    hw->clk_conf_power_st.clk_i2c_mst_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_lpcon_ll_get_lp_apb_icg_bitmap(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf_power_st.clk_lp_apb_st_map;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_set_lp_apb_icg_bitmap(modem_lpcon_dev_t *hw, uint32_t bitmap)
+{
+    hw->clk_conf_power_st.clk_lp_apb_st_map = bitmap;
 }
 
 #ifdef __cplusplus

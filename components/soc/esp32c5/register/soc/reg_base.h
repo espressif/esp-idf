@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -37,6 +37,7 @@
 #define DR_REG_SLCHOST_BASE                       0x60018000
 #define DR_REG_PVT_MONITOR_BASE                   0x60019000
 #define DR_REG_PSRAM_MEM_MONITOR_BASE             0x6001A000
+#define DR_REG_PVT_BASE                           DR_REG_PVT_MONITOR_BASE
 
 /**
  * @brief Peripheral 1 Modules

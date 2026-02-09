@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,6 +78,10 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (service_id == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CREATE_SERVICE;
@@ -97,6 +101,10 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (gatts_attr_db == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (max_nb_attr > ESP_GATT_ATTR_HANDLE_MAX) {
         LOG_ERROR("The number of attribute should not be greater than CONFIG_BT_GATT_MAX_SR_ATTRIBUTES\n");
@@ -143,6 +151,10 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (char_uuid == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     /* parameter validation check */
     status = esp_ble_gatts_add_char_desc_param_check(char_val, control);
     if (status != ESP_OK){
@@ -182,6 +194,10 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
     esp_err_t status;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (descr_uuid == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     /* parameter validation check */
     status = esp_ble_gatts_add_char_desc_param_check(char_descr_val, control);
@@ -344,6 +360,10 @@ esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *l
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (length == NULL || value == NULL) {
+        return ESP_GATT_INVALID_PDU;
+    }
+
     if (attr_handle == ESP_GATT_ILLEGAL_HANDLE) {
         *length = 0;
         return ESP_GATT_INVALID_HANDLE;
@@ -358,6 +378,10 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, b
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;

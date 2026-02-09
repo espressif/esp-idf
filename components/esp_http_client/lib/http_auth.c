@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,17 +12,17 @@
 #include "sys/socket.h"
 #include "esp_rom_md5.h"
 #include "esp_tls_crypto.h"
-#include "mbedtls/sha256.h"
 
 #include "esp_log.h"
 #include "esp_check.h"
 
 #include "http_utils.h"
 #include "http_auth.h"
+#include "http_crypto.h"
+
+#include "psa/crypto.h"
 
 #define MD5_MAX_LEN (33)
-#define SHA256_LEN (32)
-#define SHA256_HEX_LEN (65)
 #define HTTP_AUTH_BUF_LEN (1024)
 
 static const char *TAG = "HTTP_AUTH";
@@ -41,7 +41,7 @@ static int md5_printf(char *md, const char *fmt, ...)
     unsigned char digest[MD5_MAX_LEN];
     int len, i;
     md5_context_t md5_ctx;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);
     if (buf == NULL) {
@@ -72,11 +72,10 @@ static int md5_printf(char *md, const char *fmt, ...)
  */
 static int sha256_sprintf(char *sha, const char *fmt, ...)
 {
-
     unsigned char *buf;
     unsigned char digest[SHA256_LEN];
     int len, i;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);
     if (buf == NULL) {
@@ -85,19 +84,26 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
     }
 
     int ret = 0;
-    mbedtls_sha256_context sha256;
-    mbedtls_sha256_init(&sha256);
-    if (mbedtls_sha256_starts(&sha256, 0) != 0) {
-        goto exit;
-    }
-    if (mbedtls_sha256_update(&sha256, buf, len) != 0) {
-        goto exit;
-    }
-    if (mbedtls_sha256_finish(&sha256, digest) != 0) {
+    psa_status_t status;
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+
+    status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    for (i = 0; i < 32; ++i) {
+    status = psa_hash_update(&operation, buf, len);
+    if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
+    size_t hash_length;
+    status = psa_hash_finish(&operation, digest, sizeof(digest), &hash_length);
+    if (status != PSA_SUCCESS || hash_length != SHA256_LEN) {
+        goto exit;
+    }
+
+    for (i = 0; i < SHA256_LEN; ++i) {
         sprintf(&sha[i * 2], "%02x", (unsigned int)digest[i]);
     }
     sha[SHA256_HEX_LEN - 1] = '\0';
@@ -105,7 +111,7 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
 
 exit:
     free(buf);
-    mbedtls_sha256_free(&sha256);
+    psa_hash_abort(&operation);
     va_end(ap);
     return ret;
 }
@@ -122,14 +128,15 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
             password == NULL ||
             auth_data->nonce == NULL ||
             auth_data->uri == NULL ||
-            auth_data->realm == NULL) {
+            auth_data->realm == NULL ||
+            auth_data->algorithm == NULL) {
         return NULL;
     }
 
     int digest_size = MD5_MAX_LEN;
     int (*digest_func)(char *digest, const char *fmt, ...) = md5_printf;
-    if (!memcmp(auth_data->algorithm, "SHA256", strlen("SHA256")) ||
-            !memcmp(auth_data->algorithm, "SHA-256", strlen("SHA-256"))) {
+    if (strcasecmp(auth_data->algorithm, "SHA256") == 0 ||
+            strcasecmp(auth_data->algorithm, "SHA-256") == 0) {
         digest_size = SHA256_HEX_LEN;
         digest_func = sha256_sprintf;
     }
@@ -149,8 +156,7 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
 
     ESP_LOGD(TAG, "%s %s %s %s", "Digest", username, auth_data->realm, password);
     if ((strcasecmp(auth_data->algorithm, "md5-sess") == 0) ||
-            (strcasecmp(auth_data->algorithm, "SHA256") == 0) ||
-            (strcasecmp(auth_data->algorithm, "md5-sess") == 0)) {
+            (strcasecmp(auth_data->algorithm, "SHA-256-sess") == 0)) {
         if (digest_func(ha1, "%s:%s:%016llx", ha1, auth_data->nonce, auth_data->cnonce) <= 0) {
             goto _digest_exit;
         }

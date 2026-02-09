@@ -43,7 +43,8 @@ public:
         esp_partition.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         esp_partition.type = ESP_PARTITION_TYPE_DATA;
         esp_partition.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
-        strncpy(esp_partition.label, partition_name, PART_NAME_MAX_SIZE);
+        strncpy(esp_partition.label, partition_name, NVS_PART_NAME_MAX_SIZE);
+        esp_partition.label[NVS_PART_NAME_MAX_SIZE] = 0; // ensure null termination
     }
 
     ~PartitionEmulationFixture()

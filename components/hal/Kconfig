@@ -78,38 +78,10 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
             features will be added and bugs will be fixed in the IDF source
             but cannot be synced to ROM.
 
-    config HAL_WDT_USE_ROM_IMPL
-        bool "Use ROM implementation of WDT HAL driver"
-        depends on ESP_ROM_HAS_HAL_WDT
-        default y
-        help
-            Enable this flag to use HAL functions from ROM instead of ESP-IDF.
+    orsource "../esp_hal_wdt/Kconfig.hal_wdt"
 
-            If keeping this as "n" in your project, you will have less free IRAM.
-            If making this as "y" in your project, you will increase free IRAM,
-            but you will lose the possibility to debug this module, and some new
-            features will be added and bugs will be fixed in the IDF source
-            but cannot be synced to ROM.
+    orsource "../esp_hal_gpio/Kconfig.hal_gpio"
 
-    config HAL_GPIO_USE_ROM_IMPL
-        bool "Use ROM implementation of GPIO HAL driver"
-        default y
-        help
-            Enable this flag to use HAL functions from ROM when applicable instead of ESP-IDF.
-
-            If keeping this as "n" in your project, you will have less free IRAM.
-            When compiling an application for a CPU that cannot access to the ROM memory,
-            this option should be disabled.
-
-    config HAL_ECDSA_GEN_SIG_CM
-        bool "Enable countermeasure for ECDSA signature generation"
-        depends on IDF_TARGET_ESP32H2
-        default n
-        help
-            Enable this option to apply the countermeasure for ECDSA signature operation
-            This countermeasure masks the real ECDSA sign operation
-            under dummy sign operations to add randomness in the generated power signature.
-            This countermeasure is only necessary for ESP32-H2 < v1.2.
-
+    orsource "../esp_hal_security/Kconfig.hal_security"
 
 endmenu

@@ -5,6 +5,59 @@
 
 This example shows how to use the ESP BLE security APIs to secure connect to and encrypt with peer devices.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │   Security   │                                    │   Security   │
+    │    Client    │                                    │    Server    │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Security Parameters Setup ─────────  │
+           │                                                   │
+           │  1. Set IO Capability                             │
+           │  2. Set Auth Mode (Bonding, MITM, SC)             │
+           │  3. Set Key Distribution                          │
+           │                                                   │
+           │  ─────────── Connection Phase ───────────         │
+           │                                                   │
+           │  4. Scan for Server                               │  Advertising
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  5. Connect                                       │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  Connection Established                           │
+           │ <─────────────────────────────────────────────────│
+           │                                                   │
+           │  ─────────── Pairing & Encryption ───────────     │
+           │                                                   │
+           │  6. Start Encryption (esp_ble_set_encryption)     │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  7. Exchange Pairing Features                     │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  8. Generate Keys (LTK, IRK, CSRK)                │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  9. Encrypt Link                                  │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  10. ESP_GAP_BLE_AUTH_CMPL_EVT                    │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── Secure Data Exchange ───────────     │
+           │                                                   │
+           │  Encrypted GATT Operations                        │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │   Security   │                                    │   Security   │
+    │    Client    │                                    │    Server    │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:

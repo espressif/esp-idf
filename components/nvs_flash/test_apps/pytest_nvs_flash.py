@@ -12,6 +12,13 @@ def test_nvs_flash(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)
 
 
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['blockdev'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+def test_nvs_flash_blockdev(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)
+
+
 @pytest.mark.nvs_encr_hmac
 @pytest.mark.parametrize('config', ['nvs_encr_hmac_esp32c3'], indirect=True)
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])

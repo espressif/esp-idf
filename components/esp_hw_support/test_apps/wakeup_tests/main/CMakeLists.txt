@@ -8,5 +8,5 @@ set(include "."
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
-                       REQUIRES unity esp_driver_gpio console test_utils efuse
+                       REQUIRES unity esp_driver_gpio console test_utils
                        WHOLE_ARCHIVE)

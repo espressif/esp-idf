@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,9 +67,9 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers);
  *               So as an unprovisioned device, it should use this function to input
  *               the Public Key exchanged through the out-of-band mechanism.
  *
- * @param[in]    pub_key_x:   Unprovisioned device's Public Key X
- * @param[in]    pub_key_y:   Unprovisioned device's Public Key Y
- * @param[in]    private_key: Unprovisioned device's Private Key
+ * @param[in]    pub_key_x:   Unprovisioned device's Public Key X(Little Endian)
+ * @param[in]    pub_key_y:   Unprovisioned device's Public Key Y(Little Endian)
+ * @param[in]    private_key: Unprovisioned device's Private Key(Little Endian)
  *
  * @return       ESP_OK on success or error code otherwise.
  */

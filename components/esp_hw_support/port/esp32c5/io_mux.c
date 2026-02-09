@@ -5,7 +5,6 @@
  */
 
 #include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/periph_ctrl.h"
@@ -15,7 +14,7 @@
 
 #define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
 
-static portMUX_TYPE __attribute__((unused)) s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
+DEFINE_CRIT_SECTION_LOCK_STATIC(s_io_mux_spinlock);
 static soc_module_clk_t s_io_mux_clk_src = 0; // by default, the clock source is not set explicitly by any consumer (e.g. SDM, Filter)
 
 #if CONFIG_ULP_COPROC_ENABLED
@@ -29,7 +28,7 @@ static rtc_io_status_t s_rtc_io_status = {
 esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 {
     bool clk_conflict = false;
-    // check is the IO MUX has been set to another clock source
+    // check if the IO MUX has been set to another clock source
     esp_os_enter_critical(&s_io_mux_spinlock);
     if (s_io_mux_clk_src != 0 && s_io_mux_clk_src != clk_src) {
         clk_conflict = true;

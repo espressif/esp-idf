@@ -39,27 +39,5 @@ _For other small/non-public changes, which are not expected to be in the release
 * Mention submodule MR, if there is
 * Mention backport(ed) MR, if there is
 
-_Don't touch the subsection titles below, they will be parsed by scripts._
-
-## Release notes <!-- Mandatory -->
-
-_Changes made in this MR that should go into the **Release Notes** should be listed here. Please use **past tense** and *specify the area (see maintainers page of IDF internal wiki)*. If there is a subscope, include it and separate with slash (`/`). Minor changes can go to the descriptions above without a release notes entry._
-
-_Write all the changes in a **list** (Start at the beginning of the line with `-` or `*`). If multiple changes are made, each of them should take a single line. If there is only one change to list, it should still be the only line of a list. If this MR does not need any release notes, write "No release notes" here without the `-` or `*`. e.g._
-
-* [WiFi] Changed/fixed/updated xxx
-* [WiFi] Added support of xxx
-* [Peripheral Drivers/I2S] Fixed xxx (https://github.com/espressif/esp-idf/issues/xxxx)
-
-## Breaking change notes
-
-_Remove this subsection if not used._
-
-_If there are any breaking changes, please mention it here. Talking about (1) what is not accepted any more, (2) the alternative solution and (3) the benefits/reason. e.g._
-
-_Please strictly follow the breaking change restriction, which means, if there is a breaking change but you are merging to non-major versions, you have to separate the breaking part out to another MR for a major version. The breaking change subsection is only accepted in MRs merging to major versions._
-
-* [VFS/UART] Now vfs_uart_set_rts_cts accept one more instance argument, to support configuration to different ports.
-
 <!-- Don't remove the next line - assigns the MR author as the assignee -->
 /assign me

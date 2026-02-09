@@ -465,4 +465,4 @@ API 参考
     .. include-build-file:: inc/jpeg_encode.inc
 
 .. include-build-file:: inc/components/esp_driver_jpeg/include/driver/jpeg_types.inc
-.. include-build-file:: inc/components/hal/include/hal/jpeg_types.inc
+.. include-build-file:: inc/components/esp_hal_jpeg/include/hal/jpeg_types.inc

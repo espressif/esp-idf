@@ -20,6 +20,7 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_ignore_test_results.ignore_results import ChildCase
 from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
+from .constants import ECO_MARKERS
 from .utils import format_case_id
 from .utils import merge_junit_files
 from .utils import normalize_testcase_file_path
@@ -48,22 +49,22 @@ def requires_elf_or_map(case: PytestCase) -> bool:
     return False
 
 
-def skipped_targets(item: Function) -> t.Set[str]:
-    def _get_temp_markers_disabled_targets(marker_name: str) -> t.Set[str]:
-        temp_marker = item.get_closest_marker(marker_name)
+def skipped_targets(item: Function) -> set[str]:
+    def _get_temp_markers_disabled_targets(marker_name: str) -> set[str]:
+        targets = []
+        for _m in item.own_markers:
+            if _m.name == marker_name:
+                if not _m.kwargs.get('targets') or not _m.kwargs.get('reason'):
+                    raise ValueError(
+                        f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa: W604
+                        f'For example: '
+                        f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
+                    )
+                targets.extend(to_list(_m.kwargs['targets']))
 
-        if not temp_marker:
-            return set()
-
-        # temp markers should always use keyword arguments `targets` and `reason`
-        if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
-            raise ValueError(
-                f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa: W604
-                f'For example: '
-                f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
-            )
-
-        return set(to_list(temp_marker.kwargs['targets']))
+        if targets:
+            return set(targets)
+        return set()
 
     _count = IdfLocalPlugin.get_param(item, 'count', 1)
 
@@ -102,7 +103,7 @@ class IdfLocalPlugin:
         with open(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH) as fr:
             known_warnings_dict = yaml.safe_load(fr) or dict()
 
-        self.exclude_no_env_markers_test_cases: t.Set[str] = set(known_warnings_dict['no_env_marker_test_cases'])
+        self.exclude_no_env_markers_test_cases: set[str] = set(known_warnings_dict['no_env_marker_test_cases'])
 
     @staticmethod
     def get_param(item: Function, key: str, default: t.Any = None) -> t.Any:
@@ -114,7 +115,7 @@ class IdfLocalPlugin:
         return item.callspec.params.get(key, default) or default
 
     @pytest.hookimpl(wrapper=True)
-    def pytest_collection_modifyitems(self, config: Config, items: t.List[Function]) -> t.Generator[None, None, None]:
+    def pytest_collection_modifyitems(self, config: Config, items: list[Function]) -> t.Generator[None, None, None]:
         yield  # throw it back to idf-ci
 
         deselected_items = []
@@ -127,7 +128,23 @@ class IdfLocalPlugin:
                 deselected_items.append(item)
                 continue
 
-            if case.target_selector in skipped_targets(item):
+            skipped = False
+            current_targets = case.target_selector.split(',')
+            for st in skipped_targets(item):
+                # Handle wildcard patterns like "esp32p4,*" or "*,esp32p4"
+                if '*' in st:
+                    skip_pattern = st.split(',')
+                    if len(skip_pattern) != len(current_targets):
+                        continue
+                    if all(_p == '*' or _p == _t for _p, _t in zip(skip_pattern, current_targets)):
+                        skipped = True
+                        break
+                # Exact match (no wildcard)
+                elif case.target_selector == st:
+                    skipped = True
+                    break
+
+            if skipped:
                 deselected_items.append(item)
                 item.stash[IDF_CI_PYTEST_DEBUG_INFO_KEY] = 'skipped by temp_skip markers'
                 continue
@@ -164,6 +181,12 @@ class IdfLocalPlugin:
             if 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
+            for eco_marker in ECO_MARKERS:
+                if eco_marker in case.all_markers:
+                    break
+            else:
+                item.add_marker('rev_default')
+
             if 'host_test' in case.all_markers:
                 item.add_marker('skip_app_downloader')  # host_test jobs will build the apps itself
 
@@ -176,14 +199,14 @@ class IdfLocalPlugin:
             config = item.funcargs['config']
             is_qemu = item.get_closest_marker('qemu') is not None
 
-            dut: t.Union[Dut, t.Tuple[Dut]] = item.funcargs['dut']  # type: ignore
-            if isinstance(dut, (list, tuple)):
+            dut: Dut | tuple[Dut] = item.funcargs['dut']  # type: ignore
+            if isinstance(dut, (list | tuple)):
                 res = []
                 for i, _dut in enumerate(dut):
                     res.extend(
                         [
                             ChildCase(
-                                format_case_id(target, config, case.name + f' {i}', is_qemu=is_qemu),
+                                format_case_id(target, config, case.name, is_qemu=is_qemu),
                                 self.UNITY_RESULT_MAPPINGS[case.result],
                             )
                             for case in _dut.testsuite.testcases
@@ -206,7 +229,7 @@ class IdfLocalPlugin:
         """
         Modify the junit reports. Format the unity c test case names.
         """
-        tempdir: t.Optional[str] = item.funcargs.get('test_case_tempdir')  # type: ignore
+        tempdir: str | None = item.funcargs.get('test_case_tempdir')  # type: ignore
         if not tempdir:
             return
 

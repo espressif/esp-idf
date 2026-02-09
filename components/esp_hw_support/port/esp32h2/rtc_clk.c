@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +15,16 @@
 #include "esp_private/rtc_clk.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
+#include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/gpio_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_attr.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // Current PLL frequency, in 96MHz. Zero if PLL is not enabled.
 static int s_cur_pll_freq;
@@ -121,6 +123,13 @@ void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
     clk_ll_rtc_slow_set_src(clk_src);
     esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
+#ifndef BOOTLOADER_BUILD
+    if ((clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) || (clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+    }
+#endif
 }
 
 soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void)
@@ -186,7 +195,7 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
  * Must satisfy: cpu_freq = XTAL_FREQ / div.
  * Does not disable the PLL.
  */
-static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+static FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
     // let f_cpu = f_ahb
     clk_ll_cpu_set_divider(div);
@@ -391,7 +400,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_bbpll_disable();
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
@@ -404,7 +413,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
     rtc_clk_cpu_set_to_default_config();
 }
 
-soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+FORCE_IRAM_ATTR soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {

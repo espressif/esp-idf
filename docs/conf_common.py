@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Common (non-language-specific) configuration for Sphinx
 #
@@ -9,9 +8,13 @@
 # pylint: disable=undefined-variable
 import os.path
 import re
+import sys
 from pathlib import Path
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tools', 'cmakev2')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tools', 'docs')))
 
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
@@ -26,6 +29,7 @@ BT_DOCS = [
     'api-reference/bluetooth/bt_vhci.rst',
     'api-reference/bluetooth/controller_vhci.rst',
     'api-reference/bluetooth/index.rst',
+    'migration-guides/release-5.x/5.4/bt_common.rst',
 ]
 
 BLE_DOCS = [
@@ -34,11 +38,13 @@ BLE_DOCS = [
     'api-guides/ble/ble-feature-support-status.rst',
     'api-guides/ble/host-feature-support-status.rst',
     'api-guides/ble/ble-qualification.rst',
+    'api-guides/ble/ble-multiconnection-guide.rst',
     'api-guides/ble/get-started/ble-introduction.rst',
     'api-guides/ble/get-started/ble-device-discovery.rst',
     'api-guides/ble/get-started/ble-connection.rst',
     'api-guides/ble/get-started/ble-data-exchange.rst',
     'api-guides/ble/smp.rst',
+    'api-guides/low-power-mode/low-power-mode-ble.rst',
     'api-reference/bluetooth/bt_le.rst',
     'api-reference/bluetooth/esp_gap_ble.rst',
     'api-reference/bluetooth/esp_gatt_defs.rst',
@@ -75,22 +81,27 @@ CLASSIC_BT_DOCS = [
     'api-reference/bluetooth/esp_spp.rst',
     'api-reference/bluetooth/esp_gap_bt.rst',
     'migration-guides/release-5.x/5.0/bluetooth-classic.rst',
+    'migration-guides/release-5.x/5.2/bluetooth-classic.rst',
+    'migration-guides/release-5.x/5.3/bluetooth-classic.rst',
+    'migration-guides/release-5.x/5.4/bluetooth-classic.rst',
+    'migration-guides/release-6.x/6.0/bluetooth-classic.rst',
 ]
 
 BLUFI_DOCS = ['api-guides/ble/blufi.rst', 'api-reference/bluetooth/esp_blufi.rst']
 
 WIFI_DOCS = [
     'api-guides/low-power-mode/low-power-mode-wifi.rst',
-    'api-guides/wifi.rst',
+    'api-guides/wifi-driver/**',
     'api-guides/wifi-security.rst',
     'api-guides/wireshark-user-guide.rst',
     'api-reference/network/esp_now.rst',
     'api-reference/network/esp_smartconfig.rst',
     'api-reference/network/esp_wifi.rst',
     'api-reference/network/esp_dpp.rst',
-    'api-reference/provisioning/provisioning.rst',
-    'api-reference/provisioning/wifi_provisioning.rst',
     'migration-guides/release-5.x/5.2/wifi.rst',
+    'migration-guides/release-5.x/5.4/wifi.rst',
+    'migration-guides/release-5.x/5.5/wifi.rst',
+    'migration-guides/release-6.x/6.0/wifi.rst',
 ]
 
 IEEE802154_DOCS = ['migration-guides/release-5.x/5.1/ieee802154.rst', 'migration-guides/release-5.x/5.2/ieee802154.rst']
@@ -109,7 +120,9 @@ BITSCRAMBLER_DOCS = ['api-reference/peripherals/bitscrambler.rst']
 
 CLK_TREE_DOCS = ['api-reference/peripherals/clk_tree.rst']
 
-UART_DOCS = ['api-reference/peripherals/uart.rst', 'api-reference/peripherals/uhci.rst']
+UART_DOCS = ['api-reference/peripherals/uart.rst']
+
+UHCI_DOCS = ['api-reference/peripherals/uhci.rst']
 
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst']
 
@@ -196,6 +209,10 @@ I2C_DOCS = [
     'api-reference/peripherals/i2c_slave_v1.rst',
 ]
 
+I3C_DOCS = [
+    'api-reference/peripherals/i3c_master.rst',
+]
+
 SPI_DOCS = [
     'api-reference/peripherals/spi_master.rst',
     'api-reference/peripherals/spi_slave.rst',
@@ -261,7 +278,6 @@ ESP32S2_DOCS = (
         'hw-reference/esp32s2/**',
         'api-guides/usb-console.rst',
         'api-reference/peripherals/ds.rst',
-        'api-reference/peripherals/touch_element.rst',
         'api-guides/RF_calibration.rst',
         'api-guides/phy.rst',
     ]
@@ -276,7 +292,6 @@ ESP32S3_DOCS = (
         'api-reference/system/ipc.rst',
         'api-guides/flash_psram_config.rst',
         'api-reference/peripherals/sd_pullup_requirements.rst',
-        'api-reference/peripherals/touch_element.rst',
         'api-guides/RF_calibration.rst',
         'api-guides/phy.rst',
     ]
@@ -290,9 +305,17 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**', 'api-guides/RF_calibration.rst', 'api
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
 
-ESP32C5_DOCS = ['api-guides/phy.rst', 'api-reference/peripherals/sd_pullup_requirements.rst']
+ESP32C5_DOCS = [
+    'api-guides/phy.rst',
+    'api-reference/peripherals/sd_pullup_requirements.rst',
+    'api-guides/RF_calibration.rst',
+] + ESP_TEE_DOCS
 
-ESP32C61_DOCS = ['api-guides/phy.rst', 'api-reference/peripherals/sd_pullup_requirements.rst']
+ESP32C61_DOCS = [
+    'api-guides/phy.rst',
+    'api-reference/peripherals/sd_pullup_requirements.rst',
+    'api-guides/RF_calibration.rst',
+] + ESP_TEE_DOCS
 
 ESP32C6_DOCS = [
     'api-guides/RF_calibration.rst',
@@ -300,9 +323,15 @@ ESP32C6_DOCS = [
     'api-guides/phy.rst',
 ] + ESP_TEE_DOCS
 
-ESP32H2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
+ESP32H2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst'] + ESP_TEE_DOCS
 
 ESP32H4_DOCS = [
+    'api-reference/system/ipc.rst',
+    'api-guides/RF_calibration.rst',
+    'api-guides/phy.rst',
+]
+
+ESP32S31_DOCS = [
     'api-reference/system/ipc.rst',
 ]
 
@@ -326,6 +355,7 @@ conditional_include_dict = {
     'SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE': MM_SYNC_DOCS,
     'SOC_CLK_TREE_SUPPORTED': CLK_TREE_DOCS,
     'SOC_UART_SUPPORTED': UART_DOCS,
+    'SOC_UHCI_SUPPORTED': UHCI_DOCS,
     'SOC_SDMMC_HOST_SUPPORTED': SDMMC_DOCS,
     'SOC_SDIO_SLAVE_SUPPORTED': SDIO_SLAVE_DOCS,
     'SOC_MCPWM_SUPPORTED': MCPWM_DOCS,
@@ -334,7 +364,7 @@ conditional_include_dict = {
     'SOC_DEDICATED_GPIO_SUPPORTED': DEDIC_GPIO_DOCS,
     'SOC_LCD_I80_SUPPORTED': I80_LCD_DOCS,
     'SOC_LCD_RGB_SUPPORTED': RGB_LCD_DOCS,
-    'SOC_PARLIO_SUPPORT_SPI_LCD': PARLIO_LCD_DOCS,
+    'SOC_PARLIO_LCD_SUPPORTED': PARLIO_LCD_DOCS,
     'SOC_MIPI_DSI_SUPPORTED': DSI_LCD_DOCS,
     'SOC_SPIRAM_SUPPORTED': SPIRAM_DOCS,
     'SOC_PARLIO_SUPPORTED': PARLIO_DOCS,
@@ -355,6 +385,7 @@ conditional_include_dict = {
     'SOC_TOUCH_SENSOR_SUPPORTED': TOUCH_SENSOR_DOCS,
     'SOC_TWAI_SUPPORTED': TWAI_DOCS,
     'SOC_I2C_SUPPORTED': I2C_DOCS,
+    'SOC_I3C_MASTER_SUPPORTED': I3C_DOCS,
     'SOC_GPSPI_SUPPORTED': SPI_DOCS,
     'SOC_I2S_SUPPORTED': I2S_DOCS,
     'SOC_LP_I2S_SUPPORTED': LP_I2S_DOCS,
@@ -383,6 +414,7 @@ conditional_include_dict = {
     'esp32c61': ESP32C61_DOCS,
     'esp32h2': ESP32H2_DOCS,
     'esp32h4': ESP32H4_DOCS,
+    'esp32s31': ESP32S31_DOCS,
     'esp32p4': ESP32P4_DOCS,
 }
 
@@ -395,12 +427,13 @@ extensions += [  # noqa: F405
     'esp_docs.idf_extensions.build_system',
     'esp_docs.idf_extensions.esp_err_definitions',
     'esp_docs.idf_extensions.gen_defines',
-    'esp_docs.idf_extensions.gen_version_specific_includes',
     'esp_docs.idf_extensions.kconfig_reference',
     'esp_docs.idf_extensions.gen_idf_tools_links',
     'esp_docs.esp_extensions.run_doxygen',
     'esp_docs.esp_extensions.add_html_zip',
     'linuxdoc.rstFlatTable',  # https://return42.github.io/linuxdoc/linuxdoc-howto/table-markup.html#flat-table
+    'esp_docs_cmakev2_extension',
+    'gen_version_specific_includes',
 ]
 
 # Use wavedrompy as backend, instead of wavedrom-cli
@@ -432,7 +465,6 @@ linkcheck_anchors = False
 linkcheck_exclude_documents = [
     'index',  # several false positives due to the way we link to different sections
     'api-reference/protocols/esp_local_ctrl',  # Fails due to `https://<mdns-hostname>.local`
-    'api-reference/provisioning/wifi_provisioning',  # Fails due to `https://<mdns-hostname>.local`
 ]
 
 
@@ -458,7 +490,7 @@ with open('../page_redirects.txt') as f:
     ]
     for line in lines:  # check for well-formed entries
         if len(line.split(' ')) != 2:
-            raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
+            raise RuntimeError(f'Invalid line in page_redirects.txt: {line}')
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 html_static_path = ['../_static']
@@ -472,6 +504,9 @@ idf_build_system = {
 # Please update following list to enable Qemu doc guide (and cross references) for a new target
 QEMU_TARGETS = ['esp32', 'esp32c3', 'esp32s3']
 
+# Please update following list to enable ESP-TEE doc guide (and cross references) for a new target
+ESP_TEE_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
+
 
 # Callback function for user setup that needs be done after `config-init`-event
 # config.idf_target is not available at the initial config stage
@@ -480,10 +515,13 @@ def conf_setup(app, config):
         f'This document is not updated for {config.idf_target.upper()} yet, so some of the content may not be correct.'
     )
 
-    add_warnings_file = '{}/../docs_not_updated/{}.txt'.format(app.confdir, config.idf_target)
+    add_warnings_file = f'{app.confdir}/../docs_not_updated/{config.idf_target}.txt'
 
     if config.idf_target in QEMU_TARGETS:
         app.tags.add('TARGET_SUPPORT_QEMU')
+
+    if config.idf_target in ESP_TEE_TARGETS:
+        app.tags.add('TARGET_SUPPORT_ESP_TEE')
 
     try:
         with open(add_warnings_file) as warning_file:

@@ -1,6 +1,6 @@
 idf_component_register(SRCS "esp_rest_main.c"
                             "rest_server.c"
-                       PRIV_REQUIRES esp_http_server json nvs_flash
+                       PRIV_REQUIRES esp_http_server nvs_flash
                        INCLUDE_DIRS ".")
 
 if(CONFIG_EXAMPLE_DEPLOY_WEB_PAGES)

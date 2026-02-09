@@ -6,6 +6,13 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.lp_i2s
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+    ],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_lp_i2s(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=200)

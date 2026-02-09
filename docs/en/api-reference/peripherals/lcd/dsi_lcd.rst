@@ -11,7 +11,6 @@ MIPI DSI Interfaced LCD
         esp_lcd_dsi_bus_config_t bus_config = {
             .bus_id = 0, // index from 0, specify the DSI host to use
             .num_data_lanes = 2, // Number of data lanes to use, can't set a value that exceeds the chip's capability
-            .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT, // Clock source for the DPHY
             .lane_bit_rate_mbps = EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS, // Bit rate of the data lanes, in Mbps
         };
         ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
@@ -62,7 +61,6 @@ MIPI DSI Interfaced LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` sets the DPI clock frequency in MHz. Higher pixel clock frequency results in higher refresh rate, but may cause flickering if the DMA bandwidth is not sufficient or the LCD controller chip does not support high pixel clock frequency.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` sets the pixel format of the input pixel data. The available pixel formats are listed in :cpp:type:`lcd_color_format_t`. We usually use **RGB888** for MIPI LCD to get the best color depth.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_video_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` sets whether to use the 2D DMA peripheral to copy the user data to the frame buffer, asynchronously.
 
     .. code-block:: c
 
@@ -82,10 +80,39 @@ MIPI DSI Interfaced LCD
                 .vsync_pulse_width = EXAMPLE_MIPI_DSI_LCD_VSYNC,
                 .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
             },
-            .flags.use_dma2d = true,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
         ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
+
+#. Configure draw bitmap hook function (optional)
+
+    If you want to use DMA2D to implement draw bitmap, the driver has already implemented the DMA2D draw bitmap hook function, you only need to call :func:`esp_lcd_dpi_panel_enable_dma2d` to enable it.
+
+    .. code-block:: c
+
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
+
+    .. note::
+
+        Due to hardware limitation, if external memory encryption is enabled, DMA2D can only access address and length that are aligned to 16 bytes. Unless you can ensure that your draw buffer's address and length are aligned to 16 bytes, it is not recommended to use DMA2D to draw bitmap.
+
+    If you need more advanced applications, you can add a custom hook for draw bitmap, such as using PPA to implement rotation, scaling, etc.
+
+    .. code-block:: c
+
+        esp_lcd_panel_hooks_t hooks = {
+            .draw_bitmap_hook = custom_draw_bitmap_hook,
+        };
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_hooks(mipi_dpi_panel, &hooks, &user_ctx));
+
+Power Supply for MIPI DPHY
+--------------------------
+
+The MIPI DPHY on {IDF_TARGET_NAME} requires a dedicated 2.5V power supply. Please refer to your schematic and ensure that the power pin (often labeled ``VDD_MIPI_DPHY``) is properly connected to a 2.5V power source before using the MIPI DSI driver.
+
+.. only:: SOC_GP_LDO_SUPPORTED
+
+    On {IDF_TARGET_NAME}, the MIPI DPHY can be powered by the internal adjustable LDO. Connect the output pin of the LDO channel to the MIPI DPHY power pin. Before initializing the DSI driver, use the API provided in :doc:`/api-reference/peripherals/ldo_regulator` to configure the LDO output voltage to 2.5V.
 
 API Reference
 -------------

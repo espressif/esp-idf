@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,27 +8,26 @@
 #include <stdbool.h>
 #include <string.h>
 #include "sdkconfig.h"
-#include "soc/soc_caps.h"
-#include "esp_attr.h"
-#include "esp_rom_gpio.h"
-#include "driver/gpio.h"
-#include "hal/gpio_ll.h"
-#include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/ringbuf.h"
-#include "esp_intr_alloc.h"
-#include "hal/i2c_ll.h"
-#include "i2c_private.h"
-#include "driver/i2c_slave.h"
-#include "esp_memory_utils.h"
 #if CONFIG_I2C_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
-#include "esp_log.h"
 #include "esp_check.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_intr_alloc.h"
+#include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/ringbuf.h"
+#include "driver/gpio.h"
+#include "soc/soc_caps.h"
+#include "hal/i2c_ll.h"
+#include "hal/i2c_periph.h"
+#include "driver/i2c_slave.h"
+#include "i2c_private.h"
 
 static const char *TAG = "i2c.slave";
 
@@ -92,7 +91,7 @@ IRAM_ATTR static bool i2c_slave_handle_tx_fifo(i2c_slave_dev_t *i2c_slave)
 IRAM_ATTR static bool i2c_slave_handle_rx_fifo(i2c_slave_dev_t *i2c_slave, uint32_t len)
 {
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
-    uint8_t data[SOC_I2C_FIFO_LEN];
+    uint8_t data[I2C_LL_GET(FIFO_LEN)];
     BaseType_t xTaskWoken = pdFALSE;
     xSemaphoreTakeFromISR(i2c_slave->operation_mux, &xTaskWoken);
     if (len) {
@@ -306,7 +305,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_ll_set_slave_addr(hal->dev, slave_config->slave_addr, false);
     i2c_ll_set_tout(hal->dev, I2C_LL_MAX_TIMEOUT);
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, slave_config->clk_source);
     }
     bool addr_10bit_en = slave_config->addr_bit_len != I2C_ADDR_BIT_LEN_7;
@@ -316,9 +315,16 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_ll_slave_broadcast_enable(hal->dev, slave_config->flags.broadcast_en);
 #endif
 
-    i2c_ll_set_txfifo_empty_thr(hal->dev, SOC_I2C_FIFO_LEN / 2);
-    i2c_ll_set_rxfifo_full_thr(hal->dev, SOC_I2C_FIFO_LEN / 2);
+    i2c_ll_set_txfifo_empty_thr(hal->dev, I2C_LL_GET(FIFO_LEN) / 2);
+    i2c_ll_set_rxfifo_full_thr(hal->dev, I2C_LL_GET(FIFO_LEN) / 2);
     i2c_ll_set_sda_timing(hal->dev, 10, 10);
+
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    // Workaround for hardware bug in ESP32S3 and ESP32C3.
+    // Please note that following code has no functionality.
+    // It's just use for workaround the potential issue.
+    i2c_ll_slave_enable_auto_start(hal->dev, true);
+#endif
 
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
@@ -372,7 +378,7 @@ esp_err_t i2c_slave_write(i2c_slave_dev_handle_t i2c_slave, const uint8_t *data,
     i2c_ll_slave_disable_tx_it(hal->dev);
     uint32_t txfifo_len = 0;
     i2c_ll_get_txfifo_len(hal->dev, &txfifo_len);
-    if (txfifo_len < SOC_I2C_FIFO_LEN) {
+    if (txfifo_len < I2C_LL_GET(FIFO_LEN)) {
         // For the target (esp32) cannot stretch, reset the fifo when there is any dirty data in fifo.
         i2c_ll_txfifo_rst(hal->dev);
     }
@@ -443,3 +449,39 @@ esp_err_t i2c_slave_register_event_callbacks(i2c_slave_dev_handle_t i2c_slave, c
     i2c_slave->receive_callback = cbs->on_receive;
     return ESP_OK;
 }
+
+#if !CONFIG_IDF_TARGET_ESP32
+esp_err_t i2c_slave_reset_tx_fifo(i2c_slave_dev_handle_t i2c_slave)
+{
+    ESP_RETURN_ON_FALSE(i2c_slave != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c slave handle not initialized");
+    ESP_RETURN_ON_FALSE(i2c_slave->tx_ring_buf != NULL, ESP_ERR_INVALID_STATE, TAG, "invalid tx buffer state");
+
+    xSemaphoreTake(i2c_slave->operation_mux, portMAX_DELAY);
+
+    // Clear up TX RingBuffer
+    if (i2c_slave->tx_ring_buf) {
+        void *data = NULL;
+        size_t size = 0;
+        do {
+            data = xRingbufferReceiveUpTo(i2c_slave->tx_ring_buf, &size, 0, SIZE_MAX);
+            if (data) {
+                vRingbufferReturnItem(i2c_slave->tx_ring_buf, data);
+            }
+        } while (data != NULL);
+    } else {
+        xSemaphoreGive(i2c_slave->operation_mux);
+        return ESP_FAIL;
+    }
+
+    portENTER_CRITICAL(&i2c_slave->base->spinlock);
+    i2c_ll_txfifo_rst(i2c_slave->base->hal.dev);
+
+#if !CONFIG_IDF_TARGET_ESP32S2
+    i2c_ll_master_fsm_rst(i2c_slave->base->hal.dev);
+#endif
+
+    portEXIT_CRITICAL(&i2c_slave->base->spinlock);
+    xSemaphoreGive(i2c_slave->operation_mux);
+    return ESP_OK;
+}
+#endif

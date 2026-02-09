@@ -11,7 +11,7 @@ entries:
         esp_clk_tree: esp_clk_tree_enable_src (noflash)
 
 [mapping:adc_hal]
-archive: libhal.a
+archive: libesp_hal_ana_conv.a
 entries:
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         adc_oneshot_hal (noflash)

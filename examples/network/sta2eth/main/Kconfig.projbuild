@@ -21,7 +21,7 @@ menu "Example Configuration"
         depends on EXAMPLE_WIFI_CONFIGURATION_PROVISIONING
         default EXAMPLE_PROV_SECURITY_VERSION_1
         help
-            Wi-Fi provisioning component offers 3 security versions.
+            Network provisioning component offers 3 security versions.
             The example offers a choice between security version 1 and 2.
             You can also choose version 0, which is recommended only
             for testing (not secure, plain text communication)

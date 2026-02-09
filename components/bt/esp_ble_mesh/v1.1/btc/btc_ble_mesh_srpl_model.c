@@ -39,16 +39,25 @@ void btc_ble_mesh_srpl_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_SRPL_CLIENT_SEND:
+        dst->srpl_send.params = NULL;
+        dst->srpl_send.msg = NULL;
+
         dst->srpl_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->srpl_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_srpl_client_msg_t));
-        if (dst->srpl_send.params && dst->srpl_send.msg) {
-            memcpy(dst->srpl_send.params, src->srpl_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->srpl_send.msg, src->srpl_send.msg,
-                   sizeof(esp_ble_mesh_srpl_client_msg_t));
-        } else {
+        if (!dst->srpl_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+        memcpy(dst->srpl_send.params, src->srpl_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
+        dst->srpl_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_srpl_client_msg_t));
+        if (!dst->srpl_send.msg) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->srpl_send.params);
+            dst->srpl_send.params = NULL;
+            break;
+        }
+        memcpy(dst->srpl_send.msg, src->srpl_send.msg, sizeof(esp_ble_mesh_srpl_client_msg_t));
         break;
     default:
         BT_DBG("%s, Unknown act %d", __func__, msg->act);

@@ -342,7 +342,7 @@ To prevent this, the RX unit driver internally creates a power management lock. 
 
 .. only:: SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
-    In addition to turning off the clock source, the system can also turn off the RX unit's power to further reduce power consumption when entering sleep mode. To achieve this, set :cpp:member:`parlio_rx_unit_config_t::allow_pd` to ``true``. Before the system enters sleep mode, the RX unit's register context will be backed up to memory and restored when the system wakes up. Note that enabling this option can reduce power consumption but will increase memory usage.
+    In addition to turning off the clock source, the system can also turn off the RX unit's power to further reduce power consumption when entering sleep mode. To achieve this, set :cpp:member:`parlio_rx_unit_config_t::flags::allow_pd` to ``true``. Before the system enters sleep mode, the RX unit's register context will be backed up to memory and restored when the system wakes up. Note that enabling this option can reduce power consumption but will increase memory usage.
 
 Thread Safety
 ^^^^^^^^^^^^^

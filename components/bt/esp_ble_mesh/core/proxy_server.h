@@ -58,7 +58,7 @@ struct bt_mesh_proxy_client {
 
 #if CONFIG_BLE_MESH_PROXY_PRIVACY
     uint8_t proxy_privacy;
-#endif
+#endif /* CONFIG_BLE_MESH_PROXY_PRIVACY */
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 
     struct k_delayed_work sar_timer;

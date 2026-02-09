@@ -10,26 +10,14 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/rtc_clk.h"
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define MCPWM_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define MCPWM_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define MCPWM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define MCPWM_RCC_ATOMIC()
-#endif
-
 #if MCPWM_USE_RETENTION_LINK
 static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg);
 #endif
 
 typedef struct {
     _lock_t mutex;                           // platform level mutex lock
-    mcpwm_group_t *groups[SOC_MCPWM_GROUPS]; // array of MCPWM group instances
-    int group_ref_counts[SOC_MCPWM_GROUPS];  // reference count used to protect group install/uninstall
+    mcpwm_group_t *groups[MCPWM_LL_GET(GROUP_NUM)]; // array of MCPWM group instances
+    int group_ref_counts[MCPWM_LL_GET(GROUP_NUM)];  // reference count used to protect group install/uninstall
 } mcpwm_platform_t;
 
 static mcpwm_platform_t s_platform; // singleton platform
@@ -67,14 +55,14 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             }
 #endif // MCPWM_USE_RETENTION_LINK
             // enable APB to access MCPWM registers
-            MCPWM_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 mcpwm_ll_enable_bus_clock(group_id, true);
                 mcpwm_ll_reset_register(group_id);
             }
             // enable function clock before initialize HAL context
             // MCPWM registers are in the core clock domain, there's a bridge between APB and the Core clock domain
             // if the core clock is not enabled, then even the APB clock is enabled, the MCPWM registers are still not accessible
-            MCPWM_CLOCK_SRC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 mcpwm_ll_group_enable_clock(group_id, true);
             }
             // initialize HAL context
@@ -112,12 +100,12 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
     if (s_platform.group_ref_counts[group_id] == 0) {
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platform
-        MCPWM_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_group_enable_clock(group_id, false);
         }
         // hal layer deinitialize
         mcpwm_hal_deinit(&group->hal);
-        MCPWM_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_enable_bus_clock(group_id, false);
         }
 #if CONFIG_PM_ENABLE
@@ -197,12 +185,12 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
         // thus we want to use the APB_MAX lock
         pm_lock_type = ESP_PM_APB_FREQ_MAX;
 #endif
-        ret  = esp_pm_lock_create(pm_lock_type, 0, mcpwm_periph_signals.groups[group_id].module_name, &group->pm_lock);
+        ret  = esp_pm_lock_create(pm_lock_type, 0, soc_mcpwm_signals[group_id].module_name, &group->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
         ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
-        MCPWM_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_group_set_clock_source(group_id, clk_src);
         }
     }
@@ -231,7 +219,7 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
     uint32_t fit_group_prescale = 0;
     if (!(module_prescale >= 1 && module_prescale <= module_prescale_max)) {
         group_prescale = 0;
-        while (++group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE) {
+        while (++group_prescale <= MCPWM_LL_GET(MAX_GROUP_PRESCALE)) {
             group_resolution_hz = periph_src_clk_hz / group_prescale;
             module_prescale = group_resolution_hz / expect_module_resolution_hz;
             if (module_prescale >= 1 && module_prescale <= module_prescale_max) {
@@ -248,12 +236,12 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
         }
         module_prescale = fit_module_prescale;
         group_prescale = fit_group_prescale;
+        ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_GET(MAX_GROUP_PRESCALE), ESP_ERR_INVALID_STATE, TAG,
+                            "set group prescale failed, group clock cannot match the resolution");
         group_resolution_hz = periph_src_clk_hz / group_prescale;
     }
 
     ESP_LOGD(TAG, "group (%d) calc prescale:%"PRIu32", module calc prescale:%"PRIu32"", group_id, group_prescale, module_prescale);
-    ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE, ESP_ERR_INVALID_STATE, TAG,
-                        "set group prescale failed, group clock cannot match the resolution");
 
     // check if we need to update the group prescale, group prescale is shared by all mcpwm modules
     bool prescale_conflict = false;
@@ -261,7 +249,7 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
     if (group->prescale == 0) {
         group->prescale = group_prescale;
         group->resolution_hz = group_resolution_hz;
-        MCPWM_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             mcpwm_ll_group_set_clock_prescale(group_id, group_prescale);
         }
     } else {

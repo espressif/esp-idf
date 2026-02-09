@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,26 +12,27 @@ from typing import Any
 try:
     from esp_coredump import CoreDump
 except ImportError:
-    raise ModuleNotFoundError('No module named "esp_coredump" please install esp_coredump by running '
-                              '"python -m pip install esp-coredump"')
+    raise ModuleNotFoundError(
+        'No module named "esp_coredump" please install esp_coredump by running "python -m pip install esp-coredump"'
+    )
 
 from esp_coredump.cli_ext import parser
 
 
-def get_prefix_map_gdbinit_path(prog_path):  # type: (str) -> Any
+def get_prefix_map_gdbinit_path(prog_path: str) -> Any:
     build_dir = os.path.abspath(os.path.dirname(prog_path))
     desc_path = os.path.abspath(os.path.join(build_dir, 'project_description.json'))
     if not os.path.isfile(desc_path):
         logging.warning('%s does not exist. Please build the app with "idf.py build"', desc_path)
         return ''
 
-    with open(desc_path, 'r', encoding='utf-8') as f:
+    with open(desc_path, encoding='utf-8') as f:
         project_desc = json.load(f)
 
-    return project_desc.get('debug_prefix_map_gdbinit')
+    return project_desc['gdbinit_files']['02_prefix_map']
 
 
-def main():  # type: () -> None
+def main() -> None:
     args = parser.parse_args()
 
     if args.debug == 0:

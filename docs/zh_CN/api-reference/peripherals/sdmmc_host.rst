@@ -74,7 +74,7 @@ SDMMC 主机驱动
 .. only:: esp32p4
 
     - 卡槽 :c:macro:`SDMMC_HOST_SLOT_1` 通过 GPIO 交换矩阵路由，即任何 GPIO 都可以用于每个 SD 卡信号。这适用于非 UHS-I 用途。
-    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于 UHS-I 模式，驱动程序中尚不支持该模式。
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于 UHS-I 模式。
 
     在 {IDF_TARGET_NAME} 上，SDMMC 主机需要外部电源为 IO 电压供电。详情请参阅 :ref:`pwr-ctrl`。
 
@@ -87,6 +87,7 @@ SDMMC 主机驱动支持以下速率模式：
 
   - 默认速率 (20 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
   - 高速模式 (40 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
+  :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, SDR104 模式 (200 MHz)：支持 4 线 SD 卡传输。
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V SDR50 模式 (100 MHz)：支持 4 线 SD 卡传输。
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V DDR50 模式 (50 MHz)：支持 4 线 SD 卡传输。
   - 高速 DDR 模式 (40 MHz)：对于 3.3 V eMMC，支持 4 线传输。
@@ -176,8 +177,8 @@ SDMMC 主机驱动支持以下速率模式：
 
     如果设计需要更高速度的 SD 模式（仅在 1.8 V IO 电平下工作），则有两种可选方案：
 
-    - 使用片上可编程 LDO。将所需的 LDO 输出通道连接到 VDDPST_5 (SD_VREF) 管脚上，并调用 :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` 来初始化 SD 电源控制驱动。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctl_handle` 设置为生成句柄。
-    - 使用外部可编程 LDO。同样，将 LDO 输出连接到 VDDPST_5 (SD_VREF) 管脚，并自定义 `sd_pwr_ctrl` 驱动程序来控制 LDO。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` 分配给驱动程序实例句柄。
+    - 使用片上可编程 LDO。将所需的 LDO 输出通道连接到 VDDPST_5 (SD_VREF) 管脚上，并调用 :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` 来初始化 SD 电源控制驱动。最后，将 :cpp:member:`sdmmc_host_t::pwr_ctl_handle` 设置为生成句柄。
+    - 使用外部可编程 LDO。同样，将 LDO 输出连接到 VDDPST_5 (SD_VREF) 管脚，并自定义 `sd_pwr_ctrl` 驱动程序来控制 LDO。最后，将 :cpp:member:`sdmmc_host_t::pwr_ctrl_handle` 分配给驱动程序实例句柄。
 
 
 eMMC 芯片的 DDR 模式
@@ -209,3 +210,7 @@ API 参考
 -------------
 
 .. include-build-file:: inc/sdmmc_host.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl.inc
+
+.. include-build-file:: inc/sd_pwr_ctrl_by_on_chip_ldo.inc

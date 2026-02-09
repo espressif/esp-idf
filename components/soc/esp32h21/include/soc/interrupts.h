@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -47,7 +47,7 @@ typedef enum {
     ETS_HP_APM_M2_INTR_SOURCE,
     ETS_HP_APM_M3_INTR_SOURCE,
     ETS_MSPI_INTR_SOURCE,
-    ETS_I2S1_INTR_SOURCE,
+    ETS_I2S0_INTR_SOURCE,
     ETS_UHCI0_INTR_SOURCE,
     ETS_UART0_INTR_SOURCE,
     ETS_UART1_INTR_SOURCE,
