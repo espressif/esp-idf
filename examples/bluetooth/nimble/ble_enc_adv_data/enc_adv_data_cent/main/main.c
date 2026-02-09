@@ -102,7 +102,20 @@ enc_adv_data_cent_on_read(uint16_t conn_handle,
 
     value_ead.km = (struct key_material *) malloc (sizeof(struct key_material));
 
+    if (value_ead.km == NULL) {
+        MODLOG_DFLT(ERROR, "Failed to allocate memory for key material");
+        goto err;
+    }
+
     memset(value_ead.km, 0, sizeof(struct key_material));
+
+    /* Validate mbuf has enough data before copying */
+    if (attr->om == NULL || OS_MBUF_PKTLEN(attr->om) < (BLE_EAD_KEY_SIZE + BLE_EAD_IV_SIZE)) {
+        MODLOG_DFLT(ERROR, "Invalid mbuf or insufficient data size");
+        free(value_ead.km);
+        value_ead.km = NULL;
+        goto err;
+    }
 
     os_mbuf_copydata(attr->om, 0, BLE_EAD_KEY_SIZE, &value_ead.km->session_key);
     os_mbuf_copydata(attr->om, BLE_EAD_KEY_SIZE, BLE_EAD_IV_SIZE, &value_ead.km->iv);
@@ -120,8 +133,17 @@ enc_adv_data_cent_on_read(uint16_t conn_handle,
         MODLOG_DFLT(INFO, "Writing of session key, iv, and peer addr to NVS success");
     }
 
+    if (value_ead.km != NULL) {
+        free(value_ead.km);
+        value_ead.km = NULL;
+    }
+
 err:
     /* Terminate the connection. */
+    if (value_ead.km != NULL) {
+        free(value_ead.km);
+        value_ead.km = NULL;
+    }
     return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
@@ -244,6 +266,10 @@ enc_adv_data_cent_decrypt(uint8_t length_data, const uint8_t *data, const uint8_
         switch (op) {
         case BLE_GAP_ENC_ADV_DATA:
             enc_data = (uint8_t *) malloc (sizeof(uint8_t) * len);
+             if (enc_data == NULL) {
+                 MODLOG_DFLT(ERROR, "Failed to allocate enc_data");
+                 return 0;
+             }
             memcpy(enc_data, data + offset + 2, len);
 
             memcpy(&key_ead.peer_addr.val, peer_addr, PEER_ADDR_VAL_SIZE);
@@ -262,6 +288,7 @@ enc_adv_data_cent_decrypt(uint8_t length_data, const uint8_t *data, const uint8_
                 MODLOG_DFLT(INFO, "Decryption of adv data done successfully");
             } else {
                 MODLOG_DFLT(INFO, "Decryption of adv data failed");
+                free(enc_data);
                 return 0;
             }
 
@@ -272,6 +299,7 @@ enc_adv_data_cent_decrypt(uint8_t length_data, const uint8_t *data, const uint8_
                 MODLOG_DFLT(INFO, "0x%02X ", temp[i]);
             }
             MODLOG_DFLT(INFO, "\n");
+            free(enc_data);
             return 1;
 
         default:

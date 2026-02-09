@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -152,9 +152,12 @@ print_adv_fields(const struct ble_hs_adv_fields *fields)
     }
 
     if (fields->name != NULL) {
-        assert(fields->name_len < sizeof s - 1);
-        memcpy(s, fields->name, fields->name_len);
-        s[fields->name_len] = '\0';
+        size_t copy_len = fields->name_len;
+        if (copy_len >= sizeof(s)) {
+            copy_len = sizeof(s) - 1;
+        }
+        memcpy(s, fields->name, copy_len);
+        s[copy_len] = '\0';
         MODLOG_DFLT(DEBUG, "    name(%scomplete)=%s\n",
                     fields->name_is_complete ? "" : "in", s);
     }

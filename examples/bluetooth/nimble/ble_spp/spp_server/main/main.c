@@ -163,7 +163,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
         ble_spp_server_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
 
-        conn_handle_subs[event->disconnect.conn.conn_handle] = false;
+        if (event->disconnect.conn.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            conn_handle_subs[event->disconnect.conn.conn_handle] = false;
+        }
 
         /* Connection terminated; resume advertising. */
         ble_spp_server_advertise();
@@ -202,7 +204,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify,
                     event->subscribe.prev_indicate,
                     event->subscribe.cur_indicate);
-        conn_handle_subs[event->subscribe.conn_handle] = true;
+        if (event->subscribe.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            conn_handle_subs[event->subscribe.conn_handle] = true;
+        }
         return 0;
 
     default:
@@ -360,6 +364,10 @@ void ble_server_uart_task(void *pvParameters)
                 if (event.size) {
                     uint8_t *ntf;
                     ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    if (ntf == NULL) {
+                        MODLOG_DFLT(ERROR, "malloc failed for UART data, size=%u", event.size);
+                        continue;
+                    }
                     memset(ntf, 0x00, event.size);
                     uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
 

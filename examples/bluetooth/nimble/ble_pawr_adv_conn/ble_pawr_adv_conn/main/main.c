@@ -70,6 +70,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
     uint8_t adv_handle;
     uint8_t subevent;
     uint8_t phy_mask;
+    uint8_t actual_sent = 0;
 
     switch (event->type) {
 
@@ -101,26 +102,38 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
                   event->periodic_adv_subev_data_req.subevent_data_count);
 
         sent_num = event->periodic_adv_subev_data_req.subevent_data_count;
+
         for (uint8_t i = 0; i < sent_num; i++) {
             data = os_msys_get_pkthdr(BLE_PAWR_SUB_DATA_LEN, 0);
             if (!data) {
-                ESP_LOGE(TAG, "No memory, %d", i);
+                ESP_LOGE(TAG, "No memory at subevt %d", i);
+                // Free previously allocated data to prevent memory leak
+                for (uint8_t j = 0; j < actual_sent; j++) {
+                    os_mbuf_free_chain(sub_data_params[j].data);
+                    sub_data_params[j].data = NULL;
+                }
+                actual_sent = 0;  // Do not call set_periodic_adv_subev_data
                 break;
             }
             sub = (i + event->periodic_adv_subev_data_req.subevent_start) % BLE_PAWR_NUM_SUBEVTS;
             memset(&sub_data_pattern[1], sub, BLE_PAWR_SUB_DATA_LEN - 1);
-            os_mbuf_append(data, sub_data_pattern, BLE_PAWR_SUB_DATA_LEN);
+            if (os_mbuf_append(data, sub_data_pattern, BLE_PAWR_SUB_DATA_LEN) != 0) {
+                os_mbuf_free_chain(data);
+                break;
+            }
             sub_data_params[i].subevent = sub;
             sub_data_params[i].response_slot_start = 0;
             sub_data_params[i].response_slot_count = BLE_PAWR_NUM_RSP_SLOTS;
             sub_data_params[i].data = data;
             sub_data_pattern[0]++;
+            actual_sent++;
         }
-
-        rc = ble_gap_set_periodic_adv_subev_data(event->periodic_adv_subev_data_req.adv_handle,
-                                                 sent_num, sub_data_params);
-        if (rc) {
-            ESP_LOGE(TAG, "Failed to set Subevent Data, rc = 0x%x", rc);
+        if (actual_sent > 0) {
+            rc = ble_gap_set_periodic_adv_subev_data(event->periodic_adv_subev_data_req.adv_handle,
+                                                 actual_sent, sub_data_params);
+            if (rc) {
+                ESP_LOGE(TAG, "Failed to set Subevent Data, rc = 0x%x", rc);
+            }
         }
         return 0;
 

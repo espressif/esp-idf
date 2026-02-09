@@ -236,6 +236,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     int ad_struct_len = 0;
     uint8_t test_addr[6];
     uint32_t peer_addr[6];
+    uint8_t type = 0;
 
     memset(peer_addr, 0x0, sizeof peer_addr);
 
@@ -252,7 +253,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 
 	/* Conversion */
         for (int i=0; i<6; i++) {
-            test_addr[i] = (uint8_t )peer_addr[i];
+            test_addr[5 - i] = (uint8_t )peer_addr[i];
         }
 
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
@@ -264,21 +265,20 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     */
     do {
         ad_struct_len = disc->data[offset];
-
-        if (!ad_struct_len) {
+        if (!ad_struct_len || (offset + ad_struct_len + 1 > disc->length_data)) {
             break;
         }
-
-        /* Search if LE PHY UUID is advertised */
-        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2 ) {
-                return 1;
+        type = disc->data[offset + 1];
+        if ((type == 0x02 || type == 0x03) && ad_struct_len >= 3) {
+            /* Scan UUID bytes for LE_PHY_UUID16 (little-endian: 0xF2 0xAB) */
+            for (int i = 2; i + 1 < ad_struct_len; i += 2) {
+                if (disc->data[offset + i] == 0xF2 && disc->data[offset + i + 1] == 0xAB) {
+                    return 1;
+                }
             }
         }
-
         offset += ad_struct_len + 1;
-
-    } while ( offset < disc->length_data );
+    } while (offset < disc->length_data);
     return 0;
 }
 
@@ -484,42 +484,37 @@ blecent_on_sync(void)
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
-    s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK;
-
     all_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK | BLE_HCI_LE_PHY_CODED_PREF_MASK;
 
     set_default_le_phy(all_phy, all_phy);
 
-    if (s_current_phy != BLE_HCI_LE_PHY_1M_PREF_MASK) {
-	/* Check if peer address is set in EXAMPLE_PEER_ADDR */
-        if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
-	    (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
-            /* User wants to connect on 2M or coded phy directly */
-            sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
-                   &peer_addr[5], &peer_addr[4], &peer_addr[3],
-                   &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
+	(strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+        /* User wants to connect on 2M or coded phy directly */
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
+               &peer_addr[5], &peer_addr[4], &peer_addr[3],
+               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
 
-            /* Conversion */
-            for (int i=0; i<6; i++) {
-                test_addr[i] = (uint8_t )peer_addr[i];
-            }
-
-            for(ii = 0 ;ii < 6; ii++)
-                conn_addr.val[ii] = test_addr[ii];
-
-            conn_addr.type = 0;
-
-            vTaskDelay(300);
-
-	    if (s_current_phy == BLE_HCI_LE_PHY_2M_PREF_MASK)
-	        s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK ;
-
-            ble_gap_ext_connect(0, &conn_addr, 30000, s_current_phy,
-			        NULL, NULL, NULL, blecent_gap_event, NULL);
+        /* Conversion */
+        for (int i=0; i<6; i++) {
+            test_addr[i] = (uint8_t )peer_addr[i];
         }
+
+        for(ii = 0 ;ii < 6; ii++)
+            conn_addr.val[ii] = test_addr[ii];
+
+        conn_addr.type = 0;
+
+        vTaskDelay(300);
+
+	    s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK ;
+
+        ble_gap_ext_connect(0, &conn_addr, 30000, s_current_phy,
+		        NULL, NULL, NULL, blecent_gap_event, NULL);
     }
     else {
-/* Begin scanning for a peripheral to connect to. */
+        s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK;
+        /* Begin scanning for a peripheral to connect to. */
         blecent_scan();
     }
 }
