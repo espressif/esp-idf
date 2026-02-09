@@ -505,6 +505,17 @@ function(__project_init components_var test_components_var)
             set(minimal_build OFF)
             idf_build_set_property(MINIMAL_BUILD OFF)
         else()
+            # The minimal build feature is enabled; check whether the 'main'
+            # component target exists, ensuring that the component is
+            # recognized by the build system.
+            idf_build_get_property(prefix __PREFIX)
+            set(main_component_target ___${prefix}_main)
+            if(NOT TARGET ${main_component_target})
+                message(FATAL_ERROR "MINIMAL_BUILD is enabled but component main was not found. "
+                    "Please ensure the main component exists (in '${CMAKE_CURRENT_LIST_DIR}/main') "
+                    "or disable MINIMAL_BUILD, or explicitly set the COMPONENTS variable.")
+            endif()
+
             set(COMPONENTS main ${TEST_COMPONENTS})
             set(minimal_build ON)
         endif()
