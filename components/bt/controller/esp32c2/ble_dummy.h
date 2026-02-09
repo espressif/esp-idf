@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _BLE_DUMMY_H_
 #define _BLE_DUMMY_H_
 
@@ -285,7 +290,7 @@ int r_ble_ll_customize_peer_sca_get(void){return 0;}
 int r_ble_ll_customize_peer_sca_get_eco4(void){return 0;}
 int r_ble_ll_utils_calc_window_widening(void){return 0;}
 int r_ble_ll_utils_calc_window_widening_eco4(void){return 0;}
-#endif // !DEFAULT_BT_LE_PERIODIC_SYNC && !DEFAULT_BT_LE_ROLE_PERIPHERAL 
+#endif // !DEFAULT_BT_LE_PERIODIC_SYNC && !DEFAULT_BT_LE_ROLE_PERIPHERAL
 
 #if !(CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
 void r_ble_vendor_hci_register(void){}
