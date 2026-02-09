@@ -74,7 +74,9 @@
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 
+#if !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 #include "ble_dummy.h"
+#endif // !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 /* Macro definition
  ************************************************************************
  */
