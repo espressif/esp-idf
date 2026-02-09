@@ -751,6 +751,11 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
     chunk.data = net_buf_simple_pull_mem(buf, chunk.size);
     chunk.offset = idx * srv->state.xfer.chunk_size;
 
+    if (!bt_mesh_blob_srv_is_busy(srv)) {
+        BT_ERR("Discord chunk(%d), because the blob server is not busy(%d)", idx, srv->phase);
+        return -EINVAL;
+    }
+
     if (srv->phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK ||
             srv->phase == BT_MESH_BLOB_XFER_PHASE_COMPLETE) {
         // This Block is already complete received.
