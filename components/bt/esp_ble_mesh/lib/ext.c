@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,10 @@
 
 #if CONFIG_BT_BLUEDROID_ENABLED
 #include "bta/bta_api.h"
+#endif
+
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+#include "log_compression/utils.h"
 #endif
 
 #include "btc_ble_mesh_agg_model.h"
@@ -35,8 +39,6 @@
 #include "lpn.h"
 #include "rpl.h"
 #include "foundation.h"
-#include <tinycrypt/hmac.h>
-#include <tinycrypt/sha256.h>
 #include "mesh/buf.h"
 #include "mesh/slist.h"
 #include "mesh/config.h"
@@ -85,18 +87,18 @@
 uint8_t __meshlib_var_BLE_MESH_ADV_PROV = BLE_MESH_ADV_PROV;
 uint8_t __meshlib_var_BLE_MESH_ADV_DATA = BLE_MESH_ADV_DATA;
 #if CONFIG_BLE_MESH_FRIEND
-uint8_t __meshlib_var_BLE_MESH_ADV_FRIEND = BLE_MESH_ADV_DATA;
+uint8_t __meshlib_var_BLE_MESH_ADV_FRIEND = BLE_MESH_ADV_FRIEND;
 #endif
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
-uint8_t __meshlib_var_BLE_MESH_ADV_RELAY_DATA = BLE_MESH_ADV_DATA;
+uint8_t __meshlib_var_BLE_MESH_ADV_RELAY_DATA = BLE_MESH_ADV_RELAY_DATA;
 #endif
 uint8_t __meshlib_var_BLE_MESH_ADV_BEACON = BLE_MESH_ADV_BEACON;
 uint8_t __meshlib_var_BLE_MESH_ADV_URI = BLE_MESH_ADV_URI;
-#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
-uint8_t __meshlib_var_BLE_MESH_ADV_BLE = BLE_MESH_ADV_BLE;
-#endif
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
 uint8_t __meshlib_var_BLE_MESH_ADV_PROXY_SOLIC = BLE_MESH_ADV_PROXY_SOLIC;
+#endif
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+uint8_t __meshlib_var_BLE_MESH_ADV_BLE = BLE_MESH_ADV_BLE;
 #endif
 uint8_t __meshlib_var_BLE_MESH_ADV_TYPES_NUM = BLE_MESH_ADV_TYPES_NUM;
 
@@ -562,24 +564,9 @@ int bt_mesh_ext_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
     return bt_mesh_net_decrypt(key, buf, iv_index, proxy, proxy_solic);
 }
 
-int bt_mesh_ext_tc_hmac_set_key(void *ctx, const uint8_t *key, unsigned int key_size)
+int bt_mesh_ext_hmac_sha_256(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len, uint8_t mac[32])
 {
-    return tc_hmac_set_key(ctx, key, key_size);
-}
-
-int bt_mesh_ext_tc_hmac_init(void *ctx)
-{
-    return tc_hmac_init(ctx);
-}
-
-int bt_mesh_ext_tc_hmac_update(void *ctx, const void *data, unsigned int data_length)
-{
-    return tc_hmac_update(ctx, data, data_length);
-}
-
-int bt_mesh_ext_tc_hmac_final(uint8_t *tag, unsigned int taglen, void *ctx)
-{
-    return tc_hmac_final(tag, taglen, ctx);
+    return bt_mesh_sha256_hmac_raw_key(key, sg, sg_len, mac);
 }
 
 /* Mutex */
@@ -4274,12 +4261,6 @@ static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
     .struct_addr_off_val                            = offsetof(bt_mesh_addr_t, val),
     .struct_sg_size                                 = sizeof(struct bt_mesh_sg),
     .struct_sg_off_len                              = offsetof(struct bt_mesh_sg, len),
-    .struct_tc_sha256_state                         = sizeof(struct tc_sha256_state_struct),
-    .struct_tc_sha256_off_bits_hashed               = offsetof(struct tc_sha256_state_struct, bits_hashed),
-    .struct_tc_sha256_off_leftover                  = offsetof(struct tc_sha256_state_struct, leftover),
-    .struct_tc_sha256_off_leftover_offset           = offsetof(struct tc_sha256_state_struct, leftover_offset),
-    .struct_tc_hmac_state_size                      = sizeof(struct tc_hmac_state_struct),
-    .struct_tc_hmac_state_off_key                   = offsetof(struct tc_hmac_state_struct, key),
 
     .btc_ble_mesh_evt_agg_client_send_timeout                   = BTC_BLE_MESH_EVT_AGG_CLIENT_SEND_TIMEOUT,
     .btc_ble_mesh_evt_agg_client_recv_rsp                       = BTC_BLE_MESH_EVT_AGG_CLIENT_RECV_RSP,
@@ -5040,6 +5021,31 @@ void bt_mesh_lib_log_debug(const char *format, ...)
         va_end(args);
     }
 #endif
+}
+
+void ble_mesh_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...)
+{
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+    if (BLE_MESH_LOG_LEVEL >= log_level) {
+        va_list args = {0};
+        va_start(args, arg_cnt);
+        extern int ble_log_compressed_hex_printv(uint8_t source, uint32_t log_index, size_t args_cnt, va_list args);
+        ble_log_compressed_hex_printv(BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB, log_index, arg_cnt, args);
+        va_end(args);
+    }
+#endif
+    return;
+}
+
+void ble_mesh_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx, const uint8_t *buf, uint8_t len)
+{
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+    if (BLE_MESH_LOG_LEVEL >= log_level) {
+        extern int ble_log_compressed_hex_print_buf(uint8_t source, uint32_t log_index, uint8_t buf_idx, const uint8_t *buf, size_t len);
+        ble_log_compressed_hex_print_buf(BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB, log_index, buf_idx, buf, len);
+    }
+#endif
+    return;
 }
 
 /**

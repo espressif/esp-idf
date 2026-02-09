@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,8 +30,55 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
-    if (ctx && ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
-        BT_ERR("Invalid destination address 0x0000");
+    if (ctx) {
+        if (ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
+            BT_ERR("Invalid destination address 0x0000");
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if (ctx->enh.adv_cfg_used &&
+            ctx->enh.adv_cfg.channel_map & BIT(3)) {
+            BT_ERR("Invalid channel map 0x%04x: bit 3 is reserved", ctx->enh.adv_cfg.channel_map);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+#if CONFIG_BLE_MESH_EXT_ADV
+        if (ctx->enh.ext_adv_cfg_used) {
+            if (ctx->enh.ext_adv_cfg.primary_phy == ESP_BLE_MESH_ADV_PHY_CODED) {
+                BT_ERR("Primary phy can't be set to coded phy");
+                return ESP_ERR_INVALID_ARG;
+            }
+
+            if (ctx->enh.ext_adv_cfg.primary_phy == ESP_BLE_MESH_ADV_PHY_UNASSIGNED) {
+                ctx->enh.ext_adv_cfg.primary_phy = ESP_BLE_MESH_ADV_PHY_DEFAULT;
+            }
+
+            if (ctx->enh.ext_adv_cfg.secondary_phy == ESP_BLE_MESH_ADV_PHY_UNASSIGNED) {
+                ctx->enh.ext_adv_cfg.secondary_phy = ESP_BLE_MESH_ADV_PHY_DEFAULT;
+            }
+        }
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (ctx->enh.long_pkt_cfg_used &&
+            (ctx->enh.long_pkt_cfg != ESP_BLE_MESH_LONG_PACKET_FORCE &&
+             ctx->enh.long_pkt_cfg != ESP_BLE_MESH_LONG_PACKET_PREFER)) {
+            BT_ERR("Invalid long packet configuration %d (expected FORCE=1 or PREFER=2)",
+                ctx->enh.long_pkt_cfg);
+        }
+
+        if (ctx->enh.long_pkt_cfg_used && (op_len + length + mic_len > ESP_BLE_MESH_EXT_SDU_MAX_LEN)) {
+            BT_ERR("The length(%d) exceeds the maximum length supported by the long packet", length);
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (((!ctx->enh.long_pkt_cfg_used) && op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX))) {
+            BT_ERR("Too large data length %d", length);
+            return ESP_ERR_INVALID_ARG;
+        }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+    } // if (ctx)
+
+    if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {
+        BT_ERR("Too large data length %d", length);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -68,11 +115,6 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
          */
         mic_len = ((ctx->send_tag & ESP_BLE_MESH_TAG_SEND_SEGMENTED) && ctx->send_szmic) ?
                    ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
-    }
-
-    if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {
-        BT_ERR("Too large data length %d", length);
-        return ESP_ERR_INVALID_ARG;
     }
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {

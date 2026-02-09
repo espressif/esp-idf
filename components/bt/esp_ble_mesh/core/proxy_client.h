@@ -104,6 +104,8 @@ int bt_mesh_proxy_client_disconnect(uint8_t conn_handle);
 
 bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub, bool private);
 
+uint16_t bt_mesh_proxy_client_get_conn_count(void);
+
 bool bt_mesh_proxy_client_relay(struct net_buf_simple *buf, uint16_t dst);
 
 int bt_mesh_proxy_client_cfg_send(uint8_t conn_handle, uint16_t net_idx,

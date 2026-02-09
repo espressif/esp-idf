@@ -15,23 +15,78 @@
 #include "mesh/utils.h"
 #include "mesh/uuid.h"
 #include "mesh/buf.h"
+#include "mesh/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* BLE Mesh Max Connection Count */
+/**
+ * The maximum number of connection count is limited by
+ * the resources allocated by both the host and the controller
+ * components, so the actual number of available connections
+ * is the minimum of the resources from both.
+ *
+ * On the C3/S3 platform, the controller uses the macro `CONFIG_BT_CTRL_BLE_MAX_ACT`,
+ * but adv and scan also occupy this resource, so the actual number of available
+ * connections is (CONFIG_BT_CTRL_BLE_MAX_ACT - adv instance count - scan).
+ * However, the macro allocation on the host is entirely for connections,
+ * so on the C3/S3 platform, the maximum number of connectable devices should
+ * be determined by the configuration at the host minus the number of
+ * advertising instances and scan from the controller's configuration.
+*/
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
-#define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
+#if CONFIG_IDF_TARGET_ESP32
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
+#elif (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, (CONFIG_BT_CTRL_BLE_MAX_ACT - 2))
+#elif (CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || \
+       CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61)
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BT_LE_MAX_CONNECTIONS)
+#else
+/* default setting */
+#define BLE_MESH_MAX_CONN   1
 #endif
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
+#if CONFIG_IDF_TARGET_ESP32
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
+#elif (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
+#define BLE_MESH_MAX_CONN   MIN(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, (CONFIG_BT_CTRL_BLE_MAX_ACT - 2))
+#elif (CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || \
+       CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61)
 #define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
+#else
+/* default setting */
+#define BLE_MESH_MAX_CONN   1
+#endif
+#endif /* CONFIG_BT_NIMBLE_ENABLED */
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+#define BLE_MESH_GAP_ADV_MAX_LEN    (2 + CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN)
+#else
+#define BLE_MESH_GAP_ADV_MAX_LEN    31
 #endif
 
-#define BLE_MESH_GAP_ADV_MAX_LEN    31
-
 #define BLE_MESH_GATT_DEF_MTU_SIZE  23
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+#define BLE_MESH_TX_POWER_INCLUDE_DEFAULT                           false
+#define BLE_MESH_TX_POWER_DEFAULT                                   0x7f
+#define BLE_MESH_ADV_PHY_UNASSIGNED                                 0
+#define BLE_MESH_ADV_PHY_1M                                         1
+#define BLE_MESH_ADV_PHY_2M                                         2
+#define BLE_MESH_ADV_PHY_CODED                                      3
+#define BLE_MESH_ADV_PHY_OPTION_NO_PREFER                           0
+#define BLE_MESH_ADV_PHY_OPTION_PREFER_S2                           1
+#define BLE_MESH_ADV_PHY_OPTION_PREFER_S8                           2
+#define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S2                          3
+#define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S8                          4
+#define BLE_MESH_ADV_PRI_PHY_DEFAULT              BLE_MESH_ADV_PHY_1M
+#define BLE_MESH_ADV_SEC_PHY_DEFAULT              BLE_MESH_ADV_PHY_1M
+#endif
 
 /* BD ADDR types */
 #define BLE_MESH_ADDR_PUBLIC         0x00
@@ -43,16 +98,35 @@ extern "C" {
 #define BLE_MESH_ADDR_LEN                   0x06
 
 /* Advertising types */
+#if !CONFIG_BLE_MESH_USE_BLE_50
 #define BLE_MESH_ADV_IND                    0x00
 #define BLE_MESH_ADV_DIRECT_IND             0x01
 #define BLE_MESH_ADV_SCAN_IND               0x02
 #define BLE_MESH_ADV_NONCONN_IND            0x03
 #define BLE_MESH_ADV_DIRECT_IND_LOW_DUTY    0x04
+#define BLE_MESH_ADV_SCAN_RSP               0x04
+#else
+/* Bluetooth Core Spec 6.0, Vol 4, Part E, 7.7.65.13 */
+#if CONFIG_BLE_MESH_EXT_ADV
+#define BLE_MESH_EXT_ADV_NONCONN_IND       (0)
+#endif
+#define BLE_MESH_ADV_IND                   (0x13)
+#define BLE_MESH_ADV_DIRECT_IND            (0x15)
+#define BLE_MESH_ADV_SCAN_IND              (0x12)
+#define BLE_MESH_ADV_NONCONN_IND           (0x10)
+#define BLE_MESH_ADV_DIRECT_IND_LOW_DUTY   (0x1b)
+#define BLE_MESH_ADV_SCAN_RSP              (0x1b)
+#endif
+
+#define BLE_MESH_ADV_ITVL_DEFAULT          (0)
+#define BLE_MESH_ADV_CNT_DEFAULT           (0)
 
 /* advertising channel map */
-#define BLE_MESH_ADV_CHNL_37                BIT(0)
-#define BLE_MESH_ADV_CHNL_38                BIT(1)
-#define BLE_MESH_ADV_CHNL_39                BIT(2)
+#define BLE_MESH_ADV_CHAN_UNASSIGNED        (0)
+#define BLE_MESH_ADV_CHAN_37                BIT(0)
+#define BLE_MESH_ADV_CHAN_38                BIT(1)
+#define BLE_MESH_ADV_CHAN_39                BIT(2)
+#define BLE_MESH_ADV_CHAN_DEFAULT           (BLE_MESH_ADV_CHAN_39|BLE_MESH_ADV_CHAN_38|BLE_MESH_ADV_CHAN_37)
 
 /* Advertising filter policy */
 #define BLE_MESH_AP_SCAN_CONN_ALL           0x00
@@ -400,6 +474,45 @@ struct bt_mesh_adv_param {
 
     /** Maximum Advertising Interval (N * 0.625) */
     uint16_t interval_max;
+
+    uint8_t channel_map;
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+    /** Maximum Advertising Duration (N * 0.625) */
+    uint16_t adv_duration;
+
+    /** Advertising Packages Number */
+    uint16_t adv_count;
+
+    /** Advertising Primary PHY */
+    uint8_t primary_phy;
+
+    /** Advertising Secondary PHY */
+    uint8_t secondary_phy;
+
+    int8_t tx_power;
+
+    uint8_t include_tx_power : 1;
+#endif
+};
+
+#define ADV_TASK_ADV_INST_EVT(inst_id) BIT(inst_id)
+
+enum bt_mesh_adv_inst_type {
+    BLE_MESH_ADV_INST,
+#if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+     CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    BLE_MESH_ADV_PROXY_INST,
+#endif
+#if CONFIG_BLE_MESH_SEPARATE_RELAY_ADV_INSTANCE
+    BLE_MESH_RELAY_ADV_INST,
+#endif
+#if CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+    BLE_MESH_BLE_ADV_INST,
+#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
+    BLE_MESH_ADV_INST_TYPES_NUM,
 };
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
@@ -441,7 +554,7 @@ struct bt_mesh_scan_param {
     /** Scan interval (N * 0.625 ms) */
     uint16_t interval;
 
-    /** Scan window (N * 0.625 ms) */
+    /** Uncoded phy Scan window (N * 0.625 ms) */
     uint16_t window;
 
     /** BLE scan filter policy */
@@ -453,21 +566,40 @@ struct bt_mesh_conn {
     bt_mesh_atomic_t ref;
 };
 
+/* BLE Mesh advertising report  */
+struct bt_mesh_adv_report {
+    /* Advertiser LE address and type. */
+    bt_mesh_addr_t addr;
+
+    /* Strength of advertiser signal. */
+    int8_t rssi;
+
+    /* Type of advertising response from advertiser. */
+    uint8_t adv_type;
+
+    /* Buffer containing advertiser data. */
+    struct net_buf_simple adv_data;
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+    /* Primary advertising PHY */
+    uint8_t primary_phy;
+
+    /* Secondary advertising PHY */
+    uint8_t secondary_phy;
+
+    uint8_t tx_power;
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+};
+
 /** @typedef bt_mesh_scan_cb_t
  *  @brief Callback type for reporting LE scan results.
  *
  *  A function of this type is given to the bt_le_scan_start() function
  *  and will be called for any discovered LE device.
  *
- *  @param addr Advertiser LE address and type.
- *  @param rssi Strength of advertiser signal.
- *  @param adv_type Type of advertising response from advertiser.
- *  @param data Buffer containing advertiser data.
- *  @param scan_rsp_len Scan Response data length.
+ *  @param adv_rpt: BLE Mesh advertising report.
  */
-typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, int8_t rssi,
-                               uint8_t adv_type, struct net_buf_simple *buf,
-                               uint8_t scan_rsp_len);
+typedef void bt_mesh_scan_cb_t(struct bt_mesh_adv_report *adv_rpt);
 
 /*  @typedef bt_mesh_dh_key_cb_t
  *  @brief Callback type for DH Key calculation.
@@ -684,6 +816,21 @@ struct bt_mesh_gatt_attr {
 int bt_mesh_host_init(void);
 int bt_mesh_host_deinit(void);
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+int bt_le_ext_adv_start(const uint8_t inst_id,
+                        const struct bt_mesh_adv_param *param,
+                        const struct bt_mesh_adv_data *ad, size_t ad_len,
+                        const struct bt_mesh_adv_data *sd, size_t sd_len);
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
+                              const struct bt_mesh_ble_adv_param *param,
+                              const struct bt_mesh_ble_adv_data *adv_data);
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
+int bt_le_ext_adv_stop(uint8_t inst_id);
+
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len);
@@ -691,9 +838,10 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
                           const struct bt_mesh_ble_adv_data *data);
-#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
 int bt_le_adv_stop(void);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t cb);
 
@@ -784,20 +932,6 @@ void bt_mesh_gatt_init(void);
 void bt_mesh_gatt_deinit(void);
 
 void bt_mesh_adapt_init(void);
-
-void bt_mesh_set_private_key(const uint8_t pri_key[32]);
-
-const uint8_t *bt_mesh_pub_key_get(void);
-
-bool bt_mesh_check_public_key(const uint8_t key[64]);
-
-int bt_mesh_dh_key_gen(const uint8_t remote_pub_key[64], uint8_t dhkey[32]);
-
-int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
-
-int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
 
 enum {
     BLE_MESH_EXCEP_LIST_SUB_CODE_ADD = 0,
