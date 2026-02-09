@@ -25,7 +25,11 @@
 
 #if CONFIG_BLE_MESH_BLOB_SRV
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+#define MTU_SIZE_MAX (BLE_MESH_EXT_RX_SDU_MAX - BLE_MESH_MIC_SHORT)
+#else
 #define MTU_SIZE_MAX (BLE_MESH_RX_SDU_MAX - BLE_MESH_MIC_SHORT)
+#endif
 
 /* The Receive BLOB Timeout Timer */
 #define SERVER_TIMEOUT_SECS(srv) (10 * (1 + (srv)->state.timeout_base))

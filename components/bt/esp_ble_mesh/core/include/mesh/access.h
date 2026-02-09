@@ -162,6 +162,49 @@ struct bt_mesh_elem {
 #define BLE_MESH_MODEL_ID_MBT_SRV                   BLE_MESH_MODEL_ID_BLOB_SRV
 #define BLE_MESH_MODEL_ID_MBT_CLI                   BLE_MESH_MODEL_ID_BLOB_CLI
 
+typedef struct {
+    uint32_t adv_itvl;
+    uint8_t  adv_cnt;
+    uint8_t channel_map;
+} ble_mesh_adv_cfg_t;
+
+#if CONFIG_BLE_MESH_EXT_ADV
+typedef struct {
+    uint8_t primary_phy;
+    uint8_t secondary_phy;
+    uint8_t include_tx_power:1;
+    int8_t  tx_power;
+} ble_mesh_ext_adv_cfg_t;
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+#define BLE_MESH_LONG_PACKET_FORCE         (1)
+#define BLE_MESH_LONG_PACKET_PREFER        (2)
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+typedef struct {
+    uint8_t adv_cfg_used : 1;
+#if CONFIG_BLE_MESH_EXT_ADV
+    uint8_t ext_adv_cfg_used : 1;
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+#if CONFIG_BLE_MESH_LONG_PACKET
+    uint8_t long_pkt_cfg_used : 1;
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+
+    ble_mesh_adv_cfg_t adv_cfg;
+#if CONFIG_BLE_MESH_EXT_ADV
+    ble_mesh_ext_adv_cfg_t ext_adv_cfg;
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+#if CONFIG_BLE_MESH_LONG_PACKET
+    /**
+     * Long packets will be used for broadcasting
+     * only if this flag is set and the traditional
+     * packet length (380 bytes) cannot be used.
+     */
+    uint8_t long_pkt_cfg : 2;
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+} bt_mesh_msg_enh_params_t;
+
 /** Message sending context. */
 struct bt_mesh_msg_ctx {
     /** NetKey Index of the subnet to send the message on. */
@@ -212,6 +255,8 @@ struct bt_mesh_msg_ctx {
     /** Change by Espressif, if the message is sent by a server
      *  model. Not used for receiving message. */
     bool srv_send __attribute__((deprecated));
+
+    bt_mesh_msg_enh_params_t enh;
 };
 
 struct bt_mesh_model_op {
@@ -356,7 +401,7 @@ struct bt_mesh_model_op {
  *  @return Mesh transmit value that can be used e.g. for the default
  *          values of the configuration model data.
  */
-#define BLE_MESH_TRANSMIT(count, int_ms) ((count) | ((((int_ms) / 10) - 1) << 3))
+#define BLE_MESH_TRANSMIT(count, int_ms) ((uint8_t)(count) | ((((int_ms) / 10) - 1) << 3))
 
 /** @def BLE_MESH_TRANSMIT_COUNT
  *

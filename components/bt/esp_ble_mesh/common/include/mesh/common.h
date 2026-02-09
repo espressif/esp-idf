@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
@@ -22,6 +23,7 @@
 #include "mesh/trace.h"
 #include "mesh/mutex.h"
 #include "mesh/access.h"
+#include "mesh/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {

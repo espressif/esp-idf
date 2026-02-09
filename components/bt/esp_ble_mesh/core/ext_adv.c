@@ -181,7 +181,7 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
         break;
     }
 
-    adv_send_start(duration, err, cb, cb_data);
+    BLE_MESH_SEND_START_CB(buf, duration, err, cb, cb_data);
     if (err) {
         BT_ERR("Start advertising failed: err %d", err);
         return err;
@@ -381,8 +381,8 @@ static uint32_t received_adv_evts_handle(uint32_t recv_evts)
             } else
 #endif
             {
-                adv_send_end(0, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb,
-                             BLE_MESH_ADV(adv_insts[i].sending_buf)->cb_data);
+                BLE_MESH_SEND_END_CB(0, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb,
+                                     BLE_MESH_ADV(adv_insts[i].sending_buf)->cb_data);
 
                 bt_mesh_adv_buf_ref_debug(__func__, adv_insts[i].sending_buf, 4U, BLE_MESH_BUF_REF_SMALL);
 

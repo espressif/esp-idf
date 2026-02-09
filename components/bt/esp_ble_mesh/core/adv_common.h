@@ -48,6 +48,9 @@ extern "C" {
 
 #define BLE_MESH_ADV_INST_UNUSED 0xFF
 
+/* Flags for struct bt_mesh_adv */
+#define BLE_MESH_ADV_FLAG_SKIP_START_CB  BIT(0)  /* Skip start callback (already called by GATT) */
+
 struct bt_mesh_adv {
     const struct bt_mesh_send_cb *cb;
     void *cb_data;
@@ -61,6 +64,7 @@ struct bt_mesh_adv {
     uint32_t adv_itvl;
     uint8_t  adv_cnt;
     uint8_t channel_map;
+    uint8_t flags;  /* See BLE_MESH_ADV_FLAG_* */
 };
 
 #if CONFIG_BLE_MESH_USE_BLE_50
@@ -171,29 +175,7 @@ typedef enum {
     BLE_MESH_BUF_REF_MAX,
 } bt_mesh_buf_ref_flag_t;
 
-
-static const uint8_t adv_type[] = {
-    [BLE_MESH_ADV_PROV]   = BLE_MESH_DATA_MESH_PROV,
-    [BLE_MESH_ADV_DATA]   = BLE_MESH_DATA_MESH_MESSAGE,
-#if CONFIG_BLE_MESH_EXT_ADV
-    [BLE_MESH_ADV_EXT_PROV] = BLE_MESH_DATA_MESH_PROV,
-    [BLE_MESH_ADV_EXT_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-    [BLE_MESH_ADV_EXT_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-#if CONFIG_BLE_MESH_LONG_PACKET
-    [BLE_MESH_ADV_EXT_LONG_PROV] = BLE_MESH_DATA_MESH_PROV,
-    [BLE_MESH_ADV_EXT_LONG_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-    [BLE_MESH_ADV_EXT_LONG_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-#endif /* CONFIG_BLE_MESH_LONG_PACKET */
-#endif /* CONFIG_BLE_MESH_EXT_ADV */
-#if CONFIG_BLE_MESH_FRIEND
-    [BLE_MESH_ADV_FRIEND]     = BLE_MESH_DATA_MESH_MESSAGE,
-#endif
-#if CONFIG_BLE_MESH_RELAY_ADV_BUF
-    [BLE_MESH_ADV_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-#endif
-    [BLE_MESH_ADV_BEACON]     = BLE_MESH_DATA_MESH_BEACON,
-    [BLE_MESH_ADV_URI]        = BLE_MESH_DATA_URI,
-};
+extern const uint8_t adv_type[];
 
 typedef struct bt_mesh_adv *(*bt_mesh_pool_allocator_t)(int id, enum bt_mesh_adv_type type);
 typedef void (*bt_mesh_adv_queue_send_cb_t)(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
@@ -214,22 +196,22 @@ static inline TickType_t K_WAIT(int32_t val)
     return (val == K_FOREVER) ? portMAX_DELAY : (val / portTICK_PERIOD_MS);
 }
 
-static inline void adv_send_start(uint16_t duration, int err,
-                                  const struct bt_mesh_send_cb *cb,
-                                  void *cb_data)
-{
-    if (cb && cb->start) {
-        cb->start(duration, err, cb_data);
-    }
-}
+#define BLE_MESH_SEND_START_CB(_buf, _duration, _err, _cb, _cb_data) \
+    do { \
+        if (!(BLE_MESH_ADV(_buf)->flags & BLE_MESH_ADV_FLAG_SKIP_START_CB)) { \
+            if ((_cb) && (_cb)->start) { \
+                (_cb)->start((_duration), (_err), (_cb_data)); \
+            } \
+            BLE_MESH_ADV(_buf)->flags |= BLE_MESH_ADV_FLAG_SKIP_START_CB; \
+        } \
+    } while (0)
 
-static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
-                                void *cb_data)
-{
-    if (cb && cb->end) {
-        cb->end(err, cb_data);
-    }
-}
+#define BLE_MESH_SEND_END_CB(_err, _cb, _cb_data) \
+        do { \
+            if ((_cb) && (_cb)->end) { \
+                (_cb)->end((_err), (_cb_data)); \
+            } \
+        } while (0)
 
 struct bt_mesh_adv_queue *bt_mesh_adv_queue_get(void);
 

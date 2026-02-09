@@ -29,7 +29,6 @@ set(common_include_dirs
 
 set(ble_mesh_include_dirs
     "esp_ble_mesh/common/include"
-    "esp_ble_mesh/common/tinycrypt/include"
     "esp_ble_mesh/core"
     "esp_ble_mesh/core/include"
     "esp_ble_mesh/core/storage"
@@ -40,6 +39,10 @@ set(ble_mesh_include_dirs
     "esp_ble_mesh/api/core/include"
     "esp_ble_mesh/api/models/include"
     "esp_ble_mesh/api"
+)
+
+set(ble_mesh_tinycrypt_dirs
+    "esp_ble_mesh/common/tinycrypt/include"
 )
 
 set(ble_mesh_v11_include_dirs
@@ -530,33 +533,32 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/btc/btc_ble_mesh_prov.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_sensor_model.c"
                     "esp_ble_mesh/btc/btc_ble_mesh_time_scene_model.c"
-                    "esp_ble_mesh/common/tinycrypt/src/aes_decrypt.c"
-                    "esp_ble_mesh/common/tinycrypt/src/aes_encrypt.c"
-                    "esp_ble_mesh/common/tinycrypt/src/cbc_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ccm_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/cmac_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ctr_mode.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ctr_prng.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc_dh.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc_dsa.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc_platform_specific.c"
-                    "esp_ble_mesh/common/tinycrypt/src/ecc.c"
-                    "esp_ble_mesh/common/tinycrypt/src/hmac_prng.c"
-                    "esp_ble_mesh/common/tinycrypt/src/hmac.c"
-                    "esp_ble_mesh/common/tinycrypt/src/sha256.c"
-                    "esp_ble_mesh/common/tinycrypt/src/utils.c"
                     "esp_ble_mesh/common/atomic.c"
                     "esp_ble_mesh/common/buf.c"
                     "esp_ble_mesh/common/common.c"
                     "esp_ble_mesh/common/kernel.c"
                     "esp_ble_mesh/common/mutex.c"
+                    "esp_ble_mesh/common/queue.c"
                     "esp_ble_mesh/common/timer.c"
-                    "esp_ble_mesh/common/utils.c"
-                    "esp_ble_mesh/core/storage/settings_nvs.c"
+                    "esp_ble_mesh/common/utils.c")
+
+        # Select crypto implementation based on config
+        if(CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT OR
+           CONFIG_BT_SMP_CRYPTO_STACK_NATIVE)
+            list(APPEND srcs "esp_ble_mesh/common/crypto_tc.c")
+        elseif(CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
+            if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
+                list(APPEND srcs "esp_ble_mesh/common/crypto_psa.c")
+            else()
+                list(APPEND srcs "esp_ble_mesh/common/crypto_mbedtls.c")
+            endif()
+        endif()
+
+        list(APPEND srcs "esp_ble_mesh/core/storage/settings_nvs.c"
                     "esp_ble_mesh/core/storage/settings_uid.c"
                     "esp_ble_mesh/core/storage/settings.c"
                     "esp_ble_mesh/core/access.c"
-                    "esp_ble_mesh/core/adv.c"
+                    "esp_ble_mesh/core/adv_common.c"
                     "esp_ble_mesh/core/beacon.c"
                     "esp_ble_mesh/core/cfg_cli.c"
                     "esp_ble_mesh/core/cfg_srv.c"
@@ -593,6 +595,27 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/models/server/state_binding.c"
                     "esp_ble_mesh/models/server/state_transition.c"
                     "esp_ble_mesh/models/server/time_scene_server.c")
+
+        if(CONFIG_BT_SMP_CRYPTO_STACK_NATIVE)
+            list(APPEND include_dirs ${ble_mesh_tinycrypt_dirs})
+                list(APPEND srcs
+                    "esp_ble_mesh/common/tinycrypt/src/aes_decrypt.c"
+                    "esp_ble_mesh/common/tinycrypt/src/aes_encrypt.c"
+                    "esp_ble_mesh/common/tinycrypt/src/cbc_mode.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ccm_mode.c"
+                    "esp_ble_mesh/common/tinycrypt/src/cmac_mode.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ctr_mode.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ctr_prng.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ecc_dh.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ecc_dsa.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ecc_platform_specific.c"
+                    "esp_ble_mesh/common/tinycrypt/src/ecc.c"
+                    "esp_ble_mesh/common/tinycrypt/src/hmac_prng.c"
+                    "esp_ble_mesh/common/tinycrypt/src/hmac.c"
+                    "esp_ble_mesh/common/tinycrypt/src/sha256.c"
+                    "esp_ble_mesh/common/tinycrypt/src/utils.c")
+        endif()
+
         if(CONFIG_BLE_MESH_V11_SUPPORT)
             list(APPEND include_dirs ${ble_mesh_v11_include_dirs})
 
@@ -639,6 +662,16 @@ if(CONFIG_BT_ENABLED)
             endif()
         else()
             list(APPEND srcs "esp_ble_mesh/core/transport.c")
+        endif()
+
+        if(CONFIG_BLE_MESH_SUPPORT_MULTI_ADV)
+            list(APPEND srcs "esp_ble_mesh/core/ext_adv.c")
+        else()
+            list(APPEND srcs "esp_ble_mesh/core/adv.c")
+        endif()
+
+        if(CONFIG_BLE_MESH_SUPPORT_BLE_ADV)
+            list(APPEND srcs "esp_ble_mesh/core/ble_adv.c")
         endif()
     endif()
 
