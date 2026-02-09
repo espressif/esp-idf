@@ -191,7 +191,9 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr, tBT_TRANSPORT transport)
     if ((p_dev_rec = btm_find_dev(bd_addr)) != NULL) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Tell controller to get rid of the link key, if it has one stored */
-        BTM_DeleteStoredLinkKey (p_dev_rec->bd_addr, NULL);
+        if (transport != BT_TRANSPORT_LE) {
+            BTM_DeleteStoredLinkKey (p_dev_rec->bd_addr, NULL);
+        }
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
         btm_sec_free_dev(p_dev_rec, transport);
@@ -450,7 +452,7 @@ void btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec, tBT_TRANSPORT transport)
                                 | BTM_SEC_ROLE_SWITCHED | BTM_SEC_16_DIGIT_PIN_AUTHED);
     } else if (transport == BT_TRANSPORT_LE) {
         p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
-        p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED
+        p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHORIZATION | BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED
                                 | BTM_SEC_LE_NAME_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN
                                 | BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_ROLE_SWITCHED);
 #if BLE_INCLUDED == TRUE
@@ -471,7 +473,9 @@ void btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec, tBT_TRANSPORT transport)
     if(p_dev_rec->sec_flags == BTM_SEC_IN_USE) {
         p_dev_rec->sec_flags = 0;
     }
-    list_remove(btm_cb.p_sec_dev_rec_list, p_dev_rec);
+    if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE) == 0) {
+        list_remove(btm_cb.p_sec_dev_rec_list, p_dev_rec);
+    }
 }
 
 /*******************************************************************************
