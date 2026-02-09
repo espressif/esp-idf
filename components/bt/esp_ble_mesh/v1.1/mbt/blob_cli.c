@@ -656,8 +656,11 @@ static void xfer_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
     net_buf_simple_add_le32(&buf, cli->xfer->size);
     net_buf_simple_add_u8(&buf, cli->xfer->block_size_log);
 #if CONFIG_BLE_MESH_LONG_PACKET
-    /* todo: could let user select methold */
-    net_buf_simple_add_le16(&buf, BLE_MESH_EXT_TX_SDU_MAX);
+    if (cli->xfer->chunk_enh_params.long_pkt_cfg_used) {
+        net_buf_simple_add_le16(&buf, BLE_MESH_EXT_TX_SDU_MAX);
+    } else {
+        net_buf_simple_add_le16(&buf, BLE_MESH_TX_SDU_MAX);
+    }
 #else
     net_buf_simple_add_le16(&buf, BLE_MESH_TX_SDU_MAX);
 #endif
