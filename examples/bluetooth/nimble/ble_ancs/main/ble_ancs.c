@@ -103,7 +103,7 @@ char *CategoryID_to_String(uint8_t CategoryID)
 
 void ble_receive_apple_notification_source(uint8_t *message, uint16_t message_len)
 {
-    if (!message || message_len < 5) {
+    if (!message || message_len < 8) {
         return;
     }
 
@@ -126,14 +126,19 @@ void ble_receive_apple_data_source(uint8_t *message, uint16_t message_len)
     switch (Command_id)
     {
         case CommandIDGetNotificationAttributes: {
+            if (message_len < 5) {
+                ESP_LOGE(NimBLE_ANCS_TAG, "Invalid message length for attributes: %d",
+                         message_len);
+                return;
+            }
             uint32_t NotificationUID = (message[1]) | (message[2]<< 8) | (message[3]<< 16) | (message[4] << 24);
             uint32_t remian_attr_len = message_len - 5;
             uint8_t *attrs = &message[5];
             ESP_LOGI(NimBLE_ANCS_TAG, "recevice Notification Attributes response Command_id %d NotificationUID %" PRIu32, Command_id, NotificationUID);
-            while(remian_attr_len > 0) {
+            while(remian_attr_len >= 3) {
                 uint8_t AttributeID = attrs[0];
                 uint16_t len = attrs[1] | (attrs[2] << 8);
-                if(len > (remian_attr_len -3)) {
+                if(len > remian_attr_len - 3) {
                     ESP_LOGE(NimBLE_ANCS_TAG, "data error");
                     break;
                 }

@@ -227,15 +227,21 @@ bleprph_advertise(void)
 #endif
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-static void bleprph_power_control(uint16_t conn_handle)
+static int bleprph_power_control(uint16_t conn_handle)
 {
     int rc;
 
     rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
-    assert (rc == 0);
+    if (rc != 0) {
+        return rc;
+    }
 
     rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x1, 0x1);
-    assert (rc == 0);
+    if (rc != 0) {
+        return rc;
+    }
+
+    return 0;
 }
 #endif
 
@@ -317,10 +323,13 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-	bleprph_power_control(event->connect.conn_handle);
-
-	ble_gap_event_listener_register(&power_control_event_listener,
-                                        bleprph_gap_power_event, NULL);
+        if (event->connect.status == 0) {
+            rc = bleprph_power_control(event->connect.conn_handle);
+            if (rc == 0) {
+                ble_gap_event_listener_register(&power_control_event_listener,
+                                                bleprph_gap_power_event, NULL);
+            }
+        }
 #endif
         return 0;
 

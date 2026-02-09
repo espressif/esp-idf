@@ -58,9 +58,10 @@ static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 static SemaphoreHandle_t xSemaphore;
 static int mbuf_len_total;
 static int failure_count;
+static TaskHandle_t throughput_task_handle = NULL;
 static int conn_params_def[] = {40, 40, 0, 500, 80, 80};
 /* test_data accepts test_name and test_time from CLI */
-static int test_data[] = {1, 600, 0};
+static int test_data[6] = {1, 600, 0, 0, 0, 0};
 static int mtu_def = 512;
 static ble_addr_t conn_addr;
 static uint16_t handle;
@@ -225,6 +226,7 @@ static int blecent_read(uint16_t conn_handle, uint16_t val_handle,
     return 0;
 
 err:
+    xSemaphoreGive(xSemaphore);
     /* Terminate the connection. */
     vTaskDelay(100 / portTICK_PERIOD_MS);
     return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
@@ -240,7 +242,8 @@ int update_phy(uint16_t conn_handle, uint8_t phy_mode)
             current_phy_updated = 0;
             rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_1M_PREF_MASK, BLE_HCI_LE_PHY_1M_PREF_MASK, 0);
             if(rc != 0) {
-                ESP_LOGI(tag, "Requested PHY: 1M failed.");
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: 1M failed, rc=%d", rc);
             }
             else {
                 ESP_LOGI(tag, "Requested PHY: 1M");
@@ -251,7 +254,8 @@ int update_phy(uint16_t conn_handle, uint8_t phy_mode)
             current_phy_updated = 0;
             rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_2M_PREF_MASK, BLE_HCI_LE_PHY_2M_PREF_MASK, 0);
             if(rc != 0) {
-                ESP_LOGI(tag, "Requested PHY: 2M failed.");
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: 2M failed, rc=%d", rc);
             }
             else {
                 ESP_LOGI(tag, "Requested PHY: 2M");
@@ -262,7 +266,8 @@ int update_phy(uint16_t conn_handle, uint8_t phy_mode)
             current_phy_updated = 0;
             rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x01);
             if(rc != 0) {
-                ESP_LOGI(tag, "Requested PHY: Coded S2 failed.");
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: Coded S2 failed, rc=%d", rc);
             }
             else {
                 ESP_LOGI(tag, "Requested PHY: Coded S2");
@@ -273,7 +278,8 @@ int update_phy(uint16_t conn_handle, uint8_t phy_mode)
             current_phy_updated = 0;
             rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x02);
             if(rc != 0) {
-                ESP_LOGI(tag, "Requested PHY: Coded S8 failed.");
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: Coded S8 failed, rc=%d", rc);
             }
             else {
                 ESP_LOGI(tag, "Requested PHY: Coded S8");
@@ -294,9 +300,29 @@ static void throughput_task(void *arg)
     struct peer *peer = (struct peer *)arg;
     const struct peer_chr *chr;
     const struct peer_dsc *dsc;
+    struct ble_gap_conn_desc desc;
+    uint16_t conn_handle;
     int rc = 0;
 
+    /* Store conn_handle immediately to avoid UAF if peer is freed */
+    if (peer == NULL) {
+        ESP_LOGE(tag, "Invalid peer, deleting task");
+        throughput_task_handle = NULL;
+        vTaskDelete(NULL);
+        return;
+    }
+    conn_handle = peer->conn_handle;
+
     while (1) {
+        /* Check if connection is still valid using stored conn_handle */
+        rc = ble_gap_conn_find(conn_handle, &desc);
+        if (rc != 0) {
+            ESP_LOGI(tag, "Connection lost, deleting throughput task");
+            throughput_task_handle = NULL;
+            vTaskDelete(NULL);
+            return;
+        }
+
         vTaskDelay(4000 / portTICK_PERIOD_MS);
         ESP_LOGI(tag, "Format for throughput demo:: throughput read 100");
         printf(" ====================================================================================\n");
@@ -329,12 +355,15 @@ static void throughput_task(void *arg)
         scli_reset_queue();
 #if CONFIG_EXAMPLE_EXTENDED_ADV
         if(test_data[2] >= 0) {
-            rc = update_phy(handle, test_data[2]);
+            rc = update_phy(conn_handle, test_data[2]);
             if(rc != 0) {
-                ESP_LOGI(tag, "Failed to update phy.\n");
-            }
-            while (!current_phy_updated) {
-                vTaskDelay(100 / portTICK_PERIOD_MS);
+                ESP_LOGE(tag, "Failed to update phy, rc=%d. Skipping PHY update wait.", rc);
+                /* Flag is already set to 1 on failure, but skip wait loop for clarity */
+            } else {
+                /* Wait for PHY update event to complete */
+                while (!current_phy_updated) {
+                    vTaskDelay(100 / portTICK_PERIOD_MS);
+                }
             }
         }
 #endif
@@ -354,10 +383,17 @@ static void throughput_task(void *arg)
             }
 
             if (test_data[1] > 0) {
-                rc = blecent_read(peer->conn_handle, chr->chr.val_handle,
+                rc = blecent_read(conn_handle, chr->chr.val_handle,
                                   blecent_repeat_read, (void *) peer, test_data[1]);
                 if (rc != 0) {
                     ESP_LOGE(tag, "Error while reading from GATTS; rc = %d", rc);
+                    /* Delete task on critical error (connection lost or fatal error) */
+                    if (rc == BLE_HS_ENOTCONN || rc == BLE_HS_EDONE) {
+                        ESP_LOGI(tag, "Connection error, deleting throughput task");
+                        throughput_task_handle = NULL;
+                        vTaskDelete(NULL);
+                        return;
+                    }
                 }
             } else {
                 ESP_LOGE(tag, "Please enter non-zero value for test time in seconds!!");
@@ -375,9 +411,16 @@ static void throughput_task(void *arg)
             }
 
             if (test_data[1] > 0) {
-                rc = blecent_write(peer->conn_handle, chr->chr.val_handle, (void *) peer, test_data[1]);
+                rc = blecent_write(conn_handle, chr->chr.val_handle, (void *) peer, test_data[1]);
                 if (rc != 0) {
                     ESP_LOGE(tag, "Error while writing data; rc = %d", rc);
+                    /* Delete task on critical error (connection lost or fatal error) */
+                    if (rc == BLE_HS_ENOTCONN || rc == BLE_HS_EDONE) {
+                        ESP_LOGI(tag, "Connection error, deleting throughput task");
+                        throughput_task_handle = NULL;
+                        vTaskDelete(NULL);
+                        return;
+                    }
                 }
             } else {
                 ESP_LOGE(tag, "Please enter non-zero value for test time in seconds!!");
@@ -403,10 +446,17 @@ static void throughput_task(void *arg)
                 break;
             }
 
-            rc = blecent_notify(peer->conn_handle, dsc->dsc.handle,
+            rc = blecent_notify(conn_handle, dsc->dsc.handle,
                                 NULL, (void *) peer, test_data[1]);
             if (rc != 0) {
                 ESP_LOGE(tag, "Subscribing to notification failed; rc = %d ", rc);
+                /* Delete task on critical error (connection lost or fatal error) */
+                if (rc == BLE_HS_ENOTCONN || rc == BLE_HS_EDONE) {
+                    ESP_LOGI(tag, "Connection error, deleting throughput task");
+                    throughput_task_handle = NULL;
+                    vTaskDelete(NULL);
+                    return;
+                }
             } else {
                 ESP_LOGI(tag, "Subscribed to notifications. Throughput number"
                          " can be seen on peripheral terminal after %d seconds",
@@ -421,13 +471,20 @@ static void throughput_task(void *arg)
 
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
-    vTaskDelete(NULL);
 }
 
 static void
 blecent_read_write_subscribe(const struct peer *peer)
 {
-    xTaskCreate(throughput_task, "throughput_task", 4096, (void *) peer, 10, NULL);
+    /* Delete previous task if it exists */
+    /* Capture handle and set global to NULL atomically to prevent race condition
+     * where task deletes itself between NULL check and vTaskDelete call */
+    TaskHandle_t task_to_delete = throughput_task_handle;
+    throughput_task_handle = NULL;
+    if (task_to_delete != NULL) {
+        vTaskDelete(task_to_delete);
+    }
+    xTaskCreate(throughput_task, "throughput_task", 4096, (void *) peer, 10, &throughput_task_handle);
     return;
 }
 
@@ -515,6 +572,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     uint8_t test_addr[6];
     uint32_t peer_addr[6];
     uint8_t phy_uuid_found = 0;
+
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
@@ -526,9 +584,9 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
 
-        /* Conversion */
+       /* Conversion */
         for (int i=0; i<6; i++) {
-            test_addr[i] = (uint8_t )peer_addr[i];
+            test_addr[5 - i] = (uint8_t )peer_addr[i];
         }
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
@@ -538,17 +596,21 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support LE PHY UUID (0xABF2).
     */
     do {
-        ad_struct_len = disc->data[offset];
-
-        if (!ad_struct_len) {
+        if (offset + 1 >= (int)disc->length_data) {  /* At least read length and type */
             break;
         }
+        ad_struct_len = disc->data[offset];
+
+        if (!ad_struct_len || offset + ad_struct_len + 1 > (int)disc->length_data) {
+            break;
+        }
+
         /* Search for Complete Local Name (AD type 0x09) */
         if (disc->data[offset + 1] == 0x09 && phy_uuid_found) {
             int name_len = disc->data[offset] - 1;  /* Length minus type byte */
             char serv_name[] = "nimble_prph";
             if (name_len > 0) {
-                ESP_LOGI(tag, "Device Name = %.*s",name_len, (char *)&disc->data[offset + 2]);
+                ESP_LOGI(tag, "Device Name = %.*s", name_len, (char *)&disc->data[offset + 2]);
                 if (name_len == strlen(serv_name) &&
                     memcmp(&disc->data[offset + 2], serv_name, name_len) == 0) {
                     ESP_LOGI(tag, "central connect to `nimble_prph` success");
@@ -556,18 +618,18 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
                 }
                 return 0;
             }
-         }
+        }
 
-         /* Search if LE PHY UUID is advertised */
-         if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-             if ( disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2 ) {
-                 phy_uuid_found = 1;
-             }
-         }
+        /* Search if LE PHY UUID is advertised */
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03 &&
+            offset + 3 < (int)disc->length_data &&
+            disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2) {
+            phy_uuid_found = 1;
+        }
 
         offset += ad_struct_len + 1;
 
-    } while ( offset < disc->length_data );
+    } while (offset < (int)disc->length_data);
 
     return phy_uuid_found;
 }
@@ -788,6 +850,15 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         print_conn_desc(&event->disconnect.conn);
         ESP_LOGI(tag, " ");
 
+        /* Delete throughput task if it exists */
+        /* Capture handle and set global to NULL atomically to prevent race condition
+         * where task deletes itself between NULL check and vTaskDelete call */
+        TaskHandle_t task_to_delete = throughput_task_handle;
+        throughput_task_handle = NULL;
+        if (task_to_delete != NULL) {
+            vTaskDelete(task_to_delete);
+        }
+
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
         vTaskDelay(200);
@@ -882,7 +953,9 @@ blecent_on_sync(void)
     if (scli_receive_yesno(&yes)) {
         if (yes) {
             ESP_LOGI(tag, " Enter preferred MTU, format:: `MTU 512` ");
-            if (scli_receive_key(&mtu_def)) {
+            int mtu_buf[6];
+            if (scli_receive_key(mtu_buf)) {
+                mtu_def = mtu_buf[0];
                 ESP_LOGI(tag, "MTU provided by user= %d", mtu_def);
             } else {
                 ESP_LOGD(tag, "No input for setting MTU; use default mtu = %d", mtu_def);
