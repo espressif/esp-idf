@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,7 @@ _Static_assert((BLOB_BLOCK_STATUS_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_BLO
 
 NET_BUF_SIMPLE_DEFINE_STATIC(chunk_buf, BLOB_CHUNK_SDU_LEN(CHUNK_SIZE_MAX));
 static bool chunk_sending;
+static bool last_chunk_sent;
 
 struct block_status {
     enum bt_mesh_blob_status status;
@@ -568,7 +569,8 @@ void blob_cli_broadcast_rsp(struct bt_mesh_blob_cli *cli,
 
 void blob_cli_broadcast_abort(struct bt_mesh_blob_cli *cli)
 {
-    if (!cli->tx.ctx.is_inited) {
+    if (!cli->tx.ctx.is_inited &&
+        cli->state != BT_MESH_BLOB_CLI_STATE_SUSPENDED) {
         return;
     }
 
@@ -710,6 +712,13 @@ static void chunk_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
     chunk.size = chunk_size(cli->xfer, &cli->block, cli->chunk_idx);
     chunk.offset = cli->xfer->chunk_size * cli->chunk_idx;
     chunk.data = net_buf_simple_add(&chunk_buf, chunk.size);
+
+    if ((cli->block.number == cli->block_count - 1) &&
+        (cli->chunk_idx < cli->block.chunk_count)) {
+        last_chunk_sent = true;
+    } else {
+        last_chunk_sent = false;
+    }
 
     err = cli->io->rd(cli->io, cli->xfer, &cli->block, &chunk);
     if (err || cli->state == BT_MESH_BLOB_CLI_STATE_NONE) {
@@ -1616,6 +1625,16 @@ int bt_mesh_blob_cli_suspend(struct bt_mesh_blob_cli *cli)
             cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_SEND &&
             cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_CHECK) {
         BT_WARN("BLOB xfer not started: %d", cli->state);
+        return -EINVAL;
+    }
+
+    /* After the last chunk data is sent, if the server
+     * successfully receives the chunk, it will be in the
+     * complete state. At this time, if the client resumes
+     * from suspend and restarts the transmission, an error
+     * will occur, resulting in lost target */
+    if (last_chunk_sent) {
+        BT_WARN("About to end, refuse to suspend");
         return -EINVAL;
     }
 
