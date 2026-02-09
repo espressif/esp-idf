@@ -49,6 +49,24 @@ def test_component_extra_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     assert str((test_app_copy / 'main').as_posix()) not in ret.stdout
 
 
+@pytest.mark.test_app_copy('examples/get-started/hello_world')
+def test_component_extra_dirs_with_minimal_build(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Renaming main component with EXTRA_COMPONENT_DIRS works with MINIMAL_BUILD')
+    # Rename main to src
+    shutil.move(test_app_copy / 'main', test_app_copy / 'src')
+    # Set EXTRA_COMPONENT_DIRS to the renamed directory
+    replace_in_file((test_app_copy / 'CMakeLists.txt'), 
+                    'cmake_minimum_required(VERSION 3.16)',
+                    'cmake_minimum_required(VERSION 3.16)\n\nset(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/src")')
+    # Build should succeed
+    ret = idf_py('reconfigure')
+    assert ret.returncode == 0
+    # Verify that the renamed component is being used
+    assert str((test_app_copy / 'src').as_posix()) in ret.stdout
+    # Verify that MINIMAL_BUILD is enabled (should be in the output)
+    assert 'Minimal build - ON' in ret.stdout or 'Minimal build - 1' in ret.stdout
+
+
 @pytest.mark.usefixtures('test_app_copy')
 def test_component_nonexistent_extra_dirs_not_allowed(idf_py: IdfPyFunc) -> None:
     ret = idf_py('reconfigure', '-DEXTRA_COMPONENT_DIRS="nonexistent_dir"', check=False)
