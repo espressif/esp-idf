@@ -449,6 +449,10 @@ function(__project_init components_var test_components_var)
 
     # Add component directories to the build, given the component filters, exclusions
     # extra directories, etc. passed from the root CMakeLists.txt.
+    
+    # Track the main component name for MINIMAL_BUILD
+    set(__main_component_name "")
+    
     if(COMPONENT_DIRS)
         # User wants to fully override where components are pulled from.
         paths_with_spaces_to_list(COMPONENT_DIRS)
@@ -463,6 +467,7 @@ function(__project_init components_var test_components_var)
     else()
         if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/main")
             __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main" "project_components")
+            set(__main_component_name "main")
         endif()
 
         paths_with_spaces_to_list(EXTRA_COMPONENT_DIRS)
@@ -471,11 +476,18 @@ function(__project_init components_var test_components_var)
             if(NOT EXISTS ${component_abs_path})
                 message(FATAL_ERROR "Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: ${component_abs_path}")
             endif()
-            __project_component_dir("${component_dir}" "project_extra_components")
+            # Components from EXTRA_COMPONENT_DIRS should have the same priority as project_components
+            # This allows renaming the main component directory (e.g., from 'main' to 'src')
+            __project_component_dir("${component_dir}" "project_components")
+            
+            # If main component doesn't exist, use the first EXTRA_COMPONENT_DIRS entry as the main component
+            if(NOT __main_component_name)
+                get_filename_component(__main_component_name "${component_abs_path}" NAME)
+            endif()
         endforeach()
 
         # Look for components in the usual places: CMAKE_CURRENT_LIST_DIR/main,
-        # extra component dirs, and CMAKE_CURRENT_LIST_DIR/components
+        # EXTRA_COMPONENT_DIRS, and CMAKE_CURRENT_LIST_DIR/components
         __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components" "project_components")
     endif()
 
@@ -495,7 +507,7 @@ function(__project_init components_var test_components_var)
         endif()
     endforeach()
 
-    # If a minimal build is requested, set COMPONENTS to "main" only if the COMPONENTS
+    # If a minimal build is requested, set COMPONENTS to the main component only if the COMPONENTS
     # variable is not already defined. The COMPONENTS variable takes precedence over
     # the MINIMAL_BUILD property.
     idf_build_get_property(minimal_build MINIMAL_BUILD)
@@ -505,7 +517,11 @@ function(__project_init components_var test_components_var)
             set(minimal_build OFF)
             idf_build_set_property(MINIMAL_BUILD OFF)
         else()
-            set(COMPONENTS main ${TEST_COMPONENTS})
+            # Use the detected main component name, defaulting to "main" if not found
+            if(NOT __main_component_name)
+                set(__main_component_name "main")
+            endif()
+            set(COMPONENTS ${__main_component_name} ${TEST_COMPONENTS})
             set(minimal_build ON)
         endif()
     else()
