@@ -1060,6 +1060,17 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
         if (phase != BLE_MESH_DFU_PHASE_APPLYING &&
                 (target->effect == BLE_MESH_DFU_EFFECT_UNPROV ||
                  phase != BLE_MESH_DFU_PHASE_IDLE)) {
+            /**
+             * If user quickly enter the APPLY state from REFRESH,
+             * protocol may receive the last round of REFRESH info
+             * packets from the network. Therefore, in order to avoid
+             * misjudgment, the previous round of data packets are
+             * ignored here.
+            */
+            if (phase == BLE_MESH_DFU_PHASE_VERIFY_OK) {
+                BT_DBG("MaybeReceivedOutdatedMsg");
+                return 0;
+            }
             BT_WARN("Target 0x%04x in phase %u after apply",
                     target->blob.addr, phase);
             target_failed(cli, target, BLE_MESH_DFU_ERR_WRONG_PHASE);
