@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -99,6 +99,7 @@
  */
 
 #include "xtensa_rtos.h"
+#include "xtensa/xtensa_zol_macros.h"
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
@@ -120,7 +121,7 @@
     frame just in case the exception dispatcher's SP does not point to the exception
     frame (which is the case when switching from task to interrupt stack).
 
-    Clearing the pseudo base-save area is uncessary as the interrupt dispatcher
+    Clearing the pseudo base-save area is unnecessary as the interrupt dispatcher
     will restore the current SP to that of the pre-exception SP.
 --------------------------------------------------------------------------------
 */
@@ -627,7 +628,7 @@ _UserExceptionVector:
 /*
 --------------------------------------------------------------------------------
   Insert some waypoints for jumping beyond the signed 8-bit range of
-  conditional branch instructions, so the conditional branchces to specific
+  conditional branch instructions, so the conditional branches to specific
   exception handlers are not taken in the mainline. Saves some cycles in the
   mainline.
 --------------------------------------------------------------------------------
@@ -741,7 +742,7 @@ _xt_handle_exc:
     rsr     a0, EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
-    /* Set up PS for C, reenable debug and NMI interrupts, and clear EXCM. */
+    /* Set up PS for C, re-enable debug and NMI interrupts, and clear EXCM. */
     #ifdef __XTENSA_CALL0_ABI__
     movi    a0, PS_INTLEVEL(XCHAL_DEBUGLEVEL - 2) | PS_UM
     #else
@@ -880,22 +881,13 @@ _xt_syscall_exc:
     #endif
 
     /*
-    Grab the interruptee's PC and skip over the 'syscall' instruction.
-    If it's at the end of a zero-overhead loop and it's not on the last
-    iteration, decrement loop counter and skip to beginning of loop.
+    Adjust EPC to point to next instruction, so when we return to user code
+       it will be at the instruction after the 'syscall' that caused the exception.
     */
     rsr     a2, EPC_1                       /* a2 = PC of 'syscall' */
     addi    a3, a2, 3                       /* ++PC                 */
-    #if XCHAL_HAVE_LOOPS
-    rsr     a0, LEND                        /* if (PC == LEND       */
-    bne     a3, a0, 1f
-    rsr     a0, LCOUNT                      /*     && LCOUNT != 0)  */
-    beqz    a0, 1f                          /* {                    */
-    addi    a0, a0, -1                      /*   --LCOUNT           */
-    rsr     a3, LBEG                        /*   PC = LBEG          */
-    wsr     a0, LCOUNT                      /* }                    */
-    #endif
-1:  wsr     a3, EPC_1                       /* update PC            */
+    XT_ZOL_EPC_LCOUNT_RESTORE a3, a0        /* If faulted at LEND, rewinds loop and leaves adjusted PC in a3 */
+    wsr     a3, EPC_1                        /* update PC to next instruction */
 
     /* Restore interruptee's context and return from exception. */
     #ifdef __XTENSA_CALL0_ABI__
