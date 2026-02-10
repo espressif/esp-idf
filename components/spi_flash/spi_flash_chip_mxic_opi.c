@@ -208,6 +208,7 @@ esp_err_t spi_flash_chip_mxic_opi_erase_sector(esp_flash_t *chip, uint32_t start
             .command = CMD_OPI_FLASH_MXIC(CMD_SECTOR_ERASE_4B),
             .address_bitlen = 32,
             .address = start_address,
+            .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
         };
         err = chip->host->driver->common_command(chip->host, &t);
         chip->busy = 1;
@@ -237,6 +238,7 @@ esp_err_t spi_flash_chip_mxic_opi_erase_block(esp_flash_t *chip, uint32_t start_
             .command = CMD_OPI_FLASH_MXIC(CMD_LARGE_BLOCK_ERASE_4B),
             .address_bitlen = 32,
             .address = start_address,
+            .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
         };
         err = chip->host->driver->common_command(chip->host, &t);
         chip->busy = 1;
@@ -268,6 +270,7 @@ esp_err_t spi_flash_chip_mxic_opi_page_program(esp_flash_t *chip, const void *bu
             .address = address,
             .mosi_len = length,
             .mosi_data = buffer,
+            .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
         };
         chip->host->driver->common_command(chip->host, &t);
         chip->busy = 1;
