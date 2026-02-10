@@ -11,34 +11,42 @@ menu "IEEE 802.15.4"
         default 20
         range 2 100
         help
-            The number of 802.15.4 receive buffers
+            Number of receive buffers allocated for IEEE 802.15.4 frames.
+            Increasing this value allows more frames to be buffered before processing,
+            but consumes more memory.
 
     choice IEEE802154_CCA_MODE
         depends on IEEE802154_ENABLED
         prompt "Clear Channel Assessment (CCA) mode"
         default IEEE802154_CCA_ED
         help
-            configure the CCA mode
+            Select the Clear Channel Assessment (CCA) mode used to determine if the
+            channel is clear before transmission. CCA is required by the IEEE 802.15.4
+            standard to avoid collisions.
 
         config IEEE802154_CCA_CARRIER
             bool "Carrier sense only"
             help
-                configure the CCA mode to Carrier sense only
+                CCA reports channel busy only if a valid IEEE 802.15.4 signal is detected.
+                This mode is less sensitive to non-802.15.4 interference.
 
         config IEEE802154_CCA_ED
             bool "Energy above threshold"
             help
-                configure the CCA mode to Energy above threshold
+                CCA reports channel busy if the energy level exceeds the configured threshold.
+                This is the default mode and provides good balance between sensitivity and reliability.
 
         config IEEE802154_CCA_CARRIER_OR_ED
             bool "Carrier sense OR energy above threshold"
             help
-                configure the CCA mode to Carrier sense OR energy above threshold
+                CCA reports channel busy if either a valid IEEE 802.15.4 signal is detected OR
+                the energy level exceeds the threshold. This is the most sensitive mode.
 
         config IEEE802154_CCA_CARRIER_AND_ED
             bool "Carrier sense AND energy above threshold"
             help
-                configure the CCA mode to Carrier sense AND energy above threshold
+                CCA reports channel busy only if both a valid IEEE 802.15.4 signal is detected
+                AND the energy level exceeds the threshold. This is the least sensitive mode.
     endchoice
 
     config IEEE802154_CCA_MODE
@@ -55,7 +63,9 @@ menu "IEEE 802.15.4"
         range -120 0
         default -75
         help
-            set the CCA threshold, in dBm
+            Energy detection threshold for CCA, in dBm. The channel is considered busy
+            if the detected energy exceeds this threshold. Lower values make the radio
+            more sensitive to interference but may cause false positives.
 
     config IEEE802154_PENDING_TABLE_SIZE
         int "Pending table size"
@@ -63,14 +73,18 @@ menu "IEEE 802.15.4"
         range 1 100
         default 20
         help
-            set the pending table size
+            Size of the pending data table used to track frames waiting to be sent to
+            sleeping devices. Each entry consumes memory, so adjust based on the number
+            of sleeping child devices in your network.
 
     config IEEE802154_MULTI_PAN_ENABLE
         bool "Enable multi-pan feature for frame filter"
         depends on IEEE802154_ENABLED
         default n
         help
-            Enable IEEE802154 multi-pan
+            Enable IEEE 802.15.4 multi-PAN (Personal Area Network) support. This allows
+            the device to participate in multiple PANs simultaneously by filtering frames
+            based on PAN ID.
 
     config IEEE802154_INTERFACE_NUM
         int "Number of IEEE802154 interfaces"
@@ -99,7 +113,7 @@ menu "IEEE 802.15.4"
             Enabling this option allows the IEEE802.15.4 module to be powered down during automatic light sleep,
             which reduces current consumption.
 
-    menuconfig IEEE802154_DEBUG
+    config IEEE802154_DEBUG
         bool "Enable IEEE802154 Debug"
         depends on IEEE802154_ENABLED
         default n
@@ -107,119 +121,149 @@ menu "IEEE 802.15.4"
             Enabling this option allows different kinds of IEEE802154 debug output.
             All IEEE802154 debug features increase the size of the final binary.
 
-    config IEEE802154_DEBUG_ASSERT_MONITOR
-        bool "Enable IEEE802154 assert monitor"
-        depends on IEEE802154_ENABLED
-        default n
-        help
-            Enabling this option to monitor and detect certain abnormal or unexpected
-            states during the operation of the IEEE 802.15.4. When this option is enabled,
-            it will perform additional runtime checks and assertions.
-
-    config IEEE802154_RX_BUFFER_STATISTIC
-        bool "Rx buffer statistic"
+    menu "IEEE 802.15.4 Debug Parameters"
         depends on IEEE802154_DEBUG
-        default n
-        help
-            Enabling this option to count IEEE802154 rx buffer when allocating or freeing.
 
-    config IEEE802154_ASSERT
-        bool "Enrich the assert information"
-        depends on IEEE802154_DEBUG
-        select IEEE802154_RECORD
-        default n
-        help
-            Enabling this option to print more information when assert.
+        config IEEE802154_DEBUG_ASSERT_MONITOR
+            bool "Enable IEEE802154 assert monitor"
+            default n
+            help
+                Enable monitoring and detection of abnormal or unexpected states during
+                IEEE 802.15.4 operation. When enabled, performs additional runtime checks
+                and assertions to catch potential driver issues early.
 
-    config IEEE802154_RECORD
-        bool "Record the information with IEEE802154 state and event"
-        depends on IEEE802154_DEBUG
-        default n
-        help
-            Enabling this option to add some probe codes in the driver, and record these information.
+        config IEEE802154_RX_BUFFER_STATISTIC
+            bool "Rx buffer statistic"
+            default n
+            help
+                Enable tracking of receive buffer allocation and deallocation. This provides
+                statistics on buffer usage patterns, which can help optimize buffer sizing
+                for your application.
 
-    config IEEE802154_RECORD_EVENT
-        bool "Enable record event information for debugging"
-        depends on IEEE802154_RECORD
-        default n
-        help
-            Enabling this option to record event, when assert, the recorded event will be printed.
+        config IEEE802154_ASSERT
+            bool "Enrich the assert information"
+            select IEEE802154_RECORD
+            default n
+            help
+                Enable enhanced assert information. When an assertion fails, additional
+                context including state, events, and commands will be printed to help
+                diagnose the issue. Automatically enables IEEE802154_RECORD.
 
-    config IEEE802154_RECORD_EVENT_SIZE
-        int "Record event table size"
-        depends on IEEE802154_RECORD_EVENT
-        range 1 50
-        default 30
-        help
-            set the record event table size
+        config IEEE802154_RECORD
+            bool "Record the information with IEEE802154 state and event"
+            default n
+            help
+                Enable recording of IEEE 802.15.4 driver state, events, and commands.
+                Probe code is added throughout the driver to capture runtime information
+                for debugging purposes. This is a prerequisite for other RECORD_* options.
 
-    config IEEE802154_RECORD_STATE
-        bool "Enable record state information for debugging"
-        depends on IEEE802154_RECORD
-        default n
-        help
-            Enabling this option to record state, when assert, the recorded state will be printed.
+        config IEEE802154_RECORD_EVENT
+            bool "Enable record event information for debugging"
+            depends on IEEE802154_RECORD
+            default n
+            help
+                Record IEEE 802.15.4 driver events in a circular buffer. When an assertion
+                occurs, the recorded event history will be printed to help trace the sequence
+                of events leading to the failure.
 
-    config IEEE802154_RECORD_STATE_SIZE
-        int "Record state table size"
-        depends on IEEE802154_RECORD_STATE
-        range 1 50
-        default 10
-        help
-            set the record state table size
+        config IEEE802154_RECORD_EVENT_SIZE
+            int "Record event table size"
+            depends on IEEE802154_RECORD_EVENT
+            range 1 50
+            default 30
+            help
+                Size of the circular buffer for recording events. Larger values provide
+                more history but consume more memory.
 
-    config IEEE802154_RECORD_CMD
-        bool "Enable record command information for debugging"
-        depends on IEEE802154_RECORD
-        default n
-        help
-            Enabling this option to record the command, when assert, the recorded
-            command will be printed.
+        config IEEE802154_RECORD_STATE
+            bool "Enable record state information for debugging"
+            depends on IEEE802154_RECORD
+            default n
+            help
+                Record IEEE 802.15.4 driver state transitions in a circular buffer.
+                When an assertion occurs, the recorded state history will be printed
+                to show the sequence of state changes.
 
-    config IEEE802154_RECORD_CMD_SIZE
-        int "Record command table size"
-        depends on IEEE802154_RECORD_CMD
-        range 1 50
-        default 10
-        help
-            set the record command table size
+        config IEEE802154_RECORD_STATE_SIZE
+            int "Record state table size"
+            depends on IEEE802154_RECORD_STATE
+            range 1 50
+            default 10
+            help
+                Size of the circular buffer for recording state transitions. Larger values
+                provide more history but consume more memory.
 
-    config IEEE802154_RECORD_ABORT
-        bool "Enable record abort information for debugging"
-        depends on IEEE802154_RECORD
-        default n
-        help
-            Enabling this option to record the abort, when assert, the recorded
-            abort will be printed.
+        config IEEE802154_RECORD_CMD
+            bool "Enable record command information for debugging"
+            depends on IEEE802154_RECORD
+            default n
+            help
+                Record IEEE 802.15.4 driver commands in a circular buffer. When an assertion
+                occurs, the recorded command history will be printed to show what commands
+                were issued before the failure.
 
-    config IEEE802154_RECORD_ABORT_SIZE
-        int "Record abort table size"
-        depends on IEEE802154_RECORD_ABORT
-        range 1 50
-        default 10
-        help
-            set the record abort table size
+        config IEEE802154_RECORD_CMD_SIZE
+            int "Record command table size"
+            depends on IEEE802154_RECORD_CMD
+            range 1 50
+            default 10
+            help
+                Size of the circular buffer for recording commands. Larger values provide
+                more history but consume more memory.
 
-    config IEEE802154_RECORD_TXRX_FRAME
-        bool "Enable record txrx packets for debugging"
-        depends on IEEE802154_DEBUG
-        default n
-        help
-            Enabling this option to record the tx and rx packets
+        config IEEE802154_RECORD_ABORT
+            bool "Enable record abort information for debugging"
+            depends on IEEE802154_RECORD
+            default n
+            help
+                Record IEEE 802.15.4 operation aborts in a circular buffer. When an assertion
+                occurs, the recorded abort history will be printed to show what operations
+                were aborted before the failure.
 
-    config IEEE802154_RECORD_TXRX_FRAME_SIZE
-        int "Record frame table size"
-        depends on IEEE802154_RECORD_TXRX_FRAME
-        range 1 50
-        default 15
-        help
-            set the record frame table size
+        config IEEE802154_RECORD_ABORT_SIZE
+            int "Record abort table size"
+            depends on IEEE802154_RECORD_ABORT
+            range 1 50
+            default 10
+            help
+                Size of the circular buffer for recording aborts. Larger values provide
+                more history but consume more memory.
 
-    config IEEE802154_TXRX_STATISTIC
-        bool "Enable record tx/rx packets information for debugging"
-        depends on IEEE802154_DEBUG
-        default n
-        help
-            Enabling this option to record the tx and rx
+        config IEEE802154_RECORD_TXRX_FRAME
+            bool "Enable record txrx packets for debugging"
+            default n
+            help
+                Record transmitted and received IEEE 802.15.4 frames in a circular buffer.
+                When an assertion occurs, the recorded frame history will be printed to
+                help diagnose frame-level issues. Note: This can consume significant memory
+                depending on frame size and buffer size.
+
+        config IEEE802154_RECORD_TXRX_FRAME_SIZE
+            int "Record frame table size"
+            depends on IEEE802154_RECORD_TXRX_FRAME
+            range 1 50
+            default 15
+            help
+                Size of the circular buffer for recording frames. Larger values provide
+                more frame history but consume significantly more memory (each frame can
+                be up to 127 bytes plus metadata).
+
+        config IEEE802154_TXRX_STATISTIC
+            bool "Enable record tx/rx packets information for debugging"
+            default n
+            help
+                Enable collection of transmit and receive packet statistics. This tracks
+                counts, errors, and other metrics for transmitted and received frames.
+                Statistics can be accessed via debug APIs for performance analysis.
+
+        config IEEE802154_PRINT_PHY_REG
+            bool "Enable print IEEE802154 PHY register command"
+            default n
+            help
+                Enable the 'phyreg' console command to print IEEE 802.15.4 PHY register
+                information for debugging purposes. This command displays register values
+                and configuration settings of the IEEE 802.15.4 hardware.
+
+    endmenu  # IEEE 802.15.4 Debug Parameters
 
 endmenu  # IEEE 802.15.4
