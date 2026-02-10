@@ -864,12 +864,10 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
            In order to avoid the leakage of the SPI cs pin, hold it here */
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-#if SOC_MSPI_HAS_INDEPENT_IOMUX
-        if(sleep_flags & PMU_SLEEP_PD_TOP) {
-            mspi_ll_hold_all_flash_pins();
-        }
-#else // !SOC_MSPI_HAS_INDEPENT_IOMUX
         if(!(sleep_flags & RTC_SLEEP_PD_VDDSDIO) && (sleep_flags & PMU_SLEEP_PD_TOP)) {
+#if SOC_MSPI_HAS_INDEPENT_IOMUX
+            mspi_ll_hold_all_flash_pins();
+#else // !SOC_MSPI_HAS_INDEPENT_IOMUX
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
             gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
@@ -878,17 +876,14 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
             /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
             gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
 #endif
-        }
 #endif // !SOC_MSPI_HAS_INDEPENT_IOMUX
-#endif
-
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        }
         if (sleep_flags & PMU_SLEEP_PD_TOP) {
 #if CONFIG_IDF_TARGET_ESP32P4 && (CONFIG_ESP_REV_MIN_FULL == 300)
             sleep_retention_do_extra_retention(true);
 #endif
         }
-#endif
+#endif // CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 
 #if SOC_PMU_SUPPORTED
 #if SOC_PM_CPU_RETENTION_BY_SW && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
@@ -919,9 +914,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
             sleep_retention_do_extra_retention(false);
 #endif
         }
-#endif
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         /* Unhold the SPI CS pin */
         if(!(sleep_flags & RTC_SLEEP_PD_VDDSDIO) && (sleep_flags & PMU_SLEEP_PD_TOP)) {
 #if SOC_MSPI_HAS_INDEPENT_IOMUX
