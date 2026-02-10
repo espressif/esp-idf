@@ -15,6 +15,7 @@
 #include <esp_types.h>
 #include <stdio.h>
 #include <esp_heap_caps.h>
+#include "esp_attr.h"
 #include "esp_random.h"
 #include "esp_intr_alloc.h"
 #include "xtensa_api.h"
@@ -23,6 +24,7 @@
 #include "freertos/task.h"
 #include <string.h>
 #include "unity.h"
+#include "esp_log_buffer.h"
 
 #define SW_ISR_NUM_L1  7    // CPU interrupt number for internal SW0 (level 1)
 #define SW_ISR_NUM_L3  29   // CPU interrupt number for internal SW1 (level 3)
@@ -217,4 +219,60 @@ TEST_CASE("LoadStore: 8/16-bit field access in IRAM from ISRs when pending inter
     vTaskDelay(pdMS_TO_TICKS(100)); // Wait for memory to be freed, to avoid affecting other tests.
 }
 
+TEST_CASE("LoadStore: zero-overhead loop continues after IRAM 8-bit store", "[freertos]")
+{
+    const unsigned len = 32;
+
+    uint8_t *dst = heap_caps_calloc(len, 1, MALLOC_CAP_IRAM_8BIT);
+    TEST_ASSERT_NOT_NULL(dst);
+
+    uint8_t *src = heap_caps_calloc(len, 1, MALLOC_CAP_IRAM_8BIT);
+    TEST_ASSERT_NOT_NULL(src);
+
+    for (unsigned i = 0; i < len; i++) {
+        src[i] = i + 1;
+        dst[i] = 0xCC;
+    }
+
+    ESP_LOG_BUFFER_HEX("dst before", dst, len);
+    ESP_LOG_BUFFER_HEX("src       ", src, len);
+
+    /*
+    * Use Xtensa zero-overhead loop where the final instruction (LEND)
+    * is an 8-bit store into IRAM. With CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    * each store triggers the LoadStoreError handler. The handler must mimic
+    * the loop hardware to keep iterating; otherwise the loop exits after one
+    * iteration. This assembly below performs a simple byte copy from src to dst,
+    * and the test verifies that all bytes are copied correctly,
+    * indicating that the loop continued to execute after each store exception.
+    */
+    uint32_t tmp_val;
+    uint8_t *dst_it = dst;
+    uint8_t *src_it = src;
+    unsigned cnt = len;
+    __asm__ volatile(
+        "addi       %0, %0, -1\n"   /* dst-- */
+        "addi       %1, %1, -1\n"   /* src-- */
+        "loopnez    %2, .endLoop\n"
+        "addi       %1, %1, 1\n"   /* src++ */
+        "l8ui       %3, %1, 0\n"   /* tmp_val = src[] */
+        "addi       %0, %0, 1\n"   /* dst++ */
+        "s8i        %3, %0, 0\n"   /* dst[] = tmp_val, LEND: store is last in loop body */
+        ".endLoop:\n"
+        : "+r"(dst_it), "+r"(src_it), "+r"(cnt), "=&r"(tmp_val)
+        :
+        : "memory"
+    );
+
+    ESP_LOG_BUFFER_HEX("dst  after", dst, len);
+
+    for (unsigned i = 0; i < len; i++) {
+        TEST_ASSERT_EQUAL_HEX8(src[i], dst[i]);
+    }
+
+    heap_caps_free(dst);
+    heap_caps_free(src);
+
+    vTaskDelay(pdMS_TO_TICKS(100)); // Wait for free to complete before running other tests.
+}
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
