@@ -367,7 +367,9 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
     bool en_desc_burst = true;
     bool en_data_burst = max_data_burst_size > 0;
 
-#if SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
+    // There's auto alignment for AHB GDMA version 1, so we don't need to do anything here
+    // While, for AHB GDMA version 2 and AXI GDMA, we need to ensure the alignment by software
+#if (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH) && SOC_AHB_GDMA_VERSION != 1
     // if MSPI encryption is enabled, and DMA wants to read/write external memory
     if (efuse_hal_flash_encryption_enabled() && config->access_ext_mem) {
         uint32_t enc_mem_alignment = GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT;
