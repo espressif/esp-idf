@@ -31,6 +31,9 @@
 
 #if CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
 #include "esp_console.h"
+#if CONFIG_IEEE802154_DEBUG
+#include "ieee802154_debug.h"
+#endif
 #endif
 
 #define TAG "ot_esp_rcp"
@@ -67,6 +70,9 @@ void app_main(void)
     esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
     esp_console_init(&console_config);
     esp_console_register_help_command();
+#if CONFIG_IEEE802154_DEBUG
+    register_ieee802154_debug_cmd();
+#endif
 #endif
 
     ESP_ERROR_CHECK(esp_openthread_start(&config));
