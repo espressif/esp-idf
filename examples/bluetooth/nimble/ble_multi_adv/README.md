@@ -13,6 +13,13 @@ It starts 4 types of advertising:
 * Scannable legacy
 * Legacy with specified duration(5 sec)
 
+## Service UUID Notes
+
+* The example registers two 16-bit GATT services and one custom 128-bit GATT service.
+* All advertising instances include the two 16-bit service UUIDs.
+* The connectable advertiser also includes the 128-bit service UUID.
+* UUID values in advertising payloads are populated from the same UUID definitions used in the GATT server.
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:
