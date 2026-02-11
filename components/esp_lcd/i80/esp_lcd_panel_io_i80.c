@@ -722,9 +722,9 @@ static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descript
 
     // always start GDMA, because the lcd will only start working after the dma retrieves the data
     gdma_start(bus->dma_chan, gdma_link_get_head_addr(bus->dma_link));
-    // delay 1us is sufficient for DMA to pass data to LCD FIFO
+    // delay 4us is sufficient for DMA to pass data to LCD FIFO
     // in fact, this is only needed when LCD pixel clock is set too high
-    esp_rom_delay_us(1);
+    esp_rom_delay_us(4);
 
     lcd_ll_start(bus->hal.dev);
 }
