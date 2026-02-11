@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -395,7 +395,7 @@ r_ble_ll_scan_dup_move_to_head = 0x400011f0;
 r_ble_ll_scan_dup_new = 0x400011f4;
 r_ble_ll_scan_dup_update_ext = 0x400011f8;
 //r_ble_ll_scan_dup_update_legacy = 0x400011fc;
-r_ble_ll_scan_enabled = 0x40001200;
+//r_ble_ll_scan_enabled = 0x40001200;
 r_ble_ll_scan_end_adv_evt = 0x40001204;
 r_ble_ll_scan_ext_initiator_start = 0x4000120c;
 r_ble_ll_scan_get_addr_data_from_legacy = 0x40001210;
@@ -417,7 +417,7 @@ r_ble_ll_scan_refresh_nrpa = 0x40001254;
 r_ble_ll_scan_reset = 0x40001258;
 r_ble_ll_scan_rx_pkt_in = 0x4000125c;
 r_ble_ll_scan_rx_pkt_in_restore_addr_data = 0x40001268;
-r_ble_ll_scan_rxed = 0x4000126c;
+//r_ble_ll_scan_rxed = 0x4000126c;
 r_ble_ll_scan_send_truncated = 0x40001274;
 r_ble_ll_scan_set_peer_rpa = 0x4000127c;
 r_ble_ll_scan_set_perfer_addr = 0x40001280;
