@@ -619,9 +619,9 @@ static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descript
 
     if (trans_desc->data) { // some specific LCD commands can have no parameters
         gdma_start(bus->dma_chan, (intptr_t)(bus->dma_nodes));
-        // delay 1us is sufficient for DMA to pass data to LCD FIFO
+        // delay 4us is sufficient for DMA to pass data to LCD FIFO
         // in fact, this is only needed when LCD pixel clock is set too high
-        esp_rom_delay_us(1);
+        esp_rom_delay_us(4);
     }
     lcd_ll_start(bus->hal.dev);
 }
