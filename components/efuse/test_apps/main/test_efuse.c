@@ -739,7 +739,7 @@ static void efuse_burn_task(void* arg)
     ESP_LOGI(TAG, "Start burn task");
     size_t test3_len_6 = 2;
     while (!cmd_stop_reset_task1) {
-        esp_efuse_utility_update_virt_blocks();
+        esp_efuse_utility_erase_virt_blocks();
         esp_efuse_utility_reset();
         TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
     }
