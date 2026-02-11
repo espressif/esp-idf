@@ -1,12 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
+
 # normal mmu tests
-
-
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @pytest.mark.parametrize(
@@ -22,14 +21,6 @@ def test_mmap(dut: Dut) -> None:
 
 
 # mmu tests with psram enabled
-PSRAM_RELEASE_CONFIGS = [
-    pytest.param('psram_release_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('psram_release_esp32s2', marks=[pytest.mark.esp32s2]),
-    pytest.param('psram_release_esp32s3', marks=[pytest.mark.esp32s3]),
-    pytest.param('psram_release_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @idf_parametrize(
@@ -47,12 +38,6 @@ def test_mmap_psram(dut: Dut) -> None:
 
 
 # mmu tests with xip_psram
-XIP_CONFIGS = [
-    pytest.param('xip_psram_esp32s2', marks=[pytest.mark.esp32s2]),
-    pytest.param('xip_psram_esp32s3', marks=[pytest.mark.esp32s3]),
-]
-
-
 @pytest.mark.generic
 @idf_parametrize(
     'config,target', [('xip_psram_esp32s2', 'esp32s2'), ('xip_psram_esp32s3', 'esp32s3')], indirect=['config', 'target']

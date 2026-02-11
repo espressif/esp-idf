@@ -1,13 +1,8 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
-
-CONFIGS_NVS_ENCR_FLASH_ENC = [
-    pytest.param('nvs_encr_flash_enc_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('nvs_encr_flash_enc_esp32c3', marks=[pytest.mark.esp32c3]),
-]
 
 
 @pytest.mark.generic

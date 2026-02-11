@@ -1,48 +1,47 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import abc
-import copy
-import fnmatch
 import html
-import os
 import re
 import typing as t
 from textwrap import dedent
 
-import yaml
-from artifacts_handler import ArtifactType
 from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
-from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
 from idf_ci_local.app import AppWithMetricsInfo
-from idf_ci_local.uploader import AppUploader
+from idf_ci_utils import idf_relpath
 from prettytable import PrettyTable
 
 from .constants import BINARY_SIZE_METRIC_NAME
+from .constants import CI_DASHBOARD_API
 from .constants import COMMENT_START_MARKER
+from .constants import CSS_STYLES_FILEPATH
+from .constants import JS_SCRIPTS_FILEPATH
 from .constants import REPORT_TEMPLATE_FILEPATH
-from .constants import RETRY_JOB_PICTURE_LINK
-from .constants import RETRY_JOB_PICTURE_PATH
-from .constants import RETRY_JOB_TITLE
 from .constants import SIZE_DIFFERENCE_BYTES_THRESHOLD
-from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from .constants import TOP_N_APPS_BY_SIZE_DIFF
 from .models import GitlabJob
 from .models import TestCase
-from .utils import fetch_failed_testcases_failure_ratio
 from .utils import format_permalink
 from .utils import get_artifacts_url
-from .utils import get_repository_file_url
 from .utils import is_url
-from .utils import known_failure_issue_jira_fast_link
-from .utils import load_known_failure_cases
 
 
 class ReportGenerator:
     REGEX_PATTERN = r'#### {}\n[\s\S]*?(?=\n#### |$)'
 
-    def __init__(self, project_id: int, mr_iid: int, pipeline_id: int, job_id: int, commit_id: str, *, title: str):
+    def __init__(
+        self,
+        project_id: int,
+        mr_iid: int,
+        pipeline_id: int,
+        job_id: int,
+        commit_id: str,
+        local_commit_id: str,
+        *,
+        title: str,
+    ):
         gl_project = Gitlab(project_id).project
         if mr_iid is not None:
             self.mr = gl_project.mergerequests.get(mr_iid)
@@ -51,10 +50,15 @@ class ReportGenerator:
         self.pipeline_id = pipeline_id
         self.job_id = job_id
         self.commit_id = commit_id
+        self.local_commit_id = local_commit_id
 
         self.title = title
         self.output_filepath = self.title.lower().replace(' ', '_') + '.html'
         self.additional_info = ''
+
+    @property
+    def get_commit_summary(self) -> str:
+        return f'with CI commit SHA: {self.commit_id[:8]}, local commit SHA: {self.local_commit_id[:8]}'
 
     @staticmethod
     def get_download_link_for_url(url: str) -> str:
@@ -78,10 +82,25 @@ class ReportGenerator:
         with open(output_filepath, 'w') as file:
             file.write(report_str)
 
-        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/list_job_84.txt
+        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/app_info_84.txt
         # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
         report_url: str = get_artifacts_url(job_id, output_filepath)
         return report_url
+
+    @staticmethod
+    def _load_file_content(filepath: str) -> str:
+        """
+        Load the content of a file as string
+
+        :param filepath: Path to the file to load
+        :return: Content of the file as string
+        """
+        try:
+            with open(filepath, encoding='utf-8') as f:
+                return f.read()
+        except (OSError, FileNotFoundError) as e:
+            print(f'Warning: Could not read file {filepath}: {e}')
+            return ''
 
     def generate_html_report(self, table_str: str) -> str:
         # we're using bootstrap table
@@ -89,8 +108,15 @@ class ReportGenerator:
             '<table>',
             '<table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">',
         )
-        with open(REPORT_TEMPLATE_FILEPATH) as fr:
-            template = fr.read()
+
+        template = self._load_file_content(REPORT_TEMPLATE_FILEPATH)
+        css_content = self._load_file_content(CSS_STYLES_FILEPATH)
+        js_content = self._load_file_content(JS_SCRIPTS_FILEPATH)
+
+        template = template.replace('{{css_content}}', css_content)
+        template = template.replace('{{js_content}}', js_content)
+        template = template.replace('{{pipeline_id}}', str(self.pipeline_id))
+        template = template.replace('{{apiBaseUrl}}', CI_DASHBOARD_API)
 
         return template.replace('{{title}}', self.title).replace('{{table}}', table_str)
 
@@ -136,17 +162,23 @@ class ReportGenerator:
         return report_sections
 
     @staticmethod
-    def generate_additional_info_section(title: str, count: int, report_url: t.Optional[str] = None) -> str:
+    def generate_additional_info_section(
+        title: str, count: int, report_url: t.Optional[str] = None, add_permalink: bool = True
+    ) -> str:
         """
         Generate a section for the additional info string.
 
         :param title: The title of the section.
         :param count: The count of test cases.
         :param report_url: The URL of the report. If count = 0, only the count will be included.
+        :param add_permalink: Whether to include a permalink in the report URL. Defaults to True.
         :return: The formatted additional info section string.
         """
         if count != 0 and report_url:
-            return f'- **{title}:** [{count}]({report_url}/#{format_permalink(title)})\n'
+            if add_permalink:
+                return f'- **{title}:** [{count}]({report_url}/#{format_permalink(title)})\n'
+            else:
+                return f'- **{title}:** [{count}]({report_url})\n'
         else:
             return f'- **{title}:** {count}\n'
 
@@ -250,24 +282,12 @@ class ReportGenerator:
 
         return comment
 
-    def _update_mr_comment(self, comment: str, print_retry_jobs_message: bool) -> None:
-        retry_job_picture_comment = (f'{RETRY_JOB_TITLE}\n\n{RETRY_JOB_PICTURE_LINK}').format(
-            pic_url=get_repository_file_url(RETRY_JOB_PICTURE_PATH)
-        )
-        del_retry_job_pic_pattern = re.escape(RETRY_JOB_TITLE) + r'.*?' + re.escape(f'{RETRY_JOB_PICTURE_PATH})')
-
+    def _update_mr_comment(self, comment: str) -> None:
         new_comment = f'{COMMENT_START_MARKER}\n\n{comment}'
-        if print_retry_jobs_message:
-            new_comment += retry_job_picture_comment
 
         for note in self.mr.notes.list(iterator=True):
             if note.body.startswith(COMMENT_START_MARKER):
                 updated_str = self._get_updated_comment(note.body, comment)
-
-                # Add retry job message only if any job has failed
-                if print_retry_jobs_message:
-                    updated_str = re.sub(del_retry_job_pic_pattern, '', updated_str, flags=re.DOTALL)
-                    updated_str += retry_job_picture_comment
 
                 note.body = updated_str
                 try:
@@ -285,7 +305,7 @@ class ReportGenerator:
             updated_str = f'{existing_comment.strip()}\n\n{new_comment}'
         return updated_str
 
-    def post_report(self, print_retry_jobs_message: bool = False) -> None:
+    def post_report(self) -> None:
         comment = self._generate_comment()
 
         print(comment)
@@ -294,7 +314,7 @@ class ReportGenerator:
             print('No MR found, skip posting comment')
             return
 
-        self._update_mr_comment(comment, print_retry_jobs_message=print_retry_jobs_message)
+        self._update_mr_comment(comment)
 
 
 class BuildReportGenerator(ReportGenerator):
@@ -305,14 +325,13 @@ class BuildReportGenerator(ReportGenerator):
         pipeline_id: int,
         job_id: int,
         commit_id: str,
+        local_commit_id: str,
         *,
         title: str = 'Build Report',
-        apps: t.List[App],
-    ):
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
+        apps: list[AppWithMetricsInfo],
+    ) -> None:
+        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
         self.apps = apps
-        self._uploader = AppUploader(self.pipeline_id)
-        self.apps_presigned_url_filepath = TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
         self.report_titles_map = {
             'failed_apps': 'Failed Apps',
             'built_test_related_apps': 'Built Apps - Test Related',
@@ -324,10 +343,9 @@ class BuildReportGenerator(ReportGenerator):
         self.failed_apps_report_file = 'failed_apps.html'
         self.built_apps_report_file = 'built_apps.html'
         self.skipped_apps_report_file = 'skipped_apps.html'
-        self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = {}
 
     @staticmethod
-    def custom_sort(item: AppWithMetricsInfo) -> t.Tuple[int, t.Any]:
+    def custom_sort(item: AppWithMetricsInfo) -> tuple[int, t.Any]:
         """
         Custom sort function to:
         1. Push items with zero binary sizes to the end.
@@ -384,7 +402,7 @@ class BuildReportGenerator(ReportGenerator):
     @staticmethod
     def split_new_and_existing_apps(
         apps: t.Iterable[AppWithMetricsInfo],
-    ) -> t.Tuple[t.List[AppWithMetricsInfo], t.List[AppWithMetricsInfo]]:
+    ) -> tuple[list[AppWithMetricsInfo], list[AppWithMetricsInfo]]:
         """
         Splits apps into new apps and existing apps.
 
@@ -395,7 +413,7 @@ class BuildReportGenerator(ReportGenerator):
         existing_apps = [app for app in apps if not app.is_new_app]
         return new_apps, existing_apps
 
-    def filter_apps_by_criteria(self, build_status: str, preserve: bool) -> t.List[AppWithMetricsInfo]:
+    def filter_apps_by_criteria(self, build_status: str, preserve: bool) -> list[AppWithMetricsInfo]:
         """
         Filters apps based on build status and preserve criteria.
 
@@ -405,7 +423,7 @@ class BuildReportGenerator(ReportGenerator):
         """
         return [app for app in self.apps if app.build_status == build_status and app.preserve == preserve]
 
-    def get_built_apps_report_parts(self) -> t.List[str]:
+    def get_built_apps_report_parts(self) -> list[str]:
         """
         Generates report parts for new and existing apps.
 
@@ -422,19 +440,13 @@ class BuildReportGenerator(ReportGenerator):
         sections = []
 
         if new_test_related_apps:
-            for app in new_test_related_apps:
-                for artifact_type in [ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES, ArtifactType.MAP_AND_ELF_FILES]:
-                    url = self._uploader.get_app_presigned_url(app, artifact_type)
-                    self.app_presigned_urls_dict.setdefault(app.build_path, {})[artifact_type.value] = url
-
             new_test_related_apps_table_section = self.create_table_section(
                 title=self.report_titles_map['new_test_related_apps'],
                 items=new_test_related_apps,
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Bin Files with Build Log (without map and elf)',
-                    'Map and Elf Files',
+                    'Download Command',
                     'Your Branch App Size',
                 ],
                 row_attrs=[
@@ -442,31 +454,17 @@ class BuildReportGenerator(ReportGenerator):
                     'build_dir',
                 ],
                 value_functions=[
-                    ('Your Branch App Size', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
+                    ('Your Branch App Size', lambda _app: str(_app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
                     (
-                        'Bin Files with Build Log (without map and elf)',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][
-                                ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value
-                            ]
-                        ),
-                    ),
-                    (
-                        'Map and Elf Files',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][ArtifactType.MAP_AND_ELF_FILES.value]
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
                 ],
             )
             sections.extend(new_test_related_apps_table_section)
 
         if built_test_related_apps:
-            for app in built_test_related_apps:
-                for artifact_type in [ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES, ArtifactType.MAP_AND_ELF_FILES]:
-                    url = self._uploader.get_app_presigned_url(app, artifact_type)
-                    self.app_presigned_urls_dict.setdefault(app.build_path, {})[artifact_type.value] = url
-
             built_test_related_apps = self._sort_items(
                 built_test_related_apps,
                 key='metrics.binary_size.difference_percentage',
@@ -480,8 +478,7 @@ class BuildReportGenerator(ReportGenerator):
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Bin Files with Build Log (without map and elf)',
-                    'Map and Elf Files',
+                    'Download Command',
                     'Your Branch App Size',
                     'Target Branch App Size',
                     'Size Diff',
@@ -497,18 +494,9 @@ class BuildReportGenerator(ReportGenerator):
                     ('Size Diff', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference)),
                     ('Size Diff, %', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)),
                     (
-                        'Bin Files with Build Log (without map and elf)',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][
-                                ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value
-                            ]
-                        ),
-                    ),
-                    (
-                        'Map and Elf Files',
-                        lambda app: self.get_download_link_for_url(
-                            self.app_presigned_urls_dict[app.build_path][ArtifactType.MAP_AND_ELF_FILES.value]
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
                 ],
             )
@@ -521,7 +509,7 @@ class BuildReportGenerator(ReportGenerator):
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Build Log',
+                    'Download Command',
                     'Your Branch App Size',
                 ],
                 row_attrs=[
@@ -529,13 +517,12 @@ class BuildReportGenerator(ReportGenerator):
                     'build_dir',
                 ],
                 value_functions=[
-                    ('Your Branch App Size', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
                     (
-                        'Build Log',
-                        lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
+                    ('Your Branch App Size', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)),
                 ],
             )
             sections.extend(new_non_test_related_apps_table_section)
@@ -553,7 +540,7 @@ class BuildReportGenerator(ReportGenerator):
                 headers=[
                     'App Dir',
                     'Build Dir',
-                    'Build Log',
+                    'Download Command',
                     'Your Branch App Size',
                     'Target Branch App Size',
                     'Size Diff',
@@ -569,10 +556,9 @@ class BuildReportGenerator(ReportGenerator):
                     ('Size Diff', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference)),
                     ('Size Diff, %', lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)),
                     (
-                        'Build Log',
-                        lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                        ),
+                        'Download Command',
+                        lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                        f'{idf_relpath(_app.build_path)}',
                     ),
                 ],
             )
@@ -607,14 +593,9 @@ class BuildReportGenerator(ReportGenerator):
 
         self.additional_info += self._generate_top_n_apps_by_size_table()
 
-        # also generate a yaml file that includes the apps and the presigned urls
-        # for helping debugging locally
-        with open(self.apps_presigned_url_filepath, 'w') as fw:
-            yaml.dump(self.app_presigned_urls_dict, fw)
-
         return sections
 
-    def get_failed_apps_report_parts(self) -> t.List[str]:
+    def get_failed_apps_report_parts(self) -> list[str]:
         failed_apps = [app for app in self.apps if app.build_status == BuildStatus.FAILED]
         if not failed_apps:
             return []
@@ -622,14 +603,13 @@ class BuildReportGenerator(ReportGenerator):
         failed_apps_table_section = self.create_table_section(
             title=self.report_titles_map['failed_apps'],
             items=failed_apps,
-            headers=['App Dir', 'Build Dir', 'Failed Reason', 'Build Log'],
+            headers=['App Dir', 'Build Dir', 'Failed Reason', 'Download Command'],
             row_attrs=['app_dir', 'build_dir', 'build_comment'],
             value_functions=[
                 (
-                    'Build Log',
-                    lambda app: self.get_download_link_for_url(
-                        self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                    ),
+                    'Download Command',
+                    lambda _app: f'idf-ci gitlab download-artifacts --pipeline-id {self.pipeline_id} '
+                    f'{idf_relpath(_app.build_path)}',
                 ),
             ],
         )
@@ -643,7 +623,7 @@ class BuildReportGenerator(ReportGenerator):
         )
         return failed_apps_table_section
 
-    def get_skipped_apps_report_parts(self) -> t.List[str]:
+    def get_skipped_apps_report_parts(self) -> list[str]:
         skipped_apps = [app for app in self.apps if app.build_status == BuildStatus.SKIPPED]
         if not skipped_apps:
             return []
@@ -651,16 +631,8 @@ class BuildReportGenerator(ReportGenerator):
         skipped_apps_table_section = self.create_table_section(
             title=self.report_titles_map['skipped_apps'],
             items=skipped_apps,
-            headers=['App Dir', 'Build Dir', 'Skipped Reason', 'Build Log'],
+            headers=['App Dir', 'Build Dir', 'Skipped Reason'],
             row_attrs=['app_dir', 'build_dir', 'build_comment'],
-            value_functions=[
-                (
-                    'Build Log',
-                    lambda app: self.get_download_link_for_url(
-                        self._uploader.get_app_presigned_url(app, ArtifactType.LOGS)
-                    ),
-                ),
-            ],
         )
         skipped_apps_report_url = self.write_report_to_file(
             self.generate_html_report(''.join(skipped_apps_table_section)),
@@ -673,251 +645,17 @@ class BuildReportGenerator(ReportGenerator):
         return skipped_apps_table_section
 
     def _get_report_str(self) -> str:
-        self.additional_info = f'**Build Summary (with commit {self.commit_id[:8]}):**\n'
+        self.additional_info = (
+            f'**Build Summary ({self.get_commit_summary}):**\n'
+            '\n'
+            '> ℹ️ Note: Binary artifacts stored in MinIO are retained for 4 DAYS from their build date\n'
+        )
         failed_apps_report_parts = self.get_failed_apps_report_parts()
         skipped_apps_report_parts = self.get_skipped_apps_report_parts()
         built_apps_report_parts = self.get_built_apps_report_parts()
 
         return self.generate_html_report(
             ''.join(failed_apps_report_parts + built_apps_report_parts + skipped_apps_report_parts)
-        )
-
-
-class TargetTestReportGenerator(ReportGenerator):
-    def __init__(
-        self,
-        project_id: int,
-        mr_iid: int,
-        pipeline_id: int,
-        job_id: int,
-        commit_id: str,
-        *,
-        title: str = 'Target Test Report',
-        test_cases: t.List[TestCase],
-    ):
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
-
-        self.test_cases = test_cases
-        self._known_failure_cases_set = None
-        self.report_titles_map = {
-            'failed_yours': 'Failed Test Cases on Your branch (Excludes Known Failure Cases)',
-            'failed_others': 'Failed Test Cases on Other branches (Excludes Known Failure Cases)',
-            'failed_known': 'Known Failure Cases',
-            'skipped': 'Skipped Test Cases',
-            'succeeded': 'Succeeded Test Cases',
-        }
-        self.skipped_test_cases_report_file = 'skipped_cases.html'
-        self.succeeded_cases_report_file = 'succeeded_cases.html'
-        self.failed_cases_report_file = 'failed_cases.html'
-
-    @property
-    def known_failure_cases_set(self) -> t.Optional[t.Set[str]]:
-        if self._known_failure_cases_set is None:
-            self._known_failure_cases_set = load_known_failure_cases()
-
-        return self._known_failure_cases_set
-
-    def get_known_failure_cases(self) -> t.List[TestCase]:
-        """
-        Retrieve the known failure test cases.
-        :return: A list of known failure test cases.
-        """
-        if self.known_failure_cases_set is None:
-            return []
-        matched_cases = [
-            testcase
-            for testcase in self.test_cases
-            if any(fnmatch.fnmatch(testcase.name, pattern) for pattern in self.known_failure_cases_set)
-            and testcase.is_failure
-        ]
-        return matched_cases
-
-    @staticmethod
-    def filter_test_cases(
-        cur_branch_failures: t.List[TestCase],
-        other_branch_failures: t.List[TestCase],
-    ) -> t.Tuple[t.List[TestCase], t.List[TestCase]]:
-        """
-        Filter the test cases into current branch failures and other branch failures.
-
-        :param cur_branch_failures: List of failed test cases on the current branch.
-        :param other_branch_failures: List of failed test cases on other branches.
-        :return: A tuple containing two lists:
-            - failed_test_cases_cur_branch_only: Test cases that have failed only on the current branch.
-            - failed_test_cases_other_branch_exclude_cur_branch: Test cases that have failed on other branches
-        excluding the current branch.
-        """
-        cur_branch_unique_failures = []
-        other_branch_failure_map = {tc.name: tc for tc in other_branch_failures}
-
-        for cur_tc in cur_branch_failures:
-            if cur_tc.latest_failed_count > 0 and (
-                cur_tc.name not in other_branch_failure_map
-                or other_branch_failure_map[cur_tc.name].latest_failed_count == 0
-            ):
-                cur_branch_unique_failures.append(cur_tc)
-        uniq_fail_names = {cur_tc.name for cur_tc in cur_branch_unique_failures}
-        other_branch_exclusive_failures = [tc for tc in other_branch_failures if tc.name not in uniq_fail_names]
-
-        return cur_branch_unique_failures, other_branch_exclusive_failures
-
-    def get_failed_cases_report_parts(self) -> t.List[str]:
-        """
-        Generate the report parts for failed test cases and update the additional info section.
-        :return: A list of strings representing the table sections for the failed test cases.
-        """
-        known_failures = self.get_known_failure_cases()
-        failed_test_cases = self._filter_items(
-            self.test_cases, lambda tc: tc.is_failure and tc.name not in {case.name for case in known_failures}
-        )
-        failed_test_cases_cur_branch = self._sort_items(
-            fetch_failed_testcases_failure_ratio(
-                copy.deepcopy(failed_test_cases),
-                branches_filter={'include_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
-            ),
-            key='latest_failed_count',
-        )
-        failed_test_cases_other_branch = self._sort_items(
-            fetch_failed_testcases_failure_ratio(
-                copy.deepcopy(failed_test_cases),
-                branches_filter={'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
-            ),
-            key='latest_failed_count',
-        )
-        failed_test_cases_cur_branch, failed_test_cases_other_branch = self.filter_test_cases(
-            failed_test_cases_cur_branch, failed_test_cases_other_branch
-        )
-        cur_branch_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['failed_yours'],
-            items=failed_test_cases_cur_branch,
-            headers=[
-                'Test Case',
-                'Test App Path',
-                'Failure Reason',
-                'Failures on your branch (40 latest testcases)',
-                'Dut Log URL',
-                'Create Known Failure Case Jira',
-                'Job URL',
-                'Grafana URL',
-            ],
-            row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
-            value_functions=[
-                (
-                    'Failures on your branch (40 latest testcases)',
-                    lambda item: f'{getattr(item, "latest_failed_count", "")} '
-                    f'/ {getattr(item, "latest_total_count", "")}',
-                ),
-                ('Create Known Failure Case Jira', known_failure_issue_jira_fast_link),
-            ],
-        )
-        other_branch_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['failed_others'],
-            items=failed_test_cases_other_branch,
-            headers=[
-                'Test Case',
-                'Test App Path',
-                'Failure Reason',
-                'Cases that failed in other branches as well (40 latest testcases)',
-                'Dut Log URL',
-                'Create Known Failure Case Jira',
-                'Job URL',
-                'Grafana URL',
-            ],
-            row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
-            value_functions=[
-                (
-                    'Cases that failed in other branches as well (40 latest testcases)',
-                    lambda item: f'{getattr(item, "latest_failed_count", "")} '
-                    f'/ {getattr(item, "latest_total_count", "")}',
-                ),
-                ('Create Known Failure Case Jira', known_failure_issue_jira_fast_link),
-            ],
-        )
-        known_failures_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['failed_known'],
-            items=known_failures,
-            headers=['Test Case', 'Test App Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
-            row_attrs=['name', 'app_path', 'failure', 'ci_job_url', 'ci_dashboard_url'],
-        )
-        failed_cases_report_url = self.write_report_to_file(
-            self.generate_html_report(
-                ''.join(
-                    cur_branch_cases_table_section
-                    + other_branch_cases_table_section
-                    + known_failures_cases_table_section
-                )
-            ),
-            self.job_id,
-            self.failed_cases_report_file,
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['failed_yours'], len(failed_test_cases_cur_branch), failed_cases_report_url
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['failed_others'], len(failed_test_cases_other_branch), failed_cases_report_url
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['failed_known'], len(known_failures), failed_cases_report_url
-        )
-        return cur_branch_cases_table_section + other_branch_cases_table_section + known_failures_cases_table_section
-
-    def get_skipped_cases_report_parts(self) -> t.List[str]:
-        """
-        Generate the report parts for skipped test cases and update the additional info section.
-        :return: A list of strings representing the table sections for the skipped test cases.
-        """
-        skipped_test_cases = self._filter_items(self.test_cases, lambda tc: tc.is_skipped)
-        skipped_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['skipped'],
-            items=skipped_test_cases,
-            headers=['Test Case', 'Test App Path', 'Skipped Reason', 'Grafana URL'],
-            row_attrs=['name', 'app_path', 'skipped', 'ci_dashboard_url'],
-        )
-        skipped_cases_report_url = self.write_report_to_file(
-            self.generate_html_report(''.join(skipped_cases_table_section)),
-            self.job_id,
-            self.skipped_test_cases_report_file,
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['skipped'], len(skipped_test_cases), skipped_cases_report_url
-        )
-        return skipped_cases_table_section
-
-    def get_succeeded_cases_report_parts(self) -> t.List[str]:
-        """
-        Generate the report parts for succeeded test cases and update the additional info section.
-        :return: A list of strings representing the table sections for the succeeded test cases.
-        """
-        succeeded_test_cases = self._filter_items(self.test_cases, lambda tc: tc.is_success)
-        succeeded_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['succeeded'],
-            items=succeeded_test_cases,
-            headers=['Test Case', 'Test App Path', 'Job URL', 'Grafana URL'],
-            row_attrs=['name', 'app_path', 'ci_job_url', 'ci_dashboard_url'],
-        )
-        succeeded_cases_report_url = self.write_report_to_file(
-            self.generate_html_report(''.join(succeeded_cases_table_section)),
-            self.job_id,
-            self.succeeded_cases_report_file,
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['succeeded'], len(succeeded_test_cases), succeeded_cases_report_url
-        )
-        self.additional_info += '\n'
-        return succeeded_cases_table_section
-
-    def _get_report_str(self) -> str:
-        """
-        Generate a complete HTML report string by processing test cases.
-        :return: Complete HTML report string.
-        """
-        self.additional_info = f'**Test Case Summary (with commit {self.commit_id[:8]}):**\n'
-        failed_cases_report_parts = self.get_failed_cases_report_parts()
-        skipped_cases_report_parts = self.get_skipped_cases_report_parts()
-        succeeded_cases_report_parts = self.get_succeeded_cases_report_parts()
-
-        return self.generate_html_report(
-            ''.join(failed_cases_report_parts + skipped_cases_report_parts + succeeded_cases_report_parts)
         )
 
 
@@ -929,11 +667,12 @@ class JobReportGenerator(ReportGenerator):
         pipeline_id: int,
         job_id: int,
         commit_id: str,
+        local_commit_id: str,
         *,
         title: str = 'Job Report',
-        jobs: t.List[GitlabJob],
+        jobs: list[GitlabJob],
     ):
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
+        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
         self.jobs = jobs
         self.report_titles_map = {
             'failed_jobs': 'Failed Jobs (Excludes "integration_test" and "target_test" jobs)',
@@ -960,7 +699,7 @@ class JobReportGenerator(ReportGenerator):
         )
         succeeded_jobs = self._filter_items(self.jobs, lambda job: job.is_success)
 
-        self.additional_info = f'**Job Summary (with commit {self.commit_id[:8]}):**\n'
+        self.additional_info = f'**Job Summary ({self.get_commit_summary}):**\n'
         self.additional_info += self.generate_additional_info_section(
             self.report_titles_map['succeeded'], len(succeeded_jobs)
         )

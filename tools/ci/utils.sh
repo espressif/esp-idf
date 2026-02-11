@@ -5,7 +5,14 @@ function add_ssh_keys() {
   mkdir -p ~/.ssh
   chmod 700 ~/.ssh
   echo -n "${key_string}" >~/.ssh/id_rsa_base64
-  base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 >~/.ssh/id_rsa
+  # Detect base64 implementation via --help output
+  if base64 --help 2>&1 | grep -q -- '--ignore-garbage'; then
+    # GNU coreutils base64
+    base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 >~/.ssh/id_rsa
+  else
+    # macOS/BSD base64 - requires stdin or -i flag
+    base64 --decode -i ~/.ssh/id_rsa_base64 -o ~/.ssh/id_rsa
+  fi
   chmod 600 ~/.ssh/id_rsa
 }
 
@@ -94,6 +101,25 @@ function run_cmd() {
     error "==> '\$ ${cmd}' failed (${ret}) in ${runtime} seconds."
     return $ret
   fi
+}
+
+function pytest_for_ut() {
+  pytest_args="-c NUL -p no:idf-ci -p no:pytest_embedded"
+
+  if [ -n "${CI_JOB_ID-}" ]; then
+    if [ -z "${KNOWN_FAILURE_CASES_FILE_NAME-}" ]; then
+      echo "Error: KNOWN_FAILURE_CASES_FILE_NAME is not set."
+      return 1
+    fi
+
+    pytest_args="${pytest_args} --junitxml XUNIT_RESULT_${CI_JOB_ID}.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}"
+
+    if [ ! -e "${KNOWN_FAILURE_CASES_FILE_NAME}" ]; then
+      run_cmd idf-ci gitlab download-known-failure-cases-file "${KNOWN_FAILURE_CASES_FILE_NAME}"
+    fi
+  fi
+
+  run_cmd pytest "$@" "${pytest_args}"
 }
 
 # Retries a command RETRY_ATTEMPTS times in case of failure
