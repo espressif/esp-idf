@@ -1,7 +1,6 @@
 .build_template:
   stage: build
   extends:
-    - .before_script:build
     - .after_script:build
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
@@ -155,21 +154,17 @@ build_child_pipeline:
         job: generate_build_child_pipeline
     strategy: depend
 
-generate_disabled_apps_report:
+generate_prebuild_report:
   extends:
     - .build_template
   tags: [fast_run, shiny]
-  dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
-    - job: baseline_manifest_sha
-      optional: true
   artifacts:
     paths:
-      - disabled_report.html
+      - prebuild_report.html
     expire_in: 1 week
     when: always
   script:
-    - pip install dominate idf-build-apps
-    - run_cmd python tools/ci/gen_disabled_report.py --output disabled_report.html --verbose --enable-preview-targets
-    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/disabled_report.html"
+    - run_cmd idf-ci build collect --format html -o prebuild_report.html
+    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/prebuild_report.html"

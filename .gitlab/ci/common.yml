@@ -34,8 +34,7 @@ variables:
   # since we're using merged-result pipelines, the last commit should work for most cases
   # --prune --prune-tags: in case remote branch or tag is force pushed
   GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
-  # we're using .cache folder for caches
-  GIT_CLEAN_FLAGS: -ffdx -e .cache/
+
   LATEST_GIT_TAG: v6.0-rc1
 
   SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
@@ -168,9 +167,6 @@ variables:
   # Done after sourcing export.sh so that we could easily invoke the right pip
   section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
   pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.test-specific.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-  fi
   section_end "upgrade_ci_dependencies"
 
   REEXPORT_NEEDED=0
@@ -245,155 +241,20 @@ variables:
   before_script:
     - *common-before_scripts
 
-.before_script:build:
-  before_script:
-    - *common-before_scripts
-    - *setup_tools_and_idf_python_venv
-    - add_gitlab_ssh_keys
-    - fetch_submodules
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-
 .after_script:build:
   after_script:
     - source tools/ci/utils.sh
     - *show_ccache_statistics
     - *upload_failed_job_log_artifacts
 
-##############################
-# Git Strategy Job Templates #
-##############################
-.git_init: &git_init |
-  mkdir -p "${CI_PROJECT_DIR}"
-  cd "${CI_PROJECT_DIR}"
-  git init
-
-.git_fetch_from_mirror_url_if_exists: &git_fetch_from_mirror_url_if_exists |
-  # check if set mirror
-  if [ -n "${LOCAL_GITLAB_HTTPS_HOST:-}" ] && [ -n "${ESPCI_TOKEN:-}" ]; then
-    MIRROR_REPO_URL="https://bot:${ESPCI_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"
-  elif [ -n "${LOCAL_GIT_MIRROR:-}" ]; then
-    MIRROR_REPO_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"
-  fi
-
-  # fetch from mirror first if set
-  if [ -n "${MIRROR_REPO_URL:-}" ]; then
-    if git remote -v | grep origin; then
-      git remote set-url origin "${MIRROR_REPO_URL}"
-    else
-      git remote add origin "${MIRROR_REPO_URL}"
-    fi
-    # mirror url may fail with authentication issue
-    git fetch origin --no-recurse-submodules || true
-  fi
-
-  # set remote url to CI_REPOSITORY_URL
-  if git remote -v | grep origin; then
-    git remote set-url origin "${CI_REPOSITORY_URL}"
-  else
-    git remote add origin "${CI_REPOSITORY_URL}"
-  fi
-
-.git_checkout_ci_commit_sha: &git_checkout_ci_commit_sha |
-  git checkout $CI_COMMIT_SHA
-  eval "git clean ${GIT_CLEAN_FLAGS}"
-
-# git diff requires two commits, with different CI env var
-#
-# By default, we use git strategy "clone" with depth 1 to speed up the clone process.
-# But for jobs requires running `git diff`, we need to fetch more commits to get the correct diffs.
-#
-# Since there's no way to get the correct git_depth before the job starts,
-# we can't set `GIT_DEPTH` in the job definition.
-#
-# Set git strategy to "none" and fetch manually instead.
-.before_script:fetch:git_diff:
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-    - *git_init
-    - *git_fetch_from_mirror_url_if_exists
-    - |
-      # Store the diff output in a temporary file
-      TEMP_FILE=$(mktemp)
-      # merged results pipelines, by default
-      if [[ -n $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA ]]; then
-        git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_SHA
-        git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-
-        git diff --name-only $CI_MERGE_REQUEST_TARGET_BRANCH_SHA...$CI_MERGE_REQUEST_SOURCE_BRANCH_SHA > "$TEMP_FILE"
-        GIT_DIFF_OUTPUT=$(cat "$TEMP_FILE")
-        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-      # merge request pipelines, when the mr got conflicts
-      elif [[ -n $CI_MERGE_REQUEST_DIFF_BASE_SHA ]]; then
-        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_COMMIT_SHA > "$TEMP_FILE"
-        GIT_DIFF_OUTPUT=$(cat "$TEMP_FILE")
-      # other pipelines, like the protected branches pipelines
-      elif [[ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
-        git fetch origin $CI_COMMIT_BEFORE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA > "$TEMP_FILE"
-        GIT_DIFF_OUTPUT=$(cat "$TEMP_FILE")
-      else
-        # pipeline source could be web, scheduler, etc.
-        git fetch origin $CI_COMMIT_SHA --depth=2 ${GIT_FETCH_EXTRA_FLAGS}
-        git diff --name-only $CI_COMMIT_SHA~1 $CI_COMMIT_SHA > "$TEMP_FILE"
-        GIT_DIFF_OUTPUT=$(cat "$TEMP_FILE")
-      fi
-    - *git_checkout_ci_commit_sha
-    - *common-before_scripts
-    - *setup_tools_and_idf_python_venv
-    - add_gitlab_ssh_keys
-
-# target test runners may locate in different places
-# for runners set git mirror, we fetch from the mirror first, then fetch the HEAD commit
-.before_script:fetch:target_test:
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-    - *git_init
-    - *git_fetch_from_mirror_url_if_exists
-    - eval "git fetch --depth=1 ${GIT_FETCH_EXTRA_FLAGS} origin ${CI_COMMIT_SHA}"
-    - *git_checkout_ci_commit_sha
-    - *common-before_scripts
-    - *setup_tools_and_idf_python_venv
-    - add_gitlab_ssh_keys
-    # no submodules
-
 .brew-macos-settings:
   variables:
-    GIT_STRATEGY: none  # we do manual git clone to use local mirror
+    GIT_STRATEGY: fetch
     IDF_CCACHE_ENABLE: "0"
     CCACHE_DIR: "/var/tmp/cache/idf_ccache"
   tags:
     - macos-tart
   image: macos-sequoia-idf-v6.0
-  cache: []  # pip cache is created under amd64, and submodules are downloaded with brew mirror, so disable cache here
-  before_script:
-    # assert LOCAL_GIT_MIRROR is set
-    - echo -e "section_start:`date +%s`:check_out\r\e[0Kchecking out from local git mirror, then reset to CI_COMMIT_SHA"
-    - |
-      if [ -z "${LOCAL_GIT_MIRROR:-}" ]; then
-        echo "Error: LOCAL_GIT_MIRROR not set, cannot clone from mirror."
-        exit 1
-      fi
-    - MIRROR_REPO_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"
-    - cd "${CI_PROJECT_DIR}"
-    # since .cache exists in CI_PROJECT_DIR, so can't direct `git clone .`
-    - git clone -b ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${CI_COMMIT_BRANCH}} --depth=1 --recursive --shallow-submodules "${MIRROR_REPO_URL}" tmp
-    - mv tmp/.git ./
-    - rm -rf tmp
-    - git reset --hard
-    # set remote url back
-    - git remote set-url origin "${CI_REPOSITORY_URL}"
-    - eval "git fetch --depth=1 ${GIT_FETCH_EXTRA_FLAGS} origin ${CI_COMMIT_SHA}"
-    - git checkout FETCH_HEAD
-    - git submodule update --init --recursive --depth=1
-    - echo -e "section_end:`date +%s`:check_out\r\e[0K"
-    - *common-before_scripts
-    - *setup_tools_and_idf_python_venv
   after_script: []  # ccache now is disabled for macos brew runners
   timeout: 30m
 
@@ -421,16 +282,5 @@ default:
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
     - fetch_submodules
-# gitlab bug, setting them here doesn't work
-# - expire_in: https://gitlab.com/gitlab-org/gitlab/-/issues/404563
-# - when: https://gitlab.com/gitlab-org/gitlab/-/issues/440672
-#  artifacts:
-#    expire_in: 1 week
-#    when: always
-  retry:
-    max: 2
-    when:
-      # In case of a runner failure we could hop to another one, or a network error could go away.
-      - runner_system_failure
-      # Job execution timeout may be caused by a network issue.
-      - job_execution_timeout
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}

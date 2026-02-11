@@ -17,7 +17,6 @@ tools/ci/dynamic_pipelines/**/*
 tools/ci/envsubst.py
 tools/ci/executable-list.txt
 tools/ci/fix_empty_prototypes.sh
-tools/ci/gen_disabled_report.py
 tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_all_test_results.py

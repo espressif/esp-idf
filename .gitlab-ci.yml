@@ -1,21 +1,11 @@
-workflow:
-  rules:
-    # Disable those non-protected push triggered pipelines
-    - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && $CI_PIPELINE_SOURCE == "push"'
-      when: never
-    # merged result pipelines
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-      variables:
-        PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-    # else
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA == null || $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA == ""
-      variables:
-        PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
-    - when: always
-
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
+  - project: "ci/actions/common"
+    file:
+      - "templates/stable/default-workflow.yml"
+      - "templates/idf/deploy-github.yml"
+      - "templates/idf/deploy-docs.yml"
   - ".gitlab/ci/danger.yml"
   - ".gitlab/ci/common.yml"
   - ".gitlab/ci/rules.yml"

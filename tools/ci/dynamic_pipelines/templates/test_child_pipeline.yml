@@ -12,6 +12,7 @@ all_build_finished:
     expire_in: 1 week
     when: always
   before_script: []
+  dependencies: []
   script:
     - echo "all test jobs finished"
 
