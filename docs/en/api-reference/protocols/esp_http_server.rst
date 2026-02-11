@@ -78,6 +78,15 @@ The pre-handshake callback can be used for authentication, authorization, or oth
 
 To use the WebSocket pre-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` in your project configuration.
 
+WebSocket Post-Handshake Callback
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Similar to the pre-handshake callback, the HTTP server component also provides a post-handshake callback for WebSocket endpoints. This callback is invoked after the WebSocket handshake is processed.
+
+At this point the connection has been upgraded to WebSocket, and the server has responded with the WebSocket handshake response. This post handshake callback can be used for logging, sending initial messages, or other setup tasks.
+
+To use the WebSocket post-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in your project configuration.
+
 .. code-block:: c
 
     static esp_err_t ws_auth_handler(httpd_req_t *req)

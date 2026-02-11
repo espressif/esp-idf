@@ -87,16 +87,36 @@ static esp_err_t ws_pre_handshake_cb(httpd_req_t *req)
 }
 #endif
 
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB
+static esp_err_t ws_post_handshake_cb(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "=== ws_post_handshake_cb called ===");
+
+    // Get the URI with query string
+    const char *uri = req->uri;
+    ESP_LOGI(TAG, "WebSocket connection established for URI: %s", uri ? uri : "NULL");
+
+    // Send a welcome message to the client
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    ws_pkt.payload = (uint8_t *)"Welcome to the WebSocket Echo Server (post-handshake)!";
+    ws_pkt.len = strlen((char *)ws_pkt.payload);
+    esp_err_t ret = httpd_ws_send_frame(req, &ws_pkt);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+        return ret;
+    }
+    return ESP_OK;
+}
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB */
+
 /*
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
  */
 static esp_err_t echo_handler(httpd_req_t *req)
 {
-    if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
-        return ESP_OK;
-    }
     httpd_ws_frame_t ws_pkt;
     uint8_t *buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -148,10 +168,6 @@ static esp_err_t echo_handler(httpd_req_t *req)
  */
 static esp_err_t echo_partial_handler(httpd_req_t *req)
 {
-    if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened (partial)");
-        return ESP_OK;
-    }
     httpd_ws_frame_t ws_pkt;
     uint8_t *chunk_buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -248,8 +264,11 @@ static const httpd_uri_t ws_auth = {
         .user_ctx   = NULL,
         .is_websocket = true,
 #ifdef CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
-        .ws_pre_handshake_cb = ws_pre_handshake_cb
-#endif
+        .ws_pre_handshake_cb = ws_pre_handshake_cb,
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB */
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB
+        .ws_post_handshake_cb = ws_post_handshake_cb,
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB */
 };
 
 
