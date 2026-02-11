@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,15 @@
 #include "multi_adv.h"
 
 static uint8_t gatt_svr_chr_val = 0x01;  /* Example characteristic value */
+#define GATT_SVR_UUID16_1 (0xCDAB)
+#define GATT_SVR_UUID16_2 (0x1118)
+
+static const uint16_t gatt_svr_adv_uuids16[] = {
+    GATT_SVR_UUID16_1,
+    GATT_SVR_UUID16_2,
+};
+static const ble_uuid16_t gatt_svr_svc16_uuid_1 = BLE_UUID16_INIT(GATT_SVR_UUID16_1);
+static const ble_uuid16_t gatt_svr_svc16_uuid_2 = BLE_UUID16_INIT(GATT_SVR_UUID16_2);
 
 static const ble_uuid128_t gatt_svr_svc_uuid =
     BLE_UUID128_INIT(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
@@ -37,6 +46,14 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 void *arg);
 
 static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
+    {
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = &gatt_svr_svc16_uuid_1.u,
+    },
+    {
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = &gatt_svr_svc16_uuid_2.u,
+    },
     {
         /*** Service ***/
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
@@ -183,4 +200,20 @@ gatt_svr_init(void)
     gatt_svr_dsc_val = 0x99;
 
     return 0;
+}
+
+const uint8_t *
+gatt_svr_service_uuid128(void)
+{
+    return gatt_svr_svc_uuid.value;
+}
+
+const uint16_t *
+gatt_svr_service_uuids16(size_t *count)
+{
+    if (count) {
+        *count = sizeof(gatt_svr_adv_uuids16) / sizeof(gatt_svr_adv_uuids16[0]);
+    }
+
+    return gatt_svr_adv_uuids16;
 }
