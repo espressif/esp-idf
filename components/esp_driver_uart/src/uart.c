@@ -686,11 +686,14 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num)
 
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
 {
+    (void)enable;
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((thresh < UART_HW_FIFO_LEN(uart_num)), ESP_FAIL, UART_TAG, "empty intr threshold error");
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+    if (thresh != -1) {
+        uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+    }
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
@@ -1577,7 +1580,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
                 size -= send_size;
                 offset += send_size;
-                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+                uart_enable_tx_intr(uart_num, 1, -1);
             }
         }
     } else {
@@ -1587,7 +1590,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
-                    uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+                    uart_enable_tx_intr(uart_num, 1, -1);
                 }
                 size -= sent;
                 src += sent;
