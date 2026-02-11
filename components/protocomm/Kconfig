@@ -5,6 +5,8 @@ menu "Protocomm"
         default n
         help
             Enable support of security version 0.
+            This version provides no encryption or authentication and should
+            not be used in production. Use only for development and testing.
             Disabling this option saves some code size.
             Consult the Enabling protocomm security version section of the
             Protocomm documentation in ESP-IDF Programming guide for more details.
@@ -14,6 +16,8 @@ menu "Protocomm"
         default n
         help
             Enable support of security version 1.
+            Security version 2 (SRP6a + AES-GCM) is recommended over this
+            version for new designs.
             Disabling this option saves some code size.
             Consult the Enabling protocomm security version section of the
             Protocomm documentation in ESP-IDF Programming guide for more details.
