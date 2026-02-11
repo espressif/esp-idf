@@ -49,6 +49,9 @@ The protocomm component provides a project configuration menu to enable/disable 
 
     Enabling multiple security versions at once offers the ability to control them dynamically but also increases the firmware size.
 
+.. warning::
+    ``protocomm_security0`` provides no encryption or authentication and should not be used in production. ``protocomm_security2`` (SRP6a + AES-GCM) is the recommended security version for all production use cases.
+
 .. only:: SOC_WIFI_SUPPORTED
 
     SoftAP + HTTP Transport Example with Security 2
