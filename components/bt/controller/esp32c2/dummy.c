@@ -82,11 +82,11 @@ ble_ll_supported_features_init(void)
     ble_ll_supported_features |= BLE_LL_FEAT_SYNC_TRANS_SEND;
 #endif
 
-#if DEGAULT_BT_LE_2M_PHY
+#if DEFAULT_BT_LE_2M_PHY
     ble_ll_supported_features |= BLE_LL_FEAT_LE_2M_PHY;
 #endif
 
-#if DEGAULT_BT_LE_CODED_PHY
+#if DEFAULT_BT_LE_CODED_PHY
     ble_ll_supported_features |= BLE_LL_FEAT_LE_CODED_PHY;
 #endif
 
@@ -244,14 +244,14 @@ void r_ble_ll_ctrl_enc_req_make(void) { }
 int r_ble_ll_conn_hci_le_start_encrypt(void) { return BLE_ERR_UNKNOWN_HCI_CMD; }
 #endif //!DEFAULT_BT_LE_ROLE_CENTROL || !CONFIG_BT_LE_FEAT_LL_ENCRYPTION
 
-#if !DEGAULT_BT_LE_2M_PHY && !DEGAULT_BT_LE_CODED_PHY
+#if !DEFAULT_BT_LE_2M_PHY && !DEFAULT_BT_LE_CODED_PHY
 void r_ble_ll_ctrl_phy_update_proc_complete(void) { }
 void r_ble_ll_ctrl_phy_update_cancel(void) { }
 uint8_t r_ble_ll_ctrl_rx_phy_update_ind(void) { return 0x07; }
 uint8_t r_ble_ll_ctrl_rx_phy_rsp(void) { return 0x07; }
 uint8_t r_ble_ll_ctrl_rx_phy_req(void) { return 0x07; }
 void r_ble_ll_ctrl_phy_req_rsp_make(void) { }
-#endif //DEGAULT_BT_LE_2M_PHY && DEGAULT_BT_LE_CODED_PHY
+#endif //DEFAULT_BT_LE_2M_PHY && DEFAULT_BT_LE_CODED_PHY
 
 #if !DEFAULT_BT_LE_PERIODIC_SYNC
 void r_ble_lll_sync_halt(void) { }

@@ -74,6 +74,9 @@
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 
+#if !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+#include "ble_dummy.h"
+#endif // !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 /* Macro definition
  ************************************************************************
  */
@@ -916,14 +919,14 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     /* If we place the ble code into flash, don't need to initialize ROM. */
 #if !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
-#if DEFAULT_BT_LE_50_FEATURE_SUPPORT || DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_OBSERVER
+// #if DEFAULT_BT_LE_50_FEATURE_SUPPORT || DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_OBSERVER
     extern int esp_ble_rom_func_ptr_init_all(void);
     esp_ble_rom_func_ptr_init_all();
-#else
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Init only legacy adv and slave function");
-    extern int esp_ble_rom_func_ptr_init_legacy_adv_and_slave(void);
-    esp_ble_rom_func_ptr_init_legacy_adv_and_slave();
-#endif
+// #else
+//     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Init only legacy adv and slave function");
+//     extern int esp_ble_rom_func_ptr_init_legacy_adv_and_slave(void);
+//     esp_ble_rom_func_ptr_init_legacy_adv_and_slave();
+// #endif
 #endif //!CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 
     /* Initialize the function pointers for OS porting */
