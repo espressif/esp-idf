@@ -751,6 +751,11 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
     chunk.data = net_buf_simple_pull_mem(buf, chunk.size);
     chunk.offset = idx * srv->state.xfer.chunk_size;
 
+    if (!bt_mesh_blob_srv_is_busy(srv)) {
+        BT_ERR("Discord chunk(%d), because the blob server is not busy(%d)", idx, srv->phase);
+        return -EINVAL;
+    }
+
     if (srv->phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK ||
             srv->phase == BT_MESH_BLOB_XFER_PHASE_COMPLETE) {
         // This Block is already complete received.
@@ -777,9 +782,7 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 
     if (idx == srv->block.chunk_count - 1) {
         expected_size = srv->block.size % srv->state.xfer.chunk_size;
-    }
-
-    if (expected_size == 0) {
+    } else {
         expected_size = srv->state.xfer.chunk_size;
     }
 
@@ -804,7 +807,11 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
      * complete.
     */
     if (srv->phase == BT_MESH_BLOB_XFER_PHASE_SUSPENDED) {
-        phase_set(srv, BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK);
+        if(missing_chunks(&srv->block)) {
+            phase_set(srv, BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK);
+        } else {
+            phase_set(srv, BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK);
+        }
     }
 
     BT_INFO("%u/%u (%u bytes)", idx + 1, srv->block.chunk_count,
