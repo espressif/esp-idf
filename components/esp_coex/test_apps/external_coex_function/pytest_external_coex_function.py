@@ -2,17 +2,19 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
-from pytest_embedded_idf.utils import idf_parametrize
 
-
+@pytest.mark.esp32h2
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c6
+# @pytest.mark.esp32c2  # esp32c2 are using xtal_26mhz
 @pytest.mark.generic
-@idf_parametrize(
-    'target', ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6'], indirect=['target']
-)
 def test_external_coex_unit_test(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
+@pytest.mark.esp32c2
 @pytest.mark.xtal_26mhz
 @pytest.mark.generic
 @pytest.mark.parametrize(
@@ -22,14 +24,13 @@ def test_external_coex_unit_test(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_external_coex_unit_test_esp32c2_xtal26m(dut: Dut) -> None:
+def test_external_coex_cases_esp32c2_xtal26m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2
 @pytest.mark.xtal_26mhz
-@pytest.mark.generic
+@pytest.mark.generic_eco
 @pytest.mark.parametrize(
     'config, baud',
     [
@@ -37,20 +38,18 @@ def test_external_coex_unit_test_esp32c2_xtal26m(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_external_coex_unit_test_esp32c2eco4_xtal26m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c3eco7
-@pytest.mark.generic
+@pytest.mark.esp32c3
+@pytest.mark.generic_eco
 @pytest.mark.parametrize(
     'config',
     [
-        'esp32c3eco7',
+        ('esp32c3eco7')
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_external_coex_unit_test_esp32c3eco7(dut: Dut) -> None:
     dut.run_all_single_board_cases()
