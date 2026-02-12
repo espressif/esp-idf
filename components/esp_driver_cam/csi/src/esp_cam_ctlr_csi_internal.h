@@ -52,6 +52,7 @@ struct csi_controller_t {
     portMUX_TYPE                spinlock;           //spinlock
     cam_ctlr_color_t            in_color_format;    //input color format
     cam_ctlr_color_t            out_color_format;   //output color format
+    uint32_t                    custom_data_depth;  //custom data depth, bits per pixel
     uint32_t                    h_res;              //input horizontal resolution
     uint32_t                    v_res;              //input vertical resolution
     int                         in_bpp;             //input data type, bit per pixel
