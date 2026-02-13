@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,12 @@
 #include "esp_rom_sys.h"
 
 #include "soc/rtc_periph.h"
+
+// TODO: IDF-15338
+#if CONFIG_IDF_TARGET_ESP32C5
+#define FECOEX_SET_FREQ_SET_CHAN_REG    (0x600a001c)
+#define FECOEX_SET_FREQ_RESTEN             (BIT(30))
+#endif
 
 #if CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION
 #include "esp_partition.h"
@@ -334,12 +340,22 @@ void esp_phy_enable(esp_phy_modem_t modem)
                 if (sleep_modem_wifi_modem_state_enabled() && sleep_modem_wifi_modem_link_done()) {
                     sleep_modem_wifi_do_phy_retention(true);
                 } else {
+// TODO: IDF-15338
+#if CONFIG_IDF_TARGET_ESP32C5
+                    REG_CLR_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
+                    REG_SET_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
+#endif
                     phy_wakeup_init();
                 }
             } else {
                 phy_wakeup_from_modem_state_extra_init();
             }
 #else
+// TODO: IDF-15338
+#if CONFIG_IDF_TARGET_ESP32C5
+            REG_CLR_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
+            REG_SET_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
+#endif
             phy_wakeup_init();
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
 
