@@ -36,6 +36,12 @@
 #define SEC_TYPE_DH_G           0x03
 #define SEC_TYPE_DH_PUBLIC      0x04
 
+#define BLUFI_IV_PREFIX_LEN     9
+#define BLUFI_IV_SIZE           16
+#define BLUFI_HASH_SIZE         32   /* SHA-256 output size */
+#define BLUFI_KEY_SIZE          32
+#define BLUFI_ENC_DOMAIN_STR "blufi_enc"
+#define BLUFI_DEC_DOMAIN_STR "blufi_dec"
 
 struct blufi_security {
 #define DH_PARAM_LEN_MAX        1024
@@ -48,12 +54,60 @@ struct blufi_security {
     uint8_t  psk[PSK_LEN];
     uint8_t  *dh_param;
     int      dh_param_len;
-    uint8_t  iv[16];
     psa_key_id_t aes_key;
+    psa_cipher_operation_t enc_operation;  /* Persistent cipher operation for encryption */
+    psa_cipher_operation_t dec_operation;  /* Persistent cipher operation for decryption */
 };
 static struct blufi_security *blufi_sec;
 
 extern void btc_blufi_report_error(esp_blufi_error_state_t state);
+
+/**
+ * @brief Clean up DH parameter memory
+ */
+static void blufi_cleanup_dh_param(void)
+{
+    if (blufi_sec && blufi_sec->dh_param) {
+        free(blufi_sec->dh_param);
+        blufi_sec->dh_param = NULL;
+    }
+}
+
+/**
+ * @brief Clean up AES key and cipher operations
+ *
+ * @param abort_enc Whether to abort encryption operation
+ * @param abort_dec Whether to abort decryption operation
+ */
+static void blufi_cleanup_aes_session(bool abort_enc, bool abort_dec)
+{
+    if (!blufi_sec) {
+        return;
+    }
+
+    if (abort_enc) {
+        psa_cipher_abort(&blufi_sec->enc_operation);
+    }
+    if (abort_dec) {
+        psa_cipher_abort(&blufi_sec->dec_operation);
+    }
+    if (blufi_sec->aes_key != 0) {
+        psa_destroy_key(blufi_sec->aes_key);
+        blufi_sec->aes_key = 0;
+    }
+}
+
+/**
+ * @brief Clean up entire DH negotiation session (AES key, cipher ops, and DH params)
+ *
+ * @param abort_enc Whether to abort encryption operation
+ * @param abort_dec Whether to abort decryption operation
+ */
+static void blufi_cleanup_negotiation(bool abort_enc, bool abort_dec)
+{
+    blufi_cleanup_aes_session(abort_enc, abort_dec);
+    blufi_cleanup_dh_param();
+}
 
 void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 {
@@ -90,14 +144,8 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         }
 
         /* Allow renegotiation - clean up previous state */
-        if (blufi_sec->dh_param) {
-            free(blufi_sec->dh_param);
-            blufi_sec->dh_param = NULL;
-        }
-        if (blufi_sec->aes_key != 0) {
-            psa_destroy_key(blufi_sec->aes_key);
-            blufi_sec->aes_key = 0;
-        }
+        blufi_cleanup_dh_param();
+        blufi_cleanup_aes_session(true, true);
 
         blufi_sec->dh_param = (uint8_t *)malloc(blufi_sec->dh_param_len);
         if (blufi_sec->dh_param == NULL) {
@@ -199,6 +247,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
             btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_dh_param();
             return;
         }
 
@@ -209,16 +258,15 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
             psa_destroy_key(private_key);
             btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_dh_param();
             return;
         }
 
         status = psa_raw_key_agreement(alg, private_key, param, pub_len, blufi_sec->share_key, SHARE_KEY_LEN, &blufi_sec->share_len);
         psa_destroy_key(private_key);
-
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_raw_key_agreement failed %d\n", __func__, status);
-            free(blufi_sec->dh_param);
-            blufi_sec->dh_param = NULL;
+            blufi_cleanup_dh_param();
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
@@ -226,8 +274,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         /* Validate share key length fits in buffer */
         if (blufi_sec->share_len > SHARE_KEY_LEN) {
             BLUFI_ERROR("Share key length %d exceeds buffer size %d", blufi_sec->share_len, SHARE_KEY_LEN);
-            free(blufi_sec->dh_param);
-            blufi_sec->dh_param = NULL;
+            blufi_cleanup_dh_param();
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
@@ -237,26 +284,103 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_hash_compute failed %d\n", __func__, status);
             btc_blufi_report_error(ESP_BLUFI_CALC_SHA_256_ERROR);
+            blufi_cleanup_dh_param();
             return;
         }
 
-        /* Destroy previous AES key if it exists to prevent key slot leak */
-        if (blufi_sec->aes_key != 0) {
-            psa_destroy_key(blufi_sec->aes_key);
-            blufi_sec->aes_key = 0;
-        }
+        /* Destroy previous AES key and cipher operations if they exist */
+        blufi_cleanup_aes_session(true, true);
 
+        /* Import AES key for CTR mode */
         attributes = psa_key_attributes_init();
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
         psa_set_key_bits(&attributes, PSK_LEN * 8);
-        psa_set_key_algorithm(&attributes, PSA_ALG_CFB);
+        psa_set_key_algorithm(&attributes, PSA_ALG_CTR);
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
         status = psa_import_key(&attributes, blufi_sec->psk, PSK_LEN, &blufi_sec->aes_key);
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_import_key failed %d\n", __func__, status);
             btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_dh_param();
             return;
         }
+        psa_reset_key_attributes(&attributes);
+
+        /* Derive domain-separated IVs for encryption and decryption */
+        uint8_t enc_material[BLUFI_IV_PREFIX_LEN + SHARE_KEY_LEN];
+        memcpy(enc_material, BLUFI_ENC_DOMAIN_STR, BLUFI_IV_PREFIX_LEN);
+        memcpy(enc_material + BLUFI_IV_PREFIX_LEN, blufi_sec->share_key, blufi_sec->share_len);
+
+        uint8_t enc_hash[BLUFI_HASH_SIZE];
+        status = psa_hash_compute(PSA_ALG_SHA_256, enc_material, BLUFI_IV_PREFIX_LEN + blufi_sec->share_len,
+                                 enc_hash, BLUFI_HASH_SIZE, &hash_length);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s encryption IV derivation failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_negotiation(false, false);
+            return;
+        }
+        mbedtls_platform_zeroize(enc_material, sizeof(enc_material));
+
+        uint8_t dec_material[BLUFI_IV_PREFIX_LEN + SHARE_KEY_LEN];
+        memcpy(dec_material, BLUFI_DEC_DOMAIN_STR, BLUFI_IV_PREFIX_LEN);
+        memcpy(dec_material + BLUFI_IV_PREFIX_LEN, blufi_sec->share_key, blufi_sec->share_len);
+
+        uint8_t dec_hash[BLUFI_HASH_SIZE];
+        status = psa_hash_compute(PSA_ALG_SHA_256, dec_material, BLUFI_IV_PREFIX_LEN + blufi_sec->share_len,
+                                 dec_hash, BLUFI_HASH_SIZE, &hash_length);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s decryption IV derivation failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_negotiation(false, false);
+            return;
+        }
+        mbedtls_platform_zeroize(dec_material, sizeof(dec_material));
+
+        /* Use first 16 bytes (128 bits) as IV for CTR mode */
+        uint8_t iv_enc[BLUFI_IV_SIZE], iv_dec[BLUFI_IV_SIZE];
+        memcpy(iv_enc, enc_hash, BLUFI_IV_SIZE);
+        memcpy(iv_dec, dec_hash, BLUFI_IV_SIZE);
+        mbedtls_platform_zeroize(enc_hash, sizeof(enc_hash));
+        mbedtls_platform_zeroize(dec_hash, sizeof(dec_hash));
+
+        /* Setup persistent cipher operations */
+        blufi_sec->enc_operation = psa_cipher_operation_init();
+        status = psa_cipher_encrypt_setup(&blufi_sec->enc_operation, blufi_sec->aes_key, PSA_ALG_CTR);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s encryption setup failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_negotiation(false, false);
+            return;
+        }
+
+        status = psa_cipher_set_iv(&blufi_sec->enc_operation, iv_enc, BLUFI_IV_SIZE);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s encryption IV setup failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_negotiation(true, false);
+            return;
+        }
+        mbedtls_platform_zeroize(iv_enc, sizeof(iv_enc));
+
+        blufi_sec->dec_operation = psa_cipher_operation_init();
+        /* Note: CTR mode uses encrypt_setup for both encryption and decryption */
+        status = psa_cipher_encrypt_setup(&blufi_sec->dec_operation, blufi_sec->aes_key, PSA_ALG_CTR);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s decryption setup failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_negotiation(true, false);
+            return;
+        }
+
+        status = psa_cipher_set_iv(&blufi_sec->dec_operation, iv_dec, BLUFI_IV_SIZE);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s decryption IV setup failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            blufi_cleanup_negotiation(true, true);
+            return;
+        }
+        mbedtls_platform_zeroize(iv_dec, sizeof(iv_dec));
 
         /* alloc output data */
         *output_data = &blufi_sec->self_public_key[0];
@@ -281,82 +405,94 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
 int blufi_aes_encrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 {
-    uint8_t iv0[16];
+    (void)iv8;  /* iv8 parameter is no longer used with persistent CTR operation */
 
-    if (!blufi_sec) {
+    if (!blufi_sec || !crypt_data || crypt_len < 0) {
         return -1;
     }
 
-    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
-    psa_status_t status = psa_cipher_encrypt_setup(&operation, blufi_sec->aes_key, PSA_ALG_CFB);
+    if (crypt_len == 0) {
+        return 0;
+    }
+
+    if (blufi_sec->aes_key == 0) {
+        BLUFI_ERROR("AES key is not initialized");
+        return -1;
+    }
+
+    /* Use persistent cipher operation - CTR counter is automatically managed */
+    size_t output_len = 0;
+    size_t output_buf_size = PSA_CIPHER_ENCRYPT_OUTPUT_SIZE(PSA_KEY_TYPE_AES, PSA_ALG_CTR, crypt_len);
+    uint8_t *output_buf = (uint8_t *)malloc(output_buf_size);
+    if (output_buf == NULL) {
+        BLUFI_ERROR("Failed to allocate output buffer");
+        return -1;
+    }
+
+    psa_status_t status = psa_cipher_update(&blufi_sec->enc_operation, crypt_data, crypt_len,
+                                           output_buf, output_buf_size, &output_len);
     if (status != PSA_SUCCESS) {
+        BLUFI_ERROR("Encryption failed with status=%d", status);
+        free(output_buf);
         return -1;
     }
 
-    memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
-    iv0[0] = iv8;
-
-    status = psa_cipher_set_iv(&operation, iv0, sizeof(iv0));
-    if (status != PSA_SUCCESS) {
-        psa_cipher_abort(&operation);
+    if (output_len > (size_t)crypt_len) {
+        BLUFI_ERROR("Output length %d exceeds input buffer size %d", output_len, crypt_len);
+        free(output_buf);
         return -1;
     }
 
-    size_t update_out_len = 0;
-    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &update_out_len);
-    if (status != PSA_SUCCESS) {
-        psa_cipher_abort(&operation);
-        return -1;
-    }
+    memcpy(crypt_data, output_buf, output_len);
+    free(output_buf);
 
-    size_t finish_out_len = 0;
-    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &finish_out_len);
-    if (status != PSA_SUCCESS) {
-        psa_cipher_abort(&operation);
-        return -1;
-    }
-
-    return update_out_len + finish_out_len;
+    return output_len;
 }
 
 int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 {
-    uint8_t iv0[16];
+    (void)iv8;  /* iv8 parameter is no longer used with persistent CTR operation */
 
-    if (!blufi_sec) {
+    if (!blufi_sec || !crypt_data || crypt_len < 0) {
         return -1;
     }
 
-    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
-    psa_status_t status = psa_cipher_decrypt_setup(&operation, blufi_sec->aes_key, PSA_ALG_CFB);
+    if (crypt_len == 0) {
+        return 0;
+    }
+
+    if (blufi_sec->aes_key == 0) {
+        BLUFI_ERROR("AES key is not initialized");
+        return -1;
+    }
+
+    /* Use persistent cipher operation - CTR counter is automatically managed */
+    size_t output_len = 0;
+    size_t output_buf_size = PSA_CIPHER_DECRYPT_OUTPUT_SIZE(PSA_KEY_TYPE_AES, PSA_ALG_CTR, crypt_len);
+    uint8_t *output_buf = (uint8_t *)malloc(output_buf_size);
+    if (output_buf == NULL) {
+        BLUFI_ERROR("Failed to allocate output buffer");
+        return -1;
+    }
+
+    psa_status_t status = psa_cipher_update(&blufi_sec->dec_operation, crypt_data, crypt_len,
+                                           output_buf, output_buf_size, &output_len);
     if (status != PSA_SUCCESS) {
+        BLUFI_ERROR("Decryption failed with status=%d", status);
+        free(output_buf);
         return -1;
     }
 
-    memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
-    iv0[0] = iv8;
-
-    status = psa_cipher_set_iv(&operation, iv0, sizeof(iv0));
-    if (status != PSA_SUCCESS) {
-        psa_cipher_abort(&operation);
+    if (output_len > (size_t)crypt_len) {
+        BLUFI_ERROR("Output length %d exceeds input buffer size %d", output_len, crypt_len);
+        free(output_buf);
         return -1;
     }
 
-    size_t update_out_len = 0;
-    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &update_out_len);
-    if (status != PSA_SUCCESS) {
-        psa_cipher_abort(&operation);
-        return -1;
-    }
+    memcpy(crypt_data, output_buf, output_len);
+    free(output_buf);
 
-    size_t finish_out_len = 0;
-    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &finish_out_len);
-    if (status != PSA_SUCCESS) {
-        psa_cipher_abort(&operation);
-        return -1;
-    }
-
-    return update_out_len + finish_out_len;
+    return output_len;
 }
 
 uint16_t blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len)
@@ -373,8 +509,9 @@ esp_err_t blufi_security_init(void)
     }
 
     memset(blufi_sec, 0x0, sizeof(struct blufi_security));
+    blufi_sec->enc_operation = psa_cipher_operation_init();
+    blufi_sec->dec_operation = psa_cipher_operation_init();
 
-    memset(blufi_sec->iv, 0x0, sizeof(blufi_sec->iv));
     return 0;
 }
 
@@ -383,11 +520,9 @@ void blufi_security_deinit(void)
     if (blufi_sec == NULL) {
         return;
     }
-    if (blufi_sec->dh_param){
-        free(blufi_sec->dh_param);
-        blufi_sec->dh_param = NULL;
-    }
-    psa_destroy_key(blufi_sec->aes_key);
+
+    /* Clean up all resources */
+    blufi_cleanup_negotiation(true, true);
 
     memset(blufi_sec, 0x0, sizeof(struct blufi_security));
 
