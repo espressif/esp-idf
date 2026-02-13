@@ -801,7 +801,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-    if (deep_sleep && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
+    if ((pd_flags & RTC_SLEEP_PD_DIG) && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
         gpio_deep_sleep_wakeup_prepare();
     }
 #endif
