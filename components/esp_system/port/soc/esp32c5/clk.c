@@ -253,5 +253,15 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     clk_gate_config.disable_pvt_clk = true;
 #endif
 
+#if defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG) && CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    /* ESP32-C5 rev <= 1.0: Do not disable UART0 sclk when USB Serial/JTAG is primary console.
+     * Disabling it would cause the chip to end in infinite loop on reset (workaround for rom code issue).
+     * See: IDFGH-17050
+     */
+    if (efuse_hal_chip_revision() <= 100) {
+        clk_gate_config.disable_uart0_clk = false;
+    }
+#endif
+
     periph_ll_clk_gate_set_default(rst_reason, &clk_gate_config);
 }
