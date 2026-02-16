@@ -97,6 +97,13 @@ endfunction()
 function(__build_get_idf_git_revision)
     idf_build_get_property(idf_path IDF_PATH)
     git_describe(idf_ver_git "${idf_path}" "--match=v*.*")
+    
+    # Check if git_describe failed (returns string ending with NOTFOUND)
+    if(idf_ver_git MATCHES ".*NOTFOUND$")
+        # Use version from version.cmake as fallback
+        set(idf_ver_git "v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
+    endif()
+    
     if(EXISTS "${idf_path}/version.txt")
         file(STRINGS "${idf_path}/version.txt" idf_ver_t)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/version.txt")
