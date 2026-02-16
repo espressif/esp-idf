@@ -7,7 +7,7 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
-    - if: IDF_TARGET in ["esp32c5", "esp32h4", "esp32h21", "esp32s31"]
+    - if: IDF_TARGET in ["esp32h4", "esp32h21", "esp32s31"]
       temporary: true
       reason: No runners.
   depends_components:
@@ -25,7 +25,7 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag_vfs:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
-    - if: IDF_TARGET in ["esp32c5", "esp32h4", "esp32h21", "esp32s31"]
+    - if: IDF_TARGET in ["esp32h4", "esp32h21", "esp32s31"]
       temporary: true
       reason: No runners.
   depends_components:
