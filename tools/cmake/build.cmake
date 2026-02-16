@@ -101,6 +101,7 @@ function(__build_get_idf_git_revision)
     # Check if git_describe failed (returns string ending with NOTFOUND)
     if(idf_ver_git MATCHES ".*NOTFOUND$")
         # Use version from version.cmake as fallback
+        # IDF_VERSION_* variables are set in version.cmake which is included before this function is called
         set(idf_ver_git "v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
     endif()
     
