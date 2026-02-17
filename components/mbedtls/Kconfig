@@ -1162,12 +1162,6 @@ menu "mbedTLS"
     endmenu
 
     menu "Hash functions"
-        config MBEDTLS_POLY1305_C
-            bool "Poly1305 MAC algorithm"
-            default n
-            help
-                Enable support for Poly1305 MAC algorithm.
-
         config MBEDTLS_RIPEMD160_C
             bool "Enable RIPEMD-160 hash algorithm"
             default n
@@ -1618,7 +1612,7 @@ menu "mbedTLS"
         config MBEDTLS_CHACHAPOLY_C
             bool "ChaCha20-Poly1305 AEAD algorithm"
             default n
-            depends on MBEDTLS_CHACHA20_C && MBEDTLS_POLY1305_C
+            depends on MBEDTLS_CHACHA20_C
             help
                 Enable support for ChaCha20-Poly1305 AEAD algorithm.
 
