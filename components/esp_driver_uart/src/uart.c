@@ -153,7 +153,6 @@ typedef struct {
     bool tx_waiting_fifo;               /*!< this flag indicates that some task is waiting for FIFO empty interrupt, used to send all data without any data buffer*/
     uint8_t *tx_ptr;                    /*!< TX data pointer to push to FIFO in TX buffer mode*/
     uart_tx_data_t *tx_head;            /*!< TX data pointer to head of the current buffer in TX ring buffer*/
-    uint32_t trans_total_remaining_len; /*!< Remaining data length of the current processing transaction in TX ring buffer*/
     uint32_t trans_chunk_remaining_len; /*!< Remaining data length of the current processing chunk of the transaction in TX ring buffer*/
     uint8_t tx_brk_flg;                 /*!< Flag to indicate to send a break signal in the end of the item sending procedure */
     uint8_t tx_brk_len;                 /*!< TX break signal cycle length/number */
@@ -1258,56 +1257,48 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 //That would cause a watch_dog reset because empty interrupt happens so often.
                 //Although this is a loop in ISR, this loop will execute at most 128 turns.
                 while (tx_fifo_rem) {
-                    if (p_uart->trans_total_remaining_len == 0 || p_uart->tx_ptr == NULL || p_uart->trans_chunk_remaining_len == 0) {
+                    if (p_uart->tx_ptr == NULL || p_uart->trans_chunk_remaining_len == 0) {
                         size_t size;
                         p_uart->tx_head = (uart_tx_data_t *) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
                         if (p_uart->tx_head) {
-                            //The first item is the data description
-                            //Get the first item to get the data information
-                            if (p_uart->trans_total_remaining_len == 0) {
-                                p_uart->tx_ptr = NULL;
-                                p_uart->trans_total_remaining_len = p_uart->tx_head->tx_data.size;
-                                if (p_uart->tx_head->type == UART_DATA_BREAK) {
-                                    p_uart->tx_brk_flg = 1;
-                                    p_uart->tx_brk_len = p_uart->tx_head->tx_data.brk_len;
-                                }
-                                //We have saved the data description from the 1st item, return buffer.
-                                vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
-                                need_yield |= (HPTaskAwoken == pdTRUE);
-                            } else if (p_uart->tx_ptr == NULL) {
-                                //Update the TX item pointer, we will need this to return item to buffer.
-                                p_uart->tx_ptr = (uint8_t *)p_uart->tx_head;
-                                en_tx_flg = true;
-                                p_uart->trans_chunk_remaining_len = size;
+                            // Atomic item: header + data combined
+                            // Extract break info if present
+                            if (p_uart->tx_head->type == UART_DATA_BREAK) {
+                                p_uart->tx_brk_flg = 1;
+                                p_uart->tx_brk_len = p_uart->tx_head->tx_data.brk_len;
                             }
+                            // Data starts immediately after header
+                            p_uart->tx_ptr = p_uart->tx_head->tx_data.data;
+                            p_uart->trans_chunk_remaining_len = p_uart->tx_head->tx_data.size;
+                            en_tx_flg = true;
                         } else {
                             //Can not get data from ring buffer, return;
                             break;
                         }
                     }
-                    if (p_uart->trans_total_remaining_len > 0 && p_uart->tx_ptr && p_uart->trans_chunk_remaining_len > 0) {
+                    if (p_uart->tx_ptr && p_uart->trans_chunk_remaining_len > 0) {
                         // To fill the TX FIFO.
                         uint32_t send_len = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) p_uart->tx_ptr,
                                                                       MIN(p_uart->trans_chunk_remaining_len, tx_fifo_rem));
                         p_uart->tx_ptr += send_len;
-                        p_uart->trans_total_remaining_len -= send_len;
                         p_uart->trans_chunk_remaining_len -= send_len;
                         tx_fifo_rem -= send_len;
                         if (p_uart->trans_chunk_remaining_len == 0) {
-                            //Return item to ring buffer.
+                            //Return atomic item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                             need_yield |= (HPTaskAwoken == pdTRUE);
                             p_uart->tx_head = NULL;
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
                             //Set TX break signal after FIFO is empty
-                            if (p_uart->trans_total_remaining_len == 0 && p_uart->tx_brk_flg == 1) {
+                            if (p_uart->tx_brk_flg == 1) {
                                 uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
                                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                                 uart_hal_tx_break(&(uart_context[uart_num].hal), p_uart->tx_brk_len);
                                 uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
                                 UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                                 p_uart->tx_waiting_brk = 1;
+                                p_uart->tx_brk_flg = 0;
                                 //do not enable TX empty interrupt
                                 en_tx_flg = false;
                             } else {
@@ -1630,44 +1621,78 @@ int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
 
 // Per transaction in the ring buffer:
 // A data description item, followed by one or more data chunk items
-static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool brk_en, int brk_len)
+static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool brk_en, int brk_len, TickType_t ticks_to_wait)
 {
     if (size == 0) {
         return 0;
     }
-    size_t original_size = size;
+    size_t bytes_transmitted = 0;
 
     //lock for uart_tx
-    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)portMAX_DELAY);
+    if (xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)ticks_to_wait) != pdTRUE) {
+        return -1;
+    }
 #if PROTECT_APB
     esp_pm_lock_acquire(p_uart_obj[uart_num]->pm_lock);
 #endif
     p_uart_obj[uart_num]->coll_det_flg = false;
     if (p_uart_obj[uart_num]->tx_buf_size > 0) {
-        int offset = 0;
-        uart_tx_data_t evt;
-        evt.tx_data.size = size;
-        evt.tx_data.brk_len = brk_len;
-        if (brk_en) {
-            evt.type = UART_DATA_BREAK;
-        } else {
-            evt.type = UART_DATA;
-        }
-        xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
+        const char *offset = src;
         while (size > 0) {
+
+            size_t acquire_size = size + sizeof(uart_tx_data_t); // Optimally, fit all data plus description in one round
+
+            // Fall back if not enough space in ring buffer
             size_t free_size = xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf);
-            size_t send_size = MIN(size, free_size);
-            if (send_size > 0) {
-                xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
-                size -= send_size;
-                offset += send_size;
-                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+
+            // If there is enough space for data description and 'some' data, send as much as possible in one round that
+            // is likely to fit in the ring buffer without blocking
+            if (free_size > sizeof(uart_tx_data_t)) {
+                acquire_size = MIN(acquire_size, free_size);
             }
+
+            // Limit an item to a quarter of the ring buffer size, if we allow a full item size the ring buffer
+            // needs to completely empty before we can send another large item, which can cause stalls.
+            // also makes sure that we dont try to add an item larger than the ring buffer itself
+            acquire_size = MIN(acquire_size, xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf) / 4);
+
+            // Accuire space for data description and data chunk, this gives a strong
+            // guarantee that data chunk can be copied in one go
+            uart_tx_data_t *tx_data = NULL;
+            BaseType_t res = xRingbufferSendAcquire(p_uart_obj[uart_num]->tx_ring_buf, (void **)&tx_data, acquire_size, ticks_to_wait);
+            if (res != pdTRUE) {
+                break; // Timeout
+            }
+
+            size_t send_size = acquire_size - sizeof(uart_tx_data_t);
+
+            // Check if this is the last chunk and we need to attach break
+            bool is_last_chunk = (send_size >= size);
+
+            *tx_data = (uart_tx_data_t) {
+                .tx_data = {
+                    .size = send_size,
+                    .brk_len = (is_last_chunk && brk_en) ? brk_len : 0
+                },
+                .type = (is_last_chunk && brk_en) ? UART_DATA_BREAK : UART_DATA,
+            };
+
+            memcpy(tx_data->tx_data.data, offset, send_size);
+            xRingbufferSendComplete(p_uart_obj[uart_num]->tx_ring_buf, tx_data);
+
+            size -= send_size;
+            offset += send_size;
+            bytes_transmitted += send_size;
+        }
+
+        // If at least some data has been sent to the ring buffer, enable TX interrupt to start sending
+        if (bytes_transmitted > 0) {
+            uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
         }
     } else {
         while (size) {
             //semaphore for tx_fifo available
-            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (TickType_t)portMAX_DELAY)) {
+            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, ticks_to_wait)) {
                 uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
@@ -1675,6 +1700,10 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 }
                 size -= sent;
                 src += sent;
+                bytes_transmitted += sent;
+                xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
+            } else {
+                break;
             }
         }
         if (brk_en) {
@@ -1683,15 +1712,24 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
             uart_hal_tx_break(&(uart_context[uart_num].hal), brk_len);
             uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-            xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, (TickType_t)portMAX_DELAY);
+            if (pdFALSE == xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, ticks_to_wait)) {
+                uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
+                bytes_transmitted = -1; // Indicate failure due to timeout waiting for break to complete
+            }
         }
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
+
     }
+
 #if PROTECT_APB
     esp_pm_lock_release(p_uart_obj[uart_num]->pm_lock);
 #endif
     xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
-    return original_size;
+
+    // If no bytes were transmitted due to timeout, return -1 to indicate failure
+    if (bytes_transmitted == 0) {
+        return -1;
+    }
+    return bytes_transmitted;
 }
 
 int uart_write_bytes(uart_port_t uart_num, const void *src, size_t size)
@@ -1699,7 +1737,15 @@ int uart_write_bytes(uart_port_t uart_num, const void *src, size_t size)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num] != NULL), (-1), UART_TAG, "uart driver error");
     ESP_RETURN_ON_FALSE(src, (-1), UART_TAG, "buffer null");
-    return uart_tx_all(uart_num, src, size, 0, 0);
+    return uart_tx_all(uart_num, src, size, 0, 0, portMAX_DELAY);
+}
+
+int uart_write_bytes_with_timeout(uart_port_t uart_num, const void *src, size_t size, TickType_t ticks_to_wait)
+{
+    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num] != NULL), (-1), UART_TAG, "uart driver error");
+    ESP_RETURN_ON_FALSE(src, (-1), UART_TAG, "buffer null");
+    return uart_tx_all(uart_num, src, size, 0, 0, ticks_to_wait);
 }
 
 int uart_write_bytes_with_break(uart_port_t uart_num, const void *src, size_t size, int brk_len)
@@ -1709,7 +1755,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void *src, size_t si
     ESP_RETURN_ON_FALSE((size > 0), (-1), UART_TAG, "uart size error");
     ESP_RETURN_ON_FALSE((src), (-1), UART_TAG, "uart data null");
     ESP_RETURN_ON_FALSE((brk_len > 0 && brk_len < 256), (-1), UART_TAG, "break_num error");
-    return uart_tx_all(uart_num, src, size, 1, brk_len);
+    return uart_tx_all(uart_num, src, size, 1, brk_len, portMAX_DELAY);
 }
 
 static bool uart_check_buf_full(uart_port_t uart_num)
@@ -2034,7 +2080,6 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->event_queue_size = event_queue_size;
         p_uart_obj[uart_num]->tx_ptr = NULL;
         p_uart_obj[uart_num]->tx_head = NULL;
-        p_uart_obj[uart_num]->trans_total_remaining_len = 0;
         p_uart_obj[uart_num]->trans_chunk_remaining_len = 0;
         p_uart_obj[uart_num]->tx_brk_flg = 0;
         p_uart_obj[uart_num]->tx_brk_len = 0;
