@@ -25,6 +25,12 @@ menu "PTP Daemon Configuration"
             help
                 Enable PTP debug messages even if CONFIG_DEBUG_NET_INFO is not enabled.
 
+         config NETUTILS_PTPD_GPTP_PROFILE
+            bool "Enable gPTP profile"
+            default n
+            help
+                Act as a gPTP endpoint, capable of supporting Audio/Video Bridging (AVB).
+
         config NETUTILS_PTPD_CLIENT
             bool "Enable client support"
             default y
@@ -131,13 +137,13 @@ menu "PTP Daemon Configuration"
                     144: Other
                     160: Internal oscillator
 
-            config NETUTILS_PTPD_SYNC_INTERVAL_MSEC
+            config NETUTILS_PTPD_SYNC_INTERVAL_MS
                 int "PTP server sync transmit interval (ms)"
                 default 1000
                 help
                     How often to transmit sync packets in server mode.
 
-            config NETUTILS_PTPD_ANNOUNCE_INTERVAL_MSEC
+            config NETUTILS_PTPD_ANNOUNCE_INTERVAL_MS
                 int "PTP server announce transmit interval (ms)"
                 default 10000
                 help
@@ -149,17 +155,15 @@ menu "PTP Daemon Configuration"
                 help
                     If enabled, sends a follow-up packet after every sync packet.
                     This helps compensate for the time taken to initiate the transmission.
+                    If gPTP profile is enabled, this setting is ignored (acts as y).
 
-            config NETUTILS_PTPD_DELAYRESP_INTERVAL
+            config NETUTILS_PTPD_DELAYREQ_INTERVAL_MS
                 int "PTP server suggested interval of delay requests"
-                range 0 255
-                default 4
+                default 16000
                 help
                     When responding to a delay request, the server can inform the client
-                    how often it should test path delay. This is done using header field
-                    logMessageInterval. The delay will be 2^N seconds.
-
-                    Default value 4 results in 16 second interval.
+                    how often it should test path delay. Default value is 16000 ms.
+                    For gPTP profle use 1000 ms.
 
         endif # NETUTILS_PTPD_SERVER
 
@@ -205,7 +209,8 @@ menu "PTP Daemon Configuration"
                 default n
                 help
                     If enabled, sends delay request messages to measure the network delay
-                    to server. If disabled, assumes zero delay.
+                    to server. If disabled, assumes no delay. If gPTP profile is enabled,
+                    this setting is ignored (acts as y).
 
             if NETUTILS_PTPD_SEND_DELAYREQ
 
@@ -218,16 +223,22 @@ menu "PTP Daemon Configuration"
                         also not transmitted until clock synchronization is better than this.
 
                 config NETUTILS_PTPD_DELAYREQ_AVGCOUNT
-                    int "PTP client path delay averaging count"
+                    int "PTP client path/peer delay averaging count"
                     default 100
                     help
-                        Measured path delay is averaged over this many samples.
+                        Measured path/peer delay is averaged over this many samples.
 
                 config NETUTILS_PTPD_PATH_DELAY_STABILITY_NS
                     int "PTP client send delay request when clock stability (ns)"
                     default 250
                     help
                         Sends path delay request only once the internal clock is stable and skews only
+                        in defined interval.
+                config NETUTILS_PTPD_PEER_PDELAY_STABILITY_NS
+                    int "PTP client send peer delay request when clock stability (ns)"
+                    default 100
+                    help
+                        Sends peer delay request only once the internal clock is stable and skews only
                         in defined interval.
 
             endif # NETUTILS_PTPD_SEND_DELAYREQ
