@@ -316,7 +316,9 @@ TEST(ecdsa, ecdsa_SECP192R1_signature_verification)
 
 TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 {
-    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
     } else {
         test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG);
@@ -325,7 +327,9 @@ TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 
 TEST(ecdsa, ecdsa_SECP192R1_corrupt_signature)
 {
-    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
     } else {
         test_ecdsa_corrupt_data(ECDSA_CURVE_SECP192R1, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
@@ -339,18 +343,28 @@ TEST(ecdsa, ecdsa_SECP256R1_signature_verification)
 
 TEST(ecdsa, ecdsa_SECP256R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_TRNG);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_TRNG);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 {
-    test_ecdsa_corrupt_data(ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        test_ecdsa_corrupt_data(ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y);
+    }
 }
 
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
 {
-    if (!ecdsa_ll_is_deterministic_mode_supported()) {
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
@@ -361,7 +375,9 @@ TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
 
 TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
 {
-    if (!ecdsa_ll_is_deterministic_mode_supported()) {
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
         test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
@@ -372,7 +388,9 @@ TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
 {
-    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
     } else {
         test_ecdsa_export_pubkey(ECDSA_CURVE_SECP192R1, ecdsa192_pub_x, ecdsa192_pub_y, 0);
@@ -381,37 +399,63 @@ TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
 
 TEST(ecdsa, ecdsa_SECP256R1_export_pubkey)
 {
-    test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y, 0);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y, 0);
+    }
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST(ecdsa, ecdsa_SECP384R1_signature_verification)
 {
-    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y));
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        TEST_ASSERT_EQUAL(0, test_ecdsa_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y));
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP384R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_TRNG);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_TRNG);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP384R1_corrupt_signature)
 {
-    test_ecdsa_corrupt_data(ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        test_ecdsa_corrupt_data(ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y);
+    }
 }
 
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 TEST(ecdsa, ecdsa_SECP384R1_det_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else if (!ecdsa_ll_is_deterministic_mode_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
+    } else {
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    }
 }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 TEST(ecdsa, ecdsa_SECP384R1_export_pubkey)
 {
-    test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, 0);
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
+    } else {
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, 0);
+    }
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */

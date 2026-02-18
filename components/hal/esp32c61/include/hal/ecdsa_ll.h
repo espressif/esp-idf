@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -428,6 +428,15 @@ static inline int ecdsa_ll_check_k_value(void)
  * @brief Check if the ECDSA deterministic mode is supported
  */
 static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
+{
+    return true;
+}
+
+/**
+ * @brief Check if the ECDSA peripheral is supported on this chip revision
+ * For ESP32-C61, ECDSA is always supported
+ */
+static inline bool ecdsa_ll_is_supported(void)
 {
     return true;
 }
