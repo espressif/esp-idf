@@ -33,6 +33,9 @@ static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 
 uint8_t get_keep_ble_on()
 {
+    if (g_ble_cfg_p == NULL) {
+        return 0;
+    }
     return g_ble_cfg_p->keep_ble_on;
 }
 
