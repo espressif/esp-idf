@@ -244,6 +244,7 @@ typedef struct {
 typedef enum {
     /* 2xx - Success */
     HttpStatus_Ok                = 200,
+    HttpStatus_PartialContent    = 206,
 
     /* 3xx - Redirection */
     HttpStatus_MultipleChoices   = 300,
@@ -695,6 +696,19 @@ int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
  *     - ESP_FAIL
  */
 esp_err_t esp_http_client_close(esp_http_client_handle_t client);
+
+/**
+ * @brief      Clear cached response buffer (e.g. data received during fetch headers).
+ *             Use this when reusing the same client handle for a new request after
+ *             closing the connection, so the next request does not see stale data.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG if client is NULL
+ */
+esp_err_t esp_http_client_clear_response_buffer(esp_http_client_handle_t client);
 
 /**
  * @brief      This function must be the last function to call for an session.
