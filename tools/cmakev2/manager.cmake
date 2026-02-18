@@ -83,6 +83,15 @@ function(__fetch_components_from_registry)
             idf_die("IDF Component Manager error: ${cmgr_result}")
         endif()
     endwhile()
+
+    # All managed components are now fetched and their Kconfig definitions
+    # are available. Point __SDKCONFIG_ORIG back to the real sdkconfig so
+    # that subsequent operations (menuconfig, save-defconfig, confserver)
+    # read and write the actual file, not the preserved copy.
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
+    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
+    __create_base_kconfgen_command("${sdkconfig}" "${sdkconfig_defaults}")
 endfunction()
 
 #[[
