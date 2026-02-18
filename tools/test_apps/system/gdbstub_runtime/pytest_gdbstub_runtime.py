@@ -368,14 +368,11 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert dut.find_gdb_response('done', 'result', responses) is not None
     cmd = '-exec-continue'
     payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'signal-received'
+    assert payload['reason'] == 'watchpoint-trigger'
+    assert int(payload['value']['new']) == int(payload['value']['old']) + 2
     assert payload['frame']['func'] == 'foo'
+    assert payload['frame']['line'] == str(get_line_number('var_2--;'))
     assert payload['stopped-threads'] == 'all'
-    # Uncomment this when implement send reason to gdb: GCC-313
-    #
-    # assert payload['reason'] == 'watchpoint-trigger'
-    # assert int(payload['value']['new']) == int(payload['value']['old']) + 1
-    # assert payload['frame']['line'] == '14'
 
     cmd = '-break-delete 2'
     responses = dut.gdb_write(cmd)

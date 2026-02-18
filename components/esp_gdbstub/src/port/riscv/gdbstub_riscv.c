@@ -250,6 +250,22 @@ void esp_gdbstub_init_dports(void)
 {
 }
 
+bool esp_gdbstub_get_watchpoint_trigger_addr(uint32_t *addr)
+{
+    for (int i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
+        RV_WRITE_CSR(tselect, i);
+        uint32_t tdata1 = RV_READ_CSR(tdata1);
+        bool is_load = tdata1 & TDATA1_LOAD;
+        bool is_store = tdata1 & TDATA1_STORE;
+        bool is_exec = tdata1 & TDATA1_EXECUTE;
+        if (!is_exec && (is_load || is_store)) {
+            *addr = RV_READ_CSR(tdata2);
+            return true;
+        }
+    }
+    return false;
+}
+
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 #if (!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME

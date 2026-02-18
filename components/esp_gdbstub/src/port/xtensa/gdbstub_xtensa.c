@@ -307,6 +307,23 @@ void esp_gdbstub_init_dports(void)
 {
 }
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+bool esp_gdbstub_get_watchpoint_trigger_addr(uint32_t *addr)
+{
+    uint32_t debugcause;
+    RSR(XT_REG_DEBUGCAUSE, debugcause);
+    if (debugcause & XCHAL_DEBUGCAUSE_DBREAK_MASK) {
+        if (debugcause & (1 << 8)) {
+            RSR(XT_REG_DBREAKA_1, *addr);
+        } else {
+            RSR(XT_REG_DBREAKA_0, *addr);
+        }
+        return true;
+    }
+    return false;
+}
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+
 #if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 static bool stall_started = false;
 #endif
