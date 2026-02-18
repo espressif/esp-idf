@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,13 +151,15 @@ esp_err_t _ss_esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key
     return esp_tee_sec_storage_ecdsa_get_pubkey(cfg, out_pubkey);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
+esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
     bool valid_addr = (esp_tee_ptr_in_ree((void *)ctx->input) &&
+                       esp_tee_ptr_in_ree((void *)ctx->iv) &&
                        esp_tee_ptr_in_ree((void *)tag) &&
                        esp_tee_ptr_in_ree((void *)output));
 
     valid_addr &= (esp_tee_ptr_in_ree((void *)(ctx->input + ctx->input_len)) &&
+                   esp_tee_ptr_in_ree((void *)(ctx->iv + AES_GCM_SUPPORTED_IV_LEN)) &&
                    esp_tee_ptr_in_ree((void *)(tag + tag_len)) &&
                    esp_tee_ptr_in_ree((void *)(output + ctx->input_len)));
 
@@ -176,10 +178,12 @@ esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ct
 esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
     bool valid_addr = (esp_tee_ptr_in_ree((void *)ctx->input) &&
+                       esp_tee_ptr_in_ree((void *)ctx->iv) &&
                        esp_tee_ptr_in_ree((void *)tag) &&
                        esp_tee_ptr_in_ree((void *)output));
 
     valid_addr &= (esp_tee_ptr_in_ree((void *)(ctx->input + ctx->input_len)) &&
+                   esp_tee_ptr_in_ree((void *)(ctx->iv + AES_GCM_SUPPORTED_IV_LEN)) &&
                    esp_tee_ptr_in_ree((void *)(tag + tag_len)) &&
                    esp_tee_ptr_in_ree((void *)(output + ctx->input_len)));
 

@@ -18,6 +18,7 @@ extern "C" {
 
 #define MAX_ECDSA_SUPPORTED_KEY_LEN         32   /*!< Maximum supported size for the ECDSA key */
 #define MAX_AES_SUPPORTED_KEY_LEN           32   /*!< Maximum supported size for the AES key */
+#define AES_GCM_SUPPORTED_IV_LEN            12   /*!< Supported IV length for AES-GCM operations */
 
 #define SEC_STORAGE_FLAG_NONE               0      /*!< No flags */
 #define SEC_STORAGE_FLAG_WRITE_ONCE         BIT(0) /*!< Data can only be written once */
@@ -53,6 +54,7 @@ typedef struct {
     size_t aad_len;                          /*!< Length of additional authenticated data */
     const uint8_t *input;                    /*!< Input data buffer */
     size_t input_len;                        /*!< Length of input data */
+    uint8_t iv[AES_GCM_SUPPORTED_IV_LEN];    /*!< IV buffer: OUTPUT for encrypt, INPUT for decrypt */
 } esp_tee_sec_storage_aead_ctx_t;
 
 /**
@@ -145,7 +147,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
-esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output);
+esp_err_t esp_tee_sec_storage_aead_encrypt(esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output);
 
 /**
  * @brief Perform decryption using AES256-GCM with the key from secure storage

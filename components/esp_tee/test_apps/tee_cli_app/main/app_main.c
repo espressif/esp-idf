@@ -33,7 +33,7 @@ static void setup_console(void)
      * This can be customized, made dynamic, etc.
      */
     repl_config.prompt = PROMPT_STR ">";
-    repl_config.max_cmdline_length = 128;
+    repl_config.max_cmdline_length = 256;
 
     /* Register help command */
     ESP_ERROR_CHECK(esp_console_register_help_command());

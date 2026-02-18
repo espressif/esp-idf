@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@
 #define AES256_KEY_LEN                      32
 #define AES256_KEY_BITS                     (AES256_KEY_LEN * 8)
 #define AES256_DEFAULT_IV_LEN               16
-#define AES256_GCM_IV_LEN                   12
+#define AES256_GCM_IV_LEN                   (AES_GCM_SUPPORTED_IV_LEN)
 #define ECDSA_SECP256R1_KEY_LEN             32
 #define ECDSA_SECP192R1_KEY_LEN             24
 
@@ -58,10 +58,9 @@ typedef struct {
     uint8_t pub_key[2 * ECDSA_SECP192R1_KEY_LEN];  /* Public key for ECDSA SECP192R1 (X and Y coordinates) */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp192r1_t;
 
-/* Structure to hold AES-256 key and IV */
+/* Structure to hold AES-256 key */
 typedef struct {
     uint8_t key[AES256_KEY_LEN];          /* Key for AES-256 */
-    uint8_t iv[AES256_DEFAULT_IV_LEN];    /* Initialization vector for AES-256 */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_aes256_t;
 
 /* Structure to hold the cryptographic keys in NVS */
@@ -71,7 +70,7 @@ typedef struct {
     union {
         sec_stg_ecdsa_secp256r1_t ecdsa_secp256r1;  /* ECDSA SECP256R1 key pair */
         sec_stg_ecdsa_secp192r1_t ecdsa_secp192r1;  /* ECDSA SECP192R1 key pair */
-        sec_stg_aes256_t aes256;                    /* AES-256 key and IV */
+        sec_stg_aes256_t aes256;                    /* AES-256 key */
     };
     uint32_t reserved[38];                          /* Reserved space for future use */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_key_t;
@@ -338,9 +337,7 @@ static int generate_aes256_key(sec_stg_key_t *keyctx)
     }
 
     ESP_LOGD(TAG, "Generating AES-256 key...");
-
     esp_fill_random(&keyctx->aes256.key, AES256_KEY_LEN);
-    esp_fill_random(&keyctx->aes256.iv, AES256_DEFAULT_IV_LEN);
 
     return 0;
 }
@@ -408,7 +405,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
     size_t keyctx_len = sizeof(keyctx);
     err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from storage");
         return err;
     }
 
@@ -535,15 +531,14 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
 
 static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t *input, size_t len, const uint8_t *aad,
                                               size_t aad_len, uint8_t *tag, size_t tag_len, uint8_t *output,
-                                              bool is_encrypt)
+                                              uint8_t *iv, size_t iv_len, bool is_encrypt)
 {
-    if (key_id == NULL || input == NULL || output == NULL || tag == NULL) {
-        ESP_LOGE(TAG, "Invalid arguments");
+    if (key_id == NULL || input == NULL || output == NULL || tag == NULL || iv == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len == 0 || tag_len == 0) {
-        ESP_LOGE(TAG, "Invalid input/tag length");
+    if (len == 0 || tag_len == 0 || iv_len != AES256_GCM_IV_LEN) {
+        ESP_LOGE(TAG, "Invalid input/tag/iv length");
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -557,7 +552,6 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
     size_t keyctx_len = sizeof(keyctx);
     err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from storage");
         return err;
     }
 
@@ -577,7 +571,11 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
     }
 
     if (is_encrypt) {
-        ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, keyctx.aes256.iv, AES256_GCM_IV_LEN,
+        /* Generate a fresh random IV for each encryption operation */
+        memset(iv, 0x00, iv_len);
+        esp_fill_random(iv, iv_len);
+
+        ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, iv, iv_len,
                                         aad, aad_len, input, output, tag_len, tag);
         if (ret != 0) {
             ESP_LOGE(TAG, "Error in encrypting data: %d", ret);
@@ -585,7 +583,7 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
             goto exit;
         }
     } else {
-        ret = mbedtls_gcm_auth_decrypt(&gcm, len, keyctx.aes256.iv, AES256_GCM_IV_LEN,
+        ret = mbedtls_gcm_auth_decrypt(&gcm, len, iv, iv_len,
                                        aad, aad_len, tag, tag_len, input, output);
         if (ret != 0) {
             ESP_LOGE(TAG, "Error in decrypting data: %d", ret);
@@ -600,14 +598,24 @@ exit:
     return err;
 }
 
-esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
+esp_err_t esp_tee_sec_storage_aead_encrypt(esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, tag, tag_len, output, true);
+    if (ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len,
+                                        tag, tag_len, output, (uint8_t *)ctx->iv, AES256_GCM_IV_LEN, true);
 }
 
 esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, (uint8_t *)tag, tag_len, output, false);
+    if (ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len,
+                                        (uint8_t *)tag, tag_len, output, (uint8_t *)ctx->iv, AES256_GCM_IV_LEN, false);
 }
 
 esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx,
