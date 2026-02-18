@@ -573,7 +573,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
                       (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
           /* Perform service discovery */
           rc = peer_disc_all(event->connect.conn_handle,
-                             blecent_on_disc_complete, NULL);
+                             ble_prox_cent_on_disc_complete, NULL);
           if(rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
