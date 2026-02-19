@@ -14,6 +14,10 @@ examples/system/ulp/lp_core/build_system:
 examples/system/ulp/lp_core/debugging:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: ESP32-S31 not supported yet
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/gpio:
