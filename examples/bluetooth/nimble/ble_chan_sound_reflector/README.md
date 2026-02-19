@@ -1,34 +1,28 @@
 | Supported Targets | ESP32-C6 |
 | ----------------- | -------- |
 
-# BLE Channel Sounding reflector Example
+**The ESP32-C6 Bluetooth controller does not support Channel Sounding.** The target listed above is only the chip that runs the NimBLE host. This example is host-only and requires an external, Channel Sounding capable Bluetooth controller connected over HCI UART. No currently available ESP SoC can perform Channel Sounding on its own.
 
-(See the README.md file in the upper-level 'examples' directory for more information about examples.)
-* This example demonstrates the capability of the CS procedure to be executed on the ESP host + external controller.
-* It is important to note that the current example does not provide support for distance calculation, and it is currently under development.
-* Ble channel sounding reflector example uses the RAS service defined in [ble_svc_ras.c](../../../../components/bt/host/nimble/nimble/nimble/host/services/ras/src/ble_svc_ras.c)
+# BLE Channel Sounding Reflector Example
 
-I (372) hal_uart: set baud_rate:115200.
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-I (382) NimBLE_RAS_INITIATOR: BLE Host Task Started
-I (382) main_task: Returned from app_main()
+This example demonstrates the BLE Channel Sounding (CS) reflector role, serving ranging data to a peer CS initiator through the Ranging Service (RAS).
 
-I (157562) NimBLE: GAP procedure initiated: extended advertise; instance=0
+The reflector:
 
-I (157562) NimBLE: Connection secured
-I (162222) NimBLE: encryption change event; status=0
+* Advertises the Ranging Service (UUID 0x185B) using legacy ADV_IND PDUs so the connection is created on the 1M PHY, for the widest initiator compatibility.
+* Enables the CS reflector role immediately on connect, before pairing, so that an initiator's `LL_CS_CAPABILITIES_REQ` / `LL_CS_CONFIG_REQ` is not rejected by the controller.
+* Requires LE Secure Connections pairing (mandatory for Channel Sounding).
+* Runs the RAS server (RRSP role from [ble_svc_ras.c](../../../../components/bt/host/nimble/nimble/nimble/host/services/ras/src/ble_svc_ras.c)), which collects CS subevent results per procedure and delivers them to the initiator in Real-time mode (unsolicited notifications) or On-demand mode (RD Ready indication, then GET_RD / ACK_RD control-point flow).
 
-I (162372) NimBLE: CS capabilities exchanged
-I (162372) NimBLE: Set default CS settings
+Distance estimation is intentionally out of scope for this example; the reflector's job is to serve its measured ranging data to the initiator, which combines it with its own local step data.
 
-I (162392) NimBLE: Setup phase completed
+To test this demo, use the `ble_chan_sound_initiator` example or any BLE Channel Sounding initiator application.
 
-To test this demo, any BLE channel sounding initiator app can be used.
+Note:
 
-## Note
-
-* This example currently requires an external Bluetooth controller supporting BLE Channel sounding functionality, as the ESP chips listed above do not have native controller support for BLE channel sounding feature and is under development phase
-
+* The example sets `CONFIG_BT_CONTROLLER_DISABLED=y`, so the ESP32-C6 runs only the NimBLE host and every Channel Sounding operation is performed by the external controller. See [Hardware Required](#hardware-required) for the wiring it needs.
 * To install the dependency packages needed, please refer to the top level [README file](../../../README.md#running-test-python-script-pytest).
 
 ## How to Use Example
@@ -39,6 +33,17 @@ Before project configuration and build, be sure to set the correct chip target u
 idf.py set-target <chip_name>
 ```
 
+### Hardware Required
+
+* A development board with an ESP SoC listed in the supported targets table above, to run the NimBLE host.
+* A USB cable for power supply and programming.
+* An external Bluetooth controller supporting Channel Sounding, running an HCI UART firmware.
+* Four jumper wires connecting the two boards: TX, RX, RTS and CTS. Hardware flow control is mandatory; without it the HCI stream desynchronizes and the host fails during initialization.
+
+The ESP-side HCI UART pins default to TX 4, RX 5, RTS 19 and CTS 23, and are configurable under `Component config -> Bluetooth -> NimBLE Options -> Host-controller Transport`. Connect ESP TX to controller RX, ESP RX to controller TX, ESP RTS to controller CTS and ESP CTS to controller RTS.
+
+To run the CS procedure end to end, the peer device should be a BLE Channel Sounding initiator such as the `ble_chan_sound_initiator` example.
+
 ### Configure the project
 
 Open the project configuration menu:
@@ -47,10 +52,12 @@ Open the project configuration menu:
 idf.py menuconfig
 ```
 
-In the `Example Configuration` menu:
+* In the `Example Configuration` menu:
+  * `Enable Extended Adv` selects the extended advertising API (enabled by default; the example still advertises with legacy PDUs, see above).
+  * `Enable Bonding` stores keys so a bonded initiator can reconnect and re-encrypt without re-pairing (enabled by default).
+  * `Enable MITM Protection` and `Enable Peer Address Resolution` configure additional security options.
 
-* Select I/O capabilities of device from `Example Configuration --> I/O Capability`, default is `Just_works`.
-* Enable/Disable other security related parameters `Bonding, MITM option, secure connection(SM SC)`.
+* In `Component config -> Bluetooth -> NimBLE Options -> Host-controller Transport`, the HCI UART baud rate and pin assignment must match the firmware running on the external controller. The example defaults to 230400 baud with hardware flow control enabled.
 
 ### Build and Flash
 
@@ -60,7 +67,19 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
+## Example Output
+
+Console output when the reflector starts and begins advertising:
+
+```
+I (415) NimBLE_CS_REFLECTOR: BLE Host Task Started
+```
+
+Once an initiator with a controller that supports Channel Sounding connects, the reflector enables the CS reflector role, then pairs, exchanges CS capabilities, and serves each procedure's ranging data to the initiator over RAS.
 
 ## Troubleshooting
+
+* If the host times out during initialization, or the controller reports unknown HCI packet headers, the HCI UART link is misconfigured. Check that the baud rate matches on both sides and that hardware flow control is enabled at both ends and physically wired. HCI over UART has no in-band resynchronization, so a single dropped byte desynchronizes the stream until the link is restarted.
+* If the initiator connects but CS never starts, confirm the link is encrypted (Channel Sounding requires LE Secure Connections) and that both controllers support the CS feature.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

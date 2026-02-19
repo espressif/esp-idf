@@ -2211,6 +2211,11 @@
 #define MYNEWT_VAL_BLE_SVC_DIS_INCLUDED (CONFIG_BT_NIMBLE_SVC_DIS_INCLUDED)
 #endif
 
+/*** @apache-mynewt-nimble/nimble/host/services/ras */
+#ifndef MYNEWT_VAL_BLE_SVC_RAS_SYSINIT_STAGE
+#define MYNEWT_VAL_BLE_SVC_RAS_SYSINIT_STAGE (303)
+#endif
+
 /*** @apache-mynewt-nimble/nimble/host/services/gap */
 #ifdef CONFIG_BT_NIMBLE_GAP_SERVICE
 #ifndef MYNEWT_VAL_BLE_SVC_GAP_APPEARANCE
@@ -2709,6 +2714,14 @@
 #define MYNEWT_VAL_BLE_CHANNEL_SOUNDING (CONFIG_BT_NIMBLE_CHANNEL_SOUNDING)
 #else
 #define MYNEWT_VAL_BLE_CHANNEL_SOUNDING (0)
+#endif
+#endif
+
+#ifndef MYNEWT_VAL_BLE_RAS_SERVICE
+#ifdef CONFIG_BT_NIMBLE_RAS_SERVICE
+#define MYNEWT_VAL_BLE_RAS_SERVICE (CONFIG_BT_NIMBLE_RAS_SERVICE)
+#else
+#define MYNEWT_VAL_BLE_RAS_SERVICE (0)
 #endif
 #endif
 

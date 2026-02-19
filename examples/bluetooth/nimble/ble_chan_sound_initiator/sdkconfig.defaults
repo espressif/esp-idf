@@ -11,6 +11,25 @@ CONFIG_BT_NIMBLE_60_FEATURE_SUPPORT=y
 CONFIG_BT_NIMBLE_ENABLED=y
 CONFIG_BT_NIMBLE_EXT_ADV=y
 CONFIG_BT_NIMBLE_CHANNEL_SOUNDING=y
-CONFIG_BT_NIMBLE_TRANSPORT_EVT_SIZE=78
-CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=498
+CONFIG_BT_NIMBLE_TRANSPORT_EVT_SIZE=257
 CONFIG_BT_NIMBLE_GATT_MAX_PROCS=6
+
+# HCI UART link to the external Channel Sounding controller. Both values have to
+# match the controller firmware. Hardware flow control is mandatory: H4 has no
+# in-band resynchronization, so a single byte lost to a receive overrun leaves
+# the HCI stream misaligned until the link is restarted.
+CONFIG_UART_BAUDRATE_230400=y
+CONFIG_UART_HW_FLOWCTRL_CTS_RTS=y
+
+# The negotiated ATT MTU is the smaller of the two sides, so this has to match
+# the reflector: a RAS segment carries ATT_MTU - 4 octets of ranging data, and
+# 247 keeps that notification inside a single LL data PDU. The msys pools are
+# enlarged to keep headroom for the RAS ranging-data stream.
+CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=247
+CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=40
+CONFIG_BT_NIMBLE_MSYS_2_BLOCK_COUNT=40
+
+# The Ranging Service serves one connection, so accepting more links than that
+# would let a second peer subscribe and issue control-point commands the
+# service cannot answer. Keep the host limit and the service limit equal.
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1

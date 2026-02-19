@@ -11,4 +11,32 @@ CONFIG_BT_NIMBLE_60_FEATURE_SUPPORT=y
 CONFIG_BT_NIMBLE_ENABLED=y
 CONFIG_BT_NIMBLE_EXT_ADV=y
 CONFIG_BT_NIMBLE_CHANNEL_SOUNDING=y
-CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=498
+CONFIG_BT_NIMBLE_TRANSPORT_EVT_SIZE=257
+
+# HCI UART link to the external Channel Sounding controller. Both values have to
+# match the controller firmware. Hardware flow control is mandatory: H4 has no
+# in-band resynchronization, so a single byte lost to a receive overrun leaves
+# the HCI stream misaligned until the link is restarted.
+CONFIG_UART_BAUDRATE_230400=y
+CONFIG_UART_HW_FLOWCTRL_CTS_RTS=y
+
+# Exposes the GATT Database Hash characteristic (0x2B2A), which Core 5.1+ requires
+# a server to have. Without it the peer cannot cache our database and re-runs a
+# full discovery on every connection; a Read By Type 0x2b2a would be answered
+# with Attribute Not Found.
+CONFIG_BT_NIMBLE_GATT_CACHING=y
+
+# A RAS segment carries up to ATT_MTU - 4 octets of ranging data (RAS 3.2.2),
+# so the ATT MTU alone decides the segment size. 247 is the largest MTU whose
+# notification still fits one LL data PDU: 243 data + 1 segment header + 3 ATT
+# + 4 L2CAP = 251. Beyond that every segment is split into several ACL
+# fragments, which the ranging-data stream does not sustain. The msys pools are
+# enlarged to keep headroom for the stream.
+CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=247
+CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=40
+CONFIG_BT_NIMBLE_MSYS_2_BLOCK_COUNT=40
+
+# The Ranging Service serves one connection, so accepting more links than that
+# would let a second peer subscribe and issue control-point commands the
+# service cannot answer. Keep the host limit and the service limit equal.
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1

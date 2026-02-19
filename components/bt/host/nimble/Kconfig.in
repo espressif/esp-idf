@@ -945,9 +945,15 @@ menu "BLE 6.x Features"
     if BT_NIMBLE_60_FEATURE_SUPPORT
         config BT_NIMBLE_CHANNEL_SOUNDING
             bool "ble channel sounding feature"
+            depends on !BT_CONTROLLER_ENABLED || SOC_BLE_CHANNEL_SOUNDING_SUPPORTED
             default n
             help
                 Used to enable/disable the channel sounding feature
+
+        config BT_NIMBLE_RAS_SERVICE
+            bool
+            depends on BT_NIMBLE_CHANNEL_SOUNDING
+            default y
 
         config BT_NIMBLE_MONITOR_ADV
             bool "Enable Monitor Advertising"
@@ -1039,14 +1045,6 @@ menu "Services"
         default 3
         help
             Defines maximum number of report characteristics per service instance
-
-    config BT_NIMBLE_RAS_SERVICE
-        depends on BT_NIMBLE_CHANNEL_SOUNDING
-        bool "RAS service"
-        default y
-        help
-            Enable RAS Service
-
 
     menuconfig BT_NIMBLE_BAS_SERVICE
         bool "Battery service"

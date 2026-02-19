@@ -54,6 +54,7 @@ list(APPEND nimble_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/services/sps/src/ble_svc_sps.c"
     "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/services/cte/src/ble_svc_cte.c"
     "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/services/ras/src/ble_svc_ras.c"
+    "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/services/ras/src/rreq/ble_svc_ras_rreq.c"
     "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/src/ble_cs.c"
     "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/src/ble_hs_conn.c"
     "${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/src/ble_store_util.c"
