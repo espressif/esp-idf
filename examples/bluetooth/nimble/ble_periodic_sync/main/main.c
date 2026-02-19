@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -114,11 +114,11 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
         struct ble_gap_ext_disc_desc *disc = ((struct ble_gap_ext_disc_desc *)(&event->ext_disc));
         if (disc->sid == 2 && synced == 0) {
             synced++;
-            const ble_addr_t addr;
+            ble_addr_t addr;
             uint8_t adv_sid;
             struct ble_gap_periodic_sync_params params;
             int rc;
-            memcpy((void *)&addr, (void *)&disc->addr, sizeof(disc->addr));
+            memcpy(&addr, &disc->addr, sizeof(disc->addr));
             memcpy(&adv_sid, &disc->sid, sizeof(disc->sid));
             params.skip = 10;
             params.sync_timeout = 1000;

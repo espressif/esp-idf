@@ -167,8 +167,10 @@ static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
+    const char *ip_str = IP_IS_V4(&target_addr) ? inet_ntoa(*ip_2_ip4(&target_addr)) :
+                                                inet6_ntoa(*ip_2_ip6(&target_addr));
     printf("%" PRIu32 "bytes from %s icmp_seq=%d ttl=%d time=%" PRIu32 "ms\n",
-           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
+           recv_len, ip_str, seqno, ttl, elapsed_time);
 }
 
 static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
@@ -177,7 +179,9 @@ static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
     ip_addr_t target_addr;
     esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
-    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+    const char *ip_str = IP_IS_V4(&target_addr) ? inet_ntoa(*ip_2_ip4(&target_addr)) :
+                                                inet6_ntoa(*ip_2_ip6(&target_addr));
+    printf("From %s icmp_seq=%d timeout\n", ip_str, seqno);
 }
 
 

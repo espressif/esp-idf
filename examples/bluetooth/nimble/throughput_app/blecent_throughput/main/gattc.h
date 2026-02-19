@@ -111,8 +111,8 @@ peer_find(uint16_t conn_handle);
 /* Console */
 int scli_init(void);
 void ble_register_cli(void);
-int scli_receive_key(int *key);
-int cli_receive_key(int *key);
+int scli_receive_key(int key[6]);
+int cli_receive_key(int key[6]);
 int scli_receive_yesno(bool *key);
 void scli_reset_queue(void);
 

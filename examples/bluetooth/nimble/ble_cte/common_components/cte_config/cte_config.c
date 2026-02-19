@@ -81,7 +81,11 @@ uint8_t antenna_signal_index[4] = {CTE_ANT0_IDX, CTE_ANT1_IDX, CTE_ANT2_IDX, CTE
 int ble_direction_finding_antenna_init(uint8_t* gpio_array,uint8_t gpio_array_len){
     int rc;
     // GPIO configuration
-    uint32_t gpio_pin_maks = 0;
+    uint64_t gpio_pin_maks = 0;
+
+    if (!gpio_array || gpio_array_len > 4 || gpio_array_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
     for (int i = 0; i < gpio_array_len; i++){
         gpio_pin_maks |= (1ULL << gpio_array[i]);
     }
@@ -95,6 +99,7 @@ int ble_direction_finding_antenna_init(uint8_t* gpio_array,uint8_t gpio_array_le
     rc = gpio_config(&gpio_conf);
     if(rc != 0) {
         ESP_LOGE("DF","config fault GPIO failed");
+        return rc;
     }
     // gpio bind signal
     for (int i = 0; i < gpio_array_len; i++){

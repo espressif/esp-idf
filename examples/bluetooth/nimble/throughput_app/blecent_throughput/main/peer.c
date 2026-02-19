@@ -358,7 +358,7 @@ peer_chr_add(struct peer *peer,  uint16_t svc_start_handle,
     if (prev == NULL) {
         SLIST_INSERT_HEAD(&svc->chrs, chr, next);
     } else {
-        SLIST_NEXT(prev, next) = chr;
+        SLIST_INSERT_AFTER(prev, chr, next);
     }
 
     return 0;
@@ -492,31 +492,7 @@ peer_inc_add(struct peer *peer,  uint16_t svc_start_handle,
 
     svc = peer_svc_find(peer, gatt_incl_svc->start_handle, &prev);
 
-    if (!svc) {
-        /* secondary service */
-        svc = os_memblock_get(&peer_svc_pool);
-        if (svc == NULL) {
-            /* out of memory */
-            return BLE_HS_ENOMEM;
-        }
-
-        memset(svc, 0, sizeof *svc);
-        svc->svc.start_handle = gatt_incl_svc->start_handle;
-        svc->svc.end_handle = gatt_incl_svc->end_handle;
-        memcpy(&svc->svc.uuid, &gatt_incl_svc->uuid, sizeof(ble_uuid_any_t));
-
-        SLIST_INIT(&svc->chrs);
-        SLIST_INIT(&svc->incl_svc);
-
-        if (prev == NULL) {
-            SLIST_INSERT_HEAD(&peer->svcs, svc, next);
-        } else {
-            SLIST_INSERT_AFTER(prev, svc, next);
-        }
-    }
-
     /* Including the services into inlucding list */
-
     cur_svc = peer_svc_find_range(peer, gatt_incl_svc->handle);
 
     if (cur_svc == NULL) {
@@ -533,9 +509,36 @@ peer_inc_add(struct peer *peer,  uint16_t svc_start_handle,
         return 0;
     }
 
+    /* Allocate incl_svc first, before allocating secondary service.
+     * This ensures we don't leak a secondary service if incl_svc allocation fails. */
     incl_svc = os_memblock_get(&peer_incl_svc_pool);
     if (incl_svc == NULL) {
         return BLE_HS_ENOMEM;
+    }
+
+    /* Now allocate secondary service if needed, after incl_svc allocation succeeds */
+    if (!svc) {
+        /* secondary service */
+        svc = os_memblock_get(&peer_svc_pool);
+        if (svc == NULL) {
+            /* Free incl_svc before returning */
+            os_memblock_put(&peer_incl_svc_pool, incl_svc);
+            return BLE_HS_ENOMEM;
+        }
+
+        memset(svc, 0, sizeof *svc);
+        svc->svc.start_handle = gatt_incl_svc->start_handle;
+        svc->svc.end_handle = gatt_incl_svc->end_handle;
+        memcpy(&svc->svc.uuid, &gatt_incl_svc->uuid, sizeof(ble_uuid_any_t));
+
+        SLIST_INIT(&svc->chrs);
+        SLIST_INIT(&svc->incl_svc);
+
+        if (prev == NULL) {
+            SLIST_INSERT_HEAD(&peer->svcs, svc, next);
+        } else {
+            SLIST_INSERT_AFTER(prev, svc, next);
+        }
     }
 
     incl_svc->svc = *gatt_incl_svc;

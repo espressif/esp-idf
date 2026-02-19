@@ -63,6 +63,7 @@ static int get_version(int argc, char **argv)
 {
     esp_chip_info_t info;
     uint32_t flash_size;
+    const char *model_str;
     esp_chip_info(&info);
     if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
         printf("Get flash size failed");
@@ -70,7 +71,18 @@ static int get_version(int argc, char **argv)
     }
     printf("IDF Version:%s\r\n", esp_get_idf_version());
     printf("Chip info:\r\n");
-    printf("\tmodel:%s\r\n", info.model == CHIP_ESP32 ? "ESP32" : "Unknown");
+    switch (info.model) {
+        case CHIP_ESP32:   model_str = "ESP32"; break;
+        case CHIP_ESP32S3: model_str = "ESP32-S3"; break;
+        case CHIP_ESP32C3: model_str = "ESP32-C3"; break;
+        case CHIP_ESP32C2: model_str = "ESP32-C2"; break;
+        case CHIP_ESP32C6: model_str = "ESP32-C6"; break;
+        case CHIP_ESP32H2: model_str = "ESP32-H2"; break;
+        case CHIP_ESP32C61: model_str = "ESP32-C61"; break;
+        case CHIP_ESP32C5: model_str = "ESP32-C5"; break;
+        default:           model_str = "Unknown"; break;
+    }
+    printf("\tmodel:%s\r\n", model_str);
     printf("\tcores:%d\r\n", info.cores);
     printf("\tfeature:%s%s%s%s%" PRIu32 "%s\r\n",
            info.features & CHIP_FEATURE_WIFI_BGN ? "/802.11bgn" : "",

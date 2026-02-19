@@ -116,8 +116,9 @@ static int blecs_gap_event(struct ble_cs_event *event, void *arg)
                 most_recent_local_ranging_counter=event->subev_result.procedure_counter;
 
             } else if(event->subev_result.procedure_done_status == BLE_HCI_LE_CS_SUBEVENT_DONE_STATUS_PARTIAL) {
-               ranging_subevent.type=BLE_CS_EVENT_SUBEVET_RESULT;
-               ranging_subevent.subev_result= event->subev_result;
+               memset(&ranging_subevent, 0, sizeof(ranging_subevent));
+               ranging_subevent.type = BLE_CS_EVENT_SUBEVET_RESULT;
+               ranging_subevent.subev_result = event->subev_result;
                idx++;
                 if (idx==1) {
                     most_recent_local_ranging_counter=event->subev_result.procedure_counter;
@@ -133,6 +134,7 @@ static int blecs_gap_event(struct ble_cs_event *event, void *arg)
                 MODLOG_DFLT(INFO, "LE CS Subevent Result Continue , status: Aborted\n");
             } else if ( event->subev_result_continue.procedure_done_status == BLE_HCI_LE_CS_SUBEVENT_DONE_STATUS_COMPLETE) {
                 MODLOG_DFLT(INFO, "LE CS Subevent Result Continue , status: Complete\n");
+                ranging_subevent.type = BLE_CS_EVENT_SUBEVET_RESULT_CONTINUE;
                 ranging_subevent.subev_result_continue = event->subev_result_continue;
                 /* To
                 * Get total number of CS procedure from CS enable event and then accordigly indicate to most recent ranging counter
