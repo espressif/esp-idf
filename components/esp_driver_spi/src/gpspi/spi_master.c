@@ -814,6 +814,7 @@ static void SPI_MASTER_ISR_ATTR spi_format_hal_trans_struct(spi_device_t *dev, s
 // Setup the transaction-specified registers and linked-list used by the DMA (or FIFO if DMA is not used)
 static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_t *trans_buf)
 {
+    assert(dev != NULL);
     spi_host_t *host = dev->host;
     spi_transaction_t *trans = trans_buf->trans;
     spi_hal_context_t *hal = &(dev->host->hal);
@@ -909,6 +910,7 @@ static void SPI_MASTER_ISR_ATTR s_sct_load_dma_link(spi_device_t *dev, spi_dma_d
 
 static void SPI_MASTER_ISR_ATTR spi_new_sct_trans(spi_device_t *dev, spi_sct_trans_priv_t *cur_sct_trans)
 {
+    assert(dev != NULL);
     dev->host->cur_cs = dev->id;
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
