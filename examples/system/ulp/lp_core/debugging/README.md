@@ -13,7 +13,7 @@ This example demonstrates how to debug application running on the LP core.
 
 ### Hardware Required
 
-To run this example, you should have an ESP32-C6 based development board.
+To run this example, you should have an ESP based development board that integrates an LP core.
 
 ### Build and Flash
 
@@ -49,10 +49,15 @@ add-symbol build/esp-idf/main/ulp_debug_example/ulp_debug_example.elf
 ```
 thb main
 commands
-b main
 b do_crash
 b do_things
+commands
+c
+end
 b ulp_lp_core_delay_us
+commands
+c
+end
 c
 end
 ```
@@ -69,8 +74,7 @@ end
 * 2    Thread 2 "esp32c6.lp.cpu" (Name: esp32c6.lp.cpu, state: breakpoint)      do_things (max=1000000000)
     at /home/user/projects/esp/esp-idf/examples/system/ulp/lp_core/debugging/main/ulp/main.c:22
 ```
-3) When setting HW breakpoint in GDB it is set on both cores, so the number of available HW breakpoints is limited to the number of them supported by LP core (2 for ESP32-C6).
-4) OpenOCD flash support is disabled. It does not matter for LP core application because it is run completely from RAM and GDB can use SW breakpoints for it. But if you want to set a breakpoint on function from flash used by the code running on HP core (e.g. `app_main`) you should request to set HW breakpoint explicitly via `hb`/`thb` GDB commands.
+3) When setting HW breakpoint in GDB it is set on both cores, so the number of available HW breakpoints is limited to the number of them supported by LP core (2 for ESP32-C6, ESP32-C5 or ESP32-P4).
 
 ## Troubleshooting
 
