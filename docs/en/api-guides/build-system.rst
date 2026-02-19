@@ -264,6 +264,9 @@ The build system provides special treatment to the ``main`` component. It is a c
 2. Set ``EXTRA_COMPONENT_DIRS`` in the project CMakeLists.txt to include the renamed ``main`` directory.
 3. Specify the dependencies in the renamed component's CMakeLists.txt file via REQUIRES or PRIV_REQUIRES arguments :ref:`on component registration <cmake_minimal_component_cmakelists>`.
 
+.. note::
+
+   A project without a ``main`` component cannot use the ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>`, as this property explicitly relies on the presence of the ``main`` component. Ensure that the ``MINIMAL_BUILD`` build property is not set for projects that do not include a ``main`` component.
 
 Overriding Default Build Specifications
 ---------------------------------------

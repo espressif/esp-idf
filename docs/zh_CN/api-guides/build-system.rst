@@ -264,6 +264,9 @@ ESP-IDF 适用于 Python 3.9 以上版本。
 2. 在项目 CMakeLists.txt 文件中设置 ``EXTRA_COMPONENT_DIRS``，并添加重命名后的 ``main`` 目录。
 3. 在组件的 CMakeLists.txt 文件中设置 ``COMPONENT_REQUIRES`` 或 ``COMPONENT_PRIV_REQUIRES`` 以指定依赖项。
 
+.. note::
+
+   没有 ``main`` 组件的项目无法使用 ``MINIMAL_BUILD`` :ref:`构建属性 <cmake-build-properties>`，因为该属性的生效明确依赖 ``main`` 组件的存在。因此，请确保在未包含 ``main`` 组件的项目中不要设置 ``MINIMAL_BUILD`` 属性。
 
 覆盖默认的构建规范
 ---------------------------------------
