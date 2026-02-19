@@ -60,7 +60,6 @@ static int dummy_close(int fd)
 static esp_err_t dummy_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args)
 {
     (void) nfds;
-    (void) exceptfds;
 
     dummy_select_args_t *args = calloc(1, sizeof(dummy_select_args_t));
     if (args == NULL) {
@@ -71,6 +70,18 @@ static esp_err_t dummy_start_select(int nfds, fd_set *readfds, fd_set *writefds,
     args->writefds = writefds;
     args->ready_read = readfds && FD_ISSET(args->local_fd, readfds);
     args->ready_write = writefds && FD_ISSET(args->local_fd, writefds);
+
+    // start_select receives requested events; clear all output sets and let
+    // end_select publish only actual readiness.
+    if (readfds) {
+        FD_ZERO(readfds);
+    }
+    if (writefds) {
+        FD_ZERO(writefds);
+    }
+    if (exceptfds) {
+        FD_ZERO(exceptfds);
+    }
 
     if (!(args->ready_read || args->ready_write)) {
         free(args);
