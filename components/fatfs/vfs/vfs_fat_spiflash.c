@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,6 +215,11 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     return ESP_OK;
 
 fail:
+    /* Unmount FatFs volume if we had registered and attempted mount (e.g. s_f_mount_rw
+     * failed). Otherwise FatFs[vol] can be left set with a dangling pointer after
+     * esp_vfs_fat_unregister_path frees the context, and the volume mutex stays
+     * created; a later f_getfree then crashes in lock_volume / ff_mutex_take. */
+    f_mount(0, drv, 0);
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     free(ctx);
@@ -390,6 +395,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     return ESP_OK;
 
 fail:
+    f_mount(0, drv, 0);   /* Unmount on failed mount so FatFs[vol] and mutex are cleaned up */
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     return ret;

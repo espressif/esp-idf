@@ -138,7 +138,10 @@ void ff_mutex_delete (	/* Returns 1:Function succeeded or 0:Could not delete due
 	OSMutexDel(Mutex[vol], OS_DEL_ALWAYS, &err);
 
 #elif OS_TYPE == 3	/* FreeRTOS */
-	vSemaphoreDelete(Mutex[vol]);
+	if (Mutex[vol] != NULL) {
+		vSemaphoreDelete(Mutex[vol]);
+		Mutex[vol] = NULL;	/* Prevent use-after-delete in ff_mutex_take/ff_mutex_give */
+	}
 
 #elif OS_TYPE == 4	/* CMSIS-RTOS */
 	osMutexDelete(Mutex[vol]);
@@ -167,10 +170,13 @@ int ff_mutex_take (	/* Returns 1:Succeeded or 0:Timeout */
 #elif OS_TYPE == 2	/* uC/OS-II */
 	OS_ERR err;
 
-	OSMutexPend(Mutex[vol], FF_FS_TIMEOUT, &err));
+	OSMutexPend(Mutex[vol], FF_FS_TIMEOUT, &err);
 	return (int)(err == OS_NO_ERR);
 
 #elif OS_TYPE == 3	/* FreeRTOS */
+	if (vol < 0 || vol > FF_VOLUMES || Mutex[vol] == NULL) {
+		return 0;	/* No volume mounted or mutex not created -> treat as timeout */
+	}
 	return (int)(xSemaphoreTake(Mutex[vol], FF_FS_TIMEOUT) == pdTRUE);
 
 #elif OS_TYPE == 4	/* CMSIS-RTOS */
@@ -201,7 +207,9 @@ void ff_mutex_give (
 	OSMutexPost(Mutex[vol]);
 
 #elif OS_TYPE == 3	/* FreeRTOS */
-	xSemaphoreGive(Mutex[vol]);
+	if (vol >= 0 && vol <= FF_VOLUMES && Mutex[vol] != NULL) {
+		xSemaphoreGive(Mutex[vol]);
+	}
 
 #elif OS_TYPE == 4	/* CMSIS-RTOS */
 	osMutexRelease(Mutex[vol]);
