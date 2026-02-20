@@ -40,6 +40,7 @@ static uint8_t ext_adv_pattern_1[] = {
 #endif
 static const char *tag = "NimBLE_BLE_CHAN_REFLECTOR";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
+static uint8_t own_addr_type;
 void ble_store_config_init(void);
 
 struct ble_cs_event ranging_subevent;
@@ -199,8 +200,8 @@ ext_bleprph_advertise(void)
     memset (&params, 0, sizeof(params));
     /* enable connectable advertising */
     params.connectable = 1;
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using the inferred address type */
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
     params.sid = 1;
@@ -259,10 +260,12 @@ bleprph_advertise(void)
      */
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
     fields.uuids16 = (ble_uuid16_t[]) {
         BLE_UUID16_INIT(BLE_UUID_RANGING_SERVICE_VAL)
     };
@@ -277,7 +280,7 @@ bleprph_advertise(void)
     memset(&adv_params, 0, sizeof adv_params);
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
-    rc = ble_gap_adv_start(0, NULL, BLE_HS_FOREVER,
+    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
                            &adv_params, bleprph_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error enabling advertisement; rc=%d\n", rc);
@@ -412,12 +415,13 @@ static void
 bleprph_on_sync(void)
 {
     int rc;
-    uint8_t own_addr_type = 0;
     /* Make sure we have set Host feature bit for Channel Sounding*/
     rc = ble_gap_set_host_feat(47,0x01);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error setting host feature; rc=%d\n", rc);
+    }
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
-
     assert(rc == 0);
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -490,9 +494,11 @@ app_main(void)
 #endif
     rc = custom_gatt_svr_init();
     assert(rc == 0);
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-ble_chan_reflector");
     assert(rc == 0);
+#endif
     /* XXX Need to have template for store */
     ble_store_config_init();
     nimble_port_freertos_init(bleprph_host_task);

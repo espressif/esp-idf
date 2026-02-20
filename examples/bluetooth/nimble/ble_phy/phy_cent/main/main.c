@@ -267,12 +267,10 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         if (!ad_struct_len || (offset + ad_struct_len + 1 > disc->length_data)) {
             break;
         }
-
         /* Search if LE PHY UUID is advertised */
         if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
             if ( disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2 ) {
                 return 1;
-
             }
         }
         offset += ad_struct_len + 1;

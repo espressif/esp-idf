@@ -539,23 +539,24 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for the Alert Notification
     * service (0x1811).
     */
-    do {
+    while (offset < disc->length_data) {
         ad_struct_len = disc->data[offset];
 
-        if (!ad_struct_len) {
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
             break;
         }
 
-	/* Search if ANS UUID is advertised */
-        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x11 ) {
-                return 1;
+        /* Search if ANS UUID (0x1811) is advertised */
+        if (ad_struct_len >= 3 && (disc->data[offset + 1] == 0x02 || disc->data[offset + 1] == 0x03)) {
+            for (int i = 2; i + 1 <= ad_struct_len; i += 2) {
+                if (disc->data[offset + i] == 0x18 && disc->data[offset + i + 1] == 0x11) {
+                    return 1;
+                }
             }
         }
 
         offset += ad_struct_len + 1;
-
-     } while ( offset < disc->length_data );
+    }
 
     return 0;
 }
@@ -1110,6 +1111,8 @@ app_main(void)
 
 #if NIMBLE_BLE_CONNECT
 #if MYNEWT_VAL(STATIC_PASSKEY)
+    /* WARNING: Hardcoded passkey for demonstration only.
+     * In production, generate a random passkey per pairing. */
     ble_sm_configure_static_passkey(456789, true);
 #endif
 

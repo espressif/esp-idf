@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -13,9 +13,6 @@
 #include "host/ble_hs.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
-#include "console/console.h"
-
-#include "periodic_sync.h"
 #include "cte_config.h"
 
 static const char *TAG = "CTE_SYNC_EXAMPLE";
@@ -36,20 +33,17 @@ static struct ble_gap_cte_sampling_params sync_cte_sampling_params = {
 static void periodic_sync_scan(void)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params = {0};
+    struct ble_gap_ext_disc_params disc_params = {0};
     int rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         ESP_LOGE(TAG, "Failed to determine address type; rc=%d", rc);
         return;
     }
 
-    /**
-     * Perform a passive scan.  I.e., don't send follow-up scan requests to
-     * each advertiser.
-     */
     disc_params.passive = 1;
-    rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                      periodic_sync_gap_event, NULL);
+    rc = ble_gap_ext_disc(own_addr_type, 0, 0,
+                          0, 0, 0, &disc_params, &disc_params,
+                          periodic_sync_gap_event, NULL);
     if (rc != 0) {
         ESP_LOGE(TAG, "GAP discovery failed; rc=%d", rc);
     }
@@ -146,8 +140,7 @@ static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
     case BLE_GAP_EVENT_EXT_DISC: {
-        const struct ble_gap_ext_disc_desc *disc = ((struct ble_gap_ext_disc_desc *)(&event->disc));
-
+        const struct ble_gap_ext_disc_desc *disc = &event->ext_disc;
         if (is_synced) {
             return 0;
         }
@@ -216,6 +209,11 @@ static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
     }
 
     case BLE_GAP_EVENT_PERIODIC_SYNC:
+        if (event->periodic_sync.status != 0) {
+            ESP_LOGE(TAG, "Periodic Sync Failed; status=%d", event->periodic_sync.status);
+            is_synced = 0;
+            return 0;
+        }
         ESP_LOGI(TAG, "Periodic Sync Established");
         print_periodic_sync_data(event);
         ble_gap_disc_cancel();
@@ -260,7 +258,7 @@ static void periodic_sync_on_sync(void)
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
-    /* Begin scanning for a peripheral to connect to. */
+    /* Begin scanning for a periodic advertiser to sync with. */
     periodic_sync_scan();
 }
 
@@ -296,8 +294,10 @@ void app_main(void)
     ble_hs_cfg.sync_cb = periodic_sync_on_sync;
 
     /* Set the default device name. */
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     rc = ble_svc_gap_device_name_set("periodic_sync_CTE");
     assert(rc == 0);
+#endif
 
 
 #if MYNEWT_VAL(BLE_AOA_AOD)

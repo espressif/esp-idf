@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_multi_conn_prph.h"
 
@@ -90,7 +91,6 @@ ble_prph_advertise(void)
 
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
-    assert(rc == 0);
 #else
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
@@ -131,10 +131,12 @@ ble_prph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
@@ -247,6 +249,12 @@ bleprph_on_reset(int reason)
 static void
 bleprph_on_sync(void)
 {
+    int rc;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
     /* Begin advertising. */
     ble_prph_advertise();
 }
@@ -290,7 +298,9 @@ app_main(void)
 #if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
+#endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("esp-multi-conn");
     assert(rc == 0);
