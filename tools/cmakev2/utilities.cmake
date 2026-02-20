@@ -609,26 +609,19 @@ function(__split)
 endfunction()
 
 #[[
-    __get_compile_options(OUTPUT <variable>)
+    idf_build_get_compile_options(<variable>)
 
-    *OUTPUT[out]*
+    *variable*
 
-        List of generator expressions for C, CXX, and ASM compile options
+        Variable name in which the list of generator expressions for C, CXX,
+        and ASM compile options will be stored.
 
     Gather the compilation options from COMPILE_OPTIONS, C_COMPILE_OPTIONS,
     CXX_COMPILE_OPTIONS, and ASM_COMPILE_OPTIONS build properties into a single
     list using generator expressions. This list can then be used with the
     target_compile_options call.
 #]]
-function(__get_compile_options)
-    set(options)
-    set(one_value OUTPUT)
-    set(multi_value)
-    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
-
-    if(NOT DEFINED ARG_OUTPUT)
-        idf_die("OUTPUT option is required")
-    endif()
+function(idf_build_get_compile_options output)
     idf_build_get_property(compile_options COMPILE_OPTIONS GENERATOR_EXPRESSION)
     idf_build_get_property(c_compile_options C_COMPILE_OPTIONS GENERATOR_EXPRESSION)
     idf_build_get_property(cxx_compile_options CXX_COMPILE_OPTIONS GENERATOR_EXPRESSION)
@@ -643,7 +636,7 @@ function(__get_compile_options)
     foreach(option IN LISTS asm_compile_options)
         list(APPEND compile_options $<$<COMPILE_LANGUAGE:ASM>:${option}>)
     endforeach()
-    set(${ARG_OUTPUT} "${compile_options}" PARENT_SCOPE)
+    set(${output} "${compile_options}" PARENT_SCOPE)
 endfunction()
 
 #[[
