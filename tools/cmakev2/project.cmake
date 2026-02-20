@@ -419,8 +419,6 @@ function(__init_project_configuration)
     if("${linker_type}" STREQUAL "GNU")
         set(target_upper "${idf_target}")
         string(TOUPPER ${target_upper} target_upper)
-        # Add cross-reference table to the map file
-        list(APPEND link_options "-Wl,--cref")
         # Add this symbol as a hint for esp_idf_size to guess the target name
         list(APPEND link_options "-Wl,--defsym=IDF_TARGET_${target_upper}=0")
         # Check if linker supports --no-warn-rwx-segments
