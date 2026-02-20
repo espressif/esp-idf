@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
 #include "nimble/nimble_port.h"
@@ -80,7 +79,7 @@ ext_bleprph_advertise(void)
 {
     struct ble_gap_ext_adv_params params;
     struct os_mbuf *data;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     int rc;
 
     /* use defaults for non-set params */
@@ -89,8 +88,8 @@ ext_bleprph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using the inferred address type */
+    params.own_addr_type = own_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
