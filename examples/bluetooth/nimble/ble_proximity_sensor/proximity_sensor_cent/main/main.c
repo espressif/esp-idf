@@ -261,10 +261,10 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for Proximity sensor (link loss)
     * service (0x1803).
     */
-    do {
+    while (offset < disc->length_data) {
         ad_struct_len = disc->data[offset];
 
-        if (!ad_struct_len) {
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
             break;
         }
 
@@ -276,8 +276,7 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
 
         offset += ad_struct_len + 1;
-
-    } while ( offset < disc->length_data );
+    }
 
     return 0;
 }

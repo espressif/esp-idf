@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,6 +9,7 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/util/util.h"
 
 #define BLE_PAWR_EVENT_INTERVAL               (600)
 #define BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS   (3000)
@@ -85,7 +86,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
 }
 
 static void
-start_periodic_adv(void)
+start_periodic_adv(uint8_t own_addr_type)
 {
     int rc;
     uint8_t addr[6];
@@ -96,12 +97,13 @@ start_periodic_adv(void)
     uint8_t instance = 0;
 
 #if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
-    struct ble_gap_periodic_adv_enable_params eparams;
+    struct ble_gap_periodic_adv_start_params eparams;
     memset(&eparams, 0, sizeof(eparams));
 #endif
 
-    /* Get the local public address. */
-    rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, addr, NULL);
+    /* Get the local address. */
+    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
     assert (rc == 0);
 
     ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],
@@ -109,7 +111,7 @@ start_periodic_adv(void)
 
     /* For periodic we use instance with non-connectable advertising */
     memset (&params, 0, sizeof(params));
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
@@ -173,8 +175,18 @@ on_reset(int reason)
 static void
 on_sync(void)
 {
+    int rc;
+    uint8_t own_addr_type;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
     /* Begin advertising. */
-    start_periodic_adv();
+    start_periodic_adv(own_addr_type);
 }
 
 void pawr_host_task(void *param)

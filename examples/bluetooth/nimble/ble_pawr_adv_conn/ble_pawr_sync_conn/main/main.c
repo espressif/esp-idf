@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -126,9 +126,22 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
         // create a special data for checking manually in ADV side
 
         sub_data_pattern[0] = event->periodic_report.subevent;
-        rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, device_addr, NULL);
+        uint8_t addr_type;
+        rc = ble_hs_id_infer_auto(0, &addr_type);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Failed to infer address type; rc=%d", rc);
+            os_mbuf_free_chain(data);
+            return 0;
+        }
+        rc = ble_hs_id_copy_addr(addr_type, device_addr, NULL);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Failed to copy address; rc=%d", rc);
+            os_mbuf_free_chain(data);
+            return 0;
+        }
         sub_data_pattern[1] = param.response_slot;
         memcpy(&sub_data_pattern[2],device_addr,BLE_DEV_ADDR_LEN);
+        sub_data_pattern[8] = addr_type;
 
         os_mbuf_append(data, sub_data_pattern, BLE_PAWR_RSP_DATA_LEN);
 
@@ -165,7 +178,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             // choose subevents in range 0 to (num_subevents - 1)
             uint8_t subevents[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
             int result = ble_gap_periodic_adv_sync_subev(event->periodic_sync.sync_handle, 0, sizeof(subevents), subevents);
-            if (result == ESP_OK) {
+            if (result == 0) {
                 ESP_LOGI(TAG, "[Subevent Sync OK] sync handle:%d, sync_subevents:%d\n", event->periodic_sync.sync_handle, sizeof(subevents));
             } else {
                 ESP_LOGE(TAG, "Failed to sync subevents, rc = 0x%x", result);
@@ -227,7 +240,14 @@ start_scan(void)
     /* Tell the controller to filter duplicates; we don't want to process
      * repeated advertisements from the same device.
      */
-    rc = ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 1, 0, 0,  NULL, &disc_params,
+    uint8_t own_addr_type;
+    int rc_addr = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc_addr != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc_addr);
+        return;
+    }
+
+    rc = ble_gap_ext_disc(own_addr_type, 0, 0, 1, 0, 0,  NULL, &disc_params,
                           gap_event_cb, NULL);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error initiating GAP discovery procedure; rc=%d\n", rc);

@@ -247,6 +247,8 @@ enc_adv_data_prph_gap_event(struct ble_gap_event *event, void *arg)
         /** For now only BLE_SM_IOACT_DISP is handled */
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456;
             ESP_LOGI(tag, "Enter passkey %" PRIu32 " on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);

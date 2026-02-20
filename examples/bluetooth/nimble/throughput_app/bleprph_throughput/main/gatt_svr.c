@@ -33,8 +33,8 @@
 #define  THRPT_CHR_NOTIFY                    0x000a
 #define  THRPT_LONG_CHR_READ_WRITE           0x000b
 
-#define READ_THROUGHPUT_PAYLOAD            500
-#define WRITE_THROUGHPUT_PAYLOAD           500
+#define READ_THROUGHPUT_PAYLOAD            510 /* MTU(512) - ATT read rsp header(1) - 1 (avoid Read Blob) */
+#define WRITE_THROUGHPUT_PAYLOAD           509 /* MTU(512) - ATT write cmd header(3) */
 
 static const char *tag = "bleprph_throughput";
 
