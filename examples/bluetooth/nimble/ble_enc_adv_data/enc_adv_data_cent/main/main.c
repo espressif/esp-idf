@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,6 +11,7 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/ble_ead.h"
 #include "host/util/util.h"
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
@@ -253,37 +254,50 @@ enc_adv_data_cent_decrypt(uint8_t length_data, const uint8_t *data, const uint8_
     uint8_t op;
     uint8_t len, offset = 0;
     uint8_t *enc_data;
+    uint8_t enc_payload_len;
     int rc;
     uint8_t dec_data_len;
+    uint8_t temp[BLE_EAD_DECRYPTED_PAYLOAD_SIZE(UINT8_MAX)];
     struct ble_store_key_ead key_ead = {0};
     struct ble_store_value_ead value_ead = {0};
 
     while (offset < length_data) {
         len = data[offset];
+
+        /* Bounds check: ensure we can read the type byte and the full AD field */
+        if (offset + 1 >= length_data) {
+            break;
+        }
         op = data[offset + 1];
-        uint8_t temp[len];
+
+        if (len == 0 || offset + 1 + len > length_data) {
+            break;
+        }
 
         switch (op) {
         case BLE_GAP_ENC_ADV_DATA:
-            enc_data = (uint8_t *) malloc (sizeof(uint8_t) * len);
+            /* Encrypted payload is AD value (len - 1 bytes, excluding the type byte) */
+            enc_payload_len = len - 1;
+            enc_data = (uint8_t *) malloc (sizeof(uint8_t) * enc_payload_len);
              if (enc_data == NULL) {
                  MODLOG_DFLT(ERROR, "Failed to allocate enc_data");
                  return 0;
              }
-            memcpy(enc_data, data + offset + 2, len);
+            memcpy(enc_data, data + offset + 2, enc_payload_len);
 
             memcpy(&key_ead.peer_addr.val, peer_addr, PEER_ADDR_VAL_SIZE);
 
             rc = ble_store_read_ead(&key_ead, &value_ead);
             if (rc != 0 || !value_ead.km_present) {
                 MODLOG_DFLT(INFO, "Reading of session key and iv from NVS failed rc = %d", rc);
+                free(enc_data);
                 return 0;
             } else {
                 MODLOG_DFLT(INFO, "Read session key and iv from NVS successfully");
             }
 
-            rc = ble_ead_decrypt(value_ead.km->session_key, value_ead.km->iv, enc_data, len,
-                                 temp);
+            rc = ble_ead_decrypt(value_ead.km->session_key, value_ead.km->iv, enc_data,
+                                 enc_payload_len, temp);
             if (rc == 0) {
                 MODLOG_DFLT(INFO, "Decryption of adv data done successfully");
             } else {
@@ -593,6 +607,8 @@ enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456;
             ESP_LOGI(tag, "Entering passkey %" PRIu32, pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);

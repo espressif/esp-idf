@@ -1,15 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include "host/ble_hs.h"
-#include "host/ble_uuid.h"
-#include "esp_central.h"
 
 /**
  * Utility function to log an array of bytes.
