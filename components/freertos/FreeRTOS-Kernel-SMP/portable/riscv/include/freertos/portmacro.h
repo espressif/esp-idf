@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include "sdkconfig.h"
+#include "freertos/FreeRTOSConfig.h"
 
 /* Macros used instead ofsetoff() for better performance of interrupt handler */
 #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
@@ -27,10 +28,27 @@ uxPriority (4)
 #define PORT_OFFSET_PX_STACK 0x30
 #endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
 
+#if ( configNUMBER_OF_CORES > 1 )
+#define PORT_TCB_CORE_FIELDS_SIZE 8
+#else
+#define PORT_TCB_CORE_FIELDS_SIZE 0
+#endif
+
+#if ( configUSE_TASK_PREEMPTION_DISABLE == 1 )
+#define PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE 4
+#else
+#define PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE 0
+#endif
+
+/* Align the value up to the nearest multiple of 4 */
+#define PORT_ALIGN_UP_TO_4(value) (((value) + 3) & ~3)
+
 #define PORT_OFFSET_PX_END_OF_STACK ( \
     PORT_OFFSET_PX_STACK \
     + 4                                 /* StackType_t * pxStack */ \
-    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_TCB_CORE_FIELDS_SIZE                     /* BaseType_t xDummy23 + UBaseType_t uxDummy24 */ \
+    + PORT_ALIGN_UP_TO_4(configMAX_TASK_NAME_LEN)   /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE           /* BaseType_t xDummy25 */ \
 )
 
 #ifndef __ASSEMBLER__
