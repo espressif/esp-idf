@@ -15,6 +15,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='no runner')
 def test_dsi_lcd(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -28,6 +29,7 @@ def test_dsi_lcd(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='no runner')
 def test_dsi_lcd_with_virt_flash_enc(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()

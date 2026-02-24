@@ -320,7 +320,7 @@ examples/peripherals/lcd/i80_controller:
 
 examples/peripherals/lcd/mipi_dsi:
   disable:
-    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+    - if: SOC_MIPI_DSI_SUPPORTED != 1
   depends_components:
     - esp_driver_dma
     - esp_hal_lcd
