@@ -1578,6 +1578,7 @@ esp_err_t ledc_fade_func_install(int intr_alloc_flags)
             break;
         }
     }
+    LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "LEDC not initialized, call ledc_timer_config first", ESP_ERR_INVALID_STATE);
 
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
     return esp_intr_alloc_intrstatus(
