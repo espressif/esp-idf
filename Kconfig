@@ -183,6 +183,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         choice APP_BUILD_TYPE
             prompt "Application build type"
+            default APP_BUILD_TYPE_ELF_ONLY if IDF_TARGET_LINUX
             default APP_BUILD_TYPE_APP_2NDBOOT
             help
                 Select the way the application is built.
@@ -255,6 +256,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 bool
                 prompt "Build app runs entirely in RAM (EXPERIMENTAL)"
                 select APP_BUILD_GENERATE_BINARIES
+                depends on !IDF_TARGET_LINUX
+
+            config APP_BUILD_TYPE_ELF_ONLY
+                bool
+                prompt "ELF only (EXPERIMENTAL), only supported on Linux target"
+                depends on IDF_TARGET_LINUX
 
         endchoice # APP_BUILD_TYPE
 
