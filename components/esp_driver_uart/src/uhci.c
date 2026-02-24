@@ -159,6 +159,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         gdma_reset(uhci_ctrl->rx_dir.dma_chan);
 
         uhci_ctrl->rx_dir.rx_fsm = UHCI_RX_FSM_ENABLE;
+        uhci_ctrl->rx_dir.node_index = 0;
     }
 
     if (event_data->flags.abnormal_eof) {
