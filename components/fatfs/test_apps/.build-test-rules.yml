@@ -6,7 +6,6 @@ components/fatfs/test_apps/dyn_buffers:
       reason: only one target required
 
   depends_components:
-    - *common_components
     - fatfs
 
 components/fatfs/test_apps/flash_ro:
@@ -15,9 +14,7 @@ components/fatfs/test_apps/flash_ro:
       reason: only one target per arch needed
 
   depends_components:
-    - *common_components
     - esp_partition
-    - spi_flash
     - fatfs
     - vfs
 
@@ -26,9 +23,7 @@ components/fatfs/test_apps/flash_wl:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "linux"]
       reason: only one target per arch needed
   depends_components:
-    - *common_components
     - esp_partition
-    - spi_flash
     - fatfs
     - vfs
     - wear_leveling
@@ -43,7 +38,6 @@ components/fatfs/test_apps/sdcard:
       temporary: true
       reason: lack of runners
   depends_components:
-    - *common_components
     - esp_driver_sdmmc
     - esp_driver_spi
     - sdmmc
