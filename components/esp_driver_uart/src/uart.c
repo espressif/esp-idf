@@ -400,6 +400,7 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t *baudrate)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE(uart_ll_is_enabled(uart_num), ESP_FAIL, UART_TAG, "uart port not enabled, unable to get register values");
 
     soc_module_clk_t src_clk;
     uint32_t sclk_freq;
@@ -690,11 +691,14 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num)
 
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
 {
+    (void)enable;
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((thresh < UART_HW_FIFO_LEN(uart_num)), ESP_FAIL, UART_TAG, "empty intr threshold error");
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+    if (thresh != -1) {
+        uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+    }
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
@@ -1590,7 +1594,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
                 size -= send_size;
                 offset += send_size;
-                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+                uart_enable_tx_intr(uart_num, 1, -1);
             }
         }
     } else {
@@ -1600,7 +1604,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
-                    uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+                    uart_enable_tx_intr(uart_num, 1, -1);
                 }
                 size -= sent;
                 src += sent;
@@ -2305,10 +2309,11 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     ESP_RETURN_ON_FALSE(uart_context[uart_num].hw_enabled && ret_res, ESP_ERR_INVALID_ARG, UART_TAG, "invalid arg");
 
     esp_err_t ret = ESP_OK;
-    ret_res->low_period = uart_hal_get_low_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
-    ret_res->high_period = uart_hal_get_high_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
-    ret_res->pos_period = uart_hal_get_pos_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
-    ret_res->neg_period = uart_hal_get_neg_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
+    // For period count values, we will later add 1 to always over-count instead of under-count
+    ret_res->low_period = uart_hal_get_low_pulse_cnt(&(uart_context[uart_num].hal));
+    ret_res->high_period = uart_hal_get_high_pulse_cnt(&(uart_context[uart_num].hal));
+    ret_res->pos_period = uart_hal_get_pos_pulse_cnt(&(uart_context[uart_num].hal));
+    ret_res->neg_period = uart_hal_get_neg_pulse_cnt(&(uart_context[uart_num].hal));
     ret_res->edge_cnt = uart_hal_get_rxd_edge_cnt(&(uart_context[uart_num].hal));
 
     // stop auto baud rate detection
@@ -2317,11 +2322,11 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     const char *err_str = "";
     if (ret_res->low_period == 0 || ret_res->high_period == 0 || ret_res->pos_period == 0 || ret_res->neg_period == 0) {
         err_str = "fast";
-    } else if (ret_res->low_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->high_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->pos_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->neg_period == UART_LL_PULSE_TICK_CNT_MAX) {
+    } else if (ret_res->low_period++ == UART_LL_PULSE_TICK_CNT_MAX || ret_res->high_period++ == UART_LL_PULSE_TICK_CNT_MAX || ret_res->pos_period++ == UART_LL_PULSE_TICK_CNT_MAX || ret_res->neg_period++ == UART_LL_PULSE_TICK_CNT_MAX) {
         err_str = "slow";
     }
     if (strcmp(err_str, "") != 0) {
-        ESP_LOGE(UART_TAG, "bitrate too %s, unable to count ticks, please try to adjust source_clk", err_str);
+        ESP_LOGW(UART_TAG, "bitrate too %s, unreliable xxx_period values, please try to adjust source_clk", err_str);
     }
 
     soc_module_clk_t src_clk;
