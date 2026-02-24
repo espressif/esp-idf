@@ -957,9 +957,9 @@ Sometimes, the software also wants to trigger a "fake" capture event. The :cpp:f
     ETM Event and Task
     ^^^^^^^^^^^^^^^^^^
 
-    MCPWM comparator is able to generate events that can interact with the :doc:`ETM </api-reference/peripherals/etm>` module. The supported events are listed in the :cpp:type:`mcpwm_comparator_etm_event_type_t`. You can call :cpp:func:`mcpwm_comparator_new_etm_event` to get the corresponding ETM event handle.
+    MCPWM timer and comparator can generate events that can be connected to the :doc:`ETM </api-reference/peripherals/etm>` module. The event types for the timer and comparator are listed in :cpp:type:`mcpwm_timer_etm_event_type_t` and :cpp:type:`mcpwm_comparator_etm_event_type_t` respectively. You can get the ETM event handle by calling :cpp:func:`mcpwm_timer_new_etm_event` or :cpp:func:`mcpwm_comparator_new_etm_event`.
 
-    For how to connect the event and task to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
+    For how to connect the MCPWM events to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
 
     .. _mcpwm-power-management:
 

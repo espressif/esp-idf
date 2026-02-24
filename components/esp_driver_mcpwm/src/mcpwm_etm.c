@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,13 @@ typedef struct {
     mcpwm_cmpr_handle_t cmpr;
 } mcpwm_comparator_etm_event_t;
 
-static esp_err_t mcpwm_del_etm_event(esp_etm_event_t *event)
+typedef struct {
+    esp_etm_event_t base;
+    mcpwm_timer_handle_t timer;
+    mcpwm_timer_etm_event_type_t event_type;
+} mcpwm_timer_etm_event_t;
+
+static esp_err_t mcpwm_del_comparator_etm_event(esp_etm_event_t *event)
 {
     mcpwm_comparator_etm_event_t *etm_event = __containerof(event, mcpwm_comparator_etm_event_t, base);
     mcpwm_cmpr_handle_t cmpr = etm_event->cmpr;
@@ -39,11 +45,27 @@ static esp_err_t mcpwm_del_etm_event(esp_etm_event_t *event)
     return ESP_OK;
 }
 
+static esp_err_t mcpwm_del_timer_etm_event(esp_etm_event_t *event)
+{
+    mcpwm_timer_etm_event_t *etm_event = __containerof(event, mcpwm_timer_etm_event_t, base);
+    mcpwm_timer_handle_t timer = etm_event->timer;
+    mcpwm_group_t *group = timer->group;
+    mcpwm_hal_context_t *hal = &group->hal;
+    int timer_id = timer->timer_id;
+
+    portENTER_CRITICAL(&group->spinlock);
+    mcpwm_ll_etm_enable_timer_event(hal->dev, timer_id, etm_event->event_type, false);
+    portEXIT_CRITICAL(&group->spinlock);
+    free(etm_event);
+    return ESP_OK;
+}
+
 esp_err_t mcpwm_comparator_new_etm_event(mcpwm_cmpr_handle_t cmpr, const mcpwm_cmpr_etm_event_config_t *config, esp_etm_event_handle_t *out_event)
 {
     esp_err_t ret = ESP_OK;
     mcpwm_comparator_etm_event_t *event = NULL;
     ESP_RETURN_ON_FALSE(cmpr && config && out_event, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config->event_type < MCPWM_CMPR_ETM_EVENT_MAX, ESP_ERR_INVALID_ARG, TAG, "invalid event type");
     event = heap_caps_calloc(1, sizeof(mcpwm_comparator_etm_event_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(event, ESP_ERR_NO_MEM, TAG, "no memory for ETM event");
 
@@ -78,14 +100,53 @@ esp_err_t mcpwm_comparator_new_etm_event(mcpwm_cmpr_handle_t cmpr, const mcpwm_c
     event->cmpr = cmpr;
     event->base.event_id = event_id;
     event->base.trig_periph = ETM_TRIG_PERIPH_MCPWM;
-    event->base.del = mcpwm_del_etm_event;
+    event->base.del = mcpwm_del_comparator_etm_event;
 
     *out_event = &event->base;
     return ESP_OK;
 
 err:
     if (event) {
-        mcpwm_del_etm_event(&event->base);
+        mcpwm_del_comparator_etm_event(&event->base);
+    }
+    return ret;
+}
+
+esp_err_t mcpwm_timer_new_etm_event(mcpwm_timer_handle_t timer, const mcpwm_timer_etm_event_config_t *config, esp_etm_event_handle_t *out_event)
+{
+    esp_err_t ret = ESP_OK;
+    mcpwm_timer_etm_event_t *event = NULL;
+    ESP_RETURN_ON_FALSE(timer && config && out_event, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config->event_type < MCPWM_TIMER_ETM_EVENT_MAX, ESP_ERR_INVALID_ARG, TAG, "invalid event type");
+    event = heap_caps_calloc(1, sizeof(mcpwm_timer_etm_event_t), MCPWM_MEM_ALLOC_CAPS);
+    ESP_RETURN_ON_FALSE(event, ESP_ERR_NO_MEM, TAG, "no memory for ETM event");
+
+    mcpwm_group_t *group = timer->group;
+    mcpwm_hal_context_t *hal = &group->hal;
+    int group_id = group->group_id;
+    int timer_id = timer->timer_id;
+    uint32_t event_id = 0;
+
+    portENTER_CRITICAL(&group->spinlock);
+    mcpwm_ll_etm_enable_timer_event(hal->dev, timer_id, config->event_type, true);
+    portEXIT_CRITICAL(&group->spinlock);
+    event_id = MCPWM_LL_TIMER_ETM_EVENT_TABLE(group_id, timer_id, config->event_type);
+    event->event_type = config->event_type;
+    ESP_GOTO_ON_FALSE(event_id != 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported event type");
+    ESP_LOGD(TAG, "MCPWM (%d) timer (%d) event_id (%"PRId32")", group_id, timer_id, event_id);
+
+    // fill the ETM event object
+    event->timer = timer;
+    event->base.event_id = event_id;
+    event->base.trig_periph = ETM_TRIG_PERIPH_MCPWM;
+    event->base.del = mcpwm_del_timer_etm_event;
+
+    *out_event = &event->base;
+    return ESP_OK;
+
+err:
+    if (event) {
+        mcpwm_del_timer_etm_event(&event->base);
     }
     return ret;
 }
