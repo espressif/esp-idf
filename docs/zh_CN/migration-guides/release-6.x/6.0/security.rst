@@ -69,6 +69,10 @@ ESP-IDF v6.0 已升级至 Mbed TLS v4.0，**PSA Crypto 成为主要加密接口*
 
   - ``MBEDTLS_ARIA_C`` 默认禁用。依赖 ARIA 的应用必须在 ``menuconfig`` (Component config -> mbedTLS) 中显式启用，或通过自定义 ``components/mbedtls/config/mbedtls_preset_default.conf`` 来启用。
   - 默认禁用 ``secp192r1``，这与证书和 TLS 中移除对 250 位以下椭圆曲线的支持策略保持一致。如果某个应用在 TLS／证书之外仍然需要旧版曲线支持，则必须显式启用该功能（例如通过定义 ``PSA_WANT_ECC_SECP_R1_192=1``），并验证其兼容性。注意：该旧版支持可能会在下一次 ESP-IDF 小版本更新中被禁用。
+- ``MBEDTLS_THREADING_C`` 默认启用。这为 PSA Crypto 密钥管理 API 和 ``psa_crypto_init()`` 提供了线程安全。当在多线程环境中使用 PSA Crypto 时（例如，并发的 TLS 连接、证书操作，或任何可能从不同线程调用密码运算的场景），建议保持此配置为启用状态。对于仅从单个线程调用 PSA 函数的应用程序，不受此更改影响，并且如果需要，可以选择禁用线程支持。
+- ``MBEDTLS_THREADING_PTHREAD`` 默认启用。这使得 Mbed TLS 能够使用 pthread 原语来实现线程支持。
+- ``MBEDTLS_THREADING_ALT`` 默认禁用。这会禁止 Mbed TLS 使用替代线程原语来实现线程支持。
+
 
 参考文档
 ^^^^^^^^^^
