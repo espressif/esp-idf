@@ -581,6 +581,9 @@ macro(idf_project_init)
         # Discover and initialize components
         __init_components()
 
+        # Save original sdkconfig before kconfgen may drop unknown options
+        __create_sdkconfig_orig_copy()
+
         # Generate initial sdkconfig with discovered components
         __generate_sdkconfig()
 
