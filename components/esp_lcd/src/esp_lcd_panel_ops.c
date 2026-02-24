@@ -83,3 +83,10 @@ esp_err_t esp_lcd_panel_disp_sleep(esp_lcd_panel_handle_t panel, bool sleep)
     ESP_RETURN_ON_FALSE(panel->disp_sleep, ESP_ERR_NOT_SUPPORTED, TAG, "sleep is not supported by this panel");
     return panel->disp_sleep(panel, sleep);
 }
+
+esp_err_t esp_lcd_panel_set_brightness(esp_lcd_panel_handle_t panel, int brightness)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel handle");
+    ESP_RETURN_ON_FALSE(panel->set_brightness, ESP_ERR_NOT_SUPPORTED, TAG, "set_brightness is not supported by this panel");
+    return panel->set_brightness(panel, brightness);
+}
