@@ -62,6 +62,7 @@ patterns = [
     '**/build*/esp_tee/*.elf',
     '**/build*/gdbinit/*',
 ]
+if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
 
 [gitlab.artifacts.s3.flash]
 bucket = "idf-artifacts"
@@ -77,6 +78,7 @@ patterns = [
     # customized
     '**/build*/esp_tee/*.bin',
 ]
+if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
 
 [gitlab.artifacts.s3.log]
 bucket = "idf-artifacts"
