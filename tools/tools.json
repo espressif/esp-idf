@@ -536,7 +536,8 @@
           "install": "always",
           "platforms": [
             "win32",
-            "win64"
+            "win64",
+            "win-arm64"
           ]
         },
         {
@@ -596,6 +597,11 @@
           },
           "name": "3.30.2",
           "status": "recommended",
+          "win-arm64": {
+            "sha256": "86ccd6485bbd4bb41a1a858db397be5bca5e0de96858bf8dbba7a64407bd6c00",
+            "size": 46495761,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-arm64.zip"
+          },
           "win32": {
             "sha256": "48bf4b3dc2d668c578e0884cac7878e146b036ca6b5ce4f8b5572f861b004c25",
             "size": 45404613,
@@ -733,7 +739,8 @@
           "install": "always",
           "platforms": [
             "win32",
-            "win64"
+            "win64",
+            "win-arm64"
           ]
         }
       ],
@@ -753,6 +760,12 @@
             "size": 123084,
             "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip"
           },
+          "linux-arm64": {
+            "rename_dist": "ninja-linux-arm64-v1.12.1.zip",
+            "sha256": "5c25c6570b0155e95fce5918cb95f1ad9870df5768653afe128db822301a05a1",
+            "size": 121787,
+            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux-aarch64.zip"
+          },
           "macos": {
             "rename_dist": "ninja-mac-v1.12.1.zip",
             "sha256": "89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9",
@@ -767,6 +780,12 @@
           },
           "name": "1.12.1",
           "status": "recommended",
+          "win-arm64": {
+            "rename_dist": "ninja-win-arm64-v1.12.1.zip",
+            "sha256": "79c96a50e0deafec212cfa85aa57c6b74003f52d9d1673ddcd1eab1c958c5900",
+            "size": 254317,
+            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-winarm64.zip"
+          },
           "win64": {
             "rename_dist": "ninja-win-v1.12.1.zip",
             "sha256": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a",
