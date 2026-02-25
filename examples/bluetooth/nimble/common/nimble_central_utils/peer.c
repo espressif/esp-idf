@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include <assert.h>
-#include <string.h>
 #include "host/ble_hs.h"
 #include "esp_central.h"
 
