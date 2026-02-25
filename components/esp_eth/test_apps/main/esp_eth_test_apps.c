@@ -12,7 +12,7 @@
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "esp_rom_md5.h"
-#include "esp_eth_test_common.h"
+#include "esp_eth_test_utils.h"
 #include "unity.h"
 
 #define LOOPBACK_TEST_PACKET_SIZE 256
@@ -26,35 +26,19 @@ extern const char dl_espressif_com_root_cert_pem_end[]   asm("_binary_dl_espress
 static md5_context_t md5_context;
 static uint8_t digest[16];
 
-static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_wait)
+// Basic test to verify that the Ethernet driver can be initialized and deinitialized
+TEST_CASE("ethernet init/deinit test", "[ethernet],[skip_setup_teardown]")
 {
-    int i = 0;
-    ms_to_wait += 100;
-    for (i = 0; i < ms_to_wait / 100; i++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        if (esp_eth_driver_uninstall(eth_hdl) == ESP_OK) {
-            break;
-        }
-    }
-    if (i < ms_to_wait / 100) {
-        return ESP_OK;
-    } else {
-        return ESP_FAIL;
-    }
+    esp_eth_handle_t eth_handle = NULL;
+
+    TEST_ESP_OK(esp_eth_test_eth_init(&eth_handle));
+    TEST_ESP_OK(esp_eth_test_eth_deinit(eth_handle));
 }
 
 TEST_CASE("ethernet io test", "[ethernet]")
 {
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
-    esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
 
     /* get default MAC address */
     uint8_t mac_addr[ETH_ADDR_LEN];
@@ -65,8 +49,10 @@ TEST_CASE("ethernet io test", "[ethernet]")
     TEST_ASSERT(mac_addr[0] != 0);
 // *** SPI Ethernet modules deviation ***
 // Rationale: The SPI Ethernet modules don't have a burned default factory MAC address hence local MAC is used
-#if !CONFIG_TARGET_USE_SPI_ETHERNET
+#if CONFIG_ETH_TEST_MAC_ADDR_UI
     TEST_ASSERT_BITS(0b00000011, 0b00, mac_addr[0]);    // Check UL&IG, should be UI
+#else
+    TEST_ASSERT_BITS(0b00000011, 0b10, mac_addr[0]);    // Check UL&IG, should be U
 #endif
 
     /* set different MAC address */
@@ -82,114 +68,23 @@ TEST_CASE("ethernet io test", "[ethernet]")
 // *** SPI Ethernet modules deviation ***
 // Rationale: SPI Ethernet modules PHYs and MACs are statically configured at one die, hence there is no need for PHY address
 // from user's point of view
-#if !CONFIG_TARGET_USE_SPI_ETHERNET
+#if CONFIG_ETH_TEST_PHY_ADDRESS_DISABLED
     /* get PHY address */
     int phy_addr = -1;
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr));
     ESP_LOGI(TAG, "Ethernet PHY Address: %d", phy_addr);
     TEST_ASSERT(phy_addr >= 0 && phy_addr <= 31);
 #endif
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    extra_cleanup();
 }
-
-#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
-esp_err_t set_phy_reg_bits(esp_eth_handle_t eth_handle, uint32_t reg_addr, uint32_t bitmask, uint32_t max_attempts)
-{
-    esp_eth_phy_reg_rw_data_t reg = {
-        .reg_addr = reg_addr,
-        .reg_value_p = NULL
-    };
-    uint32_t reg_value, reg_value_rb;
-
-    for (uint32_t i = 0; i < max_attempts; i++) {
-        reg.reg_value_p = &reg_value;
-        esp_err_t ret = esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        reg_value |= bitmask;
-        ret = esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &reg);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        reg.reg_value_p = &reg_value_rb;
-        ret = esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        // Check if the write was successful
-        if ((reg_value_rb & bitmask) == bitmask) {
-            return ESP_OK;
-        }
-        // Add delay only if not the last attempt
-        if (i < max_attempts - 1) {
-            ESP_LOGW(TAG, "Setting PHY register %04X failed, retrying... (attempt %d of %d)", reg_addr, i + 1, max_attempts);
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-    }
-    return ESP_ERR_TIMEOUT;
-}
-
-esp_err_t clear_phy_reg_bits(esp_eth_handle_t eth_handle, uint32_t reg_addr, uint32_t bitmask, uint32_t max_attempts)
-{
-    esp_eth_phy_reg_rw_data_t reg = {
-        .reg_addr = reg_addr,
-        .reg_value_p = NULL
-    };
-    uint32_t reg_value, reg_value_rb;
-
-    for (uint32_t i = 0; i < max_attempts; i++) {
-        reg.reg_value_p = &reg_value;
-        esp_err_t ret = esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        reg_value &= ~bitmask;
-        ret = esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &reg);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        reg.reg_value_p = &reg_value_rb;
-        ret = esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        // Check if the write was successful
-        if ((reg_value_rb & bitmask) == 0) {
-            return ESP_OK;
-        }
-        // Add delay only if not the last attempt
-        if (i < max_attempts - 1) {
-            ESP_LOGW(TAG, "Clearing PHY register %04X failed, retrying... (attempt %d of %d)", reg_addr, i + 1, max_attempts);
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-    }
-    return ESP_ERR_TIMEOUT;
-}
-#endif // CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
 
 // This test expects autonegotiation to be enabled on the other node.
 TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
 {
-    EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    TEST_ESP_OK(esp_event_loop_create_default());
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
-    esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
 
+    EventBits_t bits = 0;
     // this test only test layer2, so don't need to register input callback (i.e. esp_eth_update_input_path)
     TEST_ESP_OK(esp_eth_start(eth_handle));
     // wait for connection start
@@ -244,8 +139,8 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
 // *** LAN8720 deviation ***
 // Rationale: When the device is in manual 100BASE-TX or 10BASE-T modes with Auto-MDIX enabled, the PHY does not link to a
 //            link partner that is configured for auto-negotiation. See LAN8720 errata for more details.
-#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
-    TEST_ESP_OK(set_phy_reg_bits(eth_handle, 27, 0x8000, 3));
+#if CONFIG_ETH_TEST_LAN8720_ERRATA_ENABLED
+    TEST_ESP_OK(eth_test_set_phy_reg_bits(eth_handle, 27, 0x8000, 3));
 #endif
 
     // start the driver and wait for connection establish
@@ -330,7 +225,7 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
 // *** LAN8720 deviation ***
 // Rationale: See above
 #ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
-    TEST_ESP_OK(clear_phy_reg_bits(eth_handle, 27, 0x8000, 3));
+    TEST_ESP_OK(eth_test_clear_phy_reg_bits(eth_handle, 27, 0x8000, 3));
 #endif
 
     esp_eth_start(eth_handle);
@@ -352,16 +247,11 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
 }
 
+// use static semaphore to avoid dynamic allocation and so need for de-allocation in case of test failure
 static SemaphoreHandle_t loopback_test_case_data_received;
+static StaticSemaphore_t loopback_test_case_data_received_buffer;
 static esp_err_t loopback_test_case_incoming_handler(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
 {
     TEST_ASSERT(memcmp(priv, buffer, LOOPBACK_TEST_PACKET_SIZE) == 0);
@@ -372,54 +262,43 @@ static esp_err_t loopback_test_case_incoming_handler(esp_eth_handle_t eth_handle
 
 TEST_CASE("ethernet io loopback", "[ethernet]")
 {
-    loopback_test_case_data_received = xSemaphoreCreateBinary();
-    // init everything else
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
+    loopback_test_case_data_received = xSemaphoreCreateBinaryStatic(&loopback_test_case_data_received_buffer);
     EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    TEST_ESP_OK(esp_event_loop_create_default());
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
-    esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
     // Disable autonegotiation to manually set speed and duplex mode
     bool auto_nego_en = false;
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
     bool loopback_en = true;
-// *** W5500 deviation ***
-// Rationale: does not support loopback
-#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+// *** PHY loopback not supported deviation ***
+// Rationale: Some PHYs do not support loopback at all
+#if CONFIG_ETH_TEST_LOOPBACK_DISABLED
     TEST_ASSERT(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en) == ESP_ERR_NOT_SUPPORTED);
-    goto cleanup;
+    return;
 #else
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
 #endif
 
     eth_duplex_t duplex_modes[] = {ETH_DUPLEX_HALF, ETH_DUPLEX_FULL};
     eth_speed_t speeds[] = {ETH_SPEED_100M, ETH_SPEED_10M};
-    emac_frame_t* test_packet = malloc(LOOPBACK_TEST_PACKET_SIZE);
+    emac_frame_t* test_packet = (emac_frame_t*)eth_test_alloc(LOOPBACK_TEST_PACKET_SIZE);
     esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, test_packet->src);
     esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, test_packet->dest);
     for(size_t i = 0; i < LOOPBACK_TEST_PACKET_SIZE-ETH_HEADER_LEN; i++){
         test_packet->data[i] = rand() & 0xff;
     }
     TEST_ESP_OK(esp_eth_update_input_path(eth_handle, loopback_test_case_incoming_handler, test_packet));
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
 
     for (int i = 0; i < sizeof(speeds) / sizeof(eth_speed_t); i++) {
         eth_speed_t expected_speed = speeds[i];
         for (int j = 0; j < sizeof(duplex_modes) / sizeof(eth_duplex_t); j++) {
             eth_duplex_t expected_duplex = duplex_modes[j];
             ESP_LOGI(TAG, "Test with %s Mbps %s duplex.", expected_speed == ETH_SPEED_10M ? "10" : "100", expected_duplex == ETH_DUPLEX_HALF ? "half" : "full");
-// *** KSZ80XX, KSZ8851SNL and DM9051 deviation ***
-// Rationale: do not support loopback at 10 Mbps
-#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8041) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DM9051)
+// *** 10 Mbps loopback disabled deviation ***
+// Rationale: Some PHYs do not support loopback at 10 Mbps
+#if CONFIG_ETH_TEST_10MB_LOOPBACK_DISABLED
             if ((expected_speed == ETH_SPEED_10M)) {
                 TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &expected_speed));
                 continue;
@@ -465,7 +344,11 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
                         break;
                     }
                 }
+// *** 10 Mbps loopback ignore failures deviation ***
+// Rationale: 10 Mbps loopback may be supported by PHY but the test is not reliable.
+#if !CONFIG_ETH_TEST_10MB_LOOPBACK_IGNORE_FAILURES
                 TEST_ASSERT_LESS_THAN(3, i);
+#endif
             } else {
                 TEST_ASSERT(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(1000)) == pdTRUE);
             }
@@ -486,12 +369,12 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
     // Test with enabled autonegotiaton
     ESP_LOGI(TAG, "Test with enabled autonegotiation.");
     auto_nego_en = true;
-// *** RTL8201, DP83848 and LAN87xx deviation ***
-// Rationale: do not support autonegotiation with loopback enabled.
-#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DP83848) || \
-    defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
+// *** Loopback with autonegotiation deviation ***
+// Rationale: Some PHYs do not support autonegotiation with loopback enabled.
+#if CONFIG_ETH_TEST_LOOPBACK_WITH_AUTONEGOTIATION_DISABLED
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
-    goto cleanup;
+    // Test passes - these devices correctly report autonegotiation is not supported with loopback
+    return;
 #endif
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
     TEST_ESP_OK(esp_eth_start(eth_handle));
@@ -500,45 +383,20 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
     TEST_ESP_OK(esp_eth_transmit(eth_handle, test_packet, LOOPBACK_TEST_PACKET_SIZE));
     TEST_ASSERT(xSemaphoreTake(loopback_test_case_data_received, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS)) == pdTRUE);
 
-    free(test_packet);
     loopback_en = false;
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
     TEST_ESP_OK(esp_eth_stop(eth_handle));
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-// *** W5500, LAN87xx, RTL8201 and DP83848 deviation ***
-// Rationale: in those cases 'goto cleanup' is used to skip part of the test code. Incasing in #if block is done to prevent unused label error
-#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_W5500) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720) || \
-    defined(CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DP83848)
-cleanup:
-#endif
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-#ifndef CONFIG_TARGET_ETH_PHY_DEVICE_W5500
-// only unregister events if the device != W5500, since w5500 doesn't support loopback and we don't register the event
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-#endif
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
 }
 
 TEST_CASE("ethernet event test", "[ethernet]")
 {
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
     EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    TEST_ESP_OK(esp_event_loop_create_default());
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
     // this test only test layer2 event, so don't need to register input callback (i.e. esp_eth_update_input_path)
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for connection start */
@@ -552,41 +410,15 @@ TEST_CASE("ethernet event test", "[ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
 }
 
-TEST_CASE("ethernet dhcp test", "[ethernet]")
+TEST_CASE("ethernet dhcp test", "[ethernet][esp-netif]")
 {
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
     EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    test_case_uses_tcpip();
-    TEST_ESP_OK(esp_event_loop_create_default());
-    // create TCP/IP netif
-    esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-    esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    // install Ethernet driver
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
-    // combine driver with netif
-    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
-    TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // register user defined event handlers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
@@ -597,44 +429,15 @@ TEST_CASE("ethernet dhcp test", "[ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    TEST_ESP_OK(esp_eth_del_netif_glue(glue));
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    esp_netif_destroy(eth_netif);
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
 }
 
-TEST_CASE("ethernet start/stop stress test with IP stack", "[ethernet]")
+TEST_CASE("ethernet start/stop stress test with IP stack", "[ethernet][esp-netif]")
 {
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
     EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    test_case_uses_tcpip();
-    TEST_ESP_OK(esp_event_loop_create_default());
-    // create TCP/IP netif
-    esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-    esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    // install Ethernet driver
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
-    // combine driver with netif
-    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
-    TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // register user defined event handlers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
     for(int j = 0; j < 2; j++) {
         // run the start/stop test with disabled auto-negotiation
@@ -648,8 +451,8 @@ TEST_CASE("ethernet start/stop stress test with IP stack", "[ethernet]")
 // *** LAN8720 deviation ***
 // Rationale: When the device is in manual 100BASE-TX or 10BASE-T modes with Auto-MDIX enabled, the PHY does not link to a
 //            link partner that is configured for auto-negotiation. See LAN8720 errata for more details.
-#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
-            TEST_ESP_OK(set_phy_reg_bits(eth_handle, 27, 0x8000, 3));
+#if CONFIG_ETH_TEST_LAN8720_ERRATA_ENABLED
+            TEST_ESP_OK(eth_test_set_phy_reg_bits(eth_handle, 27, 0x8000, 3));
 #endif
         }
         for (int i = 0; i < 10; i++) {
@@ -665,18 +468,6 @@ TEST_CASE("ethernet start/stop stress test with IP stack", "[ethernet]")
             TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
         }
     }
-
-    TEST_ESP_OK(esp_eth_del_netif_glue(glue));
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    esp_netif_destroy(eth_netif);
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
 }
 
 esp_err_t http_event_handle(esp_http_client_event_t *evt)
@@ -731,31 +522,13 @@ static void eth_start_download(void)
     esp_rom_md5_final(digest, &md5_context);
 }
 
-TEST_CASE("ethernet download test", "[ethernet]")
+TEST_CASE("ethernet download test", "[ethernet][esp-netif]")
 {
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
     EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    test_case_uses_tcpip();
-    TEST_ESP_OK(esp_event_loop_create_default());
-    // create TCP/IP netif
-    esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-    esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    // install Ethernet driver
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    extra_eth_config(eth_handle);
-    // combine driver with netif
-    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
-    TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // register user defined event handlers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
@@ -778,15 +551,4 @@ TEST_CASE("ethernet download test", "[ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    TEST_ESP_OK(esp_eth_del_netif_glue(glue));
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    esp_netif_destroy(eth_netif);
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    extra_cleanup();
-    vEventGroupDelete(eth_event_group);
 }

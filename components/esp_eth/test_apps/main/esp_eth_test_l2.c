@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,7 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "esp_eth_test_common.h"
+#include "esp_eth_test_utils.h"
 #include "arpa/inet.h" // for ntohs, etc.
 #include "esp_log.h"
 
@@ -27,10 +27,6 @@
 #define POKE_REQ                (0xFA)
 #define POKE_RESP               (0xFB)
 #define DUMMY_TRAFFIC           (0xFF)
-
-#define W5500_RX_MEM_SIZE       (0x4000)
-#define DM9051_RX_MEM_SIZE      (0x4000)
-#define KSZ8851SNL_RX_MEM_SIZE  (0x3000)
 
 static const char *TAG = "esp32_eth_test_l2";
 typedef struct
@@ -110,9 +106,13 @@ void poke_and_wait(esp_eth_handle_t eth_handle, void *data, uint16_t size, uint8
 
     uint32_t tmo;
     uint32_t i;
+    esp_err_t tx_err = ESP_OK;
     for(tmo = 0, i = 1; tmo < WAIT_AFTER_CONN_TMO_MS; tmo += WAIT_AFTER_CONN_MS, i++) {
         printf("Poke attempt #%" PRIu32 "\n", i);
-        TEST_ESP_OK(esp_eth_transmit(eth_handle, ctrl_pkt, 60));
+        tx_err = esp_eth_transmit(eth_handle, ctrl_pkt, 60);
+        if (tx_err != ESP_OK) {
+            break;
+        }
         EventBits_t bits = xEventGroupWaitBits(eth_event_group, ETH_POKE_RESP_RECV_BIT,
                                true, true, pdMS_TO_TICKS(WAIT_AFTER_CONN_MS));
         if ((bits & ETH_POKE_RESP_RECV_BIT) == ETH_POKE_RESP_RECV_BIT) {
@@ -122,27 +122,21 @@ void poke_and_wait(esp_eth_handle_t eth_handle, void *data, uint16_t size, uint8
             break;
         }
     }
-    TEST_ASSERT(tmo < WAIT_AFTER_CONN_TMO_MS);
     free(ctrl_pkt);
+    // assert only after the allocated memory is freed
+    TEST_ASSERT(tmo < WAIT_AFTER_CONN_TMO_MS);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(ESP_OK, tx_err, "esp_eth_transmit failed");
 }
 
 TEST_CASE("ethernet broadcast transmit", "[ethernet_l2]")
 {
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
-    TEST_ASSERT_NOT_NULL(eth_handle);
-    extra_eth_config(eth_handle);
+    // assign values to variables from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
 
-    TEST_ESP_OK(esp_event_loop_create_default());
-    EventGroupHandle_t eth_event_state_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_state_group != NULL);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_state_group));
-    EventGroupHandle_t eth_event_rx_group = xEventGroupCreate();
+    // use static event group to avoid dynamic memory allocation
+    StaticEventGroup_t eth_event_rx_group_buffer;
+    EventGroupHandle_t eth_event_rx_group = xEventGroupCreateStatic(&eth_event_rx_group_buffer);
     TEST_ASSERT(eth_event_rx_group != NULL);
 
     s_recv_info.eth_event_group = eth_event_rx_group;
@@ -152,7 +146,7 @@ TEST_CASE("ethernet broadcast transmit", "[ethernet_l2]")
     s_recv_info.brdcast_rx_cnt = 0;
 
     uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
-    TEST_ESP_OK(mac->get_addr(mac, local_mac_addr));
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
     // test app will parse the DUT MAC from this line of log output
     printf("DUT MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", local_mac_addr[0], local_mac_addr[1], local_mac_addr[2],
            local_mac_addr[3], local_mac_addr[4], local_mac_addr[5]);
@@ -161,13 +155,13 @@ TEST_CASE("ethernet broadcast transmit", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
     EventBits_t bits = 0;
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
     // if DUT is connected in network with switch: even if link is indicated up, it may take some time the switch
     // starts switching the associated port (e.g. it runs RSTP at first)
     poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
 
-    emac_frame_t *pkt = malloc(1024);
+    emac_frame_t *pkt = (emac_frame_t *)eth_test_alloc(1024);
     pkt->proto = htons(TEST_ETH_TYPE);
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, pkt->src));
     memset(pkt->dest, 0xff, ETH_ADDR_LEN);     // broadcast addr
@@ -178,42 +172,26 @@ TEST_CASE("ethernet broadcast transmit", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_transmit(eth_handle, pkt, 1024));
     // give it some time to complete transmit
     vTaskDelay(pdMS_TO_TICKS(500));
-    free(pkt);
 
     TEST_ESP_OK(esp_eth_stop(eth_handle));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    phy->del(phy);
-    mac->del(mac);
-    extra_cleanup();
-    vEventGroupDelete(eth_event_rx_group);
-    vEventGroupDelete(eth_event_state_group);
 }
 
 TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 {
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
-    TEST_ASSERT_NOT_NULL(eth_handle);
-    extra_eth_config(eth_handle);
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
 
-    TEST_ESP_OK(esp_event_loop_create_default());
-    EventGroupHandle_t eth_event_state_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_state_group != NULL);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_state_group));
-    EventGroupHandle_t eth_event_rx_group = xEventGroupCreate();
+    // use static event group to avoid dynamic memory allocation
+    StaticEventGroup_t eth_event_rx_group_buffer;
+    EventGroupHandle_t eth_event_rx_group = xEventGroupCreateStatic(&eth_event_rx_group_buffer);
     TEST_ASSERT(eth_event_rx_group != NULL);
 
     s_recv_info.eth_event_group = eth_event_rx_group;
     s_recv_info.check_rx_data = true;
 
     uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
-    TEST_ESP_OK(mac->get_addr(mac, local_mac_addr));
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
     // test app will parse the DUT MAC from this line of log output
     printf("DUT MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", local_mac_addr[0], local_mac_addr[1], local_mac_addr[2],
            local_mac_addr[3], local_mac_addr[4], local_mac_addr[5]);
@@ -223,7 +201,7 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
     EventBits_t bits = 0;
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
     // if DUT is connected in network with switch: even if link is indicated up, it may take some time the switch
     // starts switching the associated port (e.g. it runs RSTP at first)
@@ -257,7 +235,7 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 // *** W5500 deviation ***
 // Rationale: The W5500 always receives IPv6 multicast packets, even if the filter is set to block multicast.
 //            It's not documented behavior, but it's observed on the real hardware.
-#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+#if CONFIG_ETH_TEST_W5500_IP6_MCAST_DEVIATION_ENABLED
     expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
     expected_multicast_rx_cnt = 1;
 #else
@@ -333,7 +311,7 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 // *** W5500 deviation ***
 // Rationale: The W5500 always receives IPv6 multicast packets, even if the filter is set to block multicast.
 //            It's not documented behavior, but it's observed on the real hardware.
-#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+#if CONFIG_ETH_TEST_W5500_IP6_MCAST_DEVIATION_ENABLED
     expected_bits = ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT;
     expected_multicast_rx_cnt = 1;
 #else
@@ -346,7 +324,7 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     s_recv_info.brdcast_rx_cnt = 0;
 // *** W5500 deviation ***
 // Rationale: The W5500 always receives IPv6 multicast packets and hence filter delete fails.
-#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+#if CONFIG_ETH_TEST_W5500_IP6_MCAST_DEVIATION_ENABLED
     TEST_ESP_ERR(ESP_FAIL, esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip6));
 #else
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, multicast_addr_ip6));
@@ -363,13 +341,6 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     TEST_ASSERT_EQUAL(expected_multicast_rx_cnt, s_recv_info.multicast_rx_cnt);
 
     TEST_ESP_OK(esp_eth_stop(eth_handle));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    phy->del(phy);
-    mac->del(mac);
-    extra_cleanup();
-    vEventGroupDelete(eth_event_state_group);
-    vEventGroupDelete(eth_event_rx_group);
 }
 
 
@@ -378,30 +349,19 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
 // *** SPI Ethernet modules deviation ***
 // Rationale: The SPI bus is bottleneck when reading received frames from the module. The Rx Task would
 //            occupy all the resources under heavy Rx traffic and it would not be possible to access
-//            the Ethernet module to stop it. Therefore, the Rx task priority is set lower than "test" task
-//            to be able to be preempted.
-#if CONFIG_TARGET_USE_SPI_ETHERNET
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.rx_task_prio = uxTaskPriorityGet(NULL) - 1;
-    esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
-#else
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-#endif // CONFIG_TARGET_USE_SPI_ETHERNET
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
-    TEST_ASSERT_NOT_NULL(eth_handle);
-    extra_eth_config(eth_handle);
+//            the Ethernet module to stop it. Therefore, the test task priority is set higher than the Rx task
+//            to be able to preempt the Rx task.
+#if CONFIG_ETH_TEST_STRESS_TEST_TASK_PRIO > -1
+    printf("task priority: %d\n", uxTaskPriorityGet(NULL));
+    vTaskPrioritySet(NULL, CONFIG_ETH_TEST_STRESS_TEST_TASK_PRIO);
+#endif // CONFIG_ETH_TEST_STRESS_TEST_TASK_PRIO > 0
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
 
-    TEST_ESP_OK(esp_event_loop_create_default());
-    EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_state_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_state_group != NULL);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_state_group));
-    EventGroupHandle_t eth_event_rx_group = xEventGroupCreate();
+    // use static event group to avoid dynamic memory allocation
+    StaticEventGroup_t eth_event_rx_group_buffer;
+    EventGroupHandle_t eth_event_rx_group = xEventGroupCreateStatic(&eth_event_rx_group_buffer);
     TEST_ASSERT(eth_event_rx_group != NULL);
 
     s_recv_info.eth_event_group = eth_event_rx_group;
@@ -412,7 +372,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
 
     uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
     uint8_t dest_mac_addr[ETH_ADDR_LEN] = {};
-    TEST_ESP_OK(mac->get_addr(mac, local_mac_addr));
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
     // test app will parse the DUT MAC from this line of log output
     printf("DUT MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", local_mac_addr[0], local_mac_addr[1], local_mac_addr[2],
            local_mac_addr[3], local_mac_addr[4], local_mac_addr[5]);
@@ -420,27 +380,22 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
     TEST_ESP_OK(esp_eth_update_input_path(eth_handle, l2_packet_txrx_test_cb, &s_recv_info));
 
     // create dummy data packet used for traffic generation
-    emac_frame_t *pkt = calloc(1, 1500);
+    emac_frame_t *pkt = (emac_frame_t *)eth_test_alloc(1500);
     pkt->proto = htons(TEST_ETH_TYPE);
     memcpy(pkt->src, local_mac_addr, ETH_ADDR_LEN);
 
+    EventBits_t bits = 0;
     printf("EMAC start/stop stress test under heavy Tx traffic\n");
     for (int tx_i = 0; tx_i < 10; tx_i++) {
         printf("Tx Test iteration %d\n", tx_i);
         TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
-        bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
+        bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
         TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
         // at first, check that Tx/Rx path works as expected by poking the test script
         // this also serves as main PASS/FAIL criteria
         poke_and_wait(eth_handle, &tx_i, sizeof(tx_i), dest_mac_addr, eth_event_rx_group);
         memcpy(pkt->dest, dest_mac_addr, ETH_ADDR_LEN);
 
-// *** SPI Ethernet modules deviation ***
-// Rationale: Transmit errors are expected only for internal EMAC since it is possible to try to queue more
-//            data than it is able to process at a time.
-#if !CONFIG_TARGET_USE_SPI_ETHERNET
-        printf("Note: transmit errors are expected...\n");
-#endif
         // generate heavy Tx traffic
         for (int j = 0; j < 150; j++) {
             // return value is not checked on purpose since it is expected that it may fail time to time because
@@ -449,7 +404,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
             esp_eth_transmit(eth_handle, pkt, 1500);
         }
         TEST_ESP_OK(esp_eth_stop(eth_handle));
-        bits = xEventGroupWaitBits(eth_event_state_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(3000));
+        bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(3000));
         TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
     }
 
@@ -457,7 +412,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
     for (int rx_i = 0; rx_i < 10; rx_i++) {
         printf("Rx Test iteration %d\n", rx_i);
         TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
-        bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
+        bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
         TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
         poke_and_wait(eth_handle, &rx_i, sizeof(rx_i), NULL, eth_event_rx_group);
 
@@ -470,47 +425,25 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
         vTaskDelay(pdMS_TO_TICKS(500));
 
         TEST_ESP_OK(esp_eth_stop(eth_handle));
-        bits = xEventGroupWaitBits(eth_event_state_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(3000));
+        bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(3000));
         TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
         printf("Recv packets: %d\n", s_recv_info.unicast_rx_cnt);
         TEST_ASSERT_GREATER_THAN_INT32(0, s_recv_info.unicast_rx_cnt);
     }
-
-    free(pkt);
-
     // Add an extra delay to be sure that there is no traffic generated by the test script during the driver un-installation.
     // It was observed unintended behavior of the switch used in test environment when link is set down under heavy load.
     vTaskDelay(pdMS_TO_TICKS(500));
-
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    phy->del(phy);
-    mac->del(mac);
-    extra_cleanup();
-    vEventGroupDelete(eth_event_rx_group);
-    vEventGroupDelete(eth_event_state_group);
 }
 
-#define MAX_HEAP_ALLOCATION_POINTERS    (20)
 TEST_CASE("heap utilization", "[ethernet_l2]")
 {
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
-    TEST_ASSERT_NOT_NULL(eth_handle);
-    extra_eth_config(eth_handle);
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
 
-    TEST_ESP_OK(esp_event_loop_create_default());
-    EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_state_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_state_group != NULL);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_state_group));
-    EventGroupHandle_t eth_event_rx_group = xEventGroupCreate();
+    // use static event group to avoid dynamic memory allocation
+    StaticEventGroup_t eth_event_rx_group_buffer;
+    EventGroupHandle_t eth_event_rx_group = xEventGroupCreateStatic(&eth_event_rx_group_buffer);
     TEST_ASSERT(eth_event_rx_group != NULL);
 
     s_recv_info.eth_event_group = eth_event_rx_group;
@@ -518,6 +451,19 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
     s_recv_info.unicast_rx_cnt = 0;
     s_recv_info.multicast_rx_cnt = 0;
     s_recv_info.brdcast_rx_cnt = 0;
+
+// *** PHY loopback not supported deviation ***
+// Rationale: Some Ethernet modules do not support internal loopback
+#if !CONFIG_ETH_TEST_LOOPBACK_DISABLED
+    // ---------------------------------------
+    // Loopback greatly simplifies the test !!
+    // ---------------------------------------
+    bool loopback_en = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
+    printf("PHY loopback is enabled\n");
+#else
+    printf("PHY loopback is disabled\n");
+#endif
 
     uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
@@ -527,27 +473,19 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
 
     TEST_ESP_OK(esp_eth_update_input_path(eth_handle, l2_packet_txrx_test_cb, &s_recv_info));
 
-// *** W5500 deviation ***
-// Rationale: W5500 SPI Ethernet module does not support internal loopback
-#if !CONFIG_TARGET_ETH_PHY_DEVICE_W5500
-    // ---------------------------------------
-    // Loopback greatly simplifies the test !!
-    // ---------------------------------------
-    bool loopback_en = true;
-    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
-#endif
-
     // start the driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     // wait for connection start
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
     // wait for connection establish
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
 
     // create test frame
-    emac_frame_t *test_pkt = calloc(1, ETH_MAX_PACKET_SIZE);
+    uint8_t test_pkt_buffer[ETH_MAX_PACKET_SIZE];
+    emac_frame_t *test_pkt = (emac_frame_t *)test_pkt_buffer;
     test_pkt->proto = htons(TEST_ETH_TYPE);
     memcpy(test_pkt->dest, local_mac_addr, ETH_ADDR_LEN); // our addr so the frame is not filtered at loopback by MAC
     memcpy(test_pkt->src, local_mac_addr, ETH_ADDR_LEN);
@@ -556,9 +494,9 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
         test_pkt->data[i] = i & 0xFF;
     }
 
-// *** W5500 deviation ***
-// Rationale: W5500 SPI Ethernet module does not support internal loopback so we need to loop frames back at test PC side
-#if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+// *** PHY loopback not supported deviation ***
+// Rationale: Some Ethernet modules do not support internal loopback so we need to loop frames back at test PC side
+#if CONFIG_ETH_TEST_LOOPBACK_DISABLED
     uint8_t dest_mac_addr[ETH_ADDR_LEN] = {};
     poke_and_wait(eth_handle, NULL, 0, dest_mac_addr, eth_event_rx_group);
     memcpy(test_pkt->dest, dest_mac_addr, ETH_ADDR_LEN); // overwrite destination address with test PC addr
@@ -566,36 +504,20 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
 
     uint16_t transmit_size;
     size_t free_heap = 0;
-    uint8_t *memory_p[MAX_HEAP_ALLOCATION_POINTERS] = { 0 };
-    int32_t mem_block;
+    uint8_t *p;
     ESP_LOGI(TAG, "Allocate all heap");
-    for (mem_block = 0; mem_block < MAX_HEAP_ALLOCATION_POINTERS; mem_block++) {
+    do {
         free_heap = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
         ESP_LOGD(TAG, "free heap: %i B", free_heap);
-        memory_p[mem_block] = malloc(free_heap);
-        if (free_heap < 1024) {
-            break;
-        }
-    }
-    free_heap = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
+        p = eth_test_alloc(free_heap);
+    } while (p != NULL && free_heap > 1024);
     ESP_LOGI(TAG, "remaining free heap: %i B", free_heap);
     TEST_ASSERT_LESS_OR_EQUAL_INT(1024, free_heap);
     transmit_size = ETH_MAX_PAYLOAD_LEN;
     ESP_LOGI(TAG, "Verify that the driver is able to recover from `no mem` error");
 
     // define number of iteration to fill device internal buffer (if driver's flush function didn't work as expected)
-    int32_t max_i = 10; // default value will be overwritten by module specific value
-// *** Ethernet modules deviation ***
-// Rationale: Each Ethernet module has different size of Rx buffer
-#if CONFIG_TARGET_USE_INTERNAL_ETHERNET
-    max_i = CONFIG_ETH_DMA_RX_BUFFER_NUM + 2;
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_W5500
-    max_i = W5500_RX_MEM_SIZE / ETH_MAX_PACKET_SIZE + 2;
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_DM9051
-    max_i = DM9051_RX_MEM_SIZE / ETH_MAX_PACKET_SIZE + 2;
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8851SNL
-    max_i = KSZ8851SNL_RX_MEM_SIZE / ETH_MAX_PACKET_SIZE + 2;
-#endif
+    int32_t max_i = CONFIG_ETH_TEST_FILL_RX_BUFFER_ITERATIONS + 2;
 
     for (int32_t i = 0; i < max_i; i++) { // be sure to fill all the descriptors
         ESP_LOGI(TAG, "transmit frame size: %" PRIu16 ", i = %" PRIi32, transmit_size, i);
@@ -607,10 +529,7 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
         TEST_ASSERT(bits == 0); // we don't received the frame due to "no mem"
     }
     ESP_LOGI(TAG, "Free previously allocated heap");
-    while(mem_block > 0) {
-        free(memory_p[mem_block]);
-        mem_block--;
-    }
+    eth_test_free_all();
     free_heap = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
     ESP_LOGI(TAG, "free heap: %i B", free_heap);
     for (int32_t i = 0; i < max_i; i++) {
@@ -622,86 +541,7 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
         bits = xEventGroupWaitBits(eth_event_rx_group, ETH_UNICAST_RECV_BIT, true, true, pdMS_TO_TICKS(200));
         TEST_ASSERT((bits & ETH_UNICAST_RECV_BIT) == ETH_UNICAST_RECV_BIT); // now, we should be able to receive frames again
     }
-
-    free(test_pkt);
     TEST_ESP_OK(esp_eth_stop(eth_handle));
-
-    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    phy->del(phy);
-    mac->del(mac);
-    extra_cleanup();
-    vEventGroupDelete(eth_event_rx_group);
-    vEventGroupDelete(eth_event_state_group);
-}
-
-#define FORMAT_MAC(mac_addr, a, b, c, d, e, f) do { mac_addr[0] = a; mac_addr[1] = b; mac_addr[2] = c; mac_addr[3] = d; mac_addr[4] = e; mac_addr[5] = f; } while(0)
-TEST_CASE("multicast_filter", "[ethernet_l2]")
-{
-    esp_eth_mac_t *mac = mac_init(NULL, NULL);
-    TEST_ASSERT_NOT_NULL(mac);
-    esp_eth_phy_t *phy = phy_init(NULL);
-    TEST_ASSERT_NOT_NULL(phy);
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle)); // install driver
-    TEST_ASSERT_NOT_NULL(eth_handle);
-    extra_eth_config(eth_handle);
-
-    TEST_ESP_OK(esp_event_loop_create_default());
-    EventGroupHandle_t eth_event_state_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_state_group != NULL);
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_state_group));
-    EventGroupHandle_t eth_event_rx_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_rx_group != NULL);
-
-    s_recv_info.eth_event_group = eth_event_rx_group;
-    s_recv_info.check_rx_data = false;
-    s_recv_info.unicast_rx_cnt = 0;
-    s_recv_info.multicast_rx_cnt = 0;
-    s_recv_info.brdcast_rx_cnt = 0;
-
-    uint8_t local_mac_addr[ETH_ADDR_LEN] = {};
-    TEST_ESP_OK(mac->get_addr(mac, local_mac_addr));
-    // test app will parse the DUT MAC from this line of log output
-    printf("DUT MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", local_mac_addr[0], local_mac_addr[1], local_mac_addr[2],
-           local_mac_addr[3], local_mac_addr[4], local_mac_addr[5]);
-
-    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, l2_packet_txrx_test_cb, &s_recv_info));
-
-// *** W5500 deviation ***
-// Rationale: W5500 SPI Ethernet module does not support internal loopback
-#if !CONFIG_TARGET_ETH_PHY_DEVICE_W5500
-    // ---------------------------------------
-    // Loopback greatly simplifies the test !!
-    // ---------------------------------------
-    bool loopback_en = true;
-    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en));
-#endif
-
-    TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
-
-    bool all_multicast = true;
-    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_ALL_MULTICAST, &all_multicast));
-
-    EventBits_t bits = 0;
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
-    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
-    poke_and_wait(eth_handle, NULL, 0, NULL, eth_event_rx_group);
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
-
-    xEventGroupClearBits(eth_event_rx_group, ETH_MULTICAST_RECV_BIT);
-    bits = xEventGroupWaitBits(eth_event_rx_group, ETH_MULTICAST_RECV_BIT, true, true, pdMS_TO_TICKS(500));
-    TEST_ASSERT((bits & ETH_MULTICAST_RECV_BIT) == ETH_MULTICAST_RECV_BIT);
-
-    TEST_ESP_OK(esp_eth_stop(eth_handle));
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
-    phy->del(phy);
-    mac->del(mac);
-    extra_cleanup();
-    vEventGroupDelete(eth_event_rx_group);
-    vEventGroupDelete(eth_event_state_group);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(3000));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
 }
