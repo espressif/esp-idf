@@ -150,8 +150,8 @@ esp_err_t esp_nimble_init(void)
 ```
 The host is configured by setting up the callbacks for Stack-reset, Stack-sync, and Storage status.
 ```c
-ble_hs_cfg.reset_cb = blecent_on_reset;
-ble_hs_cfg.sync_cb = blecent_on_sync;
+ble_hs_cfg.reset_cb = bleprph_on_reset;
+ble_hs_cfg.sync_cb = bleprph_on_sync;
 ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
 ## Security Manager Configuration

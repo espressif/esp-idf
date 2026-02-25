@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,8 +49,8 @@
 #define WRITE_THROUGHPUT                   2
 #define NOTIFY_THROUGHPUT                  3
 
-#define READ_THROUGHPUT_PAYLOAD            500
-#define WRITE_THROUGHPUT_PAYLOAD           495
+#define READ_THROUGHPUT_PAYLOAD            510 /* MTU(512) - ATT read rsp header(1) - 1 (avoid Read Blob) */
+#define WRITE_THROUGHPUT_PAYLOAD           509 /* MTU(512) - ATT write cmd header(3) */
 #define LL_PACKET_TIME                     2120
 #define LL_PACKET_LENGTH                   251
 static const char *tag = "blecent_throughput";
@@ -59,7 +59,7 @@ static SemaphoreHandle_t xSemaphore;
 static int mbuf_len_total;
 static int failure_count;
 static TaskHandle_t throughput_task_handle = NULL;
-static int conn_params_def[] = {40, 40, 0, 500, 80, 80};
+static int conn_params_def[] = {6, 6, 0, 500, 12, 24};
 /* test_data accepts test_name and test_time from CLI */
 static int test_data[6] = {1, 600, 0, 0, 0, 0};
 static int mtu_def = 512;
