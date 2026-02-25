@@ -354,8 +354,8 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
 
         /* Search if HTP UUID is advertised */
-        if (disc->data[offset + 1] == 0x03) {
-            if (disc->data[offset + 2] == 0x09 && disc->data[offset + 3] == 0x18) {
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
+            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x09 ) {
                 return 1;
             }
         }
