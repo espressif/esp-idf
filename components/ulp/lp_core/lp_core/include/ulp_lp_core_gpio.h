@@ -25,6 +25,7 @@ typedef enum {
     LP_IO_NUM_4 = 4,     /*!< GPIO4, input and output */
     LP_IO_NUM_5 = 5,     /*!< GPIO5, input and output */
     LP_IO_NUM_6 = 6,     /*!< GPIO6, input and output */
+#if SOC_RTCIO_PIN_COUNT > 7
     LP_IO_NUM_7 = 7,     /*!< GPIO7, input and output */
 #if SOC_RTCIO_PIN_COUNT > 8
     LP_IO_NUM_8 = 8,     /*!< GPIO8, input and output */
@@ -35,6 +36,7 @@ typedef enum {
     LP_IO_NUM_13 = 13,   /*!< GPIO13, input and output */
     LP_IO_NUM_14 = 14,   /*!< GPIO14, input and output */
     LP_IO_NUM_15 = 15,   /*!< GPIO15, input and output */
+#endif
 #endif
 } lp_io_num_t;
 
