@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -245,4 +245,116 @@ TEST_CASE("Test LP_CPU -> LP_PERI access", "[PERI_APM]")
 }
 #endif /* CONFIG_ULP_COPROC_ENABLED */
 #endif
+#else
+/**
+ * Test HP-CPU access to HP_PERI
+ *
+ * PMS uses per-peripheral based access control with per-master read/write permissions.
+ * For each peripheral, tests HP-CPU read/write access with varying permissions:
+ * all access (both read and write pass) and no access (both read and write fail).
+ * Verifies enforcement of PMS access control by asserting expected load/store access faults.
+ */
+TEST_CASE("Test HP_CPU -> HP_PERI access", "[SYS_APM]")
+{
+    test_sys_pms_master_hp_cpu_slave_hp_peri();
+}
+
+/**
+ * Test HP-CPU access to LP_PERI
+ *
+ * PMS uses per-peripheral based access control with per-master read/write permissions.
+ * For each peripheral, tests HP-CPU read/write access with varying permissions:
+ * all access (both read and write pass) and no access (both read and write fail).
+ * Verifies enforcement of PMS access control by asserting expected load/store access faults.
+ */
+TEST_CASE("Test HP_CPU -> LP_PERI access", "[SYS_APM]")
+{
+    test_sys_pms_master_hp_cpu_slave_lp_peri();
+}
+
+/**
+ * Test HP-CPU access to HP_PERI and LP_PERI (configurable regions)
+ *
+ * PMS also provides region-based access control with start/end address boundaries and per-master
+ * read/write permissions. Configures PMS regions covering HP_PERI and LP_PERI address
+ * ranges. For each region, tests HP-CPU read/write access with varying permissions in
+ * both TEE and REE modes: all access (both read and write pass) and no access (both read
+ * and write fail). Verifies enforcement of PMS access control by asserting expected PMS violations.
+ */
+TEST_CASE("Test HP_CPU -> PERI access (configurable regions)", "[SYS_APM]")
+{
+    test_sys_pms_master_hp_cpu_peri_regn_access();
+}
+
+#if CONFIG_ULP_COPROC_ENABLED
+/**
+ * Test LP-CPU access to HP_PERI
+ *
+ * PMS uses per-peripheral based access control with per-master read/write permissions.
+ * For each peripheral, tests LP-CPU read/write access with varying permissions:
+ * all access (both read and write pass) and no access (both read and write fail).
+ * Verifies enforcement of PMS access control by asserting expected load/store access faults.
+ */
+TEST_CASE("Test LP_CPU -> HP_PERI access", "[SYS_APM]")
+{
+    test_sys_pms_master_lp_cpu_slave_hp_peri();
+}
+
+/**
+ * Test LP-CPU access to LP_PERI
+ *
+ * PMS uses per-peripheral based access control with per-master read/write permissions.
+ * For each peripheral, tests LP-CPU read/write access with varying permissions:
+ * all access (both read and write pass) and no access (both read and write fail).
+ * Verifies enforcement of PMS access control by asserting expected PMS violations.
+ */
+TEST_CASE("Test LP_CPU -> LP_PERI access", "[SYS_APM]")
+{
+    test_sys_pms_master_lp_cpu_slave_lp_peri();
+}
+
+/**
+ * Test LP-CPU access to HP_PERI and LP_PERI (configurable regions)
+ *
+ * PMS uses region-based access control with start/end address boundaries and per-master
+ * read/write permissions. Configures PMS regions covering HP_PERI and LP_PERI address
+ * ranges. For each region, tests LP-CPU read/write access with varying permissions:
+ * all access (both read and write pass) and no access (both read and write fail).
+ * Verifies enforcement of PMS access control by asserting expected PMS violations.
+ */
+TEST_CASE("Test LP_CPU -> PERI access (configurable regions)", "[SYS_APM]")
+{
+    test_sys_pms_master_lp_cpu_peri_regn_access();
+}
+#endif /* CONFIG_ULP_COPROC_ENABLED */
+
+/**
+ * Test GDMA access to HP_MEM
+ *
+ * PMS uses region-based access control with start/end address boundaries and per-master
+ * read/write permissions. Divides a contiguous HP_MEM block into multiple PMS regions and
+ * configures their boundaries. For each region, tests GDMA read/write access with varying
+ * permissions: R-only (read passes, write fails) and W-only (write passes, read fails).
+ * Verifies enforcement of PMS access control by asserting expected PMS violations.
+ */
+TEST_CASE("Test GDMA -> HP_MEM access", "[SYS_APM]")
+{
+    test_sys_pms_master_gdma_slave_hp_mem();
+}
+
+#if CONFIG_SPIRAM
+/**
+ * Test GDMA access to EXT_MEM (SPIRAM)
+ *
+ * PMS uses region-based access control with start/end address boundaries and per-master
+ * read/write permissions. Divides a contiguous EXT_MEM block into multiple PMS regions and
+ * configures their boundaries. For each region, tests GDMA read/write access with varying
+ * permissions: R-only (read passes, write fails) and  W-only (write passes, read fails).
+ * Verifies enforcement of PMS access control by asserting expected PMS violations.
+ */
+TEST_CASE("Test GDMA -> EXT_MEM access", "[SYS_APM]")
+{
+    test_sys_pms_master_gdma_slave_ext_mem();
+}
+#endif /* CONFIG_SPIRAM */
 #endif /* SOC_APM_CTRL_FILTER_SUPPORTED */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,8 @@
 #include "hal/apm_hal.h"
 #include "hal/apm_types.h"
 
-#include "rom/cache.h"
+#include "esp_cache.h"
 #include "esp_rom_sys.h"
-#include "esp_memory_utils.h"
 #include "esp_heap_caps.h"
 
 #include "test_pms_priv.h"
@@ -34,7 +33,25 @@
     APM_HAL_REGION_ENTRY(path, id, start, end, perm)
 #endif
 
-extern bool apm_master_excp_flag[APM_MASTER_MAX];
+typedef struct {
+    apm_master_id_t master_id;
+    apm_ctrl_module_t ctrl_mod;
+    apm_ctrl_access_path_t path;
+    uint32_t mem_start_addr;
+    uint32_t mem_end_addr;
+    uint32_t regn_count;
+    uint32_t regn_sz;
+} test_sys_apm_mem_cfg_t;
+
+typedef struct {
+    apm_master_id_t master_id;
+    apm_ctrl_module_t ctrl_mod;
+    const uint32_t *test_addr;
+    uint32_t test_addr_num;
+    uint32_t test_addr_resv_mask;
+} test_sys_apm_periph_cfg_t;
+
+extern volatile bool apm_master_excp_flag[APM_MASTER_MAX];
 
 /***************************** APM setup for memory *****************************/
 
@@ -65,31 +82,21 @@ static void test_mem_apm_setup(test_sys_apm_mem_cfg_t *cfg, uint32_t test_start_
 
 /***************************** GDMA: Utility *****************************/
 
-static void gdma_xmem_addr_rw(uint8_t *src, uint8_t *dest, size_t size, uint32_t test_attr)
+static void gdma_xmem_addr_rw(uint8_t *src, uint8_t *dest, size_t size, bool should_panic)
 {
     apm_master_excp_flag[TEST_GDMA_APM_MASTER_ID] = false;
-    memset(src, TEST_VAL, size);
+    memset(src, 0xA5, size);
+    esp_cache_msync(src, size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 
     test_gdma_init();
-#if CONFIG_SPIRAM
-    if (esp_ptr_external_ram(src)) {
-        Cache_WriteBack_Addr((uint32_t)src, size);
-    }
-#endif
     test_gdma_m2m_transfer(src, dest, size);
-#if CONFIG_SPIRAM
-    if (esp_ptr_external_ram(dest)) {
-        Cache_Invalidate_Addr((uint32_t)dest, size);
-    }
-#endif
 
-    if (!test_attr) {
-        test_delay_ms(10);
+    test_delay_ms(10);
+    if (should_panic) {
         TEST_ASSERT(apm_master_excp_flag[TEST_GDMA_APM_MASTER_ID]);
-        test_gdma_wait_done();
     } else {
         test_gdma_wait_done();
-        test_delay_ms(10);
+        esp_cache_msync(dest, size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         TEST_ASSERT_FALSE(apm_master_excp_flag[TEST_GDMA_APM_MASTER_ID]);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(src, dest, size);
     }
@@ -109,26 +116,22 @@ static void test_gdma_to_xmem_access(const test_sys_apm_mem_cfg_t *cfg, uint32_t
 
         for (uint32_t regn_idx = 2; regn_idx < cfg->regn_count; regn_idx++) {
             uint8_t *regn_start = (uint8_t *)(test_start_addr + (regn_idx - 2) * cfg->regn_sz);
-            uint32_t pms_attr = APM_PERM_NONE;
 
             if (mode == APM_SEC_MODE_TEE) {
-                pms_attr = APM_PERM_R | APM_PERM_W;
-                gdma_xmem_addr_rw(regn_start, test_dma_buf, cfg->regn_sz, pms_attr & APM_PERM_R);
-                gdma_xmem_addr_rw(test_dma_buf, regn_start, cfg->regn_sz, pms_attr & APM_PERM_W);
+                gdma_xmem_addr_rw(regn_start, test_dma_buf, cfg->regn_sz, false);
+                gdma_xmem_addr_rw(test_dma_buf, regn_start, cfg->regn_sz, false);
                 continue;
             }
 
-            pms_attr = APM_PERM_W;
             apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, APM_PERM_NONE);
-            apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, pms_attr);
-            gdma_xmem_addr_rw(regn_start, test_dma_buf, cfg->regn_sz, pms_attr & APM_PERM_R);
-            gdma_xmem_addr_rw(test_dma_buf, regn_start, cfg->regn_sz, pms_attr & APM_PERM_W);
+            apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, APM_PERM_W);
+            gdma_xmem_addr_rw(regn_start, test_dma_buf, cfg->regn_sz, true);
+            gdma_xmem_addr_rw(test_dma_buf, regn_start, cfg->regn_sz, false);
 
-            pms_attr = APM_PERM_R;
             apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, APM_PERM_NONE);
-            apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, pms_attr);
-            gdma_xmem_addr_rw(regn_start, test_dma_buf, cfg->regn_sz, pms_attr & APM_PERM_R);
-            gdma_xmem_addr_rw(test_dma_buf, regn_start, cfg->regn_sz, pms_attr & APM_PERM_W);
+            apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, APM_PERM_R);
+            gdma_xmem_addr_rw(regn_start, test_dma_buf, cfg->regn_sz, false);
+            gdma_xmem_addr_rw(test_dma_buf, regn_start, cfg->regn_sz, true);
 
             apm_hal_set_sec_mode_region_attr(cfg->ctrl_mod, regn_idx, mode, APM_PERM_ALL);
         }
@@ -545,7 +548,7 @@ static void lp_cpu_xmem_addr_rw(uint32_t mem_addr, size_t size, uint32_t attr)
 
     SEND_MSG(MSG_SLAVE_WRITE);
     SEND_ADDR(mem_addr);
-    SEND_SIZE(sizeof(uint32_t));
+    SEND_DATA(sizeof(uint32_t));
     test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
@@ -868,13 +871,13 @@ void test_tee_mode_default_access(void)
     test_tee_mode_apm_setup(&cfg, (uint32_t)test_hpmem_buf, (uint32_t)test_hpmem_buf + total_sz);
     apm_ll_hp_tee_set_master_sec_mode(TEST_GDMA_APM_MASTER_ID, APM_SEC_MODE_TEE);
 
-    uint32_t pms_attr = APM_PERM_R | APM_PERM_W;
+    bool should_panic = false;
 #if SOC_APM_CTRL_TEE_MODE_ACCESS_BUG
-    pms_attr = APM_PERM_NONE;
+    should_panic = true;
 #endif
 
-    gdma_xmem_addr_rw(test_hpmem_buf, test_dma_buf, total_sz, pms_attr & APM_PERM_R);
-    gdma_xmem_addr_rw(test_dma_buf, test_hpmem_buf, total_sz, pms_attr & APM_PERM_W);
+    gdma_xmem_addr_rw(test_hpmem_buf, test_dma_buf, total_sz, should_panic);
+    gdma_xmem_addr_rw(test_dma_buf, test_hpmem_buf, total_sz, should_panic);
 
     free(test_dma_buf);
     free(test_hpmem_buf);

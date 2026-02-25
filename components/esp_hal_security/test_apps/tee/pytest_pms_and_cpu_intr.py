@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf import IdfDut
@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 # ---------------- Pytest build parameters ----------------
 
-SOC_SUPPORT_SYS_APM_TEST = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
+SOC_SUPPORT_SYS_APM_TEST = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61', 'esp32p4']
 SOC_SUPPORT_PERI_APM_TEST = ['esp32c5']
 SOC_SUPPORT_INTR_TEST = ['esp32c5', 'esp32c61', 'esp32p4']
 

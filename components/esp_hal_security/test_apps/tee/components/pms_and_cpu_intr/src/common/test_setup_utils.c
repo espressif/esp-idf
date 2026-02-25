@@ -13,18 +13,27 @@
 #include "hal/gdma_ll.h"
 #include "hal/gdma_types.h"
 #if SOC_AHB_GDMA_VERSION == 2
+#include "hal/ahb_dma_ll.h"
 #include "soc/ahb_dma_struct.h"
 #elif SOC_AHB_GDMA_VERSION == 1
 #include "soc/gdma_struct.h"
 #endif
+#include "esp_private/periph_ctrl.h"
 
 #if CONFIG_ULP_COPROC_ENABLED
-#include "soc/lp_aon_reg.h"
 #include "soc/lpperi_reg.h"
+#if SOC_LP_AON_SUPPORTED
+#include "soc/lp_aon_reg.h"
+#define LP_CPU_RST_EN (LPPERI_LP_CPU_RESET_EN)
+#else
+#include "soc/lp_system_reg.h"
+#define LP_CPU_RST_EN (LPPERI_RST_EN_LP_CORE)
+#endif
 #include "ulp_lp_core.h"
 #endif
 
 #include "esp_attr.h"
+#include "esp_cache.h"
 #include "esp_rom_lldesc.h"
 #include "esp_rom_sys.h"
 
@@ -61,9 +70,11 @@ void test_stop_lp_cpu(void)
 
 void test_reset_lp_cpu(void)
 {
-    REG_SET_BIT(LPPERI_RESET_EN_REG, LPPERI_LP_CPU_RESET_EN);
+    REG_SET_BIT(LPPERI_RESET_EN_REG, LP_CPU_RST_EN);
+    REG_CLR_BIT(LPPERI_RESET_EN_REG, LP_CPU_RST_EN);
 }
 
+#if SOC_LP_AON_SUPPORTED
 void test_switch_lp_mem_speed(bool high_speed)
 {
     if (high_speed) {
@@ -73,6 +84,7 @@ void test_switch_lp_mem_speed(bool high_speed)
     }
     REG_SET_BIT(LP_AON_LPBUS_REG, LP_AON_FAST_MEM_MUX_SEL_UPDATE);
 }
+#endif
 #endif
 
 /***************************** Utility - GDMA  *****************************/
@@ -87,15 +99,21 @@ void test_switch_lp_mem_speed(bool high_speed)
 #define DMA_MEM_TRANS_EN_FIELD  mem_trans_en
 #endif
 
+#if SOC_RCC_IS_INDEPENDENT
+#define GDMA_RCC_ATOMIC()
+#else /* !SOC_RCC_IS_INDEPENDENT */
+#define GDMA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#endif /* SOC_RCC_IS_INDEPENDENT */
+
 #define dma_ll_force_enable_reg_clock       DMA_LL_FUNC(force_enable_reg_clock)
 #define dma_ll_tx_enable_data_burst         DMA_LL_FUNC(tx_enable_data_burst)
 #define dma_ll_tx_enable_descriptor_burst   DMA_LL_FUNC(tx_enable_descriptor_burst)
 #define dma_ll_rx_enable_data_burst         DMA_LL_FUNC(rx_enable_data_burst)
 #define dma_ll_rx_enable_descriptor_burst   DMA_LL_FUNC(rx_enable_descriptor_burst)
 #define dma_ll_tx_reset_channel             DMA_LL_FUNC(tx_reset_channel)
-#define dma_ll_tx_connect_to_periph         DMA_LL_FUNC(tx_connect_to_periph)
+#define dma_ll_tx_connect_to_mem            DMA_LL_FUNC(tx_connect_to_mem)
 #define dma_ll_rx_reset_channel             DMA_LL_FUNC(rx_reset_channel)
-#define dma_ll_rx_connect_to_periph         DMA_LL_FUNC(rx_connect_to_periph)
+#define dma_ll_rx_connect_to_mem            DMA_LL_FUNC(rx_connect_to_mem)
 #define dma_ll_tx_disconnect_all            DMA_LL_FUNC(tx_disconnect_all)
 #define dma_ll_rx_disconnect_all            DMA_LL_FUNC(rx_disconnect_all)
 #define dma_ll_tx_set_desc_addr             DMA_LL_FUNC(tx_set_desc_addr)
@@ -113,9 +131,12 @@ void test_switch_lp_mem_speed(bool high_speed)
 #define dma_ll_tx_get_interrupt_status      DMA_LL_FUNC(tx_get_interrupt_status)
 #define dma_ll_rx_get_interrupt_status      DMA_LL_FUNC(rx_get_interrupt_status)
 
-#define TEST_DMA_CHN_NUM        0
+#define TEST_DMA_GRP_NUM        0
+#define TEST_DMA_CHN_NUM        1
 #define TEST_DMA_BLK_LEN        1024
 #define TEST_DMA_MAX_BLK_NUM    32
+
+#define SOC_GDMA_TRIG_PERIPH_DUMMY (11)
 
 DRAM_ATTR static lldesc_t tx_link[TEST_DMA_MAX_BLK_NUM];
 DRAM_ATTR static lldesc_t rx_link[TEST_DMA_MAX_BLK_NUM];
@@ -146,6 +167,11 @@ static void setup_gdma_link(lldesc_t *link, uint8_t *buf, size_t size, bool is_t
         link[x - 1].empty = 0;
     }
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    size_t num_desc = (size + TEST_DMA_BLK_LEN - 1) / TEST_DMA_BLK_LEN;
+    esp_cache_msync(&link[0], num_desc * sizeof(lldesc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+#endif
+
     if (is_tx) {
         dma_ll_tx_set_desc_addr(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, (uint32_t)&link[0]);
     } else {
@@ -155,8 +181,10 @@ static void setup_gdma_link(lldesc_t *link, uint8_t *buf, size_t size, bool is_t
 
 void test_gdma_init(void)
 {
-    gdma_ll_enable_bus_clock(TEST_DMA_CHN_NUM, true);
-    gdma_ll_reset_register(TEST_DMA_CHN_NUM);
+    GDMA_RCC_ATOMIC() {
+        gdma_ll_enable_bus_clock(TEST_DMA_GRP_NUM, true);
+        gdma_ll_reset_register(TEST_DMA_GRP_NUM);
+    }
     dma_ll_force_enable_reg_clock(&TEST_DMA_DEV, true);
 
 #if SOC_AHB_GDMA_VERSION == 2
@@ -181,9 +209,8 @@ void test_gdma_init(void)
     dma_ll_tx_set_priority(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, 1);
     dma_ll_rx_set_priority(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, 1);
 
-    dma_ll_tx_connect_to_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_SPI2);
-    dma_ll_rx_connect_to_periph(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_SPI2);
-    TEST_DMA_DEV.channel[TEST_DMA_CHN_NUM].in.in_conf0.DMA_MEM_TRANS_EN_FIELD = 1;
+    dma_ll_tx_connect_to_mem(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_DUMMY);
+    dma_ll_rx_connect_to_mem(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, SOC_GDMA_TRIG_PERIPH_DUMMY);
 
     dma_ll_tx_enable_interrupt(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, GDMA_LL_EVENT_TX_EOF, true);
     dma_ll_rx_enable_interrupt(&TEST_DMA_DEV, TEST_DMA_CHN_NUM, GDMA_LL_EVENT_RX_SUC_EOF, true);
@@ -200,8 +227,10 @@ void test_gdma_deinit(void)
     dma_ll_tx_reset_channel(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
     dma_ll_rx_reset_channel(&TEST_DMA_DEV, TEST_DMA_CHN_NUM);
 
-    gdma_ll_reset_register(TEST_DMA_CHN_NUM);
-    gdma_ll_enable_bus_clock(TEST_DMA_CHN_NUM, false);
+    GDMA_RCC_ATOMIC() {
+        gdma_ll_reset_register(TEST_DMA_GRP_NUM);
+        gdma_ll_enable_bus_clock(TEST_DMA_GRP_NUM, false);
+    }
 }
 
 void test_gdma_m2m_transfer(uint8_t *src, uint8_t *dest, size_t size)

@@ -5,11 +5,13 @@ set(srcs "src/common/test_intr_utils.c"
          "src/common/test_panic_handler.c")
 
 if(CONFIG_SOC_SUPPORT_TEE_SYS_APM_TEST)
+    list(APPEND srcs "src/common/test_apm_utils.c"
+                     "src/common/test_setup_utils.c"
+                     "src/pms/test_tee_vectors.S")
     if(CONFIG_SOC_APM_CTRL_FILTER_SUPPORTED)
-        list(APPEND srcs "src/common/test_apm_utils.c"
-                         "src/common/test_setup_utils.c"
-                         "src/pms/test_tee_sys_apm.c"
-                         "src/pms/test_tee_vectors.S")
+        list(APPEND srcs "src/pms/test_tee_sys_apm.c")
+    else()
+        list(APPEND srcs "src/pms/test_tee_pms.c")
     endif()
 endif()
 
@@ -27,7 +29,7 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include" "priv_include"
                        PRIV_INCLUDE_DIRS "priv_include/${target}"
                        REQUIRES ulp unity esp_hal_security
-                       PRIV_REQUIRES esp_hal_timg
+                       PRIV_REQUIRES esp_hal_timg esp_mm
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_ULP_COPROC_ENABLED)

@@ -18,6 +18,7 @@
 #include "soc/lp_system_reg.h"
 #define LP_STORE_REG_PREFIX(reg)       LP_SYSTEM_REG_LP_STORE##reg##_REG
 #endif
+
 #include "hal/apm_types.h"
 
 /********* Panic Handler *********/
@@ -35,8 +36,8 @@
 #define SEND_ADDR(addr)     REG_WRITE(LP_STORE_REG_PREFIX(7), addr)
 #define RECV_ADDR()         REG_READ(LP_STORE_REG_PREFIX(7))
 
-#define SEND_SIZE(size)     REG_WRITE(LP_STORE_REG_PREFIX(8), size)
-#define RECV_SIZE()         REG_READ(LP_STORE_REG_PREFIX(8))
+#define SEND_DATA(data)     REG_WRITE(LP_STORE_REG_PREFIX(8), data)
+#define RECV_DATA()         REG_READ(LP_STORE_REG_PREFIX(8))
 
 #define SEND_EXCP(val)      REG_WRITE(LP_STORE_REG_PREFIX(9), val)
 #define RECV_EXCP()         REG_READ(LP_STORE_REG_PREFIX(9))
@@ -57,35 +58,12 @@
 #endif
 
 #if SOC_APM_CTRL_FILTER_SUPPORTED
-typedef struct {
-    apm_master_id_t master_id;
-    apm_ctrl_module_t ctrl_mod;
-    const uint32_t *test_addr;
-    uint32_t test_addr_num;
-    uint32_t test_addr_resv_mask;
-} test_sys_apm_periph_cfg_t;
-
-typedef struct {
-    apm_master_id_t master_id;
-    apm_ctrl_module_t ctrl_mod;
-    apm_ctrl_access_path_t path;
-    uint32_t mem_start_addr;
-    uint32_t mem_end_addr;
-    uint32_t regn_count;
-    uint32_t regn_sz;
-} test_sys_apm_mem_cfg_t;
-
-typedef struct {
-    apm_master_id_t master_id;
-    apm_tee_ctrl_module_t ctrl_mod;
-    const uint32_t *test_reg;
-    uint32_t test_reg_num;
-    uint64_t test_reg_resv_mask;
-} test_peri_apm_periph_cfg_t;
-
 void apm_hal_enable_region_filter_all(apm_ctrl_module_t ctrl_mod, bool enable);
 void test_apm_ctrl_reset_all(void);
 void test_apm_ctrl_enable_intr(apm_ctrl_module_t ctrl_mod, apm_ctrl_access_path_t path);
+#else
+void test_pms_ctrl_reset_all(void);
+void test_pms_enable_intr(apm_ctrl_module_t ctrl_mod);
 #endif
 
 /* Utility functions */
@@ -97,7 +75,9 @@ void test_u2m_switch(void);
 void test_boot_lp_cpu(void);
 void test_stop_lp_cpu(void);
 void test_reset_lp_cpu(void);
+#if SOC_LP_AON_SUPPORTED
 void test_switch_lp_mem_speed(bool high_speed);
+#endif
 
 void test_gdma_init(void);
 void test_gdma_deinit(void);
