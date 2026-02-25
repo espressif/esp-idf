@@ -13,7 +13,7 @@
 #include "sdkconfig.h"
 #include "esp_task.h"
 #include "esp_assert.h"
-#include "../../../../controller/esp32/esp_bredr_cfg.h"
+#include "../../../controller/esp32/esp_bredr_cfg.h"
 
 #ifdef __cplusplus
 extern "C" {
