@@ -18,6 +18,7 @@ This example is located in the examples folder of the ESP-IDF under the [ble_mul
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_multi_conn_prph.h"
 ```
@@ -62,12 +63,16 @@ app_main(void)
     ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
+#endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("esp-multi-conn");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
@@ -88,7 +93,7 @@ app_main(void)
             vTaskDelay(pdMS_TO_TICKS(delay_ms));
             ble_prph_advertise();
         } else {
-            ESP_LOGE(TAG, "Failed to take Semaphor");
+            ESP_LOGE(TAG, "Failed to take Semaphore");
         }
     }
 #endif // CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
@@ -162,16 +167,19 @@ esp_err_t esp_nimble_init(void)
 The host is configured by setting up the callbacks on Stack-reset, Stack-sync, registration of each GATT resource, and storage status.
 
 ```c
- ble_hs_cfg.reset_cb = ble_multi_adv_on_reset;
- ble_hs_cfg.sync_cb = ble_multi_adv_on_sync;
+ ble_hs_cfg.reset_cb = bleprph_on_reset;
+ ble_hs_cfg.sync_cb = bleprph_on_sync;
  ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
  ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
 
-The main function calls `ble_svc_gap_device_name_set()` to set the default device name. 'esp-multi-conn' is passed as the default device name to this function.
+The main function calls `ble_svc_gap_device_name_set()` to set the default device name, guarded by `CONFIG_BT_NIMBLE_GAP_SERVICE` for cases where the GAP service may be disabled:
 
 ```c
-rc = ble_svc_gap_device_name_set("esp-multi-conn");
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
+    rc = ble_svc_gap_device_name_set("esp-multi-conn");
+    assert(rc == 0);
+#endif
 ```
 
 main function calls  `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
@@ -184,10 +192,31 @@ ble_store_config_init();
 The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`.
 
 ```c
-nimble_port_freertos_init(ble_multi_adv_host_task);
+nimble_port_freertos_init(bleprph_host_task);
 ```
 
 `esp_nimble_enable()` create a task where the nimble host will run. It is not strictly necessary to have a separate task for the nimble host, but since something needs to handle the default queue, it is easier to create a separate task.
+
+## Sync Callback
+
+When the BLE host and controller are synced, the `bleprph_on_sync` callback is invoked. It ensures a valid identity address is set before starting advertising:
+
+```c
+static void
+bleprph_on_sync(void)
+{
+    int rc;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    /* Begin advertising. */
+    ble_prph_advertise();
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
 
 ## Multiple Connections
 
@@ -217,7 +246,7 @@ This example will be executed according to the following steps:
             vTaskDelay(pdMS_TO_TICKS(delay_ms));
             ble_prph_advertise();
         } else {
-            ESP_LOGE(TAG, "Failed to take Semaphor");
+            ESP_LOGE(TAG, "Failed to take Semaphore");
         }
     }
   ```

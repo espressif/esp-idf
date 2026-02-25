@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/util/util.h"
-#include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
 #include "uart_driver.h"
@@ -345,6 +343,8 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456; // This is the passkey to be entered on peer
             ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
