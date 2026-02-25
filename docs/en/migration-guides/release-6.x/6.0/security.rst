@@ -6,7 +6,7 @@ Security
 Mbed TLS
 --------
 
-Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files like ``esp32/aes.h``, ``esp32/sha.h``, ``esp32s2/aes.h``, ``esp32s2/sha.h`` and ``esp32s2/gcm.h`` have been removed, instead, you should include ``aes/esp_aes.h``, ``sha/sha_core.h`` and ``aes/esp_aes_gcm.h`` respectively.
+Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files like ``esp32/aes.h``, ``esp32/sha.h``, ``esp32s2/aes.h``, ``esp32s2/sha.h`` and ``esp32s2/gcm.h`` have been removed. Please use ``aes/esp_aes.h``, ``sha/sha_core.h`` and ``aes/esp_aes_gcm.h`` instead.
 
 .. only:: SOC_SHA_SUPPORTED
 
