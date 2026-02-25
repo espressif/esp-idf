@@ -1,0 +1,32 @@
+extends: substitution
+message: "Consider using '%s' instead of '%s'. This phrase normalizes violence toward animals."
+link: https://doi.org/10.1007/s43681-023-00380-w
+level: warning
+ignorecase: true
+swap:
+  'kill two birds with one stone': accomplish two things at once
+  'killing two birds with one stone': accomplishing two things at once
+  'killed two birds with one stone': accomplished two things at once
+  'beat a dead horse': belabor the point
+  'beating a dead horse': belaboring the point
+  'flog a dead horse': belabor the point
+  'flogging a dead horse': belaboring the point
+  'bring home the bacon': bring home the results
+  'bringing home the bacon': bringing home the results
+  'brought home the bacon': brought home the results
+  'more than one way to skin a cat': more than one way to solve this
+  'many ways to skin a cat': many ways to approach this
+  'let the cat out of the bag': reveal the secret
+  'letting the cat out of the bag': revealing the secret
+  'open a can of worms': create a complicated situation
+  'opening a can of worms': creating a complicated situation
+  'opened a can of worms': created a complicated situation
+  'wild goose chase': pointless pursuit
+  'take the bull by the horns': face the challenge head-on
+  'taking the bull by the horns': facing the challenge head-on
+  'took the bull by the horns': faced the challenge head-on
+  'like shooting fish in a barrel': extremely easy
+  'straight from the horse''s mouth': directly from the source
+  'from the horse''s mouth': from a reliable source
+  'whack-a-mole': recurring problem
+  'whack a mole': recurring problem
