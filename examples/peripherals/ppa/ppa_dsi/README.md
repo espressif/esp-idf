@@ -123,6 +123,4 @@ I (10085) main_task: Returned from app_main()
 
 ## Reference
 
-- Link to the ESP-IDF feature's API reference, for example [ESP-IDF: Pixel-Processing Accelerator](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/ppa.html)
-- [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
-- [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)
+- [ESP-IDF: Pixel-Processing Accelerator](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/ppa.html)

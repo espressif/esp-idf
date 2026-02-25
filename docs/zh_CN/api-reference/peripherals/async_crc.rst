@@ -332,6 +332,11 @@ DMA 突发大小
 
 最佳值取决于芯片的 DMA 控制器功能。
 
+应用示例
+========
+
+- :example:`peripherals/dma/async_crc` 演示了如何通过交互式控制台 CLI 使用异步 CRC 驱动程序。
+
 API 参考
 ========
 
