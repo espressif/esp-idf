@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,9 @@
 #include "utils/common.h"
 #include "crypto.h"
 #include "common/defs.h"
+#include "tls/asn1.h"
+#include "tls/rsa.h"
+#include "tls/pkcs1.h"
 
 #ifdef CONFIG_CRYPTO_MBEDTLS
 // #include "mbedtls/entropy.h"
@@ -25,6 +28,8 @@
 
 #include "psa/crypto.h"
 #include <mbedtls/psa_util.h>
+
+#define WPA_HEX_ERR(err) ((err) < 0 ? "-" : ""), (unsigned int) ((err) < 0 ? -(err) : (err))
 
 /* Dummy structures; these are just typecast to struct crypto_rsa_key */
 struct crypto_public_key;
@@ -164,13 +169,13 @@ struct crypto_public_key *crypto_public_key_from_cert(const u8 *buf,
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     ret = mbedtls_pk_get_psa_attributes(&cert->pk, PSA_KEY_USAGE_VERIFY_HASH, &key_attributes);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to get key attributes, returned %d", ret);
+        wpa_printf(MSG_ERROR, "%s:Failed to get key attributes, returned %s0x%X", __func__, WPA_HEX_ERR(ret));
         goto fail;
     }
 
     ret = mbedtls_pk_import_into_psa(&cert->pk, &key_attributes, &key_id);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to import key, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to import key, returned %s0x%X", WPA_HEX_ERR(ret));
         goto fail;
     }
 
@@ -179,7 +184,7 @@ struct crypto_public_key *crypto_public_key_from_cert(const u8 *buf,
     // Load the key from PSA into mbedTLS pk context
     ret = mbedtls_pk_copy_from_psa(key_id, kctx);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to copy key from PSA, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to copy key from PSA, returned %s0x%X", WPA_HEX_ERR(ret));
         goto fail;
     }
 
@@ -210,7 +215,7 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 
     psa_status_t status = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_ENCRYPT, &key_attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to get key attributes, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "%s:Failed to get key attributes, returned %s0x%X", __func__, WPA_HEX_ERR(status));
         ret = -1;
         goto cleanup;
     }
@@ -225,7 +230,7 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 
     ret = mbedtls_pk_import_into_psa(pkey, &key_attributes, &key_id);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to import key, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to import key, returned %s0x%X", WPA_HEX_ERR(ret));
         ret = -1;
         goto cleanup;
     }
@@ -233,7 +238,7 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
     size_t output_len = 0;
     status = psa_asymmetric_encrypt(key_id, PSA_ALG_RSA_PKCS1V15_CRYPT, in, inlen, NULL, 0, out, *outlen, &output_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to encrypt data, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "Failed to encrypt data, returned %s0x%X", WPA_HEX_ERR((int) status));
         ret = -1;
         goto cleanup;
     }
@@ -261,14 +266,14 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
 
     psa_status_t status = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_DECRYPT, &key_attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to get key attributes, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "%s:Failed to get key attributes, returned %s0x%X", __func__, WPA_HEX_ERR(status));
         ret = -1;
         goto cleanup;
     }
 
     ret = mbedtls_pk_import_into_psa(pkey, &key_attributes, &key_id);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to import key, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to import key, returned %s0x%X", WPA_HEX_ERR(ret));
         ret = -1;
         goto cleanup;
     }
@@ -276,7 +281,7 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
     size_t output_len = 0;
     status = psa_asymmetric_decrypt(key_id, PSA_ALG_RSA_PKCS1V15_CRYPT, in, inlen, NULL, 0, out, *outlen, &output_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to decrypt data, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "Failed to decrypt data, returned %s0x%X", WPA_HEX_ERR((int) status));
         ret = -1;
         goto cleanup;
     }
@@ -304,14 +309,14 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
 
     psa_status_t status = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_SIGN_HASH, &key_attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to get key attributes, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "%s:Failed to get key attributes, returned %s0x%X", __func__, WPA_HEX_ERR(status));
         ret = -1;
         goto cleanup;
     }
 
     ret = mbedtls_pk_import_into_psa(pkey, &key_attributes, &key_id);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to import key, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to import key, returned %s0x%X", WPA_HEX_ERR(ret));
         ret = -1;
         goto cleanup;
     }
@@ -319,7 +324,7 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
     size_t output_len = 0;
     status = psa_sign_hash(key_id, PSA_ALG_RSA_PKCS1V15_SIGN_RAW, in, inlen, out, *outlen, &output_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to sign data, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "Failed to sign data, returned %s0x%X", WPA_HEX_ERR((int) status));
         ret = -1;
         goto cleanup;
     }
@@ -356,14 +361,14 @@ struct crypto_public_key *crypto_public_key_from_private_key(struct crypto_priva
     // We use DECRYPT as a generic private key operation to get the key attributes
     int ret = mbedtls_pk_get_psa_attributes(priv_ctx, PSA_KEY_USAGE_DECRYPT, &key_attributes);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to get key attributes, returned %d", ret);
+        wpa_printf(MSG_ERROR, "%s:Failed to get key attributes, returned %s0x%X", __func__, WPA_HEX_ERR(ret));
         os_free(pub_ctx);
         return NULL;
     }
 
     ret = mbedtls_pk_import_into_psa(priv_ctx, &key_attributes, &key_id);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to import private key, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to import private key, returned %s0x%X", WPA_HEX_ERR(ret));
         psa_reset_key_attributes(&key_attributes);
         os_free(pub_ctx);
         return NULL;
@@ -378,7 +383,7 @@ struct crypto_public_key *crypto_public_key_from_private_key(struct crypto_priva
     psa_reset_key_attributes(&key_attributes);
 
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to export public key, returned %d", (int) status);
+        wpa_printf(MSG_ERROR, "Failed to export public key, returned %s0x%X", WPA_HEX_ERR((int) status));
         os_free(pub_ctx);
         return NULL;
     }
@@ -387,7 +392,7 @@ struct crypto_public_key *crypto_public_key_from_private_key(struct crypto_priva
     mbedtls_pk_init(pub_ctx);
     ret = mbedtls_pk_parse_public_key(pub_ctx, pub_key_buf, pub_key_len);
     if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to parse public key, returned %d", ret);
+        wpa_printf(MSG_ERROR, "Failed to parse public key, returned %s0x%X", WPA_HEX_ERR(ret));
         mbedtls_pk_free(pub_ctx);
         os_free(pub_ctx);
         return NULL;
@@ -422,101 +427,62 @@ int  crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
                                      const u8 *crypt, size_t crypt_len,
                                      u8 *plain, size_t *plain_len)
 {
-    size_t len;
-    u8 *pos;
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
+    struct crypto_rsa_key *rsa_key = NULL;
+    struct asn1_hdr hdr;
+    struct asn1_hdr bitstring;
+    const u8 *spki_pos, *spki_end;
+    int ret;
+    /* SubjectPublicKeyInfo DER for RSA-4096 is comfortably below this size. */
+    unsigned char pubkey_der[1024];
+    const u8 *pubkey = NULL;
+    size_t pubkey_len = 0;
 
-    // Load the key into PSA
-    psa_key_id_t key_id = 0;
-    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_status_t status;
-    int ret = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_DECRYPT, &key_attributes);
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to get key attributes, returned %d", ret);
-        psa_reset_key_attributes(&key_attributes);
+    if (!pkey || !crypt || !plain || !plain_len) {
         return -1;
     }
 
-    len = psa_get_key_bits(&key_attributes) / 8;
-    if (len != crypt_len) {
-        psa_reset_key_attributes(&key_attributes);
+    ret = mbedtls_pk_write_pubkey_der(pkey, pubkey_der, sizeof(pubkey_der));
+    if (ret <= 0) {
+        wpa_printf(MSG_ERROR, "%s: Failed to export public key in DER form, returned %s0x%X", __func__, WPA_HEX_ERR(ret));
         return -1;
     }
-
-    ret = mbedtls_pk_import_into_psa(pkey, &key_attributes, &key_id);
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, "Failed to import key, returned %d", ret);
-        psa_reset_key_attributes(&key_attributes);
-        return -1;
-    }
-    psa_reset_key_attributes(&key_attributes);
-
-    size_t output_len = 0;
-    status = psa_asymmetric_decrypt(key_id, PSA_ALG_RSA_PKCS1V15_CRYPT, crypt, crypt_len, NULL, 0, plain, *plain_len, &output_len);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to decrypt data, returned %d", (int) status);
-        psa_destroy_key(key_id);
-        return -1;
-    }
-
-    *plain_len = output_len;
-
-    if (key_id) {
-        psa_destroy_key(key_id);
-    }
+    pubkey_len = (size_t) ret;
+    pubkey = pubkey_der + sizeof(pubkey_der) - pubkey_len;
 
     /*
-     * PKCS #1 v1.5, 8.1:
-     *
-     * EB = 00 || BT || PS || 00 || D
-     * BT = 00 or 01
-     * PS = k-3-||D|| times (00 if BT=00) or (FF if BT=01)
-     * k = length of modulus in octets
-     *
-     * Based on 10.1.3, "The block type shall be 01" for a signature.
+     * mbedtls_pk_write_pubkey_der() returns SubjectPublicKeyInfo.
+     * crypto_rsa_import_public_key() expects PKCS#1 RSAPublicKey,
+     * i.e. the BIT STRING payload inside SubjectPublicKeyInfo.
      */
+    if (asn1_get_next(pubkey, pubkey_len, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+        wpa_printf(MSG_ERROR, "%s: Failed to parse SubjectPublicKeyInfo sequence", __func__);
+        return -1;
+    }
+    spki_pos = hdr.payload;
+    spki_end = spki_pos + hdr.length;
 
-    if (len < 3 + 8 + 16 /* min hash len */ ||
-            plain[0] != 0x00 || plain[1] != 0x01) {
-        wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
-                   "structure");
-        wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+    if (asn1_get_next(spki_pos, spki_end - spki_pos, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+        wpa_printf(MSG_ERROR, "%s: Failed to parse SubjectPublicKeyInfo algorithm", __func__);
+        return -1;
+    }
+    spki_pos = hdr.payload + hdr.length;
+
+    if (asn1_get_next(spki_pos, spki_end - spki_pos, &bitstring) < 0 || !asn1_is_bitstring(&bitstring) ||
+            bitstring.length < 1 || bitstring.payload[0] != 0) {
+        wpa_printf(MSG_ERROR, "%s: Failed to parse SubjectPublicKey BIT STRING", __func__);
         return -1;
     }
 
-    pos = plain + 3;
-    /* BT = 01 */
-    if (plain[2] != 0xff) {
-        wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature "
-                   "PS (BT=01)");
-        wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+    pubkey = bitstring.payload + 1;
+    pubkey_len = bitstring.length - 1;
+    rsa_key = crypto_rsa_import_public_key(pubkey, pubkey_len);
+    if (!rsa_key) {
+        wpa_printf(MSG_ERROR, "%s: Failed to import public key for PKCS#1 verification", __func__);
         return -1;
     }
-    while (pos < plain + len && *pos == 0xff) {
-        pos++;
-    }
-
-    if (pos - plain - 2 < 8) {
-        /* PKCS #1 v1.5, 8.1: At least eight octets long PS */
-        wpa_printf(MSG_INFO, "LibTomCrypt: Too short signature "
-                   "padding");
-        wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
-        return -1;
-    }
-
-    if (pos + 16 /* min hash len */ >= plain + len || *pos != 0x00) {
-        wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
-                   "structure (2)");
-        wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
-        return -1;
-    }
-    pos++;
-    len -= pos - plain;
-
-    /* Strip PKCS #1 header */
-    os_memmove(plain, pos, len);
-    *plain_len = len;
-
-    return 0;
+    ret = pkcs1_decrypt_public_key(rsa_key, crypt, crypt_len, plain, plain_len);
+    crypto_rsa_free(rsa_key);
+    return ret;
 }
 #endif
