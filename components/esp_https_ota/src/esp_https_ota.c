@@ -697,6 +697,16 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             }
             esp_ota_set_final_partition(handle->update_handle, handle->partition.final, handle->partition.finalize_with_copy);
             handle->state = ESP_HTTPS_OTA_IN_PROGRESS;
+
+            /**
+             * If the final partition is not an app or bootloader, return ESP_ERR_HTTPS_OTA_IN_PROGRESS
+             * As there is no need to read header and verify chip id and chip revision for custom partition.
+             * Directly jump to the OTA in progress state.
+             */
+            if (handle->partition.final->type != ESP_PARTITION_TYPE_APP
+                && handle->partition.final->type != ESP_PARTITION_TYPE_BOOTLOADER) {
+                return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
+            }
             /* In case `esp_https_ota_get_img_desc` was invoked first,
                then the image data read there should be written to OTA partition
                */
