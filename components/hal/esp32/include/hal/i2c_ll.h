@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -873,6 +873,18 @@ __attribute__((always_inline))
 static inline i2c_slave_read_write_status_t i2c_ll_slave_get_read_write_status(i2c_dev_t *hw)
 {
     return (hw->status_reg.slave_rw == 0) ? I2C_SLAVE_WRITE_BY_MASTER : I2C_SLAVE_READ_BY_MASTER;
+}
+
+/**
+ * @brief Check whether the slave is waiting for ACK
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @return true if this slave is waiting for ACK, false otherwise
+ */
+__attribute__((always_inline))
+static inline bool i2c_ll_slave_wait_ack(i2c_dev_t *hw)
+{
+    return hw->status_reg.scl_main_state_last == 6;
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
