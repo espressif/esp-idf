@@ -1055,6 +1055,6 @@ function(idf_component_include name)
     idf_build_get_property(compile_definitions COMPILE_DEFINITIONS GENERATOR_EXPRESSION)
     target_compile_definitions("${component_real_target}" PRIVATE "${compile_definitions}")
 
-    __get_compile_options(OUTPUT compile_options)
+    idf_build_get_compile_options(compile_options)
     target_compile_options("${component_real_target}" BEFORE PRIVATE "${compile_options}")
 endfunction()

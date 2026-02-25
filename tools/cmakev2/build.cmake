@@ -597,6 +597,8 @@ function(idf_build_executable executable)
     if(ARG_MAPFILE_TARGET AND "${linker_type}" STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${ARG_NAME}.map")
         target_link_options(${executable} PRIVATE "LINKER:--Map=${mapfile}")
+        # Add cross-reference table to the map file
+        target_link_options(${executable} PRIVATE "LINKER:--cref")
         add_custom_command(
             OUTPUT "${mapfile}"
             DEPENDS ${executable}

@@ -7,6 +7,8 @@ Build System v2
 
 ESP-IDF CMake-based build system v2, referred to in this documentation simply as v2 or build system, is a successor to the original CMake-based :doc:`/api-guides/build-system`, referred to as v1. The v2 addresses limitations introduced in the previous version while trying to maintain backward compatibility for components written for v1. The most significant changes include the ability to use Kconfig variables to specify component dependencies, the removal of early component evaluation using CMake script mode, and support for writing components using the native CMake approach. While v2 aims to be as backward compatible with v1 as possible, meaning most components written for v1 should work without modification with v2, there are design differences between v1 and v2 that may require changes in v1 components to work with v2. The incompatibilities are described in :ref:`cmakev2-breaking-changes`.
 
+Example applications for Build System v2 are described in the :idf_file:`Build System v2 examples README <examples/build_system/cmakev2/README.md>`.
+
 Creating a New Project
 ======================
 

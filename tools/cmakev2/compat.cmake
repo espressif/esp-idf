@@ -427,7 +427,7 @@ function(idf_component_register)
     idf_build_get_property(compile_definitions COMPILE_DEFINITIONS GENERATOR_EXPRESSION)
     add_compile_definitions("${compile_definitions}")
 
-    __get_compile_options(OUTPUT compile_options)
+    idf_build_get_compile_options(compile_options)
     add_compile_options("${compile_options}")
 
     idf_build_get_property(common_component_interfaces __COMMON_COMPONENT_INTERFACES)
