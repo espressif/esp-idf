@@ -17,6 +17,9 @@
     # Since the version 3.21 CMake passes source files and include dirs to ninja using absolute paths.
     # Needed for pytest junit reports.
     INSTALL_EXTRA_TOOLS: cmake
+    # Suppress Python warning messages during CI builds to keep logs clean and focused on errors.
+    # This prevents non-critical warnings (e.g., deprecation or resource warnings) from cluttering output.
+    PYTHONWARNINGS: "ignore"
   needs:
     - pipeline: $PARENT_PIPELINE_ID
       job: generate_build_child_pipeline
