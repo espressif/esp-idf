@@ -683,6 +683,9 @@ blecent_on_sync(void)
     /* Make sure we have set Host feature bit for Channel Sounding*/
     int rc;
     rc = ble_gap_set_host_feat(47,0x01);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error setting host feature; rc=%d\n", rc);
+    }
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);

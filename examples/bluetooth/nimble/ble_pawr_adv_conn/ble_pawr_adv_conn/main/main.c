@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,6 +9,7 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/util/util.h"
 
 #define BLE_PAWR_EVENT_PERIODIC_INTERVAL_MS   (3000)
 #define BLE_PAWR_NUM_SUBEVTS                  (10)
@@ -23,6 +24,7 @@
 static struct ble_gap_set_periodic_adv_subev_data_params sub_data_params[BLE_PAWR_NUM_SUBEVTS];
 static uint8_t sub_data_pattern[BLE_PAWR_SUB_DATA_LEN] = {0};
 static uint8_t conn;
+static uint8_t own_addr_type;
 static struct ble_gap_conn_desc desc;
 char *
 addr_str(const void *addr)
@@ -148,7 +150,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             ESP_LOGI(TAG, "data: 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x",
                     data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
 
-            peer_addr.type=0;
+            peer_addr.type = event->periodic_adv_response.data[8];
             memcpy(peer_addr.val,&event->periodic_adv_response.data[2],6);
 
             adv_handle = event->periodic_adv_response.adv_handle;
@@ -156,7 +158,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             phy_mask = 0x01;
 
             if (conn == 0) {
-                rc = ble_gap_connect_with_synced(0,adv_handle,subevent,&peer_addr,30000,phy_mask,NULL,NULL,NULL,gap_event_cb,NULL);
+                rc = ble_gap_connect_with_synced(own_addr_type,adv_handle,subevent,&peer_addr,30000,phy_mask,NULL,NULL,NULL,gap_event_cb,NULL);
                 if (rc != 0 ) {
                     ESP_LOGI(TAG,"Error: Failed to connect to device , rc = %d\n",rc);
                 }else {
@@ -179,7 +181,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
 }
 
 static void
-start_periodic_adv(void)
+start_periodic_adv(uint8_t own_addr_type)
 {
     int rc;
     uint8_t addr[6];
@@ -190,12 +192,13 @@ start_periodic_adv(void)
     uint8_t instance = 0;
 
 #if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
-    struct ble_gap_periodic_adv_enable_params eparams;
+    struct ble_gap_periodic_adv_start_params eparams;
     memset(&eparams, 0, sizeof(eparams));
 #endif
 
-    /* Get the local public address. */
-    rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, addr, NULL);
+    /* Get the local address. */
+    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
     assert (rc == 0);
 
     ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],
@@ -203,7 +206,7 @@ start_periodic_adv(void)
 
     /* For periodic we use instance with non-connectable advertising */
     memset (&params, 0, sizeof(params));
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
@@ -267,8 +270,17 @@ on_reset(int reason)
 static void
 on_sync(void)
 {
+    int rc;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
     /* Begin advertising. */
-    start_periodic_adv();
+    start_periodic_adv(own_addr_type);
 }
 
 void pawr_host_task(void *param)
