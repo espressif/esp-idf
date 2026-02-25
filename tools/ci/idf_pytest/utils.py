@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -30,8 +30,8 @@ def merge_junit_files(junit_files: t.List[str], target_path: str) -> None:
     testcases: t.Dict[str, ET.Element] = {}
     for junit in junit_files:
         logging.info(f'Merging {junit} to {target_path}')
-        tree: ET.ElementTree = ET.parse(junit)
-        testsuite: ET.Element = tree.getroot()
+        tree: ET.ElementTree = ET.parse(junit)  # type: ignore
+        testsuite: ET.Element = tree.getroot()  # type: ignore
 
         for testcase in testsuite.findall('testcase'):
             name: str = testcase.get('name') if testcase.get('name') else ''  # type: ignore
@@ -62,10 +62,6 @@ def merge_junit_files(junit_files: t.List[str], target_path: str) -> None:
         fw.write(ET.tostring(merged_testsuite))
 
 
-def comma_sep_str_to_list(s: str) -> t.List[str]:
-    return [s.strip() for s in s.split(',') if s.strip()]
-
-
 def normalize_testcase_file_path(file: str, app_path: t.Union[str, tuple]) -> str:
     """
     Normalize file paths to a consistent format, resolving relative paths based on the `app_path`.
@@ -82,9 +78,7 @@ def normalize_testcase_file_path(file: str, app_path: t.Union[str, tuple]) -> st
     def normalize_path(file_path: str, app_path: str) -> str:
         """Helper function to normalize a single path."""
         if not os.path.isabs(file_path):
-            resolved_path = os.path.normpath(
-                os.path.join(app_path, file_path.removeprefix('./').removeprefix('../'))
-            )
+            resolved_path = os.path.normpath(os.path.join(app_path, file_path.removeprefix('./').removeprefix('../')))
         else:
             resolved_path = os.path.normpath(file_path)
 

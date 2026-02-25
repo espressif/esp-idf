@@ -1,32 +1,8 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
-
-CONFIGS = [
-    pytest.param(
-        'default',
-        marks=[
-            pytest.mark.supported_targets,
-        ],
-    ),
-    pytest.param('freertos_options', marks=[pytest.mark.supported_targets]),
-    pytest.param('psram', marks=[pytest.mark.esp32, pytest.mark.esp32s3, pytest.mark.esp32p4, pytest.mark.esp32c5]),
-    pytest.param('single_core', marks=[pytest.mark.esp32, pytest.mark.esp32p4]),
-    # TODO: [ESP32C5] IDF-10335
-    # TODO: [ESP32C61] IDF-11146
-    pytest.param(
-        'smp',
-        marks=[
-            pytest.mark.supported_targets,
-            pytest.mark.temp_skip_ci(
-                targets=['esp32p4', 'esp32c5', 'esp32c61', 'esp32h21'], reason='test failed/TBD IDF-8113'
-            ),
-        ],
-    ),
-    pytest.param('tickless_idle', marks=[pytest.mark.supported_targets]),
-]
 
 
 @pytest.mark.generic

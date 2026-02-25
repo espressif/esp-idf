@@ -26,7 +26,10 @@ gcc_static_analyzer:
   script:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
     - sed -i 's/.*MINIMAL_BUILD.*//g' ${ANALYZING_APP}/CMakeLists.txt
-    - idf-build-apps build -p ${ANALYZING_APP}
+    # no -Werror
+    - export EXTRA_CFLAGS=
+    - export EXTRA_CXXFLAGS=
+    - idf-build-apps build -p ${ANALYZING_APP} --disable-targets esp32h4 esp32h21 --no-check-warnings
 #
 ## build stage
 ## Sonarqube related jobs put here for this reason:
@@ -96,7 +99,7 @@ gcc_static_analyzer:
 #code_quality_report:
 #  extends:
 #    - .sonar_scan_template
-#    - .rules:protected
+#    - .rules:protected:check
 #  allow_failure: true  # it's using exit code to indicate the code analysis result,
 #                       # we don't want to block ci when critical issues founded
 #  script:

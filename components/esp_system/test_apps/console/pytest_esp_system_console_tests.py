@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pexpect
 import pytest
@@ -13,17 +13,6 @@ def not_expect(dut: Dut, output_regex: str) -> None:
         pass
     else:
         raise RuntimeError(f'Found not_expect output {output_regex}')
-
-
-JTAG_SERIAL_MARKS = [
-    pytest.mark.esp32s3,
-    pytest.mark.esp32c2,
-    pytest.mark.esp32c3,
-    pytest.mark.esp32c5,
-    pytest.mark.esp32c6,
-    pytest.mark.esp32c61,
-    pytest.mark.esp32h2,
-]
 
 
 @pytest.mark.generic

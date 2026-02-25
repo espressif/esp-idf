@@ -2,18 +2,20 @@
   extends: .rules:test:host_test
   stage: host_test
   image: $ESP_ENV_IMAGE
-  tags:
-    - host_test
+  tags: [build, shiny]
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
+    - pipeline_variables
     - job: upload-pip-cache
       optional: true
       artifacts: false
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - pipeline_variables
+    - job: fast_template_app
+      optional: true
+      artifacts: false
   artifacts:
     expire_in: 1 week
     when: always
@@ -53,14 +55,15 @@ test_partition_table_on_host:
   extends: .host_test_template
   script:
     - cd components/partition_table/test_gen_esp32part_host
-    - ./gen_esp32part_tests.py
+    - pytest_for_ut ./gen_esp32part_tests.py
 
 test_ldgen_on_host:
-  extends: .host_test_template
+  extends:
+  - .host_test_template
   script:
     - cd tools/ldgen/test
     - export PYTHONPATH=$PYTHONPATH:..
-    - python -m unittest
+    - pytest_for_ut .
   variables:
     LC_ALL: C.UTF-8
 
@@ -68,15 +71,13 @@ test_spiffs_on_host:
   extends: .host_test_template
   script:
     - cd components/spiffs/test_spiffsgen/
-    - ./test_spiffsgen.py
+    - pytest_for_ut ./test_spiffsgen.py
 
 test_fatfsgen_on_host:
   extends: .host_test_template
   script:
     - cd components/fatfs/test_fatfsgen/
-    - ./test_fatfsgen.py
-    - ./test_wl_fatfsgen.py
-    - ./test_fatfsparse.py
+    - pytest_for_ut ./test_fatfsgen.py ./test_wl_fatfsgen.py ./test_fatfsparse.py
 
 test_multi_heap_on_host:
   extends: .host_test_template
@@ -88,7 +89,7 @@ test_certificate_bundle_on_host:
   extends: .host_test_template
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
-    - ./test_gen_crt_bundle.py
+    - pytest_for_ut ./test_gen_crt_bundle.py
 
 test_gdbstub_on_host:
   extends: .host_test_template
@@ -117,15 +118,17 @@ test_cli_installer:
     - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.16.3
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
+    # Testing with system python3, so don't use any third-party packages
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
     # It runs at the end because it modifies dependencies
     - IDF_TEST_MAY_BREAK_DEPENDENCIES=1 python3 ./test_idf_tools.py -v TestSystemDependencies.test_commands_when_nodeps
 
-.test_efuse_table_on_host_template:
+test_efuse_table_on_host:
   extends: .host_test_template
-  variables:
-    IDF_TARGET: "esp32"
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32c3, esp32s3, esp32c6, esp32h2]
   artifacts:
     when: on_failure
     paths:
@@ -135,35 +138,7 @@ test_cli_installer:
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
     - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run idf.py efuse-common-table and commit the changes.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
-    - ./efuse_tests.py
-
-test_efuse_table_on_host_esp32:
-  extends: .test_efuse_table_on_host_template
-
-test_efuse_table_on_host_esp32s2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s2
-
-test_efuse_table_on_host_esp32s3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s3
-
-test_efuse_table_on_host_esp32c3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32c3
-
-test_efuse_table_on_host_esp32h2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32h2
-
-test_efuse_table_on_host_esp32c6:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32c6
+    - pytest_for_ut ./efuse_tests.py
 
 test_logtrace_proc:
   extends: .host_test_template
@@ -201,20 +176,21 @@ test_tools:
     INSTALL_EXTRA_TOOLS: "qemu-xtensa qemu-riscv32"  # for test_idf_qemu.py
   script:
     - stat=0
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
-    - pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml                  || stat=1
+    - run_cmd pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_py
-    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
-    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
-    - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
+    - run_cmd pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml  --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_bsasm
-    - pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml                     || stat=1
+    - run_cmd pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
-    - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
+    - run_cmd pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_size
-    - pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml                  || stat=1
+    - run_cmd pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_diag
-    - pytest --noconftest test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml                  || stat=1
+    - run_cmd pytest --noconftest test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
     - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
@@ -229,12 +205,15 @@ test_split_path_by_spaces:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/tools
-    - python -m unittest split_paths_by_spaces.py
+    - pytest_for_ut ./split_paths_by_spaces.py
 
 test_mqtt_on_host:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/components/mqtt/esp-mqtt/host_test
+    # no -Werror
+    - export EXTRA_CFLAGS=
+    - export EXTRA_CXXFLAGS=
     - idf.py build
     - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
 
@@ -275,126 +254,13 @@ test_gen_soc_caps_kconfig:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/tools/gen_soc_caps_kconfig/
-    - ./test/test_gen_soc_caps_kconfig.py
-
-test_pytest_qemu:
-  extends:
-    - .host_test_template
-    - .before_script:build
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - pytest-embedded/
-      - "**/build*/*.bin"
-    reports:
-      junit: XUNIT_RESULT.xml
-  parallel:
-    matrix:
-      - IDF_TARGET: "esp32"
-        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
-        # Skip Clang + Xtensa tests due to bootloader size issue
-        IDF_TOOLCHAIN: [gcc]
-      - IDF_TARGET: "esp32c3"
-        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
-        IDF_TOOLCHAIN: [gcc, clang]
-  script:
-    - run_cmd python tools/ci/ci_build_apps.py . -v
-      --target $IDF_TARGET
-      --pytest-apps
-      -m qemu
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
-    - run_cmd pytest
-      --target $IDF_TARGET
-      --log-cli-level DEBUG
-      -m qemu
-      --embedded-services idf,qemu
-      --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --app-info-filepattern \"list_job_*.txt\"
-      --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
-
-test_pytest_linux:
-  extends:
-    - .host_test_template
-    - .before_script:build
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - pytest-embedded/
-      - "**/build*/build_log.txt"
-    reports:
-      junit: XUNIT_RESULT.xml
-  script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
-      --target linux
-      --pytest-apps
-      -m host_test
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
-    - run_cmd pytest
-      --target linux
-      -m host_test
-      --embedded-services idf
-      --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --app-info-filepattern \"list_job_*.txt\"
-
-test_pytest_macos:
-  extends:
-    - .host_test_template
-    - .before_script:build:macos
-  tags:
-    - macos_shell
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - pytest-embedded/
-      - "**/build*/build_log.txt"
-    reports:
-      junit: XUNIT_RESULT.xml
-  variables:
-    PYENV_VERSION: "3.9"
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
-  script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
-      --target linux
-      --pytest-apps
-      -m \"host_test and macos_shell\"
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
-    - run_cmd pytest
-      --target linux
-      -m \"host_test and macos_shell\"
-      --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --app-info-filepattern \"list_job_*.txt\"
-
-test_idf_pytest_plugin:
-  extends:
-    - .host_test_template
-    - .rules:patterns:idf-pytest-plugin
-  variables:
-    SUBMODULES_TO_FETCH: "none"
-  artifacts:
-    reports:
-      junit: XUNIT_RESULT.xml
-  script:
-    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests/test_report_generator
-    - python -m unittest test_report_generator.py
-    - cd ${IDF_PATH}/tools/ci/idf_pytest
-    - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+    - pytest_for_ut ./test/test_gen_soc_caps_kconfig.py
 
 test_idf_build_apps_load_soc_caps:
   extends: .host_test_template
   script:
-    - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
+    - cd tools/ci
+    - pytest_for_ut ./check_soc_headers_load_in_idf_build_apps.py
 
 test_nvs_gen_check:
   extends: .host_test_template
@@ -408,7 +274,7 @@ test_nvs_gen_check:
     LC_ALL: C.UTF-8
   script:
     - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
-    - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+    - pytest_for_ut test_nvs_gen_check.py
 
 test_esp_rom:
   extends: .host_test_template
@@ -419,7 +285,7 @@ test_esp_rom:
       junit: XUNIT_RESULT.xml
   script:
     - cd ${IDF_PATH}/components/esp_rom/
-    - pytest --noconftest test_esp_rom.py --junitxml=XUNIT_RESULT.xml
+    - pytest_for_ut test_esp_rom.py
 
 make_sure_soc_caps_compatible_in_idf_build_apps:
     extends:
@@ -438,3 +304,152 @@ make_sure_soc_caps_compatible_in_idf_build_apps:
       - git checkout $CI_COMMIT_SHA -- tools/ci/idf_build_apps_dump_soc_caps.py
       - python tools/ci/idf_build_apps_dump_soc_caps.py base.json
       - diff new.json base.json
+
+build_docker:
+  extends:
+    - .before_script:minimal
+    - .rules:build:docker
+  stage: host_test
+  needs: []
+  image: espressif/docker-builder:1
+  tags: [shiny, dind]
+  variables:
+    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
+  script:
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 --build-arg IDF_GITHUB_ASSETS=${INTERNAL_GITHUB_ASSETS}"
+    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
+    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
+    # Therefore, build a copy of the example located inside the container.
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
+
+############################
+# Host test with test apps #
+############################
+test_pytest_qemu:
+  extends:
+    - .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest-embedded/
+      - "**/build*/*.bin"
+    reports:
+      junit: XUNIT_RESULT.xml
+  parallel:
+    matrix:
+      - IDF_TARGET: "esp32"
+        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
+        # Skip Clang + Xtensa tests due to bootloader size issue
+        IDF_TOOLCHAIN: [gcc]
+      - IDF_TARGET: "esp32c3"
+        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
+        IDF_TOOLCHAIN: [gcc, clang]
+  script:
+    - run_cmd idf-ci build run
+      --build-system cmake
+      --target $IDF_TARGET
+      -m qemu
+      --modified-files ${MR_MODIFIED_FILES}
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - run_cmd pytest
+      --target $IDF_TARGET
+      -m qemu
+      --embedded-services idf,qemu
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
+
+test_pytest_linux:
+  extends:
+    - .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest-embedded/
+      - "**/build*/build_log.txt"
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - run_cmd idf-ci build run
+      --build-system cmake
+      -p components -p examples -p tools/test_apps
+      --target linux
+      --only-test-related
+      --modified-files ${MR_MODIFIED_FILES}
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - run_cmd pytest
+      --target linux
+      --embedded-services idf
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+test_pytest_macos:
+  extends:
+    - .host_test_template
+    - .brew-macos-settings
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest-embedded/
+      - "**/build*/build_log.txt"
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - run_cmd idf-ci build run
+      -p components -p examples -p tools/test_apps
+      --build-system cmake
+      --target linux
+      --only-test-related
+      -m macos
+      --modified-files ${MR_MODIFIED_FILES}
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - run_cmd pytest
+      --target linux
+      -m macos
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+######################
+# Build System Tests #
+######################
+.test_build_system_template:
+  stage: host_test
+  extends:
+    - .build_template
+    - .rules:build:check
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT.xml
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 1 week
+    when: always
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+pytest_build_system:
+  extends: .test_build_system_template
+  parallel: 3
+
+pytest_build_system_macos:
+  extends:
+    - .test_build_system_template
+    - .brew-macos-settings
+    - .rules:build:macos
+  parallel: 3

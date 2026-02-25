@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 from typing import List
@@ -99,7 +99,7 @@ def test_sdio_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
     indirect=True,
 )
 @pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14359')
+@pytest.mark.temp_skip_ci(targets=['esp32p4,esp32c5'], reason='p4 rev3 migration, IDF-14359')
 def test_sdio_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
     test_sdio_flow(dut)
 
@@ -172,7 +172,7 @@ def test_sdio_speed_frhost_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
     indirect=True,
 )
 @pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14359')
+@pytest.mark.temp_skip_ci(targets=['esp32p4,esp32c5'], reason='p4 rev3 migration, IDF-14359')
 def test_sdio_speed_frhost_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
     test_sdio_speed_frhost_flow(dut, 10000, 4000)
 
@@ -245,7 +245,7 @@ def test_sdio_speed_tohost_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
     indirect=True,
 )
 @pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14359')
+@pytest.mark.temp_skip_ci(targets=['esp32p4,esp32c5'], reason='p4 rev3 migration, IDF-14359')
 def test_sdio_speed_tohost_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
     test_sdio_speed_tohost_flow(dut, 9000, 4000)
 

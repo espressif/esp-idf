@@ -128,6 +128,14 @@ class GitlabYmlConfig:
 
         # expanding "include"
         for item in root_yml.pop('include', []) or []:
+            if isinstance(item, dict):
+                if 'project' in item:
+                    continue
+                elif 'local' in item:
+                    item = item['local']
+                else:
+                    continue
+
             all_config.update(yaml.load(open(os.path.join(IDF_PATH, item)), Loader=yaml.FullLoader))
 
         if 'default' in all_config:
