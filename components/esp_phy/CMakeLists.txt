@@ -10,6 +10,8 @@ if(IDF_TARGET STREQUAL "esp32p4")
     return()
 endif()
 
+set(embed_files)
+
 if(CONFIG_ESP_PHY_ENABLED)
 
     set(srcs "src/phy_override.c" "src/lib_printf.c" "src/phy_common.c")
