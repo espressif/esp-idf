@@ -449,22 +449,20 @@ Dependency-driven build rules are defined in per-folder manifest files (``.build
         - esp_eth
         - esp_netif
 
-
 We also have a set of common components (defined as ``common_components`` in :idf_file:`.idf_build_apps.toml`). ``common_components`` is a list of baseline (core) components that are used by many apps. In general, if one of these components changes, you usually want to rebuild and retest the apps that depend on it.
 
 The app maintainer should decide which components are important for their app. If the app should depend on a ``common_components``, add it to ``depends_components``. If not, specify only the important components.
 
 If ``depends_components`` is not specified, we use the calculated components (``project_description.json``) and check whether the app is affected by the changed components.
 
-Deprecated (prefer using ``depends_components`` / ``common_components`` instead):
-``deactivate_dependency_driven_build_by_components`` disables the dependency-driven checks if certain components change.
+Deprecated (prefer using ``depends_components`` and ``common_components`` instead): ``deactivate_dependency_driven_build_by_components`` disables the dependency-driven checks if certain components change.
 
 Target Test Jobs
 ----------------
 
 In CI, all generated target test jobs are named according to the pattern "<targets> - <env_markers>". For example, single-dut test job ``esp32 - generic``, or multi-dut test job ``esp32,esp32 - multi_dut_generic``.
 
-The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like jtag test cases, .elf files are also downloaded.
+The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like JTAG test cases, .elf files are also downloaded.
 
 .. _run_the_tests_locally:
 

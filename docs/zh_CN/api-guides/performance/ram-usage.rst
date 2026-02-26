@@ -193,6 +193,7 @@ IRAM 优化
     :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
     - 禁用 :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM`。若在缓存禁用的情况下，运行中的中断服务程序（即 IRAM ISR）没有使用 libc 锁 API，那么禁用该配置可以节省 IRAM 空间。
     :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - 禁用 :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 可以节省大约 1000 字节的 IRAM，但会降低性能。
+    :SOC_SPIRAM_SUPPORTED: - 启用 :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM`，强制 ``esp_event`` 将事件循环相关的内存分配放在外部 RAM 而不是内部 RAM 中。
 
 .. only:: esp32
 
