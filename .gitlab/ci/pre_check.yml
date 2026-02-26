@@ -140,6 +140,21 @@ check_submodule_sync:
     - git submodule update --recursive
     - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
 
+
+snapshot_known_failure_cases:
+  extends:
+    - .pre_check_template
+  script:
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - mkdir -p artifacts
+    - mv ${KNOWN_FAILURE_CASES_FILE_NAME} artifacts/${KNOWN_FAILURE_CASES_FILE_NAME}.freeze
+  artifacts:
+    paths:
+      - artifacts/${KNOWN_FAILURE_CASES_FILE_NAME}.freeze
+    expire_in: 1 week
+    when: always
+
+
 pipeline_variables:
   extends:
     - .pre_check_template
