@@ -41,6 +41,7 @@ typedef struct {
         unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
         unsigned int lsb_first: 1;       /*!< Transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */
+        unsigned int psram_mode: 1;      /*!< Enable direct transmissions from the PSRAM */
     } flags;                            /*!< Extra flags to fine-tune the SPI device */
 } esp_lcd_panel_io_spi_config_t;
 
