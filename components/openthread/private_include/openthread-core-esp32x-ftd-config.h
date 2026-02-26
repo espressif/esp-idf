@@ -879,6 +879,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+ *
+ * Additional time for CSL receiver to remain in rx active after SFD has been received, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER 0
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT
  *
  * Define as 1 to enable support for locally initializing an Active Operational Dataset.
