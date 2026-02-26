@@ -10,7 +10,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @pytest.mark.parametrize(
     'config',
     [
-        'cache_safe',
         'release',
     ],
     indirect=True,
@@ -19,19 +18,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     'target', soc_filtered_targets('SOC_GPTIMER_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
 )
 def test_gptimer(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
-
-
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        'cache_safe',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_gptimer_esp32c5(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
@@ -46,6 +32,19 @@ def test_gptimer_esp32c5(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
 def test_gptimer_esp32c5_eco3(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'cache_safe',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', soc_filtered_targets('SOC_GPTIMER_SUPPORTED == 1'), indirect=['target'])
+def test_gptimer_cache_safe(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
