@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
