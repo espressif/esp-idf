@@ -22,7 +22,9 @@
  * to avoid small performance penalties (if they are not zero).  */
 #define UNALIGNED_X(X) ((long)X & (sizeof (long) - 1))
 
+#ifndef _HAVE_HW_MISALIGNED_ACCESS
 #define _HAVE_HW_MISALIGNED_ACCESS (__riscv_misaligned_fast || __riscv_misaligned_slow)
+#endif
 
 #if _HAVE_HW_MISALIGNED_ACCESS
 /* Hardware performs unaligned operations with little

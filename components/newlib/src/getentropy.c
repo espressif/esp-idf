@@ -6,6 +6,7 @@
 
 #include <sys/random.h>
 #include <errno.h>
+#include <stddef.h>
 
 int getentropy(void *buffer, size_t length)
 {

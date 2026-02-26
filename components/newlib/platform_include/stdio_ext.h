@@ -9,6 +9,8 @@
 
 #if CONFIG_LIBC_NEWLIB
 #include_next <stdio_ext.h>
-#else
+#endif
+
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
 #include <stdio-bufio.h>
 #endif

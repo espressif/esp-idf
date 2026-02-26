@@ -9,6 +9,7 @@
 #include "esp_system.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_utils.h"
+#include "sdkconfig.h"
 
 #define ASSERT_STR              "assert failed: "
 #define CACHE_DISABLED_STR      "<cached disabled>"
@@ -39,7 +40,7 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
     esp_system_abort(buff);
 #else
     char addr[11] = { 0 };
-    char buff[200];
+    char buff[CONFIG_LIBC_ASSERT_BUFFER_SIZE];
     char lbuf[5];
     uint32_t rem_len = sizeof(buff) - 1;
     uint32_t off = 0;

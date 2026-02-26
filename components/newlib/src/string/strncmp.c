@@ -7,9 +7,8 @@
  */
 #include <string.h>
 #include <limits.h>
-#include "local.h"
+#include "string/local.h"
 
-__attribute__((optimize("-Os")))
 int
 strncmp(const char *s1,
         const char *s2,

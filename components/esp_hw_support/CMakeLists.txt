@@ -198,13 +198,8 @@ if(CONFIG_IDF_TARGET_ESP32H4)
     )
 endif()
 
-
-if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        idf_build_set_property(COMPILE_OPTIONS "-march=rv32imafc_zicsr_zifencei_xesppie" APPEND)
-    endif()
-elseif(CONFIG_IDF_TARGET_ESP32P4)
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang") # TODO: LLVM-478
+if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND CONFIG_IDF_TARGET_ESP32P4)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang") # TODO: LLVM-478 IDF-14338
         message(FATAL_ERROR "ESP32-P4 rev. 3.0 or higher is not supported in Clang-based toolchain")
     endif()
 endif()

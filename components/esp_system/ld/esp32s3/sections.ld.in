@@ -399,12 +399,24 @@ SECTIONS
 
     /* TLS data. */
     ALIGNED_SYMBOL(4, _thread_local_start)
+#if CONFIG_LIBC_PICOLIBC
+    _picolibc_reent_stub_start = ABSOLUTE(.);
+    KEEP(*(.tdata.errno))
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    /* Reproduce the public fields from struct _reent. */
+    KEEP(*(.tdata.tls_stdin))
+    KEEP(*(.tdata.tls_stdout))
+    KEEP(*(.tdata.tls_stderr))
+#endif // CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    _picolibc_reent_stub_end = ABSOLUTE(.);
+#endif // CONFIG_LIBC_PICOLIBC
     *(.tdata)
     *(.tdata.*)
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
   } > default_rodata_seg
+  ASSERT_PICOLIBC_REENT_STUB()
 
   _flash_rodata_align = ALIGNOF(.flash.rodata);
 

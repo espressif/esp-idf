@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
@@ -16,50 +16,61 @@ UTIL = os.path.basename(__file__)
 def name_mangling(name: str) -> str:
     # Simple and dumb name mangling for namespaced name following GCC algorithm
     ns, n = name.split('::')
-    return '_ZN{0}{1}{2}{3}E'.format(len(ns), ns, len(n), n)
+    return f'_ZN{len(ns)}{ns}{len(n)}{n}E'
 
 
-def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.TextIO, base_addr: int, prefix: str) -> None:
-    f_ld.write(textwrap.dedent(
-        f"""
+def gen_ld_h_from_sym(
+    f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.TextIO, base_addr: int, prefix: str
+) -> None:
+    f_ld.write(
+        textwrap.dedent(
+            f"""
         /* ULP variable definitions for the linker.
          * This file is generated automatically by {UTIL} utility.
          */
         """  # noqa: E222
-    ))
+        )
+    )
     cpp_mode = False
     var_prefix = prefix
     namespace = ''
     if '::' in prefix:
         # C++ mode, let's avoid the extern "C" type and instead use namespace
-        f_h.write(textwrap.dedent(
-            f"""
+        f_h.write(
+            textwrap.dedent(
+                f"""
             /* ULP variable definitions for the compiler.
              * This file is generated automatically by {UTIL} utility.
              */
             #pragma once
             """  # noqa: E222
-        ))
+            )
+        )
         tmp = prefix.split('::')
         namespace = tmp[0]
         var_prefix = '_'.join(tmp[1:])  # Limit to a single namespace here to avoid complex mangling rules
         f_h.write(f'namespace {namespace} {{\n')
         cpp_mode = True
     else:
-        f_h.write(textwrap.dedent(
-            f"""
+        f_h.write(
+            textwrap.dedent(
+                f"""
             /* ULP variable definitions for the compiler.
              * This file is generated automatically by {UTIL} utility.
              */
             #pragma once
+            #include <stdint.h>
             #ifdef __cplusplus
             extern "C" {{
             #endif\n
             """  # noqa: E222
-        ))
+            )
+        )
 
     # Format the regular expression to match the readelf output
-    expr = re.compile(r'^.*(?P<address>[a-f0-9]{8})\s+(?P<size>\d+) (OBJECT|NOTYPE)\s+GLOBAL\s+DEFAULT\s+[^ ]+ (?P<name>.*)$')
+    expr = re.compile(
+        r'^.*(?P<address>[a-f0-9]{8})\s+(?P<size>\d+) (OBJECT|NOTYPE)\s+GLOBAL\s+DEFAULT\s+[^ ]+ (?P<name>.*)$'
+    )
     for line in f_sym:
         # readelf format output has the following structure:
         #   Num:    Value  Size Type    Bind   Vis      Ndx Name
@@ -90,23 +101,31 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
     if cpp_mode:
         f_h.write('}\n')
     else:
-        f_h.write(textwrap.dedent(
-            """
+        f_h.write(
+            textwrap.dedent(
+                """
             #ifdef __cplusplus
             }
             #endif
             """
-        ))
+            )
+        )
 
 
 def main() -> None:
-    description = ('This application generates .h and .ld files for symbols defined in input file. '
-                   'The input symbols file can be generated using readelf utility like this: '
-                   '<PREFIX>readelf -sW <elf_file> > <symbols_file>')
+    description = (
+        'This application generates .h and .ld files for symbols defined in input file. '
+        'The input symbols file can be generated using readelf utility like this: '
+        '<PREFIX>readelf -sW <elf_file> > <symbols_file>'
+    )
 
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=argparse.FileType('r'))
-    parser.add_argument('-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE')
+    parser.add_argument(
+        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=argparse.FileType('r')
+    )
+    parser.add_argument(
+        '-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE'
+    )
     parser.add_argument('--base-addr', required=True, help='base address of the ULP memory, to be added to each symbol')
     parser.add_argument('-p', '--prefix', required=False, help='prefix for generated header file', default='ulp_')
 

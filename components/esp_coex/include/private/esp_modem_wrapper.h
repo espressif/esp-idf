@@ -14,6 +14,7 @@ extern "C" {
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 bool esp_coex_common_env_is_chip_wrapper(void);
 

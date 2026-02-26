@@ -7,9 +7,8 @@
  */
 #include <string.h>
 #include <limits.h>
-#include "local.h"
+#include "string/local.h"
 
-__attribute__((optimize("-Os")))
 char *
 strncpy(char *__restrict dst0,
         const char *__restrict src0,
@@ -29,6 +28,7 @@ strncpy(char *__restrict dst0,
         sized copies.  */
         while (!TOO_SMALL_LITTLE_BLOCK(count) && !DETECT_NULL(*aligned_src)) {
             count -= sizeof(long int);
+            /* DIG-694: there are enough instructions between lw and sw after compiler unrolls the loop */
             *aligned_dst++ = *aligned_src++;
         }
 

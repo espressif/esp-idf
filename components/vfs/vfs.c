@@ -14,6 +14,7 @@
 #include <sys/unistd.h>
 #include <sys/lock.h>
 #include <sys/param.h>
+#include <sys/select.h>
 #include <dirent.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
