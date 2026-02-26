@@ -39,6 +39,8 @@
 #include "ble_mesh_fast_prov_server_model.h"
 #include "ble_mesh_example_init.h"
 
+#include "iperf_cmd.h"
+
 #define TAG "EXAMPLE"
 
 extern struct _led_state led_state[3];
@@ -772,6 +774,7 @@ static void wifi_console_init(void)
 
     /* Register commands */
     register_wifi();
+    iperf_cmd_register_iperf();
 
     printf("\n ==================================================\n");
     printf(" |       Steps to test WiFi throughput            |\n");
