@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1124,16 +1124,16 @@ int __wrap_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
                          const mbedtls_mpi *s,
                          mbedtls_ecdsa_restart_ctx *rs_ctx)
 {
-    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && blen == ECDSA_SHA_LEN && esp_efuse_is_ecdsa_p192_curve_supported()) ||
+    if (ecdsa_ll_is_supported() &&
+        ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && blen == ECDSA_SHA_LEN && esp_efuse_is_ecdsa_p192_curve_supported()) ||
         (grp->id == MBEDTLS_ECP_DP_SECP256R1 && blen == ECDSA_SHA_LEN && esp_efuse_is_ecdsa_p256_curve_supported())
 #if SOC_ECDSA_SUPPORT_CURVE_P384
         || (grp->id == MBEDTLS_ECP_DP_SECP384R1 && blen == ECDSA_SHA_LEN_P384)
 #endif
-    ) {
+    )) {
         return esp_ecdsa_verify(grp, buf, blen, Q, r, s);
-    } else {
-        return __real_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, rs_ctx);
     }
+    return __real_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, rs_ctx);
 }
 
 /*
