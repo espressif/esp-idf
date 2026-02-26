@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "freertos/queue.h"
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
+#include "esp_memory_utils.h"
 #include "esp_private/esp_cache_private.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
@@ -30,7 +31,11 @@
 #include "hal/ppa_hal.h"
 #include "hal/ppa_ll.h"
 #include "hal/ppa_types.h"
+#include "hal/color_hal.h"
+#include "hal/color_types.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_efuse.h"
+#include "soc/soc_caps.h"
 
 static const char *TAG = "ppa_core";
 
@@ -276,6 +281,10 @@ esp_err_t ppa_register_client(const ppa_client_config_t *config, ppa_client_hand
     client->oper_type = config->oper_type;
     client->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     client->data_burst_length = config->data_burst_length ? config->data_burst_length : PPA_DATA_BURST_LENGTH_128;
+    if (esp_efuse_is_flash_encryption_enabled() && (client->data_burst_length < SOC_MEMSPI_ENCRYPTION_ALIGNMENT)) {
+        ESP_LOGW(TAG, "flash encryption is enabled, but selected data burst length does not meet encryption alignment restriction if accessing external memory, will be automatically adjusted later on");
+    }
+
     if (config->oper_type == PPA_OPERATION_SRM) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_SRM,
@@ -526,4 +535,45 @@ esp_err_t ppa_set_rgb2gray_formula(uint8_t r_weight, uint8_t g_weight, uint8_t b
     ppa_ll_set_rgb2gray_coeff(s_platform.hal.dev, r_weight, g_weight, b_weight);
     _lock_release(&s_platform.mutex);
     return ESP_OK;
+}
+
+bool ppa_check_buffer_alignment(ppa_client_handle_t ppa_client, const void *pic_blk_config, bool is_input, uint32_t block_width)
+{
+    // 1. check with cache line size alignment (output buffer only)
+    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
+    if (!is_input) {
+        ppa_out_pic_blk_config_t *out_pic_blk_config = (ppa_out_pic_blk_config_t *)pic_blk_config;
+        if (((uint32_t)out_pic_blk_config->buffer & (buf_alignment_size - 1)) != 0 || (out_pic_blk_config->buffer_size & (buf_alignment_size - 1)) != 0) {
+            ESP_LOGE(TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
+            return false;
+        }
+    }
+
+    // 2. check with mspi encryption alignment
+    // When flash encryption is enabled, and in/out buffer are in PSRAM (if located in internal RAM, there is no alignment restriction due to encryption):
+    // - The width of the window multiply byte number of one pixel should align to SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    // - The starting address of every row of the window should align to SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    // (which also implies the address and size of the in/out buffer will align to SOC_MEMSPI_ENCRYPTION_ALIGNMENT)
+
+    // check pic_width, block_width, block_head
+    const void *buffer = (is_input) ? ((ppa_in_pic_blk_config_t *)pic_blk_config)->buffer : ((ppa_out_pic_blk_config_t *)pic_blk_config)->buffer;
+    if (esp_efuse_is_flash_encryption_enabled() && !esp_ptr_internal(buffer)) {
+        if (ppa_client->engine->type == PPA_ENGINE_TYPE_SRM) {
+            ESP_LOGE(TAG, "SRM processes by macro blocks, where alignment is uncontrollable, makes it unable to work with flash encrypted if buffer is in external memory");
+            return false;
+        }
+        uint32_t pic_width = (is_input) ? ((ppa_in_pic_blk_config_t *)pic_blk_config)->pic_w : ((ppa_out_pic_blk_config_t *)pic_blk_config)->pic_w;
+        uint32_t block_offset_x = (is_input) ? ((ppa_in_pic_blk_config_t *)pic_blk_config)->block_offset_x : ((ppa_out_pic_blk_config_t *)pic_blk_config)->block_offset_x;
+        esp_color_fourcc_t color_mode = (is_input) ? ((ppa_in_pic_blk_config_t *)pic_blk_config)->cm : ((ppa_out_pic_blk_config_t *)pic_blk_config)->cm;
+        uint32_t pixel_depth_bytes = color_hal_pixel_format_fourcc_get_bit_depth(color_mode) / 8;
+
+        if (((pic_width * pixel_depth_bytes) & (SOC_MEMSPI_ENCRYPTION_ALIGNMENT - 1)) != 0 ||
+                ((block_width * pixel_depth_bytes) & (SOC_MEMSPI_ENCRYPTION_ALIGNMENT - 1)) != 0 ||
+                ((block_offset_x * pixel_depth_bytes) & (SOC_MEMSPI_ENCRYPTION_ALIGNMENT - 1)) != 0) {
+            ESP_LOGE(TAG, "(pic_width/block_width/block_offset_x * pixel_depth_bytes) not aligned to SOC_MEMSPI_ENCRYPTION_ALIGNMENT");
+            return false;
+        }
+    }
+
+    return true;
 }

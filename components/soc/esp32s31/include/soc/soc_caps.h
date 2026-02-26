@@ -221,6 +221,8 @@
 
 #define SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT        1
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 // TODO: [ESP32S31] IDF-14693
 

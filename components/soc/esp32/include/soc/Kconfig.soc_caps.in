@@ -511,6 +511,10 @@ config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32

@@ -231,6 +231,8 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
 
 bool ppa_recycle_transaction(ppa_client_handle_t ppa_client, ppa_trans_t *trans_elm);
 
+bool ppa_check_buffer_alignment(ppa_client_handle_t ppa_client, const void *pic_blk_config, bool is_input, uint32_t block_width);
+
 /****************************** PPA DRIVER ***********************************/
 
 struct ppa_platform_t {

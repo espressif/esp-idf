@@ -178,9 +178,9 @@ TEST_CASE("MIPI DSI use DMA2D (EK79007)", "[mipi_dsi]")
 
     uint8_t *img = NULL;
     size_t buffer_alignment = 1;
-    // If flash encryption is enabled, the buffer address and size must be aligned to SOC_GDMA_EXT_MEM_ENC_ALIGNMENT.
+    // If flash encryption is enabled, the buffer address and size must be aligned to SOC_MEMSPI_ENCRYPTION_ALIGNMENT.
     if (esp_efuse_is_flash_encryption_enabled()) {
-        buffer_alignment = SOC_GDMA_EXT_MEM_ENC_ALIGNMENT;
+        buffer_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
     }
     img = heap_caps_aligned_calloc(buffer_alignment, 1, TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
 
@@ -249,12 +249,12 @@ TEST_CASE("MIPI DSI use DMA2D (EK79007)", "[mipi_dsi]")
     size_t start_alignment = 1;
     size_t src_x_start = 50;
     size_t src_y_start = 50;
-    // If flash encryption is enabled, the buffer address and size must be aligned to SOC_GDMA_EXT_MEM_ENC_ALIGNMENT.
+    // If flash encryption is enabled, the buffer address and size must be aligned to SOC_MEMSPI_ENCRYPTION_ALIGNMENT.
     if (esp_efuse_is_flash_encryption_enabled()) {
-        test_block_size = ALIGN_DOWN(test_block_size, SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
-        start_alignment = SOC_GDMA_EXT_MEM_ENC_ALIGNMENT;
-        src_x_start = ALIGN_DOWN(src_x_start, SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
-        src_y_start = ALIGN_DOWN(src_y_start, SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
+        test_block_size = ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        start_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+        src_x_start = ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_y_start = ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
     }
 
     printf("Add Built-in DMA2D draw bitmap hook\r\n");

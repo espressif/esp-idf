@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,6 +108,7 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
+        .access_ext_mem = true, // in most cases the buffers are located in external memory, will not bother checking the memory region of the buffers
         .data_burst_length = blend_trans_desc->data_burst_length,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
@@ -177,9 +178,6 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
-    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
-    ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     ESP_RETURN_ON_FALSE(ppa_ll_blend_is_color_mode_supported(config->in_bg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->in_fg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->out.blend_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
     // For YUV420 input/output: in desc, ha/hb/va/vb/x/y must be even number
     // For YUV422 input/output: in desc, ha/hb/x must be even number
@@ -223,6 +221,13 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     ESP_RETURN_ON_FALSE(config->in_fg.block_w <= (config->out.pic_w - config->out.block_offset_x) &&
                         config->in_fg.block_h <= (config->out.pic_h - config->out.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "block does not fit in the out pic");
+
+    if (!ppa_check_buffer_alignment(ppa_client, &config->in_bg, true, config->in_bg.block_w) ||
+            !ppa_check_buffer_alignment(ppa_client, &config->in_fg, true, config->in_fg.block_w) ||
+            !ppa_check_buffer_alignment(ppa_client, &config->out, false, config->in_fg.block_w)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (config->bg_byte_swap) {
         PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in_bg.blend", (uint32_t)config->in_bg.blend_cm);
     }
@@ -255,6 +260,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back in_bg_buffer, in_fg_buffer extended windows (alignment not necessary on C2M direction)
+    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     uint32_t in_bg_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->in_bg.blend_cm); // bits
     // Usually C2M can let the msync do alignment internally, however, it only do L1-cacheline-size alignment for L1->L2, and then L2-cacheline-size alignment for L2->mem
     // While M2C direction manual alignment is L2-cacheline-size alignment for mem->L2->L1

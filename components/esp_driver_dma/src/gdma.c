@@ -437,7 +437,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
 #if (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH) && SOC_AHB_GDMA_VERSION != 1
     // if MSPI encryption is enabled, and DMA wants to read/write external memory
     if (esp_efuse_is_flash_encryption_enabled() && config->access_ext_mem) {
-        uint32_t enc_mem_alignment = GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT);
+        uint32_t enc_mem_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
         // when DMA access the encrypted external memory, extra alignment is needed for external memory
         ext_mem_alignment = MAX(ext_mem_alignment, enc_mem_alignment);
         if (max_data_burst_size < enc_mem_alignment) {
