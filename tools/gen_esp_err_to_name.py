@@ -14,7 +14,7 @@ import textwrap
 from typing import Any
 from typing import TextIO
 
-# ignore files and dirs: Please use tools/esp_err_to_name_exceptions.txt to add exceptions
+# ignore files and dirs: Please use tools/ci/esp_err_to_name_exceptions.txt to add exceptions
 ignore_files: list = []
 ignore_dirs: list = []
 
@@ -322,7 +322,7 @@ def main() -> None:
         default=idf_path + '/components/esp_common/src/esp_err_to_name.c',
     )
     parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
-    parser.add_argument('--exceptions_file', default=idf_path + '/tools/esp_err_to_name_exceptions.txt')
+    parser.add_argument('--exceptions_file', default=idf_path + '/tools/ci/esp_err_to_name_exceptions.txt')
     args = parser.parse_args()
 
     include_as_pattern = re.compile(rf'\s*//\s*{os.path.basename(__file__)}: [^"]* "([^"]+)"')

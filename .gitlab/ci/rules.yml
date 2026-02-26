@@ -49,6 +49,7 @@
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
   - "tools/ci/ignore_build_warnings.txt"
+  - "tools/ci/esp_err_to_name_exceptions.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
   - "tools/ci/build_template_app.sh"
@@ -72,6 +73,7 @@
   - "tools/ci/check_public_headers.py"
   - "tools/ci/check_register_rw_half_word.cmake"
   - "tools/ci/check_register_rw_half_word.py"
+  - "components/esp_wifi/remote/scripts/generate_and_check.py"
   - "examples/build_system/**/*"
 
 .patterns-host_test_cli_installer: &patterns-host_test_cli_installer

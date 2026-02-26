@@ -29,6 +29,15 @@ check_api_usage:
     - tools/ci/check_api_violation.sh
     - tools/ci/check_examples_extra_component_dirs.sh
 
+check_wifi_remote_api:
+  extends:
+    - .pre_check_template
+    - .rules:build:check
+  script:
+    - cd components/esp_wifi/remote/scripts/
+    - python generate_and_check.py
+    - git diff --exit-code || { echo 'Differences found. Please run generate_and_check.py and commit the changes.'; exit 1; }
+
 check_blobs:
   extends:
     - .pre_check_template
