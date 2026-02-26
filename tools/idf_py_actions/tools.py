@@ -76,7 +76,7 @@ def executable_exists(args: list) -> bool:
         return False
 
 
-def _idf_version_from_cmake() -> str | None:
+def idf_version_from_cmake() -> str | None:
     """Acquires version of ESP-IDF from version.cmake"""
     version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
@@ -124,7 +124,7 @@ def idf_version() -> str | None:
     except Exception:
         # if failed, then try to parse cmake.version file
         sys.stderr.write('WARNING: Git version unavailable, reading from source\n')
-        version = _idf_version_from_cmake()
+        version = idf_version_from_cmake()
 
     return version
 
