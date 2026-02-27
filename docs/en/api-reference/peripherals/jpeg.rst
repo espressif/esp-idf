@@ -10,6 +10,8 @@ JPEG is a commonly used method of lossy compression for digital images, particul
 
 JPEG codec on {IDF_TARGET_NAME} is an image codec, which is based on the JPEG baseline standard, for compressing and decompressing images to reduce the bandwidth required to transmit images or the space required to store images, making it possible to process large-resolution images. But please note, at one time, the codec engine can only work as either encoder or decoder.
 
+For more hardware features of JPEG codec, please refer to the `JPEG codec <{IDF_TARGET_TRM_EN_URL}#jpegcodec>`__ section in {IDF_TARGET_NAME} Technical Reference Manual, for more details.
+
 Functional Overview
 -------------------
 
@@ -187,6 +189,7 @@ Below is the example of code that encodes a 1080*1920 picture:
         .image_quality = 80,
         .width = 1920,
         .height = 1080,
+        .pixel_reverse = false, // Whether to reverse the pixel order of the input image, or pixel order detail please refer to technical reference manual
     };
 
     uint8_t *raw_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p);

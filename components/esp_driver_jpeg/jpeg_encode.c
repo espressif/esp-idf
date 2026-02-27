@@ -40,6 +40,7 @@ static void s_cfg_desc(jpeg_encoder_handle_t encoder_engine, dma2d_descriptor_t 
 static void s_jpeg_enc_config_picture_color_space(jpeg_encoder_handle_t encoder_engine);
 static void s_jpeg_enc_select_sample_mode(jpeg_encoder_handle_t encoder_engine);
 static void s_encoder_error_log_print(uint32_t status);
+static esp_err_t jpeg_enc_validate_sub_sample(jpeg_enc_src_type_t color_space, jpeg_down_sampling_type_t sub_sample);
 
 static void jpeg_encoder_isr_handle_default(void *arg)
 {
@@ -70,6 +71,31 @@ static esp_err_t s_jpeg_set_header_info(jpeg_encoder_handle_t encoder_engine)
     ESP_RETURN_ON_ERROR(emit_dht_marker(encoder_engine->header_info), TAG, "marker emit failed");
     ESP_RETURN_ON_ERROR(emit_com_marker(encoder_engine->header_info), TAG, "marker emit failed");
     ESP_RETURN_ON_ERROR(emit_sos_marker(encoder_engine->header_info), TAG, "marker emit failed");
+    return ESP_OK;
+}
+
+static esp_err_t jpeg_enc_validate_sub_sample(jpeg_enc_src_type_t color_space, jpeg_down_sampling_type_t sub_sample)
+{
+    if (color_space == JPEG_ENC_SRC_GRAY) {
+        if (sub_sample != JPEG_DOWN_SAMPLING_GRAY) {
+            ESP_LOGE(TAG, "Detected GRAY but want to convert to other format, which is not supported");
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else if (sub_sample == JPEG_DOWN_SAMPLING_GRAY) {
+        ESP_LOGE(TAG, "Detected not GRAY but want to convert to GRAY, which is not supported");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (color_space == JPEG_ENC_SRC_YUV422) {
+        if (sub_sample == JPEG_DOWN_SAMPLING_YUV444) {
+            ESP_LOGE(TAG, "Detected YUV422 but want to convert to YUV444, which is not supported");
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else if (color_space == JPEG_ENC_SRC_YUV420 && sub_sample != JPEG_DOWN_SAMPLING_YUV420) {
+        ESP_LOGE(TAG, "Detected YUV420 but want to convert to YUV422/YUV444, which is not supported");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     return ESP_OK;
 }
 
@@ -148,9 +174,6 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     ESP_RETURN_ON_FALSE(encode_inbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg encode picture buffer is null");
     ESP_RETURN_ON_FALSE(out_size, ESP_ERR_INVALID_ARG, TAG, "jpeg encode picture out_size is null");
     ESP_RETURN_ON_FALSE(((uintptr_t)bit_stream % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg encode bit stream is not aligned, please use jpeg_alloc_encoder_mem to malloc your buffer");
-    if (encode_cfg->src_type == JPEG_ENCODE_IN_FORMAT_YUV422) {
-        ESP_RETURN_ON_FALSE(encode_cfg->sub_sample == JPEG_DOWN_SAMPLING_YUV422, ESP_ERR_INVALID_ARG, TAG, "Sub sampling is not supported under this source type");
-    }
 
     esp_err_t ret = ESP_OK;
 
@@ -204,6 +227,9 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
         ret = ESP_ERR_NOT_SUPPORTED;
         goto err2;
     }
+
+    ESP_GOTO_ON_ERROR(jpeg_enc_validate_sub_sample(encoder_engine->color_space, encode_cfg->sub_sample), err2, TAG, "format and subsampling check failed");
+
     encoder_engine->header_info->sub_sample = encode_cfg->sub_sample;
     encoder_engine->header_info->quality = encode_cfg->image_quality;
     encoder_engine->header_info->origin_h = encode_cfg->width;
@@ -214,7 +240,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     s_jpeg_enc_select_sample_mode(encoder_engine);
     jpeg_ll_set_picture_height(hal->dev, encoder_engine->header_info->origin_v);
     jpeg_ll_set_picture_width(hal->dev, encoder_engine->header_info->origin_h);
-    jpeg_ll_pixel_reverse(hal->dev, false);
+    jpeg_ll_pixel_reverse(hal->dev, encode_cfg->pixel_reverse);
     jpeg_ll_add_tail(hal->dev, true);
     jpeg_ll_enable_ff_check(hal->dev, true);
     jpeg_ll_set_qnr_presition(hal->dev, 0);

@@ -24,6 +24,7 @@ typedef struct {
     jpeg_enc_input_format_t src_type;       /*!< Source type of raw image to be encoded, see `jpeg_enc_src_type_t` */
     jpeg_down_sampling_type_t sub_sample;   /*!< JPEG subsampling method */
     uint32_t image_quality;                 /*!< JPEG compressing quality, value from 1-100, higher value means higher quality */
+    bool pixel_reverse;                     /*!< Whether to reverse the input pixel order, for detailed pixel order please refer to TRM */
 } jpeg_encode_cfg_t;
 
 /**
