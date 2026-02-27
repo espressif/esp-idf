@@ -166,6 +166,11 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
     UINT8       *p;
     UINT16      len = p_value_type->value_len;
 
+    if (payload_size < GATT_DEF_BLE_MTU_SIZE) {
+        // never build packet smaller than default MTU size
+        return NULL;
+    }
+
     if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 

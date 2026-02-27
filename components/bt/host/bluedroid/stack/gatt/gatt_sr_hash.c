@@ -56,6 +56,15 @@ static void attr_uuid_to_bt_uuid(void *p_attr, tBT_UUID *p_uuid)
     }
 }
 
+static UINT8 get_uuid_stream_len(tBT_UUID uuid)
+{
+    // gatt_build_uuid_to_stream always converts 32-bit UUID to 128-bit UUID
+    if (uuid.len == LEN_UUID_32) {
+        return LEN_UUID_128;
+    }
+    return uuid.len;
+}
+
 static size_t calculate_database_info_size(void)
 {
     UINT8 i;
@@ -71,17 +80,17 @@ static size_t calculate_database_info_size(void)
                 if (p_attr->uuid == GATT_UUID_PRI_SERVICE ||
                     p_attr->uuid == GATT_UUID_SEC_SERVICE) {
                     // Service declaration
-                    len += 4 + p_attr->p_value->uuid.len;
+                    len += 4 + get_uuid_stream_len(p_attr->p_value->uuid);
                 } else if (p_attr->uuid == GATT_UUID_INCLUDE_SERVICE) {
                     // Included service declaration
-                    len += 8 + p_attr->p_value->incl_handle.service_type.len;
+                    len += 8 + get_uuid_stream_len(p_attr->p_value->incl_handle.service_type);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
                     tBT_UUID char_uuid = {0};
                     // Characteristic declaration
                     p_attr = (tGATT_ATTR16 *)p_attr->p_next;
                     attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
                     // Increment 1 to fetch characteristic uuid from value declaration attribute
-                    len += 7 + char_uuid.len;
+                    len += 7 + get_uuid_stream_len(char_uuid);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DESCRIPTION ||
                     p_attr->uuid == GATT_UUID_CHAR_CLIENT_CONFIG ||
                     p_attr->uuid == GATT_UUID_CHAR_SRVR_CONFIG ||

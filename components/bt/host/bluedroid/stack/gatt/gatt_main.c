@@ -1174,27 +1174,25 @@ void gatt_init_srv_chg (void)
 #if (GATTS_INCLUDED == TRUE)
 void gatt_proc_srv_chg (void)
 {
-    UINT8               start_idx, found_idx;
-    BD_ADDR             bda;
     BOOLEAN             srv_chg_ind_pending = FALSE;
     tGATT_TCB           *p_tcb;
-    tBT_TRANSPORT      transport;
+    list_node_t *p_node = NULL;
 
     GATT_TRACE_DEBUG ("gatt_proc_srv_chg");
 
     if (gatt_cb.cb_info.p_srv_chg_callback && gatt_cb.handle_of_h_r) {
         gatt_set_srv_chg();
-        start_idx = 0;
-        while (gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
-            p_tcb = gatt_get_tcb_by_idx(found_idx);
-	    srv_chg_ind_pending  = gatt_is_srv_chg_ind_pending(p_tcb);
 
-            if (!srv_chg_ind_pending) {
-                gatt_send_srv_chg_ind(bda);
-            } else {
-                GATT_TRACE_DEBUG ("discard srv chg - already has one in the queue");
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
+                srv_chg_ind_pending  = gatt_is_srv_chg_ind_pending(p_tcb);
+                if (!srv_chg_ind_pending) {
+                    gatt_send_srv_chg_ind(p_tcb->peer_bda);
+                } else {
+                    GATT_TRACE_DEBUG ("discard srv chg - already has one in the queue");
+                }
             }
-            start_idx = ++found_idx;
         }
     }
 }

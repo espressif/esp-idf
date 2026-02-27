@@ -80,6 +80,8 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
         }
 
         osi_free(p_data);
+    } else {
+        gatt_end_operation(p_clcb, GATT_NO_RESOURCES, NULL);
     }
 
     return status;
