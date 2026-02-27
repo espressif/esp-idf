@@ -371,6 +371,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_OPEN_EVT:
         if (p_data->open.status != ESP_GATT_OK) {
+            is_connected = false;
             ESP_LOGE(TAG, "GATTC open failed, status %d", p_data->open.status);
             break;
         }

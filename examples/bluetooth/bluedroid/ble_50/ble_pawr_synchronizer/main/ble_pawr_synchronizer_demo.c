@@ -182,18 +182,28 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising create sync, status %d", param->period_adv_create_sync.status);
+        if (param->period_adv_create_sync.status != ESP_BT_STATUS_SUCCESS) {
+            periodic_sync = false;
+        }
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync cancel, status %d", param->period_adv_sync_cancel.status);
+        periodic_sync = false;
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync terminate, status %d", param->period_adv_sync_term.status);
+        periodic_sync = false;
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_LOST_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync lost, sync handle %d", param->periodic_adv_sync_lost.sync_handle);
+        periodic_sync = false;
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync establish, status %d", param->periodic_adv_sync_estab.status);
+        if (param->periodic_adv_sync_estab.status != ESP_BT_STATUS_SUCCESS) {
+            periodic_sync = false;
+            break;
+        }
         ESP_LOGI(LOG_TAG, "address "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(param->periodic_adv_sync_estab.adv_addr));
         ESP_LOGI(LOG_TAG, "sync handle %d sid %d perioic adv interval %d adv phy %d", param->periodic_adv_sync_estab.sync_handle,
                                                                                       param->periodic_adv_sync_estab.sid,
