@@ -38,6 +38,11 @@ check_wifi_remote_api:
     - python generate_and_check.py
     - git diff --exit-code || { echo 'Differences found. Please run generate_and_check.py and commit the changes.'; exit 1; }
 
+check_examples_documented:
+  extends: .pre_check_template
+  script:
+    - python3 tools/ci/check_examples_documented.py
+
 check_blobs:
   extends:
     - .pre_check_template
