@@ -79,33 +79,6 @@ ble_hci_set_iso_buf_sz(uint16_t pktlen, uint8_t max_pkts)
     return 0;
 }
 
-void
-ble_hci_get_iso_buf_size(uint16_t *pktlen, uint8_t *max_pkts)
-{
-    assert(pktlen && max_pkts);
-
-    *pktlen = ble_hs_iso_buf_sz;
-    *max_pkts = ble_hs_iso_max_pkts;
-}
-
-#if (BLE_ISO_STD_FLOW_CTRL == TRUE)
-void
-ble_hci_add_iso_avail_pkts(uint16_t delta)
-{
-    osi_mutex_global_lock();
-
-    if (ble_hs_iso_avail_pkts + delta > ble_hs_iso_max_pkts) {
-        HCI_TRACE_ERROR("ISO_HS_RESET %u %u %u\n", ble_hs_iso_avail_pkts, delta, ble_hs_iso_max_pkts);
-        // ble_hs_sched_reset(BLE_HS_ECONTROLLER);
-        assert(0);
-    } else {
-        ble_hs_iso_avail_pkts += delta;
-    }
-
-    osi_mutex_global_unlock();
-}
-#endif /* (BLE_ISO_STD_FLOW_CTRL) */
-
 #define BLE_ARRAY_SIZE(x)   (sizeof(x)/sizeof((x)[0]))
 
 struct ble_hci_iso_conn *
@@ -155,39 +128,6 @@ ble_hci_iso_alloc_conn(uint16_t conn_handle)
 
     return NULL;
 }
-
-#if (BLE_ISO_STD_FLOW_CTRL == TRUE)
-static uint8_t
-ble_hci_iso_buf_needed(struct ble_hs_iso_conn *conn)
-{
-    uint16_t sdu_offset;
-    uint16_t dl_len;
-    uint8_t dlh_len;
-    uint8_t count;
-
-    dlh_len = (conn->ts_flag ? BLE_HCI_ISO_DATA_LOAD_TS_SZ : 0) + BLE_HCI_ISO_DATA_LOAD_HDR_SZ;
-    sdu_offset = 0;
-    count = 1;  /* 1 extra since framed pdu may be used */
-
-    while (1) {
-        dl_len = min(dlh_len + conn->sdu_len - sdu_offset, ble_hs_iso_buf_sz);
-
-        count += 1;
-
-        sdu_offset += dl_len - dlh_len;
-        assert(sdu_offset <= conn->sdu_len);
-
-        if (sdu_offset == conn->sdu_len) {
-            break;
-        }
-
-        /* No data load header for continuation/last segment */
-        dlh_len = 0;
-    }
-
-    return count;
-}
-#endif /* (BLE_ISO_STD_FLOW_CTRL) */
 
 static void
 ble_hci_iso_hdr_append(struct ble_hci_iso_conn *conn,

@@ -357,7 +357,8 @@ int hci_adv_credits_prep_to_release(uint16_t num)
 
     osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
     int credits_to_release = hci_hal_env.adv_credits_to_release + num;
-    assert(hci_hal_env.adv_credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    assert(num <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    assert(credits_to_release >= 0 && credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
     hci_hal_env.adv_credits_to_release = credits_to_release;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
