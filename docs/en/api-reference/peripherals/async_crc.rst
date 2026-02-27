@@ -332,6 +332,11 @@ The ``dma_burst_size`` affects DMA transfer efficiency:
 
 The optimal value depends on your chip's DMA controller capabilities.
 
+Application Examples
+====================
+
+- :example:`peripherals/dma/async_crc` demonstrates how to use the Async CRC driver through an interactive console CLI.
+
 API Reference
 =============
 
