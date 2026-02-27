@@ -78,7 +78,7 @@ typedef enum {
 #define BLE_ISO_MAX_TRANSPORT_LATENCY_MIN               (0x0005)
 #define BLE_ISO_MAX_TRANSPORT_LATENCY_MAX               (0x0FA0)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 typedef struct {
     uint8_t big_handle;             /*!< Used to identify the BIG, value 0x00 to 0xEF */
     uint8_t adv_handle;             /*!< Used to identify the periodic advertising train, value 0x00 to 0xEF */
@@ -113,7 +113,7 @@ typedef struct {
     uint8_t broadcast_code[16]; /*!< The code used to derive the session key that is used to encrypt and decrypt BIS payloads */
 } esp_ble_iso_big_creat_test_params_t;
 
-#endif //#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif //#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 typedef struct {
@@ -431,7 +431,7 @@ esp_ble_iso_cb_t esp_ble_iso_get_callback(void);
 
 
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 /**
  * @brief           This function is called to create BIG.
@@ -469,7 +469,7 @@ esp_err_t esp_ble_iso_create_big_test(esp_ble_iso_big_creat_test_params_t *big_c
  *
  */
 esp_err_t esp_ble_iso_terminate_big(uint8_t big_handle, uint8_t reason);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 
