@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,83 @@ static struct {
     bt_mesh_mutex_t op_lock;
     sys_slist_t list;
 } dfu_req_list;
+
+static struct bt_mesh_blob_cli_inputs cur_targets = {0};
+
+/**
+ * inputs list must point to a list of bt_mesh_dfu_target nodes.
+ * That was required by dfu api
+ */
+void dfu_targets_free(void)
+{
+    sys_snode_t *n, *sn;
+    struct bt_mesh_dfu_target *target;
+    struct bt_mesh_blob_cli_inputs *inputs = &cur_targets;
+
+    if (cur_targets.targets.head == NULL) {
+        return;
+    }
+
+    SYS_SLIST_FOR_EACH_NODE_SAFE(&inputs->targets, n, sn) {
+        target = (struct bt_mesh_dfu_target *)n;
+        if (target->blob.pull) {
+            bt_mesh_free(target->blob.pull);
+        }
+        bt_mesh_free(target);
+    }
+
+    inputs->app_idx = 0;
+    inputs->group = 0;
+    inputs->ttl = 0;
+    inputs->timeout_base = 0;
+
+    sys_slist_init(&inputs->targets);
+}
+
+struct bt_mesh_blob_cli_inputs *dfu_targets_alloc(struct bt_mesh_blob_cli_inputs *src)
+{
+    sys_snode_t *node;
+    struct bt_mesh_dfu_target *target_src = NULL;
+    struct bt_mesh_dfu_target *target_dst = NULL;
+    struct bt_mesh_blob_cli_inputs *dst = &cur_targets;
+
+    if (cur_targets.targets.head != NULL ||
+        cur_targets.targets.tail != NULL) {
+        BT_WARN("DFU targets busy");
+        return NULL;
+    }
+
+    dst->app_idx = src->app_idx;
+    dst->group = src->group;
+    dst->ttl = src->ttl;
+    dst->timeout_base = src->timeout_base;
+
+    sys_slist_init(&dst->targets);
+
+    SYS_SLIST_FOR_EACH_NODE(&src->targets, node) {
+        target_src = (struct bt_mesh_dfu_target *)node;
+        target_dst = bt_mesh_calloc(sizeof(struct bt_mesh_dfu_target));
+        if (!target_dst) {
+            dfu_targets_free();
+            return NULL;
+        }
+        memcpy(target_dst, target_src, sizeof(struct bt_mesh_dfu_target));
+        if (target_dst->blob.pull) {
+            target_dst->blob.pull = bt_mesh_calloc(sizeof(struct bt_mesh_blob_target_pull));
+            if (!target_dst->blob.pull) {
+                dfu_targets_free();
+                return NULL;
+            }
+            memcpy(target_dst->blob.pull, target_src->blob.pull, sizeof(struct bt_mesh_blob_target_pull));
+        } else {
+            target_dst->blob.pull = NULL;
+        }
+        target_dst->blob.n.next = NULL;
+        sys_slist_append(&dst->targets, &target_dst->blob.n);
+    }
+
+    return dst;
+}
 
 static struct bt_mesh_dfu_target *target_get(struct bt_mesh_dfu_cli *cli,
                                              uint16_t addr)
@@ -277,6 +354,8 @@ static void dfu_failed(struct bt_mesh_dfu_cli *cli,
     if (cli->cb && cli->cb->ended) {
         cli->cb->ended(cli, reason);
     }
+
+    dfu_targets_free();
 }
 
 static int req_setup(struct bt_mesh_dfu_cli *cli, enum req type,
@@ -341,8 +420,21 @@ static void blob_caps(struct bt_mesh_blob_cli *b,
     }
 
     cli->xfer.blob.block_size_log = caps->max_block_size_log;
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if (cli->xfer.blob.chunk_enh_params.long_pkt_cfg_used) {
+        cli->xfer.blob.chunk_size = MIN(caps->max_chunk_size, BLOB_TX_CHUNK_SIZE);
+    } else {
+#if CONFIG_BLE_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT || \
+        CONFIG_BLE_MESH_TX_BLOB_CHUNK_SIZE > BLOB_CHUNK_SIZE_MAX(BLE_MESH_EXT_TX_SDU_MAX)
+        cli->xfer.blob.chunk_size = MIN(caps->max_chunk_size, BLOB_CHUNK_SIZE_MAX(BLE_MESH_TX_SDU_MAX));
+#else
+        cli->xfer.blob.chunk_size = MIN(caps->max_chunk_size,
+                                        CONFIG_BLE_MESH_TX_BLOB_CHUNK_SIZE);
+#endif
+    }
+#else
     cli->xfer.blob.chunk_size = caps->max_chunk_size;
-
+#endif
     /* If mode is not already set and server reported it supports all modes
      * default to PUSH, otherwise set value reported by server. If mode
      * was set and server supports all modes, keep old value; set
@@ -826,6 +918,7 @@ static void confirmed(struct bt_mesh_blob_cli *b)
         if (cli->cb && cli->cb->confirmed) {
             cli->cb->confirmed(cli);
         }
+        dfu_targets_free();
     } else {
         dfu_failed(cli, BLE_MESH_DFU_ERR_INTERNAL);
     }
@@ -887,15 +980,16 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
                 rsp->timeout_base = net_buf_simple_pull_le16(buf);
                 rsp->blob_id = net_buf_simple_pull_le64(buf);
                 rsp->img_idx = net_buf_simple_pull_u8(buf);
-            } else if (buf->len) {
+            } else if (buf->len == 0) {
+                rsp->ttl = 0U;
+                rsp->effect = BLE_MESH_DFU_EFFECT_NONE;
+                rsp->timeout_base = 0U;
+                rsp->blob_id = 0U;
+                rsp->img_idx = 0U;
+            } else {
                 return -EINVAL;
             }
 
-            rsp->ttl = 0U;
-            rsp->effect = BLE_MESH_DFU_EFFECT_NONE;
-            rsp->timeout_base = 0U;
-            rsp->blob_id = 0U;
-            rsp->img_idx = 0U;
         }
         bt_mesh_dfu_client_cb_evt_to_btc(req->opcode, BTC_BLE_MESH_EVT_DFU_CLIENT_RECV_GET_RSP,
                                          req->dfu_cli->mod, &req->ctx, req->params,
@@ -904,6 +998,7 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
         bt_mesh_dfu_cli_rm_req_from_list(req);
         k_delayed_work_cancel(&req->timer);
         req_free(req);
+        return 0;
     }
 
     if (cli->op != BLE_MESH_DFU_OP_UPDATE_STATUS) {
@@ -965,6 +1060,17 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
         if (phase != BLE_MESH_DFU_PHASE_APPLYING &&
                 (target->effect == BLE_MESH_DFU_EFFECT_UNPROV ||
                  phase != BLE_MESH_DFU_PHASE_IDLE)) {
+            /**
+             * If user quickly enter the APPLY state from REFRESH,
+             * protocol may receive the last round of REFRESH info
+             * packets from the network. Therefore, in order to avoid
+             * misjudgment, the previous round of data packets are
+             * ignored here.
+            */
+            if (phase == BLE_MESH_DFU_PHASE_VERIFY_OK) {
+                BT_DBG("MaybeReceivedOutdatedMsg");
+                return 0;
+            }
             BT_WARN("Target 0x%04x in phase %u after apply",
                     target->blob.addr, phase);
             target_failed(cli, target, BLE_MESH_DFU_ERR_WRONG_PHASE);
@@ -1186,6 +1292,12 @@ static int dfu_cli_init(struct bt_mesh_model *mod)
 static void dfu_cli_reset(struct bt_mesh_model *mod)
 {
     struct bt_mesh_dfu_cli *cli = mod->user_data;
+
+    if (cli->xfer.state == STATE_IDLE) {
+        return;
+    }
+
+    dfu_targets_free();
 
     bt_mesh_dfu_req_list_free();
     cli->req = NULL;
