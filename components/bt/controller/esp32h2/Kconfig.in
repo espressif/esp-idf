@@ -1004,3 +1004,12 @@ config BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN
         When this option is enabled, the Controller automatically initiates a data length update
         Using the appropriate data length parameters
         When a PHY update or a connection interval update occurs.
+
+config BT_LE_CTRL_ADV_FAST_TX_EN
+    bool "Reduce adv enable-to-air latency (READ DOCS FIRST) (EXPERIMENTAL)"
+    default n
+    help
+        Reduce the latency between issuing the advertising enable command
+        and the actual on-air transmission by executing the advertising TX
+        path from IRAM.
+        Note: Enabling this option increases IRAM usage.

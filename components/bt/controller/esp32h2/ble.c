@@ -75,6 +75,13 @@ int conn_errorSim_enable(void);
 void conn_errorSim_disable(void);
 #endif // CONFIG_BT_LE_ERROR_SIM_ENABLED
 
+#if CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
+int advFastTx_stack_initEnv(void);
+void advFastTx_stack_deinitEnv(void);
+int advFastTx_stack_enable(void);
+void advFastTx_stack_disable(void);
+#endif // CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
+
 #if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
 void adv_stack_enableClearLegacyAdvVsCmd(bool en);
 void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
@@ -113,6 +120,12 @@ void ble_stack_enableVsCmds(bool en)
     log_stack_enableLogsRelatedVsCmd(en);
     hci_stack_enableSetVsEvtMaskVsCmd(en);
     winWiden_stack_enableSetConstPeerScaVsCmd(en);
+#if DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+    scan_stack_enableSetScanADIOnlyFilterVsCmd(en);
+#endif // DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER
+#if DEFAULT_BT_ADV_SEND_CONSTANT_DID
+    extAdv_stack_setExtAdvConstantDidVsCmd(en);
+#endif // DEFAULT_BT_ADV_SEND_CONSTANT_DID
 }
 
 void ble_stack_enableVsEvents(bool en)
@@ -198,12 +211,20 @@ int ble_stack_initEnv(void)
         return rc;
     }
 #endif // DEFAULT_BT_LE_PAWR_SUPPORTED
-
+#if CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
+    rc = advFastTx_stack_initEnv();
+    if (rc) {
+        return rc;
+    }
+#endif // CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
     return 0;
 }
 
 void ble_stack_deinitEnv(void)
 {
+#if CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
+    advFastTx_stack_deinitEnv();
+#endif // CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
 #if DEFAULT_BT_LE_PAWR_SUPPORTED
     pawrSync_stack_deinitEnv();
     pawrBcast_stack_deinitEnv();
@@ -289,7 +310,12 @@ int ble_stack_enable(void)
         return rc;
     }
 #endif // DEFAULT_BT_LE_PAWR_SUPPORTED
-
+#if CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
+    rc = advFastTx_stack_enable();
+    if (rc) {
+        return rc;
+    }
+#endif // CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
 #if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
     ble_stack_enableVsCmds(true);
     ble_stack_enableVsEvents(true);
@@ -308,6 +334,9 @@ void ble_stack_disable(void)
     ble_stack_enableVsEvents(false);
     ble_stack_enableVsCmds(false);
 #endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+#if CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
+    advFastTx_stack_disable();
+#endif // CONFIG_BT_LE_CTRL_ADV_FAST_TX_EN
 #if DEFAULT_BT_LE_PAWR_SUPPORTED
     pawrSync_stack_disable();
     pawrBcast_stack_disable();
