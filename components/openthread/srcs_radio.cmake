@@ -7,7 +7,6 @@
 
 set(rcp_srcs
     # OpenThread core - RADIO_COMMON_SOURCES from openthread/src/core/CMakeLists.txt
-    # No need for crypto/crypto_platform_mbedtls.cpp because we use esp-idf implementation
     openthread/src/core/api/diags_api.cpp
     openthread/src/core/api/error_api.cpp
     openthread/src/core/api/instance_api.cpp
@@ -26,7 +25,7 @@ set(rcp_srcs
     openthread/src/core/common/uptime.cpp
     openthread/src/core/crypto/aes_ccm.cpp
     openthread/src/core/crypto/aes_ecb.cpp
-    openthread/src/core/crypto/crypto_platform.cpp
+    openthread/src/core/crypto/crypto_platform_mbedtls.cpp
     openthread/src/core/crypto/storage.cpp
     openthread/src/core/diags/factory_diags.cpp
     openthread/src/core/instance/instance.cpp
