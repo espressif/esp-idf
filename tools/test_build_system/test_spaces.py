@@ -21,6 +21,7 @@ def clean_app_dir(app_path: Path) -> None:
     shutil.rmtree(app_path / 'build', ignore_errors=True)
 
 
+@pytest.mark.buildv2_skip('Examples (spiffsgen, ulp, etc.) not yet ported to buildv2')
 @pytest.mark.idf_copy_with_space
 def test_spaces_bundle1(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 1')
@@ -34,6 +35,7 @@ def test_spaces_bundle1(idf_copy: Path) -> None:
     )
 
 
+@pytest.mark.buildv2_skip('Examples (flash_encryption, https_x509_bundle) not yet ported to buildv2')
 @pytest.mark.idf_copy_with_space
 def test_spaces_bundle2(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 2')
@@ -43,6 +45,7 @@ def test_spaces_bundle2(idf_copy: Path) -> None:
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'protocols' / 'https_x509_bundle'))
 
 
+@pytest.mark.buildv2_skip('secure_boot test app not yet ported to buildv2')
 @pytest.mark.idf_copy_with_space
 def test_spaces_bundle3(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 3')
