@@ -170,6 +170,10 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     p_lcb->start_time_s = 0;
 #endif // #if (BLE_INCLUDED == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+     p_lcb->is_pawr_synced = FALSE;
+#endif
+
     /* Stop and release timers */
     btu_free_timer (&p_lcb->timer_entry);
     memset(&p_lcb->timer_entry, 0, sizeof(TIMER_LIST_ENT));
@@ -364,10 +368,7 @@ uint8_t l2cu_ble_plcb_active_count(void)
             active_count ++;
         }
     }
-    if (active_count >= MAX_L2CAP_CHANNELS) {
-        L2CAP_TRACE_ERROR("error active count");
-        active_count = 0;
-    }
+
     L2CAP_TRACE_DEBUG("plcb active count %d", active_count);
     return active_count;
 
@@ -3286,7 +3287,7 @@ tL2C_LCB  *l2cu_find_lcb_by_handle (UINT16 handle)
 bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid)
 {
     tL2C_CCB *p_ccb = (tL2C_CCB *)p_ccb_node;
-    uint8_t local_cid = *((uint8_t *)p_local_cid);
+    uint16_t local_cid = *((uint16_t *)p_local_cid);
 
     if (p_ccb->local_cid == local_cid && p_ccb->in_use) {
         return FALSE;

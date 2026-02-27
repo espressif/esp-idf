@@ -749,11 +749,14 @@ static BT_HDR *smp_build_pairing_commitment_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     UINT8 *p;
     UNUSED(cmd_code);
 
-    SMP_TRACE_EVENT("%s\n", __func__);
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_COMMITM_SIZE + L2CAP_MIN_OFFSET))
             != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
-
+        /* The transmitter sends 0x03 universally.
+        The receiver performs automatic conversion according to its capabilities to ensure backward compatibility.
+        The state machine operates using the translated opcode. please refer to smp_data_received() in smp_l2c.c
+        Please note that using SMP OPCODE to CONFIRM is not an error.
+        */
         UINT8_TO_STREAM (p, SMP_OPCODE_CONFIRM);
         ARRAY_TO_STREAM (p, p_cb->commitment, BT_OCTET16_LEN);
 
@@ -1462,7 +1465,7 @@ void smp_collect_peer_io_capabilities(UINT8 *iocap, tSMP_CB *p_cb)
 void smp_collect_local_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 {
     tBLE_ADDR_TYPE  addr_type = 0;
-    BD_ADDR         bda;
+    BD_ADDR         bda = {0};
     UINT8           *p = le_addr;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
@@ -1485,7 +1488,7 @@ void smp_collect_local_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 void smp_collect_peer_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 {
     tBLE_ADDR_TYPE  addr_type = 0;
-    BD_ADDR         bda;
+    BD_ADDR         bda = {0};
     UINT8           *p = le_addr;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
@@ -1574,8 +1577,8 @@ void smp_save_secure_connections_long_term_key(tSMP_CB *p_cb)
 *******************************************************************************/
 BOOLEAN smp_calculate_f5_mackey_and_long_term_key(tSMP_CB *p_cb)
 {
-    UINT8 a[7];
-    UINT8 b[7];
+    UINT8 a[7] = {0};
+    UINT8 b[7] = {0};
     UINT8 *p_na;
     UINT8 *p_nb;
 

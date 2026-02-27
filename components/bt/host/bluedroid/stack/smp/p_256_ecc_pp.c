@@ -177,9 +177,16 @@ static void ECC_NAF(uint8_t *naf, uint32_t *NumNAF, DWORD *k, uint32_t keyLength
                 k[0] = k[0] + 1;
                 if (k[0] == 0) { //overflow
                     j = 1;
-                    do {
+                    while (j < keyLength && k[j] == 0xFFFFFFFF) {
+                        k[j] = 0;
+                        j++;
+                    }
+                    if (j < keyLength) {
                         k[j]++;
-                    } while (k[j++] == 0); //overflow
+                    }
+                    // If j >= keyLength, the entire key is 0xFFFFFFFF,
+                    // which should not happen for a valid private key.
+                    // In this case, we stop the propagation to prevent buffer overflow.
                 }
             }
         } else {

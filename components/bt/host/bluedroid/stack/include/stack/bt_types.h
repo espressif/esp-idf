@@ -260,6 +260,7 @@ typedef struct {
 
 #define STREAM_SKIP_UINT8(p)  do { (p) += 1; } while (0)
 #define STREAM_SKIP_UINT16(p) do { (p) += 2; } while (0)
+#define STREAM_SKIP_UINT24(p) do { (p) += 3; } while (0)
 
 /********************************************************************************
 ** Macros to get and put bytes to and from a field (Little Endian format).
