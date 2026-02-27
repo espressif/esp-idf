@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,4 +79,10 @@ void ieee802154_etm_set_event_task(uint32_t channel, uint32_t event, uint32_t ta
     REG_WRITE((ETM_CH0_TASK_ID_REG + ETM_CH_OFFSET * channel), task);
 
     REG_WRITE(ETM_CHENSET_AD0_REG, (REG_READ(ETM_CHENSET_AD0_REG) | 1 << channel));
+}
+
+__attribute__((weak)) const int8_t* bt_bb_get_tx_pwr_table(uint8_t *length)
+{
+    ESP_LOGE(IEEE802154_TAG, "bt_bb_get_tx_pwr_table is not implemented");
+    return NULL;
 }
