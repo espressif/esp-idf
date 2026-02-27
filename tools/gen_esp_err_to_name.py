@@ -1,31 +1,28 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import builtins
 import collections
 import fnmatch
 import functools
 import os
 import re
 import textwrap
-from io import open
-from typing import Any, List, Optional, TextIO
+from typing import Any
+from typing import TextIO
 
-# list files here which should not be parsed
-ignore_files: list  = list()
-
-# add directories here which should not be parsed, this is a tuple since it will be used with *.startswith()
-ignore_dirs = (os.path.join('components', 'cmock', 'CMock', 'test'),
-               os.path.join('components', 'spi_flash', 'sim'))
+# ignore files and dirs: Please use tools/ci/esp_err_to_name_exceptions.txt to add exceptions
+ignore_files: list = []
+ignore_dirs: list = []
 
 # macros from here have higher priorities in case of collisions
 priority_headers = [os.path.join('components', 'esp_common', 'include', 'esp_err.h')]
 
 # The following headers won't be included. This is useful if they are permanently included from esp_err_to_name.c.in.
-dont_include = [os.path.join('soc', 'soc.h'),
-                os.path.join('esp_err.h')]
+dont_include = [os.path.join('soc', 'soc.h'), os.path.join('esp_err.h')]
 
 # Don't search the following directories, e.g. test directories
 exclude_search_dirs = ['test_apps', 'unit-test-app']
@@ -35,7 +32,7 @@ rev_err_dict = dict()  # map of error string to error code
 unproc_list = list()  # errors with unknown codes which depend on other errors
 
 
-class ErrItem(object):
+class ErrItem:
     """
     Contains information about the error:
     - name - error string
@@ -45,7 +42,16 @@ class ErrItem(object):
     - rel_str - (optional) error string which is a base for the error
     - rel_off - (optional) offset in relation to the base error
     """
-    def __init__(self, name: str, file: str, include_as: Optional[Any]=None, comment: str='', rel_str: str='', rel_off: int=0) -> None:
+
+    def __init__(
+        self,
+        name: str,
+        file: str,
+        include_as: Any | None = None,
+        comment: str = '',
+        rel_str: str = '',
+        rel_off: int = 0,
+    ) -> None:
         self.name = name
         self.file = file
         self.include_as = include_as
@@ -55,7 +61,7 @@ class ErrItem(object):
 
     def __str__(self) -> str:
         ret = self.name + ' from ' + self.file
-        if (self.rel_str != ''):
+        if self.rel_str != '':
             ret += ' is (' + self.rel_str + ' + ' + str(self.rel_off) + ')'
         if self.comment != '':
             ret += ' // ' + self.comment
@@ -89,8 +95,9 @@ class InputError(RuntimeError):
     """
     Represents and error on the input
     """
+
     def __init__(self, p: str, e: str) -> None:
-        super(InputError, self).__init__(p + ': ' + e)
+        super().__init__(f'{p}: {e}')
 
 
 def process(line: str, idf_path: str, include_as: Any) -> None:
@@ -100,13 +107,13 @@ def process(line: str, idf_path: str, include_as: Any) -> None:
     """
     if idf_path.endswith('.c'):
         # We would not try to include a C file
-        raise InputError(idf_path, 'This line should be in a header file: %s' % line)
+        raise InputError(idf_path, f'This line should be in a header file: {line}')
 
     words = re.split(r' +', line, 2)
     # words[1] is the error name
     # words[2] is the rest of the line (value, base + value, comment)
     if len(words) < 3:
-        raise InputError(idf_path, 'Error at line %s' % line)
+        raise InputError(idf_path, f'Error at line {line}')
 
     line = ''
     todo_str = words[2]
@@ -116,7 +123,7 @@ def process(line: str, idf_path: str, include_as: Any) -> None:
     m = re.search(r'/\*!<(.+?(?=\*/))', todo_str)
     if m:
         comment = m.group(1).strip()
-        todo_str = todo_str[:m.start()].strip()  # keep just the part before the comment
+        todo_str = todo_str[: m.start()].strip()  # keep just the part before the comment
 
     # identify possible parentheses ()
     m = re.search(r'\((.+)\)', todo_str)
@@ -143,7 +150,7 @@ def process(line: str, idf_path: str, include_as: Any) -> None:
             related = todo_str  # BASE error
             num = 0  # (BASE + 0)
         else:
-            raise InputError(idf_path, 'Cannot parse line %s' % line)
+            raise InputError(idf_path, f'Cannot parse line {line}')
 
     try:
         related
@@ -195,26 +202,26 @@ def path_to_include(path: str) -> str:
         # no include in the path -> use just the filename
         return os.path.basename(path)
     else:
-        return os.sep.join(spl_path[i + 1:])  # subdirectories and filename in "include"
+        return os.sep.join(spl_path[i + 1 :])  # subdirectories and filename in "include"
 
 
-def print_warning(error_list: List, error_code: int) -> None:
+def print_warning(error_list: list, error_code: int) -> None:
     """
     Print warning about errors with the same error code
     """
-    print('[WARNING] The following errors have the same code (%d):' % error_code)
+    print(f'[WARNING] The following errors have the same code ({error_code}):')
     for e in error_list:
-        print('    ' + str(e))
+        print(f'    {e}')
 
 
 def max_string_width() -> int:
-    max = 0
+    max_width = 0
     for k in err_dict:
         for e in err_dict[k]:
             x = len(e.name)
-            if x > max:
-                max = x
-    return max
+            if x > max_width:
+                max_width = x
+    return max_width
 
 
 def generate_c_output(fin: TextIO, fout: TextIO) -> None:
@@ -248,7 +255,7 @@ def generate_c_output(fin: TextIO, fout: TextIO) -> None:
         elif re.match(r'@HEADERS@', line):
             for i in include_list:
                 if i not in dont_include:
-                    fout.write("#if __has_include(\"" + i + "\")\n#include \"" + i + "\"\n#endif\n")
+                    fout.write('#if __has_include("' + i + '")\n#include "' + i + '"\n#endif\n')
         elif re.match(r'@ERROR_ITEMS@', line):
             last_file = ''
             for k in sorted(err_dict.keys()):
@@ -258,25 +265,27 @@ def generate_c_output(fin: TextIO, fout: TextIO) -> None:
                 for e in err_dict[k]:
                     if e.file != last_file:
                         last_file = e.file
-                        fout.write('    // %s\n' % last_file)
-                    table_line = ('    ERR_TBL_IT(' + e.name + '), ').ljust(max_width) + '/* ' + str(k).rjust(max_decdig)
-                    fout.write('#   ifdef      %s\n' % e.name)
+                        fout.write(f'    // {last_file}\n')
+                    table_line = (
+                        ('    ERR_TBL_IT(' + e.name + '), ').ljust(max_width) + '/* ' + str(k).rjust(max_decdig)
+                    )
+                    fout.write(f'#   ifdef      {e.name}\n')
                     fout.write(table_line)
                     hexnum_length = 0
                     if k > 0:  # negative number and zero should be only ESP_FAIL and ESP_OK
-                        hexnum = ' 0x%x' % k
+                        hexnum = f' 0x{k:x}'
                         hexnum_length = len(hexnum)
                         fout.write(hexnum)
                     if e.comment != '':
                         if len(e.comment) < 50:
-                            fout.write(' %s' % e.comment)
+                            fout.write(f' {e.comment}')
                         else:
                             indent = ' ' * (len(table_line) + hexnum_length + 1)
                             w = textwrap.wrap(e.comment, width=120, initial_indent=indent, subsequent_indent=indent)
                             # this couldn't be done with initial_indent because there is no initial_width option
-                            fout.write(' %s' % w[0].strip())
+                            fout.write(f' {w[0].strip()}')
                             for i in range(1, len(w)):
-                                fout.write('\n%s' % w[i])
+                                fout.write(f'\n{w[i]}')
                     fout.write(' */\n#   endif\n')
         else:
             fout.write(line)
@@ -285,13 +294,13 @@ def generate_c_output(fin: TextIO, fout: TextIO) -> None:
 def generate_rst_output(fout: TextIO) -> None:
     for k in sorted(err_dict.keys()):
         v = err_dict[k][0]
-        fout.write(':c:macro:`{}` '.format(v.name))
+        fout.write(f':c:macro:`{v.name}` ')
         if k > 0:
-            fout.write('**(0x{:x})**'.format(k))
+            fout.write(f'**(0x{k:x})**')
         else:
-            fout.write('({:d})'.format(k))
+            fout.write(f'({k:d})')
         if len(v.comment) > 0:
-            fout.write(': {}'.format(v.comment))
+            fout.write(f': {v.comment}')
         fout.write('\n\n')
 
 
@@ -302,14 +311,33 @@ def main() -> None:
         idf_path = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
     parser = argparse.ArgumentParser(description='ESP32 esp_err_to_name lookup generator for esp_err_t')
-    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.',
-                        default=idf_path + '/components/esp_common/src/esp_err_to_name.c.in')
-    parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=idf_path + '/components/esp_common/src/esp_err_to_name.c')
+    parser.add_argument(
+        '--c_input',
+        help='Path to the esp_err_to_name.c.in template input.',
+        default=idf_path + '/components/esp_common/src/esp_err_to_name.c.in',
+    )
+    parser.add_argument(
+        '--c_output',
+        help='Path to the esp_err_to_name.c output.',
+        default=idf_path + '/components/esp_common/src/esp_err_to_name.c',
+    )
     parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
+    parser.add_argument('--exceptions_file', default=idf_path + '/tools/ci/esp_err_to_name_exceptions.txt')
     args = parser.parse_args()
 
-    include_as_pattern = re.compile(r'\s*//\s*{}: [^"]* "([^"]+)"'.format(os.path.basename(__file__)))
+    include_as_pattern = re.compile(rf'\s*//\s*{os.path.basename(__file__)}: [^"]* "([^"]+)"')
     define_pattern = re.compile(r'\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)')
+
+    if args.exceptions_file and os.path.exists(args.exceptions_file):
+        with builtins.open(args.exceptions_file, encoding='utf-8') as exceptions_file:
+            for line in exceptions_file:
+                entry = line.strip()
+                if not entry or entry.startswith('#'):
+                    continue
+                if entry.endswith('/'):
+                    ignore_dirs.append(entry.rstrip('/'))
+                else:
+                    ignore_files.append(entry)
 
     for root, dirnames, filenames in os.walk(os.path.join(idf_path, 'components'), topdown=True):
         # When topdown is True, we can modify the dirnames list in-place
@@ -318,9 +346,9 @@ def main() -> None:
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
             path_in_idf = os.path.relpath(full_path, idf_path)
-            if path_in_idf in ignore_files or path_in_idf.startswith(ignore_dirs):
+            if path_in_idf in ignore_files or any(path_in_idf.startswith(d) for d in ignore_dirs):
                 continue
-            with open(full_path, encoding='utf-8') as f:
+            with builtins.open(full_path, encoding='utf-8') as f:
                 try:
                     include_as = None
                     for line in f:
@@ -335,15 +363,18 @@ def main() -> None:
                             except InputError as e:
                                 print(e)
                 except UnicodeDecodeError:
-                    raise ValueError('The encoding of {} is not Unicode.'.format(path_in_idf))
+                    raise ValueError(f'The encoding of {path_in_idf} is not Unicode.')
 
     process_remaining_errors()
 
     if args.rst_output is not None:
-        with open(args.rst_output, 'w', encoding='utf-8') as fout:
+        with builtins.open(args.rst_output, 'w', encoding='utf-8') as fout:
             generate_rst_output(fout)
     else:
-        with open(args.c_input, 'r', encoding='utf-8') as fin, open(args.c_output, 'w', encoding='utf-8') as fout:
+        with (
+            builtins.open(args.c_input, encoding='utf-8') as fin,
+            builtins.open(args.c_output, 'w', encoding='utf-8') as fout,
+        ):
             generate_c_output(fin, fout)
 
 

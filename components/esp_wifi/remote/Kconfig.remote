@@ -1,1 +1,50 @@
 # Configuration of remote functionality for esp_wifi component
+menu "Wi-Fi Remote"
+
+    config ESP_WIFI_REMOTE_IN_IDF
+        bool
+        default y
+
+    config ESP_WIFI_REMOTE_ENABLED  # ignore: multiple-definition
+        bool
+        default y if !ESP_HOST_WIFI_ENABLED
+        default n if ESP_HOST_WIFI_ENABLED
+
+    if ESP_WIFI_REMOTE_ENABLED
+        rsource "./Kconfig.slave_select.in"
+        rsource "./Kconfig.soc_wifi_caps.in"
+
+        menu "Wi-Fi configuration"
+            rsource "./Kconfig.wifi.in"
+        endmenu
+
+        orsource "./Kconfig.rpc.in"
+
+        config ESP_WIFI_REMOTE_EAP_ENABLED
+            bool "Enable EAP client remote API"
+            default y
+            depends on WIFI_RMT_ENTERPRISE_SUPPORT
+            help
+                When enabled, the EAP client remote API will be available.
+                This allows remote control of EAP authentication functions.
+
+    endif
+    if !ESP_WIFI_REMOTE_ENABLED
+
+        # This helper variables is only used to indicate that Wi-Fi remote if OFF
+        # and explains why
+        config ESP_WIFI_REMOTE_IS_DISABLED
+            bool "Wi-Fi Remote is disabled (Host Wi-Fi is ON)"
+            default y
+            help
+                Wi-Fi Remote is disabled because ESP_HOST_WIFI_ENABLED is ON.
+                These options are mutually exclusive.
+                Disable ESP_HOST_WIFI_ENABLED to use ESP_WIFI_REMOTE.
+
+        config ESP_WIFI_REMOTE_FORCE_DISABLED
+            bool
+            default y
+            select ESP_WIFI_REMOTE_IS_DISABLED
+    endif
+
+endmenu # Wi-Fi Remote

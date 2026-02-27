@@ -1,0 +1,409 @@
+# This file is auto-generated
+
+if SLAVE_IDF_TARGET_ESP32
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_NAN_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_XTENSA # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32
+
+if SLAVE_IDF_TARGET_ESP32S2
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_NAN_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_FREERTOS_UNICORE # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_XTENSA # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32S2
+
+if SLAVE_IDF_TARGET_ESP32C3
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_GCMP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_TXOP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_PHY_NEEDS_USB_WORKAROUND # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_FREERTOS_UNICORE # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_RISCV # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32C3
+
+if SLAVE_IDF_TARGET_ESP32S3
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_GCMP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_TXOP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_PHY_NEEDS_USB_WORKAROUND # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_XTENSA # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32S3
+
+if SLAVE_IDF_TARGET_ESP32C2
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_TXOP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_PHY_NEEDS_USB_WORKAROUND # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_FREERTOS_UNICORE # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_RISCV # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32C2
+
+if SLAVE_IDF_TARGET_ESP32C6
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_GCMP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_TXOP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_HE_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MAC_VERSION_NUM # ignore: multiple-definition
+        int
+        default 2
+
+    config SLAVE_FREERTOS_UNICORE # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_RISCV # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32C6
+
+if SLAVE_IDF_TARGET_ESP32C5
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_GCMP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_TXOP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_HE_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_SUPPORT_5G # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MAC_VERSION_NUM # ignore: multiple-definition
+        int
+        default 3
+
+    config SLAVE_SOC_WIFI_NAN_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_FREERTOS_UNICORE # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_RISCV # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32C5
+
+if SLAVE_IDF_TARGET_ESP32C61
+
+    config SLAVE_SOC_WIFI_SUPPORTED # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH # ignore: multiple-definition
+        int
+        default 12
+
+    config SLAVE_SOC_WIFI_HW_TSF # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_FTM_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_GCMP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_WAPI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_TXOP_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_CSI_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MESH_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_HE_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_SOC_WIFI_MAC_VERSION_NUM # ignore: multiple-definition
+        int
+        default 3
+
+    config SLAVE_SOC_WIFI_NAN_SUPPORT # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_FREERTOS_UNICORE # ignore: multiple-definition
+        bool
+        default y
+
+    config SLAVE_IDF_TARGET_ARCH_RISCV # ignore: multiple-definition
+        bool
+        default y
+
+endif # ESP32C61
