@@ -19,12 +19,17 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "hal/twai_periph.h"
-#include "esp_private/gpio.h"
 #include "soc/gpio_sig_map.h"
+#include "esp_private/gpio.h"
 #include "driver/uart.h" // for baudrate detection
 
+#if CONFIG_IDF_TARGET_ESP32H4
+#define TEST_TX_GPIO                GPIO_NUM_2
+#define TEST_RX_GPIO                GPIO_NUM_3
+#else
 #define TEST_TX_GPIO                GPIO_NUM_4
 #define TEST_RX_GPIO                GPIO_NUM_5
+#endif
 #define TEST_TWAI_QUEUE_DEPTH       5
 #define TEST_TRANS_LEN              100
 #define TEST_FRAME_LEN              7

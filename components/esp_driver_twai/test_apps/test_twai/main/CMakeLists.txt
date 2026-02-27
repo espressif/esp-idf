@@ -2,6 +2,9 @@ set(srcs "test_app_main.c")
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "test_twai_common.cpp" "test_twai_network.cpp")
+    if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
+        list(APPEND srcs "test_twai_sleep.c")
+    endif()
 endif()
 
 if(CONFIG_SOC_TWAI_FD_SUPPORTED)
@@ -10,6 +13,6 @@ endif()
 
 idf_component_register(
     SRCS ${srcs}
-    PRIV_REQUIRES esp_driver_twai esp_timer esp_driver_uart esp_psram esp_driver_gpio
+    PRIV_REQUIRES esp_driver_twai esp_timer esp_driver_uart esp_psram esp_driver_gpio esp_pm
     WHOLE_ARCHIVE
 )

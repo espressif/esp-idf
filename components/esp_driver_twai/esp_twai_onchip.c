@@ -287,6 +287,16 @@ static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
         esp_pm_lock_delete(twai_ctx->pm_lock);
     }
 #endif
+#if SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    const sleep_retention_module_t retention_id = twai_reg_retention_info[twai_ctx->ctrlr_id].module_id;
+    if (sleep_retention_is_module_created(retention_id)) {
+        assert(sleep_retention_is_module_inited(retention_id));
+        sleep_retention_module_free(retention_id);
+    }
+    if (sleep_retention_is_module_inited(retention_id)) {
+        sleep_retention_module_deinit(retention_id);
+    }
+#endif
     if (twai_ctx->intr_hdl) {
         esp_intr_free(twai_ctx->intr_hdl);
     }
@@ -632,13 +642,25 @@ static esp_err_t _node_parse_rx(twai_node_handle_t node, twai_frame_t *rx_frame)
     return ESP_OK;
 }
 
+#if SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t _node_create_sleep_retention_cb(void *obj)
+{
+    twai_onchip_ctx_t *twai_ctx = (twai_onchip_ctx_t *)obj;
+    return sleep_retention_entries_create(twai_reg_retention_info[twai_ctx->ctrlr_id].entry_array,
+                                          twai_reg_retention_info[twai_ctx->ctrlr_id].array_size,
+                                          REGDMA_LINK_PRI_TWAI,
+                                          twai_reg_retention_info[twai_ctx->ctrlr_id].module_id);
+}
+#endif
 /* --------------------------------- Public --------------------------------- */
 esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twai_node_handle_t *node_ret)
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((node_config->tx_queue_depth > 0) || node_config->flags.enable_listen_only, ESP_ERR_INVALID_ARG, TAG, "tx_queue_depth at least 1");
     ESP_RETURN_ON_FALSE(!node_config->intr_priority || (BIT(node_config->intr_priority) & ESP_INTR_FLAG_LOWMED), ESP_ERR_INVALID_ARG, TAG, "Invalid intr_priority level");
-
+#if !SOC_TWAI_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(!node_config->flags.sleep_allow_pd, ESP_ERR_NOT_SUPPORTED, TAG, "sleep retention is not supported on this target");
+#endif
     // Allocate TWAI node from internal memory because it contains atomic variable
     twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(node, ESP_ERR_NO_MEM, TAG, "No mem");
@@ -679,6 +701,25 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 #endif
         node->timestamp_freq_hz = node_config->timestamp_resolution_hz;
     }
+#if SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    const sleep_retention_module_t retention_id = twai_reg_retention_info[node->ctrlr_id].module_id;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = _node_create_sleep_retention_cb,
+                .arg = node,
+            },
+        },
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    if (sleep_retention_module_init(retention_id, &init_param) == ESP_OK) {
+        if ((node_config->flags.sleep_allow_pd) && (sleep_retention_module_allocate(retention_id) != ESP_OK)) {
+            ESP_LOGW(TAG, "sleep retention prepare failed, power will hold on");
+        }
+    } else {
+        ESP_LOGW(TAG, "sleep retention init failed, twai may offline after sleep");
+    }
+#endif  // SOC_TWAI_SUPPORT_SLEEP_RETENTION
     _lock_release(&s_platform.intr_mutex);
 
 #if CONFIG_PM_ENABLE
@@ -732,10 +773,9 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 
     *node_ret = &node->api_base;
     return ESP_OK;
+
 err:
-    if (node) {
-        _lock_release(&s_platform.intr_mutex);
-        _node_destroy(node);
-    }
+    _lock_release(&s_platform.intr_mutex);
+    _node_destroy(node);
     return ret;
 }
