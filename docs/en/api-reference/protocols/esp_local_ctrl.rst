@@ -97,6 +97,9 @@ You may set security for transport in ESP local control using following options:
 3. ``PROTOCOM_SEC0``: specifies that data will be exchanged as a plain text (no security).
 4. ``PROTOCOM_SEC_CUSTOM``: you can define your own security requirement. Please note that you will also have to provide ``custom_handle`` of type ``protocomm_security_t *`` in this context.
 
+.. warning::
+    It is strongly recommended to use ``PROTOCOM_SEC2`` for production deployments. ``PROTOCOM_SEC0`` provides no encryption or authentication, leaving device properties exposed to any client on the local network. ``PROTOCOM_SEC1`` provides weaker security compared to ``PROTOCOM_SEC2`` and its use is discouraged for new designs.
+
 .. note::
     The respective security schemes need to be enabled through the project configuration menu. Please refer to the Enabling protocom security version section in :doc:`Protocol Communication </api-reference/provisioning/protocomm>` for more details.
 
