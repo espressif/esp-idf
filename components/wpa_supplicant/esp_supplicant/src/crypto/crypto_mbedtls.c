@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,8 @@
 
 #include "psa/crypto.h"
 #include "mbedtls/psa_util.h"
+
+#define WPA_HEX_ERR(err) ((err) < 0 ? "-" : ""), (unsigned int) ((err) < 0 ? -(err) : (err))
 
 #ifdef CONFIG_FAST_PBKDF2
 #include "fastpbkdf2.h"
@@ -655,8 +657,9 @@ int aes_128_cbc_decrypt(const u8 *key, const u8 *iv, u8 *data, size_t data_len)
 
 #ifdef CONFIG_TLS_INTERNAL_CLIENT
 struct crypto_cipher {
-    void *ctx_enc;
-    void *ctx_dec;
+    enum crypto_cipher_alg alg;
+    size_t iv_len;
+    u8 cbc[16];
     psa_key_id_t key_id;
 };
 
@@ -689,6 +692,19 @@ static uint32_t alg_to_psa_key_type(enum crypto_cipher_alg alg)
     return 0;
 }
 
+static size_t alg_to_block_size(enum crypto_cipher_alg alg)
+{
+    switch (alg) {
+    case CRYPTO_CIPHER_ALG_AES:
+        return 16;
+    case CRYPTO_CIPHER_ALG_3DES:
+    case CRYPTO_CIPHER_ALG_DES:
+        return 8;
+    default:
+        return 0;
+    }
+}
+
 struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
                                          const u8 *iv, const u8 *key,
                                          size_t key_len)
@@ -703,8 +719,12 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
-    psa_cipher_operation_t *enc_operation = NULL;
-    psa_cipher_operation_t *dec_operation = NULL;
+    size_t iv_len = alg_to_block_size(alg);
+
+    if (iv_len == 0 || iv == NULL || key == NULL) {
+        wpa_printf(MSG_ERROR, "%s: invalid args", __func__);
+        goto cleanup;
+    }
 
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
     uint32_t psa_alg = alg_to_psa_cipher(alg);
@@ -729,47 +749,9 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     }
 
     psa_reset_key_attributes(&attributes);
-
-    enc_operation = os_zalloc(sizeof(psa_cipher_operation_t));
-    if (!enc_operation) {
-        wpa_printf(MSG_ERROR, "%s: os_zalloc failed", __func__);
-        goto cleanup;
-    }
-
-    ctx->ctx_enc = (void *)enc_operation;
-
-    status = psa_cipher_encrypt_setup(enc_operation, key_id, psa_alg);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_encrypt_setup failed", __func__);
-        goto cleanup;
-    }
-
-    status = psa_cipher_set_iv(enc_operation, iv, 16);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_set_iv failed", __func__);
-        goto cleanup;
-    }
-
-    dec_operation = os_zalloc(sizeof(psa_cipher_operation_t));
-    if (!dec_operation) {
-        wpa_printf(MSG_ERROR, "%s: os_zalloc failed", __func__);
-        goto cleanup;
-    }
-
-    ctx->ctx_dec = (void *)dec_operation;
-
-    status = psa_cipher_decrypt_setup(dec_operation, key_id, psa_alg);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_decrypt_setup failed", __func__);
-        goto cleanup;
-    }
-
-    status = psa_cipher_set_iv(dec_operation, iv, 16);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_set_iv failed", __func__);
-        goto cleanup;
-    }
-
+    ctx->alg = alg;
+    ctx->iv_len = iv_len;
+    os_memcpy(ctx->cbc, iv, iv_len);
     ctx->key_id = key_id;
 
     return ctx;
@@ -777,14 +759,6 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
 cleanup:
     if (key_id) {
         psa_destroy_key(key_id);
-    }
-    if (enc_operation) {
-        psa_cipher_abort(enc_operation);
-        os_free(enc_operation);
-    }
-    if (dec_operation) {
-        psa_cipher_abort(dec_operation);
-        os_free(dec_operation);
     }
     psa_reset_key_attributes(&attributes);
     os_free(ctx);
@@ -795,22 +769,54 @@ int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
                           u8 *crypt, size_t len)
 {
     psa_status_t status;
-    psa_cipher_operation_t *operation = (psa_cipher_operation_t *)ctx->ctx_enc;
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    uint32_t psa_alg;
+    size_t output_length = 0, finish_length = 0;
 
-    size_t output_length = 0;
+    if (!ctx || !plain || !crypt || ctx->iv_len == 0 || (len % ctx->iv_len)) {
+        return -1;
+    }
+    psa_alg = alg_to_psa_cipher(ctx->alg);
 
-    status = psa_cipher_update(operation, plain, len, crypt, len, &output_length);
+    status = psa_cipher_encrypt_setup(&operation, ctx->key_id, psa_alg);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed", __func__);
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_encrypt_setup failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
         return -1;
     }
 
-    status = psa_cipher_finish(operation, crypt + output_length, len - output_length, &output_length);
+    status = psa_cipher_set_iv(&operation, ctx->cbc, ctx->iv_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed", __func__);
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_set_iv failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
+        psa_cipher_abort(&operation);
         return -1;
     }
 
+    status = psa_cipher_update(&operation, plain, len, crypt, len, &output_length);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    status = psa_cipher_finish(&operation, crypt + output_length, len - output_length, &finish_length);
+    psa_cipher_abort(&operation);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
+        return -1;
+    }
+
+    output_length += finish_length;
+    if (output_length != len) {
+        wpa_printf(MSG_ERROR, "%s: unexpected output length %u (expected %u)",
+                   __func__, (unsigned) output_length, (unsigned) len);
+        return -1;
+    }
+
+    os_memcpy(ctx->cbc, crypt + len - ctx->iv_len, ctx->iv_len);
     return 0;
 }
 
@@ -818,36 +824,67 @@ int crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt,
                           u8 *plain, size_t len)
 {
     psa_status_t status;
-    psa_cipher_operation_t *operation = (psa_cipher_operation_t *)ctx->ctx_dec;
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    uint32_t psa_alg;
+    size_t output_length = 0, finish_length = 0;
+    u8 next_iv[16];
 
-    size_t output_length = 0;
+    if (!ctx || !plain || !crypt || ctx->iv_len == 0 || (len % ctx->iv_len)) {
+        return -1;
+    }
+    psa_alg = alg_to_psa_cipher(ctx->alg);
 
-    status = psa_cipher_update(operation, crypt, len, plain, len, &output_length);
+    os_memcpy(next_iv, crypt + len - ctx->iv_len, ctx->iv_len);
+
+    status = psa_cipher_decrypt_setup(&operation, ctx->key_id, psa_alg);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed", __func__);
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_decrypt_setup failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
         return -1;
     }
 
-    status = psa_cipher_finish(operation, plain + output_length, len - output_length, &output_length);
+    status = psa_cipher_set_iv(&operation, ctx->cbc, ctx->iv_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed", __func__);
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_set_iv failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
+        psa_cipher_abort(&operation);
         return -1;
     }
 
+    status = psa_cipher_update(&operation, crypt, len, plain, len, &output_length);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    status = psa_cipher_finish(&operation, plain + output_length, len - output_length, &finish_length);
+    psa_cipher_abort(&operation);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed: %s0x%X",
+                   __func__, WPA_HEX_ERR((int) status));
+        return -1;
+    }
+
+    output_length += finish_length;
+    if (output_length != len) {
+        wpa_printf(MSG_ERROR, "%s: unexpected output length %u (expected %u)",
+                   __func__, (unsigned) output_length, (unsigned) len);
+        return -1;
+    }
+
+    os_memcpy(ctx->cbc, next_iv, ctx->iv_len);
     return 0;
 }
 
 void crypto_cipher_deinit(struct crypto_cipher *ctx)
 {
     psa_status_t status;
-    psa_cipher_abort((psa_cipher_operation_t *)ctx->ctx_enc);
-    psa_cipher_abort((psa_cipher_operation_t *)ctx->ctx_dec);
     status = psa_destroy_key(ctx->key_id);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_destroy_key failed", __func__);
     }
-    os_free(ctx->ctx_enc);
-    os_free(ctx->ctx_dec);
     os_free(ctx);
 }
 #endif
