@@ -162,7 +162,7 @@ void btm_ble_cis_request_evt(tBTM_BLE_CIS_REQUEST_CMPL *params)
 }
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btm_ble_big_create_cmpl_evt(tBTM_BLE_BIG_CREATE_CMPL *params)
 {
     BTM_TRACE_DEBUG("%s", __func__);
@@ -217,7 +217,7 @@ void btm_ble_big_terminate_cmpl_evt(tBTM_BLE_BIG_TERMINATE_CMPL *params)
 
     BTM_IsoBleCallbackTrigger(BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT, &cb_params);
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void btm_ble_big_sync_estab_evt(tBTM_BLE_BIG_SYNC_ESTAB_CMPL *params)
@@ -315,7 +315,7 @@ void btm_ble_iso_data_path_update_complete(UINT16 opcode, UINT8 hci_status, UINT
     BTM_IsoBleCallbackTrigger(BTM_BLE_ISO_DATA_PATH_UPFATE_EVT, &cb_params);
 }
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 tBTM_STATUS BTM_BleBigCreate(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
                             uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
                             uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
@@ -356,23 +356,11 @@ tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t
 
 tBTM_STATUS BTM_BleBigTerminate(UINT8 big_handle, UINT8 reason)
 {
-    tHCI_STATUS err = HCI_SUCCESS;
-    tBTM_STATUS status = BTM_SUCCESS;
-    tBTM_BLE_ISO_CB_PARAMS cb_params = {0};
-
-    if ((err = btsnd_hcic_ble_big_terminate(big_handle, reason)) != TRUE) {
-        BTM_TRACE_ERROR("LE PA SyncCancel, cmd err=0x%x", err);
-        status = BTM_HCI_ERROR | err;
-    }
-
-    if (status != BTM_SUCCESS) {
-        cb_params.status = status;
-        BTM_IsoBleCallbackTrigger(BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT, &cb_params);
-    }
-
-    return status;
+    // event will be triggered in command status and complete event
+    btsnd_hcic_ble_big_terminate(big_handle, reason);
+    return BTM_SUCCESS;
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 tBTM_STATUS BTM_BleBigSyncCreate(uint8_t big_handle, uint16_t sync_handle,
@@ -488,6 +476,11 @@ tBTM_STATUS BTM_BleSetCigParams(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_
         BTM_TRACE_ERROR("%s, cis_cnt %d exceeds BLE_ISO_CIS_MAX_COUNT %d", __func__, cis_cnt, BLE_ISO_CIS_MAX_COUNT);
         return BTM_ILLEGAL_VALUE;
     }
+    // HCI_LE_Set_CIG_Parameters param length = 15 + 9*cis_cnt (UINT8). Max 255 => cis_cnt <= 26.
+    if (cis_cnt > 26) {
+        BTM_TRACE_ERROR("%s, cis_cnt %d exceeds HCI transport limit", __func__, cis_cnt);
+        return BTM_ILLEGAL_VALUE;
+    }
 
     if ((err = btsnd_hcic_ble_iso_set_cig_params(cig_id, sdu_int_c_to_p, sdu_int_p_to_c, worse_case_SCA, packing,
                                             framing, mtl_c_to_p, mtl_p_to_c, cis_cnt, (struct ble_hci_le_cis_params *)cis_params)) != HCI_SUCCESS) {
@@ -506,6 +499,11 @@ tBTM_STATUS BTM_BleSetCigParamsTest(uint8_t cig_id, uint32_t sdu_int_c_to_p, uin
 
     if (cis_cnt > BLE_ISO_CIS_MAX_COUNT) {
         BTM_TRACE_ERROR("%s, cis_cnt %d exceeds BLE_ISO_CIS_MAX_COUNT %d", __func__, cis_cnt, BLE_ISO_CIS_MAX_COUNT);
+        return BTM_ILLEGAL_VALUE;
+    }
+    // HCI_LE_Set_CIG_Parameters_Test param length = 15 + 14*cis_cnt (UINT8). Max 255 => cis_cnt <= 17.
+    if (cis_cnt > 17) {
+        BTM_TRACE_ERROR("%s, cis_cnt %d exceeds HCI transport limit", __func__, cis_cnt);
         return BTM_ILLEGAL_VALUE;
     }
 
@@ -562,8 +560,14 @@ void btm_ble_accept_cis_req_cmd_status(tBTM_BLE_ISO_CB_PARAMS *cb_params)
 
 tBTM_STATUS BTM_BleAcceptCisReq(uint16_t cis_handle)
 {
-    btsnd_hcic_ble_iso_accept_cis_req(cis_handle);
-    return BTM_SUCCESS;
+    if (btsnd_hcic_ble_iso_accept_cis_req(cis_handle)) {
+      return BTM_SUCCESS;
+    }
+    // failed to send command
+    tBTM_BLE_ISO_CB_PARAMS cb_params = {0};
+    cb_params.status = BTM_NO_RESOURCES;
+    btm_ble_accept_cis_req_cmd_status(&cb_params);
+    return BTM_NO_RESOURCES;
 }
 
 tBTM_STATUS BTM_BleRejectCisReq(uint16_t cis_handle, uint8_t reason)

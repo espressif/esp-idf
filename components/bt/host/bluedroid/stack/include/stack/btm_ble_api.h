@@ -978,10 +978,10 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #define    BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT                     1
 #define    BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT                  2
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define    BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT                    3
 #define    BTM_BLE_ISO_BIG_SYNC_LOST_EVT                           4
@@ -1099,7 +1099,7 @@ typedef struct {
 typedef struct {
     UINT8 status;
     UINT8 instance_num;
-    UINT8 instance[10];
+    UINT8 instance[MAX_BLE_ADV_INSTANCE];
 } tBTM_BLE_EXT_ADV_START_CMPL;
 
 typedef struct {
@@ -1537,7 +1537,7 @@ typedef struct {
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 typedef struct {
     UINT8 status;
     UINT8 big_handle;
@@ -1559,7 +1559,7 @@ typedef struct {
     UINT8 big_handle;
     UINT8 reason;
 } tBTM_BLE_BIG_TERMINATE_CMPL;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 typedef struct {
@@ -1704,10 +1704,10 @@ typedef struct {
 
 typedef union {
     UINT8 status;
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     tBTM_BLE_BIG_CREATE_CMPL           btm_big_cmpl;
     tBTM_BLE_BIG_TERMINATE_CMPL        btm_big_term;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     tBTM_BLE_BIG_SYNC_ESTAB_CMPL       btm_big_sync_estab;
     tBTM_BLE_BIG_SYNC_LOST_EVT         btm_big_sync_lost;
@@ -3107,7 +3107,7 @@ void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 sk
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 void BTM_BleIsoRegisterCallback(tBTM_BLE_ISO_CBACK cb);
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 tBTM_STATUS BTM_BleBigCreate(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
                             uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
                             uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
@@ -3120,7 +3120,7 @@ tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t
                         uint8_t pto, uint8_t encryption, uint8_t *broadcast_code);
 
 tBTM_STATUS BTM_BleBigTerminate(UINT8 big_handle, UINT8 reason);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 tBTM_STATUS BTM_BleBigSyncCreate(uint8_t big_handle, uint16_t sync_handle,
                                 uint8_t encryption, uint8_t *bc_code,

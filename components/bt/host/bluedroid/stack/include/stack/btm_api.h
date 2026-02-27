@@ -805,16 +805,6 @@ typedef struct {
     BD_ADDR     rem_bda;                 /* Remote device Bluetooth address */
 } tBTM_BLE_CH_MAP_RESULTS;
 
-/* Structure returned with read current TX power event (in tBTM_CMPL_CB callback function)
-** in response to BTM_ReadTxPower call.
-*/
-typedef struct {
-    tBTM_STATUS status;
-    UINT8       hci_status;
-    INT8        tx_power;
-    BD_ADDR     rem_bda;
-} tBTM_TX_POWER_RESULTS;
-
 /* Structure returned with read link quality event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_ReadLinkQuality call.
 */
