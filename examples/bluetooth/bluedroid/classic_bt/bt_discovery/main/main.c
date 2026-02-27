@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -185,7 +185,11 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
         get_name_from_eir(p_dev->eir, p_dev->bdname, &p_dev->bdname_len);
     }
 
-    ESP_LOGI(GAP_TAG, "Found a target device, address %s, name %s", bda_str, p_dev->bdname);
+    if (p_dev->bdname_len > 0) {
+        ESP_LOGI(GAP_TAG, "Found a target device, address %s, name %s", bda_str, p_dev->bdname);
+    } else {
+        ESP_LOGI(GAP_TAG, "Found a target device, address %s, name [unknown]", bda_str);
+    }
     p_dev->state = APP_GAP_STATE_DEVICE_DISCOVER_COMPLETE;
     ESP_LOGI(GAP_TAG, "Cancel device discovery ...");
     esp_bt_gap_cancel_discovery();
@@ -218,6 +222,7 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                     && p_dev->dev_found) {
                 p_dev->state = APP_GAP_STATE_SERVICE_DISCOVERING;
                 ESP_LOGI(GAP_TAG, "Discover services ...");
+                vTaskDelay(pdMS_TO_TICKS(500));  // 0.5s delay
                 esp_bt_gap_get_remote_services(p_dev->bda);
             }
         } else if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STARTED) {
