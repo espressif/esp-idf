@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,16 +27,16 @@ int uuidType(unsigned char *p_uuid)
     int all_zero = 1;
 
     for (i = 0; i != 16; ++i) {
+        /* Check if bytes 12-13 are non-zero for all_zero detection */
+        if (p_uuid[i] != 0) {
+            all_zero = 0;
+        }
         if (i == 12 || i == 13) {
             continue;
         }
 
         if (p_uuid[i] == BASE_UUID[i]) {
             ++match;
-        }
-
-        if (p_uuid[i] != 0) {
-            all_zero = 0;
         }
     }
     if (all_zero) {

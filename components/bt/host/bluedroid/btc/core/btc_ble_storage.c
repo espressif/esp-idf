@@ -1045,9 +1045,10 @@ bt_status_t btc_storage_set_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr, uint8
 {
     int ret;
     bdstr_t bdstr;
-
+    btc_config_lock();
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr_t));
     ret = btc_config_set_bin(bdstr, BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR, value, (size_t)len);
+    btc_config_unlock();
     if (ret == false) {
         return BT_STATUS_FAIL;
     }
