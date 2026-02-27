@@ -868,11 +868,13 @@ void BTA_DmSecureConnectionOobReply(BD_ADDR bd_addr, UINT8 *p_c, UINT8 *p_r)
 {
     tBTA_DM_API_SC_OOB_REPLY    *p_msg;
 
-    if ((p_msg = (tBTA_DM_API_SC_OOB_REPLY *) osi_malloc(sizeof(tBTA_DM_API_OOB_REPLY))) != NULL) {
+    if((p_c == NULL) || (p_r == NULL)) {
+        APPL_TRACE_ERROR("%s, p_c or p_r is NULL", __func__);
+        return;
+    }
+
+    if ((p_msg = (tBTA_DM_API_SC_OOB_REPLY *) osi_malloc(sizeof(tBTA_DM_API_SC_OOB_REPLY))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_SC_OOB_REPLY_EVT;
-        if((p_c == NULL) || (p_r == NULL)) {
-            return;
-        }
         memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);
         memcpy(p_msg->c, p_c, BT_OCTET16_LEN);
         memcpy(p_msg->r, p_r, BT_OCTET16_LEN);
@@ -1630,12 +1632,12 @@ void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR de
 *******************************************************************************/
 extern void BTA_DmBleAdvStop (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb)
 {
-    tBTA_DM_API_BLE_OBSERVE   *p_msg;
+    tBTA_DM_API_BLE_ADVACTION   *p_msg;
 
     APPL_TRACE_API("BTA_DmBleAdvStop: start = %d \n", start);
 
-    if ((p_msg = (tBTA_DM_API_BLE_OBSERVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_OBSERVE))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_OBSERVE));
+    if ((p_msg = (tBTA_DM_API_BLE_ADVACTION *) osi_malloc(sizeof(tBTA_DM_API_BLE_ADVACTION))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADVACTION));
 
         p_msg->hdr.event = BTA_DM_API_BLE_ADVSTOP_EVT;
         p_msg->start = start;
@@ -2837,9 +2839,10 @@ void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_CFG_DATA_EVT;
         p_msg->instance = instance;
         p_msg->length = length;
-        p_msg->data = (UINT8 *)(p_msg + 1);
-        memcpy(p_msg->data, data, length);
-        p_msg->data = length != 0 ? (UINT8 *)(p_msg + 1) : NULL;
+        p_msg->data = (length != 0) ? (UINT8 *)(p_msg + 1) : NULL;
+        if (data && length) {
+            memcpy(p_msg->data, data, length);
+        }
         p_msg->only_update_did = only_update_did;
         //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
@@ -3165,7 +3168,7 @@ void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PA
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void BTA_DmBleGapIsoBigCreate(tBTA_DM_BLE_BIG_CREATE_PARAMS *p_big_creat_param)
 {
     tBTA_DM_API_BIG_CREATE *p_msg;
@@ -3240,7 +3243,7 @@ void BTA_DmBleGapIsoBigTerminate(tBTA_DM_BLE_BIG_TERMINATE_PARAMS *p_big_termina
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void BTA_DmBleGapIsoBigSyncCreate(tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS *p_big_sync_param)
@@ -3500,7 +3503,7 @@ void BTA_DmBleCteSetConnectionlessTransParams(uint8_t adv_handle, uint8_t cte_le
         p_buf->cte_count = cte_count;
         p_buf->switching_pattern_len = switching_pattern_len;
         p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
-        if (switching_pattern_len) {
+        if (switching_pattern_len && antenna_ids) {
             memcpy(p_buf->antenna_ids, antenna_ids, switching_pattern_len);
         }
         //start sent the msg to the bta system control module
@@ -3544,7 +3547,7 @@ void BTA_DmBleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, uint8_t
         p_buf->max_sampled_ctes = max_sampled_ctes;
         p_buf->switching_pattern_len = switching_pattern_len;
         p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
-        if (switching_pattern_len) {
+        if (switching_pattern_len && ant_ids) {
             memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
         }
         // start sent the msg to the bta system control module
@@ -3571,7 +3574,7 @@ void BTA_DmBleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t sampli
         p_buf->slot_dur = slot_dur;
         p_buf->switching_pattern_len = switching_pattern_len;
         p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
-        if (switching_pattern_len) {
+        if (switching_pattern_len && ant_ids) {
             memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
         }
         // start sent the msg to the bta system control module
@@ -3594,7 +3597,7 @@ void BTA_DmBleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte_type
         p_buf->cte_types = cte_types;
         p_buf->switching_pattern_len = switching_pattern_len;
         p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
-        if (switching_pattern_len) {
+        if (switching_pattern_len && ant_ids) {
             memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
         }
         // start sent the msg to the bta system control module
