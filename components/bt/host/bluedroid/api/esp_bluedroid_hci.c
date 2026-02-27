@@ -81,6 +81,8 @@ void hci_host_send_packet(uint8_t *data, uint16_t len)
 #else /* BT_CONTROLLER_INCLUDED == TRUE */
     if (s_hci_driver_ops.send) {
         s_hci_driver_ops.send(data, len);
+    } else {
+        ESP_LOGE(LOG_TAG, "%s send function is not registered", __func__);
     }
 #endif /* BT_CONTROLLER_INCLUDED == TRUE */
 }
