@@ -15,6 +15,7 @@
 // helper function to initialize a gpio for simulation
 void test_gpio_init_for_simulation(int gpio_sig)
 {
+    gpio_reset_pin(gpio_sig);
     gpio_config_t config = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << gpio_sig,

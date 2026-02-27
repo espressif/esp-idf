@@ -1828,6 +1828,10 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
                 scale = LEDC_LL_DUTY_SCALE_MAX;
             }
             step = duty_delta / scale;
+            // Ensure step * cycle doesn't exceed cycles_per_phase to prevent underflow to surplus_cycles_last_phase
+            if (step > cycles_per_phase) {
+                step = cycles_per_phase;
+            }
         }
 
         // Prepare for next phase calculation

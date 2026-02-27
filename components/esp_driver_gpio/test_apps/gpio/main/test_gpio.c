@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +50,7 @@ static volatile int edge_intr_times = 0;   // use this to get how many times the
 static gpio_config_t test_init_io(gpio_num_t num)
 {
     TEST_ASSERT(GPIO_IS_VALID_OUTPUT_GPIO(num));
+    TEST_ESP_OK(gpio_reset_pin(num));
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
@@ -808,13 +809,8 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 
     for (int i = 0; i < sizeof(test_pins) / sizeof(int); i++) {
         int pin = test_pins[i];
-        gpio_config_t io_conf = {
-            .intr_type = GPIO_INTR_DISABLE,
-            .mode = GPIO_MODE_INPUT_OUTPUT,
-            .pin_bit_mask = BIT64(pin),
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
-        };
+        gpio_config_t io_conf = test_init_io(pin);
+        io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
         gpio_config(&io_conf);
 
         // test pin
@@ -893,13 +889,8 @@ static void gpio_deep_sleep_hold_test_first_stage(void)
 
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
 
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
+    gpio_config_t io_conf = test_init_io(io_num);
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
     TEST_ESP_OK(gpio_config(&io_conf));
 
     const bool initial_level = gpio_get_level(io_num);
@@ -938,13 +929,8 @@ static void gpio_deep_sleep_hold_test_second_stage(void)
 #endif
     TEST_ESP_OK(gpio_hold_dis(io_num));
 
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
+    gpio_config_t io_conf = test_init_io(io_num);
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
     TEST_ESP_OK(gpio_config(&io_conf));
 
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3 // DIG-399

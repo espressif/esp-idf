@@ -290,6 +290,7 @@ static void rtcio_deep_sleep_hold_test_first_stage(void)
 
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
 
+    gpio_reset_pin(io_num);
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT_OUTPUT,

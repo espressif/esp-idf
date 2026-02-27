@@ -364,6 +364,36 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 
     do {
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
+            // This function will set the pin to a certain mode, instead of adding new modes to current status
+            // If GPIO_MODE_DEF_OUTPUT flag is not set, output will be disabled; Same for GPIO_MODE_DEF_INPUT flag
+            // Also the func sel will always be set to GPIO function in this function
+            // so IO conflict check is tight here
+            uint64_t bit_mask = BIT64(io_num);
+            bool conflict = false;
+            // No need to reserve any pin for reading pad level (and do input check first, since output needs reserve IO which will make esp_gpio_is_reserved return true)
+            // but if the pin has been used as an IOMUX input, neither it can be configured to GPIO function, nor input can be disabled
+            if (esp_gpio_is_reserved(bit_mask) && gpio_hal_input_is_enabled(gpio_context.gpio_hal, io_num)) {
+                conflict = true;
+            }
+            // Currently, we have no way to know if an IO has been used as a GPIO matrix input (no reserve for this case),
+            // so we cannot check such case and skip if input will be disabled
+            if ((pGPIOConfig->mode) & GPIO_MODE_DEF_OUTPUT) {
+                // need to reserve the pin if it is used as an output
+                uint64_t old_busy_mask = esp_gpio_reserve(bit_mask);
+                if (old_busy_mask & bit_mask) {
+                    conflict = true;
+                }
+            } else {
+                // gpio output will be disabled, so should skip for any reserved output pins
+                if (esp_gpio_is_reserved(bit_mask) && !gpio_hal_input_is_enabled(gpio_context.gpio_hal, io_num)) {
+                    conflict = true;
+                }
+            }
+            if (conflict) {
+                ESP_LOGW(GPIO_TAG, "conflict found for GPIO[%"PRIu32"]", io_num);
+                // Right now, we just give a warning
+                // Later, we should skip the pin and continue with the next one
+            }
 
 #if SOC_RTCIO_PIN_COUNT > 0
             if (rtc_gpio_is_valid_gpio(io_num)) {
