@@ -376,10 +376,8 @@ typedef struct{
 }tGATT_PREPARE_WRITE_RECORD;
 
 typedef struct {
-#if (SMP_INCLUDED == TRUE)
     fixed_queue_t    *pending_enc_clcb;   /* pending encryption channel q */
     tGATT_SEC_ACTION sec_act;
-#endif // (SMP_INCLUDED == TRUE)
 
     BD_ADDR         peer_bda;
     tBT_TRANSPORT   transport;
