@@ -31,6 +31,7 @@ typedef struct {
 enum wps_sm_state {
     WAIT_START,
     WPA_MESG,
+    WPA_FINISH_PROCESS,
     WPA_FAIL
 };
 #endif /* ESP_SUPPLICANT */
