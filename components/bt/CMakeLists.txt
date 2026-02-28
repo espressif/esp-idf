@@ -1017,6 +1017,17 @@ if(CONFIG_BLE_COMPRESSED_LOG_ENABLE)
     if(LOG_COMPRESSION_TARGET)
         set(srcs ${LOG_COMPRESS_SRCS})
         set(include_dirs ${LOG_COMPRESS_INCLUDE_DIRS})
+        # LOG_COMPRESS_FILES_WITH_FLAGS format: "file_path|compile_flags"
+        if(LOG_COMPRESS_FILES_WITH_FLAGS)
+            foreach(file_entry ${LOG_COMPRESS_FILES_WITH_FLAGS})
+                # Split by '|' to get file path and flags
+                string(REPLACE "|" ";" file_parts "${file_entry}")
+                list(GET file_parts 0 file_path)
+                list(GET file_parts 1 compile_flags)
+                set_source_files_properties(${file_path}
+                    PROPERTIES COMPILE_FLAGS "${compile_flags}")
+            endforeach()
+        endif()
     else()
         list(APPEND include_dirs ${LOG_COMPRESS_INCLUDE_DIRS})
     endif()
