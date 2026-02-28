@@ -318,7 +318,7 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
 #if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION != 1
 static void touch_wakeup_prepare(void);
 #endif
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
@@ -872,8 +872,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_
     // for !(s_config.wakeup_triggers & RTC_EXT1_TRIG_EN), ext1 wakeup will be turned off in hardware in the real call to sleep
 #endif
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
-    if (deep_sleep && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+    if ((sleep_flags & RTC_SLEEP_PD_DIG) && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
         gpio_deep_sleep_wakeup_prepare();
     }
 #endif
@@ -1623,6 +1623,10 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
 #endif
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_GPIO, RTC_GPIO_TRIG_EN)) {
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+        s_config.gpio_wakeup_mask = 0;
+        s_config.gpio_trigger_mode = 0;
+#endif
         s_config.wakeup_triggers &= ~RTC_GPIO_TRIG_EN;
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
@@ -2028,7 +2032,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
 
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
 {
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO) {
@@ -2088,12 +2092,12 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
             continue;
         }
         err = gpio_deep_sleep_wakeup_enable(gpio_idx, intr_type);
-
+        if (err != ESP_OK) return err;
         s_config.gpio_wakeup_mask |= BIT(gpio_idx);
         if (mode == ESP_GPIO_WAKEUP_GPIO_HIGH) {
-            s_config.gpio_trigger_mode |= (mode << gpio_idx);
+            s_config.gpio_trigger_mode |= BIT(gpio_idx);
         } else {
-            s_config.gpio_trigger_mode &= ~(mode << gpio_idx);
+            s_config.gpio_trigger_mode &= ~BIT(gpio_idx);
         }
     }
     s_config.wakeup_triggers |= RTC_GPIO_TRIG_EN;
