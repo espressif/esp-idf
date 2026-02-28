@@ -527,6 +527,7 @@ UART 输出处理
     :esp32h2: - :example:`system/deep_sleep` 演示如何通过 ESP32-H2 的唤醒源，如 RTC 定时器、EXT0、EXT1 等，触发 Deep-sleep 唤醒。
     - :example:`system/light_sleep` 演示如何使用  {IDF_TARGET_NAME} 的唤醒源，如定时器，GPIO 等，触发 Light-sleep 唤醒。
     :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` 演示如何使用触摸传感器唤醒 Light-sleep 或 Deep-sleep。
+    :SOC_VBAT_SUPPORTED: - :example:`lowpower/vbat` 演示如何在 Deep-sleep 期间使用备用电池电源（VBAT），使 RTC 定时器在主电源断开后继续运行。
 
 API 参考
 -------------
