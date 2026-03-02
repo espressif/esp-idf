@@ -69,6 +69,8 @@ static struct bt_mesh_conn_cb *bt_mesh_gatts_conn_cb;
 
 static uint8_t bt_mesh_gatts_addr[6];
 
+#define BT_MESH_GATTS_CONN_UNUSED 0xFF
+
 #if CONFIG_BLE_MESH_USE_BLE_50
 static bool g_gatts_svcs_add = false;
 #endif
@@ -87,9 +89,6 @@ static inline bool bt_mesh_is_ble_adv_running();
 static bool g_host_init = false;
 
 #if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_USE_BLE_50
-
-#define BT_MESH_GATTS_CONN_UNUSED 0xFF
-
 static void bt_mesh_gatts_conn_init(void)
 {
     int i;
@@ -965,7 +964,7 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
                 (bt_mesh_gatts_conn_cb->disconnected)(&bt_mesh_gatts_conn[index], event->disconnect.reason);
             }
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
-            bt_mesh_gatts_conn[index].handle = 0;
+            bt_mesh_gatts_conn[index].handle = BT_MESH_GATTS_CONN_UNUSED;
             memset(bt_mesh_gatts_addr, 0x0, BLE_MESH_ADDR_LEN);
         }
 
