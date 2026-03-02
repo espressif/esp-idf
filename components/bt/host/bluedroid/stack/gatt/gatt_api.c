@@ -1044,13 +1044,11 @@ tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM 
         default:
             break;
         }
-#if (SMP_INCLUDED == TRUE)
         /* start security check */
         if (gatt_security_check_start(p_clcb) == FALSE) {
             status = GATT_NO_RESOURCES;
             gatt_clcb_dealloc(p_clcb);
         }
-#endif // (SMP_INCLUDED == TRUE)
     } else {
         status = GATT_NO_RESOURCES;
     }
@@ -1110,11 +1108,9 @@ tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type, tGATT_VALUE *p_
                 p_clcb->start_offset = p_write->offset;
                 p->offset = 0;
             }
-#if (SMP_INCLUDED == TRUE)
             if (gatt_security_check_start(p_clcb) == FALSE) {
                 status = GATT_NO_RESOURCES;
             }
-#endif // (SMP_INCLUDED == TRUE)
         } else {
             status = GATT_NO_RESOURCES;
         }
