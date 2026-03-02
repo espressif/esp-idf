@@ -412,6 +412,15 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
         }
     }
 
+#ifdef CONFIG_WPA3_SAE
+#ifdef CONFIG_IEEE80211R
+    if (sm && sm->pmksa && (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)) {
+        os_memcpy(sm->xxkey, sm->pmk, sm->pmk_len);
+        sm->xxkey_len = sm->pmk_len;
+    }
+#endif
+#endif
+
     if (pmkid && sm->cur_pmksa &&
             os_memcmp_const(pmkid, sm->cur_pmksa->pmkid, PMKID_LEN) == 0) {
 
