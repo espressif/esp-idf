@@ -35,7 +35,7 @@ if(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_BLUEDROID_ENABLED)
     list(APPEND LOG_COMPRESSED_MODULE "BLE_HOST")
 
     # update config file
-    set(HOST_CODE_PATH "host/bluedroid/stack")
+    set(HOST_CODE_PATH "host/bluedroid")
     set(HOST_LOG_INDEX_HEADER "host_log_index.h")
     set(BLE_HOST_LOG_SCRIPT_PATH
         "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/bluedroid/make_bluedroid_log_macro.py")
