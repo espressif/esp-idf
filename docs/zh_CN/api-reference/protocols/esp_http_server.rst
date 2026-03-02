@@ -78,6 +78,15 @@ HTTP 服务器组件为 WebSocket 端点提供了握手前回调 (pre-handshake 
 
 要使用 WebSocket 握手前回调，需在项目配置中启用 :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` 选项。
 
+WebSocket 握手后回调
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+与握手前回调类似，HTTP 服务器组件也为 WebSocket 端点提供了握手后回调。该回调会在处理完 WebSocket 握手后被调用。
+
+此时连接已升级为 WebSocket，服务器已返回 WebSocket 握手响应。该握手后回调可用于记录日志、发送初始消息或执行其他初始化任务。
+
+要使用 WebSocket 握手后回调功能，需在项目配置中启用 :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` 选项。
+
 .. code-block:: c
 
     static esp_err_t ws_auth_handler(httpd_req_t *req)

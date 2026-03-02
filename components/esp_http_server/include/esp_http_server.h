@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -467,8 +467,15 @@ typedef struct httpd_uri {
      * i.e. before the server responds with the WebSocket handshake response or before switching to the WebSocket handler.
      */
     esp_err_t (*ws_pre_handshake_cb)(httpd_req_t *req);
-#endif
-#endif
+#endif /* CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT */
+#if CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT || __DOXYGEN__
+    /**
+     * Pointer to WebSocket post-handshake callback. This will be called after the WebSocket handshake is processed,
+     * i.e. after the server responds with the WebSocket handshake response or after switching to the WebSocket handler.
+     */
+    esp_err_t (*ws_post_handshake_cb)(httpd_req_t *req);
+#endif /* CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT */
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 } httpd_uri_t;
 
 /**

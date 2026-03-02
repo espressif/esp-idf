@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -169,6 +169,9 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
 #ifdef CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT
             hd->hd_calls[i]->ws_pre_handshake_cb = uri_handler->ws_pre_handshake_cb;
 #endif
+#ifdef CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT
+            hd->hd_calls[i]->ws_post_handshake_cb = uri_handler->ws_post_handshake_cb;
+#endif
 #ifdef CONFIG_HTTPD_WS_SUPPORT
             hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
             hd->hd_calls[i]->handle_ws_control_frames = uri_handler->handle_ws_control_frames;
@@ -328,7 +331,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
             ESP_LOGW(TAG, LOG_FMT("ws_pre_handshake_cb failed"));
             return ESP_FAIL;
         }
-#endif
+#endif /* CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT */
 
         ESP_LOGD(TAG, LOG_FMT("Responding WS handshake to sock %d"), aux->sd->fd);
         esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req, uri->supported_subprotocol);
@@ -340,9 +343,17 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         aux->sd->ws_handler = uri->handler;
         aux->sd->ws_control_frames = uri->handle_ws_control_frames;
         aux->sd->ws_user_ctx = uri->user_ctx;
-    }
-#endif
 
+#ifdef CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT
+        if (uri->ws_post_handshake_cb && uri->ws_post_handshake_cb(req) != ESP_OK) {
+            ESP_LOGW(TAG, LOG_FMT("ws_post_handshake_cb failed"));
+            return ESP_FAIL;
+        }
+#endif /* CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT */
+        /* If the request is websocket handshake, then do not call the uri->handler */
+        return ESP_OK;
+    }
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
     /* Invoke handler */
     if (uri->handler(req) != ESP_OK) {
         /* Handler returns error, this socket should be closed */
