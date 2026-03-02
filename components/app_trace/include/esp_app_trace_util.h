@@ -32,7 +32,7 @@ typedef struct {
  * @brief Initializes timeout structure.
  *
  * @param tmo       Pointer to timeout structure to be initialized.
- * @param user_tmo  Timeout value (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+ * @param user_tmo  Timeout value (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 */
 static inline void esp_apptrace_tmo_init(esp_apptrace_tmo_t *tmo, uint32_t user_tmo)
 {
@@ -94,7 +94,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock);
 /** Ring buffer control structure.
  *
  * @note For purposes of application tracing module if there is no enough space for user data and write pointer can be wrapped
- *       current ring buffer size can be temporarily shrinked in order to provide buffer with requested size.
+ *       current ring buffer size can be temporarily shrunk in order to provide buffer with requested size.
  */
 typedef struct {
     uint8_t *data;      ///< pointer to data storage
@@ -114,7 +114,8 @@ typedef struct {
 static inline void esp_apptrace_rb_init(esp_apptrace_rb_t *rb, uint8_t *data, uint32_t size)
 {
     rb->data = data;
-    rb->size = rb->cur_size = size;
+    rb->size = size;
+    rb->cur_size = size;
     rb->rd = 0;
     rb->wr = 0;
 }
