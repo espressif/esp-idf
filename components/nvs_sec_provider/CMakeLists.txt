@@ -17,6 +17,8 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES bootloader_support efuse esp_partition nvs_flash
                        REQUIRES esp_security)
 
+idf_define_esp_err_codes(HEADERS include/nvs_sec_provider.h)
+
 # NOTE: In a case where only the default NVS partition is to be encrypted
 # and no custom NVS partitions exist, `nvs_flash_init` is the only API that
 # needs to be called. No API from the `nvs_sec_provider` component is called

@@ -72,6 +72,8 @@ else()
                         INCLUDE_DIRS "include"
                         PRIV_INCLUDE_DIRS "private_include")
 
+    idf_define_esp_err_codes(HEADERS include/nvs.h)
+
     # If we use the linux target, we need to redirect the crc functions to the linux
     if(${target} STREQUAL "linux")
         if(CONFIG_NVS_ENCRYPTION)

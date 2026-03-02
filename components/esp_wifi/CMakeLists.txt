@@ -85,6 +85,8 @@ idf_component_register(SRCS "${srcs}"
                                   wifi_apps/roaming_app/include wifi_apps/roaming_app/src
                     LDFRAGMENTS "${ldfragments}")
 
+idf_define_esp_err_codes(HEADERS include/esp_wifi.h include/esp_now.h include/esp_mesh.h)
+
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
 

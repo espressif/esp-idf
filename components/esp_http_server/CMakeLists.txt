@@ -14,3 +14,5 @@ idf_component_register(SRCS "src/httpd_main.c"
                     PRIV_INCLUDE_DIRS ${priv_inc_dir}
                     REQUIRES ${requires}
                     PRIV_REQUIRES ${priv_req})
+
+idf_define_esp_err_codes(HEADERS include/esp_http_server.h)

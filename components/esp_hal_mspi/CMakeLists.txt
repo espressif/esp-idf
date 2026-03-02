@@ -38,3 +38,5 @@ idf_component_register(
     REQUIRES soc hal esp_hal_gpspi esp_hal_clock # TODO: IDF-15106 remove esp_hal_clock dependency
     PRIV_REQUIRES esp_hal_gpio
 )
+
+idf_define_esp_err_codes(HEADERS include/hal/esp_flash_err.h)

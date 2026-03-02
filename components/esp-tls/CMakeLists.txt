@@ -25,6 +25,7 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES mbedtls
                     PRIV_REQUIRES ${priv_req})
 
+idf_define_esp_err_codes(HEADERS esp_tls_errors.h)
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
 idf_component_get_property(lwip lwip COMPONENT_LIB)

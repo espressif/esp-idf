@@ -16,6 +16,10 @@ tools/test_apps/build_system/embed_test:
       temporary: false
       reason: Hardware independent feature, no need to test on all targets
 
+tools/test_apps/build_system/err_codes_check:
+  enable:
+    - if: IDF_TARGET in ["esp32", "linux"]
+
 tools/test_apps/build_system/external_project:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3"]

@@ -42,6 +42,8 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES esp_netif_stack
                     LDFRAGMENTS linker.lf)
 
+idf_define_esp_err_codes(HEADERS include/esp_netif_types.h)
+
 if(CONFIG_ESP_NETIF_L2_TAP OR CONFIG_ESP_NETIF_BRIDGE_EN)
     set(optional_requires "")
     if(CONFIG_ESP_NETIF_L2_TAP)

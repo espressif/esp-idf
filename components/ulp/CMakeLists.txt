@@ -102,3 +102,5 @@ idf_component_register(
              esp_hal_i2c esp_hal_touch_sens esp_hal_gpspi esp_hal_pmu esp_hal_rtc_timer esp_hal_clock
     PRIV_REQUIRES bootloader_support esp_mm
 )
+
+idf_define_esp_err_codes(HEADERS ulp_fsm/include/ulp_fsm_common.h)

@@ -51,6 +51,7 @@ if(NOT __idf_env_set)
     include(gdbinit)
     include(prefix_map)
     include(openocd)
+    include(err_codes)
 
     # ESP-IDF extra dependencies defined in tools/idf_extra_components.yml
     if(WIN32)

@@ -32,6 +32,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/openocd.cmake)
 # idf_build_generate_depgraph function.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/depgraph.cmake)
 
+# The err_codes.cmake file from cmakev1 provides idf_define_esp_err_codes(),
+# which generates per-component error code tables placed in a link-time array.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/err_codes.cmake)
+
 include(component)
 include(build)
 include(kconfig)
@@ -42,6 +46,7 @@ include(ldgen)
 include(dfu)
 include(uf2)
 include(size)
+
 include(GetGitRevisionDescription)
 # For backward compatibility, since externalproject_add is used by
 # project_include.cmake in the bootloader component. The ExternalProject
