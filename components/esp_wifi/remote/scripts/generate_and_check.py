@@ -15,11 +15,10 @@ from typing import cast
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 current_dir = os.path.abspath(os.getcwd())
-
-idf_path = os.getenv('IDF_PATH')
-if idf_path is None:
-    idf_path = os.path.realpath(os.path.join(script_dir, '..', '..', '..', '..'))
-
+if script_dir != current_dir:
+    print(f'Error: This script must be run from its own directory: {script_dir}')
+    print(f'Current working directory is: {current_dir}')
+    sys.exit(1)
 
 Param = namedtuple('Param', ['ptr', 'array', 'qual', 'type', 'name'])
 
@@ -111,117 +110,91 @@ def exec_cmd(what: list[str], out_file: IO[str] | None = None) -> tuple[int, str
     return rc, output, err, ' '.join(what)
 
 
-def _has_related_changes() -> bool:
-    try:
-        # Check if we are in a git repository
-        rc, _, _, _ = exec_cmd(['git', 'rev-parse', '--is-inside-work-tree'])
-        if rc != 0:
-            return True
-
-        # Get changes in tracked files (staged and unstaged) relative to HEAD
-        rc, output, _, _ = exec_cmd(['git', 'diff', 'HEAD', '--name-only'])
-        if rc != 0:
-            return True
-    except Exception:
-        return True
-
-    # Patterns from .pre-commit-config.yaml plus the script itself
-    related_files_re = re.compile(
-        r"""(?x)^(
-        components/esp_wifi/remote/scripts/(generate_and_check\.py|ignore_extensions\.h|copyright_header\.h)|
-        components/esp_wifi/include/(esp_wifi.*|esp_mesh.*|esp_now.*)\.h|
-        components/esp_wifi/Kconfig|
-        components/wpa_supplicant/esp_supplicant/include/esp_eap_client\.h|
-        components/soc/.+/include/soc/Kconfig\.soc_caps\.in
-    )$"""
-    )
-
-    for line in output.splitlines():
-        if related_files_re.match(line):
-            return True
-    return False
-
-
-_cached_include_dir_flags: list[str] | None = None
-
-
-def _handle_missing_tool(msg: str) -> None:
-    if not _has_related_changes():
-        sys.exit(0)
-    YELLOW = '\033[33m'
-    RESET = '\033[0m'
-    full_msg = (
-        f'{msg}. WiFi-remote API generation check could not be performed.\n'
-        'If you have modified WiFi or Supplicant headers, the corresponding '
-        'wifi-remote files may need to be updated.\n'
-        'Please set up your ESP-IDF environment (run export.sh) and run this script manually:\n'
-        f'cd {os.path.relpath(script_dir, idf_path)} && python3 {os.path.basename(__file__)}\n'
-        'Then commit the resulting changes.'
-    )
-    print(f'{YELLOW}SKIPPED: {full_msg}{RESET}')
-    sys.exit(0)
-
-
 def preprocess(idf_path: str, header: str) -> str:
-    global _cached_include_dir_flags
     project_dir = os.path.join(idf_path, 'examples', 'wifi', 'getting_started', 'station')
     build_dir = os.path.join(project_dir, 'build')
+    is_ci = os.getenv('CI')
 
-    if _cached_include_dir_flags is None:
-        # Clean up build artifacts ONLY on the first run to ensure a fresh state if needed,
-        # but idf.py reconfigure is usually good at incremental updates.
-        # To be safe and fast, we only clean if we don't have a build dir yet.
-        if not os.path.exists(build_dir):
-            sdkconfig = os.path.join(project_dir, 'sdkconfig')
-            if os.path.exists(sdkconfig):
-                os.remove(sdkconfig)
+    def _handle_missing_tool(msg: str) -> None:
+        YELLOW = '\033[33m'
+        RESET = '\033[0m'
+        full_msg = (
+            f'{msg}. WiFi-remote API generation check could not be performed.\n'
+            'If you have modified WiFi or Supplicant headers, the corresponding '
+            'wifi-remote files may need to be updated.\n'
+            'Please set up your ESP-IDF environment (run export.sh) and run this script manually:\n'
+            f'cd {os.path.relpath(script_dir, idf_path)} && python3 {os.path.basename(__file__)}\n'
+            'Then commit the resulting changes.'
+        )
+        if is_ci:
+            print(f'Error: {full_msg}')
+            sys.exit(1)
+        else:
+            print(f'{YELLOW}SKIPPED: {full_msg}{RESET}')
+            sys.exit(0)
 
-        idf_py = shutil.which('idf.py')
-        if idf_py is None:
-            idf_py_path = os.path.join(idf_path, 'tools', 'idf.py')
-            if os.path.exists(idf_py_path):
-                idf_py = f'{sys.executable} {idf_py_path}'
-            else:
-                _handle_missing_tool('ESP-IDF environment not found')
+    # Check for missing optional dependencies
+    try:
+        import idf_build_apps  # noqa: F401
+        import pycparser  # noqa: F401
+    except ImportError:
+        _handle_missing_tool('ESP-IDF environment not found (missing python dependencies)')
 
-        assert idf_py is not None
-        try:
-            if isinstance(idf_py, str) and idf_py.startswith(sys.executable):
-                subprocess.run(
-                    idf_py.split() + ['-B', build_dir, 'reconfigure'],
-                    cwd=project_dir,
-                    check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            else:
-                subprocess.run(
-                    [idf_py, '-B', build_dir, 'reconfigure'],
-                    cwd=project_dir,
-                    check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-        except (subprocess.CalledProcessError, FileNotFoundError):
+    # Clean up build artifacts
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+    sdkconfig = os.path.join(project_dir, 'sdkconfig')
+    if os.path.exists(sdkconfig):
+        os.remove(sdkconfig)
+
+    idf_py = shutil.which('idf.py')
+    if idf_py is None:
+        idf_py_path = os.path.join(idf_path, 'tools', 'idf.py')
+        if os.path.exists(idf_py_path):
+            idf_py = f'{sys.executable} {idf_py_path}'
+        else:
             _handle_missing_tool('ESP-IDF environment not found')
 
-        build_commands_json = os.path.join(build_dir, 'compile_commands.json')
-        if not os.path.exists(build_commands_json):
-            _handle_missing_tool('ESP-IDF environment not found')
+    assert idf_py is not None
+    try:
+        if isinstance(idf_py, str) and idf_py.startswith(sys.executable):
+            subprocess.run(
+                idf_py.split() + ['-B', build_dir, 'reconfigure'],
+                cwd=project_dir,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        else:
+            subprocess.run(
+                [idf_py, '-B', build_dir, 'reconfigure'],
+                cwd=project_dir,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        _handle_missing_tool('ESP-IDF environment not found')
 
-        with open(build_commands_json, encoding='utf-8') as f:
-            build_command = json.load(f)[0]['command'].split()
-        _cached_include_dir_flags = []
-        # process compilation flags (includes and defines)
-        for item in build_command:
-            if item.startswith('-I'):
-                _cached_include_dir_flags.append(item)
-            if item.startswith('-D'):
-                _cached_include_dir_flags.append(
-                    item.replace('\\', '')
-                )  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
-        _cached_include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
+    build_commands_json = os.path.join(build_dir, 'compile_commands.json')
+    if not os.path.exists(build_commands_json):
+        _handle_missing_tool('ESP-IDF environment not found')
 
+    with open(build_commands_json, encoding='utf-8') as f:
+        build_command = json.load(f)[0]['command'].split()
+    include_dir_flags = []
+    include_dirs = []
+    # process compilation flags (includes and defines)
+    for item in build_command:
+        if item.startswith('-I'):
+            include_dir_flags.append(item)
+            if 'components' in item:
+                include_dirs.append(item[2:])  # Removing the leading "-I"
+        if item.startswith('-D'):
+            include_dir_flags.append(
+                item.replace('\\', '')
+            )  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
+    include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
     temp_file = 'esp_wifi_preprocessed.h'
     with open(temp_file, 'w') as f:
         f.write('#define asm\n')
@@ -234,7 +207,7 @@ def preprocess(idf_path: str, header: str) -> str:
             _handle_missing_tool(f'{gcc_cmd} not found')
 
         rc, out, err, cmd = exec_cmd(
-            [gcc_cmd, '-w', '-P', '-include', 'ignore_extensions.h', '-E', header] + _cached_include_dir_flags, f
+            [gcc_cmd, '-w', '-P', '-include', 'ignore_extensions.h', '-E', header] + include_dir_flags, f
         )
         if rc != 0:
             print(f'command {cmd} failed!')
@@ -242,8 +215,6 @@ def preprocess(idf_path: str, header: str) -> str:
     from pycparser import preprocess_file
 
     preprocessed_code = preprocess_file(temp_file)
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
     return cast(str, preprocessed_code)
 
 
@@ -293,9 +264,8 @@ def get_vars(parameters: list[Any]) -> tuple[str, str]:
 
 
 def generate_kconfig_wifi_caps(idf_path: str, component_path: str) -> list[str]:
-    sys.path.append(os.path.join(idf_path, 'tools'))
-    from idf_py_actions.constants import PREVIEW_TARGETS
-    from idf_py_actions.constants import SUPPORTED_TARGETS
+    from idf_build_apps.constants import PREVIEW_TARGETS
+    from idf_build_apps.constants import SUPPORTED_TARGETS
 
     kconfig = os.path.join(component_path, 'Kconfig.soc_wifi_caps.in')
     slave_select = os.path.join(component_path, 'Kconfig.slave_select.in')
@@ -731,26 +701,12 @@ making changes you might need to modify 'copyright_header.h' in the script direc
     parser.add_argument(
         '-s', '--skip-check', help='Skip checking the versioned files against the re-generated', action='store_true'
     )
-    parser.add_argument('-k', '--keep-test', help='Keep the generated test directory', action='store_true')
     parser.add_argument('--base-dir', help='Base directory to compare generated files against')
     args = parser.parse_args()
 
-    # Skip work if no related files have changed, unless we are in CI or doing a base-dir comparison.
-    # CI environments usually require a full check to ensure repository integrity even if
-    # no local uncommitted changes are present.
-    if args.base_dir is None and not os.getenv('CI') and not _has_related_changes():
-        sys.exit(0)
-
-    if script_dir != current_dir:
-        print(f'Error: This script must be run from its own directory: {script_dir}')
-        print(f'Current working directory is: {current_dir}')
-        sys.exit(1)
-
-    try:
-        import pycparser  # noqa: F401
-    except ImportError:
-        _handle_missing_tool('ESP-IDF environment not found (missing python dependencies)')
-
+    idf_path = os.getenv('IDF_PATH')
+    if idf_path is None:
+        idf_path = os.path.realpath(os.path.join(script_dir, '..', '..', '..', '..'))
     header = os.path.join(idf_path, 'components', 'esp_wifi', 'include', 'esp_wifi.h')
     eap_header = os.path.join(idf_path, 'components', 'wpa_supplicant', 'esp_supplicant', 'include', 'esp_eap_client.h')
     function_prototypes = extract_function_prototypes(preprocess(idf_path, header), header, ['esp_wifi_'])
@@ -774,15 +730,6 @@ making changes you might need to modify 'copyright_header.h' in the script direc
             rc, _, _, _ = exec_cmd(['git', 'diff', '--exit-code', f])
             if rc != 0:
                 modified_files.append(f)
-
-    # Cleanup test directory if not requested to keep it
-    if not args.keep_test:
-        test_dir = os.path.join(component_path, 'test')
-        if os.path.exists(test_dir):
-            try:
-                shutil.rmtree(test_dir)
-            except Exception as e:
-                print(f'Warning: Failed to clean up test directory {test_dir}: {e}')
 
     if modified_files:
         print('WiFi-remote API files were updated:')
