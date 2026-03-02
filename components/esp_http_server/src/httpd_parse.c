@@ -649,6 +649,12 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
         ESP_LOGW(TAG, LOG_FMT("incomplete (%"NEWLIB_NANO_COMPAT_FORMAT"/%"NEWLIB_NANO_COMPAT_FORMAT") with parser error = %d"),
                  NEWLIB_NANO_COMPAT_CAST(nparsed), NEWLIB_NANO_COMPAT_CAST(length), parser->http_errno);
         return -1;
+    } else if (HTTP_PARSER_ERRNO(parser) != HPE_OK) {
+        /* http_parser error */
+        data->error  = HTTPD_400_BAD_REQUEST;
+        data->status = PARSING_FAILED;
+        ESP_LOGE(TAG, LOG_FMT("parser error: %s"), http_errno_description(HTTP_PARSER_ERRNO(parser)));
+        return -1;
     }
 
     /* Return with the total length of the request packet

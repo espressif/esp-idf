@@ -157,6 +157,16 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
 #define ASYNC_TRANS_CONNECTING 0
 #define ASYNC_TRANS_CONNECT_PASS 1
 
+/* Check http_parser for errors, returns ret_val on parse failure. */
+#define HTTP_PARSER_RETURN_ON_ERROR(tag, parser, ret_val)                                  \
+    do {                                                                                   \
+        if (HTTP_PARSER_ERRNO(parser) != HPE_OK) {                                         \
+            ESP_LOGE(tag, "HTTP parser error: %s",                                         \
+                     http_errno_description(HTTP_PARSER_ERRNO(parser)));                   \
+            return (ret_val);                                                              \
+        }                                                                                  \
+    } while (0)
+
 static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
 static const char *DEFAULT_HTTP_PATH = "/";
@@ -1400,6 +1410,7 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
         // invalid state.
         if (!(client->is_async && rlen == 0)) {
             http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+            HTTP_PARSER_RETURN_ON_ERROR(TAG, client->parser, ESP_FAIL);
         }
     }
     return rlen;
@@ -1465,6 +1476,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
             if (rlen == ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN && client->response->is_chunked) {
                 /* Explicit call to parser for invoking `message_complete` callback */
                 http_parser_execute(client->parser, client->parser_settings, res_buffer->data, 0);
+                HTTP_PARSER_RETURN_ON_ERROR(TAG, client->parser, ESP_FAIL);
                 /* ...and lowering the message severity, as closed connection from server side is expected in chunked transport */
                 sev = ESP_LOG_DEBUG;
             }
@@ -1495,6 +1507,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        HTTP_PARSER_RETURN_ON_ERROR(TAG, client->parser, ESP_FAIL);
         ridx += res_buffer->raw_len;
         need_read -= res_buffer->raw_len;
 
@@ -1677,6 +1690,7 @@ int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client)
             return ESP_FAIL;
         }
         http_parser_execute(client->parser, client->parser_settings, buffer->data, buffer->len);
+        HTTP_PARSER_RETURN_ON_ERROR(TAG, client->parser, ESP_FAIL);
     }
     client->state = HTTP_STATE_RES_ON_DATA_START;
     ESP_LOGD(TAG, "content_length = %"PRId64, client->response->content_length);
