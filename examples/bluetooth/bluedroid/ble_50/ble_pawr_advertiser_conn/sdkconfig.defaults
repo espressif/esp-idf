@@ -1,0 +1,34 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+# BT config - Enable Bluetooth
+CONFIG_BT_ENABLED=y
+
+# Enable Bluedroid host
+CONFIG_BT_BLUEDROID_ENABLED=y
+
+# Enable BLE 5.0 features (required for PAwR)
+CONFIG_BT_BLE_50_FEATURES_SUPPORTED=y
+
+# Enable BLE extend advertising (required for periodic advertising)
+CONFIG_BT_BLE_50_EXTEND_ADV_EN=y
+
+# Enable BLE periodic advertising
+CONFIG_BT_BLE_50_PERIODIC_ADV_EN=y
+
+# Enable periodic advertising enhancements (ADI support)
+CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH=n
+
+# Enable PAwR feature (Host)
+CONFIG_BT_BLE_FEAT_PAWR_EN=y
+
+# Enable PAwR feature (Controller)
+CONFIG_BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED=y
+
+CONFIG_BT_BLE_50_EXTEND_SCAN_EN=n
+
+CONFIG_BT_BLE_50_DTM_TEST_EN=n
+
+CONFIG_BT_BLE_SMP_ENABLE=n
+
+CONFIG_BT_GATTS_ENABLE=n

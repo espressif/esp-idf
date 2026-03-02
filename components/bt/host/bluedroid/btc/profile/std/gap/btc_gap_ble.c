@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1334,7 +1334,7 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
         case BTA_BLE_GAP_CS_READ_LOCAL_SUPP_CAPS_EVT:
             msg.act = ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT;
-            param.cs_read_local_supp_caps.status = params->cs_read_local_supp_caps.status;
+            param.cs_read_local_supp_caps.status = btc_btm_status_to_esp_status(params->cs_read_local_supp_caps.status);
             param.cs_read_local_supp_caps.conn_handle = params->cs_read_local_supp_caps.conn_handle;
             param.cs_read_local_supp_caps.num_config_supported = params->cs_read_local_supp_caps.num_config_supported;
             param.cs_read_local_supp_caps.max_consecutive_proc_supported = params->cs_read_local_supp_caps.max_consecutive_proc_supported;
@@ -1359,22 +1359,22 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         case BTA_BLE_GAP_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT:
             msg.act = ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT;
-            param.cs_write_cached_remote_supp_caps.status = params->cs_write_cached_remote_supp_caps.status;
+            param.cs_write_cached_remote_supp_caps.status = btc_btm_status_to_esp_status(params->cs_write_cached_remote_supp_caps.status);
             param.cs_write_cached_remote_supp_caps.conn_handle = params->cs_write_cached_remote_supp_caps.conn_handle;
             break;
         case BTA_BLE_GAP_CS_SET_DEFAULT_SETTINGS_EVT:
             msg.act = ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT;
-            param.cs_set_default_settings.status = params->cs_set_default_settings.status;
+            param.cs_set_default_settings.status = btc_btm_status_to_esp_status(params->cs_set_default_settings.status);
             param.cs_set_default_settings.conn_handle = params->cs_set_default_settings.conn_handle;
             break;
         case BTA_BLE_GAP_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT:
             msg.act = ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT;
-            param.cs_write_cached_remote_fae_tab.status = params->cs_write_cached_remote_fae_tab.status;
+            param.cs_write_cached_remote_fae_tab.status = btc_btm_status_to_esp_status(params->cs_write_cached_remote_fae_tab.status);
             param.cs_write_cached_remote_fae_tab.conn_handle = params->cs_write_cached_remote_fae_tab.conn_handle;
             break;
         case BTA_BLE_GAP_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT;
-            param.cs_read_remote_supp_caps.status = params->cs_read_remote_supp_caps.status;
+            param.cs_read_remote_supp_caps.status = btc_btm_status_to_esp_status(params->cs_read_remote_supp_caps.status);
             param.cs_read_remote_supp_caps.conn_handle = params->cs_read_remote_supp_caps.conn_handle;
             param.cs_read_remote_supp_caps.num_config_supported = params->cs_read_remote_supp_caps.num_config_supported;
             param.cs_read_remote_supp_caps.max_consecutive_proc_supported = params->cs_read_remote_supp_caps.max_consecutive_proc_supported;
@@ -1399,16 +1399,16 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         case BTA_BLE_GAP_CS_SET_CHANNEL_CLASS_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT;
-            param.cs_set_channel_class.status = params->status;
+            param.cs_set_channel_class.status = btc_btm_status_to_esp_status(params->status);
             break;
         case BTA_BLE_GAP_CS_PROC_PARAMS_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT;
-            param.cs_set_proc_params.status = params->cs_set_proc_params.status;
+            param.cs_set_proc_params.status = btc_btm_status_to_esp_status(params->cs_set_proc_params.status);
             param.cs_set_proc_params.conn_handle = params->cs_set_proc_params.conn_handle;
             break;
         case BTA_BLE_GAP_CS_PROC_ENABLE_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT;
-            param.cs_proc_enable.status = params->cs_proc_en.status;
+            param.cs_proc_enable.status = btc_btm_status_to_esp_status(params->cs_proc_en.status);
             param.cs_proc_enable.conn_handle = params->cs_proc_en.conn_handle;
             param.cs_proc_enable.config_id = params->cs_proc_en.config_id;
             param.cs_proc_enable.state = params->cs_proc_en.state;
@@ -1424,18 +1424,18 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         case BTA_BLE_GAP_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT;
-            param.cs_read_remote_fae_tab.status = params->cs_read_remote_fae_tab.status;
+            param.cs_read_remote_fae_tab.status = btc_btm_status_to_esp_status(params->cs_read_remote_fae_tab.status);
             param.cs_read_remote_fae_tab.conn_handle = params->cs_read_remote_fae_tab.conn_handle;
             memcpy(param.cs_read_remote_fae_tab.remote_fae_table, params->cs_read_remote_fae_tab.remote_fae_table, 72);
             break;
         case BTA_BLE_GAP_CS_SECURITY_ENABLE_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT;
-            param.cs_security_enable.status = params->cs_security_enable.status;
+            param.cs_security_enable.status = btc_btm_status_to_esp_status(params->cs_security_enable.status);
             param.cs_security_enable.conn_handle =  params->cs_security_enable.conn_handle;
             break;
         case BTA_BLE_GAP_CS_CONFIG_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_CONFIG_CMPL_EVT;
-            param.cs_config_update.status = params->cs_config_update.status;
+            param.cs_config_update.status = btc_btm_status_to_esp_status(params->cs_config_update.status);
             param.cs_config_update.conn_handle = params->cs_config_update.conn_handle;
             param.cs_config_update.config_id = params->cs_config_update.config_id;
             param.cs_config_update.action = params->cs_config_update.action;

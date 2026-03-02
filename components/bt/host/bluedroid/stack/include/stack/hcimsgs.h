@@ -1295,7 +1295,7 @@ UINT8 btsnd_hcic_ble_set_ext_adv_params_v2(UINT8 adv_handle, UINT16 properties, 
 #define HCIC_PARAM_SIZE_CREATE_CONFIG_PARAMS_LEN                28
 #define HCIC_PARAM_SIZE_REMOVE_CONFIG_PARAMS_LEN                3
 #define HCIC_PARAM_SIZE_SET_CHANNEL_CLASS_PARAMS_LEN            10
-#define HCIC_PARAM_SIZE_SET_PROCEDURE_PARAMS_LEN                21
+#define HCIC_PARAM_SIZE_SET_PROCEDURE_PARAMS_LEN                23
 #define HCIC_PARAM_SIZE_SET_PROCEDURE_ENABLE_PARAMS_LEN         4
 
 UINT8 btsnd_hcic_ble_cs_read_local_supported_caps(void);
