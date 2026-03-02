@@ -17,7 +17,7 @@
 
 /// @brief For simplicity and backward compatible, we are using the same spin lock for both bus clock on/off and reset
 /// @note  We may want to split them into two spin locks in the future
-static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE __attribute__((unused)) periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static uint8_t ref_counts[PERIPH_MODULE_MAX] = {0};
 
