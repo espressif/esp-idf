@@ -166,6 +166,12 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
 
     GATT_TRACE_DEBUG ("process_read_multi_rsp status=%d mtu=%d", status, mtu);
 
+    if (!p_msg) {
+        p_cmd->status = GATT_INVALID_PDU;
+        GATT_TRACE_ERROR("process_read_multi_rsp - invalid p_msg");
+        return TRUE;
+    }
+
 	if (p_cmd->multi_rsp_q == NULL) {
         p_cmd->multi_rsp_q = fixed_queue_new(QUEUE_SIZE_MAX);
 	}
@@ -286,6 +292,12 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
     UINT8           *p;
 
     GATT_TRACE_DEBUG ("process_read_multi_var rsp status=%d mtu=%d", status, mtu);
+
+    if (!p_msg) {
+        GATT_TRACE_ERROR("process_read_multi_var_rsp - invalid p_msg");
+        p_cmd->status = GATT_INVALID_PDU;
+        return TRUE;
+    }
 
 	if (p_cmd->multi_rsp_q == NULL) {
         p_cmd->multi_rsp_q = fixed_queue_new(QUEUE_SIZE_MAX);

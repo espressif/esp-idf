@@ -224,7 +224,11 @@ void app_main(void)
         return;
     }
 
-    esp_ble_cte_register_callback(cte_event_handler);
+    ret = esp_ble_cte_register_callback(cte_event_handler);
+    if (ret != ESP_OK) {
+        ESP_LOGE(LOG_TAG, "CTE register error, error code = %x", ret);
+        return;
+    }
 
     vTaskDelay(200 / portTICK_PERIOD_MS);
 

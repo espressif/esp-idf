@@ -316,6 +316,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
         connect = false;
         get_service = false;
+        esp_ble_gap_start_ext_scan(EXT_SCAN_DURATION, EXT_SCAN_PERIOD);
         break;
     default:
         break;
@@ -476,7 +477,7 @@ static void cte_event_handler(esp_ble_cte_cb_event_t event, esp_ble_cte_cb_param
                                 param->conn_iq_rpt.pkt_status, param->conn_iq_rpt.conn_evt_counter, param->conn_iq_rpt.sample_count);
 
             ESP_LOG_BUFFER_HEX("i_sample", &param->conn_iq_rpt.i_sample[0], param->conn_iq_rpt.sample_count);
-            ESP_LOG_BUFFER_HEX("q_sample", &param->conn_iq_rpt.i_sample[0], param->conn_iq_rpt.sample_count);
+            ESP_LOG_BUFFER_HEX("q_sample", &param->conn_iq_rpt.q_sample[0], param->conn_iq_rpt.sample_count);
             break;
         case ESP_BLE_CTE_REQUEST_FAILED_EVT:
             ESP_LOGI(LOG_TAG, "CTE connection request failed, conn_handle %d reason 0x%x",  param->req_failed_evt.conn_handle, param->req_failed_evt.reason);

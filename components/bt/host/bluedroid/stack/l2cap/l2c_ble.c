@@ -234,6 +234,7 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
         return (FALSE);
     }
     bool is_disable = (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE);
+    // for multiple links, actively updating the parameters to 7.5ms may degrade multi-connection performance
     if(l2cu_ble_plcb_active_count() >1 && !(enable && is_disable)) {
         return FALSE;
     }
@@ -875,10 +876,11 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
         if (p_ccb) {
             p_ccb->remote_id = id;
-            // TODO
+            l2cu_send_peer_disc_rsp(p_lcb, id, lcid, rcid);
+        } else {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - disc req with invalid lcid, send cmd reject");
+            l2cu_send_peer_cmd_reject(p_lcb, L2CAP_CMD_REJ_INVALID_CID, id, rcid, lcid);
         }
-
-        l2cu_send_peer_disc_rsp(p_lcb, id, lcid, rcid);
         break;
     }
     default:
@@ -1073,19 +1075,29 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
         if (p_lcb->is_pawr_synced) {
             if(!btsnd_hcic_ble_create_ext_conn_v2(&aux_conn)) {
+                l2cb.is_ble_connecting = FALSE;
+                memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
+                btm_ble_set_conn_st (BLE_CONN_IDLE);
                 l2cu_release_lcb (p_lcb);
                 L2CAP_TRACE_ERROR("initiate pawr sync connection failed, no resources");
+                return (FALSE);
             }
         } else
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         {
             if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
+                l2cb.is_ble_connecting = FALSE;
+                memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
+                btm_ble_set_conn_st (BLE_CONN_IDLE);
                 l2cu_release_lcb (p_lcb);
                 L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
+                return (FALSE);
             }
         }
 #else
+    l2cu_release_lcb (p_lcb);
     L2CAP_TRACE_ERROR("BLE 5.0 not support!\n");
+    return (FALSE);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         return (TRUE);
     }
@@ -1293,7 +1305,7 @@ void l2cble_process_rc_param_request_evt(UINT16 handle, UINT16 int_min, UINT16 i
                 btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, BLE_CE_LEN_MIN, BLE_CE_LEN_MIN);
             }else {
                 L2CAP_TRACE_EVENT ("L2CAP - LE - update currently disabled");
-                p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
+                // p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
                 btsnd_hcic_ble_rc_param_req_neg_reply (handle, HCI_ERR_UNACCEPT_CONN_INTERVAL);
             }
         }

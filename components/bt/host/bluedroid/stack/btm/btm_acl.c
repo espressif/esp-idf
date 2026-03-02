@@ -271,8 +271,12 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
     }
     else {
         p = (tACL_CONN *)osi_malloc(sizeof(tACL_CONN));
-	if (p && list_append(btm_cb.p_acl_db_list, p)) {
-	    memset(p, 0, sizeof(tACL_CONN));
+        if (p && !list_append(btm_cb.p_acl_db_list, p)) {
+            osi_free(p);
+            return;
+        }
+        if (p) {
+	        memset(p, 0, sizeof(tACL_CONN));
             p->in_use            = TRUE;
             p->hci_handle        = hci_handle;
             p->link_role         = link_role;
@@ -2308,7 +2312,7 @@ void btm_read_channel_map_complete(UINT8 *p)
 void btm_read_rssi_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
-    tBTM_RSSI_RESULTS        results;
+    tBTM_RSSI_RESULTS        results = {0};
     UINT16                   handle;
     tACL_CONN               *p_acl_cb = NULL;
     BTM_TRACE_DEBUG ("btm_read_rssi_complete\n");
@@ -2340,10 +2344,12 @@ void btm_read_rssi_complete (UINT8 *p, UINT16 evt_len)
                              results.rssi, results.hci_status);
 
             /* Search through the list of active channels for the correct BD Addr */
-	    p_acl_cb = btm_handle_to_acl(handle);
-	    if (p_acl_cb) {
+            p_acl_cb = btm_handle_to_acl(handle);
+            if (p_acl_cb) {
                 memcpy (results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
-	    }
+            } else {
+                results.status = BTM_UNKNOWN_ADDR;
+            }
         } else {
             results.status = BTM_ERR_PROCESSING;
         }

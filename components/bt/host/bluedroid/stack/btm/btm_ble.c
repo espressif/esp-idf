@@ -407,8 +407,9 @@ void BTM_BlePasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
         BTM_TRACE_ERROR("Passkey reply to Unknown device");
         return;
     }
-
-    p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
+    if (res_smp == SMP_SUCCESS) {
+        p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
+    }
     BTM_TRACE_DEBUG ("BTM_BlePasskeyReply");
     SMP_PasskeyReply(bd_addr, res_smp, passkey);
 #endif
@@ -487,8 +488,9 @@ void BTM_BleOobDataReply(BD_ADDR bd_addr, UINT8 res, UINT8 len, UINT8 *p_data)
         BTM_TRACE_ERROR("BTM_BleOobDataReply() to Unknown device");
         return;
     }
-
-    p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+    if (res_smp == SMP_SUCCESS) {
+        p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+    }
     SMP_OobDataReply(bd_addr, res_smp, len, p_data);
 #endif
 }
@@ -1431,6 +1433,7 @@ void btm_ble_link_sec_check(BD_ADDR bd_addr, tBTM_LE_AUTH_REQ auth_req, tBTM_BLE
 
     if (p_dev_rec == NULL) {
         BTM_TRACE_ERROR ("btm_ble_link_sec_check received for unknown device");
+        *p_sec_req_act = BTM_BLE_SEC_REQ_ACT_NONE;
         return;
     }
 

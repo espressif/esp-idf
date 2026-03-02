@@ -305,6 +305,10 @@ void bta_dm_enable(tBTA_DM_MSG *p_data)
         sys_enable_event->hw_module = BTA_SYS_HW_BLUETOOTH;
 
         bta_sys_sendmsg(sys_enable_event);
+    } else {
+        // if malloc failed, restart
+        APPL_TRACE_ERROR("%s, failed to allocate memory for sys_enable_event", __func__);
+        assert(0);
     }
 }
 
@@ -678,7 +682,11 @@ static void bta_dm_disable_timer_cback (TIMER_LIST_ENT *p_tle)
 #if (CLASSIC_BT_INCLUDED == TRUE)
         bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
-        bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
+        if (bta_dm_cb.p_sec_cback) {
+            bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
+        } else {
+            APPL_TRACE_ERROR("%s, security callback is not registered", __func__);
+        }
     }
 }
 
@@ -1147,6 +1155,7 @@ static void bta_dm_process_remove_device(BD_ADDR bd_addr, tBT_TRANSPORT transpor
 *******************************************************************************/
 void bta_dm_remove_device(tBTA_DM_MSG *p_data)
 {
+    // p_data is not NULL, see BTA_DmRemoveDevice()
     tBTA_DM_API_REMOVE_DEVICE *p_dev = &p_data->remove_dev;
     if (p_dev == NULL) {
         return;
@@ -3732,19 +3741,26 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
 
             conn.link_down.is_removed = bta_dm_cb.device_list.peer_device[i].remove_dev_pending;
 
-            for (; i < bta_dm_cb.device_list.count ; i++) {
+            /* Shift remaining devices down; use i + 1 < count to avoid UINT8 underflow when count is 0 */
+            for (; i + 1 < bta_dm_cb.device_list.count; i++) {
                 memcpy(&bta_dm_cb.device_list.peer_device[i], &bta_dm_cb.device_list.peer_device[i + 1], sizeof(bta_dm_cb.device_list.peer_device[i]));
             }
+            /* Clear empty slots to avoid residual old data */
+            memset(&bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count-1], 0,
+                   sizeof(bta_dm_cb.device_list.peer_device[0]));
+
+            if (bta_dm_cb.device_list.count) {
+                bta_dm_cb.device_list.count--;
+            }
+#if BLE_INCLUDED == TRUE
+            if ((p_data->acl_change.transport == BT_TRANSPORT_LE) &&
+                    (bta_dm_cb.device_list.le_count)) {
+                bta_dm_cb.device_list.le_count--;
+            }
+#endif
             break;
         }
-        if (bta_dm_cb.device_list.count) {
-            bta_dm_cb.device_list.count--;
-        }
 #if BLE_INCLUDED == TRUE
-        if ((p_data->acl_change.transport == BT_TRANSPORT_LE) &&
-                (bta_dm_cb.device_list.le_count)) {
-            bta_dm_cb.device_list.le_count--;
-        }
         conn.link_down.link_type = p_data->acl_change.transport;
 #endif
 
@@ -3937,23 +3953,34 @@ static BOOLEAN bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
 {
     BOOLEAN is_device_deleted = FALSE;
     UINT16 index = 0;
+
+    for (index = 0; index < bta_dm_cb.device_list.count; index ++) {
+        if (!bdcmp( bta_dm_cb.device_list.peer_device[index].peer_bdaddr, remote_bd_addr)) {
+            break;
+        }
+    }
+
     if ( BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_LE) ||
             BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_BR_EDR)) {
         APPL_TRACE_DEBUG("%s ACL is not down. Schedule for  Dev Removal when ACL closes",
                          __FUNCTION__);
         BTM_SecClearSecurityFlags (remote_bd_addr);
-        for (index = 0; index < bta_dm_cb.device_list.count; index ++) {
-            if (!bdcmp( bta_dm_cb.device_list.peer_device[index].peer_bdaddr, remote_bd_addr)) {
-                break;
-            }
-        }
+
         if (index != bta_dm_cb.device_list.count) {
             bta_dm_cb.device_list.peer_device[index].remove_dev_pending = TRUE;
         } else {
             APPL_TRACE_ERROR(" %s Device does not exist in DB", __FUNCTION__);
         }
     } else {
-        is_device_deleted = BTM_SecDeleteDevice (remote_bd_addr, bta_dm_cb.device_list.peer_device[index].transport);
+        tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
+        if (index != bta_dm_cb.device_list.count) {
+            transport = bta_dm_cb.device_list.peer_device[index].transport;
+        } else {
+            // if device not found, Set transport to invalid value, try to delete both BR/EDR and LE keys
+            transport = BT_TRANSPORT_INVALID;
+            APPL_TRACE_WARNING("%s Device does not exist", __FUNCTION__);
+        }
+        is_device_deleted = BTM_SecDeleteDevice (remote_bd_addr, transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection */
         BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
@@ -5023,7 +5050,7 @@ void bta_dm_add_ble_device (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_passkey_reply (tBTA_DM_MSG *p_data)
 {
-    if (p_data->pin_reply.accept) {
+    if (p_data->ble_passkey_reply.accept) {
         BTM_BlePasskeyReply(p_data->ble_passkey_reply.bd_addr, BTM_SUCCESS, p_data->ble_passkey_reply.passkey);
     } else {
         BTM_BlePasskeyReply(p_data->ble_passkey_reply.bd_addr, BTM_NOT_AUTHORIZED, p_data->ble_passkey_reply.passkey);
@@ -5050,7 +5077,7 @@ void bta_dm_ble_confirm_reply (tBTA_DM_MSG *p_data)
     if (p_data->confirm.accept) {
         BTM_BleConfirmReply(p_data->confirm.bd_addr, BTM_SUCCESS);
     } else {
-        BTM_BleConfirmReply(p_data->ble_passkey_reply.bd_addr, BTM_NOT_AUTHORIZED);
+        BTM_BleConfirmReply(p_data->confirm.bd_addr, BTM_NOT_AUTHORIZED);
     }
 }
 
@@ -5517,16 +5544,17 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 void bta_dm_ble_advstop (tBTA_DM_MSG *p_data)
 {
     tBTA_STATUS status = BTA_FAILURE;
-    BOOLEAN start = p_data->ble_observe.start;
+    BOOLEAN start = p_data->ble_adv_action.start;
 
-    if (BTM_BleBroadcast(start, p_data->ble_observe.p_stop_adv_cback) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
+    tBTM_STATUS btm_status = BTM_BleBroadcast(start, p_data->ble_adv_action.p_stop_adv_cback);
+    if (btm_status == BTM_SUCCESS) {
+         status = BTA_SUCCESS;
     } else {
         APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
     }
 
-    if (p_data->ble_observe.p_stop_adv_cback){
-        (*p_data->ble_observe.p_stop_adv_cback)(status);
+    if (p_data->ble_adv_action.p_stop_adv_cback){
+        (*p_data->ble_adv_action.p_stop_adv_cback)(status);
     }
 
 }
@@ -5813,7 +5841,7 @@ void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data)
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void bta_dm_ble_big_create(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s", __func__);
@@ -5841,7 +5869,7 @@ void bta_dm_ble_big_terminate(tBTA_DM_MSG *p_data)
     tBTA_DM_BLE_BIG_TERMINATE_PARAMS param = p_data->big_terminate.big_terminate_param;
     BTM_BleBigTerminate(param.big_handle, param.reason);
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void bta_dm_ble_big_sync_create(tBTA_DM_MSG *p_data)
@@ -6293,7 +6321,7 @@ static void bta_dm_gatt_disc_complete(UINT16 conn_id, tBTA_GATT_STATUS status)
                 p_msg->disc_result.result.disc_res.raw_data_size = bta_dm_search_cb.ble_raw_used;
             } else {
                 p_msg->disc_result.result.disc_res.p_raw_data = NULL;
-                bta_dm_search_cb.p_ble_rawdata = 0;
+                bta_dm_search_cb.p_ble_rawdata = NULL;
             }
 
             bta_sys_sendmsg(p_msg);

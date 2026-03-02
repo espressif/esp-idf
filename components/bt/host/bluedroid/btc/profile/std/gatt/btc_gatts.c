@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,9 +74,11 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->send_ind.value, src->send_ind.value, src->send_ind.value_len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+                dst->send_ind.value_len = 0;
             }
         } else {
             dst->send_ind.value = NULL;
+            dst->send_ind.value_len = 0;
             if (src->send_ind.value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
             }
@@ -103,9 +105,11 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                         src->add_char.char_val.attr_len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+                dst->add_char.char_val.attr_len = 0;
             }
         } else {
             dst->add_char.char_val.attr_value = NULL;
+            dst->add_char.char_val.attr_len = 0;
             if (src->add_char.char_val.attr_value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
             }
@@ -120,9 +124,11 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                         src->add_descr.descr_val.attr_len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+                dst->add_descr.descr_val.attr_len = 0;
             }
         } else {
             dst->add_descr.descr_val.attr_value = NULL;
+            dst->add_descr.descr_val.attr_len = 0;
             if (src->add_descr.descr_val.attr_value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
             }
@@ -138,8 +144,11 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                         sizeof(esp_gatts_attr_db_t) * num_attr);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+                dst->create_attr_tab.max_nb_attr = 0;
             }
         } else {
+            dst->create_attr_tab.gatts_attr_db = NULL;
+            dst->create_attr_tab.max_nb_attr = 0;
             BTC_TRACE_ERROR("%s %d, NULL data", __func__, msg->act);
         }
         break;
@@ -151,9 +160,11 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->set_attr_val.value, src->set_attr_val.value, src->set_attr_val.length);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+                dst->set_attr_val.length = 0;
             }
         } else {
             dst->set_attr_val.value = NULL;
+            dst->set_attr_val.length = 0;
             if (src->set_attr_val.value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
             } else {
@@ -462,8 +473,8 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
                 break;
             }
             case ESP_GATT_UUID_CHAR_DECLARE:
-                if((gatts_attr_db[i].att_desc.value) == NULL) {
-                    BTC_TRACE_ERROR("%s, Characteristic declaration should not be NULL.", __func__);
+                if((gatts_attr_db[i].att_desc.value) == NULL || ((i + 1) >= max_nb_attr)) {
+                    BTC_TRACE_ERROR("%s, att_desc.value is NULL or (%d + 1) >= %d", __func__, i, max_nb_attr);
                     return ESP_GATT_INVALID_PDU;
                 }
 
@@ -788,6 +799,10 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.read.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.read.trans_id = p_data->req_data.trans_id;
         memcpy(param.read.bda, p_data->req_data.remote_bda, ESP_BD_ADDR_LEN);
+        if (p_data->req_data.p_data == NULL) {
+            BTC_TRACE_ERROR("%s READ_EVT p_data NULL", __func__);
+            break;
+        }
         param.read.handle = p_data->req_data.p_data->read_req.handle;
         param.read.offset = p_data->req_data.p_data->read_req.offset;
         param.read.is_long = p_data->req_data.p_data->read_req.is_long;
@@ -816,23 +831,26 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_GATTS_EXEC_WRITE_EVT: {
+        if (p_data->req_data.p_data == NULL) {
+            break;
+        }
         gatts_if = BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id);
         param.exec_write.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.exec_write.trans_id = p_data->req_data.trans_id;
         memcpy(param.exec_write.bda, p_data->req_data.remote_bda, ESP_BD_ADDR_LEN);
-        if (p_data->req_data.p_data == NULL) {
-            break;
-        }
         param.exec_write.exec_write_flag = p_data->req_data.p_data->exec_write;
 
         btc_gatts_cb_to_app(ESP_GATTS_EXEC_WRITE_EVT, gatts_if, &param);
         break;
     }
     case BTA_GATTS_MTU_EVT:
+        if (p_data->req_data.p_data == NULL) {
+            BTC_TRACE_ERROR("%s MTU_EVT p_data NULL", __func__);
+            break;
+        }
         gatts_if = BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id);
         param.mtu.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.mtu.mtu = p_data->req_data.p_data->mtu;
-
         btc_gatts_cb_to_app(ESP_GATTS_MTU_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_CONF_EVT:

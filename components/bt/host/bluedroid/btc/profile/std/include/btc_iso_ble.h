@@ -41,11 +41,11 @@ struct btc_iso_cis_hdls {
 }__attribute__((packed));
 
 typedef enum {
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     BTC_ISO_ACT_BIG_CREATE,
     BTC_ISO_ACT_BIG_CREATE_TEST,
     BTC_ISO_ACT_BIG_TERMINATE,
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     BTC_ISO_ACT_BIG_SYNC_CREATE,
     BTC_ISO_ACT_BIG_SYNC_TERMINATE,
@@ -71,7 +71,7 @@ typedef enum {
 
 /* btc_ble_iso_args_t */
 typedef union {
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     struct iso_big_create_args {
         uint8_t big_handle;
         uint8_t adv_handle;
@@ -110,7 +110,7 @@ typedef union {
         uint8_t big_handle;
         uint8_t reason;
     } iso_big_terminate_params;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     struct iso_big_sync_creat_arg {

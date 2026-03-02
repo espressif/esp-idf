@@ -63,7 +63,7 @@ static const uint16_t character_declaration_uuid  = ESP_GATT_UUID_CHAR_DECLARE;
 
 /* Service UUID - must be a variable, not a macro, to take address */
 static const uint16_t power_control_service_uuid  = BLE_UUID_POWER_CONTROL_SERVICE_VAL;
-static const uint16_t power_level_char_uuid       = BLE_UUID_POWER_CONTROL_SERVICE_VAL;
+static const uint16_t power_level_char_uuid       = BLE_UUID_POWER_LEVEL_CHAR_UUID;
 
 /* Characteristic properties */
 static const uint8_t char_prop_read                = ESP_GATT_CHAR_PROP_BIT_READ;
@@ -280,7 +280,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         ESP_LOGI(TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR"",
                  param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda));
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
-        conn_handle = param->connect.conn_id;
+        conn_handle = param->connect.conn_handle;
 
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
@@ -302,7 +302,10 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
         conn_handle = 0xFFFF;
         // Restart extended advertising
-        FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_start(NUM_EXT_ADV, ext_adv), test_sem);
+        esp_err_t ret = esp_ble_gap_ext_adv_start(NUM_EXT_ADV, ext_adv);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to restart advertising, error = %d", ret);
+        }
         break;
     case ESP_GATTS_READ_EVT:
         ESP_LOGI(TAG, "Read event, handle %d", param->read.handle);
@@ -407,11 +410,6 @@ void app_main(void)
 
     // Create semaphore for extended advertising
     test_sem = xSemaphoreCreateBinary();
-
-    // Start extended advertising
-    esp_bd_addr_t addr;
-    esp_ble_gap_addr_create_static(addr);
-    ESP_LOGI(TAG, "Device Address: "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(addr));
 
     // Set extended advertising parameters
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(EXT_ADV_HANDLE, &ext_adv_params), test_sem);

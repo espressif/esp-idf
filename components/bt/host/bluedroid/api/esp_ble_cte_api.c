@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,9 @@
 
 esp_err_t esp_ble_cte_register_callback(esp_ble_cte_cb_t callback)
 {
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_BLE_CTE, callback) == 0 ? ESP_OK : ESP_FAIL);
@@ -22,6 +25,9 @@ esp_err_t esp_ble_cte_register_callback(esp_ble_cte_cb_t callback)
 
 esp_ble_cte_cb_t esp_ble_cte_get_callback(void)
 {
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return NULL;
+    }
     return (esp_ble_cte_cb_t) btc_profile_cb_get(BTC_PID_BLE_CTE);
 }
 
@@ -30,12 +36,28 @@ esp_err_t esp_ble_cte_set_connectionless_trans_params(esp_ble_cte_connless_trans
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
     if ((cte_trans_params == NULL) || (cte_trans_params->antenna_ids == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_trans_params->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
+            (cte_trans_params->switching_pattern_len > ESP_BLE_CTE_MAX_SWITCHING_PATTERN_LENGTH)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_trans_params->cte_len < ESP_BLE_CTE_MIN_CTE_LENGTH) ||
+            (cte_trans_params->cte_len > ESP_BLE_CTE_MAX_CTE_LENGTH)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cte_trans_params->cte_type > ESP_BLE_CTE_TYPE_AOD_WITH_2US) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_trans_params->cte_count < ESP_BLE_CTE_MIN_CTE_COUNT) ||
+            (cte_trans_params->cte_count > ESP_BLE_CTE_MAX_CTE_COUNT)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -57,12 +79,17 @@ esp_err_t esp_ble_cte_set_connectionless_trans_enable(esp_ble_cte_trans_enable_p
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
     if (cte_trans_enable == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_trans_enable->cte_enable != ESP_BLE_CTE_ADV_WITH_CTE_DISABLE) &&
+            (cte_trans_enable->cte_enable != ESP_BLE_CTE_ADV_WITH_CTE_ENABLE)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -80,13 +107,38 @@ esp_err_t esp_ble_cte_set_connectionless_iq_sampling_enable(esp_ble_cte_iq_sampl
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-
-    if ((iq_sampling_en == NULL) || (iq_sampling_en->antenna_ids == NULL)) {
+    // iq_sampling_en must not be NULL
+    if (iq_sampling_en == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+    // Sampling enable must be either disable or enable
+    if ((iq_sampling_en->sampling_en != ESP_BLE_CTE_SAMPLING_DISABLE) &&
+            (iq_sampling_en->sampling_en != ESP_BLE_CTE_SAMPLING_ENABLE)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* When sampling is enabled, antenna_ids and switching_pattern_len are required; when disabled they are ignored by the controller */
+    if (iq_sampling_en->sampling_en == ESP_BLE_CTE_SAMPLING_ENABLE) {
+        // Slot duration must be either 1us or 2us
+        if ((iq_sampling_en->slot_dur != ESP_BLE_CTE_SLOT_DURATION_1US) &&
+                (iq_sampling_en->slot_dur != ESP_BLE_CTE_SLOT_DURATION_2US)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        // Max sampled Ctes must be between 0 and 16
+        if (iq_sampling_en->max_sampled_ctes > ESP_BLE_CTE_MAX_SAMPLED_CTES) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (iq_sampling_en->antenna_ids == NULL) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if ((iq_sampling_en->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
+                (iq_sampling_en->switching_pattern_len > ESP_BLE_CTE_MAX_SWITCHING_PATTERN_LENGTH)) {
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -97,9 +149,13 @@ esp_err_t esp_ble_cte_set_connectionless_iq_sampling_enable(esp_ble_cte_iq_sampl
     arg.cte_iq_sampling_en.sampling_en = iq_sampling_en->sampling_en;
     arg.cte_iq_sampling_en.slot_dur = iq_sampling_en->slot_dur;
     arg.cte_iq_sampling_en.max_sampled_ctes = iq_sampling_en->max_sampled_ctes;
-    arg.cte_iq_sampling_en.switching_pattern_len = iq_sampling_en->switching_pattern_len;
-    arg.cte_iq_sampling_en.antenna_ids = iq_sampling_en->antenna_ids;
-
+    if (iq_sampling_en->sampling_en == ESP_BLE_CTE_SAMPLING_ENABLE) {
+        arg.cte_iq_sampling_en.switching_pattern_len = iq_sampling_en->switching_pattern_len;
+        arg.cte_iq_sampling_en.antenna_ids = iq_sampling_en->antenna_ids;
+    } else {
+        arg.cte_iq_sampling_en.switching_pattern_len = 0;
+        arg.cte_iq_sampling_en.antenna_ids = NULL;
+    }
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_cte_args_t), btc_ble_cte_arg_deep_copy, btc_ble_cte_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
@@ -109,13 +165,32 @@ esp_err_t esp_ble_cte_set_connection_receive_params(esp_ble_cte_recv_params_para
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if ((cte_recv_params == NULL) || (cte_recv_params->antenna_ids == NULL)) {
+    if (cte_recv_params == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_recv_params->sampling_en != ESP_BLE_CTE_SAMPLING_DISABLE) &&
+            (cte_recv_params->sampling_en != ESP_BLE_CTE_SAMPLING_ENABLE)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* When sampling is enabled, antenna_ids and switching_pattern_len are required; when disabled they are ignored by the controller */
+    if (cte_recv_params->sampling_en == ESP_BLE_CTE_SAMPLING_ENABLE) {
+        if ((cte_recv_params->slot_dur != ESP_BLE_CTE_SLOT_DURATION_1US) &&
+            (cte_recv_params->slot_dur != ESP_BLE_CTE_SLOT_DURATION_2US)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (cte_recv_params->antenna_ids == NULL) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if ((cte_recv_params->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
+                (cte_recv_params->switching_pattern_len > ESP_BLE_CTE_MAX_SWITCHING_PATTERN_LENGTH)) {
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -125,8 +200,13 @@ esp_err_t esp_ble_cte_set_connection_receive_params(esp_ble_cte_recv_params_para
     arg.cte_recv_params.conn_handle = cte_recv_params->conn_handle;
     arg.cte_recv_params.sampling_en = cte_recv_params->sampling_en;
     arg.cte_recv_params.slot_dur = cte_recv_params->slot_dur;
-    arg.cte_recv_params.switching_pattern_len = cte_recv_params->switching_pattern_len;
-    arg.cte_recv_params.antenna_ids = cte_recv_params->antenna_ids;
+    if (cte_recv_params->sampling_en == ESP_BLE_CTE_SAMPLING_ENABLE) {
+        arg.cte_recv_params.switching_pattern_len = cte_recv_params->switching_pattern_len;
+        arg.cte_recv_params.antenna_ids = cte_recv_params->antenna_ids;
+    } else {
+        arg.cte_recv_params.switching_pattern_len = 0;
+        arg.cte_recv_params.antenna_ids = NULL;
+    }
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_cte_args_t), btc_ble_cte_arg_deep_copy, btc_ble_cte_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -135,12 +215,22 @@ esp_err_t esp_ble_cte_set_connection_transmit_params(esp_ble_cte_conn_trans_para
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
     if ((cte_conn_trans_params == NULL) || (cte_conn_trans_params->antenna_ids == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_conn_trans_params->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
+            (cte_conn_trans_params->switching_pattern_len > ESP_BLE_CTE_MAX_SWITCHING_PATTERN_LENGTH)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* cte_types must be non-zero and only allowed bits (AOA, AoD 1us, AoD 2us) */
+    if ((cte_conn_trans_params->cte_types == 0) ||
+            (cte_conn_trans_params->cte_types & ~ESP_BLE_CTE_TYPES_ALL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -160,6 +250,7 @@ esp_err_t esp_ble_cte_connection_cte_request_enable(esp_ble_cte_req_en_params_t 
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -167,6 +258,19 @@ esp_err_t esp_ble_cte_connection_cte_request_enable(esp_ble_cte_req_en_params_t 
 
     if (cte_conn_req_en == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_conn_req_en->enable != ESP_BLE_CTE_REQUEST_FOR_CONNECTION_DISABLE) &&
+            (cte_conn_req_en->enable != ESP_BLE_CTE_REQUEST_FOR_CONNECTION_ENABLE)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cte_conn_req_en->enable == ESP_BLE_CTE_REQUEST_FOR_CONNECTION_ENABLE) {
+        if ((cte_conn_req_en->req_cte_len < ESP_BLE_CTE_MIN_REQUESTED_CTE_LENGTH) ||
+                (cte_conn_req_en->req_cte_len > ESP_BLE_CTE_MAX_REQUESTED_CTE_LENGTH)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (cte_conn_req_en->req_cte_Type > ESP_BLE_CTE_TYPE_AOD_WITH_2US) {
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -186,12 +290,17 @@ esp_err_t esp_ble_cte_connection_cte_response_enable(esp_ble_cte_rsp_en_params_t
 {
     btc_msg_t msg;
     btc_ble_cte_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
     if (cte_conn_rsp_en == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((cte_conn_rsp_en->enable != ESP_BLE_CTE_RESPONSE_FOR_CONNECTION_DISABLE) &&
+            (cte_conn_rsp_en->enable != ESP_BLE_CTE_RESPONSE_FOR_CONNECTION_ENABLE)) {
         return ESP_ERR_INVALID_ARG;
     }
 

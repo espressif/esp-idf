@@ -109,6 +109,14 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
     case BTA_GATTS_API_SET_ATTR_VAL_EVT:{
         UINT16 attr_id = ((tBTA_GATTS_DATA *) p_msg)->api_set_val.hdr.layer_specific;
         p_srvc_cb = bta_gatts_find_srvc_cb_by_attr_id(p_cb, attr_id);
+        if (p_srvc_cb == NULL) {
+            if (((tBTA_GATTS_DATA *) p_msg)->api_set_val.value != NULL) {
+                osi_free(((tBTA_GATTS_DATA *) p_msg)->api_set_val.value);
+            }
+            APPL_TRACE_ERROR("Service not found for attribute ID: %d", attr_id);
+            break;
+        }
+
         bta_gatts_set_attr_value(p_srvc_cb, (tBTA_GATTS_DATA *) p_msg);
         break;
     }

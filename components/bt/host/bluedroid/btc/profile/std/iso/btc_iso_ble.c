@@ -34,7 +34,7 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
     msg.pid = BTC_PID_ISO_BLE;
 
     switch(event) {
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
         case BTA_BLE_ISO_BIG_CREATE_COMPLETE_EVT:
             msg.act = ESP_BLE_ISO_BIG_CREATE_CMPL_EVT;
             param.create_big_cmpl.status = btc_btm_status_to_esp_status(params->btm_big_cmpl.status);
@@ -60,7 +60,7 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
             param.term_big_cmpl.big_handle = params->btm_big_term.big_handle;
             param.term_big_cmpl.reason = params->btm_big_term.reason;
             break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
         case BTA_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT:
             msg.act = ESP_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT;
@@ -244,6 +244,7 @@ void btc_iso_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->iso_set_data_path_params.codec_cfg, src->iso_set_data_path_params.codec_cfg, src->iso_set_data_path_params.codec_cfg_len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+                dst->iso_set_data_path_params.codec_cfg_len = 0;
             }
         }
         break;
@@ -300,7 +301,7 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
     BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     case BTC_ISO_ACT_BIG_CREATE:
         BTA_DmBleGapIsoBigCreate((tBTA_DM_BLE_BIG_CREATE_PARAMS *)&arg->iso_big_creat_params);
         break;
@@ -310,7 +311,7 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
     case BTC_ISO_ACT_BIG_TERMINATE:
         BTA_DmBleGapIsoBigTerminate((tBTA_DM_BLE_BIG_TERMINATE_PARAMS *)&arg->iso_big_terminate_params);
         break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     case BTC_ISO_ACT_BIG_SYNC_CREATE:
         BTA_DmBleGapIsoBigSyncCreate((tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS *)&arg->iso_big_sync_creat_params);
@@ -329,6 +330,7 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapIsoReadTxSync(arg->iso_read_tx_sync_params.iso_handle);
         break;
     case BTC_ISO_ACT_READ_ISO_LINK_QUALITY:
+         BTA_DmBleGapIsoReadLinkQuality(arg->iso_read_link_quality_params.iso_handle);
         break;
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
     case BTC_ISO_ACT_SET_CIG_PARAMS: {

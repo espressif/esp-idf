@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,6 +159,8 @@ void btc_ble_cte_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->cte_trans_params.antenna_ids, src->cte_trans_params.antenna_ids, src->cte_trans_params.switching_pattern_len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+                dst->cte_trans_params.switching_pattern_len = 0;
+                dst->cte_trans_params.antenna_ids = NULL;
             }
         }
         break;
@@ -168,6 +170,8 @@ void btc_ble_cte_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             if (dst->cte_iq_sampling_en.antenna_ids) {
                 memcpy(dst->cte_iq_sampling_en.antenna_ids, src->cte_iq_sampling_en.antenna_ids, src->cte_iq_sampling_en.switching_pattern_len);
             } else {
+                dst->cte_iq_sampling_en.switching_pattern_len = 0;
+                dst->cte_iq_sampling_en.antenna_ids = NULL;
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
             }
         }
@@ -181,6 +185,8 @@ void btc_ble_cte_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             if (dst->cte_recv_params.antenna_ids) {
                 memcpy(dst->cte_recv_params.antenna_ids, src->cte_recv_params.antenna_ids, src->cte_recv_params.switching_pattern_len);
             } else {
+                dst->cte_recv_params.switching_pattern_len = 0;
+                dst->cte_recv_params.antenna_ids = NULL;
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
             }
         }
@@ -191,6 +197,8 @@ void btc_ble_cte_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             if (dst->cte_conn_trans_params.antenna_ids) {
                 memcpy(dst->cte_conn_trans_params.antenna_ids, src->cte_conn_trans_params.antenna_ids, src->cte_conn_trans_params.switching_pattern_len);
             } else {
+                dst->cte_conn_trans_params.switching_pattern_len = 0;
+                dst->cte_conn_trans_params.antenna_ids = NULL;
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
             }
         }
@@ -258,7 +266,11 @@ void btc_ble_cte_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->connless_iq_rpt.i_sample, &(src->connless_iq_rpt.i_sample[0]),
                    src->connless_iq_rpt.sample_count);
             } else {
+                dst->connless_iq_rpt.sample_count = 0;
+                dst->connless_iq_rpt.i_sample = NULL;
+                dst->connless_iq_rpt.q_sample = NULL;
                 BTC_TRACE_ERROR("%s, i_sample malloc failed\n", __func__);
+                break;
             }
             dst->connless_iq_rpt.q_sample = osi_malloc(src->connless_iq_rpt.sample_count);
             if (dst->connless_iq_rpt.q_sample) {
@@ -266,7 +278,14 @@ void btc_ble_cte_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                    src->connless_iq_rpt.sample_count);
             } else {
                 BTC_TRACE_ERROR("%s, q_sample malloc failed\n", __func__);
+                osi_free(dst->connless_iq_rpt.i_sample);
+                dst->connless_iq_rpt.sample_count = 0;
+                dst->connless_iq_rpt.i_sample = NULL;
+                dst->connless_iq_rpt.q_sample = NULL;
             }
+        } else {
+            dst->connless_iq_rpt.i_sample = NULL;
+            dst->connless_iq_rpt.q_sample = NULL;
         }
         break;
 #endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
@@ -278,15 +297,26 @@ void btc_ble_cte_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->conn_iq_rpt.i_sample, src->conn_iq_rpt.i_sample,
                    src->conn_iq_rpt.sample_count);
             } else {
+                dst->conn_iq_rpt.i_sample = NULL;
+                dst->conn_iq_rpt.q_sample = NULL;
+                dst->conn_iq_rpt.sample_count = 0;
                 BTC_TRACE_ERROR("%s, i_sample malloc failed\n", __func__);
+                break;
             }
             dst->conn_iq_rpt.q_sample = osi_malloc(src->conn_iq_rpt.sample_count);
             if (dst->conn_iq_rpt.q_sample) {
                 memcpy(dst->conn_iq_rpt.q_sample, src->conn_iq_rpt.q_sample,
                    src->conn_iq_rpt.sample_count);
             } else {
+                osi_free(dst->conn_iq_rpt.i_sample);
+                dst->conn_iq_rpt.i_sample = NULL;
+                dst->conn_iq_rpt.q_sample = NULL;
+                dst->conn_iq_rpt.sample_count = 0;
                 BTC_TRACE_ERROR("%s, q_sample malloc failed\n", __func__);
             }
+        } else {
+            dst->conn_iq_rpt.i_sample = NULL;
+            dst->conn_iq_rpt.q_sample = NULL;
         }
         break;
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
@@ -303,8 +333,8 @@ void btc_ble_cte_cb_deep_free(btc_msg_t *msg)
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
         case ESP_BLE_CTE_CONNLESS_IQ_REPORT_EVT: {
             esp_ble_cte_cb_param_t *params = (esp_ble_cte_cb_param_t *)msg->arg;
-            uint8_t *i_sample = &(params->connless_iq_rpt.i_sample[0]);
-            uint8_t *q_sample = &(params->connless_iq_rpt.q_sample[0]);
+            uint8_t *i_sample = params->connless_iq_rpt.i_sample;
+            uint8_t *q_sample = params->connless_iq_rpt.q_sample;
             if (i_sample) {
                 osi_free(i_sample);
             }

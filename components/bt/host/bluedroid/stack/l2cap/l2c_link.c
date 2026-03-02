@@ -43,7 +43,7 @@
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-extern tBTM_STATUS BTM_BleStartExtAdvRestart(uint8_t handle);
+extern tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t handle);
 #endif// #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern bool btm_ble_inter_get(void);
 

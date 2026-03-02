@@ -1443,11 +1443,11 @@ config BT_BLE_FEAT_ISO_60_EN
         Enable iso 6.0 feature
 
 config BT_BLE_FEAT_ISO_BIG_BROCASTER
-    bool "Enable BLE iso BIG brocaster"
+    bool "Enable BLE iso BIG broadcaster"
     depends on BT_BLE_FEAT_ISO_EN
     default y
     help
-        Enable BLE 5.2 BIG brocaster
+        Enable BLE 5.2 BIG broadcaster
 
 config BT_BLE_FEAT_ISO_BIG_SYNCER
     bool "Enable BLE iso BIG syncer"

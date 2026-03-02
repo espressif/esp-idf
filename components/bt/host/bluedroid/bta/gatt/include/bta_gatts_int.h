@@ -243,7 +243,6 @@ extern void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_send_service_change_indication (tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_show_local_database (void);
 
-extern BOOLEAN bta_gatts_uuid_compare(tBT_UUID tar, tBT_UUID src);
 extern tBTA_GATTS_RCB *bta_gatts_find_app_rcb_by_app_if(tBTA_GATTS_IF server_if);
 extern UINT8 bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB *p_cb, tBTA_GATTS_IF server_if);
 extern UINT8 bta_gatts_alloc_srvc_cb(tBTA_GATTS_CB *p_cb, UINT8 rcb_idx);
