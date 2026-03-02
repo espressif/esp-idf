@@ -2807,7 +2807,6 @@ BOOLEAN gatt_update_auto_connect_dev (tGATT_IF gatt_if, BOOLEAN add, BD_ADDR bd_
 }
 #endif // #if (GATT_BG_CONN_DEV == TRUE)
 
-#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     gatt_add_pending_new_srv_start
@@ -2829,7 +2828,6 @@ tGATT_PENDING_ENC_CLCB *gatt_add_pending_enc_channel_clcb(tGATT_TCB *p_tcb, tGAT
     }
     return p_buf;
 }
-#endif // (SMP_INCLUDED == TRUE)
 
 char *gatt_uuid_to_str(const tBT_UUID *uuid)
 {
