@@ -169,6 +169,15 @@ void esp_gdbstub_clear_step(void);
 void esp_gdbstub_do_step(esp_gdbstub_frame_t *regs_frame);
 void esp_gdbstub_trigger_cpu(void);
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+/**
+ * Check if a watchpoint triggered the current debug exception.
+ * @param[out] addr  Address of the triggered watchpoint (only valid if return is true)
+ * @return true if a watchpoint triggered, false otherwise (breakpoint/step/other)
+ */
+bool esp_gdbstub_get_watchpoint_trigger_addr(uint32_t *addr);
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+
 /**
  * Write a value to register in frame
  * @param frame  gdbstub frame
