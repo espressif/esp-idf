@@ -481,6 +481,11 @@ static esp_err_t esp_cam_ctlr_dvp_cam_enable(esp_cam_ctlr_handle_t handle)
         ret = ESP_OK;
     }
     cam_hal_start_streaming(&ctlr->hal);
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(ctlr->pm_lock), TAG, "acquire pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
 
     portEXIT_CRITICAL(&ctlr->spinlock);
 
@@ -510,6 +515,11 @@ static esp_err_t esp_cam_ctlr_dvp_cam_disable(esp_cam_ctlr_handle_t handle)
     }
     cam_hal_stop_streaming(&ctlr->hal);
 
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(ctlr->pm_lock), TAG, "release pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ret;
@@ -606,6 +616,12 @@ static esp_err_t esp_cam_ctlr_dvp_cam_del(esp_cam_ctlr_handle_t handle)
         if (!ctlr->bk_buffer_dis) {
             heap_caps_free(ctlr->backup_buffer);
         }
+
+#if CONFIG_PM_ENABLE
+        if (ctlr->pm_lock) {
+            ESP_RETURN_ON_ERROR(esp_pm_lock_delete(ctlr->pm_lock), TAG, "delete pm_lock failed");
+        }
+#endif // CONFIG_PM_ENABLE
 
         s_dvp_declaim_ctlr(ctlr->ctlr_id);
 
@@ -851,6 +867,10 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
 
     ESP_GOTO_ON_ERROR(gdma_register_rx_event_callbacks(ctlr->dma.dma_chan, &cbs, ctlr),
                       fail4, TAG, "failed to register DMA event callbacks");
+
+#if CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "dvp_cam_ctlr", &ctlr->pm_lock), fail5, TAG, "failed to create pm lock");
+#endif //CONFIG_PM_ENABLE
 
     /* Initialize DVP controller */
 
