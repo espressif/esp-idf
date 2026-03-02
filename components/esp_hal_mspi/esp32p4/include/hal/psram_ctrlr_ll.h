@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -261,6 +261,20 @@ static inline void psram_ctrlr_ll_enable_hex_data_line_mode(uint32_t mspi_id, bo
     (void)mspi_id;
     SPIMEM2.mem_sram_cmd.mem_sdin_hex = en;
     SPIMEM2.mem_sram_cmd.mem_sdout_hex = en;
+}
+
+/**
+ * @brief Get PSRAM hex data line mode enable status
+ *
+ * @param mspi_id      mspi_id
+ *
+ * @return true if hex data line mode is enabled, false otherwise
+ */
+__attribute__((always_inline))
+static inline bool psram_ctrlr_ll_is_hex_data_line_mode(uint32_t mspi_id)
+{
+    (void)mspi_id;
+    return (SPIMEM2.mem_sram_cmd.mem_sdin_hex & SPIMEM2.mem_sram_cmd.mem_sdout_hex);
 }
 
 /**

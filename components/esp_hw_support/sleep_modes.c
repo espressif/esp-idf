@@ -161,6 +161,10 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+#include "esp_private/esp_psram_impl.h"
+#endif
+
 // If light sleep time is less than that, don't power down flash
 #define FLASH_PD_MIN_SLEEP_TIME_US  2000
 
@@ -1381,6 +1385,10 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint3
         }
 #endif
     }
+
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+    esp_psram_impl_resume_from_halfsleep_mode(s_config.rtc_clk_cal_period);
+#endif
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
     if (sleep_flags & RTC_SLEEP_PD_VDDSDIO) {

@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-set(includes "include")
+set(includes "include" "device/include")
 
 if(CONFIG_SOC_SPIRAM_XIP_SUPPORTED)
     list(APPEND includes xip_impl/include)
@@ -37,7 +37,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_INCLUDE_DIRS device/include
                        PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
 
