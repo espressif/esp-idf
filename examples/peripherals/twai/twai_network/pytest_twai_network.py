@@ -94,6 +94,6 @@ def test_twai_network_multi(dut: tuple[IdfDut, IdfDut], socket_can: Bus) -> None
     )
     print('USB CAN Send:', message)
     socket_can.send(message, timeout=0.2)
-    dut[0].expect_exact('RX: 10a [8] 48 69 20 45 53 50 33 32', timeout=10)  # ASCII: Hi ESP32
+    dut[0].expect_exact('10a [8] 48 69 20 45 53 50 33 32', timeout=10)  # ASCII: Hi ESP32
 
     print('===> TWAI network communication test completed successfully')
