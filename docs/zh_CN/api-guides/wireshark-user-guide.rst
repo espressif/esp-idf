@@ -11,7 +11,7 @@
 1.1 什么是 Wireshark？
 ========================
 
-Wireshark（原称 Ethereal）是一个网络封包分析软件。网络封包分析软件的功能是撷取网络封包，并尽可能显示出最为详细的网络封包资料。Wireshark 使用 WinPCAP 作为接口，直接与网卡进行数据报文交换。
+`Wireshark <https://www.wireshark.org>`_ （原称 Ethereal）是一个网络封包分析软件。网络封包分析软件的功能是撷取网络封包，并尽可能显示出最为详细的网络封包资料。Wireshark 使用 libpcap（Linux 及其他类 Unix 系统）或 Npcap（Windows）作为接口，直接与网卡进行数据报文交换。
 
 网络封包分析软件的功能可想像成“电工技师使用电表来量测电流、电压、电阻” 的工作，只是将场景移植到网络上，并将电线替换成网线。
 
@@ -41,7 +41,9 @@ Wireshark 是目前全世界最广泛的网络封包分析软件之一。
 1.3 Wireshark 的特性
 ========================
 
-* 支持 UNIX 和 Windows 平台
+Wireshark 的特性如下：
+
+* 支持 Linux、macOS 和 Windows 平台
 
 * 在接口实时捕捉包
 
@@ -67,7 +69,7 @@ Wireshark 是目前全世界最广泛的网络封包分析软件之一。
 
 * **捕捉多种网络接口**
 
-  Wireshark 可以捕捉多种网络接口类型的包，哪怕是无线局域网接口。
+  Wireshark 可以捕捉多种网络接口类型的包，包括无线局域网（需要硬件支持监听模式）。
 
 * **支持多种其它程序捕捉的文件**
 
@@ -90,37 +92,42 @@ Wireshark 是目前全世界最广泛的网络封包分析软件之一。
   Wireshark 不会发送网络包或做其它交互性的事情（名称解析除外，但你也可以禁止解析）。
 
 
-========================
+==========================
 2. 如何获取 Wireshark
-========================
+==========================
 
 官网链接：https://www.wireshark.org/download.html
 
-Wireshark 支持多种操作系统，请在下载安装文件时，注意选择与你所用操作系统匹配的安装文件。
+Wireshark 支持 Linux、macOS 和 Windows。请在下载安装文件时，注意选择与你所用操作系统匹配的安装文件。Windows 安装包已包含 Npcap（抓包库）；Linux 下请确保已安装 libpcap。
 
 
-==============
+======================
 3. 使用步骤
-==============
+======================
 
-**本文档仅以 Linux 系统下的 Wireshark（版本号：2.2.6）为例**。
+**本文档以 Linux 系统下的 Wireshark 为例。** 不同版本的界面可能略有差异，最新文档请参阅 `Wireshark User's Guide <https://www.wireshark.org/docs/wsug_html/>`_。
 
-**1) 启动 Wireshark**
 
-Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark 配置抓包网卡和信道。Shell 脚本如下：
+**a) 启动 Wireshark**
+
+查找无线网卡名称（如 ``wlan0``），可运行 ``ip link show`` 或 ``iw dev`` 列出可用接口。
+
+Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark 并配置网卡为监听模式。以下命令需要 root 权限，请使用 ``sudo`` 或以 root 身份运行脚本：
 
 ::
 
-  ifconfig $1 down
-  iwconfig $1 mode monitor
-  iwconfig $1 channel $2
-  ifconfig $1 up
-  Wireshark&
+  ip link set $1 down
+  iw dev $1 set type monitor
+  ip link set $1 up
+  wireshark &
 
-脚本中有两个参数：``$1`` 和 ``$2``，分别表示网卡和信道，例如，``./xxx.sh wlan0 6`` （此处，``wlan0`` 即为抓包使用的网卡，后面的数字 ``6`` 即为 AP 或 soft-AP 所在的 channel）。
+.. note::
+  设置特定信道（如 ``iw dev $1 set channel 6``）会将抓包限制在该信道。脚本默认省略该命令，因此会抓取接口当前信道。若需抓取特定信道，请在 ``set type monitor`` 与 ``ip link set $1 up`` 之间添加 ``iw dev $1 set channel 6`` （或其他信道）。
+
+脚本中参数 ``$1`` 表示网卡（如 ``wlan0``）。例如，``./xxx.sh wlan0`` 即在无线接口上开始抓包。
 
 
-**2) 运行 Shell 脚本打开 Wireshark，会出现 Wireshark 抓包开始界面**
+**b) 运行 Shell 脚本打开 Wireshark，会出现 Wireshark 抓包开始界面**
 
 .. figure:: ../../_static/ws-capture-interface.jpeg
     :align: center
@@ -130,8 +137,7 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 
     Wireshark 抓包界面
 
-
-**3) 选择接口，开始抓包**
+**c) 选择接口，开始抓包**
 
 从上图红色框中可以看到有多个接口，第一个为本地网卡，第二个为无线网络。
 
@@ -140,9 +146,17 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 双击 *wlan0* 即可开始抓包。
 
 
-**4) 设置过滤条件**
+**d) 设置过滤条件**
 
 抓包过程中会抓取到同信道所有的空中包，但其实很多都是我们不需要的，因此很多时候我们会设置抓包的过滤条件从而得到我们想要的包。
+
+常用无线抓包显示过滤器示例：
+
+* ``wlan.ssid == "MyNetwork"`` — 按 SSID（网络名）过滤
+* ``wlan.addr == aa:bb:cc:dd:ee:ff`` — 按 MAC 地址（源、目的或 BSSID）过滤
+* ``wlan.bssid == aa:bb:cc:dd:ee:ff`` — 按接入点 BSSID 过滤
+* ``wlan.fc.type_subtype == 0x08`` — 过滤信标帧
+* ``eapol`` — 过滤 EAPOL 握手包（WPA 解密所需）
 
 下图中红色框内即为设置 filter 的位置。
 
@@ -173,7 +187,7 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 
     *Filter Expression* 对话框
 
-**最直接的方法** ：直接在工具栏上输入过滤条件。
+**最直接的方法**：直接在工具栏上输入过滤条件。
 
 .. figure:: ../../_static/ws-filter-toolbar.png
     :align: center
@@ -182,9 +196,11 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 
     过滤条件工具栏
 
-点击在此区域输入或修改显示的过滤字符，在输入过程中会进行语法检查。如果输入的格式不正确，或者未输入完成，则背景显示为红色。直到输入合法的表达式，背景会变为绿色。你可以点击下拉列表选择先前键入的过滤字符。列表会一直保留，即使重新启动程序。
+点击在此区域输入或修改过滤条件。如果输入的格式不正确或未输入完成，内置语法检查会将背景显示为红色。输入合法表达式后，背景会变为绿色。
 
-例如：下图所示，直接输入 2 个 MAC 作为过滤条件，点击 *Apply* （即图中的蓝色箭头），则表示只抓取 2 个此 MAC 地址之间的交互的包。
+先前输入的过滤条件会自动保存，可随时通过下拉列表访问。
+
+例如：下图所示，直接输入 2 个 MAC 作为过滤条件，点击 *Apply* （即图中的蓝色箭头），则表示只抓取这两个 MAC 地址之间的交互包。
 
 .. figure:: ../../_static/ws-filter-toolbar_green.png
     :align: center
@@ -193,10 +209,30 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 
     在过滤条件工具栏中运用 MAC 地址过滤示例
 
+**加密 Wi-Fi 流量的解密密钥**
 
-**5) 封包列表**
+要查看成功连接 Wi-Fi 后（WPA/WPA2 个人版）的解密流量，需在 Wireshark 中配置解密密钥：
 
-若想查看包的具体的信息只需要选中要查看的包，在界面的下方会显示出包的具体的格式和包的内容。
+1. 依次点击 *Edit* → *Preferences* → *Protocols* → *IEEE 802.11*
+2. 点击 *Decryption Keys* 旁的 *Edit*
+3. 按下表格式添加密钥（确保勾选 *Enable decryption* ）
+
+常用解密密钥格式：
+
+============  ============================================
+密钥类型      格式 / 示例
+============  ============================================
+wpa-pwd       ``password:ssid``
+              例如 ``mypassword:MyNetwork``
+wep           十六进制密钥，例如 ``a1:b2:c3:d4:e5``
+============  ============================================
+
+.. note::
+  WPA/WPA2 个人版解密需要抓包中包含 4 次 EAPOL 握手（设备加入网络时）。可使用 ``eapol`` 显示过滤器验证握手包是否存在。详见 `Wireshark 802.11 文档 <https://www.wireshark.org/docs/wsug_html_chunked/Ch80211Keys.html>`_。
+
+**e) 封包列表**
+
+若想查看包的具体信息，只需点击封包列表中的任意包，其详细信息会显示在列表下方的框中。例如，若点击第一个包，其详细信息会显示在该框中。
 
 .. figure:: ../../_static/ws-packet-list.png
     :align: center
@@ -205,10 +241,7 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 
     封包列表具体信息示例
 
-如上图所示，我要查看第 1 个包，选中此包，图中红色框中即为包的具体内容。
-
-
-**6) 停止/开始包的捕捉**
+**f) 停止/开始包的捕捉**
 
 若要停止当前抓包，点击下图的红色按钮即可。
 
@@ -229,9 +262,9 @@ Linux 下，可编写一个 Shell 脚本，运行该文件即可启动 Wireshark
 
     开始或继续包的捕捉
 
-**7) 保存当前捕捉包**
+**g) 保存当前捕捉包**
 
-Linux 下，可以通过依次点击 "File" -> "Export Packet Dissections" -> "As Plain Text File" 进行保存。
+Linux 下，依次点击 *File* → *Export Packet Dissections* → *as Plain Text* 进行保存。
 
 .. figure:: ../../_static/ws-save-packets.png
     :align: center
@@ -241,7 +274,7 @@ Linux 下，可以通过依次点击 "File" -> "Export Packet Dissections" -> "A
 
     保存捕捉包
 
-上图中，需要注意的是，选择 *All packets*、*Displayed* 以及 *All expanded* 三项。
+请注意，需选择 *All packets*、*Displayed* 和 *All expanded* 三项。
 
-Wireshark 捕捉的包可以保存为其原生格式文件 (libpcap)，也可以保存为其他格式（如.txt 文件）供其他工具进行读取分析。
+Wireshark 默认将捕捉的包保存为 libpcap 格式。也可保存为其他格式（如 txt）供其他工具分析。
 
