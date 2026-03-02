@@ -129,8 +129,6 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-#if (SMP_INCLUDED == TRUE)
-
 /*******************************************************************************
 **
 ** Function         gatt_sec_check_complete
@@ -158,6 +156,7 @@ void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 s
     }
 }
 
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_enc_cmpl_cback
@@ -256,7 +255,7 @@ void gatt_notify_enc_cmpl(BD_ADDR bd_addr)
     }
     return;
 }
-
+#endif // (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_set_sec_act
@@ -290,7 +289,7 @@ tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB *p_tcb)
     }
     return sec_act;
 }
-#endif // (SMP_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         gatt_determine_sec_act
@@ -426,7 +425,6 @@ tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB *p_tcb)
     return  encrypt_status ;
 }
 
-#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function          gatt_convert_sec_action
@@ -524,6 +522,5 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
 
     return status;
 }
-#endif // (SMP_INCLUDED == TRUE)
 
 #endif  /* BLE_INCLUDED */
