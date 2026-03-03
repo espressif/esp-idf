@@ -36,6 +36,12 @@ Typically, an I2C slave device has a 7-bit address or 10-bit address. {IDF_TARGE
 
     Keep in mind that the higher the frequency, the smaller the pull-up resistor should be (but not less than 1 kΩ). Indeed, large resistors will decline the current, which will increase the clock switching time and reduce the frequency. A range of 2 kΩ to 5 kΩ is recommended, but adjustments may also be necessary depending on their current draw requirements.
 
+.. only:: esp32
+
+    .. note::
+
+        The ESP32 I2C controller does not support clock stretching when operating as a slave. Therefore, in addition to driver configuration, the application layer should pay attention to speed matching and synchronization between master and slave devices: if the master processes too fast while the slave responds slowly, communication errors or data loss may occur. It is recommended to use application-layer data verification, GPIO signal synchronization, or other methods to achieve data synchronization between master and slave. Please confirm whether the ESP32 slave mode meets your project requirements according to your use case before use.
+
 I2C Clock Configuration
 -----------------------
 
