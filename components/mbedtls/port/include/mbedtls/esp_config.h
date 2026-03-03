@@ -2008,7 +2008,6 @@
 #ifdef CONFIG_MBEDTLS_CHACHA20_C
 #define PSA_WANT_KEY_TYPE_CHACHA20 1
 #else
-#undef MBEDTLS_CHACHA20_C
 #undef PSA_WANT_KEY_TYPE_CHACHA20
 #endif
 
@@ -2019,12 +2018,11 @@
  *
  * Module:  library/chachapoly.c
  *
- * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
+ * This module requires: MBEDTLS_CHACHA20_C
  */
 #ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
 #define PSA_WANT_ALG_CHACHA20_POLY1305 1
 #else
-#undef MBEDTLS_CHACHAPOLY_C
 #undef PSA_WANT_ALG_CHACHA20_POLY1305
 #endif
 
@@ -2519,20 +2517,6 @@
  * This module enables abstraction of common (libc) functions.
  */
 #define MBEDTLS_PLATFORM_C
-
-/**
- * \def MBEDTLS_POLY1305_C
- *
- * Enable the Poly1305 MAC algorithm.
- *
- * Module:  library/poly1305.c
- * Caller:  library/chachapoly.c
- */
-#ifdef CONFIG_MBEDTLS_POLY1305_C
-#define MBEDTLS_POLY1305_C
-#else
-#undef MBEDTLS_POLY1305_C
-#endif
 
 /**
  * \def MBEDTLS_RIPEMD160_C
