@@ -117,6 +117,16 @@ esp_err_t esp_flash_app_disable_os_functions(esp_flash_t* chip);
  */
 esp_err_t esp_flash_set_dangerous_write_protection(esp_flash_t *chip, const bool protect);
 
+#if CONFIG_SPI_FLASH_ROM_IMPL
+/**
+ * @brief Initialize ROM API functions structure
+ *
+ * This function initializes the ROM API functions structure, either by pointing
+ * to a custom structure or by patching the ROM structure in RAM.
+ */
+void esp_flash_rom_api_funcs_init(void);
+#endif // CONFIG_SPI_FLASH_ROM_IMPL
+
 #ifdef __cplusplus
 }
 #endif

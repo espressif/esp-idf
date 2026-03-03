@@ -396,6 +396,10 @@ esp_err_t esp_flash_init_default_chip(void)
         return err;
     }
 
+#if CONFIG_SPI_FLASH_ROM_IMPL
+    esp_flash_rom_api_funcs_init();
+#endif // CONFIG_SPI_FLASH_ROM_IMPL
+
     // ROM TODO: account for non-standard default pins in efuse
     // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
     err = esp_flash_init_main(&default_chip);
