@@ -60,6 +60,35 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
 .. note:: The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
 
+PyPI Mirror
+-----------
+
+Python packages are installed from the Python Package Index (PyPI) at ``https://pypi.org``. If PyPI is inaccessible or slow to access, a PyPI mirror can be configured to be used instead.
+
+To configure a custom PyPI mirror, set the ``IDF_PYTHON_INDEX_URL`` environment variable to the URL of the mirror's simple index. For example, to use the Tsinghua University mirror:
+
+.. code-block:: bash
+
+    export IDF_PYTHON_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+Or the Aliyun mirror:
+
+.. code-block:: bash
+
+    export IDF_PYTHON_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+
+.. note:: The exact URL path for the simple index varies by mirror provider. Please refer to your chosen mirror's documentation for the correct URL to use.
+
+After setting the environment variable, run ``install.sh`` (or ``install.bat`` on Windows) as usual. All ``pip`` operations will use the specified mirror instead of the default ``https://pypi.org``.
+
+Alternatively, the ``--index-url`` argument can be passed directly to ``idf_tools.py install-python-env``:
+
+.. code-block:: bash
+
+    python $IDF_PATH/tools/idf_tools.py install-python-env --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+.. note:: Espressif also provides a PyPI mirror with prebuilt binary wheels for ESP-IDF at ``https://dl.espressif.com/pypi`` (or ``https://dl.espressif.cn/pypi`` for faster downloads in China). This mirror is used as an *additional* index alongside the primary PyPI index and is controlled by the ``IDF_PIP_WHEELS_URL`` environment variable. Note that this mirror contains only binary wheels for packages that require native compilation and may not contain all packages available on PyPI.
+
 .. _idf-tools-py:
 
 ``idf_tools.py`` Script

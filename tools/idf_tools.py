@@ -99,6 +99,7 @@ IDF_TOOLS_INSTALL_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_TOOLS_EXPORT_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_DL_URL = 'https://dl.espressif.com/dl/esp-idf'
 IDF_PIP_WHEELS_URL = os.environ.get('IDF_PIP_WHEELS_URL', 'https://dl.espressif.com/pypi')
+IDF_PYTHON_INDEX_URL = os.environ.get('IDF_PYTHON_INDEX_URL', '')
 PYTHON_VENV_DIR_TEMPLATE = 'idf{}_py{}_env'
 PYTHON_VER_MAJOR_MINOR = f'{sys.version_info.major}.{sys.version_info.minor}'
 VENV_VER_FILE = 'idf_version.txt'
@@ -2801,14 +2802,22 @@ def action_install_python_env(args):  # type: ignore
 
     constraint_file = get_constraints(idf_version) if use_constraints else None
 
+    index_url = args.index_url
+    if index_url:
+        info(f'Using custom PyPI index URL: {index_url}')
+
     info('Upgrading pip...')
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip']
+    if index_url:
+        run_args += ['--index-url', index_url]
     if constraint_file:
         run_args += ['--constraint', constraint_file]
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
 
     info('Upgrading setuptools...')
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'setuptools']
+    if index_url:
+        run_args += ['--index-url', index_url]
     if constraint_file:
         run_args += ['--constraint', constraint_file]
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
@@ -2823,6 +2832,8 @@ def action_install_python_env(args):  # type: ignore
         run_args += ['--find-links', args.extra_wheels_dir]
     if args.no_index:
         run_args += ['--no-index']
+    if index_url:
+        run_args += ['--index-url', index_url]
     if args.extra_wheels_url:
         run_args += ['--extra-index-url', args.extra_wheels_url]
 
@@ -3396,6 +3407,14 @@ def main(argv: list[str]) -> None:
         '--extra-wheels-dir', help=('Additional directories with wheels to use during installation')
     )
     install_python_env.add_argument('--extra-wheels-url', help='Additional URL with wheels', default=IDF_PIP_WHEELS_URL)
+    install_python_env.add_argument(
+        '--index-url',
+        help=(
+            'Overrides the default PyPI index URL (https://pypi.org/simple) for all pip operations. '
+            'Useful for using a local PyPI mirror. It can be set with the IDF_PYTHON_INDEX_URL environment variable.'
+        ),
+        default=IDF_PYTHON_INDEX_URL,
+    )
     install_python_env.add_argument('--no-index', help='Work offline without retrieving wheels index')
     install_python_env.add_argument(
         '--features',

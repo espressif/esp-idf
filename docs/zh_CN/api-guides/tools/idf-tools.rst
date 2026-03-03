@@ -60,6 +60,35 @@ GitHub 资源镜像
 
 .. note:: 目前，乐鑫下载服务器不会镜像 GitHub 上的所有内容，只镜像部分发布版本的附件资源文件及源文件。
 
+PyPI 镜像
+-----------
+
+Python 软件包默认从 ``https://pypi.org`` 的 Python 软件包索引 (PyPI) 进行安装。如果 PyPI 无法访问或访问速度较慢，可以配置使用 PyPI 镜像代替。
+
+要配置自定义 PyPI 镜像，请将 ``IDF_PYTHON_INDEX_URL`` 环境变量设置为镜像的简单索引 URL。例如，使用清华大学镜像：
+
+.. code-block:: bash
+
+    export IDF_PYTHON_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+或使用阿里云镜像：
+
+.. code-block:: bash
+
+    export IDF_PYTHON_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+
+.. note:: 简单索引的具体 URL 路径因镜像提供商而异，请参阅所选镜像的文档以获取正确的 URL。
+
+设置环境变量后，照常运行 ``install.sh``（Windows 系统运行 ``install.bat``）。所有 ``pip`` 操作将使用指定的镜像，而非默认的 ``https://pypi.org``。
+
+也可以直接将 ``--index-url`` 参数传递给 ``idf_tools.py install-python-env``：
+
+.. code-block:: bash
+
+    python $IDF_PATH/tools/idf_tools.py install-python-env --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+.. note:: 乐鑫在 ``https://dl.espressif.com/pypi``（在国内可使用 ``https://dl.espressif.cn/pypi`` 加快下载速度）提供了带有 ESP-IDF 预编译二进制包的 PyPI 镜像。该镜像作为主 PyPI 索引的*附加*索引使用，由 ``IDF_PIP_WHEELS_URL`` 环境变量控制。请注意，该镜像仅包含需要本地编译的软件包的二进制 wheel 文件，不包含 PyPI 上的所有软件包。
+
 .. _idf-tools-py:
 
 ``idf_tools.py`` 脚本
