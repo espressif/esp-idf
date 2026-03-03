@@ -46,7 +46,7 @@ static void send_binary(esp_mqtt_client_handle_t client)
     esp_partition_mmap(partition, 0, partition->size, ESP_PARTITION_MMAP_DATA, &binary_address, &out_handle);
     // sending only the configured portion of the partition (if it's less than the partition size)
     int binary_size = MIN(CONFIG_BROKER_BIN_SIZE_TO_SEND, partition->size);
-    int msg_id = esp_mqtt_client_publish(client, "/topic/binary", binary_address, binary_size, 0, 0);
+    int msg_id = esp_mqtt_client_publish(client, "/topic/binary", binary_address, binary_size, 1, 0);
     ESP_LOGI(TAG, "binary sent with msg_id=%d", msg_id);
 }
 
@@ -69,6 +69,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+        esp_mqtt_client_subscribe(client, "/topic/binary", 1);
+
         msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
@@ -126,7 +128,8 @@ static void mqtt_app_start(void)
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker = {
             .address.uri = CONFIG_BROKER_URI,
-            .verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start
+            .verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start,
+            .verification.skip_cert_common_name_check = true
         },
     };
 
