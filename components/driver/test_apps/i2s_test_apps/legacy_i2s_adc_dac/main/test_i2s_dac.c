@@ -33,7 +33,7 @@
 //i2s number
 #define EXAMPLE_I2S_NUM           (0)
 //i2s sample rate
-#define EXAMPLE_I2S_SAMPLE_RATE   (16000)
+#define EXAMPLE_I2S_SAMPLE_RATE   (32000)
 //i2s data bits
 #define EXAMPLE_I2S_SAMPLE_BITS   (16)
 //enable display buffer for debug
@@ -78,7 +78,7 @@ static void example_i2s_deinit(void)
  */
 static void example_set_file_play_mode(void)
 {
-    TEST_ESP_OK(i2s_set_clk(EXAMPLE_I2S_NUM, 16000, EXAMPLE_I2S_SAMPLE_BITS, 1));
+    TEST_ESP_OK(i2s_set_clk(EXAMPLE_I2S_NUM, EXAMPLE_I2S_SAMPLE_RATE, EXAMPLE_I2S_SAMPLE_BITS, 1));
 }
 
 /**
