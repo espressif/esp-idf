@@ -94,9 +94,17 @@ class PanicTestDut(IdfDut):
         else:
             assert match
 
-    def expect_stack_dump(self) -> None:
+    def expect_stack_dump(self) -> Any:
+        """Expect and capture the entire stack memory dump (RISC-V only).
+
+        Returns:
+            str: The full stack dump hex data
+        """
         assert not self.is_xtensa, 'Stack memory dump is only printed on RISC-V'
         self.expect_exact('Stack memory:')
+        pattern = re.compile(rb'\r?\n\r?\n')
+        result = self.expect(pattern, return_what_before_match=True).decode('utf-8')
+        return result.strip()
 
     def expect_gme(self, reason: str) -> None:
         """Expect method for Guru Meditation Errors"""
@@ -133,7 +141,7 @@ class PanicTestDut(IdfDut):
                 else:
                     raise ValueError(f'Unsupported input type: {type(pattern).__name__}')
 
-    def _call_espcoredump(self, extra_args: list[str], output_file_name: str, max_retries: int = 3) -> None:
+    def _call_espcoredump(self, extra_args: List[str], output_file_name: str, max_retries: int = 3) -> None:
         # no "with" here, since we need the file to be open for later inspection by the test case
         if not self.coredump_output:
             self.coredump_output = open(output_file_name, 'w')
