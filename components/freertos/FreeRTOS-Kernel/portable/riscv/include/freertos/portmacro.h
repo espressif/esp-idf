@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -745,6 +745,21 @@ extern volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag[_cpu_])
 #else
 #define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
+// -------------- FPU softerware retention ------------------
+#if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW
+/**
+ * @brief Whether the FPU context is dirty on the given core.
+ *
+ * Returns non-zero if any task has used the FPU, such context should be
+ *                  saved during sleep retention.
+ *
+ * @param core_id Core id
+ * @return pdTRUE  FPU context is dirty
+ * @return pdFALSE FPU was not used
+ */
+BaseType_t xPortFPUContextIsDirty(BaseType_t core_id);
 #endif
 
 #ifdef __cplusplus
