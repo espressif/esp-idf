@@ -66,6 +66,7 @@ static uint8_t s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE + 1][IEEE802154_RX_FR
 static esp_ieee802154_frame_info_t s_rx_frame_info[CONFIG_IEEE802154_RX_BUFFER_SIZE + 1];
 
 static bool s_needs_next_operation = false;
+static volatile bool s_pending_rx_stop = false;
 
 static uint8_t s_rx_index = 0;
 static uint8_t s_enh_ack_frame[128];
@@ -457,6 +458,13 @@ static void enable_rx(void)
 
 static IRAM_ATTR void next_operation(void)
 {
+    if (s_pending_rx_stop) {
+        ieee802154_ll_disable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
+        ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
+        esp_ieee802154_receive_at_done();
+        s_pending_rx_stop = false;
+    }
+
     if (ieee802154_pib_get_rx_when_idle()) {
         enable_rx();
     } else {
@@ -1044,8 +1052,15 @@ esp_err_t ieee802154_receive(void)
 IEEE802154_NOINLINE static void ieee802154_finish_receive_at(void* ctx)
 {
     (void)ctx;
-    stop_current_operation();
-    esp_ieee802154_receive_at_done();
+    if (s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame()) {
+        // if we successfully receive SFD, then continue receiving
+        ieee802154_ll_enable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
+        s_pending_rx_stop = true;
+    } else {
+        // or else we go back to sleep
+        stop_current_operation();
+        esp_ieee802154_receive_at_done();
+    }
 }
 
 IEEE802154_NOINLINE static void ieee802154_start_receive_at(void* ctx)
