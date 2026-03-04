@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,12 +72,23 @@ void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallback
  * @note This function should be called before `esp_radio_spinel_init`.
  *
  * @param[in]  radio_uart_config    The config of UART for radio spinel.
- * @param[in]  aUartInitHandler     The function for UART initialization
- * @param[in]  aUartDeinitHandler   The function for UART deinitialization
+ *                                  Must not be nullptr.
+ *
+ * @param[in]  aUartInitHandler     Optional UART initialization handler.
+ *                                  If provided (not nullptr), this handler will be used
+ *                                  to initialize the UART. Otherwise, a default
+ *                                  internal implementation will be used.
+ *
+ * @param[in]  aUartDeinitHandler   Optional UART deinitialization handler.
+ *                                  If provided (not nullptr), this handler will be used
+ *                                  to deinitialize the UART. Otherwise, a default
+ *                                  internal implementation will be used.
+ *
  * @param[in]  idx                  The index of 802.15.4 related protocol stack.
  *
  * @return
  *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if `radio_uart_config` is nullptr
  *      - ESP_FAIL on failures
  *
  */

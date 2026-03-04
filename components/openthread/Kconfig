@@ -604,6 +604,13 @@ menu "OpenThread"
             help
                 The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
                 failure.
+
+        config OPENTHREAD_SPINEL_UART_DRIVER_BUFFER_SIZE
+            int "UART driver buffer size for radio spinel interface"
+            depends on OPENTHREAD_SPINEL_ONLY || OPENTHREAD_RADIO_SPINEL_UART
+            default 1024
+            help
+                RX buffer size passed to uart_driver_install() for the radio spinel UART interface.
     endmenu
 
     menuconfig OPENTHREAD_DEBUG
