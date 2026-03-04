@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,9 @@
 #include "lib/spinel/spinel_interface.hpp"
 #include "lib/hdlc/hdlc.hpp"
 #include "openthread/error.h"
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+#include "esp_openthread_types.h"
+#endif
 
 namespace esp {
 namespace radio_spinel {
@@ -143,6 +146,9 @@ public:
      *      - ESP_ERROR on failure
      */
     esp_err_t Enable(const esp_radio_spinel_uart_config_t &radio_uart_config);
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+    esp_err_t Enable(const esp_openthread_uart_config_t &radio_uart_config);
+#endif
 
     /**
      * @brief  This method disable the HDLC interface.
@@ -150,7 +156,13 @@ public:
      */
     esp_err_t Disable(void);
 
-    void RegisterUartInitHandler(esp_radio_spinel_uart_init_handler handler) { mUartInitHandler = handler; }
+    void RegisterUartInitHandler(esp_radio_spinel_uart_init_handler handler)
+    {
+        if (mUartInitHandler != NULL) {
+            ESP_LOGW(ESP_SPINEL_LOG_TAG, "UartInitHandler already registered, will overwrite (prev=%p, new=%p)", mUartInitHandler, handler);
+        }
+        mUartInitHandler = handler;
+    }
 
     void RegisterUartDeinitHandler(esp_radio_spinel_uart_deinit_handler handler) { mUartDeinitHandler = handler; }
 
