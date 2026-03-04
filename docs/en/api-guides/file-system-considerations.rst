@@ -101,8 +101,7 @@ The most supported file system, recommended for common applications - file/direc
 
 - `FatFS source site <http://elm-chan.org/fsw/ff/>`_
 - More about `FAT table size limits <https://en.wikipedia.org/wiki/Design_of_the_FAT_file_system#Size_limits>`_
-- :ref:`Using FatFS with VFS <using-fatfs-with-vfs>`
-- :ref:`Using FatFS with VFS and SD cards <using-fatfs-with-vfs-and-sdcards>`
+- :ref:`Using FatFS in ESP-IDF <fatfs-mount-and-use>`
 - ESP-IDF FatFS tools: :ref:`Partition generator <fatfs-partition-generator>` and :ref:`Partition analyzer <fatfs-partition-analyzer>`
 
 **Examples:**
