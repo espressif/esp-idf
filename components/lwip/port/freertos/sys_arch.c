@@ -369,13 +369,14 @@ sys_mbox_free(sys_mbox_t *mbox)
     return;
   }
   UBaseType_t msgs_waiting = uxQueueMessagesWaiting((QueueHandle_t)&(*mbox)->os_mbox);
-  LWIP_ASSERT("mbox quence not empty", msgs_waiting == 0);
+  LWIP_ASSERT("mbox queue not empty", msgs_waiting == 0);
+  /* Always free the mbox structure even if messages remain (e.g. release build
+   * with assert disabled) to avoid leaking the ~108-byte mbox allocation. */
+  (void)msgs_waiting;
 
   vQueueDelete((QueueHandle_t)&(*mbox)->os_mbox);
   heap_caps_free(*mbox);
   *mbox = NULL;
-
-  (void)msgs_waiting;
 }
 
 /**

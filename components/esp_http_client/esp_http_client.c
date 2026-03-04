@@ -648,16 +648,35 @@ error:
 
 static esp_err_t _clear_connection_info(esp_http_client_handle_t client)
 {
-    free(client->connection_info.path);
-    free(client->connection_info.host);
-    free(client->connection_info.query);
-    free(client->connection_info.username);
+    if (client->connection_info.path) {
+        free(client->connection_info.path);
+        client->connection_info.path = NULL;
+    }
+    if (client->connection_info.host) {
+        free(client->connection_info.host);
+        client->connection_info.host = NULL;
+    }
+    if (client->connection_info.query) {
+        free(client->connection_info.query);
+        client->connection_info.query = NULL;
+    }
+    if (client->connection_info.username) {
+        free(client->connection_info.username);
+        client->connection_info.username = NULL;
+    }
     if (client->connection_info.password) {
         memset(client->connection_info.password, 0, strlen(client->connection_info.password));
         free(client->connection_info.password);
+        client->connection_info.password = NULL;
     }
-    free(client->connection_info.scheme);
-    free(client->connection_info.url);
+    if (client->connection_info.scheme) {
+        free(client->connection_info.scheme);
+        client->connection_info.scheme = NULL;
+    }
+    if (client->connection_info.url) {
+        free(client->connection_info.url);
+        client->connection_info.url = NULL;
+    }
     memset(&client->connection_info, 0, sizeof(connection_info_t));
     return ESP_OK;
 }
@@ -665,16 +684,36 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client)
 static esp_err_t _clear_auth_data(esp_http_client_handle_t client)
 {
     if (client->auth_data == NULL) {
-        return ESP_FAIL;
+        return ESP_OK;
     }
-
-    free(client->auth_data->method);
-    free(client->auth_data->realm);
-    free(client->auth_data->algorithm);
-    free(client->auth_data->qop);
-    free(client->auth_data->nonce);
-    free(client->auth_data->opaque);
-    free(client->auth_data->uri);
+    if (client->auth_data->method) {
+        free(client->auth_data->method);
+        client->auth_data->method = NULL;
+    }
+    if (client->auth_data->realm) {
+        free(client->auth_data->realm);
+        client->auth_data->realm = NULL;
+    }
+    if (client->auth_data->algorithm) {
+        free(client->auth_data->algorithm);
+        client->auth_data->algorithm = NULL;
+    }
+    if (client->auth_data->qop) {
+        free(client->auth_data->qop);
+        client->auth_data->qop = NULL;
+    }
+    if (client->auth_data->nonce) {
+        free(client->auth_data->nonce);
+        client->auth_data->nonce = NULL;
+    }
+    if (client->auth_data->opaque) {
+        free(client->auth_data->opaque);
+        client->auth_data->opaque = NULL;
+    }
+    if (client->auth_data->uri) {
+        free(client->auth_data->uri);
+        client->auth_data->uri = NULL;
+    }
     memset(client->auth_data, 0, sizeof(esp_http_auth_data_t));
     return ESP_OK;
 }
@@ -1097,38 +1136,77 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
     esp_http_client_close(client);
     if (client->transport_list) {
         esp_transport_list_destroy(client->transport_list);
+        client->transport_list = NULL;
     }
     if (client->request) {
-        http_header_destroy(client->request->headers);
-        if (client->request->buffer) {
-            free(client->request->buffer->data);
+        if (client->request->headers) {
+            http_header_destroy(client->request->headers);
+            client->request->headers = NULL;
         }
-        free(client->request->buffer);
+        if (client->request->buffer) {
+            if (client->request->buffer->data) {
+                free(client->request->buffer->data);
+                client->request->buffer->data = NULL;
+            }
+            free(client->request->buffer);
+            client->request->buffer = NULL;
+        }
         free(client->request);
+        client->request = NULL;
     }
     if (client->response) {
 #if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
-        http_header_destroy(client->response->headers);
+        if (client->response->headers) {
+            http_header_destroy(client->response->headers);
+            client->response->headers = NULL;
+        }
 #endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
         if (client->response->buffer) {
-            free(client->response->buffer->data);
+            if (client->response->buffer->data) {
+                free(client->response->buffer->data);
+                client->response->buffer->data = NULL;
+            }
             esp_http_client_cached_buf_cleanup(client->response->buffer);
+            free(client->response->buffer);
+            client->response->buffer = NULL;
         }
-        free(client->response->buffer);
         free(client->response);
+        client->response = NULL;
     }
     if (client->if_name) {
         free(client->if_name);
+        client->if_name = NULL;
     }
-    free(client->parser);
-    free(client->parser_settings);
+    if (client->parser) {
+        free(client->parser);
+        client->parser = NULL;
+    }
+    if (client->parser_settings) {
+        free(client->parser_settings);
+        client->parser_settings = NULL;
+    }
     _clear_connection_info(client);
     _clear_auth_data(client);
-    free(client->auth_data);
-    free(client->current_header_key);
-    free(client->current_header_value);
-    free(client->location);
-    free(client->auth_header);
+    if (client->auth_data) {
+        free(client->auth_data);
+        client->auth_data = NULL;
+    }
+    if (client->current_header_key) {
+        free(client->current_header_key);
+        client->current_header_key = NULL;
+    }
+    if (client->current_header_value) {
+        free(client->current_header_value);
+        client->current_header_value = NULL;
+    }
+    if (client->location) {
+        free(client->location);
+        client->location = NULL;
+    }
+    if (client->auth_header) {
+        free(client->auth_header);
+        client->auth_header = NULL;
+    }
     free(client);
     return ESP_OK;
 }
