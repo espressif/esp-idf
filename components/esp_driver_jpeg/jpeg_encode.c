@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,9 +89,9 @@ esp_err_t jpeg_new_encoder_engine(const jpeg_encode_engine_cfg_t *enc_eng_cfg, j
     uint32_t alignment = cache_line_size;
     size_t dma_desc_mem_size = JPEG_ALIGN_UP(sizeof(dma2d_descriptor_t), cache_line_size);
 
-    encoder_engine->rxlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, sizeof(dma2d_descriptor_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
+    encoder_engine->rxlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(encoder_engine->rxlink, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg encoder rxlink");
-    encoder_engine->txlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, sizeof(dma2d_descriptor_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
+    encoder_engine->txlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(encoder_engine->txlink, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg encoder txlink");
     encoder_engine->dma_desc_size = dma_desc_mem_size;
 
@@ -140,6 +140,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     ESP_RETURN_ON_FALSE(encoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg encode handle is null");
     ESP_RETURN_ON_FALSE(encode_cfg, ESP_ERR_INVALID_ARG, TAG, "jpeg encode config is null");
     ESP_RETURN_ON_FALSE(encode_inbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg encode picture buffer is null");
+    ESP_RETURN_ON_FALSE(bit_stream, ESP_ERR_INVALID_ARG, TAG, "jpeg encode output buffer is null");
     ESP_RETURN_ON_FALSE(out_size, ESP_ERR_INVALID_ARG, TAG, "jpeg encode picture out_size is null");
     ESP_RETURN_ON_FALSE(((uintptr_t)bit_stream % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg encode bit stream is not aligned, please use jpeg_alloc_encoder_mem to malloc your buffer");
     if (encode_cfg->src_type == JPEG_ENCODE_IN_FORMAT_YUV422) {
@@ -154,6 +155,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     jpeg_hal_context_t *hal = &encoder_engine->codec_base->hal;
     uint8_t *raw_buffer = (uint8_t*)encode_inbuf;
     uint32_t compressed_size;
+    uint32_t payload_buf_size;
     xSemaphoreTake(encoder_engine->codec_base->codec_mutex, portMAX_DELAY);
     jpeg_ll_soft_rst(hal->dev);
     jpeg_ll_set_codec_mode(hal->dev, JPEG_CODEC_ENCODER);
@@ -214,6 +216,8 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     jpeg_ll_set_qnr_presition(hal->dev, 0);
     ESP_GOTO_ON_ERROR(s_jpeg_set_header_info(encoder_engine), err2, TAG, "set header failed");
     jpeg_hal_set_quantization_coefficient(hal, encoder_engine->header_info->m_quantization_tables[0], encoder_engine->header_info->m_quantization_tables[1]);
+    ESP_GOTO_ON_FALSE(outbuf_size > encoder_engine->header_info->header_len, ESP_ERR_INVALID_ARG, err2, TAG, "output buffer is too small for jpeg header");
+    payload_buf_size = outbuf_size - encoder_engine->header_info->header_len;
 
     uint8_t sample_method_idx = 0;
     switch (encoder_engine->header_info->sub_sample) {
@@ -240,11 +244,11 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     ESP_GOTO_ON_FALSE((encoder_engine->header_info->header_len % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_STATE, err2, TAG, "The header is not cache line aligned, please check");
 
     // 1D direction
-    memset(encoder_engine->rxlink, 0, sizeof(dma2d_descriptor_t));
-    s_cfg_desc(encoder_engine, encoder_engine->rxlink, JPEG_DMA2D_2D_DISABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, outbuf_size & JPEG_DMA2D_MAX_SIZE, 0, JPEG_DMA2D_EOF_NOT_LAST, 1, DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, outbuf_size >> JPEG_DMA2D_1D_HIGH_14BIT, 0, bit_stream + encoder_engine->header_info->header_len, NULL);
+    memset(encoder_engine->rxlink, 0, encoder_engine->dma_desc_size);
+    s_cfg_desc(encoder_engine, encoder_engine->rxlink, JPEG_DMA2D_2D_DISABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE, payload_buf_size & JPEG_DMA2D_MAX_SIZE, 0, JPEG_DMA2D_EOF_NOT_LAST, 1, DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, payload_buf_size >> JPEG_DMA2D_1D_HIGH_14BIT, 0, bit_stream + encoder_engine->header_info->header_len, NULL);
 
     // 2D direction
-    memset(encoder_engine->txlink, 0, sizeof(dma2d_descriptor_t));
+    memset(encoder_engine->txlink, 0, encoder_engine->dma_desc_size);
     s_cfg_desc(encoder_engine, encoder_engine->txlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value(picture_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, encoder_engine->header_info->origin_v, encoder_engine->header_info->origin_h, raw_buffer, NULL);
 
     ret = esp_cache_msync((void*)raw_buffer, inbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
