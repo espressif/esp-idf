@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import subprocess
@@ -29,10 +29,10 @@ def test_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
 
 
-@pytest.fixture(name='socket_can', scope='module')
+@pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
-    start_command = 'sudo ip link set can0 up type can bitrate 250000 restart-ms 100'
+    start_command = 'sudo ip link set can0 up type can bitrate 250000'
     stop_command = 'sudo ip link set can0 down'
     subprocess.run(start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     bus = Bus(interface='socketcan', channel='can0', bitrate=250000)
@@ -57,7 +57,6 @@ def fixture_create_socket_can() -> Bus:
     indirect=True,
 )
 def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
-    dut.serial.hard_reset()
     dut.expect_exact('Press ENTER to see the list of tests')
 
     # TEST_CASE("twai_listen_only", "[twai]")
@@ -91,7 +90,6 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     indirect=True,
 )
 def test_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
-    dut.serial.hard_reset()
     dut.expect_exact('Press ENTER to see the list of tests')
 
     # TEST_CASE("twai_remote_request", "[twai]")
