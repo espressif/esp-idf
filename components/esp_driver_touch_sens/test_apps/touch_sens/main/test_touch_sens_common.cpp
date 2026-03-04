@@ -12,6 +12,7 @@
 #include "hal/touch_sensor_ll.h"
 #include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_heap_caps.h"
 
 static touch_sensor_sample_config_t s_sample_cfg[TOUCH_SAMPLE_CFG_NUM] = {
 #if SOC_TOUCH_SENSOR_VERSION == 1
@@ -94,11 +95,11 @@ static touch_channel_config_t s_test_get_chan_cfg_by_benchmark(uint32_t benchmar
     for (int i = 0; i < num; i++) {
 #if SOC_TOUCH_SENSOR_VERSION == 1
         chan_cfg.abs_active_thresh[i] = benchmark[i] * (1 - coeff);
-        printf("[Sampler %d] benchmark %5"PRIu32" abs thresh %4"PRIu32"\n",
+        printf("[Sampler %d] benchmark %5" PRIu32 " abs thresh %4" PRIu32 "\n",
                i, benchmark[i], chan_cfg.abs_active_thresh[i]);
 #else
         chan_cfg.active_thresh[i] = benchmark[i] * coeff;
-        printf("[Sampler %d] benchmark %5"PRIu32" thresh %4"PRIu32"\n",
+        printf("[Sampler %d] benchmark %5" PRIu32 " thresh %4" PRIu32 "\n",
                i, benchmark[i], chan_cfg.active_thresh[i]);
 #endif
     }
@@ -161,13 +162,14 @@ static void s_test_touch_simulate_touch(touch_sensor_handle_t touch, touch_chann
 
 static void s_test_touch_log_data(touch_channel_handle_t touch_chan, uint32_t sample_cfg_num, const char *tag)
 {
-    uint32_t data[sample_cfg_num];
+    uint32_t *data = (uint32_t *)heap_caps_malloc(sample_cfg_num * sizeof(uint32_t), MALLOC_CAP_INTERNAL);
     TEST_ESP_OK(touch_channel_read_data(touch_chan, TOUCH_CHAN_DATA_TYPE_SMOOTH, data));
     printf("%s:", tag);
     for (int i = 0; i < sample_cfg_num; i++) {
-        printf(" %"PRIu32, data[i]);
+        printf(" %" PRIu32, data[i]);
     }
     printf("\n");
+    free(data);
 }
 
 #define TEST_ACTIVE_THRESH_RATIO    (0.01f)
@@ -211,6 +213,12 @@ TEST_CASE("touch_sens_active_inactive_test", "[touch]")
         .on_inactive = s_test_touch_on_inactive_callback,
 #if SOC_TOUCH_SENSOR_VERSION == 1
         .on_hw_active = s_test_touch_on_hw_active_callback,
+#endif
+#if SOC_TOUCH_SENSOR_VERSION > 1
+        .on_measure_done = NULL,
+        .on_scan_done = NULL,
+        .on_timeout = NULL,
+        .on_proximity_meas_done = NULL,
 #endif
     };
     test_touch_cb_data_t cb_data = {};
@@ -266,9 +274,13 @@ TEST_CASE("touch_sens_current_meas_channel_test", "[touch]")
     touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
     TEST_ESP_OK(touch_sensor_config_filter(touch, &filter_cfg));
 
-    int err_chan[TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID + 1] = {[0 ...(TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID)] = -1};
+    int err_chan_num = TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID + 1;
+    int *err_chan = (int *)malloc(err_chan_num * sizeof(int));
+    for (int i = 0; i < err_chan_num; i++) {
+        err_chan[i] = -1;
+    }
     int scan_times = 100;
-    uint32_t curr_chan[scan_times];
+    uint32_t *curr_chan = (uint32_t *)malloc(scan_times * sizeof(uint32_t));
     /* Loop all channels */
     for (int ch_id = TOUCH_MIN_CHAN_ID; ch_id <= TOUCH_MAX_CHAN_ID; ch_id++) {
         /* New a channel */
@@ -293,12 +305,15 @@ TEST_CASE("touch_sens_current_meas_channel_test", "[touch]")
 
     /* Check if there is any error in the current measuring channel from any channel */
     bool has_error = false;
-    for (int i = 0; i < TOUCH_MAX_CHAN_ID - TOUCH_MIN_CHAN_ID + 1; i++) {
+    for (int i = 0; i < err_chan_num; i++) {
         if (err_chan[i] >= 0) {
             ESP_LOGE("TOUCH_TEST", "actual channel is %d, but current measuring channel reads %d", i + TOUCH_MIN_CHAN_ID, err_chan[i]);
             has_error = true;
         }
     }
     TEST_ASSERT_FALSE(has_error);
+
+    free(err_chan);
+    free(curr_chan);
 }
 #endif  // SOC_TOUCH_SENSOR_VERSION > 1
