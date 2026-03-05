@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -598,6 +598,7 @@ int bt_mesh_input_string(const char *str)
         return -EINVAL;
     }
 
+    (void)memset(prov_link.auth, 0, sizeof(prov_link.auth));
     (void)memcpy(prov_link.auth, str, bt_mesh_prov_get()->input_size);
 
     send_input_complete();
@@ -946,17 +947,17 @@ static void prov_data(const uint8_t *data)
 
     bt_mesh_prov_buf_init(&msg, PROV_COMPLETE);
 
-    if (bt_mesh_prov_send(&prov_link, &msg)) {
-        BT_ERR("Failed to send Provisioning Complete");
-        return;
-    }
-
-    /* Ignore any further PDUs on this link */
-    prov_link.expect = 0U;
-
 #if CONFIG_BLE_MESH_RPR_SRV
     /* For NPPI, no need to perform the following actions */
     if (bt_mesh_atomic_test_bit(prov_link.flags, PB_NPPI)) {
+        if (bt_mesh_prov_send(&prov_link, &msg)) {
+            BT_ERR("NPPI, failed to send Provisioning Complete");
+            return;
+        }
+
+        /* Ignore any further PDUs on this link */
+        prov_link.expect = 0U;
+
         return;
     }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
@@ -968,11 +969,23 @@ static void prov_data(const uint8_t *data)
         identity_enable = false;
     }
 
-    err = bt_mesh_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
+    err = bt_mesh_pre_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
     if (err) {
         BT_ERR("Failed to provision (err %d)", err);
+        close_link(PROV_ERR_UNEXP_ERR);
         return;
     }
+
+    if (bt_mesh_prov_send(&prov_link, &msg)) {
+        BT_ERR("Failed to send Provisioning Complete");
+        return;
+    }
+
+    /* Ignore any further PDUs on this link */
+    prov_link.expect = 0U;
+
+    /* The device becomes a node and enters the network */
+    bt_mesh_provision();
 
     /* After PB-GATT provisioning we should start advertising
      * using Node Identity.
@@ -1670,6 +1683,11 @@ int bt_mesh_rpr_srv_nppi_pdu_recv(uint8_t type, const uint8_t *data)
 {
     if (!bt_mesh_atomic_test_bit(prov_link.flags, PB_NPPI)) {
         BT_ERR("Not a NPPI provisioning link");
+        return -EINVAL;
+    }
+
+    if (type >= ARRAY_SIZE(prov_handlers)) {
+        BT_ERR("NPPI, unknown provisioning PDU type 0x%02x", type);
         return -EINVAL;
     }
 

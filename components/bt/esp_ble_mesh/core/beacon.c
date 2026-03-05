@@ -496,6 +496,7 @@ update_stats:
 
 void bt_mesh_beacon_recv(struct net_buf_simple *buf, int8_t rssi)
 {
+    struct net_buf_simple_state state = {0};
     uint8_t type = 0U;
 
     BT_DBG("BeaconRecv");
@@ -511,11 +512,15 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf, int8_t rssi)
     case BEACON_TYPE_UNPROVISIONED:
         BT_DBG("UnprovDevBeaconRecv, Rssi %d", rssi);
 
+        net_buf_simple_save(buf, &state);
+
         if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
             IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             bt_mesh_is_provisioner_en()) {
             bt_mesh_provisioner_unprov_beacon_recv(buf, rssi);
         }
+
+        net_buf_simple_restore(buf, &state);
 
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_is_provisioned()) {

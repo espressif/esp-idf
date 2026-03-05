@@ -602,10 +602,7 @@ static bool send_next_segment(struct seg_tx *tx, int *result)
         return true;
     }
 
-    /* If security credentials is updated in the network layer,
-     * need to store the security credentials for the segments,
-     * which will be used for retransmission later.
-     */
+    /* For sending the next segments, the credential must match */
     if (tx->cred != net_tx.ctx->send_cred) {
         BT_ERR("MismatchSegCred %u vs. %u",
                tx->cred, net_tx.ctx->send_cred);
@@ -1851,9 +1848,10 @@ static void seg_ack_send_start(uint16_t duration, int err, void *user_data)
     BT_INFO("SegAckSendStart, Err %d", err);
 
     if (err) {
+        bt_mesh_seg_rx_lock();
         rx->last_ack = k_uptime_get_32();
-
         BT_DBG("LastAck %lu", rx->last_ack);
+        bt_mesh_seg_rx_unlock();
     }
 }
 
@@ -1862,12 +1860,15 @@ static void seg_ack_send_end(int err, void *user_data)
     struct seg_rx *rx = user_data;
     uint32_t interval = 0U;
 
+    bt_mesh_seg_rx_lock();
+
     BT_INFO("SegAckSendEnd, InUse %u Err %d", rx->in_use, err);
 
     /* This could happen when during the Segment ACK transaction,
      * the seg_rx is been reset.
      */
     if (rx->in_use == 0) {
+        bt_mesh_seg_rx_unlock();
         return;
     }
 
@@ -1900,6 +1901,8 @@ static void seg_ack_send_end(int err, void *user_data)
         /* Introduce a delay for the Segment ACK retransmission */
         k_delayed_work_submit(&rx->ack_timer, interval);
     }
+
+    bt_mesh_seg_rx_unlock();
 }
 
 static const struct bt_mesh_send_cb seg_ack_sent_cb = {
@@ -2053,6 +2056,7 @@ static void discard_msg(struct k_work *work)
     timeout = bt_mesh_seg_discard_timeout();
 
     BT_WARN("DiscardTimerExpired, timeout %lu", timeout);
+    ARG_UNUSED(timeout);
 
     /* Not fully reset the seg_rx, in case any segment of
      * this message is received later.
@@ -2124,7 +2128,7 @@ static struct seg_rx *seg_rx_find_with_buf(struct bt_mesh_net_rx *net_rx,
             }
 
             /* Received a new packet when the old packet was not fully obtained */
-            BT_WARN("Duplicate SDU from src 0x%04x auth 0x%04x", net_rx->ctx.addr, rx->seq_auth);
+            BT_WARN("Duplicate SDU from src 0x%04x auth 0x%016llx", net_rx->ctx.addr, rx->seq_auth);
 
             /* Clear out the old context since the sender
              * has apparently started sending a new SDU.
@@ -2177,6 +2181,11 @@ static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
 
         /* Copy the information in seg_rx into ext_seg_rx */
         struct seg_rx *ext_rx = seg_rx_alloc(net_rx, &(rx->hdr), seq_auth, rx->seg_n);
+        if (!ext_rx) {
+            BT_ERR("Failed to alloc ext_rx for long packet");
+            return NULL;
+        }
+
         uint16_t last_seg_len = rx->buf.len - (rx->seg_n * seg_len(&si));
         uint8_t  *last_seg = rx->buf.data + (rx->seg_n * seg_len(&si));
 
@@ -2667,6 +2676,12 @@ void bt_mesh_rx_reset(void)
     for (size_t i = 0; i < ARRAY_SIZE(seg_rx); i++) {
         seg_rx_reset(&seg_rx[i], true);
     }
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    for (size_t i = 0; i < ARRAY_SIZE(ext_seg_rx); i++) {
+        seg_rx_reset(&ext_seg_rx[i], true);
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
 }
 
 void bt_mesh_tx_reset(void)
@@ -2692,6 +2707,15 @@ void bt_mesh_rx_reset_single(uint16_t src)
             seg_rx_reset(rx, true);
         }
     }
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+    for (size_t i = 0; i < ARRAY_SIZE(ext_seg_rx); i++) {
+        struct seg_rx *rx = &ext_seg_rx[i];
+        if (src == rx->src) {
+            seg_rx_reset(rx, true);
+        }
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
 }
 
 void bt_mesh_tx_reset_single(uint16_t dst)

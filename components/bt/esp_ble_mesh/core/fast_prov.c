@@ -169,7 +169,7 @@ const uint8_t *bt_mesh_get_fast_prov_app_key(uint16_t net_idx, uint16_t app_idx)
     BT_DBG("GetFastProvAppKey, NetIdx 0x%04x AppIdx 0x%04x", net_idx, app_idx);
 
     key = bt_mesh_fast_prov_app_key_find(app_idx);
-    if (!key) {
+    if (!key || key->net_idx != net_idx) {
         BT_ERR("Invalid AppKeyIndex 0x%04x", app_idx);
         return NULL;
     }
@@ -202,7 +202,10 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
             bt_mesh_proxy_client_prov_enable();
         }
 
-        bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr());
+        if (bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr()) < 0) {
+            BT_ERR("SetPrimaryElemAddrFail");
+            return 0x01;
+        }
         bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
         bt_mesh_provisioner_fast_prov_enable(true);
         bt_mesh_atomic_or(bt_mesh.flags, BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV));

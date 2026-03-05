@@ -35,6 +35,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     // Create a semaphore
     if ((semaphore = xSemaphoreCreateCounting(1, 0)) == NULL) {
         BT_ERR("Failed to create semaphore");
+        bt_mesh_host_deinit();
         return ESP_ERR_NO_MEM;
     }
 
@@ -50,6 +51,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL) != BT_STATUS_SUCCESS) {
         vSemaphoreDelete(semaphore);
         BT_ERR("Failed to start mesh init");
+        bt_mesh_host_deinit();
         return ESP_FAIL;
     }
 

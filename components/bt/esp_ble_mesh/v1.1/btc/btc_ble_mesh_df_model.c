@@ -75,6 +75,9 @@ void btc_ble_mesh_df_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_DF_CLIENT_GET_STATE: {
+        dst->df_get.params = NULL;
+        dst->df_get.get = NULL;
+
         dst->df_get.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->df_get.params) {
             memcpy(dst->df_get.params, src->df_get.params,
@@ -90,81 +93,122 @@ void btc_ble_mesh_df_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_
                        sizeof(esp_ble_mesh_df_client_get_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->df_get.params);
+                dst->df_get.params = NULL;
             }
         }
         break;
     }
     case BTC_BLE_MESH_ACT_DF_CLIENT_SET_STATE: {
+        dst->df_set.params = NULL;
+        dst->df_set.set = NULL;
+
         dst->df_set.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->df_set.set = bt_mesh_calloc(sizeof(esp_ble_mesh_df_client_set_t));
-        if (dst->df_set.params && dst->df_set.set) {
-            memcpy(dst->df_set.params, src->df_set.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->df_set.set, src->df_set.set,
-                   sizeof(esp_ble_mesh_df_client_set_t));
-
-            switch (src->df_set.params->opcode) {
-            case ESP_BLE_MESH_MODEL_OP_FORWARDING_TABLE_DEPS_ADD:
-                if (src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list &&
-                    src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list_size) {
-                    length = src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list_size * sizeof(esp_ble_mesh_uar_t);
-                    dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list = bt_mesh_calloc(length);
-                    if (!dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list) {
-                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
-                        return;
-                    }
-
-                    memcpy(dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list,
-                           src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list,
-                           length);
-                }
-                if (src->df_set.set->forwarding_table_deps_add.dep_target_uar_list &&
-                    src->df_set.set->forwarding_table_deps_add.dep_target_uar_list_size) {
-                    length = src->df_set.set->forwarding_table_deps_add.dep_target_uar_list_size * sizeof(esp_ble_mesh_uar_t);
-                    dst->df_set.set->forwarding_table_deps_add.dep_target_uar_list = bt_mesh_calloc(length);
-                    if (!dst->df_set.set->forwarding_table_deps_add.dep_target_uar_list) {
-                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
-                        return;
-                    }
-
-                    memcpy(dst->df_set.set->forwarding_table_deps_add.dep_target_uar_list,
-                           src->df_set.set->forwarding_table_deps_add.dep_target_uar_list,
-                           length);
-                }
-                break;
-            case ESP_BLE_MESH_MODEL_OP_FORWARDING_TABLE_DEPS_DEL:
-                if (src->df_set.set->forwarding_table_deps_del.dep_origin_list &&
-                    src->df_set.set->forwarding_table_deps_del.dep_origin_list_size) {
-                    length = src->df_set.set->forwarding_table_deps_del.dep_origin_list_size * 2;
-                    dst->df_set.set->forwarding_table_deps_del.dep_origin_list = bt_mesh_calloc(length);
-                    if (!dst->df_set.set->forwarding_table_deps_del.dep_origin_list) {
-                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
-                        return;
-                    }
-
-                    memcpy(dst->df_set.set->forwarding_table_deps_del.dep_origin_list,
-                           src->df_set.set->forwarding_table_deps_del.dep_origin_list,
-                           length);
-                }
-                if (src->df_set.set->forwarding_table_deps_del.dep_target_list &&
-                    src->df_set.set->forwarding_table_deps_del.dep_target_list_size) {
-                    length = src->df_set.set->forwarding_table_deps_del.dep_target_list_size * 2;
-                    dst->df_set.set->forwarding_table_deps_del.dep_target_list = bt_mesh_calloc(length);
-                    if (!dst->df_set.set->forwarding_table_deps_del.dep_target_list) {
-                        BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
-                        return;
-                    }
-
-                    memcpy(dst->df_set.set->forwarding_table_deps_del.dep_target_list,
-                           src->df_set.set->forwarding_table_deps_del.dep_target_list,
-                           length);
-                }
-                break;
-            default:
-                break;
-            }
-        } else {
+        if (!dst->df_set.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
+        }
+
+        dst->df_set.set = bt_mesh_calloc(sizeof(esp_ble_mesh_df_client_set_t));
+        if (!dst->df_set.set) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->df_set.params);
+            dst->df_set.params = NULL;
+            break;
+        }
+
+        memcpy(dst->df_set.params, src->df_set.params, sizeof(esp_ble_mesh_client_common_param_t));
+        memcpy(dst->df_set.set, src->df_set.set, sizeof(esp_ble_mesh_df_client_set_t));
+
+        switch (src->df_set.params->opcode) {
+        case ESP_BLE_MESH_MODEL_OP_FORWARDING_TABLE_DEPS_ADD:
+            if (src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list &&
+                src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list_size) {
+                length = src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list_size * sizeof(esp_ble_mesh_uar_t);
+                dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list = bt_mesh_calloc(length);
+                if (!dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list) {
+                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* Free the previously allocated resources */
+                    bt_mesh_free(dst->df_set.params);
+                    dst->df_set.params = NULL;
+                    bt_mesh_free(dst->df_set.set);
+                    dst->df_set.set = NULL;
+                    return;
+                }
+
+                memcpy(dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list,
+                       src->df_set.set->forwarding_table_deps_add.dep_origin_uar_list,
+                       length);
+            }
+            if (src->df_set.set->forwarding_table_deps_add.dep_target_uar_list &&
+                src->df_set.set->forwarding_table_deps_add.dep_target_uar_list_size) {
+                length = src->df_set.set->forwarding_table_deps_add.dep_target_uar_list_size * sizeof(esp_ble_mesh_uar_t);
+                dst->df_set.set->forwarding_table_deps_add.dep_target_uar_list = bt_mesh_calloc(length);
+                if (!dst->df_set.set->forwarding_table_deps_add.dep_target_uar_list) {
+                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* Free the previously allocated resources */
+                    if (dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list) {
+                        bt_mesh_free(dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list);
+                        dst->df_set.set->forwarding_table_deps_add.dep_origin_uar_list = NULL;
+                    }
+                    bt_mesh_free(dst->df_set.params);
+                    dst->df_set.params = NULL;
+                    bt_mesh_free(dst->df_set.set);
+                    dst->df_set.set = NULL;
+                    return;
+                }
+
+                memcpy(dst->df_set.set->forwarding_table_deps_add.dep_target_uar_list,
+                       src->df_set.set->forwarding_table_deps_add.dep_target_uar_list,
+                       length);
+            }
+            break;
+        case ESP_BLE_MESH_MODEL_OP_FORWARDING_TABLE_DEPS_DEL:
+            if (src->df_set.set->forwarding_table_deps_del.dep_origin_list &&
+                src->df_set.set->forwarding_table_deps_del.dep_origin_list_size) {
+                length = src->df_set.set->forwarding_table_deps_del.dep_origin_list_size * 2;
+                dst->df_set.set->forwarding_table_deps_del.dep_origin_list = bt_mesh_calloc(length);
+                if (!dst->df_set.set->forwarding_table_deps_del.dep_origin_list) {
+                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* Free the previously allocated resources */
+                    bt_mesh_free(dst->df_set.params);
+                    dst->df_set.params = NULL;
+                    bt_mesh_free(dst->df_set.set);
+                    dst->df_set.set = NULL;
+                    return;
+                }
+
+                memcpy(dst->df_set.set->forwarding_table_deps_del.dep_origin_list,
+                       src->df_set.set->forwarding_table_deps_del.dep_origin_list,
+                       length);
+            }
+            if (src->df_set.set->forwarding_table_deps_del.dep_target_list &&
+                src->df_set.set->forwarding_table_deps_del.dep_target_list_size) {
+                length = src->df_set.set->forwarding_table_deps_del.dep_target_list_size * 2;
+                dst->df_set.set->forwarding_table_deps_del.dep_target_list = bt_mesh_calloc(length);
+                if (!dst->df_set.set->forwarding_table_deps_del.dep_target_list) {
+                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* Free the previously allocated resources */
+                    if (dst->df_set.set->forwarding_table_deps_del.dep_origin_list) {
+                        bt_mesh_free(dst->df_set.set->forwarding_table_deps_del.dep_origin_list);
+                        dst->df_set.set->forwarding_table_deps_del.dep_origin_list = NULL;
+                    }
+                    bt_mesh_free(dst->df_set.params);
+                    dst->df_set.params = NULL;
+                    bt_mesh_free(dst->df_set.set);
+                    dst->df_set.set = NULL;
+                    return;
+                }
+
+                memcpy(dst->df_set.set->forwarding_table_deps_del.dep_target_list,
+                       src->df_set.set->forwarding_table_deps_del.dep_target_list,
+                       length);
+            }
+            break;
+        default:
+            break;
         }
         break;
     }
@@ -255,6 +299,9 @@ static void btc_ble_mesh_df_client_copy_req_data(btc_msg_t *msg, void *p_dest, v
                     p_dest_data->recv.forwarding_table_entries_status.entry_list = bt_mesh_calloc(length);
                     if (!p_dest_data->recv.forwarding_table_entries_status.entry_list) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 
@@ -270,6 +317,9 @@ static void btc_ble_mesh_df_client_copy_req_data(btc_msg_t *msg, void *p_dest, v
                     p_dest_data->recv.forwarding_table_deps_get_status.dep_origin_uar_list = bt_mesh_calloc(length);
                     if (!p_dest_data->recv.forwarding_table_deps_get_status.dep_origin_uar_list) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 
@@ -282,6 +332,13 @@ static void btc_ble_mesh_df_client_copy_req_data(btc_msg_t *msg, void *p_dest, v
                     p_dest_data->recv.forwarding_table_deps_get_status.dep_target_uar_list = bt_mesh_calloc(length);
                     if (!p_dest_data->recv.forwarding_table_deps_get_status.dep_target_uar_list) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        if (p_dest_data->recv.forwarding_table_deps_get_status.dep_origin_uar_list) {
+                            bt_mesh_free(p_dest_data->recv.forwarding_table_deps_get_status.dep_origin_uar_list);
+                            p_dest_data->recv.forwarding_table_deps_get_status.dep_origin_uar_list = NULL;
+                        }
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 

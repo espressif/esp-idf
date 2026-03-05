@@ -172,7 +172,11 @@ static int handle_receivers_get(const struct bt_mesh_model *mod, struct bt_mesh_
     net_buf_simple_add_le16(&rsp, srv->target_cnt);
     net_buf_simple_add_le16(&rsp, first);
 
-    cnt = MIN(cnt, srv->target_cnt - first);
+    if (first >= srv->target_cnt) {
+        cnt = 0;
+    } else {
+        cnt = MIN(cnt, srv->target_cnt - first);
+    }
     progress = bt_mesh_dfu_cli_progress(&srv->dfu) / 2;
 
     for (i = 0; i < cnt && net_buf_simple_tailroom(&rsp) >= 5 + BLE_MESH_MIC_SHORT; i++) {
@@ -207,7 +211,14 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 {
     size_t size = 0;
 
+#ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
+    struct bt_mesh_dfd_srv *srv = mod->user_data;
+    assert(srv);
+
+    BLE_MESH_MODEL_BUF_DEFINE(rsp, BLE_MESH_DFD_OP_CAPABILITIES_GET, 17 + srv->oob_schemes.count);
+#else
     BLE_MESH_MODEL_BUF_DEFINE(rsp, BLE_MESH_DFD_OP_CAPABILITIES_GET, 17);
+#endif
     bt_mesh_model_msg_init(&rsp, BLE_MESH_DFD_OP_CAPABILITIES_GET);
 
     net_buf_simple_add_le16(&rsp, CONFIG_BLE_MESH_DFD_SRV_TARGETS_MAX);
@@ -222,8 +233,6 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
     net_buf_simple_add_le32(&rsp, CONFIG_BLE_MESH_DFD_SRV_SLOT_SPACE - size);
 
 #ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
-    struct bt_mesh_dfd_srv *srv = mod->user_data;
-
     if (srv->oob_schemes.count > 0) {
         net_buf_simple_add_u8(&rsp, 1);
         net_buf_simple_add_mem(&rsp, srv->oob_schemes.schemes,
@@ -522,8 +531,10 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
     err = bt_mesh_dfu_slot_info_set(srv->upload.slot, size, meta, meta_len);
     switch (err) {
     case -EFBIG:
+        bt_mesh_dfu_slot_release(srv->upload.slot);
+        srv->upload.slot = NULL;
         upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
-        break;
+        return 0;
     case 0:
         break;
     default:
@@ -637,6 +648,8 @@ static int handle_upload_start_oob(const struct bt_mesh_model *mod, struct bt_me
     if (status != BLE_MESH_DFD_SUCCESS) {
         upload_status_rsp(srv, ctx, status);
         bt_mesh_dfu_slot_release(srv->upload.slot);
+        srv->upload.slot = NULL;
+        srv->upload.is_oob = false;
     } else {
         srv->upload.is_pending_oob_check = true;
     }
@@ -679,7 +692,7 @@ static void fw_status_rsp(struct bt_mesh_dfd_srv *srv,
     net_buf_simple_add_le16(&rsp, bt_mesh_dfu_slot_count());
 
     net_buf_simple_add_le16(&rsp, idx);
-    if (fwid) {
+    if (fwid && fwid_len <= CONFIG_BLE_MESH_DFU_FWID_MAXLEN) {
         net_buf_simple_add_mem(&rsp, fwid, fwid_len);
     }
 
@@ -696,6 +709,11 @@ static int handle_fw_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
     int idx;
 
     fwid_len = buf->len;
+    if (fwid_len > CONFIG_BLE_MESH_DFU_FWID_MAXLEN) {
+        fw_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL, 0xffff, NULL, 0);
+        return 0;
+    }
+
     fwid = net_buf_simple_pull_mem(buf, fwid_len);
 
     idx = bt_mesh_dfu_slot_get(fwid, fwid_len, &slot);
@@ -741,9 +759,11 @@ static int handle_fw_delete(const struct bt_mesh_model *mod, struct bt_mesh_msg_
     fwid_len = buf->len;
     fwid = net_buf_simple_pull_mem(buf, fwid_len);
 
+    int idx = bt_mesh_dfu_slot_get(fwid, fwid_len, NULL);
     enum bt_mesh_dfd_status status = bt_mesh_dfd_srv_fw_delete(srv, &fwid_len, &fwid);
 
-    fw_status_rsp(srv, ctx, status, 0xffff, fwid, fwid_len);
+    uint16_t rsp_idx = (status == BLE_MESH_DFD_SUCCESS && idx >= 0) ? (uint16_t)idx : 0xffff;
+    fw_status_rsp(srv, ctx, status, rsp_idx, fwid, fwid_len);
 
     return 0;
 }

@@ -118,7 +118,12 @@ struct bt_mesh_proxy_client *bt_mesh_proxy_server_get_client(uint8_t index)
 {
     BT_DBG("ProxyServerGetClient, Index %u", index);
 
-    return &clients[0];
+    if (index >= ARRAY_SIZE(clients)) {
+        BT_ERR("InvalidClientIndex %u", index);
+        return NULL;
+    }
+
+    return &clients[index];
 }
 
 uint8_t bt_mesh_proxy_server_get_client_count(void)
@@ -514,6 +519,11 @@ static void proxy_send_beacons(struct k_work *work)
 
     BT_DBG("ProxySendBeacons");
 
+    if (client == NULL || client->conn == NULL) {
+        BT_WARN("NullInProxySendBeacons %p", client);
+        return;
+    }
+
     /* Upon connection, the Proxy Server shall evaluate Proxy Privacy parameter
      * for the connection and the Proxy Server shall retain the value of the
      * Proxy Privacy parameter for the lifetime of the connection. The Proxy
@@ -664,7 +674,7 @@ bool bt_mesh_proxy_server_is_node_id_enable(void)
         struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 
         if (sub->net_idx != BLE_MESH_KEY_UNUSED &&
-            sub->node_id == BLE_MESH_PRIVATE_NODE_IDENTITY_RUNNING) {
+            sub->node_id == BLE_MESH_NODE_IDENTITY_RUNNING) {
             return true;
         }
     }
@@ -921,9 +931,9 @@ static void proxy_connected(struct bt_mesh_conn *conn, uint8_t err)
     BT_DBG("ProxyConnected, ConnHandle 0x%04x Err 0x%02x", conn->handle, err);
 
     if (gatt_svc == MESH_GATT_PROV && conn_count == 1) {
-       BT_WARN("Only one prov connection could exists");
-       bt_mesh_gatts_disconnect(conn, 0x13);
-       return;
+        BT_WARN("Only one prov connection could exists");
+        bt_mesh_gatts_disconnect(conn, 0x13);
+        return;
     }
 
     conn_count++;
@@ -957,6 +967,7 @@ static void proxy_connected(struct bt_mesh_conn *conn, uint8_t err)
 
     if (!client) {
         BT_ERR("No free Proxy Client objects");
+        bt_mesh_gatts_disconnect(conn, 0x13);
         return;
     }
 
@@ -1005,6 +1016,10 @@ static void proxy_disconnected(struct bt_mesh_conn *conn, uint8_t reason)
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER && CONFIG_BLE_MESH_PRB_SRV
             k_delayed_work_cancel(&rand_upd_timer);
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER && CONFIG_BLE_MESH_PRB_SRV */
+
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+            k_delayed_work_cancel(&client->send_beacons);
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 
             k_delayed_work_cancel(&client->sar_timer);
             bt_mesh_conn_unref(client->conn);
@@ -1411,6 +1426,11 @@ bool bt_mesh_proxy_server_relay(struct net_buf_simple *buf, uint16_t dst)
         /* Proxy PDU sending modifies the original buffer,
          * so we need to make a copy.
          */
+        if (1 + buf->len > msg.size) {
+            BT_WARN("Too large Net PDU for proxy relay (%u > %u)", 1 + buf->len, msg.size);
+            continue;
+        }
+
         net_buf_simple_reserve(&msg, 1);
         net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
@@ -1446,6 +1466,7 @@ int bt_mesh_proxy_server_segment_send(struct bt_mesh_conn *conn, uint8_t type,
                                       struct net_buf_simple *msg)
 {
     uint16_t mtu = 0U;
+    int err = 0;
 
     BT_DBG("ProxyServerSegSend");
     BT_DBG("ConnHandle 0x%04x Type %u", conn->handle, type);
@@ -1462,18 +1483,25 @@ int bt_mesh_proxy_server_segment_send(struct bt_mesh_conn *conn, uint8_t type,
     }
 
     net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_FIRST, type));
-    proxy_send(conn, msg->data, mtu);
+    err = proxy_send(conn, msg->data, mtu);
+    if (err) {
+        BT_ERR("ProxyServerSendFail %d", err);
+        return err;
+    }
     net_buf_simple_pull(msg, mtu);
 
     while (msg->len) {
         if (msg->len + 1 <= mtu) {
             net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_LAST, type));
-            proxy_send(conn, msg->data, msg->len);
-            break;
+            return proxy_send(conn, msg->data, msg->len);
         }
 
         net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_CONT, type));
-        proxy_send(conn, msg->data, mtu);
+        err = proxy_send(conn, msg->data, mtu);
+        if (err) {
+            BT_ERR("ProxyServerSendFail %d", err);
+            return err;
+        }
         net_buf_simple_pull(msg, mtu);
     }
 
