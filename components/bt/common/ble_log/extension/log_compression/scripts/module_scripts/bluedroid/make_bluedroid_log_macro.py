@@ -48,7 +48,7 @@ def gen_compressed_stmt(
         stmt += '\\\n'
         return '    ' + generate_bluedroid_log_prefix(func_name, stmt)
     size_str = ', '.join([arg['size_type'] for arg in args])
-    args_str = ', '.join([arg['name'] for arg in args]).replace('\n', '')
+    args_str = ', '.join([arg['name'] for arg in args]).replace('\\\n', '').replace('\n', '')
     stmt = f'    ble_log_compressed_hex_print({module_id},{log_index}, {len(args)}, {size_str}, {args_str});'
     for idx, buffer_arg in enumerate(buffer_args):
         stmt += '\\\n'
