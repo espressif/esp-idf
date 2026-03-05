@@ -150,7 +150,7 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
         struct bt_mesh_ble_adv_data data = {0};
         struct bt_mesh_ble_adv_tx *tx = cb_data;
 
-        if (tx == NULL) {
+        if (tx == NULL || tx->buf == NULL || tx->buf->len < 2) {
             BT_ERR("Invalid adv user data");
             net_buf_unref(buf);
             return -EINVAL;
@@ -160,13 +160,21 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
                ADV_SCAN_INT(tx->param.interval), tx->param.duration,
                tx->param.period, tx->param.count);
 
-        data.adv_data_len = tx->buf->data[0];
-        if (data.adv_data_len) {
+        data.adv_data_len = MIN(tx->buf->data[0], sizeof(data.adv_data));
+        if (data.adv_data_len && tx->buf->len >= 1 + data.adv_data_len) {
             memcpy(data.adv_data, tx->buf->data + 1, data.adv_data_len);
+        } else {
+            data.adv_data_len = 0;
         }
-        data.scan_rsp_data_len = tx->buf->data[data.adv_data_len + 1];
-        if (data.scan_rsp_data_len) {
-            memcpy(data.scan_rsp_data, tx->buf->data + data.adv_data_len + 2, data.scan_rsp_data_len);
+        if (tx->buf->len >= data.adv_data_len + 2) {
+            data.scan_rsp_data_len = MIN(tx->buf->data[data.adv_data_len + 1], sizeof(data.scan_rsp_data));
+            if (data.scan_rsp_data_len && tx->buf->len >= data.adv_data_len + 2 + data.scan_rsp_data_len) {
+                memcpy(data.scan_rsp_data, tx->buf->data + data.adv_data_len + 2, data.scan_rsp_data_len);
+            } else {
+                data.scan_rsp_data_len = 0;
+            }
+        } else {
+            data.scan_rsp_data_len = 0;
         }
         duration = tx->param.duration;
 

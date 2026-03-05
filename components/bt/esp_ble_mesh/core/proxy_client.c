@@ -519,7 +519,7 @@ static void proxy_disconnected(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, 
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_prov_node_get_link()->conn == conn) {
             for (size_t i = 0; i < ARRAY_SIZE(waiting_conn_link); i++) {
-                if (waiting_conn_link[i].link->conn == conn) {
+                if (waiting_conn_link[i].link && waiting_conn_link[i].link->conn == conn) {
                     waiting_conn_link[i].link = NULL;
                     memset(&waiting_conn_link[i].addr, 0, sizeof(bt_mesh_addr_t));
                     break;
@@ -559,6 +559,7 @@ static void proxy_disconnected(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, 
 static ssize_t prov_write_ccc(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn)
 {
     struct bt_mesh_proxy_server *server = find_server(conn);
+    int err = 0;
 
     BT_DBG("ProvWriteCCC, ConnHandle 0x%04x", conn->handle);
 
@@ -572,18 +573,29 @@ static ssize_t prov_write_ccc(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn)
 
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_prov_node_get_link()->conn == conn) {
-            int err = bt_mesh_pb_gatt_open(conn);
+            err = bt_mesh_pb_gatt_open(conn);
             if (err) {
                 BT_ERR("proxy write ccc error %d", err);
+                server->conn_type = CLI_NONE;
                 return err;
             }
 
-            return bt_mesh_rpr_srv_recv_link_ack(addr->val, false);
+            err = bt_mesh_rpr_srv_recv_link_ack(addr->val, false);
+            if (err) {
+                BT_ERR("rpr srv recv link ack fail %d", err);
+                server->conn_type = CLI_NONE;
+            }
+            return err;
         }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
 
 #if CONFIG_BLE_MESH_PROVISIONER
-        return bt_mesh_provisioner_pb_gatt_open(conn, addr->val);
+        err = bt_mesh_provisioner_pb_gatt_open(conn, addr->val);
+        if (err) {
+            BT_ERR("pvnr pb gatt open fail %d", err);
+            server->conn_type = CLI_NONE;
+        }
+        return err;
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
     }
 
@@ -615,7 +627,7 @@ int bt_mesh_proxy_client_prov_enable(void)
     BT_DBG("ProxyClientProvEnable");
 
     for (i = 0; i < ARRAY_SIZE(servers); i++) {
-        if (servers[i].conn) {
+        if (servers[i].conn && servers[i].conn_type == CLI_NONE) {
             servers[i].conn_type = CLI_PROV;
         }
     }
@@ -932,6 +944,11 @@ bool bt_mesh_proxy_client_relay(struct net_buf_simple *buf, uint16_t dst)
          * so we need to make a copy.
          */
         net_buf_simple_reserve(&msg, 1);
+        if (buf->len > net_buf_simple_tailroom(&msg)) {
+            BT_ERR("Relay buf too large: %u > %u", buf->len, net_buf_simple_tailroom(&msg));
+            continue;
+        }
+
         net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
         err = bt_mesh_proxy_client_send(server->conn, BLE_MESH_PROXY_NET_PDU, &msg);
@@ -1220,6 +1237,9 @@ int bt_mesh_proxy_client_deinit(void)
     for (i = 0; i < ARRAY_SIZE(servers); i++) {
         struct bt_mesh_proxy_server *server = &servers[i];
         k_delayed_work_free(&server->sar_timer);
+        if (server->conn) {
+            bt_mesh_conn_unref(server->conn);
+        }
         memset(server, 0, sizeof(struct bt_mesh_proxy_server));
     }
 

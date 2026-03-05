@@ -1249,7 +1249,7 @@ typedef union {
      * @brief ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT
      */
     struct ble_mesh_output_str_evt_param {
-        char string[8];                         /*!< String of Output OOB Authentication */
+        char string[ESP_BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN + 1];  /*!< String of Output OOB Authentication */
     } node_prov_output_str;                     /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_INPUT_EVT
@@ -1402,7 +1402,7 @@ typedef union {
         uint8_t link_idx;                       /*!< Index of the provisioning link */
         /** Union of output OOB */
         union {
-            char string[8];                     /*!< String output by the Provisioner */
+            char string[ESP_BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN + 1];  /*!< String output by the Provisioner */
             uint32_t number;                    /*!< Number output by the Provisioner */
         };
     } provisioner_prov_output;                  /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_OUTPUT_EVT */
