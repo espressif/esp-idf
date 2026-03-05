@@ -122,7 +122,6 @@ idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
 # BOOTLOADER_EXTRA_COMPONENT_DIRS may have been set by the `main` component, do not overwrite it
 idf_build_get_property(bootloader_extra_component_dirs BOOTLOADER_EXTRA_COMPONENT_DIRS)
-list(APPEND bootloader_extra_component_dirs "${CMAKE_CURRENT_LIST_DIR}")
 
 # We cannot pass lists as a parameter to the external project without modifying the ';' separator
 string(REPLACE ";" "|" BOOTLOADER_IGNORE_EXTRA_COMPONENT "${BOOTLOADER_IGNORE_EXTRA_COMPONENT}")
