@@ -70,6 +70,7 @@ if(CONFIG_ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE)
 endif()
 
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
+    set(priv_include_dirs)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
     # micro-ecc is only needed for secure boot sources built under BOOTLOADER_BUILD.
