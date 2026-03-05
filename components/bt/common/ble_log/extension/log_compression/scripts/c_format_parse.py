@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # ruff: noqa: UP007
 """
@@ -10,7 +10,7 @@ import struct
 from typing import Union
 
 
-def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str, str, str, str, str]]]:
+def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str, str, str, str, str, str]]]:
     """
     Parse a format string into tokens.
 
@@ -19,8 +19,9 @@ def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str,
 
     Returns:
         List of tokens (strings or format spec tuples)
+        Tuple format: (start, end, full_spec, flags, width, precision, length, conv_char)
     """
-    tokens: list[Union[str, tuple[int, int, str, str, str, str, str]]] = []
+    tokens: list[Union[str, tuple[int, int, str, str, str, str, str, str]]] = []
     i = 0
     n = len(format_str)
 
@@ -41,36 +42,51 @@ def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str,
                 flags += format_str[i]
                 i += 1
 
-            # Parse width
+            # Parse width (including dynamic width '*')
             width = ''
-            while i < n and format_str[i].isdigit():
-                width += format_str[i]
+            if i < n and format_str[i] == '*':
+                width = '*'
                 i += 1
+            else:
+                while i < n and format_str[i].isdigit():
+                    width += format_str[i]
+                    i += 1
 
-            # Parse precision
+            # Parse precision (including dynamic precision '*')
             precision = ''
             if i < n and format_str[i] == '.':
                 i += 1
-                while i < n and format_str[i].isdigit():
-                    precision += format_str[i]
+                if i < n and format_str[i] == '*':
+                    precision = '*'
                     i += 1
+                else:
+                    while i < n and format_str[i].isdigit():
+                        precision += format_str[i]
+                        i += 1
 
-            # Parse length modifier
+            # Parse length modifier (supports h, hh, l, ll, j, z, t)
             length = ''
-            if i < n and format_str[i] in 'zhl':
+            if i < n and format_str[i] in 'jzt':
+                # j, z, t are single-character length modifiers
                 length += format_str[i]
                 i += 1
-                # Handle double length (e.g., ll)
-                if i < n and format_str[i] == 'l' and length == 'l':
-                    length += 'l'
+            elif i < n and format_str[i] in 'hl':
+                length += format_str[i]
+                i += 1
+                # Handle double length (e.g., hh, ll)
+                if i < n and format_str[i] == length[0]:
+                    length += format_str[i]
                     i += 1
 
-            if i < n and format_str[i] in 'diuoxXfcsplL':
+            # Parse conversion character
+            # Supports: d, i, u, o, x, X, f, F, e, E, g, G, a, A, c, s, p, n, L
+            if i < n and format_str[i] in 'diuoxXfFeEgGaAcspnL':
                 conv_char = format_str[i]
                 i += 1
                 full_spec = format_str[start:i]
-                tokens.append((start, i, full_spec, flags, width, length, conv_char))
+                tokens.append((start, i, full_spec, flags, width, precision, length, conv_char))
             else:
+                # Invalid format spec, treat as literal text
                 tokens.append(format_str[start:i])
         else:
             # Regular text
@@ -200,7 +216,7 @@ def parse_compressed_arguments(byte_sequence: bytes, format_str: str) -> str:
 
     for token in tokens:
         if isinstance(token, tuple):
-            start, end, flags, width, precision, length_mod, conv_char = token
+            start, end, full_spec, flags, width, precision, length_mod, conv_char = token
 
             if conv_char == '%':
                 output.append('%')
