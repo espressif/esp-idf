@@ -613,7 +613,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #if CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
-    ble_log_write_hex(BLE_LOG_SRC_HCI, data, len);
+    ble_log_write_hci(BLE_LOG_HCI_UPSTREAM, data, len);
 #endif /* CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED */
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
