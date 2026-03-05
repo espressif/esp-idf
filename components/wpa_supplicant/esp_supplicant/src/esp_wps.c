@@ -2010,6 +2010,7 @@ int wifi_wps_disable_internal(void)
     /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
      * to post message to wps_task once this function returns.
      */
+    esp_wifi_scan_stop();
     wps_delete_timer();
     wifi_station_wps_deinit();
     return ESP_OK;
