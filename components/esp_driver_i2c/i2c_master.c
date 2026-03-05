@@ -853,7 +853,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             free(i2c_master->i2c_async_ops);
             for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
                 if (i2c_master->trans_queues[i]) {
-                    vQueueDelete(i2c_master->trans_queues[i]);
+                    vQueueDeleteWithCaps(i2c_master->trans_queues[i]);
                 }
             }
             bus_handle = NULL;
@@ -1068,7 +1068,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
         ESP_RETURN_ON_FALSE(i2c_master->queues_storage, ESP_ERR_NO_MEM, TAG, "no mem for queue storage");
         i2c_transaction_t **pp_trans_desc = (i2c_transaction_t **)i2c_master->queues_storage;
         for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
-            i2c_master->trans_queues[i] = xQueueCreate(bus_config->trans_queue_depth, sizeof(i2c_transaction_t));
+            i2c_master->trans_queues[i] = xQueueCreateWithCaps(bus_config->trans_queue_depth, sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
 
             pp_trans_desc += bus_config->trans_queue_depth;
             // sanity check
@@ -1129,7 +1129,7 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
     i2c_dev->ack_check_disable = dev_config->flags.disable_ack_check;
     i2c_dev->scl_wait_us = (dev_config->scl_wait_us == 0) ? I2C_LL_SCL_WAIT_US_VAL_DEFAULT : dev_config->scl_wait_us;
 
-    i2c_master_device_list_t *device_item = (i2c_master_device_list_t *)calloc(1, sizeof(i2c_master_device_list_t));
+    i2c_master_device_list_t *device_item = (i2c_master_device_list_t *)heap_caps_calloc(1, sizeof(i2c_master_device_list_t), I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE((device_item != NULL), ESP_ERR_NO_MEM, err, TAG, "no memory for i2c device item`");
     device_item->device = i2c_dev;
     xSemaphoreTake(bus_handle->bus_lock_mux, portMAX_DELAY);

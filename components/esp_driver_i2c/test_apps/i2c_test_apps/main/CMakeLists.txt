@@ -35,5 +35,5 @@ if(CONFIG_SOC_I2C_SUPPORT_SLAVE)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity driver test_utils
+                       PRIV_REQUIRES unity driver test_utils esp_psram
                        WHOLE_ARCHIVE)
