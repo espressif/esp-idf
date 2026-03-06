@@ -189,10 +189,17 @@ def print_hints_on_download_error(err: str) -> None:
         info('Certificate issues are usually caused by an outdated certificate database on your computer.')
         info('Please check the documentation of your operating system for how to upgrade it.')
 
+        info('The following commands may help resolve this issue:')
         if sys.platform == 'darwin':
-            info('Running "./Install\\ Certificates.command" might be able to fix this issue.')
-
-        info(f'Running "{sys.executable} -m pip install --upgrade certifi" can also resolve this issue in some cases.')
+            # Python.org macOS installer puts Install Certificates.command in /Applications/Python X.Y/
+            app_certs = (
+                f'/Applications/Python {sys.version_info.major}.{sys.version_info.minor}/Install Certificates.command'
+            )
+            if os.path.isfile(app_certs):
+                info(f'\tRun: open "{app_certs}"  (or double-click it in Finder)')
+            else:
+                info('\tGo to Python installation location and execute: ./Install\\ Certificates.command')
+        info(f'\t{sys.executable} -m pip install --upgrade pip-system-certs certifi')
 
     # Certificate issue on Windows can be hidden under different errors which might be even translated,
     # e.g. "[WinError -2146881269] ASN1 valor de tag inválido encontrado"
