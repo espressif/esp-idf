@@ -220,7 +220,7 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_RESET_AND_ENTRY_SET(27, pmpaddr27, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 
-    // 9. LP memory
+    // 9. LP memory and LP peripherals
 #if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
     extern int _rtc_text_start;
     extern int _rtc_text_end;
@@ -235,11 +235,15 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_RESET_AND_ENTRY_SET(29, (int)&_rtc_text_start, PMP_TOR | RW);
 #endif
     PMP_RESET_AND_ENTRY_SET(30, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_RESET_AND_ENTRY_SET(31, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+    // LP peripherals are contiguous with LP memory; this entry covers both with R/W
+    PMP_RESET_AND_ENTRY_SET(31, SOC_LP_PERIPH_HIGH, PMP_TOR | RW);
 #else
     const uint32_t pmpaddr28 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
     PMP_RESET_AND_ENTRY_SET(28, pmpaddr28, PMP_NAPOT | CONDITIONAL_RWX);
     _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
+
+    PMP_RESET_AND_ENTRY_SET(29, SOC_LP_PERIPH_LOW, NONE);
+    PMP_RESET_AND_ENTRY_SET(30, SOC_LP_PERIPH_HIGH, PMP_TOR | CONDITIONAL_RW);
 #endif
 }
 #else
