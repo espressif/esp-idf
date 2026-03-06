@@ -1447,6 +1447,7 @@ static int wps_rf_band_cb(void *ctx)
 
     if (ret != ESP_OK) {
         wpa_printf(MSG_ERROR, "WPS: failed to get band mode");
+        return WPS_RF_24GHZ;
     }
 
     switch (band_mode) {
