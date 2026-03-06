@@ -788,6 +788,7 @@ def ensure_build_directory(
     cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
 
     args.define_cache_entry.append(f'CCACHE_ENABLE={args.ccache}')
+    args.define_cache_entry.append(f'CONFIGDEP_ENABLE={args.configdep}')
 
     cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
 

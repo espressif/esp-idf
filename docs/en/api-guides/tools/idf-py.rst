@@ -459,6 +459,8 @@ By default, the ``sdkconfig`` file is created in the project root directory. How
 
 For a complete example, see the :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`.
 
+.. _idf_py_global_options:
+
 Global Options
 ==============
 
@@ -471,6 +473,8 @@ To list all available root level options, run ``idf.py --help``. To list options
 .. important::
 
     Note that some older versions of CCache_ may exhibit bugs on some platforms, so if files are not rebuilt as expected, try disabling CCache_ and rebuilding the project. To enable CCache_ by default, set the ``IDF_CCACHE_ENABLE`` environment variable to a non-zero value.
+
+- ``--configdep`` or ``--no-configdep`` enables or disables the rebuild optimization using ``esp-idf-configdep``. This tool post-processes compiler-generated dependency files to reduce unnecessary rebuilds caused by ``sdkconfig.h`` changes. This is particularly useful when there are frequent changes of small number of config options between rebuilds. Enabled by default. To permanently enable or disable configdep, set the ``IDF_CONFIGDEP_ENABLE`` environment variable to ``1`` or ``0`` respectively.
 
 - ``-v`` flag causes both ``idf.py`` and the build system to produce verbose build output. This can be useful for debugging build problems.
 - ``--cmake-warn-uninitialized`` (or ``-w``)  causes CMake to print uninitialized variable warnings found in the project directory only. This only controls CMake variable warnings inside CMake itself, not other types of build warnings. This option can also be set permanently by setting the ``IDF_CMAKE_WARN_UNINITIALIZED`` environment variable to a non-zero value.
