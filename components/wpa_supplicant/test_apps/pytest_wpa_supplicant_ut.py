@@ -3,33 +3,24 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.unity_tester import CaseTester
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c6
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'esp32c6'], indirect=['target'])
 def test_wpa_supplicant_ut(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c6
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count',
     [
         2,
     ],
-    indirect=True
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c2', 'esp32c6'], indirect=['target'])
 def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
         if case.attributes.get('test_env') == 'two_duts':

@@ -1,16 +1,16 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import time
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_light_sleep(dut: Dut) -> None:
-
     ENTERING_SLEEP_STR = 'Entering light sleep'
     EXIT_SLEEP_REGEX = r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms'
     EXIT_SLEEP_PIN_REGEX = r'Returned from light sleep, reason: (pin), t=(\d+) ms, slept for (\d+) ms'
@@ -34,7 +34,11 @@ def test_light_sleep(dut: Dut) -> None:
     match = dut.expect(EXIT_SLEEP_REGEX)
     logging.info('Got second sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
     # sleep time error should be less than 1ms
-    assert match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
+    assert (
+        match.group(1).decode('utf8') == 'timer'
+        and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1
+        and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
+    )
 
     # this time we'll test gpio wakeup
     dut.expect_exact(ENTERING_SLEEP_STR)
@@ -61,5 +65,9 @@ def test_light_sleep(dut: Dut) -> None:
     logging.info('Went to sleep again')
 
     match = dut.expect(EXIT_SLEEP_REGEX)
-    assert match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
+    assert (
+        match.group(1).decode('utf8') == 'timer'
+        and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1
+        and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
+    )
     logging.info('Woke up from timer again')

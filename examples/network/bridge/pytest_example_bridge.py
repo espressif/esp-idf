@@ -24,8 +24,7 @@ import pytest
 from common_test_methods import get_host_ip_by_interface
 from netmiko import ConnectHandler
 from pytest_embedded import Dut
-
-
+from pytest_embedded_idf.utils import idf_parametrize
 # Testbed configuration
 
 ETHVM_ENDNODE_USER = 'ci.ethvm'
@@ -84,9 +83,7 @@ class SwitchSsh:
         if self.type == self.EDGE_SWITCH_5XP:
             self.ssh_client = paramiko.SSHClient()
             self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.ssh_client.connect(hostname=self.host_ip,
-                                    username=usr,
-                                    password=passwd)
+            self.ssh_client.connect(hostname=self.host_ip, username=usr, password=passwd)
         else:
             edgeSwitch = {
                 'device_type': 'ubiquiti_edgeswitch',
@@ -134,7 +131,10 @@ class SwitchSsh:
 
 def get_endnode_mac_by_interface(endnode: EndnodeSsh, if_name: str) -> str:
     ip_info = endnode.exec_cmd(f'ip addr show {if_name}')
-    regex = if_name + r':.*?link/ether ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+    regex = (
+        if_name
+        + r':.*?link/ether ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+    )
     mac_addr = re.search(regex, ip_info, re.DOTALL)
     if mac_addr is None:
         return ''
@@ -175,7 +175,15 @@ def get_host_brcast_ip_by_interface(interface_name: str, ip_type: int = netiface
     return ''
 
 
-def run_iperf(proto: str, endnode: EndnodeSsh, server_ip: str, bandwidth_lim:int=10, interval:int=5, server_if:str='', client_if:str='') -> float:
+def run_iperf(
+    proto: str,
+    endnode: EndnodeSsh,
+    server_ip: str,
+    bandwidth_lim: int = 10,
+    interval: int = 5,
+    server_if: str = '',
+    client_if: str = '',
+) -> float:
     if proto == 'tcp':
         proto = ''
     else:
@@ -399,7 +407,9 @@ def eth_bridge_test(dut: Dut, dev_user: str, dev_password: str) -> None:
 
     logging.info('link up the port #2')
     switch1.switch_port_up(port_num_endnode)
-    dut.expect_exact(f'Ethernet ({p2_id}) Link Up')  # Note: No "Ethernet Got IP Address" since DHCP Server is connected to port #1
+    dut.expect_exact(
+        f'Ethernet ({p2_id}) Link Up'
+    )  # Note: No "Ethernet Got IP Address" since DHCP Server is connected to port #1
 
     logging.info('link down both ports')
     switch1.switch_port_down(port_num_endnode)
@@ -616,7 +626,6 @@ def setup_test_environment() -> Generator[None, None, None]:
     # Optional teardown after all tests...
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_w5500
 @pytest.mark.parametrize(
     'config',
@@ -625,5 +634,6 @@ def setup_test_environment() -> Generator[None, None, None]:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     eth_bridge_test(dut, dev_user, dev_password)

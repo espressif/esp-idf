@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import subprocess
@@ -6,6 +6,7 @@ import sys
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def _real_test_func(dut: Dut) -> None:
@@ -26,19 +27,14 @@ def _real_test_func(dut: Dut) -> None:
     subprocess.check_call([sys.executable, script_path, '--binary', binary_path])
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.esp32c6
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32p4'], indirect=['target'])
 def test_otatool_example(dut: Dut) -> None:
     _real_test_func(dut)
 
 
-@pytest.mark.esp32c2
 @pytest.mark.generic
 @pytest.mark.flash_4mb
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_otatool_example_c2_4mb(dut: Dut) -> None:
     _real_test_func(dut)

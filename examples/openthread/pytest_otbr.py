@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 import copy
@@ -17,61 +17,43 @@ import ot_ci_function as ocf
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
-
 # This file contains the test scripts for Thread:
-
 # Case 1: Thread network formation and attaching
 #         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping
 #         connection between them.
-
 # Case 2: Bidirectional IPv6 connectivity
 #         Test IPv6 ping connection between Thread device and Linux Host (via Thread Border Router).
-
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
 #         Thread device joins the multicast group, then test group communication from Wi-Fi to Thread network.
-
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
 #         Linux Host joins the multicast group, test group communication from Thread to Wi-Fi network.
-
 # Case 5: discover Service published by Thread device
 #         Thread device publishes the service, Linux Host discovers the service on Wi-Fi network.
-
 # Case 6: discover Service published by W-Fi device
 #         Linux Host device publishes the service on Wi-Fi network, Thread device discovers the service.
-
 # Case 7: ICMP communication via NAT64
 #         Thread device (IPV6) ping the host device (IPV4) via NAT64.
-
 # Case 8: UDP communication via NAT64
 #         Thread device (IPV6) send udp message to the host device (IPV4) via NAT64.
-
 # Case 9: TCP communication via NAT64
 #         Thread device (IPV6) send tcp message to the host device (IPV4) via NAT64.
-
 # Case 10: Sleepy device test
 #         Start a Thread sleepy device, wait it join the Thread network and check related flags.
-
 # Case 11: Basic startup Test of BR
 #         Test the basic startup and network formation of a Thread device.
-
 # Case 12: Curl a website via DNS and NAT64
 #         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl
 #         a website.
-
 # Case 13: Meshcop discovery of Border Router
 #         A border router joins a Wi-Fi network, forms a Thread network and publish a meshcop service. Linux Host device
 #         discover the mescop service.
-
 # Case 14: Curl a website over HTTPS via DNS and NAT64
 #         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl
 #         a https website.
-
 # Case 15: Thread network formation and attaching with TREL
 #         A TREL device forms a Thread network, other TREL devices attach to it, then test ping connection between them.
-
 # Case 16: Thread network BR lib check
 #         Check BR library compatibility
-
 # Case 17: Synchronized sleepy end device (SSED) test
 #         Start a Thread ssed device, wait it join the Thread network and check related flags.
 
@@ -101,15 +83,10 @@ ESPPORT1 = os.getenv('ESPPORT1')
 ESPPORT2 = os.getenv('ESPPORT2')
 ESPPORT3 = os.getenv('ESPPORT3')
 
-PORT_MAPPING = {
-    'ESPPORT1': 'esp32h2',
-    'ESPPORT2': 'esp32s3',
-    'ESPPORT3': 'esp32c6'
-}
+PORT_MAPPING = {'ESPPORT1': 'esp32h2', 'ESPPORT2': 'esp32s3', 'ESPPORT3': 'esp32c6'}
 
 
 # Case 1: Thread network formation and attaching
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -123,7 +100,7 @@ PORT_MAPPING = {
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
         pytest.param(
             'rcp_spi|cli|br_spi',
@@ -133,7 +110,7 @@ PORT_MAPPING = {
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32h2|esp32c6|esp32s3',
             f'{ESPPORT1}|{ESPPORT3}|{ESPPORT2}',
-            id='h2-c6-s3'
+            id='h2-c6-s3',
         ),
     ],
     indirect=True,
@@ -178,7 +155,7 @@ def test_thread_connect(dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
 #         /  \
 #        /    \
 # Wi-FI_Host   Thread_End_Device
-def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
+def formBasicWiFiThreadNetwork(br: IdfDut, cli: IdfDut) -> None:
     ocf.init_thread(br)
     ocf.init_thread(cli)
     otbr_wifi_para = copy.copy(default_br_wifi_para)
@@ -189,11 +166,10 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
     otcli_thread_para.dataset = ocf.getDataset(br)
     otcli_thread_para.exaddr = '7766554433221101'
     ocf.joinThreadNetwork(cli, otcli_thread_para)
-    ocf.wait(cli,10)
+    ocf.wait(cli, 10)
 
 
 # Case 2: Bidirectional IPv6 connectivity
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -207,14 +183,14 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -254,7 +230,6 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: Tuple[IdfDut
 
 
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -268,14 +243,14 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: Tuple[IdfDut
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_multicast_forwarding_A(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -308,7 +283,6 @@ def test_multicast_forwarding_A(Init_interface: bool, dut: Tuple[IdfDut, IdfDut,
 
 
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -322,14 +296,14 @@ def test_multicast_forwarding_A(Init_interface: bool, dut: Tuple[IdfDut, IdfDut,
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_multicast_forwarding_B(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -342,7 +316,7 @@ def test_multicast_forwarding_B(Init_interface: bool, dut: Tuple[IdfDut, IdfDut,
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         myudp = ocf.udp_parameter('INET6', '::', 5090, 'ff04::125', False, 15.0, b'')
-        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp, ))
+        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp,))
         udp_mission.start()
         start_time = time.time()
         while not myudp.init_flag:
@@ -363,7 +337,6 @@ def test_multicast_forwarding_B(Init_interface: bool, dut: Tuple[IdfDut, IdfDut,
 
 
 # Case 5: discover dervice published by Thread device
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -377,7 +350,7 @@ def test_multicast_forwarding_B(Init_interface: bool, dut: Tuple[IdfDut, IdfDut,
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
@@ -386,7 +359,7 @@ def test_service_discovery_of_Thread_device(
     Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
 ) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     assert Init_avahi
     dut[0].serial.stop_redirect_thread()
@@ -425,7 +398,6 @@ def test_service_discovery_of_Thread_device(
 
 
 # Case 6: discover dervice published by Wi-Fi device
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -439,7 +411,7 @@ def test_service_discovery_of_Thread_device(
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
@@ -448,7 +420,7 @@ def test_service_discovery_of_WiFi_device(
     Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
 ) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     assert Init_avahi
     dut[0].serial.stop_redirect_thread()
@@ -499,7 +471,6 @@ def test_service_discovery_of_WiFi_device(
 
 
 # Case 7: ICMP communication via NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -513,14 +484,14 @@ def test_service_discovery_of_WiFi_device(
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_ICMP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -538,7 +509,6 @@ def test_ICMP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) ->
 
 
 # Case 8: UDP communication via NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -552,14 +522,14 @@ def test_ICMP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) ->
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_UDP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -574,7 +544,7 @@ def test_UDP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         host_ipv4_address = ocf.get_host_ipv4_address()
         logging.info(f'host_ipv4_address: {host_ipv4_address}')
         myudp = ocf.udp_parameter('INET4', host_ipv4_address, 5090, '', False, 15.0, b'')
-        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp, ))
+        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp,))
         udp_mission.start()
         start_time = time.time()
         while not myudp.init_flag:
@@ -595,7 +565,6 @@ def test_UDP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
 
 
 # Case 9: TCP communication via NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -609,14 +578,14 @@ def test_UDP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_TCP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -632,7 +601,7 @@ def test_TCP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         connect_address = ocf.get_ipv6_from_ipv4(host_ipv4_address, br)
         logging.info(f'connect_address is: {connect_address}')
         mytcp = ocf.tcp_parameter('INET4', host_ipv4_address, 12345, False, False, 15.0, b'')
-        tcp_mission = threading.Thread(target=ocf.create_host_tcp_server, args=(mytcp, ))
+        tcp_mission = threading.Thread(target=ocf.create_host_tcp_server, args=(mytcp,))
         tcp_mission.start()
         start_time = time.time()
         while not mytcp.listen_flag:
@@ -658,8 +627,6 @@ def test_TCP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
 
 
 # Case 10: Sleepy device test
-@pytest.mark.esp32h2
-@pytest.mark.esp32c6
 @pytest.mark.openthread_sleep
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -672,7 +639,7 @@ def test_TCP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
             f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
             'esp32h2|esp32c6',
             f'{ESPPORT1}|{ESPPORT3}',
-            id='h2-c6'
+            id='h2-c6',
         ),
         pytest.param(
             'cli|sleepy',
@@ -681,7 +648,7 @@ def test_TCP_NAT64(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
             f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
             'esp32c6|esp32h2',
             f'{ESPPORT3}|{ESPPORT1}',
-            id='c6-h2'
+            id='c6-h2',
         ),
     ],
     indirect=True,
@@ -721,7 +688,6 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 11: Basic startup Test of BR
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -730,11 +696,10 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         pytest.param(
             'rcp_uart|br',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
-            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,
@@ -763,7 +728,6 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 12: Curl a website via DNS and NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_bbr
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -777,14 +741,14 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -806,7 +770,6 @@ def test_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
 
 
 # Case 13: Meshcop discovery of Border Router
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -815,11 +778,10 @@ def test_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         pytest.param(
             'rcp_uart|br',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
-            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,
@@ -868,7 +830,6 @@ def test_br_meshcop(Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, I
 
 
 # Case 14: Curl a website over HTTPS via DNS and NAT64
-@pytest.mark.supported_targets
 @pytest.mark.openthread_bbr
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -882,14 +843,14 @@ def test_br_meshcop(Init_interface: bool, Init_avahi: bool, dut: Tuple[IdfDut, I
             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
-            id='c6-h2-s3'
+            id='c6-h2-s3',
         ),
     ],
     indirect=True,
 )
 def test_https_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
@@ -909,7 +870,6 @@ def test_https_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut
 
 
 # Case 15: Thread network formation and attaching with TREL
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -922,7 +882,7 @@ def test_https_NAT64_DNS(Init_interface: bool, dut: Tuple[IdfDut, IdfDut, IdfDut
             f'|{os.path.join(os.path.dirname(__file__), "ot_trel")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,
@@ -964,7 +924,6 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 16: Thread network BR lib check
-@pytest.mark.supported_targets
 @pytest.mark.openthread_br
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
@@ -973,11 +932,10 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
         pytest.param(
             'rcp_uart|br_libcheck',
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
-            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}|{os.path.join(os.path.dirname(__file__), "ot_br")}',
             'esp32c6|esp32s3',
             f'{ESPPORT3}|{ESPPORT2}',
-            id='c6-s3'
+            id='c6-s3',
         ),
     ],
     indirect=True,

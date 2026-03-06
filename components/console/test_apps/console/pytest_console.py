@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def do_test_quit(dut: Dut) -> None:
@@ -49,18 +50,16 @@ def do_test_help_quit(dut: Dut) -> None:
     dut.expect(r'quit\s+Quit REPL environment\s+esp>', timeout=5)
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('defaults'),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
-        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
-        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
-    ]
+@idf_parametrize('config', ['defaults'], indirect=['config'])
+@idf_parametrize(
+    'target,test_on,markers',
+    [
+        ('linux', 'host', (pytest.mark.host_test,)),
+        ('esp32', 'target', (pytest.mark.generic,)),
+        ('esp32c3', 'target', (pytest.mark.generic,)),
+        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+    ],
+    indirect=['target'],
 )
 def test_console(dut: Dut, test_on: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
@@ -68,52 +67,46 @@ def test_console(dut: Dut, test_on: str) -> None:
     dut.expect(r'\d{1} Tests 0 Failures 0 Ignored', timeout=120)
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('defaults'),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
-        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
-        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
-    ]
+@idf_parametrize('config', ['defaults'], indirect=['config'])
+@idf_parametrize(
+    'target,test_on,markers',
+    [
+        ('linux', 'host', (pytest.mark.host_test,)),
+        ('esp32', 'target', (pytest.mark.generic,)),
+        ('esp32c3', 'target', (pytest.mark.generic,)),
+        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+    ],
+    indirect=['target'],
 )
 def test_console_repl(dut: Dut, test_on: str) -> None:
     do_test_quit(dut)
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('defaults'),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
-        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
-        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
-    ]
+@idf_parametrize('config', ['defaults'], indirect=['config'])
+@idf_parametrize(
+    'target,test_on,markers',
+    [
+        ('linux', 'host', (pytest.mark.host_test,)),
+        ('esp32', 'target', (pytest.mark.generic,)),
+        ('esp32c3', 'target', (pytest.mark.generic,)),
+        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+    ],
+    indirect=['target'],
 )
 def test_console_help_sorted_registration(dut: Dut, test_on: str) -> None:
     do_test_help_generic(dut, 'sorted')
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('defaults'),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
-        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
-        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
-    ]
+@idf_parametrize('config', ['defaults'], indirect=['config'])
+@idf_parametrize(
+    'target,test_on,markers',
+    [
+        ('linux', 'host', (pytest.mark.host_test,)),
+        ('esp32', 'target', (pytest.mark.generic,)),
+        ('esp32c3', 'target', (pytest.mark.generic,)),
+        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+    ],
+    indirect=['target'],
 )
 def test_console_help_reverse_registration(dut: Dut, test_on: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -140,46 +133,30 @@ def test_console_help_reverse_registration(dut: Dut, test_on: str) -> None:
     dut.expect_exact('esp>', timeout=5)
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('sorted'),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-    ]
-)
+@idf_parametrize('config', ['sorted'], indirect=['config'])
+@idf_parametrize('target', ['linux'], indirect=['target'])
+@idf_parametrize('test_on,markers', [('host', (pytest.mark.host_test,))])
 def test_console_sorted_help_sorted_registration(dut: Dut, test_on: str) -> None:
     do_test_help_generic(dut, 'sorted')
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('sorted', marks=[pytest.mark.linux, pytest.mark.host_test]),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-    ]
-)
+@idf_parametrize('config', ['sorted'], indirect=['config'])
+@idf_parametrize('target', ['linux'], indirect=['target'])
+@idf_parametrize('test_on,markers', [('host', (pytest.mark.host_test,))])
 def test_console_sorted_help_reverse_registration(dut: Dut, test_on: str) -> None:
     do_test_help_generic(dut, 'reverse')
 
 
-@pytest.mark.parametrize(
-    'config', [
-        pytest.param('defaults'),
-    ]
-)
-@pytest.mark.parametrize(
-    'test_on', [
-        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
-        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
-        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
-        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
-    ]
+@idf_parametrize('config', ['defaults'], indirect=['config'])
+@idf_parametrize(
+    'target,test_on,markers',
+    [
+        ('linux', 'host', (pytest.mark.host_test,)),
+        ('esp32', 'target', (pytest.mark.generic,)),
+        ('esp32c3', 'target', (pytest.mark.generic,)),
+        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+    ],
+    indirect=['target'],
 )
 def test_console_help_quit(dut: Dut, test_on: str) -> None:
     do_test_help_quit(dut)

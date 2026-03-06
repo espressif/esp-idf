@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import re
@@ -7,6 +7,7 @@ import typing
 import pexpect
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -34,18 +35,13 @@ def _test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         p.expect_exact('hit Temporary breakpoint 1, app_main ()')
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c2
 @pytest.mark.jtag
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32c2'], indirect=['target'])
 def test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_idf_gdb(openocd_dut, dut)
 
 
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
 @pytest.mark.usb_serial_jtag
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
 def test_idf_gdb_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_idf_gdb(openocd_dut, dut)

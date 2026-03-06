@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_ledc_psram')
 @pytest.mark.generic
 @pytest.mark.parametrize(
@@ -15,11 +15,11 @@ from pytest_embedded_idf import IdfDut
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_ledc(dut: IdfDut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32s3
 @pytest.mark.octal_psram
 @pytest.mark.parametrize(
     'config',
@@ -29,5 +29,6 @@ def test_ledc(dut: IdfDut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_ledc_psram(dut: IdfDut) -> None:
     dut.run_all_single_board_cases()

@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import time
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 touch_wake_up_support = ['esp32', 'esp32s2']
 
@@ -27,8 +28,10 @@ CONFIGS = [
 ]
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target', [('esp32_singlecore', 'esp32'), ('basic', 'supported_targets')], indirect=['config', 'target']
+)
 def test_deep_sleep(dut: Dut) -> None:
     def expect_enable_deep_sleep_touch() -> None:
         # different targets configure different wake pin(s)

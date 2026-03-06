@@ -1,18 +1,13 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        'spiflash'
-    ],
-    indirect=True
-)
+@pytest.mark.parametrize('config', ['spiflash'], indirect=True)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
     # SPI flash
     dut.expect('example: Mountig WL layer...', timeout=10)
@@ -29,7 +24,6 @@ def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
     dut.expect('example: LittleFS partition unmounted', timeout=240)  # SPI flash has slow write speed
 
 
-@pytest.mark.esp32
 @pytest.mark.sdcard_sdmode
 @pytest.mark.parametrize(
     'config',
@@ -39,6 +33,7 @@ def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
     # SD card
     dut.expect('example: Mounting SD card - raw access', timeout=10)
@@ -52,10 +47,7 @@ def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
     dut.expect('example: SD card unmounted - LittleFS', timeout=180)
 
 
-@pytest.mark.esp32
 @pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDFCI-2059, temporary lack runner')
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
 @pytest.mark.sdcard_spimode
 @pytest.mark.parametrize(
     'config',
@@ -64,6 +56,7 @@ def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s2'], indirect=['target'])
 def test_examples_perf_benchmark_sdcard_spi(dut: Dut) -> None:
     # SD card
     dut.expect('example: Mounting SD card - raw access', timeout=10)

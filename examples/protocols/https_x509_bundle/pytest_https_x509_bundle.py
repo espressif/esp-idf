@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -6,10 +6,11 @@ import os
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
     """
     steps: |
@@ -35,9 +36,15 @@ def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
     dut.expect('Completed {} connections'.format(num_URLS), timeout=60)
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
-@pytest.mark.parametrize('config', ['ssldyn',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'ssldyn',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
     # check and log bin size
