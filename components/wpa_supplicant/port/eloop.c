@@ -169,7 +169,7 @@ overflow:
                "ELOOP: Too long timeout (secs=%u usecs=%u) to ever happen - ignore it",
                secs, usecs);
     os_free(timeout);
-    return 0;
+    return -1;
 }
 
 #ifdef ELOOP_DEBUG
@@ -526,6 +526,9 @@ void eloop_destroy(void)
                    sec, usec, timeout->eloop_data, timeout->user_data,
                    timeout->handler);
 #endif
+        if (timeout->handler) {
+            timeout->handler(timeout->eloop_data, timeout->user_data);
+        }
         eloop_remove_timeout(timeout);
     }
     if (eloop_data_lock) {
