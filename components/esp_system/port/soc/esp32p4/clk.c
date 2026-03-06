@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@
 #include "soc/spi_mem_s_reg.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/trace_struct.h"
+#include "soc/usb_dwc_struct.h"
 
 #include "hal/adc_ll.h"
 #include "hal/aes_ll.h"
@@ -340,15 +341,21 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _mpi_ll_enable_bus_clock(false);
         _sha_ll_enable_bus_clock(false);
 
-        // USB1.1
+        /*** USB sys & phy & pad & clock initialization for power saving ***/
+        // Force the USB 2.0 PHY to enter suspend mode before disabling the clock.
+        REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_USB_OTG20_SYS_CLK_EN);
+        REG_SET_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL1_REG, LP_CLKRST_USB_OTG20_PHYREF_CLK_EN);
+        USB_DWC_HS.gotgctl_reg.bvalidoven = 1;
+        USB_DWC_HS.pcgcctl_reg.stoppclk = 1;
+        // USB1.1 & USB OTG2.0 sys clock gating
         REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG11_BK_SYS_CLK_EN);
         REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG11_48M_CLK_EN);
         REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_USB_OTG11_SYS_CLK_EN);
-        // USB2.0
+        // USB2.0 phy & ULPI clock gating
         _usb_utmi_ll_enable_bus_clock(false);
         REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG20_BK_SYS_CLK_EN);
         REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL1_REG, LP_CLKRST_USB_OTG20_ULPI_CLK_EN);
-        // UHCI
+        // UHCI clock gating
         REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_UHCI_APB_CLK_EN);
         REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_UHCI_SYS_CLK_EN);
 

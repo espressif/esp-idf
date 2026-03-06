@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,18 +76,19 @@ static const char *TAG = "boot.esp32p4";
 
 void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
-    uint8_t clk_gpio_num = MSPI_IOMUX_PIN_NUM_CLK;
-    uint8_t q_gpio_num   = MSPI_IOMUX_PIN_NUM_MISO;
-    uint8_t d_gpio_num   = MSPI_IOMUX_PIN_NUM_MOSI;
-    uint8_t cs0_gpio_num = MSPI_IOMUX_PIN_NUM_CS0;
-    uint8_t hd_gpio_num  = MSPI_IOMUX_PIN_NUM_HD;
-    uint8_t wp_gpio_num  = MSPI_IOMUX_PIN_NUM_WP;
-    esp_rom_gpio_pad_set_drv(clk_gpio_num, drv);
-    esp_rom_gpio_pad_set_drv(q_gpio_num,   drv);
-    esp_rom_gpio_pad_set_drv(d_gpio_num,   drv);
-    esp_rom_gpio_pad_set_drv(cs0_gpio_num, drv);
-    esp_rom_gpio_pad_set_drv(hd_gpio_num, drv);
-    esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
+    // Configure all Flash pins: clear pull-up/pull-down, set drive strength
+    // SPI CS is external pull-uped so there no need to set internal pull-up
+    mspi_ll_flash_pin_cfg_t flash_cfg = {
+        .hys = 0,
+        .ie = 0,
+        .wpu = 0,
+        .wpd = 0,
+        .drv = drv,
+        .reserved = 0
+    };
+    for (mspi_ll_flash_pin_id_t pin_id = MSPI_LL_PIN_ID_FLASH_CS; pin_id <= MSPI_LL_PIN_ID_FLASH_D; pin_id++) {
+        mspi_ll_set_flash_pin_cfg(pin_id, &flash_cfg);
+    }
 }
 
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
