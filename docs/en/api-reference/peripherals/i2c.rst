@@ -45,6 +45,12 @@ Typically, an I2C slave device has a 7-bit address or 10-bit address. {IDF_TARGE
 
     We realized that our first version of the I2C slave driver had some problems and was not easy to use, so we have prepared a second version of the I2C slave driver, which solves many of the problems with our current I2C slave and which will be the focus of our maintenance. We encourage and recommend that you use the second version of the I2C slave driver, which you can do by enabling :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2`. This document focuses on the content of I2C slave v2.0. If you still want to read programming guide of I2C slave v1.0, please refer to :ref:`i2c-slave-v1`. The I2C slave v1.0 driver will be removed with the IDF v6.0 update.
 
+.. only:: esp32
+
+    .. note::
+
+        The ESP32 I2C controller does not support clock stretching when operating as a slave. Therefore, in addition to driver configuration, the application layer should pay attention to speed matching and synchronization between master and slave devices: if the master processes too fast while the slave responds slowly, communication errors or data loss may occur. It is recommended to use application-layer data verification, GPIO signal synchronization, or other methods to achieve data synchronization between master and slave. Please confirm whether the ESP32 slave mode meets your project requirements according to your use case before use.
+
 I2C Clock Configuration
 -----------------------
 
