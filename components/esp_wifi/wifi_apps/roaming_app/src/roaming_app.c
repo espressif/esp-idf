@@ -784,7 +784,7 @@ static bool conduct_scan(void)
     gettimeofday(&g_roaming_app.scanned_aps.time, NULL);
     os_memset(&g_roaming_app.scanned_aps, 0, sizeof(struct scanned_ap_info));
     /* Issue scan */
-    if (esp_wifi_promiscuous_scan_start(&g_roaming_app.config.scan_config, scan_done_event_handler) < 0) {
+    if (esp_wifi_promiscuous_scan_start(&g_roaming_app.config.scan_config, scan_done_event_handler) != ESP_OK) {
         ESP_LOGE(ROAMING_TAG, "failed to issue scan");
         return false;
     }
