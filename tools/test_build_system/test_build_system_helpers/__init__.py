@@ -20,6 +20,8 @@ from .idf_utils import get_idf_build_env
 from .idf_utils import run_cmake
 from .idf_utils import run_cmake_and_build
 from .idf_utils import run_idf_py
+from .rebuild_utils import BUILD_SNAPSHOT_EXCLUDE
+from .rebuild_utils import rebuild_and_check
 from .snapshot import Snapshot
 from .snapshot import get_snapshot
 
@@ -46,4 +48,6 @@ __all__ = [
     'file_contains',
     'bin_file_contains',
     'bin_files_differ',
+    'BUILD_SNAPSHOT_EXCLUDE',
+    'rebuild_and_check',
 ]

@@ -1,20 +1,51 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # These tests check whether the build system rebuilds some files or not
-# depending on the changes to the project.
+# depending on the changes to the project. Configdep is disabled here so
+# mtime assertions reflect CMake/Ninja only; see test_rebuild_configdep.py for
+# the same checks with configdep enabled (after settle builds).
 import logging
 import os
+import subprocess
 from pathlib import Path
+from typing import cast
 
 import pytest
 from test_build_system_helpers import ALL_ARTIFACTS_BUILDV1
 from test_build_system_helpers import ALL_ARTIFACTS_BUILDV2
 from test_build_system_helpers import APP_BINS
 from test_build_system_helpers import BOOTLOADER_BINS
+from test_build_system_helpers import BUILD_SNAPSHOT_EXCLUDE
 from test_build_system_helpers import PARTITION_BIN
 from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import get_idf_build_env
 from test_build_system_helpers import get_snapshot
+from test_build_system_helpers import rebuild_and_check
 from test_build_system_helpers import replace_in_file
+from test_build_system_helpers import run_idf_py
+
+
+@pytest.fixture
+def idf_py(monkeypatch: pytest.MonkeyPatch) -> IdfPyFunc:
+    """Use ``idf.py`` with esp-idf-configdep disabled for this module.
+
+    These tests assert Ninja rebuild granularity via file mtimes. The
+    ``esp-idf-configdep`` wrapper can create per-option ``.cdep`` stubs after the
+    real compiler has written ``.obj`` files, so on the next Ninja run inputs can
+    look newer than outputs and trigger spurious rebuilds. That behavior is
+    covered separately in ``test_rebuild_configdep.py`` with a settle-build
+    pattern. Here we exercise the core CMake/Ninja dependency graph only.
+    """
+    monkeypatch.setenv('IDF_CONFIGDEP_ENABLE', '0')
+    env = get_idf_build_env(os.environ['IDF_PATH'])
+
+    def result(*args: str, check: bool = True, input_str: str | None = None) -> subprocess.CompletedProcess[str]:
+        return cast(
+            subprocess.CompletedProcess[str],
+            run_idf_py(*args, env=env, workdir=os.getcwd(), check=check, input_str=input_str),
+        )
+
+    return result
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -23,14 +54,7 @@ def test_rebuild_no_changes(idf_py: IdfPyFunc, request: pytest.FixtureRequest) -
     idf_py('build')
     logging.info('get the first snapshot')
     # excluding the 'log' subdirectory here since it changes after every build
-    all_build_files = get_snapshot(
-        'build/**/*',
-        exclude_patterns=[
-            'build/log/*',
-            'build/CMakeFiles/bootloader-complete',
-            'build/bootloader-prefix/src/bootloader-stamp/bootloader-done',
-        ],
-    )
+    all_build_files = get_snapshot('build/**/*', exclude_patterns=BUILD_SNAPSHOT_EXCLUDE)
 
     logging.info('check that all build artifacts were generated')
     all_artifacts = ALL_ARTIFACTS_BUILDV2 if request.config.getoption('buildv2', False) else ALL_ARTIFACTS_BUILDV1
@@ -40,31 +64,8 @@ def test_rebuild_no_changes(idf_py: IdfPyFunc, request: pytest.FixtureRequest) -
     logging.info('build again with no changes')
     idf_py('build')
     # if there are no changes, nothing gets rebuilt
-    all_build_files_after_rebuild = get_snapshot(
-        'build/**/*',
-        exclude_patterns=[
-            'build/log/*',
-            'build/CMakeFiles/bootloader-complete',
-            'build/bootloader-prefix/src/bootloader-stamp/bootloader-done',
-        ],
-    )
+    all_build_files_after_rebuild = get_snapshot('build/**/*', exclude_patterns=BUILD_SNAPSHOT_EXCLUDE)
     all_build_files_after_rebuild.assert_same(all_build_files)
-
-
-def rebuild_and_check(
-    idf_py: IdfPyFunc, should_be_rebuilt: str | list[str], should_not_be_rebuilt: str | list[str]
-) -> None:
-    """
-    Helper function for the test cases below.
-    Asserts that the files matching 'should_be_rebuilt' patterns are rebuilt
-    and files matching 'should_not_be_rebuilt' patterns aren't, after
-    touching (updating the mtime) of the given 'file_to_touch' and rebuilding.
-    """
-    snapshot_should_be_rebuilt = get_snapshot(should_be_rebuilt)
-    snapshot_should_not_be_rebuilt = get_snapshot(should_not_be_rebuilt)
-    idf_py('build')
-    snapshot_should_be_rebuilt.assert_different(get_snapshot(should_be_rebuilt))
-    snapshot_should_not_be_rebuilt.assert_same(get_snapshot(should_not_be_rebuilt))
 
 
 # For this and the following test function, there are actually multiple logical
@@ -104,7 +105,7 @@ def test_rebuild_source_files(idf_py: IdfPyFunc) -> None:
     # pick on .c, .cpp, .S file which includes sdkconfig.h:
     obj_files = [
         'build/esp-idf/esp_libc/CMakeFiles/__idf_esp_libc.dir/newlib_init.c.obj',
-        'build/esp-idf/nvs_flash/CMakeFiles/__idf_nvs_flash.dir/src/nvs_api.cpp.obj'
+        'build/esp-idf/nvs_flash/CMakeFiles/__idf_nvs_flash.dir/src/nvs_api.cpp.obj',
         'build/esp-idf/esp_system/CMakeFiles/__idf_esp_system.dir/port/arch/xtensa/panic_handler_asm.S.obj',
     ]
     sdkconfig_files = ['build/config/sdkconfig.h', 'build/config/sdkconfig.json']
