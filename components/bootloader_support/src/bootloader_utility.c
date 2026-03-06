@@ -154,6 +154,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
     err = esp_partition_table_verify(partitions, true, &num_partitions);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify partition table");
+        bootloader_munmap(partitions);
         return false;
     }
 
