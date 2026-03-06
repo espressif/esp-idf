@@ -1635,6 +1635,7 @@ static int wifi_wps_disable_internal(void *ctx, void *data)
     if (wps_get_status() == WPS_STATUS_PENDING) {
         esp_wifi_disconnect();
     }
+    esp_wifi_scan_stop();
     wps_set_status(WPS_STATUS_DISABLE);
 
     /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
