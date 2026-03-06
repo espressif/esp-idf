@@ -1067,7 +1067,7 @@ function(idf_sign_binary binary)
     endif()
 
     if(ARG_KEYFILE)
-        set(keyfle "${ARG_KEYFILE}")
+        set(keyfile "${ARG_KEYFILE}")
     else()
         idf_build_get_property(project_dir PROJECT_DIR)
         get_filename_component(keyfile "${CONFIG_SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${project_dir}")
