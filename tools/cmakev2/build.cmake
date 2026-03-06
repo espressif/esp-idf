@@ -1228,6 +1228,35 @@ function(idf_check_binary_size binary)
 endfunction()
 
 #[[
+.. cmakev2:function:: idf_check_bootloader_size
+
+    .. code-block:: cmake
+
+        idf_check_bootloader_size(<binary>)
+
+    *binary[in]*
+
+        Binary image target to which to add a bootloader size check.  The
+        ``binary`` target is created by the :cmakev2:ref:`idf_build_binary` or
+        :cmakev2:ref:`idf_sign_binary` function.
+
+    Ensure that the bootloader binary image does not overlap the partition
+    table. The file path of the binary image should be stored in the
+    ``BINARY_PATH`` property of the ``binary`` target.
+#]]
+function(idf_check_bootloader_size binary)
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+
+    partition_table_add_check_bootloader_size_target("${binary}_check_size"
+        DEPENDS "${binary_path}"
+        BOOTLOADER_BINARY_PATH "${binary_path}")
+    add_dependencies("${binary}" "${binary}_check_size")
+endfunction()
+
+#[[
 .. cmakev2:function:: idf_check_binary_signed
 
     .. code-block:: cmake
