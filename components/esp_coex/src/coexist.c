@@ -17,9 +17,7 @@
 #include "esp_private/gpio.h"
 #endif
 
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-#include "esp_private/esp_modem_clock.h"
-#endif
+#include "esp_private/periph_ctrl.h"
 
 #if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
 #include "esp_coex_i154.h"
@@ -267,16 +265,11 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         return ESP_ERR_INVALID_ARG;
 #endif /* SOC_EXTERNAL_COEX_ADVANCE */
     }
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-    modem_clock_module_enable(PERIPH_COEX_MODULE);
-#endif
+    coex_module_enable();
 #if SOC_EXTERNAL_COEX_ADVANCE
     esp_coex_external_params(g_external_coex_params, 0, 0);
 #endif
     esp_err_t ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-    modem_clock_module_disable(PERIPH_COEX_MODULE);
-#endif
     if (ESP_OK != ret) {
         return ESP_FAIL;
     }
@@ -286,7 +279,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
 esp_err_t esp_disable_extern_coex_gpio_pin(void)
 {
     esp_coex_external_stop();
-
+    coex_module_disable();
     return ESP_OK;
 }
 #endif /* External Coex */
