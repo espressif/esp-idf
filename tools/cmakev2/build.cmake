@@ -913,7 +913,8 @@ endfunction()
 
         idf_build_binary(<executable>
                          TARGET <target>
-                         OUTPUT_FILE <file>)
+                         OUTPUT_FILE <file>
+                         [ALL])
 
     *executable[in]*
 
@@ -928,6 +929,10 @@ endfunction()
 
         Output file path for storing the binary image file.
 
+    *ALL[in,opt]*
+
+        If specified, the target will be added to the default build target.
+
     Create a binary image for the specified ``executable`` target and save it
     in the file specified with the ``OUTPUT_FILE`` option. A custom target
     named ``TARGET`` will be created for the generated binary image. The path
@@ -936,7 +941,7 @@ endfunction()
     the ``TARGET``.
 #]]
 function(idf_build_binary executable)
-    set(options)
+    set(options ALL)
     set(one_value OUTPUT_FILE TARGET)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
@@ -990,8 +995,13 @@ function(idf_build_binary executable)
         COMMENT "Generating binary image '${binary_name}' from executable '${executable_name}'"
     )
 
-    # Create a custom target to generate the binary file
-    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+    # Create a custom target to generate the binary file.
+    # If ALL is specified, include the target in the default build.
+    set(all_arg)
+    if(ARG_ALL)
+        set(all_arg ALL)
+    endif()
+    add_custom_target(${ARG_TARGET} ${all_arg} DEPENDS "${ARG_OUTPUT_FILE}")
 
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom binary target, which is used by the idf_flash_binary.
@@ -1010,7 +1020,8 @@ endfunction()
         idf_sign_binary(<binary>
                         TARGET <target>
                         OUTPUT_FILE <file>
-                        [KEYFILE <file>])
+                        [KEYFILE <file>]
+                        [ALL])
 
     *binary[in]*
 
@@ -1033,6 +1044,10 @@ endfunction()
         provided, the key file specified by the
         ``CONFIG_SECURE_BOOT_SIGNING_KEY`` configuration option will be used.
 
+    *ALL[in,opt]*
+
+        If specified, the target will be added to the default build target.
+
     Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
     it in the file specified with the  `OUTPUT_FILE` option. A custom target
     named ``TARGET`` will be created for the signed binary image.  The path of
@@ -1041,7 +1056,7 @@ endfunction()
     ``TARGET``.
 #]]
 function(idf_sign_binary binary)
-    set(options)
+    set(options ALL)
     set(one_value OUTPUT_FILE TARGET KEYFILE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
@@ -1097,7 +1112,13 @@ function(idf_sign_binary binary)
         VERBATIM
         COMMENT "Signing '${binary_name}' with key '${key_name}' into '${signed_binary_name}'"
     )
-    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+    # Create a custom target for the signed binary file.
+    # If ALL is specified, include the target in the default build.
+    set(all_arg)
+    if(ARG_ALL)
+        set(all_arg ALL)
+    endif()
+    add_custom_target(${ARG_TARGET} ${all_arg} DEPENDS "${ARG_OUTPUT_FILE}")
 
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom signed binary target, which is used by the idf_flash_binary.
