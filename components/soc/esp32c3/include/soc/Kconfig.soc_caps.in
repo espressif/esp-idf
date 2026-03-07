@@ -651,6 +651,10 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
     int
     default 108
 
+config SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+    bool
+    default y
+
 config SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
     bool
     default y

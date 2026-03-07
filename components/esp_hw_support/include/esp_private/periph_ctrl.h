@@ -49,7 +49,7 @@ extern "C" {
  * @note User code protected by this macro should be as short as possible, because it's a critical section
  */
 #define PERIPH_RCC_ATOMIC()                   \
-    for (int _rc_cnt = 1, __DECLARE_RCC_ATOMIC_ENV; \
+    for (int _rc_cnt = 1, __DECLARE_RCC_ATOMIC_ENV __attribute__((unused)); \
          _rc_cnt ? (periph_rcc_enter(), 1) : 0;     \
          periph_rcc_exit(), _rc_cnt--)
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "hal/gpio_hal.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/io_mux.h"
+#include "esp_private/periph_ctrl.h"
 
 #if (SOC_RTCIO_PIN_COUNT > 0)
 #include "hal/rtc_io_hal.h"
@@ -35,6 +36,12 @@ static const char *GPIO_TAG = "gpio";
 //default value for SOC_GPIO_SUPPORT_RTC_INDEPENDENT is 0
 #ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
+#endif
+
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
 #endif
 
 typedef struct {
@@ -781,14 +788,18 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
 void gpio_deep_sleep_hold_en(void)
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_deep_sleep_hold_en(gpio_context.gpio_hal);
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_deep_sleep_hold_en(gpio_context.gpio_hal);
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 }
 
 void gpio_deep_sleep_hold_dis(void)
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_deep_sleep_hold_dis(gpio_context.gpio_hal);
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_deep_sleep_hold_dis(gpio_context.gpio_hal);
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 }
 #endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
@@ -800,7 +811,9 @@ esp_err_t IRAM_ATTR gpio_force_hold_all()
     rtc_gpio_force_hold_en_all();
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_force_hold_all();
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_force_hold_all();
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
@@ -808,7 +821,9 @@ esp_err_t IRAM_ATTR gpio_force_hold_all()
 esp_err_t IRAM_ATTR gpio_force_unhold_all()
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_force_unhold_all();
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_force_unhold_all();
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 #if SOC_RTCIO_HOLD_SUPPORTED
     rtc_gpio_force_hold_dis_all();

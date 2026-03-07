@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,14 @@
 #include "esp_intr_alloc.h"
 #include "sys/lock.h"
 #include "esp_private/rtc_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_attr.h"
+
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
+#endif
 
 
 #ifndef NDEBUG
@@ -187,8 +194,10 @@ IRAM_ATTR void rtc_isr_noniram_disable(uint32_t cpu)
 {
 #if SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
     if (rtc_isr_cpu == cpu) {
-        rtc_intr_enabled |= RTCCNTL.int_ena.val;
-        RTCCNTL.int_ena.val &= rtc_intr_cache;
+        RTC_CNTL_ATOMIC() {
+            rtc_intr_enabled |= RTCCNTL.int_ena.val;
+            RTCCNTL.int_ena.val &= rtc_intr_cache;
+        }
     }
 #endif
 }
@@ -197,8 +206,10 @@ IRAM_ATTR void rtc_isr_noniram_enable(uint32_t cpu)
 {
 #if SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
     if (rtc_isr_cpu == cpu) {
-        RTCCNTL.int_ena.val = rtc_intr_enabled;
-        rtc_intr_enabled = 0;
+        RTC_CNTL_ATOMIC() {
+            RTCCNTL.int_ena.val = rtc_intr_enabled;
+            rtc_intr_enabled = 0;
+        }
     }
 #endif
 }

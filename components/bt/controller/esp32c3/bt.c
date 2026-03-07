@@ -69,6 +69,8 @@
 
 #define BT_LOG_TAG                          "BLE_INIT"
 
+#define RTC_CNTL_ATOMIC()        PERIPH_RCC_ATOMIC()
+
 #define BTDM_INIT_PERIOD                    (5000)    /* ms */
 
 /* Low Power Clock Selection */
@@ -804,8 +806,10 @@ void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 #if CONFIG_MAC_BB_PD
 #if SOC_PM_SUPPORT_BT_PD
     // Bluetooth module power down
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    RTC_CNTL_ATOMIC() {
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    }
 #endif
     esp_mac_bb_power_down();
 #endif
@@ -816,8 +820,10 @@ void IRAM_ATTR btdm_hw_mac_power_up_wrapper(void)
 #if CONFIG_MAC_BB_PD
 #if SOC_PM_SUPPORT_BT_PD
     // Bluetooth module power up
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    RTC_CNTL_ATOMIC() {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    }
 #endif
     esp_mac_bb_power_up();
 #endif
@@ -834,8 +840,10 @@ static inline void esp_bt_power_domain_on(void)
 {
     // Bluetooth module power up
 #if SOC_PM_SUPPORT_BT_PD
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    RTC_CNTL_ATOMIC() {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    }
 #endif
     esp_wifi_bt_power_domain_on();
 }
@@ -844,8 +852,10 @@ static inline void esp_bt_power_domain_off(void)
 {
     // Bluetooth module power down
 #if SOC_PM_SUPPORT_BT_PD
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    RTC_CNTL_ATOMIC() {
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    }
 #endif
     esp_wifi_bt_power_domain_off();
 }
