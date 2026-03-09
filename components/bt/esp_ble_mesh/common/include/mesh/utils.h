@@ -41,6 +41,13 @@ extern "C" {
 #define INT_TO_POINTER(x)  ((void *) (x))
 #endif
 
+#ifndef ESP_ASSUME_NONNULL
+/**
+ * @brief Assume pointer parameters are non-null unless explicitly marked otherwise.
+*/
+#define ESP_ASSUME_NONNULL(ptr)
+#endif
+
 /* Evaluates to 0 if cond is true-ish; compile error otherwise */
 #ifndef ZERO_OR_COMPILE_ERROR
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)

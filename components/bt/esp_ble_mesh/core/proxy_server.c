@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -182,7 +182,7 @@ static void proxy_sar_timeout(struct k_work *work)
     BT_WARN("ProxySARTimeout");
 
     client = CONTAINER_OF(work, struct bt_mesh_proxy_client, sar_timer.work);
-    if (!client || !client->conn) {
+    if (!client->conn) {
         BT_ERR("Invalid proxy client parameter");
         return;
     }
@@ -312,15 +312,12 @@ static void filter_add(struct bt_mesh_proxy_client *client,
 
     for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
         if (client->filter[i].addr == addr) {
+            BT_INFO("client addr 0x%04x already added", addr);
             return;
         }
     }
 
     for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
-        if (client->filter[i].addr == addr) {
-            BT_INFO("client addr 0x%04x already added", addr);
-            return;
-        }
         if (client->filter[i].addr == BLE_MESH_ADDR_UNASSIGNED) {
             BT_INFO("Add client or filter addr 0x%04x", addr);
             client->filter[i].addr = addr;
@@ -514,7 +511,7 @@ static void proxy_send_beacons(struct k_work *work)
 {
     struct bt_mesh_proxy_client *client = CONTAINER_OF(work,
                                           struct bt_mesh_proxy_client,
-                                          send_beacons);;
+                                          send_beacons);
     int i;
 
     BT_DBG("ProxySendBeacons");
@@ -1484,10 +1481,10 @@ int bt_mesh_proxy_server_segment_send(struct bt_mesh_conn *conn, uint8_t type,
 
     net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_FIRST, type));
     err = proxy_send(conn, msg->data, mtu);
-    if (err) {
-        BT_ERR("ProxyServerSendFail %d", err);
-        return err;
-    }
+    /* Note:
+     * Even if proxy_send() failed, do not return early here in order to
+     * keep the msg in a consistent final state.
+     */
     net_buf_simple_pull(msg, mtu);
 
     while (msg->len) {
@@ -1498,14 +1495,14 @@ int bt_mesh_proxy_server_segment_send(struct bt_mesh_conn *conn, uint8_t type,
 
         net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_CONT, type));
         err = proxy_send(conn, msg->data, mtu);
-        if (err) {
-            BT_ERR("ProxyServerSendFail %d", err);
-            return err;
-        }
+        /* Note:
+         * Even if proxy_send() failed, do not return early here in order to
+         * keep the msg in a consistent final state.
+         */
         net_buf_simple_pull(msg, mtu);
     }
 
-    return 0;
+    return err;
 }
 
 int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, uint8_t type,
@@ -2241,6 +2238,9 @@ int bt_mesh_proxy_server_deinit(void)
         k_delayed_work_free(&client->sar_timer);
 
         memset(client, 0, sizeof(struct bt_mesh_proxy_client));
+#if CONFIG_BLE_MESH_PROXY_PRIVACY
+        client->proxy_privacy = BLE_MESH_PROXY_PRIVACY_DISABLED;
+#endif /* CONFIG_BLE_MESH_PROXY_PRIVACY */
     }
 
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER && CONFIG_BLE_MESH_PRB_SRV

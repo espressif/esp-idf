@@ -53,7 +53,7 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
             dst->health_client_get_state.get_state = (esp_ble_mesh_health_client_get_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_health_client_get_state_t));
             if (dst->health_client_get_state.get_state) {
                 memcpy(dst->health_client_get_state.get_state, src->health_client_get_state.get_state,
-                    sizeof(esp_ble_mesh_health_client_get_state_t));
+                       sizeof(esp_ble_mesh_health_client_get_state_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                 /* Free the previously allocated resources */
@@ -192,6 +192,7 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_HEALTH_CLIENT_TIMEOUT_EVT:
         break;
     default:
@@ -229,6 +230,7 @@ static void btc_ble_mesh_health_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_HEALTH_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
             bt_mesh_free(arg->params);
