@@ -495,7 +495,8 @@ esp_err_t esp_ble_mesh_register_generic_client_callback(esp_ble_mesh_generic_cli
  *
  * @param[in]   params:    Pointer to BLE Mesh common client parameters.
  * @param[in]   get_state: Pointer to generic get message value.
- *                         Shall not be set to NULL.
+ *                         Shall not be set to NULL when the opcode requires
+ *                         parameters (property-related GET operations).
  *
  * @return      ESP_OK on success or error code otherwise.
  *

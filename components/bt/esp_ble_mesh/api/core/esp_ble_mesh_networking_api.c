@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,35 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     esp_err_t status = ESP_OK;
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    /* When data is NULL, it is mandatory to set length to 0 to prevent users from misinterpreting parameters. */
+    if (data == NULL) {
+        length = 0;
+    }
+
+    /* Compute op_len from opcode before length validation */
+    if (opcode < 0x100) {
+        op_len = 1;
+    } else if (opcode < 0x10000) {
+        op_len = 2;
+    } else {
+        op_len = 3;
+    }
+
+    if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
+        /* When "send_rel" is true and "send_szmic" is 1, 8-octets TransMIC will
+         * be used, otherwise 4-octets TransMIC will be used.
+         */
+        mic_len = (model->pub->send_rel && model->pub->send_szmic) ?
+                   ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
+    } else {
+        /* When the message is tagged with the send-segmented tag and "send_szmic"
+         * is 1, 8-octets TransMIC will be used, otherwise 4-octets TransMIC will
+         * be used.
+         */
+        mic_len = ((ctx->send_tag & ESP_BLE_MESH_TAG_SEND_SEGMENTED) && ctx->send_szmic) ?
+                   ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
+    }
 
     if (ctx) {
         if (ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
@@ -63,6 +92,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
              ctx->enh.long_pkt_cfg != ESP_BLE_MESH_LONG_PACKET_PREFER)) {
             BT_ERR("Invalid long packet configuration %d (expected FORCE=1 or PREFER=2)",
                 ctx->enh.long_pkt_cfg);
+            return ESP_ERR_INVALID_ARG;
         }
 
         if (ctx->enh.long_pkt_cfg_used && (op_len + length + mic_len > ESP_BLE_MESH_EXT_SDU_MAX_LEN)) {
@@ -82,19 +112,6 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* When data is NULL, it is mandatory to set length to 0 to prevent users from misinterpreting parameters. */
-    if (data == NULL) {
-        length = 0;
-    }
-
-    if (opcode < 0x100) {
-        op_len = 1;
-    } else if (opcode < 0x10000) {
-        op_len = 2;
-    } else {
-        op_len = 3;
-    }
-
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
         if (op_len + length > model->pub->msg->size) {
             BT_ERR("Too small publication msg size %d", model->pub->msg->size);
@@ -103,30 +120,19 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     }
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
-        /* When "send_rel" is true and "send_szmic" is 1, 8-octets TransMIC will
-         * be used, otherwise 4-octets TransMIC will be used.
-         */
-        mic_len = (model->pub->send_rel && model->pub->send_szmic) ?
-                   ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
-    } else {
-        /* When the message is tagged with the send-segmented tag and "send_szmic"
-         * is 1, 8-octets TransMIC will be used, otherwise 4-octets TransMIC will
-         * be used.
-         */
-        mic_len = ((ctx->send_tag & ESP_BLE_MESH_TAG_SEND_SEGMENTED) && ctx->send_szmic) ?
-                   ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
-    }
-
-    if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
         bt_mesh_model_msg_init(model->pub->msg, opcode);
-        net_buf_simple_add_mem(model->pub->msg, data, length);
+        if (length > 0) {
+            net_buf_simple_add_mem(model->pub->msg, data, length);
+        }
     } else {
         msg_data = (uint8_t *)bt_mesh_calloc(op_len + length);
         if (msg_data == NULL) {
             return ESP_ERR_NO_MEM;
         }
         esp_ble_mesh_model_msg_opcode_init(msg_data, opcode);
-        memcpy(msg_data + op_len, data, length);
+        if (length > 0) {
+            memcpy(msg_data + op_len, data, length);
+        }
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -693,6 +699,7 @@ esp_err_t esp_ble_mesh_provisioner_open_settings_with_uid(const char *uid)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_UID;
 
+    memset(arg.open_settings_with_uid.uid, 0, sizeof(arg.open_settings_with_uid.uid));
     strncpy(arg.open_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
@@ -736,6 +743,7 @@ esp_err_t esp_ble_mesh_provisioner_close_settings_with_uid(const char *uid, bool
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_UID;
 
+    memset(arg.close_settings_with_uid.uid, 0, sizeof(arg.close_settings_with_uid.uid));
     strncpy(arg.close_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
     arg.close_settings_with_uid.erase = erase;
 
@@ -779,6 +787,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_settings_with_uid(const char *uid)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_UID;
 
+    memset(arg.delete_settings_with_uid.uid, 0, sizeof(arg.delete_settings_with_uid.uid));
     strncpy(arg.delete_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)

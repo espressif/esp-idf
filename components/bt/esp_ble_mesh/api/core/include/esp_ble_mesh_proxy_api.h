@@ -161,7 +161,7 @@ esp_err_t esp_ble_mesh_proxy_client_directed_proxy_set(uint8_t conn_handle, uint
  * @return       ESP_OK on success or error code otherwise.
  *
  */
-esp_err_t esp_ble_mesh_proxy_client_send_solic_pdu(uint8_t net_idx, uint16_t ssrc, uint16_t dst);
+esp_err_t esp_ble_mesh_proxy_client_send_solic_pdu(uint16_t net_idx, uint16_t ssrc, uint16_t dst);
 
 #ifdef __cplusplus
 }

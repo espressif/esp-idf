@@ -137,8 +137,12 @@ int bt_mesh_unprov_dev_info_query(uint8_t uuid[16], uint8_t addr[6],
                     return 0;
                 }
 
-                memcpy(addr, unprov_dev_info_fifo.info[idx].addr, 6);
-                *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
+                if (addr) {
+                    memcpy(addr, unprov_dev_info_fifo.info[idx].addr, 6);
+                }
+                if (adv_type) {
+                    *adv_type = unprov_dev_info_fifo.info[idx].adv_type;
+                }
                 break;
             }
         }
@@ -324,19 +328,19 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
 
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_is_provisioned()) {
-            const bt_mesh_addr_t *addr = NULL;
+            const bt_mesh_addr_t *unprov_addr = NULL;
 
             if (buf->len != PROV_SVC_DATA_LEN) {
                 BT_WARN("Invalid Mesh Prov Service Data length %d", buf->len);
                 return;
             }
 
-            addr = bt_mesh_get_unprov_dev_addr();
-            assert(addr);
+            unprov_addr = bt_mesh_get_unprov_dev_addr();
+            assert(unprov_addr);
 
-            bt_mesh_unprov_dev_fifo_enqueue(buf->data, addr->val, bt_mesh_get_adv_type());
+            bt_mesh_unprov_dev_fifo_enqueue(buf->data, unprov_addr->val, bt_mesh_get_adv_type());
 
-            bt_mesh_rpr_srv_unprov_beacon_recv(buf, bt_mesh_get_adv_type(), addr, rssi);
+            bt_mesh_rpr_srv_unprov_beacon_recv(buf, bt_mesh_get_adv_type(), unprov_addr, rssi);
         }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
 
@@ -391,6 +395,14 @@ static bool ble_scan_en;
 int bt_mesh_start_ble_scan(struct bt_mesh_ble_scan_param *param)
 {
     BT_DBG("StartBLEScan");
+    ARG_UNUSED(param);
+
+    /* Note:
+     * Currently the function is only used to enable reporting
+     * non-mesh advertising packets to the application layer,
+     * and the input parameter will not be used for now.
+     */
+    ARG_UNUSED(param);
 
     if (ble_scan_en == true) {
         BT_WARN("%s, Already", __func__);
@@ -423,7 +435,7 @@ bool bt_mesh_ble_scan_state_get(void)
     return ble_scan_en;
 }
 
-static void inline callback_ble_adv_pkt(const bt_mesh_addr_t *addr,
+static inline void callback_ble_adv_pkt(const bt_mesh_addr_t *addr,
                                         uint8_t adv_type, uint8_t data[],
                                         uint16_t length, int8_t rssi)
 {
@@ -570,6 +582,7 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
 #endif
         )) {
             BT_DBG("IgnorePkt, Type 0x%02x AdvType 0x%02x", type, adv_rpt->adv_type);
+            net_buf_simple_restore(buf, &buf_state);
             return;
         }
 
@@ -724,18 +737,18 @@ int bt_mesh_scan_param_update(struct bt_mesh_scan_param *param)
     BT_DBG("ScanParamUpdate, Type %u Interval %u Window %u",
            param->type, param->interval, param->window);
 
+    err = bt_le_scan_stop();
+    if (err && err != -EALREADY) {
+        BT_ERR("StopScanFailed, Err %d", err);
+        return err;
+    }
+
     scan_param.interval = param->interval;
     scan_param.window = param->window;
 
-    err = bt_le_scan_stop();
-    if (err) {
-        if (err == -EALREADY) {
-            BT_INFO("New scan parameters will take effect after scan starts");
-            return 0;
-        }
-
-        BT_ERR("StopScanFailed, Err %d", err);
-        return err;
+    if (err == -EALREADY) {
+        BT_INFO("New scan parameters will take effect after scan starts");
+        return 0;
     }
 
     /* Since the user only needs to set the scan interval and scan window,
