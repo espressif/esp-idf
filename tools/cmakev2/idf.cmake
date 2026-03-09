@@ -369,11 +369,33 @@ endfunction()
     EXTRA_COMPONENT_EXCLUDE_DIRS
         List of paths to exclude from searching the component directories.
 
+    The ``PROJECT_COMPONENTS_SOURCE`` build property controls how the
+    project's own components are categorised -- i.e. those discovered
+    under ``CMAKE_CURRENT_SOURCE_DIR/main``,
+    ``CMAKE_CURRENT_SOURCE_DIR/components``, or the paths listed in
+    ``COMPONENT_DIRS``.  It defaults to ``project_components``
+    (priority 3 -- highest).  Setting it to ``idf_components``
+    (priority 0) makes them overridable by components supplied through
+    ``EXTRA_COMPONENT_DIRS`` (priority 2).  This is useful for
+    sub-projects whose built-in components are provided by ESP-IDF and
+    should be overridable by user-supplied components.
+
     Each component is initialized for every component directory found.
 #]]
 function(__init_components)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(prefix PREFIX)
+
+    idf_build_get_property(project_components_source PROJECT_COMPONENTS_SOURCE)
+    if(NOT project_components_source)
+        set(project_components_source "project_components")
+    endif()
+
+    set(valid_sources "project_components" "idf_components")
+    if(NOT project_components_source IN_LIST valid_sources)
+        idf_die("Invalid PROJECT_COMPONENTS_SOURCE '${project_components_source}'."
+                " Must be one of: ${valid_sources}")
+    endif()
 
     __get_component_paths(PATHS "${idf_path}/components"
                           OUTPUT idf_components)
@@ -411,7 +433,7 @@ function(__init_components)
     foreach(path IN LISTS project_components)
         __init_component(DIRECTORY "${path}"
                          PREFIX "${prefix}"
-                         SOURCE "project_components")
+                         SOURCE "${project_components_source}")
     endforeach()
 
     foreach(path IN LISTS project_extra_components)
