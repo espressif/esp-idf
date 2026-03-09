@@ -41,3 +41,4 @@ warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' 
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in .*/components/wpa_supplicant/test_apps/sdkconfig.defaults
 ld: warning: ignoring duplicate libraries
 archive library: .+ the table of contents is empty
+WARNING: The following Kconfig variables were used in "if" clauses

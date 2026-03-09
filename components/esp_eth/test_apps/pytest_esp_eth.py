@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import contextlib
 import logging
@@ -195,8 +195,10 @@ def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
         pipe_rcv, pipe_send = Pipe(False)
         tx_proc = Process(target=target_if.traffic_gen, args=(dut_mac, pipe_rcv, ))
         tx_proc.start()
-        dut.expect_exact('Ethernet Stopped')
-        pipe_send.send(0)  # just send some dummy data
+        try:
+            dut.expect_exact('Ethernet Stopped')
+        finally:
+            pipe_send.send(0)  # just send some dummy data to stop traffic generation
         tx_proc.join(5)
         if tx_proc.exitcode is None:
             tx_proc.terminate()
@@ -204,17 +206,16 @@ def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
     dut.expect_unity_test_output(extra_before=res.group(1))
 
 
-def ethernet_heap_alloc_test(dut: IdfDut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
-
+def ethernet_heap_alloc_test(dut: IdfDut, test_if: str = '') -> None:
+    target_if = EthTestIntf(ETH_TYPE, test_if)
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
     dut.expect_exact('Enter test for running.')
     dut.write('"heap utilization"')
-    res = dut.expect(r'DUT PHY: (\w+)')
-    dut_phy = res.group(1).decode('utf-8')
-    # W5500 does not support internal loopback, we need to loopback for it
-    if 'W5500' in dut_phy:
+    res = dut.expect(r'PHY loopback is (enabled|disabled)')
+    phy_loopback = res.group(1).decode('utf-8')
+    # Some chips do not support internal loopback, we need to loopback at test PC side
+    if phy_loopback == 'disabled':
         logging.info('Starting loopback server...')
         res = dut.expect(
             r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
