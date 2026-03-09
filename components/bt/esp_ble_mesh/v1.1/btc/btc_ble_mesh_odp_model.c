@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,8 +40,8 @@ void btc_ble_mesh_odp_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_ODP_CLIENT_SEND:
-        dst->odp_send.params= NULL;
-        dst->odp_send.msg= NULL;
+        dst->odp_send.params = NULL;
+        dst->odp_send.msg = NULL;
 
         dst->odp_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!dst->odp_send.params) {
@@ -217,8 +217,8 @@ void btc_ble_mesh_odp_client_recv_pub_cb(uint32_t opcode,
     }
 
     bt_mesh_odp_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_ODP_CLIENT_RECV_PUB,
-        model, ctx, buf->data, buf->len);
+                                     BTC_BLE_MESH_EVT_ODP_CLIENT_RECV_PUB,
+                                     model, ctx, buf->data, buf->len);
 }
 
 static int btc_ble_mesh_odp_client_send(esp_ble_mesh_client_common_param_t *params,
@@ -266,7 +266,7 @@ void btc_ble_mesh_odp_client_call_handler(btc_msg_t *msg)
         cb.send.err_code = btc_ble_mesh_odp_client_send(arg->odp_send.params,
                                                         arg->odp_send.msg);
         btc_ble_mesh_odp_client_cb(&cb,
-            ESP_BLE_MESH_ODP_CLIENT_SEND_COMP_EVT);
+                                   ESP_BLE_MESH_ODP_CLIENT_SEND_COMP_EVT);
     }
 
     btc_ble_mesh_odp_client_arg_deep_free(msg);

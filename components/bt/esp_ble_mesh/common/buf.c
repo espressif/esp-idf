@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2015 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,6 +378,8 @@ void net_buf_reset(struct net_buf *buf)
 void net_buf_simple_init_with_data(struct net_buf_simple *buf,
                                    void *data, size_t size)
 {
+    NET_BUF_ASSERT(size <= UINT16_MAX);
+
     buf->__buf = data;
     buf->data  = data;
     buf->size  = size;
@@ -388,6 +390,7 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
     NET_BUF_ASSERT(buf);
     NET_BUF_ASSERT(buf->len == 0U);
+    NET_BUF_ASSERT(reserve <= buf->size);
     NET_BUF_DBG("buf %p reserve %zu", buf, reserve);
 
     buf->data = buf->__buf + reserve;
@@ -416,24 +419,24 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
     NET_BUF_ASSERT(list);
 
     bt_mesh_list_lock();
-    buf = (void *)sys_slist_get(list);
-    bt_mesh_list_unlock();
 
+    buf = (void *)sys_slist_get(list);
     if (!buf) {
+        bt_mesh_list_unlock();
         return NULL;
     }
 
     /* Get any fragments belonging to this buffer */
     for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
-        bt_mesh_list_lock();
         frag->frags = (void *)sys_slist_get(list);
-        bt_mesh_list_unlock();
 
         NET_BUF_ASSERT(frag->frags);
 
         /* The fragments flag is only for list-internal usage */
         frag->flags &= ~NET_BUF_FRAGS;
     }
+
+    bt_mesh_list_unlock();
 
     /* Mark the end of the fragment list */
     frag->frags = NULL;
@@ -447,7 +450,10 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 
     NET_BUF_DBG("buf %p (old) ref %u pool %p", buf, buf->ref, buf->pool);
 
+    bt_mesh_buf_lock();
     buf->ref++;
+    bt_mesh_buf_unlock();
+
     return buf;
 }
 
@@ -459,6 +465,8 @@ void net_buf_unref(struct net_buf *buf)
 {
     NET_BUF_ASSERT(buf);
 
+    bt_mesh_buf_lock();
+
     while (buf) {
         struct net_buf *frags = buf->frags;
         struct net_buf_pool *pool = NULL;
@@ -467,6 +475,7 @@ void net_buf_unref(struct net_buf *buf)
         if (!buf->ref) {
             NET_BUF_ERR("%s():%d: buf %p double free", func, line,
                         buf);
+            bt_mesh_buf_unlock();
             return;
         }
 #endif
@@ -475,6 +484,7 @@ void net_buf_unref(struct net_buf *buf)
 
         /* Changed by Espressif. Add !buf->ref to avoid minus 0 */
         if (!buf->ref || --buf->ref > 0) {
+            bt_mesh_buf_unlock();
             return;
         }
 
@@ -496,6 +506,8 @@ void net_buf_unref(struct net_buf *buf)
 
         buf = frags;
     }
+
+    bt_mesh_buf_unlock();
 }
 
 static uint8_t *fixed_data_alloc(struct net_buf *buf, size_t *size, int32_t timeout)
@@ -525,6 +537,10 @@ static uint8_t *data_alloc(struct net_buf *buf, size_t *size, int32_t timeout)
     return pool->alloc->cb->alloc(buf, size, timeout);
 }
 
+/**
+ * When using this function, Must ensure that the lock for
+ * buf->pool has been acquired; otherwise, race conditions may occur.
+ */
 #if CONFIG_BLE_MESH_NET_BUF_LOG
 struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
                                         int32_t timeout, const char *func, int line)
@@ -541,11 +557,6 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
     NET_BUF_DBG("Alloc, pool %p, uninit_count %d, buf_count %d",
                 pool, pool->uninit_count, pool->buf_count);
 
-    /* We need to lock interrupts temporarily to prevent race conditions
-     * when accessing pool->uninit_count.
-     */
-    bt_mesh_buf_lock();
-
     /* If there are uninitialized buffers we're guaranteed to succeed
      * with the allocation one way or another.
      */
@@ -554,13 +565,10 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
         for (i = pool->buf_count; i > 0; i--) {
             buf = pool_get_uninit(pool, i);
             if (!buf->ref) {
-                bt_mesh_buf_unlock();
                 goto success;
             }
         }
     }
-
-    bt_mesh_buf_unlock();
 
     NET_BUF_ERR("Out of free buffer, pool %p", pool);
     return NULL;
@@ -600,15 +608,25 @@ struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
                                           int line)
 {
     const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
+    struct net_buf *buf = NULL;
 
-    return net_buf_alloc_len_debug(pool, fixed->data_size, timeout, func, line);
+    bt_mesh_buf_lock();
+    buf = net_buf_alloc_len_debug(pool, fixed->data_size, timeout, func, line);
+    bt_mesh_buf_unlock();
+
+    return buf;
 }
 #else
 struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, int32_t timeout)
 {
     const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
+    struct net_buf *buf = NULL;
 
-    return net_buf_alloc_len(pool, fixed->data_size, timeout);
+    bt_mesh_buf_lock();
+    buf = net_buf_alloc_len(pool, fixed->data_size, timeout);
+    bt_mesh_buf_unlock();
+
+    return buf;
 }
 #endif
 

@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t mod_id,
-                                       uint16_t cid, uint16_t group_addr);
+int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t cid,
+                                       uint16_t mod_id, uint16_t group_addr);
 
 int bt_mesh_model_unsubscribe_group_addr(uint16_t elem_addr, uint16_t cid,
                                          uint16_t mod_id, uint16_t group_addr);

@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,27 +77,49 @@ void bt_mesh_heartbeat_send(void)
         uint8_t  init_ttl;
         uint16_t feat;
     } hb;
-    struct bt_mesh_msg_ctx ctx = {
-        .net_idx   = cfg->hb_pub.net_idx,
-        .app_idx   = BLE_MESH_KEY_UNUSED,
-        .addr      = cfg->hb_pub.dst,
-        .send_ttl  = cfg->hb_pub.ttl,
-        .send_cred = BLE_MESH_FLOODING_CRED,
-    };
-    struct bt_mesh_net_tx tx = {
-        .sub  = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
-        .ctx  = &ctx,
-        .src  = bt_mesh_model_elem(cfg->model)->addr,
-        .xmit = bt_mesh_net_transmit_get(),
-    };
+    struct bt_mesh_msg_ctx ctx = {0};
+    struct bt_mesh_net_tx tx = {0};
+    struct bt_mesh_elem *elem = NULL;
     uint16_t feat = 0U;
 
-    BT_DBG("HeartbeatSend, Dst 0x%04x", cfg->hb_pub.dst);
+    if (cfg == NULL) {
+        BT_WARN("No configuration server context available");
+        return;
+    }
+
+    if (cfg->model == NULL) {
+        BT_ERR("Configuration server model is NULL");
+        return;
+    }
 
     /* Do nothing if heartbeat publication is not enabled */
     if (cfg->hb_pub.dst == BLE_MESH_ADDR_UNASSIGNED) {
         return;
     }
+
+    elem = bt_mesh_model_elem(cfg->model);
+    if (elem == NULL) {
+        BT_ERR("Failed to get element for heartbeat");
+        return;
+    }
+
+    ctx.net_idx = cfg->hb_pub.net_idx;
+    ctx.app_idx = BLE_MESH_KEY_UNUSED;
+    ctx.addr = cfg->hb_pub.dst;
+    ctx.send_ttl = cfg->hb_pub.ttl;
+    ctx.send_cred = BLE_MESH_FLOODING_CRED;
+
+    tx.sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
+    if (tx.sub == NULL) {
+        BT_ERR("No subnet found for heartbeat publication (net_idx 0x%04x)", cfg->hb_pub.net_idx);
+        return;
+    }
+
+    tx.ctx = &ctx;
+    tx.src = elem->addr;
+    tx.xmit = bt_mesh_net_transmit_get();
+
+    BT_DBG("HeartbeatSend, Dst 0x%04x", cfg->hb_pub.dst);
 
     hb.init_ttl = cfg->hb_pub.ttl;
 
