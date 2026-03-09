@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,12 +45,12 @@ _Static_assert(CONFIG_BLE_MESH_ADV_BUF_COUNT >= (CONFIG_BLE_MESH_TX_SEG_MAX + 3)
 
 #define APP_MIC_LEN(aszmic)         ((aszmic) ? BLE_MESH_MIC_LONG : BLE_MESH_MIC_SHORT)
 
-#define UNSEG_HDR(akf, aid)         ((akf << 6) | (aid & AID_MASK))
-#define SEG_HDR(akf, aid)           (UNSEG_HDR(akf, aid) | 0x80)
+#define UNSEG_HDR(akf, aid)         (((akf) << 6) | ((aid) & AID_MASK))
+#define SEG_HDR(akf, aid)           (UNSEG_HDR((akf), (aid)) | 0x80)
 
-#define BLOCK_COMPLETE(seg_n)       (uint32_t)(((uint64_t)1 << (seg_n + 1)) - 1)
+#define BLOCK_COMPLETE(seg_n)       (uint32_t)(((uint64_t)1 << ((seg_n) + 1)) - 1)
 
-#define SEQ_AUTH(iv_index, seq)     (((uint64_t)iv_index) << 24 | (uint64_t)seq)
+#define SEQ_AUTH(iv_index, seq)     (((uint64_t)(iv_index)) << 24 | (uint64_t)(seq))
 
 /* How long to wait for available buffers before giving up */
 #define BUF_TIMEOUT                 K_NO_WAIT
@@ -226,12 +226,13 @@ uint32_t bt_mesh_seg_rx_interval(void)
 uint32_t bt_mesh_seg_ack_timeout(uint8_t seg_n)
 {
     uint32_t timeout = 0U;
-    float min = 0.0;
+    uint32_t min_x2 = 0U;
 
-    min = MIN((float)seg_n + 0.5, (float)bt_mesh_get_sar_adi() + 1.5);
-    timeout = (uint32_t)(min * bt_mesh_seg_rx_interval());
+    /* Use fixed-point arithmetic (x2 scale) to avoid float on FPU-less chips */
+    min_x2 = MIN((uint32_t)seg_n * 2U + 1U, (uint32_t)bt_mesh_get_sar_adi() * 2U + 3U);
+    timeout = (min_x2 * bt_mesh_seg_rx_interval()) / 2U;
 
-    BT_DBG("SegAckTimeout %lu, Min %f", timeout, min);
+    BT_DBG("SegAckTimeout %lu, Min %lu", timeout, min_x2);
 
     return timeout;
 }
@@ -1196,7 +1197,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     uint8_t aid = 0U;
     int err = 0;
 
-    BT_DBG("transcend");
+    BT_DBG("TransEnhSend");
 
     if (msg->len < 1) {
         BT_ERR("Zero-length SDU not allowed");
@@ -1679,6 +1680,12 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
     init_ttl = (net_buf_simple_pull_u8(buf) & 0x7f);
     feat = net_buf_simple_pull_be16(buf);
 
+    if (rx->ctx.recv_ttl > init_ttl) {
+        BT_WARN("Malformed heartbeat: recv_ttl (%u) > init_ttl (%u)",
+                rx->ctx.recv_ttl, init_ttl);
+        return -EINVAL;
+    }
+
     hops = (init_ttl - rx->ctx.recv_ttl + 1);
 
     BT_INFO("Src 0x%04x TTL %u InitTTL %u Hops %u Feat 0x%04x",
@@ -2064,7 +2071,7 @@ static void discard_msg(struct k_work *work)
     seg_rx_reset(rx, false);
 }
 
-static inline uint16_t sdu_len_max(uint8_t seg_n,uint16_t seg_len)
+static inline uint16_t sdu_len_max(uint8_t seg_n, uint16_t seg_len)
 {
     BT_DBG("IsSduLenOK,Len:%u,SegN:%u", seg_len, seg_n);
 
@@ -2080,7 +2087,12 @@ static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n, uint16_t buf_len)
     BT_DBG("IsSduLenOK, CTL %u SegN %u", ctl, seg_n);
 
 #if CONFIG_BLE_MESH_LONG_PACKET
-    if ((sdu_len_max(seg_n, buf_len) > CONFIG_BLE_MESH_RX_SDU_MAX)) {
+    /* Use maximum possible segment length based on CTL flag, not actual buf_len,
+     * to correctly detect long packets. The last segment can be shorter than
+     * regular segments, so using buf_len could underestimate the SDU size.
+     */
+    uint8_t max_seg_len = ctl ? BLE_MESH_EXT_CTL_SEG_SDU_MAX : BLE_MESH_EXT_APP_SEG_SDU_MAX;
+    if ((sdu_len_max(seg_n, max_seg_len) > BLE_MESH_EXT_RX_SDU_MAX)) {
         si.long_pkt = 1;
         return ((seg_n + 1) * seg_len(&si) <= BLE_MESH_EXT_RX_SDU_MAX);
     }
