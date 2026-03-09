@@ -349,6 +349,16 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t 
     }
 }
 
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+void rtc_clk_root_clk_switch_protect(const rtc_cpu_freq_config_t *new_config, const rtc_cpu_freq_config_t *old_config, bool enable)
+{
+    if ((new_config->source == SOC_CPU_CLK_SRC_PLL_F160M && old_config->source == SOC_CPU_CLK_SRC_PLL_F240M) ||
+        (new_config->source == SOC_CPU_CLK_SRC_PLL_F240M && old_config->source == SOC_CPU_CLK_SRC_PLL_F160M)) {
+        clk_ll_soc_root_clk_auto_gating_bypass(enable);
+    }
+}
+#endif
+
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 {
     soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();

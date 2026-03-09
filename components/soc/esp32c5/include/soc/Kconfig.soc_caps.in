@@ -1487,6 +1487,10 @@ config SOC_RCC_IS_INDEPENDENT
     bool
     default y
 
+config SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+    bool
+    default y
+
 config SOC_CLK_ANA_I2C_MST_DEPENDS_ON_MODEM_APB
     bool
     default y
