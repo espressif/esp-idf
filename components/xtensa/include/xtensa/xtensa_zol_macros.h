@@ -16,7 +16,6 @@
 
 #if __XTENSA__
 #include "xtensa/config/core-isa.h"
-#include "xtensa/config/xt_specreg.h"
 
 /**
  * Adjust loop counter and return address for exceptions at LEND.
@@ -37,13 +36,13 @@
  */
 .macro XT_ZOL_EPC_LCOUNT_RESTORE epc_reg tmp_reg
     #if XCHAL_HAVE_LOOPS
-    rsr     \tmp_reg, XT_REG_LEND
+    rsr     \tmp_reg, LEND
     bne     \epc_reg, \tmp_reg, 1f
-    rsr     \tmp_reg, XT_REG_LCOUNT
+    rsr     \tmp_reg, LCOUNT
     beqz    \tmp_reg, 1f
     addi    \tmp_reg, \tmp_reg, -1
-    wsr     \tmp_reg, XT_REG_LCOUNT
-    rsr     \epc_reg, XT_REG_LBEG
+    wsr     \tmp_reg, LCOUNT
+    rsr     \epc_reg, LBEG
 1:
     #endif
 .endm
