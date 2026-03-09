@@ -267,6 +267,12 @@ void esp_phy_sleep_data_init(void);
 void esp_phy_sleep_data_deinit(void);
 #endif
 
+/**
+ * @brief Wait for frequency hardware hop to complete
+ *
+ */
+void phy_wait_freq_hw_hop_done(void);
+
 #ifdef __cplusplus
 }
 #endif
