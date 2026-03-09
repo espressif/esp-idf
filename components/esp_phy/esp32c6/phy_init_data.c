@@ -161,14 +161,12 @@ static esp_err_t sleep_retention_wifi_bb_init(void *arg)
     #define N_REGS_WIFI_NRX()       (136)
     #define N_REGS_WIFI_BB()        (53)
     #define N_REGS_WIFI_BRX()       (39)
-    #define N_REGS_WIFI_FE_COEX()   (58)
 
     const static sleep_retention_entries_config_t bb_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, N_REGS_WIFI_AGC(),     0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, N_REGS_WIFI_TX(),      0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, N_REGS_WIFI_NRX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
         [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, N_REGS_WIFI_BB(),      0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, N_REGS_WIFI_FE_COEX(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
     };
     esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi BB");
@@ -201,6 +199,7 @@ void esp_phy_sleep_data_init(void)
         .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
     };
+    RETENTION_MODULE_BITMAP_SET(&init_param.depends, SLEEP_RETENTION_MODULE_PHY_FE);
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_WIFI_BB, &init_param);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "WiFi BB sleep retention init failed");
@@ -225,4 +224,39 @@ void esp_phy_sleep_data_deinit(void)
     }
 }
 
-#endif /* SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD */
+static esp_err_t sleep_retention_phy_fe_init(void *arg)
+{
+    #define N_REGS_FE_COEX()       (58)
+    #define REG_FECOEX_BASE         0x600a0000
+
+    const static sleep_retention_entries_config_t phy_fe_regs_retention[] = {
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(0), REG_FECOEX_BASE, REG_FECOEX_BASE, N_REGS_FE_COEX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
+    };
+    esp_err_t err = sleep_retention_entries_create(phy_fe_regs_retention, ARRAY_SIZE(phy_fe_regs_retention), 3, SLEEP_RETENTION_MODULE_PHY_FE);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "PHY FE");
+    ESP_LOGD(TAG, "PHY FE sleep retention initialization");
+    return ESP_OK;
+}
+
+void esp_phy_fe_sleep_data_init(void)
+{
+    sleep_retention_module_init_param_t init_param = {
+        .cbs     = { .create = { .handle = sleep_retention_phy_fe_init, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
+    };
+    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_PHY_FE, &init_param);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "PHY FE sleep retention init failed");
+        return;
+    }
+}
+
+void esp_phy_fe_sleep_data_deinit(void)
+{
+    esp_err_t err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_PHY_FE);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "PHY FE sleep retention deinit failed");
+        return;
+    }
+}
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD

@@ -257,7 +257,7 @@ void esp_phy_modem_rf_flag_update(void);
 
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
 /**
- * @brief PHY module sleep data (includes AGC, TX, NRX, BB, FE, etc..) initialize.
+ * @brief PHY module sleep data (includes AGC, TX, NRX, BB, etc..) initialize.
  */
 void esp_phy_sleep_data_init(void);
 
@@ -300,6 +300,19 @@ void phy_wait_freq_hw_hop_done(void);
  */
 void phy_track_temp_debug(uint8_t debug_flag, uint8_t track_temp);
 #endif
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
+/**
+ * @brief PHY module common memory (FE) initialize
+ *
+ */
+void esp_phy_fe_sleep_data_init(void);
+
+/**
+ * @brief PHY module common memory (FE) de-initialize
+ *
+ */
+void esp_phy_fe_sleep_data_deinit(void);
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
 
 #ifdef __cplusplus
 }
