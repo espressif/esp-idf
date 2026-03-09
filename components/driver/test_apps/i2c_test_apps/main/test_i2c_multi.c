@@ -224,6 +224,7 @@ static void i2c_slave_read_test_large_write_small_read(void)
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
 
+// Ignored because the slave driver v1 API (`i2c_slave_receive`) is mis-designed. Redesigned in v5.4.
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test (large write small read)", "[i2c][ignore][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_large_write_small_read, i2c_slave_read_test_large_write_small_read);
 
 #endif
@@ -790,6 +791,7 @@ static void uart_test_i2c_master_freq(void)
     }
 }
 
+// This test fails on v5.3 due to the I2C legacy driver bug. Fixed since v5.4.
 TEST_CASE_MULTIPLE_DEVICES("I2C master clock frequency test", "[i2c][ignore][test_env=generic_multi_device][timeout=150]", uart_test_i2c_master_freq, i2c_master_write_fsm_reset);
 
 #endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
