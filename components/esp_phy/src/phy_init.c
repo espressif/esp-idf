@@ -522,7 +522,9 @@ void esp_phy_modem_init(uint8_t modem)
     }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 #if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
-    sleep_modem_phy_init(modem);
+    if (sleep_modem_phy_init(modem) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to initialize sleep modem phy");
+    }
 #endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
     _lock_release(&s_phy_access_lock);
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
@@ -577,6 +579,7 @@ void esp_mac_bb_pd_mem_init(void)
     }
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
+    esp_phy_fe_sleep_data_init();
     esp_phy_sleep_data_init();
 #endif
 }
@@ -593,6 +596,7 @@ void esp_mac_bb_pd_mem_deinit(void)
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
     esp_phy_sleep_data_deinit();
+    esp_phy_fe_sleep_data_deinit();
 #endif
 }
 

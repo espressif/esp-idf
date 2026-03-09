@@ -577,7 +577,7 @@
 
 #define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
 
-#define SOC_PM_RETENTION_MODULE_NUM         (32)
+#define SOC_PM_RETENTION_MODULE_NUM         (40)
 
 #define SOC_PM_FLASH_KEEP_POWER_IN_LSLP     (1)  /*!<Keep flash on in light sleep to reduce wake latency and current leakage*/
 
