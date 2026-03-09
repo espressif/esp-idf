@@ -183,7 +183,7 @@ IRAM_ATTR static void i2c_slave_isr_handler(void *arg)
         if (slave_rw == I2C_SLAVE_READ_BY_MASTER) {
 #if !SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
             i2c_slave_request_event_data_t evt_data = {};
-            if (i2c_slave->request_callback) {
+            if (i2c_slave->request_callback && i2c_ll_slave_wait_ack(hal->dev)) {
                 pxHigherPriorityTaskWoken |= i2c_slave->request_callback(i2c_slave, &evt_data, i2c_slave->user_ctx);
             }
 #endif
