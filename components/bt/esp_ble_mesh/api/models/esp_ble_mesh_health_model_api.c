@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,10 @@
 #if CONFIG_BLE_MESH_HEALTH_CLI
 esp_err_t esp_ble_mesh_register_health_client_callback(esp_ble_mesh_health_client_cb_t callback)
 {
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_HEALTH_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);
@@ -29,7 +33,9 @@ esp_err_t esp_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_
         params->ctx.net_idx == ESP_BLE_MESH_KEY_UNUSED ||
         params->ctx.app_idx == ESP_BLE_MESH_KEY_UNUSED ||
         params->ctx.addr == ESP_BLE_MESH_ADDR_UNASSIGNED ||
-        (params->opcode == ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET && get_state == NULL)) {
+        ((params->opcode == ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET ||
+         params->opcode == ESP_BLE_MESH_MODEL_OP_ATTENTION_GET ||
+         params->opcode == ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_GET) && get_state == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 

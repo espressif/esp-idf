@@ -224,7 +224,7 @@ esp_err_t esp_ble_mesh_proxy_client_directed_proxy_set(uint8_t conn_handle, uint
 #endif /* CONFIG_BLE_MESH_DF_CLI */
 
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
-esp_err_t esp_ble_mesh_proxy_client_send_solic_pdu(uint8_t net_idx, uint16_t ssrc, uint16_t dst)
+esp_err_t esp_ble_mesh_proxy_client_send_solic_pdu(uint16_t net_idx, uint16_t ssrc, uint16_t dst)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};

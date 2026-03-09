@@ -36,7 +36,7 @@ void bt_mesh_update_rpl(struct bt_mesh_rpl *rpl, struct bt_mesh_net_rx *rx)
  */
 static bool rpl_check_and_store(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
 {
-    BT_DBG("%s, Src 0x%04x Seq %lu OldIV %u",
+    BT_DBG("%s, Src 0x%04x Seq 0x%06x OldIV %u",
            match ? "RPLOnlyCheck" : "RPLCheckAndStore",
            rx->ctx.addr, rx->seq, rx->old_iv);
 
