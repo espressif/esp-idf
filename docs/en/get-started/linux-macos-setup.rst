@@ -206,11 +206,13 @@ To prefer the Espressif download server when installing tools, use the following
 
 .. note::
     For users in China, we recommend using our download server located in China for faster download speed.
+    Alternatively, you can set as well the environment variable ``PIP_INDEX_URL`` to the China mirror of PyPI.
 
     .. code-block:: bash
 
         cd ~/esp/esp-idf
         export IDF_GITHUB_ASSETS="dl.espressif.cn/github_assets"
+        export PIP_INDEX_URL="https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
         ./install.sh
 
 Customizing the Tools Installation Path
