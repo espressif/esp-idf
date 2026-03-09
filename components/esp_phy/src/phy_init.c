@@ -456,6 +456,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
         // Update WiFi MAC time before disable WiFi/BT common peripheral clock
         phy_update_wifi_mac_time(true, esp_timer_get_time());
 #endif
+        phy_wait_freq_hw_hop_done();
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
         esp_phy_common_clock_disable();
     }
