@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -208,7 +208,7 @@ static void btc_ble_mesh_prov_copy_req_data(btc_msg_t *msg, void *p_dest, void *
 #if CONFIG_BLE_MESH_CERT_BASED_PROV
     case ESP_BLE_MESH_PROVISIONER_RECV_PROV_RECORDS_LIST_EVT:
         if (p_src_data->recv_provisioner_records_list.msg &&
-            p_src_data->recv_provisioner_records_list.len) {
+                p_src_data->recv_provisioner_records_list.len) {
             p_dest_data->recv_provisioner_records_list.msg = (uint8_t *)bt_mesh_calloc(p_src_data->recv_provisioner_records_list.len);
             if (!p_dest_data->recv_provisioner_records_list.msg) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
@@ -222,7 +222,7 @@ static void btc_ble_mesh_prov_copy_req_data(btc_msg_t *msg, void *p_dest, void *
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_RECORD_RECV_COMP_EVT:
         if (p_src_data->provisioner_prov_record_recv_comp.record &&
-            p_src_data->provisioner_prov_record_recv_comp.total_len) {
+                p_src_data->provisioner_prov_record_recv_comp.total_len) {
             p_dest_data->provisioner_prov_record_recv_comp.record = bt_mesh_calloc(p_src_data->provisioner_prov_record_recv_comp.total_len);
             if (!p_dest_data->provisioner_prov_record_recv_comp.record) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
@@ -263,10 +263,11 @@ static void btc_ble_mesh_prov_free_req_data(btc_msg_t *msg)
             bt_mesh_free(arg->provisioner_prov_record_recv_comp.record);
         }
         break;
-#else /* CONFIG_BLE_MESH_CERT_BASED_PROV */
-    ARG_UNUSED(arg);
 #endif /* CONFIG_BLE_MESH_CERT_BASED_PROV */
     default:
+#if !CONFIG_BLE_MESH_CERT_BASED_PROV
+        ARG_UNUSED(arg);
+#endif /* !CONFIG_BLE_MESH_CERT_BASED_PROV */
         break;
     }
 }
@@ -381,7 +382,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
         }
 
         if (p_src_data->model_operation.msg &&
-            p_src_data->model_operation.length) {
+                p_src_data->model_operation.length) {
             p_dest_data->model_operation.msg = (uint8_t *)bt_mesh_calloc(p_src_data->model_operation.length);
             if (!p_dest_data->model_operation.msg) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
@@ -412,7 +413,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
         }
 
         if (p_src_data->client_recv_publish_msg.msg &&
-            p_src_data->client_recv_publish_msg.length) {
+                p_src_data->client_recv_publish_msg.length) {
             p_dest_data->client_recv_publish_msg.msg = (uint8_t *)bt_mesh_calloc(p_src_data->client_recv_publish_msg.length);
             if (!p_dest_data->client_recv_publish_msg.msg) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
@@ -529,6 +530,14 @@ static void btc_ble_mesh_server_model_op_cb(struct bt_mesh_model *model,
                                             struct net_buf_simple *buf)
 {
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
+
+    /**
+     * model,ctx and buf is guaranteed to be non-NULL
+     * by bt_mesh_model_recv in access.c
+     */
+    ESP_ASSUME_NONNULL(model);
+    ESP_ASSUME_NONNULL(ctx);
+    ESP_ASSUME_NONNULL(buf);
 
     mesh_param.model_operation.opcode = ctx->recv_op;
     mesh_param.model_operation.model = (esp_ble_mesh_model_t *)model;
@@ -707,7 +716,7 @@ static int btc_ble_mesh_output_string_cb(const char *str)
 
     memset(mesh_param.node_prov_output_str.string, 0, sizeof(mesh_param.node_prov_output_str.string));
     strncpy(mesh_param.node_prov_output_str.string, str,
-            MIN(strlen(str), sizeof(mesh_param.node_prov_output_str.string)));
+            MIN(strlen(str), sizeof(mesh_param.node_prov_output_str.string) - 1));
 
     ret = btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT);
     return (ret == BT_STATUS_SUCCESS) ? 0 : -1;
@@ -797,7 +806,7 @@ static void btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb(const uint8_t addr[6
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
     if (addr == NULL || dev_uuid == NULL ||
-        (bearer != BLE_MESH_PROV_ADV && bearer != BLE_MESH_PROV_GATT)) {
+            (bearer != BLE_MESH_PROV_ADV && bearer != BLE_MESH_PROV_GATT)) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -850,6 +859,17 @@ static int btc_ble_mesh_provisioner_prov_output_cb(uint8_t method, bt_mesh_input
     mesh_param.provisioner_prov_output.size = size;
     mesh_param.provisioner_prov_output.link_idx = link_idx;
     if (act == BLE_MESH_ENTER_STRING) {
+        /**
+         * data is guaranteed to be non-NULL by `prov_auth` in `prov_pvnr.c`
+        */
+        ESP_ASSUME_NONNULL(data);
+        /**
+         * The size of the string should be less than or equal to 8 bytes,
+         * which is defined in the Bluetooth Mesh Profile Specification 5.4.1.3.
+         * Moreover, the size used here has been verified by the protocol stack
+         * and is legitimate, so it will definitely not cause a string out-of-bounds
+         * issue.
+         */
         strncpy(mesh_param.provisioner_prov_output.string, (char *)data, size);
     } else {
         mesh_param.provisioner_prov_output.number = sys_get_le32((uint8_t *)data);
@@ -1160,7 +1180,10 @@ int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
         return -EINVAL;
     }
 
-    __ASSERT(model && model->op, "Invalid parameter");
+    if (!model || !model->op) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
     esp_ble_mesh_model_op_t *op = model->op;
     while (op && op->opcode != 0) {
         op->param_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_client_model_op_cb;
@@ -2351,7 +2374,7 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
             model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
         }
         break;
-#endif /* CONFIG_BLE_MESH_DFD_SRV */
+#endif /* CONFIG_BLE_MESH_DFD_CLI */
     default:
         goto set_vnd_op;
     }
@@ -2390,6 +2413,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
                 esp_ble_mesh_model_t *sig_model = &elem->sig_models[j];
                 if (sig_model->op && BLE_MESH_MODEL_OP_LEN(sig_model->op->opcode) == 3) {
                     /* Opcode of SIG model must be 1 or 2 bytes. */
+                    xSemaphoreGive(arg->mesh_init.semaphore);
                     btc_ble_mesh_prov_register_complete_cb(-EINVAL);
                     return;
                 }
@@ -2400,6 +2424,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
                 esp_ble_mesh_model_t *vnd_model = &elem->vnd_models[k];
                 if (vnd_model->op && BLE_MESH_MODEL_OP_LEN(vnd_model->op->opcode) < 3) {
                     /* Opcode of vendor model must be 3 bytes. */
+                    xSemaphoreGive(arg->mesh_init.semaphore);
                     btc_ble_mesh_prov_register_complete_cb(-EINVAL);
                     return;
                 }
@@ -2588,9 +2613,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_PROVISIONER_PROV_DEV_WITH_ADDR_COMP_EVT;
         param.provisioner_prov_dev_with_addr_comp.err_code =
             bt_mesh_provisioner_prov_device_with_addr(arg->provisioner_prov_dev_with_addr.uuid,
-                arg->provisioner_prov_dev_with_addr.addr, arg->provisioner_prov_dev_with_addr.addr_type,
-                arg->provisioner_prov_dev_with_addr.bearer, arg->provisioner_prov_dev_with_addr.oob_info,
-                arg->provisioner_prov_dev_with_addr.unicast_addr);
+                                                      arg->provisioner_prov_dev_with_addr.addr, arg->provisioner_prov_dev_with_addr.addr_type,
+                                                      arg->provisioner_prov_dev_with_addr.bearer, arg->provisioner_prov_dev_with_addr.oob_info,
+                                                      arg->provisioner_prov_dev_with_addr.unicast_addr);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_DEV_DEL: {
         struct bt_mesh_device_delete del_dev = {0};
@@ -2608,9 +2633,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_PROVISIONER_SET_DEV_UUID_MATCH_COMP_EVT;
         param.provisioner_set_dev_uuid_match_comp.err_code =
             bt_mesh_provisioner_set_dev_uuid_match(arg->set_dev_uuid_match.offset,
-                    arg->set_dev_uuid_match.match_len,
-                    arg->set_dev_uuid_match.match_val,
-                    arg->set_dev_uuid_match.prov_after_match);
+                                                   arg->set_dev_uuid_match.match_len,
+                                                   arg->set_dev_uuid_match.match_val,
+                                                   arg->set_dev_uuid_match.prov_after_match);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_SET_PROV_DATA_INFO: {
         struct bt_mesh_prov_data_info info = {0};
@@ -2653,7 +2678,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT;
         param.provisioner_add_app_key_comp.err_code =
             bt_mesh_provisioner_local_app_key_add(app_key, arg->add_local_app_key.net_idx,
-                    &arg->add_local_app_key.app_idx);
+                                                  &arg->add_local_app_key.app_idx);
         param.provisioner_add_app_key_comp.net_idx = arg->add_local_app_key.net_idx;
         param.provisioner_add_app_key_comp.app_idx = arg->add_local_app_key.app_idx;
         break;
@@ -2664,7 +2689,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_update_app_key_comp.app_idx = arg->update_local_app_key.app_idx;
         param.provisioner_update_app_key_comp.err_code =
             bt_mesh_provisioner_local_app_key_update(arg->update_local_app_key.app_key,
-                    arg->update_local_app_key.net_idx, arg->update_local_app_key.app_idx);
+                                                     arg->update_local_app_key.net_idx, arg->update_local_app_key.app_idx);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP:
         act = ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT;
@@ -2674,9 +2699,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_bind_app_key_to_model_comp.model_id = arg->local_mod_app_bind.model_id;
         param.provisioner_bind_app_key_to_model_comp.err_code =
             bt_mesh_provisioner_bind_local_model_app_idx(arg->local_mod_app_bind.elem_addr,
-                    arg->local_mod_app_bind.model_id,
-                    arg->local_mod_app_bind.cid,
-                    arg->local_mod_app_bind.app_idx);
+                                                         arg->local_mod_app_bind.model_id,
+                                                         arg->local_mod_app_bind.cid,
+                                                         arg->local_mod_app_bind.app_idx);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY: {
         const uint8_t *net_key = NULL;
@@ -2695,14 +2720,14 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_update_net_key_comp.net_idx = arg->update_local_net_key.net_idx;
         param.provisioner_update_net_key_comp.err_code =
             bt_mesh_provisioner_local_net_key_update(arg->update_local_net_key.net_key,
-                arg->update_local_net_key.net_idx);
+                                                     arg->update_local_net_key.net_idx);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
         act = ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT;
         param.provisioner_store_node_comp_data_comp.addr = arg->store_node_comp_data.unicast_addr;
         param.provisioner_store_node_comp_data_comp.err_code =
             bt_mesh_provisioner_store_node_comp_data(arg->store_node_comp_data.unicast_addr,
-                arg->store_node_comp_data.data, arg->store_node_comp_data.length);
+                                                     arg->store_node_comp_data.data, arg->store_node_comp_data.length);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID:
         act = ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT;
@@ -2794,11 +2819,11 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 #if CONFIG_BLE_MESH_CERT_BASED_PROV
-    extern int bt_mesh_provisioner_send_prov_records_get(uint16_t link_idx);
-    extern int bt_mesh_provisioner_send_prov_record_req(uint16_t link_idx, uint16_t record_id,
-                                                        uint16_t frag_offset, uint16_t max_size);
-    extern int bt_mesh_provisioner_send_prov_invite(uint16_t link_idx);
-    extern int bt_mesh_provisioner_send_link_close(uint16_t link_idx);
+        extern int bt_mesh_provisioner_send_prov_records_get(uint16_t link_idx);
+        extern int bt_mesh_provisioner_send_prov_record_req(uint16_t link_idx, uint16_t record_id,
+                                                            uint16_t frag_offset, uint16_t max_size);
+        extern int bt_mesh_provisioner_send_prov_invite(uint16_t link_idx);
+        extern int bt_mesh_provisioner_send_link_close(uint16_t link_idx);
 
     case BTC_BLE_MESH_ACT_PROVISIONER_SEND_PROV_RECORDS_GET:
         act = ESP_BLE_MESH_PROVISIONER_SEND_PROV_RECORDS_GET_EVT;
@@ -2837,13 +2862,13 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT;
         param.set_fast_prov_info_comp.status_unicast =
             bt_mesh_set_fast_prov_unicast_addr_range(arg->set_fast_prov_info.unicast_min,
-                    arg->set_fast_prov_info.unicast_max);
+                                                     arg->set_fast_prov_info.unicast_max);
         param.set_fast_prov_info_comp.status_net_idx =
             bt_mesh_set_fast_prov_net_idx(arg->set_fast_prov_info.net_idx);
         param.set_fast_prov_info_comp.status_match =
             bt_mesh_provisioner_set_dev_uuid_match(arg->set_fast_prov_info.offset,
-                    arg->set_fast_prov_info.match_len,
-                    arg->set_fast_prov_info.match_val, false);
+                                                   arg->set_fast_prov_info.match_len,
+                                                   arg->set_fast_prov_info.match_val, false);
         break;
     case BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION:
         act = ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT;
@@ -3039,11 +3064,18 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND: {
-        assert(arg->model_send.model);
-        assert(arg->model_send.ctx);
-        if (arg->model_send.length) {
-            assert(arg->model_send.data);
-        }
+        /**
+         * model,ctx and data is guaranteed to be non-NULL
+         * by esp_ble_mesh_server_model_send_msg in esp_ble_mesh_networking_api.c
+        */
+        ESP_ASSUME_NONNULL(arg->model_send.model);
+        ESP_ASSUME_NONNULL(arg->model_send.ctx);
+        ESP_ASSUME_NONNULL(arg->model_send.data);
+        /**
+         * length is guaranteed to be greater than 0 (opcode length + payload length)
+         * by ble_mesh_model_send_msg in esp_ble_mesh_networking_api.c
+        */
+        ESP_ASSUME_NONNULL(arg->model_send.length);
 
         /* arg->model_send.length contains opcode & payload, plus extra 4-bytes TransMIC */
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
@@ -3109,7 +3141,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
                   (struct bt_mesh_model *)arg->model_update_state.model, arg->model_update_state.type,
                   (bt_mesh_server_state_value_t *)arg->model_update_state.value);
         btc_ble_mesh_server_model_update_state_comp_cb(arg->model_update_state.model,
-                arg->model_update_state.type, err);
+                                                       arg->model_update_state.type, err);
         break;
 #endif /* CONFIG_BLE_MESH_SERVER_MODEL */
     default:

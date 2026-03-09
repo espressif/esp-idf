@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,6 +166,7 @@ static void btc_ble_mesh_brc_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_BRC_CLIENT_SEND_COMP_EVT:
     case ESP_BLE_MESH_BRC_CLIENT_SEND_TIMEOUT_EVT:
         break;
@@ -202,6 +203,7 @@ static void btc_ble_mesh_brc_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_BRC_CLIENT_SEND_COMP_EVT:
     case ESP_BLE_MESH_BRC_CLIENT_SEND_TIMEOUT_EVT:
         if (arg->params) {
@@ -291,8 +293,8 @@ void btc_ble_mesh_brc_client_recv_pub_cb(uint32_t opcode,
     }
 
     bt_mesh_brc_client_cb_evt_to_btc(opcode,
-        ESP_BLE_MESH_BRC_CLIENT_RECV_PUB_EVT,
-        model, ctx, buf->data, buf->len);
+                                     ESP_BLE_MESH_BRC_CLIENT_RECV_PUB_EVT,
+                                     model, ctx, buf->data, buf->len);
 }
 
 static int btc_ble_mesh_brc_client_send(esp_ble_mesh_client_common_param_t *params,
@@ -360,7 +362,7 @@ void btc_ble_mesh_brc_client_call_handler(btc_msg_t *msg)
         cb.send.err_code = btc_ble_mesh_brc_client_send(arg->brc_send.params,
                                                         arg->brc_send.msg);
         btc_ble_mesh_brc_client_cb(&cb,
-            ESP_BLE_MESH_BRC_CLIENT_SEND_COMP_EVT);
+                                   ESP_BLE_MESH_BRC_CLIENT_SEND_COMP_EVT);
         break;
     default:
         break;
