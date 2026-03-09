@@ -709,7 +709,18 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
 #endif
         extern portMUX_TYPE s_time_update_lock;
         portENTER_CRITICAL_SAFE(&s_time_update_lock);
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+        /* On ESP32-C5 ECO1 and later: before switching the main system clock
+        * between 240 MHz and 160 MHz, clear BIT(31) of PCR_FPGA_DEBUG_REG.
+        * After the switch is completed, set BIT(31) back to 1.
+        * This operation fixes WiFi packet TX/RX abnormalities and missed interrupts.
+        * See WIFI-7270 for details.*/
+        rtc_clk_root_clk_switch_protect(&new_config, &old_config, true);
+#endif
         rtc_clk_cpu_freq_set_config_fast(&new_config);
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+        rtc_clk_root_clk_switch_protect(&new_config, &old_config, false);
+#endif
         portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(new_config.source_freq_mhz, new_config.freq_mhz);
