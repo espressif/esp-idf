@@ -153,6 +153,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #endif
         phy_close_rf();
         phy_xpd_tsens();
+        phy_wait_freq_hw_hop_done();
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_disable(PERIPH_PHY_MODULE);
 #endif
