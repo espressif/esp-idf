@@ -337,6 +337,7 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 #endif
 }
 
+#if !CONFIG_SPI_FLASH_ROM_IMPL
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
@@ -358,6 +359,7 @@ bool IRAM_ATTR spi_flash_cache_enabled(void)
 {
     return cache_hal_is_cache_enabled(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32S2
 IRAM_ATTR void esp_config_instruction_cache_mode(void)
