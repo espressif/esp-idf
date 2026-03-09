@@ -240,6 +240,13 @@ void phy_wakeup_from_modem_state_extra_init(void);
 void esp_phy_modem_rf_flag_update(void);
 #endif
 
+
+/**
+ * @brief Wait for frequency hardware hop to complete
+ *
+ */
+void phy_wait_freq_hw_hop_done(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -323,3 +323,9 @@ void phy_wakeup_from_modem_state_extra_init(void)
     temperature_sensor_ll_enable(true);
 }
 #endif
+
+__attribute__((weak)) void phy_wait_freq_hw_hop_done(void)
+{
+    ESP_LOGD(TAG, "phy_wait_freq_hw_hop_done is not implemented");
+    return;
+}
