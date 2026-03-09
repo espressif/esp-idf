@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -527,7 +527,7 @@ const char *bt_mesh_ext_hex(const void *buf, size_t len)
 }
 
 /* Crypto */
-bool bt_mesh_ext_s1(const char *m, uint8_t salt[16])
+int bt_mesh_ext_s1(const char *m, uint8_t salt[16])
 {
     return bt_mesh_s1(m, salt);
 }
@@ -866,18 +866,21 @@ void *bt_mesh_ext_model_get_pub(void *model)
 
 uint16_t bt_mesh_ext_model_get_pub_addr(void *model)
 {
-    return MODEL(model)->pub->addr;
+    struct bt_mesh_model_pub *pub = MODEL(model)->pub;
+    return pub ? pub->addr : BLE_MESH_ADDR_UNASSIGNED;
 }
 
 uint16_t bt_mesh_ext_model_get_pub_key(void *model)
 {
-    return MODEL(model)->pub->key;
+    struct bt_mesh_model_pub *pub = MODEL(model)->pub;
+    return pub ? pub->key : 0;
 }
 
 uint8_t bt_mesh_ext_model_get_pub_directed_pub_policy(void *model)
 {
 #if CONFIG_BLE_MESH_DF_SRV
-    return MODEL(model)->pub->directed_pub_policy;
+    struct bt_mesh_model_pub *pub = MODEL(model)->pub;
+    return pub ? pub->directed_pub_policy : 0;
 #else
     assert(0);
     return 0;
@@ -887,7 +890,10 @@ uint8_t bt_mesh_ext_model_get_pub_directed_pub_policy(void *model)
 void bt_mesh_ext_model_set_pub_directed_pub_policy(void *model, uint8_t directed_pub_policy)
 {
 #if CONFIG_BLE_MESH_DF_SRV
-    MODEL(model)->pub->directed_pub_policy = directed_pub_policy;
+    struct bt_mesh_model_pub *pub = MODEL(model)->pub;
+    if (pub) {
+        pub->directed_pub_policy = directed_pub_policy;
+    }
 #else
     assert(0);
 #endif /* CONFIG_BLE_MESH_DF_SRV */
@@ -895,7 +901,8 @@ void bt_mesh_ext_model_set_pub_directed_pub_policy(void *model, uint8_t directed
 
 void *bt_mesh_ext_model_get_pub_msg(void *model)
 {
-    return MODEL(model)->pub->msg;
+    struct bt_mesh_model_pub *pub = MODEL(model)->pub;
+    return pub ? pub->msg : NULL;
 }
 
 uint8_t bt_mesh_ext_model_get_keys_count(void *model)
@@ -1037,7 +1044,7 @@ bool bt_mesh_ext_model_is_opcode_belongs(void *models, uint8_t model_count, uint
     struct bt_mesh_model *model = NULL;
 
     for (size_t i = 0; i < model_count; i++) {
-        model = models + i;
+        model = &((struct bt_mesh_model *)models)[i];
         for (op = model->op; op->func; op++) {
             if (op->opcode == opcode) {
                 return true;
@@ -1127,6 +1134,9 @@ int bt_mesh_ext_net_pdu_decrypt(void *sub, const uint8_t *enc,
 
 uint16_t bt_mesh_ext_net_get_sub_net_idx(uint8_t index)
 {
+    if (index >= ARRAY_SIZE(bt_mesh.sub)) {
+        return BLE_MESH_KEY_UNUSED;
+    }
     return bt_mesh.sub[index].net_idx;
 }
 
@@ -1137,6 +1147,9 @@ uint8_t bt_mesh_ext_net_get_sub_count(void)
 
 void *bt_mesh_ext_net_get_sub(uint8_t index)
 {
+    if (index >= ARRAY_SIZE(bt_mesh.sub)) {
+        return NULL;
+    }
     return &bt_mesh.sub[index];
 }
 
@@ -1167,11 +1180,17 @@ uint16_t bt_mesh_ext_net_get_rpl_count(void)
 
 uint16_t bt_mesh_ext_net_get_rpl_src(uint16_t index)
 {
+    if (index >= ARRAY_SIZE(bt_mesh.rpl)) {
+        return BLE_MESH_ADDR_UNASSIGNED;
+    }
     return bt_mesh.rpl[index].src;
 }
 
 void bt_mesh_ext_net_reset_rpl(uint16_t index)
 {
+    if (index >= ARRAY_SIZE(bt_mesh.rpl)) {
+        return;
+    }
     memset(&bt_mesh.rpl[index], 0, sizeof(bt_mesh.rpl[index]));
 }
 
@@ -1271,13 +1290,13 @@ uint8_t bt_mesh_ext_default_ttl_get(void)
 void bt_mesh_ext_key_idx_pack(struct net_buf_simple *buf,
                               uint16_t idx1, uint16_t idx2)
 {
-    return key_idx_pack(buf, idx1, idx2);
+    key_idx_pack(buf, idx1, idx2);
 }
 
 void bt_mesh_ext_key_idx_unpack(struct net_buf_simple *buf,
                                 uint16_t *idx1, uint16_t *idx2)
 {
-    return key_idx_unpack(buf, idx1, idx2);
+    key_idx_unpack(buf, idx1, idx2);
 }
 
 /* Provisioning */
@@ -1729,6 +1748,9 @@ void bt_mesh_ext_prov_link_free_pb_remote_data(void *link)
 uint8_t *bt_mesh_ext_prov_link_get_record(void *link, uint16_t id)
 {
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_CERT_BASED_PROV)
+    if (id >= BLE_MESH_REC_MAX_ID) {
+        return NULL;
+    }
     return LINK(link)->records[id];
 #else
     assert(0);
@@ -1741,6 +1763,9 @@ uint8_t *bt_mesh_ext_prov_link_alloc_record(void *link, uint16_t id, uint16_t le
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_CERT_BASED_PROV)
     if (id >= BLE_MESH_REC_MAX_ID) {
         return NULL;
+    }
+    if (LINK(link)->records[id] != NULL) {
+        return NULL; /* Slot already allocated, caller should free first */
     }
     LINK(link)->records[id] = bt_mesh_calloc(len * sizeof(uint8_t));
     return LINK(link)->records[id];
@@ -1930,6 +1955,9 @@ uint16_t bt_mesh_ext_proxy_server_get_filter_size(void *client)
 uint16_t bt_mesh_ext_proxy_server_get_filter_addr(void *client, uint8_t index)
 {
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    if (index >= ARRAY_SIZE(PROXY_CLI(client)->filter)) {
+        return 0;
+    }
     return PROXY_CLI(client)->filter[index].addr;
 #else
     assert(0);
@@ -1940,6 +1968,9 @@ uint16_t bt_mesh_ext_proxy_server_get_filter_addr(void *client, uint8_t index)
 bool bt_mesh_ext_proxy_server_filter_is_client(void *client, uint8_t index)
 {
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    if (index >= ARRAY_SIZE(PROXY_CLI(client)->filter)) {
+        return false;
+    }
     return PROXY_CLI(client)->filter[index].proxy_client;
 #else
     assert(0);
@@ -2117,7 +2148,7 @@ int bt_mesh_ext_rpr_srv_set_waiting_prov_link(void* link, bt_mesh_addr_t *addr)
 #else
     assert(0);
     return 0;
-#endif /*  CONFIG_BLE_MESH_PB_GATT && CONFIG_BLE_MESH_RPR_SRV) */
+#endif /* (CONFIG_BLE_MESH_PB_GATT && CONFIG_BLE_MESH_RPR_SRV) */
 }
 
 /* Friend */
@@ -4192,7 +4223,7 @@ static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
     .config_ble_mesh_prb_cli                        = IS_ENABLED(CONFIG_BLE_MESH_PRB_CLI),
     .config_ble_mesh_prb_srv                        = IS_ENABLED(CONFIG_BLE_MESH_PRB_SRV),
     .config_ble_mesh_private_beacon                 = (IS_ENABLED(CONFIG_BLE_MESH_PRB_SRV) | \
-                                                       IS_ENABLED(CONFIG_BLE_MESH_PRB_SRV)),
+                                                       IS_ENABLED(CONFIG_BLE_MESH_PRB_CLI)),
     .config_ble_mesh_rpr_cli                        = IS_ENABLED(CONFIG_BLE_MESH_RPR_CLI),
     .config_ble_mesh_rpr_srv                        = IS_ENABLED(CONFIG_BLE_MESH_RPR_SRV),
     .config_ble_mesh_rpr_srv_active_scan            = IS_ENABLED(CONFIG_BLE_MESH_RPR_SRV_ACTIVE_SCAN),
@@ -5060,7 +5091,7 @@ void ble_mesh_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint
  */
 void bt_mesh_lib_ext_func_dummy_call(void)
 {
-    (void *)bt_hex(NULL, 0);
+    (void)bt_hex(NULL, 0);
 }
 
 int bt_mesh_v11_ext_init(void)

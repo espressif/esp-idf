@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,6 +103,14 @@ static const struct {
 
 bool bt_mesh_prov_pdu_check(uint8_t type, uint16_t length, uint8_t *reason)
 {
+    if (type >= ARRAY_SIZE(prov_pdu)) {
+        BT_ERR("Invalid PDU type 0x%02x", type);
+        if (reason) {
+            *reason = PROV_ERR_NVAL_PDU;
+        }
+        return false;
+    }
+
     if (prov_pdu[type].length != length) {
 #if CONFIG_BLE_MESH_CERT_BASED_PROV
         if ((type == PROV_REC_LIST || type == PROV_REC_RSP) &&
@@ -224,12 +232,21 @@ bool bt_mesh_gen_prov_start(struct bt_mesh_prov_link *link,
         return false;
     }
 
-    if (START_LAST_SEG(rx->gpc) > 0 && link->rx.buf->len <= 20) {
-        BT_ERR("Too small total length for multi-segment PDU");
-        if (close) {
-            *close = true;
+    if (START_LAST_SEG(rx->gpc) > 0) {
+        /* For multi-segment PDUs, validate that total length is consistent
+         * with the claimed segment count to prevent underflow in
+         * bt_mesh_gen_prov_cont() when computing expect_len.
+         * Minimum length = first segment (20) + (last_seg - 1) * full continuation (23) + 1
+         */
+        uint16_t min_len = 20 + 23 * (START_LAST_SEG(rx->gpc) - 1) + 1;
+        if (link->rx.buf->len < min_len) {
+            BT_ERR("Total length %u too small for %u segments (min %u)",
+                   link->rx.buf->len, START_LAST_SEG(rx->gpc) + 1, min_len);
+            if (close) {
+                *close = true;
+            }
+            return false;
         }
-        return false;
     }
 
     link->rx.seg = (1 << (START_LAST_SEG(rx->gpc) + 1)) - 1;
@@ -375,7 +392,7 @@ static void free_segments(struct bt_mesh_prov_link *link)
         struct net_buf *buf = link->tx.buf[i];
 
         if (!buf) {
-            break;
+            continue;
         }
 
         link->tx.buf[i] = NULL;
@@ -536,6 +553,8 @@ static void send_reliable(struct bt_mesh_prov_link *link, uint8_t xmit)
 {
     link->tx.start = k_uptime_get();
 
+    bt_mesh_mutex_lock(&link->buf_lock);
+
     for (size_t i = 0; i < ARRAY_SIZE(link->tx.buf); i++) {
         struct net_buf *buf = link->tx.buf[i];
 
@@ -549,6 +568,8 @@ static void send_reliable(struct bt_mesh_prov_link *link, uint8_t xmit)
             bt_mesh_adv_send(buf, xmit, &buf_sent_cb, link);
         }
     }
+
+    bt_mesh_mutex_unlock(&link->buf_lock);
 }
 
 int bt_mesh_prov_bearer_ctl_send(struct bt_mesh_prov_link *link, uint8_t op,
@@ -737,6 +758,7 @@ int bt_mesh_prov_send(struct bt_mesh_prov_link *link, struct net_buf_simple *buf
     return bt_mesh_prov_send_adv(link, buf);
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 
-    /* Shall not reach here. */
-    return 0;
+    /* Shall not reach here - no provisioning bearer is enabled */
+    BT_ERR("No provisioning bearer available");
+    return -ENOTSUP;
 }
