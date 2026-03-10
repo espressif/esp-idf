@@ -1177,6 +1177,7 @@ esp_err_t ieee802154_energy_detect(uint32_t duration)
     stop_current_operation();
 
     ieee802154_pib_update();
+    IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX);
 
     start_ed(duration);
     ieee802154_set_state(IEEE802154_STATE_ED);
@@ -1193,6 +1194,7 @@ esp_err_t ieee802154_cca(void)
     stop_current_operation();
 
     ieee802154_pib_update();
+    IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX);
 
     start_ed(CCA_DETECTION_TIME);
     ieee802154_set_state(IEEE802154_STATE_CCA);
