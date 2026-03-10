@@ -5,4 +5,21 @@ menu "SD Protocol Layer Configuration"
         help
             Enable SDIO support.
             Disabling this will skip SDIO-specific initialization steps
+    config SD_UNALIGNED_MULTI_BLOCK_RW_MAX_CHUNK_SIZE
+        int "The maximum size of the chunks a SDMMC read/write to/from an unaligned buffer will be split into"
+        range 1 99999
+        default 1
+        help
+            The maximum size in blocks of the chunks a SDMMC read/write with an unaligned buffer will be split into.
+            The SDMMC driver requires aligned buffers for DMA access. If unaligned buffers are passed and the host's
+            dma_aligned_buffer is NULL, an aligned temporary buffer must be allocated for the actual transfer.
+            This option defines the maximum size for the temporary buffer, which equals this option's value multiplied
+            with the block size (typically 512 Bytes). A value of 16 therefore leads to up to 8192 bytes being
+            allocated on the heap for each transfer. The allocated buffer will never be larger than the number of bytes
+            to transfer in total.
+            It also decides whether single (value == 1) or multi block read/write (value > 1) commands are used.
+            With the default value of 1 single-block read/write commands will be used with the allocated buffer size
+            matching the block size.
+            You should keep this option at 1 if your card or configuration doesn't support the read or write multiple
+            blocks commands (CMD18 & CMD25).
 endmenu
