@@ -57,6 +57,7 @@ function(__init_kconfig)
     idf_build_set_property(SDKCONFIG "${sdkconfig}")
     idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
     idf_build_set_property(SDKCONFIG_DEFAULTS "${sdkconfig_defaults_checked}")
+    idf_build_set_property(GENERATE_SDKCONFIG 1)
 
     # Setup ESP-IDF root Kconfig and sdkconfig.rename files.
     idf_build_set_property(__ROOT_KCONFIG "${idf_path}/Kconfig")
@@ -643,8 +644,12 @@ function(__generate_kconfig_outputs)
         --output header "${sdkconfig_header}"
         --output cmake "${sdkconfig_cmake}"
         --output json "${sdkconfig_json}"
-        --output config "${sdkconfig}"
     )
+
+    idf_build_get_property(generate_sdkconfig GENERATE_SDKCONFIG)
+    if(generate_sdkconfig)
+        list(APPEND kconfgen_outputs_cmd --output config "${sdkconfig}")
+    endif()
 
     idf_build_set_property(__KCONFGEN_OUTPUTS_CMD "${kconfgen_outputs_cmd}")
 
