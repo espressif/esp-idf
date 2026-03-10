@@ -73,6 +73,9 @@
 #include "hal/touch_sens_hal.h"
 #endif
 #include "hal/mspi_ll.h"
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+#include "hal/lp_aon_hal.h"
+#endif
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
@@ -2362,6 +2365,15 @@ uint32_t esp_sleep_get_wakeup_causes(void)
     uint32_t wakeup_cause_raw = pmu_ll_hp_get_wakeup_cause(&PMU);
 #else
     uint32_t wakeup_cause_raw = rtc_cntl_ll_get_wakeup_cause();
+#endif
+
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+    /* LP store register to read wakeup cause saved by LP core.
+     * Must match the register used in lp_core_utils.c */
+    uint32_t lp_core_wakeup_cause_status0 = lp_aon_hal_load_wakeup_cause();
+    if ((wakeup_cause_raw == 0) && (lp_core_wakeup_cause_status0 != 0)) {
+        wakeup_cause_raw = lp_core_wakeup_cause_status0;
+    }
 #endif
 
     if (wakeup_cause_raw & RTC_TIMER_TRIG_EN) {

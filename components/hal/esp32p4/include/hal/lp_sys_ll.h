@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +81,25 @@ FORCE_INLINE_ATTR void lp_sys_ll_set_lp_mem_lowpower_mode(uint32_t mode)
     LP_SYS.lp_mem_aux_ctrl.lp_mem_lowpower_mode = mode;
 }
 #endif
+
+/**
+ * @brief Set the wakeup cause stored by LP core
+ * @param wakeup_cause  The wakeup cause in PMU register
+ */
+static inline void lp_sys_ll_store_wakeup_cause(uint32_t wakeup_cause)
+{
+    REG_WRITE(RTC_LP_CORE_STORE_WAKEUP_REG, wakeup_cause);
+}
+
+/**
+ * @brief Get the wakeup cause stored by LP core
+ * @return  The wakeup cause cleared before LP core sleep
+ */
+static inline uint32_t lp_sys_ll_load_wakeup_cause(void)
+{
+    return REG_READ(RTC_LP_CORE_STORE_WAKEUP_REG);
+}
+
 #ifdef __cplusplus
 }
 #endif
