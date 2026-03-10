@@ -14,5 +14,6 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='no runner')
 def test_dsi_lcd(dut: Dut) -> None:
     dut.run_all_single_board_cases()
