@@ -4013,7 +4013,7 @@ FRESULT f_open (
 #endif
     }
 
-#if FF_USE_DYN_BUFFER
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
 fail:
 #endif
 
