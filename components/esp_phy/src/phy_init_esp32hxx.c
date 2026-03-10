@@ -9,9 +9,16 @@
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
 #include "esp_timer.h"
+#include "esp_private/periph_ctrl.h"
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
 #include "esp_private/esp_modem_clock.h"
+#endif
+#include "phy_init_deps.h"
+
+#ifndef PHY_INIT_MODEM_CLOCK_REQUIRED_BITS
+#warning "PHY_INIT_MODEM_CLOCK_REQUIRED_BITS not defined; using default value 0"
+#define PHY_INIT_MODEM_CLOCK_REQUIRED_BITS 0
 #endif
 
 #define PHY_ENABLE_VERSION_PRINT 1
@@ -106,6 +113,8 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_enable(PERIPH_PHY_MODULE);
 #endif
+        phy_module_enable();
+        assert(phy_module_has_clock_bits(PHY_INIT_MODEM_CLOCK_REQUIRED_BITS));
         if (!s_phy_is_enabled) {
             register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
             phy_version_print();
@@ -116,6 +125,7 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_init();
 #endif
+        phy_module_disable();
     }
     phy_set_modem_flag(modem);
     // Immediately track pll when phy enabled.
