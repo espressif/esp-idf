@@ -2,7 +2,7 @@ idf_build_get_property(idf_path IDF_PATH)
 
 set(priv_requires bootloader_support esp_driver_gptimer esp_tee esp_timer mbedtls spi_flash)
 # Test FW related
-list(APPEND priv_requires nvs_flash test_utils unity)
+list(APPEND priv_requires console nvs_flash test_utils unity)
 # TEE related
 list(APPEND priv_requires tee_sec_storage tee_ota_ops test_sec_srv)
 
@@ -13,7 +13,8 @@ list(APPEND srcs "test_esp_tee_ctx_switch.c"
                  "test_esp_tee_panic.c"
                  "test_esp_tee_sec_stg.c"
                  "test_esp_tee_ota.c"
-                 "test_esp_tee_flash_prot.c")
+                 "test_esp_tee_flash_prot.c"
+                 "test_esp_tee_fuzzer.c")
 
 if(CONFIG_SECURE_TEE_ATTESTATION)
     list(APPEND srcs "test_esp_tee_att.c")

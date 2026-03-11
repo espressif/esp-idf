@@ -1,9 +1,14 @@
 # SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import logging
+import random
 import re
 from enum import Enum
+from pathlib import Path
 
+import pexpect
 import pytest
+import yaml
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
 from tee_exception_test_map import TEE_EXCEPTION_TEST_MAP
@@ -506,3 +511,62 @@ def test_esp_tee_attestation(dut: IdfDut) -> None:
 
     # start test
     dut.run_all_single_board_cases(group='attestation')
+
+
+# ---------------- TEE Fuzzing tests ----------------
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['tee_fuzzing'], indirect=['config'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
+def test_esp_tee_fuzzer(dut: IdfDut) -> None:
+    # Panics are expected during fuzzing; skip GDB decode on teardown
+    dut.skip_decode_panic = True
+
+    seed = random.randrange(2**32)
+    logging.info('Fuzzer seed: 0x%08x', seed)
+    rng = random.Random(seed)
+
+    # Number of random inputs to send per service
+    FUZZ_ITERATIONS_PER_SERVICE = 4
+
+    # Build {service_id: arg_count} map from the target's YAML service table
+    yml_path = Path(__file__).parent.joinpath('..', '..', 'scripts', dut.target, 'sec_srv_tbl_default.yml').resolve()
+    with open(yml_path) as f:
+        services = {
+            entry['id']: entry['args'] for family in yaml.safe_load(f)['secure_services'] for entry in family['entries']
+        }
+
+    pat_ret = re.compile(r'Service call returned (0x[0-9A-Fa-f]+)')
+    pat_rst = re.compile(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)')
+    device_rebooted = True  # True on first entry since device boots fresh
+
+    for srv_id, num_args in sorted(services.items()):
+        for iter_idx in range(FUZZ_ITERATIONS_PER_SERVICE):
+            # Re-enter the console menu only after a reboot
+            if device_rebooted:
+                dut.expect_exact('Press ENTER to see the list of tests')
+                dut.write('[fuzzing]')
+                dut.expect('esp>')
+                device_rebooted = False
+
+            # Always pass at least 1 arg; extra trailing args are ignored by the dispatcher
+            n = max(num_args, 1)
+            arg_str = ';'.join(f'0x{rng.getrandbits(32):08x}' for _ in range(n))
+            dut.write(f'fuzz -c {num_args} -i {srv_id} {arg_str}')
+
+            try:
+                # Service call either returns gracefully or crashes the device
+                match = dut.expect([pat_ret, pat_rst], timeout=3)
+            except pexpect.TIMEOUT:
+                logging.warning('Device hung, hard-resetting (srv_id: %d, iter: %d)', srv_id, iter_idx)
+                dut.serial.hard_reset()
+                device_rebooted = True
+                continue
+
+            if pat_rst.match(match.group(0).decode()):
+                # Device crashed and rebooted — verify it was a software reset
+                device_rebooted = True
+                rst_rsn = match.group(2).decode()
+                if rst_rsn not in ('LP_SW_HPSYS', 'RTC_SW_HPSYS'):
+                    logging.warning('Unexpected reset reason: "%s" (srv_id: %d, iter: %d)', rst_rsn, srv_id, iter_idx)
