@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
  * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
-=======
- * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
->>>>>>> 0770fb4638e... refactor(examples/bluedroid): Replace hardcoded ADV type values with macros
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
