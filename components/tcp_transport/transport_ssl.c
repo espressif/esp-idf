@@ -502,7 +502,7 @@ void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
 }
 #endif
 
-#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE) || defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE)
 void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*crt_bundle_attach)(void *conf)))
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
