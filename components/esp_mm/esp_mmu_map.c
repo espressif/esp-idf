@@ -279,6 +279,7 @@ esp_err_t esp_mmu_map_get_max_consecutive_free_block_size(mmu_mem_caps_t caps, m
     ESP_RETURN_ON_ERROR(s_mem_caps_check(caps), TAG, "invalid caps");
     *out_len = 0;
 
+    _lock_acquire(&s_mmu_ctx.mutex);
     size_t max = 0;
 
     for (int i = 0; i < s_mmu_ctx.num_regions; i++) {
@@ -290,6 +291,7 @@ esp_err_t esp_mmu_map_get_max_consecutive_free_block_size(mmu_mem_caps_t caps, m
     }
 
     *out_len = max;
+    _lock_release(&s_mmu_ctx.mutex);
 
     return ESP_OK;
 }
