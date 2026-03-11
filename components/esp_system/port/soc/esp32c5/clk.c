@@ -20,7 +20,6 @@
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
 #include "esp_cpu.h"
-#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
 #include "hal/clk_tree_ll.h"
 #if SOC_MODEM_CLOCK_SUPPORTED
