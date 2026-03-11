@@ -24,6 +24,9 @@ CORE:  10: init_show_cpu_freq in components/esp_system/startup_funcs.c on BIT(0)
 CORE:  20: init_show_app_info in components/esp_app_format/esp_app_desc.c on BIT(0)
 CORE:  21: init_efuse_show_app_info in components/efuse/src/esp_efuse_startup.c on BIT(0)
 
+# Set the standard stream to non blocking and register the default vfs
+CORE:  99: init_vfs_linux_coop in components/vfs/vfs_linux_default_coop.c on BIT(0)
+
 # Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
 # If the heap allocator is initialized first, it will put free memory linked list items into
 # memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,

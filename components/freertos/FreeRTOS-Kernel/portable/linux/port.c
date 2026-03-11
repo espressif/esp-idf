@@ -13,6 +13,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "utils/wait_for_event.h"
+#include "esp_private/freertos_linux_coop_syscalls.h"
 #include "utils/linux_port_utils.h"
 
 #define FREERTOS_SIM_TICK_PERIOD_US (1000000 / CONFIG_FREERTOS_HZ)

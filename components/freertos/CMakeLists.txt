@@ -104,16 +104,6 @@ list(APPEND srcs
     "esp_additions/idf_additions_event_groups.c"
     "esp_additions/idf_additions.c")
 
-if(arch STREQUAL "linux")
-    # Check if we need to address the FreeRTOS EINTR coexistence with linux system calls if we're building without
-    # lwIP enabled, we need to use linux system select which will receive EINTR event on every FreeRTOS interrupt, we
-    # workaround this problem by wrapping select() to bypass and silence the EINTR events
-    set(BYPASS_EINTR_ISSUE 0)
-    if(NOT CONFIG_LWIP_ENABLE)
-        set(BYPASS_EINTR_ISSUE 1)
-    endif()
-endif()
-
 # ------------------------------------------------ Set Public Includes -------------------------------------------------
 
 # Add common public include directories
@@ -186,42 +176,9 @@ idf_component_register(SRCS ${srcs}
 if(arch STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
     target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)
-    if(BYPASS_EINTR_ISSUE)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
-    endif()
-
-    set(WRAP_FUNCTIONS
-        read
-        write
-        pread
-        pwrite
-        readv
-        writev
-        recv
-        send
-        recvfrom
-        sendto
-        recvmsg
-        sendmsg
-        connect
-        accept
-        close
-        select
-        pselect
-        poll
-        sleep
-        usleep
-        open
-        socket
-        socketpair
-        pipe
-        pipe2
-        dup
-        dup2)
-
-    foreach(wrap ${WRAP_FUNCTIONS})
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-    endforeach()
+    # dl is needed for dlsym(RTLD_NEXT, ...) used by the cooperative syscall
+    # interposition layer (linux_port_coop_syscalls.c)
+    target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
 
     # Disable strict prototype warnings in upstream code
     # (struct event * event_create() is missing 'void')

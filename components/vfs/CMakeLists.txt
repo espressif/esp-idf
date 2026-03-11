@@ -10,7 +10,7 @@ if(${target} STREQUAL "linux")
     if(CONFIG_VFS_SUPPORT_IO)
         list(APPEND inc linux_include)
         list(APPEND priv_inc private_include)
-        list(APPEND srcs "vfs_linux.c" "vfs.c" "vfs_calls.c")
+        list(APPEND srcs "vfs_linux.c" "vfs_linux_default_coop.c" "vfs.c" "vfs_calls.c")
     endif()
 
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
@@ -20,7 +20,20 @@ if(${target} STREQUAL "linux")
     idf_component_register(SRCS ${srcs}
                            LDFRAGMENTS "linker.lf"
                            INCLUDE_DIRS ${inc}
-                           PRIV_INCLUDE_DIRS ${priv_inc})
+                           PRIV_INCLUDE_DIRS ${priv_inc}
+                           PRIV_REQUIRES freertos)
+
+    target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
+
+    if(CONFIG_VFS_SUPPORT_IO)
+        # On macOS, C symbols have a leading underscore prefix.
+        if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _esp_vfs_include_linux_coop_init")
+        else()
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_vfs_include_linux_coop_init")
+        endif()
+    endif()
+
     return()
 endif()
 
