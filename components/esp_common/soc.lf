@@ -42,14 +42,14 @@ entries:
 entries:
     .ext_ram.bss+
 
-[sections:tcm_text]
+[sections:scp_text]
 entries:
-    .tcm.text+
+    .scp.text+
 
-[sections:tcm_data]
+[sections:scp_data]
 entries:
-    .tcm.data+
+    .scp.data+
 
-[sections:tcm_bss]
+[sections:scp_bss]
 entries:
-    .tcm.bss+
+    .scp.bss+

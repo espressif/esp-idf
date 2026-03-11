@@ -127,7 +127,7 @@
     I (310) heap_init: At 4FF3AFC0 len 00004BE4 (18 KiB): RAM
     I (316) heap_init: At 4FF40000 len 00060000 (384 KiB): RAM
     I (323) heap_init: At 50108000 len 00007FE8 (31 KiB): RTCRAM
-    I (329) heap_init: At 30100044 len 00001FBC (7 KiB): TCM
+    I (329) heap_init: At 30100044 len 00001FBC (7 KiB): SCP
     I (336) spi_flash: detected chip: generic
     I (340) spi_flash: flash io: dio
     W (344) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.

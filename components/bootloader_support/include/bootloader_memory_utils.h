@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -197,19 +197,31 @@ inline static void * esp_ptr_diram_iram_to_dram(const void *p) {
 #endif
 }
 
-#if SOC_MEM_TCM_SUPPORTED
+#if SOC_MEM_SCP_SUPPORTED
 /**
- * @brief Check if the pointer is in TCM
+ * @brief Check if the pointer is in TCM (SCP)
  *
  * @param p pointer
  *
- * @return true: is in TCM; false: not in TCM
+ * @return true: is in TCM (SCP); false: not in TCM (SCP)
  */
-__attribute__((always_inline))
+ __attribute__((always_inline, deprecated("esp_ptr_in_tcm is deprecated, please use esp_ptr_in_scp instead")))
 inline static bool esp_ptr_in_tcm(const void *p) {
-    return ((intptr_t)p >= SOC_TCM_LOW && (intptr_t)p < SOC_TCM_HIGH);
+    return ((intptr_t)p >= SOC_SCP_LOW && (intptr_t)p < SOC_SCP_HIGH);
 }
-#endif  //#if SOC_MEM_TCM_SUPPORTED
+
+/**
+ * @brief Check if the pointer is in SCP
+ *
+ * @param p pointer
+ *
+ * @return true: is in SCP; false: not in SCP
+ */
+ __attribute__((always_inline))
+ inline static bool esp_ptr_in_scp(const void *p) {
+     return ((intptr_t)p >= SOC_SCP_LOW && (intptr_t)p < SOC_SCP_HIGH);
+ }
+#endif  //#if SOC_MEM_SCP_SUPPORTED
 
 /** End of the common section that has to be in sync with esp_memory_utils.h **/
 

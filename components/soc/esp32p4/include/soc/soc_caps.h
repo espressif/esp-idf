@@ -786,7 +786,7 @@
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION       (1)
 
 /*-------------------------- Memory CAPS --------------------------*/
-#define SOC_MEM_TCM_SUPPORTED                      (1)
+#define SOC_MEM_SCP_SUPPORTED                      (1)
 #define SOC_ASYNCHRONOUS_BUS_ERROR_MODE            (1)
 /*--------------------------- EMAC --------------------------------*/
 #define SOC_EMAC_IEEE_1588_SUPPORT                 (1)      /*!< EMAC Supports IEEE1588 time stamping */

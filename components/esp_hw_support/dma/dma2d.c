@@ -710,8 +710,8 @@ esp_err_t dma2d_set_desc_addr(dma2d_channel_handle_t dma2d_chan, intptr_t desc_b
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE_ISR(dma2d_chan && desc_base_addr, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    // 2D-DMA descriptor addr needs 8-byte alignment and not in TCM (addr not in TCM is IDF restriction)
-    ESP_GOTO_ON_FALSE_ISR((desc_base_addr & 0x7) == 0 && !esp_ptr_in_tcm((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // 2D-DMA descriptor addr needs 8-byte alignment and not in SCP (addr not in SCP is IDF restriction)
+    ESP_GOTO_ON_FALSE_ISR((desc_base_addr & 0x7) == 0 && !esp_ptr_in_scp((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;

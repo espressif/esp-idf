@@ -22,8 +22,8 @@ entries:
     rtc_data -> rtc_data
     rtc_rodata -> rtc_data
     rtc_bss -> rtc_bss
-    tcm_text -> tcm_text
-    tcm_data -> tcm_data
+    scp_text -> scp_text
+    scp_data -> scp_data
 
 [scheme:rtc]
 entries:
@@ -46,13 +46,13 @@ entries:
 entries:
     text -> iram0_text
 
-[scheme:tcm]
+[scheme:scp]
 entries:
-    text -> tcm_text
-    data -> tcm_data
-    rodata -> tcm_data
-    bss -> tcm_bss
-    common -> tcm_bss
+    text -> scp_text
+    data -> scp_data
+    rodata -> scp_data
+    bss -> scp_bss
+    common -> scp_bss
 
 [mapping:default]
 archive: *

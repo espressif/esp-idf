@@ -187,7 +187,7 @@ DROM（数据存储在 flash 中）
         除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
 
 
-.. only:: SOC_MEM_TCM_SUPPORTED
+.. only:: SOC_MEM_SCP_SUPPORTED
 
     紧密耦合内存 (TCM)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
