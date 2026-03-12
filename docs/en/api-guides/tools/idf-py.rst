@@ -469,11 +469,11 @@ Extending ``idf.py``
 
 For security reasons, component extensions are loaded from trusted sources only:
 
-- ESP-IDF built-in components (under ``IDF_PATH/components``)
-- Project components (the project's own ``components/`` directory)
-- User-defined components from directories listed in ``EXTRA_COMPONENT_DIRS`` in the project's top-level ``CMakeLists.txt``
-- Espressif components from the ESP Component Registry (``https://components.espressif.com/``). Only the ``espressif/`` namespace is trusted, not all registry components
-- IDF-managed components downloaded to the ``IDF_TOOLS_PATH/root_managed_components/`` directory. Only the ``espressif/`` namespace is trusted
+- ESP-IDF built-in components (under ``IDF_PATH/components``).
+- Project components (the project's own ``components/`` directory).
+- User-defined components from directories listed in ``EXTRA_COMPONENT_DIRS`` in the project's top-level ``CMakeLists.txt``.
+- Espressif components from the ESP Component Registry (``https://components.espressif.com/``). Only the ``espressif/`` namespace is trusted, not all registry components.
+- IDF-managed components downloaded to the ``IDF_TOOLS_PATH/root_managed_components/`` directory. Only the ``espressif/`` namespace is trusted.
 
 Extensions from other sources (e.g., components resolved via ``git``, local ``path``, or ``override_path``) are skipped with a warning. To load extensions from all components, set ``IDF_EXTENSION_ALLOW_UNTRUSTED=1``.
 

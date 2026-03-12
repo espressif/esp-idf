@@ -467,6 +467,16 @@ ESP-IDF 支持 `CMake presets`_ 以简化多个构建配置的管理。此功能
 - **参与构建的组件**：在项目根目录，或注册在项目 ``CMakeLists.txt`` 中的组件根目录，放置名为 ``idf_ext.py`` 的文件，该文件会在项目配置完成后得到识别。运行 ``idf.py build`` 或 ``idf.py reconfigure``，新添加的命令即可生效。
 - **Python 入口点**：对于任何已安装的 Python 包，在 ``idf_extension`` 组中定义入口点后，就可以提供扩展功能。只要安装了 Python 包就可以使用扩展功能，无需重新构建项目。
 
+出于安全考虑，组件扩展仅从可信来源加载：
+
+- ESP-IDF 内置组件（位于 ``IDF_PATH/components`` 下）。
+- 项目组件（项目自身的 ``components/`` 目录）。
+- 在项目顶层 ``CMakeLists.txt`` 中，由 ``EXTRA_COMPONENT_DIRS`` 所列目录中的用户自定义组件。
+- 乐鑫组件注册表 (``https://components.espressif.com/``) 中的乐鑫组件，仅 ``espressif/`` 命名空间受信任。
+- 下载到 ``IDF_TOOLS_PATH/root_managed_components/`` 目录下的 IDF 托管组件。仅 ``espressif/`` 命名空间受信任。
+
+其他来源的扩展（例如通过 ``git``、本地 ``path`` 或 ``override_path`` 解析的组件）会被跳过，并给出警告。若要加载所有组件中的扩展，请设置 ``IDF_EXTENSION_ALLOW_UNTRUSTED=1``。
+
 .. important::
 
    扩展不能定义与 ``idf.py`` 命令同名的子命令或选项。系统会检查自定义的动作和选项名称是否存在冲突，不允许覆盖默认命令，如有冲突会打印警告。对于 Python 入口点，必须使用唯一标识符，否则会忽略重复的入口点名称并发出警告。
