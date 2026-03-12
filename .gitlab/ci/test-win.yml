@@ -42,6 +42,7 @@ test_tools_win:
   extends:
     - .host_test_win_template
     - .rules:labels:windows_pytest_build_system
+  parallel: 4
   artifacts:
     paths:
       - ${IDF_PATH}/*.out
@@ -84,9 +85,11 @@ pytest_build_system_win:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
   parallel: 2
-  needs: []
   tags:
     - windows-build
+  needs:
+    - job: manual_gate
+      optional: true
   artifacts:
     paths:
       - XUNIT_RESULT.xml
