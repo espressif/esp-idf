@@ -225,7 +225,6 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
-        .mdc_freq_hz = 0,                                                     \
         .emac_dataif_gpio =                                                   \
         {                                                                     \
             .rmii =                                                           \
@@ -246,6 +245,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
                 .clock_gpio = -1                                              \
             }                                                                 \
         },                                                                    \
+        .mdc_freq_hz = 0,                                                     \
     }
 #endif // CONFIG_IDF_TARGET_ESP32P4
 
