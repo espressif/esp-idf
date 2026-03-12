@@ -23,6 +23,27 @@ static inline size_t get_chunk_size(const sdmmc_card_t *card)
     return (chunk_size != 0) ? chunk_size : 1;
 }
 
+static esp_err_t allocate_dma_buf(size_t* actual_size, size_t block_size, void **buf)
+{
+    if (actual_size == NULL || buf == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t size = *actual_size;
+    do {
+        if (*actual_size < block_size) {
+            ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+            return ESP_ERR_NO_MEM;
+        }
+        *buf = heap_caps_malloc(*actual_size, MALLOC_CAP_DMA);
+        if (!*buf) {
+            *actual_size /= 2;
+            ESP_LOGD(TAG, "%s: required space for buffer of size %d not available, trying again with size %zu", __func__, size, *actual_size);
+        }
+    } while (!*buf);
+    return ESP_OK;
+}
+
 esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd)
 {
     if (card->host.command_timeout_ms != 0) {
@@ -489,11 +510,12 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
             // Allocate a temporary DMA-capable buffer.
             // We don't want to force the allocation into SPIRAM, the allocator
             // will decide based on the buffer size and memory availability.
-            buf = heap_caps_malloc(actual_size, MALLOC_CAP_DMA);
-            if (!buf) {
-                ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
-                return ESP_ERR_NO_MEM;
+            // We start with the largest buffer possible to minimize the number of read iterations, but if that fails, we try smaller sizes down to a single block.
+            err = allocate_dma_buf(&actual_size, block_size, &buf);
+            if (err != ESP_OK) {
+                return err;
             }
+            blocks_per_write = actual_size / block_size;
         } else {
             // Check that the provided dma_aligned_buffer is large enough
             actual_size = heap_caps_get_allocated_size(buf);
@@ -649,11 +671,12 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
             // Allocate a temporary DMA-capable buffer.
             // We don't want to force the allocation into SPIRAM, the allocator
             // will decide based on the buffer size and memory availability.
-            buf = heap_caps_malloc(actual_size, MALLOC_CAP_DMA);
-            if (!buf) {
-                ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
-                return ESP_ERR_NO_MEM;
+            // We start with the largest buffer possible to minimize the number of read iterations, but if that fails, we try smaller sizes down to a single block.
+            err = allocate_dma_buf(&actual_size, block_size, &buf);
+            if (err != ESP_OK) {
+                return err;
             }
+            blocks_per_read = actual_size / block_size;
         } else {
             // Check that the provided dma_aligned_buffer is large enough
             actual_size = heap_caps_get_allocated_size(buf);

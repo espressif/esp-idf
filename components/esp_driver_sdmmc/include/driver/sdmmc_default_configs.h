@@ -47,7 +47,7 @@ extern "C" {
     .get_real_freq = &sdmmc_host_get_real_freq, \
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
     .set_input_delay = &sdmmc_host_set_input_delay, \
-    .unaligned_multi_block_rw_max_chunk_size = 0, \
+    .unaligned_multi_block_rw_max_chunk_size = 16, \
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
     .get_dma_info = NULL, \
