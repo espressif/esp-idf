@@ -814,6 +814,20 @@ esp_err_t esp_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
 esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
 
 /**
+  * @brief     Get the home channel of device
+  *
+  * @param     primary   store primary channel
+  * @param[out]  second  store second channel
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_home_channel(uint8_t *primary, wifi_second_chan_t *second);
+
+/**
   * @brief     configure country info
   *
   * @attention 1. It is discouraged to call this API since this doesn't validate the per-country rules,
