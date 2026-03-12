@@ -459,7 +459,8 @@ menu "Wi-Fi"
         config ESP_WIFI_SLP_BEACON_LOST_TIMEOUT
             int "Beacon loss timeout"
             range 5 100
-            default 10
+            default 25 if ESP_COEX_SW_COEXIST_ENABLE
+            default 10 if (!ESP_COEX_SW_COEXIST_ENABLE)
             depends on ESP_WIFI_SLP_BEACON_LOST_OPT
             help
                 Timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond.
