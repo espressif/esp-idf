@@ -200,6 +200,48 @@ menu "Power Supplier"
             help
                 The resistor value of charger circuit.
 
+        config ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+            bool "Control main power (ESP_3V3) enable via GPIO when VBAT powers deep sleep"
+            default n
+            depends on ESP_VBAT_INIT_AUTO && SOC_MAIN_POWER_CONTROL_SUPPORTED
+            help
+                When enabled, after the chip enters deep sleep and switches to VDD_BAT (VBAT)
+                power, ESP_VBAT_MAIN_POWER_CTRL_PIN is used to disable the main power (ESP_3V3)
+                enable. The main power is re-enabled in advance before wakeup.
+
+        config ESP_VBAT_MAIN_POWER_CTRL_PIN
+            int "GPIO for main power (ESP_3V3) enable"
+            default 2
+            range 0 3 if !RTC_CLK_SRC_EXT_CRYS
+            range 2 3 if RTC_CLK_SRC_EXT_CRYS
+            depends on ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+            help
+                RTC GPIO used to enable/disable the main power rail (ESP_3V3) when VBAT is active.
+
+        config ESP_VBAT_MAIN_POWER_CTRL_PIN_INV
+            bool "Invert main power control pin output (Output high to enable power by default)"
+            default n
+            depends on ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+            help
+                When enabled, the ESP_VBAT_MAIN_POWER_CTRL_PIN logic for the main power control
+                pin is inverted. (n: output high to enable power; y = output low to enable power).
+
+        config ESP_VBAT_MAIN_POWER_WAKEUP_ADVANCE_US
+            int "Main power enable advance time before wakeup (us)"
+            default 1000
+            range 0 1500 if !RTC_CLK_SRC_EXT_CRYS && ESP32P4_SELECTS_REV_LESS_V3
+            range 0 7500 if RTC_CLK_SRC_EXT_CRYS && ESP32P4_SELECTS_REV_LESS_V3
+            range 0 6000 if !RTC_CLK_SRC_EXT_CRYS && !ESP32P4_SELECTS_REV_LESS_V3
+            range 0 30000 if RTC_CLK_SRC_EXT_CRYS && !ESP32P4_SELECTS_REV_LESS_V3
+            depends on ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+            help
+                Advance time in microseconds to assert main power (ESP_3V3) enable before the
+                chip starts the wakeup sequence and switches to main voltage supply. The delay
+                allows the external main power rail to reach target voltage before chip exits
+                deep sleep. Set this value to be greater than or equal to your main power
+                supply's startup/settling time (from enable assertion to stable output voltage).
+                If too small, the main rail may not be ready when the chip wakes, which can
+                cause brownout or unstable boot.
     endmenu
 
 endmenu

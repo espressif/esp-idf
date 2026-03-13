@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -237,7 +237,7 @@ typedef struct {
 typedef struct {
     uint16_t    digital_power_supply_wait_cycle;
     uint8_t     min_slp_slow_clk_cycle;
-    uint8_t     analog_wait_target_cycle;
+    uint16_t    analog_wait_target_cycle;
     uint8_t     digital_power_down_wait_cycle;
     uint8_t     digital_power_up_wait_cycle;
 } pmu_lp_param_t;
@@ -526,11 +526,21 @@ typedef struct pmu_sleep_machine_constant {
 // DCDC startup, which saves more power compared to waiting in the Active state.
 #define PMU_HP_ANA_WAIT_TIME_PU_TOP_US      (PMU_HP_ANA_WAIT_TIME_PD_TOP_US + PMU_REGDMA_S2A_WORK_TIME_US) // 945
 
+#ifndef MAX
+#define MAX(a, b)       (((a) > (b)) ? (a) : (b))
+#endif
+
+#if CONFIG_ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+#define PMU_LP_ANA_WAIT_TIME_US MAX(154, CONFIG_ESP_VBAT_MAIN_POWER_WAKEUP_ADVANCE_US)
+#else
+#define PMU_LP_ANA_WAIT_TIME_US 154
+#endif
+
 #define PMU_SLEEP_MC_DEFAULT()      {           \
     .lp = {                                     \
         .min_slp_time_us                = 450,  \
         .wakeup_wait_cycle              = 4,    \
-        .analog_wait_time_us            = 154,  \
+        .analog_wait_time_us            = PMU_LP_ANA_WAIT_TIME_US,  \
         .xtal_wait_stable_time_us       = 250,  \
         .clk_switch_cycle               = 1,    \
         .clk_power_on_wait_cycle        = 1,    \

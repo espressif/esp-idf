@@ -686,6 +686,8 @@
 
 #define SOC_PM_RETENTION_MODULE_NUM         (64)
 
+#define SOC_MAIN_POWER_CONTROL_SUPPORTED    (1)  /*!<Supports outputting an enable signal to control the power-on and power-off of the main power supply when powered by VBAT.*/
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
