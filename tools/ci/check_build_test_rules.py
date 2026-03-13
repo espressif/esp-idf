@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import inspect
@@ -15,6 +15,10 @@ from typing import Tuple
 import yaml
 from idf_ci_utils import get_all_manifest_files
 from idf_ci_utils import IDF_PATH
+
+# Copy of the constant from idf_pytest.constants, to avoid installing
+# additional dependencies (pytest, pytest-embedded) in pre-commit hooks
+DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -69,6 +73,17 @@ def check_readme(
     from idf_build_apps import App, find_apps
     from idf_build_apps.constants import SUPPORTED_TARGETS
 
+    def app_build_targets(_app: App) -> List[str]:
+        return sorted(
+            {
+                target
+                for target in (
+                    App.MANIFEST.enable_build_targets(_app.app_dir)
+                    + App.MANIFEST.enable_build_targets(_app.app_dir, config_name=_app.config_name)
+                )
+            }
+        )
+
     def get_readme_path(_app: App) -> Optional[str]:
         _readme_path = os.path.join(_app.app_dir, 'README.md')
 
@@ -81,9 +96,10 @@ def check_readme(
         return _readme_path
 
     def _generate_new_support_table_str(_app: App) -> str:
+        manifest_targets = app_build_targets(_app)
         # extra space here
         table_headers = [
-            f'{USUAL_TO_FORMAL[target]}' for target in _app.supported_targets
+            f'{USUAL_TO_FORMAL[target]}' for target in manifest_targets
         ]
         table_headers = ['Supported Targets'] + table_headers
 
@@ -113,7 +129,9 @@ def check_readme(
         return support_string[0].strip(), [FORMAL_TO_USUAL[part] for part in parts[1:] if part in FORMAL_TO_USUAL]
 
     def check_enable_build(_app: App, _old_supported_targets: List[str]) -> bool:
-        if _app.supported_targets == sorted(_old_supported_targets):
+        manifest_targets = app_build_targets(_app)
+
+        if manifest_targets == sorted(_old_supported_targets):
             return True
 
         _readme_path = get_readme_path(_app)
@@ -123,7 +141,7 @@ def check_readme(
             inspect.cleandoc(
                 f'''
             {_app.app_dir}:
-            - enable build targets according to the manifest file: {_app.supported_targets}
+            - enable build targets according to the manifest file: {manifest_targets}
             - enable build targets according to the old Supported Targets table under readme "{_readme_path}": {_old_supported_targets}
 
             If you want to disable some targets, please use the following snippet:
@@ -153,6 +171,7 @@ def check_readme(
             exclude_list=exclude_dirs or [],
             manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
+            config_rules_str=DEFAULT_CONFIG_RULES_STR,
         )
     )
     exit_code = 0
@@ -240,15 +259,20 @@ def check_test_scripts(
         else:
             return True  # no test case
 
-        actual_extra_tested_targets = set(actual_verified_targets) - set(
-            _app.verified_targets
-        )
+        manifest_targets = sorted({
+            target for target in (
+                App.MANIFEST.enable_test_targets(_app.app_dir)
+                + App.MANIFEST.enable_test_targets(_app.app_dir, config_name=_app.config_name)
+            )
+        })
+
+        actual_extra_tested_targets = set(actual_verified_targets) - set(manifest_targets)
         if actual_extra_tested_targets - set(bypass_check_test_targets or []):
             print(
                 inspect.cleandoc(
                     f'''
                 {_app.app_dir}:
-                - enable test targets according to the manifest file: {_app.verified_targets}
+                - enable test targets according to the manifest file: {manifest_targets}
                 - enable test targets according to the test scripts: {actual_verified_targets}
 
                 test scripts enabled targets should be a subset of the manifest file declared ones.
@@ -259,19 +283,19 @@ def check_test_scripts(
             )
             return False
 
-        if _app.verified_targets == actual_verified_targets:
+        if manifest_targets == actual_verified_targets:
             return True
-        elif not (set(_app.verified_targets) - set(actual_verified_targets + (bypass_check_test_targets or []))):
+        if not ((set(manifest_targets) ^ set(actual_verified_targets)) - set(bypass_check_test_targets or [])):
             print(f'WARNING: bypass test script check on {_app.app_dir} for targets {bypass_check_test_targets} ')
             return True
 
-        if_clause = f'IDF_TARGET in [{", ".join([doublequote(target) for target in sorted(set(_app.verified_targets) - set(actual_verified_targets))])}]'
+        if_clause = f'IDF_TARGET in [{", ".join([doublequote(target) for target in sorted(set(manifest_targets) - set(actual_verified_targets))])}]'
 
         print(
             inspect.cleandoc(
                 f'''
             {_app.app_dir}:
-            - enable test targets according to the manifest file: {_app.verified_targets}
+            - enable test targets according to the manifest file: {manifest_targets}
             - enable test targets according to the test scripts: {actual_verified_targets}
 
             the test scripts enabled test targets should be the same with the manifest file enabled ones. Please check
@@ -307,6 +331,7 @@ def check_test_scripts(
             exclude_list=exclude_dirs or [],
             manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
+            config_rules_str=DEFAULT_CONFIG_RULES_STR,
         )
     )
     exit_code = 0

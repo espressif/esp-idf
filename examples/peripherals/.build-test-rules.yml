@@ -270,6 +270,10 @@ examples/peripherals/mcpwm/mcpwm_servo_control:
 examples/peripherals/mcpwm/mcpwm_sync:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4"]
+      temporary: true
+      reason: targets are not used in test cases
   depends_components:
     - esp_driver_mcpwm
 
