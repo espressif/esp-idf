@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/spi_flash.h"
 #include "esp32c5/rom/opi_flash.h"
+#endif
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+#include "riscv/rv_utils.h"
 #endif
 
 #define SPI_IDX   1
@@ -803,3 +807,24 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 #endif // IDF_TARGET
 
 #endif // CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+
+#if CONFIG_SPI_FLASH_ROM_IMPL
+extern void rom_spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    rv_utils_dis_branch_predictor();
+#endif
+    rom_spi_flash_disable_cache(cpuid, saved_state);
+}
+
+extern void rom_spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
+{
+    rom_spi_flash_restore_cache(cpuid, saved_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    rv_utils_en_branch_predictor();
+#endif
+}
+#endif
