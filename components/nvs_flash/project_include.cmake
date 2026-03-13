@@ -43,20 +43,16 @@ function(nvs_create_partition_image partition csv)
             PROPERTY ADDITIONAL_CLEAN_FILES ${image_file}
            )
 
-        idf_component_get_property(main_args esptool_py FLASH_ARGS)
-        idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
-        esptool_py_flash_target(${partition}-flash "${main_args}" "${sub_args}" ALWAYS_PLAINTEXT)
-        esptool_py_flash_to_partition(${partition}-flash "${partition}" "${image_file}")
-
-        add_dependencies(${partition}-flash nvs_${partition}_bin)
+        set(register_target_optional_args ALWAYS_PLAINTEXT DEPENDS nvs_${partition}_bin)
 
         if(arg_FLASH_IN_PROJECT)
-            esptool_py_flash_to_partition(flash "${partition}" "${image_file}")
-            add_dependencies(flash nvs_${partition}_bin)
+            list(APPEND register_target_optional_args FLASH_IN_PROJECT)
             if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
-                add_dependencies(encrypted-flash nvs_${partition}_bin)
+                list(APPEND register_target_optional_args FLASH_IN_PROJECT_DEPENDENCY_TARGETS encrypted-flash)
             endif()
         endif()
+
+        esp_partition_register_target(${partition} "${image_file}" ${register_target_optional_args})
     else()
         set(message
             "Failed to create NVS image for partition '${partition}'. "
