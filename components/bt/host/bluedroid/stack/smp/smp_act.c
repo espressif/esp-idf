@@ -766,6 +766,32 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
     STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
 
+    /* Security Check: Reject standard SIG debug keys */
+    const uint8_t sig_debug_key_x[32] = {
+        0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 
+        0xdb, 0xfd, 0xf4, 0xac, 0x11, 0x91, 0xf4, 0xef,
+        0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e, 
+        0x2c, 0xbe, 0x97, 0xf2, 0xd2, 0x03, 0xb0, 0x20
+    };
+    const uint8_t sig_debug_key_y[32] = {
+        0x8b, 0xd2, 0x89, 0x15, 0xd0, 0x8e, 0x1c, 0x74,
+        0x24, 0x30, 0xed, 0x8f, 0xc2, 0x45, 0x63, 0x76,
+        0x5c, 0x15, 0x52, 0x5a, 0xbf, 0x9a, 0x32, 0x63,
+        0x6d, 0xeb, 0x2a, 0x65, 0x49, 0x9c, 0x80, 0xdc
+    };
+
+    if (memcmp(p_cb->peer_publ_key.x, sig_debug_key_x, 32) == 0 &&
+        memcmp(p_cb->peer_publ_key.y, sig_debug_key_y, 32) == 0) {
+#if CONFIG_BT_SMP_ALLOW_DEBUG_KEYS
+        SMP_TRACE_WARNING("%s: Peer is using debug keys. Allowed by config.", __func__);
+#else
+        SMP_TRACE_ERROR("%s: Peer attempted to use debug keys! Rejecting.", __func__);
+        UINT8 reason = SMP_PAIR_AUTH_FAIL;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
+#endif
+    }
+
     /* Check if the peer device's and own public key are not same. If they are same then
      * return pairing fail. This check is needed to avoid 'Impersonation in Passkey entry
      * protocol' vulnerability (CVE-2020-26558).*/
