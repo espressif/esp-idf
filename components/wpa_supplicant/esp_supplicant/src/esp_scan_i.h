@@ -7,8 +7,7 @@
 #ifndef ESP_SCAN_I_H
 #define ESP_SCAN_I_H
 
-#define SUPPLICANT_SCAN_ACTIVE_SCAN_MIN_DURATION 10
-#define SUPPLICANT_SCAN_ACTIVE_SCAN_MAX_DURATION 70
+#define SUPPLICANT_SCAN_ACTIVE_SCAN_DURATION 70
 
 void esp_scan_init(struct wpa_supplicant *wpa_s);
 void esp_scan_deinit(struct wpa_supplicant *wpa_s);
