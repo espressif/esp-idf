@@ -11,7 +11,7 @@ from threading import Thread
 import paho.mqtt.client as mqtt
 import pexpect
 import pytest
-from pytest_embedded import Dut
+from pytest_embedded import Dut  # noqa: F401
 from pytest_embedded_idf.utils import idf_parametrize
 
 event_client_connected = Event()

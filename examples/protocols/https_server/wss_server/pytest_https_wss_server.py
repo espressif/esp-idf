@@ -6,9 +6,9 @@ import logging
 import os
 import threading
 import time
-from types import TracebackType
-from typing import Any
-from typing import Optional
+from types import TracebackType  # noqa: F401
+from typing import Any  # noqa: F401
+from typing import Optional  # noqa: F401
 
 import pytest
 import websocket
