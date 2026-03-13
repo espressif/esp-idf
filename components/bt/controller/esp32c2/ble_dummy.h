@@ -220,9 +220,9 @@ void r_ble_lll_conn_rx_pkt_isr_eco4(void){}
 // int_eco4 r_ble_ll_conn_env_init(void){return 0;}
 #endif // !DEFAULT_BT_LE_ROLE_CENTROL && !DEFAULT_BT_LE_ROLE_PERIPHERAL
 
-#if !DEFAULT_BT_LE_ROLE_PERIPHERAL || !DEFAULT_BT_LE_2M_PHY && !DEFAULT_BT_LE_CODED_PHY
+#if !DEFAULT_BT_LE_2M_PHY && !DEFAULT_BT_LE_CODED_PHY
 void r_ble_ll_ctrl_rx_phy_update_ind(void){}
-void r_ble_ll_ctrl_rx_phy_update_ind_eco4(void){}
+uint8_t r_ble_ll_ctrl_rx_phy_update_ind_eco4(void){return 0x07;}
 #endif // !DEFAULT_BT_LE_2M_PHY && !DEFAULT_BT_LE_CODED_PHY
 
 #if !DEFAULT_BT_LE_50_FEATURE_SUPPORT
