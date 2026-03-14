@@ -12,7 +12,11 @@
 
 // efuse key blocks for HMAC
 #define HMAC_KEY_BLOCK_1 4
+#if CONFIG_IDF_TARGET_ESP32S31
+#define HMAC_KEY_BLOCK_2 3  // S31 has only KEY0-KEY4, KEY3 is free
+#else
 #define HMAC_KEY_BLOCK_2 5
+#endif
 
 /*
  * ECDSA and other peripheral testcases cannot run together as block used for burning keys are overlapped

@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+#define AES_BLOCK_SIZE 16
+
 enum AES_TYPE {
     AES_ENC,
     AES_DEC,
