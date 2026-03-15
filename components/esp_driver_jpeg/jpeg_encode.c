@@ -379,9 +379,19 @@ void *jpeg_alloc_encoder_mem(size_t size, const jpeg_encode_memory_alloc_cfg_t *
        Principle of buffer align.
        For output buffer(for decoder is 2DDMA write to PSRAM), both address and size should be aligned according to cache invalidate.
        For input buffer(for decoder is PSRAM write to 2DDMA), no restriction for any align (both cache writeback and requirement from 2DDMA).
+       NOTE: If the chip uses write-back cache (like the ESP32-P4), the input buffer address and size must both be aligned; viz. the buffer_direction is insignificant.  (See also: jpeg_alloc_decoder_mem()).
     */
     size_t cache_align = 0;
     esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_align);
+
+#if SOC_CACHE_WRITEBACK_SUPPORTED
+    /*
+      As noted above, mem_cfg->buffer_direction is ignored here; address and size must both be aligned regardless.
+    */ 
+    size = JPEG_ALIGN_UP(size, cache_align);
+    *allocated_size = size;
+    return heap_caps_aligned_calloc(cache_align, 1, size, MALLOC_CAP_SPIRAM);
+#else
     if (mem_cfg->buffer_direction == JPEG_ENC_ALLOC_OUTPUT_BUFFER) {
         size = JPEG_ALIGN_UP(size, cache_align);
         *allocated_size = size;
@@ -390,6 +400,7 @@ void *jpeg_alloc_encoder_mem(size_t size, const jpeg_encode_memory_alloc_cfg_t *
         *allocated_size = size;
         return heap_caps_calloc(1, size, MALLOC_CAP_SPIRAM);
     }
+#endif
 }
 
 /****************************************************************
