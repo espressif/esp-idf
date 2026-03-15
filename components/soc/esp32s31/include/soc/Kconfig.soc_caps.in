@@ -195,6 +195,10 @@ config SOC_ECC_EXTENDED_MODES_SUPPORTED
     bool
     default y
 
+config SOC_ECDSA_SUPPORTED
+    bool
+    default y
+
 config SOC_BOD_SUPPORTED
     bool
     default y
@@ -1011,6 +1015,26 @@ config SOC_ECC_SUPPORT_CURVE_P384
     bool
     default y
 
+config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_CURVE_P384
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
+    bool
+    default y
+
 config SOC_DS_SIGNATURE_MAX_BIT_LEN
     int
     default 4096
@@ -1052,10 +1076,6 @@ config SOC_EFUSE_ECDSA_KEY_P192
     default y
 
 config SOC_EFUSE_ECDSA_KEY_P384
-    bool
-    default y
-
-config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     bool
     default y
 

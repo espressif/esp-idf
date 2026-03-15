@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,12 +11,8 @@
 #define DS_KEY_BLOCK_3 2
 
 // efuse key blocks for HMAC
-#define HMAC_KEY_BLOCK_1 4
-#if CONFIG_IDF_TARGET_ESP32S31
-#define HMAC_KEY_BLOCK_2 3  // S31 has only KEY0-KEY4, KEY3 is free
-#else
-#define HMAC_KEY_BLOCK_2 5
-#endif
+#define HMAC_KEY_BLOCK_1 3
+#define HMAC_KEY_BLOCK_2 4
 
 /*
  * ECDSA and other peripheral testcases cannot run together as block used for burning keys are overlapped
