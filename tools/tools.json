@@ -1080,6 +1080,76 @@
           }
         }
       ]
+    },
+    {
+      "description": "Clangd for all Espressif chips",
+      "export_paths": [
+        [
+          "esp-clangd",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/llvm-project",
+      "install": "always",
+      "license": "Apache-2.0",
+      "name": "esp-clangd",
+      "supported_targets": [
+        "esp32",
+        "esp32s2",
+        "esp32s3",
+        "esp32c3",
+        "esp32c2",
+        "esp32c6",
+        "esp32c5",
+        "esp32h2",
+        "esp32p4",
+        "esp32c61",
+        "esp32h21",
+        "esp32h4",
+        "esp32s31"
+      ],
+      "version_cmd": [
+        "clangd",
+        "--version"
+      ],
+      "version_regex": "\\([^\\s]+\\s+([0-9a-zA-Z\\.\\-_]+)\\)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "f0573d773f24e78ab798b25d877ffd3d8caeab3dfafeb48a4f99315cd473dd08",
+            "size": 17078156,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260304/clangd-esp-21.1.3_20260304-x86_64-linux-gnu.tar.xz"
+          },
+          "linux-arm64": {
+            "sha256": "b443919f06882d8035f4c2b28fb72826e9b08b89d46abbb7b55f5a1432804d02",
+            "size": 14706352,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260304/clangd-esp-21.1.3_20260304-aarch64-linux-gnu.tar.xz"
+          },
+          "linux-armhf": {
+            "sha256": "9700a9652341e38982e677a688a2d075956613b98a8535fa7e4c22db0685291e",
+            "size": 15363732,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260304/clangd-esp-21.1.3_20260304-arm-linux-gnueabihf.tar.xz"
+          },
+          "macos": {
+            "sha256": "89a1bf9cc570cab7e2632535badb9035126f440c1c64795bb19a74bdf76551d3",
+            "size": 12660720,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260304/clangd-esp-21.1.3_20260304-x86_64-apple-darwin.tar.xz"
+          },
+          "macos-arm64": {
+            "sha256": "53e3ea1abffc7127646b694b4683f6a4dd1a5d89ccfc354d4b136b78ac722ba5",
+            "size": 10996336,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260304/clangd-esp-21.1.3_20260304-aarch64-apple-darwin.tar.xz"
+          },
+          "name": "esp-21.1.3_20260304",
+          "status": "recommended",
+          "win64": {
+            "sha256": "492f75478eaf2fbb7c5f970518a244fe3ef68a03cea24755634c7af892f41b85",
+            "size": 14081448,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260304/clangd-esp-21.1.3_20260304-x86_64-w64-mingw32.tar.xz"
+          }
+        }
+      ]
     }
   ],
   "version": 3

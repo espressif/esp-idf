@@ -47,6 +47,9 @@ On Linux and macOS, it is recommended to install CMake using the OS-specific pac
 
 .. tool-esp-clang-libs-notes
 
+---
+
+.. tool-esp-clangd-notes
 
 ---
 
