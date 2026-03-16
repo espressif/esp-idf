@@ -993,6 +993,12 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         /* Cache Resume 1: Resume cache for continue running*/
         resume_cache();
         resume_timers(sleep_flags);
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED && CONFIG_SPIRAM_XIP_FROM_PSRAM
+        // Code outside of esp_sleep_start_safe may be linked to FLASH, and if CONFIG_SPIRAM_XIP_FROM_PSRAM
+        // is enabled, code in Flash will be copied to PSRAM for execution. We need to wait here until
+        // PSRAM exits half-sleep before returning.
+        esp_psram_impl_resume_from_halfsleep_mode(s_config.rtc_clk_cal_period);
+#endif
     }
     return result;
 }
@@ -1379,10 +1385,6 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint3
         esp_rom_delay_us(flash_enable_time_us);
     }
 
-#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
-    esp_psram_impl_resume_from_halfsleep_mode(s_config.rtc_clk_cal_period);
-#endif
-
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
     if (sleep_flags & RTC_SLEEP_PD_VDDSDIO) {
         /* Cache Resume 2: flash is ready now, we can resume the cache and access flash safely after */
@@ -1641,6 +1643,14 @@ esp_err_t esp_light_sleep_start(void)
     if (!(s_config.wakeup_triggers & ignore_check_wakeup_triggers)) {
         resume_cache();
     }
+#endif
+
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED && !CONFIG_SPIRAM_XIP_FROM_PSRAM
+    // If CONFIG_SPIRAM_XIP_FROM_PSRAM is not enabled, the sleep-wake process
+    // prior to this point does not access the PSRAM, so we can postpone waiting
+    // for the PSRAM to resume until here, in order to reuse the time overhead
+    // of the wake-up process as much as possible.
+    esp_psram_impl_resume_from_halfsleep_mode(s_config.rtc_clk_cal_period);
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
