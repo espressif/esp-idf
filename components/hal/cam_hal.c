@@ -74,7 +74,7 @@ void cam_hal_init(cam_hal_context_t *hal, const cam_hal_config_t *config)
 
     cam_ll_enable_stop_signal(hal->hw, 0);
     cam_ll_swap_dma_data_byte_order(hal->hw, config->byte_swap_en);
-    cam_ll_reverse_dma_data_bit_order(hal->hw, 0);
+    cam_ll_reverse_dma_data_bit_order(hal->hw, config->bit_swap_en);
     cam_ll_enable_vsync_generate_eof(hal->hw, 1);
 
     cam_hal_set_line_int_num(hal, 0);
