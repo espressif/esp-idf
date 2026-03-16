@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,10 @@ typedef struct {
     size_t trans_queue_depth; /*!< Depth of internal transaction queue */
     size_t max_transfer_size; /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
     size_t dma_burst_size;    /*!< DMA burst size, in bytes */
-    parlio_sample_edge_t sample_edge;       /*!< Parallel IO sample edge */
+    union {
+        parlio_sample_edge_t sample_edge __attribute__((deprecated("Please use `shift_edge` instead"))); /*!< Parallel IO sample edge */
+        parlio_shift_edge_t shift_edge;         /*!< Parallel IO Tx shift edge */
+    };
     parlio_bit_pack_order_t bit_pack_order; /*!< Set the order of packing the bits into bytes (only works when `data_width` < 8) */
     struct {
         uint32_t clk_gate_en: 1;  /*!< Enable TX clock gating,

@@ -46,7 +46,7 @@ First, we need to create a TX unit instance. The following code shows how to cre
         .output_clk_freq_hz = 10 * 1000 * 1000, // Output clock frequency is 10 MHz
         .trans_queue_depth = 32,                // Transaction queue depth is 32
         .max_transfer_size = 256,               // Maximum transfer size is 256 bytes
-        .sample_edge = PARLIO_SAMPLE_EDGE_NEG,  // Sample data on the falling edge of the clock
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,    // Shift data on the falling edge of the clock
         .flags = {
             .invert_valid_out = true, // The valid signal is high by default, inverted to simulate the chip select signal CS in QPI timing
         }
@@ -74,7 +74,7 @@ The following are the configuration parameters of the :cpp:type:`parlio_tx_unit_
     -  :cpp:member:`parlio_tx_unit_config_t::trans_queue_depth` The depth of the internal transaction queue. The deeper the queue, the more transactions can be prepared in the pending queue.
     -  :cpp:member:`parlio_tx_unit_config_t::max_transfer_size` The maximum transfer size per transaction (in bytes).
     -  :cpp:member:`parlio_tx_unit_config_t::dma_burst_size` The DMA burst transfer size (in bytes), must be a power of 2.
-    -  :cpp:member:`parlio_tx_unit_config_t::sample_edge` The data sampling edge of the TX unit.
+    -  :cpp:member:`parlio_tx_unit_config_t::shift_edge` The data shift edge of the TX unit.
     -  :cpp:member:`parlio_tx_unit_config_t::bit_pack_order` Sets the order of data bits within a byte (valid only when data width < 8).
     -  :cpp:member:`parlio_tx_unit_config_t::flags` Usually used to fine-tune some behaviors of the driver, including the following options
     -  :cpp:member:`parlio_tx_unit_config_t::flags::invert_valid_out` Determines whether to invert the valid signal before sending it to the GPIO pin.
@@ -216,7 +216,7 @@ The TX unit can choose various clock sources, among which the external clock sou
         .output_clk_freq_hz = 5 * 1000 * 1000, // Output clock frequency is 5 MHz. Note that it cannot exceed the input clock frequency
         .trans_queue_depth = 32,
         .max_transfer_size = 256,
-        .sample_edge = PARLIO_SAMPLE_EDGE_NEG,  // Sample data on the falling edge of the clock
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,    // Shift data on the falling edge of the clock
     };
     // Create TX unit instance
     ESP_ERROR_CHECK(parlio_new_tx_unit(&config, &tx_unit));
@@ -273,7 +273,7 @@ The waveform of the external clock input is shown below:
             .output_clk_freq_hz = 10 * 1000 * 1000, // Output clock frequency is 10 MHz
             .trans_queue_depth = 32,
             .max_transfer_size = 256,
-            .sample_edge = PARLIO_SAMPLE_EDGE_NEG,  // Sample data on the falling edge of the clock
+            .shift_edge = PARLIO_SHIFT_EDGE_NEG,    // Shift data on the falling edge of the clock
             .flags = {
                 .invert_valid_out = true,  // The valid signal is high by default, inverted to simulate the chip select signal CS in QPI timing
             }

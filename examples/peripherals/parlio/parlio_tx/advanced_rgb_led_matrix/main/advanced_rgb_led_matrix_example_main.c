@@ -160,7 +160,7 @@ void app_main(void)
         .output_clk_freq_hz = EXAMPLE_LED_MATRIX_PIXEL_CLOCK_HZ,
         .trans_queue_depth = 4,
         .max_transfer_size = (EXAMPLE_LED_MATRIX_H_RES + EXAMPLE_GAP_CYCLE_PER_LINE) * EXAMPLE_LED_MATRIX_V_RES / 2 * sizeof(uint16_t),  // full frame as the maximum transfer size
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,
     };
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00, // the idle value will take no effect since we are using the loop mode

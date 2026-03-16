@@ -39,7 +39,7 @@ static void test_parlio_tx_cache_safe(void)
         .trans_queue_depth = 4,
         .max_transfer_size = 65535,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
     };
 
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
