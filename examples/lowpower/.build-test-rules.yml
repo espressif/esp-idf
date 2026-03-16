@@ -12,6 +12,8 @@ examples/lowpower/power_management:
 examples/lowpower/vbat:
   enable:
     - if: SOC_VBAT_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET in ["esp32h2"] and CONFIG_NAME == "mainpower_ctrl"
   disable_test:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
