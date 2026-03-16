@@ -825,7 +825,7 @@ static esp_err_t i2c_param_master_config(i2c_bus_handle_t handle, const i2c_mast
 
 static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 {
-    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "no memory for i2c master bus");
+    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     i2c_master_bus_handle_t i2c_master = bus_handle;
     esp_err_t err = ESP_OK;
     if (i2c_master->base) {
@@ -1158,6 +1158,7 @@ esp_err_t i2c_master_bus_rm_device(i2c_master_dev_handle_t handle)
 
 esp_err_t i2c_del_master_bus(i2c_master_bus_handle_t bus_handle)
 {
+    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_LOGD(TAG, "del i2c bus(%d)", bus_handle->base->port_num);
     ESP_RETURN_ON_ERROR(i2c_master_bus_destroy(bus_handle), TAG, "destroy i2c bus failed");
     return ESP_OK;
