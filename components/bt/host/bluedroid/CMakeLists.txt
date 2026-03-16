@@ -22,7 +22,8 @@ function(set_bluedroid_host_compile_flags)
                                     PROPERTIES COMPILE_FLAGS "${jump_table_opts}")
     endif()
 
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
+    if((CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0) OR
+        CMAKE_C_COMPILER_ID MATCHES "Clang")
         set_source_files_properties("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/device/controller.c"
                                     PROPERTIES COMPILE_FLAGS "-Wno-unterminated-string-initialization")
     endif()
