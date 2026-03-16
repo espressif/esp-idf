@@ -160,7 +160,7 @@ TEST_CASE("ISP AWB driver oneshot vs continuous test", "[isp]")
     uint32_t image_height = 600;
     /* Default parameters from helper macro */
     esp_isp_awb_config_t awb_config = {
-        .sample_point = ISP_AWB_SAMPLE_POINT_AFTER_CCM,
+        .sample_point = ISP_AWB_SAMPLE_POINT_1,
         .window = {
             .top_left = {.x = image_width * 0.2, .y = image_height * 0.2},
             .btm_right = {.x = image_width * 0.8, .y = image_height * 0.8},
@@ -273,7 +273,7 @@ TEST_CASE("ISP AE driver oneshot vs continuous test", "[isp]")
     isp_ae_ctlr_t ae_ctlr = NULL;
     /* Default parameters from helper macro */
     esp_isp_ae_config_t ae_config = {
-        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        .sample_point = ISP_AE_SAMPLE_POINT_0,
     };
     isp_ae_result_t ae_res = {};
     /* Create the ae controller */
@@ -318,7 +318,7 @@ TEST_CASE("ISP AE controller exhausted allocation", "[isp]")
     TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
 
     esp_isp_ae_config_t ae_config = {
-        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        .sample_point = ISP_AE_SAMPLE_POINT_0,
     };
     isp_ae_ctlr_t ae_ctrlr[SOC_ISP_AE_CTLR_NUMS + 1] = {};
     for (int i = 0; i < SOC_ISP_AE_CTLR_NUMS; i++) {
