@@ -157,26 +157,26 @@ SECTIONS
   ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)),
           "RTC_FAST segment data does not fit.")
 
-  .scp.text :
+  .spm.text :
   {
-    /* Code marked as running out of SCP */
-    _scp_text_start = ABSOLUTE(.);
+    /* Code marked as running out of SPM */
+    _spm_text_start = ABSOLUTE(.);
 
-    arrays[scp_text]
-    mapping[scp_text]
+    arrays[spm_text]
+    mapping[spm_text]
 
-    _scp_text_end = ABSOLUTE(.);
-  } > scp_idram_seg
+    _spm_text_end = ABSOLUTE(.);
+  } > spm_idram_seg
 
-  .scp.data :
+  .spm.data :
   {
-    _scp_data_start = ABSOLUTE(.);
+    _spm_data_start = ABSOLUTE(.);
 
-    arrays[scp_data]
-    mapping[scp_data]
+    arrays[spm_data]
+    mapping[spm_data]
 
-    _scp_data_end = ABSOLUTE(.);
-  } > scp_idram_seg
+    _spm_data_end = ABSOLUTE(.);
+  } > spm_idram_seg
 
   .iram0.text :
   {

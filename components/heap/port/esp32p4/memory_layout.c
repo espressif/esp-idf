@@ -36,7 +36,7 @@ enum {
      */
     SOC_MEMORY_TYPE_RETENT_MEM  = 1,
     SOC_MEMORY_TYPE_SPIRAM      = 2,
-    SOC_MEMORY_TYPE_SCP         = 3,
+    SOC_MEMORY_TYPE_SPM         = 3,
     SOC_MEMORY_TYPE_RTCRAM      = 4,
     SOC_MEMORY_TYPE_NUM,
 };
@@ -53,7 +53,7 @@ enum {
 #endif
 
 // The memory used for SIMD instructions requires the bus of its memory regions be able to transfer the data in 128-bit
-// SCP and RTCRAM memory regions cannot satisfy 128-bit data access
+// SPM and RTCRAM memory regions cannot satisfy 128-bit data access
 
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
@@ -66,7 +66,7 @@ const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     [SOC_MEMORY_TYPE_RETENT_MEM]    = { "RETENT_RAM",   { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_RETENTION | MALLOC_CAP_SIMD,    0,                                             0 }},
     [SOC_MEMORY_TYPE_L2MEM]         = { "RAM",          { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_SIMD,                           0,                                             0 }},
     [SOC_MEMORY_TYPE_SPIRAM]        = { "SPIRAM",       { MALLOC_CAP_SPIRAM,                                                  0,                                             ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
-    [SOC_MEMORY_TYPE_SCP]           = { "SCP",          { MALLOC_CAP_SCP,                                                     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
+    [SOC_MEMORY_TYPE_SPM]           = { "SPM",          { MALLOC_CAP_SPM,                                                     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
     [SOC_MEMORY_TYPE_RTCRAM]        = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                                                  0,                                             MALLOC_RTCRAM_BASE_CAPS}},
 };
 
@@ -112,7 +112,7 @@ const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x50108000,           APP_USABLE_LP_RAM_SIZE,                        SOC_MEMORY_TYPE_RTCRAM,      0,                      false}, //LPRAM
 #endif
-    { 0x30100000,           0x2000,                                        SOC_MEMORY_TYPE_SCP,         0,                      false},
+    { 0x30100000,           0x2000,                                        SOC_MEMORY_TYPE_SPM,         0,                      false},
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
@@ -125,7 +125,7 @@ extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end
 extern int _rtc_p4_rev3_mspi_workaround_start, _rtc_p4_rev3_mspi_workaround_end;
 #endif
 #endif
-extern int _scp_text_start, _scp_data_end;
+extern int _spm_text_start, _spm_data_end;
 extern int _rtc_reserved_start, _rtc_reserved_end;
 extern int _rtc_ulp_memory_start;
 
@@ -146,7 +146,7 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
 
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_scp_text_start, (intptr_t)&_scp_data_end, scp_code_data);
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_spm_text_start, (intptr_t)&_spm_data_end, spm_code_data);
 
 #ifdef CONFIG_SPIRAM
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH, extram_region);

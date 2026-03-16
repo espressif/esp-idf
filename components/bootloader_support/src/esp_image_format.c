@@ -490,8 +490,8 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     }
 #endif
 
-#if SOC_MEM_SCP_SUPPORTED
-    else if (esp_ptr_in_scp(load_addr_p) && esp_ptr_in_scp(load_inclusive_end_p)) {
+#if SOC_MEM_SPM_SUPPORTED
+    else if (esp_ptr_in_spm(load_addr_p) && esp_ptr_in_spm(load_inclusive_end_p)) {
         return true;
     }
 #endif

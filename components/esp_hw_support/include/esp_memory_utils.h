@@ -196,31 +196,31 @@ inline static void * esp_ptr_diram_iram_to_dram(const void *p) {
 #endif
 }
 
-#if SOC_MEM_SCP_SUPPORTED
+#if SOC_MEM_SPM_SUPPORTED
 /**
- * @brief Check if the pointer is in TCM (SCP)
+ * @brief Check if the pointer is in TCM (SPM)
  *
  * @param p pointer
  *
- * @return true: is in TCM (SCP); false: not in TCM (SCP)
+ * @return true: is in TCM (SPM); false: not in TCM (SPM)
  */
- __attribute__((always_inline, deprecated("esp_ptr_in_tcm is deprecated, please use esp_ptr_in_scp instead")))
+ __attribute__((always_inline, deprecated("esp_ptr_in_tcm is deprecated, please use esp_ptr_in_spm instead")))
 inline static bool esp_ptr_in_tcm(const void *p) {
-    return ((intptr_t)p >= SOC_SCP_LOW && (intptr_t)p < SOC_SCP_HIGH);
+    return ((intptr_t)p >= SOC_SPM_LOW && (intptr_t)p < SOC_SPM_HIGH);
 }
 
 /**
- * @brief Check if the pointer is in SCP
+ * @brief Check if the pointer is in SPM
  *
  * @param p pointer
  *
- * @return true: is in SCP; false: not in SCP
+ * @return true: is in SPM; false: not in SPM
  */
  __attribute__((always_inline))
- inline static bool esp_ptr_in_scp(const void *p) {
-     return ((intptr_t)p >= SOC_SCP_LOW && (intptr_t)p < SOC_SCP_HIGH);
+ inline static bool esp_ptr_in_spm(const void *p) {
+     return ((intptr_t)p >= SOC_SPM_LOW && (intptr_t)p < SOC_SPM_HIGH);
  }
-#endif  //#if SOC_MEM_SCP_SUPPORTED
+#endif  //#if SOC_MEM_SPM_SUPPORTED
 
 /** End of common functions to be kept in sync with bootloader_memory_utils.h **/
 /** Add app-specific functions below **/
@@ -290,8 +290,8 @@ inline static bool esp_ptr_internal(const void *p) {
     bool r;
     r = ((intptr_t)p >= SOC_MEM_INTERNAL_LOW && (intptr_t)p < SOC_MEM_INTERNAL_HIGH);
 
-#if SOC_MEM_SCP_SUPPORTED
-    r |= esp_ptr_in_scp(p);
+#if SOC_MEM_SPM_SUPPORTED
+    r |= esp_ptr_in_spm(p);
 #endif
 
 #if SOC_RTC_SLOW_MEM_SUPPORTED

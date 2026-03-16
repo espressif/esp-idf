@@ -47,12 +47,12 @@ static void esp_cpu_configure_invalid_regions(void)
     // 0. Gap at bottom of address space
     PMA_RESET_AND_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
 
-    // 1. Gap between CPU subsystem region & HP SCP
+    // 1. Gap between CPU subsystem region & HP SPM
     PMA_RESET_AND_ENTRY_SET_TOR(1, SOC_CPU_SUBSYSTEM_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_SCP_LOW, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_SPM_LOW, PMA_TOR | PMA_NONE);
 
-    // 2. Gap between HP SCP and CPU Peripherals
-    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_SCP_HIGH, PMA_NONE);
+    // 2. Gap between HP SPM and CPU Peripherals
+    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_SPM_HIGH, PMA_NONE);
     PMA_RESET_AND_ENTRY_SET_TOR(4, CPU_PERIPH_LOW, PMA_TOR | PMA_NONE);
 
     // 3. Gap between CPU Peripherals and I_Cache

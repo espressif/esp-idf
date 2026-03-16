@@ -21,8 +21,8 @@ extern "C" {
 /**
  * Select CPU reset vector
  * @param boot_from_lp_ram
- *        true:     boot from LP SCP RAM:   0x50108000
- *        false:    boot from HP SCP ROM:   0x4FC00000
+ *        true:     boot from LP SPM RAM:   0x50108000
+ *        false:    boot from HP SPM ROM:   0x4FC00000
  */
 __attribute__((always_inline))
 static inline void lp_clkrst_ll_boot_from_lp_ram(bool boot_from_lp_ram)
