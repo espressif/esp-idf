@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 
+#include <stddef.h>
 #include <string.h>
 #include "esp_fault.h"
 #include "bootloader_flash_priv.h"
@@ -220,8 +221,13 @@ _Static_assert(SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 3 && SECURE_BOOT_NUM_BLOCKS 
     size_t validated_keys = 0;
     int sb_result = SB_FAILED;
 
-    ets_secure_boot_sig_block_t sig_block_copy[SECURE_BOOT_NUM_BLOCKS] = {0};
+    _Static_assert(offsetof(ets_secure_boot_signature_t, block) == 0,
+                   "block[0] must be at offset 0 in ets_secure_boot_signature_t for pointer cast to be valid");
+    _Static_assert(__builtin_types_compatible_p(__typeof__(((ets_secure_boot_signature_t *)0)->block[0]), ets_secure_boot_sig_block_t),
+                   "ets_secure_boot_signature_t::block element type must be ets_secure_boot_sig_block_t");
+    static ets_secure_boot_sig_block_t sig_block_copy[SECURE_BOOT_NUM_BLOCKS];
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        memset(sig_block_copy, 0, sizeof(sig_block_copy));
         memcpy(&sig_block_copy[0], &sig_block->block[i], sizeof(ets_secure_boot_sig_block_t));
         int sb_sub_result = ets_secure_boot_verify_signature((ets_secure_boot_signature_t*)&sig_block_copy[0], image_digest, &trusted_key_digests, verified_digest);
         if (sb_sub_result == SB_SUCCESS) {
