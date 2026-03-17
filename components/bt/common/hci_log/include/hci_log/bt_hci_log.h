@@ -102,6 +102,17 @@ esp_err_t bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint16_t 
  */
 esp_err_t bt_hci_log_record_hci_adv(uint8_t data_type, uint8_t *data, uint8_t data_len);
 
+/**
+ *
+ * @brief           Convert HCI H4 packet type to HCI log data type.
+ *
+ * @param h4_type : HCI H4 packet type byte
+ *
+ * @return          corresponding HCI log data type
+ *
+ */
+uint8_t bt_hci_log_h4_type_to_data_type(uint8_t h4_type);
+
 #ifdef __cplusplus
 }
 #endif
