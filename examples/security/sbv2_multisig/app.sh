@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#
-# TODO: figure out how to write the efuse file in qemu
-#
-
 set -e
 
 if [ -z "$IDF_PATH" ]; then
@@ -131,38 +127,30 @@ elif [ "$QEMU" -eq 1 ]; then
     MERGED_BIN_FILE="build/$MERGED_BIN_FILE"
     echo "Merged binary for QEMU: $MERGED_BIN_FILE"
 
-    #TODO???
-    # create the efuse binary for qemu and set the secure boot digests
-    #DIGEST1=secure_boot_signing_key1.digest
-    #DIGEST2=secure_boot_signing_key2.digest
-    #DIGEST3=secure_boot_signing_key3.digest
-    #if [ ! -f "$DIGEST1" ] || [ ! -f "$DIGEST2" ] || [ ! -f "$DIGEST3" ]; then
-    #    echo "One or more key digests ($DIGEST1, $DIGEST2, $DIGEST3) are missing."
-    #    exit 1
-    #fi
+    # create an efuse binary file for qemu
     EFUSE_BIN="qemu_efuse.bin"
     if [ -f "$EFUSE_BIN" ]; then
         echo "EFUSE binary $EFUSE_BIN already exists. Skipping creation."
     else
         echo "Creating EFUSE binary $EFUSE_BIN"
         dd if=/dev/zero bs=1KiB count=1 of="$EFUSE_BIN"
-        #TODO???
-        #espefuse --chip esp32s3 --do-not-confirm --virt --path-efuse-file "$EFUSE_BIN" dump --format joint --file_name "$EFUSE_BIN"
     fi
 
-    #TODO???
-    # set the secure boot digests in the efuse binary using espefuse.py
-    #idf.py qemu --efuse-file "$EFUSE_BIN" efuse-burn-key BLOCK_KEY0 "$DIGEST1" SECURE_BOOT_DIGEST0
-    #idf.py qemu --efuse-file "$EFUSE_BIN" efuse-burn-key BLOCK_KEY0 "$DIGEST2" SECURE_BOOT_DIGEST1
-    #idf.py qemu --efuse-file "$EFUSE_BIN" efuse-burn-key BLOCK_KEY0 "$DIGEST3" SECURE_BOOT_DIGEST2
-
     # run qemu
+    echo "============================="
+    echo "Starting QEMU with signed binary..."
+    echo "============================="
     qemu-system-xtensa -nographic -machine esp32s3 \
         -drive file="$MERGED_BIN_FILE",if=mtd,format=raw \
-        -drive file="$EFUSE_BIN",if=none,format=raw,id=efuse &
+        -drive file="$EFUSE_BIN",if=none,format=raw,id=efuse \
+        -global driver=nvram.esp32s3.efuse,property=drive,value=efuse \
+        -global driver=timer.esp32s3.timg,property=wdt_disable,value=true &
     QEMU_PID=$!
-    # kill the qemu process after 2 seconds
+
+    # wait for qemu to boot and print the secure boot status
     sleep 2
+
+    # kill the qemu process
     kill $QEMU_PID
 
 fi
