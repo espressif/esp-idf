@@ -84,7 +84,7 @@ static const char *TAG = "esp_stdio";
 static inline bool is_fd_valid(int fd)
 {
 #if ESP_STDIO_IS_BASIC
-    return (fd == 0) && (s_ctx.fd_count > 0);
+    return (fd >= 0) && (s_ctx.fd_count > 0);
 #else
     return (fd >= 0) && (fd < CONFIG_ESP_STDIO_MAX_FDS) && s_ctx.fds[fd].in_use;
 #endif
