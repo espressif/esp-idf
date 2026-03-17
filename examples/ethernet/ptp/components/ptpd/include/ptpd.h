@@ -47,17 +47,7 @@
  * Public Types
  ****************************************************************************/
 
-/* PTPD status information structure */
-
-struct ptpd_status_s
-{
-  /* Is there a valid remote clock source active? */
-
-  bool clock_source_valid;
-
-  /* Information about selected best clock source */
-
-  struct
+typedef struct
   {
     uint8_t id[8];     /* Clock identity */
     int utcoffset;     /* Offset between clock time and UTC time (seconds) */
@@ -69,7 +59,21 @@ struct ptpd_status_s
     uint8_t gm_id[8];  /* Grandmaster clock identity */
     int stepsremoved;  /* How many steps from grandmaster clock */
     int timesource;    /* Type of time source (IEEE-1588) */
-  } clock_source_info;
+  } clock_info_s;
+
+/* PTPD status information structure */
+
+struct ptpd_status_s
+{
+  /* Is there a valid remote clock source active? */
+
+  bool clock_source_valid;
+
+  /* Information about selected best clock source */
+
+  clock_info_s clock_source_info;
+
+  clock_info_s own_identity_info;
 
   /* When was clock last updated or adjusted (CLOCK_REALTIME).
    * Matches last_received_sync but in different clock.

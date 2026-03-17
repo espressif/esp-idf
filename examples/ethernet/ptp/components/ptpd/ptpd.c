@@ -314,7 +314,6 @@ static struct ptp_state_s *s_state;
  * Private Functions
  ****************************************************************************/
 #ifdef ESP_PTP
-
 // Convert 8 bytes to 64-bit signed integer (nanoseconds << 16)
 static int64_t get_correction_ns(uint8_t *correction_field)
 {
@@ -348,9 +347,9 @@ static int8_t msec_to_log_period(uint16_t msec_period) {
 }
 
 // Convert log period to period in msec
-static uint16_t log_period_to_msec(int8_t log_period) {
+static uint32_t log_period_to_msec(int8_t log_period) {
     // interval = 2^logMessagePeriod
-    return (uint16_t)(pow(2.0, log_period) * 1e3);
+    return (uint32_t)(pow(2.0, log_period) * 1e3);
 }
 
 /* Calculates randomized delay request interval in ms.
@@ -534,12 +533,12 @@ static bool is_better_clock(FAR const struct ptp_announce_s *a,
       system_identity_check = -1;
     }
     else if (a->gm_priority1 == b->gm_priority1      /* Main priority field */
-      || a->gm_quality[0] == b->gm_quality[0] /* Clock class */
-      || a->gm_quality[1] == b->gm_quality[1] /* Clock accuracy */
-      || a->gm_quality[2] == b->gm_quality[2] /* Clock variance high byte */
-      || a->gm_quality[3] == b->gm_quality[3]  /* Clock variance low byte */
-      || a->gm_priority2 == b->gm_priority2 /* Sub priority field */
-      || memcmp(a->gm_identity, b->gm_identity, sizeof(a->gm_identity)) == 0)
+      && a->gm_quality[0] == b->gm_quality[0] /* Clock class */
+      && a->gm_quality[1] == b->gm_quality[1] /* Clock accuracy */
+      && a->gm_quality[2] == b->gm_quality[2] /* Clock variance high byte */
+      && a->gm_quality[3] == b->gm_quality[3]  /* Clock variance low byte */
+      && a->gm_priority2 == b->gm_priority2 /* Sub priority field */
+      && memcmp(a->gm_identity, b->gm_identity, sizeof(a->gm_identity)) == 0)
     {
       system_identity_check = 0;
     }
@@ -549,11 +548,11 @@ static bool is_better_clock(FAR const struct ptp_announce_s *a,
     || ((system_identity_check == 0) &&
           (memcmp(a->stepsremoved, b->stepsremoved, sizeof(a->stepsremoved)) < 0)) /* Compare steps removed */
     || ((system_identity_check == 0) &&
-          (memcmp(a->stepsremoved, b->stepsremoved, sizeof(a->stepsremoved)) < 0) &&
+          (memcmp(a->stepsremoved, b->stepsremoved, sizeof(a->stepsremoved)) == 0) &&
           (memcmp(a->header.sourceidentity, b->header.sourceidentity,
                   sizeof(a->header.sourceidentity)) < 0)) /* Compare source port identity */
     || ((system_identity_check == 0) &&
-          (memcmp(a->stepsremoved, b->stepsremoved, sizeof(a->stepsremoved)) < 0) &&
+          (memcmp(a->stepsremoved, b->stepsremoved, sizeof(a->stepsremoved)) == 0) &&
           (memcmp(a->header.sourceidentity, b->header.sourceidentity,
                   sizeof(a->header.sourceidentity)) == 0) &&
           (memcmp(a->header.sourceportindex, b->header.sourceportindex,
@@ -1108,6 +1107,7 @@ static int ptp_send_announce(FAR struct ptp_state_s *state)
 
   /* Add the path trace TLV */
   struct ptp_pathtrace_tlv_s pathtrace_tlv;
+  memset(&pathtrace_tlv, 0, sizeof(pathtrace_tlv));
   pathtrace_tlv.type[1] = 8;   // Path trace
   pathtrace_tlv.length[1] = 8; // 8 bytes
   memcpy(pathtrace_tlv.pathsequence, state->own_identity.gm_identity,
@@ -1223,6 +1223,10 @@ static int ptp_send_sync(FAR struct ptp_state_s *state)
   msg.header.flags[0] = 0;     // Reset 2-step flag
   msg.header.controlfield = 2; // Follow-up message
 
+#ifdef CONFIG_NETUTILS_PTPD_GPTP_PROFILE
+  msg.header.messagetype |= PTP_MSGTYPE_SDOID_GPTP; // gPTP profile message
+#endif
+
   /* Add the information TLV (required for gPTP and ignored otherwise) */
 
   struct ptp_info_tlv_s info_tlv;
@@ -1262,7 +1266,11 @@ static int ptp_send_sync(FAR struct ptp_state_s *state)
 
 static int ptp_send_delay_req(FAR struct ptp_state_s *state)
 {
+#ifdef CONFIG_NETUTILS_PTPD_GPTP_PROFILE
+  struct ptp_pdelay_req_s req;
+#else
   struct ptp_delay_req_s req;
+#endif
 #ifndef ESP_PTP
   struct sockaddr_in addr;
 #endif // !ESP_PTP
@@ -1292,8 +1300,10 @@ static int ptp_send_delay_req(FAR struct ptp_state_s *state)
 
   ptp_increment_sequence(&state->delay_req_seq, &req.header);
 
+#ifndef CONFIG_NETUTILS_PTPD_GPTP_PROFILE
   ptp_gettime(state, &state->delayreq_time);
   timespec_to_ptp_format(&state->delayreq_time, req.origintimestamp);
+#endif
 
 #ifdef ESP_PTP
   ret = ptp_net_send(state, &req, sizeof(req), &state->delayreq_time);
@@ -1825,6 +1835,7 @@ static int ptp_process_delay_req(FAR struct ptp_state_s *state,
 #ifdef CONFIG_NETUTILS_PTPD_GPTP_PROFILE
   timespec_to_ptp_format(&ts, resp.delay_resp_follow_up.origintimestamp);
   resp.header.messagetype = PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP;
+  resp.header.messagetype |= PTP_MSGTYPE_SDOID_GPTP; // gPTP profile message
   resp.header.messagelength[1] = sizeof(struct ptp_delay_resp_follow_up_s);
   resp.header.flags[0] = 0; // Reset 2-step flag
 
@@ -2142,9 +2153,32 @@ static void ptp_process_statusreq(FAR struct ptp_state_s *state)
   status = state->status_req.dest;
   status->clock_source_valid = state->selected_source_valid;
 
+  /* Copy own identity info to status struct */
+
+  FAR struct ptp_announce_s *o = &state->own_identity;
+
+  memcpy(status->own_identity_info.id,
+         o->header.sourceidentity,
+         sizeof(status->own_identity_info.id));
+
+  status->own_identity_info.utcoffset = o->utcoffset[0];
+  status->own_identity_info.priority1 = o->gm_priority1;
+  status->own_identity_info.clockclass = o->gm_quality[0];
+  status->own_identity_info.accuracy = o->gm_quality[1];
+  status->own_identity_info.priority2 = o->gm_priority2;
+  status->own_identity_info.variance =
+      ((uint16_t)o->gm_quality[2] << 8) | o->gm_quality[3];
+  memcpy(status->own_identity_info.gm_id,
+         o->gm_identity,
+         sizeof(status->own_identity_info.gm_id));
+
+  status->own_identity_info.stepsremoved =
+      ((uint16_t)o->stepsremoved[0] << 8) | o->stepsremoved[1];
+  status->own_identity_info.timesource = o->timesource;
+
   if (status->clock_source_valid)
     {
-      /* Copy relevant parts of announce info to status struct */
+      /* Copy relevant parts of selected source announce info to status struct */
 
       FAR struct ptp_announce_s *s = &state->selected_source;
 

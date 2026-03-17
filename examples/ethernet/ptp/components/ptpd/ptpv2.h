@@ -69,7 +69,7 @@
 #define PTP_MSGTYPE_DELAY_RESP 0x09
 #define PTP_MSGTYPE_PDELAY_REQ 0x02            // only used in gPTP
 #define PTP_MSGTYPE_PDELAY_RESP 0x03           // only used in gPTP
-#define PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP 0x0a // only used in gPTP
+#define PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP 0x1a // only used in gPTP
 
 /* Message flags */
 
@@ -163,12 +163,12 @@ struct ptp_follow_up_s
   uint8_t informationtlv[32]; // gPTP required
 };
 
-/* DelayReq: request delay measurement (path delay or peer delay) */
+/* DelayReq: request delay measurement (path delay) */
 
 struct ptp_delay_req_s
 {
   struct ptp_header_s header;
-  uint8_t origintimestamp[10]; // in gPTP profile, this will be ignored
+  uint8_t origintimestamp[10];
 };
 
 /* DelayResp: response to DelayReq (path delay or peer delay)*/
@@ -189,6 +189,14 @@ struct ptp_delay_resp_follow_up_s
   uint8_t origintimestamp[10];
   uint8_t reqidentity[8];
   uint8_t reqportindex[2];
+};
+
+/* PeerDelayReq: request peer delay measurement */
+
+struct ptp_pdelay_req_s
+{
+  struct ptp_header_s header;
+  uint8_t reserved[20];
 };
 
 #endif /* __APPS_NETUTILS_PTPD_PTPV2_H */

@@ -212,7 +212,7 @@ menu "PTP Daemon Configuration"
                     to server. If disabled, assumes no delay. If gPTP profile is enabled,
                     this setting is ignored (acts as y).
 
-            if NETUTILS_PTPD_SEND_DELAYREQ
+            if NETUTILS_PTPD_SEND_DELAYREQ || NETUTILS_PTPD_GPTP_PROFILE
 
                 config NETUTILS_PTPD_MAX_PATH_DELAY_NS
                     int "PTP client maximum path delay (ns)"
@@ -234,7 +234,7 @@ menu "PTP Daemon Configuration"
                     help
                         Sends path delay request only once the internal clock is stable and skews only
                         in defined interval.
-                config NETUTILS_PTPD_PEER_PDELAY_STABILITY_NS
+                config NETUTILS_PTPD_PEER_DELAY_STABILITY_NS
                     int "PTP client send peer delay request when clock stability (ns)"
                     default 100
                     help
