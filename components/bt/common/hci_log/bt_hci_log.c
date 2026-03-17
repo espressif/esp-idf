@@ -40,6 +40,16 @@ static const char s_hex_to_char_mapping[16] = {
 static bt_hci_log_t g_bt_hci_log_data_ctl  = {0};
 static bt_hci_log_t g_bt_hci_log_adv_ctl  = {0};
 
+uint8_t bt_hci_log_h4_type_to_data_type(uint8_t h4_type)
+{
+    switch (h4_type) {
+    case 0x05:
+        return HCI_LOG_DATA_TYPE_ISO_DATA;
+    default:
+        return h4_type;
+    }
+}
+
 esp_err_t bt_hci_log_init(void)
 {
     uint8_t *g_bt_hci_log_data_buffer = NULL;
