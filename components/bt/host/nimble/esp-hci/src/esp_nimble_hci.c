@@ -78,7 +78,11 @@ void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
 void esp_vhci_host_send_packet_wrapper(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
-    bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
+    uint8_t data_type = bt_hci_log_h4_type_to_data_type(data[0]);
+    bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+#if BT_HCI_INSIGHTS_INCLUDED
+    bt_hci_log_record_insights(data_type, &data[1], len - 1);
+#endif
 #endif
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
@@ -237,18 +241,24 @@ static void dummy_controller_rcv_pkt_ready(void)
 void bt_record_hci_data(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
-    if ((data[0] == BLE_HCI_UART_H4_EVT) && (data[1] == BLE_HCI_EVCODE_LE_META) && ((data[3] ==  BLE_HCI_LE_SUBEV_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_DIRECT_ADV_RPT)
+    if (len < 2) {
+        return;
+    }
+    if ((len >= 4) && (data[0] == BLE_HCI_UART_H4_EVT) && (data[1] == BLE_HCI_EVCODE_LE_META) && ((data[3] ==  BLE_HCI_LE_SUBEV_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_DIRECT_ADV_RPT)
         || (data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_PERIODIC_ADV_RPT))) {
         bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+#endif
     } else {
         uint8_t data_type;
-        if (data[0] == HCI_LOG_DATA_TYPE_ISO_DATA) {
-            data_type = HCI_LOG_DATA_TYPE_ISO_DATA;
-        } else {
-            data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
-        }
+        data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : bt_hci_log_h4_type_to_data_type(data[0]));
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(data_type, &data[1], len - 1);
+#endif
     }
+
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 }
 
