@@ -122,7 +122,7 @@ int ff_mutex_create (	/* Returns 1:Function succeeded or 0:Could not create the 
 /  semaphore of the volume created with ff_mutex_create function.
 */
 
-void ff_mutex_delete (	/* Returns 1:Function succeeded or 0:Could not delete due to an error */
+void ff_mutex_delete (
 	int vol				/* Mutex ID: Volume mutex (0 to FF_VOLUMES - 1) or system mutex (FF_VOLUMES) */
 )
 {
