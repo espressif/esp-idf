@@ -53,7 +53,7 @@ static void esp_internal_sha_update_state(esp_sha256_context *ctx)
 }
 
 static int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input,
-                               size_t ilen)
+                             size_t ilen)
 {
     size_t fill, left, len;
     uint32_t local_len = 0;
