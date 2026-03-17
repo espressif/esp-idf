@@ -397,7 +397,6 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     if(CONFIG_MBEDTLS_HARDWARE_SHA)
         target_sources(tfpsacrypto PRIVATE
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/psa_crypto_driver_esp_sha.c"
-            "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha256.c"
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha512.c"
             "${COMPONENT_DIR}/port/sha/esp_sha.c"
             "${COMPONENT_DIR}/port/psa_driver/esp_mac/psa_crypto_driver_esp_hmac_transparent.c"
@@ -405,6 +404,7 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     endif()
     target_sources(tfpsacrypto PRIVATE
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha1.c"
+            "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha256.c"
             "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
     )
 endif()

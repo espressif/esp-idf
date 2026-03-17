@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,22 +18,26 @@ uint32_t esp_core_dump_checksum_size(void) __attribute__((alias("core_dump_sha_s
 uint32_t esp_core_dump_elf_version(void) __attribute__((alias("core_dump_sha_version")));
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "psa_crypto_driver_esp_sha.h"
+#include "hal/sha_types.h"
 
 static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 {
-    mbedtls_sha256_init(&sha_ctx->ctx);
-    mbedtls_sha256_starts(&sha_ctx->ctx, false);
+    esp_sha256_starts(&sha_ctx->ctx, SHA2_256);
+    /* Coredump runs from a panic context, so the SHA HW engine and its
+     * FreeRTOS-based locks must not be used. Pin the context to software
+     * mode here so subsequent update/finish calls cannot enter the HW path. */
+    sha_ctx->ctx.operation_mode = ESP_SHA_MODE_SOFTWARE;
 }
 
 static void core_dump_sha256_update(core_dump_sha_ctx_t *sha_ctx, const void *data, size_t data_len)
 {
-    mbedtls_sha256_update(&sha_ctx->ctx, data, data_len);
+    esp_sha256_update(&sha_ctx->ctx, data, data_len);
 }
 
 static void core_dump_sha256_finish(core_dump_sha_ctx_t *sha_ctx)
 {
-    mbedtls_sha256_finish(&sha_ctx->ctx, sha_ctx->result);
-    mbedtls_sha256_free(&sha_ctx->ctx);
+    esp_sha256_finish(&sha_ctx->ctx, sha_ctx->result);
 }
 
 #else
