@@ -189,12 +189,16 @@ menu "ESP-STDIO"
         int "Max logical stdio file descriptors"
         depends on VFS_SUPPORT_IO
         range 0 64
-        default 3
+        default 16
         help
             Maximum number of logical /dev/console descriptors tracked by esp_stdio VFS.
                 - 0 enables basic mode with a shared internal descriptor.
                 - 1..2 is not allowed
-                - Values >3 enable descriptor-table mode.
+                - Values >= 3 select descriptor-table mode (minimum table size is 3).
+
+            stdin, stdout, and stderr each occupy one slot. The default leaves room for additional
+            opens of /dev/console (e.g. dup2, reopen). If set to exactly 3, only the three standard
+            streams fit and further opens fail with ENFILE unless one is closed first.
 
             Enabling basic mode decreases RAM usage, but disables checks for per-fd behaviour, such as read-only.
 
