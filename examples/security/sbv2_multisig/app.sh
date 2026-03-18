@@ -8,13 +8,16 @@ if [ -z "$IDF_PATH" ]; then
 fi
 
 usage() {
-    echo "Usage: $0 sign"
+    echo "Usage: $0 sign [num_signatures]"
     echo "       $0 qemu"
+    echo ""
+    echo "  num_signatures  Number of keys to sign with (1-3, default: 3)"
     exit 1
 }
 
 SIGN=0
 QEMU=0
+NUM_SIGNATURES=3
 BOOTLOADER_NAME=bootloader.bin
 BOOTLOADER_FILE=build/bootloader/$BOOTLOADER_NAME
 SIGNED_BOOTLOADER_NAME=bootloader_signed.bin
@@ -26,7 +29,17 @@ SIGNED_BIN_FILE=build/$SIGNED_BIN_NAME
 
 while true; do
     case "$1" in
-        sign) SIGN=1; shift ;;
+        sign)
+            SIGN=1
+            shift
+            if [[ "$1" =~ ^[1-3]$ ]]; then
+                NUM_SIGNATURES="$1"
+                shift
+            elif [[ -n "$1" ]] && [[ "$1" != "qemu" ]]; then
+                echo "Invalid num_signatures: '$1' (must be 1-3)"
+                usage
+            fi
+            ;;
         qemu) QEMU=1; shift ;;
         -h | --help) usage ;;
         "") break ;;
@@ -45,25 +58,14 @@ fi
 sign_binary() {
     local INPUT_FILE="$1"
     local OUTPUT_FILE="$2"
+    local NUM_SIGS="${3:-3}"
 
     if [ ! -f "$INPUT_FILE" ]; then
         echo "File $INPUT_FILE does not exist."
         exit 1
     fi
 
-    KEY1=secure_boot_signing_key1.pem
-    KEY2=secure_boot_signing_key2.pem
-    KEY3=secure_boot_signing_key3.pem
-    if [ ! -f "$KEY1" ] || [ ! -f "$KEY2" ] || [ ! -f "$KEY3" ]; then
-        echo "One or more signing keys ($KEY1, $KEY2, $KEY3) are missing."
-        exit 1
-    fi
-
     local HASH_FILE="${INPUT_FILE%.bin}.hash"
-    local SIG_FILE1="${INPUT_FILE%.bin}.sig1"
-    local SIG_FILE2="${INPUT_FILE%.bin}.sig2"
-    local SIG_FILE3="${INPUT_FILE%.bin}.sig3"
-
     local HASH_OPTS="-sha256 -binary"
     local SIGN_OPTS="-pkeyopt digest:sha256 -pkeyopt rsa_padding_mode:pss -pkeyopt rsa_pss_saltlen:32 -pkeyopt rsa_mgf1_md:sha256"
 
@@ -71,16 +73,26 @@ sign_binary() {
     openssl dgst $HASH_OPTS -out "$HASH_FILE" "$INPUT_FILE"
     echo "Generated hash of $INPUT_FILE and saved to $HASH_FILE"
 
-    # Generate signatures with each of the three keys
-    openssl pkeyutl -sign -inkey "$KEY1" -in "$HASH_FILE" -out "$SIG_FILE1" $SIGN_OPTS
-    openssl pkeyutl -sign -inkey "$KEY2" -in "$HASH_FILE" -out "$SIG_FILE2" $SIGN_OPTS
-    openssl pkeyutl -sign -inkey "$KEY3" -in "$HASH_FILE" -out "$SIG_FILE3" $SIGN_OPTS
-    echo "Generated signatures for $INPUT_FILE using keys $KEY1, $KEY2, and $KEY3. Signatures saved to $SIG_FILE1, $SIG_FILE2, and $SIG_FILE3"
+    # Generate signatures and collect args for espsecure
+    local PUB_KEY_ARGS=()
+    local SIG_ARGS=()
+    for i in $(seq 1 "$NUM_SIGS"); do
+        local KEY="secure_boot_signing_key${i}.pem"
+        if [ ! -f "$KEY" ]; then
+            echo "Signing key $KEY is missing."
+            exit 1
+        fi
+        local SIG_FILE="${INPUT_FILE%.bin}.sig${i}"
+        openssl pkeyutl -sign -inkey "$KEY" -in "$HASH_FILE" -out "$SIG_FILE" $SIGN_OPTS
+        echo "Generated signature with $KEY -> $SIG_FILE"
+        PUB_KEY_ARGS+=("$KEY")
+        SIG_ARGS+=("$SIG_FILE")
+    done
 
     # Apply the signatures to the binary file
-    espsecure sign-data --version 2 --pub-key "$KEY1" "$KEY2" "$KEY3" --signature "$SIG_FILE1" "$SIG_FILE2" "$SIG_FILE3" --output "$OUTPUT_FILE" "$INPUT_FILE"
+    espsecure sign-data --version 2 --pub-key "${PUB_KEY_ARGS[@]}" --signature "${SIG_ARGS[@]}" --output "$OUTPUT_FILE" "$INPUT_FILE"
 
-    echo "Successfully signed $INPUT_FILE. Signed file: $OUTPUT_FILE"
+    echo "Successfully signed $INPUT_FILE with $NUM_SIGS key(s). Signed file: $OUTPUT_FILE"
     echo "Signature information:"
     espsecure signature-info-v2 "$OUTPUT_FILE"
 }
@@ -95,8 +107,8 @@ if [ "$SIGN" -eq 1 ]; then
         exit 1
     fi
 
-    sign_binary "$BIN_FILE" "$SIGNED_BIN_FILE"
-    sign_binary "$BOOTLOADER_FILE" "$SIGNED_BOOTLOADER_FILE"
+    sign_binary "$BIN_FILE" "$SIGNED_BIN_FILE" "$NUM_SIGNATURES"
+    sign_binary "$BOOTLOADER_FILE" "$SIGNED_BOOTLOADER_FILE" "$NUM_SIGNATURES"
 
 elif [ "$QEMU" -eq 1 ]; then
     FLASH_ARGS_FILE=flash_args
