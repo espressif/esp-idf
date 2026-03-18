@@ -256,10 +256,22 @@ static void ds_acquire_enable(void)
     esp_crypto_sha_enable_periph_clk(true);
     esp_crypto_mpi_enable_periph_clk(true);
     esp_crypto_ds_enable_periph_clk(true);
+
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+    /*  Key Manager holds the key usage selector register(efuse vs own key).
+        Thus, we need to enable the Key Manager peripheral clock to ensure
+        that the key usage selector register is properly set.
+     */
+    esp_crypto_key_mgr_enable_periph_clk(true);
+#endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 }
 
 static void ds_disable_release(void)
 {
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+    esp_crypto_key_mgr_enable_periph_clk(false);
+#endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
+
     esp_crypto_ds_enable_periph_clk(false);
     esp_crypto_mpi_enable_periph_clk(false);
     esp_crypto_sha_enable_periph_clk(false);
