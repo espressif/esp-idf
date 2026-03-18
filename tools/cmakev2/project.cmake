@@ -84,6 +84,7 @@ function(__init_project_configuration)
     set(link_options)
 
     idf_build_get_property(idf_ver IDF_VER)
+    idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_target IDF_TARGET)
     idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
     idf_build_get_property(build_dir BUILD_DIR)
