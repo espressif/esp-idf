@@ -285,7 +285,7 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM            (2)
 #define SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER     (1)
 
-#define SOC_DEBUG_PROBE_NUM_UNIT                 (1U)  // Number of debug probe units
+#define SOC_DEBUG_PROBE_NUM_UNIT                 (2U)  // Unit 0: HP probe, Unit 1: LP probe
 #define SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH         (16) // Maximum width of the debug probe output in each unit
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/

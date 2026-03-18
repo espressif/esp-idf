@@ -745,7 +745,7 @@ config SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
 
 config SOC_DEBUG_PROBE_NUM_UNIT
     int
-    default 1
+    default 2
 
 config SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH
     int

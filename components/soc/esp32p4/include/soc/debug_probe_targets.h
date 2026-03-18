@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -48,6 +48,23 @@ typedef enum {
     DEBUG_PROBE_TARGET_REGDMA = 29,        // REGDMA
     DEBUG_PROBE_TARGET_PVT = 30,           // PVT
 } soc_debug_probe_target_t;
+
+/**
+ * @brief LP probe target module (probe_a_top_sel 0..10)
+ */
+typedef enum {
+    DEBUG_PROBE_TARGET_LP_PMU = 0,           // LP PMU
+    DEBUG_PROBE_TARGET_LP_TCM_RAM = 1,       // LP TCM RAM
+    DEBUG_PROBE_TARGET_LP_TCM_ROM = 2,       // LP TCM ROM
+    DEBUG_PROBE_TARGET_LP_CORE = 3,          // LP Core
+    DEBUG_PROBE_TARGET_LP_ADC = 4,           // LP ADC
+    DEBUG_PROBE_TARGET_LP_SPI = 5,           // LP SPI
+    DEBUG_PROBE_TARGET_LP_TOUCH = 6,         // LP Touch
+    DEBUG_PROBE_TARGET_LP_ANA_PERI = 7,      // LP Analog Peripherals
+    DEBUG_PROBE_TARGET_LP_AON_CLKRST = 8,    // LP AON Clock/Reset
+    DEBUG_PROBE_TARGET_LP_SYS_MISC = 9,      // LP System Misc
+    DEBUG_PROBE_TARGET_LP_SYS_PROBE_IN = 10, // LP System Probe In
+} soc_debug_probe_target_lp_t;
 
 #ifdef __cplusplus
 }
