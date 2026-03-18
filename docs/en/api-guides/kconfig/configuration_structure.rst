@@ -79,6 +79,8 @@ The structure of the ``sdkconfig.rename`` file is as follows:
     * ``CONFIG_DEPRECATED_NAME CONFIG_NEW_NAME``, where ``CONFIG_DEPRECATED_NAME`` is the old config name which was renamed in a newer ESP-IDF version to ``CONFIG_NEW_NAME``.
     * ``CONFIG_DEPRECATED_NAME !CONFIG_NEW_INVERTED_NAME`` where ``CONFIG_NEW_INVERTED_NAME`` was introduced in a newer ESP-IDF version by Boolean inversion of the logic value of ``CONFIG_DEPRECATED_NAME``.
 
+If there is more than one mapping for the same deprecated option name (i.e. the same deprecated option name is renamed more than once), the last occurrence is used. Configuration system will report this only if configuration report verbosity is set to ``verbose`` (e.g. via ``KCONFIG_REPORT_VERBOSITY`` environment variable).
+
 Primary use case of this file is to ensure backward compatibility when the config name is changed in the newer ESP-IDF version.
 
 Example:
