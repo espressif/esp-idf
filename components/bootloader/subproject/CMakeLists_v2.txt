@@ -66,6 +66,10 @@ idf_build_set_property(PROJECT_COMPONENTS_SOURCE "idf_components")
 # components listed in `esp_common` as optional requirements are pulled into
 # the build.
 idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
+# The bootloader uses its own compiler optimization flags
+# (CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_*) set below, not the app-level
+# CONFIG_COMPILER_OPTIMIZATION_* defaults.
+idf_build_set_property(SET_COMPILER_OPTIMIZATION NO)
 
 # Perform internal IDF project initialisation
 idf_project_init()
