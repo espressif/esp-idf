@@ -312,9 +312,19 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
             break;
         }
 
-        if ((btc_hd_cb.app_info.p_name = (char *)osi_malloc(BTC_HD_APP_NAME_LEN)) == NULL ||
-            (btc_hd_cb.app_info.p_description = (char *)osi_malloc(BTC_HD_APP_DESCRIPTION_LEN)) == NULL ||
-            (btc_hd_cb.app_info.p_provider = (char *)osi_malloc(BTC_HD_APP_PROVIDER_LEN)) == NULL ||
+        if (!p_app_param->name || !p_app_param->description || !p_app_param->provider ||
+            !p_app_param->desc_list || (p_app_param->desc_list_len <= 0)) {
+            ret = ESP_HIDD_ERROR;
+            break;
+        }
+
+        size_t name_len = strnlen(p_app_param->name, BTC_HD_APP_NAME_LEN);
+        size_t description_len = strnlen(p_app_param->description, BTC_HD_APP_DESCRIPTION_LEN);
+        size_t provider_len = strnlen(p_app_param->provider, BTC_HD_APP_PROVIDER_LEN);
+
+        if ((btc_hd_cb.app_info.p_name = (char *)osi_malloc(name_len + 1)) == NULL ||
+            (btc_hd_cb.app_info.p_description = (char *)osi_malloc(description_len + 1)) == NULL ||
+            (btc_hd_cb.app_info.p_provider = (char *)osi_malloc(provider_len + 1)) == NULL ||
             (btc_hd_cb.app_info.descriptor.dsc_list = (uint8_t *)osi_malloc(p_app_param->desc_list_len)) == NULL) {
             BTC_TRACE_ERROR(
                 "%s malloc app_info failed! p_name:%p, p_description:%p, p_provider:%p, descriptor.dsc_list:%p",
@@ -323,9 +333,12 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
             ret = ESP_HIDD_NO_RES;
             break;
         }
-        memcpy(btc_hd_cb.app_info.p_name, p_app_param->name, BTC_HD_APP_NAME_LEN);
-        memcpy(btc_hd_cb.app_info.p_description, p_app_param->description, BTC_HD_APP_DESCRIPTION_LEN);
-        memcpy(btc_hd_cb.app_info.p_provider, p_app_param->provider, BTC_HD_APP_PROVIDER_LEN);
+        memcpy(btc_hd_cb.app_info.p_name, p_app_param->name, name_len);
+        btc_hd_cb.app_info.p_name[name_len] = '\0';
+        memcpy(btc_hd_cb.app_info.p_description, p_app_param->description, description_len);
+        btc_hd_cb.app_info.p_description[description_len] = '\0';
+        memcpy(btc_hd_cb.app_info.p_provider, p_app_param->provider, provider_len);
+        btc_hd_cb.app_info.p_provider[provider_len] = '\0';
         memcpy(btc_hd_cb.app_info.descriptor.dsc_list, p_app_param->desc_list, p_app_param->desc_list_len);
         btc_hd_cb.app_info.subclass = p_app_param->subclass;
         btc_hd_cb.app_info.descriptor.dl_len = p_app_param->desc_list_len;
