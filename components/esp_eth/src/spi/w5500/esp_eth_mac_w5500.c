@@ -544,7 +544,7 @@ static inline bool is_w5500_sane_for_rxtx(emac_w5500_t *emac)
 {
     uint8_t phycfg;
     /* phy is ok for rx and tx operations if bits RST and LNK are set (no link down, no reset) */
-    if (w5500_read(emac, W5500_REG_PHYCFGR, &phycfg, 1) == ESP_OK && (phycfg & 0x8001)) {
+    if (w5500_read(emac, W5500_REG_PHYCFGR, &phycfg, 1) == ESP_OK && (phycfg & 0x81) == 0x81) {
         return true;
     }
    return false;
