@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
+#include <esp_heap_caps.h>
 
 #include "unity.h"
 #include "test_utils.h"
@@ -30,6 +31,21 @@ httpd_uri_t handler_limit_uri (char* path)
     };
     return uri;
 };
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+static httpd_uri_t handler_limit_ws_uri(char *path, const char *subprotocol)
+{
+    httpd_uri_t uri = {
+        .uri                   = path,
+        .method                = HTTP_GET,
+        .handler               = null_func,
+        .user_ctx              = NULL,
+        .is_websocket          = true,
+        .supported_subprotocol = subprotocol,
+    };
+    return uri;
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 static inline unsigned num_digits(unsigned x)
 {
@@ -81,6 +97,36 @@ void test_handler_limit(httpd_handle_t hd)
         TEST_ASSERT(httpd_unregister_uri_handler(hd, uris[i].uri, uris[i].method) == ESP_OK);
     }
     basic_sanity = false;
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    /* --- WS subprotocol memory leak check ---
+     * Each registration strdup's the supported_subprotocol string.
+     * Verify that unregistration frees it (expected leak per handler:
+     * strlen(subprotocol) + 1 bytes if the bug is present).
+     */
+    char ws_paths[HTTPD_TEST_MAX_URI_HANDLERS][8];
+    httpd_uri_t ws_uris[HTTPD_TEST_MAX_URI_HANDLERS];
+    const char *subprotocol = "chat";
+
+    for (i = 0; i < HTTPD_TEST_MAX_URI_HANDLERS; i++) {
+        sprintf(ws_paths[i], "/ws%d", i);
+        ws_uris[i] = handler_limit_ws_uri(ws_paths[i], subprotocol);
+    }
+
+    size_t heap_before = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+
+    for (i = 0; i < HTTPD_TEST_MAX_URI_HANDLERS; i++) {
+        TEST_ASSERT(httpd_register_uri_handler(hd, &ws_uris[i]) == ESP_OK);
+    }
+    for (i = 0; i < HTTPD_TEST_MAX_URI_HANDLERS; i++) {
+        TEST_ASSERT(httpd_unregister_uri_handler(hd, ws_uris[i].uri, ws_uris[i].method) == ESP_OK);
+    }
+
+    size_t heap_after = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    int leaked = (int)heap_before - (int)heap_after;
+
+    TEST_ASSERT_MESSAGE(leaked <= 0, "Heap leaked after WS handler unregister");
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 }
 
 /********************* Test Handler Limit End *******************/
@@ -100,7 +146,7 @@ httpd_handle_t test_httpd_start(uint16_t id)
 
 /* Currently this only tests for the number of tasks.
  * Heap leakage is not tested as LWIP allocates memory
- * which may not be freed immedietly causing erroneous
+ * which may not be freed immediately causing erroneous
  * evaluation. Another test to implement would be the
  * monitoring of open sockets, but LWIP presently provides
  * no such API for getting the number of open sockets.
