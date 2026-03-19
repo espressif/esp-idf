@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,23 @@ void pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_rest
  * @param hal           regdma hal context
  */
 void pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal);
+
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+/**
+ * @brief Start transmission on regdma WiFi MAC SEL link
+ *
+ * @param hal           regdma hal context
+ * @param backup_or_restore        false: restore, true: backup
+ */
+void pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_restore);
+
+/**
+ * @brief Stop transmission on regdma WiFi MAC SEL link
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_stop_regdma_wifimac_link(pau_hal_context_t *hal);
+#endif
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA

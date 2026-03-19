@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,25 @@ void IRAM_ATTR pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal)
     pau_ll_select_regdma_entry_link(hal->dev, 0); /* restore link select to default */
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
 }
+
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+void IRAM_ATTR pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_restore)
+{
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+    pau_ll_set_regdma_select_wifimac_link(hal->dev);
+    pau_ll_set_regdma_wifimac_link_backup_direction(hal->dev, backup_or_restore);
+    pau_ll_set_regdma_wifimac_link_backup_start_enable(hal->dev);
+
+    while (!(pau_ll_get_regdma_intr_raw_signal(hal->dev) & PAU_DONE_INT_RAW));
+}
+
+void IRAM_ATTR pau_hal_stop_regdma_wifimac_link(pau_hal_context_t *hal)
+{
+    pau_ll_set_regdma_wifimac_link_backup_start_disable(hal->dev);
+    pau_ll_set_regdma_deselect_wifimac_link(hal->dev);
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+}
+#endif
 
 void IRAM_ATTR pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_restore)
 {
