@@ -819,7 +819,8 @@ esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_p
  * @note
  * - This function is necessary in order to handle multiple requests simultaneously.
  * See examples/async_requests for example usage.
- * - You must call httpd_req_async_handler_complete() when you are done with the request.
+ * - You must call httpd_req_async_handler_complete() when you are done with the request
+ * and also on any error conditions.
  *
  * @param[in]   r       The request to create an async copy of
  * @param[out]  out     A newly allocated request which can be used on an async thread
