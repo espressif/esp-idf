@@ -332,7 +332,7 @@ void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT *p_kb_data, UINT8 *p_report,
             p_kb->caps_lock = p_kb->caps_lock ? FALSE : TRUE;
         } else if (this_report[xx] == BTA_HH_KB_NUM_LOCK) {
             p_kb->num_lock = p_kb->num_lock ? FALSE : TRUE;
-        } else {
+        } else if (key_idx < BTA_HH_KB_VKEY_LEN) {
             p_data->this_char[key_idx ++] = this_char;
         }
 

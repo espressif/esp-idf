@@ -58,7 +58,7 @@
 #define BTA_HH_VC_UNPLUG_EVT    13      /* virtually unplugged */
 #define BTA_HH_DATA_EVT         15
 #define BTA_HH_API_ERR_EVT      16      /* API error is caught */
-#define BTA_HH_UPDATE_SCPP_EVT  17      /* update scan paramter complete */
+#define BTA_HH_UPDATE_SCPP_EVT  17      /* update scan parameter complete */
 #define BTA_HH_DATA_IND_EVT     18      /* Data on interrupt channel */
 
 typedef UINT16 tBTA_HH_EVT;
@@ -120,7 +120,7 @@ enum {
     BTA_HH_HS_HID_NOT_READY,    /* handshake error : device not ready */
     BTA_HH_HS_INVALID_RPT_ID,   /* handshake error : invalid report ID */
     BTA_HH_HS_TRANS_NOT_SPT,    /* handshake error : transaction not spt */
-    BTA_HH_HS_INVALID_PARAM,    /* handshake error : invalid paremter */
+    BTA_HH_HS_INVALID_PARAM,    /* handshake error : invalid parameter */
     BTA_HH_HS_ERROR,            /* handshake error : unspecified HS error */
     BTA_HH_ERR,                 /* general BTA HH error */
     BTA_HH_ERR_SDP,             /* SDP error */
@@ -237,7 +237,8 @@ enum {
 
 /* parsed boot mode keyboard report */
 typedef struct {
-    UINT8               this_char[6];       /* virtual key code     */
+#define BTA_HH_KB_VKEY_LEN  (6)
+    UINT8               this_char[BTA_HH_KB_VKEY_LEN];       /* virtual key code     */
     BOOLEAN             mod_key[BTA_HH_MOD_MAX_KEY];
     /* ctrl, shift, Alt, GUI */
     /* modifier key: is Shift key pressed */
@@ -500,7 +501,7 @@ extern void BTA_HhGetDscpInfo(UINT8 dev_handle);
 **
 ** Description      Add a virtually cabled device into HID-Host device list
 **                  to manage and assign a device handle for future API call,
-**                  host applciation call this API at start-up to initialize its
+**                  host application call this API at start-up to initialize its
 **                  virtually cabled devices.
 **
 ** Returns          void
