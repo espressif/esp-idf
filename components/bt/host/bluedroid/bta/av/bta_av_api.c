@@ -117,6 +117,7 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id,
         p_buf->hdr.event = BTA_AV_API_REGISTER_EVT;
         if (p_service_name) {
             BCM_STRNCPY_S(p_buf->p_service_name, p_service_name, BTA_SERVICE_NAME_LEN);
+            p_buf->p_service_name[BTA_SERVICE_NAME_LEN] = '\0';
         } else {
             p_buf->p_service_name[0] = '\0';
         }
@@ -133,6 +134,9 @@ void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 seid, UINT8 tsep, tBTA_AV_CODEC codec
 {
     tBTA_AV_API_REG_SEP  *p_buf;
 
+    if (p_codec_info == NULL) {
+        return;
+    }
     if ((p_buf = (tBTA_AV_API_REG_SEP *) osi_malloc(sizeof(tBTA_AV_API_REG_SEP))) != NULL) {
         p_buf->hdr.layer_specific   = chnl;
         p_buf->hdr.event = BTA_AV_API_REG_SEP_EVT;
@@ -344,8 +348,14 @@ void BTA_AvReconfig(tBTA_AV_HNDL hndl, BOOLEAN suspend, UINT8 sep_info_idx,
 void BTA_AvProtectReq(tBTA_AV_HNDL hndl, UINT8 *p_data, UINT16 len)
 {
     tBTA_AV_API_PROTECT_REQ  *p_buf;
+    size_t alloc_size;
 
-    if ((p_buf = (tBTA_AV_API_PROTECT_REQ *) osi_malloc((UINT16) (sizeof(tBTA_AV_API_PROTECT_REQ) + len))) != NULL) {
+    /* Cap allocation size to avoid UINT16 overflow */
+    alloc_size = sizeof(tBTA_AV_API_PROTECT_REQ) + len;
+    if (alloc_size > 0xFFFF) {
+        return;
+    }
+    if ((p_buf = (tBTA_AV_API_PROTECT_REQ *) osi_malloc((UINT16) alloc_size)) != NULL) {
         p_buf->hdr.layer_specific   = hndl;
         p_buf->hdr.event = BTA_AV_API_PROTECT_REQ_EVT;
         p_buf->len       = len;
@@ -374,8 +384,14 @@ void BTA_AvProtectReq(tBTA_AV_HNDL hndl, UINT8 *p_data, UINT16 len)
 void BTA_AvProtectRsp(tBTA_AV_HNDL hndl, UINT8 error_code, UINT8 *p_data, UINT16 len)
 {
     tBTA_AV_API_PROTECT_RSP  *p_buf;
+    size_t alloc_size;
 
-    if ((p_buf = (tBTA_AV_API_PROTECT_RSP *) osi_malloc((UINT16) (sizeof(tBTA_AV_API_PROTECT_RSP) + len))) != NULL) {
+    /* Cap allocation size to avoid UINT16 overflow */
+    alloc_size = sizeof(tBTA_AV_API_PROTECT_RSP) + len;
+    if (alloc_size > UINT16_MAX) {
+        return;
+    }
+    if ((p_buf = (tBTA_AV_API_PROTECT_RSP *) osi_malloc((UINT16) alloc_size)) != NULL) {
         p_buf->hdr.layer_specific   = hndl;
         p_buf->hdr.event    = BTA_AV_API_PROTECT_RSP_EVT;
         p_buf->len          = len;
@@ -469,8 +485,14 @@ void BTA_AvRemoteCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_RC rc_id, tBTA_AV_STA
 void BTA_AvVendorCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE cmd_code, UINT8 *p_data, UINT16 len)
 {
     tBTA_AV_API_VENDOR  *p_buf;
+    size_t alloc_size;
 
-    if ((p_buf = (tBTA_AV_API_VENDOR *) osi_malloc((UINT16) (sizeof(tBTA_AV_API_VENDOR) + len))) != NULL) {
+    /* Cap allocation size to avoid UINT16 overflow */
+    alloc_size = sizeof(tBTA_AV_API_VENDOR) + len;
+    if (alloc_size > UINT16_MAX) {
+        return;
+    }
+    if ((p_buf = (tBTA_AV_API_VENDOR *) osi_malloc((UINT16) alloc_size)) != NULL) {
         p_buf->hdr.event = BTA_AV_API_VENDOR_CMD_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->msg.hdr.ctype = cmd_code;
@@ -504,8 +526,14 @@ void BTA_AvVendorCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE cmd_code, UINT8 
 void BTA_AvVendorRsp(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE rsp_code, UINT8 *p_data, UINT16 len, UINT32 company_id)
 {
     tBTA_AV_API_VENDOR  *p_buf;
+    size_t alloc_size;
 
-    if ((p_buf = (tBTA_AV_API_VENDOR *) osi_malloc((UINT16) (sizeof(tBTA_AV_API_VENDOR) + len))) != NULL) {
+    /* Cap allocation size to avoid UINT16 overflow */
+    alloc_size = sizeof(tBTA_AV_API_VENDOR) + len;
+    if (alloc_size > 0xFFFF) {
+        return;
+    }
+    if ((p_buf = (tBTA_AV_API_VENDOR *) osi_malloc((UINT16) alloc_size)) != NULL) {
         p_buf->hdr.event = BTA_AV_API_VENDOR_RSP_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->msg.hdr.ctype = rsp_code;
@@ -627,6 +655,8 @@ void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, BT_HDR *p
         p_buf->label = label;
 
         bta_sys_sendmsg(p_buf);
+    } else if (p_pkt) {
+        osi_free(p_pkt);
     }
 }
 
@@ -689,14 +719,30 @@ void BTA_AvCaClose(UINT8 rc_handle)
 void BTA_AvCaGet(UINT8 rc_handle, tBTA_AV_GET_TYPE type, UINT8 *image_handle, UINT8 *image_descriptor, UINT16 image_descriptor_len)
 {
     tBTA_AV_API_CA_GET  *p_buf;
+    size_t alloc_size;
 
-    if ((p_buf = (tBTA_AV_API_CA_GET *) osi_malloc(sizeof(tBTA_AV_API_CA_GET))) != NULL) {
+    /* NULL image_handle would cause crash in memcpy; reject early */
+    if (image_handle == NULL) {
+        return;
+    }
+    /* Cap allocation size to avoid overflow */
+    alloc_size = sizeof(tBTA_AV_API_CA_GET) + image_descriptor_len;
+    if (alloc_size > 0xFFFF) {
+        return;
+    }
+    if ((p_buf = (tBTA_AV_API_CA_GET *) osi_malloc((UINT16) alloc_size)) != NULL) {
         p_buf->hdr.event = BTA_AV_API_CA_GET_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->type = type;
         memcpy(p_buf->image_handle, image_handle, BTA_AV_CA_IMG_HDL_LEN);
-        p_buf->image_descriptor = image_descriptor;
         p_buf->image_descriptor_len = image_descriptor_len;
+        /* Copy image_descriptor into message to avoid use-after-free when message is async */
+        if (image_descriptor != NULL && image_descriptor_len > 0) {
+            p_buf->image_descriptor = (UINT8 *) (p_buf + 1);
+            memcpy(p_buf->image_descriptor, image_descriptor, image_descriptor_len);
+        } else {
+            p_buf->image_descriptor = NULL;
+        }
         bta_sys_sendmsg(p_buf);
     }
 }

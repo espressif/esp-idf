@@ -82,7 +82,7 @@ void bta_av_ci_setconfig(tBTA_AV_HNDL hndl, UINT8 err_code, UINT8 category,
         p_buf->category = category;
         p_buf->recfg_needed = recfg_needed;
         p_buf->avdt_handle = avdt_handle;
-        p_buf->num_seid = num_seid;
+        p_buf->num_seid = (p_seid != NULL) ? num_seid : 0;
         if (p_seid && num_seid) {
             memcpy(p_buf->p_seid, p_seid, num_seid);
         }
