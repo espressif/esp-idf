@@ -17,6 +17,11 @@ set(CMAKE_MODULE_PATH
 # for both cmakev1 and cmakev2.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
+# Suppress CMake warning: "Manually-specified variables were not used by the project: CONFIGDEP_ENABLE"
+# (CONFIGDEP_ENABLE is passed by idf.py but only used in the cmake v1 project() flow in project.cmake)
+# FIXME: When cmakev2 will start supporting configdep, this can be removed.
+set(_idf_ignore_configdep_enable "${CONFIGDEP_ENABLE}")
+
 # The gdbinit.cmake file from cmakev1 contains a single function,
 # __generate_gdbinit, which is used in the generation of
 # project_description.json.
