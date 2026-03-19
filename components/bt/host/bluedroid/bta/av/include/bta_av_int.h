@@ -133,6 +133,7 @@ enum {
 
 /* events for AV stream control block state machine */
 #define BTA_AV_FIRST_SSM_EVT    BTA_AV_API_OPEN_EVT
+#define BTA_AV_LAST_SSM_EVT     BTA_AV_ACP_CONNECT_EVT
 
 /* events that do not go through state machine */
 #define BTA_AV_FIRST_NSM_EVT    BTA_AV_API_ENABLE_EVT
@@ -678,7 +679,7 @@ extern tBTA_AV_CB *bta_av_cb_ptr;
 #endif
 
 /* config struct */
-extern tBTA_AV_CFG *p_bta_av_cfg;
+extern const tBTA_AV_CFG *p_bta_av_cfg;
 
 extern const tBTA_AV_SACT bta_av_a2d_action[];
 extern const tBTA_AV_SACT bta_av_vdp_action[];
