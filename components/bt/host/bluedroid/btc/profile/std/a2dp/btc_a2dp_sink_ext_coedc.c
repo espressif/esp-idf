@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,6 +118,17 @@ bool btc_a2dp_sink_startup(void)
     osi_event_bind(data_event, a2dp_sink_local_param.btc_aa_snk_task_hdl, BTC_A2DP_SNK_DATA_QUEUE_IDX);
     a2dp_sink_local_param.btc_aa_snk_cb.data_ready_event = data_event;
     a2dp_sink_local_param.btc_aa_snk_cb.audio_rx_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    if (a2dp_sink_local_param.btc_aa_snk_cb.audio_rx_q == NULL) {
+        osi_event_delete(data_event);
+        a2dp_sink_local_param.btc_aa_snk_cb.data_ready_event = NULL;
+        a2dp_sink_local_param.btc_aa_snk_task_hdl = NULL;
+#if A2D_DYNAMIC_MEMORY == TRUE
+        osi_free(a2dp_sink_local_param_ptr);
+        a2dp_sink_local_param_ptr = NULL;
+#endif
+        return false;
+    }
+
     btc_a2dp_sink_state = BTC_A2DP_SINK_STATE_ON;
 
     btc_a2dp_control_init();
@@ -220,9 +231,18 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
 
 static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
 {
-    UINT8 *sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
-    int num_sbc_frames = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
-    UINT32 sbc_frame_len = p_msg->len - 1;
+    UINT8 *sbc_start_frame;
+    int num_sbc_frames;
+    UINT32 sbc_frame_len;
+    UINT32 timestamp;
+
+    if (p_msg->len < 1) {
+        osi_free(p_msg);
+        return;
+    }
+    sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
+    num_sbc_frames = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
+    sbc_frame_len = (UINT32)p_msg->len - 1U;
 
     if (a2dp_sink_local_param.btc_aa_snk_cb.rx_flush) {
         osi_free(p_msg);
@@ -249,7 +269,7 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
 
     APPL_TRACE_DEBUG("Number of sbc frames %d, frame_len %d\n", num_sbc_frames, sbc_frame_len);
 
-    UINT32 timestamp = *((UINT32 *) (p_msg + 1));
+    memcpy(&timestamp, (UINT8 *)(p_msg + 1), sizeof(UINT32));
     UINT16 conn_hdl = btc_a2d_conn_handle_get();
     btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, sbc_start_frame, sbc_frame_len, num_sbc_frames, timestamp);
     /* dont free p_msg here */
@@ -258,6 +278,11 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
 UINT8 btc_a2dp_sink_enque_buf(BT_HDR *p_pkt)
 {
     if (btc_a2dp_sink_state != BTC_A2DP_SINK_STATE_ON){
+        osi_free(p_pkt);
+        return 0;
+    }
+
+    if (a2dp_sink_local_param.btc_aa_snk_cb.audio_rx_q == NULL) {
         osi_free(p_pkt);
         return 0;
     }
