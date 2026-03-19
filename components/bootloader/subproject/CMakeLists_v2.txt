@@ -293,8 +293,19 @@ elseif(CONFIG_SECURE_BOOT_V1_ENABLED)
 # are needed, so the post-build message block is skipped.
 # ---------------------------------------------------------------------------
 elseif(CONFIG_SECURE_BOOT_V2_ENABLED)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # When signing during build, produce the raw binary as
+        # bootloader-unsigned.bin and then sign it into bootloader.bin.
+        set(bootloader_unsigned_bin "bootloader-unsigned.bin")
+    else()
+        # Without build-time signing, produce the binary directly as
+        # bootloader.bin (matching v1 behavior). The user is expected
+        # to sign it externally before flashing.
+        set(bootloader_unsigned_bin "bootloader.bin")
+    endif()
+
     idf_build_binary(bootloader_elf
-                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/bootloader-unsigned.bin"
+                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
                      TARGET bootloader_unsigned_bin
                      ALL)
     idf_check_bootloader_size(bootloader_unsigned_bin)
