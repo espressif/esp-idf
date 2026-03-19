@@ -418,6 +418,7 @@ static void btc_a2dp_sink_handle_decoder_reset(tBTC_MEDIA_SINK_CFG_UPDATE *p_msg
                                         a2dp_sink_local_param.btc_aa_snk_cb.channel_count, FALSE, FALSE);
     if (!OI_SUCCESS(status)) {
         APPL_TRACE_ERROR("OI_CODEC_SBC_DecoderReset failed with error code %d\n", status);
+        return;
     }
 
     btc_a2dp_control_set_datachnl_stat(TRUE);
@@ -528,7 +529,7 @@ static void btc_a2dp_sink_handle_decoder_reset(tBTC_MEDIA_SINK_CFG_UPDATE *p_msg
  *******************************************************************************/
 static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
 {
-    UINT8 *sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
+    UINT8 *sbc_start_frame;
     int count;
     UINT32 pcmBytes, availPcmBytes;
     OI_INT16 *pcmDataPointer = a2dp_sink_local_param.pcmData; /*Will be overwritten on next packet receipt*/
@@ -574,8 +575,6 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
         }
         availPcmBytes -= pcmBytes;
         pcmDataPointer += pcmBytes / 2;
-        p_msg->offset += (p_msg->len - 1) - sbc_frame_len;
-        p_msg->len = sbc_frame_len + 1;
     }
     if (count != num_sbc_frames || sbc_frame_len) {
         APPL_TRACE_WARNING("Potential decoding error, cnt:%d, num:%d, len:%d. Please ignore if playback is normal.",
