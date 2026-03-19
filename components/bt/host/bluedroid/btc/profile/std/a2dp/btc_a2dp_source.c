@@ -371,10 +371,12 @@ void btc_a2dp_source_on_stopped(tBTA_AV_SUSPEND *p_av)
 
 void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
 {
-    /* check for status failures */
-    if (p_av->status != BTA_AV_SUCCESS) {
-        if (p_av->initiator == TRUE) {
-            btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
+    if (p_av != NULL) {
+        /* check for status failures */
+        if (p_av->status != BTA_AV_SUCCESS) {
+            if (p_av->initiator == TRUE) {
+                btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
+            }
         }
     }
 
@@ -699,15 +701,24 @@ static void btc_a2dp_source_encoder_init(void)
     /* lookup table to convert freq */
     UINT16 freq_block_tbl[5] = { SBC_sf48000, SBC_sf44100, SBC_sf32000, 0, SBC_sf16000 };
 
+    UINT8 block_idx, mode_idx, freq_idx;
+
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
     /* Retrieve the current SBC configuration (default if currently not used) */
     bta_av_co_audio_get_sbc_config(&sbc_config, &minmtu);
     msg.NumOfSubBands = (sbc_config.num_subbands == A2D_SBC_IE_SUBBAND_4) ? 4 : 8;
-    msg.NumOfBlocks = codec_block_tbl[sbc_config.block_len >> 5];
+
+    block_idx = sbc_config.block_len >> 5;
+    msg.NumOfBlocks = (block_idx < 5) ? codec_block_tbl[block_idx] : 16;
+
     msg.AllocationMethod = (sbc_config.alloc_mthd == A2D_SBC_IE_ALLOC_MD_L) ? SBC_LOUDNESS : SBC_SNR;
-    msg.ChannelMode = codec_mode_tbl[sbc_config.ch_mode >> 1];
-    msg.SamplingFreq = freq_block_tbl[sbc_config.samp_freq >> 5];
+
+    mode_idx = sbc_config.ch_mode >> 1;
+    msg.ChannelMode = (mode_idx < 5) ? codec_mode_tbl[mode_idx] : SBC_JOINT_STEREO;
+
+    freq_idx = sbc_config.samp_freq >> 5;
+    msg.SamplingFreq = (freq_idx < 5) ? freq_block_tbl[freq_idx] : SBC_sf44100;
     msg.MtuSize = minmtu;
 
     APPL_TRACE_EVENT("msg.ChannelMode %x", msg.ChannelMode);
@@ -1140,6 +1151,10 @@ static UINT8 btc_get_num_aa_frame(void)
                                      a2dp_source_local_param.btc_aa_src_cb.media_feeding.cfg.pcm.num_channel *
                                      a2dp_source_local_param.btc_aa_src_cb.media_feeding.cfg.pcm.bit_per_sample / 8;
 
+        if (pcm_bytes_per_frame == 0) {
+            break;
+        }
+
         UINT32 us_this_tick = BTC_MEDIA_TIME_TICK_MS * 1000;
         UINT64 now_us = time_now_us();
         if (a2dp_source_local_param.last_frame_us != 0) {
@@ -1334,9 +1349,9 @@ BOOLEAN btc_media_aa_read_feeding(void)
         a2dp_source_local_param.btc_aa_src_cb.media_feeding_state.pcm.aa_feed_residue -= bytes_needed;
 
         if (a2dp_source_local_param.btc_aa_src_cb.media_feeding_state.pcm.aa_feed_residue != 0) {
-            memcpy((UINT8 *)up_sampled_buffer,
-                   (UINT8 *)up_sampled_buffer + bytes_needed,
-                   a2dp_source_local_param.btc_aa_src_cb.media_feeding_state.pcm.aa_feed_residue);
+            memmove((UINT8 *)up_sampled_buffer,
+                    (UINT8 *)up_sampled_buffer + bytes_needed,
+                    a2dp_source_local_param.btc_aa_src_cb.media_feeding_state.pcm.aa_feed_residue);
         }
         return TRUE;
     }
@@ -1456,7 +1471,10 @@ static void btc_a2dp_source_prep_2_send(UINT8 nb_frame)
     }
 
     while (fixed_queue_length(a2dp_source_local_param.btc_aa_src_cb.TxAaQ) > (MAX_OUTPUT_A2DP_SRC_FRAME_QUEUE_SZ - nb_frame)) {
-        osi_free(fixed_queue_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, 0));
+        void *p_drop = fixed_queue_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, 0);
+        if (p_drop != NULL) {
+            osi_free(p_drop);
+        }
     }
 
     // Transcode frame

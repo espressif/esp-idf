@@ -135,10 +135,15 @@ void btc_a2dp_source_set_tx_flush(BOOLEAN enable)
 void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
 {
     /* check for status failures */
+    if (p_av == NULL) {
+        return;
+    }
+
     if (p_av->status != BTA_AV_SUCCESS) {
         if (p_av->initiator == TRUE) {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
         }
+        return;
     }
 
     /* stop tx, ack to cmd, flush tx queue */
@@ -201,6 +206,8 @@ bool btc_a2dp_source_startup(void)
 
 error_exit:;
     APPL_TRACE_ERROR("%s A2DP source start up failed", __func__);
+
+    btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_OFF;
 
 #if A2D_DYNAMIC_MEMORY == TRUE
     osi_free(a2dp_source_local_param_ptr);

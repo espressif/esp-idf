@@ -330,6 +330,7 @@ static void btc_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_
 static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
 {
     esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
 
     BTC_TRACE_DEBUG("%s event: %s flags %x\n", __FUNCTION__,
               dump_av_sm_event_name(event), btc_av_cb.flags);
@@ -415,6 +416,10 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
          */
 #if BTC_AV_SRC_INCLUDED
         BTC_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
+        if (btc_av_cb.tle_av_open_on_rc) {
+            osi_alarm_free(btc_av_cb.tle_av_open_on_rc);
+            btc_av_cb.tle_av_open_on_rc = NULL;
+        }
         btc_av_cb.tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
         osi_alarm_set(btc_av_cb.tle_av_open_on_rc, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
 #endif /* BTC_AV_SRC_INCLUDED */
@@ -513,7 +518,8 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
         if (p_bta_data->open.status == BTA_AV_SUCCESS) {
             btc_av_cb.edr = p_bta_data->open.edr;
             btc_av_cb.peer_sep = p_bta_data->open.sep;
-            mtu = p_bta_data->open.mtu - BTC_AV_AUDIO_MTU_RESERVE;
+            mtu = (p_bta_data->open.mtu > BTC_AV_AUDIO_MTU_RESERVE) ?
+                  (p_bta_data->open.mtu - BTC_AV_AUDIO_MTU_RESERVE) : 0;
             conn_stat = ESP_A2D_CONNECTION_STATE_CONNECTED;
             av_state = BTC_AV_STATE_OPENED;
         } else {
@@ -573,19 +579,21 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
         btc_a2d_cb_to_app(ESP_A2D_AUDIO_CFG_EVT, &param);
     } break;
 
-    case BTC_AV_CONNECT_REQ_EVT:
+    case BTC_AV_CONNECT_REQ_EVT: {
+        btc_av_connect_req_t *connect_req = (btc_av_connect_req_t *)p_data;
         // Check for device, if same device which moved to opening then ignore callback
-        if (memcmp ((bt_bdaddr_t *)p_data, &(btc_av_cb.peer_bda),
+        if (memcmp (&connect_req->target_bda, &(btc_av_cb.peer_bda),
                     sizeof(btc_av_cb.peer_bda)) == 0) {
             BTC_TRACE_DEBUG("%s: Same device moved to Opening state,ignore Connect Req\n", __func__);
             btc_queue_advance();
             break;
         } else {
             BTC_TRACE_DEBUG("%s: Moved from idle by Incoming Connection request\n", __func__);
-            btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, (bt_bdaddr_t *)p_data, 0, 0);
+            btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &connect_req->target_bda, 0, 0);
             btc_queue_advance();
             break;
         }
+    }
 
     case BTA_AV_PENDING_EVT:
         // Check for device, if same device which moved to opening then ignore callback
@@ -644,6 +652,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
 static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data)
 {
     esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
 
     BTC_TRACE_DEBUG("%s event: %s flags %x\n", __FUNCTION__,
               dump_av_sm_event_name(event), btc_av_cb.flags);
@@ -731,6 +740,7 @@ static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data)
 static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
 {
     esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
     tBTA_AV *p_av = (tBTA_AV *)p_data;
 
     BTC_TRACE_DEBUG("%s event: %s flags %x\n", __FUNCTION__,
@@ -882,17 +892,19 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
         }
         break;
 
-    case BTC_AV_CONNECT_REQ_EVT:
-        if (memcmp (&((btc_av_connect_req_t *)p_data)->target_bda, &(btc_av_cb.peer_bda),
+    case BTC_AV_CONNECT_REQ_EVT: {
+        btc_av_connect_req_t *connect_req = (btc_av_connect_req_t *)p_data;
+        if (memcmp (&connect_req->target_bda, &(btc_av_cb.peer_bda),
                     sizeof(btc_av_cb.peer_bda)) == 0) {
             BTC_TRACE_DEBUG("%s: Ignore BTC_AVCONNECT_REQ_EVT for same device\n", __func__);
         } else {
             BTC_TRACE_DEBUG("%s: Moved to opened by Other Incoming Conn req\n", __func__);
             btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED,
-                                        (bt_bdaddr_t *)p_data, 0, ESP_A2D_DISC_RSN_NORMAL);
+                                        &connect_req->target_bda, 0, ESP_A2D_DISC_RSN_NORMAL);
         }
         btc_queue_advance();
         break;
+    }
 
     CHECK_RC_EVENT(event, p_data);
 
@@ -936,6 +948,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
 {
     tBTA_AV *p_av = (tBTA_AV *)p_data;
     esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
 
     BTC_TRACE_DEBUG("%s event: %s flags %x\n", __FUNCTION__,
               dump_av_sm_event_name(event), btc_av_cb.flags);
@@ -2101,6 +2114,13 @@ uint16_t btc_a2d_conn_handle_get(void)
 void btc_av_audio_buff_alloc(uint16_t size, uint8_t **pp_buff, uint8_t **pp_data)
 {
     /* todo */
+    if (pp_buff == NULL || pp_data == NULL) {
+        return;
+    }
+
+    *pp_buff = NULL;
+    *pp_data = NULL;
+
     BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTC_AUDIO_BUFF_OFFSET + size);
     if (p_buf != NULL) {
         *pp_buff = (uint8_t *)p_buf;
