@@ -69,9 +69,7 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         ble_log_rt_ts_trigger(NULL);
 #endif /* CONFIG_BLE_LOG_TS_TRIGGER_TASK_EVENT */
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
         ble_log_write_enh_stat();
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
     }
 }
 

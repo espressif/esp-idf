@@ -30,9 +30,7 @@ BLE_LOG_STATIC
 void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_code,
                              const uint8_t *addr, uint16_t len,
                              const uint8_t *addr_append, uint16_t len_append, bool omdata);
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
 BLE_LOG_STATIC void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost);
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
 /* ------------------------- */
 /*     PRIVATE INTERFACE     */
@@ -119,22 +117,13 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
     }
 
     /* Data integrity check */
-#if CONFIG_BLE_LOG_PAYLOAD_CHECKSUM_ENABLED
     uint32_t checksum = ble_log_fast_checksum((const uint8_t *)buf, BLE_LOG_FRAME_HEAD_LEN + payload_len);
-#else /* !CONFIG_BLE_LOG_PAYLOAD_CHECKSUM_ENABLED */
-    /* Note:
-     * Minimum data integrity check is still required for log parsing reliability,
-     * which can be achieved by validating the checksum of frame head only */
-    uint32_t checksum = ble_log_fast_checksum((const uint8_t *)buf, BLE_LOG_FRAME_HEAD_LEN);
-#endif /* CONFIG_BLE_LOG_PAYLOAD_CHECKSUM_ENABLED */
     BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN + payload_len, &checksum, BLE_LOG_FRAME_TAIL_LEN);
 
     /* Update peripheral transport */
     (*trans)->pos += payload_len + BLE_LOG_FRAME_OVERHEAD;
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
     ble_log_stat_mgr_update(src_code, payload_len, false);
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
     /* Queue trans if full */
     if (BLE_LOG_TRANS_FREE_SPACE((*trans)) <= BLE_LOG_FRAME_OVERHEAD) {
@@ -142,7 +131,6 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
     }
 }
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost)
 {
@@ -159,7 +147,6 @@ void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost)
         stat_mgr->enh_stat.written_bytes_cnt += bytes_cnt;
     }
 }
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
 /* -------------------------- */
 /*     INTERNAL INTERFACE     */
@@ -226,10 +213,8 @@ bool ble_log_lbm_init(void)
         }
         BLE_LOG_MEMSET(stat_mgr_ctx[i], 0, sizeof(ble_log_stat_mgr_t));
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
         stat_mgr_ctx[i]->enh_stat.int_src_code = BLE_LOG_INT_SRC_ENH_STAT;
         stat_mgr_ctx[i]->enh_stat.src_code = i;
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
     }
 
     /* Initialization done */
@@ -312,7 +297,6 @@ ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
     return NULL;
 }
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
 void ble_log_write_enh_stat(void)
 {
     BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
@@ -328,7 +312,6 @@ void ble_log_write_enh_stat(void)
 deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
 /* ------------------------ */
 /*     PUBLIC INTERFACE     */
@@ -349,10 +332,8 @@ void ble_log_flush(void)
         goto deref;
     }
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
     /* Write enhanced statistics before module disable */
     ble_log_write_enh_stat();
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
     /* Write BLE Log flush log */
     ble_log_info_t ble_log_info = {
@@ -408,11 +389,9 @@ void ble_log_flush(void)
     /* Reset statistics manager after all operations complete */
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
         BLE_LOG_MEMSET(stat_mgr_ctx[i], 0, sizeof(ble_log_stat_mgr_t));
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
         /* Reinitialize enhanced statistics fields */
         stat_mgr_ctx[i]->enh_stat.int_src_code = BLE_LOG_INT_SRC_ENH_STAT;
         stat_mgr_ctx[i]->enh_stat.src_code = i;
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
     }
 
     /* Resume enable status */
@@ -452,11 +431,9 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
     return true;
 
 failed:
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
     if (lbm_inited) {
         ble_log_stat_mgr_update(src_code, payload_len, true);
     }
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 exit:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return false;
@@ -524,11 +501,9 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
     return;
 
 failed:
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
     if (lbm_inited) {
         ble_log_stat_mgr_update(src_code, payload_len, true);
     }
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 exit:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return;
