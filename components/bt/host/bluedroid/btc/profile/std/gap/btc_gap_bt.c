@@ -1032,6 +1032,9 @@ static void btc_gap_bt_get_dev_name_callback(UINT8 status, char *name)
     ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        if (param.get_dev_name_cmpl.name) {
+            osi_free(param.get_dev_name_cmpl.name);
+        }
     }
 }
 
@@ -1355,8 +1358,14 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
 #if (BTC_DM_PM_INCLUDED == TRUE)
     case BTC_GAP_BT_MODE_CHG_EVT:
 #endif /// BTC_DM_PM_INCLUDED == TRUE
-    case BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT:
         break;
+    case BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT: {
+        char *name = ((esp_bt_gap_cb_param_t *)msg->arg)->get_dev_name_cmpl.name;
+        if (name) {
+            osi_free(name);
+        }
+        break;
+    }
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;

@@ -226,7 +226,7 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
         return;
     }
     if (*p_req) {
-        if (*p_req++ != SDP_CONTINUATION_LEN || (p_req >= p_req_end)) {
+        if (*p_req++ != SDP_CONTINUATION_LEN || (p_req + 2 > p_req_end)) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE,
                                      SDP_TEXT_BAD_CONT_LEN);
             return;
