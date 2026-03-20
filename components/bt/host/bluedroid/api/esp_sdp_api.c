@@ -41,7 +41,8 @@ static bool esp_sdp_record_integrity_check(esp_bluetooth_sdp_record_t *record)
         default:
             break;
         }
-        if (record->hdr.service_name_length > ESP_SDP_SERVER_NAME_MAX ||
+        if (record->hdr.service_name == NULL ||
+            record->hdr.service_name_length > ESP_SDP_SERVER_NAME_MAX ||
             strlen(record->hdr.service_name) + 1 != record->hdr.service_name_length) {
             LOG_ERROR("Invalid server name!\n");
             ret = false;
