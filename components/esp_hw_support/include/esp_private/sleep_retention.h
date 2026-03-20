@@ -56,7 +56,8 @@ typedef struct {
 } sleep_retention_module_callbacks_t;
 
 typedef enum {
-    SLEEP_RETENTION_MODULE_ATTR_PASSIVE = 0x1
+    SLEEP_RETENTION_MODULE_ATTR_PASSIVE = 0x1,
+    SLEEP_RETENTION_MODULE_ATTR_ATTACH = 0x2
 } sleep_retention_module_attribute_t;
 
 /**
@@ -203,6 +204,19 @@ sleep_retention_module_bitmap_t sleep_retention_get_inited_modules(void);
 sleep_retention_module_bitmap_t sleep_retention_get_created_modules(void);
 
 /**
+ * @brief Get all retainted modules that require sleep retention
+ *
+ * This is an unprotected interface for getting a bitmap of all modules that
+ * require sleep retention.
+ *
+ * It can only be called by the sleep procedure.
+ *
+ * @return the bitmap for all modules that have successfully created a sleep
+ * retention context
+ */
+sleep_retention_module_bitmap_t sleep_retention_get_retained_modules(void);
+
+/**
  * @brief Get the initialization state of module
  *
  * @param module   module number
@@ -221,6 +235,8 @@ bool sleep_retention_is_module_inited(sleep_retention_module_t module);
  * invalid, otherwise return true
  */
 bool sleep_retention_is_module_created(sleep_retention_module_t module);
+
+bool sleep_retention_is_module_attached(sleep_retention_module_t module);
 
 /**
  * @brief Calculates the bitwise logical and of the module bitmap and return results
