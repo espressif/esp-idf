@@ -55,7 +55,7 @@ static sdp_local_param_t *sdp_local_param_ptr;
 #if SDP_DYNAMIC_MEMORY == FALSE
 #define is_sdp_init() (sdp_local_param.sdp_slot_mutex != NULL)
 #else
-#define is_sdp_init() (&sdp_local_param != NULL && sdp_local_param.sdp_slot_mutex != NULL)
+#define is_sdp_init() (sdp_local_param_ptr != NULL && sdp_local_param.sdp_slot_mutex != NULL)
 #endif
 
 static void btc_sdp_cleanup(void)
@@ -1439,7 +1439,7 @@ void btc_sdp_get_protocol_status(esp_sdp_protocol_status_t *param)
     if (is_sdp_init()) {
         param->sdp_inited = true;
         osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-        for (size_t i = 0; i <= SDP_MAX_RECORDS; i++) {
+        for (size_t i = 0; i < SDP_MAX_RECORDS; i++) {
             if (sdp_local_param.sdp_slots[i] != NULL && sdp_local_param.sdp_slots[i]->state == SDP_RECORD_ALLOCED) {
                 param->records_num++;
             }
