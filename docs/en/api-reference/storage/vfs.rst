@@ -168,7 +168,7 @@ A socket VFS driver needs to be registered with the following functions defined:
 
 :cpp:func:`stop_socket_select_isr` has the same functionality as :cpp:func:`stop_socket_select` but it can be used from ISR.
 
-Please see :component_file:`lwip/port/esp32xx/vfs_lwip.c` for a reference socket driver implementation using LWIP.
+Please see :component_file:`lwip/port/vfs_lwip.c` for a reference socket driver implementation using LWIP.
 
 .. note::
 
