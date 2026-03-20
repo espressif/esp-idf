@@ -220,7 +220,6 @@ ble_transport_to_ll_cmd_impl(void *buf)
     data[0] = HCI_H4_CMD;
     memcpy(data + 1, buf, len - 1);
     hci_uart_send(data, len);
-
 #if MYNEWT_VAL(MP_RUNTIME_ALLOC)
     ble_transport_free(BLE_HCI_CMD, buf);
 #else

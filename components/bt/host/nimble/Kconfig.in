@@ -569,7 +569,7 @@ menu "Memory Settings"
 
     config BT_NIMBLE_MEMPOOL_RUNTIME_ALLOC
         bool "Support on-demand runtime memory allocation for mempool"
-        depends on BT_NIMBLE_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER
+        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_STATIC_TO_DYNAMIC
         default n
         help
             When this option is enabled, mempool does not require pre-allocating memory.
