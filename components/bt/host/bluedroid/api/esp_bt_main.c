@@ -92,6 +92,7 @@ esp_err_t esp_bluedroid_disable(void)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid disable failed\n");
+        future_free(*future_p);
         s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_FAIL;
     }
@@ -260,6 +261,7 @@ esp_err_t esp_bluedroid_deinit(void)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid de-initialise failed\n");
+        future_free(*future_p);
         return ESP_FAIL;
     }
 

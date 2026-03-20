@@ -283,6 +283,7 @@ static void hci_sco_data_to_lower(BT_HDR *p_buf)
     if (p_buf->offset == 0) {
         BTM_TRACE_ERROR("offset cannot be 0");
         osi_free(p_buf);
+        return;
     }
 
     bte_main_hci_send(p_buf, (UINT16)(BT_EVT_TO_LM_HCI_SCO | LOCAL_BLE_CONTROLLER_ID));
@@ -1166,11 +1167,15 @@ UINT16  btm_find_scb_by_handle (UINT16 handle)
 tBTM_STATUS BTM_RemoveSco (UINT16 sco_inx)
 {
 #if (BTM_MAX_SCO_LINKS>0)
+    if (sco_inx >= BTM_MAX_SCO_LINKS) {
+        return (BTM_UNKNOWN_ADDR);
+    }
+
     tSCO_CONN   *p = &btm_cb.sco_cb.sco_db[sco_inx];
     UINT16       tempstate;
 
     /* Validity check */
-    if ((sco_inx >= BTM_MAX_SCO_LINKS) || (p->state == SCO_ST_UNUSED)) {
+    if (p->state == SCO_ST_UNUSED) {
         return (BTM_UNKNOWN_ADDR);
     }
 
