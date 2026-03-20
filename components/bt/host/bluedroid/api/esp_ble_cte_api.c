@@ -45,6 +45,8 @@ esp_err_t esp_ble_cte_set_connectionless_trans_params(esp_ble_cte_connless_trans
     if ((cte_trans_params == NULL) || (cte_trans_params->antenna_ids == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
+    // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
+#if (0)
     if ((cte_trans_params->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
             (cte_trans_params->switching_pattern_len > ESP_BLE_CTE_MAX_SWITCHING_PATTERN_LENGTH)) {
         return ESP_ERR_INVALID_ARG;
@@ -60,6 +62,7 @@ esp_err_t esp_ble_cte_set_connectionless_trans_params(esp_ble_cte_connless_trans
             (cte_trans_params->cte_count > ESP_BLE_CTE_MAX_CTE_COUNT)) {
         return ESP_ERR_INVALID_ARG;
     }
+#endif
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_CTE;
@@ -116,6 +119,8 @@ esp_err_t esp_ble_cte_set_connectionless_iq_sampling_enable(esp_ble_cte_iq_sampl
     if (iq_sampling_en == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
+#if (0)
     // Sampling enable must be either disable or enable
     if ((iq_sampling_en->sampling_en != ESP_BLE_CTE_SAMPLING_DISABLE) &&
             (iq_sampling_en->sampling_en != ESP_BLE_CTE_SAMPLING_ENABLE)) {
@@ -140,6 +145,7 @@ esp_err_t esp_ble_cte_set_connectionless_iq_sampling_enable(esp_ble_cte_iq_sampl
             return ESP_ERR_INVALID_ARG;
         }
     }
+#endif
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_CTE;
@@ -174,6 +180,8 @@ esp_err_t esp_ble_cte_set_connection_receive_params(esp_ble_cte_recv_params_para
     if (cte_recv_params == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
+#if (0)
     if ((cte_recv_params->sampling_en != ESP_BLE_CTE_SAMPLING_DISABLE) &&
             (cte_recv_params->sampling_en != ESP_BLE_CTE_SAMPLING_ENABLE)) {
         return ESP_ERR_INVALID_ARG;
@@ -192,7 +200,7 @@ esp_err_t esp_ble_cte_set_connection_receive_params(esp_ble_cte_recv_params_para
             return ESP_ERR_INVALID_ARG;
         }
     }
-
+#endif
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_CTE;
     msg.act = BTC_CTE_ACT_SET_CONN_CTE_RECV_PARAMS;
@@ -224,6 +232,8 @@ esp_err_t esp_ble_cte_set_connection_transmit_params(esp_ble_cte_conn_trans_para
     if ((cte_conn_trans_params == NULL) || (cte_conn_trans_params->antenna_ids == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
+    // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
+#if (0)
     if ((cte_conn_trans_params->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
             (cte_conn_trans_params->switching_pattern_len > ESP_BLE_CTE_MAX_SWITCHING_PATTERN_LENGTH)) {
         return ESP_ERR_INVALID_ARG;
@@ -233,6 +243,7 @@ esp_err_t esp_ble_cte_set_connection_transmit_params(esp_ble_cte_conn_trans_para
             (cte_conn_trans_params->cte_types & ~ESP_BLE_CTE_TYPES_ALL)) {
         return ESP_ERR_INVALID_ARG;
     }
+#endif
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_CTE;
@@ -259,6 +270,8 @@ esp_err_t esp_ble_cte_connection_cte_request_enable(esp_ble_cte_req_en_params_t 
     if (cte_conn_req_en == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
+#if (0)
     if ((cte_conn_req_en->enable != ESP_BLE_CTE_REQUEST_FOR_CONNECTION_DISABLE) &&
             (cte_conn_req_en->enable != ESP_BLE_CTE_REQUEST_FOR_CONNECTION_ENABLE)) {
         return ESP_ERR_INVALID_ARG;
@@ -272,6 +285,7 @@ esp_err_t esp_ble_cte_connection_cte_request_enable(esp_ble_cte_req_en_params_t 
             return ESP_ERR_INVALID_ARG;
         }
     }
+#endif
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_CTE;
@@ -299,10 +313,13 @@ esp_err_t esp_ble_cte_connection_cte_response_enable(esp_ble_cte_rsp_en_params_t
     if (cte_conn_rsp_en == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
+#if (0)
     if ((cte_conn_rsp_en->enable != ESP_BLE_CTE_RESPONSE_FOR_CONNECTION_DISABLE) &&
             (cte_conn_rsp_en->enable != ESP_BLE_CTE_RESPONSE_FOR_CONNECTION_ENABLE)) {
         return ESP_ERR_INVALID_ARG;
     }
+#endif
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_CTE;
