@@ -103,7 +103,7 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
         BE_STREAM_TO_UINT8 (eventid, p);
         if (AVRC_EVT_VOLUME_CHANGE == eventid
                 && (AVRC_RSP_CHANGED == p_msg->hdr.ctype || AVRC_RSP_INTERIM == p_msg->hdr.ctype
-                    || AVRC_RSP_REJ == p_msg->hdr.ctype || AVRC_RSP_NOT_IMPL == p_msg->hdr.ctype)) {
+                    || AVRC_RSP_NOT_IMPL == p_msg->hdr.ctype)) {
             if (len < 2) {
                 AVRC_TRACE_WARNING("invalid message length %u: must be at least 2", len);
                 return AVRC_STS_INTERNAL_ERR;
@@ -114,8 +114,8 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
         }
         // todo: parse the response for other event_ids
         AVRC_TRACE_DEBUG("avrc_pars_vendor_rsp PDU reg notif response:event 0x%x", eventid);
-        break;
 #endif /* (AVRC_ADV_CTRL_INCLUDED == TRUE) */
+        break;
     case AVRC_PDU_GET_CAPABILITIES:        /* 0x10 */
         if (len < 2) {
             AVRC_TRACE_WARNING("invalid message length %u: must be at least 2", len);
@@ -137,8 +137,7 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
             if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_COMP_ID) {
                 status = AVRC_STS_INTERNAL_ERR;
             } else {
-                if (len < 2 + p_result->get_caps.count * 6) {
-                    AVRC_TRACE_WARNING("invalid message length %u: must be at least %d", len, 2 + p_result->get_caps.count * 6);
+                if (len < 2 + p_result->get_caps.count * 3) {
                     return AVRC_STS_INTERNAL_ERR;
                 }
                 for (int i = 0; i < p_result->get_caps.count; ++i) {
