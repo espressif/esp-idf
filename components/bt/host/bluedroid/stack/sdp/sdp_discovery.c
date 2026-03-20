@@ -305,6 +305,9 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *
     if (p_ccb->num_handles > sdp_cb.max_recs_per_search) {
         p_ccb->num_handles = sdp_cb.max_recs_per_search;
     }
+    if (p_ccb->num_handles > SDP_MAX_DISC_SERVER_RECS) {
+        p_ccb->num_handles = SDP_MAX_DISC_SERVER_RECS;
+    }
 
     if (p_reply + ((p_ccb->num_handles - orig) * 4) + 1 > p_reply_end) {
         sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
@@ -424,8 +427,10 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_
     /* If p_reply is NULL, we were called after the records handles were read */
     if (p_reply) {
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("ID & len: 0x%02x-%02x-%02x-%02x\n",
-                          p_reply[0], p_reply[1], p_reply[2], p_reply[3]);
+        if (p_reply + 4 <= p_reply_end) {
+            SDP_TRACE_WARNING("ID & len: 0x%02x-%02x-%02x-%02x\n",
+                            p_reply[0], p_reply[1], p_reply[2], p_reply[3]);
+        }
 #endif
         /* Skip transaction ID and length */
         p_reply += 4;
