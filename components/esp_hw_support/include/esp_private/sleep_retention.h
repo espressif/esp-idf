@@ -161,6 +161,9 @@ esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module);
  */
 esp_err_t sleep_retention_module_free(sleep_retention_module_t module);
 
+esp_err_t sleep_retention_module_attach(sleep_retention_module_t module);
+esp_err_t sleep_retention_module_detach(sleep_retention_module_t module);
+
 /**
  * @brief Force take the power lock so that during sleep the power domain won't be powered off.
  *
