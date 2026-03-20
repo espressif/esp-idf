@@ -138,7 +138,16 @@ typedef struct {
 /* -------------------------------------- */
 typedef struct {
     uint32_t frame_sn;
-    ble_log_enh_stat_t enh_stat;
+    /* Aligned live counters — updated by ble_log_stat_mgr_update(),
+     * snapshot by ble_log_write_enh_stat(). Natural 4-byte alignment
+     * ensures each load/store compiles to a single l32i/s32i on
+     * Xtensa/RISC-V, so individual field access is atomic without locks.
+     * The packed ble_log_enh_stat_t wire format is built on the stack
+     * only when serializing to UART. */
+    uint32_t written_frame_cnt;
+    uint32_t lost_frame_cnt;
+    uint32_t written_bytes_cnt;
+    uint32_t lost_bytes_cnt;
 } ble_log_stat_mgr_t;
 
 #define BLE_LOG_GET_FRAME_SN(VAR)               __atomic_fetch_add(VAR, 1, __ATOMIC_RELAXED)

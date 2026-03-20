@@ -137,14 +137,14 @@ void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost)
     /* Get statistic manager by source code */
     ble_log_stat_mgr_t *stat_mgr = stat_mgr_ctx[src_code];
 
-    /* Update statistics */
+    /* Update aligned counters */
     uint32_t bytes_cnt = len + BLE_LOG_FRAME_OVERHEAD;
     if (lost) {
-        stat_mgr->enh_stat.lost_frame_cnt++;
-        stat_mgr->enh_stat.lost_bytes_cnt += bytes_cnt;
+        stat_mgr->lost_frame_cnt++;
+        stat_mgr->lost_bytes_cnt += bytes_cnt;
     } else {
-        stat_mgr->enh_stat.written_frame_cnt++;
-        stat_mgr->enh_stat.written_bytes_cnt += bytes_cnt;
+        stat_mgr->written_frame_cnt++;
+        stat_mgr->written_bytes_cnt += bytes_cnt;
     }
 }
 
@@ -212,9 +212,6 @@ bool ble_log_lbm_init(void)
             goto exit;
         }
         BLE_LOG_MEMSET(stat_mgr_ctx[i], 0, sizeof(ble_log_stat_mgr_t));
-
-        stat_mgr_ctx[i]->enh_stat.int_src_code = BLE_LOG_INT_SRC_ENH_STAT;
-        stat_mgr_ctx[i]->enh_stat.src_code = i;
     }
 
     /* Initialization done */
@@ -304,9 +301,23 @@ void ble_log_write_enh_stat(void)
         goto deref;
     }
 
+    /* Snapshot all sources under one critical section so the set of
+     * counters is mutually consistent, then write outside the lock. */
+    ble_log_enh_stat_t snapshots[BLE_LOG_SRC_MAX];
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
-        ble_log_enh_stat_t *enh_stat = &(stat_mgr_ctx[i]->enh_stat);
-        ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)enh_stat, sizeof(ble_log_enh_stat_t));
+        snapshots[i].int_src_code = BLE_LOG_INT_SRC_ENH_STAT;
+        snapshots[i].src_code     = i;
+    }
+    BLE_LOG_ENTER_CRITICAL();
+    for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
+        BLE_LOG_MEMCPY(&snapshots[i].written_frame_cnt,
+                       &stat_mgr_ctx[i]->written_frame_cnt,
+                       4 * sizeof(uint32_t));
+    }
+    BLE_LOG_EXIT_CRITICAL();
+
+    for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
+        ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&snapshots[i], sizeof(ble_log_enh_stat_t));
     }
 
 deref:
@@ -389,9 +400,6 @@ void ble_log_flush(void)
     /* Reset statistics manager after all operations complete */
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
         BLE_LOG_MEMSET(stat_mgr_ctx[i], 0, sizeof(ble_log_stat_mgr_t));
-        /* Reinitialize enhanced statistics fields */
-        stat_mgr_ctx[i]->enh_stat.int_src_code = BLE_LOG_INT_SRC_ENH_STAT;
-        stat_mgr_ctx[i]->enh_stat.src_code = i;
     }
 
     /* Resume enable status */
