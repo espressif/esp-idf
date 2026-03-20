@@ -48,18 +48,24 @@ static UINT8 get_rcb_idx(tBTA_AV_RCB *p_rcb)
     return (p_rcb - &bta_av_cb.rcb[0]);
 }
 
-static void get_peer_bd_addr(tBTA_AV_RCB *p_rcb, BD_ADDR out_addr)
+static BOOLEAN get_peer_bd_addr(tBTA_AV_RCB *p_rcb, BD_ADDR out_addr)
 {
     /* check if this rcb is related to a scb */
     if (p_rcb->shdl && p_rcb->shdl <= BTA_AV_NUM_STRS) {
         tBTA_AV_SCB *p_scb = bta_av_cb.p_scb[p_rcb->shdl - 1];
-        bdcpy(out_addr, p_scb->peer_addr);
+        if (p_scb != NULL) {
+            bdcpy(out_addr, p_scb->peer_addr);
+            return TRUE;
+        }
     }
     /* else, try get peer addr from lcb */
     else if (p_rcb->lidx && p_rcb->lidx <= BTA_AV_NUM_LINKS + 1)
     {
         bdcpy(out_addr, bta_av_cb.lcb[p_rcb->lidx-1].addr);
+        return TRUE;
     }
+
+    return FALSE;
 }
 
 static void report_data_event(BT_HDR *pkt, UINT8 *p_data, UINT16 data_len, BOOLEAN final)
@@ -131,7 +137,8 @@ static void close_goepc_and_disconnect(tBTA_AV_RCB *p_rcb)
 
     tBTA_AV_DATA *p_data = (tBTA_AV_DATA *) osi_malloc(sizeof(tBTA_AV_DATA));
     if (p_data == NULL) {
-        assert(0);
+        APPL_TRACE_ERROR("close_goepc_and_disconnect ENOMEM");
+        return;
     }
     p_data->hdr.event = BTA_AV_CA_GOEP_DISCONNECT_EVT;
     p_data->hdr.layer_specific = get_rcb_idx(p_rcb);
@@ -154,6 +161,11 @@ void bta_av_ca_goep_event_handler(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
 {
     tBTA_AV_DATA *p_data = NULL;
     UINT16 rcb_idx;
+
+    if (p_msg == NULL) {
+        goto error;
+    }
+
     if (!find_rcb_idx_by_goep_handle(handle, &rcb_idx)) {
         /* can not find a rcb, go error */
         goto error;
@@ -161,7 +173,9 @@ void bta_av_ca_goep_event_handler(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
 
     if (event == GOEPC_RESPONSE_EVT || event == GOEPC_OPENED_EVT || event == GOEPC_CLOSED_EVT) {
         p_data = (tBTA_AV_DATA *) osi_malloc(sizeof(tBTA_AV_DATA));
-        assert(p_data != NULL);
+        if (p_data == NULL) {
+            goto error;
+        }
     }
 
     switch (event)
@@ -208,7 +222,7 @@ error:
     if (p_data != NULL) {
         osi_free(p_data);
     }
-    if (event == GOEPC_RESPONSE_EVT && p_msg->response.pkt != NULL) {
+    if (event == GOEPC_RESPONSE_EVT && p_msg && p_msg->response.pkt != NULL) {
         osi_free(p_msg->response.pkt);
     }
     if (event != GOEPC_CLOSED_EVT) {
@@ -225,13 +239,19 @@ void bta_av_ca_api_open(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
     /* reuse the security mask store in bta_av_cb, when support multi connection, this may need change */
     svr.l2cap.sec_mask = bta_av_cb.sec_mask;
     p_rcb->cover_art_max_rx = p_data->api_ca_open.mtu;
-    get_peer_bd_addr(p_rcb, svr.l2cap.addr);
+    if (!get_peer_bd_addr(p_rcb, svr.l2cap.addr)) {
+        goto error;
+    }
 
     if (GOEPC_Open(&svr, bta_av_ca_goep_event_handler, &p_rcb->cover_art_goep_hdl) != GOEP_SUCCESS) {
         /* open failed */
-        if ((p_data = (tBTA_AV_DATA *) osi_malloc(sizeof(tBTA_AV_DATA))) == NULL) {
-            assert(0);
-        }
+        goto error;
+    }
+
+    return;
+
+error:
+    if ((p_data = (tBTA_AV_DATA *) osi_malloc(sizeof(tBTA_AV_DATA))) != NULL) {
         p_data->hdr.event = BTA_AV_CA_GOEP_DISCONNECT_EVT;
         p_data->hdr.layer_specific = get_rcb_idx(p_rcb);
         p_data->ca_disconnect.reason = BT_STATUS_FAIL;
@@ -271,7 +291,7 @@ void bta_av_ca_api_get(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
         break;
     default:
         /* should not go here */
-        assert(0);
+        goto error;
         break;
     }
     image_handle_to_utf16(p_data->api_ca_get.image_handle, image_handle_utf16);
@@ -307,19 +327,21 @@ void bta_av_ca_response(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
             {
             case OBEX_HEADER_ID_BODY:
             /* actually,END_OF_BODY should not in this continue response */
-            case OBEX_HEADER_ID_END_OF_BODY:
+            case OBEX_HEADER_ID_END_OF_BODY: {
+                UINT16 hdr_len = OBEX_GetHeaderLength(header);
+                UINT16 seg_len = (hdr_len >= 3) ? (UINT16)(hdr_len - 3) : 0;
                 if (body_data == NULL) {
                     /* first body header */
                     body_data = header + 3;     /* skip opcode, length */
-                    body_data_len = OBEX_GetHeaderLength(header) - 3;
-                }
-                else {
+                    body_data_len = seg_len;
+                } else {
                     /* another body header found */
                     report_data_event(NULL, body_data, body_data_len, FALSE);
                     body_data = header + 3;     /* skip opcode, length */
-                    body_data_len = OBEX_GetHeaderLength(header) - 3;
+                    body_data_len = seg_len;
                 }
                 break;
+            }
             default:
                 break;
             }
@@ -395,19 +417,21 @@ void bta_av_ca_response_final(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
                 {
                 /* actually, BODY should not in this final response */
                 case OBEX_HEADER_ID_BODY:
-                case OBEX_HEADER_ID_END_OF_BODY:
+                case OBEX_HEADER_ID_END_OF_BODY: {
+                    UINT16 hdr_len = OBEX_GetHeaderLength(header);
+                    UINT16 seg_len = (hdr_len >= 3) ? (UINT16)(hdr_len - 3) : 0;
                     if (body_data == NULL) {
                         /* first body header */
                         body_data = header + 3;     /* skip opcode, length */
-                        body_data_len = OBEX_GetHeaderLength(header) - 3;
-                    }
-                    else {
+                        body_data_len = seg_len;
+                    } else {
                         /* another body header found */
                         report_data_event(NULL, body_data, body_data_len, FALSE);
                         body_data = header + 3;     /* skip opcode, length */
-                        body_data_len = OBEX_GetHeaderLength(header) - 3;
+                        body_data_len = seg_len;
                     }
                     break;
+                }
                 default:
                     break;
                 }
