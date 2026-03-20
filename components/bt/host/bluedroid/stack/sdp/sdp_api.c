@@ -46,6 +46,7 @@
 ** Function         SDP_InitDiscoveryDb
 **
 ** Description      This function is called to initialize a discovery database.
+**                  It will no longer use p_attr_list and p_uuid_list after calling it.
 **
 ** Parameters:      p_db        - (input) address of an area of memory where the
 **                                        discovery database is managed.
@@ -63,7 +64,7 @@
 **
 *******************************************************************************/
 BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uuid,
-                             tSDP_UUID *p_uuid_list, UINT16 num_attr, UINT16 *p_attr_list)
+                             const tSDP_UUID *p_uuid_list, UINT16 num_attr, const UINT16 *p_attr_list)
 {
 #if SDP_CLIENT_ENABLED == TRUE
     UINT16  xx;
@@ -372,7 +373,7 @@ BOOLEAN SDP_FindServiceUUIDInRec(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
                     if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
                         /* Look through data element sequence until no more UUIDs */
                         for (p_extra_sattr = p_sattr->attr_value.v.p_sub_attr; p_extra_sattr; p_extra_sattr = p_extra_sattr->p_next_attr) {
-                            /* Increment past this to see if the next attribut is UUID */
+                            /* Increment past this to see if the next attribute is UUID */
                             if ((SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) == UUID_DESC_TYPE)
                                     /* only support 16 bits UUID for now */
                                     && (SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2)) {
@@ -522,7 +523,7 @@ tSDP_DISC_REC *SDP_FindServiceInDb (tSDP_DISCOVERY_DB *p_db, UINT16 service_uuid
                         if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
                             /* Look through data element sequence until no more UUIDs */
                             for (p_extra_sattr = p_sattr->attr_value.v.p_sub_attr; p_extra_sattr; p_extra_sattr = p_extra_sattr->p_next_attr) {
-                                /* Increment past this to see if the next attribut is UUID */
+                                /* Increment past this to see if the next attribute is UUID */
                                 if ((SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) == UUID_DESC_TYPE)
                                         && (SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2)
                                         /* for a specific uuid, or any one */
