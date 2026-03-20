@@ -180,15 +180,16 @@ extern "C"
 ** Function         SDP_InitDiscoveryDb
 **
 ** Description      This function is called to initialize a discovery database.
+**                  It will no longer use p_attr_list and p_uuid_list after calling it.
 **
 ** Returns          TRUE if successful, FALSE if one or more parameters are bad
 **
 *******************************************************************************/
 extern BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len,
                                     UINT16 num_uuid,
-                                    tSDP_UUID *p_uuid_list,
+                                    const tSDP_UUID *p_uuid_list,
                                     UINT16 num_attr,
-                                    UINT16 *p_attr_list);
+                                    const UINT16 *p_attr_list);
 
 /*******************************************************************************
 **
