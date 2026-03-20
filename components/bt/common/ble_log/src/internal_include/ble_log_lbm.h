@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,7 +124,6 @@ typedef struct {
 /* ---------------------------------------- */
 /*     Enhanced Statistics Data Defines     */
 /* ---------------------------------------- */
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
 typedef struct {
     uint8_t int_src_code;
     uint8_t src_code;
@@ -133,16 +132,13 @@ typedef struct {
     uint32_t written_bytes_cnt;
     uint32_t lost_bytes_cnt;
 } __attribute__((packed)) ble_log_enh_stat_t;
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
 /* -------------------------------------- */
 /*     Log Statistics Manager Context     */
 /* -------------------------------------- */
 typedef struct {
     uint32_t frame_sn;
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
     ble_log_enh_stat_t enh_stat;
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 } ble_log_stat_mgr_t;
 
 #define BLE_LOG_GET_FRAME_SN(VAR)               __atomic_fetch_add(VAR, 1, __ATOMIC_RELAXED)
@@ -170,8 +166,6 @@ bool ble_log_lbm_init(void);
 void ble_log_lbm_deinit(void);
 ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len);
 void ble_log_lbm_enable(bool enable);
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
 void ble_log_write_enh_stat(void);
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
 
 #endif /* __BLE_LOG_LBM_H__ */
