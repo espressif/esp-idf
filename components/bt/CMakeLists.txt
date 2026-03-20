@@ -35,6 +35,7 @@ set(common_include_dirs
     common/btc/profile/esp/include
     common/hci_log/include
     common/ble_log/include
+    common/ble_log/deprecated/include
 )
 
 set(ble_mesh_include_dirs
@@ -159,7 +160,7 @@ if(CONFIG_BT_ENABLED)
          "common/osi/osi.c"
          "common/osi/semaphore.c"
          "porting/mem/bt_osi_mem.c"
-         "common/ble_log/ble_log_spi_out.c"
+         "common/ble_log/deprecated/ble_log_spi_out.c"
          )
 
     # BLE Log Module
