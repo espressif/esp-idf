@@ -47,7 +47,6 @@ if BLE_LOG_ENABLED
         depends on SOC_ESP_NIMBLE_CONTROLLER
         default y
         select BT_LE_CONTROLLER_LOG_ENABLED
-        select BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
         select BLE_LOG_LL_ENABLED
         help
             Current BLE Controller is ESP BLE Controller
@@ -103,30 +102,6 @@ if BLE_LOG_ENABLED
         default y
         help
             Enable BLE Host side HCI Logging
-
-    config BLE_LOG_PAYLOAD_CHECKSUM_ENABLED
-        bool "Enable payload checksum for BLE Log data integrity check"
-        default y
-        help
-            Checksum is the default method for BLE Log data integrity check,
-            but for targets with slow CPU speed, it may cause significant system
-            performance decrease; a compromise could be made to balance the
-            realtime performance and log data integrity, which is calculating the
-            checksum of frame head and payload all together by default, or only
-            calculate the checksum of frame head to minimize performance decrease
-
-    config BLE_LOG_XOR_CHECKSUM_ENABLED
-        bool "Enable XOR checksum for BLE Log payload integrity check"
-        default y
-        help
-            XOR checksum is introduced for integrity check performance optimization.
-
-    config BLE_LOG_ENH_STAT_ENABLED
-        bool "Enable enhanced statistics for BLE Log"
-        default n
-        help
-            Enable enhanced statistics for written/lost frame/bytes count, which may
-            cost additional ~100kB memory
 
     config BLE_LOG_TS_ENABLED
         bool "Enable BLE Log Timestamp Synchronization (TS)"
