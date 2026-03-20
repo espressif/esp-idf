@@ -357,7 +357,7 @@ TEST_CASE("IDF additions: IDF tick hooks during scheduler suspension", "[freerto
 
         /* Cleanup */
         vTaskSuspend(suspend_task_handle[x]);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(10);
         vTaskDelete(suspend_task_handle[x]);
     }
 }
