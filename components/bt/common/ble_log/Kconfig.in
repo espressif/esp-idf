@@ -243,3 +243,7 @@ if BLE_LOG_ENABLED
         source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/Kconfig.in"
     endmenu
 endif
+
+menu "Legacy SPI Log Output (Deprecated - use BLE Log Module instead)"
+    source "$IDF_PATH/components/bt/common/ble_log/deprecated/Kconfig.in"
+endmenu
