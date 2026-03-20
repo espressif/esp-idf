@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@
 #define BLE_LOG_UART_DMA_BURST_SIZE         (32)
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 #define BLE_LOG_UART_REDIR_BUF_SIZE         (512)
-#define BLE_LOG_UART_REDIR_FLUSH_TIMEOUT    (100)
+#define BLE_LOG_UART_REDIR_FLUSH_PERIOD_US  (1000 * 1000)
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
 /* VARIABLE */
@@ -36,7 +36,6 @@ BLE_LOG_STATIC uhci_controller_handle_t dev_handle = NULL;
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 BLE_LOG_STATIC bool uart_driver_inited = false;
 BLE_LOG_STATIC ble_log_lbm_t *redir_lbm = NULL;
-BLE_LOG_STATIC uint32_t redir_last_write_ts = 0;
 BLE_LOG_STATIC esp_timer_handle_t redir_flush_timer = NULL;
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
@@ -63,11 +62,17 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool uart_dma_tx_done_cb(
 }
 
 #if BLE_LOG_PRPH_UART_DMA_REDIR
-BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void esp_timer_cb_flush_log(void)
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void esp_timer_cb_flush_log(void *arg)
 {
-    uint32_t os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
-    if ((os_ts - redir_last_write_ts) > BLE_LOG_UART_REDIR_FLUSH_TIMEOUT) {
-        xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
+    (void)arg;
+
+    if (!prph_inited) {
+        return;
+    }
+
+    /* Non-blocking trylock: skip if mutex is held by a writer.
+     * The periodic timer will retry on the next tick. */
+    if (xSemaphoreTake(redir_lbm->mutex, 0) == pdTRUE) {
         int trans_idx = redir_lbm->trans_idx;
         for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
             ble_log_prph_trans_t **trans = &(redir_lbm->trans[trans_idx]);
@@ -136,7 +141,7 @@ bool ble_log_prph_init(size_t trans_cnt)
         }
     }
 
-    /* Mutex initilaization */
+    /* Mutex initialization */
     redir_lbm->mutex = xSemaphoreCreateMutex();
     if (!redir_lbm->mutex) {
         goto exit;
@@ -151,7 +156,7 @@ bool ble_log_prph_init(size_t trans_cnt)
 
     /* Initialize periodic flush timer */
     esp_timer_create_args_t timer_args = {
-        .callback = (esp_timer_cb_t)esp_timer_cb_flush_log,
+        .callback = esp_timer_cb_flush_log,
         .dispatch_method = ESP_TIMER_TASK,
     };
     if (esp_timer_create(&timer_args, &redir_flush_timer) != ESP_OK) {
@@ -161,7 +166,7 @@ bool ble_log_prph_init(size_t trans_cnt)
 
     prph_inited = true;
 #if BLE_LOG_PRPH_UART_DMA_REDIR
-    esp_timer_start_periodic(redir_flush_timer, BLE_LOG_UART_REDIR_FLUSH_TIMEOUT);
+    esp_timer_start_periodic(redir_flush_timer, BLE_LOG_UART_REDIR_FLUSH_PERIOD_US);
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
     return true;
@@ -287,7 +292,6 @@ void ble_log_redir_uart_tx_chars(const char *src, size_t len)
         uint8_t *buf = (*trans)->buf + (*trans)->pos;
         BLE_LOG_MEMCPY(buf, src, len);
         (*trans)->pos += len;
-        redir_last_write_ts = pdTICKS_TO_MS(xTaskGetTickCount());
 
         if (BLE_LOG_TRANS_FREE_SPACE((*trans)) <= BLE_LOG_FRAME_OVERHEAD) {
             ble_log_rt_queue_trans(trans);
