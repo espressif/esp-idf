@@ -27,9 +27,15 @@ BLE_LOG_STATIC ble_log_stat_mgr_t *stat_mgr_ctx[BLE_LOG_SRC_MAX] = {0};
 BLE_LOG_STATIC ble_log_lbm_t *ble_log_lbm_acquire(void);
 BLE_LOG_STATIC void ble_log_lbm_release(ble_log_lbm_t *lbm);
 BLE_LOG_STATIC
+ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len);
+BLE_LOG_STATIC
 void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_code,
                              const uint8_t *addr, uint16_t len,
                              const uint8_t *addr_append, uint16_t len_append, bool omdata);
+#if BLE_LOG_UART_REDIR_ENABLED
+BLE_LOG_STATIC
+void ble_log_lbm_stream_seal(ble_log_prph_trans_t **trans, ble_log_src_t src_code);
+#endif /* BLE_LOG_UART_REDIR_ENABLED */
 BLE_LOG_STATIC void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost);
 
 /* ------------------------- */
@@ -130,6 +136,33 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
         ble_log_rt_queue_trans(trans);
     }
 }
+
+#if BLE_LOG_UART_REDIR_ENABLED
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
+void ble_log_lbm_stream_seal(ble_log_prph_trans_t **trans, ble_log_src_t src_code)
+{
+    if ((*trans)->pos <= BLE_LOG_FRAME_HEAD_LEN) {
+        return;
+    }
+
+    uint16_t payload_len = (*trans)->pos - BLE_LOG_FRAME_HEAD_LEN;
+    ble_log_stat_mgr_t *stat_mgr = stat_mgr_ctx[src_code];
+    uint32_t frame_sn = BLE_LOG_GET_FRAME_SN(&(stat_mgr->frame_sn));
+    ble_log_frame_head_t frame_head = {
+        .length = payload_len,
+        .frame_meta = BLE_LOG_MAKE_FRAME_META(src_code, frame_sn),
+    };
+    BLE_LOG_MEMCPY((*trans)->buf, &frame_head, BLE_LOG_FRAME_HEAD_LEN);
+
+    uint32_t checksum = ble_log_fast_checksum((*trans)->buf, (*trans)->pos);
+    BLE_LOG_MEMCPY((*trans)->buf + (*trans)->pos, &checksum, BLE_LOG_FRAME_TAIL_LEN);
+    (*trans)->pos += BLE_LOG_FRAME_TAIL_LEN;
+
+    ble_log_stat_mgr_update(src_code, payload_len, false);
+
+    ble_log_rt_queue_trans(trans);
+}
+#endif /* BLE_LOG_UART_REDIR_ENABLED */
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost)
@@ -263,11 +296,7 @@ void ble_log_lbm_deinit(void)
     }
 }
 
-/* Note:
- * The function below should be private, but when UART redirection is required,
- * it would be a waste to implement get transport function again, thus
- * make it available internally */
-BLE_LOG_IRAM_ATTR
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
 {
     /* Check if available buffer can contain incoming log */
@@ -323,6 +352,76 @@ void ble_log_write_enh_stat(void)
 deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
+
+#if BLE_LOG_UART_REDIR_ENABLED
+/* ------------------------------------------------- */
+/*     STREAM WRITE INTERFACE                        */
+/*                                                   */
+/* Stream mode appends raw data into a transport     */
+/* buffer with deferred frame encapsulation:         */
+/*   - Header space is reserved on first write       */
+/*   - Data is memcpy'd after the reserved header    */
+/*   - Header and checksum are filled in at seal     */
+/*                                                   */
+/* get_trans(lbm, 0) reuse safety:                   */
+/*                                                   */
+/* get_trans auto-queues a buffer raw (no seal) when */
+/* free_space < log_len + FRAME_OVERHEAD.  With      */
+/* log_len = 0, this triggers at free_space < 10.    */
+/*                                                   */
+/* To prevent unsealed stream data from being sent   */
+/* raw, stream_write auto-seals at free_space <= 10. */
+/* This guarantees that any unsealed stream buffer   */
+/* seen by get_trans always has free_space > 10,     */
+/* so get_trans returns it directly without queuing.  */
+/* ------------------------------------------------- */
+BLE_LOG_IRAM_ATTR
+void ble_log_lbm_stream_write(ble_log_lbm_t *lbm, ble_log_src_t src_code,
+                               const uint8_t *data, size_t len)
+{
+    while (len > 0) {
+        ble_log_prph_trans_t **trans = ble_log_lbm_get_trans(lbm, 0);
+        if (!trans) {
+            ble_log_stat_mgr_update(src_code, len, true);
+            return;
+        }
+
+        if ((*trans)->pos == 0) {
+            (*trans)->pos = BLE_LOG_FRAME_HEAD_LEN;
+        }
+
+        uint16_t available = BLE_LOG_TRANS_FREE_SPACE((*trans));
+        if (available <= BLE_LOG_FRAME_TAIL_LEN) {
+            ble_log_lbm_stream_seal(trans, src_code);
+            continue;
+        }
+        available -= BLE_LOG_FRAME_TAIL_LEN;
+
+        size_t to_write = (len < available) ? len : available;
+        BLE_LOG_MEMCPY((*trans)->buf + (*trans)->pos, data, to_write);
+        (*trans)->pos += to_write;
+        data += to_write;
+        len -= to_write;
+
+        if (BLE_LOG_TRANS_FREE_SPACE((*trans)) <= BLE_LOG_FRAME_OVERHEAD) {
+            ble_log_lbm_stream_seal(trans, src_code);
+        }
+    }
+}
+
+BLE_LOG_IRAM_ATTR
+void ble_log_lbm_stream_flush(ble_log_lbm_t *lbm, ble_log_src_t src_code)
+{
+    int trans_idx = lbm->trans_idx;
+    for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+        ble_log_prph_trans_t **trans = &(lbm->trans[trans_idx]);
+        if (!(*trans)->prph_owned && (*trans)->pos > BLE_LOG_FRAME_HEAD_LEN) {
+            ble_log_lbm_stream_seal(trans, src_code);
+        }
+        trans_idx = (trans_idx + 1) % BLE_LOG_TRANS_PING_PONG_BUF_CNT;
+    }
+}
+#endif /* BLE_LOG_UART_REDIR_ENABLED */
 
 /* ------------------------ */
 /*     PUBLIC INTERFACE     */

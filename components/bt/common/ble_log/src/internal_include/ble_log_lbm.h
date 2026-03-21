@@ -16,6 +16,12 @@
 #include "ble_log_prph.h"
 
 #include "freertos/FreeRTOS.h"
+
+#if defined(CONFIG_BLE_LOG_PRPH_UART_DMA) && (CONFIG_BLE_LOG_PRPH_UART_DMA_PORT == 0)
+#define BLE_LOG_UART_REDIR_ENABLED          (1)
+#else
+#define BLE_LOG_UART_REDIR_ENABLED          (0)
+#endif
 #include "freertos/semphr.h"
 
 /* ------------------------- */
@@ -173,8 +179,12 @@ enum {
 /* --------------------------- */
 bool ble_log_lbm_init(void);
 void ble_log_lbm_deinit(void);
-ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len);
 void ble_log_lbm_enable(bool enable);
 void ble_log_write_enh_stat(void);
+#if BLE_LOG_UART_REDIR_ENABLED
+void ble_log_lbm_stream_write(ble_log_lbm_t *lbm, ble_log_src_t src_code,
+                               const uint8_t *data, size_t len);
+void ble_log_lbm_stream_flush(ble_log_lbm_t *lbm, ble_log_src_t src_code);
+#endif
 
 #endif /* __BLE_LOG_LBM_H__ */
