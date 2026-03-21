@@ -35,6 +35,9 @@ typedef enum {
     BLE_LOG_SRC_HCI,
     BLE_LOG_SRC_ENCODE,
 
+    /* UART redirection (PORT 0 only) */
+    BLE_LOG_SRC_REDIR,
+
     BLE_LOG_SRC_MAX,
 } ble_log_src_t;
 
