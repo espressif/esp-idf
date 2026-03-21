@@ -152,6 +152,7 @@ if BLE_LOG_ENABLED
 
     choice BLE_LOG_PRPH_CHOICE
         prompt "BLE Log peripheral choice"
+        default BLE_LOG_PRPH_UART_DMA if SOC_UHCI_SUPPORTED
         default BLE_LOG_PRPH_DUMMY
         help
             Choose BLE Log peripheral
@@ -203,7 +204,7 @@ if BLE_LOG_ENABLED
 
         config BLE_LOG_PRPH_UART_DMA_BAUD_RATE
             int "Baud rate of UART port for UART DMA transport"
-            default 921600
+            default 3000000
             help
                 Determine the baud rate of UART port
 
