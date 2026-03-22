@@ -130,7 +130,7 @@ bool ble_log_cas_acquire(volatile bool *cas_lock);
 void ble_log_cas_release(volatile bool *cas_lock);
 #endif /* UNIT_TEST */
 
-#define BLE_LOG_VERSION                         (3)
+#define BLE_LOG_VERSION                         (4)
 
 /* TYPEDEF */
 typedef enum {
