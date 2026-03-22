@@ -173,6 +173,7 @@ void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost)
     /* Update aligned counters */
     uint32_t bytes_cnt = len + BLE_LOG_FRAME_OVERHEAD;
     if (lost) {
+        BLE_LOG_GET_FRAME_SN(&(stat_mgr->frame_sn));  /* consume SN for loss detection */
         stat_mgr->lost_frame_cnt++;
         stat_mgr->lost_bytes_cnt += bytes_cnt;
     } else {
