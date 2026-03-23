@@ -24,7 +24,9 @@ BLE_LOG_STATIC ble_log_lbm_ctx_t *lbm_ctx = NULL;
 BLE_LOG_STATIC ble_log_stat_mgr_t *stat_mgr_ctx[BLE_LOG_SRC_MAX] = {0};
 
 /* PRIVATE FUNCTION DECLARATION */
-BLE_LOG_STATIC ble_log_lbm_t *ble_log_lbm_acquire(void);
+BLE_LOG_STATIC
+bool ble_log_lbm_acquire_trans(size_t log_len, ble_log_lbm_t **out_lbm,
+                               ble_log_prph_trans_t ***out_trans);
 BLE_LOG_STATIC void ble_log_lbm_release(ble_log_lbm_t *lbm);
 BLE_LOG_STATIC
 ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len);
@@ -42,9 +44,14 @@ BLE_LOG_STATIC void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len
 /*     PRIVATE INTERFACE     */
 /* ------------------------- */
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
-ble_log_lbm_t *ble_log_lbm_acquire(void)
+bool ble_log_lbm_acquire_trans(size_t log_len, ble_log_lbm_t **out_lbm,
+                               ble_log_prph_trans_t ***out_trans)
 {
-    ble_log_lbm_t *lbm = NULL;
+    *out_lbm = NULL;
+    *out_trans = NULL;
+
+    ble_log_lbm_t *lbm;
+    ble_log_prph_trans_t **trans;
     ble_log_lbm_t *atomic_pool;
     ble_log_lbm_t *spin_lbm;
     int atomic_pool_size;
@@ -59,18 +66,32 @@ ble_log_lbm_t *ble_log_lbm_acquire(void)
         atomic_pool_size = BLE_LOG_LBM_ATOMIC_TASK_CNT;
     }
 
-    /* Try to acquire atomic LBM first */
+    /* Try each atomic LBM: acquire lock, check buffer, fallback on failure */
     for (int i = 0; i < atomic_pool_size; i++) {
         lbm = &atomic_pool[i];
         if (ble_log_cas_acquire(&(lbm->atomic_lock))) {
-            return lbm;
+            trans = ble_log_lbm_get_trans(lbm, log_len);
+            if (trans) {
+                *out_lbm = lbm;
+                *out_trans = trans;
+                return true;
+            }
+            ble_log_cas_release(&(lbm->atomic_lock));
         }
     }
 
-    /* Fallback to spinlock LBM */
+    /* Last resort: spinlock LBM */
     lbm = spin_lbm;
     BLE_LOG_ACQUIRE_SPIN_LOCK(&(lbm->spin_lock));
-    return lbm;
+    trans = ble_log_lbm_get_trans(lbm, log_len);
+    if (trans) {
+        *out_lbm = lbm;
+        *out_trans = trans;
+        return true;
+    }
+    BLE_LOG_RELEASE_SPIN_LOCK(&(lbm->spin_lock));
+
+    return false;
 }
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
@@ -582,12 +603,11 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
         goto exit;
     }
 
-    /* Get transport */
+    /* Get transport from the best available pool */
     size_t payload_len = len + sizeof(uint32_t);
-    ble_log_lbm_t *lbm = ble_log_lbm_acquire();
-    ble_log_prph_trans_t **trans = ble_log_lbm_get_trans(lbm, payload_len);
-    if (!trans) {
-        ble_log_lbm_release(lbm);
+    ble_log_lbm_t *lbm;
+    ble_log_prph_trans_t **trans;
+    if (!ble_log_lbm_acquire_trans(payload_len, &lbm, &trans)) {
         goto failed;
     }
 
@@ -637,14 +657,19 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
     }
     bool omdata = flag & BIT(BLE_LOG_LL_FLAG_OMDATA);
 
-    /* Determine LBM by flag */
+    /* Determine LBM and get transport */
     ble_log_lbm_t *lbm;
-    if (BLE_LOG_IN_ISR()) {
-        /* Reuse common LBM acquire logic */
-        lbm = ble_log_lbm_acquire();
+    ble_log_prph_trans_t **trans;
+    size_t payload_len;
 
+    if (BLE_LOG_IN_ISR()) {
         /* os_mbuf_copydata is in flash and not safe to call from ISR */
         omdata = false;
+
+        payload_len = len + len_append;
+        if (!ble_log_lbm_acquire_trans(payload_len, &lbm, &trans)) {
+            goto failed;
+        }
     } else {
         if (use_ll_task) {
             lbm = &(lbm_ctx->lbm_ll_task);
@@ -656,14 +681,12 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
             }
 #endif /* CONFIG_BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED */
         }
-    }
-
-    /* Get transport */
-    size_t payload_len = len + len_append;
-    ble_log_prph_trans_t **trans = ble_log_lbm_get_trans(lbm, payload_len);
-    if (!trans) {
-        ble_log_lbm_release(lbm);
-        goto failed;
+        payload_len = len + len_append;
+        trans = ble_log_lbm_get_trans(lbm, payload_len);
+        if (!trans) {
+            /* LL pools use LOCK_NONE, release is no-op */
+            goto failed;
+        }
     }
 
     /* Write transport */
