@@ -429,6 +429,12 @@ typedef struct {
     BD_ADDR             remote_bda;
 } tBTA_GATTC_SERVICE_CHANGE;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTC_IF       client_if;
+    BD_ADDR             remote_bda;
+} tBTA_GATTC_CANCEL_OPEN;
+
 typedef union {
     tBTA_GATT_STATUS        status;
     tBTA_GATTC_DIS_CMPL     dis_cmpl;    /* discovery complete */
@@ -450,6 +456,7 @@ typedef union {
     tBTA_GATTC_SERVICE_CHANGE srvc_chg;     /* service change event */
     tBTA_GATTC_SET_ASSOC    set_assoc;
     tBTA_GATTC_GET_ADDR_LIST get_addr_list;
+    tBTA_GATTC_CANCEL_OPEN  cancel_open;
 } tBTA_GATTC;
 
 /* GATTC enable callback function */
