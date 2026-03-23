@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,14 +70,13 @@ esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 esp_err_t esp_spp_deinit(void)
 {
     btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_UNINIT;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -242,27 +241,25 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
 esp_err_t esp_spp_vfs_register(void)
 {
     btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_VFS_REGISTER;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_vfs_unregister(void)
 {
     btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_VFS_UNREGISTER;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_get_profile_status(esp_spp_profile_status_t *profile_status)
