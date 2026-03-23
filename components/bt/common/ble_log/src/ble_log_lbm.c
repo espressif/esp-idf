@@ -433,8 +433,8 @@ BLE_LOG_STATIC void ble_log_emit_buf_util(ble_log_lbm_t *lbm, uint8_t lbm_id)
         .int_src_code   = BLE_LOG_INT_SRC_BUF_UTIL,
         .lbm_id         = lbm_id,
         .trans_cnt      = BLE_LOG_TRANS_BUF_CNT,
-        .inflight_peak  = (uint8_t)__atomic_exchange_n(
-                              &lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED),
+        .inflight_peak  = (uint8_t)__atomic_load_n(
+                              &lbm->trans_inflight_peak, __ATOMIC_RELAXED),
     };
     ble_log_write_hex(BLE_LOG_SRC_INTERNAL,
                       (const uint8_t *)&util, sizeof(ble_log_buf_util_t));
