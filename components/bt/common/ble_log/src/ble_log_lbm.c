@@ -203,11 +203,12 @@ bool ble_log_lbm_init(void)
     ble_log_lbm_t *lbm;
     for (int i = 0; i < BLE_LOG_LBM_COMMON_CNT; i++) {
         lbm = &(lbm_ctx->lbm_common_pool[i]);
-        for (int j = 0; j < BLE_LOG_TRANS_PING_PONG_BUF_CNT; j++) {
+        for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
             if (!ble_log_prph_trans_init(&(lbm->trans[j]),
-                                         CONFIG_BLE_LOG_LBM_TRANS_SIZE)) {
+                                         BLE_LOG_TRANS_SIZE)) {
                 goto exit;
             }
+            lbm->trans[j]->owner = (void *)lbm;
         }
     }
 
@@ -225,11 +226,12 @@ bool ble_log_lbm_init(void)
 #if CONFIG_BLE_LOG_LL_ENABLED
     for (int i = 0; i < BLE_LOG_LBM_LL_MAX; i++) {
         lbm = &(lbm_ctx->lbm_ll_pool[i]);
-        for (int j = 0; j < BLE_LOG_TRANS_PING_PONG_BUF_CNT; j++) {
+        for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
             if (!ble_log_prph_trans_init(&(lbm->trans[j]),
-                                         CONFIG_BLE_LOG_LBM_LL_TRANS_SIZE)) {
+                                         BLE_LOG_TRANS_LL_SIZE)) {
                 goto exit;
             }
+            lbm->trans[j]->owner = (void *)lbm;
         }
     }
 
@@ -286,7 +288,7 @@ void ble_log_lbm_deinit(void)
         ble_log_lbm_t *lbm;
         for (int i = 0; i < BLE_LOG_LBM_CNT; i++) {
             lbm = &(lbm_ctx->lbm_pool[i]);
-            for (int j = 0; j < BLE_LOG_TRANS_PING_PONG_BUF_CNT; j++) {
+            for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
                 ble_log_prph_trans_deinit(&(lbm->trans[j]));
             }
         }
@@ -302,9 +304,9 @@ ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
 {
     /* Check if available buffer can contain incoming log */
     ble_log_prph_trans_t **trans;
-    for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+    for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
         trans = &(lbm->trans[lbm->trans_idx]);
-        if (!(*trans)->prph_owned) {
+        if (!__atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE)) {
             /* Return if there's enough free space in current transport */
             if (BLE_LOG_TRANS_FREE_SPACE((*trans)) >= (log_len + BLE_LOG_FRAME_OVERHEAD)) {
                 return trans;
@@ -317,10 +319,10 @@ ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
         }
 
         /* Current transport unavailable, switch to the other */
-        lbm->trans_idx = !lbm->trans_idx;
+        lbm->trans_idx = (lbm->trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
     }
 
-    /* Both ping-pong buffers are unavailable */
+    /* All buffers are unavailable */
     return NULL;
 }
 
@@ -414,15 +416,69 @@ BLE_LOG_IRAM_ATTR
 void ble_log_lbm_stream_flush(ble_log_lbm_t *lbm, ble_log_src_t src_code)
 {
     int trans_idx = lbm->trans_idx;
-    for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+    for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
         ble_log_prph_trans_t **trans = &(lbm->trans[trans_idx]);
-        if (!(*trans)->prph_owned && (*trans)->pos > BLE_LOG_FRAME_HEAD_LEN) {
+        if (!__atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE) &&
+            (*trans)->pos > BLE_LOG_FRAME_HEAD_LEN) {
             ble_log_lbm_stream_seal(trans, src_code);
         }
-        trans_idx = (trans_idx + 1) % BLE_LOG_TRANS_PING_PONG_BUF_CNT;
+        trans_idx = (trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
     }
 }
 #endif /* BLE_LOG_UART_REDIR_ENABLED */
+
+BLE_LOG_STATIC void ble_log_emit_buf_util(ble_log_lbm_t *lbm, uint8_t lbm_id)
+{
+    ble_log_buf_util_t util = {
+        .int_src_code   = BLE_LOG_INT_SRC_BUF_UTIL,
+        .lbm_id         = lbm_id,
+        .trans_cnt      = BLE_LOG_TRANS_BUF_CNT,
+        .inflight_peak  = (uint8_t)__atomic_exchange_n(
+                              &lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED),
+    };
+    ble_log_write_hex(BLE_LOG_SRC_INTERNAL,
+                      (const uint8_t *)&util, sizeof(ble_log_buf_util_t));
+}
+
+void ble_log_write_buf_util(void)
+{
+    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
+    if (!lbm_enabled) {
+        goto deref;
+    }
+
+    ble_log_emit_buf_util(&lbm_ctx->spin_task,
+        BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_COMMON_TASK, 0));
+    for (int i = 0; i < BLE_LOG_LBM_ATOMIC_TASK_CNT; i++) {
+        ble_log_emit_buf_util(&lbm_ctx->atomic_pool_task[i],
+            BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_COMMON_TASK, 1 + i));
+    }
+
+    ble_log_emit_buf_util(&lbm_ctx->spin_isr,
+        BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_COMMON_ISR, 0));
+    for (int i = 0; i < BLE_LOG_LBM_ATOMIC_ISR_CNT; i++) {
+        ble_log_emit_buf_util(&lbm_ctx->atomic_pool_isr[i],
+            BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_COMMON_ISR, 1 + i));
+    }
+
+#if CONFIG_BLE_LOG_LL_ENABLED
+    ble_log_emit_buf_util(&lbm_ctx->lbm_ll_task,
+        BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_LL, 0));
+    ble_log_emit_buf_util(&lbm_ctx->lbm_ll_hci,
+        BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_LL, 1));
+#endif
+
+#if BLE_LOG_UART_REDIR_ENABLED
+    ble_log_lbm_t *redir_lbm = ble_log_prph_get_redir_lbm();
+    if (redir_lbm) {
+        ble_log_emit_buf_util(redir_lbm,
+            BLE_LOG_BUF_UTIL_MAKE_ID(BLE_LOG_BUF_UTIL_POOL_REDIR, 0));
+    }
+#endif
+
+deref:
+    BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
+}
 
 /* ------------------------ */
 /*     PUBLIC INTERFACE     */
@@ -445,6 +501,7 @@ void ble_log_flush(void)
 
     /* Write enhanced statistics before module disable */
     ble_log_write_enh_stat();
+    ble_log_write_buf_util();
 
     /* Write BLE Log flush log */
     ble_log_info_t ble_log_info = {
@@ -470,12 +527,13 @@ void ble_log_flush(void)
     for (int i = 0; i < BLE_LOG_LBM_CNT; i++) {
         lbm = &(lbm_ctx->lbm_pool[i]);
         int trans_idx = lbm->trans_idx;
-        for (int j = 0; j < BLE_LOG_TRANS_PING_PONG_BUF_CNT; j++) {
+        for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
             trans = &(lbm->trans[trans_idx]);
-            if (!(*trans)->prph_owned && (*trans)->pos) {
+            if (!__atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE) &&
+                (*trans)->pos) {
                 ble_log_rt_queue_trans(trans);
             }
-            trans_idx = !trans_idx;
+            trans_idx = (trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
         }
     }
 
@@ -486,9 +544,9 @@ void ble_log_flush(void)
         in_progress = false;
         for (int i = 0; i < BLE_LOG_LBM_CNT; i++) {
             lbm = &(lbm_ctx->lbm_pool[i]);
-            for (int j = 0; j < BLE_LOG_TRANS_PING_PONG_BUF_CNT; j++) {
+            for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
                 trans = &(lbm->trans[j]);
-                in_progress |= (*trans)->prph_owned;
+                in_progress |= __atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE);
             }
         }
         if (in_progress) {
@@ -501,6 +559,13 @@ void ble_log_flush(void)
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
         BLE_LOG_MEMSET(stat_mgr_ctx[i], 0, sizeof(ble_log_stat_mgr_t));
     }
+
+    for (int i = 0; i < BLE_LOG_LBM_CNT; i++) {
+        lbm = &(lbm_ctx->lbm_pool[i]);
+        __atomic_store_n(&lbm->trans_inflight, 0, __ATOMIC_RELAXED);
+        __atomic_store_n(&lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED);
+    }
+    ble_log_prph_reset_util_counters();
 
     /* Resume enable status */
     lbm_enabled = lbm_enabled_copy;
@@ -633,7 +698,7 @@ void ble_log_dump_to_console(void)
     for (int i = 0; i < BLE_LOG_LBM_CNT; i++) {
         lbm = &(lbm_ctx->lbm_pool[i]);
         trans_idx = lbm->trans_idx;
-        for (int j = 0; j < BLE_LOG_TRANS_PING_PONG_BUF_CNT; j++) {
+        for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
             trans = lbm->trans[trans_idx];
             BLE_LOG_FEED_WDT();
 
@@ -643,7 +708,7 @@ void ble_log_dump_to_console(void)
                     BLE_LOG_FEED_WDT();
                 }
             }
-            trans_idx = !trans_idx;
+            trans_idx = (trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
         }
     }
     BLE_LOG_CONSOLE("\n:BLE_LOG_DUMP_END]\n\n");
