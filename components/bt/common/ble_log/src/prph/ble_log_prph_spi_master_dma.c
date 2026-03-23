@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 /* INCLUDE */
 #include "ble_log_prph_spi_master_dma.h"
+#include "ble_log_lbm.h"
 
 #include "esp_timer.h"
 
@@ -35,7 +36,9 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_
     /* Recycle transport */
     ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
     trans->pos = 0;
-    trans->prph_owned = false;
+    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
 }
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
@@ -179,6 +182,10 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     spi_trans->length = (trans->pos << 3);
     spi_trans->rxlength = 0;
     if (spi_device_queue_trans(dev_handle, spi_trans, 0) != ESP_OK) {
-        trans->prph_owned = false;
+        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
     }
 }
+
+void ble_log_prph_reset_util_counters(void) {}
