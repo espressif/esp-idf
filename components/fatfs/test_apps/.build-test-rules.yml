@@ -1,5 +1,15 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/fatfs/test_apps/bdl:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+  depends_components:
+    - esp_blockdev
+    - esp_partition
+    - fatfs
+    - vfs
+
 components/fatfs/test_apps/dyn_buffers:
   disable_test:
     - if: IDF_TARGET != "esp32"

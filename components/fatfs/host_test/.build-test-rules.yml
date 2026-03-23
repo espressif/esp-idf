@@ -5,3 +5,7 @@ components/fatfs/host_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: test not pass, should be re-enable # TODO: IDF-8980
+
+components/fatfs/host_test/bdl:
+  enable:
+    - if: IDF_TARGET == "linux"

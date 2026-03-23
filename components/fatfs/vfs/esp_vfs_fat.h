@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "driver/sdspi_host.h"
 #include "ff.h"
 #include "wear_levelling.h"
+#include "esp_blockdev.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -400,6 +401,48 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_ro hasn't been called
  */
 esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label);
+
+/**
+ * @brief Convenience function to mount a FatFS volume on a BDL (Block Device Layer) device
+ *
+ * The FatFS logical sector size is derived from BDL geometry as
+ * LCM(FF_MIN_SS, read_size, write_size [, erase_size]).  erase_size is
+ * included when it fits within FF_MAX_SS, making the sector erase-aligned
+ * for NOR-style devices and page-aligned for NAND-style devices (where
+ * the FTL/WL layer handles erase internally).
+ *
+ * The caller is responsible for constructing the BDL stack (e.g. partition BDL ->
+ * WL BDL) before calling this function.  Read-only devices are detected
+ * automatically.
+ *
+ * @param base_path     path where FATFS partition should be mounted (e.g. "/spiflash")
+ * @param bdl_handle    BDL device handle providing the storage
+ * @param mount_config  pointer to structure with extra parameters for mounting FATFS
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the arguments is invalid
+ *      - ESP_ERR_NO_MEM if memory can not be allocated or no free drives
+ *      - ESP_FAIL if partition can not be mounted
+ */
+esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
+    esp_blockdev_handle_t bdl_handle,
+    const esp_vfs_fat_mount_config_t *mount_config);
+
+/**
+ * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_bdl_mount
+ *
+ * @note This function does NOT release the BDL device handle — the caller owns
+ *       the BDL stack lifecycle.
+ *
+ * @param base_path     path where partition was registered (e.g. "/spiflash")
+ * @param bdl_handle    BDL device handle used during mount
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_bdl_mount hasn't been called
+ */
+esp_err_t esp_vfs_fat_bdl_unmount(const char *base_path, esp_blockdev_handle_t bdl_handle);
 
 /**
  * @brief Get information for FATFS partition

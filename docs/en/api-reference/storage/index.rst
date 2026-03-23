@@ -87,6 +87,8 @@ Examples
       - Demonstrates the capabilities of Python-based tooling for FATFS images available on host computers.
     * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash>`
       - Demonstrates using FATFS over wear leveling on external flash.
+    * - :example:`bdl_wl <storage/fatfs/bdl_wl>`
+      - Demonstrates using FATFS over BDL wear-levelling stack on internal flash.
     * - :example:`wear_leveling <storage/wear_levelling>`
       - Demonstrates using FATFS over wear leveling on internal flash.
 
