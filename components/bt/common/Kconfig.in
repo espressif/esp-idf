@@ -35,7 +35,122 @@ choice BT_SMP_CRYPTO_STACK
 
 endchoice
 
-menu "BLE Log"
+menu "BT Logs"
+    menu "Log Sources"
+        menuconfig BT_LE_CONTROLLER_LOG_ENABLED
+            depends on SOC_ESP_NIMBLE_CONTROLLER
+            bool "Enable Controller logs"
+            default n
+
+        choice
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            prompt "Controller log output mode"
+            default BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 if BLE_LOG_ENABLED
+            default BT_LE_CTRL_LEGACY_LOG_MODE_ENABLED
+
+            config BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+                depends on BLE_LOG_ENABLED
+                bool "BLE Log v2 mode"
+                help
+                    Utilize BLE Log v2 for controller log
+
+            config BT_LE_CTRL_LEGACY_LOG_MODE_ENABLED
+                depends on !BLE_LOG_ENABLED
+                bool "Legacy log mode (Deprecated)"
+        endchoice
+
+        if BT_LE_CONTROLLER_LOG_ENABLED && BT_LE_CTRL_LEGACY_LOG_MODE_ENABLED
+            config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+                bool "Enable controller link layer logs"
+                default y
+
+            config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+                bool "Enable controller HCI logs"
+                default y
+
+            config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+                bool "Controller log dump mode only"
+                default y
+                help
+                    Only operate in dump mode. Logs are cached internally only,
+                    not output asynchronously.
+
+            config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+                bool "Output controller logs to SPI bus (Experimental)"
+                depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+                select BT_BLE_LOG_SPI_OUT_ENABLED
+                default n
+                help
+                    Output ble controller logs to SPI bus
+
+            config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+                bool "Store controller logs to flash (Experimental)"
+                depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+                default n
+                help
+                    Store ble controller logs to flash memory.
+
+            config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+                int "Controller log partition size (multiples of 4K)"
+                depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+                default 65536
+                help
+                    The size of ble controller log partition shall be a multiples of 4K.
+                    The name of log partition shall be "bt_ctrl_log".
+                    The partition type shall be ESP_PARTITION_TYPE_DATA.
+                    The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
+            config BT_LE_LOG_CTRL_BUF1_SIZE
+                int "First controller log buffer size"
+                default 4096
+                help
+                    Configure the size of the first BLE controller LOG buffer.
+
+            config BT_LE_LOG_CTRL_BUF2_SIZE
+                int "Second controller log buffer size"
+                default 1024
+                help
+                    Configure the size of the second BLE controller LOG buffer.
+
+            config BT_LE_LOG_HCI_BUF_SIZE
+                int "HCI log buffer size"
+                default 4096
+                help
+                    Configure the size of the BLE HCI LOG buffer.
+        endif
+
+        config BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL
+            int "Controller log output level"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            range 0 5
+            default 1
+            help
+                The output level of controller log.
+
+        config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
+            hex "Controller log module output switch"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            range 0 0xFFFFFFFF
+            default 0xFFFFFFFF
+            help
+                Bitmask to enable/disable logging for individual controller
+                modules. 0xFFFFFFFF enables all modules.
+
+        config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+            bool "Enable wrap panic handler"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
+
+        config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+            bool "Enable esp_task_wdt_isr_user_handler implementation"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+    endmenu
+
     source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"
 endmenu
 
