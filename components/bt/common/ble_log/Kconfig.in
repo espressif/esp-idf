@@ -1,8 +1,8 @@
 config BLE_LOG_ENABLED
-    bool "Enable BLE Log Module (Experimental)"
+    bool "Enable BT Log Async Output (Dev Only)"
     default n
     help
-        Enable BLE Log Module
+        Enable BT Log Async Output
 
 if BLE_LOG_ENABLED
     config BLE_LOG_TASK_STACK_SIZE
@@ -234,6 +234,6 @@ if BLE_LOG_ENABLED
     endmenu
 endif
 
-menu "Legacy SPI Log Output (Deprecated - use BLE Log Module instead)"
+menu "Legacy SPI Log Output (Deprecated - use BT Log Async Output instead)"
     source "$IDF_PATH/components/bt/common/ble_log/deprecated/Kconfig.in"
 endmenu
