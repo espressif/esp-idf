@@ -69,6 +69,38 @@ class TestUnknown:
         assert result is None
 
 
+class TestBufUtil:
+    def test_decode_buf_util(self) -> None:
+        # lbm_id=0x01 (pool=0, index=1), trans_cnt=4, inflight_peak=3
+        sub = b'\x01\x04\x03'
+        payload = _make_internal_payload(os_ts=7777, int_src=5, sub_payload=sub)
+        result = decode_internal_frame(payload)
+        assert result is not None
+        assert result['int_src'] == InternalSource.BUF_UTIL
+        assert result['lbm_id'] == 0x01
+        assert result['pool'] == 0
+        assert result['index'] == 1
+        assert result['trans_cnt'] == 4
+        assert result['inflight_peak'] == 3
+        assert result['os_ts_ms'] == 7777
+
+    def test_buf_util_pool_index_extraction(self) -> None:
+        # lbm_id=0x21 -> pool=2 (LL), index=1 (ll_hci)
+        sub = b'\x21\x04\x02'
+        payload = _make_internal_payload(os_ts=0, int_src=5, sub_payload=sub)
+        result = decode_internal_frame(payload)
+        assert result is not None
+        assert result['pool'] == 2
+        assert result['index'] == 1
+
+    def test_buf_util_too_short(self) -> None:
+        # Only 2 bytes of sub_payload (need 3 after int_src_code)
+        sub = b'\x00\x04'
+        payload = _make_internal_payload(os_ts=0, int_src=5, sub_payload=sub)
+        result = decode_internal_frame(payload)
+        assert result is None
+
+
 class TestMalformed:
     def test_too_short_payload(self) -> None:
         result = decode_internal_frame(b'\x00\x00\x00')
