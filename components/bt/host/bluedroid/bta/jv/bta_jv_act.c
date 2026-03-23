@@ -288,8 +288,7 @@ tBTA_JV_RFC_CB *bta_jv_rfc_port_to_cb(UINT16 port_handle)
             p_cb = &bta_jv_cb.rfc_cb[handle - 1];
         }
     } else {
-        APPL_TRACE_WARNING("bta_jv_rfc_port_to_cb(port_handle:0x%x):jv handle:0x%x not"
-                           " FOUND", port_handle, bta_jv_cb.port_cb[port_handle - 1].handle);
+        APPL_TRACE_WARNING("bta_jv_rfc_port_to_cb(port_handle:0x%x)", port_handle);
     }
     return p_cb;
 }
@@ -993,8 +992,11 @@ static void bta_jv_start_discovery_cback(UINT16 result, void *user_data)
                     } else {
                         dcomp.service_name[dcomp.scn_num] = NULL;
                     }
-                    dcomp.scn_num++;
                     status = BTA_JV_SUCCESS;
+                    dcomp.scn_num++;
+                    if (dcomp.scn_num == BTA_JV_MAX_SCN) {
+                        break;
+                    }
                 }
             } while (p_sdp_rec);
         }
@@ -2860,6 +2862,7 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
             open_evt.l2c_open.status = BTA_JV_SUCCESS;
         } else {
             fcclient_free(t);
+            t = NULL;
             open_evt.l2c_open.status = BTA_JV_FAILURE;
         }
     }
@@ -2871,7 +2874,7 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
     //call this with lock taken so socket does not disappear from under us */
     if (p_cback) {
         p_cback(BTA_JV_L2CAP_OPEN_EVT, &open_evt, user_data);
-        if (!t->p_cback) { /* no callback set, means they do not want this one... */
+        if (t && !t->p_cback) { /* no callback set, means they do not want this one... */
             fcclient_free(t);
         }
     }
