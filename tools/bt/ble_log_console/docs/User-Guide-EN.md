@@ -2,7 +2,7 @@
 
 ## Introduction
 
-BLE Log Console is a terminal-based tool for real-time capture and parsing of BLE Log frames from ESP32 firmware via UART DMA. It displays parsed frames in an interactive TUI and saves the raw binary data to a file for offline analysis.
+BLE Log Console is a terminal-based tool for real-time capture and parsing of BLE Log frames from ESP chip firmware via UART DMA. It displays parsed frames in an interactive TUI and saves the raw binary data to a file for offline analysis.
 
 ## Prerequisites
 
@@ -21,19 +21,10 @@ This enables the BLE Log module, selects UART DMA as the transport, and restrict
 **Manual configuration:**
 
 ```
-Component config → Bluetooth → BT Logs → Enable BLE Log Module (Experimental)  [y]
-Component config → Bluetooth → BT Logs → BLE Log Module
-  → Peripheral Selection → UART DMA
-  → UART DMA Configuration
-      → UART Port Number        (default: 0)
-      → Baud Rate               (default: 3000000)
-      → TX GPIO Number          (set to match your hardware)
+Component config → Bluetooth → BT Logs → Enable BT Log Async Output (Dev Only)  [y]
 ```
 
-| Config Option | Recommended | Description |
-|---------------|-------------|-------------|
-| `CONFIG_BT_LOG_CRITICAL_ONLY` | `y` | One-click setup — enables BLE Log + UART DMA |
-| `CONFIG_BLE_LOG_PRPH_UART_DMA_BAUD_RATE` | `3000000` | 3 Mbps — balances throughput and reliability |
+UART DMA transport, 3 Mbps baud rate, and PORT 0 are all enabled by default -- no further configuration needed in most cases.
 
 > **About UART PORT 0**: When configured for PORT 0, the firmware automatically wraps `ESP_LOG` output in BLE Log frames (`REDIR` source). The console decodes and displays these as regular log lines.
 
@@ -50,52 +41,61 @@ ESP32 GND     ──────── USB-Serial GND
 
 Ensure your USB-serial adapter supports the configured baud rate (3 Mbps by default). Adapters based on CP2102N, CH343, or FT232H are recommended.
 
-### 3. ESP-IDF Environment
-
-Source the ESP-IDF environment before use:
-
-```bash
-cd <esp-idf-root>
-. ./export.sh
-```
-
-No additional installation is needed — `textual` is included in ESP-IDF's core dependencies.
-
 ## Getting Started
 
+### Quick Start (Recommended)
+
+Use the provided launcher script -- it automatically activates the ESP-IDF environment and installs dependencies. Can be run from any directory:
+
+```bash
+# Linux / macOS
+<esp-idf-root>/tools/bt/ble_log_console/run.sh
+
+# Windows
+<esp-idf-root>\tools\bt\ble_log_console\run.bat
+```
+
+When launched without arguments, the tool opens a **Launch Screen** -- an interactive configuration interface where you can:
+
+- **Select a serial port** from a dropdown of auto-detected devices (with a **Refresh** button to re-scan)
+- **Choose a baud rate** from preset options (115200 to 3000000, default: 3000000)
+- **Set the log directory** via text input or a **Browse** file picker
+- Press **Connect** to start capture
+
+To skip the Launch Screen and start capture directly, pass `--port`:
+
+```bash
+# Linux / macOS
+./run.sh -p /dev/ttyUSB0
+./run.sh -p /dev/ttyUSB0 -b 3000000 -d /tmp/my_captures
+
+# Windows
+run.bat -p COM3
+```
+
+All CLI options are forwarded to `console.py`.
+
+### Manual Launch
+
+If you prefer to manage the ESP-IDF environment yourself:
+
 ```bash
 cd <esp-idf-root>
 . ./export.sh
+python -m pip install textual textual-fspicker      # Install extra dependencies
 cd tools/bt/ble_log_console
+python console.py                                  # Launch Screen
+python console.py -p /dev/ttyUSB0                  # Direct capture
+python console.py -p /dev/ttyUSB0 -b 3000000       # Custom baud rate
+python console.py -p /dev/ttyUSB0 -d /tmp/captures  # Custom log directory
 ```
 
-### Interactive Mode (Launch Screen)
-
-Run with no arguments to open the Launch Screen — a TUI where you can select the serial port, baud rate, and log directory before starting capture:
-
-```bash
-python console.py
-```
-
-### Capture Mode (CLI)
-
-Pass `--port` to skip the Launch Screen and start capture immediately:
-
-```bash
-# Basic usage
-python console.py -p /dev/ttyUSB0
-
-# With custom baud rate (must match firmware config)
-python console.py -p /dev/ttyUSB0 -b 3000000
-
-# With custom log directory
-python console.py -p /dev/ttyUSB0 -d /tmp/my_captures
-```
+### CLI Options
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
 | `--port` | `-p` | (optional) | Serial port path, e.g., `/dev/ttyUSB0`, `COM3`. Omit to use Launch Screen. |
-| `--baudrate` | `-b` | `3000000` | Baud rate — must match `CONFIG_BLE_LOG_PRPH_UART_DMA_BAUD_RATE` |
+| `--baudrate` | `-b` | `3000000` | Baud rate -- must match `CONFIG_BLE_LOG_PRPH_UART_DMA_BAUD_RATE` |
 | `--log-dir` | `-d` | current working directory | Directory where capture `.bin` files are saved |
 
 Capture files are saved to the current working directory (or `--log-dir` if specified) with a timestamp-based filename:
@@ -122,17 +122,16 @@ A scrollable area displaying real-time logs:
 Fixed at the bottom, updated in real time:
 
 ```
-Sync: SYNCED  Checksum: XOR | Header+Payload
-RX: 1.2 MB  Speed: 2.8 Mbps  Max: 2.9 Mbps  Rate: 3421 fps
-Frame Loss: 12 frames, 480 bytes
+Sync: SYNCED | Checksum: XOR / Header+Payload | Press h for help
+RX: 1.2 MB  Speed: 293.0 KB/s  Max: 300.0 KB/s  Rate: 3421 fps  Lost: 12 frames, 480 B
 ```
 
-- **Sync**: Sync state (SEARCHING → CONFIRMING → SYNCED → CONFIRMING_LOSS)
-- **Checksum**: Auto-detected checksum mode
+- **Sync**: Sync state (SEARCHING -> CONFIRMING -> SYNCED -> CONFIRMING_LOSS)
+- **Checksum**: Auto-detected checksum mode (algorithm / scope)
 - **RX**: Total received bytes
-- **Speed / Max**: Current / peak transport speed
+- **Speed / Max**: Current / peak transport speed (in KB/s or MB/s)
 - **Rate**: Current frame rate
-- **Frame Loss**: Cumulative lost frames and bytes since console start
+- **Lost**: Cumulative lost frames and bytes since console start
 
 ## Keyboard Shortcuts
 
@@ -143,41 +142,70 @@ Frame Loss: 12 frames, 480 bytes
 | `c` | Clear the log view |
 | `s` | Toggle auto-scroll (on by default) |
 | `d` | Open per-source frame statistics (press `Escape` or `d` to close) |
+| `m` | Show buffer utilization (press `Escape` or `m` to close) |
 | `h` | Show keyboard shortcuts (press `Escape` to close) |
 | `r` | Reset chip via DTR/RTS toggle |
 
 ### Frame Statistics Detail (`d` key)
 
-Pressing `d` opens a modal overlay showing per-source write and loss statistics since the console started:
+Pressing `d` opens a modal overlay with two tables, refreshed every second:
 
-```
-┌─────────── Per-Source Frame Statistics (since console start) ───────────┐
-│ Source    │ Written Frames │ Written Bytes │ Lost Frames │ Lost Bytes   │
-│ LL_TASK   │          12345 │       56.7 KB │           5 │        200 B │
-│ LL_HCI    │            890 │       34.2 KB │           0 │          0 B │
-│ HOST      │            456 │       12.1 KB │           0 │          0 B │
-│ HCI       │            234 │        8.5 KB │           2 │         80 B │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+**Firmware Counters (since chip init)** -- per-source write and buffer loss counts as reported by the firmware:
 
-Rows with frame loss are highlighted in red.
+| Source | Written Frames | Written Bytes | Buffer Loss Frames | Buffer Loss Bytes |
+|--------|---------------|---------------|-------------------|-------------------|
+| LL_TASK | 12345 | 56.7 KB | 5 | 200 B |
+| LL_HCI | 890 | 34.2 KB | - | - |
+| HOST | 456 | 12.1 KB | - | - |
+| HCI | 234 | 8.5 KB | 2 | 80 B |
 
-## Viewing Saved Captures
+**Console Measurements (since console start)** -- per-source receive rates and peak bursts measured by the console:
+
+| Source | Received Frames | Received Bytes | Avg Frames/s | Avg Bytes/s | Peak Frames/10ms | Peak Bytes/s |
+|--------|----------------|---------------|-------------|------------|-----------------|-------------|
+| LL_TASK | 12340 | 56.5 KB | 412 | 18.8 KB/s | 8 | 24.0 KB/s |
+| LL_HCI | 890 | 34.2 KB | 30 | 1.1 KB/s | 3 | 3.6 KB/s |
+
+Sources with buffer loss are highlighted in red in the firmware table.
+
+### Buffer Utilization (`m` key)
+
+Pressing `m` opens a modal overlay showing per-LBM (Log Buffer Manager) buffer utilization as reported by the firmware:
+
+| Pool | Idx | Name | Peak | Total | Util% |
+|------|-----|------|------|-------|-------|
+| COMMON_TASK | 0 | spin | 3 | 4 | 75% |
+| COMMON_TASK | 1 | atomic[0] | 4 | 4 | 100% |
+| COMMON_ISR | 0 | spin | 2 | 4 | 50% |
+| LL | 0 | ll_task | 4 | 4 | 100% |
+| LL | 1 | ll_hci | 2 | 4 | 50% |
+
+- **Pool**: Buffer pool category (COMMON_TASK, COMMON_ISR, LL, REDIR)
+- **Idx**: LBM index within the pool
+- **Name**: Human-readable LBM name (spin, atomic[N], ll_task, ll_hci, redir)
+- **Peak**: Maximum number of transport buffers in flight simultaneously
+- **Total**: Total transport buffers available for this LBM
+- **Util%**: Peak / Total as percentage; 100% (highlighted in red) means all buffers were in use simultaneously, indicating potential frame loss
+
+This helps diagnose which buffer pool is under-provisioned when experiencing frame loss.
+
+## Building Standalone Executable
+
+Use the provided build script to package BLE Log Console as a single-file executable that requires no Python or ESP-IDF environment on the target machine:
 
 ```bash
-python console.py ls
+# Linux / macOS
+<esp-idf-root>/tools/bt/ble_log_console/build.sh
+
+# Windows
+<esp-idf-root>\tools\bt\ble_log_console\build.bat
 ```
 
-Example output:
+The script automatically activates the ESP-IDF environment, installs PyInstaller, builds the executable, places it in the current working directory, and cleans up intermediate artifacts.
 
-```
-Captures in /tmp/ble_log_console:
+Output: `./ble_log_console` (Linux/macOS) or `.\ble_log_console.exe` (Windows).
 
-  2026-03-17 14:30:25     2.3 MB  ble_log_20260317_143025.bin
-  2026-03-17 10:15:03   512.0 KB  ble_log_20260317_101503.bin
-```
-
-These `.bin` files contain raw binary data as received from UART. They can be parsed offline using the BLE Log Analyzer's `ble_log_parser_v2` module for HCI log extraction, btsnoop conversion, and more.
+> **Note**: Build on the same OS/architecture as the target machine. PyInstaller does not cross-compile.
 
 ## Troubleshooting
 
@@ -200,7 +228,8 @@ If it only appears once at startup, this is normal. If persistent, check the bau
 ### High frame loss
 
 - Press `d` to view per-source loss details
-- Increase firmware buffers: `CONFIG_BLE_LOG_LBM_TRANS_SIZE`, `CONFIG_BLE_LOG_LBM_LL_TRANS_SIZE`
+- Press `m` to check buffer utilization -- pools at 100% need more buffers
+- Increase firmware buffers: `CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE`, `CONFIG_BLE_LOG_LBM_LL_TRANS_BUF_SIZE`
 - Add more LBMs: `CONFIG_BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT`
 - Increase baud rate (if your adapter supports it)
 
@@ -210,12 +239,4 @@ If it only appears once at startup, this is normal. If persistent, check the bau
 - The console decodes REDIR frames automatically — no extra configuration needed
 - Logs are flushed by a 1-second periodic timer, so there may be a short delay
 
-### `ModuleNotFoundError: No module named 'textual'`
 
-Re-run the ESP-IDF installer:
-
-```bash
-cd <esp-idf-root>
-./install.sh
-. ./export.sh
-```
