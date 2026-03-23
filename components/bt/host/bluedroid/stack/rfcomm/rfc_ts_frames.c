@@ -179,8 +179,17 @@ void rfc_send_buf_uih (tRFC_MCB *p_mcb, UINT8 dlci, BT_HDR *p_buf)
     UINT8   cr = RFCOMM_CR(p_mcb->is_initiator, TRUE);
     UINT8   credits;
 
+    if (p_buf->offset < RFCOMM_CTRL_FRAME_LEN) {
+        osi_free(p_buf);
+        return;
+    }
+
     p_buf->offset -= RFCOMM_CTRL_FRAME_LEN;
     if (p_buf->len > 127) {
+        if (p_buf->offset < 1) {
+            osi_free(p_buf);
+            return;
+        }
         p_buf->offset--;
     }
 
@@ -191,6 +200,10 @@ void rfc_send_buf_uih (tRFC_MCB *p_mcb, UINT8 dlci, BT_HDR *p_buf)
     }
 
     if (credits) {
+        if (p_buf->offset < 1) {
+            osi_free(p_buf);
+            return;
+        }
         p_buf->offset--;
     }
 
@@ -558,8 +571,26 @@ void rfc_send_test (tRFC_MCB *p_mcb, BOOLEAN is_command, BT_HDR *p_buf)
     UINT16   xx;
     UINT8    *p_src, *p_dest;
 
+    if (p_buf->offset + sizeof(BT_HDR) >= RFCOMM_CMD_BUF_SIZE) {
+        osi_free(p_buf);
+        return;
+    }
+
+    UINT16 max_len = RFCOMM_CMD_BUF_SIZE - sizeof(BT_HDR) - p_buf->offset;
+    if (p_buf->offset < (L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET + 2)) {
+        if (max_len < (L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET + 2 - p_buf->offset)) {
+            osi_free(p_buf);
+            return;
+        }
+        max_len -= (L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET + 2 - p_buf->offset);
+    }
+    if (p_buf->len > max_len) {
+        p_buf->len = max_len;
+    }
+
     BT_HDR *p_buf_new;
     if ((p_buf_new = (BT_HDR *)osi_malloc(RFCOMM_CMD_BUF_SIZE)) == NULL) {
+        osi_free(p_buf);
         return;
     }
     memcpy(p_buf_new, p_buf, sizeof(BT_HDR) + p_buf->offset + p_buf->len);
