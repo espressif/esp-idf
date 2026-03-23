@@ -123,6 +123,7 @@ menu "BT Logs"
             int "Controller log output level"
             depends on BT_LE_CONTROLLER_LOG_ENABLED
             range 0 5
+            default 2 if BT_LOG_CRITICAL_ONLY_CTRL
             default 1
             help
                 The output level of controller log.
@@ -150,6 +151,54 @@ menu "BT Logs"
             help
                 Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
     endmenu
+
+    menuconfig BT_LOG_CRITICAL_ONLY
+        bool "Enable bandwidth-optimized log mode (critical logs only)"
+        default n
+        depends on !BT_STACK_NO_LOG
+        select BLE_LOG_ENABLED
+        select BLE_COMPRESSED_LOG_ENABLE
+        help
+            Enable bandwidth-optimized logging for the BLE Log Async Output
+            system. When enabled, only high-severity logs are captured and
+            log encoding is applied to reduce UART/SPI DMA bandwidth usage.
+
+            Each stack component below can be independently enabled.
+            Requires a DMA-backed output peripheral — configure in:
+            BLE Log Module → BLE Log peripheral choice.
+
+    if BT_LOG_CRITICAL_ONLY
+        config BT_LOG_CRITICAL_ONLY_CTRL
+            bool "Controller: bandwidth-optimized logging"
+            depends on SOC_ESP_NIMBLE_CONTROLLER || BT_CTRL_RUN_IN_FLASH_ONLY
+            select BT_LE_CONTROLLER_LOG_ENABLED if SOC_ESP_NIMBLE_CONTROLLER
+            select BT_CTRL_LE_LOG_EN if !SOC_ESP_NIMBLE_CONTROLLER
+            default y
+            help
+                Enable controller log output via the async transport with
+                a reduced output level for bandwidth optimization.
+                The controller log level defaults to 2 when active.
+
+        config BT_LOG_CRITICAL_ONLY_HOST
+            bool "Host: bandwidth-optimized logging"
+            select BLE_HOST_COMPRESSED_LOG_ENABLE if BT_BLUEDROID_ENABLED
+            default y
+            help
+                Enable host stack log encoding via the async transport.
+                For Bluedroid, the per-level compression options control
+                which severity levels are encoded — configure in:
+                Settings of BLE Log Compression → BLE Host log compression.
+
+        config BT_LOG_CRITICAL_ONLY_MESH
+            bool "Mesh: bandwidth-optimized logging"
+            depends on SOC_BLE_MESH_SUPPORTED && BLE_MESH
+            select BLE_MESH_COMPRESSED_LOG_ENABLE
+            default y
+            help
+                Enable mesh log encoding via the async transport.
+                The per-level compression options are configured in:
+                Settings of BLE Log Compression → BLE Mesh log compression.
+    endif # BT_LOG_CRITICAL_ONLY
 
     source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"
 endmenu
