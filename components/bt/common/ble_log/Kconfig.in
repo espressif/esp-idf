@@ -13,15 +13,22 @@ if BLE_LOG_ENABLED
         help
             Stack size for BLE Log Task
 
-    config BLE_LOG_LBM_TRANS_SIZE
-        int "Buffer size for each peripheral transport"
-        default 512
+    config BLE_LOG_LBM_TRANS_BUF_SIZE
+        int "Total buffer memory per common LBM (bytes)"
+        default 2048
         help
-            There're 2 log buffer managers (LBMs) with compare-and-swap
-            (CAS) protection, 1 LBM with FreeRTOS mutex protection, 1 LBM
-            without protection for critical section. Each LBM is managing
-            2 ping-pong buffers, which means there will be 4 * 2 *
-            BLE_LOG_LBM_TRANS_SIZE bytes buffer allocated
+            Total buffer memory allocated for each common pool log buffer
+            manager (LBM). This memory is divided equally among internal
+            transport buffers. Must be a multiple of BLE_LOG_TRANS_BUF_CNT
+            (currently 4).
+
+            The common pool contains:
+            - BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT atomic LBMs (task context)
+            - BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT atomic LBMs (ISR context)
+            - 2 spinlock-protected LBMs (one for task, one for ISR fallback)
+
+            Total common pool memory:
+            (ATOMIC_TASK_CNT + ATOMIC_ISR_CNT + 2) * BLE_LOG_LBM_TRANS_BUF_SIZE
 
     config BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT
         int "Count of log buffer managers with atomic lock protection for task context"
@@ -70,14 +77,21 @@ if BLE_LOG_ENABLED
             Enable BLE Log for Link Layer
 
     if BLE_LOG_LL_ENABLED
-        config BLE_LOG_LBM_LL_TRANS_SIZE
-            int "Buffer size for each peripheral transport of Link Layer LBM"
-            default 1024
+        config BLE_LOG_LBM_LL_TRANS_BUF_SIZE
+            int "Total buffer memory per Link Layer LBM (bytes)"
+            default 2048
             help
-                There're 2 Link Layer dedicated log buffer managers (LBMs) with
-                compare-and-swap (CAS) protection. Each LBM is managing 2 ping-
-                pong buffers, which means there will be additional 2 * 2 *
-                BLE_LOG_LBM_LL_TRANS_SIZE bytes buffer allocated
+                Total buffer memory allocated for each Link Layer dedicated
+                log buffer manager (LBM). This memory is divided equally among
+                internal transport buffers. Must be a multiple of
+                BLE_LOG_TRANS_BUF_CNT (currently 4).
+
+                There are 2 Link Layer LBMs without lock protection (each is
+                accessed from a single context only):
+                - LL task LBM (Link Layer task context logs)
+                - LL HCI LBM (Link Layer HCI context logs)
+
+                Total LL pool memory: 2 * BLE_LOG_LBM_LL_TRANS_BUF_SIZE
 
         config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
             bool "Enable LL HCI Log Payload Length Limit"
