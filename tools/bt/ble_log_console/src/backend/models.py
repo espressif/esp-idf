@@ -117,6 +117,14 @@ class InternalSource(int, Enum):
     ENH_STAT = 2
     INFO = 3
     FLUSH = 4
+    BUF_UTIL = 5
+
+
+class BufUtilPool(int, Enum):
+    COMMON_TASK = 0
+    COMMON_ISR = 1
+    LL = 2
+    REDIR = 3
 
 
 # --- Data classes ---
@@ -152,6 +160,46 @@ class SourceStats:
     written_bytes: int = 0
     lost_frames: int = 0
     lost_bytes: int = 0
+
+
+@dataclass(frozen=True)
+class BufUtilEntry:
+    """Single LBM buffer utilization snapshot."""
+
+    lbm_id: int
+    pool: int
+    index: int
+    trans_cnt: int
+    inflight_peak: int
+
+
+# --- Buffer utilization name resolution ---
+
+_LBM_NAMES: dict[tuple[int, int], str] = {
+    (0, 0): 'spin',
+    (1, 0): 'spin',
+    (2, 0): 'll_task',
+    (2, 1): 'll_hci',
+    (3, 0): 'redir',
+}
+
+
+def resolve_pool_name(pool: int) -> str:
+    """Resolve pool code to BufUtilPool name, with fallback for unknown codes."""
+    try:
+        return BufUtilPool(pool).name
+    except ValueError:
+        return f'POOL_{pool}'
+
+
+def resolve_lbm_name(pool: int, index: int) -> str:
+    """Resolve pool + index to human-readable LBM name."""
+    key = (pool, index)
+    if key in _LBM_NAMES:
+        return _LBM_NAMES[key]
+    if pool in (0, 1) and index >= 1:
+        return f'atomic[{index - 1}]'
+    return f'lbm_{pool}_{index}'
 
 
 @dataclass(slots=True)
@@ -265,7 +313,17 @@ class EnhStatResult(TypedDict):
     os_ts_ms: int
 
 
-InternalDecoderResult = InfoResult | EnhStatResult
+class BufUtilResult(TypedDict):
+    int_src: InternalSource
+    lbm_id: int
+    pool: int
+    index: int
+    trans_cnt: int
+    inflight_peak: int
+    os_ts_ms: int
+
+
+InternalDecoderResult = InfoResult | EnhStatResult | BufUtilResult
 
 
 # --- Textual Messages (backend -> frontend) ---
@@ -278,10 +336,16 @@ class SyncStateChanged(Message):
 
 
 class StatsUpdated(Message):
-    def __init__(self, stats: FrameStats, funnel_snapshots: list[FunnelSnapshot] | None = None) -> None:
+    def __init__(
+        self,
+        stats: FrameStats,
+        funnel_snapshots: list[FunnelSnapshot] | None = None,
+        buf_util_snapshots: list[BufUtilEntry] | None = None,
+    ) -> None:
         super().__init__()
         self.stats = stats
         self.funnel_snapshots = funnel_snapshots or []
+        self.buf_util_snapshots = buf_util_snapshots or []
 
 
 class InternalFrameDecoded(Message):

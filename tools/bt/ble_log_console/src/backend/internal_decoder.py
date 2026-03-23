@@ -9,6 +9,7 @@ See Spec Section 9.
 
 import struct
 
+from src.backend.models import BufUtilResult
 from src.backend.models import EnhStatResult
 from src.backend.models import InfoResult
 from src.backend.models import InternalDecoderResult
@@ -22,6 +23,9 @@ _INFO_STRUCT = struct.Struct('<BB')
 
 # ble_log_enh_stat_t: [1B int_src_code][1B src_code][4B written][4B lost][4B written_bytes][4B lost_bytes]
 _ENH_STAT_STRUCT = struct.Struct('<BBIIII')
+
+# ble_log_buf_util_t: [1B int_src_code][1B lbm_id][1B trans_cnt][1B inflight_peak]
+_BUF_UTIL_STRUCT = struct.Struct('<BBBB')
 
 
 def decode_internal_frame(payload: bytes) -> InternalDecoderResult | None:
@@ -71,6 +75,22 @@ def decode_internal_frame(payload: bytes) -> InternalDecoderResult | None:
             lost_frame_cnt=lost_frame_cnt,
             written_bytes_cnt=written_bytes_cnt,
             lost_bytes_cnt=lost_bytes_cnt,
+            os_ts_ms=os_ts_ms,
+        )
+
+    if int_src == InternalSource.BUF_UTIL:
+        if len(sub_payload) < _BUF_UTIL_STRUCT.size:
+            return None
+        _, lbm_id, trans_cnt, inflight_peak = _BUF_UTIL_STRUCT.unpack_from(sub_payload, 0)
+        pool = (lbm_id >> 4) & 0x0F
+        index = lbm_id & 0x0F
+        return BufUtilResult(
+            int_src=int_src,
+            lbm_id=lbm_id,
+            pool=pool,
+            index=index,
+            trans_cnt=trans_cnt,
+            inflight_peak=inflight_peak,
             os_ts_ms=os_ts_ms,
         )
 
