@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from src.backend.models import BleLogSource
+from src.backend.models import BufUtilEntry
 from src.backend.models import ChecksumMode
 from src.backend.models import FrameByteCount
 from src.backend.models import FrameStats
@@ -13,10 +14,11 @@ from src.backend.models import FunnelSnapshot
 from src.backend.models import SourceCode
 from src.backend.models import SyncState
 from src.backend.models import ThroughputInfo
+from src.backend.stats.buf_util import BufUtilTracker
 from src.backend.stats.firmware_loss import FirmwareLossTracker
 from src.backend.stats.firmware_written import FirmwareWrittenTracker
-from src.backend.stats.peak_burst import PeakBurstTracker
 from src.backend.stats.peak_burst import WRITE_RATE_WINDOW_MS
+from src.backend.stats.peak_burst import PeakBurstTracker
 from src.backend.stats.sn_gap import SNGapTracker
 from src.backend.stats.traffic_spike import TrafficSpikeDetector
 from src.backend.stats.traffic_spike import TrafficSpikeResult
@@ -38,6 +40,7 @@ class StatsAccumulator:
         self._fw_written = FirmwareWrittenTracker()
         self._sn_gap = SNGapTracker()
         self._traffic = TrafficSpikeDetector()
+        self._buf_util = BufUtilTracker()
         self._per_source_received_frames: dict[SourceCode, int] = {}
         self._per_source_received_bytes: dict[SourceCode, int] = {}
         self._enh_stat_prev: dict[SourceCode, tuple[int, int, int, int]] = {}
@@ -85,6 +88,14 @@ class StatsAccumulator:
     def check_traffic(self) -> TrafficSpikeResult | None:
         return self._traffic.check()
 
+    # -- Buffer utilization ------------------------------------------------------
+
+    def record_buf_util(self, lbm_id: int, trans_cnt: int, inflight_peak: int) -> None:
+        self._buf_util.record(lbm_id, trans_cnt, inflight_peak)
+
+    def buf_util_snapshot(self) -> list[BufUtilEntry]:
+        return self._buf_util.snapshot()  # type: ignore[no-any-return]
+
     # -- Firmware ENH_STAT -------------------------------------------------------
 
     def record_enh_stat(
@@ -131,6 +142,7 @@ class StatsAccumulator:
             self._fw_written.reset()
             self._enh_stat_prev.clear()
             self._prev_written.clear()
+            self._buf_util.reset()
         elif reason == 'flush':
             # ENH_STAT-coupled: reset baselines only
             self._fw_loss.reset_baselines()

@@ -19,9 +19,12 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
+from src.backend.models import BufUtilEntry
 from src.backend.models import FunnelSnapshot
 from src.backend.models import format_bytes
 from src.backend.models import format_throughput
+from src.backend.models import resolve_lbm_name
+from src.backend.models import resolve_pool_name
 from src.backend.models import resolve_source_name
 
 if TYPE_CHECKING:
@@ -61,6 +64,34 @@ def _build_firmware_table(snapshots: list[FunnelSnapshot]) -> Table:
             format_bytes(snap.written.bytes) if snap.written.bytes > 0 else '-',
             _fmt_loss_frames(snap.buffer_loss.frames),
             _fmt_loss_bytes(snap.buffer_loss.bytes),
+        )
+
+    return table
+
+
+def _build_buf_util_table(entries: list[BufUtilEntry]) -> Table:
+    table = Table(title='Buffer Utilization (since chip init)', expand=True)
+    table.add_column('Pool', style='cyan', no_wrap=True, min_width=12, max_width=16)
+    table.add_column('Idx', justify='right', min_width=4, max_width=6)
+    table.add_column('Name', style='cyan', no_wrap=True, min_width=10, max_width=14)
+    table.add_column('Peak', justify='right', min_width=6, max_width=8)
+    table.add_column('Total', justify='right', min_width=6, max_width=8)
+    table.add_column('Util%', justify='right', min_width=6, max_width=8)
+
+    for entry in entries:
+        if entry.trans_cnt > 0:
+            pct = entry.inflight_peak / entry.trans_cnt * 100
+            pct_text = Text(f'{pct:.0f}%', style='red' if pct >= 100 else '')
+        else:
+            pct_text = Text('-')
+
+        table.add_row(
+            resolve_pool_name(entry.pool),
+            str(entry.index),
+            resolve_lbm_name(entry.pool, entry.index),
+            str(entry.inflight_peak),
+            str(entry.trans_cnt),
+            pct_text,
         )
 
     return table
@@ -155,3 +186,51 @@ class StatsScreen(ModalScreen):
 
         fw.update(_build_firmware_table(snapshots))
         cs.update(_build_console_table(snapshots))
+
+
+class BufUtilScreen(ModalScreen):
+    DEFAULT_CSS = """
+    BufUtilScreen {
+        align: center middle;
+    }
+
+    #buf-util-container {
+        width: 80%;
+        max-width: 100;
+        height: auto;
+        max-height: 60%;
+        overflow-y: auto;
+        background: $surface;
+        padding: 1 2;
+        border: thick $accent;
+    }
+
+    #buf-util-container > Static {
+        height: auto;
+    }
+    """
+
+    BINDINGS = [
+        Binding('escape', 'dismiss', 'Close'),
+        Binding('m', 'dismiss', 'Close'),
+    ]
+
+    def _get_app(self) -> BLELogApp:
+        return self.app  # type: ignore[return-value]
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id='buf-util-container'):
+            yield Static(id='buf-util-table')
+            yield Static('[dim]Press Escape to return -- refreshes every 1s[/dim]')
+
+    def on_mount(self) -> None:
+        self._refresh_table()
+        self.set_interval(REFRESH_INTERVAL_SEC, self._refresh_table)
+
+    def _refresh_table(self) -> None:
+        entries = self._get_app().buf_util_snapshots
+        widget = self.query_one('#buf-util-table', Static)
+        if not entries:
+            widget.update('No buffer utilization data yet.\n\nPress Escape to return.')
+            return
+        widget.update(_build_buf_util_table(entries))

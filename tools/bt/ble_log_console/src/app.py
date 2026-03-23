@@ -25,6 +25,8 @@ from src.backend.models import FRAME_OVERHEAD
 from src.backend.models import LL_TS_OFFSET
 from src.backend.models import BackendStopped
 from src.backend.models import BleLogSource
+from src.backend.models import BufUtilEntry
+from src.backend.models import BufUtilResult
 from src.backend.models import EnhStatResult
 from src.backend.models import FrameLossDetected
 from src.backend.models import FunnelSnapshot
@@ -49,6 +51,7 @@ from src.backend.uart_transport import open_serial
 from src.frontend.launch_screen import LaunchScreen
 from src.frontend.log_view import LogView
 from src.frontend.shortcut_screen import ShortcutScreen
+from src.frontend.stats_screen import BufUtilScreen
 from src.frontend.stats_screen import StatsScreen
 from src.frontend.status_panel import StatusPanel
 
@@ -72,6 +75,8 @@ class BLELogApp(App):
         Binding('S', 'toggle_scroll', show=False),
         Binding('d', 'dump_stats', 'Stats'),
         Binding('D', 'dump_stats', show=False),
+        Binding('m', 'show_buf_util', 'BufUtil'),
+        Binding('M', 'show_buf_util', show=False),
         Binding('h', 'show_help', 'Help'),
         Binding('H', 'show_help', show=False),
         Binding('r', 'reset_chip', 'Reset'),
@@ -96,6 +101,7 @@ class BLELogApp(App):
         # Console-side per-source received bytes (from StatsUpdated snapshots)
         self._per_source_rx_bytes: dict[int, int] | None = None
         self._funnel_snapshots: list[FunnelSnapshot] = []
+        self._buf_util_snapshots: list[BufUtilEntry] = []
         # Wall-clock capture start (set when backend loop begins)
         self._capture_start_time: float = 0.0
         self._serial_lock = threading.Lock()
@@ -113,8 +119,11 @@ class BLELogApp(App):
 
     @property
     def funnel_snapshots(self) -> list[FunnelSnapshot]:
-        """Public accessor for funnel snapshots (used by StatsScreen)."""
         return self._funnel_snapshots
+
+    @property
+    def buf_util_snapshots(self) -> list[BufUtilEntry]:
+        return self._buf_util_snapshots
 
     def _on_launch_result(self, config: LaunchConfig | None) -> None:
         """Handle Launch Screen dismissal."""
@@ -150,7 +159,8 @@ class BLELogApp(App):
             checksum_mode=parser.checksum_mode,
         )
         funnel = stats.funnel_snapshot(elapsed)
-        self._post(StatsUpdated(snapshot, funnel))
+        buf_util = stats.buf_util_snapshot()
+        self._post(StatsUpdated(snapshot, funnel, buf_util))
         return now
 
     def _backend_loop(self) -> None:
@@ -231,6 +241,14 @@ class BLELogApp(App):
                             decoded = decode_internal_frame(item.payload)
                             if decoded:
                                 int_src = decoded['int_src']
+
+                                # Reject false INIT_DONE from misaligned data:
+                                # real firmware always has version >= 1.
+                                if int_src == InternalSource.INIT_DONE:
+                                    info = cast(InfoResult, decoded)
+                                    if info['version'] == 0:
+                                        continue
+
                                 self._post(InternalFrameDecoded(int_src, decoded))
 
                                 if int_src in (InternalSource.INIT_DONE, InternalSource.INFO):
@@ -260,6 +278,13 @@ class BLELogApp(App):
                                                 lost_bytes=new_bytes,
                                             )
                                         )
+                                elif int_src == InternalSource.BUF_UTIL:
+                                    buf = cast(BufUtilResult, decoded)
+                                    stats.record_buf_util(
+                                        lbm_id=buf['lbm_id'],
+                                        trans_cnt=buf['trans_cnt'],
+                                        inflight_peak=buf['inflight_peak'],
+                                    )
 
                         # Decode UART redirect frames (raw ASCII, no os_ts prefix).
                         # A single log line may span multiple frames due to
@@ -318,6 +343,7 @@ class BLELogApp(App):
         panel = self.query_one(StatusPanel)
         panel.stats = msg.stats
         self._funnel_snapshots = msg.funnel_snapshots
+        self._buf_util_snapshots = msg.buf_util_snapshots
         # Preserve all-time per-source peak for the stats screen
         if msg.stats.os_peak.max_per_source is not None:
             self._max_per_source_peak = msg.stats.os_peak.max_per_source
@@ -372,6 +398,9 @@ class BLELogApp(App):
 
     def action_dump_stats(self) -> None:
         self.push_screen(StatsScreen(start_time=self._capture_start_time))
+
+    def action_show_buf_util(self) -> None:
+        self.push_screen(BufUtilScreen())
 
     def action_show_help(self) -> None:
         self.push_screen(ShortcutScreen())
