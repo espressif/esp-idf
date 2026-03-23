@@ -62,12 +62,12 @@ static void rfc_set_port_state(tPORT_STATE *port_pars, MX_FRAME *p_frame);
 *******************************************************************************/
 void rfc_port_sm_execute (tPORT *p_port, UINT16 event, void *p_data)
 {
-    RFCOMM_TRACE_DEBUG("%s st:%d, evt:%d\n", __func__, p_port->rfc.state, event);
-
     if (!p_port) {
         RFCOMM_TRACE_WARNING ("NULL port event %d", event);
         return;
     }
+
+    RFCOMM_TRACE_DEBUG("%s st:%d, evt:%d\n", __func__, p_port->rfc.state, event);
 
     switch (p_port->rfc.state) {
     case RFC_STATE_CLOSED:
@@ -240,7 +240,7 @@ void rfc_port_sm_sabme_wait_ua (tPORT *p_port, UINT16 event, void *p_data)
 **
 ** Description      This function handles events for the port in the
 **                  WAIT_SEC_CHECK state.  SABME has been received from the
-**                  peer and Security Manager verifes BD_ADDR, before we can
+**                  peer and Security Manager verifies BD_ADDR, before we can
 **                  send ESTABLISH_IND to the Port entity
 **
 ** Returns          void
