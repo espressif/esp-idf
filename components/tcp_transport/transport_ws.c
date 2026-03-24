@@ -707,6 +707,24 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
             return ws_handle_control_frame_internal(t, timeout_ms);
         }
 
+        // Read the full control frame payload into the caller's buffer in one shot.
+        // This prevents the client from receiving the payload in chunks and
+        // incorrectly echoing only the last chunk as a PONG response.
+        if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && ws->frame_state.payload_len > 0) {
+            int payload_len = ws->frame_state.payload_len;
+            if (payload_len > len) {
+                ESP_LOGE(TAG, "Control frame payload (%d) exceeds caller buffer (%d)", payload_len, len);
+                return -1;
+            }
+            int bytes_read = esp_transport_read_exact_size(ws, buffer, payload_len, timeout_ms);
+            if (bytes_read != payload_len) {
+                ESP_LOGE(TAG, "Control frame payload read failed (expected=%d, got=%d)", payload_len, bytes_read);
+                return -1;
+            }
+            ws->frame_state.bytes_remaining = 0;
+            return payload_len;
+        }
+
         if (rlen == 0) {
             ws->frame_state.bytes_remaining = 0;
             return 0; // timeout
