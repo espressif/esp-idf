@@ -211,7 +211,6 @@ void *hostap_init(void)
     }
 
 #ifdef CONFIG_SAE
-    dl_list_init(&hapd->sae_commit_queue);
     auth_conf->sae_require_mfp = 1;
 #endif /* CONFIG_SAE */
 
@@ -231,6 +230,17 @@ void *hostap_init(void)
 
     return (void *)hapd;
 fail:
+#ifdef CONFIG_SAE
+    if (hapd->sta_list_lock) {
+        wpa3_hostap_auth_deinit();
+        if (g_wpa3_hostap_auth_api_lock &&
+                WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
+            WPA3_HOSTAP_AUTH_API_UNLOCK();
+        }
+        os_mutex_delete(hapd->sta_list_lock);
+        hapd->sta_list_lock = NULL;
+    }
+#endif /* CONFIG_SAE */
     if (hapd->conf->ssid.wpa_passphrase != NULL) {
         os_free(hapd->conf->ssid.wpa_passphrase);
     }
@@ -260,19 +270,21 @@ void hostapd_cleanup(struct hostapd_data *hapd)
         hapd->conf = NULL;
     }
 
+    if (hapd->sta_list_lock) {
 #ifdef CONFIG_SAE
-
     struct hostapd_sae_commit_queue *q, *tmp;
 
-    if (!dl_list_empty(&hapd->sae_commit_queue)) {
+    HOSTAPD_STA_LIST_LOCK(hapd);
         dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
                               struct hostapd_sae_commit_queue, list) {
             dl_list_del(&q->list);
             os_free(q);
         }
-    }
-
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
 #endif /* CONFIG_SAE */
+        os_mutex_delete(hapd->sta_list_lock);
+        hapd->sta_list_lock = NULL;
+    }
 #ifdef CONFIG_WPS_REGISTRAR
     if (esp_wifi_get_wps_type_internal() != WPS_TYPE_DISABLE ||
             esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
@@ -463,14 +475,31 @@ send_resp:
 #ifdef CONFIG_WPS_REGISTRAR
 static void ap_free_sta_timeout(void *ctx, void *data)
 {
-    struct hostapd_data *hapd = (struct hostapd_data *) ctx;
-    u8 *addr = (u8 *) data;
-    struct sta_info *sta = ap_get_sta(hapd, addr);
+    struct hostapd_data *hapd = (struct hostapd_data *)ctx;
+    u8 *addr = (u8 *)data;
+    struct sta_info *sta;
 
+    HOSTAPD_STA_LIST_LOCK(hapd);
+    sta = ap_get_sta_internal(hapd, addr);
     if (sta) {
+#ifdef CONFIG_SAE
+        if (sta->lock) {
+            if (os_semphr_take(sta->lock, 0)) {
+                HOSTAPD_STA_LIST_UNLOCK(hapd);
+                ap_free_sta(hapd, sta);
+            } else {
+                sta->remove_pending = true;
+                HOSTAPD_STA_LIST_UNLOCK(hapd);
+            }
+            goto done;
+        }
+#endif /* CONFIG_SAE */
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         ap_free_sta(hapd, sta);
+    } else {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
     }
-
+done:
     os_free(addr);
 }
 #endif
@@ -478,42 +507,51 @@ static void ap_free_sta_timeout(void *ctx, void *data)
 bool wpa_ap_remove(u8* bssid)
 {
     struct hostapd_data *hapd = hostapd_get_hapd_data();
+    struct sta_info *sta;
 
     if (!hapd) {
         return false;
     }
-    struct sta_info *sta = ap_get_sta(hapd, bssid);
+
+    HOSTAPD_STA_LIST_LOCK(hapd);
+    sta = ap_get_sta_internal(hapd, bssid);
     if (!sta) {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         return false;
     }
 
-#ifdef CONFIG_SAE
-    if (sta->lock) {
-        if (os_semphr_take(sta->lock, 0)) {
-            ap_free_sta(hapd, sta);
-        } else {
-            sta->remove_pending = true;
-        }
-        return true;
-    }
-#endif /* CONFIG_SAE */
-
 #ifdef CONFIG_WPS_REGISTRAR
-    wpa_printf(MSG_DEBUG, "wps_status=%d", wps_get_status());
     if (wps_get_status() == WPS_STATUS_PENDING) {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         u8 *addr = os_malloc(ETH_ALEN);
 
         if (!addr) {
             return false;
         }
-        os_memcpy(addr, sta->addr, ETH_ALEN);
+        os_memcpy(addr, bssid, ETH_ALEN);
         if (eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr) != 0) {
             os_free(addr);
             return false;
         }
-    } else
-#endif
-        ap_free_sta(hapd, sta);
+        return true;
+    }
+#endif /* CONFIG_WPS_REGISTRAR */
+
+#ifdef CONFIG_SAE
+    if (sta->lock) {
+        if (os_semphr_take(sta->lock, 0)) {
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
+            ap_free_sta(hapd, sta);
+        } else {
+            sta->remove_pending = true;
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
+        }
+        return true;
+    }
+#endif /* CONFIG_SAE */
+
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
+    ap_free_sta(hapd, sta);
 
     return true;
 }

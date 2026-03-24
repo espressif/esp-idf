@@ -62,9 +62,9 @@ struct sta_info {
 #ifdef CONFIG_SAE
 	void *lock;
 	struct sae_data *sae;
-	bool sae_commit_processing;	/* halt queuing commit while we are
+	volatile bool sae_commit_processing;	/* halt queuing commit while we are
 				 * processing commit for that station  */
-	bool remove_pending;	/* Flag to indicate to free station when
+	volatile bool remove_pending;	/* Flag to indicate to free station when
 				 * whose mutex is taken by task */
 	struct wpabuf *sae_data;
 #endif /* CONFIG_SAE */
@@ -96,6 +96,8 @@ int ap_for_each_sta(struct hostapd_data *hapd,
 			      void *ctx),
 		    void *ctx);
 struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta);
+/* Caller must hold HOSTAPD_STA_LIST_LOCK(hapd) for the duration of the lookup. */
+struct sta_info * ap_get_sta_internal(struct hostapd_data *hapd, const u8 *sta);
 void ap_sta_hash_add(struct hostapd_data *hapd, struct sta_info *sta);
 void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_free_stas(struct hostapd_data *hapd);
