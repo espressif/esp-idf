@@ -249,7 +249,7 @@ menu "OpenThread"
 
         config OPENTHREAD_BORDER_ROUTER
             bool "Enable Border Router"
-            depends on OPENTHREAD_FTD
+            depends on OPENTHREAD_FTD && OPENTHREAD_PLATFORM_NETIF
             default n
             help
                 Select this option to enable border router features in OpenThread.
@@ -299,7 +299,7 @@ menu "OpenThread"
 
         config OPENTHREAD_DNS64_CLIENT
             bool "Enable DNS64 Client"
-            depends on LWIP_IPV4
+            depends on LWIP_IPV4 && OPENTHREAD_PLATFORM_NETIF
             select LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
             default n
             help
@@ -507,6 +507,15 @@ menu "OpenThread"
                     The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
                     failure.
         endmenu
+
+        config OPENTHREAD_PLATFORM_NETIF
+            bool "Enable esp_netif/lwIP glue"
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default y
+            help
+                Enable the default ESP-IDF OpenThread integration which creates an
+                OpenThread esp_netif, attaches the esp_netif glue, and enables
+                lwIP-specific DNS/netif handling.
 
     endmenu
 
