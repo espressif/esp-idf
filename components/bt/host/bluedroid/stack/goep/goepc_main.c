@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -183,7 +183,7 @@ void goepc_obex_callback(UINT16 handle, UINT8 event, tOBEX_MSG *msg)
     case OBEX_DISCONNECT_EVT:
         /* when we received this event, obex connection already disconnect */
         p_ccb->obex_handle = 0;
-        goepc_sm_event = GOEPC_SM_EVENT_DISCONNECT;;
+        goepc_sm_event = GOEPC_SM_EVENT_DISCONNECT;
         exec_sm = TRUE;
         break;
     case OBEX_CONGEST_EVT:
@@ -316,11 +316,16 @@ static void goepc_sm_state_opening(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DATA *
         GOEPC_TRACE_ERROR("goepc_sm_state_opening received unexpected response from peer\n");
         if (p_data->pkt != NULL) {
             osi_free(p_data->pkt);
+            p_data->pkt = NULL;
         }
         goepc_sm_act_disconnect(p_ccb);
         break;
     default:
         GOEPC_TRACE_ERROR("goepc_sm_state_opening unexpected event: 0x%x\n", event);
+        if (p_data->pkt != NULL) {
+            osi_free(p_data->pkt);
+            p_data->pkt = NULL;
+        }
         break;
     }
 }
@@ -349,6 +354,10 @@ static void goepc_sm_state_opened_idle(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DA
         break;
     default:
         GOEPC_TRACE_ERROR("goepc_sm_state_opened_idle unexpected event: 0x%x\n", event);
+        if (p_data->pkt != NULL) {
+            osi_free(p_data->pkt);
+            p_data->pkt = NULL;
+        }
         break;
     }
 }
@@ -374,6 +383,10 @@ static void goepc_sm_state_opened_req(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DAT
         break;
     default:
         GOEPC_TRACE_ERROR("goepc_sm_state_opened_req unexpected event: 0x%x\n", event);
+        if (p_data->pkt != NULL) {
+            osi_free(p_data->pkt);
+            p_data->pkt = NULL;
+        }
         break;
     }
 }
@@ -396,6 +409,10 @@ static void goepc_sm_state_opened_rsp(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DAT
         break;
     default:
         GOEPC_TRACE_ERROR("goepc_sm_state_opened_rsp unexpected event: 0x%x\n", event);
+        if (p_data->pkt != NULL) {
+            osi_free(p_data->pkt);
+            p_data->pkt = NULL;
+        }
         break;
     }
 }
@@ -431,10 +448,14 @@ BOOLEAN goepc_check_obex_req_allow(UINT8 state, BOOLEAN final)
 
 void goepc_sm_execute(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DATA *p_data)
 {
+    bool free_pkt = false;
+    bool has_pkt = false;
+
     switch (p_ccb->state)
     {
     case GOEPC_STATE_INIT:
         /* do nothing */
+        free_pkt = true;
         break;
     case GOEPC_STATE_OPENING:
         goepc_sm_state_opening(p_ccb, event, p_data);
@@ -449,8 +470,33 @@ void goepc_sm_execute(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DATA *p_data)
         goepc_sm_state_opened_rsp(p_ccb, event, p_data);
         break;
     default:
+        free_pkt = true;
         GOEPC_TRACE_ERROR("goepc_sm_execute unexpected state: 0x%x\n", p_ccb->state);
         break;
+    }
+
+    switch (event)
+    {
+    case GOEPC_SM_EVENT_REQ:
+    /* falls through */
+    case GOEPC_SM_EVENT_REQ_FB:
+    /* falls through */
+    case GOEPC_SM_EVENT_RSP:
+    /* falls through */
+    case GOEPC_SM_EVENT_RSP_FB:
+    /* falls through */
+        has_pkt = true;
+        break;
+    default:
+        has_pkt = false;
+        break;
+    }
+
+    if (has_pkt && free_pkt) {
+        if (p_data->pkt) {
+            osi_free(p_data->pkt);
+            p_data->pkt = NULL;
+        }
     }
 }
 

@@ -38,7 +38,7 @@ static inline void obex_server_to_tl_server(tOBEX_SVR_INFO *server, tOBEX_TL_SVR
     }
 }
 
-static inline void obex_updata_packet_length(BT_HDR *p_buf, UINT16 len)
+static inline void obex_update_packet_length(BT_HDR *p_buf, UINT16 len)
 {
     UINT8 *p_pkt_len = (UINT8 *)(p_buf + 1) + p_buf->offset + 1;
     UINT16_TO_BE_FIELD(p_pkt_len, len);
@@ -66,12 +66,12 @@ UINT16 OBEX_Init(void)
 #endif /* #if (OBEX_DYNAMIC_MEMORY) */
     memset(&obex_cb, 0, sizeof(tOBEX_CB));
     obex_cb.tl_ops[OBEX_OVER_L2CAP] = obex_tl_l2cap_ops_get();
-    if (obex_cb.tl_ops[OBEX_OVER_L2CAP]->init != NULL) {
+    if (obex_cb.tl_ops[OBEX_OVER_L2CAP] && obex_cb.tl_ops[OBEX_OVER_L2CAP]->init) {
         obex_cb.tl_ops[OBEX_OVER_L2CAP]->init(obex_tl_l2cap_callback);
     }
 #if (RFCOMM_INCLUDED == TRUE)
     obex_cb.tl_ops[OBEX_OVER_RFCOMM] = obex_tl_rfcomm_ops_get();
-    if (obex_cb.tl_ops[OBEX_OVER_RFCOMM]->init != NULL) {
+    if (obex_cb.tl_ops[OBEX_OVER_RFCOMM] && obex_cb.tl_ops[OBEX_OVER_RFCOMM]->init) {
         obex_cb.tl_ops[OBEX_OVER_RFCOMM]->init(obex_tl_rfcomm_callback);
     }
 #endif
@@ -89,11 +89,11 @@ UINT16 OBEX_Init(void)
 *******************************************************************************/
 void OBEX_Deinit(void)
 {
-    if (obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit != NULL) {
+    if (obex_cb.tl_ops[OBEX_OVER_L2CAP] && obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit) {
         obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit();
     }
 #if (RFCOMM_INCLUDED == TRUE)
-    if (obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit != NULL) {
+    if (obex_cb.tl_ops[OBEX_OVER_RFCOMM] && obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit) {
         obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit();
     }
 #endif
@@ -327,7 +327,7 @@ UINT16 OBEX_BuildRequest(tOBEX_PARSE_INFO *info, UINT16 buff_size, BT_HDR **out_
     }
     buff_size += sizeof(BT_HDR) + OBEX_BT_HDR_MIN_OFFSET + OBEX_BT_HDR_RESERVE_LEN;
 
-    BT_HDR *p_buf= (BT_HDR *)osi_malloc(buff_size);
+    BT_HDR *p_buf = (BT_HDR *)osi_malloc(buff_size);
     if (p_buf == NULL) {
         return OBEX_NO_RESOURCES;
     }
@@ -780,10 +780,10 @@ UINT8 *OBEX_GetNextHeader(BT_HDR *pkt, tOBEX_PARSE_INFO *info)
     if (pkt == NULL || info == NULL) {
         return NULL;
     }
-    UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
     if (info->next_header_pos == 0 || info->next_header_pos >= pkt->len) {
         return NULL;
     }
+    UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
     UINT8 *header = p_data + info->next_header_pos;
     UINT16 header_len = OBEX_GetHeaderLength(header);
     info->next_header_pos += header_len;

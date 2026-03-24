@@ -527,16 +527,12 @@ void rfc_bqb_send_msc_cmd(BD_ADDR cert_pts_addr)
     UINT8       dlci;
     BOOLEAN     get_dlci = FALSE;
     tPORT       *p_port;
-    tPORT_CTRL  *p_pars;
+    tPORT_CTRL  pars;
     tRFC_MCB    *p_mcb;
 
-    if ((p_pars = (tPORT_CTRL *)osi_malloc(sizeof(tPORT_CTRL))) == NULL) {
-        return;
-    }
-
-    p_pars->modem_signal = 0;
-    p_pars->break_signal = 0;
-    p_pars->fc = TRUE;
+    pars.modem_signal = 0;
+    pars.break_signal = 0;
+    pars.fc = TRUE;
 
     p_mcb = port_find_mcb (cert_pts_addr);
 
@@ -549,12 +545,11 @@ void rfc_bqb_send_msc_cmd(BD_ADDR cert_pts_addr)
         }
     }
 
-    if (get_dlci) {
-        rfc_send_msc(p_mcb, dlci, TRUE, p_pars);
+    if (get_dlci && p_mcb) {
+        rfc_send_msc(p_mcb, dlci, TRUE, &pars);
     } else {
         RFCOMM_TRACE_ERROR ("Get dlci fail");
     }
-    osi_free(p_pars);
 }
 #endif /* BT_RFCOMM_BQB_INCLUDED */
 
@@ -794,7 +789,7 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
         RFCOMM_TRACE_ERROR("Illegal MX Frame len:%d < 2", length);
         osi_free(p_buf);
         return;
-  }
+    }
 
     p_rx_frame->ea   = *p_data & RFCOMM_EA;
     p_rx_frame->cr   = (*p_data & RFCOMM_CR_MASK) >> RFCOMM_SHIFT_CR;
@@ -991,7 +986,7 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
 
         if (!ea || !cr || !p_rx_frame->dlci
                 || !RFCOMM_VALID_DLCI (p_rx_frame->dlci)) {
-            RFCOMM_TRACE_ERROR ("Bad RPN frame");
+            RFCOMM_TRACE_ERROR ("Bad RLS frame");
             break;
         }
 
