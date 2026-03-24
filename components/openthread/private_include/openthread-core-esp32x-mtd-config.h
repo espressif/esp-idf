@@ -245,6 +245,21 @@
 #endif
 #define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
 
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+ *
+ * Define to 1 to enable platform NETIF support.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#error `OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE` is redefined.
+#endif
+#ifdef CONFIG_OPENTHREAD_PLATFORM_NETIF
+#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
+#endif
+#endif
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 /**
@@ -255,16 +270,6 @@
  */
 #ifndef OPENTHREAD_CONFIG_COAP_API_ENABLE
 #define OPENTHREAD_CONFIG_COAP_API_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
- *
- * Define to 1 to enable platform NETIF support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
 #endif
 
 /**
