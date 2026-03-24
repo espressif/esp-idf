@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
-#include <string.h>
 #include <esp_err.h>
 #include <esp_log.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <protocomm_ble.h>
 #include <esp_local_ctrl.h>
+#include <protocomm_ble.h>
 
 #include "esp_local_ctrl_priv.h"
 
@@ -18,7 +18,9 @@
 
 static const char *TAG = "esp_local_ctrl_transport_ble";
 
-static esp_err_t start_ble_transport(protocomm_t *pc, const esp_local_ctrl_transport_config_t *config)
+static esp_err_t
+start_ble_transport(protocomm_t *pc,
+                    const esp_local_ctrl_transport_config_t *config)
 {
     if (!config || !config->ble) {
         ESP_LOGE(TAG, "NULL configuration provided");
@@ -32,8 +34,11 @@ static void stop_ble_transport(protocomm_t *pc)
     protocomm_ble_stop(pc);
 }
 
-static esp_err_t copy_ble_config(esp_local_ctrl_transport_config_t *dest_config, const esp_local_ctrl_transport_config_t *src_config)
+static esp_err_t
+copy_ble_config(esp_local_ctrl_transport_config_t *dest_config,
+                const esp_local_ctrl_transport_config_t *src_config)
 {
+    esp_err_t ret = ESP_OK;
     if (!dest_config || !src_config || !src_config->ble) {
         ESP_LOGE(TAG, "NULL arguments provided");
         return ESP_ERR_INVALID_ARG;
@@ -46,13 +51,11 @@ static esp_err_t copy_ble_config(esp_local_ctrl_transport_config_t *dest_config,
     }
 
     /* Copy BLE device name */
-    memcpy(dest_config->ble->device_name,
-           src_config->ble->device_name,
+    memcpy(dest_config->ble->device_name, src_config->ble->device_name,
            sizeof(src_config->ble->device_name));
 
     /* Copy Service UUID */
-    memcpy(dest_config->ble->service_uuid,
-           src_config->ble->service_uuid,
+    memcpy(dest_config->ble->service_uuid, src_config->ble->service_uuid,
            sizeof(src_config->ble->service_uuid));
 
     dest_config->ble->nu_lookup_count = 0;
@@ -65,7 +68,6 @@ static esp_err_t copy_ble_config(esp_local_ctrl_transport_config_t *dest_config,
             free(dest_config->ble);
             return ESP_ERR_NO_MEM;
         }
-        esp_err_t ret = ESP_OK;
         for (uint16_t i = 0; i < src_config->ble->nu_lookup_count; i++) {
             dest_config->ble->nu_lookup[i].uuid = src_config->ble->nu_lookup[i].uuid;
             if (!src_config->ble->nu_lookup[i].name) {
@@ -73,7 +75,8 @@ static esp_err_t copy_ble_config(esp_local_ctrl_transport_config_t *dest_config,
                 ret = ESP_ERR_INVALID_ARG;
                 goto err_free_nu_lookup;
             }
-            dest_config->ble->nu_lookup[i].name = strdup(src_config->ble->nu_lookup[i].name);
+            dest_config->ble->nu_lookup[i].name =
+                strdup(src_config->ble->nu_lookup[i].name);
             if (!dest_config->ble->nu_lookup[i].name) {
                 ESP_LOGE(TAG, "Failed to allocate memory for endpoint name");
                 ret = ESP_ERR_NO_MEM;
@@ -86,7 +89,7 @@ static esp_err_t copy_ble_config(esp_local_ctrl_transport_config_t *dest_config,
 
 err_free_nu_lookup:
     for (uint16_t i = 0; i < dest_config->ble->nu_lookup_count; i++) {
-        free((void *) dest_config->ble->nu_lookup[i].name);
+        free((void *)dest_config->ble->nu_lookup[i].name);
     }
     free(dest_config->ble->nu_lookup);
     free(dest_config->ble);
@@ -94,16 +97,17 @@ err_free_nu_lookup:
     return ret;
 }
 
-static esp_err_t declare_endpoint(esp_local_ctrl_transport_config_t *config, const char *ep_name, uint16_t ep_uuid)
+static esp_err_t declare_endpoint(esp_local_ctrl_transport_config_t *config,
+                                  const char *ep_name, uint16_t ep_uuid)
 {
     if (!config || !config->ble) {
         ESP_LOGE(TAG, "NULL configuration provided");
         return ESP_ERR_INVALID_ARG;
     }
 
-    protocomm_ble_name_uuid_t *nu_lookup = realloc(config->ble->nu_lookup,
-                                                   (config->ble->nu_lookup_count + 1)
-                                                   * sizeof(protocomm_ble_name_uuid_t));
+    protocomm_ble_name_uuid_t *nu_lookup =
+        realloc(config->ble->nu_lookup, (config->ble->nu_lookup_count + 1) *
+                sizeof(protocomm_ble_name_uuid_t));
     if (!nu_lookup) {
         ESP_LOGE(TAG, "Failed to allocate memory for new endpoint entry");
         return ESP_ERR_NO_MEM;
@@ -123,7 +127,7 @@ static void free_config(esp_local_ctrl_transport_config_t *config)
 {
     if (config && config->ble) {
         for (unsigned int i = 0; i < config->ble->nu_lookup_count; i++) {
-            free((void*) config->ble->nu_lookup[i].name);
+            free((void *)config->ble->nu_lookup[i].name);
         }
         free(config->ble->nu_lookup);
         free(config->ble);
@@ -135,10 +139,10 @@ const esp_local_ctrl_transport_t *esp_local_ctrl_get_transport_ble(void)
 {
     static const esp_local_ctrl_transport_t tp = {
         .start_service = start_ble_transport,
-        .stop_service  = stop_ble_transport,
-        .copy_config   = copy_ble_config,
-        .declare_ep    = declare_endpoint,
-        .free_config   = free_config
+        .stop_service = stop_ble_transport,
+        .copy_config = copy_ble_config,
+        .declare_ep = declare_endpoint,
+        .free_config = free_config
     };
     return &tp;
 };
