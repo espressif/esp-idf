@@ -235,6 +235,12 @@ wpa_auth_send_eapol(struct wpa_authenticator *wpa_auth, const u8 *addr,
     return hostapd_send_eapol(wpa_auth->addr, addr, data, data_len);
 }
 
+/*
+ * CAUTION: cb is invoked while HOSTAPD_STA_LIST_LOCK is held.
+ * The mutex is non-recursive, so cb must NEVER call any function
+ * that acquires HOSTAPD_STA_LIST_LOCK (e.g. ap_get_sta, ap_free_sta)
+ * — doing so will deadlock.
+ */
 int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
               int (*cb)(struct wpa_state_machine *sm, void *ctx),
               void *cb_ctx)
@@ -245,10 +251,14 @@ int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
     if (hapd == NULL)
         return 1;
 
+    HOSTAPD_STA_LIST_LOCK(hapd);
     for (sta = hapd->sta_list; sta; sta = sta->next) {
-         if (sta->wpa_sm && cb(sta->wpa_sm, cb_ctx))
+         if (sta->wpa_sm && cb(sta->wpa_sm, cb_ctx)) {
+             HOSTAPD_STA_LIST_UNLOCK(hapd);
              return 1;
+         }
     }
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
     return 0;
 }
 
