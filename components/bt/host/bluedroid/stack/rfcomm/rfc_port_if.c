@@ -359,7 +359,7 @@ void RFCOMM_LineStatusReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT8 status)
 *******************************************************************************/
 void RFCOMM_DlcReleaseReq (tRFC_MCB *p_mcb, UINT8 dlci)
 {
-    rfc_port_sm_execute(port_find_mcb_dlci_port (p_mcb, dlci), RFC_EVENT_CLOSE, 0);
+    rfc_port_sm_execute(port_find_mcb_dlci_port (p_mcb, dlci), RFC_EVENT_CLOSE, NULL);
 }
 
 
