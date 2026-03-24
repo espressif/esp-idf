@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -73,21 +65,33 @@ static esp_err_t copy_ble_config(esp_local_ctrl_transport_config_t *dest_config,
             free(dest_config->ble);
             return ESP_ERR_NO_MEM;
         }
+        esp_err_t ret = ESP_OK;
         for (uint16_t i = 0; i < src_config->ble->nu_lookup_count; i++) {
             dest_config->ble->nu_lookup[i].uuid = src_config->ble->nu_lookup[i].uuid;
             if (!src_config->ble->nu_lookup[i].name) {
                 ESP_LOGE(TAG, "Endpoint name cannot be null");
-                return ESP_ERR_INVALID_ARG;
+                ret = ESP_ERR_INVALID_ARG;
+                goto err_free_nu_lookup;
             }
             dest_config->ble->nu_lookup[i].name = strdup(src_config->ble->nu_lookup[i].name);
             if (!dest_config->ble->nu_lookup[i].name) {
                 ESP_LOGE(TAG, "Failed to allocate memory for endpoint name");
-                return ESP_ERR_NO_MEM;
+                ret = ESP_ERR_NO_MEM;
+                goto err_free_nu_lookup;
             }
             dest_config->ble->nu_lookup_count++;
         }
     }
     return ESP_OK;
+
+err_free_nu_lookup:
+    for (uint16_t i = 0; i < dest_config->ble->nu_lookup_count; i++) {
+        free((void *) dest_config->ble->nu_lookup[i].name);
+    }
+    free(dest_config->ble->nu_lookup);
+    free(dest_config->ble);
+    dest_config->ble = NULL;
+    return ret;
 }
 
 static esp_err_t declare_endpoint(esp_local_ctrl_transport_config_t *config, const char *ep_name, uint16_t ep_uuid)
