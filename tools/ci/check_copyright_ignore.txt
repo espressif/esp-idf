@@ -378,8 +378,6 @@ components/esp_hid/include/esp_hidh_gattc.h
 components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
-components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
-components/esp_phy/test/test_phy_rtc.c
 components/esp_rom/esp32/include/esp32/rom/tjpgd.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld
 components/esp_rom/esp32/ld/esp32.rom.eco3.ld
