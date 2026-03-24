@@ -124,7 +124,7 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
-    bool send_param = (lcd_cmd >= 0);
+    bool send_param = (lcd_cmd != -1);
 
     if (send_param) {
         int write_size = 0;
@@ -156,7 +156,7 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
-    bool send_param = (lcd_cmd >= 0);
+    bool send_param = (lcd_cmd != -1);
 
     uint8_t control_phase_byte = 0;
     size_t control_phase_size = 0;
