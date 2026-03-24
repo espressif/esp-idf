@@ -181,6 +181,7 @@ esp_err_t esp_openthread_mainloop_exit(void)
 
 esp_err_t esp_openthread_launch_mainloop(void)
 {
+    ESP_LOGI(OT_PLAT_LOG_TAG, "OpenThread enter mainloop");
     esp_openthread_mainloop_context_t mainloop;
     otInstance *instance = esp_openthread_get_instance();
     esp_err_t error = ESP_OK;

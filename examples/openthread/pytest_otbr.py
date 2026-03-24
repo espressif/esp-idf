@@ -122,6 +122,16 @@ PORT_MAPPING = {'ESPPORT1': 'esp32h2', 'ESPPORT2': 'esp32s3', 'ESPPORT3': 'esp32
             id='c6-h2-s3',
         ),
         pytest.param(
+            'rcp_uart|cli_disable_platform_netif|br',
+            3,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32h2|esp32s3',
+            f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
+            id='c6-h2_disable_platform_netif-s3',
+        ),
+        pytest.param(
             'rcp_spi|cli|br_spi',
             3,
             f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
@@ -204,6 +214,16 @@ def formBasicWiFiThreadNetwork(br: IdfDut, cli: IdfDut) -> None:
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
             id='c6-h2-s3',
         ),
+        pytest.param(
+            'rcp_uart|cli_disable_platform_netif|br',
+            3,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32h2|esp32s3',
+            f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
+            id='c6-h2_disable_platform_netif-s3',
+        ),
     ],
     indirect=True,
 )
@@ -261,6 +281,16 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
             id='c6-h2-s3',
         ),
+        pytest.param(
+            'rcp_uart|cli_disable_platform_netif|br',
+            3,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32h2|esp32s3',
+            f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
+            id='c6-h2_disable_platform_netif-s3',
+        ),
     ],
     indirect=True,
 )
@@ -313,6 +343,16 @@ def test_multicast_forwarding_A(Init_interface: bool, dut: tuple[IdfDut, IdfDut,
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
             id='c6-h2-s3',
+        ),
+        pytest.param(
+            'rcp_uart|cli_disable_platform_netif|br',
+            3,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32h2|esp32s3',
+            f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
+            id='c6-h2_disable_platform_netif-s3',
         ),
     ],
     indirect=True,
@@ -367,6 +407,16 @@ def test_multicast_forwarding_B(Init_interface: bool, dut: tuple[IdfDut, IdfDut,
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
             id='c6-h2-s3',
+        ),
+        pytest.param(
+            'rcp_uart|cli_disable_platform_netif|br',
+            3,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32h2|esp32s3',
+            f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
+            id='c6-h2_disable_platform_netif-s3',
         ),
     ],
     indirect=True,
@@ -428,6 +478,16 @@ def test_service_discovery_of_Thread_device(
             'esp32c6|esp32h2|esp32s3',
             f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
             id='c6-h2-s3',
+        ),
+        pytest.param(
+            'rcp_uart|cli_disable_platform_netif|br',
+            3,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32h2|esp32s3',
+            f'{ESPPORT3}|{ESPPORT1}|{ESPPORT2}',
+            id='c6-h2_disable_platform_netif-s3',
         ),
     ],
     indirect=True,
@@ -711,7 +771,7 @@ def test_ot_sleepy_device(dut: tuple[IdfDut, IdfDut]) -> None:
     finally:
         logging.info('Cleaning up...')
         ocf.execute_command(leader, 'factoryreset')
-        leader.expect('OpenThread attached to netif', timeout=20)
+        leader.expect('OpenThread enter mainloop', timeout=20)
         ocf.hardreset_dut(sleepy_device)
         time.sleep(3)
 
