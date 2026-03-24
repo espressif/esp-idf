@@ -204,6 +204,10 @@ static int use_sae_anti_clogging(struct hostapd_data *hapd)
         return 1;
     }
 
+#ifdef ESP_SUPPLICANT
+    HOSTAPD_STA_LIST_LOCK(hapd);
+#endif /* ESP_SUPPLICANT */
+
     for (sta = hapd->sta_list; sta; sta = sta->next) {
         if (sta->sae &&
             (sta->sae->state == SAE_COMMITTED ||
@@ -211,6 +215,9 @@ static int use_sae_anti_clogging(struct hostapd_data *hapd)
             open++;
         }
         if (open >= hapd->conf->sae_anti_clogging_threshold) {
+#ifdef ESP_SUPPLICANT
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
+#endif /* ESP_SUPPLICANT */
             return 1;
         }
     }
@@ -220,8 +227,15 @@ static int use_sae_anti_clogging(struct hostapd_data *hapd)
      * potentially result in too many open sessions. */
     if (open + dl_list_len(&hapd->sae_commit_queue) >=
         hapd->conf->sae_anti_clogging_threshold) {
+#ifdef ESP_SUPPLICANT
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+#endif /* ESP_SUPPLICANT */
         return 1;
     }
+
+#ifdef ESP_SUPPLICANT
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
+#endif /* ESP_SUPPLICANT */
 
     return 0;
 }
@@ -681,11 +695,23 @@ int auth_sae_queue(struct hostapd_data *hapd,
     struct hostapd_sae_commit_queue *q, *q2;
     unsigned int queue_len;
 
+#ifdef ESP_SUPPLICANT
+    if (!hapd->sta_list_lock) {
+        wpa_printf(MSG_DEBUG,
+                   "SAE: sta_list_lock not set (no WPA3 hostap path), drop from " MACSTR,
+                   MAC2STR(bssid));
+        return -1;
+    }
+    HOSTAPD_STA_LIST_LOCK(hapd);
+#endif /* ESP_SUPPLICANT */
     queue_len = dl_list_len(&hapd->sae_commit_queue);
     if (queue_len >= hapd->conf->max_num_sta) {
         wpa_printf(MSG_DEBUG,
                    "SAE: No more room in message queue - drop the new frame from "
                    MACSTR, MAC2STR(bssid));
+#ifdef ESP_SUPPLICANT
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+#endif /* ESP_SUPPLICANT */
         return 0;
     }
 
@@ -694,6 +720,9 @@ int auth_sae_queue(struct hostapd_data *hapd,
                queue_len);
     q = os_zalloc(sizeof(*q) + len);
     if (!q) {
+#ifdef ESP_SUPPLICANT
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+#endif /* ESP_SUPPLICANT */
         return -1;
     }
 
@@ -731,11 +760,13 @@ queued:
     if (wpa3_hostap_post_evt(SIG_WPA3_RX_COMMIT, 0) != 0) {
         wpa_printf(MSG_ERROR, "failed to queue commit build event");
         dl_list_del(&q->list);
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         os_free(q);
         return -1;
     }
-    return 0;
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
 #endif /* ESP_SUPPLICANT */
+    return 0;
 
 }
 
