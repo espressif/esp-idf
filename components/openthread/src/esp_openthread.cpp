@@ -252,7 +252,7 @@ static void ot_task_worker(void *aContext)
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&(config->platform_config)));
 
-#if CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
     esp_netif_t *openthread_netif = esp_netif_new(&(config->netif_config));
     assert(openthread_netif != NULL);
     ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&(config->platform_config))));
@@ -283,7 +283,7 @@ static void ot_task_worker(void *aContext)
 
     // esp_openthread_cli_console_command_unregister is not provided on idf 5.3
 
-#if CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
     // Clean up
     esp_openthread_netif_glue_deinit();
     esp_netif_destroy(openthread_netif);
