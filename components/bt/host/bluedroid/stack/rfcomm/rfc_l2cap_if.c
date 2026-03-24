@@ -421,7 +421,7 @@ tRFC_MCB *rfc_find_lcid_mcb (UINT16 lcid)
 **
 ** Function         rfc_save_lcid_mcb
 **
-** Description      This function returns MCB block supporting local cid
+** Description      This function saves MCB block supporting local cid
 **
 *******************************************************************************/
 void rfc_save_lcid_mcb (tRFC_MCB *p_mcb, UINT16 lcid)

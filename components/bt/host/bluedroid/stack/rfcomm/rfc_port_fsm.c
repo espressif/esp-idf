@@ -597,8 +597,7 @@ void rfc_process_rpn (tRFC_MCB *p_mcb, BOOLEAN is_command,
     }
 
     /* If we are not awaiting response just ignore it */
-    p_port = port_find_mcb_dlci_port (p_mcb, p_frame->dlci);
-    if ((p_port == NULL) || !(p_port->rfc.expected_rsp & (RFC_RSP_RPN | RFC_RSP_RPN_REPLY))) {
+    if (!(p_port->rfc.expected_rsp & (RFC_RSP_RPN | RFC_RSP_RPN_REPLY))) {
         return;
     }
 

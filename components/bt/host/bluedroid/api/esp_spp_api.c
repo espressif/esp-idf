@@ -18,7 +18,6 @@
 static const uint8_t UUID_SPP[16] = {0x00, 0x00, 0x11, 0x01, 0x00, 0x00, 0x10, 0x00,
                                     0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
                                     };
-static tSDP_UUID sdp_uuid;
 
 esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
 {
@@ -38,8 +37,8 @@ esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (cfg->mode == ESP_SPP_MODE_VFS && (cfg->tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE ||
-            cfg->tx_buffer_size > ESP_SPP_MAX_TX_BUFFER_SIZE)) {
+    if (!cfg || (cfg->mode == ESP_SPP_MODE_VFS && (cfg->tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE ||
+            cfg->tx_buffer_size > ESP_SPP_MAX_TX_BUFFER_SIZE))) {
         LOG_WARN("Invalid tx buffer size");
         return ESP_ERR_INVALID_ARG;
     }
@@ -70,12 +69,13 @@ esp_err_t esp_spp_deinit(void)
 
 esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr)
 {
-    sdp_uuid.len = 16;
-    memcpy(sdp_uuid.uu.uuid128, UUID_SPP, sizeof(sdp_uuid.uu.uuid128));
-
     btc_msg_t msg;
     btc_spp_args_t arg;
+    tSDP_UUID sdp_uuid;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    sdp_uuid.len = 16;
+    memcpy(sdp_uuid.uu.uuid128, UUID_SPP, sizeof(sdp_uuid.uu.uuid128));
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
@@ -100,7 +100,7 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
         sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
         sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)) {
         LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHENTICATE"
-                 "or (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only\n");
+                 "or (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only");
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -150,7 +150,7 @@ esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (cfg == NULL || cfg->name == NULL || strlen(cfg->name) > ESP_SPP_SERVER_NAME_MAX) {
-        LOG_ERROR("Invalid server name!\n");
+        LOG_ERROR("Invalid server name!");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -163,7 +163,7 @@ esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg)
         LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHENTICATE,"
                  "(ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT),"
                  "ESP_SPP_SEC_IN_16_DIGITS, (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE), or"
-                 "(ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only\n");
+                 "(ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only");
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -201,7 +201,7 @@ esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if ((scn == 0) || (scn >= PORT_MAX_RFC_PORTS)) {
-        LOG_ERROR("Invalid SCN!\n");
+        LOG_ERROR("Invalid SCN!");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -219,7 +219,7 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (len <= 0 || p_data == NULL) {
-        LOG_ERROR("Invalid data or len!\n");
+        LOG_ERROR("Invalid data or len!");
         return ESP_ERR_INVALID_ARG;
     }
 
