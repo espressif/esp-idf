@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -554,7 +554,7 @@ void obex_tl_l2cap_congestion_status_ind(UINT16 lcid, BOOLEAN is_congested)
 **                  other APIs
 **
 *******************************************************************************/
-void obex_tl_l2cap_init(tOBEX_TL_CBACK callback)
+void obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
 {
     assert(callback != NULL);
 #if (OBEX_DYNAMIC_MEMORY)
@@ -587,7 +587,7 @@ void obex_tl_l2cap_init(tOBEX_TL_CBACK callback)
 
 /*******************************************************************************
 **
-** Function         obex_tl_l2cap_init
+** Function         obex_tl_l2cap_deinit
 **
 ** Description      Deinitialize OBEX over L2CAP transport layer
 **
@@ -674,7 +674,7 @@ void obex_tl_l2cap_disconnect(UINT16 hdl)
 **
 ** Function         obex_tl_l2cap_send_data
 **
-** Description      Start the process of establishing a L2CAP connection
+** Description      Send data on an established L2CAP connection
 **
 ** Returns          OBEX_TL_SUCCESS, if data accepted
 **                  OBEX_TL_CONGESTED, if data accepted and the channel is congested

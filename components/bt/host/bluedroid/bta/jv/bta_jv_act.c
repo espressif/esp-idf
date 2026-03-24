@@ -24,6 +24,7 @@
 
 #include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "osi/allocator.h"
 #include "osi/osi.h"
@@ -37,9 +38,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include "stack/sdp_api.h"
-#include "stack/l2c_api.h"
 #include "stack/port_api.h"
-#include <string.h>
 #include "stack/rfcdefs.h"
 #include "stack/avct_api.h"
 #include "stack/avdt_api.h"
@@ -301,7 +300,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB *p_cb, tBTA_JV_PCB *p_pc
     UINT8 used = 0, i, listen = 0;
     tPORT_STATE port_state;
     UINT32 event_mask = BTA_JV_RFC_EV_MASK;
-    UINT32 scn_num = (UINT32)p_cb->scn;
+    UINT32 scn_num = 0;
     tBTA_JV evt_data = {0};
 
     if (!p_cb || !p_pcb) {
@@ -423,6 +422,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB *p_cb, tBTA_JV_PCB *p_pc
                     evt_data.rfc_srv_open.handle = 0;
                     evt_data.rfc_srv_open.new_listen_handle = p_pcb->handle;
                     evt_data.rfc_srv_open.status = BTA_JV_SUCCESS;
+                    scn_num = (UINT32)p_cb->scn;
                     p_pcb->user_data = p_cb->p_cback(BTA_JV_RFCOMM_SRV_OPEN_EVT, &evt_data, (void *)scn_num);
                 }
             }
@@ -509,9 +509,12 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle)
     int i, j, bd_counter = 0, appid_counter = 0;
 
     for (i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
-        p_cb = NULL;
         if ((bta_jv_cb.pm_cb[i].state != BTA_JV_PM_FREE_ST) &&
                 (jv_handle == bta_jv_cb.pm_cb[i].handle)) {
+            p_cb = NULL;
+            bd_counter = 0;
+            appid_counter = 0;
+
             for (j = 0; j < BTA_JV_PM_MAX_NUM; j++) {
                 if (bdcmp(bta_jv_cb.pm_cb[j].peer_bd_addr, bta_jv_cb.pm_cb[i].peer_bd_addr) == 0) {
                     bd_counter++;
@@ -721,11 +724,12 @@ BOOLEAN bta_jv_check_psm(UINT16 psm)
 void bta_jv_enable(tBTA_JV_MSG *p_data)
 {
     tBTA_UTL_COD   cod;
-
     tBTA_JV_STATUS status = BTA_JV_SUCCESS;
+
+    memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
+
     bta_jv_cb.p_dm_cback = p_data->enable.p_cback;
     bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, (tBTA_JV *)&status, 0);
-    memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
 
     /* Set the Class of Device */
     cod.major = BTM_COD_MAJOR_UNCLASSIFIED;
@@ -1744,7 +1748,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
     void *user_data = NULL;
 
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback:code:%d, port_handle%d", code, port_handle);
-    if (NULL == p_cb || NULL == p_cb->p_cback) {
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb) {
         return;
     }
 
@@ -2021,7 +2025,7 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
     int failed = TRUE;
 
     // APPL_TRACE_DEBUG("bta_jv_port_mgmt_sr_cback, code:0x%x, port_handle:%d", code, (uint16_t)port_handle);
-    if (NULL == p_cb || NULL == p_cb->p_cback) {
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb) {
         // APPL_TRACE_ERROR("bta_jv_port_mgmt_sr_cback, p_cb:%p, p_cb->p_cback%p",
         // p_cb, p_cb ? p_cb->p_cback : NULL);
         return;
@@ -2044,10 +2048,10 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
         /* accept the connection defaulted */
         if (p_mgmt_cb_arg) {
             p_mgmt_cb_arg->accept = TRUE;
+            evt_data.rfc_srv_open.peer_mtu = p_mgmt_cb_arg->peer_mtu;
         }
         evt_data.rfc_srv_open.handle = p_pcb->handle;
         evt_data.rfc_srv_open.status = BTA_JV_SUCCESS;
-        evt_data.rfc_srv_open.peer_mtu = p_mgmt_cb_arg->peer_mtu;
         bdcpy(evt_data.rfc_srv_open.rem_bda, rem_bda);
         tBTA_JV_PCB *p_pcb_new_listen  = bta_jv_add_rfc_port(p_cb, p_pcb);
         if (p_pcb_new_listen) {
@@ -2131,7 +2135,7 @@ static void bta_jv_port_event_sr_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV evt_data = {0};
 
-    if (NULL == p_cb || NULL == p_cb->p_cback) {
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb) {
         return;
     }
 
@@ -2544,7 +2548,7 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
 
 /*******************************************************************************
  **
- ** Function    bta_jv_pm_conn_busy
+ ** Function    bta_jv_pm_conn_idle
  **
  ** Description set pm connection busy state (input param safe)
  **
@@ -2892,10 +2896,13 @@ static void fcchan_data_cbk(UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
     tc = fcchan_get(chan, FALSE);
     if (tc) {
         t = fcclient_find_by_addr(tc->clients, bd_addr); // try to find an open socked for that addr and channel
-        if (!t) {
-            //no socket -> drop it
-            return;
+    }
+    if (!t) {
+        //no socket -> drop it
+        if (p_buf) {
+            osi_free(p_buf);
         }
+        return;
     }
 
     sock_cback = t->p_cback;
