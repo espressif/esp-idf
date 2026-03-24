@@ -53,7 +53,9 @@ void app_main(void)
 
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
     ESP_ERROR_CHECK(esp_netif_init());
+#endif
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
 
 #if CONFIG_OPENTHREAD_CLI
@@ -62,7 +64,9 @@ void app_main(void)
 #endif
 
     static esp_openthread_config_t config = {
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
         .netif_config = ESP_NETIF_DEFAULT_OPENTHREAD(),
+#endif
         .platform_config = {
             .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
             .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
