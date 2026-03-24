@@ -1,22 +1,20 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 from src.backend.checksum import sum_checksum
 from src.backend.checksum import xor_checksum
 from src.backend.frame_parser import FrameParser
 from src.backend.models import ChecksumAlgorithm
 from src.backend.models import ChecksumScope
 from src.backend.models import SyncState
-
 from tests.helpers import build_frame
 
 
 def _make_sum_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=True)
+    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=True)  # type: ignore[no-any-return]
 
 
 def _make_xor_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=True)
+    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=True)  # type: ignore[no-any-return]
 
 
 class TestFrameParserStateTransitions:
@@ -138,11 +136,11 @@ class TestFrameParserOutput:
 
 
 def _make_sum_header_only_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=False)
+    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=False)  # type: ignore[no-any-return]
 
 
 def _make_xor_header_only_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=False)
+    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=False)  # type: ignore[no-any-return]
 
 
 class TestChecksumAutoDetection:

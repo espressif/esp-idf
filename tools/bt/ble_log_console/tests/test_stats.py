@@ -1,16 +1,16 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
+from typing import Optional
 from unittest.mock import patch
 
 from src.backend.models import BleLogSource
 from src.backend.models import has_os_ts
+from src.backend.stats import StatsAccumulator
 from src.backend.stats import TRAFFIC_ALERT_COOLDOWN_SEC
 from src.backend.stats import TRAFFIC_THRESHOLD_PCT
 from src.backend.stats import TRAFFIC_WINDOW_SEC
-from src.backend.stats import WRITE_RATE_WINDOW_MS
-from src.backend.stats import StatsAccumulator
 from src.backend.stats import TrafficSpikeResult
+from src.backend.stats import WRITE_RATE_WINDOW_MS
 from src.backend.stats.peak_burst import _ts_delta_ms
 
 # Convenience: default frame size used in peak write tests (arbitrary but consistent)
@@ -55,7 +55,7 @@ class TestStatsAccumulator:
         self, stats: StatsAccumulator, src_code: int, lost_frames: int, lost_bytes: int
     ) -> tuple[int, int]:
         """Helper: call record_enh_stat with dummy written/baudrate, return loss delta."""
-        return stats.record_enh_stat(
+        return stats.record_enh_stat(  # type: ignore[no-any-return]
             src_code=src_code,
             written_frames=0,
             lost_frames=lost_frames,
@@ -839,7 +839,7 @@ class TestTrafficSpikeDetection:
 
     def _trigger_spike(
         self, stats: StatsAccumulator, mock_time: object, t: float, hot_bytes: int, src: int = 1
-    ) -> TrafficSpikeResult | None:
+    ) -> Optional[TrafficSpikeResult]:
         """Helper: inject traffic, enter spike, then exit and return result."""
         mock_time.perf_counter.return_value = t  # type: ignore[attr-defined]
         stats.record_frame_traffic(hot_bytes, src)

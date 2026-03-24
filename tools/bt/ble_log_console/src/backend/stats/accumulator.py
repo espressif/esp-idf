@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Thin composition of stats sub-modules into a single accumulator."""
-
 from __future__ import annotations
 
 from src.backend.models import BleLogSource
@@ -17,13 +15,13 @@ from src.backend.models import ThroughputInfo
 from src.backend.stats.buf_util import BufUtilTracker
 from src.backend.stats.firmware_loss import FirmwareLossTracker
 from src.backend.stats.firmware_written import FirmwareWrittenTracker
-from src.backend.stats.peak_burst import WRITE_RATE_WINDOW_MS
 from src.backend.stats.peak_burst import PeakBurstTracker
+from src.backend.stats.peak_burst import WRITE_RATE_WINDOW_MS
 from src.backend.stats.sn_gap import SNGapTracker
 from src.backend.stats.traffic_spike import TrafficSpikeDetector
 from src.backend.stats.traffic_spike import TrafficSpikeResult
-from src.backend.stats.transport import UART_BITS_PER_BYTE
 from src.backend.stats.transport import TransportMetrics
+from src.backend.stats.transport import UART_BITS_PER_BYTE
 
 _ZERO = FrameByteCount(frames=0, bytes=0)
 
@@ -124,7 +122,7 @@ class StatsAccumulator:
 
         self._enh_stat_prev[src_code] = (written_frames, lost_frames, written_bytes, lost_bytes)
         self._fw_written.record(src_code, written_frames, written_bytes)
-        return self._fw_loss.record(src_code, lost_frames, lost_bytes)
+        return self._fw_loss.record(src_code, lost_frames, lost_bytes)  # type: ignore[no-any-return]
 
     # -- Reset -------------------------------------------------------------------
 
