@@ -1,24 +1,21 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Status panel widget — docked to bottom, shows live stats.
 
 See Spec Section 11.
 """
-
 from rich.text import Text
+from src.backend.models import format_bytes
+from src.backend.models import format_throughput
+from src.backend.models import FrameStats
+from src.backend.models import SyncState
+from src.backend.stats import UART_BITS_PER_BYTE
 from textual.reactive import reactive
 from textual.widget import Widget
 
-from src.backend.models import FrameStats
-from src.backend.models import SyncState
-from src.backend.models import format_bytes
-from src.backend.models import format_throughput
-from src.backend.stats import UART_BITS_PER_BYTE
-
 
 def _format_speed(bps: float) -> str:
-    return format_throughput(bps / UART_BITS_PER_BYTE)
+    return format_throughput(bps / UART_BITS_PER_BYTE)  # type: ignore[no-any-return]
 
 
 _SYNC_COLORS = {

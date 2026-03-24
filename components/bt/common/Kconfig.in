@@ -50,7 +50,7 @@ menu "BT Logs"
             bool "Enable Controller logs"
             default n
 
-        choice
+        choice BT_LE_CONTROLLER_LOG_OUTPUT_MODE
             depends on BT_LE_CONTROLLER_LOG_ENABLED
             prompt "Controller log output mode"
             default BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 if BLE_LOG_ENABLED
