@@ -750,10 +750,10 @@ static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descript
 {
     // by default, the dummy phase is disabled because it's not common for most LCDs
     uint32_t dummy_cycles = 0;
-    uint32_t cmd_cycles = trans_desc->cmd_value >= 0 ? trans_desc->cmd_cycles : 0;
+    uint32_t cmd_cycles = trans_desc->cmd_value != -1 ? trans_desc->cmd_cycles : 0;
     // Number of data phase cycles are controlled by DMA buffer length, we only need to enable/disable the phase here
     uint32_t data_cycles = trans_desc->data ? 1 : 0;
-    if (trans_desc->cmd_value >= 0) {
+    if (trans_desc->cmd_value != -1) {
         lcd_ll_set_command(bus->hal.dev, bus->bus_width, trans_desc->cmd_value);
     }
     lcd_ll_set_phase_cycles(bus->hal.dev, cmd_cycles, dummy_cycles, data_cycles);
