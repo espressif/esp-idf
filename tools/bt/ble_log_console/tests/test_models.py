@@ -7,18 +7,18 @@ from src.backend.models import LossType
 from src.backend.models import ThroughputInfo
 
 
-def test_frame_byte_count():
+def test_frame_byte_count() -> None:
     fbc = FrameByteCount(frames=100, bytes=5000)
     assert fbc.frames == 100
     assert fbc.bytes == 5000
 
 
-def test_loss_type_enum():
+def test_loss_type_enum() -> None:
     assert LossType.BUFFER == 'buffer'
     assert LossType.TRANSPORT == 'transport'
 
 
-def test_funnel_snapshot_structure():
+def test_funnel_snapshot_structure() -> None:
     zero = FrameByteCount(frames=0, bytes=0)
     tp = ThroughputInfo(
         throughput_fps=0.0, throughput_bps=0.0, peak_write_frames=0, peak_write_bytes=0, peak_window_ms=10

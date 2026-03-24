@@ -12,11 +12,11 @@ from tests.helpers import build_frame
 
 
 def _make_sum_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=True)
+    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=True)  # type: ignore[no-any-return]
 
 
 def _make_xor_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=True)
+    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=True)  # type: ignore[no-any-return]
 
 
 class TestFrameParserStateTransitions:
@@ -138,11 +138,11 @@ class TestFrameParserOutput:
 
 
 def _make_sum_header_only_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=False)
+    return build_frame(payload, src, sn, sum_checksum, checksum_scope_full=False)  # type: ignore[no-any-return]
 
 
 def _make_xor_header_only_frame(payload: bytes, src: int, sn: int) -> bytes:
-    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=False)
+    return build_frame(payload, src, sn, xor_checksum, checksum_scope_full=False)  # type: ignore[no-any-return]
 
 
 class TestChecksumAutoDetection:

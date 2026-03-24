@@ -124,7 +124,7 @@ class StatsAccumulator:
 
         self._enh_stat_prev[src_code] = (written_frames, lost_frames, written_bytes, lost_bytes)
         self._fw_written.record(src_code, written_frames, written_bytes)
-        return self._fw_loss.record(src_code, lost_frames, lost_bytes)
+        return self._fw_loss.record(src_code, lost_frames, lost_bytes)  # type: ignore[no-any-return]
 
     # -- Reset -------------------------------------------------------------------
 

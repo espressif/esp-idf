@@ -18,7 +18,7 @@ from src.backend.stats import UART_BITS_PER_BYTE
 
 
 def _format_speed(bps: float) -> str:
-    return format_throughput(bps / UART_BITS_PER_BYTE)
+    return format_throughput(bps / UART_BITS_PER_BYTE)  # type: ignore[no-any-return]
 
 
 _SYNC_COLORS = {
