@@ -119,7 +119,7 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
-    bool send_param = (lcd_cmd >= 0);
+    bool send_param = (lcd_cmd != -1);
 
     if (send_param) {
         int write_size = 0;
@@ -151,7 +151,7 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
-    bool send_param = (lcd_cmd >= 0);
+    bool send_param = (lcd_cmd != -1);
     int write_size = 0;
     uint8_t *write_buffer = (uint8_t*)heap_caps_malloc(CONTROL_PHASE_LENGTH + CMD_LENGTH + buffer_size, MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(write_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for write buffer");
