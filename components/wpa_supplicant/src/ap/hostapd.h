@@ -107,6 +107,10 @@ struct hostapd_data {
 	struct sta_info *sta_hash[STA_HASH_SIZE];
 	int num_sta; /* number of entries in sta_list */
 
+#ifdef ESP_SUPPLICANT
+	void *sta_list_lock;
+#endif /* ESP_SUPPLICANT */
+
 	struct eapol_authenticator *eapol_auth;
 	struct wpa_authenticator *wpa_auth;
 
@@ -168,5 +172,22 @@ struct hostapd_data *hostapd_get_hapd_data(void);
 const struct hostapd_eap_user *
 hostapd_get_eap_user(struct hostapd_data *hapd, const u8 *identity,
 		     size_t identity_len, int phase2);
+
+#ifdef ESP_SUPPLICANT
+#define HOSTAPD_STA_LIST_LOCK(hapd) \
+    do { \
+        if ((hapd) && (hapd)->sta_list_lock) \
+            os_mutex_lock((hapd)->sta_list_lock); \
+    } while (0)
+
+#define HOSTAPD_STA_LIST_UNLOCK(hapd) \
+    do { \
+        if ((hapd) && (hapd)->sta_list_lock) \
+            os_mutex_unlock((hapd)->sta_list_lock); \
+    } while (0)
+#else
+#define HOSTAPD_STA_LIST_LOCK(hapd) do { } while (0)
+#define HOSTAPD_STA_LIST_UNLOCK(hapd) do { } while (0)
+#endif /* ESP_SUPPLICANT */
 
 #endif /* HOSTAPD_H */
