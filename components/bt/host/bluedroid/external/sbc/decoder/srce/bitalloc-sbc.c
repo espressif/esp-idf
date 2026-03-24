@@ -25,7 +25,7 @@
 @ingroup codec_internal
 */
 
-/**@addgroup codec_internal*/
+/**@addtogroup codec_internal*/
 /**@{*/
 #include "common/bt_target.h"
 #include <oi_codec_sbc_private.h>
@@ -78,7 +78,7 @@ static void stereoBitAllocation(OI_CODEC_SBC_COMMON_CONTEXT *common)
     }
     sbL = 0;
     sbR = nrof_subbands;
-    while (excess) {
+    while (excess && sbL < nrof_subbands) {
         excess = allocExcessBits(&common->bits.uint8[sbL], excess);
         ++sbL;
         if (!excess) {
@@ -107,7 +107,9 @@ PRIVATE void OI_SBC_ComputeBitAllocation(OI_CODEC_SBC_COMMON_CONTEXT *common)
      * Using an array of function pointers prevents the compiler from creating a suboptimal
      * monolithic inlined bit allocation function.
      */
-    balloc[common->frameInfo.mode](common);
+    if (common->frameInfo.mode < OI_ARRAYSIZE(balloc)) {
+        balloc[common->frameInfo.mode](common);
+    }
 }
 
 OI_UINT32 OI_CODEC_SBC_CalculateBitrate(OI_CODEC_SBC_FRAME_INFO *frame)
@@ -136,6 +138,10 @@ OI_UINT16 OI_CODEC_SBC_CalculateBitpool(OI_CODEC_SBC_FRAME_INFO *frame,
     OI_UINT16 nrof_blocks = frame->nrof_blocks;
     OI_UINT16 hdr;
     OI_UINT16 bits;
+
+    if ((frameLen <= SBC_HEADER_LEN) || (nrof_blocks == 0)) {
+        return 0;
+    }
 
     if (frame->mode == SBC_JOINT_STEREO) {
         hdr = 9 * nrof_subbands;

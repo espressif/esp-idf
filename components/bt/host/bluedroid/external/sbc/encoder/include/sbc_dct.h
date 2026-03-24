@@ -30,7 +30,7 @@
 {                                                                               \
     __asm                                                                       \
 {                                                                               \
-    MUL s32OutLow,(SINT32)s16In2, (s32In1>>15)        \
+    MUL s32OutLow,(SINT32)s16In2, (s32In1>>15)                                  \
 }                                                                               \
 }
 #else
@@ -43,8 +43,8 @@
 #if (SBC_IS_64_MULT_IN_IDCT == TRUE)
 #define SBC_MULT_32_32(s32In2, s32In1, s32OutLow)                           \
 {                                                                           \
-    s64Temp = ((SINT64) s32In2) * ((SINT64) s32In1)>>31;            \
-    s32OutLow = (SINT32) s64Temp;                                                    \
+    s64Temp = ((SINT64) s32In2) * ((SINT64) s32In1)>>31;                    \
+    s32OutLow = (SINT32) s64Temp;                                           \
 }
 #endif
 #else

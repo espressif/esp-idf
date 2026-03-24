@@ -103,26 +103,26 @@
 #endif
 
 /* Set SBC_IPAQ_OPT to TRUE in case the target is an ARM */
-/* 32 and 64 bit mult will be performed using SINT64 ( usualy __int64 ) cast that usualy give optimal performance if supported */
+/* 32 and 64 bit mult will be performed using SINT64 ( usually __int64 ) cast that usually give optimal performance if supported */
 #ifndef SBC_IPAQ_OPT
 #define SBC_IPAQ_OPT TRUE
 #endif
 
 /* Debug only: set SBC_IS_64_MULT_IN_WINDOW_ACCU to TRUE to use 64 bit multiplication in the windowing */
-/* -> not recomended, more MIPS for the same restitution.  */
+/* -> not recommended, more MIPS for the same restitution.  */
 #ifndef SBC_IS_64_MULT_IN_WINDOW_ACCU
 #define SBC_IS_64_MULT_IN_WINDOW_ACCU  FALSE
 #endif /*SBC_IS_64_MULT_IN_WINDOW_ACCU */
 
 /* Set SBC_IS_64_MULT_IN_IDCT to TRUE to use 64 bits multiplication in the DCT of Matrixing */
-/* -> more MIPS required for a better audio quality. comparasion with the SIG utilities shows a division by 10 of the RMS */
+/* -> more MIPS required for a better audio quality. comparison with the SIG utilities shows a division by 10 of the RMS */
 /* CAUTION: It only apply in the if SBC_FAST_DCT is set to TRUE */
 #ifndef SBC_IS_64_MULT_IN_IDCT
 #define SBC_IS_64_MULT_IN_IDCT  FALSE
 #endif /*SBC_IS_64_MULT_IN_IDCT */
 
 /* set SBC_IS_64_MULT_IN_QUANTIZER to TRUE to use 64 bits multiplication in the quantizer */
-/* setting this flag to FALSE add whistling noise at 5.5 and 11 KHz usualy not perceptible by human's hears. */
+/* setting this flag to FALSE add whistling noise at 5.5 and 11 KHz usually not perceptible by human's hears. */
 #ifndef SBC_IS_64_MULT_IN_QUANTIZER
 #define SBC_IS_64_MULT_IN_QUANTIZER  TRUE
 #endif /*SBC_IS_64_MULT_IN_IDCT */
@@ -183,7 +183,7 @@ typedef struct SBC_ENC_PARAMS_TAG {
     SINT16 as16PcmBuffer[SBC_MAX_NUM_FRAME * SBC_MAX_NUM_OF_BLOCKS * SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS];
 #endif
 
-    SINT16  s16ScartchMemForBitAlloc[16];
+    SINT16  s16ScratchMemForBitAlloc[16];
 
     SINT32  s32SbBuffer[SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS * SBC_MAX_NUM_OF_BLOCKS];
 
