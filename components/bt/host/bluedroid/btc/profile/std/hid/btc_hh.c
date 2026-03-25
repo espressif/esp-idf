@@ -19,9 +19,9 @@
  ******************************************************************************/
 /************************************************************************************
  *
- *  Filename:      btc_hd.c
+ *  Filename:      btc_hh.c
  *
- *  Description:   HID Device Profile Bluetooth Interface
+ *  Description:   HID Host Profile Bluetooth Interface
  *
  *
  ***********************************************************************************/
@@ -68,9 +68,9 @@ static void btc_hh_cb_arg_deep_free(btc_msg_t *msg);
 
 static inline void btc_hh_cb_to_app(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
 {
-    esp_hh_cb_t btc_hh_cb = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
-    if (btc_hh_cb) {
-        btc_hh_cb(event, param);
+    esp_hh_cb_t btc_hh_cbk = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
+    if (btc_hh_cbk) {
+        btc_hh_cbk(event, param);
     }
 }
 
@@ -367,6 +367,23 @@ static void bte_hh_arg_deep_copy(btc_msg_t *msg, void *p_dst, void *p_src)
         }
         break;
     }
+    case BTA_HH_DATA_IND_EVT: {
+        BT_HDR *src_hdr = p_src_data->int_data.p_data;
+        p_dst_data->int_data.p_data = NULL;
+        if (src_hdr) {
+            p_dst_data->int_data.p_data = osi_malloc(sizeof(BT_HDR) + src_hdr->len);
+            if (p_dst_data->int_data.p_data == NULL) {
+                BTC_TRACE_ERROR("%s malloc int_data.p_data failed!", __func__);
+                p_dst_data->int_data.status = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
+            BT_HDR *dst_hdr = p_dst_data->int_data.p_data;
+            memcpy(dst_hdr, src_hdr, sizeof(BT_HDR));
+            memcpy(dst_hdr->data, src_hdr->data + src_hdr->offset, src_hdr->len);
+            dst_hdr->offset = 0;
+        }
+        break;
+    }
     default:
         break;
     }
@@ -424,6 +441,9 @@ static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH *p_data)
         break;
     case BTA_HH_DATA_EVT:
         param_len = sizeof(tBTA_HH_API_SENDDATA);
+        break;
+    case BTA_HH_DATA_IND_EVT:
+        param_len = sizeof(tBTA_HH_INTDATA);
         break;
     case BTA_HH_API_ERR_EVT:
         param_len = 0;
@@ -712,6 +732,11 @@ static void btc_hh_set_info(btc_hidh_args_t *arg)
     esp_hidh_cb_param_t param;
     tBTA_HH_DEV_DSCP_INFO dscp_info;
 
+    if (!arg->set_info.hid_info) {
+        ret = ESP_HIDH_ERR;
+        goto _error;
+    }
+
     BTC_TRACE_DEBUG("%s: sub_class = 0x%02x, app_id = %d, vendor_id = 0x%04x, "
                     "product_id = 0x%04x, version= 0x%04x",
                     __func__, arg->set_info.hid_info->sub_class, arg->set_info.hid_info->app_id,
@@ -751,6 +776,7 @@ static void btc_hh_set_info(btc_hidh_args_t *arg)
     } while(0);
     utl_freebuf((void **)&dscp_info.descriptor.dsc_list);
 
+_error:
     if (ret != ESP_HIDH_OK) {
         param.set_info.status = ret;
         param.set_info.handle = BTA_HH_INVALID_HANDLE;
@@ -1255,7 +1281,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         }
         if (p_data->status == BTA_HH_OK) {
             // Clear the control block
-            for (uint8_t i = 0; i < BTC_HH_MAX_HID; i++) {
+            for (i = 0; i < BTC_HH_MAX_HID; i++) {
                 if (btc_hh_cb.devices[i].vup_timer) {
                     osi_alarm_free(btc_hh_cb.devices[i].vup_timer);
                 }
@@ -1495,7 +1521,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         break;
     case BTA_HH_ADD_DEV_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_info.status, p_data->dev_info.handle);
-        for (uint8_t i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
+        for (i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
             if (memcmp(btc_hh_cb.added_devices[i].bd_addr, p_data->dev_info.bda, BD_ADDR_LEN) == 0) {
                 if (p_data->dev_info.status == BTA_HH_OK) {
                     btc_hh_cb.added_devices[i].dev_handle = p_data->dev_info.handle;

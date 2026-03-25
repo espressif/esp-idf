@@ -49,9 +49,9 @@ void BTA_HdEnable(tBTA_HD_CBACK *p_cback)
 {
     tBTA_HD_API_ENABLE *p_buf;
     APPL_TRACE_API("%s", __func__);
-    bta_sys_register(BTA_ID_HD, &bta_hd_reg);
-    p_buf = (tBTA_HD_API_ENABLE *)osi_malloc((uint16_t)sizeof(tBTA_HD_API_ENABLE));
+    p_buf = (tBTA_HD_API_ENABLE *)osi_malloc(sizeof(tBTA_HD_API_ENABLE));
     if (p_buf != NULL) {
+        bta_sys_register(BTA_ID_HD, &bta_hd_reg);
         memset(p_buf, 0, sizeof(tBTA_HD_API_ENABLE));
         p_buf->hdr.event = BTA_HD_API_ENABLE_EVT;
         p_buf->p_cback = p_cback;
@@ -89,6 +89,10 @@ void BTA_HdDisable(void)
  ******************************************************************************/
 extern void BTA_HdRegisterApp(tBTA_HD_APP_INFO *p_app_info, tBTA_HD_QOS_INFO *p_in_qos, tBTA_HD_QOS_INFO *p_out_qos)
 {
+    if (p_app_info == NULL || p_in_qos == NULL || p_out_qos == NULL) {
+        APPL_TRACE_ERROR("bad app_info(%p), in_qos(%p) or out_qos(%p)", p_app_info, p_in_qos, p_out_qos);
+        return;
+    }
 
     /* Validate descriptor length before copying */
     if (p_app_info->descriptor.dl_len > BTA_HD_APP_DESCRIPTOR_LEN) {

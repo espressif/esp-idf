@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "bta/bta_api.h"
@@ -46,13 +47,16 @@
 #if HID_DEV_INCLUDED == TRUE
 #include "bta_dm_int.h"
 
+_Static_assert(sizeof(tBTA_HD_QOS_INFO) == sizeof(esp_hidd_qos_param_t),
+               "QoS layout must match between BTA and esp_hidd");
+
 /* HD request events */
 typedef enum { BTC_HD_DUMMY_REQ_EVT = 0 } btc_hd_req_evt_t;
 
 /*******************************************************************************
  *  Static variables
  ******************************************************************************/
-btc_hd_cb_t btc_hd_cb = {0};
+static btc_hd_cb_t btc_hd_cb = {0};
 
 // static tBTA_HD_APP_INFO app_info;
 // static tBTA_HD_QOS_INFO in_qos;
@@ -64,7 +68,7 @@ btc_hd_cb_t btc_hd_cb = {0};
 #define BTC_HD_APP_NAME_LEN 50
 #define BTC_HD_APP_DESCRIPTION_LEN 50
 #define BTC_HD_APP_PROVIDER_LEN 50
-#define BTC_HD_APP_DESCRIPTOR_LEN 2048
+#define BTC_HD_APP_DESCRIPTOR_LEN ESP_HIDD_APP_DESC_LIST_LEN_MAX
 #define COD_HID_KEYBOARD 0x0540
 #define COD_HID_POINTING 0x0580
 #define COD_HID_COMBO 0x05C0
@@ -79,9 +83,9 @@ static void btc_hd_cb_arg_deep_free(btc_msg_t *msg);
 
 static inline void btc_hd_cb_to_app(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
 {
-    esp_hd_cb_t btc_hd_cb = (esp_hd_cb_t)btc_profile_cb_get(BTC_PID_HD);
-    if (btc_hd_cb) {
-        btc_hd_cb(event, param);
+    esp_hd_cb_t btc_hd_cbk = (esp_hd_cb_t)btc_profile_cb_get(BTC_PID_HD);
+    if (btc_hd_cbk) {
+        btc_hd_cbk(event, param);
     }
 }
 
@@ -174,13 +178,13 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD *p_data)
         param_len = sizeof(tBTA_HD_CONN);
         break;
     case BTA_HD_GET_REPORT_EVT:
-        param_len += sizeof(tBTA_HD_GET_REPORT);
+        param_len = sizeof(tBTA_HD_GET_REPORT);
         break;
     case BTA_HD_SET_REPORT_EVT:
         param_len = sizeof(tBTA_HD_SET_REPORT);
         break;
     case BTA_HD_SET_PROTOCOL_EVT:
-        param_len += sizeof(p_data->set_protocol);
+        param_len = sizeof(p_data->set_protocol);
         break;
     case BTA_HD_INTR_DATA_EVT:
         param_len = sizeof(tBTA_HD_INTR_DATA);
@@ -262,7 +266,7 @@ static void btc_hd_deinit(void)
             break;
         }
 
-        btc_hd_cb.service_dereg_active = FALSE;
+        btc_hd_cb.service_dereg_active = false;
         // unregister app will also release the connection
         // and disable after receiving unregister event from lower layer
         if (is_hidd_app_register()) {
@@ -296,6 +300,22 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
     BTC_TRACE_API("%s", __func__);
     esp_hidd_status_t ret = ESP_HIDD_SUCCESS;
     do {
+        if (!p_app_param || !p_in_qos || !p_out_qos) {
+            BTC_TRACE_ERROR("bad app_param(%p), in_qos(%p) or out_qos(%p)", p_app_param, p_in_qos, p_out_qos);
+            ret = ESP_HIDD_ERROR;
+            break;
+        }
+        if ((p_app_param->desc_list_len <= 0) || (p_app_param->desc_list_len > BTC_HD_APP_DESCRIPTOR_LEN) || !p_app_param->desc_list) {
+            BTC_TRACE_ERROR("bad desc_list_len (%d) or desc_list(%p)", p_app_param->desc_list_len, p_app_param->desc_list);
+            ret = ESP_HIDD_ERROR;
+            break;
+        }
+        if (!p_app_param->name || !p_app_param->description || !p_app_param->provider) {
+            BTC_TRACE_ERROR("bad name(%p), description(%p) or provider(%p)", p_app_param->name, p_app_param->description, p_app_param->provider);
+            ret = ESP_HIDD_ERROR;
+            break;
+        }
+
         if (!is_hidd_init()) {
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
@@ -312,20 +332,15 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
             break;
         }
 
-        if (!p_app_param->name || !p_app_param->description || !p_app_param->provider ||
-            !p_app_param->desc_list || (p_app_param->desc_list_len <= 0)) {
-            ret = ESP_HIDD_ERROR;
-            break;
-        }
-
         size_t name_len = strnlen(p_app_param->name, BTC_HD_APP_NAME_LEN);
         size_t description_len = strnlen(p_app_param->description, BTC_HD_APP_DESCRIPTION_LEN);
         size_t provider_len = strnlen(p_app_param->provider, BTC_HD_APP_PROVIDER_LEN);
+        size_t desc_list_len = (size_t)p_app_param->desc_list_len;
 
         if ((btc_hd_cb.app_info.p_name = (char *)osi_malloc(name_len + 1)) == NULL ||
             (btc_hd_cb.app_info.p_description = (char *)osi_malloc(description_len + 1)) == NULL ||
             (btc_hd_cb.app_info.p_provider = (char *)osi_malloc(provider_len + 1)) == NULL ||
-            (btc_hd_cb.app_info.descriptor.dsc_list = (uint8_t *)osi_malloc(p_app_param->desc_list_len)) == NULL) {
+            (btc_hd_cb.app_info.descriptor.dsc_list = (uint8_t *)osi_malloc(desc_list_len)) == NULL) {
             BTC_TRACE_ERROR(
                 "%s malloc app_info failed! p_name:%p, p_description:%p, p_provider:%p, descriptor.dsc_list:%p",
                 __func__, btc_hd_cb.app_info.p_name, btc_hd_cb.app_info.p_description, btc_hd_cb.app_info.p_provider,
@@ -339,22 +354,12 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
         btc_hd_cb.app_info.p_description[description_len] = '\0';
         memcpy(btc_hd_cb.app_info.p_provider, p_app_param->provider, provider_len);
         btc_hd_cb.app_info.p_provider[provider_len] = '\0';
-        memcpy(btc_hd_cb.app_info.descriptor.dsc_list, p_app_param->desc_list, p_app_param->desc_list_len);
+        memcpy(btc_hd_cb.app_info.descriptor.dsc_list, p_app_param->desc_list, desc_list_len);
         btc_hd_cb.app_info.subclass = p_app_param->subclass;
         btc_hd_cb.app_info.descriptor.dl_len = p_app_param->desc_list_len;
 
-        btc_hd_cb.in_qos.service_type = p_in_qos->service_type;
-        btc_hd_cb.in_qos.token_rate = p_in_qos->token_rate;
-        btc_hd_cb.in_qos.token_bucket_size = p_in_qos->token_bucket_size;
-        btc_hd_cb.in_qos.peak_bandwidth = p_in_qos->peak_bandwidth;
-        btc_hd_cb.in_qos.access_latency = p_in_qos->access_latency;
-        btc_hd_cb.in_qos.delay_variation = p_in_qos->delay_variation;
-        btc_hd_cb.out_qos.service_type = p_out_qos->service_type;
-        btc_hd_cb.out_qos.token_rate = p_out_qos->token_rate;
-        btc_hd_cb.out_qos.token_bucket_size = p_out_qos->token_bucket_size;
-        btc_hd_cb.out_qos.peak_bandwidth = p_out_qos->peak_bandwidth;
-        btc_hd_cb.out_qos.access_latency = p_out_qos->access_latency;
-        btc_hd_cb.out_qos.delay_variation = p_out_qos->delay_variation;
+        memcpy(&btc_hd_cb.in_qos, p_in_qos, sizeof(tBTA_HD_QOS_INFO));
+        memcpy(&btc_hd_cb.out_qos, p_out_qos, sizeof(tBTA_HD_QOS_INFO));
 
         BTA_HdRegisterApp(&btc_hd_cb.app_info, &btc_hd_cb.in_qos, &btc_hd_cb.out_qos);
     } while(0);
@@ -404,7 +409,7 @@ static void btc_hd_unregister_app(bool need_deinit)
             ret = ESP_HIDD_BUSY;
             break;
         }
-        btc_hd_cb.service_dereg_active = TRUE;
+        btc_hd_cb.service_dereg_active = true;
 
         if (need_deinit) {
             btc_hd_cb.status = BTC_HD_DISABLING;
@@ -596,10 +601,10 @@ static void btc_hd_send_report(esp_hidd_report_type_t type, uint8_t id, uint16_t
 
         if (type == ESP_HIDD_REPORT_TYPE_INTRDATA) {
             report.type = ESP_HIDD_REPORT_TYPE_INPUT;
-            report.use_intr = TRUE;
+            report.use_intr = true;
         } else {
             report.type = (type & 0x03);
-            report.use_intr = FALSE;
+            report.use_intr = false;
         }
 
         report.id = id;
@@ -728,6 +733,19 @@ void btc_hd_call_arg_deep_free(btc_msg_t *msg)
     case BTC_HD_SEND_REPORT_EVT:
         utl_freebuf((void **)&arg->send_report.data);
         break;
+    case BTC_HD_REGISTER_APP_EVT: {
+        esp_hidd_app_param_t *app_param = arg->register_app.app_param;
+        if (app_param) {
+            utl_freebuf((void **)&app_param->name);
+            utl_freebuf((void **)&app_param->description);
+            utl_freebuf((void **)&app_param->provider);
+            utl_freebuf((void **)&app_param->desc_list);
+        }
+        utl_freebuf((void **)&arg->register_app.app_param);
+        utl_freebuf((void **)&arg->register_app.in_qos);
+        utl_freebuf((void **)&arg->register_app.out_qos);
+        break;
+    }
     default:
         break;
     }
@@ -817,7 +835,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
         if (p_data->status == BTA_HD_OK){
             btc_hd_cb.status = BTC_HD_DISABLED;
             if (btc_hd_cb.service_dereg_active) {
-                btc_hd_cb.service_dereg_active = FALSE;
+                btc_hd_cb.service_dereg_active = false;
             }
             free_app_info_param();
             memset(&btc_hd_cb, 0, sizeof(btc_hd_cb));
@@ -829,7 +847,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
         break;
     case BTA_HD_REGISTER_APP_EVT:
         if (p_data->reg_status.status == BTA_HD_OK) {
-            btc_hd_cb.app_registered = TRUE;
+            btc_hd_cb.app_registered = true;
         }
         param.register_app.status = p_data->reg_status.status;
         param.register_app.in_use = p_data->reg_status.in_use;
@@ -841,7 +859,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
         btc_hd_cb_to_app(ESP_HIDD_REGISTER_APP_EVT, &param);
         break;
     case BTA_HD_UNREGISTER_APP_EVT:
-        btc_hd_cb.app_registered = FALSE;
+        btc_hd_cb.app_registered = false;
         param.unregister_app.status = p_data->status;
         btc_hd_cb_to_app(ESP_HIDD_UNREGISTER_APP_EVT, &param);
         if (btc_hd_cb.status == BTC_HD_DISABLING) {
@@ -858,13 +876,13 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             // if (check_cod_hid(addr)) {
             //     /* Incoming connection from hid device, reject it */
             //     BTC_TRACE_WARNING("remote device is not hid host, disconnecting");
-            //     btc_hd_cb.forced_disc = TRUE;
+            //     btc_hd_cb.forced_disc = true;
             //     BTA_HdDisconnect();
             //     break;
             // }
             // btc_storage_set_hidd((bt_bdaddr_t *)&p_data->conn.bda);
             btc_hd_cb.status = BTC_HD_CONNECTED;
-            btc_hd_cb.in_use = TRUE;
+            btc_hd_cb.in_use = true;
         } else if (p_data->conn.conn_status == BTA_HD_CONN_STATE_DISCONNECTED) {
             btc_hd_cb.status = BTC_HD_DISCONNECTED;
         }
@@ -881,7 +899,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
                 bt_bdaddr_t *addr = (bt_bdaddr_t *)&p_data->conn.bda;
                 BTC_TRACE_WARNING("remote device was forcefully disconnected");
                 btc_hd_remove_device(*addr);
-                btc_hd_cb.forced_disc = FALSE;
+                btc_hd_cb.forced_disc = false;
                 break;
             }
         }
@@ -937,7 +955,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
         }
 
-        btc_hd_cb.in_use = FALSE;
+        btc_hd_cb.in_use = false;
 
         param.vc_unplug.status = p_data->conn.status;
         param.vc_unplug.conn_status = p_data->conn.conn_status;
@@ -977,6 +995,75 @@ void btc_hd_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             BTC_TRACE_ERROR("%s %d osi_malloc failed\n", __func__, msg->act);
         }
         break;
+    case BTC_HD_REGISTER_APP_EVT: {
+        esp_hidd_app_param_t *src_app_param = src->register_app.app_param;
+        esp_hidd_qos_param_t *src_in_qos = src->register_app.in_qos;
+        esp_hidd_qos_param_t *src_out_qos = src->register_app.out_qos;
+
+        dst->register_app.app_param = NULL;
+        dst->register_app.in_qos = NULL;
+        dst->register_app.out_qos = NULL;
+
+        if (!src_app_param || !src_in_qos || !src_out_qos) {
+            BTC_TRACE_ERROR("bad app_param(%p), in_qos(%p) or out_qos(%p)", src_app_param, src_in_qos, src_out_qos);
+            break;
+        }
+        if ((src_app_param->desc_list_len <= 0) || (src_app_param->desc_list_len > BTC_HD_APP_DESCRIPTOR_LEN) || !src_app_param->desc_list) {
+            BTC_TRACE_ERROR("bad desc_list_len (%d) or desc_list(%p)", src_app_param->desc_list_len, src_app_param->desc_list);
+            break;
+        }
+        if (!src_app_param->name || !src_app_param->description || !src_app_param->provider) {
+            BTC_TRACE_ERROR("bad name(%p), description(%p) or provider(%p)", src_app_param->name, src_app_param->description, src_app_param->provider);
+            break;
+        }
+
+        esp_hidd_app_param_t *dst_app_param = (esp_hidd_app_param_t *)osi_malloc(sizeof(esp_hidd_app_param_t));
+        esp_hidd_qos_param_t *dst_in_qos = (esp_hidd_qos_param_t *)osi_malloc(sizeof(esp_hidd_qos_param_t));
+        esp_hidd_qos_param_t *dst_out_qos = (esp_hidd_qos_param_t *)osi_malloc(sizeof(esp_hidd_qos_param_t));
+        size_t name_len = strnlen(src_app_param->name, BTC_HD_APP_NAME_LEN);
+        size_t description_len = strnlen(src_app_param->description, BTC_HD_APP_DESCRIPTION_LEN);
+        size_t provider_len = strnlen(src_app_param->provider, BTC_HD_APP_PROVIDER_LEN);
+        size_t desc_list_len = (size_t)src_app_param->desc_list_len;
+        char *name = (char *)osi_malloc(name_len + 1);
+        char *description = (char *)osi_malloc(description_len + 1);
+        char *provider = (char *)osi_malloc(provider_len + 1);
+        uint8_t *desc_list = (uint8_t *)osi_malloc(desc_list_len);
+
+        if (!dst_app_param || !dst_in_qos || !dst_out_qos || !name || !description || !provider || !desc_list) {
+            BTC_TRACE_ERROR("%s %d osi_malloc failed\n", __func__, msg->act);
+            utl_freebuf((void **)&dst_app_param);
+            utl_freebuf((void **)&dst_in_qos);
+            utl_freebuf((void **)&dst_out_qos);
+            utl_freebuf((void **)&name);
+            utl_freebuf((void **)&description);
+            utl_freebuf((void **)&provider);
+            utl_freebuf((void **)&desc_list);
+            break;
+        }
+
+        memcpy(name, src_app_param->name, name_len);
+        name[name_len] = '\0';
+        memcpy(description, src_app_param->description, description_len);
+        description[description_len] = '\0';
+        memcpy(provider, src_app_param->provider, provider_len);
+        provider[provider_len] = '\0';
+        memcpy(desc_list, src_app_param->desc_list, desc_list_len);
+
+        dst_app_param->name = name;
+        dst_app_param->description = description;
+        dst_app_param->provider = provider;
+        dst_app_param->subclass = src_app_param->subclass;
+        dst_app_param->desc_list = desc_list;
+        dst_app_param->desc_list_len = src_app_param->desc_list_len;
+
+        memcpy(dst_in_qos, src_in_qos, sizeof(esp_hidd_qos_param_t));
+        memcpy(dst_out_qos, src_out_qos, sizeof(esp_hidd_qos_param_t));
+
+        dst->register_app.app_param = dst_app_param;
+        dst->register_app.in_qos = dst_in_qos;
+        dst->register_app.out_qos = dst_out_qos;
+        break;
+    }
     default:
         break;
     }
@@ -1000,4 +1087,4 @@ void btc_hd_get_profile_status(esp_hidd_profile_status_t *param)
     }
 }
 
-#endif // HID_DEV_INCLUDED==TRUE
+#endif // HID_DEV_INCLUDED==true
