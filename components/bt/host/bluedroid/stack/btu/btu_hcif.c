@@ -192,12 +192,12 @@ static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btu_ble_create_big_cmd_status(UINT8 status);
 static void btu_ble_big_create_complete_evt(UINT8 *p);
 void btu_ble_big_terminate_cmd_status(UINT8 status);
 static void btu_ble_big_terminate_complete_evt(UINT8 *p);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 static void btu_ble_create_big_sync_cmd_status(UINT8 status);
@@ -570,14 +570,14 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_cis_request_evt(p);
             break;
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
         case HCI_BLE_BIG_CREATE_COMPLETE_EVT:
             btu_ble_big_create_complete_evt(p);
             break;
         case HCI_BLE_BIG_TERMINATE_COMPLETE_EVT:
             btu_ble_big_terminate_complete_evt(p);
             break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
         case HCI_BLE_BIG_SYNC_ESTABLISHED_EVT:
             btu_ble_big_sync_establish_evt(p);
@@ -1636,7 +1636,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
     }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     case HCI_BLE_CREATE_BIG:
     case HCI_BLE_CREATE_BIG_TEST:
         btu_ble_create_big_cmd_status(status);
@@ -1644,7 +1644,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
     case HCI_BLE_TERMINATE_BIG:
         btu_ble_big_terminate_cmd_status(status);
         break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     case HCI_BLE_BIG_CREATE_SYNC:
         btu_ble_create_big_sync_cmd_status(status);
@@ -2540,9 +2540,9 @@ static void btm_ble_resolve_random_addr_adv_ext(void *p_rec, void *p)
 {
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
     BD_ADDR     bda;
-    UINT8       *pp = (UINT8 *)p+4; //jump to the location of bd addr
+    UINT8       *pp = (UINT8 *)p+2; //jump to the location of addr_type
     if (match_rec) {
-        // Assign the original address to be the current report address
+        UINT8_TO_STREAM(pp, match_rec->ble.ble_addr_type);
         memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
         BDADDR_TO_STREAM(pp,bda);
     }
@@ -2556,15 +2556,13 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
     tBTM_BLE_EXT_ADV_REPORT ext_adv_report = {0};
     UINT8 num_reports = {0};
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-    UINT8 *pp = p;
+    UINT8 *pp;
+    BOOLEAN             match = FALSE;
 #endif
     //UINT8 legacy_event_type = 0;
     UINT16 evt_type = 0;
     uint8_t addr_type;
     BD_ADDR bda;
-    #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-    BOOLEAN             match = FALSE;
-    #endif
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -2578,6 +2576,10 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
     }
 
     while (num_reports--) {
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+        /* Save current report start position for address resolution callback */
+        pp = p;
+#endif
         STREAM_TO_UINT16(evt_type, p);
         ext_adv_report.event_type = evt_type & 0x1F;
         if(ext_adv_report.event_type & BTM_BLE_ADV_LEGACY_MASK) {
@@ -2603,8 +2605,9 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
             match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
             if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
                 btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_adv_ext, pp);
-                //the BDADDR may be updated, so read it again
-                p = p - sizeof(bda);
+                //the addr_type and BDADDR may be updated, so read them again
+                p = p - sizeof(bda) - 1;
+                STREAM_TO_UINT8(addr_type, p);
                 STREAM_TO_BDADDR(bda, p);
             }
         }
@@ -2658,6 +2661,13 @@ static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)
         STREAM_TO_UINT8(sync_estab.rsp_slot_delay, p);
         STREAM_TO_UINT8(sync_estab.rsp_slot_spacing, p);
     }
+#else
+    if (v2_evt) {
+        STREAM_SKIP_UINT8(p);
+        STREAM_SKIP_UINT8(p);
+        STREAM_SKIP_UINT8(p);
+        STREAM_SKIP_UINT8(p);
+    }
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
     btm_ble_periodic_adv_sync_establish_evt(&sync_estab);
@@ -2668,15 +2678,15 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt
     tBTM_PERIOD_ADV_REPORT adv_report = {0};
     /* This parameter is intended to be used in a future feature. */
     UINT8 unused = 0;
-    UINT8 min_len = MIN_BLE_PERIODIC_ADV_REPORT_LEN;
+    UINT8 min_len = v2_evt ? (MIN_BLE_PERIODIC_ADV_REPORT_LEN + 3) : MIN_BLE_PERIODIC_ADV_REPORT_LEN;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
         return;
     }
 
-    if (evt_len < MIN_BLE_PERIODIC_ADV_REPORT_LEN) {
-        HCI_TRACE_ERROR("%s, Invalid params, the adv len is too short.", __func__);
+    if (evt_len < min_len) {
+        HCI_TRACE_ERROR("%s, Invalid params, the adv len %d is too short.", __func__, evt_len);
         return;
     }
 
@@ -2688,7 +2698,11 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt
     if (v2_evt) {
         STREAM_TO_UINT16(adv_report.periodic_evt_cnt, p);
         STREAM_TO_UINT8(adv_report.subevt, p);
-        min_len += 3;
+    }
+#else
+    if (v2_evt) {
+        STREAM_SKIP_UINT16(p);
+        STREAM_SKIP_UINT8(p);
     }
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     STREAM_TO_UINT8(adv_report.data_status, p);
@@ -2887,6 +2901,15 @@ static void btu_ble_cis_established_evt(UINT8 *p, bool v2_evt)
         STREAM_TO_UINT24(cis_estab_evt.sdu_int_p_to_c, p);
         STREAM_TO_UINT8(cis_estab_evt.framing, p);
     }
+#else
+    if (v2_evt) {
+        STREAM_SKIP_UINT24(p);
+        STREAM_SKIP_UINT16(p);
+        STREAM_SKIP_UINT16(p);
+        STREAM_SKIP_UINT24(p);
+        STREAM_SKIP_UINT24(p);
+        STREAM_SKIP_UINT8(p);
+    }
 #endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
 
     btm_ble_cis_established_evt(&cis_estab_evt);
@@ -2914,7 +2937,7 @@ static void btu_ble_cis_request_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btu_ble_create_big_cmd_status(UINT8 status)
 {
     if (status != HCI_SUCCESS) {
@@ -2989,7 +3012,7 @@ static void btu_ble_big_terminate_complete_evt(UINT8 *p)
 
     btm_ble_big_terminate_cmpl_evt(&big_term);
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void btu_ble_create_big_sync_cmd_status(UINT8 status)
@@ -3536,6 +3559,8 @@ static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p)
                 HCI_TRACE_ERROR("%s, no memory.", __func__);
             }
         }
+    } else {
+        HCI_TRACE_ERROR("%s, no memory for step_info.", __func__);
     }
 
     btm_ble_cs_subevt_continue_result_evt(&subevt_continue_result);

@@ -1047,6 +1047,7 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn);
 
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
+                                                                       UINT16 skip,
                                                                        UINT16 sync_timeout, UINT8 sync_cte_type);
 
 UINT8 btsnd_hcic_ble_periodic_adv_create_sync_cancel(void);
@@ -1105,11 +1106,11 @@ UINT8 btsnd_hcic_ble_set_default_periodic_adv_sync_trans_params(UINT8 mode, UINT
 #define HCIC_PARAM_SIZE_ISO_ACCEPT_CIS_REQ_PARAMS         2
 #define HCIC_PARAM_SIZE_ISO_REJECT_CIS_REQ_PARAMS         3
 #define HCIC_PARAM_SIZE_ISO_READ_LINK_QUALITY_PARAMS      2
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #define HCIC_PARAM_SIZE_BIG_CREATE_PARAMS                 31
 #define HCIC_PARAM_SIZE_BIG_CREATE_TEST_PARAMS            36
 #define HCIC_PARAM_SIZE_BIG_TERMINATE_PARAMS              2
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define HCIC_PARAM_SIZE_BIG_SYNC_CREATE_PARAMS            55
 #define HCIC_PARAM_SIZE_BIG_SYNC_TERMINATE_PARAMS         1
@@ -1160,7 +1161,7 @@ UINT8 btsnd_hcic_ble_iso_accept_cis_req(uint16_t cis_handle);
 UINT8 btsnd_hcic_ble_iso_reject_cis_req(uint16_t cis_handle, uint8_t reason);
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 UINT8 btsnd_hcic_ble_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
                                 uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
                                 uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
@@ -1173,7 +1174,7 @@ UINT8 btsnd_hcic_ble_big_create_test(uint8_t big_handle, uint8_t adv_handle, uin
                                     uint8_t pto, uint8_t encryption, uint8_t *broadcast_code);
 
 UINT8 btsnd_hcic_ble_big_terminate(uint8_t big_handle, uint8_t reason);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 UINT8 btsnd_hcic_ble_big_sync_create(uint8_t big_handle, uint16_t sync_handle,

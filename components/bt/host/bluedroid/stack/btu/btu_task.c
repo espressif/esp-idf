@@ -564,6 +564,12 @@ void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ti
     osi_mutex_lock(&btu_l2cap_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_l2cap_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, 0);
+        if (alarm == NULL) {
+            HCI_TRACE_ERROR("%s Unable to create alarm", __func__);
+            osi_mutex_unlock(&btu_l2cap_alarm_lock);
+            return;
+        }
+
         hash_map_set(btu_l2cap_alarm_hash_map, p_tle, (void *)alarm);
     }
     osi_mutex_unlock(&btu_l2cap_alarm_lock);

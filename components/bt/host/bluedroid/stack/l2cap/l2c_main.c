@@ -909,7 +909,7 @@ void l2c_init (void)
     l2cb.l2c_ble_fixed_chnls_mask =
         L2CAP_FIXED_CHNL_ATT_BIT | L2CAP_FIXED_CHNL_BLE_SIG_BIT | L2CAP_FIXED_CHNL_SMP_BIT;
 #endif
-
+    // Free callback must be NULL
     l2cb.rcv_pending_q = list_new(NULL);
     if (l2cb.rcv_pending_q == NULL) {
         L2CAP_TRACE_ERROR("%s unable to allocate memory for link layer control block", __func__);
@@ -948,6 +948,10 @@ void l2c_free_p_ccb_pool(void)
 
 void l2c_free(void)
 {
+    // check again
+    if (l2cb.rcv_pending_q && list_length(l2cb.rcv_pending_q) > 0) {
+        assert(0);
+    }
     list_free(l2cb.rcv_pending_q);
     l2cb.rcv_pending_q = NULL;
     l2c_free_p_lcb_pool();
