@@ -406,7 +406,7 @@ void smp_send_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     smp_send_cmd(SMP_OPCODE_ID_ADDR, p_cb);
 
 #if (BLE_INCLUDED == TRUE)
-    tBTM_LE_KEY_VALUE   le_key;
+    tBTM_LE_KEY_VALUE   le_key = {0};
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LID,
                             &le_key, TRUE);
@@ -1440,7 +1440,9 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         if (smp_get_state() == SMP_STATE_BOND_PENDING) {
             if (p_cb->derive_lk) {
                 tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
-                if (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
+                if (p_dev_rec == NULL) {
+                    SMP_TRACE_WARNING("%s device record not found, skip LK derivation", __func__);
+                } else if (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
                     (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
                     SMP_TRACE_DEBUG("%s BREDR key is higher security than existing LE keys, "
                                     "don't derive LK from LTK", __func__);
@@ -1698,7 +1700,11 @@ void smp_both_have_public_keys(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s\n", __func__);
 
     /* invokes DHKey computation */
-    smp_compute_dhkey(p_cb);
+    if (!smp_compute_dhkey(p_cb)) {
+        UINT8 reason = SMP_PAIR_INTERNAL_ERR;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
+    }
 
     /* on slave side invokes sending local public key to the peer */
     if (p_cb->role == HCI_ROLE_SLAVE) {

@@ -680,10 +680,10 @@ BOOLEAN smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
 ** Description      Generate Confirm/Compare Step2:
 **                  p2 = padding || ia || ra
 **
-** Returns          void
+** Returns          FALSE if remote address unavailable, TRUE otherwise
 **
 *******************************************************************************/
-void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
+BOOLEAN smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
 {
     UINT8       *p = (UINT8 *)p2;
     BD_ADDR     remote_bda;
@@ -691,7 +691,7 @@ void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
     SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm\n");
     if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda, &addr_type)) {
         SMP_TRACE_ERROR("can not generate confirm p2 for unknown device\n");
-        return;
+        return FALSE;
     }
 
     SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm\n");
@@ -713,6 +713,7 @@ void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
     SMP_TRACE_DEBUG("p2 = padding || ia || ra");
     smp_debug_print_nbyte_little_endian(p2, (const UINT8 *)"p2", 16);
 #endif
+    return TRUE;
 }
 
 /*******************************************************************************
@@ -776,7 +777,10 @@ static void smp_calculate_comfirm_cont(tSMP_CB *p_cb, tSMP_ENC *p)
     smp_debug_print_nbyte_little_endian (p->param_buf, (const UINT8 *)"C1", 16);
 #endif
 
-    smp_gen_p2_4_confirm(p_cb, p2);
+    if (!smp_gen_p2_4_confirm(p_cb, p2)) {
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
+        return;
+    }
 
     /* calculate p2 = (p1' XOR p2) */
     smp_xor_128(p2, p->param_buf);
@@ -1269,6 +1273,7 @@ void smp_process_private_key(tSMP_CB *p_cb)
             p_cb->loc_publ_key.x[i] = pub_be[1 + BT_OCTET32_LEN - 1 - i];
             p_cb->loc_publ_key.y[i] = pub_be[33 + BT_OCTET32_LEN - 1 - i];
         }
+        psa_ok = TRUE;
 
 mbedtls_pubkey_cleanup:
         /* Clear sensitive data - mbedtls_ecp_keypair_free will zero the private key */
@@ -1334,10 +1339,10 @@ mbedtls_pubkey_cleanup:
 **                    key and peer public key;
 **                  - saves the new public key x-coordinate as DHKey.
 **
-** Returns          void
+** Returns          TRUE if DHKey was computed successfully, FALSE otherwise.
 **
 *******************************************************************************/
-void smp_compute_dhkey (tSMP_CB *p_cb)
+BOOLEAN smp_compute_dhkey (tSMP_CB *p_cb)
 {
     SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
 
@@ -1409,6 +1414,7 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     for (int i = 0; i < BT_OCTET32_LEN; i++) {
         p_cb->dhkey[i] = shared_secret[BT_OCTET32_LEN - 1 - i];
     }
+    psa_ok = TRUE;
 
 mbedtls_dhkey_cleanup:
     /* Clear sensitive data - mbedtls_mpi_free will zero the memory */
@@ -1439,11 +1445,11 @@ mbedtls_dhkey_cleanup:
 
         /* Validate peer public key */
         /* uECC_valid_public_key returns 0 if valid, negative value if invalid */
-        if (uECC_valid_public_key(peer_pub_be, uECC_secp256r1()) < 0) {
+        if (uECC_valid_public_key(peer_pub_be, uECC_secp256r1()) != 0) {
             SMP_TRACE_ERROR("%s Invalid peer public key\n", __FUNCTION__);
             memset(priv_be, 0, sizeof(priv_be));
             memset(peer_pub_be, 0, sizeof(peer_pub_be));
-            return;
+            return FALSE;
         }
 
         /* Compute ECDH shared secret */
@@ -1453,7 +1459,7 @@ mbedtls_dhkey_cleanup:
             memset(priv_be, 0, sizeof(priv_be));
             memset(peer_pub_be, 0, sizeof(peer_pub_be));
             memset(shared_secret, 0, sizeof(shared_secret));
-            return;
+            return FALSE;
         }
 
         /* Convert shared secret from big-endian to little-endian for DHKey */
@@ -1474,9 +1480,16 @@ mbedtls_dhkey_cleanup:
     memcpy(peer_publ_key.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
     memcpy(peer_publ_key.y, p_cb->peer_publ_key.y, BT_OCTET32_LEN);
 
+    if (!ECC_CheckPointIsInElliCur_P256(&peer_publ_key)) {
+        SMP_TRACE_ERROR("%s Invalid peer public key\n", __FUNCTION__);
+        memset(private_key, 0, sizeof(private_key));
+        return FALSE;
+    }
+
     ECC_PointMult(&new_publ_key, &peer_publ_key, (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
 
     memcpy(p_cb->dhkey, new_publ_key.x, BT_OCTET32_LEN);
+    memset(private_key, 0, sizeof(private_key));
 #endif /* SMP_CRYPTO_MBEDTLS */
 
     smp_debug_print_nbyte_little_endian (p_cb->dhkey, (const UINT8 *)"DHKey",
@@ -1488,6 +1501,7 @@ mbedtls_dhkey_cleanup:
                                          BT_OCTET32_LEN);
     smp_debug_print_nbyte_little_endian (p_cb->peer_publ_key.y, (const UINT8 *)"rem public(y)",
                                          BT_OCTET32_LEN);
+    return TRUE;
 }
 
 /*******************************************************************************

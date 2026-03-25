@@ -262,7 +262,7 @@ void multiprecision_mult(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
     DWORD V;
 
     U = V = W = 0;
-    multiprecision_init(c, keyLength);
+    multiprecision_init(c, 2 * keyLength);
 
     //assume little endian right now
     for (uint32_t i = 0; i < keyLength; i++) {
@@ -340,7 +340,7 @@ void multiprecision_fast_mod(DWORD *c, DWORD *a)
     c[2] += V;
     V = c[2] < V;
     c[2] += U;
-    V = c[2] < U;
+    V += c[2] < U;
     c[3] += V;
     V = c[3] < V;
     c[4] += V;
@@ -594,6 +594,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
 
 void multiprecision_inv_mod(DWORD *aminus, DWORD *u, uint32_t keyLength)
 {
+    DWORD u_local[KEY_LENGTH_DWORDS_P256];
     DWORD v[KEY_LENGTH_DWORDS_P256];
     DWORD A[KEY_LENGTH_DWORDS_P256 + 1];
     DWORD C[KEY_LENGTH_DWORDS_P256 + 1];
@@ -605,14 +606,15 @@ void multiprecision_inv_mod(DWORD *aminus, DWORD *u, uint32_t keyLength)
         modp = curve.p;
     }
 
+    multiprecision_copy(u_local, u, keyLength);
     multiprecision_copy(v, modp, keyLength);
     multiprecision_init(A, keyLength);
     multiprecision_init(C, keyLength);
     A[0] = 1;
 
-    while (!multiprecision_iszero(u, keyLength)) {
-        while (!(u[0] & 0x01)) { // u is even
-            multiprecision_rshift(u, u, keyLength);
+    while (!multiprecision_iszero(u_local, keyLength)) {
+        while (!(u_local[0] & 0x01)) { // u is even
+            multiprecision_rshift(u_local, u_local, keyLength);
             if (!(A[0] & 0x01)) { // A is even
                 multiprecision_rshift(A, A, keyLength);
             } else {
@@ -633,11 +635,11 @@ void multiprecision_inv_mod(DWORD *aminus, DWORD *u, uint32_t keyLength)
             }
         }
 
-        if (multiprecision_compare(u, v, keyLength) >= 0) {
-            multiprecision_sub(u, u, v, keyLength);
+        if (multiprecision_compare(u_local, v, keyLength) >= 0) {
+            multiprecision_sub(u_local, u_local, v, keyLength);
             multiprecision_sub_mod(A, A, C, keyLength);
         } else {
-            multiprecision_sub(v, v, u, keyLength);
+            multiprecision_sub(v, v, u_local, keyLength);
             multiprecision_sub_mod(C, C, A, keyLength);
         }
     }
