@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,8 +43,15 @@ const uint8_t *simple_ble_get_uuid128(uint16_t handle)
 {
     const uint8_t *uuid128_ptr;
 
+    if (g_ble_cfg_p == NULL || g_gatt_table_map == NULL) {
+        return NULL;
+    }
+
     for (int i = 0; i < g_ble_max_gatt_table_size; i++) {
         if (g_gatt_table_map[i] == handle) {
+            if (g_ble_cfg_p->gatt_db[i].att_desc.uuid_length != ESP_UUID_LEN_128) {
+                return NULL;
+            }
             uuid128_ptr = (const uint8_t *) g_ble_cfg_p->gatt_db[i].att_desc.uuid_p;
             return uuid128_ptr;
         }
@@ -52,16 +59,31 @@ const uint8_t *simple_ble_get_uuid128(uint16_t handle)
     return NULL;
 }
 
+static void simple_ble_set_random_addr_if_configured(void)
+{
+    if (g_ble_cfg_p->ble_addr == NULL) {
+        return;
+    }
+
+    esp_err_t err = esp_ble_gap_set_rand_addr(g_ble_cfg_p->ble_addr);
+    if (err == ESP_OK) {
+        g_ble_cfg_p->adv_params.own_addr_type = BLE_ADDR_TYPE_RANDOM;
+    } else {
+        ESP_LOGW(TAG, "Failed to set random address, using configured address type");
+    }
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
+    if (g_ble_cfg_p == NULL) {
+        return;
+    }
+
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
         adv_config_done &= (~adv_config_flag);
 
-        if (g_ble_cfg_p->ble_addr) {
-            esp_ble_gap_set_rand_addr(g_ble_cfg_p->ble_addr);
-            g_ble_cfg_p->adv_params.own_addr_type = BLE_ADDR_TYPE_RANDOM;
-        }
+        simple_ble_set_random_addr_if_configured();
 
         if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
@@ -70,10 +92,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
         adv_config_done &= (~scan_rsp_config_flag);
 
-        if (g_ble_cfg_p->ble_addr) {
-            esp_ble_gap_set_rand_addr(g_ble_cfg_p->ble_addr);
-            g_ble_cfg_p->adv_params.own_addr_type = BLE_ADDR_TYPE_RANDOM;
-        }
+        simple_ble_set_random_addr_if_configured();
 
         if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
@@ -96,7 +115,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         if (param->reg.status == ESP_GATT_OK) {
             gatts_if = p_gatts_if;
         } else {
-            ESP_LOGE(TAG, "reg app failed, app_id 0x0x%x, status %d",
+            ESP_LOGE(TAG, "reg app failed, app_id 0x%x, status %d",
                      param->reg.app_id,
                      param->reg.status);
             return;
@@ -107,8 +126,15 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         return;
     }
 
+    if (g_ble_cfg_p == NULL) {
+        return;
+    }
+
     switch (event) {
     case ESP_GATTS_REG_EVT:
+        if (g_ble_cfg_p == NULL) {
+            return;
+        }
         ret = esp_ble_gatts_create_attr_tab(g_ble_cfg_p->gatt_db, gatts_if, g_ble_cfg_p->gatt_db_count, service_instance_id);
         if (ret) {
             ESP_LOGE(TAG, "create attr table failed, error code = 0x%x", ret);
@@ -133,17 +159,23 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         adv_config_done |= scan_rsp_config_flag;
         break;
     case ESP_GATTS_READ_EVT:
-        g_ble_cfg_p->read_fn(event, gatts_if, param);
+        if (g_ble_cfg_p) {
+            g_ble_cfg_p->read_fn(event, gatts_if, param);
+        }
         break;
     case ESP_GATTS_WRITE_EVT:
-        g_ble_cfg_p->write_fn(event, gatts_if, param);
+        if (g_ble_cfg_p) {
+            g_ble_cfg_p->write_fn(event, gatts_if, param);
+        }
         break;
     case ESP_GATTS_EXEC_WRITE_EVT:
-        g_ble_cfg_p->exec_write_fn(event, gatts_if, param);
+        if (g_ble_cfg_p) {
+            g_ble_cfg_p->exec_write_fn(event, gatts_if, param);
+        }
         break;
     case ESP_GATTS_MTU_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
-        if (g_ble_cfg_p->set_mtu_fn) {
+        if (g_ble_cfg_p && g_ble_cfg_p->set_mtu_fn) {
             g_ble_cfg_p->set_mtu_fn(event, gatts_if, param);
         }
         break;
@@ -155,7 +187,9 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_CONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
-        g_ble_cfg_p->connect_fn(event, gatts_if, param);
+        if (g_ble_cfg_p) {
+            g_ble_cfg_p->connect_fn(event, gatts_if, param);
+        }
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
 	memcpy(s_cached_remote_bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
@@ -168,17 +202,26 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
-        g_ble_cfg_p->disconnect_fn(event, gatts_if, param);
+        if (g_ble_cfg_p) {
+            g_ble_cfg_p->disconnect_fn(event, gatts_if, param);
+        }
         memset(s_cached_remote_bda, 0, sizeof(esp_bd_addr_t));
-        esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
+        if (g_ble_cfg_p) {
+            esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
+        }
         break;
     case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
         if (param->add_attr_tab.status != ESP_GATT_OK) {
             ESP_LOGE(TAG, "creating the attribute table failed, error code=0x%x", param->add_attr_tab.status);
+        } else if (g_ble_cfg_p == NULL) {
+            ESP_LOGE(TAG, "BLE config unavailable for attribute table event");
         } else if (param->add_attr_tab.num_handle != g_ble_cfg_p->gatt_db_count) {
             ESP_LOGE(TAG, "created attribute table abnormally ");
         } else {
             ESP_LOGD(TAG, "created attribute table successfully, the number handle = %d", param->add_attr_tab.num_handle);
+            free(g_gatt_table_map);
+            g_gatt_table_map = NULL;
+            g_ble_max_gatt_table_size = 0;
             g_gatt_table_map = (uint16_t *) calloc(param->add_attr_tab.num_handle, sizeof(uint16_t));
             if (g_gatt_table_map == NULL) {
                 ESP_LOGE(TAG, "Memory allocation for GATT_TABLE_MAP failed ");
@@ -217,10 +260,13 @@ simple_ble_cfg_t *simple_ble_init(void)
 
 esp_err_t simple_ble_deinit(void)
 {
-    free(g_ble_cfg_p->gatt_db);
-    g_ble_cfg_p->gatt_db = NULL;
-    free(g_ble_cfg_p);
+    simple_ble_cfg_t *ble_cfg = g_ble_cfg_p;
     g_ble_cfg_p = NULL;
+    if (ble_cfg) {
+        free(ble_cfg->gatt_db);
+        ble_cfg->gatt_db = NULL;
+        free(ble_cfg);
+    }
 
     free(g_gatt_table_map);
     g_gatt_table_map = NULL;
@@ -246,7 +292,8 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 
 #ifdef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
     ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
-    return ESP_FAIL;
+    ret = ESP_FAIL;
+    goto err_bt_deinit;
 #elif CONFIG_BTDM_CTRL_MODE_BTDM
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
 #else  //For all other chips supporting BLE Only
@@ -255,7 +302,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 
     if (ret) {
         ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
-        return ret;
+        goto err_bt_deinit;
     }
 #endif
 
@@ -263,37 +310,38 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(TAG, "%s init bluetooth failed %d", __func__, ret);
-        return ret;
+        goto err_bt_disable;
     }
 
     ret = esp_bluedroid_enable();
     if (ret) {
         ESP_LOGE(TAG, "%s enable bluetooth failed %d", __func__, ret);
-        return ret;
+        goto err_bluedroid_deinit;
     }
-
     ret = esp_ble_gatts_register_callback(gatts_profile_event_handler);
     if (ret) {
         ESP_LOGE(TAG, "gatts register error, error code = 0x%x", ret);
-        return ret;
+        goto err_bluedroid_disable;
     }
 
     ret = esp_ble_gap_register_callback(gap_event_handler);
     if (ret) {
         ESP_LOGE(TAG, "gap register error, error code = 0x%x", ret);
-        return ret;
+        goto err_bluedroid_disable;
     }
 
     uint16_t app_id = 0x55;
     ret = esp_ble_gatts_app_register(app_id);
     if (ret) {
         ESP_LOGE(TAG, "gatts app register error, error code = 0x%x", ret);
-        return ret;
+        goto err_bluedroid_disable;
     }
 
     esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
     if (local_mtu_ret) {
         ESP_LOGE(TAG, "set local  MTU failed, error code = 0x%x", local_mtu_ret);
+        ret = local_mtu_ret;
+        goto err_bluedroid_disable;
     }
     ESP_LOGD(TAG, "Free mem at end of simple_ble_init %" PRIu32, esp_get_free_heap_size());
 
@@ -317,6 +365,18 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     return ESP_OK;
+
+err_bluedroid_disable:
+    esp_bluedroid_disable();
+err_bluedroid_deinit:
+    esp_bluedroid_deinit();
+err_bt_disable:
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
+    esp_bt_controller_disable();
+err_bt_deinit:
+    esp_bt_controller_deinit();
+#endif
+    return ret;
 }
 
 esp_err_t simple_ble_stop(void)
@@ -356,4 +416,16 @@ esp_err_t simple_ble_stop(void)
 esp_err_t simple_ble_disconnect(void)
 {
     return esp_ble_gap_disconnect(s_cached_remote_bda);
+}
+
+void simple_ble_gatts_clear_char_values(void)
+{
+    if (g_ble_cfg_p == NULL || g_gatt_table_map == NULL) {
+        return;
+    }
+    for (int i = 0; i < g_ble_max_gatt_table_size; i++) {
+        if (g_ble_cfg_p->gatt_db[i].att_desc.uuid_length == ESP_UUID_LEN_128) {
+            esp_ble_gatts_set_attr_value(g_gatt_table_map[i], 0, NULL);
+        }
+    }
 }
