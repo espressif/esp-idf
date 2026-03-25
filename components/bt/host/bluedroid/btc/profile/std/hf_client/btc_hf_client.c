@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
 #include "common/bt_defs.h"
 #include "device/bdaddr.h"
 #include "btc/btc_dm.h"
@@ -537,6 +536,8 @@ static bt_status_t btc_hf_client_send_chld_cmd(esp_hf_chld_type_t type, int idx)
         }
         return BT_STATUS_UNSUPPORTED;
 
+    default:
+        return BT_STATUS_FAIL;
     }
     return BT_STATUS_SUCCESS;
 }
@@ -1069,7 +1070,6 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                     param.cnum.type = ESP_HF_SUBSCRIBER_SERVICE_TYPE_UNKNOWN;
                 }
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CNUM_EVT, &param);
-                break;
             } while (0);
             break;
         case BTA_HF_CLIENT_BTRH_EVT:
