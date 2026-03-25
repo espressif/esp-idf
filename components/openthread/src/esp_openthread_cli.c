@@ -64,8 +64,12 @@ static int cli_output_callback(void *context, const char *format, va_list args)
 {
     char prompt_check[3];
     int ret = 0;
+    va_list args_copy;
 
-    vsnprintf(prompt_check, sizeof(prompt_check), format, args);
+    va_copy(args_copy, args);
+    vsnprintf(prompt_check, sizeof(prompt_check), format, args_copy);
+    va_end(args_copy);
+
     if (!strncmp(prompt_check, "> ", sizeof(prompt_check)) && s_cli_task) {
         xTaskNotifyGive(s_cli_task);
     } else {
@@ -93,7 +97,11 @@ esp_err_t esp_openthread_cli_input(const char *line)
 
     ESP_RETURN_ON_FALSE(line_copy != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to copy OpenThread CLI line input");
 
-    return esp_openthread_task_queue_post(line_handle_task, line_copy);
+    esp_err_t ret = esp_openthread_task_queue_post(line_handle_task, line_copy);
+    if (ret != ESP_OK) {
+        free(line_copy);
+    }
+    return ret;
 }
 
 static int ot_cli_console_callback(int argc, char **argv)
@@ -140,6 +148,11 @@ static void ot_cli_loop(void *context)
 
     console_config.hint_color = -1;
     ret = esp_console_init(&console_config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to initialize console: %s", esp_err_to_name(ret));
+        vTaskDelete(NULL);
+        return;
+    }
 
     linenoiseSetMultiLine(true);
     linenoiseHistorySetMaxLen(100);
@@ -183,9 +196,8 @@ static void ot_cli_loop(void *context)
     }
 }
 
-void esp_openthread_cli_create_task()
+void esp_openthread_cli_create_task(void)
 {
-    xTaskCreate(ot_cli_loop, "ot_cli", 4096, xTaskGetCurrentTaskHandle(), 4, &s_cli_task);
-
-    return;
+    BaseType_t ret = xTaskCreate(ot_cli_loop, "ot_cli", 4096, xTaskGetCurrentTaskHandle(), 4, &s_cli_task);
+    ESP_RETURN_ON_FALSE(ret == pdPASS, , OT_PLAT_LOG_TAG, "Failed to create OpenThread CLI task");
 }

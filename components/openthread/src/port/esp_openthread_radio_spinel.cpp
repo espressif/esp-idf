@@ -414,7 +414,11 @@ otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArg
     char *end = cmd + sizeof(cmd);
 
     for (int index = 0; index < aArgsLength; index++) {
-        cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", aArgs[index]);
+        if (end > cur + strlen(aArgs[index])) {
+            cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", aArgs[index]);
+        } else {
+            return OT_ERROR_INVALID_ARGS;
+        }
     }
 
     return s_radio.PlatDiagProcess(cmd);

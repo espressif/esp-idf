@@ -81,7 +81,7 @@ static uint32_t s_csl_sample_time;
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 static uint32_t s_mac_frame_counter;
 static uint8_t s_key_id;
-static struct otMacKeyMaterial s_pervious_key;
+static struct otMacKeyMaterial s_previous_key;
 static struct otMacKeyMaterial s_current_key;
 static struct otMacKeyMaterial s_next_key;
 #if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
@@ -101,7 +101,7 @@ static void ot_set_security_key_from_key_material(struct otMacKeyMaterial a_key_
     /* Key bytes are pre-exported in task context (otPlatRadioSetMacKey).
      * Identify which cached buffer to use by comparing the key reference.
      * Jira TZ-2472 */
-    if (a_key_material.mKeyMaterial.mKeyRef == s_pervious_key.mKeyMaterial.mKeyRef) {
+    if (a_key_material.mKeyMaterial.mKeyRef == s_previous_key.mKeyMaterial.mKeyRef) {
         memcpy(s_security_key, s_pervious_key_bytes, 16);
     } else if (a_key_material.mKeyMaterial.mKeyRef == s_next_key.mKeyMaterial.mKeyRef) {
         memcpy(s_security_key, s_next_key_bytes, 16);
@@ -165,7 +165,7 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
 
 void esp_openthread_radio_deinit(void)
 {
-    if (s_radio_event_fd > 0) {
+    if (s_radio_event_fd != -1) {
         close(s_radio_event_fd);
         s_radio_event_fd = -1;
     }
@@ -521,7 +521,7 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
     assert(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
     s_key_id = aKeyId;
-    s_pervious_key = *aPrevKey;
+    s_previous_key = *aPrevKey;
     s_current_key  = *aCurrKey;
     s_next_key     = *aNextKey;
 #if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
@@ -656,7 +656,7 @@ static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_f
     if (key_id == s_key_id) {
         key = &s_current_key;
     } else if (key_id == s_key_id - 1) {
-        key = &s_pervious_key;
+        key = &s_previous_key;
     } else if (key_id == s_key_id + 1) {
         key = &s_next_key;
     } else {
@@ -729,6 +729,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
 
     if (atomic_load(&s_recv_queue.used) == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         ESP_EARLY_LOGE(OT_PLAT_LOG_TAG, "radio receive buffer full!");
+        esp_ieee802154_receive_handle_done(data);
         return;
     }
 
