@@ -1899,15 +1899,31 @@ void l2cu_disconnect_chnl (tL2C_CCB *p_ccb)
     UINT16      local_cid = p_ccb->local_cid;
 
     if (local_cid >= L2CAP_BASE_APPL_CID) {
-        tL2CA_DISCONNECT_IND_CB   *p_disc_cb = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
+        tL2CA_DISCONNECT_IND_CB   *p_disc_cb = NULL;
+
+        if (p_ccb->p_rcb != NULL) {
+            p_disc_cb = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
+        }
 
         L2CAP_TRACE_WARNING ("L2CAP - disconnect_chnl CID: 0x%04x", local_cid);
 
         l2cu_send_peer_disc_req (p_ccb);
 
+        /*
+         * l2cu_send_peer_disc_req drains xmit_hold_q in basic FCR mode.
+         * Free the queue and NULL it here to prevent l2cu_release_ccb from
+         * calling fixed_queue_free again on already-dequeued buffers.
+         */
+        if (p_ccb->xmit_hold_q != NULL) {
+            fixed_queue_free(p_ccb->xmit_hold_q, osi_free_func);
+            p_ccb->xmit_hold_q = NULL;
+        }
+
         l2cu_release_ccb (p_ccb);
 
-        (*p_disc_cb)(local_cid, FALSE);
+        if (p_disc_cb) {
+            (*p_disc_cb)(local_cid, FALSE);
+        }
     } else {
         /* failure on the AMP channel, probably need to disconnect ACL */
         L2CAP_TRACE_ERROR ("L2CAP - disconnect_chnl CID: 0x%04x Ignored", local_cid);

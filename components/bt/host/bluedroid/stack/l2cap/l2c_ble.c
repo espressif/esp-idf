@@ -828,7 +828,6 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16(mps, p);
         STREAM_TO_UINT16(credits, p);
         L2CAP_TRACE_DEBUG("%s spsm %x, scid %x", __func__, spsm, scid);
-        UNUSED(spsm);
 
         p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, scid);
         if (p_ccb) {
@@ -836,12 +835,11 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
         }
 
-        #if 0
         p_rcb = l2cu_find_ble_rcb_by_psm(spsm);
         if (p_rcb == NULL) {
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_NO_PSM);
             break;
         }
-        #endif
 
         p_ccb = l2cu_allocate_ccb(p_lcb, 0);
         if (p_ccb == NULL) {
@@ -860,6 +858,34 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         p_ccb->peer_conn_cfg.credits = credits;
 
         l2cu_send_peer_ble_credit_based_conn_res(p_ccb, L2CAP_LE_RESULT_CONN_OK);
+        break;
+    }
+    case L2CAP_CMD_BLE_FLOW_CTRL_CREDIT: {
+        if (cmd_len < L2CAP_CMD_BLE_FLOW_CTRL_CREDIT_LEN) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - flow ctrl credit too short: %d", cmd_len);
+            return;
+        }
+        tL2C_CCB *p_ccb = NULL;
+        UINT16 lcid;
+        UINT16 credit;
+        STREAM_TO_UINT16(lcid, p);
+        STREAM_TO_UINT16(credit, p);
+
+        p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
+        if (p_ccb == NULL) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - flow ctrl credit for unknown CID: 0x%04x", lcid);
+            break;
+        }
+
+        if ((p_ccb->peer_conn_cfg.credits + credit) > L2CAP_LE_MAX_CREDIT) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - credit overflow, disconnecting CID: 0x%04x", lcid);
+            l2cble_send_peer_disc_req(p_ccb);
+        } else {
+            p_ccb->peer_conn_cfg.credits += credit;
+            L2CAP_TRACE_DEBUG ("L2CAP - LE - credits updated to %d for CID: 0x%04x",
+                               p_ccb->peer_conn_cfg.credits, lcid);
+            l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
+        }
         break;
     }
     case L2CAP_CMD_DISC_REQ: {
@@ -988,13 +1014,20 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     uint32_t link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
     if(GATTC_CONNECT_RETRY_COUNT) {
         if(!p_lcb->retry_create_con) {
-            p_lcb->start_time_s = (esp_system_get_time()/1000);
+            p_lcb->start_time_s = esp_system_get_time() / 1000;
         }
-        uint32_t current_time = (esp_system_get_time()/1000);
-        link_timeout = (L2CAP_BLE_LINK_CONNECT_TOUT*1000 - (current_time - p_lcb->start_time_s))/1000;
+        int64_t current_time = esp_system_get_time() / 1000;
+        int64_t elapsed_ms = current_time - p_lcb->start_time_s;
+        int64_t timeout_ms = (int64_t)L2CAP_BLE_LINK_CONNECT_TOUT * 1000;
+        int64_t remaining_ms = timeout_ms - elapsed_ms;
 
-        if(link_timeout == 0 || link_timeout > L2CAP_BLE_LINK_CONNECT_TOUT) {
+        if (remaining_ms <= 0 || remaining_ms > timeout_ms) {
             link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
+        } else {
+            link_timeout = (uint32_t)(remaining_ms / 1000);
+            if (link_timeout == 0) {
+                link_timeout = 1;
+            }
         }
     }
 
