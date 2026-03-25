@@ -195,7 +195,9 @@ void bta_hf_client_cback_sco(UINT8 event)
     evt.sync_conn_handle = BTM_ReadScoHandle(bta_hf_client_cb.scb.sco_idx);
 
     /* call app cback */
-    (*bta_hf_client_cb.p_cback)(event, (tBTA_HF_CLIENT_HDR *) &evt);
+    if (bta_hf_client_cb.p_cback) {
+        (*bta_hf_client_cb.p_cback)(event, (tBTA_HF_CLIENT_HDR *) &evt);
+    }
 }
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
@@ -233,7 +235,7 @@ static void bta_hf_client_sco_read_cback (UINT16 sco_idx, BT_HDR *p_data, tBTM_S
 *******************************************************************************/
 static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
 {
-    tBTM_ESCO_PARAMS    resp;
+    tBTM_ESCO_PARAMS    resp = {0};
     UINT8               hci_status = HCI_SUCCESS;
     UINT8            index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S3;
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
@@ -248,8 +250,8 @@ static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
             index = BTA_HF_CLIENT_SCO_PARAM_IDX_CVSD;
         } else {
             if ((bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_CVSD) &&
-                 (bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
-                 (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
+                (bta_hf_client_cb.scb.features & BTA_HF_CLIENT_FEAT_ESCO_S4) &&
+                (bta_hf_client_cb.scb.peer_features & BTA_HF_CLIENT_PEER_ESCO_S4)) {
                 index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
 #if BT_HF_CLIENT_BQB_INCLUDED
                 if (s_bta_hf_client_bqb_esco_s1_flag == true) {
@@ -460,8 +462,8 @@ static void bta_hf_client_sco_create(BOOLEAN is_orig)
     }
 
     if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_CVSD) {
-        if ((bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
-                (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
+        if ((bta_hf_client_cb.scb.features & BTA_HF_CLIENT_FEAT_ESCO_S4) &&
+            (bta_hf_client_cb.scb.peer_features & BTA_HF_CLIENT_PEER_ESCO_S4)) {
             index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
         }
     } else if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_MSBC) {

@@ -79,7 +79,9 @@ static void bta_hf_client_mgmt_cback(UINT32 code, UINT16 port_handle, void* data
                      code, port_handle, bta_hf_client_cb.scb.conn_handle, bta_hf_client_cb.scb.serv_handle);
 
     /* ignore close event for port handles other than connected handle */
-    if ((code != PORT_SUCCESS) && (port_handle != bta_hf_client_cb.scb.conn_handle)) {
+    if ((code != PORT_SUCCESS) &&
+        (port_handle != bta_hf_client_cb.scb.conn_handle) &&
+        (port_handle != bta_hf_client_cb.scb.serv_handle)) {
         APPL_TRACE_DEBUG("bta_hf_client_mgmt_cback ignoring handle:%d", port_handle);
         return;
     }
@@ -206,6 +208,7 @@ void bta_hf_client_rfc_do_open(tBTA_HF_CLIENT_DATA *p_data)
     }
     /* RFCOMM create connection failed; send ourselves RFCOMM close event */
     else {
+        bta_hf_client_cb.scb.conn_handle = 0;
         bta_hf_client_sm_execute(BTA_HF_CLIENT_RFC_CLOSE_EVT, p_data);
     }
 }
