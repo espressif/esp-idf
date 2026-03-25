@@ -362,128 +362,131 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
     }
     else {
         p = (tACL_CONN *)osi_malloc(sizeof(tACL_CONN));
-        if (p && !list_append(btm_cb.p_acl_db_list, p)) {
+        if (p == NULL) {
+            BTM_TRACE_ERROR("btm_acl_created: osi_malloc failed for tACL_CONN\n");
+            return;
+        }
+        if (!list_append(btm_cb.p_acl_db_list, p)) {
+            BTM_TRACE_ERROR("btm_acl_created: list_append failed\n");
             osi_free(p);
             return;
         }
-        if (p) {
-	        memset(p, 0, sizeof(tACL_CONN));
-            p->in_use            = TRUE;
-            p->hci_handle        = hci_handle;
-            p->link_role         = link_role;
-            p->link_up_issued    = FALSE;
-            memcpy (p->remote_addr, bda, BD_ADDR_LEN);
-            /* Set the default version of the peer device to version4.0 before exchange the version with it.
-               If the peer device act as a master and don't exchange the version with us, then it can only use the
-               legacy connect instead of secure connection in the pairing step. */
-            p->lmp_version = HCI_PROTO_VERSION_4_0;
+        memset(p, 0, sizeof(tACL_CONN));
+        p->in_use            = TRUE;
+        p->hci_handle        = hci_handle;
+        p->link_role         = link_role;
+        p->link_up_issued    = FALSE;
+        memcpy (p->remote_addr, bda, BD_ADDR_LEN);
+        /* Set the default version of the peer device to version4.0 before exchange the version with it.
+           If the peer device act as a master and don't exchange the version with us, then it can only use the
+           legacy connect instead of secure connection in the pairing step. */
+        p->lmp_version = HCI_PROTO_VERSION_4_0;
 #if BLE_INCLUDED == TRUE
-            p->transport = transport;
+        p->transport = transport;
 #if BLE_PRIVACY_SPT == TRUE
-            if (transport == BT_TRANSPORT_LE) {
-                btm_ble_refresh_local_resolvable_private_addr(bda,
-                        btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
-            }
+        if (transport == BT_TRANSPORT_LE) {
+            btm_ble_refresh_local_resolvable_private_addr(bda,
+                    btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
+        }
 #else
-            p->conn_addr_type = BLE_ADDR_PUBLIC;
-            memcpy(p->conn_addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
-            BTM_TRACE_DEBUG ("conn_addr: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
-                    p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
+        p->conn_addr_type = BLE_ADDR_PUBLIC;
+        memcpy(p->conn_addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
+        BTM_TRACE_DEBUG ("conn_addr: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
+                p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
 #endif
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
-            p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
+        p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
 
-            p->p_pm_mode_db = btm_pm_sm_alloc();
+        p->p_pm_mode_db = btm_pm_sm_alloc();
 
 #if BTM_PM_DEBUG == TRUE
-            BTM_TRACE_DEBUG( "btm_pm_sm_alloc handle:%d st:%d", hci_handle, p->p_pm_mode_db->state);
+        BTM_TRACE_DEBUG( "btm_pm_sm_alloc handle:%d st:%d", hci_handle, p->p_pm_mode_db->state);
 #endif  // BTM_PM_DEBUG
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
-            btm_sec_update_legacy_auth_state(p, BTM_ACL_LEGACY_AUTH_NONE);
+        btm_sec_update_legacy_auth_state(p, BTM_ACL_LEGACY_AUTH_NONE);
 #endif
 
-            if (dc) {
-                memcpy (p->remote_dc, dc, DEV_CLASS_LEN);
-            }
+        if (dc) {
+            memcpy (p->remote_dc, dc, DEV_CLASS_LEN);
+        }
 
-            if (bdn) {
-                memcpy (p->remote_name, bdn, BTM_MAX_REM_BD_NAME_LEN);
-            }
+        if (bdn) {
+            memcpy (p->remote_name, bdn, BTM_MAX_REM_BD_NAME_LEN);
+        }
 
-            /* if BR/EDR do something more */
-            if (transport == BT_TRANSPORT_BR_EDR) {
-                btsnd_hcic_read_rmt_clk_offset (p->hci_handle);
-                btsnd_hcic_rmt_ver_req (p->hci_handle);
-            }
-            p_dev_rec = btm_find_dev_by_handle (hci_handle);
+        /* if BR/EDR do something more */
+        if (transport == BT_TRANSPORT_BR_EDR) {
+            btsnd_hcic_read_rmt_clk_offset (p->hci_handle);
+            btsnd_hcic_rmt_ver_req (p->hci_handle);
+        }
+        p_dev_rec = btm_find_dev_by_handle (hci_handle);
 
 #if (BLE_INCLUDED == TRUE)
-            if (p_dev_rec ) {
-                BTM_TRACE_DEBUG ("device_type=0x%x\n", p_dev_rec->device_type);
-            }
+        if (p_dev_rec ) {
+            BTM_TRACE_DEBUG ("device_type=0x%x\n", p_dev_rec->device_type);
+        }
 #endif
 
-            if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
-                if (!p_dev_rec->remote_secure_connection_previous_state) {
-                    /* If remote features already known, copy them and continue connection setup */
-                    if ((p_dev_rec->num_read_pages) &&
-                            (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
-                        memcpy (p->peer_lmp_features, p_dev_rec->features,
-                                (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-                        p->num_read_pages = p_dev_rec->num_read_pages;
+        if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
+            if (!p_dev_rec->remote_secure_connection_previous_state) {
+                /* If remote features already known, copy them and continue connection setup */
+                if ((p_dev_rec->num_read_pages) &&
+                        (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
+                    memcpy (p->peer_lmp_features, p_dev_rec->features,
+                            (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
+                    p->num_read_pages = p_dev_rec->num_read_pages;
 #if (CLASSIC_BT_INCLUDED == TRUE)
-                        const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
+                    const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-                        /* Store the Peer Security Capabilities (in SM4 and rmt_sec_caps) */
+                    /* Store the Peer Security Capabilities (in SM4 and rmt_sec_caps) */
 #if (SMP_INCLUDED == TRUE)
-                        btm_sec_set_peer_sec_caps(p, p_dev_rec);
+                    btm_sec_set_peer_sec_caps(p, p_dev_rec);
 #endif  ///SMP_INCLUDED == TRUE
 #if (CLASSIC_BT_INCLUDED == TRUE)
-                        BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
-                        if (req_pend) {
-                            /* Request for remaining Security Features (if any) */
-                            l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
-                        }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
-                        btm_establish_continue (p);
-                        return;
+                    BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
+                    if (req_pend) {
+                        /* Request for remaining Security Features (if any) */
+                        l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
                     }
-                } else {
-                    /* If remote features indicated secure connection (SC) mode, check the remote features again*/
-                    /* this is to prevent from BIAS attack where attacker can downgrade SC mode*/
-                    btm_read_remote_features (p->hci_handle);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+                    btm_establish_continue (p);
+                    return;
                 }
-            }
-
-#if (BLE_INCLUDED == TRUE)
-            /* If here, features are not known yet */
-            if (p_dev_rec && transport == BT_TRANSPORT_LE) {
-#if BLE_PRIVACY_SPT == TRUE
-                btm_ble_get_acl_remote_addr (p_dev_rec, p->active_remote_addr,
-                        &p->active_remote_addr_type);
-#endif
-
-                if (link_role == HCI_ROLE_MASTER) {
-                    btsnd_hcic_ble_read_remote_feat(p->hci_handle);
-                } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
-                        && link_role == HCI_ROLE_SLAVE) {
-                    btsnd_hcic_rmt_ver_req (p->hci_handle);
-                } else {
-                    btm_establish_continue(p);
-                }
-            } else
-#endif
-            {
+            } else {
+                /* If remote features indicated secure connection (SC) mode, check the remote features again*/
+                /* this is to prevent from BIAS attack where attacker can downgrade SC mode*/
                 btm_read_remote_features (p->hci_handle);
             }
-
-            /* read page 1 - on rmt feature event for buffer reasons */
-            return;
         }
+
+#if (BLE_INCLUDED == TRUE)
+        /* If here, features are not known yet */
+        if (p_dev_rec && transport == BT_TRANSPORT_LE) {
+#if BLE_PRIVACY_SPT == TRUE
+            btm_ble_get_acl_remote_addr (p_dev_rec, p->active_remote_addr,
+                    &p->active_remote_addr_type);
+#endif
+
+            if (link_role == HCI_ROLE_MASTER) {
+                btsnd_hcic_ble_read_remote_feat(p->hci_handle);
+            } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
+                    && link_role == HCI_ROLE_SLAVE) {
+                btsnd_hcic_rmt_ver_req (p->hci_handle);
+            } else {
+                btm_establish_continue(p);
+            }
+        } else
+#endif
+        {
+            btm_read_remote_features (p->hci_handle);
+        }
+
+        /* read page 1 - on rmt feature event for buffer reasons */
+        return;
     }
 }
 
@@ -593,11 +596,9 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
 #if (CLASSIC_BT_INCLUDED == TRUE)
         list_remove(btm_cb.p_pm_mode_db_list, p->p_pm_mode_db);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
-        /* Clear the ACL connection data */
-        memset(p, 0, sizeof(tACL_CONN));
-	if (list_remove(btm_cb.p_acl_db_list, p)) {
-	    p = NULL;
-	}
+        /* Remove and free the ACL connection data */
+        list_remove(btm_cb.p_acl_db_list, p);
+        p = NULL;
     }
 }
 

@@ -780,8 +780,8 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
             if(ble_cb && ble_cb->update_exceptional_list_cmp_cb) {
                 (*ble_cb->update_exceptional_list_cmp_cb)(status, subcode, length, p);
             }
-            break;
 #endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
+        break;
         }
         case HCI_VENDOR_BLE_CLEAR_ADV: {
             uint8_t status;

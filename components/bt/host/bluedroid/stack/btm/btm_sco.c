@@ -322,7 +322,7 @@ void btm_sco_check_send_pkts (UINT16 sco_inx)
     }
 }
 
-void btm_sco_process_num_completed_pkts (UINT8 *p)
+void btm_sco_process_num_completed_pkts (UINT8 *p, UINT8 evt_len)
 {
     UINT8       num_handles, xx;
     UINT16      handle;
@@ -330,7 +330,20 @@ void btm_sco_process_num_completed_pkts (UINT8 *p)
     UINT16      sco_inx;
     tSCO_CB  *p_cb = &btm_cb.sco_cb;
     tSCO_CONN * p_ccb;
+
+    if (evt_len < 1) {
+        BTM_TRACE_ERROR ("btm_sco_process_num_completed_pkts: evt too short (len=%u)", evt_len);
+        return;
+    }
+
     STREAM_TO_UINT8 (num_handles, p);
+
+    if (num_handles > (evt_len - 1) / 4) {
+        BTM_TRACE_ERROR ("btm_sco_process_num_completed_pkts: num_handles %u exceeds evt_len %u, truncating",
+                         num_handles, evt_len);
+        num_handles = (evt_len - 1) / 4;
+    }
+
     for (xx = 0; xx < num_handles; xx++) {
         STREAM_TO_UINT16 (handle, p);
         STREAM_TO_UINT16 (num_sent, p);

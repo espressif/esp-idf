@@ -1192,7 +1192,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len);
 void btm_sco_chk_pend_unpark (UINT8 hci_status, UINT16 hci_handle);
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
 void btm_sco_process_num_bufs (UINT16 num_lm_sco_bufs);
-void btm_sco_process_num_completed_pkts (UINT8 *p);
+void btm_sco_process_num_completed_pkts (UINT8 *p, UINT8 evt_len);
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
 #else
 #define btm_sco_chk_pend_unpark(hci_status, hci_handle)

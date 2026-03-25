@@ -1979,7 +1979,7 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
         }
         /* 16bits/32bits/128bits Service Data */
         if (len > MIN_ADV_LENGTH && data_mask & BTM_BLE_AD_BIT_SERVICE_DATA &&
-                p_data && p_data->p_service_data->len != 0 && p_data->p_service_data->p_val) {
+                p_data && p_data->p_service_data && p_data->p_service_data->len != 0 && p_data->p_service_data->p_val) {
             if (len  > (p_data->p_service_data->service_uuid.len + MIN_ADV_LENGTH)) {
                 if (p_data->p_service_data->len > (len - MIN_ADV_LENGTH)) {
                     cp_len = len - MIN_ADV_LENGTH - p_data->p_service_data->service_uuid.len;
@@ -3063,7 +3063,7 @@ static void btm_adv_pkt_handler(void *arg)
         STREAM_TO_UINT8  (hci_evt_len, p);
         STREAM_TO_UINT8  (ble_sub_code, p);
         if (ble_sub_code == HCI_BLE_ADV_PKT_RPT_EVT) {
-            btm_ble_process_adv_pkt(p);
+            btm_ble_process_adv_pkt(p, hci_evt_len);
         } else if (ble_sub_code == HCI_BLE_ADV_DISCARD_REPORT_EVT) {
             btm_ble_process_adv_discard_evt(p);
         } else if (ble_sub_code == HCI_BLE_DIRECT_ADV_EVT) {
@@ -3083,7 +3083,6 @@ static void btm_adv_pkt_handler(void *arg)
     }
 
     UNUSED(hci_evt_code);
-    UNUSED(hci_evt_len);
 }
 
 /*******************************************************************************
@@ -3099,7 +3098,7 @@ static void btm_adv_pkt_handler(void *arg)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_process_adv_pkt (UINT8 *p_data)
+void btm_ble_process_adv_pkt (UINT8 *p_data, UINT8 evt_len)
 {
     BD_ADDR             bda;
     UINT8               evt_type = 0, *p = p_data;
@@ -3119,10 +3118,22 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         return;
     }
 
+    /* sub_code(1) already consumed by caller, need at least num_reports(1) */
+    if (evt_len < 2) {
+        BTM_TRACE_ERROR("btm_ble_process_adv_pkt: evt too short (len=%u)", evt_len);
+        return;
+    }
+
     /* Extract the number of reports in this event. */
     STREAM_TO_UINT8(num_reports, p);
+    UINT8 remaining = evt_len - 2;
 
     while (num_reports--) {
+        /* Per-report minimum: evt_type(1) + addr_type(1) + bda(6) + data_len(1) + rssi(1) = 10 */
+        if (remaining < 10) {
+            BTM_TRACE_ERROR("btm_ble_process_adv_pkt: remaining %u too short for report", remaining);
+            break;
+        }
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
         /* Save current report start position for address resolution callback */
         UINT8 *pp = p;
@@ -3131,8 +3142,6 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         STREAM_TO_UINT8    (evt_type, p);
         STREAM_TO_UINT8    (addr_type, p);
         STREAM_TO_BDADDR   (bda, p);
-        //BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
-        //                              bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 
 #if (!CONTROLLER_RPA_LIST_ENABLE)
@@ -3142,17 +3151,21 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
 
         /* map address to security record */
         match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
-
-        // BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
-        //                             bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
-        /* always do RRA resolution on host */
+#endif
+        /* Validate data_len before any path (callee reads 1 + data_len + 1 = data_len+2 bytes from p) */
+        data_len = *p; /* read without advancing; p points to data_len byte */
+        if (data_len + 2 > remaining - 8) {
+            BTM_TRACE_ERROR("btm_ble_process_adv_pkt: data_len %u + data + rssi exceeds remaining %u", data_len, (UINT16)(remaining - 8));
+            break;
+        }
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+        /* RRA path: resolve first, btm_ble_process_adv_pkt_cont will be called from callback; else process now */
         if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
             btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_adv, pp);
         } else
 #endif
         btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, p);
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE && (!CONTROLLER_RPA_LIST_ENABLE))
-        //save current adv addr information if p_dev_rec!= NULL
         tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
         if(p_dev_rec) {
             p_dev_rec->ble.current_addr_type = temp_addr_type;
@@ -3161,9 +3174,11 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         }
 #endif
         STREAM_TO_UINT8(data_len, p);
+        remaining -= 9; /* evt_type(1) + addr_type(1) + bda(6) + data_len(1) */
 
         /* Advance to the next event data_len + rssi byte */
         p += data_len + 1;
+        remaining -= (data_len + 1);
     }
 }
 

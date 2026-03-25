@@ -46,7 +46,7 @@ void btm_ble_iso_read_iso_tx_sync_complete(UINT8 *p)
     if (cb_params.btm_read_tx_sync.status != HCI_SUCCESS) {
         cb_params.btm_read_tx_sync.status = (BTM_HCI_ERROR | cb_params.btm_read_tx_sync.status);
     }
-    cb_params.btm_read_tx_sync.conn_hdl = (cb_params.btm_read_tx_sync.conn_hdl & 0xEFF);
+    cb_params.btm_read_tx_sync.conn_hdl = (cb_params.btm_read_tx_sync.conn_hdl & 0x0FFF);
     cb_params.btm_read_tx_sync.time_offset = (cb_params.btm_read_tx_sync.time_offset & 0xFFFFFF);
     BTM_TRACE_DEBUG("read tx sync cmpl, status 0x%x conn_hdl 0x%x pkt_seq_num %d tx_time_stamp %ld time_offset %ld\n",
                     cb_params.btm_read_tx_sync.status, cb_params.btm_read_tx_sync.conn_hdl, cb_params.btm_read_tx_sync.pkt_seq_num,
