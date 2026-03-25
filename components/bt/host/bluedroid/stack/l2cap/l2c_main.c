@@ -150,7 +150,6 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
 #if (!CONFIG_BT_STACK_NO_LOG)
     UINT16      psm;
 #endif
-    UINT16      credit;
 
     /* Extract the handle */
     STREAM_TO_UINT16 (handle, p);
@@ -292,6 +291,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
                 l2c_fcr_proc_pdu (p_ccb, p_msg);
+#else
+                /* Classic FCR not compiled (e.g. BLE-only); free p_msg to avoid leak */
+                osi_free (p_msg);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
             } else {
                 (*l2cb.fixed_reg[rcv_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb)
@@ -310,31 +312,24 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             osi_free (p_msg);
         } else {
             if (p_lcb->transport == BT_TRANSPORT_LE) {
-                // Got a pkt, valid send out credits to the peer device
-                credit = L2CAP_LE_DEFAULT_CREDIT;
-                L2CAP_TRACE_DEBUG("%s Credits received %d",__func__, credit);
-                if((p_ccb->peer_conn_cfg.credits + credit) > L2CAP_LE_MAX_CREDIT) {
-                    /* we have received credits more than max coc credits,
-                     * so disconnecting the Le Coc Channel
-                     */
-#if (BLE_INCLUDED == TRUE)
-                    l2cble_send_peer_disc_req (p_ccb);
-#endif  ///BLE_INCLUDED == TRUE
-                } else {
-                    p_ccb->peer_conn_cfg.credits += credit;
-                    l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
-                }
+                l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
             }
             /* Basic mode packets go straight to the state machine */
             if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (L2CAP_COC_INCLUDED == TRUE)
                 l2c_csm_execute (p_ccb, L2CEVT_L2CAP_DATA, p_msg);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#else
+                /* COC not included: state machine not compiled; free p_msg to avoid leak */
+                osi_free (p_msg);
+#endif
             } else {
                 /* eRTM or streaming mode, so we need to validate states first */
                 if ((p_ccb->chnl_state == CST_OPEN) || (p_ccb->chnl_state == CST_CONFIG)) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
                     l2c_fcr_proc_pdu (p_ccb, p_msg);
+#else
+                    /* Classic FCR not compiled (e.g. BLE-only); free p_msg to avoid leak */
+                    osi_free (p_msg);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
                 } else {
                     osi_free (p_msg);
@@ -423,14 +418,26 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 
         switch (cmd_code) {
         case L2CAP_CMD_REJECT:
+            if (cmd_len < L2CAP_CMD_REJECT_LEN) {
+                L2CAP_TRACE_WARNING ("L2CAP - cmd reject too short, cmd_len: %d", cmd_len);
+                break;
+            }
             STREAM_TO_UINT16 (rej_reason, p);
             if (rej_reason == L2CAP_CMD_REJ_MTU_EXCEEDED) {
+                if (cmd_len < L2CAP_CMD_REJECT_LEN + 2) {
+                    L2CAP_TRACE_WARNING ("L2CAP - MTU rej too short, cmd_len: %d", cmd_len);
+                    break;
+                }
                 STREAM_TO_UINT16 (rej_mtu, p);
                 /* What to do with the MTU reject ? We have negotiated an MTU. For now */
                 /* we will ignore it and let a higher protocol timeout take care of it */
                 L2CAP_TRACE_WARNING ("L2CAP - MTU rej Handle: %d MTU: %d", p_lcb->handle, rej_mtu);
             }
             if (rej_reason == L2CAP_CMD_REJ_INVALID_CID) {
+                if (cmd_len < L2CAP_CMD_REJECT_LEN + 4) {
+                    L2CAP_TRACE_WARNING ("L2CAP - CID rej too short, cmd_len: %d", cmd_len);
+                    break;
+                }
                 STREAM_TO_UINT16 (rcid, p);
                 STREAM_TO_UINT16 (lcid, p);
 
