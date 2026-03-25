@@ -1146,9 +1146,11 @@ BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb)
             }
         } else {
             GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error");
-
+            /* attp_send_msg_to_l2cap() already freed p_cmd->p_cmd on failure */
+            p_cmd->p_cmd = NULL;
             memset(p_cmd, 0, sizeof(tGATT_CMD_Q));
             p_tcb->pending_cl_req ++;
+            p_tcb->pending_cl_req %= GATT_CL_MAX_LCB;
             p_cmd = &p_tcb->cl_cmd_q[p_tcb->pending_cl_req];
         }
 

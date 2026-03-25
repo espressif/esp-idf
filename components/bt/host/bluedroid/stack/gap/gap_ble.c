@@ -315,6 +315,9 @@ UINT8 gap_proc_write_req( tGATTS_REQ_TYPE type, tGATT_WRITE_REQ *p_data)
             switch (p_db_attr->uuid) {
                 #if (GATTS_DEVICE_NAME_WRITABLE == TRUE)
                 case GATT_UUID_GAP_DEVICE_NAME: {
+                    if (p_data->len > BD_NAME_LEN) {
+                        return GATT_INVALID_ATTR_LEN;
+                    }
                     UINT8 *p_val = p_data->value;
                     p_val[p_data->len] = '\0';
                     BTM_SetLocalDeviceName((char *)p_val, BT_DEVICE_TYPE_BLE);

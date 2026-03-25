@@ -86,10 +86,13 @@ static size_t calculate_database_info_size(void)
                     len += 8 + get_uuid_stream_len(p_attr->p_value->incl_handle.service_type);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
                     tBT_UUID char_uuid = {0};
-                    // Characteristic declaration
+                    if (p_attr->p_next == NULL) {
+                        GATT_TRACE_ERROR("%s: malformed DB, char decl at handle %u has no value attr",
+                                         __func__, p_attr->handle);
+                        break;
+                    }
                     p_attr = (tGATT_ATTR16 *)p_attr->p_next;
                     attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
-                    // Increment 1 to fetch characteristic uuid from value declaration attribute
                     len += 7 + get_uuid_stream_len(char_uuid);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DESCRIPTION ||
                     p_attr->uuid == GATT_UUID_CHAR_CLIENT_CONFIG ||
@@ -136,14 +139,17 @@ static void fill_database_info(UINT8 *p_data)
                     gatt_build_uuid_to_stream(&p_data, p_attr->p_value->incl_handle.service_type);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
                     tBT_UUID char_uuid = {0};
-                    // Characteristic declaration
+                    if (p_attr->p_next == NULL) {
+                        GATT_TRACE_ERROR("%s: malformed DB, char decl at handle %u has no value attr",
+                                         __func__, p_attr->handle);
+                        break;
+                    }
                     UINT16_TO_STREAM(p_data, p_attr->handle);
                     UINT16_TO_STREAM(p_data, GATT_UUID_CHAR_DECLARE);
                     UINT8_TO_STREAM(p_data, p_attr->p_value->char_decl.property);
                     UINT16_TO_STREAM(p_data, p_attr->p_value->char_decl.char_val_handle);
                     p_attr = (tGATT_ATTR16 *)p_attr->p_next;
                     attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
-                    // Increment 1 to fetch characteristic uuid from value declaration attribute
                     gatt_build_uuid_to_stream(&p_data, char_uuid);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DESCRIPTION ||
                     p_attr->uuid == GATT_UUID_CHAR_CLIENT_CONFIG ||
@@ -160,6 +166,7 @@ static void fill_database_info(UINT8 *p_data)
                     // TODO: process extended properties descriptor
                     if (p_attr->p_value->attr_val.attr_len == 2) {
                         memcpy(p_data, p_attr->p_value->attr_val.attr_val, 2);
+                        p_data += 2;
                     } else {
                         UINT16_TO_STREAM(p_data, 0x0000);
                     }
@@ -179,6 +186,11 @@ tGATT_STATUS gatts_calculate_datebase_hash(BT_OCTET16 hash)
     UINT8 *data_buf = NULL;
 
     len = calculate_database_info_size();
+
+    if (len == 0) {
+        memset(hash, 0, BT_OCTET16_LEN);
+        return GATT_SUCCESS;
+    }
 
     data_buf = (UINT8 *)osi_malloc(len);
     if (data_buf == NULL) {
@@ -236,6 +248,10 @@ void gatts_show_local_database(void)
                     tBT_UUID char_uuid = {0};
                     tGATT_ATTR16 *p_char_val;
                     p_char_val = (tGATT_ATTR16 *)p_attr->p_next;
+                    if (p_char_val == NULL) {
+                        printf("characteristic (malformed - no value attr)\n");
+                        break;
+                    }
                     attr_uuid_to_bt_uuid((void *)p_char_val, &char_uuid);
 
                     printf("%s\n", gatt_get_attr_name(p_attr->uuid));

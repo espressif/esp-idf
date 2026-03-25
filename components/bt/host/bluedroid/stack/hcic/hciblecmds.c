@@ -1329,16 +1329,16 @@ UINT8 btsnd_hcic_ble_set_ext_adv_data(UINT8 adv_handle,
     HCI_TRACE_EVENT("%s, adv_handle = %d, operation = %d, fragment_prefrence = %d,\
                      data_len = %d", __func__, adv_handle, operation, fragment_prefrence, data_len);
 
+    if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
+        data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
+    }
+
     HCIC_BLE_CMD_CREATED(p, pp,  data_len + 4);
     UINT16_TO_STREAM(pp, HCI_BLE_SET_EXT_ADV_DATA);
     UINT8_TO_STREAM(pp, data_len + 4);
     UINT8_TO_STREAM(pp, adv_handle);
     UINT8_TO_STREAM(pp, operation);
     UINT8_TO_STREAM(pp, fragment_prefrence);
-
-    if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
-        data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
-    }
 
     UINT8_TO_STREAM (pp, data_len);
 
@@ -1361,6 +1361,10 @@ UINT8 btsnd_hcic_ble_set_ext_adv_scan_rsp_data(UINT8 adv_handle,
     HCI_TRACE_EVENT("%s, adv_handle = %d, operation = %d, fragment_prefrence = %d,\n\
                      data_len = %d", __func__, adv_handle, operation, fragment_prefrence, data_len);
 
+    if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
+        data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
+    }
+
     HCIC_BLE_CMD_CREATED(p, pp,  data_len + 4);
 
     UINT16_TO_STREAM(pp, HCI_BLE_SET_EXT_SCAN_RSP_DATA);
@@ -1368,12 +1372,6 @@ UINT8 btsnd_hcic_ble_set_ext_adv_scan_rsp_data(UINT8 adv_handle,
     UINT8_TO_STREAM(pp, adv_handle);
     UINT8_TO_STREAM(pp, operation);
     UINT8_TO_STREAM(pp, fragment_prefrence);
-
-    memset(pp, 0, data_len);
-
-    if (data_len > HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA) {
-        data_len = HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA;
-    }
 
     UINT8_TO_STREAM (pp, data_len);
     if (p_data != NULL && data_len > 0) {
@@ -1540,18 +1538,16 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_data(UINT8 adv_handle,
     HCI_TRACE_EVENT("%s, adv_handle = %d, operation = %d, len = %d",
                        __func__, adv_handle, operation, len);
 
+    if (len > HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA) {
+        len = HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA;
+    }
+
     HCIC_BLE_CMD_CREATED(p, pp,  len + 3);
 
     UINT16_TO_STREAM(pp, HCI_BLE_SET_PERIOD_ADV_DATA);
     UINT8_TO_STREAM(pp, len + 3);
     UINT8_TO_STREAM(pp, adv_handle);
     UINT8_TO_STREAM(pp, operation);
-
-    //memset(pp, 0, len);
-
-    if (len > HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA) {
-        len = HCIC_PARAM_SIZE_WRITE_PERIODIC_ADV_DATA;
-    }
 
     UINT8_TO_STREAM (pp, len);
 
@@ -2268,17 +2264,19 @@ UINT8 btsnd_hcic_ble_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
     HCI_TRACE_DEBUG("big sync create: big_handle %d sync_handle %d encryption %d mse %d big_sync_timeout %d", big_handle, sync_handle, encryption, mse, big_sync_timeout);
 
-    // for (uint8_t i = 0; i < num_bis; i++)
-    // {
-    //     HCI_TRACE_ERROR("i %d bis %d", bis[i]);
-    // }
+    #define HCIC_PARAM_SIZE_BIG_SYNC_CREATE_FIXED 24
+    if (num_bis > (HCIC_PARAM_SIZE_BIG_SYNC_CREATE_PARAMS - HCIC_PARAM_SIZE_BIG_SYNC_CREATE_FIXED)) {
+        HCI_TRACE_ERROR("%s: num_bis %u exceeds max", __func__, num_bis);
+        return FALSE;
+    }
 
-    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_BIG_SYNC_CREATE_PARAMS);
+    UINT8 param_size = HCIC_PARAM_SIZE_BIG_SYNC_CREATE_FIXED + num_bis;
+    HCIC_BLE_CMD_CREATED(p, pp, param_size);
 
     pp = (UINT8 *)(p + 1);
 
     UINT16_TO_STREAM(pp, HCI_BLE_BIG_CREATE_SYNC);
-    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BIG_SYNC_CREATE_PARAMS);
+    UINT8_TO_STREAM(pp, param_size);
 
     UINT8_TO_STREAM(pp, big_handle);
     UINT16_TO_STREAM(pp, sync_handle);
