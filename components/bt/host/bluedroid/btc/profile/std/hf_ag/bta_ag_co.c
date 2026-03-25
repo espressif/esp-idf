@@ -134,7 +134,7 @@ void bta_ag_ci_rx_write(UINT16 handle, char *p_data, UINT16 len)
             p_buf->hdr.event = BTA_AG_CI_RX_WRITE_EVT;
             p_buf->hdr.layer_specific = handle;
             p_data_area = (char *)(p_buf+1);        /* Point to data area after header */
-            strncpy(p_data_area, p_data, len);
+            memcpy(p_data_area, p_data, len);
             p_data_area[len] = 0;
             bta_sys_sendmsg(p_buf);
         } else {
@@ -284,6 +284,7 @@ static void bta_ag_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad
         {
             bta_hf_ct_plc.first_good_frame_found = TRUE;
             sbc_plc_good_frame(&(bta_hf_ct_plc.plc_state), (int16_t *)bta_ag_co_cb.decode_raw_data, bta_hf_ct_plc.sbc_plc_out);
+            break;
         }
 
         case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
