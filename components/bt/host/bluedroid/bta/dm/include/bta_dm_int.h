@@ -240,11 +240,11 @@ enum {
     BTA_DM_API_BLE_READ_CH_MAP_EVT,
 #endif
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     BTA_DM_API_ISO_BIG_CREATE_EVT,
     BTA_DM_API_ISO_BIG_CREATE_TEST_EVT,
     BTA_DM_API_ISO_BIG_TERMINATE_EVT,
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT,
     BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT,
@@ -868,12 +868,8 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 start;
-    UINT32                  duration;
-    tBTA_DM_SEARCH_CBACK    *p_cback;
-    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
-    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
     tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
-} tBTA_DM_API_BLE_OBSERVE;
+} tBTA_DM_API_BLE_ADVACTION;
 
 /* Data type for start/stop scan */
 typedef struct {
@@ -883,7 +879,6 @@ typedef struct {
     tBTA_DM_SEARCH_CBACK    *p_cback;
     tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
     tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
-    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
 } tBTA_DM_API_BLE_SCAN;
 
 typedef struct {
@@ -1433,7 +1428,7 @@ typedef struct {
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 typedef struct {
     BT_HDR                          hdr;
     tBTA_DM_BLE_BIG_CREATE_PARAMS big_creat_param;
@@ -1446,7 +1441,7 @@ typedef struct {
     BT_HDR                          hdr;
     tBTA_DM_BLE_BIG_TERMINATE_PARAMS big_terminate_param;
 } tBTA_DM_API_BIG_TERMINATE;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 typedef struct {
     BT_HDR                          hdr;
@@ -1743,7 +1738,7 @@ typedef union {
     tBTA_DM_API_BLE_SET_BG_CONN_TYPE    ble_set_bd_conn_type;
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS  ble_set_scan_fil_params;
-    tBTA_DM_API_BLE_OBSERVE             ble_observe;
+    tBTA_DM_API_BLE_ADVACTION           ble_adv_action;
     tBTA_DM_API_BLE_SCAN                ble_scan;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
@@ -1816,11 +1811,11 @@ typedef union {
     tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK ble_set_vendor_evt_mask;
 #endif
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     tBTA_DM_API_BIG_CREATE              big_creat;
     tBTA_DM_API_BIG_CREATE_TEST         big_creat_test;
     tBTA_DM_API_BIG_TERMINATE           big_terminate;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     tBTA_DM_API_BIG_SYNC_CREATE         big_sync;
     tBTA_DM_API_BIG_SYNC_TERMINATE      big_sync_terminate;
@@ -2477,11 +2472,11 @@ extern void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_dat
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 extern void bta_dm_ble_big_create(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_big_create_test(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_big_terminate(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 extern void bta_dm_ble_big_sync_create(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_big_sync_terminate(tBTA_DM_MSG *p_data);
