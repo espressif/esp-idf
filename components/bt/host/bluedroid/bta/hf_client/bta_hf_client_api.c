@@ -90,13 +90,16 @@ tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK *p_cback)
         return BTA_FAILURE;
     }
 
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_HS, &bta_hf_client_reg);
-
     if ((p_buf = (tBTA_HF_CLIENT_API_ENABLE *) osi_malloc(sizeof(tBTA_HF_CLIENT_API_ENABLE))) != NULL) {
+        /* register with BTA system manager */
+        bta_sys_register(BTA_ID_HS, &bta_hf_client_reg);
+
         p_buf->hdr.event = BTA_HF_CLIENT_API_ENABLE_EVT;
         p_buf->p_cback = p_cback;
         bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("BTA_HfClientEnable ENOMEM");
+        return BTA_NO_RESOURCES;
     }
 
     return BTA_SUCCESS;
@@ -354,8 +357,20 @@ void BTA_HfClientCiData(void)
 *******************************************************************************/
 void BTA_HfClientAudioBuffAlloc(UINT16 size, UINT8 **pp_buff, UINT8 **pp_data)
 {
+    BT_HDR *p_buf;
+
+    if (pp_buff != NULL) {
+        *pp_buff = NULL;
+    }
+    if (pp_data != NULL) {
+        *pp_data = NULL;
+    }
+    if (pp_buff == NULL || pp_data == NULL) {
+        return;
+    }
+
     /* reserve 1 byte at last, when the size is mSBC frame size (57), then we got a buffer that can hold 60 bytes data */
-    BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_H2_HEADER_LEN + size + 1);
+    p_buf = (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_H2_HEADER_LEN + size + 1);
     if (p_buf != NULL) {
         /* mSBC offset is large than CVSD, so this is work in CVSD air mode */
         p_buf->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_H2_HEADER_LEN;

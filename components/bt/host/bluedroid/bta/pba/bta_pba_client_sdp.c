@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,11 @@ static void bta_pba_client_sdp_cback(UINT16 status, void *user_data)
     tBTA_PBA_CLIENT_CCB *p_ccb = (tBTA_PBA_CLIENT_CCB *)user_data;
 
     APPL_TRACE_DEBUG("bta_pba_client_sdp_cback status:0x%x", status);
+
+    if (p_ccb == NULL || p_ccb->allocated == 0) {
+        APPL_TRACE_ERROR("bta_pba_client_sdp_cback EINVAL CCB");
+        return;
+    }
 
     if ((p_buf = (tBTA_PBA_CLIENT_DISC_RESULT *) osi_malloc(sizeof(tBTA_PBA_CLIENT_DISC_RESULT))) != NULL) {
         p_buf->hdr.event = BTA_PBA_CLIENT_DISC_RES_EVT;
@@ -140,6 +145,8 @@ BOOLEAN bta_pba_client_sdp_find_attr(tBTA_PBA_CLIENT_CCB *p_ccb)
     tSDP_DISC_ATTR      *p_attr;
     tSDP_PROTOCOL_ELEM  pe;
     BOOLEAN             result = FALSE;
+
+    p_ccb->peer_version = 0;
 
     /* loop through all records we found */
     while (TRUE) {
@@ -260,7 +267,7 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
 
 /*******************************************************************************
 **
-** Function         bta_hf_client_free_db
+** Function         bta_pba_client_free_db
 **
 ** Description      Free discovery database.
 **

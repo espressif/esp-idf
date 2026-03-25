@@ -199,7 +199,7 @@ static void bta_ag_sco_conn_cback(UINT16 sco_idx)
             handle = 0;
     }
 
-    if (handle != 0)
+    if (handle != 0 && p_scb)
     {
         BTM_ReadEScoLinkParms(sco_idx, &sco_data);
 
@@ -672,10 +672,13 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 #if (BTM_WBS_INCLUDED == TRUE)
-    if (esco_codec == BTA_AG_CODEC_MSBC)
-        pcm_sample_rate = BTA_HFP_SCO_SAMP_RATE_16K;
+        if (esco_codec == BTA_AG_CODEC_MSBC) {
+            pcm_sample_rate = BTA_HFP_SCO_SAMP_RATE_16K;
+        } else
 #endif
-        pcm_sample_rate = BTA_HFP_SCO_SAMP_RATE_8K;
+        {
+            pcm_sample_rate = BTA_HFP_SCO_SAMP_RATE_8K;
+        }
         sco_route = bta_ag_sco_co_init(pcm_sample_rate, pcm_sample_rate, &codec_info, p_scb->app_id);
 #endif
 
@@ -786,7 +789,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB *p_scb)
 
         /* Start timer to handle timeout */
         p_scb->cn_timer.p_cback = (TIMER_CBACK*)&bta_ag_cn_timer_cback;
-        p_scb->cn_timer.param = (INT32)p_scb;
+        p_scb->cn_timer.param = (UINT32)p_scb;
         bta_sys_start_timer(&p_scb->cn_timer, 0, BTA_AG_CODEC_NEGO_TIMEOUT);
     }
     else
@@ -1688,7 +1691,7 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_sco_conn_rsp(tBTA_AG_SCB *p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
 {
-    tBTM_ESCO_PARAMS    resp;
+    tBTM_ESCO_PARAMS    resp = {0};
     UINT8               hci_status = HCI_SUCCESS;
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     tBTA_HFP_CODEC_INFO codec_info = {BTA_HFP_SCO_CODEC_PCM};
