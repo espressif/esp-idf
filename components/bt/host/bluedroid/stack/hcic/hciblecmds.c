@@ -1419,7 +1419,7 @@ UINT8 btsnd_hcic_ble_read_max_adv_len(void)
     UINT8 *pp;
     HCI_TRACE_EVENT("%s", __func__);
 
-    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_READ_MAX_ADV_SIZE + 1);
+    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_READ_MAX_ADV_SIZE);
 
     UINT16_TO_STREAM(pp, HCI_BLE_RD_MAX_ADV_DATA_LEN);
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_MAX_ADV_SIZE);
@@ -1433,7 +1433,7 @@ UINT8 btsnd_hcic_ble_read_num_support_adv_set(void)
     UINT8 *pp;
     HCI_TRACE_EVENT("%s", __func__);
 
-    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_NUM_SUPPORT_ADV_SET + 1);
+    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_NUM_SUPPORT_ADV_SET);
 
     UINT16_TO_STREAM(pp, HCI_BLE_RD_NUM_OF_ADV_SETS);
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_NUM_SUPPORT_ADV_SET);
@@ -1447,7 +1447,7 @@ UINT8 btsnd_hcic_ble_remove_adv_set(UINT8 adv_handle)
     UINT8 *pp;
     HCI_TRACE_EVENT("%s, adv_handle = %d", __func__, adv_handle);
 
-    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_REMOVE_ADV_SET + 1);
+    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_REMOVE_ADV_SET);
 
     UINT16_TO_STREAM(pp, HCI_BLE_REMOVE_ADV_SET);
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_REMOVE_ADV_SET);
@@ -1462,7 +1462,7 @@ UINT8 btsnd_hcic_ble_clear_adv_set(void)
     UINT8 *pp;
     HCI_TRACE_EVENT("%s", __func__);
 
-    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_CLEAR_ADV_SET + 1);
+    HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_CLEAR_ADV_SET);
 
     UINT16_TO_STREAM(pp, HCI_BLE_CLEAR_ADV_SETS);
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CLEAR_ADV_SET);
@@ -1781,15 +1781,16 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 option, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
+                                                                       UINT16 skip,
                                                                        UINT16 sync_timeout, UINT8 sync_cte_type)
 {
     BT_HDR *p;
     UINT8 *pp;
-    HCI_TRACE_EVENT("%s, option = %d, adv_sid = %d, adv_addr_type = %d, sync_timeout = %d, sync_cte_type = %d",
-                                   __func__, option, adv_sid, adv_addr_type, sync_timeout, sync_cte_type);
+    HCI_TRACE_EVENT("%s, option = %d, adv_sid = %d, adv_addr_type = %d, skip = %d, sync_timeout = %d, sync_cte_type = %d",
+                                   __func__, option, adv_sid, adv_addr_type, skip, sync_timeout, sync_cte_type);
 
     HCI_TRACE_EVENT("addr %02x %02x %02x %02x %02x %02x", adv_addr[0], adv_addr[1], adv_addr[2], adv_addr[3], adv_addr[4], adv_addr[5]);
-    uint16_t skip = 0;
+
     HCIC_BLE_CMD_CREATED(p, pp,  HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC + 2);
 
     UINT16_TO_STREAM(pp, HCI_BLE_PERIOD_ADV_CREATE_SYNC);
@@ -1949,7 +1950,7 @@ UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_WRITE_RF_PATH_COMPENSATION);
 
     UINT16_TO_STREAM(pp, rf_tx_path);
-    UINT16_TO_STREAM(pp, rf_tx_path);
+    UINT16_TO_STREAM(pp, rf_rx_path);
 
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
@@ -2157,7 +2158,7 @@ BOOLEAN btsnd_hcic_ble_set_vendor_evt_mask (UINT32 evt_mask)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 UINT8 btsnd_hcic_ble_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
                                 uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
                                 uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
@@ -2255,7 +2256,7 @@ UINT8 btsnd_hcic_ble_big_terminate(uint8_t big_handle, uint8_t reason)
     btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
     return TRUE;
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 UINT8 btsnd_hcic_ble_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
                                     uint8_t encryption, uint8_t *bc_code,
@@ -3395,7 +3396,7 @@ UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UI
     UINT8_TO_STREAM(pp, config_id);
     UINT8_TO_STREAM(pp, enable);
 
-    btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 
     return TRUE;
 }
