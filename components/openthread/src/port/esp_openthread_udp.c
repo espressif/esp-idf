@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,8 +135,12 @@ static void udp_recv_task(void *ctx)
                  ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to copy OpenThread message when receiving OpenThread plat UDP"));
     task->socket->mHandler(task->socket->mContext, message, &message_info);
     otMessageFree(message);
+    message = NULL;
 
 exit:
+    if (message != NULL) {
+        otMessageFree(message);
+    }
     free(task);
     if (data_buf_to_free) {
         free(data_buf_to_free);
@@ -156,6 +160,8 @@ static void handle_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, cons
 
     if (task == NULL) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate recv task when receiving OpenThread plat UDP");
+        pbuf_free(p);
+        return;
     }
     task->socket = (otUdpSocket *)ctx;
     task->recv_buf = p;

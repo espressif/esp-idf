@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,21 +67,22 @@ static void IRAM_ATTR handle_spi_transaction_done(spi_slave_transaction_t *trans
                             trans->rx_buffer, pending_transaction->input_buf_len, trans->trans_len)) {
         esp_openthread_task_queue_post(s_process_callback, s_context);
     }
-    trans = NULL;
 }
 
 esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_t *config)
 {
+    esp_err_t ret = ESP_OK;
+
     s_spi_config = heap_caps_malloc(sizeof(esp_openthread_spi_slave_config_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    ESP_RETURN_ON_FALSE(s_spi_config != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG,
-                        "failed to allocate memory for SPI transaction on internal heap");
+    ESP_GOTO_ON_FALSE(s_spi_config != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG,
+                      "failed to allocate memory for SPI transaction on internal heap");
     memcpy(s_spi_config, &(config->host_config.spi_slave_config), sizeof(esp_openthread_spi_slave_config_t));
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1 << s_spi_config->intr_pin),
+        .pin_bit_mask = (1ULL << s_spi_config->intr_pin),
     };
-    ESP_RETURN_ON_ERROR(gpio_config(&io_conf), OT_PLAT_LOG_TAG, "fail to configure SPI gpio");
+    ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, OT_PLAT_LOG_TAG, "fail to configure SPI gpio");
 
     gpio_set_pull_mode(s_spi_config->bus_config.mosi_io_num, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(s_spi_config->bus_config.sclk_io_num, GPIO_PULLUP_ONLY);
@@ -90,11 +91,9 @@ esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_
     s_spi_transaction = heap_caps_malloc(sizeof(spi_slave_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     s_pending_transaction = heap_caps_malloc(sizeof(pending_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (s_spi_transaction == NULL || s_pending_transaction == NULL) {
-        heap_caps_free(s_spi_config);
-        heap_caps_free(s_spi_transaction);
-        heap_caps_free(s_pending_transaction);
         ESP_LOGE(OT_PLAT_LOG_TAG, "failed to allocate memory for SPI transaction on internal heap");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto err;
     }
 
     s_spi_transaction->user = (void *)s_pending_transaction;
@@ -102,11 +101,20 @@ esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_
     /* Initialize SPI slave interface */
     s_spi_config->slave_config.post_setup_cb = handle_spi_setup_done;
     s_spi_config->slave_config.post_trans_cb = handle_spi_transaction_done;
-    ESP_RETURN_ON_ERROR(spi_slave_initialize(s_spi_config->host_device, &s_spi_config->bus_config,
-                                             &s_spi_config->slave_config, SPI_DMA_CH_AUTO),
-                        OT_PLAT_LOG_TAG, "fail to initialize SPI slave");
+    ESP_GOTO_ON_ERROR(spi_slave_initialize(s_spi_config->host_device, &s_spi_config->bus_config,
+                                           &s_spi_config->slave_config, SPI_DMA_CH_AUTO),
+                      err, OT_PLAT_LOG_TAG, "fail to initialize SPI slave");
 
     return ESP_OK;
+
+err:
+    heap_caps_free(s_spi_config);
+    s_spi_config = NULL;
+    heap_caps_free(s_spi_transaction);
+    s_spi_transaction = NULL;
+    heap_caps_free(s_pending_transaction);
+    s_pending_transaction = NULL;
+    return ret;
 }
 
 void esp_openthread_spi_slave_deinit(void)
