@@ -449,7 +449,7 @@ void gatt_process_find_type_value_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UIN
 void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
                                 UINT16 len, UINT8 *p_data)
 {
-    tGATT_DISC_RES  result;
+    tGATT_DISC_RES  result = {0};
     UINT8   *p = p_data, uuid_len = 0, type;
 
     UNUSED(p_tcb);
@@ -472,6 +472,10 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
         uuid_len = LEN_UUID_16;
     } else if (type == GATT_INFO_TYPE_PAIR_128) {
         uuid_len = LEN_UUID_128;
+    } else {
+        GATT_TRACE_ERROR("invalid Info Response PDU format: %d", type);
+        gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+        return;
     }
 
     while (len >= uuid_len + 2) {
@@ -796,7 +800,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
     if ((value_len > (p_tcb->payload_size - 2)) || (value_len > (len - 1))  ) {
         /* this is an error case that server's response containing a value length which is larger than MTU-2
            or value_len > message total length -1 */
-        GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: Discard response op_code=%d vale_len=%d > (MTU-2=%d or msg_len-1=%d)",
+        GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: Discard response op_code=%d value_len=%d > (MTU-2=%d or msg_len-1=%d)",
                          op_code, value_len, (p_tcb->payload_size - 2), (len - 1));
         gatt_end_operation(p_clcb, GATT_ERROR, NULL);
         return;
@@ -884,7 +888,8 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
         }
         /* read by type */
         else if (p_clcb->operation == GATTC_OPTYPE_READ && p_clcb->op_subtype == GATT_READ_BY_TYPE) {
-            p_clcb->counter = len - 2;
+            /* value_len is the length of current record's value; use it to avoid overread when multiple records present */
+            p_clcb->counter = value_len;
             p_clcb->s_handle = handle;
             if ( p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
                 p_clcb->op_subtype = GATT_READ_BY_HANDLE;
@@ -916,7 +921,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
 
             /* UUID not matching */
             if (!gatt_uuid_compare(record_value.dclr_value.char_uuid, p_clcb->uuid)) {
-                len -= (value_len + 2);
+                len -= (value_len + handle_len);
                 continue; /* skip the result, and look for next one */
             } else if (p_clcb->operation == GATTC_OPTYPE_READ)
                 /* UUID match for read characteristic value */
@@ -1000,7 +1005,7 @@ void gatt_process_read_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb,  UINT8 op_code,
                     gatt_end_operation(p_clcb, GATT_SUCCESS, (void *)p_clcb->p_attr_buf);
                 }
             } else { /* exception, should not happen */
-                GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %p ", offset, p_clcb->p_attr_buf);
+                GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %p ", offset, p_clcb->p_attr_buf ? p_clcb->p_attr_buf:0);
                 gatt_end_operation(p_clcb, GATT_NO_RESOURCES, (void *)p_clcb->p_attr_buf);
             }
         }
