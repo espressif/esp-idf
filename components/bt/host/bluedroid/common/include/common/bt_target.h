@@ -681,10 +681,6 @@
 #define BTA_DM_QOS_INCLUDED FALSE
 #endif
 
-#ifndef BTA_PAN_INCLUDED
-#define BTA_PAN_INCLUDED FALSE
-#endif
-
 #ifndef BTA_HD_INCLUDED
 #define BTA_HD_INCLUDED FALSE
 #endif
