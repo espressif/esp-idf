@@ -221,7 +221,7 @@ static void btm_ble_resolve_address_cmpl(void)
 {
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-    BTM_TRACE_EVENT ("btm_ble_resolve_address_cmpl p_mgnt_cb->p_dev_rec = 0x%08x", (uint32_t)p_mgnt_cb->p_dev_rec);
+    BTM_TRACE_EVENT ("btm_ble_resolve_address_cmpl p_mgnt_cb->p_dev_rec = 0x%08x", p_mgnt_cb->p_dev_rec ? (uint32_t)p_mgnt_cb->p_dev_rec : 0);
 
     p_mgnt_cb->busy = FALSE;
 
@@ -405,7 +405,9 @@ void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK *p_c
             p_dev_rec = list_node(p_node);
             p_mgnt_cb->p_dev_rec = p_dev_rec;
             if (btm_ble_match_random_bda(p_dev_rec)) {
-                break;
+                // if matched, btm_ble_match_random_bda->btm_ble_proc_resolve_x->btm_ble_resolve_address_cmpl
+                p_mgnt_cb->p_dev_rec = NULL;
+                return;
             }
             p_mgnt_cb->p_dev_rec = NULL;
         }

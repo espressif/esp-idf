@@ -917,7 +917,7 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
     UINT8       addr_type = BLE_ADDR_RANDOM;
     BD_ADDR     bda;
-    UINT8       *pp = (UINT8 *)p + 1;
+    UINT8       *pp = (UINT8 *)p;
     UINT8           evt_type;
 
     BTM_TRACE_EVENT ("btm_ble_resolve_random_addr_on_adv ");
@@ -937,6 +937,7 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
             // Assign the original address to be the current report address
             memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
         }
+        addr_type = match_rec->ble.ble_addr_type;
     }
 
     btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, pp);
@@ -1112,7 +1113,6 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
 {
     UINT8 evt_type;
 #if BLE_PRIVACY_SPT == TRUE
-    UINT8 i = BTM_SEC_MAX_DEVICE_RECORDS;
     tBTM_SEC_DEV_REC    *p_dev_rec;
     list_node_t         *p_node = NULL;
 #endif  ///BLE_PRIVACY_SPT == TRUE
@@ -1165,14 +1165,12 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
                 memcpy(p_peer_addr_ptr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
                 *p_peer_addr_type = p_dev_rec->ble.static_addr_type;
                 break;
-	    }
-	}
+	        }
+        }
 
-        if (i != BTM_SEC_MAX_DEVICE_RECORDS) {
+        if (p_node) {
             *p_own_addr_type = BLE_ADDR_RANDOM_ID;
-        } else
-            /* resolving list is empty, not enabled */
-        {
+        } else {
             *p_own_addr_type = BLE_ADDR_RANDOM;
         }
     }
@@ -3125,6 +3123,10 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
     STREAM_TO_UINT8(num_reports, p);
 
     while (num_reports--) {
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+        /* Save current report start position for address resolution callback */
+        UINT8 *pp = p;
+#endif
         /* Extract inquiry results */
         STREAM_TO_UINT8    (evt_type, p);
         STREAM_TO_UINT8    (addr_type, p);
@@ -3145,7 +3147,7 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         //                             bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
         /* always do RRA resolution on host */
         if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
-            btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_adv, p_data);
+            btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_adv, pp);
         } else
 #endif
         btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, p);
@@ -3539,6 +3541,7 @@ tBTM_STATUS btm_ble_start_adv(void)
         //btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_ADV);
     }
 #endif
+    UINT8 wl_state = btm_cb.ble_ctr_cb.wl_state;
     if (p_cb->afp != AP_SCAN_CONN_ALL) {
         //find the device in the btm dev buffer and write it to the controller white list
         btm_execute_wl_dev_operation();
@@ -3558,17 +3561,19 @@ tBTM_STATUS btm_ble_start_adv(void)
         rt = adv_enable_status;
         BTM_TRACE_EVENT ("BTM_SUCCESS\n");
     } else {
-        p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+        rt = BTM_NO_RESOURCES;
+        // reinit adv_enable_status
+        // There is no suitable value, temporarily changed to 0xff
+        adv_enable_status = 0xff;
+    }
+
+    if(adv_enable_status != HCI_SUCCESS) {
         p_cb->state = temp_state;
         p_cb->adv_mode = adv_mode;
 #if (BLE_TOPOLOGY_CHECK == TRUE)
         btm_ble_adv_states_operation(btm_ble_clear_topology_mask, p_cb->evt_type);
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-        btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
-    }
-
-    if(adv_enable_status != HCI_SUCCESS) {
-        p_cb->adv_mode = adv_mode;
+        btm_cb.ble_ctr_cb.wl_state = wl_state;
     }
     osi_mutex_unlock(&adv_enable_lock);
     return rt;
@@ -3609,6 +3614,12 @@ tBTM_STATUS btm_ble_stop_adv(void)
             osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
             rt = adv_enable_status;
         } else {
+            rt = BTM_NO_RESOURCES;
+            // reinit adv_enable_status
+            // There is no suitable value, temporarily changed to 0xff
+            adv_enable_status = 0xff;
+        }
+        if(adv_enable_status != HCI_SUCCESS) {
             // reset state
             p_cb->fast_adv_on = temp_fast_adv_on;
             p_cb->adv_mode = temp_adv_mode;
@@ -3617,10 +3628,6 @@ tBTM_STATUS btm_ble_stop_adv(void)
 #if (BLE_TOPOLOGY_CHECK == TRUE)
             btm_ble_set_topology_mask (temp_mask);
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-            rt = BTM_NO_RESOURCES;
-        }
-        if(adv_enable_status != HCI_SUCCESS) {
-            p_cb->adv_mode = temp_adv_mode;
         }
         osi_mutex_unlock(&adv_enable_lock);
     }

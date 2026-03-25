@@ -71,7 +71,14 @@ static bool is_deleting_zero_addr;
 void btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, UINT8 op_code)
 {
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
-
+    UINT8 max_size = controller_get_interface()->get_ble_resolving_list_max_size();
+    if (max_size <= 1) {
+        return;
+    }
+    if (((p_q->q_next + 1) % max_size) == p_q->q_pending) {
+        BTM_TRACE_ERROR("%s, resolving pending queue full\n", __func__);
+        return;
+    }
     memcpy(p_q->resolve_q_random_pseudo[p_q->q_next], pseudo_bda, BD_ADDR_LEN);
     p_q->resolve_q_action[p_q->q_next] = op_code;
     p_q->q_next ++;
@@ -244,10 +251,11 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
             if (controller_get_interface()->get_ble_resolving_list_max_size() == 0) {
                 btm_ble_resolving_list_init(irk_list_sz_max);
             }
-
-            uint8_t irk_mask_size = (irk_list_sz_max % 8) ?
+            if (btm_cb.ble_ctr_cb.irk_list_mask != NULL) {
+                uint8_t irk_mask_size = (irk_list_sz_max % 8) ?
                                     (irk_list_sz_max / 8 + 1) : (irk_list_sz_max / 8);
-            memset(btm_cb.ble_ctr_cb.irk_list_mask, 0, irk_mask_size);
+                memset(btm_cb.ble_ctr_cb.irk_list_mask, 0, irk_mask_size);
+            }
         }
 
         btm_cb.ble_ctr_cb.resolving_list_avail_size =
@@ -709,8 +717,9 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
 
 #if (BLE_42_ADV_EN == TRUE)
     if (p_ble_cb->inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
-        btm_ble_stop_adv();
-        p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
+        if (btm_ble_stop_adv() == BTM_SUCCESS) {
+            p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
+        }
     }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
@@ -1124,14 +1133,31 @@ void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
     UINT8 irk_mask_size =  (max_irk_list_sz % 8) ?
                            (max_irk_list_sz / 8 + 1) : (max_irk_list_sz / 8);
+    // free them if they are already allocated.
+    btm_ble_resolving_list_cleanup();
+
+    p_q->q_next = 0;
+    p_q->q_pending = 0;
 
     if (max_irk_list_sz > 0) {
         p_q->resolve_q_random_pseudo = (BD_ADDR *)osi_malloc(sizeof(BD_ADDR) * max_irk_list_sz);
+        if (p_q->resolve_q_random_pseudo == NULL) {
+            BTM_TRACE_ERROR("%s - Out of memory for random pseudo address", __FUNCTION__);
+            goto _mem_error;
+        }
         p_q->resolve_q_action = (UINT8 *)osi_malloc(max_irk_list_sz);
+        if (p_q->resolve_q_action == NULL) {
+            BTM_TRACE_ERROR("%s - Out of memory for resolve action", __FUNCTION__);
+            goto _mem_error;
+        }
 
         /* RPA offloading feature */
         if (btm_cb.ble_ctr_cb.irk_list_mask == NULL) {
             btm_cb.ble_ctr_cb.irk_list_mask = (UINT8 *)osi_malloc(irk_mask_size);
+            if (btm_cb.ble_ctr_cb.irk_list_mask == NULL) {
+                BTM_TRACE_ERROR("%s - Out of memory for IRK list mask", __FUNCTION__);
+                goto _mem_error;
+            }
         }
 
         BTM_TRACE_DEBUG ("%s max_irk_list_sz = %d", __func__, max_irk_list_sz);
@@ -1140,6 +1166,12 @@ void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
     controller_get_interface()->set_ble_resolving_list_max_size(max_irk_list_sz);
     btm_ble_clear_resolving_list();
     btm_cb.ble_ctr_cb.resolving_list_avail_size = max_irk_list_sz;
+
+    return;
+
+_mem_error:
+    btm_ble_resolving_list_cleanup();
+    btm_cb.ble_ctr_cb.resolving_list_avail_size = 0;
 }
 
 /*******************************************************************************

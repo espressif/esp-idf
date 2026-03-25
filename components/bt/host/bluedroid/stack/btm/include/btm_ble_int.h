@@ -574,10 +574,10 @@ void btm_ble_accept_cis_req_cmd_status(tBTM_BLE_ISO_CB_PARAMS *cb_params);
 void btm_ble_create_cis_cmd_status(tBTM_BLE_ISO_CB_PARAMS *cb_params);
 void btm_ble_iso_set_cig_params_complete(UINT8 *p);
 #endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btm_ble_big_create_cmpl_evt(tBTM_BLE_BIG_CREATE_CMPL *param);
 void btm_ble_big_terminate_cmpl_evt(tBTM_BLE_BIG_TERMINATE_CMPL *params);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void btm_ble_big_sync_estab_evt(tBTM_BLE_BIG_SYNC_ESTAB_CMPL *params);
 void btm_ble_big_sync_lost_evt(tBTM_BLE_BIG_SYNC_LOST_EVT *params);
