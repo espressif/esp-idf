@@ -108,7 +108,6 @@ const tBTA_GATTC_ACTION bta_gattc_action[] = {
 #define BTA_GATTC_ACTIONS           1       /* number of actions */
 #define BTA_GATTC_NEXT_STATE          1       /* position of next state */
 #define BTA_GATTC_NUM_COLS            2       /* number of columns in state tables */
-
 /* state table for idle state */
 static const UINT8 bta_gattc_st_idle[][BTA_GATTC_NUM_COLS] = {
     /* Event                            Action 1                  Next state */
@@ -297,6 +296,11 @@ BOOLEAN bta_gattc_sm_execute(tBTA_GATTC_CLCB *p_clcb, UINT16 event, tBTA_GATTC_D
     state_table = bta_gattc_st_tbl[p_clcb->state];
 
     event &= 0x00FF;
+
+    if (event >= sizeof(bta_gattc_st_idle) / sizeof(bta_gattc_st_idle[0])) {
+        APPL_TRACE_ERROR("bta_gattc_sm_execute: invalid event index %d", event);
+        return TRUE;
+    }
 
     /* set next state */
     p_clcb->state = state_table[event][BTA_GATTC_NEXT_STATE];
