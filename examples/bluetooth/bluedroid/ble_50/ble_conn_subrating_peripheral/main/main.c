@@ -51,8 +51,6 @@
         } \
 } while(0);
 
-static uint16_t conn_handle = 0xFFFF;
-
 uint16_t subrating_handle_table[SUBRATING_IDX_NB];
 
 /* UUIDs */
@@ -249,7 +247,6 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         ESP_LOGI(TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR"",
                  param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda));
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
-        conn_handle = param->connect.conn_id;
 
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
@@ -267,7 +264,6 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
-        conn_handle = 0xFFFF;
         // Restart extended advertising
         esp_ble_gap_ext_adv_start(NUM_EXT_ADV, ext_adv);
         break;

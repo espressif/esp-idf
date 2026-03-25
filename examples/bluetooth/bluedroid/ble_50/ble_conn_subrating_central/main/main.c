@@ -208,7 +208,11 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 creat_conn_params.phy_1m_conn_params = &phy_1m_conn_params;
                 creat_conn_params.phy_2m_conn_params = &phy_2m_conn_params;
                 creat_conn_params.phy_coded_conn_params = &phy_coded_conn_params;
-                esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params);
+                if (esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params) != ESP_OK)
+                {
+                    connect = false;
+                    ESP_LOGE(TAG, "Failed to open connection");
+                }
             }
         }
         break;
