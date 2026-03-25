@@ -116,12 +116,13 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     if (out_clk_freq_hz != proc_config->clk_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32"Hz", out_clk_freq_hz);
     }
-    isp_hal_init(&proc->hal, proc->proc_id);
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "clock source enable failed");
     PERIPH_RCC_ATOMIC() {
         isp_ll_select_clk_source(proc->hal.hw, clk_src);
         isp_ll_set_clock_div(proc->hal.hw, &clk_div);
     }
+    isp_hal_init(&proc->hal, proc->proc_id);
+
     proc->clk_src = clk_src;
     atomic_init(&proc->isp_fsm, ISP_FSM_INIT);
     atomic_init(&proc->bf_fsm, ISP_FSM_INIT);
