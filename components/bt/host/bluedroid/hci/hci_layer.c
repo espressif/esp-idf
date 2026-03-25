@@ -117,7 +117,7 @@ int hci_start_up(void)
     hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
                                         HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len);
     if (hci_host_thread == NULL) {
-        return -2;
+        goto error;
     }
 
     osi_event_bind(hci_host_env.downstream_data_ready, hci_host_thread, HCI_DOWNSTREAM_DATA_QUEUE_IDX);
@@ -135,12 +135,14 @@ error:
 void hci_shut_down(void)
 {
     hci_host_startup_flag  = false;
+
+    /* Close HAL and cleanup before freeing thread: hal->open() and osi_event_bind()
+     * stored references to hci_host_thread; they must not use it after osi_thread_free(). */
+    if (hci_host_thread != NULL) {
+        hal->close();
+        packet_fragmenter->cleanup();
+    }
     hci_layer_deinit_env();
-
-    packet_fragmenter->cleanup();
-
-    //low_power_manager->cleanup();
-    hal->close();
 
     osi_thread_free(hci_host_thread);
     hci_host_thread = NULL;
@@ -443,13 +445,15 @@ static bool filter_incoming_event(BT_HDR *packet)
 {
     pkt_linked_item_t *wait_entry = NULL;
     hci_cmd_metadata_t *metadata = NULL;
-    uint8_t *stream = packet->data + packet->offset;
+    uint8_t *stream;
     uint8_t event_code;
     command_opcode_t opcode;
 
     if (packet == NULL) {
         return true;
     }
+
+    stream = packet->data + packet->offset;
 
     if (packet->len < HCI_EVENT_PREAMBLE_SIZE) {
         HCI_TRACE_WARNING("dropping too short HCI event (len=%u)", packet->len);
