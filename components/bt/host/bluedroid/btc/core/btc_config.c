@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,7 +85,11 @@ static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key
 
 bool btc_config_init(void)
 {
-    osi_mutex_new(&lock);
+    if (osi_mutex_new(&lock) != 0) {
+        BTC_TRACE_ERROR("%s unable to create lock.\n", __func__);
+        return false;
+    }
+
     config = config_new(CONFIG_FILE_PATH);
     if (!config) {
         BTC_TRACE_WARNING("%s unable to load config file; starting unconfigured.\n", __func__);
