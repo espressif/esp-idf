@@ -125,8 +125,13 @@ tBTA_GATTC_CLCB *bta_gattc_find_clcb_by_cif (UINT8 client_if, BD_ADDR remote_bda
     tBTA_GATTC_CLCB *p_clcb = &bta_gattc_cb.clcb[0];
     UINT8   i;
 
+    if (remote_bda == NULL) {
+        return NULL;
+    }
+
     for (i = 0; i < BTA_GATTC_CLCB_MAX; i ++, p_clcb ++) {
         if (p_clcb->in_use &&
+                p_clcb->p_rcb != NULL &&
                 p_clcb->p_rcb->client_if == client_if &&
                 p_clcb->transport == transport &&
                 bdcmp(p_clcb->bda, remote_bda) == 0) {
@@ -244,16 +249,16 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
 
     if (p_clcb) {
         p_srcb = p_clcb->p_srcb;
-        if (p_srcb->num_clcb) {
+        if (p_srcb != NULL && p_srcb->num_clcb) {
             p_srcb->num_clcb --;
         }
 
-        if (p_clcb->p_rcb->num_clcb) {
+        if (p_clcb->p_rcb != NULL && p_clcb->p_rcb->num_clcb) {
             p_clcb->p_rcb->num_clcb --;
         }
 
         /* if the srcb is no longer needed, reset the state */
-        if ( p_srcb->num_clcb == 0) {
+        if (p_srcb != NULL && p_srcb->num_clcb == 0) {
             p_srcb->connected = FALSE;
             p_srcb->state = BTA_GATTC_SERV_IDLE;
             p_srcb->mtu = 0;
@@ -268,13 +273,13 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
 #endif
         }
 
-        if ( p_clcb->p_q_cmd != NULL && !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd)){
+        if (p_clcb->p_q_cmd != NULL &&
+            (p_clcb->p_cmd_list == NULL || !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd))) {
             osi_free(p_clcb->p_q_cmd);
             p_clcb->p_q_cmd = NULL;
         }
         // don't forget to clear the command queue before dealloc the clcb.
-        list_clear(p_clcb->p_cmd_list);
-        osi_free((void *)p_clcb->p_cmd_list);
+        list_free(p_clcb->p_cmd_list);
         p_clcb->p_cmd_list = NULL;
         //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
@@ -970,6 +975,10 @@ tBTA_GATTC_CLCB *bta_gattc_find_int_conn_clcb(tBTA_GATTC_DATA *p_msg)
 {
     tBTA_GATTC_CLCB *p_clcb = NULL;
 
+    if (p_msg == NULL) {
+        return NULL;
+    }
+
     if (p_msg->int_conn.role == HCI_ROLE_SLAVE) {
         bta_gattc_conn_find_alloc(p_msg->int_conn.remote_bda);
     }
@@ -1005,6 +1014,10 @@ tBTA_GATTC_CLCB *bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA *p_msg)
 {
     tBTA_GATTC_CLCB         *p_clcb = NULL;
 
+    if (p_msg == NULL) {
+        return NULL;
+    }
+
     bta_gattc_conn_dealloc(p_msg->int_conn.remote_bda);
     if ((p_clcb = bta_gattc_find_clcb_by_conn_id(p_msg->int_conn.hdr.layer_specific)) == NULL) {
         /* connection attempt failed, send connection callback event */
@@ -1033,6 +1046,8 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
     switch (p_src->len)
     {
         case 0:
+            /* Invalid/empty UUID: zero p_dest so callers don't use garbage */
+            memset(p_dest->uu, 0, sizeof(p_dest->uu));
             break;
 
         case LEN_UUID_16:
@@ -1041,8 +1056,8 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
             break;
 
         case LEN_UUID_32:
-            p_dest->uu[12] = p_src->uu.uuid16 & 0xff;
-            p_dest->uu[13] = (p_src->uu.uuid16 >> 8) & 0xff;
+            p_dest->uu[12] = p_src->uu.uuid32 & 0xff;
+            p_dest->uu[13] = (p_src->uu.uuid32 >> 8) & 0xff;
             p_dest->uu[14] = (p_src->uu.uuid32 >> 16) & 0xff;
             p_dest->uu[15] = (p_src->uu.uuid32 >> 24) & 0xff;
             break;
@@ -1054,6 +1069,7 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
 
         default:
             APPL_TRACE_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
+            memset(p_dest->uu, 0, sizeof(p_dest->uu));
             break;
     }
 }

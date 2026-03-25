@@ -45,7 +45,8 @@
 
 #define BTA_DM_MSG_LEN 50
 
-#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       (1 << (id))
+/* Use 1ULL to avoid UB: 1 << 32 is undefined when int is 32-bit (C11 §6.5.7) */
+#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       ((UINT32)(1ULL << (id)))
 
 /* DM events */
 enum {
