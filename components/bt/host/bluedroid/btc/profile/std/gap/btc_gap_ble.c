@@ -88,6 +88,10 @@ static void btc_gap_ble_get_dev_name_callback(UINT8 status, char *name)
 
     ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
     if (ret != BT_STATUS_SUCCESS) {
+        if (param.get_dev_name_cmpl.name) {
+            osi_free(param.get_dev_name_cmpl.name);
+        }
+
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
 }
@@ -213,6 +217,9 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                 mask |= BTM_BLE_AD_BIT_MANU;
                 bta_adv_data->p_manu->len = p_adv_data->manufacturer_len;
                 memcpy(bta_adv_data->p_manu->p_val, p_adv_data->p_manufacturer_data, p_adv_data->manufacturer_len);
+            } else {
+                osi_free(bta_adv_data->p_manu);
+                bta_adv_data->p_manu = NULL;
             }
         }
     }
@@ -246,6 +253,11 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
             p_elem = p_prop->p_elem;
             if (NULL != p_elem) {
                 memcpy(p_elem++, p_elem_service_data, sizeof(tBTA_BLE_PROP_ELEM));
+            } else {
+                osi_free(p_elem_service_data->p_val);
+                osi_free(bta_adv_data->p_proprietary);
+                bta_adv_data->p_proprietary = NULL;
+                mask &= ~BTM_BLE_AD_BIT_PROPRIETARY;
             }
         }
         osi_free(p_elem_service_data);
@@ -274,6 +286,10 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                     mask |= BTM_BLE_AD_BIT_SERVICE;
                     ++bta_adv_data->p_services->num_service;
                     *p_uuid_out16++ = bt_uuid.uu.uuid16;
+                } else {
+                    osi_free(bta_adv_data->p_services);
+                    bta_adv_data->p_services = NULL;
+                    BTC_TRACE_ERROR("%s - memory malloc failed", __FUNCTION__);
                 }
                 break;
             }
@@ -2117,6 +2133,9 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
             }
+        } else {
+            dst->periodic_adv_cfg_data.data = NULL;
+            dst->periodic_adv_cfg_data.len = 0;
         }
         break;
     }
@@ -2205,6 +2224,7 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GAP_BLE_SET_PA_RSP_DATA: {
         btc_ble_5_gap_args_t *src = (btc_ble_5_gap_args_t *)p_src;
         btc_ble_5_gap_args_t *dst = (btc_ble_5_gap_args_t *)p_dest;
+        dst->per_adv_response_data_params.response_data = NULL;
         if (src->per_adv_response_data_params.response_data && src->per_adv_response_data_params.response_data_len) {
             dst->per_adv_response_data_params.response_data = osi_malloc(src->per_adv_response_data_params.response_data_len);
             if (dst->per_adv_response_data_params.response_data) {
@@ -2218,6 +2238,7 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GAP_BLE_SET_PA_SYNC_SUBEVT: {
         btc_ble_5_gap_args_t *src = (btc_ble_5_gap_args_t *)p_src;
         btc_ble_5_gap_args_t *dst = (btc_ble_5_gap_args_t *)p_dest;
+        dst->per_sync_subevent_params.subevent = NULL;
         if (src->per_sync_subevent_params.subevent && src->per_sync_subevent_params.num_subevents_to_sync) {
             dst->per_sync_subevent_params.subevent = osi_malloc(src->per_sync_subevent_params.num_subevents_to_sync);
             if (dst->per_sync_subevent_params.subevent) {
@@ -2301,9 +2322,9 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-    case BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+    case ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT:
         if (src->cs_subevt_result.step_info) {
-            dst->cs_subevt_result.step_info = osi_malloc(src->cs_subevt_result.num_steps_reported * sizeof(esp_ble_cs_step_info));
+            dst->cs_subevt_result.step_info = osi_calloc(src->cs_subevt_result.num_steps_reported * sizeof(esp_ble_cs_step_info));
             if (dst->cs_subevt_result.step_info) {
                 for (UINT8 i = 0; i < src->cs_subevt_result.num_steps_reported; i++)
                 {
@@ -2324,9 +2345,9 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             }
         }
         break;
-    case BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+    case ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT:
         if (src->cs_subevt_result_continue.step_info) {
-            dst->cs_subevt_result_continue.step_info = osi_malloc(src->cs_subevt_result_continue.num_steps_reported * sizeof(esp_ble_cs_step_info));
+            dst->cs_subevt_result_continue.step_info = osi_calloc(src->cs_subevt_result_continue.num_steps_reported * sizeof(esp_ble_cs_step_info));
             if (dst->cs_subevt_result_continue.step_info) {
                 for (UINT8 i = 0; i < src->cs_subevt_result_continue.num_steps_reported; i++)
                 {
@@ -2336,7 +2357,7 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                     if (src->cs_subevt_result_continue.step_info[i].step_data_len) {
                         dst->cs_subevt_result_continue.step_info[i].data = osi_malloc(src->cs_subevt_result_continue.step_info[i].step_data_len);
                         if (dst->cs_subevt_result_continue.step_info[i].data) {
-                            memcpy(dst->cs_subevt_result_continue.step_info[i].data, src->cs_subevt_result_continue.step_info[i].data, src->cs_subevt_result.step_info[i].step_data_len);
+                            memcpy(dst->cs_subevt_result_continue.step_info[i].data, src->cs_subevt_result_continue.step_info[i].data, src->cs_subevt_result_continue.step_info[i].step_data_len);
                         } else {
                             BTC_TRACE_ERROR("%s, data, no enough memory.", __func__);
                         }
@@ -2545,7 +2566,7 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
         break;
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-   case BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+   case ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT:
    {
         esp_ble_cs_step_info *step_info = ((esp_ble_gap_cb_param_t *)msg->arg)->cs_subevt_result.step_info;
         if (step_info) {
@@ -2560,7 +2581,7 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
         }
    }
         break;
-    case BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+    case ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT:
     {
         esp_ble_cs_step_info *step_info = ((esp_ble_gap_cb_param_t *)msg->arg)->cs_subevt_result_continue.step_info;
         if (step_info) {
@@ -2797,14 +2818,14 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_PASSKEY_REPLY_EVT: {
         BD_ADDR bd_addr;
-        memcpy(bd_addr, arg->enc_passkey_replay.bd_addr, sizeof(BD_ADDR));
-        BTA_DmBlePasskeyReply(bd_addr, arg->enc_passkey_replay.accept, arg->enc_passkey_replay.passkey);
+        memcpy(bd_addr, arg->enc_passkey_reply.bd_addr, sizeof(BD_ADDR));
+        BTA_DmBlePasskeyReply(bd_addr, arg->enc_passkey_reply.accept, arg->enc_passkey_reply.passkey);
         break;
     }
     case BTC_GAP_BLE_CONFIRM_REPLY_EVT: {
         BD_ADDR bd_addr;
-        memcpy(bd_addr, arg->enc_comfirm_replay.bd_addr, sizeof(BD_ADDR));
-        BTA_DmBleConfirmReply(bd_addr, arg->enc_comfirm_replay.accept);
+        memcpy(bd_addr, arg->enc_confirm_reply.bd_addr, sizeof(BD_ADDR));
+        BTA_DmBleConfirmReply(bd_addr, arg->enc_confirm_reply.accept);
         break;
     }
     case BTC_GAP_BLE_REMOVE_BOND_DEV_EVT: {

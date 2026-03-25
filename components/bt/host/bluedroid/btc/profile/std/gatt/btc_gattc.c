@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
 
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -40,6 +40,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->write_char.value, src->write_char.value, src->write_char.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->write_char.value_len = 0;
         }
         break;
     }
@@ -49,6 +50,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->write_descr.value, src->write_descr.value, src->write_descr.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->write_descr.value_len = 0;
         }
         break;
     }
@@ -58,6 +60,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->prep_write.value, src->prep_write.value, src->prep_write.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->prep_write.value_len = 0;
         }
         break;
     }
@@ -67,6 +70,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->prep_write_descr.value, src->prep_write_descr.value, src->prep_write_descr.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->prep_write_descr.value_len = 0;
         }
         break;
     }
@@ -332,6 +336,11 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
     tBT_UUID *bta_uuid = NULL;
     if (svc_uuid) {
         bta_uuid = osi_malloc(sizeof(tBT_UUID));
+        if (bta_uuid == NULL) {
+            *count = 0;
+            return ESP_GATT_NO_RESOURCES;
+        }
+
         btc_to_bta_uuid(bta_uuid, svc_uuid);
     }
 
@@ -616,16 +625,16 @@ static void btc_gattc_read_char(btc_ble_gattc_args_t *arg)
 static void btc_gattc_read_multiple_char(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_MULTI bta_multi;
-    bta_multi.num_attr = arg->read_multiple.num_attr;
-    memcpy(bta_multi.handles, arg->read_multiple.handles, BTA_GATTC_MULTI_MAX);
+    bta_multi.num_attr = (arg->read_multiple.num_attr > BTA_GATTC_MULTI_MAX) ? BTA_GATTC_MULTI_MAX : arg->read_multiple.num_attr;
+    memcpy(bta_multi.handles, arg->read_multiple.handles, sizeof(uint16_t) * bta_multi.num_attr);
     BTA_GATTC_ReadMultiple(arg->read_multiple.conn_id, &bta_multi, arg->read_multiple.auth_req);
 }
 
 static void btc_gattc_read_multiple_variable_char(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_MULTI bta_multi;
-    bta_multi.num_attr = arg->read_multiple.num_attr;
-    memcpy(bta_multi.handles, arg->read_multiple.handles, BTA_GATTC_MULTI_MAX);
+    bta_multi.num_attr = (arg->read_multiple.num_attr > BTA_GATTC_MULTI_MAX) ? BTA_GATTC_MULTI_MAX : arg->read_multiple.num_attr;
+    memcpy(bta_multi.handles, arg->read_multiple.handles, sizeof(uint16_t) * bta_multi.num_attr);
     BTA_GATTC_ReadMultipleVariable(arg->read_multiple.conn_id, &bta_multi, arg->read_multiple.auth_req);
 }
 
@@ -676,7 +685,11 @@ static void btc_gattc_prepare_write(btc_ble_gattc_args_t *arg)
 static void btc_gattc_prepare_write_char_descr(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_UNFMT descr_val;
-
+    /*
+    According to the Bluetooth Core Specification, a Prepare Write Request can have a zero-length value.
+    The underlying BTA layer function BTA_GATTC_PrepareWriteCharDescr is implemented to handle zero-length data correctly by skipping the memory copy
+    but still sending the message to the stack.
+    */
     descr_val.len = arg->prep_write_descr.value_len;
     descr_val.p_value = arg->prep_write_descr.value;
     BTA_GATTC_PrepareWriteCharDescr(arg->prep_write_descr.conn_id,
