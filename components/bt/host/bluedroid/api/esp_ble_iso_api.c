@@ -14,6 +14,9 @@
 
 esp_err_t esp_ble_iso_register_callback(esp_ble_iso_cb_t callback)
 {
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_ISO_BLE, callback) == 0 ? ESP_OK : ESP_FAIL);
@@ -21,23 +24,55 @@ esp_err_t esp_ble_iso_register_callback(esp_ble_iso_cb_t callback)
 
 esp_ble_iso_cb_t esp_ble_iso_get_callback(void)
 {
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return NULL;
+    }
+
     return (esp_ble_iso_cb_t) btc_profile_cb_get(BTC_PID_ISO_BLE);
 }
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 esp_err_t esp_ble_iso_create_big(esp_ble_iso_big_creat_params_t *big_creat_param)
 {
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (big_creat_param == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-
-    if (big_creat_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
+    if (big_creat_param->num_bis == 0 || big_creat_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->num_bis > ESP_BLE_MAX_BIS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->sdu_interval < BLE_ISO_SDU_INT_MIN || big_creat_param->sdu_interval > BLE_ISO_SDU_INT_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->max_sdu < 0x0001 || big_creat_param->max_sdu > 0x0FFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->max_transport_latency < BLE_ISO_MAX_TRANSPORT_LATENCY_MIN ||
+            big_creat_param->max_transport_latency > BLE_ISO_MAX_TRANSPORT_LATENCY_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->rtn > 0x1E) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((big_creat_param->phy != 0x01) && (big_creat_param->phy != 0x02) && (big_creat_param->phy != 0x04)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->packing > 0x01) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->framing > BLE_ISO_FRAMING_FRAMED_PDU_UNSEGMENTABLE_MODE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_param->encryption > 0x01) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -53,18 +88,58 @@ esp_err_t esp_ble_iso_create_big(esp_ble_iso_big_creat_params_t *big_creat_param
 
 esp_err_t esp_ble_iso_create_big_test(esp_ble_iso_big_creat_test_params_t *big_creat_test_param)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (big_creat_test_param == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-
-    if (big_creat_test_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
+    if (big_creat_test_param->num_bis == 0 || big_creat_test_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (big_creat_test_param->num_bis > ESP_BLE_MAX_BIS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->sdu_interval < BLE_ISO_SDU_INT_MIN || big_creat_test_param->sdu_interval > BLE_ISO_SDU_INT_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->iso_interval < 0x0004 || big_creat_test_param->iso_interval > 0x0C80) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->nse == 0 || big_creat_test_param->nse > 0x1F) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->max_sdu < 0x0001 || big_creat_test_param->max_sdu > 0x0FFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->max_pdu < 0x0001 || big_creat_test_param->max_pdu > 0x00FB) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((big_creat_test_param->phy != 0x01) && (big_creat_test_param->phy != 0x02) && (big_creat_test_param->phy != 0x04)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->framing > BLE_ISO_FRAMING_FRAMED_PDU_UNSEGMENTABLE_MODE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->bn == 0 || big_creat_test_param->bn > 0x07) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->irc == 0 || big_creat_test_param->irc > 0x0F) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->encryption > 0x01) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->packing > 0x01) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_creat_test_param->pto > 0x0F) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_ISO_BLE;
@@ -78,10 +153,16 @@ esp_err_t esp_ble_iso_create_big_test(esp_ble_iso_big_creat_test_params_t *big_c
 
 esp_err_t esp_ble_iso_terminate_big(uint8_t big_handle, uint8_t reason)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    /* big_handle: 0x00 to 0xEF */
+    if (big_handle > 0xEF) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_ISO_BLE;
@@ -93,22 +174,50 @@ esp_err_t esp_ble_iso_terminate_big(uint8_t big_handle, uint8_t reason)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_iso_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 esp_err_t esp_ble_iso_big_create_sync(esp_ble_iso_big_sync_creat_params_t *big_sync_create_param)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (big_sync_create_param == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-
-    if (big_sync_create_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
+    /* num_bis: 0x01 to 0x1F, and not more than BLE_ISO_BIS_MAX_COUNT */
+    if (big_sync_create_param->num_bis == 0 || big_sync_create_param->num_bis > BLE_ISO_BIS_MAX_COUNT) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (big_sync_create_param->num_bis > ESP_BLE_MAX_BIS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_sync_create_param->big_handle > 0xEF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* sync_handle: 0x0000 to 0x0EFF */
+    if (big_sync_create_param->sync_handle > 0x0EFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (big_sync_create_param->encryption > 0x01) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* mse: 0x00 to 0x1F */
+    if (big_sync_create_param->mse > 0x1F) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* big_sync_timeout: 0x000A to 0x4000 */
+    if (big_sync_create_param->big_sync_timeout < 0x000A || big_sync_create_param->big_sync_timeout > 0x4000) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    for (uint8_t k = 0; k < big_sync_create_param->num_bis; k++) {
+        /* BIS index: 0x01 to 0x1F */
+        if (big_sync_create_param->bis[k] == 0 || big_sync_create_param->bis[k] > 0x1F) {
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -127,18 +236,22 @@ esp_err_t esp_ble_iso_big_create_sync(esp_ble_iso_big_sync_creat_params_t *big_s
         arg.iso_big_sync_creat_params.bis[i] = big_sync_create_param->bis[i];
     }
 
-    // memcpy(&arg.iso_big_sync_creat_params, big_sync_create_param, sizeof(esp_ble_iso_big_sync_creat_params_t));
-
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_iso_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_iso_big_terminate_sync(uint8_t big_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    /* big_handle: 0x00 to 0xEF */
+    if (big_handle > 0xEF) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_ISO_BLE;
@@ -155,6 +268,7 @@ esp_err_t esp_ble_iso_set_iso_data_path(esp_ble_iso_set_data_path_params_t *data
 {
     btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -173,6 +287,10 @@ esp_err_t esp_ble_iso_set_iso_data_path(esp_ble_iso_set_data_path_params_t *data
     }
 
     if (data_path_params->data_path_dir > ESP_BLE_ISO_DATA_PATH_DIR_OUTPUT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* controller_delay: 0x000000 to 0x3D0900 (0 to 4 s in microseconds) */
+    if (data_path_params->controller_delay > 0x3D0900) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -198,6 +316,7 @@ esp_err_t esp_ble_iso_remove_iso_data_path(esp_ble_iso_remove_data_path_params_t
 {
     btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -226,6 +345,7 @@ esp_err_t esp_ble_iso_read_iso_tx_sync(uint16_t iso_handle)
 {
     btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -244,6 +364,7 @@ esp_err_t esp_ble_iso_read_link_quality(uint16_t iso_handle)
 {
     btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -261,14 +382,36 @@ esp_err_t esp_ble_iso_read_link_quality(uint16_t iso_handle)
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
 esp_err_t esp_ble_iso_set_cig_parameters(struct esp_ble_iso_set_cig_params *cig_params)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if ((cig_params == NULL) || (cig_params->cis_cnt > BLE_ISO_CIS_MAX_COUNT)) {
+    if (cig_params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->cis_cnt == 0 || cig_params->cis_cnt > BLE_ISO_CIS_MAX_COUNT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->sdu_int_c_to_p < BLE_ISO_SDU_INT_MIN || cig_params->sdu_int_c_to_p > BLE_ISO_SDU_INT_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->sdu_int_p_to_c < BLE_ISO_SDU_INT_MIN || cig_params->sdu_int_p_to_c > BLE_ISO_SDU_INT_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->worse_case_SCA > BLE_ISO_WORST_CASE_SCA_LEVEL_20_PPM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->framing > BLE_ISO_FRAMING_FRAMED_PDU_UNSEGMENTABLE_MODE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->mtl_c_to_p < BLE_ISO_MAX_TRANSPORT_LATENCY_MIN || cig_params->mtl_c_to_p > BLE_ISO_MAX_TRANSPORT_LATENCY_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params->mtl_p_to_c < BLE_ISO_MAX_TRANSPORT_LATENCY_MIN || cig_params->mtl_p_to_c > BLE_ISO_MAX_TRANSPORT_LATENCY_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -293,14 +436,33 @@ esp_err_t esp_ble_iso_set_cig_parameters(struct esp_ble_iso_set_cig_params *cig_
 
 esp_err_t esp_ble_iso_set_cig_parameters_test(struct esp_ble_iso_set_cig_params_test *cig_params_test)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if ((cig_params_test == NULL) || (cig_params_test->cis_cnt > BLE_ISO_CIS_MAX_COUNT)) {
+    if (cig_params_test == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params_test->cis_cnt == 0 || cig_params_test->cis_cnt > BLE_ISO_CIS_MAX_COUNT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params_test->sdu_int_c_to_p < BLE_ISO_SDU_INT_MIN || cig_params_test->sdu_int_c_to_p > BLE_ISO_SDU_INT_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params_test->sdu_int_p_to_c < BLE_ISO_SDU_INT_MIN || cig_params_test->sdu_int_p_to_c > BLE_ISO_SDU_INT_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params_test->iso_interval < 0x0004 || cig_params_test->iso_interval > 0x0C80) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params_test->worse_case_SCA > BLE_ISO_WORST_CASE_SCA_LEVEL_20_PPM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cig_params_test->framing > BLE_ISO_FRAMING_FRAMED_PDU_UNSEGMENTABLE_MODE) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -326,14 +488,18 @@ esp_err_t esp_ble_iso_set_cig_parameters_test(struct esp_ble_iso_set_cig_params_
 
 esp_err_t esp_ble_iso_create_cis(struct esp_ble_iso_create_cis_params *creat_cis_params)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if ((creat_cis_params == NULL) || (creat_cis_params->cis_count > BLE_ISO_CIS_MAX_COUNT)) {
+    if (creat_cis_params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (creat_cis_params->cis_count == 0 || creat_cis_params->cis_count > BLE_ISO_CIS_MAX_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -355,11 +521,17 @@ esp_err_t esp_ble_iso_create_cis(struct esp_ble_iso_create_cis_params *creat_cis
 
 esp_err_t esp_ble_iso_remove_cig(uint8_t cig_id)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    /* cig_id: 0x00 to 0xEF */
+    if (cig_id > 0xEF) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -375,11 +547,16 @@ esp_err_t esp_ble_iso_remove_cig(uint8_t cig_id)
 #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 esp_err_t esp_ble_iso_accept_cis_request(uint16_t cis_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+    /* Connection handle range: 0x0000 to 0x0EFF */
+    if (cis_handle > 0x0EFF) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -393,11 +570,15 @@ esp_err_t esp_ble_iso_accept_cis_request(uint16_t cis_handle)
 
 esp_err_t esp_ble_iso_reject_cis_request(uint16_t cis_handle, uint8_t reason)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+    if (cis_handle > 0x0EFF) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -414,11 +595,15 @@ esp_err_t esp_ble_iso_reject_cis_request(uint16_t cis_handle, uint8_t reason)
 #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 esp_err_t esp_ble_iso_disconnect_cis(uint16_t cis_handle, uint8_t reason)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_iso_args_t arg;
+    memset(&arg, 0, sizeof(arg));
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+    if (cis_handle > 0x0EFF) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
