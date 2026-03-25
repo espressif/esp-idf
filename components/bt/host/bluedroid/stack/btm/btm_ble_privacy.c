@@ -49,6 +49,7 @@
 #define BTM_BLE_META_CLEAR_IRK_LEN      1
 #define BTM_BLE_META_READ_IRK_LEN       2
 #define BTM_BLE_META_ADD_WL_ATTR_LEN    9
+#define BTM_BLE_IRK_LIST_INVALID_INDEX  0xFF
 
 #if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
 static bool is_deleting_zero_addr;
@@ -166,7 +167,7 @@ void btm_ble_clear_irk_index(UINT8 index)
 **
 ** Description      find the first available IRK list index
 **
-** Returns          index from 0 ~ max (127 default)
+** Returns          index from 0 ~ max-1, or BTM_BLE_IRK_LIST_INVALID_INDEX if full
 **
 *******************************************************************************/
 UINT8 btm_ble_find_irk_index(void)
@@ -187,7 +188,7 @@ UINT8 btm_ble_find_irk_index(void)
     }
 
     BTM_TRACE_ERROR ("%s failed, list full", __func__);
-    return i;
+    return BTM_BLE_IRK_LIST_INVALID_INDEX;
 }
 
 /*******************************************************************************
@@ -209,7 +210,13 @@ void btm_ble_update_resolving_list(BD_ADDR pseudo_bda, BOOLEAN add)
     if (add) {
         p_dev_rec->ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
         if (!controller_get_interface()->supports_ble_privacy()) {
-            p_dev_rec->ble.resolving_list_index = btm_ble_find_irk_index();
+            UINT8 irk_index = btm_ble_find_irk_index();
+            if (irk_index != BTM_BLE_IRK_LIST_INVALID_INDEX) {
+                p_dev_rec->ble.resolving_list_index = irk_index;
+            } else {
+                p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
+                BTM_TRACE_WARNING("%s: IRK list full, cannot add to resolving list", __func__);
+            }
         }
     } else {
         p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;

@@ -441,12 +441,12 @@ tBTM_SEC_DEV_REC *btm_find_dev_by_identity_addr(BD_ADDR bd_addr, UINT8 addr_type
     context.free_check          = FALSE;
     p_node = list_foreach(btm_cb.p_sec_dev_rec_list, btm_find_sec_dev_in_list, &context);
     if (p_node) {
-	p_dev_rec = list_node(p_node);
+	    p_dev_rec = list_node(p_node);
         if ((p_dev_rec->ble.static_addr_type & (~BLE_ADDR_TYPE_ID_BIT)) !=
                 (addr_type & (~BLE_ADDR_TYPE_ID_BIT))) {
             BTM_TRACE_WARNING("%s find pseudo->random match with diff addr type: %d vs %d",
                               __func__, p_dev_rec->ble.static_addr_type, addr_type);
-	}
+	    }
     }
     return p_dev_rec;
 #endif

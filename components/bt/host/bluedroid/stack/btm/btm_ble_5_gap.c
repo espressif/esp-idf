@@ -203,8 +203,6 @@ static const char *btm_ble_hci_status_to_str(tHCI_STATUS status)
     default:
         return "Invalid HCI status code.";
     }
-
-    return NULL;
 }
 #endif /* !UC_BT_STACK_NO_LOG */
 
@@ -384,6 +382,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 
     if ((status = btm_ble_ext_adv_params_validate(params)) != BTM_SUCCESS) {
         BTM_TRACE_ERROR("%s, invalid extend adv params.", __func__);
+        goto end;
     }
 
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE) {
@@ -567,10 +566,6 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
             BTM_TRACE_ERROR("LE EA En=%d: cmd err=0x%x", enable, err);
             status = BTM_HCI_ERROR | err;
         }
-
-        osi_free(instance);
-        osi_free(duration);
-        osi_free(max_events);
     } else {
         // enable = false, num == 0 or ext_adv = NULL
 
@@ -584,6 +579,15 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
 
 
 end:
+    if (instance) {
+        osi_free(instance);
+    }
+    if (duration) {
+        osi_free(duration);
+    }
+    if (max_events) {
+        osi_free(max_events);
+    }
 
     if (!enable && status == BTM_SUCCESS) {
         // disable all ext adv
@@ -602,6 +606,9 @@ end:
             for (uint8_t i = 0; i < num; i++)
             {
                 uint8_t index = ext_adv[i].instance;
+                if (index >= MAX_BLE_ADV_INSTANCE) {
+                    continue;
+                }
                 adv_record[index].invalid = false;
                 adv_record[index].enabled = false;
                 adv_record[index].instance = INVALID_VALUE_8BIT;
@@ -616,6 +623,9 @@ end:
         for (uint8_t i = 0; i < num; i++)
         {
             uint8_t index = ext_adv[i].instance;
+            if (index >= MAX_BLE_ADV_INSTANCE) {
+                continue;
+            }
             adv_record[index].invalid = true;
             adv_record[index].enabled = true;
             adv_record[index].instance = ext_adv[i].instance;

@@ -401,7 +401,7 @@ extern "C" {
 
 void btm_ble_timeout(TIMER_LIST_ENT *p_tle);
 #if (BLE_42_SCAN_EN == TRUE)
-void btm_ble_process_adv_pkt (UINT8 *p);
+void btm_ble_process_adv_pkt (UINT8 *p, UINT8 evt_len);
 void btm_ble_process_adv_discard_evt(UINT8 *p);
 void btm_ble_process_direct_adv_pkt (UINT8 *p);
 bool btm_ble_adv_pkt_ready(void);
