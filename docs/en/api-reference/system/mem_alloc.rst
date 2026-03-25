@@ -42,6 +42,12 @@ All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MAL
 
 When calling ``malloc()``, the ESP-IDF ``malloc()`` internally calls ``heap_caps_malloc_default(size)``. This will allocate memory with the capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
+``MALLOC_CAP_DEFAULT`` describes the memory capability, not the exact allocation policy. In particular, ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` is not required to follow the same placement strategy as ``malloc()``.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    For example, when :doc:`external RAM </api-guides/external-ram>` is added to the capability allocator, ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` may return external RAM, while ``malloc()`` may still prefer or require internal RAM depending on the configuration.
+
 Because ``malloc()`` uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling the standard ``free()`` function.
 
 Available Heap
