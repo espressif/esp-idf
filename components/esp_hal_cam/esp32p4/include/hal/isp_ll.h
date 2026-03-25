@@ -299,10 +299,10 @@ static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_sr
     case ISP_CLK_SRC_XTAL:
         clk_val = 0;
         break;
-    case ISP_CLK_SRC_PLL160:
+    case ISP_CLK_SRC_PLL240:
         clk_val = 1;
         break;
-    case ISP_CLK_SRC_PLL240:
+    case ISP_CLK_SRC_PLL160:
         clk_val = 2;
         break;
     default:
