@@ -115,116 +115,116 @@ const tBTA_HH_ACTION bta_hh_action[] = {
 
 /* state table for idle state */
 const UINT8 bta_hh_st_idle[][BTA_HH_NUM_COLS] = {
-    /* Event                          Action                    Next state */
-    /* BTA_HH_API_OPEN_EVT      */    {BTA_HH_START_SDP,     BTA_HH_W4_CONN_ST },
-    /* BTA_HH_API_CLOSE_EVT     */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_OPEN_EVT      */    {BTA_HH_OPEN_ACT,      BTA_HH_W4_CONN_ST },
-    /* BTA_HH_INT_CLOSE_EVT     */    {BTA_HH_CLOSE_ACT,     BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_DATA_EVT      */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_CTRL_DATA     */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_HANDSK_EVT    */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_SDP_CMPL_EVT      */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_API_WRITE_DEV_EVT */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_API_GET_DSCP_EVT  */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_API_MAINT_DEV_EVT */    {BTA_HH_MAINT_DEV_ACT, BTA_HH_IDLE_ST    },
-    /* BTA_HH_OPEN_CMPL_EVT        */  {BTA_HH_OPEN_CMPL_ACT, BTA_HH_CONN_ST    }
+    /* Event                             Action                Next state */
+    /* BTA_HH_API_OPEN_EVT        */    {BTA_HH_START_SDP,     BTA_HH_W4_CONN_ST },
+    /* BTA_HH_API_CLOSE_EVT       */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_OPEN_EVT        */    {BTA_HH_OPEN_ACT,      BTA_HH_W4_CONN_ST },
+    /* BTA_HH_INT_CLOSE_EVT       */    {BTA_HH_CLOSE_ACT,     BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_DATA_EVT        */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_CTRL_DATA       */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_HANDSK_EVT      */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_SDP_CMPL_EVT        */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_API_WRITE_DEV_EVT   */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_API_GET_DSCP_EVT    */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_API_MAINT_DEV_EVT   */    {BTA_HH_MAINT_DEV_ACT, BTA_HH_IDLE_ST    },
+    /* BTA_HH_OPEN_CMPL_EVT       */    {BTA_HH_OPEN_CMPL_ACT, BTA_HH_CONN_ST    },
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-    /* BTA_HH_GATT_CLOSE_EVT    */   , {BTA_HH_IGNORE,         BTA_HH_IDLE_ST    }
-    /* BTA_HH_GATT_OPEN_EVT    */    , {BTA_HH_GATT_OPEN,      BTA_HH_W4_CONN_ST }
-    /* BTA_HH_START_ENC_EVT    */    , {BTA_HH_IGNORE,         BTA_HH_IDLE_ST    }
-    /* BTA_HH_ENC_CMPL_EVT     */    , {BTA_HH_IGNORE,         BTA_HH_IDLE_ST    }
-    /* READ_CHAR_CMPL_EVT */         , {BTA_HH_IGNORE,       BTA_HH_IDLE_ST  }
-    /* BTA_HH_GATT_WRITE_CMPL_EVT*/    , {BTA_HH_IGNORE,       BTA_HH_IDLE_ST  }
-    /* READ_DESCR_CMPL_EVT */        , {BTA_HH_IGNORE,           BTA_HH_IDLE_ST  }
-    /* WRITE_DESCR_CMPL_EVT */       , {BTA_HH_IGNORE,           BTA_HH_IDLE_ST   }
-    /* SCPP_UPDATE_EVT */            , {BTA_HH_IGNORE,           BTA_HH_IDLE_ST   }
-    /* BTA_HH_GATT_ENC_CMPL_EVT */   , {BTA_HH_IGNORE,           BTA_HH_IDLE_ST   }
+    /* BTA_HH_GATT_CLOSE_EVT      */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_GATT_OPEN_EVT       */    {BTA_HH_GATT_OPEN,     BTA_HH_W4_CONN_ST },
+    /* BTA_HH_START_ENC_EVT       */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_ENC_CMPL_EVT        */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* READ_CHAR_CMPL_EVT         */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_GATT_WRITE_CMPL_EVT */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* READ_DESCR_CMPL_EVT        */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* WRITE_DESCR_CMPL_EVT       */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* SCPP_UPDATE_EVT            */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
+    /* BTA_HH_GATT_ENC_CMPL_EVT   */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
 #endif
 
 };
 
 
 const UINT8 bta_hh_st_w4_conn[][BTA_HH_NUM_COLS] = {
-    /* Event                          Action                 Next state */
-    /* BTA_HH_API_OPEN_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST },
-    /* BTA_HH_API_CLOSE_EVT     */    {BTA_HH_IGNORE,        BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_OPEN_EVT      */    {BTA_HH_OPEN_ACT,      BTA_HH_W4_CONN_ST },
-    /* BTA_HH_INT_CLOSE_EVT     */    {BTA_HH_OPEN_FAILURE,  BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_DATA_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST },
-    /* BTA_HH_INT_CTRL_DATA     */    {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST },
-    /* BTA_HH_INT_HANDSK_EVT    */    {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST },
-    /* BTA_HH_SDP_CMPL_EVT      */    {BTA_HH_SDP_CMPL,      BTA_HH_W4_CONN_ST },
-    /* BTA_HH_API_WRITE_DEV_EVT */    {BTA_HH_WRITE_DEV_ACT, BTA_HH_W4_CONN_ST },
-    /* BTA_HH_API_GET_DSCP_EVT  */    {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST },
-    /* BTA_HH_API_MAINT_DEV_EVT */    {BTA_HH_MAINT_DEV_ACT, BTA_HH_IDLE_ST    },
-    /* BTA_HH_OPEN_CMPL_EVT     */    {BTA_HH_OPEN_CMPL_ACT, BTA_HH_CONN_ST    }
+    /* Event                             Action                   Next state */
+    /* BTA_HH_API_OPEN_EVT        */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* BTA_HH_API_CLOSE_EVT       */    {BTA_HH_IGNORE,           BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_OPEN_EVT        */    {BTA_HH_OPEN_ACT,         BTA_HH_W4_CONN_ST },
+    /* BTA_HH_INT_CLOSE_EVT       */    {BTA_HH_OPEN_FAILURE,     BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_DATA_EVT        */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* BTA_HH_INT_CTRL_DATA       */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* BTA_HH_INT_HANDSK_EVT      */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* BTA_HH_SDP_CMPL_EVT        */    {BTA_HH_SDP_CMPL,         BTA_HH_W4_CONN_ST },
+    /* BTA_HH_API_WRITE_DEV_EVT   */    {BTA_HH_WRITE_DEV_ACT,    BTA_HH_W4_CONN_ST },
+    /* BTA_HH_API_GET_DSCP_EVT    */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* BTA_HH_API_MAINT_DEV_EVT   */    {BTA_HH_MAINT_DEV_ACT,    BTA_HH_IDLE_ST    },
+    /* BTA_HH_OPEN_CMPL_EVT       */    {BTA_HH_OPEN_CMPL_ACT,    BTA_HH_CONN_ST    },
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-    /* BTA_HH_GATT_CLOSE_EVT    */   , {BTA_HH_LE_OPEN_FAIL,  BTA_HH_IDLE_ST    }
-    /* BTA_HH_GATT_OPEN_EVT    */    , {BTA_HH_GATT_OPEN,     BTA_HH_W4_CONN_ST }
-    /* BTA_HH_START_ENC_EVT    */    , {BTA_HH_START_SEC,     BTA_HH_W4_SEC     }
-    /* BTA_HH_ENC_CMPL_EVT     */    , {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST }
-    /* READ_CHAR_CMPL_EVT */        , {BTA_HH_W4_LE_READ_CHAR,    BTA_HH_W4_CONN_ST  }
-    /* BTA_HH_GATT_WRITE_CMPL_EVT*/  , {BTA_HH_W4_LE_WRITE,    BTA_HH_W4_CONN_ST  }
-    /* READ_DESCR_CMPL_EVT */        , {BTA_HH_W4_LE_READ_DESCR, BTA_HH_W4_CONN_ST  }
-    /* WRITE_DESCR_CMPL_EVT */       , {BTA_HH_WRITE_DESCR,   BTA_HH_W4_CONN_ST   }
-    /* SCPP_UPDATE_EVT */            , {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST   }
-    /* BTA_HH_GATT_ENC_CMPL_EVT */   , {BTA_HH_IGNORE,        BTA_HH_W4_CONN_ST }
+    /* BTA_HH_GATT_CLOSE_EVT      */    {BTA_HH_LE_OPEN_FAIL,     BTA_HH_IDLE_ST    },
+    /* BTA_HH_GATT_OPEN_EVT       */    {BTA_HH_GATT_OPEN,        BTA_HH_W4_CONN_ST },
+    /* BTA_HH_START_ENC_EVT       */    {BTA_HH_START_SEC,        BTA_HH_W4_SEC     },
+    /* BTA_HH_ENC_CMPL_EVT        */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* READ_CHAR_CMPL_EVT         */    {BTA_HH_W4_LE_READ_CHAR,  BTA_HH_W4_CONN_ST },
+    /* BTA_HH_GATT_WRITE_CMPL_EVT */    {BTA_HH_W4_LE_WRITE,      BTA_HH_W4_CONN_ST },
+    /* READ_DESCR_CMPL_EVT        */    {BTA_HH_W4_LE_READ_DESCR, BTA_HH_W4_CONN_ST },
+    /* WRITE_DESCR_CMPL_EVT       */    {BTA_HH_WRITE_DESCR,      BTA_HH_W4_CONN_ST },
+    /* SCPP_UPDATE_EVT            */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
+    /* BTA_HH_GATT_ENC_CMPL_EVT   */    {BTA_HH_IGNORE,           BTA_HH_W4_CONN_ST },
 #endif
 };
 
 
 const UINT8 bta_hh_st_connected[][BTA_HH_NUM_COLS] = {
-    /* Event                          Action                 Next state */
-    /* BTA_HH_API_OPEN_EVT      */    {BTA_HH_IGNORE,        BTA_HH_CONN_ST    },
-    /* BTA_HH_API_CLOSE_EVT     */    {BTA_HH_API_DISC_ACT,  BTA_HH_CONN_ST    },
-    /* BTA_HH_INT_OPEN_EVT      */    {BTA_HH_OPEN_ACT,      BTA_HH_CONN_ST    },
-    /* BTA_HH_INT_CLOSE_EVT     */    {BTA_HH_CLOSE_ACT,     BTA_HH_IDLE_ST    },
-    /* BTA_HH_INT_DATA_EVT      */    {BTA_HH_DATA_ACT,      BTA_HH_CONN_ST    },
-    /* BTA_HH_INT_CTRL_DATA     */    {BTA_HH_CTRL_DAT_ACT,  BTA_HH_CONN_ST    },
-    /* BTA_HH_INT_HANDSK_EVT    */    {BTA_HH_HANDSK_ACT,    BTA_HH_CONN_ST    },
-    /* BTA_HH_SDP_CMPL_EVT      */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST       },
-    /* BTA_HH_API_WRITE_DEV_EVT */    {BTA_HH_WRITE_DEV_ACT, BTA_HH_CONN_ST    },
-    /* BTA_HH_API_GET_DSCP_EVT  */    {BTA_HH_GET_DSCP_ACT,  BTA_HH_CONN_ST    },
-    /* BTA_HH_API_MAINT_DEV_EVT */    {BTA_HH_MAINT_DEV_ACT, BTA_HH_CONN_ST    },
-    /* BTA_HH_OPEN_CMPL_EVT        */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST    }
+    /* Event                           Action                 Next state */
+    /* BTA_HH_API_OPEN_EVT      */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
+    /* BTA_HH_API_CLOSE_EVT     */    {BTA_HH_API_DISC_ACT,   BTA_HH_CONN_ST },
+    /* BTA_HH_INT_OPEN_EVT      */    {BTA_HH_OPEN_ACT,       BTA_HH_CONN_ST },
+    /* BTA_HH_INT_CLOSE_EVT     */    {BTA_HH_CLOSE_ACT,      BTA_HH_IDLE_ST },
+    /* BTA_HH_INT_DATA_EVT      */    {BTA_HH_DATA_ACT,       BTA_HH_CONN_ST },
+    /* BTA_HH_INT_CTRL_DATA     */    {BTA_HH_CTRL_DAT_ACT,   BTA_HH_CONN_ST },
+    /* BTA_HH_INT_HANDSK_EVT    */    {BTA_HH_HANDSK_ACT,     BTA_HH_CONN_ST },
+    /* BTA_HH_SDP_CMPL_EVT      */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
+    /* BTA_HH_API_WRITE_DEV_EVT */    {BTA_HH_WRITE_DEV_ACT,  BTA_HH_CONN_ST },
+    /* BTA_HH_API_GET_DSCP_EVT  */    {BTA_HH_GET_DSCP_ACT,   BTA_HH_CONN_ST },
+    /* BTA_HH_API_MAINT_DEV_EVT */    {BTA_HH_MAINT_DEV_ACT,  BTA_HH_CONN_ST },
+    /* BTA_HH_OPEN_CMPL_EVT     */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-    /* BTA_HH_GATT_CLOSE_EVT    */    , {BTA_HH_GATT_CLOSE,    BTA_HH_IDLE_ST    }
-    /* BTA_HH_GATT_OPEN_EVT    */    , {BTA_HH_IGNORE,        BTA_HH_CONN_ST    }
-    /* BTA_HH_START_ENC_EVT    */    , {BTA_HH_IGNORE,        BTA_HH_CONN_ST     }
-    /* BTA_HH_ENC_CMPL_EVT     */    , {BTA_HH_IGNORE,        BTA_HH_CONN_ST     }
-    /* READ_CHAR_CMPL_EVT */         , {BTA_HH_LE_READ_CHAR,  BTA_HH_CONN_ST     }
-    /* WRITE_CHAR_CMPL_EVT*/         , {BTA_HH_LE_WRITE,      BTA_HH_CONN_ST     }
-    /* READ_DESCR_CMPL_EVT */        , {BTA_HH_LE_READ_DESCR, BTA_HH_CONN_ST     }  /* do not currently read any descr when connection up */
-    /* WRITE_DESCR_CMPL_EVT */       , {BTA_HH_WRITE_DESCR,   BTA_HH_CONN_ST     }  /* do not currently write any descr when connection up */
-    /* SCPP_UPDATE_EVT */            , {BTA_HH_LE_UPDATE_SCPP,  BTA_HH_CONN_ST   }
-    /* BTA_HH_GATT_ENC_CMPL_EVT */   , {BTA_HH_IGNORE,        BTA_HH_CONN_ST     }
+    /* BTA_HH_GATT_CLOSE_EVT    */    {BTA_HH_GATT_CLOSE,     BTA_HH_IDLE_ST },
+    /* BTA_HH_GATT_OPEN_EVT     */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
+    /* BTA_HH_START_ENC_EVT     */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
+    /* BTA_HH_ENC_CMPL_EVT      */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
+    /* READ_CHAR_CMPL_EVT       */    {BTA_HH_LE_READ_CHAR,   BTA_HH_CONN_ST },
+    /* WRITE_CHAR_CMPL_EVT      */    {BTA_HH_LE_WRITE,       BTA_HH_CONN_ST },
+    /* READ_DESCR_CMPL_EVT      */    {BTA_HH_LE_READ_DESCR,  BTA_HH_CONN_ST },  /* do not currently read any descr when connection up */
+    /* WRITE_DESCR_CMPL_EVT     */    {BTA_HH_WRITE_DESCR,    BTA_HH_CONN_ST },  /* do not currently write any descr when connection up */
+    /* SCPP_UPDATE_EVT          */    {BTA_HH_LE_UPDATE_SCPP, BTA_HH_CONN_ST },
+    /* BTA_HH_GATT_ENC_CMPL_EVT */    {BTA_HH_IGNORE,         BTA_HH_CONN_ST },
 #endif
 };
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 const UINT8 bta_hh_st_w4_sec[][BTA_HH_NUM_COLS] = {
-    /* Event                          Action                 Next state */
-    /* BTA_HH_API_OPEN_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_API_CLOSE_EVT     */    {BTA_HH_API_DISC_ACT,  BTA_HH_W4_SEC  },
-    /* BTA_HH_INT_OPEN_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_INT_CLOSE_EVT     */    {BTA_HH_OPEN_FAILURE,  BTA_HH_IDLE_ST },
-    /* BTA_HH_INT_DATA_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_INT_CTRL_DATA     */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_INT_HANDSK_EVT    */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_SDP_CMPL_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_API_WRITE_DEV_EVT */    {BTA_HH_IGNORE  ,      BTA_HH_W4_SEC  },
-    /* BTA_HH_API_GET_DSCP_EVT  */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_API_MAINT_DEV_EVT */    {BTA_HH_MAINT_DEV_ACT, BTA_HH_W4_SEC  },
-    /* BTA_HH_OPEN_CMPL_EVT     */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_GATT_CLOSE_EVT    */    {BTA_HH_LE_OPEN_FAIL,  BTA_HH_IDLE_ST },
-    /* BTA_HH_GATT_OPEN_EVT    */     {BTA_HH_IGNORE,        BTA_HH_W4_SEC  },
-    /* BTA_HH_START_ENC_EVT    */     {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
-    /* BTA_HH_ENC_CMPL_EVT     */     {BTA_HH_SEC_CMPL,      BTA_HH_W4_CONN_ST },
-    /* READ_CHAR_CMPL_EVT */          {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
-    /* BTA_HH_GATT_WRITE_CMPL_EVT*/   {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
-    /* READ_DESCR_CMPL_EVT */         {BTA_HH_IGNORE,        BTA_HH_W4_SEC   },
-    /* WRITE_DESCR_CMPL_EVT */        {BTA_HH_IGNORE,        BTA_HH_W4_SEC   }
-    /* SCPP_UPDATE_EVT */            , {BTA_HH_IGNORE,        BTA_HH_W4_SEC   }
-    /* BTA_HH_GATT_ENC_CMPL_EVT */   , {BTA_HH_GATT_ENC_CMPL, BTA_HH_W4_SEC   }
+    /* Event                             Action                Next state */
+    /* BTA_HH_API_OPEN_EVT        */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_API_CLOSE_EVT       */    {BTA_HH_API_DISC_ACT,  BTA_HH_W4_SEC     },
+    /* BTA_HH_INT_OPEN_EVT        */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_INT_CLOSE_EVT       */    {BTA_HH_OPEN_FAILURE,  BTA_HH_IDLE_ST    },
+    /* BTA_HH_INT_DATA_EVT        */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_INT_CTRL_DATA       */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_INT_HANDSK_EVT      */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_SDP_CMPL_EVT        */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_API_WRITE_DEV_EVT   */    {BTA_HH_IGNORE  ,      BTA_HH_W4_SEC     },
+    /* BTA_HH_API_GET_DSCP_EVT    */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_API_MAINT_DEV_EVT   */    {BTA_HH_MAINT_DEV_ACT, BTA_HH_W4_SEC     },
+    /* BTA_HH_OPEN_CMPL_EVT       */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_GATT_CLOSE_EVT      */    {BTA_HH_LE_OPEN_FAIL,  BTA_HH_IDLE_ST    },
+    /* BTA_HH_GATT_OPEN_EVT       */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_START_ENC_EVT       */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_ENC_CMPL_EVT        */    {BTA_HH_SEC_CMPL,      BTA_HH_W4_CONN_ST },
+    /* READ_CHAR_CMPL_EVT         */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_GATT_WRITE_CMPL_EVT */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* READ_DESCR_CMPL_EVT        */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* WRITE_DESCR_CMPL_EVT       */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* SCPP_UPDATE_EVT            */    {BTA_HH_IGNORE,        BTA_HH_W4_SEC     },
+    /* BTA_HH_GATT_ENC_CMPL_EVT   */    {BTA_HH_GATT_ENC_CMPL, BTA_HH_W4_SEC     },
 };
 #endif
 
@@ -337,7 +337,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA *p_data)
                 cback_event = BTA_HH_CLOSE_EVT;
 
                 cback_data.dev_status.status = BTA_HH_ERR_HDL;
-                cback_data.dev_status.handle = (UINT8)p_data->api_sndcmd.hdr.layer_specific;
+                cback_data.dev_status.handle = (UINT8)p_data->hdr.layer_specific;
                 break;
 
             default:

@@ -28,6 +28,9 @@ extern "C" {
 #define ESP_HID_CLASS_MIC          (0x20<<2)           /*!< pointing device */
 #define ESP_HID_CLASS_COM          (0x30<<2)           /*!< combo keyboard/pointing */
 
+/** Maximum length of HID Device descriptor list */
+#define ESP_HIDD_APP_DESC_LIST_LEN_MAX  2048
+
 /**
  * @brief HIDD handshake result code
  */

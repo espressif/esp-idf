@@ -756,7 +756,7 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     /* fall through */
     case BTA_HH_SET_RPT_EVT:
     /* fall through */
-    case BTA_HH_SET_IDLE_EVT :
+    case BTA_HH_SET_IDLE_EVT:
     /* fall through */
     default:
 #if BTA_HH_DEBUG
