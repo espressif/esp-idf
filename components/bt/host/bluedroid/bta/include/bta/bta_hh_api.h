@@ -156,9 +156,9 @@ typedef struct {
 
 /* configuration struct */
 typedef struct {
-    UINT8                max_devt_spt; /* max number of types of devices spt */
-    tBTA_HH_SPT_TOD     *p_devt_list;  /* supported types of device list     */
-    UINT16               sdp_db_size;
+    UINT8                 max_devt_spt; /* max number of types of devices spt */
+    const tBTA_HH_SPT_TOD *p_devt_list;  /* supported types of device list     */
+    UINT16                sdp_db_size;
 } tBTA_HH_CFG;
 
 enum {
