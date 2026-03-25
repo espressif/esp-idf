@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,4 +126,12 @@ const uint8_t *simple_ble_get_uuid128(uint16_t handle);
  * @return ESP_OK on success, and appropriate error code for failure
  */
 esp_err_t simple_ble_disconnect(void);
+
+/** Clear all characteristic value attributes in the GATT table
+ *
+ * Resets the stored value of every 128-bit-UUID characteristic (i.e. every
+ * response written via esp_ble_gatts_set_attr_value) to zero length so that
+ * a new connection cannot read the previous session's response data.
+ */
+void simple_ble_gatts_clear_char_values(void);
 #endif /* _SIMPLE_BLE_ */
