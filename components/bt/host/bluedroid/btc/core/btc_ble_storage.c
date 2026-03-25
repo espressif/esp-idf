@@ -177,6 +177,7 @@ static bt_status_t _btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
         break;
     case BTM_LE_KEY_LID:
         name =  BTC_BLE_STORAGE_LE_KEY_LID_STR;
+        break;
     default:
         return BT_STATUS_FAIL;
     }

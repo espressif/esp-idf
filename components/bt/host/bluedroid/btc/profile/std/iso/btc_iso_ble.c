@@ -27,7 +27,7 @@ static inline void btc_iso_ble_cb_to_app(esp_ble_iso_cb_event_t event, esp_ble_i
 static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
                                                 tBTM_BLE_ISO_CB_PARAMS *params)
 {
-    esp_ble_iso_cb_param_t param;
+    esp_ble_iso_cb_param_t param = {0};
     bt_status_t ret;
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CB;

@@ -105,7 +105,7 @@ bool btc_config_init(void)
 
     return true;
 
-error:;
+error:
     config_free(config);
     osi_mutex_free(&lock);
     config = NULL;
