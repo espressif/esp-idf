@@ -603,6 +603,8 @@ extern void gatt_set_err_rsp(BOOLEAN enable, UINT8 req_op_code, UINT8 err_status
 }
 #endif
 
+extern const UINT8  base_uuid[LEN_UUID_128];
+
 /* internal functions */
 extern void gatt_init (void);
 extern void gatt_free(void);
@@ -658,7 +660,6 @@ extern tGATTS_PENDING_NEW_SRV_START *gatt_sr_is_new_srv_chg(tBT_UUID *p_app_uuid
 extern BOOLEAN gatt_is_srv_chg_ind_pending (tGATT_TCB *p_tcb);
 extern tGATTS_SRV_CHG *gatt_is_bda_in_the_srv_chg_clt_list (BD_ADDR bda);
 
-extern BOOLEAN gatt_find_the_connected_bda(UINT8 start_idx, BD_ADDR bda, UINT8 *p_found_idx, tBT_TRANSPORT *p_transport);
 extern void gatt_set_srv_chg(void);
 extern void gatt_delete_dev_from_srv_chg_clt_list(BD_ADDR bd_addr);
 extern tGATTS_PENDING_NEW_SRV_START *gatt_add_pending_new_srv_start( tGATTS_HNDL_RANGE *p_new_srv_start);
