@@ -444,8 +444,6 @@ typedef tBTM_CMPL_CB tBTA_CMPL_CB;
 
 typedef tBTM_VSC_CMPL tBTA_VSC_CMPL;
 
-typedef tBTM_TX_POWER_RESULTS tBTA_TX_POWER_RESULTS;
-
 typedef tBTM_RSSI_RESULTS tBTA_RSSI_RESULTS;
 
 typedef tBTM_BLE_CH_MAP_RESULTS tBTA_BLE_CH_MAP_RESULTS;
@@ -1661,10 +1659,10 @@ extern tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #define BTA_BLE_ISO_BIG_CREATE_COMPLETE_EVT                        BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT
 #define BTA_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT                     BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define BTA_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT                       BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT
 #define BTA_BLE_ISO_BIG_SYNC_LOST_EVT                              BTM_BLE_ISO_BIG_SYNC_LOST_EVT
@@ -3119,11 +3117,11 @@ extern void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 extern void BTA_DmBleGapIsoBigCreate(tBTA_DM_BLE_BIG_CREATE_PARAMS *p_big_creat_param);
 extern void BTA_DmBleGapIsoBigCreateTest(tBTA_DM_BLE_BIG_CREATE_TEST_PARAMS *p_big_creat_test_param);
 extern void BTA_DmBleGapIsoBigTerminate(tBTA_DM_BLE_BIG_TERMINATE_PARAMS *p_big_terminate_param);
-#endif// #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif// #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 extern void BTA_DmBleGapIsoBigSyncCreate(tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS *p_big_sync_param);
 extern void BTA_DmBleGapIsoBigSyncTerminate(tBTA_DM_BLE_BIG_SYNC_TERMINATE_PARAMS *p_big_sync_terminate_param);
