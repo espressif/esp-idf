@@ -546,7 +546,7 @@ static uint8_t get_ble_resolving_list_max_size(void)
     return controller_param.ble_resolving_list_max_size;
 }
 
-static void set_ble_resolving_list_max_size(int resolving_list_max_size)
+static void set_ble_resolving_list_max_size(uint8_t resolving_list_max_size)
 {
     assert(controller_param.readable);
     assert(controller_param.ble_supported);
