@@ -41,7 +41,6 @@
 enum {
     BTA_GATTC_OPEN,
     BTA_GATTC_OPEN_FAIL,
-    BTA_GATTC_OPEN_ERROR,
     BTA_GATTC_CANCEL_OPEN,
     BTA_GATTC_CANCEL_OPEN_OK,
     BTA_GATTC_CANCEL_OPEN_ERROR,
@@ -77,7 +76,6 @@ typedef void (*tBTA_GATTC_ACTION)(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_da
 const tBTA_GATTC_ACTION bta_gattc_action[] = {
     bta_gattc_open,
     bta_gattc_open_fail,
-    bta_gattc_open_error,
     bta_gattc_cancel_open,
     bta_gattc_cancel_open_ok,
     bta_gattc_cancel_open_error,
@@ -289,6 +287,11 @@ BOOLEAN bta_gattc_sm_execute(tBTA_GATTC_CLCB *p_clcb, UINT16 event, tBTA_GATTC_D
                      gattc_evt_code(in_event));
 #endif
 
+    // should not happen, but just in case
+    if (!p_clcb) {
+        APPL_TRACE_ERROR("p_clcb or p_data is NULL, event is %d", event);
+        return rt;
+    }
 
     /* look up the state table for the current state */
     state_table = bta_gattc_st_tbl[p_clcb->state];

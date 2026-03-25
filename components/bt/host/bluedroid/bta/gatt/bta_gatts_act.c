@@ -36,6 +36,7 @@
 #include <string.h>
 #include "osi/allocator.h"
 #include "l2c_int.h"
+#include "gatt_int.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -176,13 +177,15 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     tBTA_GATT_STATUS         status = BTA_GATT_OK;
     UINT8                    i, first_unuse = 0xff;
 
+    memset(&cb_data, 0, sizeof(tBTA_GATTS));
+
     if (p_cb->enabled == FALSE) {
         bta_gatts_enable(p_cb);
     }
 
     for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i ++) {
         if (p_cb->rcb[i].in_use) {
-            if (bta_gatts_uuid_compare(p_cb->rcb[i].app_uuid, p_msg->api_reg.app_uuid)) {
+            if (gatt_uuid_compare(p_cb->rcb[i].app_uuid, p_msg->api_reg.app_uuid)) {
                 APPL_TRACE_ERROR("application already registered.\n");
                 status = BTA_GATT_DUP_REG;
                 break;
@@ -199,9 +202,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
         }
 
         cb_data.reg_oper.server_if = BTA_GATTS_INVALID_IF;
-// btla-specific ++
         memcpy(&cb_data.reg_oper.uuid, &p_msg->api_reg.app_uuid, sizeof(tBT_UUID));
-// btla-specific --
         if (first_unuse != 0xff) {
             APPL_TRACE_VERBOSE("register application first_unuse rcb_idx = %d", first_unuse);
 
@@ -213,6 +214,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                     GATT_Register(&p_msg->api_reg.app_uuid, &bta_gatts_cback);
             if ( !p_cb->rcb[first_unuse].gatt_if) {
                 status = BTA_GATT_NO_RESOURCES;
+                memset( &p_cb->rcb[first_unuse], 0 , sizeof(tBTA_GATTS_RCB));
             } else {
                 if ((p_buf =
                             (tBTA_GATTS_INT_START_IF *) osi_malloc(sizeof(tBTA_GATTS_INT_START_IF))) != NULL) {
@@ -222,6 +224,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                     bta_sys_sendmsg(p_buf);
                 } else {
                     status = BTA_GATT_NO_RESOURCES;
+                    GATT_Deregister(p_cb->rcb[first_unuse].gatt_if);
                     memset( &p_cb->rcb[first_unuse], 0 , sizeof(tBTA_GATTS_RCB));
                 }
             }
@@ -309,7 +312,7 @@ void bta_gatts_deregister(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 {
     UINT8               rcb_idx;
-    tBTA_GATTS          cb_data;
+    tBTA_GATTS          cb_data = {0};
     UINT8               srvc_idx;
     UINT16              service_id = 0;
 

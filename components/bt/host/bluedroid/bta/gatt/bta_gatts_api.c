@@ -302,6 +302,8 @@ void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
                     memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, value_len);
                 }
                 else{
+                    p_buf->attr_val.attr_len = 0;
+                    p_buf->attr_val.attr_max_len = 0;
                     APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
 
                 }
