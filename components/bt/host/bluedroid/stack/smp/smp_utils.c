@@ -351,7 +351,7 @@ BOOLEAN smp_send_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     BOOLEAN sent = FALSE;
     UINT8 failure = SMP_PAIR_INTERNAL_ERR;
     SMP_TRACE_EVENT("smp_send_cmd on l2cap cmd_code=0x%x\n", cmd_code);
-    if ( cmd_code <= (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */) &&
+    if ( cmd_code < SMP_OPCODE_ARRAY_SIZE &&
             smp_cmd_build_act[cmd_code] != NULL) {
         p_buf = (*smp_cmd_build_act[cmd_code])(cmd_code, p_cb);
 
@@ -861,6 +861,11 @@ void smp_convert_string_to_tk(BT_OCTET16 tk, UINT32 passkey)
 void smp_mask_enc_key(UINT8 loc_enc_size, UINT8 *p_data)
 {
     SMP_TRACE_EVENT("smp_mask_enc_key\n");
+    if (loc_enc_size < SMP_ENCR_KEY_SIZE_MIN) {
+        SMP_TRACE_ERROR("smp_mask_enc_key: loc_enc_size %d below minimum %d\n",
+                        loc_enc_size, SMP_ENCR_KEY_SIZE_MIN);
+        return;
+    }
     if (loc_enc_size < BT_OCTET16_LEN) {
         for (; loc_enc_size < BT_OCTET16_LEN; loc_enc_size ++) {
             * (p_data + loc_enc_size) = 0;
@@ -1060,7 +1065,7 @@ BOOLEAN smp_command_has_invalid_parameters(tSMP_CB *p_cb)
 
     SMP_TRACE_DEBUG("%s for cmd code 0x%02x\n", __func__, cmd_code);
 
-    if ((cmd_code > (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */)) ||
+    if ((cmd_code >= SMP_OPCODE_ARRAY_SIZE) ||
             (cmd_code < SMP_OPCODE_MIN)) {
         SMP_TRACE_WARNING("Somehow received command with the RESERVED code 0x%02x\n", cmd_code);
         return TRUE;

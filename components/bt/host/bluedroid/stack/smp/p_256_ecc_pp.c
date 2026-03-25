@@ -274,7 +274,9 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
     /* The function of the elliptic curve is y^2 = x^3 - 3x + b (mod q) ==>
        y^2 = (x^2 - 3)*x + b (mod q),
        so we calculate the x^2 - 3 value here */
-    x_x[0] -= 3;
+    DWORD three[2 * KEY_LENGTH_DWORDS_P256] = {0};
+    three[0] = 3;
+    multiprecision_sub(x_x, x_x, three, 2 * KEY_LENGTH_DWORDS_P256);
     /* Using math relations. (a*b) % q = ((a%q)*(b%q)) % q ==>
       (x^2 - 3)*x = (((x^2 - 3) % q) * x % q) % q */
     multiprecision_fast_mod_P256(x_x_q, x_x);
