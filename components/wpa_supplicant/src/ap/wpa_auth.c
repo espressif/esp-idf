@@ -137,17 +137,26 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
     }
 
 #ifdef CONFIG_SAE
-    struct sta_info *sta = ap_get_sta(hapd, addr);
+    /* wpa_auth_get_psk runs on the Wi-Fi task only, so sae_pmk_copy is not shared with any other task. */
+    static u8 sae_pmk_copy[PMK_LEN];
+    HOSTAPD_STA_LIST_LOCK(hapd);
+    struct sta_info *sta = ap_get_sta_internal(hapd, addr);
     if (sta && sta->auth_alg == WLAN_AUTH_SAE) {
-        if (!sta->sae || prev_psk)
+        if (!sta->sae || prev_psk) {
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
             return NULL;
-        return sta->sae->pmk;
+        }
+        os_memcpy(sae_pmk_copy, sta->sae->pmk, PMK_LEN);
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        return sae_pmk_copy;
     }
     if (sta && wpa_auth_uses_sae(sta->wpa_sm)) {
         wpa_printf(MSG_DEBUG,
                "No PSK for STA trying to use SAE with PMKSA caching");
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         return NULL;
     }
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
 #endif /*CONFIG_SAE*/
 
     return (u8*)hostapd_get_psk(hapd->conf, addr, prev_psk);
@@ -236,10 +245,10 @@ wpa_auth_send_eapol(struct wpa_authenticator *wpa_auth, const u8 *addr,
 }
 
 /*
- * CAUTION: cb is invoked while HOSTAPD_STA_LIST_LOCK is held.
- * The mutex is non-recursive, so cb must NEVER call any function
- * that acquires HOSTAPD_STA_LIST_LOCK (e.g. ap_get_sta, ap_free_sta)
- * — doing so will deadlock.
+ * Modified to handle Wi-Fi vs WPA3 task concurrency only when CONFIG_SAE is enabled.
+ * Snapshot SM indices under HOSTAPD_STA_LIST_LOCK, then per entry try
+ * sta->lock (timeout 0) when present; if it is not acquired, skip
+ * cb for that station; otherwise run cb.
  */
 int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
               int (*cb)(struct wpa_state_machine *sm, void *ctx),
@@ -247,18 +256,86 @@ int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
 {
     struct hostapd_data *hapd = hostapd_get_hapd_data();
     struct sta_info *sta;
+    u8 idx_snap[WPA_SM_MAX_INDEX];
+    unsigned int n = 0;
+    unsigned int i;
+#ifdef CONFIG_SAE
+    void *sta_lk = NULL;
+    u8 sta_mac[ETH_ALEN];
+#endif /* CONFIG_SAE */
+    int cb_ret;
+
 
     if (hapd == NULL)
         return 1;
 
     HOSTAPD_STA_LIST_LOCK(hapd);
     for (sta = hapd->sta_list; sta; sta = sta->next) {
-         if (sta->wpa_sm && cb(sta->wpa_sm, cb_ctx)) {
-             HOSTAPD_STA_LIST_UNLOCK(hapd);
-             return 1;
-         }
+        struct wpa_state_machine *sm = sta->wpa_sm;
+
+        if (!sm || n >= WPA_SM_MAX_INDEX)
+            continue;
+        if (sm->index >= WPA_SM_MAX_INDEX)
+            continue;
+        if (!(BIT(sm->index) & s_sm_valid_bitmap))
+            continue;
+        if (s_sm_table[sm->index] != sm)
+            continue;
+        idx_snap[n++] = (u8) sm->index;
     }
     HOSTAPD_STA_LIST_UNLOCK(hapd);
+
+    for (i = 0; i < n; i++) {
+        struct wpa_state_machine *sm;
+
+#ifdef CONFIG_SAE
+        sta_lk = NULL;
+#endif /* CONFIG_SAE */
+
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        sm = wpa_auth_get_sm(idx_snap[i]);
+        if (!sm) {
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
+            continue;
+        }
+#ifdef CONFIG_SAE
+        sta = ap_get_sta_internal(hapd, sm->addr);
+        if (sta && sta->wpa_sm == sm && sta->lock) {
+            /* Take sta->lock with timeout 0.
+             * Skip cb for this STA if sta->lock is not taken (WPA3 task may be holding the lock). */
+            if (!os_semphr_take(sta->lock, 0)) {
+                HOSTAPD_STA_LIST_UNLOCK(hapd);
+                continue;
+            }
+            sta_lk = sta->lock;
+            os_memcpy(sta_mac, sta->addr, ETH_ALEN);
+        }
+#endif /* CONFIG_SAE */
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+
+        cb_ret = cb(sm, cb_ctx);
+
+#ifdef CONFIG_SAE
+        /*
+         * Give only when re-lookup finds sta->lock == sta_lk; otherwise skip
+         * os_semphr_give(sta_lk) (sta_lk is not dereferenced on that path).
+         * ap_free_sta() give+deletes sta->lock and clears the field before freeing sta.
+         * ESP softAP: wpa_ap_remove and this walk usually run on the same Wi-Fi task as
+         * cb(), so STA removal does not run concurrently with cb() in the typical model.
+         */
+        if (sta_lk) {
+            HOSTAPD_STA_LIST_LOCK(hapd);
+            sta = ap_get_sta_internal(hapd, sta_mac);
+            if (sta && sta->lock == sta_lk)
+                os_semphr_give(sta_lk);
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
+            sta_lk = NULL;
+        }
+#endif /* CONFIG_SAE */
+
+        if (cb_ret)
+            return 1;
+    }
     return 0;
 }
 

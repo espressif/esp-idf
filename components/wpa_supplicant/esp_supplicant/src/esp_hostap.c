@@ -61,6 +61,9 @@ void *hostap_init(void)
     wifi_pmf_config_t pmf_cfg = {0};
     uint8_t authmode;
     uint8_t sae_ext = 0;
+#ifdef CONFIG_SAE
+    struct hostapd_sae_commit_queue *q, *tmp;
+#endif
 
     sae_ext = esp_wifi_ap_get_sae_ext_config_internal();
 
@@ -250,11 +253,29 @@ void *hostap_init(void)
 fail:
 #ifdef CONFIG_SAE
     if (hapd->sta_list_lock) {
-        wpa3_hostap_auth_deinit();
-        if (g_wpa3_hostap_auth_api_lock &&
-                WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
-            WPA3_HOSTAP_AUTH_API_UNLOCK();
+        if (wpa3_hostap_auth_deinit()) {
+            if (g_wpa3_hostap_auth_api_lock) {
+                /* Block until WPA3 task gives the API lock after SIG_TASK_DEL teardown */
+                WPA3_HOSTAP_AUTH_API_LOCK();
+                WPA3_HOSTAP_AUTH_API_UNLOCK();
+            }
+        } else {
+            wpa_printf(MSG_ERROR,
+                       "hostap_init fail: failed to post SIG_TASK_DEL, skipping WPA3 API lock wait");
         }
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        /*
+         * hostap_init() failed before global_hapd was assigned, so the WPA3
+         * hostap task has no registered hapd to drain this queue on exit;
+         * free queued commits here before releasing hapd.
+         */
+        dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
+                              struct hostapd_sae_commit_queue, list) {
+            dl_list_del(&q->list);
+            os_free(q);
+        }
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+
         os_mutex_delete(hapd->sta_list_lock);
         hapd->sta_list_lock = NULL;
     }
@@ -288,21 +309,6 @@ void hostapd_cleanup(struct hostapd_data *hapd)
         hapd->conf = NULL;
     }
 
-    if (hapd->sta_list_lock) {
-#ifdef CONFIG_SAE
-    struct hostapd_sae_commit_queue *q, *tmp;
-
-    HOSTAPD_STA_LIST_LOCK(hapd);
-        dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
-                              struct hostapd_sae_commit_queue, list) {
-            dl_list_del(&q->list);
-            os_free(q);
-        }
-        HOSTAPD_STA_LIST_UNLOCK(hapd);
-#endif /* CONFIG_SAE */
-        os_mutex_delete(hapd->sta_list_lock);
-        hapd->sta_list_lock = NULL;
-    }
 #ifdef CONFIG_WPS_REGISTRAR
     if (esp_wifi_get_wps_type_internal() != WPS_TYPE_DISABLE ||
             esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
@@ -328,11 +334,15 @@ bool hostap_deinit(void *data)
     wifi_ap_wps_disable_internal();
 #endif
 #ifdef CONFIG_SAE
-    wpa3_hostap_auth_deinit();
-    /* Wait till lock is released by wpa3 task */
-    if (g_wpa3_hostap_auth_api_lock &&
-            WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
-        WPA3_HOSTAP_AUTH_API_UNLOCK();
+    if (wpa3_hostap_auth_deinit()) {
+        /* Block until WPA3 task gives the API lock after SIG_TASK_DEL teardown */
+        if (g_wpa3_hostap_auth_api_lock) {
+            WPA3_HOSTAP_AUTH_API_LOCK();
+            WPA3_HOSTAP_AUTH_API_UNLOCK();
+        }
+    } else {
+        wpa_printf(MSG_ERROR,
+                   "hostap_deinit: failed to post SIG_TASK_DEL, skipping WPA3 API lock wait");
     }
 #endif /* CONFIG_SAE */
 
