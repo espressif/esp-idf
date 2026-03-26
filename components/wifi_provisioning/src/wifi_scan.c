@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <esp_log.h>
@@ -73,6 +65,15 @@ static esp_err_t cmd_scan_start_handler(WiFiScanPayload *req,
     }
 
     resp_scan_start__init(resp_payload);
+
+    if (req->payload_case != WI_FI_SCAN_PAYLOAD__PAYLOAD_CMD_SCAN_START || !req->cmd_scan_start) {
+        ESP_LOGE(TAG, "Invalid scan start command");
+        resp->status = STATUS__InvalidArgument;
+        resp->payload_case = WI_FI_SCAN_PAYLOAD__PAYLOAD_RESP_SCAN_START;
+        resp->resp_scan_start = resp_payload;
+        return ESP_OK;
+    }
+
     resp->status = (h->scan_start(req->cmd_scan_start->blocking,
                                   req->cmd_scan_start->passive,
                                   req->cmd_scan_start->group_channels,
@@ -130,6 +131,14 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
         return ESP_ERR_NO_MEM;
     }
     resp_scan_result__init(resp_payload);
+
+    if (req->payload_case != WI_FI_SCAN_PAYLOAD__PAYLOAD_CMD_SCAN_RESULT || !req->cmd_scan_result) {
+        ESP_LOGE(TAG, "Invalid scan result command");
+        resp->status = STATUS__InvalidArgument;
+        resp->payload_case = WI_FI_SCAN_PAYLOAD__PAYLOAD_RESP_SCAN_RESULT;
+        resp->resp_scan_result = resp_payload;
+        return ESP_OK;
+    }
 
     resp->status = STATUS__Success;
     resp->payload_case = WI_FI_SCAN_PAYLOAD__PAYLOAD_RESP_SCAN_RESULT;
