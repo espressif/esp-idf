@@ -18,7 +18,7 @@ import importlib.metadata
 import importlib.util
 import json
 import locale
-import os.path
+import os
 import shlex
 import subprocess
 import sys
@@ -1222,11 +1222,33 @@ def _valid_unicode_config() -> bool:
         return False
 
 
+def _windows_unicode_satisfactory() -> bool:
+    """Return True if Python's stdio encoding can represent arbitrary Unicode.
+
+    On a real Win32 console, CPython hardcodes ``encoding='utf-8'`` for
+    ``_WindowsConsoleIO`` streams (``Python/pylifecycle.c:2795-2806``),
+    regardless of the active console output code page. On a non-console
+    stream (pipe, redirected file) this reflects the locale encoding —
+    typically cp1252 on English Windows unless ``PYTHONUTF8=1`` is set.
+    """
+
+    def _stdio_utf8(stream: Any) -> bool:
+        enc = getattr(stream, 'encoding', None)
+        if enc is None:
+            return True
+        try:
+            return codecs.lookup(enc).name == 'utf-8'
+        except LookupError:
+            return False
+
+    return _stdio_utf8(sys.stdout) and _stdio_utf8(sys.stderr)
+
+
 def _find_usable_locale() -> str | None:
     """
     Find the best locale for Unicode support.
     All the locales available on the system (via locale -a) are checked.
-    The unicode locales are filtered.
+    The Unicode locales are filtered.
     The best locale is selected based on the proiority (the lowest number, the higher priority):
         - user preferred Unicode    (priority -1)
         - c.utf8                    (priority 0)
@@ -1257,10 +1279,10 @@ def _find_usable_locale() -> str | None:
     for lcl in system_locales:
         lcl = lcl.strip()
         if 'utf' in str(lcl).lower().replace('-', ''):
-            # filter unicode locales
+            # filter Unicode locales
             lcl_alias_name = lcl.lower()
             if str(locale_name).lower().replace(' ', '-') in lcl_alias_name:
-                # user preferred language has unicode encoding (highest priority -1)
+                # user preferred language has Unicode encoding (highest priority -1)
                 if str(locale_name).lower().startswith(('tr', 'az', 'lt', 'kk')):
                     print_warning(
                         f'Your locale "{locale_name}" has potential issues with case conversion for ASCII characters'
@@ -1271,15 +1293,15 @@ def _find_usable_locale() -> str | None:
                 # c.utf should be on most systems (second priority 0)
                 found_locale = (0, lcl_alias_name, lcl)
             elif 'univ' in lcl_alias_name:
-                # universal unicode locale (third priority 1)
+                # universal Unicode locale (third priority 1)
                 found_locale = (1, lcl_alias_name, lcl)
             elif 'en_' in lcl_alias_name:
-                # any english unicode locale (fourth priority 2)
+                # any english Unicode locale (fourth priority 2)
                 found_locale = (2, lcl_alias_name, lcl)
             if found_locale is not None and (best_locale is None or found_locale[0] < best_locale[0]):
                 best_locale = found_locale
                 if best_locale[0] <= 1:
-                    # if there is a hit for the best locale to satisfy the unicode support (priority <= 1)
+                    # if there is a hit for the best locale to satisfy the Unicode support (priority <= 1)
                     # we can break the loop and use the best locale
                     break
 
@@ -1298,16 +1320,16 @@ if __name__ == '__main__':
                 'documentation in order to set up a suitiable environment, or continue at your own risk.'
             )
         elif os.name == 'posix' and not _valid_unicode_config():
-            # Trying to find best unicode locale available on the system and restart python with
+            # Trying to find best Unicode locale available on the system and restart python with
             best_locale = _find_usable_locale()
 
             # Unset LC_ALL if it exists, as it takes precedence over LC_CTYPE
             # This prevents infinite loops when LC_ALL is set to a non-Unicode locale
             if best_locale:
                 print_warning(
-                    'Your environment is not configured to handle unicode characters.'
+                    'Your environment is not configured to handle Unicode characters.'
                     ' Environment variable LC_CTYPE is temporary set to '
-                    f'{best_locale} (found on the system) for unicode support.'
+                    f'{best_locale} (found on the system) for Unicode support.'
                 )
                 if 'LC_ALL' in os.environ:
                     del os.environ['LC_ALL']
@@ -1315,6 +1337,23 @@ if __name__ == '__main__':
             ret = subprocess.call([sys.executable] + sys.argv, env=os.environ)
             if ret:
                 raise SystemExit(ret)
+
+        elif os.name == 'nt' and not _windows_unicode_satisfactory():
+            print_warning(
+                'Your environment is not configured to handle Unicode characters.\n'
+                '\n'
+                'Recommended fix (persistent):\n'
+                ' - Enable "Beta: Use Unicode UTF-8 for worldwide language support" '
+                'in Windows language/region settings.\n'
+                '\n'
+                'If you still see issues or this warning persists, you can also try one of these workarounds:\n'
+                ' - Run "chcp 65001" in the current console before running idf.py.\n'
+                ' - Set PYTHONUTF8=1 before running idf.py (or set it globally).\n'
+                '\n'
+                'Note: "chcp 65001" must be run in each new console session unless your '
+                'console/profile is configured to apply it automatically.'
+            )
+            main()
 
         else:
             main()
