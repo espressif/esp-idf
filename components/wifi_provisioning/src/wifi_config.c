@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -149,6 +141,14 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
         return ESP_ERR_NO_MEM;
     }
     resp_set_config__init(resp_payload);
+
+    if (req->payload_case != WI_FI_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_CONFIG || !req->cmd_set_config) {
+        ESP_LOGE(TAG, "Invalid set config command");
+        resp_payload->status = STATUS__InvalidArgument;
+        resp->payload_case = WI_FI_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_CONFIG;
+        resp->resp_set_config = resp_payload;
+        return ESP_OK;
+    }
 
     wifi_prov_config_set_data_t req_data;
     memset(&req_data, 0, sizeof(req_data));
