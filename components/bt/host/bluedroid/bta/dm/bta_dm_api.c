@@ -3222,6 +3222,81 @@ void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PA
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+void BTA_DmBleGapAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout)
+{
+    tBTA_DM_API_ADD_MONITOR_ADV_LIST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_ADD_MONITOR_ADV_LIST *) osi_malloc(sizeof(tBTA_DM_API_ADD_MONITOR_ADV_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ADD_MONITOR_ADV_LIST));
+        p_msg->hdr.event = BTA_DM_API_ADD_MONITOR_ADV_LIST_EVT;
+        p_msg->addr_type = addr_type;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        p_msg->rssi_low = rssi_low;
+        p_msg->rssi_high = rssi_high;
+        p_msg->timeout = timeout;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapRemoveMonitorAdvList(UINT8 addr_type, BD_ADDR addr)
+{
+    tBTA_DM_API_RMV_MONITOR_ADV_LIST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_RMV_MONITOR_ADV_LIST *) osi_malloc(sizeof(tBTA_DM_API_RMV_MONITOR_ADV_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_RMV_MONITOR_ADV_LIST));
+        p_msg->hdr.event = BTA_DM_API_RMV_MONITOR_ADV_LIST_EVT;
+        p_msg->addr_type = addr_type;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapClearMonitorAdvList(void)
+{
+    tBTA_DM_API_CLEAR_MONITOR_ADV_LIST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_CLEAR_MONITOR_ADV_LIST *) osi_malloc(sizeof(tBTA_DM_API_CLEAR_MONITOR_ADV_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_CLEAR_MONITOR_ADV_LIST));
+        p_msg->hdr.event = BTA_DM_API_CLEAR_MONITOR_ADV_LIST_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapReadMonitorAdvListSize(void)
+{
+    tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE *) osi_malloc(sizeof(tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE));
+        p_msg->hdr.event = BTA_DM_API_READ_MONITOR_ADV_LIST_SIZE_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapEnableMonitorAdv(UINT8 enable)
+{
+    tBTA_DM_API_ENABLE_MONITOR_ADV *p_msg;
+    APPL_TRACE_API("%s, enable = %d", __func__, enable);
+    if ((p_msg = (tBTA_DM_API_ENABLE_MONITOR_ADV *) osi_malloc(sizeof(tBTA_DM_API_ENABLE_MONITOR_ADV))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ENABLE_MONITOR_ADV));
+        p_msg->hdr.event = BTA_DM_API_ENABLE_MONITOR_ADV_EVT;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
 void BTA_DmBleGapIsoBigCreate(tBTA_DM_BLE_BIG_CREATE_PARAMS *p_big_creat_param)

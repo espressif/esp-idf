@@ -5864,6 +5864,43 @@ void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+void bta_dm_ble_gap_add_monitor_adv_list(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, addr_type = %d", __func__, p_data->ble_add_monitor_adv_list.addr_type);
+    BTM_BleAddMonitorAdvList(p_data->ble_add_monitor_adv_list.addr_type,
+                             p_data->ble_add_monitor_adv_list.addr,
+                             p_data->ble_add_monitor_adv_list.rssi_low,
+                             p_data->ble_add_monitor_adv_list.rssi_high,
+                             p_data->ble_add_monitor_adv_list.timeout);
+}
+
+void bta_dm_ble_gap_rmv_monitor_adv_list(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, addr_type = %d", __func__, p_data->ble_rmv_monitor_adv_list.addr_type);
+    BTM_BleRemoveMonitorAdvList(p_data->ble_rmv_monitor_adv_list.addr_type,
+                                p_data->ble_rmv_monitor_adv_list.addr);
+}
+
+void bta_dm_ble_gap_clear_monitor_adv_list(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleClearMonitorAdvList();
+}
+
+void bta_dm_ble_gap_read_monitor_adv_list_size(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleReadMonitorAdvListSize();
+}
+
+void bta_dm_ble_gap_enable_monitor_adv(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, enable = %d", __func__, p_data->ble_enable_monitor_adv.enable);
+    BTM_BleEnableMonitorAdv(p_data->ble_enable_monitor_adv.enable);
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
 void bta_dm_ble_big_create(tBTA_DM_MSG *p_data)
