@@ -1344,6 +1344,125 @@ void btm_ble_ext_adv_report_evt(tBTM_BLE_EXT_ADV_REPORT *params)
 }
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+void btm_ble_monitor_adv_report_evt(tBTM_BLE_MONITOR_ADV_REPORT *params)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (!params) {
+        BTM_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+    memcpy(&cb_params.monitor_adv_report, params, sizeof(tBTM_BLE_MONITOR_ADV_REPORT));
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT, &cb_params);
+}
+
+void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+    UINT8 status;
+
+    if (!p) {
+        BTM_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(status, p);
+    cb_params.monitor_adv_list_size.status = (status == HCI_SUCCESS) ? BTM_SUCCESS : (BTM_HCI_ERROR | status);
+    if (status == HCI_SUCCESS) {
+        STREAM_TO_UINT8(cb_params.monitor_adv_list_size.list_size, p);
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT, &cb_params);
+}
+
+tBTM_STATUS BTM_BleAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout)
+{
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (addr_type > BLE_ADDR_TYPE_MAX) {
+        status = BTM_ILLEGAL_VALUE;
+        BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
+        goto end;
+    }
+
+    if ((err = btsnd_hcic_ble_add_monitor_adv_list(addr_type, addr, rssi_low, rssi_high, timeout)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE AddMonitorAdvList: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+end:
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_ADD_MONITOR_ADV_COMPLETE_EVT, &cb_params);
+    return status;
+}
+
+tBTM_STATUS BTM_BleRemoveMonitorAdvList(UINT8 addr_type, BD_ADDR addr)
+{
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (addr_type > BLE_ADDR_TYPE_MAX) {
+        status = BTM_ILLEGAL_VALUE;
+        BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
+        goto end;
+    }
+
+    if ((err = btsnd_hcic_ble_rmv_monitor_adv_list(addr_type, addr)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE RmvMonitorAdvList: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+end:
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_REMOVE_MONITOR_ADV_COMPLETE_EVT, &cb_params);
+    return status;
+}
+
+tBTM_STATUS BTM_BleClearMonitorAdvList(void)
+{
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_clear_monitor_adv_list()) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE ClearMonitorAdvList: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_CLEAR_MONITOR_ADV_COMPLETE_EVT, &cb_params);
+    return status;
+}
+
+tBTM_STATUS BTM_BleReadMonitorAdvListSize(void)
+{
+    if (!btsnd_hcic_ble_read_monitor_adv_list_size()) {
+        return BTM_NO_RESOURCES;
+    }
+    return BTM_CMD_STARTED;
+}
+
+tBTM_STATUS BTM_BleEnableMonitorAdv(UINT8 enable)
+{
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_enable_monitor_adv(enable)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE EnableMonitorAdv: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT, &cb_params);
+    return status;
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params)
 {

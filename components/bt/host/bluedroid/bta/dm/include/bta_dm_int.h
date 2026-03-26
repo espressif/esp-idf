@@ -226,6 +226,13 @@ enum {
     BTA_DM_API_PERIODIC_ADV_SET_INFO_TRANS_EVT,
     BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT,
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    BTA_DM_API_ADD_MONITOR_ADV_LIST_EVT,
+    BTA_DM_API_RMV_MONITOR_ADV_LIST_EVT,
+    BTA_DM_API_CLEAR_MONITOR_ADV_LIST_EVT,
+    BTA_DM_API_READ_MONITOR_ADV_LIST_SIZE_EVT,
+    BTA_DM_API_ENABLE_MONITOR_ADV_EVT,
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if BLE_INCLUDED == TRUE
 #if (BLE_42_DTM_TEST_EN == TRUE)
     BTA_DM_API_DTM_TX_START_EVT,
@@ -1375,6 +1382,35 @@ typedef struct {
     BT_HDR                          hdr;
 } tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR;
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           addr_type;
+    BD_ADDR                         addr;
+    INT8                            rssi_low;
+    INT8                            rssi_high;
+    UINT8                           timeout;
+} tBTA_DM_API_ADD_MONITOR_ADV_LIST;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           addr_type;
+    BD_ADDR                         addr;
+} tBTA_DM_API_RMV_MONITOR_ADV_LIST;
+
+typedef struct {
+    BT_HDR                          hdr;
+} tBTA_DM_API_CLEAR_MONITOR_ADV_LIST;
+
+typedef struct {
+    BT_HDR                          hdr;
+} tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           enable;
+} tBTA_DM_API_ENABLE_MONITOR_ADV;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 typedef struct {
     BT_HDR                          hdr;
@@ -1805,6 +1841,13 @@ typedef union {
     tBTA_DM_API_PERIODIC_ADV_SET_INFO_TRANS ble_periodic_adv_set_info_trans;
     tBTA_DM_API_SET_PAST_PARAMS ble_set_past_params;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    tBTA_DM_API_ADD_MONITOR_ADV_LIST    ble_add_monitor_adv_list;
+    tBTA_DM_API_RMV_MONITOR_ADV_LIST    ble_rmv_monitor_adv_list;
+    tBTA_DM_API_CLEAR_MONITOR_ADV_LIST  ble_clear_monitor_adv_list;
+    tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE ble_read_monitor_adv_list_size;
+    tBTA_DM_API_ENABLE_MONITOR_ADV      ble_enable_monitor_adv;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_42_DTM_TEST_EN == TRUE)
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
@@ -2475,6 +2518,14 @@ extern void bta_dm_ble_gap_periodic_adv_set_info_trans(tBTA_DM_MSG *p_data);
 
 extern void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+extern void bta_dm_ble_gap_add_monitor_adv_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_rmv_monitor_adv_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_clear_monitor_adv_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_read_monitor_adv_list_size(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_enable_monitor_adv(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)

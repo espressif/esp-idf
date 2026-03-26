@@ -1625,6 +1625,14 @@ typedef struct {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define BTA_BLE_GAP_SET_HOST_FEATURE_EVT                           BTM_BLE_GAP_SET_HOST_FEATURE_EVT
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+#define BTA_DM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT                    BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT
+#define BTA_DM_BLE_5_GAP_ADD_MONITOR_ADV_COMPLETE_EVT              BTM_BLE_5_GAP_ADD_MONITOR_ADV_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_REMOVE_MONITOR_ADV_COMPLETE_EVT           BTM_BLE_5_GAP_REMOVE_MONITOR_ADV_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_CLEAR_MONITOR_ADV_COMPLETE_EVT            BTM_BLE_5_GAP_CLEAR_MONITOR_ADV_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT   BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #define BTA_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT               BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
@@ -3117,6 +3125,14 @@ extern void BTA_DmBleGapPeriodicAdvSetInfoTrans(BD_ADDR peer_addr, UINT16 servic
 
 extern void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PAST_PARAMS *params);
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+extern void BTA_DmBleGapAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout);
+extern void BTA_DmBleGapRemoveMonitorAdvList(UINT8 addr_type, BD_ADDR addr);
+extern void BTA_DmBleGapClearMonitorAdvList(void);
+extern void BTA_DmBleGapReadMonitorAdvListSize(void);
+extern void BTA_DmBleGapEnableMonitorAdv(UINT8 enable);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)

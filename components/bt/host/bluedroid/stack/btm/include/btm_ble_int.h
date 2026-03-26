@@ -554,6 +554,10 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
 void btm_ble_periodic_adv_list_init(UINT8 periodic_adv_size);
 #endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+void btm_ble_monitor_adv_report_evt(tBTM_BLE_MONITOR_ADV_REPORT *params);
+void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 void btm_ble_periodic_adv_sync_trans_recv_evt(tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV *params);
