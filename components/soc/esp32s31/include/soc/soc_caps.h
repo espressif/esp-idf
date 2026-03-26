@@ -112,6 +112,7 @@
 #define SOC_REGI2C_SUPPORTED            1
 #define SOC_JPEG_CODEC_SUPPORTED        1
 #define SOC_EMAC_SUPPORTED              1
+#define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
 
 /*-------------------------- EMAC CAPS ----------------------------------------*/
 #define SOC_EMAC_SUPPORT_1000M                     (1)      /*!< EMAC Supports 1000Mbps mode */

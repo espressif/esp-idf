@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,6 @@ extern "C" {
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
-#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (32)   // (register default)0: XTAL_CLK
 
 /*------------------------------------------------------------------------------
  * Control
