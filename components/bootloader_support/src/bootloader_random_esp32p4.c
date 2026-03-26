@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -12,6 +12,7 @@
 
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 #include "hal/trng_ll.h"
@@ -24,7 +25,12 @@
 
 void bootloader_random_enable(void)
 {
+#ifndef BOOTLOADER_BUILD
+    sar_periph_ctrl_adc_reset();
+#else
     _adc_ll_reset_register();
+#endif
+
     _adc_ll_enable_bus_clock(true);
 
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);

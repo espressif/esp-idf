@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -260,9 +260,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     ANALOG_CLOCK_ENABLE();
 
     //reset ADC digital part to reset ADC sampling EOF counter
-    ADC_BUS_CLK_ATOMIC() {
-        adc_ll_reset_register();
-    }
+    sar_periph_ctrl_adc_reset();
 
     if (handle->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(handle->pm_lock), ADC_TAG, "acquire pm_lock failed");
@@ -359,7 +357,7 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     adc_hal_digi_enable(false);
     adc_hal_digi_connect(false);
 #if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    sar_periph_ctrl_adc_reset();
     adc_hal_digi_clr_eof();
 #endif
 
