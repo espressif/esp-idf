@@ -39,7 +39,10 @@ uint32_t hmac_hal_configure(hmac_hal_output_t config, uint32_t key_id)
             return 1;
         }
     } else {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        /* key_mgr eFuse key usage configuration not supported before ESP32-P4 rev 3 */
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_HMAC_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+#endif
     }
 #endif
 
