@@ -9,7 +9,7 @@ ESP-IDF uses the `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ library to
 
     FatFs is an ambiguous term, as it refers to the filesystem itself, the upstream library, as well as the component in ESP-IDF. For clarity, this documentation uses the following terms:
 
-    - **FAT filesystem**: the on-disk FAT format (FAT12/FAT16/FAT32); exFAT (see :ref:`Optional exFAT Support <fatfs-optional-exfat-support>`).
+    - **FAT filesystem**: the on-disk FAT format (FAT12/FAT16/FAT32), exFAT (see :ref:`Optional exFAT Support <fatfs-optional-exfat-support>`).
     - **FatFs library**: the upstream `FatFs library <http://elm-chan.org/fsw/ff/00index_e.html>`_ used by ESP-IDF.
     - **FatFs component**: the ESP-IDF integration layer around the FatFs library (mount helpers, wrappers, and related APIs) in :component:`fatfs`.
 
@@ -27,9 +27,9 @@ The general mounting workflow is:
 #. Select a mount path (for example, ``"/spiflash"`` or ``"/sdcard"``) and set ``esp_vfs_fat_mount_config_t``.
 #. Mount the volume with a convenience helper from :component_file:`fatfs/vfs/esp_vfs_fat.h`:
 
-    - :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl` for SPI flash partitions with wear leveling
-    - :cpp:func:`esp_vfs_fat_spiflash_mount_ro` for read-only SPI flash partitions **without** wear leveling
-    - :cpp:func:`esp_vfs_fat_sdmmc_mount` or :cpp:func:`esp_vfs_fat_sdspi_mount` for SD cards
+    - :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl` for SPI flash partitions with wear leveling.
+    - :cpp:func:`esp_vfs_fat_spiflash_mount_ro` for read-only SPI flash partitions **without** wear leveling.
+    - :cpp:func:`esp_vfs_fat_sdmmc_mount` or :cpp:func:`esp_vfs_fat_sdspi_mount` for SD cards.
 
 #. Use standard file APIs (``stdio.h`` or POSIX) on paths under the mount path.
 #. Close open files and call the matching unmount helper.
@@ -66,13 +66,13 @@ These options control how the FatFs library calculates and reports free space:
 Differences from the POSIX Standard
 -----------------------------------
 
-#. :cpp:func:`link`: FAT filesystems do not support hard links, therefore :cpp:func:`link` copies file contents instead. (This applies only to files on FAT filesystem volumes.)
+#. :cpp:func:`link`: FAT filesystems do not support hard links, therefore :cpp:func:`link` copies file contents instead, which applies only to files on FAT filesystem volumes.
 #. :cpp:func:`unlink`: If ``CONFIG_FATFS_FS_LOCK`` is enabled, removing an open file fails with ``EBUSY``. Otherwise, behavior is undefined and can corrupt the filesystem.
 #. ``.`` and ``..`` are not supported as references to the current and parent directory.
 
 .. _fatfs-formatting:
 
-Formatting a FAT Filesystem
+Format a FAT Filesystem
 ---------------------------
 
 Formatting creates a new FAT filesystem on the target volume and erases the existing directory structure and file data on that volume. Use it for first-time provisioning, or to recover from ``FR_NO_FILESYSTEM``.
@@ -84,8 +84,8 @@ For mount-time auto-formatting, set ``esp_vfs_fat_mount_config_t.format_if_mount
 
 For explicit formatting after initialization, use the helper that matches the storage type:
 
-* :cpp:func:`esp_vfs_fat_spiflash_format_rw_wl` or :cpp:func:`esp_vfs_fat_spiflash_format_cfg_rw_wl` for SPI flash partitions with wear leveling
-* :cpp:func:`esp_vfs_fat_sdcard_format` or :cpp:func:`esp_vfs_fat_sdcard_format_cfg` for SD cards
+* :cpp:func:`esp_vfs_fat_spiflash_format_rw_wl` or :cpp:func:`esp_vfs_fat_spiflash_format_cfg_rw_wl` for SPI flash partitions with wear leveling.
+* :cpp:func:`esp_vfs_fat_sdcard_format` or :cpp:func:`esp_vfs_fat_sdcard_format_cfg` for SD cards.
 
 The SPI flash formatting helpers can be called whether the filesystem is currently mounted or not. The SD card formatting helpers require the card (but not the filesystem) to be mounted first.
 
@@ -109,11 +109,15 @@ An in-depth description of the FatFs partition generator and analyzer can be fou
 Build System Integration with FatFs Partition Generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Invoke the FatFs generator directly from the CMake build system by calling ``fatfs_create_spiflash_image``::
+Invoke the FatFs generator directly from the CMake build system by calling ``fatfs_create_spiflash_image``:
+
+.. code-block:: none
 
     fatfs_create_spiflash_image(<partition> <base_dir> [optional arguments])
 
-To generate a **read-only** partition without wear leveling support, use ``fatfs_create_rawflash_image``::
+To generate a **read-only** partition without wear leveling support, use ``fatfs_create_rawflash_image``:
+
+.. code-block:: none
 
     fatfs_create_rawflash_image(<partition> <base_dir> [optional arguments])
 
@@ -130,7 +134,9 @@ The function arguments are:
 
 #. flag ``ONE_FAT`` - Optionally generate a FAT filesystem volume with one FAT (File Allocation Table) instead of two. This increases free space in the FAT filesystem volume by ``number of logical sectors used by one FAT * logical sector size``, but it also increases corruption risk.
 
-For example::
+For example:
+
+.. code-block:: none
 
     fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
 
@@ -145,7 +151,9 @@ FatFs Partition Parser
 
 The :component_file:`fatfsparse.py <fatfs/fatfsparse.py>` tool performs the reverse operation of :component_file:`fatfsgen.py <fatfs/fatfsgen.py>`. It reconstructs a host folder structure from a FAT filesystem image.
 
-Usage::
+Usage
+
+.. code-block:: none
 
     ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] [--verbose] fatfs_image.img
 
@@ -157,6 +165,7 @@ Size Requirements and Limits
 ----------------------------
 
 The FatFs component supports FAT12, FAT16, and FAT32 filesystem types, and can optionally support exFAT (see :ref:`Optional exFAT Support <fatfs-optional-exfat-support>`).
+
 The filesystem type depends on the number of clusters on the volume:
 
 .. math::
@@ -174,7 +183,7 @@ The required size of a raw FAT filesystem consists of the FAT filesystem metadat
 
 .. math::
 
-    fatfs_size = (reserved + fats + root\_dir + data) * logical\_sector\_size
+    fatfs\_size = (reserved + fats + root\_dir + data) × logical\_sector\_size
 
 Where:
 
@@ -194,22 +203,22 @@ The FAT area depends on the selected FAT type and the number of clusters:
      - FAT Sizing
    * - FAT12
      - ``<= 4085``
-     - Each FAT entry uses 12 bits, so one FAT copy requires ``ceil(((cluster_count + 2) * 3 / 2) / logical_sector_size)`` logical sectors.
+     - Each FAT entry uses 12 bits, so one FAT copy requires ``ceil(((cluster_count + 2) × 3 / 2) / logical_sector_size)`` logical sectors.
    * - FAT16
      - ``4085 < cluster_count < 65526``
-     - Each FAT entry uses 16 bits, so one FAT copy requires ``ceil(((cluster_count + 2) * 2) / logical_sector_size)`` logical sectors.
+     - Each FAT entry uses 16 bits, so one FAT copy requires ``ceil(((cluster_count + 2) × 2) / logical_sector_size)`` logical sectors.
    * - FAT32
      - ``>= 65526``
-     - Each FAT entry uses 32 bits, so one FAT copy requires ``ceil(((cluster_count + 2) * 4) / logical_sector_size)`` logical sectors.
+     - Each FAT entry uses 32 bits, so one FAT copy requires ``ceil(((cluster_count + 2) × 4) / logical_sector_size)`` logical sectors.
    * - exFAT
      - ``16 .. 0x7FFFFFFD``
-     - Each FAT entry uses 32 bits, so one FAT copy requires ``ceil(((cluster_count + 2) * 4) / logical_sector_size)`` logical sectors.
+     - Each FAT entry uses 32 bits, so one FAT copy requires ``ceil(((cluster_count + 2) × 4) / logical_sector_size)`` logical sectors.
 
 For FAT12 and FAT16, the root directory is outside the data area, so:
 
 .. math::
 
-    root\_dir = ceil((root\_dir\_entries * 32) / logical\_sector\_size)
+    root\_dir = ceil((root\_dir\_entries × 32) / logical\_sector\_size)
 
 For FAT32, the root directory is stored in the data area, so ``root_dir = 0`` in the formula above.
 
@@ -235,7 +244,7 @@ For a flash partition with wear leveling, the total size is the raw FAT filesyst
 
 .. math::
 
-    partition_size = wl_metadata_flash_sectors * flash_sector_size + fatfs_size
+    partition\_size = wl\_metadata\_flash\_sectors × flash\_sector\_size + fatfs\_size
 
 Where:
 
@@ -265,21 +274,22 @@ The minimum supported partition size depends on the WL configuration:
 For more details, see :doc:`File System Considerations <../../api-guides/file-system-considerations>`.
 
 .. note::
+
     The wear leveling layer protects the underlying flash by distributing write and erase cycles across the managed storage region. Its effectiveness therefore scales with the size of that region. Small partitions restrict wear distribution and can significantly reduce protection, so their use is strongly discouraged. For more information, refer to :doc:`wear leveling <wear-levelling>`.
 
-Optimizing
-----------
+Optimization
+------------
 
 FatFs behavior can be tuned for different priorities by choosing the right configuration options and filesystem layout.
 
 The main variables that affect behavior are:
 
-* Buffer placement and sizing (:ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`, :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`, :ref:`CONFIG_FATFS_USE_DYN_BUFFERS`, :ref:`CONFIG_FATFS_PER_FILE_CACHE`, and application I/O buffer sizes)
-* Wear leveling logical sector size and mode (``CONFIG_WL_SECTOR_SIZE_*`` and ``CONFIG_WL_SECTOR_MODE_*``)
-* Sync strategy (:ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`)
-* Workload pattern (transaction sizes, sequential vs random access, read vs write ratio)
+* Buffer placement and sizing (:ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`, :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`, :ref:`CONFIG_FATFS_USE_DYN_BUFFERS`, :ref:`CONFIG_FATFS_PER_FILE_CACHE`, and application I/O buffer sizes).
+* Wear leveling logical sector size and mode (``CONFIG_WL_SECTOR_SIZE_*`` and ``CONFIG_WL_SECTOR_MODE_*``).
+* Sync strategy (:ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`).
+* Workload pattern (transaction sizes, sequential vs random access, read vs write ratio).
 
-Optimizing for I/O Performance
+Optimize I/O Performance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For throughput-oriented workloads:
@@ -295,9 +305,10 @@ For throughput-oriented workloads:
 * Enable :ref:`CONFIG_FATFS_USE_FASTSEEK` for read-heavy workloads with long backward seeks.
 
 .. note::
+
     For a baseline of what to expect in a performance-optimized scenario, see :example:`storage/perf_benchmark`.
 
-Optimizing for memory usage
+Optimize Memory Usage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Disable :ref:`CONFIG_FATFS_PER_FILE_CACHE` to use a single shared cache when reducing RAM usage is the priority.
@@ -309,8 +320,8 @@ Optimizing for memory usage
 * If long filenames are required, reduce ``CONFIG_FATFS_MAX_LFN`` to the smallest value that meets your needs.
 * Enable :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` so each mounted volume uses buffers sized to its actual sector size.
 
-Optimizing for storage efficiency
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Optimize Storage Efficiency
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For maximizing usable filesystem capacity:
 
@@ -320,7 +331,7 @@ For maximizing usable filesystem capacity:
 * Keep long filenames short where possible; long names consume additional directory entries.
 * For read-only data, consider raw FAT partitions without wear leveling where appropriate.
 
-Advanced operations
+Advanced Operations
 -------------------
 
 Manual mounting may be required when you use storage media that ESP-IDF does not support directly or when you need access to low-level FatFs library functions.
@@ -341,7 +352,7 @@ Architecture Overview
 
 The following diagram illustrates the layered architecture of FatFs and its relationship with other ESP-IDF components:
 
-::
+.. code-block:: none
 
     +---------------------------------------------------------------+
     |              Newlib/Picolib (C Standard Library)              |
@@ -367,17 +378,16 @@ The following diagram illustrates the layered architecture of FatFs and its rela
 
 .. _fatfs-manual-mount:
 
-Manually Mounting a FAT Filesystem Partition
+Manually Mount a FAT Filesystem Partition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When mounting a FAT filesystem partition manually, follow the same general flow used by the convenience wrappers described in :ref:`Mount and Use FatFs <fatfs-mount-and-use>`: register the filesystem with the FatFs library, then mount it through the VFS.
 
-#.
-   Register the filesystem with the VFS by calling :cpp:func:`esp_vfs_fat_register`. This allocates the ``FATFS`` structure and sets up the interface between the VFS and the FatFs library. Specify:
+#. Register the filesystem with the VFS by calling :cpp:func:`esp_vfs_fat_register`. This allocates the ``FATFS`` structure and sets up the interface between the VFS and the FatFs library. Specify:
 
-    - The path prefix where the filesystem will be mounted (for example, ``"/sdcard"`` or ``"/spiflash"``)
-    - The FatFs drive number
-    - A variable that receives a pointer to the ``FATFS`` structure
+    - The path prefix where the filesystem will be mounted (for example, ``"/sdcard"`` or ``"/spiflash"``).
+    - The FatFs drive number.
+    - A variable that receives a pointer to the ``FATFS`` structure.
 
 #. Register the disk I/O driver for the drive number used in Step 1 by calling :cpp:func:`ff_diskio_register`.
 
@@ -408,9 +418,9 @@ The disk I/O layer uses :cpp:struct:`ff_diskio_impl_t` to provide medium access 
 
 ESP-IDF provides convenience wrappers for the supported storage media. These include:
 
-    - :cpp:func:`ff_diskio_register_wl_partition` for SPI flash partitions with wear leveling
-    - :cpp:func:`ff_diskio_register_raw_partition` for read-only SPI flash partitions **without** wear leveling
-    - :cpp:func:`ff_diskio_register_sdmmc` for both SDMMC and SPI connected SD cards
+    - :cpp:func:`ff_diskio_register_wl_partition` for SPI flash partitions with wear leveling.
+    - :cpp:func:`ff_diskio_register_raw_partition` for read-only SPI flash partitions **without** wear leveling.
+    - :cpp:func:`ff_diskio_register_sdmmc` for both SDMMC and SPI connected SD cards.
 
 For API reference, see :ref:`Disk I/O API Reference <fatfs-diskio-api-reference>`.
 
