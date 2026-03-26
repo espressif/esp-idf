@@ -52,6 +52,24 @@ int ap_for_each_sta(struct hostapd_data *hapd,
 }
 
 
+/**
+ * ap_get_sta - Look up a station by MAC address
+ * @hapd: hostapd data structure
+ * @sta: MAC address to look up
+ * Returns: Pointer to sta_info structure, or NULL if not found
+ *
+ * This function acquires and releases HOSTAPD_STA_LIST_LOCK internally.
+ * The returned pointer is NOT protected after the lock is released.
+ * Use-after-free can occur if the station is freed by another task
+ * (via ap_free_sta) between the unlock here and the caller's use.
+ *
+ * For safe access to sta fields, callers should either:
+ * - Use ap_get_sta_internal() while holding HOSTAPD_STA_LIST_LOCK, OR
+ * - Take sta->lock immediately after (for SAE stations), OR
+ * - Copy needed data while lock is still held
+ *
+ * Note: This is particularly important for wpa3_task callers.
+ */
 struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta)
 {
 	struct sta_info *s;
