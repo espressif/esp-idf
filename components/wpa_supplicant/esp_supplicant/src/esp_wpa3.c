@@ -418,6 +418,7 @@ void esp_wifi_unregister_wpa3_cb(void)
 
 static TaskHandle_t g_wpa3_hostap_task_hdl = NULL;
 static QueueHandle_t g_wpa3_hostap_evt_queue = NULL;
+/* Global API lock - created once, never deleted */
 SemaphoreHandle_t g_wpa3_hostap_auth_api_lock = NULL;
 
 int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
@@ -446,7 +447,8 @@ int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
             return ESP_FAIL;
         }
     } else if (evt.id == SIG_TASK_DEL) {
-        /* wait for portMAX_DELAY as sometimes queue might be full */
+        /* Wi-Fi blocks until SIG_TASK_DEL is queued; only Wi-Fi calls wpa3_hostap_post_evt. */
+        /* Hence there will be no deadlock for g_wpa3_hostap_auth_api_lock. */
         if (os_queue_send_to_front(g_wpa3_hostap_evt_queue, &evt, portMAX_DELAY) != pdPASS) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
             wpa_printf(MSG_DEBUG, "failed to add msg to queue front");
@@ -657,10 +659,30 @@ static void esp_wpa3_hostap_task(void *pvParameters)
     os_queue_delete(g_wpa3_hostap_evt_queue);
     g_wpa3_hostap_evt_queue = NULL;
 
+    struct hostapd_data *hapd = hostapd_get_hapd_data();
+    if (hapd && hapd->sta_list_lock) {
+        struct hostapd_sae_commit_queue *q, *tmp;
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
+                              struct hostapd_sae_commit_queue, list) {
+            dl_list_del(&q->list);
+            os_free(q);
+        }
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        /*
+         * Safe to delete sta_list_lock after unlock: only the WPA3 hostap task and
+         * the Wi-Fi task take this lock; the Wi-Fi task is blocked while posting
+         * SIG_TASK_DEL, so it cannot acquire sta_list_lock again until teardown
+         * sequencing completes.
+         */
+        os_mutex_delete(hapd->sta_list_lock);
+        hapd->sta_list_lock = NULL;
+    }
+
     if (g_wpa3_hostap_auth_api_lock) {
         WPA3_HOSTAP_AUTH_API_UNLOCK();
     }
-    /* At this point, task is deleted*/
+    /* At this point, task is deleted */
     os_task_delete(NULL);
 }
 
@@ -678,6 +700,7 @@ int wpa3_hostap_auth_init(void *data)
         return ESP_FAIL;
     }
 
+    /* g_wpa3_hostap_auth_api_lock is global - created once, never deleted */
     if (g_wpa3_hostap_auth_api_lock == NULL) {
         g_wpa3_hostap_auth_api_lock = os_semphr_create(1, 1);
         if (!g_wpa3_hostap_auth_api_lock) {
@@ -696,6 +719,8 @@ int wpa3_hostap_auth_init(void *data)
         return ESP_FAIL;
     }
 
+    dl_list_init(&hapd->sae_commit_queue);
+
     if (os_task_create(esp_wpa3_hostap_task, "esp_wpa3_hostap_task",
                     WPA3_HOSTAP_HANDLE_AUTH_TASK_STACK_SIZE, NULL,
                     WPA3_HOSTAP_HANDLE_AUTH_TASK_PRIORITY,
@@ -708,8 +733,6 @@ int wpa3_hostap_auth_init(void *data)
         return ESP_FAIL;
     }
 
-    dl_list_init(&hapd->sae_commit_queue);
-
     return ESP_OK;
 }
 
@@ -718,9 +741,8 @@ bool wpa3_hostap_auth_deinit(void)
     if (wpa3_hostap_post_evt(SIG_TASK_DEL, 0) != 0) {
         wpa_printf(MSG_DEBUG, "failed to send task delete event");
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 static int wpa3_hostap_handle_auth(u8 *buf, size_t len, u32 auth_transaction, u16 status, u8 *bssid)
