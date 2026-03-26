@@ -1100,7 +1100,33 @@ ExternalProject 的依赖与构建清理
 
 如果使用 ``SDKCONFIG_DEFAULTS`` 覆盖默认文件的名称，则硬件目标的默认文件名也会从 ``SDKCONFIG_DEFAULTS`` 值中派生。如果 ``SDKCONFIG_DEFAULTS`` 中有多个文件，硬件目标文件会在引入该硬件目标文件的文件之后应用， 而 ``SDKCONFIG_DEFAULTS`` 中所有其它后续文件则会在硬件目标文件之后应用 。
 
-例如，如果 ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``，并且在同一文件夹中有一个 ``sdkconfig.defaults.esp32`` 文件，那么这些文件将按以下顺序应用：（1) sdkconfig.defaults (2) sdkconfig.defaults.esp32 (3) sdkconfig_devkit1。
+以下示例中，假定构建目标为 ``esp32``，且项目目录中有下列文件：
+
+.. code-block:: none
+
+    sdkconfig.defaults
+    sdkconfig.defaults.esp32
+    sdkconfig_devkit1
+
+**示例 1**： ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``
+
+构建系统将按以下顺序应用这些文件：
+
+1. ``sdkconfig.defaults``。
+2. ``sdkconfig.defaults.esp32`` — 对于 ``SDKCONFIG_DEFAULTS`` 中列出的每个文件，构建系统都会尝试加载其对应目标芯片的变体文件。
+3. ``sdkconfig_devkit1``。
+4. 构建系统还会尝试加载 ``sdkconfig_devkit1.esp32``，但由于项目中不存在以此命名的文件，所以不会加载任何额外的文件。
+
+**示例 2**： ``SDKCONFIG_DEFAULTS="sdkconfig_devkit1"``
+
+构建系统将按以下顺序应用这些文件：
+
+1. ``sdkconfig_devkit1``。
+2. 构建系统还会尝试加载 ``sdkconfig_devkit1.esp32``，但由于项目中不存在以此命名的文件，所以不会加载任何额外的文件。
+
+.. warning::
+
+    在第二个示例中，标准的 ``sdkconfig.defaults`` （或其特定于目标的变体）未被应用，因为它未被显式包含在 ``SDKCONFIG_DEFAULTS`` 中。
 
 关于项目配置的详细信息，请参阅 :ref:`项目配置指南 <project-configuration-guide>`。关于配置文件的详细信息，请参阅 :ref:`配置文件的结构和关系 <configuration-structure>`。
 

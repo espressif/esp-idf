@@ -1104,24 +1104,24 @@ For the following example, suppose the build target is ``esp32`` and these files
 
 .. code-block:: none
 
-  sdkconfig.defaults
-  sdkconfig.defaults.esp32
-  sdkconfig_devkit1
+    sdkconfig.defaults
+    sdkconfig.defaults.esp32
+    sdkconfig_devkit1
 
 **Example 1**: ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``
 
 The build system will apply the files in this order:
 
-1. ``sdkconfig.defaults``
-2. ``sdkconfig.defaults.esp32`` - build system will always try to load target specific variation of every file listed in ``SDKCONFIG_DEFAULTS``
-3. ``sdkconfig_devkit1``
+1. ``sdkconfig.defaults``.
+2. ``sdkconfig.defaults.esp32`` - build system will always try to load target specific variation of every file listed in ``SDKCONFIG_DEFAULTS``.
+3. ``sdkconfig_devkit1``.
 4. The build system will also attempt to load a file named ``sdkconfig_devkit1.esp32``, but because there is no file with this name, no additional file will be loaded.
 
 **Example 2**: ``SDKCONFIG_DEFAULTS="sdkconfig_devkit1"``
 
 The build system will apply the files in this order:
 
-1. ``sdkconfig_devkit1``
+1. ``sdkconfig_devkit1``.
 2. The build system will also attempt to load a file named ``sdkconfig_devkit1.esp32``, but because there is no file with this name, no additional file will be loaded.
 
 .. warning::
