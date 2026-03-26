@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -154,6 +154,14 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
         return ESP_ERR_NO_MEM;
     }
     resp_set_config__init(resp_payload);
+
+    if (req->payload_case != WI_FI_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_CONFIG || !req->cmd_set_config) {
+        ESP_LOGE(TAG, "Invalid set config command");
+        resp_payload->status = STATUS__InvalidArgument;
+        resp->payload_case = WI_FI_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_CONFIG;
+        resp->resp_set_config = resp_payload;
+        return ESP_OK;
+    }
 
     wifi_prov_config_set_data_t req_data;
     memset(&req_data, 0, sizeof(req_data));
