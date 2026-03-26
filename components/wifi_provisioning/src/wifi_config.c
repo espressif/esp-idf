@@ -83,6 +83,7 @@ static esp_err_t cmd_get_status_handler(WiFiConfigPayload *req,
 
             connected->ip4_addr = strdup(resp_data.conn_info.ip_addr);
             if (connected->ip4_addr == NULL) {
+                free(connected);
                 free(resp_payload);
                 return ESP_ERR_NO_MEM;
             }
@@ -92,6 +93,7 @@ static esp_err_t cmd_get_status_handler(WiFiConfigPayload *req,
                                                         sizeof(resp_data.conn_info.bssid));
             if (connected->bssid.data == NULL) {
                 free(connected->ip4_addr);
+                free(connected);
                 free(resp_payload);
                 return ESP_ERR_NO_MEM;
             }
@@ -101,6 +103,7 @@ static esp_err_t cmd_get_status_handler(WiFiConfigPayload *req,
             if (connected->ssid.data == NULL) {
                 free(connected->bssid.data);
                 free(connected->ip4_addr);
+                free(connected);
                 free(resp_payload);
                 return ESP_ERR_NO_MEM;
             }
@@ -157,10 +160,8 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
 
     if (req->payload_case != WI_FI_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_CONFIG || !req->cmd_set_config) {
         ESP_LOGE(TAG, "Invalid set config command");
-        resp_payload->status = STATUS__InvalidArgument;
-        resp->payload_case = WI_FI_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_CONFIG;
         resp->resp_set_config = resp_payload;
-        return ESP_OK;
+        return ESP_ERR_INVALID_ARG;
     }
 
     wifi_prov_config_set_data_t req_data;
@@ -250,6 +251,9 @@ static void wifi_prov_config_command_cleanup(WiFiConfigPayload *resp, void *priv
     switch (resp->msg) {
         case WI_FI_CONFIG_MSG_TYPE__TypeRespGetStatus:
             {
+                if (!resp->resp_get_status) {
+                    break;
+                }
                 switch (resp->resp_get_status->sta_state) {
                     case WIFI_STATION_STATE__Connecting:
                         break;
@@ -328,28 +332,35 @@ esp_err_t wifi_prov_config_data_handler(uint32_t session_id, const uint8_t *inbu
     }
 
     wi_fi_config_payload__init(&resp);
+    /* Validate req->msg before arithmetic to avoid signed overflow on attacker-controlled
+     * wire values. For unknown commands the dispatcher returns ESP_FAIL without calling
+     * any handler, so nothing is allocated and resp.msg = 0 is safe for cleanup. */
+    if (lookup_cmd_handler(req->msg) >= 0) {
+        resp.msg = req->msg + 1;
+    }
     ret = wifi_prov_config_command_dispatcher(req, &resp, priv_data);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Proto command dispatcher error %d", ret);
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto exit;
     }
-
-    resp.msg = req->msg + 1; /* Response is request + 1 */
-    wi_fi_config_payload__free_unpacked(req, NULL);
 
     *outlen = wi_fi_config_payload__get_packed_size(&resp);
     if (*outlen <= 0) {
         ESP_LOGE(TAG, "Invalid encoding for response");
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto exit;
     }
 
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
         ESP_LOGE(TAG, "System out of memory");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto exit;
     }
     wi_fi_config_payload__pack(&resp, *outbuf);
+exit:
+    wi_fi_config_payload__free_unpacked(req, NULL);
     wifi_prov_config_command_cleanup(&resp, priv_data);
-
-    return ESP_OK;
+    return ret;
 }
