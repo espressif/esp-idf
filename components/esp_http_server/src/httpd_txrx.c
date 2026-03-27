@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,12 @@ esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *valu
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
 
+    /* Reject CRLF in header field or value */
+    if (strpbrk(field, "\r\n") || strpbrk(value, "\r\n")) {
+        ESP_LOGW(TAG, LOG_FMT("rejecting header with CRLF: %.32s"), field);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     struct httpd_req_aux *ra = r->aux;
     struct httpd_data *hd = (struct httpd_data *) r->handle;
 
@@ -209,6 +215,12 @@ esp_err_t httpd_resp_set_status(httpd_req_t *r, const char *status)
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
 
+    /* Reject CRLF in status */
+    if (strpbrk(status, "\r\n")) {
+        ESP_LOGW(TAG, LOG_FMT("rejecting status with CRLF: %.32s"), status);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     struct httpd_req_aux *ra = r->aux;
     ra->status = (char *)status;
     return ESP_OK;
@@ -226,6 +238,12 @@ esp_err_t httpd_resp_set_type(httpd_req_t *r, const char *type)
 
     if (!httpd_valid_req(r)) {
         return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    /* Reject CRLF in content type */
+    if (strpbrk(type, "\r\n")) {
+        ESP_LOGW(TAG, LOG_FMT("rejecting content type with CRLF: %.32s"), type);
+        return ESP_ERR_INVALID_ARG;
     }
 
     struct httpd_req_aux *ra = r->aux;
