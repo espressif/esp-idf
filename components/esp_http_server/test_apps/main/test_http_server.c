@@ -100,7 +100,7 @@ httpd_handle_t test_httpd_start(uint16_t id)
 
 /* Currently this only tests for the number of tasks.
  * Heap leakage is not tested as LWIP allocates memory
- * which may not be freed immedietly causing erroneous
+ * which may not be freed immediately causing erroneous
  * evaluation. Another test to implement would be the
  * monitoring of open sockets, but LWIP presently provides
  * no such API for getting the number of open sockets.
@@ -242,6 +242,41 @@ TEST_CASE("Max Allowed Sockets Test", "[HTTP SERVER]")
      * should fail */
     config.max_open_sockets += 1;
     TEST_ASSERT(httpd_start(&hd, &config) != ESP_OK);
+}
+
+TEST_CASE("httpd_resp_set_hdr rejects CRLF in header field and value", "[HTTP SERVER][security]")
+{
+    httpd_req_t fake_req = {0};
+
+    /* \r\n in value */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_hdr(&fake_req, "X-Field", "val\r\nX-Injected: pwned"));
+    /* bare \n in value */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_hdr(&fake_req, "X-Field", "val\nX-Injected: pwned"));
+    /* \r\n in field name */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_hdr(&fake_req, "X-Field\r\nX-Injected: pwned", "val"));
+}
+
+TEST_CASE("httpd_resp_set_status rejects CRLF in status string", "[HTTP SERVER][security]")
+{
+    httpd_req_t fake_req = {0};
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_status(&fake_req, "200 OK\r\nX-Injected: pwned"));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_status(&fake_req, "200 OK\nX-Injected: pwned"));
+}
+
+TEST_CASE("httpd_resp_set_type rejects CRLF in content type", "[HTTP SERVER][security]")
+{
+    httpd_req_t fake_req = {0};
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_type(&fake_req, "text/html\r\nX-Injected: pwned"));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_type(&fake_req, "text/html\nX-Injected: pwned"));
 }
 
 void app_main(void)
