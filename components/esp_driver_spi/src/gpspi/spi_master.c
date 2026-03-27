@@ -118,7 +118,7 @@ We have two bits to control the interrupt:
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/cache_utils.h"
 #include "driver/spi_master.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_ipc.h"
@@ -453,11 +453,6 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
     SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
-#if SOC_SPI_SUPPORT_CLK_RC_FAST
-    if (dev_config->clock_source == SPI_CLK_SRC_RC_FAST) {
-        SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
-    }
-#endif
     uint32_t clock_source_hz = 0;
     uint32_t clock_source_div = 1;
     spi_clock_source_t clk_src = dev_config->clock_source ? dev_config->clock_source : SPI_CLK_SRC_DEFAULT;
@@ -622,7 +617,6 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
             }
             spi_device_release_bus(handle);
         }
-        periph_rtc_dig_clk8m_disable();
     }
 #endif
     SPI_CHECK(esp_clk_tree_enable_src(handle->hal_dev.timing_conf.clock_source, false) == ESP_OK, "clock source disable failed", ESP_ERR_INVALID_STATE);

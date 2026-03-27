@@ -36,7 +36,6 @@
 #endif
 #if SOC_I2S_SUPPORTS_APLL
 #include "hal/clk_tree_ll.h"
-#include "clk_ctrl_os.h"
 #endif
 
 #include "esp_private/i2s_platform.h"
@@ -55,7 +54,6 @@
 #include "esp_clock_output.h"
 #endif
 
-#include "clk_ctrl_os.h"
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_intr_alloc.h"
@@ -319,9 +317,6 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
     new_chan->role = I2S_ROLE_MASTER; // Set default role to master
     new_chan->dir = dir;
     new_chan->state = I2S_CHAN_STATE_REGISTER;
-#if SOC_I2S_SUPPORTS_APLL
-    new_chan->apll_en = false;
-#endif
     new_chan->mode_info = NULL;
     new_chan->controller = i2s_obj;
 #if CONFIG_PM_ENABLE
@@ -580,7 +575,7 @@ static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
         return 0;
     }
     uint32_t real_freq = 0;
-    esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
     if (ret == ESP_ERR_INVALID_ARG) {
         ESP_LOGE(TAG, "set APLL freq failed due to invalid argument");
         return 0;
@@ -1029,7 +1024,6 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         i2s_obj->tx_chan->start = i2s_tx_channel_start;
         i2s_obj->tx_chan->stop = i2s_tx_channel_stop;
         *tx_handle = i2s_obj->tx_chan;
-        esp_clk_tree_enable_src((soc_module_clk_t)i2s_ll_tx_clk_get_src(i2s_obj->hal.dev), true);
         ESP_LOGD(TAG, "tx channel is registered on I2S%d successfully", i2s_obj->id);
     }
     /* Register and specify the rx handle */
@@ -1044,7 +1038,6 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         i2s_obj->rx_chan->start = i2s_rx_channel_start;
         i2s_obj->rx_chan->stop = i2s_rx_channel_stop;
         *rx_handle = i2s_obj->rx_chan;
-        esp_clk_tree_enable_src((soc_module_clk_t)i2s_ll_rx_clk_get_src(i2s_obj->hal.dev), true);
         ESP_LOGD(TAG, "rx channel is registered on I2S%d successfully", i2s_obj->id);
     }
 
@@ -1081,6 +1074,20 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     i2s_dir_t __attribute__((unused)) dir = handle->dir;
     bool is_bound = true;
 
+#if SOC_I2S_SUPPORTS_APLL
+    /* Must switch back to D2CLK on ESP32-S2,
+    * because the clock of some registers are bound to APLL,
+    * otherwise, once APLL is disabled, the registers can't be updated anymore
+    * NOTE: even this limitation is only applicable to ESP32-S2, switch back to Default clock does not harm for other chips */
+    PERIPH_RCC_ATOMIC() {
+        if (handle->dir == I2S_DIR_TX) {
+            i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+        } else {
+            i2s_ll_rx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+        }
+    }
+#endif
+
 #if SOC_I2S_HW_VERSION_2
     I2S_CLOCK_SRC_ATOMIC() {
         if (dir == I2S_DIR_TX) {
@@ -1089,33 +1096,20 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
             i2s_ll_rx_disable_clock(handle->controller->hal.dev);
         }
     }
-    if (handle->clk_src != I2S_CLK_SRC_EXTERNAL)
 #endif
-    {
-        i2s_clock_src_t clk_src = handle->clk_src;
+
+    // disable clock source
+    i2s_clock_src_t clk_src = handle->clk_src;
 #ifdef I2S_LL_DEFAULT_CLK_SRC
-        if (clk_src == I2S_CLK_SRC_DEFAULT) {
-            clk_src = I2S_LL_DEFAULT_CLK_SRC;
-        }
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    }
 #endif
+    // since the enum value of default clock on some chips may be 0, we use mode to check if the clock is enabled
+    if (handle->mode != I2S_COMM_MODE_NONE) {
         esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
     }
 
-#if SOC_I2S_SUPPORTS_APLL
-    if (handle->apll_en) {
-        /* Must switch back to D2CLK on ESP32-S2,
-         * because the clock of some registers are bound to APLL,
-         * otherwise, once APLL is disabled, the registers can't be updated anymore */
-        I2S_CLOCK_SRC_ATOMIC() {
-            if (handle->dir == I2S_DIR_TX) {
-                i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
-            } else {
-                i2s_ll_rx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
-            }
-        }
-        periph_rtc_apll_release();
-    }
-#endif
 #if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
         esp_pm_lock_delete(handle->pm_lock);
@@ -1442,6 +1436,8 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
 
 esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_config_t *tune_cfg, i2s_tuning_info_t *tune_info)
 {
+    esp_err_t ret = ESP_OK;
+
     /** We tune the sample rate via the MCLK clock.
      *  Because the sample rate is decided by MCLK eventually,
      *  and MCLK has a higher resolution which can be tuned more precisely.
@@ -1480,11 +1476,11 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
         new_mclk = handle->origin_mclk_hz + tune_cfg->min_delta_mclk;
     }
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-#if SOC_CLK_APLL_SUPPORTED
+#if SOC_I2S_SUPPORTS_APLL
     if (handle->clk_src == I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_release();
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false), err, TAG, "APLL disable failed");
         handle->sclk_hz = i2s_set_get_apll_freq(new_mclk);
-        periph_rtc_apll_acquire();
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true), err, TAG, "APLL enable failed");
     }
 #endif
     /* Calculate the new divider */
@@ -1492,7 +1488,8 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
     i2s_hal_calc_mclk_precise_division(handle->sclk_hz, new_mclk, &mclk_div);
     /* mclk_div = sclk / mclk >= 2 */
     if (mclk_div.integer < 2) {
-        return ESP_ERR_INVALID_ARG;
+        ret = ESP_ERR_INVALID_ARG;
+        goto err;
     }
     /* Set the new divider for MCLK */
     I2S_CLOCK_SRC_ATOMIC() {
@@ -1526,7 +1523,11 @@ result:
         tune_info->water_mark = used_size * 100 / tot_size;
     }
     xSemaphoreGive(handle->mutex);
-    return ESP_OK;
+    return ret;
+
+err:
+    xSemaphoreGive(handle->mutex);
+    return ret;
 }
 
 #if SOC_I2S_SUPPORTS_TX_SYNC_CNT

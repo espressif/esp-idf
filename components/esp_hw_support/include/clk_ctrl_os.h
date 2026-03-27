@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@ extern "C" {
  *
  * @return true: success for enable the RC_FAST clock, false: RC_FAST clock enable failed
  */
-bool periph_rtc_dig_clk8m_enable(void);
+bool periph_rtc_dig_clk8m_enable(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
 
 /**
  * @brief This function is used to disable the digital RC_FAST clock, which should be called
@@ -30,25 +30,25 @@ bool periph_rtc_dig_clk8m_enable(void);
  * @note If this function is called a number of times, the `periph_rtc_dig_clk8m_disable`
  *       function needs to be called same times to disable.
  */
-void periph_rtc_dig_clk8m_disable(void);
+void periph_rtc_dig_clk8m_disable(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
 
 /**
  * @brief This function is used to get the real clock frequency value of RC_FAST clock
  *
  * @return The real clock value, in Hz
  */
-uint32_t periph_rtc_dig_clk8m_get_freq(void);
+uint32_t periph_rtc_dig_clk8m_get_freq(void) __attribute__((deprecated("Please use esp_clk_tree_src_get_freq_hz instead")));
 
 #if SOC_CLK_APLL_SUPPORTED
 /**
  * @brief Enable APLL power if it has not enabled
  */
-void periph_rtc_apll_acquire(void);
+void periph_rtc_apll_acquire(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
 
 /**
  * @brief Shut down APLL power if no peripherals using APLL
  */
-void periph_rtc_apll_release(void);
+void periph_rtc_apll_release(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
 
 /**
  * @brief Calculate and set APLL coefficients by given frequency
@@ -69,19 +69,19 @@ void periph_rtc_apll_release(void);
  *      - ESP_ERR_INVALID_ARG: The input expt_freq is out of APLL support range
  *      - ESP_ERR_INVALID_STATE: APLL is referred by more than one peripherals, not allowed to change its frequency now
  */
-esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz);
+esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz) __attribute__((deprecated("Please use esp_clk_tree_src_set_freq_hz instead")));
 #endif // SOC_CLK_APLL_SUPPORTED
 
 #if SOC_CLK_MPLL_SUPPORTED
 /**
  * @brief Enable MPLL power if it has not enabled
  */
-esp_err_t periph_rtc_mpll_acquire(void);
+esp_err_t periph_rtc_mpll_acquire(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
 
 /**
  * @brief Shut down MPLL power if no peripherals using APLL
  */
-void periph_rtc_mpll_release(void);
+void periph_rtc_mpll_release(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
 
 /**
  * @brief Configure MPLL frequency
@@ -96,7 +96,7 @@ void periph_rtc_mpll_release(void);
  *      - ESP_OK: MPLL frequency set success
  *      - ESP_ERR_INVALID_STATE: MPLL is referred by more than one peripherals, not allowed to change its frequency now
  */
-esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz);
+esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz) __attribute__((deprecated("Please use esp_clk_tree_src_set_freq_hz instead")));
 #endif // SOC_CLK_MPLL_SUPPORTED
 
 #ifdef __cplusplus

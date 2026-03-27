@@ -5,13 +5,16 @@
  */
 
 #include <stdint.h>
+#include <stdatomic.h>
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "esp_log.h"
 #include "soc/rtc.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/periph_ctrl.h"
 
 ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 

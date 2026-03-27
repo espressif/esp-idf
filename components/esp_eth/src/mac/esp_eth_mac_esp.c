@@ -31,7 +31,7 @@
 #include "hal/emac_hal.h"
 #include "soc/soc.h"
 #include "soc/emac_periph.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 #include "esp_private/eth_mac_esp_dma.h"
@@ -493,18 +493,18 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
 
 #if CONFIG_IDF_TARGET_ESP32
     // the RMII reference comes from the APLL
-    periph_rtc_apll_acquire();
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true), TAG, "APLL enable failed");
     emac->use_pll = true;
-    esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
     ESP_RETURN_ON_FALSE(ret != ESP_ERR_INVALID_ARG, ESP_FAIL, TAG, "Set APLL clock coefficients failed");
     if (ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "APLL is occupied already, it is working at %" PRIu32 " Hz", real_freq);
     }
 #elif CONFIG_IDF_TARGET_ESP32P4
     // the RMII reference comes from the MPLL
-    periph_rtc_mpll_acquire();
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, true), TAG, "MPLL enable failed");
     emac->use_pll = true;
-    esp_err_t ret = periph_rtc_mpll_freq_set(expt_freq * 2, &real_freq); // cannot set 50MHz at MPLL, the nearest possible freq is 100 MHz
+    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, expt_freq * 2, &real_freq); // cannot set 50MHz at MPLL, the nearest possible freq is 100 MHz
     if (ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "MPLL is occupied already, it is working at %" PRIu32 " Hz", real_freq);
     }
@@ -677,9 +677,9 @@ static void emac_esp_free_driver_obj(emac_esp32_t *emac)
 
         if (emac->use_pll) {
 #if CONFIG_IDF_TARGET_ESP32
-            periph_rtc_apll_release();
+            esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false);
 #elif CONFIG_IDF_TARGET_ESP32P4
-            periph_rtc_mpll_release();
+            esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false);
 #endif
         }
 #ifdef CONFIG_IDF_TARGET_ESP32

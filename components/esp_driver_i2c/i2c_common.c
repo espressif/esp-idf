@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/i2c_periph.h"
 #include "esp_clk_tree.h"
-#include "clk_ctrl_os.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
 #if SOC_LP_I2C_SUPPORTED
@@ -233,15 +233,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
     }
     _lock_release(&s_i2c_platform.mutex);
 
-    switch (clk_src) {
-#if SOC_I2C_SUPPORT_RTC
-    case I2C_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_disable();
-        break;
-#endif // SOC_I2C_SUPPORT_RTC
-    default:
-        break;
-    }
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clk_src, false), TAG, "clock source clock disable failed");
 
     if (do_deinitialize) {
         ESP_LOGD(TAG, "delete bus %d", port_num);
@@ -268,14 +260,7 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
     ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_STATE, TAG,
                         "group clock conflict, already is %d but attempt to %d", handle->clk_src, clk_src);
 
-    // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
-#if SOC_I2C_SUPPORT_RTC
-    if (clk_src == (soc_module_clk_t)I2C_CLK_SRC_RC_FAST) {
-        // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
-        // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
-        periph_rtc_dig_clk8m_enable();
-    }
-#endif // SOC_I2C_SUPPORT_RTC
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), TAG, "clock source clock enable failed");
 
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &periph_src_clk_hz), TAG, "i2c get clock frequency error");
 

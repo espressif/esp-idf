@@ -16,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_eth_test_utils.h"
 #include "hal/emac_hal.h" // for MAC_HAL_TDES0_* control bits
+#include "esp_private/esp_clk_tree_common.h"
 
 #define ETHERTYPE_TX_STD        0x2222  // frame transmitted via _transmit_frame
 #define ETHERTYPE_TX_MULTI_2    0x2223  // frame transmitted via _transmit_multiple_buf_frame (2 buffers)

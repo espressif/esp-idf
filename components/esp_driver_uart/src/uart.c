@@ -38,7 +38,6 @@
 #include "soc/lp_gpio_pins.h"
 #endif
 #endif
-#include "clk_ctrl_os.h"
 #include "esp_pm.h"
 #include "esp_private/sleep_retention.h"
 
@@ -1081,11 +1080,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 
     // Enable the newly selected clock source
     esp_clk_tree_enable_src(uart_sclk_sel, true);
-#if SOC_UART_SUPPORT_RTC_CLK
-    if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
-        periph_rtc_dig_clk8m_enable();
-    }
-#endif
 
     bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -2130,11 +2124,6 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
 
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
         esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
-#if SOC_UART_SUPPORT_RTC_CLK
-        if (uart_context[uart_num].sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
-            periph_rtc_dig_clk8m_disable();
-        }
-#endif
         uart_context[uart_num].sclk_sel = -1;
     }
 
@@ -2339,11 +2328,6 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
         uint32_t sclk_freq = 0;
         ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), err, UART_TAG, "invalid source_clk");
         esp_clk_tree_enable_src(uart_sclk_sel, true);
-#if SOC_UART_SUPPORT_RTC_CLK
-        if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
-            periph_rtc_dig_clk8m_enable();
-        }
-#endif
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), 57600, sclk_freq); // set to any baudrate
@@ -2404,11 +2388,6 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
         uart_release_pin(uart_num, true, true, true, true, true, true);
         if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
             esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
-#if SOC_UART_SUPPORT_RTC_CLK
-            if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
-                periph_rtc_dig_clk8m_disable();
-            }
-#endif
             uart_context[uart_num].sclk_sel = -1;
         }
         uart_module_disable(uart_num);
