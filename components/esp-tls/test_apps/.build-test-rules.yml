@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp-tls/test_apps:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on one target is enough
