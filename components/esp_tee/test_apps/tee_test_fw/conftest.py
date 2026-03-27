@@ -203,25 +203,6 @@ class TEESerial(IdfSerial):
         return self.app.sdkconfig.get('ESPTOOLPY_FLASHSIZE', '')
 
     @EspSerial.use_esptool()
-    def bootloader_force_flash_if_req(self) -> None:
-        # Forcefully flash the bootloader only if security features are enabled
-        if any(
-            (
-                self.app.sdkconfig.get('SECURE_BOOT', True),
-                self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', True),
-            )
-        ):
-            offs = int(self.app.sdkconfig.get('BOOTLOADER_OFFSET_IN_FLASH', 0))
-            bootloader_path = os.path.join(self.app.binary_path, 'bootloader', 'bootloader.bin')
-            encrypt = '--encrypt' if self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED') else ''
-            flash_size = self._get_flash_size()
-
-            esptool.main(
-                f'--no-stub write-flash {offs} {bootloader_path} --force {encrypt} --flash-size {flash_size}'.split(),
-                esp=self.esp,
-            )
-
-    @EspSerial.use_esptool()
     def custom_erase_partition(self, partition: str) -> None:
         if self.app.sdkconfig.get('SECURE_ENABLE_SECURE_ROM_DL_MODE'):
             with tempfile.NamedTemporaryFile(delete=True) as temp_file:
@@ -295,25 +276,17 @@ class TEESerial(IdfSerial):
                     os.remove(file)
 
     @EspSerial.use_esptool()
-    def custom_flash(self) -> None:
-        self.bootloader_force_flash_if_req()
-        self.flash()
-
-    @EspSerial.use_esptool()
     def custom_flash_w_test_tee_img_gen(self) -> None:
-        self.bootloader_force_flash_if_req()
         self.flash()
         self.copy_test_tee_img('ota_1', False)
 
     @EspSerial.use_esptool()
     def custom_flash_w_test_tee_img_rb(self) -> None:
-        self.bootloader_force_flash_if_req()
         self.flash()
         self.copy_test_tee_img('ota_1', True)
 
     @EspSerial.use_esptool()
     def custom_flash_with_empty_sec_stg(self) -> None:
-        self.bootloader_force_flash_if_req()
         self.flash()
         self.custom_erase_partition('secure_storage')
 
@@ -354,12 +327,11 @@ class TEESerial(IdfSerial):
         },
     ]
 
-    NVS_KEYS_B64 = 'MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzPMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzA=='
-
+    TEST_KEYS_DIR = Path(__file__).parent / 'test_keys'
     TMP_DIR = Path('tmp')
-    NVS_KEYS_PATH = TMP_DIR / 'nvs_keys.bin'
     NVS_CSV_PATH = TMP_DIR / 'tee_sec_stg_val.csv'
     NVS_BIN_PATH = TMP_DIR / 'tee_sec_stg_nvs.bin'
+    NVS_KEYS_FILE = 'tee_sec_stg_nvs_keys.bin'
 
     def run_command(self, command: list[str]) -> None:
         try:
@@ -391,7 +363,6 @@ class TEESerial(IdfSerial):
                 input_path = tmp_dir / entry['input']
                 self.write_keys_to_file(entry['b64'], input_path)
                 entry['input'] = str(input_path)
-        self.write_keys_to_file(self.NVS_KEYS_B64, self.NVS_KEYS_PATH)
 
         idf_path = Path(os.environ['IDF_PATH'])
         ESP_TEE_SEC_STG_KEYGEN = os.path.join(
@@ -400,6 +371,30 @@ class TEESerial(IdfSerial):
         NVS_PARTITION_GEN = os.path.join(
             idf_path, 'components', 'nvs_flash', 'nvs_partition_generator', 'nvs_partition_gen.py'
         )
+
+        nvs_keys = tmp_dir / self.NVS_KEYS_FILE
+        if self.app.sdkconfig.get('SECURE_TEE_SEC_STG_MODE_RELEASE'):
+            hmac_key_src = self.TEST_KEYS_DIR / 'tee_sec_stg_hmac_key.bin'
+            self.run_command(
+                [
+                    sys.executable,
+                    NVS_PARTITION_GEN,
+                    'generate-key',
+                    '--key_protect_hmac',
+                    '--kp_hmac_inputkey',
+                    str(hmac_key_src),
+                    '--keyfile',
+                    self.NVS_KEYS_FILE,
+                    '--outdir',
+                    str(tmp_dir),
+                ]
+            )
+            nvs_keys = tmp_dir / 'keys' / self.NVS_KEYS_FILE
+        else:
+            NVS_KEYS_DEV_B64 = (
+                'MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzPMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzA=='
+            )
+            self.write_keys_to_file(NVS_KEYS_DEV_B64, nvs_keys)
 
         cmds = [
             [sys.executable, ESP_TEE_SEC_STG_KEYGEN, '-k', entry['type'], '-o', str(tmp_dir / f'{entry["key"]}.bin')]
@@ -410,7 +405,6 @@ class TEESerial(IdfSerial):
 
         csv_path = self.create_tee_sec_stg_csv(tmp_dir)
         nvs_bin = self.NVS_BIN_PATH
-        nvs_keys = self.NVS_KEYS_PATH
         size = self.app.partition_table['secure_storage']['size']
 
         cmds.append(
@@ -430,7 +424,6 @@ class TEESerial(IdfSerial):
             for cmd in cmds:
                 self.run_command(cmd)
 
-            self.bootloader_force_flash_if_req()
             self.flash()
             self.custom_erase_partition('secure_storage')
             self.custom_write_partition('secure_storage', nvs_bin)
