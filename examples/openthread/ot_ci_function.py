@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
+import ipaddress
 import logging
 import os
 import re
@@ -377,6 +378,78 @@ def is_joined_wifi_network(br: IdfDut) -> bool:
     return check_if_host_receive_ra(br)
 
 
+def wait_for_host_ra_route(
+    br: IdfDut,
+    *,
+    retries: int = 12,
+    interval_s: int = 5,
+) -> None:
+    interface_name = get_host_interface_name()
+    log_ipv6_addr_route_by_interface(interface_name, title='Wait RA (initial)')
+
+    for attempt in range(1, retries + 1):
+        if is_joined_wifi_network(br):
+            log_ipv6_addr_route_by_interface(interface_name, title='RA Ready!')
+            return
+
+        logging.info(f'Host route not ready yet, retry {attempt}/{retries}...')
+        log_ipv6_addr_route_by_interface(interface_name, title=f'Wait RA ({attempt}/{retries})')
+
+        time.sleep(interval_s)
+
+    raise AssertionError('Host did not receive RA / OMR route in time')
+
+
+def host_global_address_has_onlink_prefix(interface_name: str, onlinkprefix: str) -> bool:
+    onlinkprefix = onlinkprefix.strip()
+    if not onlinkprefix:
+        return False
+    base = onlinkprefix.rstrip(':')
+    try:
+        network = ipaddress.IPv6Network(f'{base}::/64', strict=False)
+    except ValueError:
+        logging.warning(f'Invalid onlinkprefix for /64 check: {onlinkprefix}')
+        return False
+
+    out = subprocess.getoutput(f'ip -6 addr show dev {interface_name}')
+    for line in out.splitlines():
+        if 'inet6' not in line or 'scope global' not in line:
+            continue
+        m = re.search(r'inet6 ([^\s]+)/\d+', line)
+        if not m:
+            continue
+        addr_s = m.group(1).split('%')[0]
+        try:
+            if ipaddress.IPv6Address(addr_s) in network:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def wait_for_host_onlink_global_address(
+    br: IdfDut,
+    *,
+    retries: int = 12,
+    interval_s: int = 5,
+) -> str:
+    interface_name = get_host_interface_name()
+    onlinkprefix = get_onlinkprefix(br)
+    logging.info(f'Wait for host GUA in BR onlink prefix {onlinkprefix!r} on {interface_name}')
+    log_ipv6_addr_route_by_interface(interface_name, title='Wait onlink GUA (initial)')
+
+    for attempt in range(1, retries + 1):
+        if host_global_address_has_onlink_prefix(interface_name, onlinkprefix):
+            log_ipv6_addr_route_by_interface(interface_name, title='Onlink GUA ready!')
+            return onlinkprefix
+
+        logging.info(f'Host onlink GUA not ready yet, retry {attempt}/{retries}...')
+        log_ipv6_addr_route_by_interface(interface_name, title=f'Wait onlink GUA ({attempt}/{retries})')
+        time.sleep(interval_s)
+
+    raise AssertionError(f'Host did not get a global IPv6 address in onlink prefix {onlinkprefix!r} in time')
+
+
 thread_ipv6_group = 'ff04:0:0:0:0:0:0:125'
 
 
@@ -543,35 +616,72 @@ def open_host_interface() -> None:
         assert flag
 
 
+def ensure_avahi_running(restart_if_needed: bool = True) -> bool:
+    out_str = subprocess.getoutput('pgrep -a avahi-daemon 2>/dev/null')
+    if out_str.strip():
+        logging.info(f'avahi process list:\n{out_str}')
+        return True
+
+    logging.warning('avahi-daemon not running')
+    if restart_if_needed:
+        logging.warning('restarting avahi-daemon once...')
+        restart_avahi()
+        out_str = subprocess.getoutput('pgrep -a avahi-daemon 2>/dev/null')
+        if out_str.strip():
+            logging.info(f'avahi process list after restart:\n{out_str}')
+            return True
+
+    logging.error('avahi-daemon is still not running')
+    return False
+
+
 def get_domain() -> str:
     hostname = socket.gethostname()
     logging.info(f'hostname is: {hostname}')
-    command = 'ps -auxww | grep avahi-daemon | grep running'
-    out_str = subprocess.getoutput(command)
-    logging.info(f'avahi status:\n {out_str}')
-    role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
-    logging.info(f'active host is: {role}')
-    return str(role)
+    out_str = subprocess.getoutput('pgrep -a avahi-daemon 2>/dev/null')
+    if not out_str.strip():
+        out_str = subprocess.getoutput('ps -C avahi-daemon -o args= --no-headers 2>/dev/null')
+    logging.info(f'avahi status:\n{out_str}')
+    matches = re.findall(r'\[([\w\W]+?)\.local\]', str(out_str))
+    if matches:
+        role = matches[0]
+        logging.info(f'active host is: {role}')
+        return str(role)
+    short = subprocess.getoutput('hostname -s').strip() or hostname.split('.')[0]
+    logging.warning(
+        'Could not parse [.local] from avahi process args; using short hostname %r',
+        short,
+    )
+    return short
 
 
-def flush_ipv6_addr_by_interface() -> None:
-    interface_name = get_host_interface_name()
-    logging.info(f'flush ipv6 addr : {interface_name}')
+def log_ipv6_addr_route_by_interface(interface_name: str, title: str = '') -> tuple[str, str]:
     command_show_addr = f'ip -6 addr show dev {interface_name}'
     command_show_route = f'ip -6 route show dev {interface_name}'
-    addr_before = subprocess.getoutput(command_show_addr)
-    route_before = subprocess.getoutput(command_show_route)
-    logging.info(f'Before flush, IPv6 addresses: \n{addr_before}')
-    logging.info(f'Before flush, IPv6 routes: \n{route_before}')
+    addr = subprocess.getoutput(command_show_addr)
+    route = subprocess.getoutput(command_show_route)
+    prefix = f'{title} ' if title else ''
+    logging.info(f'{prefix}IPv6 addresses on {interface_name}:\n{addr}')
+    logging.info(f'{prefix}IPv6 routes on {interface_name}:\n{route}')
+    return addr, route
+
+
+def flush_ipv6_addr_route_by_interface(interface_name: str, down_up_wait_s: int = 5) -> None:
+    logging.info(f'flush ipv6 addr/route: {interface_name}')
+    log_ipv6_addr_route_by_interface(interface_name, title='Before flush')
+
     subprocess.run(['ip', 'link', 'set', interface_name, 'down'])
     subprocess.run(['ip', '-6', 'addr', 'flush', 'dev', interface_name])
     subprocess.run(['ip', '-6', 'route', 'flush', 'dev', interface_name])
     subprocess.run(['ip', 'link', 'set', interface_name, 'up'])
-    time.sleep(5)
-    addr_after = subprocess.getoutput(command_show_addr)
-    route_after = subprocess.getoutput(command_show_route)
-    logging.info(f'After flush, IPv6 addresses: \n{addr_after}')
-    logging.info(f'After flush, IPv6 routes: \n{route_after}')
+
+    time.sleep(down_up_wait_s)
+    log_ipv6_addr_route_by_interface(interface_name, title='After flush')
+
+
+def flush_ipv6_addr_by_interface() -> None:
+    interface_name = get_host_interface_name()
+    flush_ipv6_addr_route_by_interface(interface_name)
 
 
 class tcp_parameter:

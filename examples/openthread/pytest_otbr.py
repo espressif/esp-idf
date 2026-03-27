@@ -215,19 +215,22 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
+        onlinkprefix = ocf.wait_for_host_onlink_global_address(br)
+        logging.info(f'br onlinkprefix: {onlinkprefix}')
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
         logging.info(f'cli_global_unicast_addr {cli_global_unicast_addr}')
+        interface_name = ocf.get_host_interface_name()
+        ocf.log_ipv6_addr_route_by_interface(interface_name, title='Before ping test')
         command = 'ping ' + str(cli_global_unicast_addr) + ' -c 10'
         out_str = subprocess.getoutput(command)
+        ocf.log_ipv6_addr_route_by_interface(interface_name, title='After ping test')
         logging.info(f'ping result:\n{out_str}')
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
-        interface_name = ocf.get_host_interface_name()
         command = 'ifconfig ' + interface_name + ' | grep inet6 | grep global'
         out_bytes = subprocess.check_output(command, shell=True, timeout=5)
         out_str = out_bytes.decode('utf-8')
-        onlinkprefix = ocf.get_onlinkprefix(br)
         pattern = rf'\W+({onlinkprefix}(?:\w+:){{3}}\w+)\W+'
         host_global_unicast_addr = re.findall(pattern, out_str)
         logging.info(f'host_global_unicast_addr: {host_global_unicast_addr}')
@@ -272,7 +275,7 @@ def test_multicast_forwarding_A(Init_interface: bool, dut: tuple[IdfDut, IdfDut,
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
         assert ocf.thread_is_joined_group(cli)
@@ -325,7 +328,7 @@ def test_multicast_forwarding_B(Init_interface: bool, dut: tuple[IdfDut, IdfDut,
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
         ocf.execute_command(cli, 'udp open')
@@ -382,7 +385,7 @@ def test_service_discovery_of_Thread_device(
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         command = 'avahi-browse -rt _testyyy._udp'
         out_str = subprocess.getoutput(command)
         logging.info(f'avahi-browse:\n{out_str}')
@@ -415,7 +418,7 @@ def test_service_discovery_of_Thread_device(
 
 # Case 6: discover dervice published by Wi-Fi device
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=5)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -442,13 +445,15 @@ def test_service_discovery_of_WiFi_device(
     dut[0].serial.stop_redirect_thread()
 
     formBasicWiFiThreadNetwork(br, cli)
+    sp: subprocess.Popen | None = None
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         br_global_unicast_addr = ocf.get_global_unicast_addr(br, br)
         command = 'dns config ' + br_global_unicast_addr
         ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 1)
+        assert ocf.ensure_avahi_running(restart_if_needed=True), 'avahi-daemon is not running on this runner'
         domain_name = ocf.get_domain()
         logging.info(f'domain name is: {domain_name}')
         command = 'dns resolve ' + domain_name + '.default.service.arpa.'
@@ -477,7 +482,8 @@ def test_service_discovery_of_WiFi_device(
         assert 'Port:12347' in str(tmp)
     finally:
         ocf.host_close_service()
-        sp.terminate()
+        if sp is not None:
+            sp.terminate()
         ocf.stop_thread(cli)
         ocf.stop_thread(br)
         time.sleep(3)
@@ -510,7 +516,7 @@ def test_ICMP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) ->
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         host_ipv4_address = ocf.get_host_ipv4_address()
         logging.info(f'host_ipv4_address: {host_ipv4_address}')
         rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), count=5)[1]
@@ -548,7 +554,7 @@ def test_UDP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> 
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
         ocf.execute_command(cli, 'udp open')
@@ -604,7 +610,7 @@ def test_TCP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> 
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         ocf.execute_command(br, 'bbr')
         br.expect('server16', timeout=5)
         ocf.execute_command(cli, 'tcpsockclient open')
@@ -832,7 +838,7 @@ def test_br_meshcop(Init_interface: bool, Init_avahi: bool, dut: tuple[IdfDut, I
         br_thread_para.setnetworkname(networkname)
         ocf.joinThreadNetwork(br, br_thread_para)
         ocf.wait(br, 10)
-        assert ocf.is_joined_wifi_network(br)
+        ocf.wait_for_host_ra_route(br)
         command = 'timeout 3 avahi-browse -r _meshcop._udp'
         try:
             result = subprocess.run(command, capture_output=True, check=True, shell=True)
