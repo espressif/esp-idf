@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,7 +168,7 @@ const char *ENUM_TAG = "ENUM";
 // ---------------------------- Helpers ----------------------------------------
 // -----------------------------------------------------------------------------
 #define ENUM_CHECK(cond, ret_val) ({                                        \
-            if (!(cond)) {                                                  \
+            if (unlikely(!(cond))) {                                        \
                 return (ret_val);                                           \
             }                                                               \
 })
@@ -541,6 +541,10 @@ static esp_err_t parse_short_config_desc(void)
     usb_transfer_t *ctrl_xfer = &p_enum_driver->constant.urb->transfer;
     const usb_config_desc_t *config_desc = (usb_config_desc_t *)(ctrl_xfer->data_buffer + sizeof(usb_setup_packet_t));
 
+    // Validate actual received data size to prevent OOB reads
+    const int actual_data_len = ctrl_xfer->actual_num_bytes - sizeof(usb_setup_packet_t);
+    ENUM_CHECK(actual_data_len >= ENUM_SHORT_DESC_REQ_LEN, ESP_ERR_INVALID_RESPONSE);
+
     // Check if the returned descriptor is corrupted
     if (config_desc->bDescriptorType != USB_B_DESCRIPTOR_TYPE_CONFIGURATION) {
         ESP_LOGE(ENUM_TAG, "Short config desc has wrong bDescriptorType");
@@ -576,6 +580,10 @@ static esp_err_t parse_full_config_desc(void)
     usb_device_handle_t dev_hdl = p_enum_driver->single_thread.dev_hdl;
     usb_transfer_t *ctrl_xfer = &p_enum_driver->constant.urb->transfer;
     const usb_config_desc_t *config_desc = (usb_config_desc_t *)(ctrl_xfer->data_buffer + sizeof(usb_setup_packet_t));
+
+    // Validate actual received data size to prevent OOB reads
+    const int actual_data_len = ctrl_xfer->actual_num_bytes - sizeof(usb_setup_packet_t);
+    ENUM_CHECK(actual_data_len >= ENUM_SHORT_DESC_REQ_LEN, ESP_ERR_INVALID_RESPONSE);
 
     // Check if the returned descriptor is corrupted
     if (config_desc->bDescriptorType != USB_B_DESCRIPTOR_TYPE_CONFIGURATION) {
@@ -639,6 +647,9 @@ static esp_err_t parse_langid_table(void)
     esp_err_t ret;
     usb_transfer_t *transfer = &p_enum_driver->constant.urb->transfer;
     const usb_str_desc_t *str_desc = (usb_str_desc_t *)(transfer->data_buffer + sizeof(usb_setup_packet_t));
+
+    // Validate minimum LANGID descriptor length: header (2 bytes) + at least 1 LANGID entry (2 bytes)
+    ENUM_CHECK(str_desc->bLength >= (sizeof(usb_str_desc_t) + 2), ESP_ERR_INVALID_RESPONSE);
 
     //Scan the LANGID table for our target LANGID
     ret = ESP_ERR_NOT_FOUND;

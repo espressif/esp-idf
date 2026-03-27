@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +79,7 @@ int usb_parse_interface_number_of_alternate(const usb_config_desc_t *config_desc
  * @param[in] bInterfaceNumber Interface number
  * @param[in] bAlternateSetting Alternate setting number
  * @param[out] offset Byte offset of the interface descriptor relative to the start of the configuration descriptor. Can be NULL.
- * @return const usb_intf_desc_t* Pointer to interface descriptor, NULL if not found.
+ * @return const usb_intf_desc_t* Pointer to interface descriptor, NULL if not found or invalid (e.g., too many endpoints) descriptor
  */
 const usb_intf_desc_t *usb_parse_interface_descriptor(const usb_config_desc_t *config_desc, uint8_t bInterfaceNumber, uint8_t bAlternateSetting, int *offset);
 

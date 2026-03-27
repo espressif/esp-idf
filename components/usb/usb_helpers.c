@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,15 +20,24 @@
 const usb_standard_desc_t *usb_parse_next_descriptor(const usb_standard_desc_t *cur_desc, uint16_t wTotalLength, int *offset)
 {
     assert(cur_desc != NULL && offset != NULL);
+    if (cur_desc->bLength < sizeof(usb_standard_desc_t)) {
+        return NULL;    // Invalid descriptor length, would cause infinite loop
+    }
     if (*offset >= wTotalLength) {
         return NULL;    // We have traversed the entire configuration descriptor
     }
-    if (*offset + cur_desc->bLength >= wTotalLength) {
-        return NULL;    // Next descriptor is out of bounds
+    /*
+     * The returned pointer must address at least sizeof(usb_standard_desc_t) bytes,
+     * because callers read bLength and bDescriptorType immediately (e.g. usb_print_config_descriptor()).
+     * Reject advancing when fewer than that many bytes remain in [next_offset, wTotalLength).
+     */
+    const int next_offset = *offset + cur_desc->bLength;
+    if (next_offset + (int)sizeof(usb_standard_desc_t) > (int)wTotalLength) {
+        return NULL;    // Next descriptor start out of bounds or trailing fragment < sizeof(usb_standard_desc_t)
     }
     // Return the next descriptor, update offset
     const usb_standard_desc_t *ret_desc = (const usb_standard_desc_t *)(((uintptr_t)cur_desc) + cur_desc->bLength);
-    *offset += cur_desc->bLength;
+    *offset = next_offset;
     return ret_desc;
 }
 
@@ -37,16 +46,36 @@ const usb_standard_desc_t *usb_parse_next_descriptor_of_type(const usb_standard_
     assert(cur_desc != NULL && offset != NULL);
     int offset_temp = *offset;      // We only want to update offset if we've actually found a descriptor
     // Keep stepping over descriptors until we find one of bDescriptorType or until we go out of bounds
-    const usb_standard_desc_t *ret_desc = usb_parse_next_descriptor(cur_desc, wTotalLength, &offset_temp);
-    while (ret_desc != NULL) {
+    const usb_standard_desc_t *ret_desc = cur_desc;
+    while ((ret_desc = usb_parse_next_descriptor(ret_desc, wTotalLength, &offset_temp)) != NULL) {
         if (ret_desc->bDescriptorType == bDescriptorType) {
+            switch (bDescriptorType) {
+            case USB_B_DESCRIPTOR_TYPE_CONFIGURATION:
+                if (ret_desc->bLength < sizeof(usb_config_desc_t)) {
+                    return NULL;
+                }
+                break;
+            case USB_B_DESCRIPTOR_TYPE_INTERFACE:
+                if (ret_desc->bLength < sizeof(usb_intf_desc_t)) {
+                    return NULL;
+                }
+                break;
+            case USB_B_DESCRIPTOR_TYPE_ENDPOINT:
+                if (ret_desc->bLength < sizeof(usb_ep_desc_t)) {
+                    return NULL;
+                }
+                break;
+            case USB_B_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION:
+                if (ret_desc->bLength < sizeof(usb_iad_desc_t)) {
+                    return NULL;
+                }
+                break;
+            default:
+                break;
+            }
+            *offset = offset_temp;  // Found: advance caller's offset past descriptors we stepped over
             break;
         }
-        ret_desc = usb_parse_next_descriptor(ret_desc, wTotalLength, &offset_temp);
-    }
-    if (ret_desc != NULL) {
-        // We've found a descriptor. Update the offset
-        *offset = offset_temp;
     }
     return ret_desc;
 }
@@ -104,8 +133,16 @@ const usb_intf_desc_t *usb_parse_interface_descriptor(const usb_config_desc_t *c
         // Get the next interface descriptor
         next_intf_desc = (const usb_intf_desc_t *)usb_parse_next_descriptor_of_type((const usb_standard_desc_t *)next_intf_desc, config_desc->wTotalLength, USB_B_DESCRIPTOR_TYPE_INTERFACE, &offset_temp);
     }
-    if (next_intf_desc != NULL && offset != NULL) {
-        *offset = offset_temp;
+
+    if (next_intf_desc != NULL) {
+        // In case offset was provided, set it
+        if (offset != NULL) {
+            *offset = offset_temp;
+        }
+        // Check if the interface descriptor has too many endpoints
+        if (next_intf_desc->bNumEndpoints > USB_MAX_ENDPOINTS_PER_INTERFACE) {
+            return NULL;    // Too many endpoints, invalid descriptor
+        }
     }
     return next_intf_desc;
 }
@@ -199,6 +236,9 @@ static void print_ep_desc(const usb_ep_desc_t *ep_desc)
            USB_EP_DESC_GET_EP_DIR(ep_desc) ? "IN" : "OUT");
     printf("\t\tbmAttributes 0x%x\t%s\n", ep_desc->bmAttributes, ep_type_str);
     printf("\t\twMaxPacketSize %d\n", USB_EP_DESC_GET_MPS(ep_desc));
+    if (USB_EP_DESC_GET_MULT(ep_desc) > 0) {
+        printf("\t\twMaxPacketSize (with additional transactions in microframe) %d\n", USB_EP_DESC_GET_MPS(ep_desc) * (USB_EP_DESC_GET_MULT(ep_desc) + 1));
+    }
     printf("\t\tbInterval %d\n", ep_desc->bInterval);
 }
 
