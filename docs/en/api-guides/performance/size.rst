@@ -181,7 +181,7 @@ By default, ESP-IDF uses Newlib "full" formatting for I/O functions (``printf()`
 
 Enabling "Nano" formatting reduces the stack usage of each function that calls ``printf()`` or another string formatting function, see :ref:`optimize-stack-sizes`.
 
-"Nano" formatting does not support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib README file`_.
+"Nano" formatting does not support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib documentation`_.
 
 
 .. only:: esp32c2
@@ -191,7 +191,7 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
         :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
 
 
-.. _Newlib README file: https://sourceware.org/newlib/README
+.. _Newlib documentation: https://sourceware.org/newlib/docs.html
 
 libstdc++
 @@@@@@@@@

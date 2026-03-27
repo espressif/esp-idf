@@ -60,7 +60,7 @@ config ESP_EFUSE_BLOCK_REV_MIN_FULL
         So that to avoid running an incompatible image on a SoC that contains breaking change in the eFuse Block.
         If you want to update this value to run the image that not compatible with the current eFuse Block revision,
         please contact to Espressif's business team for details:
-        https://www.espressif.com.cn/en/contact-us/sales-questions
+        https://www.espressif.com/en/contact-us/sales-questions
 
 config ESP_EFUSE_BLOCK_REV_MAX_FULL
     int
