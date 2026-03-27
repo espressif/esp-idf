@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "btc_blufi_prf.h"
 #include "btc/btc_task.h"
 #include "btc/btc_manage.h"
+#include "osi/allocator.h"
 
 #include "blufi_int.h"
 
@@ -27,6 +28,14 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
     int output_len = 0;
     bool need_free = false;
 
+#define BLUFI_REQUIRE_LEN_AT_LEAST(_n)                                     \
+    if (len < (_n)) {                                                      \
+        BTC_TRACE_ERROR("%s pkt %02x len too short: %d\n",                 \
+                        __func__, type, len);                              \
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);               \
+        break;                                                             \
+    }
+
     switch (BLUFI_GET_TYPE(type)) {
     case BLUFI_TYPE_CTRL:
         switch (BLUFI_GET_SUBTYPE(type)) {
@@ -34,9 +43,11 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             /* TODO: check sequence */
             break;
         case BLUFI_TYPE_CTRL_SUBTYPE_SET_SEC_MODE:
+            BLUFI_REQUIRE_LEN_AT_LEAST(1);
             blufi_env.sec_mode = data[0];
             break;
         case BLUFI_TYPE_CTRL_SUBTYPE_SET_WIFI_OPMODE:
+            BLUFI_REQUIRE_LEN_AT_LEAST(1);
             msg.sig = BTC_SIG_API_CB;
             msg.pid = BTC_PID_BLUFI;
             msg.act = ESP_BLUFI_EVENT_SET_WIFI_OPMODE;
@@ -109,11 +120,16 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
                 btc_blufi_send_encap(BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_NEG),
                              output_data, output_len);
             }
+            if (need_free && output_data) {
+                osi_free(output_data);
+                output_data = NULL;
+            }
             break;
         case BLUFI_TYPE_DATA_SUBTYPE_STA_BSSID:
             if (len < 6) {
                 BTC_TRACE_ERROR("%s STA_BSSID data too short: %d\n", __func__, len);
-                return;
+                btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+                break;
             }
             msg.sig = BTC_SIG_API_CB;
             msg.pid = BTC_PID_BLUFI;
@@ -159,6 +175,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), btc_blufi_cb_deep_copy, btc_blufi_cb_deep_free);
             break;
         case BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_MAX_CONN_NUM:
+            BLUFI_REQUIRE_LEN_AT_LEAST(1);
             msg.sig = BTC_SIG_API_CB;
             msg.pid = BTC_PID_BLUFI;
             msg.act = ESP_BLUFI_EVENT_RECV_SOFTAP_MAX_CONN_NUM;
@@ -167,6 +184,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
             break;
         case BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_AUTH_MODE:
+            BLUFI_REQUIRE_LEN_AT_LEAST(1);
             msg.sig = BTC_SIG_API_CB;
             msg.pid = BTC_PID_BLUFI;
             msg.act = ESP_BLUFI_EVENT_RECV_SOFTAP_AUTH_MODE;
@@ -175,6 +193,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
             break;
         case BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_CHANNEL:
+            BLUFI_REQUIRE_LEN_AT_LEAST(1);
             msg.sig = BTC_SIG_API_CB;
             msg.pid = BTC_PID_BLUFI;
             msg.act = ESP_BLUFI_EVENT_RECV_SOFTAP_CHANNEL;
@@ -252,6 +271,8 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
     default:
         break;
     }
+
+#undef BLUFI_REQUIRE_LEN_AT_LEAST
 }
 
 #endif  ///BLUFI_INCLUDED == TRUE

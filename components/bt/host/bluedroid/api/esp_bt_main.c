@@ -208,7 +208,9 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     }
 
 #if (BT_HCI_LOG_INCLUDED == TRUE)
-    bt_hci_log_init();
+    if (bt_hci_log_init() != ESP_OK) {
+      LOG_WARN("HCI log facility unavailable, continuing without HCI log\n");
+    }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 
     s_bt_host_state = ESP_BLUEDROID_STATUS_INITIALIZED;

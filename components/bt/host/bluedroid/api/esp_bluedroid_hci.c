@@ -68,7 +68,9 @@ bool hci_host_check_send_available(void)
 void hci_host_send_packet(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
-    bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
+    if (data != NULL && len > 1) {
+        bt_hci_log_record_hci_data(data[0], &data[1], (uint16_t)(len - 1));
+    }
 #endif
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,15 +51,17 @@ int btc_profile_cb_set(btc_pid_t profile_id, void *cb)
 void *btc_profile_cb_get(btc_pid_t profile_id)
 {
 #if BTC_DYNAMIC_MEMORY == TRUE
-    void *p = btc_profile_cb_tab;
+    void **p = btc_profile_cb_tab;
     if (p == NULL) {
         return NULL;
     }
+#else
+    void **p = btc_profile_cb_tab;
 #endif
 
     if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
         return NULL;
     }
 
-    return btc_profile_cb_tab[profile_id];
+    return p[profile_id];
 }
