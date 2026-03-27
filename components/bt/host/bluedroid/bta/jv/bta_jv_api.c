@@ -118,11 +118,6 @@ void BTA_JvDisable(tBTA_JV_RFCOMM_CBACK *p_cback)
 
     APPL_TRACE_API( "BTA_JvDisable");
     bta_sys_deregister(BTA_ID_JV);
-    memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
-    /* set handle to invalid value by default */
-    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
-        bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
-    }
     if ((p_buf = (tBTA_JV_API_DISABLE *) osi_malloc(sizeof(tBTA_JV_API_DISABLE))) != NULL) {
         p_buf->hdr.event = BTA_JV_API_DISABLE_EVT;
         p_buf->p_cback = p_cback;
