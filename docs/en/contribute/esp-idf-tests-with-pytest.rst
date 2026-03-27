@@ -123,7 +123,7 @@ Finally, we have the test function. With a ``dut`` fixture. In single-dut test c
 Same App With Different sdkconfig Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/find_build.html>`__.
+For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/explanations/find.html>`__.
 
 Here's a simple example that demonstrates how to run the same app with different sdkconfig files. Assume we have the following folder structure:
 
@@ -767,5 +767,5 @@ Let us assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 1900
 Further Readings
 ================
 
--  `pytest documentation <https://docs.pytest.org/en/latest/contents.html/>`_
+-  `pytest documentation <https://docs.pytest.org/en/stable/>`_
 -  `pytest-embedded documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/>`_
