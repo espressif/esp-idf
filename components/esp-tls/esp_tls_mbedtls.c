@@ -1196,6 +1196,7 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
             return ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT;
         }
     }
+    tls->conn_state = ESP_TLS_DONE;
     return ret;
 }
 

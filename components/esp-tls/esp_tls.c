@@ -145,6 +145,15 @@ ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
     if (!tls) {
         return -1;
     }
+    if (!tls->read) {
+        return -1;
+    }
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    if (tls->is_tls && tls->conn_state != ESP_TLS_DONE) {
+        ESP_LOGE(TAG, "TLS handshake has not completed, read operation not permitted");
+        return -1;
+    }
+#endif
     return tls->read(tls, (char *)data, datalen);
 }
 
@@ -153,6 +162,15 @@ ssize_t esp_tls_conn_write(esp_tls_t *tls, const void  *data, size_t datalen)
     if (!tls || !data) {
         return -1;
     }
+    if (!tls->write) {
+        return -1;
+    }
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    if (tls->is_tls && tls->conn_state != ESP_TLS_DONE) {
+        ESP_LOGE(TAG, "TLS handshake has not completed, write operation not permitted");
+        return -1;
+    }
+#endif
     return tls->write(tls, (char *)data, datalen);
 }
 
@@ -574,12 +592,12 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
         } else if (ret == -1) {
             ESP_LOGE(TAG, "Failed to open new connection");
             return -1;
-        } else if (ret == 0 && cfg->timeout_ms >= 0) {
+        } else if (ret == 0 && cfg->timeout_ms > 0) {
             uint64_t elapsed_time_us = esp_tls_get_platform_time() - start_time_us;
             if ((elapsed_time_us / 1000) >= cfg->timeout_ms) {
                 ESP_LOGW(TAG, "Failed to open new connection in specified timeout");
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
-                return 0;
+                return -1;
             }
         }
     }
