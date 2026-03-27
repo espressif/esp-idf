@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,9 +13,14 @@
 #include "esp_timer.h"
 
 #if (BT_HCI_LOG_INCLUDED == TRUE)
+
+static const char *const TAG = "bt_hci_log";
+
 #define BT_HCI_LOG_PRINT_TAG                     (1)
 #define BT_HCI_LOG_DATA_BUF_SIZE                 (1024 * HCI_LOG_DATA_BUFFER_SIZE)
 #define BT_HCI_LOG_ADV_BUF_SIZE                  (1024 * HCI_LOG_ADV_BUFFER_SIZE)
+/* Max payload per HCI log line; larger inputs are dropped (not logged). */
+#define BT_HCI_LOG_RECORD_PAYLOAD_MAX            (2048U)
 
 typedef struct {
     osi_mutex_t mutex_lock;
@@ -64,8 +69,14 @@ esp_err_t bt_hci_log_init(void)
     g_bt_hci_log_adv_ctl.buf_size = BT_HCI_LOG_ADV_BUF_SIZE;
     g_bt_hci_log_adv_ctl.p_hci_log_buffer = g_bt_hci_log_adv_buffer;
 
-    osi_mutex_new((osi_mutex_t *)&g_bt_hci_log_data_ctl.mutex_lock);
-    osi_mutex_new((osi_mutex_t *)&g_bt_hci_log_adv_ctl.mutex_lock);
+    if (osi_mutex_new((osi_mutex_t *)&g_bt_hci_log_data_ctl.mutex_lock) != 0) {
+        bt_hci_log_deinit();
+        return ESP_FAIL;
+    }
+    if (osi_mutex_new((osi_mutex_t *)&g_bt_hci_log_adv_ctl.mutex_lock) != 0) {
+        bt_hci_log_deinit();
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }
@@ -191,9 +202,16 @@ void bt_hci_log_record_string(bt_hci_log_t *p_hci_log_ctl, char *string)
 
     g_hci_log_buffer = p_hci_log_ctl->p_hci_log_buffer;
 
-    while (*string != '\0') {
-        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = *string;
-        ++string;
+    if (string == NULL) {
+        return;
+    }
+
+    /* Avoid unbounded memory scan if string is not NUL-terminated. */
+    const size_t max_len = 256;
+    size_t len = strnlen(string, max_len);
+
+    for (size_t i = 0; i < len; i++) {
+        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = (uint8_t)string[i];
 
         if (++p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
             p_hci_log_ctl->log_record_in = 0;
@@ -211,6 +229,7 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
     uint8_t *g_hci_log_buffer;
     int64_t ts;
     uint8_t *temp_buf;
+    uint16_t record_len;
 
     if (!p_hci_log_ctl->p_hci_log_buffer) {
         return ESP_FAIL;
@@ -221,20 +240,33 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
     if (!g_hci_log_buffer) {
         return ESP_FAIL;
     }
+    if (p_hci_log_ctl->mutex_lock == NULL) {
+        return ESP_FAIL;
+    }
+
+    if ((data_len == 0) || (data == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     ts = esp_timer_get_time();
 
-    temp_buf = (uint8_t *)malloc(data_len + 8);
+    if (data_len > BT_HCI_LOG_RECORD_PAYLOAD_MAX) {
+        ESP_LOGW(TAG, "HCI log record dropped: data_len=%u (max %u)",
+                 (unsigned)data_len, (unsigned)BT_HCI_LOG_RECORD_PAYLOAD_MAX);
+        return ESP_FAIL;
+    }
+
+    record_len = (uint16_t)((uint32_t)data_len + 8U);
+
+    temp_buf = (uint8_t *)malloc((size_t)record_len);
     if (!temp_buf) {
         return ESP_ERR_NO_MEM;
     }
 
-    memset(temp_buf, 0x0, data_len + 8);
+    memset(temp_buf, 0x0, (size_t)record_len);
 
     memcpy(temp_buf, &ts, 8);
     memcpy(temp_buf + 8, data, data_len);
-
-    data_len += 8;
 
     mutex_lock = p_hci_log_ctl->mutex_lock;
     osi_mutex_lock(&mutex_lock, OSI_MUTEX_MAX_TIMEOUT);
@@ -267,7 +299,7 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
         bt_hci_log_record_string(p_hci_log_ctl, str);
     }
 
-    bt_hci_log_record_hex(p_hci_log_ctl, temp_buf, data_len);
+    bt_hci_log_record_hex(p_hci_log_ctl, temp_buf, record_len);
 
     g_hci_log_buffer[p_hci_log_ctl->log_record_in] = '\n';
 
@@ -294,6 +326,9 @@ void bt_hci_log_data_show(bt_hci_log_t *p_hci_log_ctl)
     uint8_t *g_hci_log_buffer;
 
     if (!p_hci_log_ctl->p_hci_log_buffer) {
+        return;
+    }
+    if (p_hci_log_ctl->mutex_lock == NULL) {
         return;
     }
 

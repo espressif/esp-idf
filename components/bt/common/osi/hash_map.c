@@ -138,26 +138,37 @@ bool hash_map_set(hash_map_t *hash_map, const void *key, void *data)
     }
     list_t *hash_bucket_list = hash_map->bucket[hash_key].list;
 
-    hash_map_entry_t *hash_map_entry = find_bucket_entry_(hash_bucket_list, key);
+    /* Allocate the new entry FIRST, before touching any existing entry.
+     * This preserves the atomicity of hash_map_set: on failure the map
+     * stays exactly as it was, and the caller's previously-stored
+     * key/data remain valid. */
+    hash_map_entry_t *new_entry = osi_calloc(sizeof(hash_map_entry_t));
+    if (new_entry == NULL) {
+        return false;
+    }
+    new_entry->key = key;
+    new_entry->data = data;
+    new_entry->hash_map = hash_map;
 
-    if (hash_map_entry) {
-        // Calls hash_map callback to delete the hash_map_entry.
-        bool rc = list_remove(hash_bucket_list, hash_map_entry);
+    hash_map_entry_t *old_entry = find_bucket_entry_(hash_bucket_list, key);
+
+    if (!list_append(hash_bucket_list, new_entry)) {
+        osi_free(new_entry);
+        return false;
+    }
+
+    /* Only after the new entry has been successfully inserted do we
+     * destroy the old one (which frees the previous key/data via
+     * bucket_free_). For a brand-new key, bump hash_size instead. */
+    if (old_entry) {
+        bool rc = list_remove(hash_bucket_list, old_entry);
         assert(rc == true);
         (void)rc;
     } else {
         hash_map->hash_size++;
     }
-    hash_map_entry = osi_calloc(sizeof(hash_map_entry_t));
-    if (hash_map_entry == NULL) {
-        return false;
-    }
 
-    hash_map_entry->key = key;
-    hash_map_entry->data = data;
-    hash_map_entry->hash_map = hash_map;
-
-    return list_append(hash_bucket_list, hash_map_entry);
+    return true;
 }
 
 bool hash_map_erase(hash_map_t *hash_map, const void *key)

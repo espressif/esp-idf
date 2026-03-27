@@ -22,6 +22,7 @@
 #include "osi/osi.h"
 #include "osi/mutex.h"
 #include "osi/semaphore.h"
+#include "esp_assume.h"
 
 typedef struct fixed_queue_t {
 
@@ -43,6 +44,12 @@ fixed_queue_t *fixed_queue_new(size_t capacity)
     }
 
     osi_mutex_new(&ret->lock);
+    /* CONTRACT / PRECONDITION:
+     * - ret->lock is guaranteed non-NULL after successful osi_mutex_new().
+     * - Rationale: treat mutex allocation failure as fatal in debug builds;
+     *   release builds do not add extra code size.
+     */
+    ESP_ASSUME_NONNULL(ret->lock);
     ret->capacity = capacity;
 
     ret->list = list_new(NULL);
