@@ -319,7 +319,7 @@ EIM 提供两种安装方式：
 
 .. code-block:: bash
 
-    eim uninstall v5.4.2
+    eim remove v5.4.2
 
 如需删除所有 ESP-IDF 版本，请在终端中运行以下命令：
 

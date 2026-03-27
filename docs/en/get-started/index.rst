@@ -319,7 +319,7 @@ To remove a specific ESP-IDF version, for example v5.4.2, run the following comm
 
 .. code-block:: bash
 
-    eim uninstall v5.4.2
+    eim remove v5.4.2
 
 To remove all ESP-IDF versions, run the following command in your terminal:
 
