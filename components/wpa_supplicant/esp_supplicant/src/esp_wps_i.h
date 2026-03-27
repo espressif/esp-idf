@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,11 +9,7 @@
 #include "wps/wps.h"
 #include "wps/wps_attr_parse.h"
 
-/* WPS message flag */
-enum wps_msg_flag {
-    WPS_MSG_FLAG_MORE = 0x01,
-    WPS_MSG_FLAG_LEN = 0x02
-};
+struct wpabuf;
 
 enum wps_reg_sig_type {
     SIG_WPS_REG_ENABLE = 1,         //1
@@ -41,6 +37,11 @@ struct discard_ap_list_t {
     u8 bssid[6];
 };
 
+struct wps_eap_wsc_frag_data {
+    struct wpabuf *in_buf;
+    enum wsc_op_code in_op_code;
+};
+
 struct wps_sm {
     u8 state;
     struct wps_config *wps_cfg;
@@ -61,6 +62,7 @@ struct wps_sm {
     u8 discover_ssid_cnt;
     bool wps_pbc_overlap;
     bool post_m8_recv;
+    struct wps_eap_wsc_frag_data wsc_frag;
 };
 
 #define API_MUTEX_TAKE() do {\
