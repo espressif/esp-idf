@@ -170,7 +170,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 
-“Nano”  格式化不支持 64 位整数或 C99 格式化功能。请在 `Newlib README 文件`_ 中搜索 ``--enable-newlib-nano-formatted-io`` 来获取完整的限制列表。
+“Nano”  格式化不支持 64 位整数或 C99 格式化功能。请在 `Newlib 文档`_ 中搜索 ``--enable-newlib-nano-formatted-io`` 来获取完整的限制列表。
 
 
 .. only:: esp32c2
@@ -180,7 +180,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
         {IDF_TARGET_NAME} 会默认启用 :ref:`CONFIG_NEWLIB_NANO_FORMAT`。
 
 
-.. _Newlib README 文件: https://sourceware.org/newlib/README
+.. _Newlib 文档: https://sourceware.org/newlib/docs.html
 
 .. _minimizing_binary_mbedtls:
 
