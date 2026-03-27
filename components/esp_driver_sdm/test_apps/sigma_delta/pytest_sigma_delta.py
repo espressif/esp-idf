@@ -30,8 +30,8 @@ def test_sdm_esp32c5(dut: IdfDut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_sdm_esp32c5_eco3(dut: IdfDut) -> None:
+def test_sdm_esp32c5_rev1(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='sdm')

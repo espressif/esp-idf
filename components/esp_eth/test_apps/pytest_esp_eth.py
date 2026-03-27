@@ -51,7 +51,7 @@ class EthTestIntf:
     def configure_eth_if(self, eth_type: int = 0) -> Iterator[socket.socket]:
         if eth_type == 0:
             eth_type = self.eth_type
-        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
+        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))  # type: ignore
         so.bind((self.target_if, 0))
         try:
             yield so
@@ -293,7 +293,7 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
     'config, target',
     [
         pytest.param('default_generic_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )
@@ -307,7 +307,7 @@ def test_esp32p4_ethernet(dut: IdfDut) -> None:
     'config, target',
     [
         pytest.param('default_generic_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )
@@ -321,7 +321,7 @@ def test_esp32p4_emac(dut: IdfDut) -> None:
     'config, target',
     [
         pytest.param('rmii_clko_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('rmii_clko_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('rmii_clko_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )
