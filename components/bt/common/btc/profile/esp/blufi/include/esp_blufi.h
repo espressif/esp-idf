@@ -18,6 +18,7 @@
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_gap_ble_api.h"
+#include "esp_gatt_defs.h"
 #endif
 
 #ifdef __cplusplus
@@ -61,7 +62,7 @@ void esp_blufi_btc_deinit(void);
  *                  - other  : failed
  *
  */
-esp_err_t esp_blufi_close(uint8_t gatts_if, uint16_t conn_id);
+esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
 void esp_blufi_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 #endif
 
