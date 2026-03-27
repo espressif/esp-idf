@@ -748,7 +748,20 @@ void bta_jv_disable (tBTA_JV_MSG *p_data)
 {
     tBTA_JV_STATUS evt_data;
     evt_data = BTA_JV_SUCCESS;
-    // UNUSED(p_data);
+
+    // clear all the pm_cb slots
+    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
+        if (bta_jv_cb.pm_cb[i].state != BTA_JV_PM_FREE_ST) {
+            bta_jv_clear_pm_cb(&bta_jv_cb.pm_cb[i], TRUE);
+        }
+    }
+
+    // reset the control block
+    memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
+    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
+        bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
+    }
+
     if (p_data->disable.p_cback) {
         p_data->disable.p_cback(BTA_JV_DISABLE_EVT, (tBTA_JV *)&evt_data, NULL);
     }
