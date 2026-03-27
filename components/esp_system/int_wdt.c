@@ -87,23 +87,22 @@ static esp_err_t esp_int_wdt_retention_enable(uint32_t group_id)
 #endif
 
 static wdt_hal_context_t iwdt_context;
-static portMUX_TYPE s_iwdt_configure_lock = portMUX_INITIALIZER_UNLOCKED;
-
 static void ESP_SYSTEM_IRAM_ATTR reconfigure_ticks(uint32_t stage0_ticks, uint32_t stage1_ticks)
 {
-    portENTER_CRITICAL_SAFE(&s_iwdt_configure_lock);
     wdt_hal_write_protect_disable(&iwdt_context);
     wdt_hal_config_stage(&iwdt_context, WDT_STAGE0, stage0_ticks, WDT_STAGE_ACTION_INT);
     wdt_hal_config_stage(&iwdt_context, WDT_STAGE1, stage1_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
     wdt_hal_feed(&iwdt_context);
     wdt_hal_write_protect_enable(&iwdt_context);
-    portEXIT_CRITICAL_SAFE(&s_iwdt_configure_lock);
 }
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+static portMUX_TYPE s_iwdt_configure_lock = portMUX_INITIALIZER_UNLOCKED;
 void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_reconfigure_ticks(uint32_t stage0_ticks, uint32_t stage1_ticks)
 {
+    portENTER_CRITICAL_SAFE(&s_iwdt_configure_lock);
     reconfigure_ticks(stage0_ticks, stage1_ticks);
+    portEXIT_CRITICAL_SAFE(&s_iwdt_configure_lock);
 }
 #endif
 
@@ -128,7 +127,7 @@ static void ESP_SYSTEM_IRAM_ATTR tick_hook(void)
 #endif
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     esp_int_wdt_set_livelock_params(CONFIG_ESP_INT_WDT_TIMEOUT_MS);
-    reconfigure_ticks(esp_int_wdt_livelock_get_feed_stage0_ticks(), IWDT_STAGE1_TIMEOUT_US);
+    esp_int_wdt_reconfigure_ticks(esp_int_wdt_livelock_get_feed_stage0_ticks(), IWDT_STAGE1_TIMEOUT_US);
 #else
     reconfigure_ticks(IWDT_STAGE0_TIMEOUT_US, IWDT_STAGE1_TIMEOUT_US);
 #endif
