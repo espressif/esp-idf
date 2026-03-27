@@ -5,10 +5,10 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include <string.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 
 #include "osi/allocator.h"
@@ -34,6 +34,22 @@ tBLUFI_ENV *blufi_env_ptr;
 // static functions declare
 static void btc_blufi_send_ack(uint8_t seq);
 
+static inline void btc_blufi_env_free_buffers(void)
+{
+    if (blufi_env.aggr_buf) {
+        osi_free(blufi_env.aggr_buf);
+        blufi_env.aggr_buf = NULL;
+    }
+    blufi_env.total_len = 0;
+    blufi_env.offset = 0;
+
+    if (blufi_env.prepare_buf) {
+        osi_free(blufi_env.prepare_buf);
+        blufi_env.prepare_buf = NULL;
+    }
+    blufi_env.prepare_len = 0;
+}
+
 inline void btc_blufi_cb_to_app(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
 {
     esp_blufi_event_cb_t btc_blufi_cb = (esp_blufi_event_cb_t)btc_profile_cb_get(BTC_PID_BLUFI);
@@ -52,6 +68,7 @@ static uint8_t btc_blufi_profile_init(void)
         return ESP_BLUFI_ERROR;
     }
 
+    btc_blufi_env_free_buffers();
     memset(&blufi_env, 0x0, sizeof(blufi_env));
     blufi_env.cbs = store_p;        /* if set callback prior, restore the point */
     blufi_env.frag_size = BLUFI_FRAG_DATA_DEFAULT_LEN;
@@ -138,6 +155,7 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
             blufi_env.aggr_buf = NULL;                 \
         }                                              \
         blufi_env.offset = 0;                          \
+        blufi_env.total_len = 0;                       \
     } while (0)
 
     // first step, decrypt
@@ -170,11 +188,14 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
     }
 
     if (BLUFI_FC_IS_FRAG(hdr->fc)) {
-        if(hdr->data_len<2) {
-           BTC_TRACE_ERROR("%s: Invalid fragment data length: %d", __func__, hdr->data_len);
-           btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
-           return;
+        if (hdr->data_len < 2) {
+            BTC_TRACE_ERROR("%s: Invalid fragment data length: %d", __func__, hdr->data_len);
+            BLUFI_RESET_AGGR_BUF();
+            btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+            return;
         }
+        uint16_t frag_payload = (uint16_t)(hdr->data_len - 2);
+
         if (blufi_env.offset == 0) {
             /*
             blufi_env.aggr_buf should be NULL if blufi_env.offset is 0.
@@ -183,17 +204,16 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
             */
             if (blufi_env.aggr_buf) {
                 BTC_TRACE_ERROR("%s msg error, blufi_env.aggr_buf is not freed\n", __func__);
-                osi_free(blufi_env.aggr_buf);
-                blufi_env.aggr_buf = NULL;
+                BLUFI_RESET_AGGR_BUF();
                 btc_blufi_report_error(ESP_BLUFI_MSG_STATE_ERROR);
                 return;
             }
-            if (hdr->data_len < 2) {
-                BTC_TRACE_ERROR("%s frag header too short: data_len=%d\n", __func__, hdr->data_len);
+            blufi_env.total_len = hdr->data[0] | (((uint16_t) hdr->data[1]) << 8);
+            if (blufi_env.total_len == 0) {
+                BTC_TRACE_ERROR("%s zero total_len\n", __func__);
                 btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
                 return;
             }
-            blufi_env.total_len = hdr->data[0] | (((uint16_t) hdr->data[1]) << 8);
             blufi_env.aggr_buf = osi_malloc(blufi_env.total_len);
             if (blufi_env.aggr_buf == NULL) {
                 BTC_TRACE_ERROR("%s no mem, len %d\n", __func__, blufi_env.total_len);
@@ -201,15 +221,15 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
                 return;
             }
         }
-        if (blufi_env.offset + hdr->data_len  - 2 <= blufi_env.total_len){
-            memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data + 2, hdr->data_len  - 2);
-            blufi_env.offset += (hdr->data_len - 2);
-        } else {
-            BTC_TRACE_ERROR("%s payload is longer than packet length, len %d \n", __func__, blufi_env.total_len);
+
+        if ((uint32_t)blufi_env.offset + frag_payload > blufi_env.total_len) {
+            BTC_TRACE_ERROR("%s payload is longer than packet length, len %d\n", __func__, blufi_env.total_len);
             BLUFI_RESET_AGGR_BUF();
             btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
             return;
         }
+        memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data + 2, frag_payload);
+        blufi_env.offset += frag_payload;
 
     } else {
         if (blufi_env.offset > 0) {   /* if previous pkt is frag */
@@ -255,6 +275,16 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
         return;
     }
 
+    if (total_data_len <= 0 || data == NULL) {
+        BTC_TRACE_ERROR("%s invalid data or length %d\n", __func__, total_data_len);
+        return;
+    }
+    if (total_data_len > UINT16_MAX) {
+        BTC_TRACE_ERROR("%s total_data_len too large %d\n", __func__, total_data_len);
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+        return;
+    }
+
     while (remain_len > 0) {
         if (remain_len > blufi_env.frag_size) {
             hdr = osi_malloc(sizeof(struct blufi_hdr) + 2 + blufi_env.frag_size + 2);
@@ -264,8 +294,8 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
             }
             hdr->fc = 0x0;
             hdr->data_len = blufi_env.frag_size + 2;
-            hdr->data[0] = remain_len & 0xff;
-            hdr->data[1] = (remain_len >> 8) & 0xff;
+            hdr->data[0] = (uint8_t)(remain_len & 0xff);
+            hdr->data[1] = (uint8_t)((remain_len >> 8) & 0xff);
             memcpy(hdr->data + 2, &data[total_data_len - remain_len], blufi_env.frag_size); //copy first, easy for check sum
             hdr->fc |= BLUFI_FC_FRAG;
         } else {
@@ -325,15 +355,99 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
     }
 }
 
+/* IEEE 802.11 SSID / passphrase upper bounds for BLUFI encoding */
+#define BLUFI_WIFI_SSID_MAX     32
+#define BLUFI_WIFI_PASS_MAX     64
+#define BLUFI_WIFI_CONN_REP_MAX 512
+
+static size_t blufi_extra_field_len(int len, size_t max_len)
+{
+    if (len <= 0) {
+        return 0;
+    }
+    return (size_t)len > max_len ? max_len : (size_t)len;
+}
+
+static bool btc_blufi_wifi_conn_report_add(size_t *acc, size_t add)
+{
+    if (*acc > SIZE_MAX - add) {
+        return false;
+    }
+    *acc += add;
+    return *acc <= BLUFI_WIFI_CONN_REP_MAX;
+}
+
+static size_t btc_blufi_wifi_conn_report_need(esp_blufi_extra_info_t *info)
+{
+    size_t n = 3;
+
+    if (info == NULL) {
+        return n;
+    }
+    if (info->sta_bssid_set && !btc_blufi_wifi_conn_report_add(&n, 8)) {
+        return 0;
+    }
+    if (info->sta_ssid) {
+        size_t sl = blufi_extra_field_len(info->sta_ssid_len, BLUFI_WIFI_SSID_MAX);
+        if (!btc_blufi_wifi_conn_report_add(&n, 2 + sl)) {
+            return 0;
+        }
+    }
+    if (info->sta_passwd) {
+        size_t pl = blufi_extra_field_len(info->sta_passwd_len, BLUFI_WIFI_PASS_MAX);
+        if (!btc_blufi_wifi_conn_report_add(&n, 2 + pl)) {
+            return 0;
+        }
+    }
+    if (info->softap_ssid) {
+        size_t sl = blufi_extra_field_len(info->softap_ssid_len, BLUFI_WIFI_SSID_MAX);
+        if (!btc_blufi_wifi_conn_report_add(&n, 2 + sl)) {
+            return 0;
+        }
+    }
+    if (info->softap_passwd) {
+        size_t pl = blufi_extra_field_len(info->softap_passwd_len, BLUFI_WIFI_PASS_MAX);
+        if (!btc_blufi_wifi_conn_report_add(&n, 2 + pl)) {
+            return 0;
+        }
+    }
+    if (info->softap_authmode_set && !btc_blufi_wifi_conn_report_add(&n, 3)) {
+        return 0;
+    }
+    if (info->softap_max_conn_num_set && !btc_blufi_wifi_conn_report_add(&n, 3)) {
+        return 0;
+    }
+    if (info->softap_channel_set && !btc_blufi_wifi_conn_report_add(&n, 3)) {
+        return 0;
+    }
+    if (info->sta_max_conn_retry_set && !btc_blufi_wifi_conn_report_add(&n, 3)) {
+        return 0;
+    }
+    if (info->sta_conn_end_reason_set && !btc_blufi_wifi_conn_report_add(&n, 3)) {
+        return 0;
+    }
+    if (info->sta_conn_rssi_set && !btc_blufi_wifi_conn_report_add(&n, 3)) {
+        return 0;
+    }
+    return n;
+}
+
 static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, uint8_t softap_conn_num, esp_blufi_extra_info_t *info, int info_len)
 {
     uint8_t type;
     uint8_t *data;
-    int data_len;
     uint8_t *p;
+    size_t buf_len;
 
-    data_len = info_len + 3;
-    p = data = osi_malloc(data_len);
+    (void)info_len;
+
+    buf_len = btc_blufi_wifi_conn_report_need(info);
+    if (buf_len == 0 || buf_len > BLUFI_WIFI_CONN_REP_MAX) {
+        BTC_TRACE_ERROR("%s invalid buffer size %u\n", __func__, (unsigned)buf_len);
+        return;
+    }
+
+    p = data = osi_malloc(buf_len);
     if (data == NULL) {
         BTC_TRACE_ERROR("%s no mem\n", __func__);
         return;
@@ -352,28 +466,32 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
             p += 6;
         }
         if (info->sta_ssid) {
+            size_t sl = blufi_extra_field_len(info->sta_ssid_len, BLUFI_WIFI_SSID_MAX);
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_STA_SSID;
-            *p++ = info->sta_ssid_len;
-            memcpy(p, info->sta_ssid, info->sta_ssid_len);
-            p += info->sta_ssid_len;
+            *p++ = (uint8_t)sl;
+            memcpy(p, info->sta_ssid, sl);
+            p += sl;
         }
         if (info->sta_passwd) {
+            size_t pl = blufi_extra_field_len(info->sta_passwd_len, BLUFI_WIFI_PASS_MAX);
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_STA_PASSWD;
-            *p++ = info->sta_passwd_len;
-            memcpy(p, info->sta_passwd, info->sta_passwd_len);
-            p += info->sta_passwd_len;
+            *p++ = (uint8_t)pl;
+            memcpy(p, info->sta_passwd, pl);
+            p += pl;
         }
         if (info->softap_ssid) {
+            size_t sl = blufi_extra_field_len(info->softap_ssid_len, BLUFI_WIFI_SSID_MAX);
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_SSID;
-            *p++ = info->softap_ssid_len;
-            memcpy(p, info->softap_ssid, info->softap_ssid_len);
-            p += info->softap_ssid_len;
+            *p++ = (uint8_t)sl;
+            memcpy(p, info->softap_ssid, sl);
+            p += sl;
         }
         if (info->softap_passwd) {
+            size_t pl = blufi_extra_field_len(info->softap_passwd_len, BLUFI_WIFI_PASS_MAX);
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_PASSWD;
-            *p++ = info->softap_passwd_len;
-            memcpy(p, info->softap_passwd, info->softap_passwd_len);
-            p += info->softap_passwd_len;
+            *p++ = (uint8_t)pl;
+            memcpy(p, info->softap_passwd, pl);
+            p += pl;
         }
         if (info->softap_authmode_set) {
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_AUTH_MODE;
@@ -403,14 +521,16 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
         if (info->sta_conn_rssi_set) {
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_STA_CONN_RSSI;
             *p++ = 1;
-            *p++ = info->sta_conn_rssi;
+            *p++ = (uint8_t)info->sta_conn_rssi;
         }
     }
-    if (p - data > data_len) {
-        BTC_TRACE_ERROR("%s len error %d %d\n", __func__, (int)(p - data), data_len);
+    if ((size_t)(p - data) != buf_len) {
+        BTC_TRACE_ERROR("%s len mismatch %d %u\n", __func__, (int)(p - data), (unsigned)buf_len);
+        osi_free(data);
+        return;
     }
 
-    btc_blufi_send_encap(type, data, data_len);
+    btc_blufi_send_encap(type, data, (int)buf_len);
     osi_free(data);
 }
 
@@ -420,30 +540,48 @@ void btc_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list)
     uint8_t *data;
     int data_len;
     uint8_t *p;
-    // malloc size: (len + RSSI + ssid buffer) * apCount;
-    uint32_t malloc_size = (1 + 1 + sizeof(list->ssid)) * apCount;
+    uint32_t entry_sz;
+    uint32_t malloc_size;
+
+    if (list == NULL || apCount == 0) {
+        return;
+    }
+    entry_sz = 1u + 1u + (uint32_t)sizeof(list[0].ssid);
+
+    /* The encoded WiFi list is later wrapped by btc_blufi_send_encap(),
+     * which rejects total_data_len > UINT16_MAX (single BLUFI frame limit).
+     * Cap apCount against that real ceiling here instead of the previous
+     * (uint16_t)(UINT32_MAX / entry_sz) check, which the narrowing cast
+     * silently truncated to 18439 entries (~645 KB) and let the buffer
+     * be allocated only to be discarded later by send_encap.
+     * The apCount value returned by WiFi is very small in practice, but
+     * we still want to fail fast and avoid a pointless large allocation. */
+    if ((uint32_t)apCount > (UINT16_MAX / entry_sz)) {
+        BTC_TRACE_ERROR("%s apCount %u exceeds BLUFI single-frame limit\n",
+                        __func__, (unsigned)apCount);
+        return;
+    }
+    malloc_size = (uint32_t)apCount * entry_sz;
     p = data = osi_malloc(malloc_size);
     if (data == NULL) {
         BTC_TRACE_ERROR("malloc error\n");
         return;
     }
     type = BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_WIFI_LIST);
-    for (int i = 0; i < apCount; ++i)
-    {
-        uint32_t len = strlen((const char *)list[i].ssid);
-        data_len = (p - data);
-        //current_len + ssid + rssi + total_len_value
-        if((data_len + len + 1 + 1) >  malloc_size) {
+    for (int i = 0; i < apCount; ++i) {
+        size_t len = strnlen((const char *)list[i].ssid, sizeof(list[i].ssid));
+        data_len = (int)(p - data);
+        if ((uint32_t)data_len + len + 1u + 1u > malloc_size) {
             BTC_TRACE_ERROR("%s len error", __func__);
             osi_free(data);
             return;
         }
-        *p++ = len + 1; // length of ssid + rssi
-        *p++ = list[i].rssi;
+        *p++ = (uint8_t)(len + 1); /* length of ssid + rssi */
+        *p++ = (uint8_t)list[i].rssi;
         memcpy(p, list[i].ssid, len);
-        p = p + len;
+        p += len;
     }
-    data_len = (p - data);
+    data_len = (int)(p - data);
     btc_blufi_send_encap(type, data, data_len);
     osi_free(data);
 }
@@ -506,76 +644,97 @@ void btc_blufi_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
     switch (msg->act) {
     case ESP_BLUFI_EVENT_RECV_STA_SSID:
+        dst->sta_ssid.ssid = NULL;
         dst->sta_ssid.ssid = osi_malloc(src->sta_ssid.ssid_len);
         if (dst->sta_ssid.ssid == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->sta_ssid.ssid, src->sta_ssid.ssid, src->sta_ssid.ssid_len);
         break;
     case ESP_BLUFI_EVENT_RECV_STA_PASSWD:
+        dst->sta_passwd.passwd = NULL;
         dst->sta_passwd.passwd = osi_malloc(src->sta_passwd.passwd_len);
         if (dst->sta_passwd.passwd == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->sta_passwd.passwd, src->sta_passwd.passwd, src->sta_passwd.passwd_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_SSID:
+        dst->softap_ssid.ssid = NULL;
         dst->softap_ssid.ssid = osi_malloc(src->softap_ssid.ssid_len);
         if (dst->softap_ssid.ssid == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->softap_ssid.ssid, src->softap_ssid.ssid, src->softap_ssid.ssid_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD:
+        dst->softap_passwd.passwd = NULL;
         dst->softap_passwd.passwd = osi_malloc(src->softap_passwd.passwd_len);
         if (dst->softap_passwd.passwd == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->softap_passwd.passwd, src->softap_passwd.passwd, src->softap_passwd.passwd_len);
         break;
     case ESP_BLUFI_EVENT_RECV_USERNAME:
+        dst->username.name = NULL;
         dst->username.name = osi_malloc(src->username.name_len);
         if (dst->username.name == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->username.name, src->username.name, src->username.name_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CA_CERT:
+        dst->ca.cert = NULL;
         dst->ca.cert = osi_malloc(src->ca.cert_len);
         if (dst->ca.cert == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->ca.cert, src->ca.cert, src->ca.cert_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_CERT:
+        dst->client_cert.cert = NULL;
         dst->client_cert.cert = osi_malloc(src->client_cert.cert_len);
         if (dst->client_cert.cert == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->client_cert.cert, src->client_cert.cert, src->client_cert.cert_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_CERT:
+        dst->server_cert.cert = NULL;
         dst->server_cert.cert = osi_malloc(src->server_cert.cert_len);
         if (dst->server_cert.cert == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->server_cert.cert, src->server_cert.cert, src->server_cert.cert_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY:
+        dst->client_pkey.pkey = NULL;
          dst->client_pkey.pkey = osi_malloc(src->client_pkey.pkey_len);
         if (dst->client_pkey.pkey == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->client_pkey.pkey, src->client_pkey.pkey, src->client_pkey.pkey_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
+        dst->server_pkey.pkey = NULL;
          dst->server_pkey.pkey = osi_malloc(src->server_pkey.pkey_len);
         if (dst->server_pkey.pkey == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
         }
         memcpy(dst->server_pkey.pkey, src->server_pkey.pkey, src->server_pkey.pkey_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:
+        dst->custom_data.data = NULL;
          dst->custom_data.data = osi_malloc(src->custom_data.data_len);
         if (dst->custom_data.data == NULL) {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
@@ -831,8 +990,8 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
     case BTC_BLUFI_ACT_SEND_WIFI_LIST:{
         esp_blufi_ap_record_t *list = src->wifi_list.list;
-        src->wifi_list.list = NULL;
-        if (list == NULL || src->wifi_list.apCount <= 0) {
+        dst->wifi_list.list = NULL;
+        if (list == NULL || src->wifi_list.apCount == 0) {
             break;
         }
         dst->wifi_list.list = (esp_blufi_ap_record_t *)osi_malloc(sizeof(esp_blufi_ap_record_t) * src->wifi_list.apCount);

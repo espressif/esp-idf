@@ -292,6 +292,8 @@ static void btc_thread_handler(void *arg)
     btc_msg_t *msg = (btc_msg_t *)arg;
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, msg->arg);
+    /* msg->pid is validated at btc_transfer_context() entry; any message that
+     * reaches this handler is guaranteed to carry a valid pid. */
     switch (msg->sig) {
     case BTC_SIG_API_CALL:
         profile_tab[msg->pid].btc_call(msg);
@@ -331,7 +333,12 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     btc_msg_t* lmsg;
     bt_status_t ret;
     //                              arg XOR arg_len
-    if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
+    if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0)) ||
+        (msg->pid >= BTC_PID_NUM)) {
+        /* Reject invalid pid here, before any deep_copy runs, so the caller's
+         * arg is not yet duplicated into lmsg and there is nothing to free.
+         * This keeps the trust boundary at the single public entry point and
+         * makes the downstream handler unable to encounter an invalid pid. */
         BTC_TRACE_WARNING("%s Invalid parameters\n", __func__);
         return BT_STATUS_PARM_INVALID;
     }
@@ -564,22 +571,31 @@ bt_status_t btc_init(void)
 
 void btc_deinit(void)
 {
-    osi_thread_t *thread = btc_thread;
-    if (!thread) {
+    if (!btc_thread) {
         return;
     }
-    osi_thread_free(thread);
-    btc_thread = NULL;
 
+    /* Reverse order of btc_init():
+     *   1) BLE GAP deinit must run BEFORE btc_deinit_mem(), otherwise under
+     *      BTC_DYNAMIC_MEMORY the gl_bta_adv_data macro expands to
+     *      *(NULL) and btc_cleanup_adv_data() early-returns, leaking the
+     *      inner adv-data fields (p_manu / p_proprietary / p_services...).
+     *   2) BT classic GAP deinit follows.
+     *   3) Then release the dynamic-memory pool.
+     *   4) Finally tear down the BTC worker thread.
+     */
+#if (BLE_INCLUDED == TRUE)
+    btc_gap_ble_deinit();
+#endif  ///BLE_INCLUDED == TRUE
 #if BTC_GAP_BT_INCLUDED
     btc_gap_bt_deinit();
 #endif
 #if BTC_DYNAMIC_MEMORY
     btc_deinit_mem();
 #endif
-#if (BLE_INCLUDED == TRUE)
-    btc_gap_ble_deinit();
-#endif  ///BLE_INCLUDED == TRUE
+
+    osi_thread_free(btc_thread);
+    btc_thread = NULL;
 }
 
 int get_btc_work_queue_size(void)
