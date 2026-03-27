@@ -12,4 +12,10 @@ menu "HFP Example Configuration"
         default "ESP_HFP_AG"
         help
             Use this option to set target device name to connect.
+
+    config EXAMPLE_ENABLE_CONSOLE_REPL
+        bool "Enable UART interactive console (REPL)"
+        default y
+        help
+            Enable UART interactive console (REPL)
 endmenu
