@@ -236,21 +236,19 @@ void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_u
             p_buf->control.auto_rsp = control->auto_rsp;
         }
 
-        if(attr_val != NULL && len){
+        if(attr_val != NULL){
             p_buf->attr_val.attr_len = attr_val->attr_len;
             p_buf->attr_val.attr_max_len = attr_val->attr_max_len;
-            p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
-            if(p_buf->attr_val.attr_val != NULL){
-                memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, len);
-            } else {
-                p_buf->attr_val.attr_len = 0;
-                p_buf->attr_val.attr_max_len = 0;
-                APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
+            if(len != 0){
+                p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
+                if(p_buf->attr_val.attr_val != NULL){
+                    memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, len);
+                } else {
+                    p_buf->attr_val.attr_len = 0;
+                    p_buf->attr_val.attr_max_len = 0;
+                    APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
+                }
             }
-        } else {
-            p_buf->attr_val.attr_len = 0;
-            p_buf->attr_val.attr_max_len = 0;
-            p_buf->attr_val.attr_val = NULL;
         }
 
         if (p_char_uuid) {
