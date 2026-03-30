@@ -1,11 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
- */
-
+* SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
+*
+* SPDX-License-Identifier: Apache-2.0 OR MIT
+*/
 #pragma once
-
 #define I2C_SAR_ADC                             0x69
 #define I2C_SAR_ADC_HOSTID                      0
 
@@ -52,7 +50,37 @@
 #define ADC_SAR1_ENCAL_GND_ADDR                 0x8
 #define ADC_SAR1_ENCAL_GND_ADDR_MSB             0x1
 #define ADC_SAR1_ENCAL_GND_ADDR_LSB             0x1
+ 
+
 
 #define I2C_SARADC_TSENS_DAC                    0x6
 #define I2C_SARADC_TSENS_DAC_MSB                0x3
 #define I2C_SARADC_TSENS_DAC_LSB                0x0
+
+#define I2C_SARADC            0x69
+#define I2C_SARADC_HOSTID     0
+
+#define I2C_SARADC_SAR1_INIT_CODE_LSB 0
+#define I2C_SARADC_SAR1_INIT_CODE_LSB_MSB 7
+#define I2C_SARADC_SAR1_INIT_CODE_LSB_LSB 0
+
+#define I2C_SARADC_SAR1_INIT_CODE_MSB 1
+#define I2C_SARADC_SAR1_INIT_CODE_MSB_MSB 3
+#define I2C_SARADC_SAR1_INIT_CODE_MSB_LSB 0
+
+#define I2C_SARADC_SAR2_INIT_CODE_LSB 3
+#define I2C_SARADC_SAR2_INIT_CODE_LSB_MSB 7
+#define I2C_SARADC_SAR2_INIT_CODE_LSB_LSB 0
+
+#define I2C_SARADC_SAR2_INIT_CODE_MSB 4
+#define I2C_SARADC_SAR2_INIT_CODE_MSB_MSB 3
+#define I2C_SARADC_SAR2_INIT_CODE_MSB_LSB 0
+
+
+#define I2C_SARADC_SAR1_EN_TOUT   8
+#define I2C_SARADC_SAR1_EN_TOUT_MSB  0
+#define I2C_SARADC_SAR1_EN_TOUT_LSB  0
+
+#define I2C_SARADC_SAR2_EN_TOUT   8
+#define I2C_SARADC_SAR2_EN_TOUT_MSB  2
+#define I2C_SARADC_SAR2_EN_TOUT_LSB  2
