@@ -89,7 +89,6 @@ static void btc_bt_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discove
     }
 
     BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
-    return;
 }
 
 static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
@@ -97,7 +96,7 @@ static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
     tBTA_DM_INQ inq_params;
     tBTA_SERVICE_MASK services = 0;
 
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
+    BTIF_TRACE_EVENT("%s", __func__);
 
     inq_params.mode = (arg->start_disc.mode == ESP_BT_INQ_MODE_GENERAL_INQUIRY) ?
                       BTA_DM_GENERAL_INQUIRY : BTA_DM_LIMITED_INQUIRY;
@@ -112,8 +111,6 @@ static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
     gap_bt_local_param.disc_stat = ESP_BT_GAP_DISCOVERY_STOPPED;
     /* find nearby devices */
     BTA_DmSearch(&inq_params, services, bte_search_devices_evt);
-
-    return;
 }
 
 static void btc_gap_bt_cancel_discovery(void)
@@ -1342,7 +1339,6 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         break;
     }
     btc_gap_bt_arg_deep_free(msg);
-    return;
 }
 
 void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
@@ -1407,7 +1403,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
         break;
     }
     default:
-        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
+        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __func__, msg->act);
         break;
     }
 }
@@ -1527,7 +1523,7 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         break;
     }
     default:
-        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
+        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __func__, msg->act);
         break;
     }
     btc_gap_bt_cb_deep_free(msg);
