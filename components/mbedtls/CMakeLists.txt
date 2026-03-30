@@ -39,7 +39,8 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
     endif()
 endif()
 
-set(mbedtls_srcs "port/esp_mem.c")
+set(mbedtls_srcs "port/esp_mem.c"
+                 "port/psa_crypto_storage/esp_psa_key_file.c")
 set(mbedtls_include_dirs
     "port/include"
     "mbedtls/include"
@@ -60,6 +61,7 @@ endif()
 
 
 list(APPEND mbedtls_include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
+list(APPEND mbedtls_include_dirs "${COMPONENT_DIR}/port/psa_crypto_storage/include")
 
 idf_component_register(SRCS "${mbedtls_srcs}"
     INCLUDE_DIRS "${mbedtls_include_dirs}"
@@ -243,6 +245,7 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
         target_link_libraries(tfpsacrypto PRIVATE "$<$<TARGET_EXISTS:idf::nvs_flash>:idf::nvs_flash>")
         # Define compile definition to indicate ESP-IDF PSA ITS implementation is available
         target_compile_definitions(tfpsacrypto PUBLIC "$<$<TARGET_EXISTS:idf::nvs_flash>:ESP_PSA_ITS_AVAILABLE>")
+        target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/psa_crypto_storage/include")
     else()
         # For v1: check if component is in build before adding source and linking
         idf_build_get_property(build_components BUILD_COMPONENTS)
@@ -251,6 +254,7 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
             idf_component_get_property(nvs_flash_lib nvs_flash COMPONENT_LIB)
             target_link_libraries(tfpsacrypto PRIVATE ${nvs_flash_lib})
             target_compile_definitions(tfpsacrypto PUBLIC ESP_PSA_ITS_AVAILABLE)
+            target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/psa_crypto_storage/include")
         endif()
     endif()
 endif()
