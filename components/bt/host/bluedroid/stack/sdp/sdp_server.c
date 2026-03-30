@@ -344,10 +344,15 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         max_list_len = p_ccb->rem_mtu_size - SDP_MAX_ATTR_RSPHDR_LEN;
     }
 
-    p_req = sdpu_extract_attr_seq (p_req, param_len, &attr_seq);
+    p_req = sdpu_extract_attr_seq (p_req, (UINT16)(p_req_end - p_req), &attr_seq);
 
     if ((!p_req) || (!attr_seq.num_attr) || (p_req > p_req_end)) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_ATTR_LIST);
+        return;
+    }
+
+    if (max_list_len < 4) {
+        sdpu_build_n_send_error (p_ccb, trans_num, SDP_ILLEGAL_PARAMETER, NULL);
         return;
     }
 
@@ -375,31 +380,32 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_ccb->rsp_list = (UINT8 *)osi_malloc(max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR("%s No scratch buf for attr rsp\n", __func__);
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
         if ((*p_req++ != SDP_CONTINUATION_LEN) || (p_req + 2 > p_req_end)) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE, SDP_TEXT_BAD_CONT_LEN);
+            osi_free(p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
             return;
         }
         BE_STREAM_TO_UINT16 (cont_offset, p_req);
 
         if (cont_offset != p_ccb->cont_offset) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE, SDP_TEXT_BAD_CONT_INX);
+            osi_free(p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
             return;
         }
 
-        if (!p_ccb->rsp_list) {
-            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
-            return;
-        }
         is_cont = TRUE;
 
         /* Initialise for continuation response */
         p_rsp = &p_ccb->rsp_list[0];
         attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start = p_ccb->cont_info.next_attr_start_id;
     } else {
-	    if (p_ccb->rsp_list) {
+        if (p_ccb->rsp_list) {
             osi_free (p_ccb->rsp_list);
         }
 
@@ -438,6 +444,12 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             if (p_ccb->cont_info.attr_offset) {
                 p_rsp = sdpu_build_partial_attrib_entry (p_rsp, p_attr, rem_len,
                         &p_ccb->cont_info.attr_offset);
+                if (p_rsp == NULL) {
+                    sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+                    osi_free(p_ccb->rsp_list);
+                    p_ccb->rsp_list = NULL;
+                    return;
+                }
 
                 /* If the partial attrib could not been fully added yet */
                 if (p_ccb->cont_info.attr_offset != attr_len) {
@@ -449,12 +461,20 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                 if (attr_len >= SDP_MAX_ATTR_LEN) {
                     SDP_TRACE_ERROR("SDP attr too big: max_list_len=%d,attr_len=%d\n", max_list_len, attr_len);
                     sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+                    osi_free(p_ccb->rsp_list);
+                    p_ccb->rsp_list = NULL;
                     return;
                 }
 
                 /* add the partial attribute if possible */
                 p_rsp = sdpu_build_partial_attrib_entry (p_rsp, p_attr, (UINT16)rem_len,
                         &p_ccb->cont_info.attr_offset);
+                if (p_rsp == NULL) {
+                    sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+                    osi_free(p_ccb->rsp_list);
+                    p_ccb->rsp_list = NULL;
+                    return;
+                }
 
                 p_ccb->cont_info.next_attr_index = xx;
                 p_ccb->cont_info.next_attr_start_id = p_attr->id;
@@ -502,6 +522,8 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Get a buffer to use to build the response */
     if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp\n");
+        osi_free(p_ccb->rsp_list);
+        p_ccb->rsp_list = NULL;
         return;
     }
     p_buf->offset = L2CAP_MIN_OFFSET;
@@ -574,7 +596,6 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         maxxed_out = FALSE, is_cont = FALSE;
     UINT8           *p_seq_start;
     UINT16          seq_len, attr_len;
-    UNUSED(p_req_end);
 
     /* Extract the UUID sequence to search for */
     p_req = sdpu_extract_uid_seq (p_req, param_len, &uid_seq);
@@ -591,9 +612,9 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         max_list_len = p_ccb->rem_mtu_size - SDP_MAX_SERVATTR_RSPHDR_LEN;
     }
 
-    p_req = sdpu_extract_attr_seq (p_req, param_len, &attr_seq);
+    p_req = sdpu_extract_attr_seq (p_req, (UINT16)(p_req_end - p_req), &attr_seq);
 
-    if ((!p_req) || (!attr_seq.num_attr)) {
+    if ((!p_req) || (!attr_seq.num_attr) || (p_req > p_req_end)) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_ATTR_LIST);
         return;
     }
@@ -625,17 +646,23 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
         if ((*p_req++ != SDP_CONTINUATION_LEN) || (p_req + 2 > p_req_end)) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE, SDP_TEXT_BAD_CONT_LEN);
+            osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
             return;
         }
         BE_STREAM_TO_UINT16 (cont_offset, p_req);
 
         if (cont_offset != p_ccb->cont_offset) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE, SDP_TEXT_BAD_CONT_INX);
+            osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
             return;
         }
 
         if (!p_ccb->rsp_list) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+            osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
             return;
         }
         is_cont = TRUE;
@@ -704,6 +731,12 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                 if (p_ccb->cont_info.attr_offset) {
                     p_rsp = sdpu_build_partial_attrib_entry (p_rsp, p_attr, rem_len,
                             &p_ccb->cont_info.attr_offset);
+                    if (p_rsp == NULL) {
+                        sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+                        osi_free(p_ccb->rsp_list);
+                        p_ccb->rsp_list = NULL;
+                        return;
+                    }
 
                     /* If the partial attrib could not been fully added yet */
                     if (p_ccb->cont_info.attr_offset != attr_len) {
@@ -716,12 +749,20 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                     if (attr_len >= SDP_MAX_ATTR_LEN) {
                         SDP_TRACE_ERROR("SDP attr too big: max_list_len=%d,attr_len=%d\n", max_list_len, attr_len);
                         sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+                        osi_free(p_ccb->rsp_list);
+                        p_ccb->rsp_list = NULL;
                         return;
                     }
 
                     /* add the partial attribute if possible */
                     p_rsp = sdpu_build_partial_attrib_entry (p_rsp, p_attr, (UINT16)rem_len,
                             &p_ccb->cont_info.attr_offset);
+                    if (p_rsp == NULL) {
+                        sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
+                        osi_free(p_ccb->rsp_list);
+                        p_ccb->rsp_list = NULL;
+                        return;
+                    }
 
                     p_ccb->cont_info.next_attr_index = xx;
                     p_ccb->cont_info.next_attr_start_id = p_attr->id;
@@ -791,6 +832,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     // TODO(sharvil): rewrite SDP server.
     if (is_cont && len_to_send == 0) {
         sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_CONT_STATE, NULL);
+        osi_free(p_ccb->rsp_list);
+        p_ccb->rsp_list = NULL;
         return;
     }
 
@@ -817,6 +860,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Get a buffer to use to build the response */
     if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp\n");
+        osi_free (p_ccb->rsp_list);
+        p_ccb->rsp_list = NULL;
         return;
     }
     p_buf->offset = L2CAP_MIN_OFFSET;

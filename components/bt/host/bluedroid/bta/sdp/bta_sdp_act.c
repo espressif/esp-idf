@@ -628,7 +628,7 @@ void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
 **
 ** Function     bta_sdp_disable
 **
-** Description  Removes an SDP record
+** Description  Disable SDP
 **
 ** Returns      void
 **
