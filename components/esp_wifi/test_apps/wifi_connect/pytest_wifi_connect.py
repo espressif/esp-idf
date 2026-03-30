@@ -8,7 +8,10 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.two_duts
 @pytest.mark.parametrize('count', [2], indirect=True)
 @idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32c61'], indirect=['target']
+    'target',
+    # esp32s31: no two_duts runner in CI (rev_default) yet
+    ['esp32', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32c61'],
+    indirect=['target'],
 )
 def test_wifi_connect_cases(case_tester: CaseTester) -> None:  # type: ignore
     case_tester.run_all_cases()
@@ -57,10 +60,6 @@ def test_wifi_connect_cases_esp32c3_rev1(case_tester: CaseTester) -> None:
     case_tester.run_all_cases()
 
 
-# Must match TEST_CASE_MULTIPLE_DEVICES name string in test_connect_passive_channel_hidden_ap.c (menu line quoted text).
-_PASSIVE_HIDDEN_AP_CASE = 'connect passive channel hidden softap'
-
-
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, config',
@@ -71,16 +70,21 @@ _PASSIVE_HIDDEN_AP_CASE = 'connect passive channel hidden softap'
 )
 @idf_parametrize(
     'target',
+    # esp32s31: no two_duts runner in CI (rev_default) yet
     ['esp32', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32c61'],
     indirect=['target'],
 )
 def test_wifi_connect_passive_hidden_ap(case_tester: CaseTester) -> None:
     """Firmware uses sdkconfig.ci.passive_hidden_ap; runs only the passive hidden AP multi-DUT case."""
+
+    run_cases = []
     for case in case_tester.test_menu:
-        if case.name == _PASSIVE_HIDDEN_AP_CASE:
-            case_tester.run_multi_dev_case(case=case, reset=True)
-            return
-    pytest.fail(
-        f'Case {_PASSIVE_HIDDEN_AP_CASE!r} not in menu; build must merge sdkconfig.ci.passive_hidden_ap '
-        '(CONFIG_ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT).'
-    )
+        if case.attributes.get('group'):
+            if case.attributes['group'] == 'passive_hidden_ap':
+                case_tester.run_multi_dev_case(case=case, reset=True)
+                run_cases.append(case.name)
+    if not run_cases:
+        pytest.fail(
+            'No passive_hidden_ap cases found in menu; build must merge sdkconfig.ci.passive_hidden_ap '
+            '(CONFIG_ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT).'
+        )

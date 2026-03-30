@@ -38,13 +38,8 @@
 #define TEST_DEFAULT_SSID "SSID_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
 #define TEST_DEFAULT_PWD "PASS_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
 
-#if CONFIG_SOC_WIFI_SUPPORT_5G
-/* DFS channel: passive scan is required by regulatory rules on many domains. */
-#define TEST_PASSIVE_HIDDEN_AP_CHANNEL (52)
-#else
 /* 2.4 GHz passive scan scenario: channel 12 with CN regulatory (see apply_country_auto). */
 #define TEST_PASSIVE_HIDDEN_AP_CHANNEL (12)
-#endif
 
 #define CONNECT_TIMEOUT_MS   (30000)
 #define MAXIMUM_RETRY            (5)
@@ -246,7 +241,7 @@ static void test_passive_hidden_channel_softap(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("connect passive channel hidden softap",
-                           "[wifi][passive_hidden_ap]",
+                           "[wifi][group=passive_hidden_ap]",
                            test_passive_hidden_channel_sta,
                            test_passive_hidden_channel_softap);
 
