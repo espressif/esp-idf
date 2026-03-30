@@ -90,7 +90,7 @@ static UINT8 *sdpu_build_uuid_seq (UINT8 *p_out, UINT16 num_uuids, tSDP_UUID *p_
             UINT32_TO_BE_STREAM (p_out, p_uuid_list->uu.uuid32);
         } else {
             UINT8_TO_BE_STREAM (p_out, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-            ARRAY_TO_BE_STREAM (p_out, p_uuid_list->uu.uuid128, p_uuid_list->len);
+            ARRAY_TO_BE_STREAM (p_out, p_uuid_list->uu.uuid128, LEN_UUID_128);
         }
     }
 
@@ -373,6 +373,10 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
         list_len = p_ccb->list_len;
         p = &p_ccb->rsp_list[0];
         p_end = &p_ccb->rsp_list[0] + list_len;
+
+        if (cpy_len == 0) {
+            return;
+        }
 
         if (offset) {
             type = *p++;
@@ -835,7 +839,7 @@ static UINT8 *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end)
 ** Returns          pointer to next byte in data stream
 **
 *******************************************************************************/
-tSDP_DISC_REC *add_record (tSDP_DISCOVERY_DB *p_db, BD_ADDR p_bda)
+static tSDP_DISC_REC *add_record (tSDP_DISCOVERY_DB *p_db, BD_ADDR p_bda)
 {
     tSDP_DISC_REC   *p_rec;
 
@@ -950,7 +954,7 @@ static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DI
                 break;
             }
         }
-    /* Case falls through */
+    /* falls through */
 
     case TWO_COMP_INT_DESC_TYPE:
         switch (attr_len) {
