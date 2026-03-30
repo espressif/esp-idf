@@ -454,7 +454,7 @@ linkcheck_exclude_documents = [
     'index',  # several false positives due to the way we link to different sections
     'api-reference/protocols/esp_local_ctrl',  # Fails due to `https://<mdns-hostname>.local`
 ]
-
+esp_hover_api_enable = True
 
 # URLs to ignore during linkcheck
 linkcheck_ignore = [
