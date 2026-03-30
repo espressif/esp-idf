@@ -1999,7 +1999,7 @@ extern void BTA_DmWriteNewConnTxPwrLvl(INT8 pwr_lvl_min, INT8 pwr_lvl_max, tBTA_
 extern void BTA_DmReadBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, tBTA_CMPL_CB *cmpl_cb);
 extern void BTA_DmWriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBTA_CMPL_CB *cmpl_cb);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
-extern void BTA_DmBleReadChannelMap(BD_ADDR remote_device, tBTA_CMPL_CB *p_callback);
+extern void BTA_DmBleReadChannelMap(BD_ADDR remote_device);
 
 /*******************************************************************************
 **
