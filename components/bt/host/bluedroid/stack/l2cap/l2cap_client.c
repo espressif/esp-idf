@@ -368,11 +368,18 @@ static void read_ready_cb(uint16_t local_channel_id, BT_HDR *packet)
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
         L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
+        osi_free(packet);
         return;
     }
 
     // TODO(sharvil): eliminate copy from BT_HDR.
     buffer_t *buffer = buffer_new(packet->len);
+    if (!buffer) {
+        L2CAP_TRACE_ERROR("%s unable to new a buffer\n", __func__);
+        osi_free(packet);
+        return;
+    }
+
     memcpy(buffer_ptr(buffer), packet->data + packet->offset, packet->len);
     osi_free(packet);
 

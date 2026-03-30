@@ -157,6 +157,10 @@ tBTA_SDP_STATUS BTA_SdpSearch(BD_ADDR bd_addr, tSDP_UUID *uuid)
     tBTA_SDP_STATUS ret = BTA_SDP_FAILURE;
     tBTA_SDP_API_SEARCH *p_msg;
 
+    if (!uuid) {
+        return BTA_SDP_FAILURE;
+    }
+
     APPL_TRACE_API("%s\n", __FUNCTION__);
     if ((p_msg = (tBTA_SDP_API_SEARCH *)osi_malloc(sizeof(tBTA_SDP_API_SEARCH))) != NULL) {
         p_msg->hdr.event = BTA_SDP_API_SEARCH_EVT;

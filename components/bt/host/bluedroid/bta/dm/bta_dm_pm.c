@@ -433,10 +433,10 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
                 ((NULL != (p = BTM_ReadRemoteFeatures (peer_addr))) && HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
                 (index == BTA_DM_PM_SSR0)) {
             if (status == BTA_SYS_SCO_OPEN) {
-                APPL_TRACE_DEBUG("%s: SCO inactive, reset SSR to zero", __func__);
+                APPL_TRACE_DEBUG("%s: SCO active, reset SSR to zero", __func__);
                 BTM_SetSsrParams (peer_addr, 0, 0, 0 );
             } else if (status == BTA_SYS_SCO_CLOSE) {
-                APPL_TRACE_DEBUG("%s: SCO active, back to old SSR", __func__);
+                APPL_TRACE_DEBUG("%s: SCO inactive, back to old SSR", __func__);
                 bta_dm_pm_ssr(peer_addr);
             }
         }
@@ -621,8 +621,8 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
         }
         return;
     }
-    /* if pending power mode timer expires, and currecnt link is in a
-       lower power mode than current profile requirement, igonre it */
+    /* if pending power mode timer expires, and current link is in a
+       lower power mode than current profile requirement, ignore it */
     if (pm_req == BTA_DM_PM_EXECUTE && pm_request < pm_action) {
         APPL_TRACE_ERROR("Ignore the power mode request: %d", pm_request)
         return;
@@ -644,7 +644,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
 }
 /*******************************************************************************
 **
-** Function         bta_ag_pm_park
+** Function         bta_dm_pm_park
 **
 ** Description      Switch to park mode.
 **
@@ -669,7 +669,7 @@ static BOOLEAN bta_dm_pm_park(BD_ADDR peer_addr)
 
 /*******************************************************************************
 **
-** Function         bta_ag_pm_sniff
+** Function         bta_dm_pm_sniff
 **
 ** Description      Switch to sniff mode.
 **
