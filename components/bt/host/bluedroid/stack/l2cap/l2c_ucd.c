@@ -90,6 +90,12 @@ static void l2c_ucd_data_ind_cback (BD_ADDR rem_bda, BT_HDR *p_buf)
 
     L2CAP_TRACE_DEBUG ("L2CAP - l2c_ucd_data_ind_cback");
 
+    if (p_buf->len < L2CAP_UCD_OVERHEAD) {
+        L2CAP_TRACE_ERROR ("L2CAP - data not enough for l2c_ucd_data_ind_cback %d", p_buf->len);
+        osi_free (p_buf);
+        return;
+    }
+
     p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     STREAM_TO_UINT16(psm, p)
 
@@ -257,7 +263,6 @@ BOOLEAN L2CA_UcdDeregister_In_CCB_List (void *p_ccb_node, void * context)
 
 BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
 {
-    tL2C_CCB    *p_ccb;
     tL2C_RCB    *p_rcb;
     UINT16      xx;
 

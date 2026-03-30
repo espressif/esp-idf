@@ -304,14 +304,18 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
     if (!p_ccb) {
         return (GAP_ERR_BAD_HANDLE);
     }
+    if (!p_len) {
+        return (GAP_ERR_ILL_PARM);
+    }
 
     *p_len = 0;
 
+    osi_mutex_global_lock();
+
     if (fixed_queue_is_empty(p_ccb->rx_queue)) {
+        osi_mutex_global_unlock();
         return (GAP_NO_DATA_AVAIL);
 	}
-
-    osi_mutex_global_lock();
 
     while (max_len) {
         BT_HDR *p_buf = fixed_queue_try_peek_first(p_ccb->rx_queue);
@@ -359,19 +363,19 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
 int GAP_GetRxQueueCnt (UINT16 handle, UINT32 *p_rx_queue_count)
 {
     tGAP_CCB    *p_ccb;
-    int         rc = BT_PASS;
+    int         rc = GAP_INVALID_HANDLE;
+
+    if (!p_rx_queue_count) {
+        return GAP_ERR_ILL_PARM;
+    }
 
     /* Check that handle is valid */
-    if (handle < GAP_MAX_CONNECTIONS) {
-        p_ccb = &gap_cb.conn.ccb_pool[handle];
-
+    p_ccb = gap_find_ccb_by_handle (handle);
+    if (p_ccb) {
         if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED) {
             *p_rx_queue_count = p_ccb->rx_queue_size;
-        } else {
-            rc = GAP_INVALID_HANDLE;
+            rc = BT_PASS;
         }
-    } else {
-        rc = GAP_INVALID_HANDLE;
     }
 
     GAP_TRACE_EVENT ("GAP_GetRxQueueCnt - rc = 0x%04x, rx_queue_count=%d",

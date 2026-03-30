@@ -37,7 +37,7 @@ const char *const smp_br_event_name [SMP_BR_MAX_EVT] = {
     "BR_CONFIRM_EVT",
     "BR_RAND_EVT",
     "BR_PAIRING_FAILED_EVT",
-    "BR_ENCRPTION_INFO_EVT",
+    "BR_ENCRYPTION_INFO_EVT",
     "BR_MASTER_ID_EVT",
     "BR_ID_INFO_EVT",
     "BR_ID_ADDR_EVT",
@@ -316,7 +316,13 @@ void smp_br_state_machine_event(tSMP_CB *p_cb, tSMP_BR_EVENT event, void *p_data
     tSMP_BR_STATE       curr_state = p_cb->br_state;
     tSMP_BR_SM_TBL      state_table;
     UINT8               action, entry;
-    tSMP_BR_ENTRY_TBL   entry_table =  smp_br_entry_table[p_cb->role];
+    tSMP_BR_ENTRY_TBL   entry_table = NULL;
+
+    if (p_cb->role > HCI_ROLE_SLAVE) {
+        SMP_TRACE_ERROR("Invalid role: %d", p_cb->role);
+        return;
+    }
+    entry_table =  smp_br_entry_table[p_cb->role];
 
     SMP_TRACE_EVENT("main %s", __func__);
     if (curr_state >= SMP_BR_STATE_MAX) {

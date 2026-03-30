@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -353,21 +353,25 @@ static int free_sdp_slot(int id)
     sdp_slot_t *slot = NULL;
 
     if(id >= SDP_MAX_RECORDS) {
-        APPL_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
-        return handle;
-    }
-    slot = sdp_local_param.sdp_slots[id];
-    if (slot == NULL) {
-        // already freed
+        BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
         return handle;
     }
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    slot = sdp_local_param.sdp_slots[id];
+    if (slot == NULL) {
+        osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
+        return handle;
+    }
+
     handle = slot->sdp_handle;
     if (slot->state != SDP_RECORD_FREE) {
         /* safe a copy of the pointer, and free after unlock() */
         record = slot->record_data;
     }
+
+    osi_free(sdp_local_param.sdp_slots[id]);
+    sdp_local_param.sdp_slots[id] = NULL;
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
 
     if(record != NULL) {
@@ -376,8 +380,6 @@ static int free_sdp_slot(int id)
         // Record have already been freed
         handle = -1;
     }
-    osi_free(sdp_local_param.sdp_slots[id]);
-    sdp_local_param.sdp_slots[id] = NULL;
 
     return handle;
 }
@@ -623,7 +625,7 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED", __func__);
     } else {
-        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_NOTIFICATION */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
 
@@ -703,7 +705,7 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_PBAP_PSE */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
 
@@ -749,7 +751,7 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_PBAP_PCE */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
 
@@ -1040,6 +1042,10 @@ static void btc_sdp_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         tBTA_SDP_SEARCH_COMP *dest_search_comp = (tBTA_SDP_SEARCH_COMP *)p_dest;
         int record_count = src_search_comp->record_count;
 
+        if (record_count > BTA_SDP_MAX_RECORDS) {
+            record_count = BTA_SDP_MAX_RECORDS;
+        }
+
         for (int i = 0; i < record_count; i++) {
             bluetooth_sdp_record *src_record = &src_search_comp->records[i];
             bluetooth_sdp_record *dest_record = &dest_search_comp->records[i];
@@ -1091,7 +1097,12 @@ static void btc_sdp_cb_arg_deep_free(btc_msg_t *msg)
     switch (msg->act) {
     case BTA_SDP_SEARCH_COMP_EVT: {
         tBTA_SDP_SEARCH_COMP *search_comp = (tBTA_SDP_SEARCH_COMP *)msg->arg;
-        for (size_t i = 0; i < search_comp->record_count; i++) {
+        int record_count = search_comp->record_count;
+        if (record_count > BTA_SDP_MAX_RECORDS) {
+            record_count = BTA_SDP_MAX_RECORDS;
+        }
+
+        for (size_t i = 0; i < record_count; i++) {
             bluetooth_sdp_record *record = &search_comp->records[i];
             if (record->hdr.service_name) {
                 osi_free(record->hdr.service_name);
@@ -1416,7 +1427,6 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
             int slot_id = get_sdp_slot_id_by_handle(p_data->sdp_remove_record.handle);
             if (slot_id < 0) {
                 p_data->sdp_remove_record.status = ESP_SDP_NO_CREATE_RECORD;
-                break;
             } else {
                 free_sdp_slot(slot_id);
             }
