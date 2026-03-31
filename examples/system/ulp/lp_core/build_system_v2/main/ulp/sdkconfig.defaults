@@ -1,0 +1,2 @@
+# Override the default clamp max value for this ULP application
+CONFIG_ULP_CLAMP_MAX_VALUE=100
