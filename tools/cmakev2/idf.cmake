@@ -309,6 +309,16 @@ function(__init_toolchain)
     set(cache_toolchain $CACHE{IDF_TOOLCHAIN})
     set(cache_toolchain_file $CACHE{CMAKE_TOOLCHAIN_FILE})
 
+    # When IDF_CUSTOM_TOOLCHAIN is set, the toolchain was provided
+    # externally by the parent build (e.g. ULP sub-project via
+    # externalproject_add -DCMAKE_TOOLCHAIN_FILE=...). Skip
+    # IDF_TARGET-based resolution and validation, and trust the
+    # caller-provided CMAKE_TOOLCHAIN_FILE.
+    if(IDF_CUSTOM_TOOLCHAIN AND cache_toolchain_file)
+        idf_build_set_property(IDF_TOOLCHAIN_FILE "${cache_toolchain_file}")
+        return()
+    endif()
+
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_target IDF_TARGET)
 
