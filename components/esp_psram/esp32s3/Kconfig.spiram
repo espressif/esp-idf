@@ -8,16 +8,11 @@ config SPIRAM
 menu "SPI RAM config"
     depends on SPIRAM
 
-    choice SPIRAM_MODE
-        prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
-        default SPIRAM_MODE_QUAD
+    config SPIRAM_MODE_QUAD
+        bool "Quad Mode PSRAM"
 
-        config SPIRAM_MODE_QUAD
-            bool "Quad Mode PSRAM"
-
-        config SPIRAM_MODE_OCT
-            bool "Octal Mode PSRAM"
-    endchoice
+    config SPIRAM_MODE_OCT
+        bool "Octal Mode PSRAM"
 
     choice SPIRAM_TYPE
         prompt "Type of SPIRAM chip in use"

@@ -774,3 +774,58 @@ size_t esp_psram_get_heap_size_to_protect(void)
     }
 }
 #endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
+
+#ifdef CONFIG_SPIRAM_MODE_QUAD
+esp_err_t esp_psram_quad_enable(void);
+esp_err_t esp_psram_quad_get_physical_size(uint32_t *out_size_bytes);
+esp_err_t esp_psram_quad_get_available_size(uint32_t *out_size_bytes);
+uint8_t esp_psram_quad_get_cs_io(void);
+#endif
+#ifdef CONFIG_SPIRAM_MODE_HEX
+esp_err_t esp_psram_hex_enable(void);
+esp_err_t esp_psram_hex_get_physical_size(uint32_t *out_size_bytes);
+esp_err_t esp_psram_hex_get_available_size(uint32_t *out_size_bytes);
+uint8_t esp_psram_hex_get_cs_io(void);
+#endif
+#ifdef CONFIG_SPIRAM_MODE_OCT
+esp_err_t esp_psram_octal_enable(void);
+esp_err_t esp_psram_octal_get_physical_size(uint32_t *out_size_bytes);
+esp_err_t esp_psram_octal_get_available_size(uint32_t *out_size_bytes);
+uint8_t esp_psram_octal_get_cs_io(void);
+#endif
+
+esp_err_t esp_psram_impl_enable(void) {
+    esp_err_t ret = ESP_ERR_NOT_SUPPORTED;
+#ifdef CONFIG_SPIRAM_MODE_QUAD
+    ret = esp_psram_quad_enable();
+    if (ret == ESP_OK) {
+        esp_psram_impl_get_physical_size = esp_psram_quad_get_physical_size;
+        esp_psram_impl_get_available_size = esp_psram_quad_get_available_size;
+        esp_psram_impl_get_cs_io = esp_psram_quad_get_cs_io;
+        return ESP_OK;
+    }
+#endif
+#ifdef CONFIG_SPIRAM_MODE_HEX
+    ret = esp_psram_hex_enable();
+    if (ret == ESP_OK) {
+        esp_psram_impl_get_physical_size = esp_psram_hex_get_physical_size;
+        esp_psram_impl_get_available_size = esp_psram_hex_get_available_size;
+        esp_psram_impl_get_cs_io = esp_psram_hex_get_cs_io;
+        return ESP_OK;
+    }
+#endif
+#ifdef CONFIG_SPIRAM_MODE_OCT
+    ret = esp_psram_octal_enable();
+    if (ret == ESP_OK) {
+        esp_psram_impl_get_physical_size = esp_psram_octal_get_physical_size;
+        esp_psram_impl_get_available_size = esp_psram_octal_get_available_size;
+        esp_psram_impl_get_cs_io = esp_psram_octal_get_cs_io;
+        return ESP_OK;
+    }
+#endif
+    return ret;
+}
+
+esp_err_t (*esp_psram_impl_get_physical_size)(uint32_t *out_size_bytes);
+esp_err_t (*esp_psram_impl_get_available_size)(uint32_t *out_size_bytes);
+uint8_t (*esp_psram_impl_get_cs_io)(void);
