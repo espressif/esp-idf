@@ -5226,7 +5226,7 @@ void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
-
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
 
     status = BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
                                 p_data->ble_set_scan_fil_params.scan_int,
@@ -5240,7 +5240,7 @@ void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
         APPL_TRACE_ERROR("%s(), fail to set scan params.", __func__);
     }
 
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_PARAMS_SET_COMPLETE_EVT, &cb_params);
 }
@@ -5291,6 +5291,8 @@ void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status = BTM_SET_STATIC_RAND_ADDR_FAIL;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
+
     if (p_data->set_addr.addr_type != BLE_ADDR_RANDOM) {
         APPL_TRACE_ERROR("Invalid random address type = %d\n", p_data->set_addr.addr_type);
         goto _addr_set_end;
@@ -5299,7 +5301,7 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
     status = BTM_BleSetRandAddress(p_data->set_addr.address);
 
 _addr_set_end:
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_RANDOM_ADDR_EVT, &cb_params);
 
@@ -5369,6 +5371,8 @@ void bta_dm_ble_set_key_material (tBTA_DM_MSG *p_data)
 void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
+
     if (p_data->ble_scan.start) {
         /*Save the  callback to be called when a scan results are available */
         bta_dm_search_cb.p_scan_cback = p_data->ble_scan.p_cback;
@@ -5378,7 +5382,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
             APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
         }
 
-        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        memset(&cb_params, 0, sizeof(cb_params));
         status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
         cb_params.status = status;
         BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_START_COMPLETE_EVT, &cb_params);
@@ -5391,7 +5395,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
             APPL_TRACE_WARNING(" %s stop scan failed, status=0x%x\n", __FUNCTION__, status);
         }
 
-        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        memset(&cb_params, 0, sizeof(cb_params));
         status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
         cb_params.status = status;
         BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_STOP_COMPLETE_EVT, &cb_params);
@@ -5419,6 +5423,8 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
 void bta_dm_ble_start_adv_with_params  (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status = BTA_FAILURE;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
+
     status = BTM_BleStartAdvWithParams(p_data->ble_set_adv_params_all.adv_int_min,
                                 p_data->ble_set_adv_params_all.adv_int_max,
                                 p_data->ble_set_adv_params_all.adv_type,
@@ -5435,7 +5441,7 @@ void bta_dm_ble_start_adv_with_params  (tBTA_DM_MSG *p_data)
     status = BTM_BleStartAdv();
 
 _adv_param_error:
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_START_COMPLETE_EVT, &cb_params);
 }
@@ -5471,11 +5477,12 @@ void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
 
     status = BTM_BleWriteAdvData(p_data->ble_set_adv_data.data_mask,
                             (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg);
 
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 }
@@ -5492,11 +5499,12 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
 
     status = BTM_BleWriteAdvDataRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
                                p_data->ble_set_adv_data_raw.raw_adv_len);
 
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_RAW_SET_COMPLETE_EVT, &cb_params);
 }
@@ -5513,11 +5521,12 @@ void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data)
 {
    tBTM_STATUS status;
+   tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
 
     status = BTM_BleWriteScanRsp(p_data->ble_set_adv_data.data_mask,
                             (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg);
 
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_RSP_SET_COMPLETE_EVT, &cb_params);
 }
@@ -5534,11 +5543,12 @@ void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data)
 void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
 
     status = BTM_BleWriteScanRspRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
                                p_data->ble_set_adv_data_raw.raw_adv_len);
 
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RSP_RAW_SET_COMPLETE_EVT, &cb_params);
 }
@@ -5556,10 +5566,13 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 {
     UINT8 status = BTM_SUCCESS;
     tACL_CONN *p_acl_cb = btm_bda_to_acl(p_data->ble_set_data_length.remote_bda, BT_TRANSPORT_LE);
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
+    uint16_t length;
+
     if (p_acl_cb == NULL) {
         APPL_TRACE_ERROR("%s error: Invalid connection remote_bda.", __func__);
-        uint16_t length = controller_get_interface()->get_acl_data_size_ble();
-        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        length = controller_get_interface()->get_acl_data_size_ble();
+        memset(&cb_params, 0, sizeof(cb_params));
         cb_params.data_length_params.status = BTM_UNKNOWN_ADDR;
         cb_params.data_length_params.rx_len = length;
         cb_params.data_length_params.tx_len = length;
@@ -5591,7 +5604,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
     if (status != BTM_SUCCESS) {
         APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
         if (p_acl_cb->data_length_params.tx_len == 0){
-            uint16_t length = controller_get_interface()->get_acl_data_size_ble();
+            length = controller_get_interface()->get_acl_data_size_ble();
             p_acl_cb->data_length_params.rx_len = length;
             p_acl_cb->data_length_params.tx_len = length;
         }
@@ -5602,7 +5615,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
     }
 
 _data_length_set_complete:
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.data_length_params.status = status;
     cb_params.data_length_params.rx_len = p_acl_cb->data_length_params.rx_len;
     cb_params.data_length_params.tx_len = p_acl_cb->data_length_params.tx_len;
@@ -5624,13 +5637,15 @@ _data_length_set_complete:
 void bta_dm_ble_advstop (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
+
     status = BTM_BleAdvStop();
 
     if (status != BTM_SUCCESS) {
         APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
     }
 
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.status = status;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADV_STOP_COMPLETE_EVT, &cb_params);
 

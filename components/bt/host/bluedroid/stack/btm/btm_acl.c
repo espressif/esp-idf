@@ -2280,6 +2280,7 @@ tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda)
 {
     tACL_CONN *p;
     tBTM_BLE_CH_MAP_RESULTS result;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
     UINT8 status;
 
     BTM_TRACE_DEBUG("BTM_ReadChannelMap: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
@@ -2310,7 +2311,7 @@ tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda)
     result.status = BTM_UNKNOWN_ADDR;
 
 _ch_map_err:
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     // `ch_map_read` is same as `results`
     memcpy(&cb_params.ch_map_results, &result, sizeof(tBTM_BLE_CH_MAP_RESULTS));
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_READ_CHANNEL_MAP_EVT, &cb_params);
@@ -2362,6 +2363,7 @@ void btm_read_channel_map_complete(UINT8 *p)
     BTM_TRACE_DEBUG("btm_read_channel_map_complete\n");
 
     if (btm_cb.devcb.is_ch_map_cb) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
         /* Reset the callback pointer to prevent duplicate calls */
         btm_cb.devcb.is_ch_map_cb = false;
         /* Extract HCI status from the response */
@@ -2390,7 +2392,7 @@ void btm_read_channel_map_complete(UINT8 *p)
         }
 
         /* Invoke the registered callback with the results */
-        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        memset(&cb_params, 0, sizeof(cb_params));
         // `ch_map_read` is same as `results`
         memcpy(&cb_params.ch_map_results, &results, sizeof(tBTM_BLE_CH_MAP_RESULTS));
         BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_READ_CHANNEL_MAP_EVT, &cb_params);
