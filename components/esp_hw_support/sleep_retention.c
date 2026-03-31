@@ -33,10 +33,19 @@ static int acquire_cnt; //for the force acquire lock
 
 
 struct sleep_retention_module_object {
-    sleep_retention_module_callbacks_t cbs;         /* A callback list that can extend more sleep retention event callbacks */
-    sleep_retention_module_bitmap_t    dependents;  /* A bitmap identifying all modules that the current module depends on */
-    sleep_retention_module_bitmap_t    references;  /* A bitmap indicating all other modules that depend on (or reference) the current module,
-                                                     * It will update at runtime based on whether the module is referenced by other modules */
+    sleep_retention_module_callbacks_t cbs;             /* A callback list that can extend more sleep retention event callbacks */
+    sleep_retention_module_bitmap_t    dependents;      /* A bitmap identifying all modules that the current module depends on */
+    union {
+        sleep_retention_module_bitmap_t    references;  /* A bitmap indicating all other modules that depend on (or reference)
+                                                         * the current module, It will update at runtime (allocate or free)
+                                                         * based on whether the module is referenced by other modules */
+        sleep_retention_module_bitmap_t    refarray[2]; /* Bitmap array to indicating all other modules that depend on (or
+                                                         * reference) the current module, It will update at runtime (allocate/
+                                                         * attach or free/detach) based on whether the module is referenced by
+                                                         * other modules, refarray[0] is equivalent to references and is used to
+                                                         * indicate allocate/free operations, and refarray[1] is used to indicate
+                                                         * attach/detach operations.*/
+    };
     sleep_retention_module_attribute_t attributes;  /* A bitmap indicating attribute of the current module */
 };
 
@@ -45,6 +54,7 @@ static inline void sleep_retention_module_object_ctor(struct sleep_retention_mod
     self->cbs = *cbs;
     self->dependents = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
     self->references = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+    self->refarray[1] = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
     self->attributes = 0;
 }
 
@@ -81,6 +91,41 @@ static inline void clr_reference(struct sleep_retention_module_object * const se
 static inline sleep_retention_module_bitmap_t get_references(struct sleep_retention_module_object * const self)
 {
     return self->references;
+}
+
+static inline void refarray_set_bit(struct sleep_retention_module_object * const self, int n, sleep_retention_module_t module)
+{
+    if (n >= 0 && n < ARRAY_SIZE(self->refarray)) {
+        self->refarray[n].bitmap[module >> 5] |= BIT(module % 32);
+    }
+}
+
+static inline void refarray_clr_bit(struct sleep_retention_module_object * const self, int n, sleep_retention_module_t module)
+{
+    if (n >= 0 && n < ARRAY_SIZE(self->refarray)) {
+        self->refarray[n].bitmap[module >> 5] &= ~BIT(module % 32);
+    }
+}
+
+static inline sleep_retention_module_bitmap_t refarray_get(struct sleep_retention_module_object * const self, int n)
+{
+    if (n >= 0 && n < ARRAY_SIZE(self->refarray)) {
+        return self->refarray[n];
+    }
+    return (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+}
+
+static inline bool refarray_zero(struct sleep_retention_module_object * const self, int n)
+{
+    if (n >= 0 && n < ARRAY_SIZE(self->refarray)) {
+        uint32_t val = 0;
+        sleep_retention_module_bitmap_t map = refarray_get(self, n);
+        for (int i = 0; i < SLEEP_RETENTION_MODULE_BITMAP_SZ; i++) {
+            val |= map.bitmap[i];
+        }
+        return (val == 0);
+    }
+    return false;
 }
 
 static inline bool references_exist(struct sleep_retention_module_object * const self)
@@ -844,7 +889,6 @@ bool IRAM_ATTR sleep_retention_module_bitmap_eq(sleep_retention_module_bitmap_t 
     return true;
 }
 
-
 static void module_action(sleep_retention_module_t module, sleep_retention_module_t dep_module, int action)
 {
     switch (action)
@@ -852,6 +896,8 @@ static void module_action(sleep_retention_module_t module, sleep_retention_modul
     case 0: break;  /* Nothing to do */
     case 1: set_reference(instance(dep_module), module); break; /* allocate */
     case 2: clr_reference(instance(dep_module), module); break; /* free */
+    case 3: refarray_set_bit(instance(dep_module), 1, module);  break;  /* attach */
+    case 4: refarray_clr_bit(instance(dep_module), 1, module);  break;  /* detach */
     default:  break;
     }
 }
@@ -1070,7 +1116,7 @@ static esp_err_t passive_module_attach(sleep_retention_module_t module)
     if (module_is_inited(module) && module_is_created(module) && !module_is_retained(module)) {
         module_entries_move(module, &s_retention.context[1], &s_retention.retention);
         s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
-        err = module_action_wrapper(module, (BIT(31) | action(0)), passive_module_attach);
+        err = module_action_wrapper(module, (BIT(31) | action(3)), passive_module_attach);
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
@@ -1089,7 +1135,7 @@ esp_err_t sleep_retention_module_attach(sleep_retention_module_t module)
             if (module_runtime_attach(instance(module))) {
                 module_entries_move(module, &s_retention.context[1], &s_retention.retention);
                 s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
-                err = module_action_wrapper(module, action(0), passive_module_attach);
+                err = module_action_wrapper(module, action(3), passive_module_attach);
             } else {
                 err = ESP_ERR_NOT_SUPPORTED;
             }
@@ -1113,9 +1159,11 @@ static esp_err_t passive_module_detach(sleep_retention_module_t module)
     assert(module_runtime_attach(instance(module)) && "Illegal dependency");
     assert(module_is_inited(module) && "All passive module must be inited first!");
     if (module_is_inited(module) && module_is_created(module) && module_is_retained(module)) {
-        module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
-        s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
-        err = module_action_wrapper(module, (BIT(31) | action(0)), passive_module_detach);
+        if (refarray_zero(instance(module), 1)) {
+            module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
+            s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+            err = module_action_wrapper(module, (BIT(31) | action(4)), passive_module_detach);
+        }
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
@@ -1134,7 +1182,7 @@ esp_err_t sleep_retention_module_detach(sleep_retention_module_t module)
             if (module_runtime_attach(instance(module))) {
                 module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
                 s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
-                err = module_action_wrapper(module, action(0), passive_module_detach);
+                err = module_action_wrapper(module, action(4), passive_module_detach);
             } else {
                 err = ESP_ERR_NOT_SUPPORTED;
             }
