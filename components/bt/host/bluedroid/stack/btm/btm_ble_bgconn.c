@@ -283,6 +283,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
 {
     BOOLEAN result = TRUE;
     UINT8 status;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     if (addr_type > BLE_ADDR_RANDOM && addr_type != BLE_ADDR_ANONYMOUS)
 #else
@@ -366,7 +367,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
     return TRUE;
 
 _wl_end:
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    memset(&cb_params, 0, sizeof(cb_params));
     cb_params.white_list_update.status = status;
     cb_params.white_list_update.operation = to_add ? BTM_WHITELIST_ADD : BTM_WHITELIST_REMOVE;
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_WHITE_LIST_UPDATE_EVT, &cb_params);
