@@ -755,6 +755,8 @@ static int wps_finish(void)
 
         if (connect) {
             esp_wifi_connect();
+        } else {
+            esp_wifi_disconnect();
         }
 
         /* wait for 1 sec before sending WPS success event to give connection time */
