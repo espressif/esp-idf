@@ -9,6 +9,10 @@
 #ifndef STA_INFO_H
 #define STA_INFO_H
 
+#ifdef CONFIG_SAE
+#include <stdatomic.h>
+#endif
+
 /* STA flags */
 #define WLAN_STA_AUTH BIT(0)
 #define WLAN_STA_ASSOC BIT(1)
@@ -62,9 +66,9 @@ struct sta_info {
 #ifdef CONFIG_SAE
 	void *lock;
 	struct sae_data *sae;
-	volatile bool sae_commit_processing;	/* halt queuing commit while we are
+	atomic_bool sae_commit_processing;	/* halt queuing commit while we are
 				 * processing commit for that station  */
-	volatile bool remove_pending;	/* Flag to indicate to free station when
+	atomic_bool remove_pending;	/* Flag to indicate to free station when
 				 * whose mutex is taken by task */
 	struct wpabuf *sae_data;
 #endif /* CONFIG_SAE */

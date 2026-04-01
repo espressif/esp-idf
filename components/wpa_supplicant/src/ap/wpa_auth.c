@@ -137,12 +137,9 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
     }
 
 #if defined(CONFIG_SAE) || defined(CONFIG_OWE_SOFTAP)
-    /* wpa_auth_get_psk runs on the Wi-Fi task only, so these static buffers are safe */
 #ifdef CONFIG_SAE
+    /* wpa_auth_get_psk runs on the Wi-Fi task only, so sae_pmk_copy is not shared with any other task. */
     static u8 sae_pmk_copy[PMK_LEN];
-#endif
-#ifdef CONFIG_OWE_SOFTAP
-    static u8 owe_pmk_copy[PMK_LEN_MAX];
 #endif
     HOSTAPD_STA_LIST_LOCK(hapd);
     struct sta_info *sta = ap_get_sta_internal(hapd, addr);
@@ -168,10 +165,8 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
 #ifdef CONFIG_OWE_SOFTAP
     if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) &&
         sta && sta->owe_pmk) {
-        size_t len = sta->owe_pmk_len > PMK_LEN_MAX ? PMK_LEN_MAX : sta->owe_pmk_len;
-        os_memcpy(owe_pmk_copy, sta->owe_pmk, len);
         HOSTAPD_STA_LIST_UNLOCK(hapd);
-        return owe_pmk_copy;
+        return sta->owe_pmk;
     }
 
     if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && sta) {
@@ -179,15 +174,12 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
 
         sa = wpa_auth_sta_get_pmksa(sta->wpa_sm);
         if (sa && sa->akmp == WPA_KEY_MGMT_OWE) {
-            size_t len = sa->pmk_len > PMK_LEN_MAX ? PMK_LEN_MAX : sa->pmk_len;
-            os_memcpy(owe_pmk_copy, sa->pmk, len);
             HOSTAPD_STA_LIST_UNLOCK(hapd);
-            return owe_pmk_copy;
+            return sa->pmk;
         }
      }
-
 #endif /* CONFIG_OWE_SOFTAP */
-    
+
     HOSTAPD_STA_LIST_UNLOCK(hapd);
 #endif /* defined(CONFIG_SAE) || defined(CONFIG_OWE_SOFTAP) */
 
@@ -358,8 +350,14 @@ int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
         if (sta_lk) {
             HOSTAPD_STA_LIST_LOCK(hapd);
             sta = ap_get_sta_internal(hapd, sta_mac);
-            if (sta && sta->lock == sta_lk)
+            if (sta && sta->lock == sta_lk) {
                 os_semphr_give(sta_lk);
+            } else if (!sta) {
+                wpa_printf(MSG_DEBUG,
+                       "WPA: sta->lock not released (STA " MACSTR
+                       " gone); ap_free_sta released semaphore",
+                       MAC2STR(sta_mac));
+            }
             HOSTAPD_STA_LIST_UNLOCK(hapd);
             sta_lk = NULL;
         }
