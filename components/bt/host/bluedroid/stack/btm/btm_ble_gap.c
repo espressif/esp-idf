@@ -37,6 +37,7 @@
 #include "hci/hci_layer.h"
 #if BLE_INCLUDED == TRUE
 #include "l2c_int.h"
+#include "bta_dm_gap.h"
 
 #include "stack/gattdefs.h"
 #include "gatt_int.h"
@@ -493,7 +494,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
     }
 
     if (random_cb){
-        random_cb->cb_is_triggered = false;
+        BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT);
     }else{
         BTM_TRACE_ERROR("%s,random_cb = NULL", __func__);
     }
@@ -4104,7 +4105,7 @@ BOOLEAN BTM_BleAddDevToResolvingList(BD_ADDR addr,
         BTM_TRACE_ERROR("Add device to resolving list error");
         return FALSE;
     }
-
+    BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT);
     return TRUE;
 }
 

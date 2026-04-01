@@ -203,7 +203,6 @@ typedef struct {
     tBTM_BLE_ADDR_CBACK         *p_generate_cback;
     void                        *p;
     TIMER_LIST_ENT              raddr_timer_ent;
-    bool                        cb_is_triggered;
 } tBTM_LE_RANDOM_CB;
 
 #define BTM_BLE_MAX_BG_CONN_DEV_NUM    10

@@ -38,6 +38,7 @@
 #include "bta/utl.h"
 #include "stack/gap_api.h"    /* For GAP_BleReadPeerPrefConnParams */
 #include <string.h>
+#include <stdint.h>
 #include "device/controller.h"
 #include "bta_dm_gap.h"
 
@@ -265,6 +266,27 @@ UINT8 *g_disc_raw_data_buf;
 
 #if (BLE_INCLUDED == TRUE)
 tBTM_BLE_LEGACY_GAP_CBACK ble_legacy_gap_cb;
+static uint64_t ble_legacy_gap_oneshot_mask;
+
+void BTM_BleLegacyGapOneshotArm(tBTM_BLE_LEGACY_GAP_EVENT event)
+{
+    if (event < BTM_BLE_LEGACY_GAP_MAX_EVT) {
+        ble_legacy_gap_oneshot_mask |= (1ULL << event);
+    }
+}
+
+void BTM_BleLegacyGapOneshotFireIfArmed(tBTM_BLE_LEGACY_GAP_EVENT event, tBTM_BLE_LEGACY_GAP_CB_PARAMS *params)
+{
+    if (event >= BTM_BLE_LEGACY_GAP_MAX_EVT) {
+        return;
+    }
+    uint64_t bit = (1ULL << event);
+    if ((ble_legacy_gap_oneshot_mask & bit) == 0) {
+        return;
+    }
+    ble_legacy_gap_oneshot_mask &= ~bit;
+    BTM_LegacyBleCallbackTrigger(event, params);
+}
 
 void BTM_BleLegacyGapRegisterCallback(tBTM_BLE_LEGACY_GAP_CBACK cb)
 {
