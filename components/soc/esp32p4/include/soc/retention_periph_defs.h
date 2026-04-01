@@ -63,6 +63,7 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_EMAC         = 37,
     SLEEP_RETENTION_MODULE_JPEG         = 38,
     SLEEP_RETENTION_MODULE_LCDCAM       = 39,
+    SLEEP_RETENTION_MODULE_H264         = 40,
 
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
@@ -107,6 +108,7 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_SDM0)         ? true \
     : ((m) == SLEEP_RETENTION_MODULE_LCDCAM)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_JPEG)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_H264)         ? true \
     : false)
 
 #ifdef __cplusplus

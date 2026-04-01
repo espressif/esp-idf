@@ -1943,6 +1943,10 @@ config SOC_JPEG_ENCODE_SUPPORTED
     bool
     default y
 
+config SOC_H264_ENCODER_SUPPORTED
+    bool
+    default y
+
 config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
     bool
     default y
