@@ -42,6 +42,10 @@
 #include "ot_led_strip.h"
 #endif
 
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+#include "ext_coex_cmd.h"
+#endif
+
 #define TAG "esp_ot_br"
 
 #if CONFIG_OPENTHREAD_SUPPORT_HW_RESET_RCP
@@ -98,6 +102,9 @@ void app_main(void)
 #if CONFIG_OPENTHREAD_CLI
     ot_console_start();
     ot_register_external_commands();
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    register_cmd_extcoex();
+#endif
 #endif
 
 #if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
