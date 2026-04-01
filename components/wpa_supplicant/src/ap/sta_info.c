@@ -235,8 +235,8 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	/* initialize STA info data */
 	os_memcpy(sta->addr, addr, ETH_ALEN);
 #ifdef CONFIG_SAE
-	sta->sae_commit_processing = false;
-	sta->remove_pending = false;
+	atomic_init(&sta->sae_commit_processing, false);
+	atomic_init(&sta->remove_pending, false);
 	sta->lock = os_semphr_create(1, 1);
 	if (!sta->lock) {
 		wpa_printf(MSG_ERROR, "Failed to create sta->lock for " MACSTR,
