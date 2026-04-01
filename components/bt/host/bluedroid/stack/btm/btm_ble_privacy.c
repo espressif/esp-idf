@@ -298,7 +298,7 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
     cb_params.status = status;
-    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
+    BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
@@ -436,19 +436,12 @@ void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
-    tBTM_LE_RANDOM_CB *random_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-
-    if (random_cb->cb_is_triggered) {
-        return;
-    }
-
     if (status != HCI_SUCCESS) {
         BTM_TRACE_ERROR("set local privacy failed with status: 0x%x", status);
     }
-    random_cb->cb_is_triggered = true;
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
     cb_params.status = (status == HCI_SUCCESS)? BTM_SUCCESS : BTM_ILLEGAL_VALUE;
-    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+    BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
 }
 
 /*******************************************************************************

@@ -80,10 +80,9 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
         BTM_TRACE_DEBUG("set random address failed");
         status = BTM_SET_PRIVACY_FAIL;
     }
-
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
     cb_params.status = status;
-    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+    BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
 }
 /*******************************************************************************
 **

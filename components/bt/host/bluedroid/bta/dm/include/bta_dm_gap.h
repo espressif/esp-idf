@@ -103,10 +103,17 @@ typedef union {
 #define BTM_BLE_LEGACY_GAP_SET_VENDOR_EVT_MASK_COMPLETE_EVT   0x15
 #define BTM_BLE_LEGACY_GAP_SET_CHANNELS_COMPLETE_EVT          0x16
 #define BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT      0x17
+// BTM_BLE_LEGACY_GAP_MAX_EVT should not be modified
+#define BTM_BLE_LEGACY_GAP_MAX_EVT                            0x40
 
 typedef void (*tBTM_BLE_LEGACY_GAP_CBACK)(tBTM_BLE_LEGACY_GAP_EVENT event, tBTM_BLE_LEGACY_GAP_CB_PARAMS *params);
 void BTM_BleLegacyGapRegisterCallback(tBTM_BLE_LEGACY_GAP_CBACK cb);
 void BTM_LegacyBleCallbackTrigger(tBTM_BLE_LEGACY_GAP_EVENT event, tBTM_BLE_LEGACY_GAP_CB_PARAMS *params);
+
+/* Arm legacy GAP one-shot: next HCI complete for this event may invoke the registered callback once. */
+void BTM_BleLegacyGapOneshotArm(tBTM_BLE_LEGACY_GAP_EVENT event);
+/* If armed, disarm and call BTM_LegacyBleCallbackTrigger; otherwise no-op. */
+void BTM_BleLegacyGapOneshotFireIfArmed(tBTM_BLE_LEGACY_GAP_EVENT event, tBTM_BLE_LEGACY_GAP_CB_PARAMS *params);
 #endif // #if BLE_INCLUDED == TRUE
 
 #endif /* BTA_DM_GAP_H */
