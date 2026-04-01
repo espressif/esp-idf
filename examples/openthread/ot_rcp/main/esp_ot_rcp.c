@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -33,6 +33,9 @@
 #include "esp_console.h"
 #if CONFIG_IEEE802154_DEBUG
 #include "ieee802154_debug.h"
+#endif
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+#include "ext_coex_cmd.h"
 #endif
 #endif
 
@@ -72,6 +75,9 @@ void app_main(void)
     esp_console_register_help_command();
 #if CONFIG_IEEE802154_DEBUG
     register_ieee802154_debug_cmd();
+#endif
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    register_cmd_extcoex();
 #endif
 #endif
 
