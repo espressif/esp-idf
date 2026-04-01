@@ -11,3 +11,5 @@ dependencies:
     version: "~0.2.0"
     rules:
       - if: "target in [esp32p4]"
+  esp-qa/coexist-cmd:
+    version: "~0.0.1"
