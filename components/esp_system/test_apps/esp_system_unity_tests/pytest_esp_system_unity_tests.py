@@ -41,7 +41,7 @@ def test_esp_system_esp32c5(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @idf_parametrize(
     'config',
     [
@@ -51,7 +51,7 @@ def test_esp_system_esp32c5(dut: Dut) -> None:
     indirect=['config'],
 )
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_esp_system_esp32c5_eco3(dut: Dut) -> None:
+def test_esp_system_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=60)
 
 
