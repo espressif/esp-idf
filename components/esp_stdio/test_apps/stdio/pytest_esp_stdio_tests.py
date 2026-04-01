@@ -89,6 +89,7 @@ def test_esp_system_stdio_correct_open_and_close(dut: Dut) -> None:
     dut.expect('STDIO_TEST:FD_INIT:IN=0,OUT=1,ERR=2')
     dut.expect('STDIO_TEST:STREAM:STDOUT')
     dut.expect('STDIO_TEST:STREAM:STDERR')
+    dut.expect('STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK')
     dut.expect('Opening /dev/console')
     dut.expect('This should be printed to stdout')
     dut.expect('Closing /dev/console')
@@ -110,6 +111,7 @@ def test_esp_system_stdio_correct_open_and_close(dut: Dut) -> None:
 def test_esp_stdio_non_basic_default_qemu(dut: Dut) -> None:
     dut.expect('Hello World')
     dut.expect('STDIO_TEST:FD_INIT:IN=0,OUT=1,ERR=2')
+    dut.expect('STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK')
     dut.expect('STDIO_TEST:MODE=NON_BASIC')
     dut.expect('STDIO_TEST:NON_BASIC:UNIQUE_OK')
     dut.expect('STDIO_TEST:NON_BASIC:REUSE_OK')
@@ -127,6 +129,7 @@ def test_esp_stdio_non_basic_default_qemu(dut: Dut) -> None:
 def test_esp_stdio_non_basic_small_fd_mode_qemu(dut: Dut) -> None:
     dut.expect('Hello World')
     dut.expect('STDIO_TEST:FD_INIT:IN=0,OUT=1,ERR=2')
+    dut.expect('STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK')
     dut.expect('STDIO_TEST:MODE=NON_BASIC')
     dut.expect('STDIO_TEST:NON_BASIC:SATURATED_OK')
 
@@ -141,6 +144,7 @@ def test_esp_stdio_non_basic_small_fd_mode_qemu(dut: Dut) -> None:
 def test_esp_stdio_basic_mode_qemu(dut: Dut) -> None:
     dut.expect('Hello World')
     dut.expect('STDIO_TEST:FD_INIT:IN=0,OUT=1,ERR=2')
+    dut.expect('STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK')
     dut.expect('STDIO_TEST:MODE=BASIC')
     dut.expect('STDIO_TEST:BASIC:OPEN_OK')
     dut.expect('STDIO_TEST:BASIC:WRITE_OK')
@@ -157,6 +161,7 @@ def test_esp_stdio_non_basic_small_fd_mode(dut: Dut) -> None:
     _expect_app_main_banner(dut)
     dut.expect('Hello World')
     dut.expect('STDIO_TEST:FD_INIT:IN=0,OUT=1,ERR=2')
+    dut.expect('STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK')
     dut.expect('STDIO_TEST:MODE=NON_BASIC')
     dut.expect('STDIO_TEST:NON_BASIC:SATURATED_OK')
 
@@ -170,6 +175,7 @@ def test_esp_stdio_basic_mode(dut: Dut) -> None:
     _expect_app_main_banner(dut)
     dut.expect('Hello World')
     dut.expect('STDIO_TEST:FD_INIT:IN=0,OUT=1,ERR=2')
+    dut.expect('STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK')
     dut.expect('STDIO_TEST:MODE=BASIC')
     dut.expect('STDIO_TEST:BASIC:OPEN_OK')
     dut.expect('STDIO_TEST:BASIC:WRITE_OK')
