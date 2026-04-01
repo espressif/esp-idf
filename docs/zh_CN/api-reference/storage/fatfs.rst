@@ -44,7 +44,6 @@ FatFs 组件提供以下配置选项：
 * ``CONFIG_FATFS_LONG_FILENAMES`` - 选择 FatFs 库如何处理长文件名 (LFN) 支持。可用选项包括 :ref:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` 以禁用 LFN 支持并将名称限制为 `8.3 格式 <https://en.wikipedia.org/wiki/8.3_filename>`_ （仅 SFN）， :ref:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在堆上（默认），以及 :ref:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在栈上。详细信息请参阅 `FatFs 文件名 <http://elm-chan.org/fsw/ff/doc/filename.html>`_。
 * :ref:`CONFIG_FATFS_VOLUME_COUNT` - 设置逻辑 FatFs 卷的数量。增加此值可能会增加基础内存使用量。
 * :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - 如果启用，FatFs 库在分配内部缓冲区时优先使用外部 RAM。如果外部 RAM 分配失败，则回退到内部 RAM。这可能会对热 I/O 路径产生明显的性能开销。禁用此选项可优先考虑性能；启用可减少内部 RAM 使用量。
-* :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - 如果启用，FatFs 库首先尝试在支持 DMA、缓存对齐的内存中分配堆工作缓冲区，以便 SDMMC 传输避免额外的拷贝。此选项在使用 PSRAM 和 SDMMC DMA 的目标芯片上（例如 ESP32-P4）非常有用。如果同时启用此选项和 :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`，FatFs 库会先尝试支持 DMA 的 RAM，然后是外部 RAM，最后是内部 RAM。
 * :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` - 如果启用，FatFs 库会单独分配实例缓冲区，并根据每个已挂载卷的逻辑扇区大小调整其大小。当多个 FatFs 实例使用不同的逻辑扇区大小时，此选项非常有用，因为它可以减少内存使用量。如果禁用，所有实例都使用为最大配置逻辑扇区大小调整大小的缓冲区。
 * :ref:`CONFIG_FATFS_PER_FILE_CACHE` - 如果启用，每个打开的文件使用单独的缓存缓冲区。这提高了 I/O 性能，但当多个文件打开时会增加 RAM 使用量。如果禁用，则使用单个共享缓存，这减少了 RAM 使用量，但可能会增加存储读写操作。
 * :ref:`CONFIG_FATFS_USE_FASTSEEK` - 如果启用，POSIX :cpp:func:`lseek` 运行更快。快速定位不适用于以写入模式打开的文件。要使用快速查找，请以只读模式打开文件，或关闭后以只读模式重新打开。
@@ -284,7 +283,7 @@ exFAT 使用不同的元数据布局。除了 FAT 区域外，它还需要一个
 
 影响行为的主要变量是：
 
-* 缓冲区位置和大小（:ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`、:ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`、:ref:`CONFIG_FATFS_USE_DYN_BUFFERS`、:ref:`CONFIG_FATFS_PER_FILE_CACHE` 和应用程序 I/O 缓冲区大小）。
+* 缓冲区位置和大小（:ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`、:ref:`CONFIG_FATFS_USE_DYN_BUFFERS`、:ref:`CONFIG_FATFS_PER_FILE_CACHE` 和应用程序 I/O 缓冲区大小）。
 * 磨损均衡逻辑扇区大小和模式（``CONFIG_WL_SECTOR_SIZE_*`` 和 ``CONFIG_WL_SECTOR_MODE_*``）。
 * 同步策略（:ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`）。
 * 工作负载模式（事务大小、顺序访问与随机访问、读取与写入比率）。
@@ -301,7 +300,6 @@ exFAT 使用不同的元数据布局。除了 FAT 区域外，它还需要一个
 * 对于带磨损均衡的 SPI flash，当 RAM 预算允许时，优先选择 ``CONFIG_WL_SECTOR_SIZE_4096``，因为它通常更高效。
 * 如果使用 512 字节的 WL 扇区，当应用程序可以接受 flash 扇区擦除期间更高的断电风险时，请使用 ``CONFIG_WL_SECTOR_MODE_PERF``。
 * 在热路径上尽可能优先选择 POSIX ``read``/``write`` 而不是 ``fread``/``fwrite``。有关更广泛的速度指导，请参阅 :doc:`最大化执行速度 <../../api-guides/performance/speed>`。
-* 在 SDMMC DMA 目标（例如带有 PSRAM 的 ESP32-P4）上，启用 :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` 以减少额外的缓冲区拷贝。
 * 对于具有长反向查找的读取密集型工作负载，启用 :ref:`CONFIG_FATFS_USE_FASTSEEK`。
 
 .. note::

@@ -44,7 +44,6 @@ The following configuration options are available for the FatFs component:
 * ``CONFIG_FATFS_LONG_FILENAMES`` - Selects how the FatFs library handles long filename (LFN) support. The available options are :ref:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` to disable LFN support and limit names to the `8.3 format <https://en.wikipedia.org/wiki/8.3_filename>`_ (SFN only), :ref:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` to enable LFN support with the LFN working buffer stored on the heap (default), and :ref:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` to enable LFN support with the LFN working buffer stored on the stack. For details, see `FatFs filenames <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
 * :ref:`CONFIG_FATFS_VOLUME_COUNT` - Sets the number of logical FatFs volumes. Increasing this value can increase baseline memory usage.
 * :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - If enabled, the FatFs library prefers external RAM when allocating internal buffers. If external RAM allocation fails, it falls back to internal RAM. This can have a noticeable performance cost on hot I/O paths. Disable this option to prioritize performance; enable it to reduce internal RAM usage.
-* :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - If enabled, the FatFs library tries to allocate heap work buffers in DMA-capable, cache-aligned memory first so SDMMC transfers avoid extra copies. This option is useful on targets that use PSRAM with SDMMC DMA (for example ESP32-P4). If this option and :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` are both enabled, the FatFs library tries DMA-capable RAM first, then external RAM, then internal RAM.
 * :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` - If enabled, the FatFs library allocates instance buffers separately and sizes them according to each mounted volume's logical sector size. This option is useful when multiple FatFs instances use different logical sector sizes, as it can reduce memory usage. If disabled, all instances use buffers sized for the largest configured logical sector size.
 * :ref:`CONFIG_FATFS_PER_FILE_CACHE` - If enabled, each open file uses a separate cache buffer. This improves I/O performance but increases RAM usage when multiple files are open. If disabled, a single shared cache is used, which reduces RAM usage but can increase storage read/write operations.
 * :ref:`CONFIG_FATFS_USE_FASTSEEK` - If enabled, POSIX :cpp:func:`lseek` runs faster. Fast seek does not work for files opened in write mode. To use fast seek, open the file in read-only mode, or close and reopen it in read-only mode.
@@ -284,7 +283,7 @@ FatFs behavior can be tuned for different priorities by choosing the right confi
 
 The main variables that affect behavior are:
 
-* Buffer placement and sizing (:ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`, :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`, :ref:`CONFIG_FATFS_USE_DYN_BUFFERS`, :ref:`CONFIG_FATFS_PER_FILE_CACHE`, and application I/O buffer sizes).
+* Buffer placement and sizing (:ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`, :ref:`CONFIG_FATFS_USE_DYN_BUFFERS`, :ref:`CONFIG_FATFS_PER_FILE_CACHE`, and application I/O buffer sizes).
 * Wear leveling logical sector size and mode (``CONFIG_WL_SECTOR_SIZE_*`` and ``CONFIG_WL_SECTOR_MODE_*``).
 * Sync strategy (:ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`).
 * Workload pattern (transaction sizes, sequential vs random access, read vs write ratio).
@@ -301,7 +300,6 @@ For throughput-oriented workloads:
 * For SPI flash with wear leveling, prefer ``CONFIG_WL_SECTOR_SIZE_4096`` when RAM budget allows, as it is generally more efficient.
 * If using 512-byte WL sectors, use ``CONFIG_WL_SECTOR_MODE_PERF`` when your application can accept the higher power-loss risk during flash-sector erase.
 * Prefer POSIX ``read``/``write`` over ``fread``/``fwrite`` on hot paths when possible. For broader speed guidance, see :doc:`Maximizing Execution Speed <../../api-guides/performance/speed>`.
-* On SDMMC DMA targets (for example ESP32-P4 with PSRAM), enable :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` to reduce extra buffer copies.
 * Enable :ref:`CONFIG_FATFS_USE_FASTSEEK` for read-heavy workloads with long backward seeks.
 
 .. note::
