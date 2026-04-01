@@ -35,6 +35,8 @@
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/nullfs.h"
+#include "esp_heap_caps.h"
+#endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -322,29 +324,171 @@ int console_access(__attribute__((unused)) void *ctx, const char *path, int amod
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
+
+/*
+ * Logical /dev/console fds (0,1,2,...) are not UART port numbers. uart_vfs select uses fd_set bits as
+ * SOC UART indices; without remapping, monitoring stdout/stderr selects UART1/UART2 and corrupts
+ * s_uart_select_count / ISR registration (only UART0 is the console sink).
+ */
+typedef struct {
+    void *uart_args;
+    fd_set *readfds;
+    fd_set *writefds;
+    fd_set *exceptfds;
+    uint64_t interested_read;
+    uint64_t interested_write;
+    uint64_t interested_except;
+} console_select_ctx_t;
+
+/* Kconfig allows up to 64 logical fds; uint64_t masks and (1ULL << i) require i < 64. */
+enum { CONSOLE_SELECT_MAX_SCAN = 64 };
+
 static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                                       esp_vfs_select_sem_t select_sem, void **end_select_args)
 {
-    // start_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
     const mux_entry_t *entry = get_primary_entry();
     assert(entry);
-    if (entry->fd >= 0 && entry->ops->select && entry->ops->select->start_select) {
-        return entry->ops->select->start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
+    *end_select_args = NULL;
+
+    if (entry->fd < 0 || entry->ops->select == NULL || entry->ops->select->start_select == NULL) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
-    return ESP_ERR_NOT_SUPPORTED;
+    uint64_t interested_read = 0;
+    uint64_t interested_write = 0;
+    uint64_t interested_except = 0;
+
+    const int scan = nfds < CONSOLE_SELECT_MAX_SCAN ? nfds : CONSOLE_SELECT_MAX_SCAN;
+    for (int i = 0; i < scan; ++i) {
+        if (!is_fd_valid(i)) {
+            continue;
+        }
+        if (readfds && FD_ISSET(i, readfds)) {
+            interested_read |= (1ULL << i);
+        }
+        if (writefds && FD_ISSET(i, writefds)) {
+            interested_write |= (1ULL << i);
+        }
+        if (exceptfds && FD_ISSET(i, exceptfds)) {
+            interested_except |= (1ULL << i);
+        }
+    }
+
+    if (interested_read == 0 && interested_write == 0 && interested_except == 0) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    const int hw = entry->fd;
+
+    if (readfds) {
+        FD_ZERO(readfds);
+        if (interested_read) {
+            FD_SET(hw, readfds);
+        }
+    }
+    if (writefds) {
+        FD_ZERO(writefds);
+        if (interested_write) {
+            FD_SET(hw, writefds);
+        }
+    }
+    if (exceptfds) {
+        FD_ZERO(exceptfds);
+        if (interested_except) {
+            FD_SET(hw, exceptfds);
+        }
+    }
+
+    const int forward_nfds = nfds > hw + 1 ? nfds : hw + 1;
+
+    console_select_ctx_t *ctx = heap_caps_malloc(sizeof(console_select_ctx_t), MALLOC_CAP_INTERNAL);
+    if (ctx == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    ctx->uart_args = NULL;
+    ctx->readfds = readfds;
+    ctx->writefds = writefds;
+    ctx->exceptfds = exceptfds;
+    ctx->interested_read = interested_read;
+    ctx->interested_write = interested_write;
+    ctx->interested_except = interested_except;
+
+    esp_err_t err = entry->ops->select->start_select(forward_nfds, readfds, writefds, exceptfds, select_sem,
+                                                     &ctx->uart_args);
+    if (err != ESP_OK) {
+        if (readfds) {
+            FD_ZERO(readfds);
+            for (int i = 0; i < scan; ++i) {
+                if (interested_read & (1ULL << i)) {
+                    FD_SET(i, readfds);
+                }
+            }
+        }
+        if (writefds) {
+            FD_ZERO(writefds);
+            for (int i = 0; i < scan; ++i) {
+                if (interested_write & (1ULL << i)) {
+                    FD_SET(i, writefds);
+                }
+            }
+        }
+        if (exceptfds) {
+            FD_ZERO(exceptfds);
+            for (int i = 0; i < scan; ++i) {
+                if (interested_except & (1ULL << i)) {
+                    FD_SET(i, exceptfds);
+                }
+            }
+        }
+        heap_caps_free(ctx);
+        return err;
+    }
+
+    *end_select_args = ctx;
+    return ESP_OK;
+}
+
+static void console_expand_fdset(fd_set *fds, uint64_t interested, int hw)
+{
+    if (fds == NULL) {
+        return;
+    }
+    const bool ready = FD_ISSET(hw, fds);
+    FD_ZERO(fds);
+    if (!ready || interested == 0) {
+        return;
+    }
+    for (int i = 0; i < CONSOLE_SELECT_MAX_SCAN; ++i) {
+        if (interested & (1ULL << i)) {
+            FD_SET(i, fds);
+        }
+    }
 }
 
 esp_err_t console_end_select(void *end_select_args)
 {
-    // end_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
+    if (end_select_args == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    console_select_ctx_t *ctx = (console_select_ctx_t *)end_select_args;
     const mux_entry_t *entry = get_primary_entry();
     assert(entry);
+
+    esp_err_t ret = ESP_OK;
     if (entry->fd >= 0 && entry->ops->select && entry->ops->select->end_select) {
-        return entry->ops->select->end_select(end_select_args);
+        ret = entry->ops->select->end_select(ctx->uart_args);
     }
 
-    return ESP_ERR_NOT_SUPPORTED;
+    const int hw = entry->fd;
+    if (hw >= 0) {
+        console_expand_fdset(ctx->readfds, ctx->interested_read, hw);
+        console_expand_fdset(ctx->writefds, ctx->interested_write, hw);
+        console_expand_fdset(ctx->exceptfds, ctx->interested_except, hw);
+    }
+
+    heap_caps_free(ctx);
+    return ret;
 }
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
