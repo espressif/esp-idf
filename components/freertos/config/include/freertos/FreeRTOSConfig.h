@@ -289,9 +289,6 @@
     #ifdef CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
         #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS    1
     #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
-    #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-        #define configCHECK_MUTEX_GIVEN_BY_OWNER               1
-    #endif /* CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER */
 #endif /* !CONFIG_FREERTOS_SMP */
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
