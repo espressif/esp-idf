@@ -894,8 +894,20 @@ static void module_action(sleep_retention_module_t module, sleep_retention_modul
     switch (action)
     {
     case 0: break;  /* Nothing to do */
-    case 1: set_reference(instance(dep_module), module); break; /* allocate */
-    case 2: clr_reference(instance(dep_module), module); break; /* free */
+    case 1: { /* allocate */
+            set_reference(instance(dep_module), module);
+            if (module_is_passive(instance(dep_module)) && module_runtime_attach(instance(dep_module))) {
+                assert(module_runtime_attach(instance(module)));
+            }
+        }
+        break;
+    case 2: { /* free */
+            clr_reference(instance(dep_module), module);
+            if (module_is_passive(instance(dep_module)) && module_runtime_attach(instance(dep_module))) {
+                assert(module_runtime_attach(instance(module)));
+            }
+        }
+        break;
     case 3: refarray_set_bit(instance(dep_module), 1, module);  break;  /* attach */
     case 4: refarray_clr_bit(instance(dep_module), 1, module);  break;  /* detach */
     default:  break;
