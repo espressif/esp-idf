@@ -51,7 +51,10 @@ function(__init_kconfig)
     # include(project.cmake) but before project().
     __resolve_sdkconfig_defaults()
 
-    idf_build_set_property(GENERATE_SDKCONFIG 1)
+    __get_default_value(VARIABLE GENERATE_SDKCONFIG
+                        DEFAULT 1
+                        OUTPUT generate_sdkconfig)
+    idf_build_set_property(GENERATE_SDKCONFIG "${generate_sdkconfig}")
 
     # Setup ESP-IDF root Kconfig and sdkconfig.rename files.
     idf_build_set_property(__ROOT_KCONFIG "${idf_path}/Kconfig")
