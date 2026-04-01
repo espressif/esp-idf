@@ -543,17 +543,17 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
     }
 
     if (sta->lock && os_semphr_take(sta->lock, 0)) {
+        atomic_store(&sta->sae_commit_processing, true);
         HOSTAPD_STA_LIST_UNLOCK(hapd);
 
-        sta->sae_commit_processing = true;
         ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
 
-        if (sta->remove_pending) {
+        if (atomic_load(&sta->remove_pending)) {
             ap_free_sta(hapd, sta);
             os_free(frm);
             return;
         }
-        sta->sae_commit_processing = false;
+        atomic_store(&sta->sae_commit_processing, false);
         os_semphr_give(sta->lock);
         uint16_t aid = 0;
         if (ret != WLAN_STATUS_SUCCESS &&
@@ -613,7 +613,7 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
 
     ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
 
-    if (sta->remove_pending) {
+    if (atomic_load(&sta->remove_pending)) {
         ap_free_sta(hapd, sta);
         goto done;
     }
@@ -782,7 +782,7 @@ static int wpa3_hostap_handle_auth(u8 *buf, size_t len, u32 auth_transaction, u1
     if (auth_transaction == SAE_MSG_COMMIT) {
         HOSTAPD_STA_LIST_LOCK(hapd);
         struct sta_info *sta = ap_get_sta_internal(hapd, bssid);
-        if (sta && sta->sae_commit_processing) {
+        if (sta && atomic_load(&sta->sae_commit_processing)) {
             HOSTAPD_STA_LIST_UNLOCK(hapd);
             return ESP_OK;
         }

@@ -326,8 +326,14 @@ int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
         if (sta_lk) {
             HOSTAPD_STA_LIST_LOCK(hapd);
             sta = ap_get_sta_internal(hapd, sta_mac);
-            if (sta && sta->lock == sta_lk)
+            if (sta && sta->lock == sta_lk) {
                 os_semphr_give(sta_lk);
+            } else if (!sta) {
+                wpa_printf(MSG_DEBUG,
+                       "WPA: sta->lock not released (STA " MACSTR
+                       " gone); ap_free_sta released semaphore",
+                       MAC2STR(sta_mac));
+            }
             HOSTAPD_STA_LIST_UNLOCK(hapd);
             sta_lk = NULL;
         }
