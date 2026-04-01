@@ -150,7 +150,7 @@ static int auth_sae_send_commit(struct hostapd_data *hapd,
     }
 
 #ifdef ESP_SUPPLICANT
-    if (sta->remove_pending) {
+    if (atomic_load(&sta->remove_pending)) {
         reply_res = -1;
     } else {
         reply_res = esp_send_sae_auth_reply(hapd, sta->addr, bssid, WLAN_AUTH_SAE, 1,
@@ -176,7 +176,7 @@ static int auth_sae_send_confirm(struct hostapd_data *hapd,
     }
 
 #ifdef ESP_SUPPLICANT
-    if (sta->remove_pending) {
+    if (atomic_load(&sta->remove_pending)) {
         reply_res = -1;
         wpabuf_free(data);
     } else {
@@ -256,7 +256,7 @@ void sae_accept_sta(struct hostapd_data *hapd, struct sta_info *sta)
     sta->flags |= WLAN_STA_AUTH;
 
 #ifdef ESP_SUPPLICANT
-    sta->sae_commit_processing = false;
+    atomic_store(&sta->sae_commit_processing, false);
 #endif /* ESP_SUPPLICANT */
 
     sta->auth_alg = WLAN_AUTH_SAE;
@@ -604,7 +604,7 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
             resp = WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ;
 
 #ifdef ESP_SUPPLICANT
-            sta->sae_commit_processing = false;
+            atomic_store(&sta->sae_commit_processing, false);
 #endif /* ESP_SUPPLICANT */
 
             goto reply;
@@ -673,7 +673,7 @@ reply:
             data = wpabuf_alloc_copy(pos, 2);
         }
 #ifdef ESP_SUPPLICANT
-        if (!sta->remove_pending) {
+        if (!atomic_load(&sta->remove_pending)) {
             esp_send_sae_auth_reply(hapd, bssid, bssid, WLAN_AUTH_SAE,
                                     auth_transaction, resp,
                                     data ? wpabuf_head(data) : (u8 *) "",

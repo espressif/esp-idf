@@ -505,7 +505,7 @@ static void ap_free_sta_timeout(void *ctx, void *data)
                 HOSTAPD_STA_LIST_UNLOCK(hapd);
                 ap_free_sta(hapd, sta);
             } else {
-                sta->remove_pending = true;
+                atomic_store(&sta->remove_pending, true);
                 HOSTAPD_STA_LIST_UNLOCK(hapd);
             }
             goto done;
@@ -560,7 +560,7 @@ bool wpa_ap_remove(u8* bssid)
             HOSTAPD_STA_LIST_UNLOCK(hapd);
             ap_free_sta(hapd, sta);
         } else {
-            sta->remove_pending = true;
+            atomic_store(&sta->remove_pending, true);
             HOSTAPD_STA_LIST_UNLOCK(hapd);
         }
         return true;
