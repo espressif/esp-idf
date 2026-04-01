@@ -32,6 +32,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
         # the external ULP project. This is a workaround to the bug https://public.kitware.com/Bug/view.php?id=16137.
         string(REPLACE ";" "|" ulp_s_sources "${ulp_s_sources}")
 
+        idf_build_get_property(sdkconfig SDKCONFIG)
         idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
         idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
         idf_build_get_property(idf_path IDF_PATH)
@@ -75,7 +76,43 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-lp-core-riscv.cmake)
         endif()
 
-        externalproject_add(${app_name}
+        if(IDF_BUILD_V2)
+            externalproject_add(${app_name}
+                SOURCE_DIR ${project_path}
+                BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
+                INSTALL_COMMAND ""
+                CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+                            -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                            -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
+                            -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
+                            -DULP_APP_NAME=${app_name}
+                            -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
+                            -DULP_VAR_PREFIX=${prefix}
+                            -DULP_TYPE=${type}
+                            -DCOMPONENT_DIR=${COMPONENT_DIR}
+                            -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
+                            -DIDF_TARGET=${idf_target}
+                            -DIDF_PATH=${idf_path}
+                            -DSDKCONFIG_DEFAULTS=${sdkconfig}
+                            -DPYTHON=${python}
+                            -DPYTHON_DEPS_CHECKED=1
+                            -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
+                            -DIDF_CUSTOM_TOOLCHAIN=1
+                            ${extra_cmake_args}
+                BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
+                BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
+                                ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
+                BUILD_ALWAYS 1
+                )
+
+            externalproject_get_property(${app_name} BINARY_DIR)
+            add_custom_target(menuconfig-${app_name}
+                COMMAND ${CMAKE_COMMAND} --build ${BINARY_DIR} --target menuconfig
+                DEPENDS ${app_name}-prefix/src/${app_name}-stamp/${app_name}-configure
+                USES_TERMINAL
+            )
+        else()
+            externalproject_add(${app_name}
                 SOURCE_DIR ${project_path}
                 BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
                 INSTALL_COMMAND ""
@@ -101,6 +138,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                                 ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
                 BUILD_ALWAYS 1
                 )
+        endif()
 
         set_property(TARGET ${app_name} PROPERTY ULP_SOURCES "${sources}")
 

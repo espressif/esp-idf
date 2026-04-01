@@ -1,4 +1,6 @@
-include(${SDKCONFIG_CMAKE})
+if(NOT IDF_BUILD_V2)
+    include(${SDKCONFIG_CMAKE})
+endif()
 enable_language(C ASM)
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
