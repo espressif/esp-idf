@@ -65,6 +65,7 @@ extern "C" {
 #define REGDMA_PCNT_LINK(_pri)              ((0x25 << 8) | _pri)
 #define REGDMA_MCPWM_LINK(_pri)             ((0x26 << 8) | _pri)
 #define REGDMA_LCDCAM_LINK(_pri)            ((0x29 << 8) | _pri)
+#define REGDMA_H264_LINK(_pri)              ((0x2a << 8) | _pri)
 #define REGDMA_PPA_LINK(_pri)               ((0x2B << 8) | _pri)
 #define REGDMA_DMA2D_LINK(_pri)             ((0x2C << 8) | _pri)
 
@@ -95,6 +96,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_MCPWM                   REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_LCDCAM                  REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_H264                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_PPA                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_DMA2D                   REGDMA_LINK_PRI_GENERAL_PERIPH
 
