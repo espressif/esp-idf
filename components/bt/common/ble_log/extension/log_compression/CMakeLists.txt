@@ -9,7 +9,7 @@ set(BLE_MESH_LOG_INDEX_HEADER "\"\"")
 set(BLE_MESH_TAGS "")
 set(BLE_MESH_TAGS_PRESERVE "")
 
-# default config value for host module
+# default config value for host module (Bluedroid or NimBLE)
 set(HOST_CODE_PATH "")
 set(HOST_LOG_INDEX_HEADER "\"\"")
 set(BLE_HOST_TAGS "")
@@ -41,6 +41,20 @@ if(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_BLUEDROID_ENABLED)
         "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/bluedroid/make_bluedroid_log_macro.py")
 
     include(${CMAKE_CURRENT_LIST_DIR}/cmake/ble_host_bluedroid_tags.cmake)
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/${HOST_LOG_INDEX_HEADER}")
+        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${HOST_LOG_INDEX_HEADER}" "")
+    endif()
+    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH ${HOST_CODE_PATH})
+elseif(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_NIMBLE_ENABLED)
+    list(APPEND LOG_COMPRESSED_MODULE "BLE_HOST")
+
+    set(HOST_CODE_PATH "host/nimble/nimble/nimble/host")
+    set(HOST_LOG_INDEX_HEADER "nimble_log_index.h")
+    set(BLE_HOST_LOG_SCRIPT_PATH
+        "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/nimble/make_nimble_log_macro.py")
+    set(BLE_HOST_TAGS "MODLOG_DFLT, BLE_HS_LOG")
+    set(BLE_HOST_TAGS_PRESERVE "")
+
     if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/${HOST_LOG_INDEX_HEADER}")
         file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${HOST_LOG_INDEX_HEADER}" "")
     endif()
