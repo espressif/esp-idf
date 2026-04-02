@@ -296,9 +296,9 @@ TEST_CASE("Test TEE Secure Storage - Null Pointer and Zero Length", "[sec_storag
     };
 
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_encrypt(&aead_ctx, NULL, sizeof(tag), data));
-    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_encrypt(&aead_ctx, tag, 0, data));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_encrypt(&aead_ctx, tag, 0, data));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_decrypt(&aead_ctx, NULL, sizeof(tag), data));
-    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_decrypt(&aead_ctx, tag, 0, data));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_decrypt(&aead_ctx, tag, 0, data));
 
     aead_ctx.input = NULL;
     aead_ctx.input_len = sizeof(data);
@@ -307,8 +307,8 @@ TEST_CASE("Test TEE Secure Storage - Null Pointer and Zero Length", "[sec_storag
 
     aead_ctx.input = data;
     aead_ctx.input_len = 0;
-    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_encrypt(&aead_ctx, tag, sizeof(tag), data));
-    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_decrypt(&aead_ctx, tag, sizeof(tag), data));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_encrypt(&aead_ctx, tag, sizeof(tag), data));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_decrypt(&aead_ctx, tag, sizeof(tag), data));
 
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_id));
 

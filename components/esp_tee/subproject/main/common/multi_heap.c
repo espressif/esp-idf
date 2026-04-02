@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,10 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
     /* Can't use libc assert() here as it calls printf() which can cause another malloc() for a newlib lock.
        Also, it's useful to be able to print the memory address where corruption was detected.
     */
-    (void) condition;
+    if (!condition) {
+        esp_rom_printf(format, line, address);
+        abort();
+    }
 }
 
 #define MULTI_HEAP_ASSERT(CONDITION, ADDRESS) \
