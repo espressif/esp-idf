@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1448,12 +1448,10 @@ static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif)
 
     ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
-    if (esp_netif->timer_running) {
-        ESP_LOGD(TAG, "if%p start ip lost tmr: already started", esp_netif);
-        return ESP_OK;
-    }
-
     if ( netif && (CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL > 0)) {
+        if (esp_netif->timer_running) {
+            sys_untimeout(esp_netif_ip_lost_timer, (void *)esp_netif);
+        }
         esp_netif->timer_running = true;
         sys_timeout(CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL * 1000, esp_netif_ip_lost_timer, (void *)esp_netif);
         ESP_LOGD(TAG, "if%p start ip lost tmr: interval=%d", esp_netif, CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL);
