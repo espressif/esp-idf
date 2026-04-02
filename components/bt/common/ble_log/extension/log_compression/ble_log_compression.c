@@ -16,6 +16,14 @@
 
 #if CONFIG_BLE_COMPRESSED_LOG_ENABLE
 
+#define BLE_CP_DROP_LOG_PERIOD 256U
+
+#define BLE_CP_TRY_PUSH(expr) do { \
+        if ((expr) != 0) { \
+            return -1; \
+        } \
+    } while (0)
+
 #define BUF_NAME(name, idx) name##_buffer##idx
 #define BUF_MGMT_NAME(name) name##_log_buffer_mgmt
 
@@ -42,10 +50,16 @@ INIT_BUFFER_MGMT(mesh, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
 char * mesh_last_task_handle = NULL;
 #endif
 
-#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && CONFIG_BT_BLUEDROID_ENABLED
 DECLARE_BUFFERS(host, CONFIG_BLE_HOST_COMPRESSED_LOG_BUFFER_LEN, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
 INIT_BUFFER_MGMT(host, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
 char * host_last_task_handle = NULL;
+#endif
+
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && CONFIG_BT_NIMBLE_ENABLED
+DECLARE_BUFFERS(nimble, CONFIG_BLE_HOST_COMPRESSED_LOG_BUFFER_LEN, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
+INIT_BUFFER_MGMT(nimble, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
+char * nimble_last_task_handle = NULL;
 #endif
 
 /* The maximum number of supported parameters is 64 */
@@ -66,10 +80,15 @@ int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t **mgmt)
         last_handle = &mesh_last_task_handle;
         break;
 #endif
-#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
     case BLE_COMPRESSED_LOG_OUT_SOURCE_HOST:
+#if CONFIG_BT_BLUEDROID_ENABLED
         buffer_mgmt = BUF_MGMT_NAME(host);
         last_handle = &host_last_task_handle;
+#elif CONFIG_BT_NIMBLE_ENABLED
+        buffer_mgmt = BUF_MGMT_NAME(nimble);
+        last_handle = &nimble_last_task_handle;
+#endif
         break;
 #endif
     default:
@@ -80,10 +99,18 @@ int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t **mgmt)
     for (int i = 0; i < LOG_CP_MAX_LOG_BUFFER_USED_SIMU; i++) {
         if (ble_log_cas_acquire(&(buffer_mgmt[i].busy))) {
             *mgmt = &buffer_mgmt[i];
-            ble_log_cp_push_u8(*mgmt, source);
+            if (ble_log_cp_push_u8(*mgmt, source) != 0) {
+                (*mgmt)->idx = 0;
+                ble_log_cas_release(&((*mgmt)->busy));
+                return -1;
+            }
             if (*last_handle == NULL ||
                 *last_handle != cur_handle) {
-                ble_log_cp_push_u8(*mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_TASK_SWITCH));
+                if (ble_log_cp_push_u8(*mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_TASK_SWITCH)) != 0) {
+                    (*mgmt)->idx = 0;
+                    ble_log_cas_release(&((*mgmt)->busy));
+                    return -1;
+                }
                 *last_handle = cur_handle;
             }
             return 0;
@@ -108,8 +135,8 @@ int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32
 {
     uint8_t arg_type = 0;
 
-    ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, args_cnt));
-    ble_log_cp_push_u16(mgmt, log_index);
+    BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, args_cnt)));
+    BLE_CP_TRY_PUSH(ble_log_cp_push_u16(mgmt, log_index));
     uint8_t size_info_idx = mgmt->idx;
     uint8_t *cur = &(mgmt->buffer)[mgmt->idx];
     uint8_t size_info = 0;
@@ -117,20 +144,20 @@ int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32
     for (size_t i = 0; i < args_cnt; i++) {
         if (i % 2) {
             arg_type = va_arg(args, size_t);
-            ble_log_cp_push_u8(mgmt, size_info|arg_type);
+            BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, size_info|arg_type));
             size_info = 0;
             cur++;
         } else {
             arg_type = va_arg(args, size_t);
             if (i == args_cnt - 1) {
-                ble_log_cp_push_u8(mgmt, arg_type);
+                BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, arg_type));
             } else {
                 size_info = arg_type << 4;
             }
         }
         if (arg_type >= ARG_SIZE_TYPE_MAX) {
             printf("Found invalid arg type %08lx type %d", log_index, arg_type);
-            return 0;
+            return -1;
         }
     }
 
@@ -148,27 +175,31 @@ int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32
                 uint32_t u32v = va_arg(args, size_t);
                 if (likely(u32v)) {
                     if (u32v <= 0xff) {
-                        ble_log_cp_push_u8(mgmt, 3);
-                        ble_log_cp_push_u8(mgmt, u32v);
-                        ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_LZU32, !(i%2));
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, 3));
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, u32v));
+                        BLE_CP_TRY_PUSH(
+                            ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_LZU32, !(i%2))
+                        );
                         break;
                     } else if (u32v <= 0xffff) {
-                        ble_log_cp_push_u8(mgmt, 2);
-                        ble_log_cp_push_u16(mgmt, u32v);
-                        ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_LZU32, !(i%2));
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, 2));
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u16(mgmt, u32v));
+                        BLE_CP_TRY_PUSH(
+                            ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_LZU32, !(i%2))
+                        );
                         break;
                     } else {
-                        ble_log_cp_push_u32(mgmt, u32v);
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u32(mgmt, u32v));
                     }
                 } else {
-                    ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_AZU32, !(i%2));
+                    BLE_CP_TRY_PUSH(ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_AZU32, !(i%2)));
                 }
             break;
             case ARG_SIZE_TYPE_U64:
                 uint64_t u64v = va_arg(args, uint64_t);
                 if (likely(u64v)) {
                     if (unlikely(u64v >> 48)) {
-                        ble_log_cp_push_u64(mgmt, u64v);
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u64(mgmt, u64v));
                     } else {
                         uint32_t tmpv = 0;
                         uint8_t lz = 0;
@@ -179,45 +210,46 @@ int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32
                             tmpv = u64v >> 32;
                         }
                         lz += __builtin_clz(tmpv) / 8;
-                        ble_log_cp_push_u8(mgmt, lz);
+                        BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, lz));
                         switch (8-lz) {
                             case 5:
-                                ble_log_cp_push_u32(mgmt, (uint32_t)u64v);
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u32(mgmt, (uint32_t)u64v));
                                 [[fallthrough]];
                             case 1:
-                                ble_log_cp_push_u8(mgmt, (uint8_t)tmpv);
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, (uint8_t)tmpv));
                             break;
                             case 6:
-                                ble_log_cp_push_u32(mgmt, (uint32_t)u64v);
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u32(mgmt, (uint32_t)u64v));
                                 [[fallthrough]];
                             case 2:
-                                ble_log_cp_push_u16(mgmt, (uint16_t)tmpv);
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u16(mgmt, (uint16_t)tmpv));
                             break;
                             case 7:
-                                ble_log_cp_push_u32(mgmt, (uint32_t)u64v);
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u32(mgmt, (uint32_t)u64v));
                                 [[fallthrough]];
                             case 3:
-                                ble_log_cp_push_u8(mgmt, (uint8_t)tmpv);
-                                ble_log_cp_push_u16(mgmt, (uint16_t)(tmpv >> 8));
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, (uint8_t)tmpv));
+                                BLE_CP_TRY_PUSH(ble_log_cp_push_u16(mgmt, (uint16_t)(tmpv >> 8)));
                             break;
                             default:
                                 assert(0);
                                 break;
                         }
-                        ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_LZU64, !(i%2));
+                        BLE_CP_TRY_PUSH(
+                            ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_LZU64, !(i%2))
+                        );
                     }
                 } else {
-                    ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_AZU64, !(i%2));
+                    BLE_CP_TRY_PUSH(ble_log_cp_update_half_byte(mgmt, size_info_idx + i/2, ARG_SIZE_TYPE_AZU64, !(i%2)));
                 }
             break;
             case ARG_SIZE_TYPE_STR:
                 char *str_p = (char *)va_arg(args, char *);
-                ble_log_cp_push_buf(mgmt, (const uint8_t *)str_p, strlen(str_p) + 1);
+                BLE_CP_TRY_PUSH(ble_log_cp_push_buf(mgmt, (const uint8_t *)str_p, strlen(str_p) + 1));
             break;
             default:
                 printf("Invalid size %d\n", arg_type);
-                assert(0);
-            break;
+                return -1;
         }
     }
     return 0;
@@ -231,7 +263,10 @@ int ble_log_compressed_hex_printv(uint8_t source, uint32_t log_index, size_t arg
         return 0;
     }
 
-    ble_log_compressed_hex_print_internal(mgmt, log_index, args_cnt, args);
+    if (ble_log_compressed_hex_print_internal(mgmt, log_index, args_cnt, args) != 0) {
+        ble_compressed_log_buffer_free(mgmt);
+        return 0;
+    }
     ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
     ble_compressed_log_buffer_free(mgmt);
     return 0;
@@ -246,12 +281,19 @@ int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index, size_t args
     }
 
     if (args_cnt == 0) {
-        ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, 0));
-        ble_log_cp_push_u16(mgmt, log_index);
+        if (ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_ARGS, 0)) != 0 ||
+            ble_log_cp_push_u16(mgmt, log_index) != 0) {
+            ble_compressed_log_buffer_free(mgmt);
+            return 0;
+        }
     } else {
         va_list args;
         va_start(args, args_cnt);
-        ble_log_compressed_hex_print_internal(mgmt, log_index, args_cnt, args);
+        if (ble_log_compressed_hex_print_internal(mgmt, log_index, args_cnt, args) != 0) {
+            va_end(args);
+            ble_compressed_log_buffer_free(mgmt);
+            return 0;
+        }
         va_end(args);
     }
 
@@ -269,16 +311,23 @@ int ble_log_compressed_hex_print_buf(uint8_t source, uint32_t log_index, uint8_t
     }
 
     if (buf == NULL && len != 0) {
-        ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_NULL_BUF));
-        ble_log_cp_push_u16(mgmt, log_index);
+        if (ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_NULL_BUF)) != 0 ||
+            ble_log_cp_push_u16(mgmt, log_index) != 0) {
+            ble_compressed_log_buffer_free(mgmt);
+            return 0;
+        }
         ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
         ble_compressed_log_buffer_free(mgmt);
         return 0;
     }
 
-    ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_BUF, buf_idx));
-    ble_log_cp_push_u16(mgmt, log_index);
-    ble_log_cp_push_buf(mgmt, buf, len);
+    if (ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_HEX_BUF, buf_idx)) != 0 ||
+        ble_log_cp_push_u16(mgmt, log_index) != 0 ||
+        ble_log_cp_push_u16(mgmt, (uint16_t)len) != 0 ||
+        ble_log_cp_push_buf(mgmt, buf, (uint16_t)len) != 0) {
+        ble_compressed_log_buffer_free(mgmt);
+        return 0;
+    }
     ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
     ble_compressed_log_buffer_free(mgmt);
     return 0;
