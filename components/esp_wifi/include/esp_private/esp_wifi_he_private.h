@@ -171,7 +171,7 @@ esp_err_t esp_wifi_softap_add_color_change_announcement(uint8_t color);
 * @attention This API should be called after esp_wifi_start().
 *
 * @param[in] bss_max_idle_enable enable bss max idle
-* @param[in] bss_max_idle_period_secs bss max idle period, unit seconds
+* @param[in] bss_max_idle_period_secs bss max idle period, unit seconds. Minimum value will be 10
 * @param[in] protected_keep_alive using protected/unprotected frame to keep alive
 *
 * @return
