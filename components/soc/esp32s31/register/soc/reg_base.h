@@ -104,7 +104,7 @@
 #define DR_REG_LP_I2C_BASE                        0x20811000
 #define DR_REG_LP_SPI_BASE                        0x20812000
 #define DR_REG_LP_I2C_ANA_MST_BASE                0x20813000
-#define DR_REG_LP_TRNG_BASE                       0x20814000
+#define DR_REG_TRNG_BASE                          0x20814000
 #define DR_REG_ADC_BASE                           0x20815000
 #define DR_REG_TOUCH_SENS_BASE                    0x20816000
 #define DR_REG_LP_MAILBOX_BASE                    0x20817000
