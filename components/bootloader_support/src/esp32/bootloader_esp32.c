@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,8 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
+
 #include "hal/gpio_hal.h"
 #include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"
@@ -88,6 +90,7 @@ static inline esp_err_t bootloader_check_rated_cpu_clock(void)
     return ESP_OK;
 }
 
+#if SOC_RTC_WDT_SUPPORTED
 static void wdt_reset_cpu0_info_enable(void)
 {
     //We do not reset core1 info here because it didn't work before cpu1 was up. So we put it into call_start_cpu1.
@@ -168,6 +171,7 @@ static void bootloader_check_wdt_reset(void)
     }
     wdt_reset_cpu0_info_enable();
 }
+#endif // SOC_RTC_WDT_SUPPORTED
 
 esp_err_t bootloader_init(void)
 {
@@ -240,10 +244,14 @@ esp_err_t bootloader_init(void)
     }
 #endif // #if !CONFIG_APP_BUILD_TYPE_RAM
 
+#if SOC_RTC_WDT_SUPPORTED
     // check whether a WDT reset happened
     bootloader_check_wdt_reset();
+#endif
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
     return ret;

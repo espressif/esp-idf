@@ -138,16 +138,6 @@ static size_t find_unused_context_index(void)
     return FF_VOLUMES;
 }
 
-esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, size_t max_files, FATFS** out_fs)
-{
-    esp_vfs_fat_conf_t conf = {
-        .base_path = base_path,
-        .fat_drive = fat_drive,
-        .max_files = max_files,
-    };
-    return esp_vfs_fat_register_cfg(&conf, out_fs);
-}
-
 #ifdef CONFIG_VFS_SUPPORT_DIR
 static const esp_vfs_dir_ops_t s_vfs_fat_dir = {
     .stat_p = &vfs_fat_stat,
@@ -185,7 +175,7 @@ static const esp_vfs_fs_ops_t s_vfs_fat = {
 #endif // CONFIG_VFS_SUPPORT_DIR
 };
 
-esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
+esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
 {
     size_t ctx = find_context_index_by_path(conf->base_path);
     if (ctx < FF_VOLUMES) {
@@ -235,6 +225,8 @@ esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_f
 
     return ESP_OK;
 }
+
+esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs) __attribute__((alias("esp_vfs_fat_register")));
 
 esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
 {

@@ -112,9 +112,18 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TOUCHPAD,          //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,               //!< Wakeup caused by ULP program
     ESP_SLEEP_WAKEUP_GPIO,              //!< Wakeup caused by GPIO (light sleep only on ESP32, S2 and S3)
-    ESP_SLEEP_WAKEUP_UART,              //!< Wakeup caused by UART0 (light sleep only)
+    ESP_SLEEP_WAKEUP_UART0,             //!< Wakeup caused by UART0 (light sleep only)
+    ESP_SLEEP_WAKEUP_UART = ESP_SLEEP_WAKEUP_UART0,
     ESP_SLEEP_WAKEUP_UART1,             //!< Wakeup caused by UART1 (light sleep only)
+#if (SOC_UART_HP_NUM > 2) && !SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP
     ESP_SLEEP_WAKEUP_UART2,             //!< Wakeup caused by UART2 (light sleep only)
+#endif
+#if (SOC_UART_HP_NUM > 3)
+    ESP_SLEEP_WAKEUP_UART3,             //!< Wakeup caused by UART3 (light sleep only)
+#endif
+#if (SOC_UART_HP_NUM > 4)
+    ESP_SLEEP_WAKEUP_UART4,             //!< Wakeup caused by UART4 (light sleep only)
+#endif
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
@@ -513,13 +522,14 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void);
 /**
  * @brief Enable wakeup from light sleep using UART
  *
- * Use uart_set_wakeup_threshold function to configure UART wakeup threshold.
+ * Use uart_wakeup_setup function to configure UART wakeup mode and parameters.
  *
  * Wakeup from light sleep takes some time, so not every character sent
  * to the UART can be received by the application.
  *
  * @note 1. ESP32 does not support wakeup from UART2.
- *       2. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
+ *       2. Wakeup mode 0(Active threshold) don't need source clock, but other modes need.
+ *       3. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
  *          this API is unavailable since the UART module is powered down during sleep.
  *
  * @param uart_num  UART port to wake up from
@@ -584,14 +594,26 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void);
 
 #if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 /**
- * @brief Get the bit mask of GPIOs which caused wakeup (gpio)
+ * @brief Get the bit mask of RTC IO which caused wakeup (GPIO wakeup source).
  *
  * If wakeup was caused by another source, this function will return 0.
+ * Each bit corresponds to an RTC IO.
+ * Use esp_sleep_wakeup_io_bit2num() to convert a bit index to GPIO number.
  *
- * @return bit mask, if GPIOn caused wakeup, BIT(n) will be set
+ * @return bit mask of RTC IO that caused wakeup
  */
 uint64_t esp_sleep_get_gpio_wakeup_status(void);
 #endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+
+/**
+ * @brief Convert RTC IO status bit index to GPIO number.
+ *
+ * Used to interpret the bit mask returned by esp_sleep_get_gpio_wakeup_status().
+ *
+ * @param bit RTC IO bit index (0 to SOC_RTCIO_PIN_COUNT-1).
+ * @return GPIO number, or GPIO_NUM_NC if bit is invalid or has no corresponding GPIO.
+ */
+gpio_num_t esp_sleep_wakeup_io_bit2num(uint32_t bit);
 
 /**
  * @brief Configure power domain options for sleep mode

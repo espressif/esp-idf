@@ -99,11 +99,15 @@ config SOC_BOD_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V1_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
 config SOC_CLK_TREE_SUPPORTED
+    bool
+    default y
+
+config SOC_REGI2C_SUPPORTED
     bool
     default y
 
@@ -112,6 +116,10 @@ config SOC_ASSIST_DEBUG_SUPPORTED
     default y
 
 config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_WDT_SUPPORTED
     bool
     default y
 
@@ -311,10 +319,6 @@ config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
     int
     default 0
 
-config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT
-    int
-    default 6
-
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x00000000001FFFC0
@@ -411,6 +415,10 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
     int
     default 108
 
+config SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+    bool
+    default y
+
 config SOC_RTCIO_PIN_COUNT
     int
     default 0
@@ -479,6 +487,10 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -486,6 +498,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V1
+    bool
+    default y
 
 config SOC_MWDT_SUPPORT_XTAL
     bool

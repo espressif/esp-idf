@@ -52,8 +52,11 @@ esp_err_t esp_hmac_derive_pbkdf2_key(hmac_key_id_t key_id, const uint8_t *salt, 
 
     // Create opaque key reference
     esp_hmac_opaque_key_t opaque_key = {
-        .use_km_key = false,
-        .efuse_block = (uint8_t)(EFUSE_BLK_KEY0 + key_id),
+    // TODO: Support key recovery info for HMAC key in PBKDF2 after PSA migration of this API is done
+#if SOC_KEY_MANAGER_SUPPORTED
+        .key_recovery_info = NULL,
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+        .efuse_key_id = key_id,
     };
 
     // Import the opaque key

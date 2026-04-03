@@ -32,6 +32,10 @@ if(CONFIG_ETH_ENABLED)
                          "src/phy/esp_eth_phy_generic.c")
     endif()
 
+    if(CONFIG_SOC_EMAC_IEEE1588V2_SUPPORTED)
+        list(APPEND srcs "src/eth_clock/esp_eth_clock.c")
+    endif()
+
     if(CONFIG_ETH_USE_OPENETH)
         list(APPEND srcs "src/openeth/esp_eth_mac_openeth.c"
                          "src/phy/esp_eth_phy_generic.c")

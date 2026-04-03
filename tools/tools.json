@@ -542,7 +542,8 @@
           "install": "always",
           "platforms": [
             "win32",
-            "win64"
+            "win64",
+            "win-arm64"
           ]
         },
         {
@@ -602,6 +603,11 @@
           },
           "name": "4.0.3",
           "status": "recommended",
+          "win-arm64": {
+            "sha256": "86ccd6485bbd4bb41a1a858db397be5bca5e0de96858bf8dbba7a64407bd6c00",
+            "size": 46495761,
+            "url": "https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-arm64.zip"
+          },
           "win32": {
             "sha256": "b59a31dfbfa376a4aaea9ff560ff2b29f78ee5f9fb15447fc71ae7bf9fea9379",
             "size": 47717299,
@@ -678,46 +684,46 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "5e6ff40aeca23bdd203cde04d60bc808c0e6bff110eadcbce3d602618c880531",
-            "size": 2547606,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-linux-amd64-0.12.0-esp32-20251215.tar.gz"
+            "sha256": "dbd7ecf751431c70628176fbf1ce404c3ff28027e91b66bda7f834a2d5ff5b81",
+            "size": 2603774,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-linux-amd64-0.12.0-esp32-20260304.tar.gz"
           },
           "linux-arm64": {
-            "sha256": "29f98e2f90cd37924b714562b876a471d444a8f2aec428c6760e82bbf3b54cca",
-            "size": 2399117,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-linux-arm64-0.12.0-esp32-20251215.tar.gz"
+            "sha256": "7fbe82e36f8e34a7a3118045fd7888754afbfe4c60cfaee0ac70663fd5965f63",
+            "size": 2518511,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-linux-arm64-0.12.0-esp32-20260304.tar.gz"
           },
           "linux-armel": {
-            "sha256": "25de2b2dd0f5b437f5d5540c505eb9d0fbb971256ab13acd19642f8acdbd5cee",
-            "size": 2554256,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-linux-armel-0.12.0-esp32-20251215.tar.gz"
+            "sha256": "c717a6ff87b07be729850fd7662fda3f1d4d7125d44dd15b0694e3021bed2bfb",
+            "size": 2702211,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-linux-armel-0.12.0-esp32-20260304.tar.gz"
           },
           "linux-armhf": {
-            "sha256": "2a2e6240a688ec91eee054140cc4967afceadeb8660f23f4b55a3936f65720a8",
-            "size": 2392746,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-linux-armhf-0.12.0-esp32-20251215.tar.gz"
+            "sha256": "847df6f58308fddbb00d0db71ad971d9ab6346d091bb060bd98c053a0d4e4322",
+            "size": 2524667,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-linux-armhf-0.12.0-esp32-20260304.tar.gz"
           },
           "macos": {
-            "sha256": "956dd02ccf35116d565be2b148e041bd47c135e551a1f5097eae756d7d4dd079",
-            "size": 2710467,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-macos-0.12.0-esp32-20251215.tar.gz"
+            "sha256": "be6951d9766f88fad11060314f6c3469c56715a60f2715aaeb7d806afc935c0d",
+            "size": 2768050,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-macos-0.12.0-esp32-20260304.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "e6414c8db2ab09b687eaf765b1e69a92aecdcfe44e073d6f47ff829777e2e823",
-            "size": 2535504,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-macos-arm64-0.12.0-esp32-20251215.tar.gz"
+            "sha256": "a36099d3a47241e816693d9bd719198e4667ad67f0a027404d90584d44b6842d",
+            "size": 2592946,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-macos-arm64-0.12.0-esp32-20260304.tar.gz"
           },
-          "name": "v0.12.0-esp32-20251215",
+          "name": "v0.12.0-esp32-20260304",
           "status": "recommended",
           "win32": {
-            "sha256": "032a3791c256c974bceced073dc8cf0e18c07a75f39592110cbe71fc8de914b2",
-            "size": 3109352,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-win32-0.12.0-esp32-20251215.zip"
+            "sha256": "a9db16887fb0df26d1c3e495203c9edcd86d9262b2be7b7d929f8017194add31",
+            "size": 3176748,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-win32-0.12.0-esp32-20260304.zip"
           },
           "win64": {
-            "sha256": "d406be70d26098ced57eefcf636c4b4c184cd8c151204a459bb6ccbe4aa47eca",
-            "size": 3109355,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20251215/openocd-esp32-win64-0.12.0-esp32-20251215.zip"
+            "sha256": "ad29bd55f2b7ad39669fbeeec32012954359dcfc0ecfa5a03068589b4d0e8613",
+            "size": 3176747,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.12.0-esp32-20260304/openocd-esp32-win64-0.12.0-esp32-20260304.zip"
           }
         }
       ]
@@ -739,7 +745,8 @@
           "install": "always",
           "platforms": [
             "win32",
-            "win64"
+            "win64",
+            "win-arm64"
           ]
         }
       ],
@@ -759,6 +766,12 @@
             "size": 123084,
             "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip"
           },
+          "linux-arm64": {
+            "rename_dist": "ninja-linux-arm64-v1.12.1.zip",
+            "sha256": "5c25c6570b0155e95fce5918cb95f1ad9870df5768653afe128db822301a05a1",
+            "size": 121787,
+            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux-aarch64.zip"
+          },
           "macos": {
             "rename_dist": "ninja-mac-v1.12.1.zip",
             "sha256": "89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9",
@@ -773,6 +786,12 @@
           },
           "name": "1.12.1",
           "status": "recommended",
+          "win-arm64": {
+            "rename_dist": "ninja-win-arm64-v1.12.1.zip",
+            "sha256": "79c96a50e0deafec212cfa85aa57c6b74003f52d9d1673ddcd1eab1c958c5900",
+            "size": 254317,
+            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-winarm64.zip"
+          },
           "win64": {
             "rename_dist": "ninja-win-v1.12.1.zip",
             "sha256": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a",

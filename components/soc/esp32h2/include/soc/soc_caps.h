@@ -88,17 +88,19 @@
 #define SOC_VBAT_SUPPORTED              1
 #define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
 #define SOC_PMU_SUPPORTED               1
-#define SOC_RTC_TIMER_V2_SUPPORTED      1
+#define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_LP_AON_SUPPORTED            1
 #define SOC_PAU_SUPPORTED               1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
+#define SOC_REGI2C_SUPPORTED            1
 #define SOC_PM_SUPPORTED                1
 #define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
 
@@ -258,10 +260,6 @@
 /*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
-/*------------------------- Analog Comparator CAPS ---------------------------*/
-#define SOC_ANA_CMPR_NUM                    (1U)
-#define SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO   (1)
-
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #define SOC_I2C_NUM                             (2U)
 #define SOC_HP_I2C_NUM                          (2U)
@@ -383,13 +381,15 @@
 
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V2_SUPPORTED
+#define SOC_RTC_TIMER_V2                    1
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_SUPPORT_ETM             (1)
@@ -429,6 +429,7 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1 /*!< Only avliable in chip version above 1.2*/
+#define SOC_FLASH_ENCRYPTION_PAGE_CONFIGURABLE  1  /* Flash encryption can be configured on a MMU page basis */
 
 /*-------------------------- APM CAPS ----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
@@ -463,9 +464,6 @@
 #define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)
 #define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
 #define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
-
-/*--------------------------- UHCI CAPS -------------------------------------*/
-#define SOC_UHCI_NUM               (1UL)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

@@ -639,7 +639,9 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
             esp_ecdsa_opaque_key_t opaque_key = {
                 .curve = curve,
                 .efuse_block = tls->ecdsa_efuse_blk,
-                .use_km_key = false,
+#if SOC_KEY_MANAGER_SUPPORTED
+                .key_recovery_info = NULL,
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
             };
 
             // Import opaque key reference
@@ -1420,6 +1422,10 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
 
     psa_key_id_t ds_key_id = 0;
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = ds_data;
+
     psa_key_attributes_t ds_key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_algorithm_t alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_ANY_HASH);
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
@@ -1427,14 +1433,14 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
     psa_set_key_type(&ds_key_attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-    psa_set_key_bits(&ds_key_attributes, ds_data->rsa_length_bits);
+    psa_set_key_bits(&ds_key_attributes, rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
     psa_set_key_usage_flags(&ds_key_attributes, PSA_KEY_USAGE_SIGN_HASH);
     psa_set_key_algorithm(&ds_key_attributes, alg);
-    psa_set_key_lifetime(&ds_key_attributes, PSA_KEY_LIFETIME_ESP_RSA_DS);
+    psa_set_key_lifetime(&ds_key_attributes, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
     status = psa_import_key(&ds_key_attributes,
-                             (const uint8_t *)ds_data,
-                             sizeof(esp_ds_data_ctx_t),
-                                &ds_key_id);
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
+                            &ds_key_id);
     psa_reset_key_attributes(&ds_key_attributes);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to import DS key to PSA, status = %d", status);

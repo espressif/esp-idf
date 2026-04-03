@@ -187,14 +187,25 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
 ```c
 static void start_scan(void)
 {
-    struct ble_gap_ext_disc_params disc_params = {
-        .itvl = BLE_GAP_SCAN_ITVL_MS(600),
-        .window = BLE_GAP_SCAN_ITVL_MS(300),
-        .passive = 1
-    };
+    struct ble_gap_ext_disc_params disc_params;
 
-    ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 1, 0, 0, NULL, 
-                    &disc_params, gap_event_cb, NULL);
+    memset(&disc_params, 0, sizeof(disc_params));
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(600);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(300);
+    disc_params.passive = 1;
+
+    uint8_t own_addr_type;
+    int rc_addr = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc_addr != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc_addr);
+        return;
+    }
+
+    int rc = ble_gap_ext_disc(own_addr_type, 0, 0, 1, 0, 0, NULL, &disc_params,
+                             gap_event_cb, NULL);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Error initiating GAP discovery procedure; rc=%d\n", rc);
+    }
 }
 ```
 Key parameters:

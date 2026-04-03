@@ -61,15 +61,15 @@ extern "C" {
 
 // RMT driver object is per-channel, the interrupt source is shared between channels
 #if CONFIG_RMT_TX_ISR_CACHE_SAFE
-#define RMT_TX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#define RMT_TX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_IRAM)
 #else
-#define RMT_TX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)
+#define RMT_TX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE)
 #endif
 
 #if CONFIG_RMT_RX_ISR_CACHE_SAFE
-#define RMT_RX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#define RMT_RX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_IRAM)
 #else
-#define RMT_RX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)
+#define RMT_RX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE)
 #endif
 
 // Hopefully the channel offset won't change in other targets
@@ -79,8 +79,6 @@ extern "C" {
 #define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
 #define RMT_DMA_NODES_PING_PONG               2  // two nodes ping-pong
-#define RMT_PM_LOCK_NAME_LEN_MAX              16
-#define RMT_GROUP_INTR_PRIORITY_UNINITIALIZED (-1)
 
 // RMT is a slow peripheral, it only supports AHB-GDMA
 #define RMT_DMA_DESC_ALIGN      4
@@ -143,7 +141,6 @@ struct rmt_group_t {
     rmt_tx_channel_t *tx_channels[RMT_LL_GET(TX_CANDIDATES_PER_INST)]; // array of RMT TX channels
     rmt_rx_channel_t *rx_channels[RMT_LL_GET(RX_CANDIDATES_PER_INST)]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
-    int intr_priority;     // RMT interrupt priority
 };
 
 struct rmt_channel_t {
@@ -161,7 +158,6 @@ struct rmt_channel_t {
     gdma_channel_handle_t dma_chan;    // DMA channel
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;      // power management lock
-    char pm_lock_name[RMT_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
     // RMT channel common interface
     // The following IO functions will have per-implementation for TX and RX channel
@@ -256,23 +252,6 @@ void rmt_release_group_handle(rmt_group_t *group);
  *      - ESP_FAIL: Set clock source failed because of other error
  */
 esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src, uint32_t expect_channel_resolution);
-
-/**
- * @brief Set interrupt priority to RMT group
- * @param group RMT group to set interrupt priority to
- * @param intr_priority User-specified interrupt priority (in num, not bitmask)
- * @return If the priority conflicts
- *      - true:  Interrupt priority conflict with previous specified
- *      - false: Interrupt priority set successfully
- */
-bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority);
-
-/**
- * @brief Convert the interrupt priority to flags
- * @param group RMT group
- * @return isr_flags which is compatible to `ESP_INTR_FLAG_*`
- */
-int rmt_isr_priority_to_flags(rmt_group_t *group);
 
 /**
  * @brief Create sleep retention link

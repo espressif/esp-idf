@@ -25,6 +25,8 @@
 #include "esp_hw_log.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_pvt";
+static bool pvt_enable_flag = false;
+static bool pvt_pump_enable_flag = false;
 
 #if CONFIG_ESP_ENABLE_PVT
 
@@ -43,9 +45,13 @@ static uint8_t get_lp_hp_gap(void)
             lp_hp_gap = gap_abs_value;
         }
         lp_hp_gap = lp_hp_gap - 8;
-        assert((lp_hp_gap >= -15) && (lp_hp_gap <= 7));
-        if (lp_hp_gap < 0 ) {
-            lp_hp_gap = 16 - lp_hp_gap;
+        if (lp_hp_gap < 0) {
+            if (lp_hp_gap >= -15) {
+                lp_hp_gap = 16 - lp_hp_gap;
+            } else {
+                // pvt offset value only has 4 bit
+                lp_hp_gap = 31;
+            }
         }
     }
     return lp_hp_gap;
@@ -78,6 +84,9 @@ void pvt_auto_dbias_init(void)
 {
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 2) {
+        if (pvt_enable_flag == true) {
+            return;
+        }
         SET_PERI_REG_MASK(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
         SET_PERI_REG_MASK(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
         /*config for dbias func*/
@@ -112,6 +121,9 @@ void IRAM_ATTR pvt_func_enable(bool enable)
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 2) {
         if (enable) {
+            if (pvt_enable_flag == true) {
+                return;
+            }
             SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // start calibration @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
             SET_PERI_REG_MASK(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
@@ -121,7 +133,11 @@ void IRAM_ATTR pvt_func_enable(bool enable)
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // hand over control of dbias to pvt
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // must clear @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_DBIAS_TIMER_REG, PVT_TIMER_EN);   // enable auto dbias
+            pvt_enable_flag = true;
         } else {
+            if (pvt_enable_flag == false) {
+                return;
+            }
             uint32_t pvt_hp_dbias = get_pvt_hp_dbias();
             uint32_t pvt_lp_dbias = get_pvt_lp_dbias(); // update pvt_cali_dbias
             SET_PERI_REG_BITS(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, pvt_hp_dbias, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_S);
@@ -130,6 +146,7 @@ void IRAM_ATTR pvt_func_enable(bool enable)
             SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL);   // hand over control of dbias to pmu
             CLEAR_PERI_REG_MASK(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
             CLEAR_PERI_REG_MASK(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
+            pvt_enable_flag = false;
         }
     }
 }
@@ -139,6 +156,9 @@ void charge_pump_init(void)
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 2) {
         /*config for charge pump*/
+        if (pvt_pump_enable_flag == true) {
+            return;
+        }
         SET_PERI_REG_BITS(PVT_PMUP_CHANNEL_CFG_REG, PVT_PUMP_CHANNEL_CODE0, PVT_PUMP_CHANNEL_CODE, PVT_PUMP_CHANNEL_CODE0_S);   //Set channel code
         WRITE_PERI_REG(PVT_PMUP_BITMAP_LOW0_REG, (1 << PVT_PUMP_BITMAP));  // Select monitor cell for charge pump
         SET_PERI_REG_BITS(PVT_PMUP_DRV_CFG_REG, PVT_PUMP_DRV0, PVT_PUMP_DRV, PVT_PUMP_DRV0_S); //Configure the charging intensity
@@ -150,9 +170,17 @@ void IRAM_ATTR charge_pump_enable(bool enable)
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 2) {
         if (enable) {
+            if (pvt_pump_enable_flag == true) {
+                return;
+            }
             SET_PERI_REG_MASK(PVT_PMUP_DRV_CFG_REG, PVT_PUMP_EN);   // enable charge pump
+            pvt_pump_enable_flag = true;
         } else {
+            if (pvt_pump_enable_flag == false) {
+                return;
+            }
             CLEAR_PERI_REG_MASK(PVT_PMUP_DRV_CFG_REG, PVT_PUMP_EN); //disable charge pump
+            pvt_pump_enable_flag = false;
         }
     }
 }

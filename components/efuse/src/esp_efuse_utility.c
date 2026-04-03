@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "assert.h"
 #include "sdkconfig.h"
 #include <sys/param.h>
+#include "esp_efuse_table.h"
 
 ESP_LOG_ATTR_TAG(TAG, "efuse");
 
@@ -492,4 +493,55 @@ bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned
         ESP_LOGE(TAG, "BURN BLOCK%d - ERROR (written bits != read bits)", block);
     }
     return correct_written_data;
+}
+
+// This function defers the programming of ESP_EFUSE_WR_DIS efuse field.
+// This field is very critical, because it disables any further programming of some efuses.
+// We want to defer its programming until all other efuses are programmed successfully.
+// Returns the staged WR_DIS data, so that it can be restored later for programming.
+static uint32_t defer_wr_dis(void)
+{
+    // ESP_EFUSE_WR_DIS is always in reg 0 of block 0, the only length is varied from chip to chip.
+    uint32_t staged_reg = REG_READ(range_write_addr_blocks[0].start); // array of staged write registers
+    uint32_t wr_dis_reg_mask = get_mask(ESP_EFUSE_WR_DIS[0]->bit_count, ESP_EFUSE_WR_DIS[0]->bit_start);
+
+    // Clear WR_DIS field and keep other bits in the staged register unchanged
+    REG_WRITE(range_write_addr_blocks[0].start, staged_reg & ~wr_dis_reg_mask);
+
+    // return WR_DIS value, excluding other bits in the staged register.
+    return staged_reg & wr_dis_reg_mask;
+}
+
+static inline void restore_deferred_wr_dis(uint32_t staged_wr_dis_data)
+{
+    REG_WRITE(range_write_addr_blocks[0].start, staged_wr_dis_data);
+}
+
+esp_err_t esp_efuse_utility_burn_chip(void)
+{
+    // Always defer the WR_DIS field burning to ensure that if any error occurs during the burn process of BLOCK0,
+    // the chip will have a chance to be recovered by the repeating burning mechanism in esp_efuse_utility_burn_chip_opt.
+    // This is critical because WR_DIS permanently disables further eFuse programming of some efuse fields.
+
+    uint32_t staged_wr_dis_data = defer_wr_dis();
+
+    esp_err_t err = esp_efuse_utility_burn_chip_opt(false, true);
+
+    if (err == ESP_OK) {
+        if (staged_wr_dis_data != 0) {
+            restore_deferred_wr_dis(staged_wr_dis_data);
+            err = esp_efuse_utility_burn_chip_opt(false, true);
+            if (err != ESP_OK) {
+                err = ESP_ERR_BURN_WR_DIS;
+                ESP_LOGE(TAG, "Failed to burn WR_DIS = 0x%08" PRIx32, staged_wr_dis_data);
+            }
+        }
+    } else {
+        ESP_LOGE(TAG, "Failed to burn eFuses");
+        if (staged_wr_dis_data != 0) {
+            ESP_LOGW(TAG, "WR_DIS efuse was not burned (deferred): 0x%08" PRIx32, staged_wr_dis_data);
+        }
+    }
+
+    return err;
 }

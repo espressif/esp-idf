@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -348,7 +348,7 @@ blecoex_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_CONNECT:
 	MODLOG_DFLT(INFO, "%s connection %s; status=%d ",
-	            client_connect == 1 ? "Client" : "Server",
+		    client_connect == 1 ? "Client" : "Server",
                     event->connect.status == 0 ? "established" : "failed",
                     event->connect.status);
 
@@ -491,9 +491,11 @@ ble_coex_advertise(void)
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
     name = ble_svc_gap_device_name();
-    fields.name = (uint8_t *)name;
-    fields.name_len = strlen(name);
-    fields.name_is_complete = 1;
+    if (name) {
+        fields.name = (uint8_t *)name;
+        fields.name_len = strlen(name);
+        fields.name_is_complete = 1;
+    }
 
     fields.uuids16 = (ble_uuid16_t[]) {
         BLE_UUID16_INIT(BLECOEX_SVC_ALERT_UUID)
@@ -523,16 +525,19 @@ static void on_sync(void)
 {
     int rc;
 
-    ble_hs_util_ensure_addr(0);
-
-    ble_hs_id_infer_auto(0, &own_addr_type);
-    ble_svc_gap_device_name_set("NimBLE Coex");
-    ble_coex_advertise();
-
-    // Start scanning as a client
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
+    rc = ble_svc_gap_device_name_set("NimBLE Coex");
+    assert(rc == 0);
+#endif
+    ble_coex_advertise();
+
+    /* Start scanning as a client */
     ble_coex_scan();
 }
 
@@ -557,7 +562,11 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
 
     ble_hs_cfg.sync_cb = on_sync;
 #if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
@@ -565,9 +574,16 @@ void app_main(void)
 #else
     peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
 #endif
+
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif /* CONFIG_BT_NIMBLE_GAP_SERVICE */
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
+#if CONFIG_BT_NIMBLE_ANS_SERVICE
     ble_svc_ans_init();
+#endif
 
     ble_gatts_count_cfg(gatt_svr_svcs);
     ble_gatts_add_svcs(gatt_svr_svcs);

@@ -491,18 +491,21 @@ void rfc_check_send_cmd(tRFC_MCB *p_mcb, BT_HDR *p_buf)
             RFCOMM_TRACE_ERROR("%s: empty queue: p_mcb = %p p_mcb->lcid = %u cached p_mcb = %p",
                                __func__, p_mcb, p_mcb->lcid,
                                rfc_find_lcid_mcb(p_mcb->lcid));
+            osi_free(p_buf);
+        } else {
+            fixed_queue_enqueue(p_mcb->cmd_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         }
-        fixed_queue_enqueue(p_mcb->cmd_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
     /* handle queue if L2CAP not congested */
-    while (p_mcb->l2cap_congested == FALSE) {
-        if ((p = (BT_HDR *)fixed_queue_dequeue(p_mcb->cmd_q, 0)) == NULL) {
-            break;
+    if (p_mcb->cmd_q) {
+        while (p_mcb->l2cap_congested == FALSE) {
+            if ((p = (BT_HDR *)fixed_queue_dequeue(p_mcb->cmd_q, 0)) == NULL) {
+                break;
+            }
+
+            L2CA_DataWrite (p_mcb->lcid, p);
         }
-
-
-        L2CA_DataWrite (p_mcb->lcid, p);
     }
 }
 

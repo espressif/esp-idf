@@ -8,6 +8,8 @@ entries:
         port_utils (noflash)
         if ESP_TRACE_TRANSPORT_APPTRACE:
             adapter_transport_apptrace (noflash)
+        if ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG:
+            adapter_transport_usb_serial_jtag (noflash)
 
 [mapping:esp_trace_driver]
 archive: libesp_driver_gptimer.a

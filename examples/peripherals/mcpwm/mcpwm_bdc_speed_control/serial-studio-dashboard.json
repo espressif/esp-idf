@@ -1,6 +1,12 @@
 {
+    "actions": [
+    ],
+    "decoder": 0,
+    "frameDetection": 1,
     "frameEnd": "*/",
+    "frameParser": "/**\n * Automatically migrated frame parser function.\n */\nfunction parse(frame) {\n    return frame.split(',');\n}",
     "frameStart": "/*",
+
     "groups": [
         {
             "datasets": [

@@ -21,7 +21,6 @@ def test_heap_poisoning(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize(
     'config, embedded_services',

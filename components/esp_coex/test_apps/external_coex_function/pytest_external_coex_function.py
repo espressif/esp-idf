@@ -27,30 +27,30 @@ def test_external_coex_unit_test_esp32c2_xtal26m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.xtal_26mhz
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config, baud',
     [
-        ('esp32c2eco4_xtal26m', '74880'),
+        ('esp32c2_rev2_xtal26m', '74880'),
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_external_coex_unit_test_esp32c2eco4_xtal26m(dut: Dut) -> None:
+def test_external_coex_unit_test_esp32c2_rev2_xtal26m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
     [
-        'esp32c3eco7',
+        'esp32c3_rev1',
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
-def test_external_coex_unit_test_esp32c3eco7(dut: Dut) -> None:
+def test_external_coex_unit_test_esp32c3_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases()

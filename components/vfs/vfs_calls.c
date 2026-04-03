@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define _VFS_SUPPRESS_CTX_DEPRECATION
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

@@ -2,13 +2,13 @@
 archive: libopenthread.a
 entries:
   if OPENTHREAD_TIMING_OPTIMIZATION = y:
-    link_metrics (noflash)
     link_quality (noflash)
     mac_frame (noflash)
     radio (noflash)
     sub_mac (noflash)
 
   if OPENTHREAD_TIMING_OPTIMIZATION = y && OPENTHREAD_RADIO = n:
+    link_metrics (noflash)
     mesh_forwarder (noflash)
     csl_tx_scheduler (noflash)
     mac (noflash)

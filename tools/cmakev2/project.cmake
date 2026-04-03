@@ -84,6 +84,7 @@ function(__init_project_configuration)
     set(link_options)
 
     idf_build_get_property(idf_ver IDF_VER)
+    idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_target IDF_TARGET)
     idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
     idf_build_get_property(build_dir BUILD_DIR)
@@ -186,24 +187,32 @@ function(__init_project_configuration)
         list(APPEND cxx_compile_options "-std=gnu++26")
     endif()
 
-    if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
-        if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-            list(APPEND compile_options "-Oz")
-        else()
-            list(APPEND compile_options "-Os")
+    # Subprojects that handle their own compiler optimization flags can set the
+    # SET_COMPILER_OPTIMIZATION build property to NO before idf_project_init().
+    idf_build_get_property(set_compiler_optimization SET_COMPILER_OPTIMIZATION)
+    if(NOT set_compiler_optimization)
+        set(set_compiler_optimization YES)
+    endif()
+    if(set_compiler_optimization)
+        if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
+            if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+                list(APPEND compile_options "-Oz")
+            else()
+                list(APPEND compile_options "-Os")
+            endif()
+            if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+                list(APPEND compile_options "-freorder-blocks")
+            endif()
+        elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
+            list(APPEND compile_options "-Og")
+            if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+                list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
+            endif()
+        elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
+            list(APPEND compile_options "-O0")
+        elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
+            list(APPEND compile_options "-O2")
         endif()
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-            list(APPEND compile_options "-freorder-blocks")
-        endif()
-    elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
-        list(APPEND compile_options "-Og")
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
-            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
-        endif()
-    elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
-        list(APPEND compile_options "-O0")
-    elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
-        list(APPEND compile_options "-O2")
     endif()
 
     if(CONFIG_COMPILER_CXX_EXCEPTIONS)
@@ -419,8 +428,6 @@ function(__init_project_configuration)
     if("${linker_type}" STREQUAL "GNU")
         set(target_upper "${idf_target}")
         string(TOUPPER ${target_upper} target_upper)
-        # Add cross-reference table to the map file
-        list(APPEND link_options "-Wl,--cref")
         # Add this symbol as a hint for esp_idf_size to guess the target name
         list(APPEND link_options "-Wl,--defsym=IDF_TARGET_${target_upper}=0")
         # Check if linker supports --no-warn-rwx-segments
@@ -581,11 +588,20 @@ macro(idf_project_init)
         # Discover and initialize components
         __init_components()
 
+        # Save original sdkconfig before kconfgen may drop unknown options.
+        # Only creates a backup when the component manager is enabled.
+        __create_sdkconfig_orig_copy()
+
         # Generate initial sdkconfig with discovered components
         __generate_sdkconfig()
 
-        # Initialize the component manager and fetch components in a loop
-        __fetch_components_from_registry()
+        # Fetch managed components from registry if the component manager is enabled
+        idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+        if(idf_component_manager EQUAL 1)
+            __fetch_components_from_registry()
+        else()
+            __component_manager_warn_if_disabled_and_manifests_exist()
+        endif()
 
         # Include sdkconfig.cmake
         idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
@@ -602,6 +618,15 @@ macro(idf_project_init)
         # Initialize the target architecture based on the configuration
         # Ensure this is done after including the sdkconfig.
         __init_idf_target_arch()
+
+        # Make build properties available as CMake variables for backward
+        # compatibility with project_include.cmake files (e.g. ULP component
+        # references ${SDKCONFIG_HEADER} and ${SDKCONFIG_CMAKE} directly).
+        idf_build_get_property(build_properties BUILD_PROPERTIES)
+        foreach(build_property IN LISTS build_properties)
+            idf_build_get_property(val ${build_property})
+            set(${build_property} "${val}")
+        endforeach()
 
         # Include all project_include.cmake files for the components that have
         # been discovered.
@@ -731,7 +756,8 @@ function(__project_default)
                              TARGET app-flash
                              NAME "app"
                              FLASH)
-            idf_build_generate_metadata(BINARY "${executable}_binary_signed")
+            idf_build_generate_metadata(BINARY "${executable}_binary_signed"
+                                        HINTS_OUTPUT_FILE "${BUILD_DIR}/hints.yml")
         else()
             idf_build_binary("${executable}"
                              OUTPUT_FILE "${build_dir}/${executable}.bin"
@@ -748,12 +774,14 @@ function(__project_default)
 
             idf_create_dfu("${executable}_binary"
                            TARGET dfu)
-            idf_build_generate_metadata(BINARY "${executable}_binary")
+            idf_build_generate_metadata(BINARY "${executable}_binary"
+                                        HINTS_OUTPUT_FILE "${BUILD_DIR}/hints.yml")
         endif()
 
         idf_build_generate_flasher_args()
     else()
-        idf_build_generate_metadata(EXECUTABLE "${executable}")
+        idf_build_generate_metadata(EXECUTABLE "${executable}"
+                                    HINTS_OUTPUT_FILE "${BUILD_DIR}/hints.yml")
     endif()
 
     idf_create_menuconfig("${executable}"
@@ -763,6 +791,9 @@ function(__project_default)
                           TARGET confserver)
 
     idf_create_save_defconfig()
+
+    idf_create_config_report("${executable}"
+                             TARGET config-report)
 
     idf_create_uf2("${executable}"
                    TARGET uf2)
@@ -795,6 +826,11 @@ endfunction()
 #]]
 macro(idf_project_default)
     idf_project_init()
+
+    # Use DEFERRED optional-requires resolution only when this will be the sole
+    # library being built.
+    idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
+
     # Only the idf_project_init macro needs be called within the global scope,
     # as it includes the project_include.cmake files and the cmake version of
     # the configuration. The remaining functionality of the idf_project_default

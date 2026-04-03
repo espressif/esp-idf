@@ -34,7 +34,8 @@ void example_init_monitor_gpio(void);
  *          CPU won't be involved by using Event Task Matrix, so it can achieve relatively higher interrupt frequency
  */
 void example_analog_comparator_etm_app(void);
-#endif
+
+#else
 
 /**
  * @brief   Set or clear the monitor GPIO in the cross interrupt callback.
@@ -43,6 +44,7 @@ void example_analog_comparator_etm_app(void);
  *          But as the operations are done in callback, CPU is involved, so it can only achieve a low interrupt frequency
  */
 void example_analog_comparator_intr_app(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -39,8 +39,6 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
             group->occupy_mask = UINT32_MAX & ~((1 << RMT_LL_GET(CHANS_PER_INST)) - 1);
             // group clock won't be configured at this stage, it will be set when allocate the first channel
             group->clk_src = 0;
-            // group interrupt priority is shared between all channels, it will be set when allocate the first channel
-            group->intr_priority = RMT_GROUP_INTR_PRIORITY_UNINITIALIZED;
             // enable the bus clock for the RMT peripheral
             PERIPH_RCC_ATOMIC() {
                 rmt_ll_enable_bus_clock(group_id, true);
@@ -217,8 +215,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     // note, even if the clock source is APB, we still use CPU_FREQ_MAX lock to ensure the stability of the RMT operation.
     esp_pm_lock_type_t pm_lock_type = chan->dma_chan ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_CPU_FREQ_MAX;
 
-    sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, chan->channel_id); // e.g. rmt_0_0
-    ret  = esp_pm_lock_create(pm_lock_type, 0, chan->pm_lock_name, &chan->pm_lock);
+    ret = esp_pm_lock_create(pm_lock_type, 0, soc_rmt_signals[group->group_id].module_name, &chan->pm_lock);
     ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
@@ -291,52 +288,6 @@ esp_err_t rmt_disable(rmt_channel_handle_t channel)
 {
     ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     return channel->disable(channel);
-}
-
-bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority)
-{
-    bool priority_conflict = false;
-    portENTER_CRITICAL(&group->spinlock);
-    if (group->intr_priority == RMT_GROUP_INTR_PRIORITY_UNINITIALIZED) {
-        // intr_priority never allocated, accept user's value unconditionally
-        // intr_priority could only be set once here
-        group->intr_priority = intr_priority;
-    } else {
-        // group intr_priority already specified
-        // If interrupt priority specified before, it CANNOT BE CHANGED until `rmt_release_group_handle()` called
-        // So we have to check if the new priority specified conflicts with the old one
-        if (intr_priority) {
-            // User specified intr_priority, check if conflict or not
-            // Even though the `group->intr_priority` is 0, an intr_priority must have been specified automatically too,
-            // although we do not know it exactly now, so specifying the intr_priority again might also cause conflict.
-            // So no matter if `group->intr_priority` is 0 or not, we have to check.
-            // Value `0` of `group->intr_priority` means "unknown", NOT "unspecified"!
-            if (intr_priority != (group->intr_priority)) {
-                // intr_priority conflicts!
-                priority_conflict = true;
-            }
-        }
-        // else do nothing
-        // user did not specify intr_priority, then keep the old priority
-        // We'll use the `RMT_INTR_ALLOC_FLAG | RMT_ALLOW_INTR_PRIORITY_MASK`, which should always success
-    }
-    // The `group->intr_priority` will not change any longer, even though another task tries to modify it.
-    // So we could exit critical here safely.
-    portEXIT_CRITICAL(&group->spinlock);
-    return priority_conflict;
-}
-
-int rmt_isr_priority_to_flags(rmt_group_t *group)
-{
-    int isr_flags = 0;
-    if (group->intr_priority) {
-        // Use user-specified priority bit
-        isr_flags |= (1 << (group->intr_priority));
-    } else {
-        // Allow all LOWMED priority bits
-        isr_flags |= RMT_ALLOW_INTR_PRIORITY_MASK;
-    }
-    return isr_flags;
 }
 
 #if RMT_USE_RETENTION_LINK

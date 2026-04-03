@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "ulp_lp_core_spi.h"
+#include "ulp_lp_core_utils.h"
 #include "soc/lp_spi_struct.h"
 
 /* Use the register structure to access LP_SPI module registers */
@@ -19,18 +20,12 @@ lp_spi_dev_t *lp_spi_dev = &LP_SPI;
 
 static inline esp_err_t lp_core_spi_wait_for_interrupt(int32_t cycles_to_wait)
 {
-    uint32_t to = 0;
+    uint32_t timeout_start = ulp_lp_core_get_cpu_cycles();
     while (!lp_spi_dev->spi_dma_int_raw.reg_trans_done_int_raw) {
-        if (cycles_to_wait > -1) {
-            /* If the cycles_to_wait value is not -1, keep track of cycles and
-             * break from the loop once the timeout is reached.
-             */
-            to++;
-            if (to >= cycles_to_wait) {
-                /* Clear interrupt bits */
-                lp_spi_dev->spi_dma_int_clr.reg_trans_done_int_clr = 1;
-                return ESP_ERR_TIMEOUT;
-            }
+        if (ulp_lp_core_is_timeout_elapsed(timeout_start, cycles_to_wait)) {
+            /* Clear interrupt bits */
+            lp_spi_dev->spi_dma_int_clr.reg_trans_done_int_clr = 1;
+            return ESP_ERR_TIMEOUT;
         }
     }
 

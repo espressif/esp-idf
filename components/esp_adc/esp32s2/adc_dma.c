@@ -58,7 +58,7 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
     if (spi_success != true) {
         return ESP_FAIL;
     }
-    ret = spicommon_dma_chan_alloc(ADC_DMA_SPI_HOST, SPI_DMA_CH_AUTO);
+    ret = spicommon_dma_chan_alloc(ADC_DMA_SPI_HOST, SPI_DMA_CH_AUTO, 0);
     if (ret != ESP_OK) {
         return ret;
     }

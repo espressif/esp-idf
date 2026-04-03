@@ -70,6 +70,12 @@ extern "C" {
 ---------------------------------------------------------------*/
 #define ADC_LL_PWDET_CCT_DEFAULT                       (4)
 
+/*---------------------------------------------------------------
+                    I2C SAR ADC REG PD workaround
+---------------------------------------------------------------*/
+#define ADC_LL_ANA_CALI_REG_PD_WORKAROUND    1
+#define ADC_LL_ANA_CALI_REG_BYTE_NUM         8
+
 typedef enum {
     ADC_LL_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
     ADC_LL_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */

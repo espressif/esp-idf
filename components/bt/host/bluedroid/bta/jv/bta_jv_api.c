@@ -74,6 +74,14 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback)
     p_bta_jv_cfg->p_sdp_raw_data = (UINT8 *)osi_malloc(p_bta_jv_cfg->sdp_raw_size);
     p_bta_jv_cfg->p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(p_bta_jv_cfg->sdp_db_size);
     if (p_bta_jv_cfg->p_sdp_raw_data == NULL || p_bta_jv_cfg->p_sdp_db == NULL) {
+        if (p_bta_jv_cfg->p_sdp_raw_data) {
+            osi_free(p_bta_jv_cfg->p_sdp_raw_data);
+            p_bta_jv_cfg->p_sdp_raw_data = NULL;
+        }
+        if (p_bta_jv_cfg->p_sdp_db) {
+            osi_free( p_bta_jv_cfg->p_sdp_db);
+            p_bta_jv_cfg->p_sdp_db = NULL;
+        }
         return BTA_JV_NO_DATA;
     }
 #endif
@@ -118,11 +126,6 @@ void BTA_JvDisable(tBTA_JV_RFCOMM_CBACK *p_cback)
 
     APPL_TRACE_API( "BTA_JvDisable");
     bta_sys_deregister(BTA_ID_JV);
-    memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
-    /* set handle to invalid value by default */
-    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
-        bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
-    }
     if ((p_buf = (tBTA_JV_API_DISABLE *) osi_malloc(sizeof(tBTA_JV_API_DISABLE))) != NULL) {
         p_buf->hdr.event = BTA_JV_API_DISABLE_EVT;
         p_buf->p_cback = p_cback;
@@ -292,7 +295,9 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(BD_ADDR bd_addr, UINT16 num_uuid,
         p_msg->hdr.event = BTA_JV_API_START_DISCOVERY_EVT;
         bdcpy(p_msg->bd_addr, bd_addr);
         p_msg->num_uuid = num_uuid;
-        memcpy(p_msg->uuid_list, p_uuid_list, num_uuid * sizeof(tSDP_UUID));
+        if (p_uuid_list && (num_uuid > 0)) {
+            memcpy(p_msg->uuid_list, p_uuid_list, num_uuid * sizeof(tSDP_UUID));
+        }
         p_msg->num_attr = 0;
         p_msg->user_data = user_data;
         bta_sys_sendmsg(p_msg);
@@ -323,7 +328,12 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(const char *name, UINT32 channel, void *
     if ((p_msg = (tBTA_JV_API_CREATE_RECORD *)osi_malloc(sizeof(tBTA_JV_API_CREATE_RECORD))) != NULL) {
         p_msg->hdr.event = BTA_JV_API_CREATE_RECORD_EVT;
         p_msg->user_data = user_data;
-        strcpy(p_msg->name, name);
+        if (name) {
+            strncpy(p_msg->name, name, ESP_SDP_SERVER_NAME_MAX);
+            p_msg->name[ESP_SDP_SERVER_NAME_MAX] = '\0';
+        } else {
+            p_msg->name[0] = '\0';
+        }
         p_msg->channel = channel;
         bta_sys_sendmsg(p_msg);
         status = BTA_JV_SUCCESS;

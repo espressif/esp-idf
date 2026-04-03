@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -256,6 +256,19 @@ __attribute__((always_inline))
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].fun_ie = 1;
+}
+
+/**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_input_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return IO_MUX.gpio[gpio_num].fun_ie ? true : false;
 }
 
 /**
@@ -569,6 +582,7 @@ static inline void gpio_ll_set_input_signal_matrix_source(gpio_dev_t *hw, uint32
   * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
   * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
+__attribute__((always_inline))
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
     hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
@@ -636,8 +650,8 @@ static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in
 static inline void gpio_ll_force_hold_all(void)
 {
     // WT flag, it gets self-cleared after the configuration is done
-    PMU.imm_pad_hold_all.tie_high_hp_pad_hold_all = 1;
-    PMU.imm_pad_hold_all.tie_high_lp_pad_hold_all = 1;
+    PMU.imm.pad_hold_all.tie_high_hp_pad_hold_all = 1;
+    PMU.imm.pad_hold_all.tie_high_lp_pad_hold_all = 1;
 }
 
 /**
@@ -647,8 +661,8 @@ static inline void gpio_ll_force_hold_all(void)
 static inline void gpio_ll_force_unhold_all(void)
 {
     // WT flag, it gets self-cleared after the configuration is done
-    PMU.imm_pad_hold_all.tie_low_hp_pad_hold_all = 1;
-    PMU.imm_pad_hold_all.tie_low_lp_pad_hold_all = 1;
+    PMU.imm.pad_hold_all.tie_low_hp_pad_hold_all = 1;
+    PMU.imm.pad_hold_all.tie_low_lp_pad_hold_all = 1;
 }
 
 /**

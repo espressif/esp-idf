@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,6 +16,21 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "light_sleep_example.h"
+
+static uint32_t uart_wakeup_causes(void)
+{
+    uint32_t uart_wakeup_causes = BIT(ESP_SLEEP_WAKEUP_UART0) | BIT(ESP_SLEEP_WAKEUP_UART1);
+#if (SOC_UART_HP_NUM > 2) && !SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP
+    uart_wakeup_causes |= BIT(ESP_SLEEP_WAKEUP_UART2);
+#endif
+#if (SOC_UART_HP_NUM > 3)
+    uart_wakeup_causes |= BIT(ESP_SLEEP_WAKEUP_UART3);
+#endif
+#if (SOC_UART_HP_NUM > 4)
+    uart_wakeup_causes |= BIT(ESP_SLEEP_WAKEUP_UART4);
+#endif
+    return uart_wakeup_causes;
+}
 
 static void light_sleep_task(void *args)
 {
@@ -42,7 +57,7 @@ static void light_sleep_task(void *args)
             wakeup_reason = "timer";
         } else if (wakup_causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
             wakeup_reason = "pin";
-        } else if (wakup_causes & (BIT(ESP_SLEEP_WAKEUP_UART) | BIT(ESP_SLEEP_WAKEUP_UART1) | BIT(ESP_SLEEP_WAKEUP_UART2))) {
+        } else if (wakup_causes & uart_wakeup_causes()) {
             wakeup_reason = "uart";
             /* Hang-up for a while to switch and execute the uart task
              * Otherwise the chip may fall sleep again before running uart task */

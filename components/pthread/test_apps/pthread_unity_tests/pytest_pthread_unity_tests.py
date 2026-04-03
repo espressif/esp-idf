@@ -47,7 +47,6 @@ def test_pthread_single_core_tls(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='thread-specific', timeout=300)
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_pthread_qemu(dut: Dut) -> None:

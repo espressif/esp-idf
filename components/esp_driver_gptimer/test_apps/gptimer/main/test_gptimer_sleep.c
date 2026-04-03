@@ -238,6 +238,7 @@ static void test_gptimer_etm_sleep_retention(bool back_up_before_sleep)
     TEST_ESP_OK(esp_etm_del_event(gptimer_event));
     TEST_ESP_OK(esp_etm_channel_disable(etm_channel_a));
     TEST_ESP_OK(esp_etm_channel_disable(etm_channel_b));
+    TEST_ESP_OK(gpio_reset_pin(output_gpio));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_b));
 }

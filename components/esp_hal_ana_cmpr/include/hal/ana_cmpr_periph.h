@@ -11,6 +11,7 @@
 #include "soc/interrupts.h"
 #if SOC_ANA_CMPR_SUPPORTED
 #include "soc/ana_cmpr_pins.h"
+#include "hal/ana_cmpr_ll.h"
 #endif
 
 #ifdef __cplusplus
@@ -25,7 +26,7 @@ typedef struct {
     const char *module_name;
 } ana_cmpr_periph_t;
 
-extern const ana_cmpr_periph_t ana_cmpr_periph[SOC_ANA_CMPR_NUM];
+extern const ana_cmpr_periph_t ana_cmpr_periph[ANALOG_CMPR_LL_GET(INST_NUM)];
 #endif
 
 #ifdef __cplusplus

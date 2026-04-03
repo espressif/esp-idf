@@ -1,8 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <esp_types.h>
@@ -22,12 +23,21 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
 #endif
 
+/*
+  flash_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_HP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {           \
         .vdd_flash_mode = 0, \
         .mem_dslp       = 0, \
         .mem_pd_en      = 0, \
         .wifi_pd_en     = 0, \
+        .peri_pd_en     = 0, \
         .cpu_pd_en      = 0, \
         .aon_pd_en      = 0, \
         .top_pd_en      = 0  \
@@ -40,24 +50,32 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
         .xpd_bbpll      = 1  \
     }, \
     .xtal = {                \
-        .xpd_xtalx2     = 0, \
+        .xpd_xtalx2     = 1, \
         .xpd_xtal       = 1  \
     } \
 }
 
+/*
+  flash_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_HP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {           \
-        .vdd_flash_mode = 0, \
+        .vdd_flash_mode = 3, \
         .mem_dslp       = 0, \
         .mem_pd_en      = 0, \
-        .wifi_pd_en     = 1, \
-        .cpu_pd_en      = 1, \
+        .wifi_pd_en     = 0, \
+        .cpu_pd_en      = 0, \
         .aon_pd_en      = 0, \
-        .top_pd_en      = 1  \
+        .top_pd_en      = 0  \
     }, \
     .clk_power = {           \
         .i2c_iso_en     = 1, \
-        .i2c_retention  = 0, \
+        .i2c_retention  = 1, \
         .xpd_bb_i2c     = 0, \
         .xpd_bbpll_i2c  = 0, \
         .xpd_bbpll      = 0, \
@@ -153,10 +171,10 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
     .bias = {                       \
         .dcdc_ccm_enb       = 0,    \
         .dcdc_clear_rdy     = 0,    \
-        .dig_reg_dpcur_bias = 2,    \
-        .dig_reg_dsfmos     = 10,   \
-        .dcm_vset           = 24,   \
+        .dig_reg_dpcur_bias = 3,    \
+        .dig_reg_dsfmos     = 15,   \
         .dcm_mode           = 3,    \
+        .dcm_vset           = DCDC_DREG_DEFAULT,   \
         .xpd_trx            = 1,    \
         .xpd_bias           = 1,    \
         .discnnt_dig_rtc    = 0,    \
@@ -174,10 +192,10 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd                = 1,    \
         .slp_mem_dbias      = 0,    \
         .slp_logic_dbias    = 0,    \
-        .dbias              = HP_CALI_DBIAS_DEFAULT \
+        .dbias              = 0     \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 0x1a  \
+        .drv_b              = HP_CALI_DRVB_DEFAULT  \
     } \
 }
 
@@ -186,9 +204,9 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dcdc_ccm_enb       = 1,    \
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 1,    \
-        .dig_reg_dsfmos     = 8,    \
-        .dcm_vset           = 0,    \
+        .dig_reg_dsfmos     = 15,    \
         .dcm_mode           = 3,    \
+        .dcm_vset           = DCDC_DREG_DEFAULT,    \
         .xpd_trx            = 0,    \
         .xpd_bias           = 0,    \
         .discnnt_dig_rtc    = 0,    \
@@ -205,7 +223,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dbias              = 0     \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 26  \
+        .drv_b              = 20    \
     } \
 }
 
@@ -261,11 +279,17 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
     return &hp_retention[mode];
 }
 
-
-/** LP system default parameter */
+/*
+  vdd_io_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_LP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
-        .vdd_io_mode    = 4,    \
+        .vdd_io_mode    = 0,    \
         .bod_source_sel = 0,    \
         .vddbat_mode    = 2,    \
         .mem_dslp       = 0,    \
@@ -280,12 +304,20 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
     } \
 }
 
+/*
+  vdd_io_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_LP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
         .vdd_io_mode    = 3,    \
         .bod_source_sel = 0,    \
-        .vddbat_mode    = 1,    \
-        .mem_dslp       = 1,    \
+        .vddbat_mode    = 0,    \
+        .mem_dslp       = 0,    \
         .peri_pd_en     = 0,    \
     }, \
     .clk_power = {              \
@@ -327,10 +359,10 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
     .bias = {                    \
         .dcdc_ccm_enb       = 1, \
         .dcdc_clear_rdy     = 0, \
-        .dig_reg_dpcur_bias = 3, \
-        .dig_reg_dsfmos     = 5, \
-        .dcm_vset           = 0, \
+        .dig_reg_dpcur_bias = 1, \
+        .dig_reg_dsfmos     = 15, \
         .dcm_mode           = 3, \
+        .dcm_vset           = 0, \
         .xpd_bias           = 0, \
         .discnnt_dig_rtc    = 1, \
         .pd_cur             = 1, \
@@ -340,7 +372,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .slp_xpd            = 0, \
         .xpd                = 1, \
         .slp_dbias          = 0, \
-        .dbias              = 1  \
+        .dbias              = 3  \
     }, \
     .regulator1 = {              \
         .drv_b              = 0  \
@@ -357,54 +389,12 @@ const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_m
     return &lp_analog[mode];
 }
 
-uint32_t get_act_hp_dbias(void)
+uint32_t get_act_hp_drvb(void)
 {
-    /* hp_cali_dbias is read from efuse to ensure that the hp_active_voltage is close to 0.93V */
-    // TODO: PM-373
-    //unsigned blk_version = efuse_hal_blk_version();
-    uint32_t hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    //if (blk_version >= 3) {
-    //    hp_cali_dbias = efuse_ll_get_active_hp_dbias();
-    //    if (hp_cali_dbias != 0) {
-    //        //efuse dbias need to add 2 to meet the CPU frequency switching
-    //        if (hp_cali_dbias + 2 > 31) {
-    //            hp_cali_dbias = 31;
-    //        } else {
-    //            hp_cali_dbias += 2;
-    //        }
-    //    } else {
-    //        hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    //        ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
-    //    }
-    //} else {
-    //    ESP_HW_LOGD(TAG, "blk_version is less than 3, act dbias not burnt in efuse\n");
-    //}
-
-    return hp_cali_dbias;
+    return HP_CALI_DRVB_DEFAULT;
 }
 
 uint32_t get_act_lp_dbias(void)
 {
-    /* lp_cali_dbias are read from efuse to ensure that the lp_active_voltage is close to 0.925V */
-    // TODO: PM-373
-    //unsigned blk_version = efuse_hal_blk_version();
-    uint32_t lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    //if (blk_version >= 3) {
-    //    lp_cali_dbias = efuse_ll_get_active_lp_dbias();
-    //    if (lp_cali_dbias != 0) {
-    //        //efuse dbias need to add 2 to meet the CPU frequency switching
-    //        if (lp_cali_dbias + 2 > 31) {
-    //            lp_cali_dbias = 31;
-    //        } else {
-    //            lp_cali_dbias += 2;
-    //        }
-    //    } else {
-    //        lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    //        ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
-    //    }
-    //} else {
-    //    ESP_HW_LOGD(TAG, "blk_version is less than 3, act dbias not burnt in efuse\n");
-    //}
-
-    return lp_cali_dbias;
+    return LP_CALI_DBIAS_DEFAULT;
 }

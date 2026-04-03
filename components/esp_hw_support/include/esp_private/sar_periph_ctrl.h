@@ -123,6 +123,19 @@ void adc_reset_lock_release(void);
  */
 void sar_periph_ctrl_adc_reset(void);
 
+/*------------------------------------------------------------------------------
+* I2C SAR ADC
+*----------------------------------------------------------------------------*/
+
+/**
+ * @brief Enable I2C SAR ADC
+ */
+void regi2c_saradc_enable(void);
+
+/**
+ * @brief Disable I2C SAR ADC
+ */
+void regi2c_saradc_disable(void);
 #ifdef __cplusplus
 }
 #endif

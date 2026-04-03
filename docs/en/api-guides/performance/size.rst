@@ -158,11 +158,9 @@ lwIP IPv4
 Picolibc instead of Newlib
 @@@@@@@@@@@@@@@@@@@@@@@@@@
 
-By default, ESP-IDF uses the Newlib C library, and it also has experimental support for the Picolibc C library.
+By default, ESP-IDF uses the Picolibc C library. Newlib is also supported and can be selected with :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>`.
 
 Picolibc C library provides smaller ``printf`` family functions and can reduce the binary size by up to 30 KB, depending on your application.
-
-To switch to linking against the Picolibc C library, please enable the configuration options :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` and :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`.
 
 .. _newlib-nano-formatting:
 
@@ -183,7 +181,7 @@ By default, ESP-IDF uses Newlib "full" formatting for I/O functions (``printf()`
 
 Enabling "Nano" formatting reduces the stack usage of each function that calls ``printf()`` or another string formatting function, see :ref:`optimize-stack-sizes`.
 
-"Nano" formatting does not support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib README file`_.
+"Nano" formatting does not support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib documentation`_.
 
 
 .. only:: esp32c2
@@ -193,7 +191,7 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
         :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
 
 
-.. _Newlib README file: https://sourceware.org/newlib/README
+.. _Newlib documentation: https://sourceware.org/newlib/docs.html
 
 libstdc++
 @@@@@@@@@

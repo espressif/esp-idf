@@ -326,6 +326,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 efuse component and not returned by any
                                                                                 public API. */
 #   endif
+#   ifdef      ESP_ERR_BURN_WR_DIS
+    ERR_TBL_IT(ESP_ERR_BURN_WR_DIS),                            /*  5639 0x1607 Error to burn WR_DIS field. */
+#   endif
     // components/bootloader_support/include/esp_image_format.h
 #   ifdef      ESP_ERR_IMAGE_BASE
     ERR_TBL_IT(ESP_ERR_IMAGE_BASE),                             /*  8192 0x2000 */

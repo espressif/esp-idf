@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,7 +103,6 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
         for (int i = 0; i < TEST_NUM_TASKS; i++) {
             // Create a task with caps
             TEST_ASSERT_EQUAL(pdPASS, xTaskCreateWithCaps(task_with_caps_self_delete, "task", 4096, NULL, UNITY_FREERTOS_PRIORITY, &task_handle[i], MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
-            TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
             // Get the task's memory
             TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle[i], &puxStackBuffer, &pxTaskBuffer));
         }
@@ -112,7 +111,11 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
             // Notify the task to delete itself
             xTaskNotifyGive(task_handle[i]);
         }
+        // Let the scheduler run the self-delete tasks.
+        vTaskDelay(1);
     }
+    // Allow the last batch to be freed by the cleanup task in vTaskDeleteWithCaps().
+    vTaskDelay(50);
 }
 
 #endif /* CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM */
@@ -354,7 +357,7 @@ TEST_CASE("IDF additions: IDF tick hooks during scheduler suspension", "[freerto
 
         /* Cleanup */
         vTaskSuspend(suspend_task_handle[x]);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(10);
         vTaskDelete(suspend_task_handle[x]);
     }
 }

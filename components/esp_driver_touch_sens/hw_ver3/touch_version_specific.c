@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,13 +52,10 @@ void touch_priv_enable_module(bool enable)
 
 void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
 {
-    /* If the touch controller object has not been allocated, return directly */
-    if (!g_touch) {
-        return;
-    }
+    touch_sensor_handle_t sens_handle = (touch_sensor_handle_t)arg;
     bool need_yield = false;
     uint32_t status = touch_ll_get_intr_status_mask();
-    g_touch->is_meas_timeout = false;
+    sens_handle->is_meas_timeout = false;
     touch_ll_interrupt_clear(status);
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
@@ -67,7 +64,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
         /* Not a valid channel */
         return;
     }
-    data.chan = g_touch->ch[ch_offset];
+    data.chan = sens_handle->ch[ch_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
         return;
@@ -75,55 +72,55 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     data.chan_id = data.chan->id;
 
     if (status & TOUCH_LL_INTR_MASK_DONE) {
-        if (g_touch->cbs.on_measure_done) {
-            need_yield |= g_touch->cbs.on_measure_done(g_touch, &data, g_touch->user_ctx);
+        if (sens_handle->cbs.on_measure_done) {
+            need_yield |= sens_handle->cbs.on_measure_done(sens_handle, &data, sens_handle->user_ctx);
         }
     }
     if (status & TOUCH_LL_INTR_MASK_SCAN_DONE) {
-        if (g_touch->cbs.on_scan_done) {
-            need_yield |= g_touch->cbs.on_scan_done(g_touch, &data, g_touch->user_ctx);
+        if (sens_handle->cbs.on_scan_done) {
+            need_yield |= sens_handle->cbs.on_scan_done(sens_handle, &data, sens_handle->user_ctx);
         }
     }
     if (status & TOUCH_LL_INTR_MASK_PROX_DONE) {
         data.chan->prox_cnt++;
         /* The proximity sensing result only accurate when the scanning times equal to the sample_cfg_num */
-        if (data.chan->prox_cnt == g_touch->sample_cfg_num) {
+        if (data.chan->prox_cnt == sens_handle->sample_cfg_num) {
             data.chan->prox_cnt = 0;
-            for (uint32_t i = 0; i < g_touch->sample_cfg_num; i++) {
+            for (uint32_t i = 0; i < sens_handle->sample_cfg_num; i++) {
                 touch_ll_read_chan_data(data.chan_id, i, TOUCH_LL_READ_BENCHMARK, &data.chan->prox_val[i]);
             }
-            if (g_touch->cbs.on_proximity_meas_done) {
-                need_yield |= g_touch->cbs.on_proximity_meas_done(g_touch, &data, g_touch->user_ctx);
+            if (sens_handle->cbs.on_proximity_meas_done) {
+                need_yield |= sens_handle->cbs.on_proximity_meas_done(sens_handle, &data, sens_handle->user_ctx);
             }
         }
     }
     if (status & TOUCH_LL_INTR_MASK_ACTIVE) {
         /* When the guard ring activated, disable the scanning of other channels to avoid fake touch */
         TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-        if (g_touch->immersion_proof && data.chan == g_touch->guard_chan) {
+        if (sens_handle->immersion_proof && data.chan == sens_handle->guard_chan) {
             touch_ll_enable_scan_mask(~BIT(data.chan->id), false);
         }
         TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-        if (g_touch->cbs.on_active) {
-            need_yield |= g_touch->cbs.on_active(g_touch, &data, g_touch->user_ctx);
+        if (sens_handle->cbs.on_active) {
+            need_yield |= sens_handle->cbs.on_active(sens_handle, &data, sens_handle->user_ctx);
         }
     }
     if (status & TOUCH_LL_INTR_MASK_INACTIVE) {
         /* When the guard ring inactivated, enable the scanning of other channels again */
         TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-        if (g_touch->immersion_proof && data.chan == g_touch->guard_chan) {
-            touch_ll_enable_scan_mask(g_touch->chan_mask & (~BIT(g_touch->shield_chan->id)), true);
+        if (sens_handle->immersion_proof && data.chan == sens_handle->guard_chan) {
+            touch_ll_enable_scan_mask(sens_handle->chan_mask & (~BIT(sens_handle->shield_chan->id)), true);
         }
         TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-        if (g_touch->cbs.on_inactive) {
-            need_yield |= g_touch->cbs.on_inactive(g_touch, &data, g_touch->user_ctx);
+        if (sens_handle->cbs.on_inactive) {
+            need_yield |= sens_handle->cbs.on_inactive(sens_handle, &data, sens_handle->user_ctx);
         }
     }
     if (status & TOUCH_LL_INTR_MASK_TIMEOUT) {
-        g_touch->is_meas_timeout = true;
+        sens_handle->is_meas_timeout = true;
         touch_ll_force_done_curr_measurement();
-        if (g_touch->cbs.on_timeout) {
-            need_yield |= g_touch->cbs.on_timeout(g_touch, &data, g_touch->user_ctx);
+        if (sens_handle->cbs.on_timeout) {
+            need_yield |= sens_handle->cbs.on_timeout(sens_handle, &data, sens_handle->user_ctx);
         }
     }
 

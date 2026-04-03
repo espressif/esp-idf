@@ -46,10 +46,10 @@ A secure element (ATECC608) can be also used for the underlying TLS connection i
 
 .. only:: SOC_ECDSA_SUPPORTED
 
-    Use ECDSA Peripheral for TLS
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Use ECDSA Digital Signature Peripheral (ECDSA_DS) for TLS
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The ECDSA peripheral can be used for the underlying TLS connection in the HTTP client connection. Please refer to the **ECDSA Peripheral with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The HTTP client can be configured to use ECDSA peripheral as follows:
+    The ECDSA Digital Signature Peripheral (ECDSA_DS) can be used for the underlying TLS connection in the HTTP client connection. Please refer to the **ECDSA Digital Signature Peripheral (ECDSA_DS) with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The HTTP client can be configured to use the ECDSA_DS peripheral as follows:
 
     .. code-block:: c
 

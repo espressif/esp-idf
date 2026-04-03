@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -242,7 +242,7 @@ static void do_stack_overflow(int depth, volatile uint8_t *sink)
     do_stack_overflow(depth + 1, sink);
 }
 
-static void do_stack_underflow(void *underflow)
+static void __attribute__((noinline)) do_stack_underflow(void *underflow)
 {
     __asm__ __volatile__(
         "mv sp, %0\n" :: "r"(underflow)
@@ -255,7 +255,7 @@ static void do_stack_underflow(void *underflow)
 }
 
 typedef struct {
-    bool    underflow;
+    bool underflow;
     StackType_t *underflow_stack;
 } StackProtectionTaskArgs;
 
@@ -275,8 +275,6 @@ static void do_stack_smash(bool underflow)
 {
     static struct {
         StackType_t StackBuffer[2048];
-
-        StackType_t UnderflowStart[0];
         StackType_t Underflow[1024];
         StackType_t UnderflowEnd[0];
     } tData;
@@ -286,8 +284,8 @@ static void do_stack_smash(bool underflow)
     taskArgs.underflow = underflow;
     taskArgs.underflow_stack = tData.UnderflowEnd;
 
-    TaskHandle_t handle = xTaskCreateStatic(tStackProtection, "tt", sizeof(tData.StackBuffer), &taskArgs, 10, tData.StackBuffer, &TaskBuffer);
-    assert(handle != NULL);
+    TaskHandle_t handle = xTaskCreateStatic(tStackProtection, "tStackProt", sizeof(tData.StackBuffer) / sizeof(StackType_t), &taskArgs, 10, tData.StackBuffer, &TaskBuffer);
+    TEST_ASSERT_NULL(handle);
 }
 
 TEST_CASE("Test REE stack overflow", "[exception]")

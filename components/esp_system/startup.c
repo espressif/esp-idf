@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,14 +34,41 @@ uint64_t g_startup_time = 0;
 extern void esp_startup_start_app(void);
 
 // Entry point for core 0 from hardware init (port layer)
+#if defined(__APPLE__) && defined(__MACH__)
+static void start_cpu0_default(void);
+__attribute__((weak, noreturn)) void start_cpu0(void)
+{
+    start_cpu0_default();
+    __builtin_unreachable();
+}
+#else
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
+#endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 // Entry point for core [1..X] from hardware init (port layer)
+#if defined(__APPLE__) && defined(__MACH__)
+static void start_cpu_other_cores_default(void);
+__attribute__((weak, noreturn)) void start_cpu_other_cores(void)
+{
+    start_cpu_other_cores_default();
+    __builtin_unreachable();
+}
+#else
 void start_cpu_other_cores(void) __attribute__((weak, alias("start_cpu_other_cores_default"))) __attribute__((noreturn));
+#endif
 
 // App entry point for core [1..X]
+#if defined(__APPLE__) && defined(__MACH__)
+static void esp_startup_start_app_other_cores_default(void);
+__attribute__((weak, noreturn)) void esp_startup_start_app_other_cores(void)
+{
+    esp_startup_start_app_other_cores_default();
+    __builtin_unreachable();
+}
+#else
 void esp_startup_start_app_other_cores(void) __attribute__((weak, alias("esp_startup_start_app_other_cores_default"))) __attribute__((noreturn));
+#endif
 
 static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
@@ -79,10 +106,14 @@ static void __do_global_ctors_1(void)
 }
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 
+/* declare the start and stop symbols surrounding the array of init functions
+ * registered by calling the system init function macros */
+_SECTION_ATTR_SYMBOL_DECL_GENERIC(esp_system_init_fn_t, esp_sys_init_fn)
+
 /**
- * @brief Call component init functions defined using ESP_SYSTEM_INIT_Fn macros.
+ * @brief Call component init functions defined using the system init function macros.
  * The esp_system_init_fn_t structures describing these functions are collected into
- * an array [_esp_system_init_fn_array_start, _esp_system_init_fn_array_end) by the
+ * an array [_esp_sys_init_fn_start, _esp_sys_init_fn_end) by the
  * linker. The functions are sorted by their priority value.
  * The sequence of the init function calls (sorted by priority) is documented in
  * system_init_fn.txt file.
@@ -91,13 +122,10 @@ static void __do_global_ctors_1(void)
 __attribute__((no_sanitize_undefined)) /* TODO: IDF-8133 */
 static void do_system_init_fn(uint32_t stage_num)
 {
-    extern esp_system_init_fn_t _esp_system_init_fn_array_start;
-    extern esp_system_init_fn_t _esp_system_init_fn_array_end;
-
-    esp_system_init_fn_t *p;
+    const esp_system_init_fn_t *p;
 
     int core_id = esp_cpu_get_core_id();
-    for (p = &_esp_system_init_fn_array_start; p < &_esp_system_init_fn_array_end; ++p) {
+    for (p = _SECTION_START(esp_sys_init_fn); p < _SECTION_END(esp_sys_init_fn); ++p) {
         if (p->stage == stage_num && (p->cores & BIT(core_id)) != 0) {
             // During core init, stdout is not initialized yet, so use early logging.
             ESP_EARLY_LOGD(TAG, "calling init function: %p on core: %d", p->fn, core_id);
@@ -171,7 +199,6 @@ static void do_secondary_init(void)
 
 static void start_cpu0_default(void)
 {
-    extern void __libc_init_array(void);
     // Initialize core components and services.
     // Operations that needs the cache to be disabled have to be done here.
     do_core_init();
@@ -180,7 +207,10 @@ static void start_cpu0_default(void)
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
     __do_global_ctors_1();
 #endif
+#if !CONFIG_IDF_TARGET_LINUX
+    extern void __libc_init_array(void);
     __libc_init_array();
+#endif // !CONFIG_IDF_TARGET_LINUX
 
     /* ----------------------------------Separator-----------------------------
      * After this stage, other CPU start running with the cache, however the scheduler (and ipc service) is not available.
@@ -199,3 +229,11 @@ static void start_cpu0_default(void)
 
     ESP_INFINITE_LOOP();
 }
+
+#if CONFIG_IDF_TARGET_LINUX && !defined(ESP_SYSTEM_LINUX_NO_MAIN)
+__attribute__((weak)) int main(int argc, char **argv)
+{
+    start_cpu0();
+    return 0;
+}
+#endif // CONFIG_IDF_TARGET_LINUX

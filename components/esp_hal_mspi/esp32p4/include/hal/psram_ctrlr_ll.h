@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,7 @@ extern "C" {
 
 #define PSRAM_CTRLR_LL_THRESH_INT_SUPPORTED      1
 #define PSRAM_CTRLR_LL_PMS_INT_SUPPORTED         1
+#define PSRAM_CTRLR_LL_ADDR_INT_SUPPORTED        1
 #define PSRAM_CTRLR_LL_EVENT_SLV_ST_END          (1<<3)
 #define PSRAM_CTRLR_LL_EVENT_MST_ST_END          (1<<4)
 #define PSRAM_CTRLR_LL_EVENT_ECC_ERR             (1<<5)
@@ -263,6 +264,20 @@ static inline void psram_ctrlr_ll_enable_hex_data_line_mode(uint32_t mspi_id, bo
 }
 
 /**
+ * @brief Get PSRAM hex data line mode enable status
+ *
+ * @param mspi_id      mspi_id
+ *
+ * @return true if hex data line mode is enabled, false otherwise
+ */
+__attribute__((always_inline))
+static inline bool psram_ctrlr_ll_is_hex_data_line_mode(uint32_t mspi_id)
+{
+    (void)mspi_id;
+    return (SPIMEM2.mem_sram_cmd.mem_sdin_hex & SPIMEM2.mem_sram_cmd.mem_sdout_hex);
+}
+
+/**
  * @brief Enable PSRAM AXI master access
  *
  * @param mspi_id      mspi_id
@@ -360,6 +375,7 @@ static inline void _psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en
     (void)mspi_id;
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_psram_sys_clk_en = en;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_pll_clk_en = en;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_core_clk_en = en;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section

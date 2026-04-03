@@ -280,7 +280,9 @@ twai_error_state_t twai_hal_get_err_state(twai_hal_context_t *hal_ctx);
 __attribute__((always_inline))
 static inline twai_error_flags_t twai_hal_get_err_flags(twai_hal_context_t *hal_ctx)
 {
-    return hal_ctx->errors;
+    twai_error_flags_t error_flags = hal_ctx->errors;
+    hal_ctx->errors.val = 0;    // clear ctx for next errors
+    return error_flags;
 }
 
 /* ------------------------------- TX and RX -------------------------------- */

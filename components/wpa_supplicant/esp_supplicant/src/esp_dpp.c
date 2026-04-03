@@ -771,12 +771,14 @@ static void esp_dpp_auth_resp_retry(void *eloop_ctx, void *timeout_ctx)
     esp_dpp_auth_resp_retry_timeout(NULL, NULL);
 }
 
-static void tx_status_handler(void *arg, esp_event_base_t event_base,
-                              int32_t event_id, void *event_data)
+static void tx_status_eloop_handler(void *eloop_ctx, void *event_data)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
-
     wifi_event_action_tx_status_t *evt = event_data;
+
+    if (!evt) {
+        return;
+    }
 
     wpa_printf(MSG_DEBUG, "Mgmt Tx Status - %d, Cookie - 0x%x",
                evt->status, (uint32_t)evt->context);
@@ -784,13 +786,9 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
     if (evt->op_id != s_current_tx_op_id) {
         wpa_printf(MSG_DEBUG, "DPP: status not for recent frame op_id=%u, s_current_tx_op_id=%u",
                    evt->op_id, s_current_tx_op_id);
-        return;
-    }
-    if (!auth) {
+    } else if (!auth) {
         wpa_printf(MSG_DEBUG, "Auth already deinitialized, return");
-        return;
-    }
-    if (auth->waiting_auth_conf) {
+    } else if (auth->waiting_auth_conf) {
         eloop_cancel_timeout(esp_dpp_auth_resp_retry_timeout, NULL, NULL);
         if (evt->status == WIFI_ACTION_TX_FAILED) {
             /* failed to send auth response frame */
@@ -810,20 +808,51 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
             eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth);
         }
     }
+    os_free(evt);
+}
+
+static void tx_status_handler(void *arg, esp_event_base_t event_base,
+                              int32_t event_id, void *event_data)
+{
+    wifi_event_action_tx_status_t *evt_c = os_malloc(sizeof(*evt_c));
+    if (evt_c) {
+        os_memcpy(evt_c, event_data, sizeof(*evt_c));
+        if (eloop_register_timeout(0, 0, tx_status_eloop_handler, NULL, evt_c) < 0) {
+            os_free(evt_c);
+        }
+    } else {
+        wpa_printf(MSG_ERROR, "DPP: Failed to allocate memory for TX status");
+    }
+}
+
+static void roc_status_eloop_handler(void *eloop_ctx, void *event_data)
+{
+    wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
+
+    if (evt) {
+        if (evt->context == (uint32_t)s_action_rx_cb) {
+            eloop_cancel_timeout(dpp_listen_next_channel, NULL, NULL);
+            eloop_register_timeout(0, 0, dpp_listen_next_channel, NULL, NULL);
+        }
+        os_free(evt);
+    }
+
+    atomic_store(&roc_in_progress, false);
+    os_event_group_set_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED);
 }
 
 static void roc_status_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
-    wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
-
-    if (evt->context == (uint32_t)s_action_rx_cb) {
-        eloop_cancel_timeout(dpp_listen_next_channel, NULL, NULL);
-        eloop_register_timeout(0, 0, dpp_listen_next_channel, NULL, NULL);
+    wifi_event_roc_done_t *evt_c = os_malloc(sizeof(*evt_c));
+    if (evt_c) {
+        os_memcpy(evt_c, event_data, sizeof(*evt_c));
+        if (eloop_register_timeout(0, 0, roc_status_eloop_handler, NULL, evt_c) < 0) {
+            os_free(evt_c);
+        }
+    } else {
+        wpa_printf(MSG_ERROR, "DPP: Failed to allocate memory for ROC status");
     }
-
-    atomic_store(&roc_in_progress, false);
-    os_event_group_set_bits(s_dpp_event_group, DPP_ROC_EVENT_HANDLED);
 }
 
 static char *esp_dpp_parse_chan_list(const char *chan_list)

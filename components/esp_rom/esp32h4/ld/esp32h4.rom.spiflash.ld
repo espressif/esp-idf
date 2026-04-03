@@ -18,8 +18,8 @@
  ***************************************/
 
 /* Functions */
-spi_flash_disable_cache = 0x400001f8;
-spi_flash_restore_cache = 0x400001fc;
+rom_spi_flash_disable_cache = 0x400001f8;
+rom_spi_flash_restore_cache = 0x400001fc;
 spi_flash_cache_enabled = 0x40000200;
 spi_flash_enable_cache = 0x40000204;
 esp_enable_cache_flash_wrap = 0x40000208;

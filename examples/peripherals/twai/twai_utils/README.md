@@ -34,7 +34,7 @@ ESP32 Pin     Transceiver    TWAI Bus
 ---------     -----------    --------
 GPIO4 (TX) -->  CTX
 GPIO5 (RX) <--  CRX
-3.3V       -->  VCC
+3.3V/5V    -->  VCC
 GND        -->  GND
               TWAI_H     <-->  TWAI_H
               TWAI_L     <-->  TWAI_L

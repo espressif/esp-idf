@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,9 +76,9 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
 
 #define TEST_IMG_SIZE (200 * 200 * sizeof(uint16_t))
 
-static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_handle_t panel_handle)
+static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_handle_t panel_handle, bool use_psram)
 {
-    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA | (use_psram ? MALLOC_CAP_SPIRAM : MALLOC_CAP_INTERNAL));
     TEST_ASSERT_NOT_NULL(img);
 
     esp_lcd_panel_reset(panel_handle);
@@ -115,10 +115,6 @@ static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_ha
 
     printf("turn off the panel\r\n");
     esp_lcd_panel_disp_on_off(panel_handle, false);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
-    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
-    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
-    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
     free(img);
 }
 
@@ -133,6 +129,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 16, 16, false);
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
@@ -142,6 +139,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 
 #if SOC_SPI_SUPPORT_OCT
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 8, 8, true);
@@ -152,6 +150,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 
     test_spi_lcd_common_initialize(&io_handle, NULL, NULL, 16, 16, true);
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
@@ -161,6 +160,7 @@ TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 #endif // SOC_SPI_SUPPORT_OCT
 }
 
@@ -176,7 +176,15 @@ TEST_CASE("lcd_panel_with_8-line_spi_interface_(st7789)", "[lcd]")
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
-    lcd_panel_test(io_handle, panel_handle);
+    lcd_panel_test(io_handle, panel_handle, false);
+#if SOC_PSRAM_DMA_CAPABLE && CONFIG_PSRAM
+    printf("test with PSRAM\r\n");
+    lcd_panel_test(io_handle, panel_handle, true);
+#endif
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 }
 
 TEST_CASE("lcd_panel_with_8-line_spi_interface_(nt35510)", "[lcd]")
@@ -190,7 +198,15 @@ TEST_CASE("lcd_panel_with_8-line_spi_interface_(nt35510)", "[lcd]")
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
-    lcd_panel_test(io_handle, panel_handle);
+    lcd_panel_test(io_handle, panel_handle, false);
+#if SOC_PSRAM_DMA_CAPABLE && CONFIG_PSRAM
+    printf("test with PSRAM\r\n");
+    lcd_panel_test(io_handle, panel_handle, true);
+#endif
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 }
 #endif // SOC_SPI_SUPPORT_OCT
 
@@ -205,7 +221,15 @@ TEST_CASE("lcd_panel_with_1-line_spi_interface_(st7789)", "[lcd]")
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
-    lcd_panel_test(io_handle, panel_handle);
+    lcd_panel_test(io_handle, panel_handle, false);
+#if SOC_PSRAM_DMA_CAPABLE && CONFIG_PSRAM
+    printf("test with PSRAM\r\n");
+    lcd_panel_test(io_handle, panel_handle, true);
+#endif
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
 }
 
 TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
@@ -275,5 +299,6 @@ TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
     free(color_data);
 }

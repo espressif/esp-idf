@@ -504,6 +504,21 @@ esp_err_t emac_hal_adj_freq_factor(emac_hal_context_t *hal, double scale_factor)
     return ESP_OK;
 }
 
+esp_err_t emac_hal_ptp_adj_freq(emac_hal_context_t *hal, int32_t adj_ppb)
+{
+    if (emac_ll_get_ts_update_method(hal->ptp_regs) != ETH_PTP_UPDATE_METHOD_FINE ||
+            !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    uint32_t current = emac_ll_get_ts_addend_val(hal->ptp_regs);
+    int64_t addend_new = (int64_t)current * (1000000000ll + adj_ppb);
+    addend_new /= 1000000000ll;
+
+    emac_ll_set_ts_addend_val(hal->ptp_regs, (uint32_t)addend_new);
+    emac_ll_ts_addend_do_update(hal->ptp_regs);
+    return ESP_OK;
+}
+
 esp_err_t emac_hal_ptp_time_add(emac_hal_context_t *hal, uint32_t off_sec, uint32_t off_nsec, bool sign)
 {
     emac_ll_set_ts_update_second_val(hal->ptp_regs, off_sec);
@@ -569,6 +584,11 @@ esp_err_t emac_hal_set_pps0_out_freq(emac_hal_context_t *hal, uint32_t freq_hz)
     }
     emac_ll_set_pps0_out_freq(hal->ptp_regs, n);
     return ESP_OK;
+}
+
+uint32_t emac_hal_get_ts_resolution(emac_hal_context_t *hal)
+{
+    return subsecond2nanosecond(hal, emac_ll_get_ts_sub_second_incre_val(hal->ptp_regs));
 }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 

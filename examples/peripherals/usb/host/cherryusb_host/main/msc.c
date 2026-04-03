@@ -273,7 +273,12 @@ esp_err_t msc_host_vfs_register(struct usbh_msc *msc_class,
     strcpy(vfs->base_path, base_path);
     vfs->pdrv = pdrv;
 
-    ret = esp_vfs_fat_register(base_path, drive, mount_config->max_files, &fs);
+    esp_vfs_fat_conf_t conf = {
+        .base_path = base_path,
+        .fat_drive = drive,
+        .max_files = mount_config->max_files,
+    };
+    ret = esp_vfs_fat_register(&conf, &fs);
     ESP_GOTO_ON_ERROR(ret, fail, TAG, "Failed to register filesystem, error=%s", esp_err_to_name(ret));
     vfs->fs = fs;
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -56,7 +56,7 @@ int main(void) {
             ulp_riscv_wakeup_main_processor();
         }
 
-        ulp_riscv_delay_cycles(1000 * ULP_RISCV_CYCLES_PER_MS);
+        ulp_riscv_delay_us(1000000);
     }
 
     return 0;

@@ -3,17 +3,29 @@ idf_build_get_property(target IDF_TARGET)
 # Bootloader builds only needs it for config, not for anything else
 idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(non_os_build OR ${target} STREQUAL "linux")
+if(non_os_build)
     idf_component_register()
     return()
 endif()
 
-set(srcs "stdio_vfs.c"
-         "stdio_simple.c"
-         "stdio_syscalls_simple.c")
+set(srcs)
+set(includes)
+
+if(${target} STREQUAL "linux")
+    list(APPEND srcs "stdio_port.c"
+                     "linux/esp_stdio_linux.c")
+    list(APPEND includes "include"
+                         "linux/include")
+else()
+    list(APPEND srcs "stdio_port.c"
+                     "stdio_vfs.c"
+                     "stdio_simple.c"
+                     "stdio_syscalls_simple.c")
+    list(APPEND includes "include")
+endif()
 
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS include)
+                       INCLUDE_DIRS ${includes})
 
 if(CONFIG_VFS_SUPPORT_IO)
     if(IDF_BUILD_V2)

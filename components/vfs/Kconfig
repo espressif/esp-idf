@@ -86,6 +86,13 @@ menu "Virtual file system"
         help
             Define maximum number of virtual filesystems that can be registered.
 
+    config VFS_SUPPRESS_CTX_DEPRECATION
+        bool "Suppress context-less API deprecation warning"
+        default n
+        help
+            The VFS APIs without context pointer are deprecated and will be removed in the next major release.
+            Please switch to the APIs with context pointer,
+            or alternatively enable this option to silence the warning.
 
     menu "Host File System I/O (Semihosting)"
         depends on VFS_SUPPORT_IO

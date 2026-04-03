@@ -4,6 +4,8 @@
 # Remove duplicates from a string containing compilation flags
 function(remove_duplicated_flags FLAGS UNIQFLAGS)
     set(FLAGS_LIST "${FLAGS}")
+    # Remove leading and trailing spaces
+    string(STRIP "${FLAGS_LIST}" FLAGS_LIST)
     # Convert the given flags, as a string, into a CMake list type
     separate_arguments(FLAGS_LIST)
     # Remove all the duplicated flags

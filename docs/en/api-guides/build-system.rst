@@ -264,6 +264,9 @@ The build system provides special treatment to the ``main`` component. It is a c
 2. Set ``EXTRA_COMPONENT_DIRS`` in the project CMakeLists.txt to include the renamed ``main`` directory.
 3. Specify the dependencies in the renamed component's CMakeLists.txt file via REQUIRES or PRIV_REQUIRES arguments :ref:`on component registration <cmake_minimal_component_cmakelists>`.
 
+.. note::
+
+   A project without a ``main`` component cannot use the ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>`, as this property explicitly relies on the presence of the ``main`` component. Ensure that the ``MINIMAL_BUILD`` build property is not set for projects that do not include a ``main`` component.
 
 Overriding Default Build Specifications
 ---------------------------------------
@@ -1097,7 +1100,33 @@ If and only if an ``sdkconfig.defaults`` file exists, the build system will also
 
 If ``SDKCONFIG_DEFAULTS`` is used to override the name of defaults file/files, the name of target-specific defaults file will be derived from ``SDKCONFIG_DEFAULTS`` value/values using the rule above. When there are multiple files in ``SDKCONFIG_DEFAULTS``, target-specific file will be applied right after the file bringing it in, before all latter files in ``SDKCONFIG_DEFAULTS``
 
-For example, if ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``, and there is a file ``sdkconfig.defaults.esp32`` in the same folder, then the files will be applied in the following order: (1) sdkconfig.defaults (2) sdkconfig.defaults.esp32 (3) sdkconfig_devkit1.
+For the following example, suppose the build target is ``esp32`` and these files exist in the project directory:
+
+.. code-block:: none
+
+    sdkconfig.defaults
+    sdkconfig.defaults.esp32
+    sdkconfig_devkit1
+
+**Example 1**: ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``
+
+The build system will apply the files in this order:
+
+1. ``sdkconfig.defaults``.
+2. ``sdkconfig.defaults.esp32`` - build system will always try to load target specific variation of every file listed in ``SDKCONFIG_DEFAULTS``.
+3. ``sdkconfig_devkit1``.
+4. The build system will also attempt to load a file named ``sdkconfig_devkit1.esp32``, but because there is no file with this name, no additional file will be loaded.
+
+**Example 2**: ``SDKCONFIG_DEFAULTS="sdkconfig_devkit1"``
+
+The build system will apply the files in this order:
+
+1. ``sdkconfig_devkit1``.
+2. The build system will also attempt to load a file named ``sdkconfig_devkit1.esp32``, but because there is no file with this name, no additional file will be loaded.
+
+.. warning::
+
+    In the second example, the standard ``sdkconfig.defaults`` (or its target specific variation) is not applied, because it was not explicitly included in ``SDKCONFIG_DEFAULTS``.
 
 You can find more detailed information on how the project configuration works in the :ref:`Project Configuration Guide <project-configuration-guide>`. In the :ref:`Configuration Files Structure and Relationships <configuration-structure>`, you can find lower-level information about the configuration files.
 

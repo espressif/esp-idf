@@ -37,6 +37,11 @@ void temperature_sensor_hal_init(void);
  */
 void temperature_sensor_hal_sync_tsens_idx(uint8_t tsens_idx);
 
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+void temperature_sensor_hal_i2c_saradc_reg_backup(void);
+void temperature_sensor_hal_i2c_saradc_reg_restore(void);
+#endif
+
 #endif // SOC_TEMP_SENSOR_SUPPORTED
 
 #ifdef __cplusplus

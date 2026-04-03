@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -220,7 +220,11 @@ ble_transport_to_ll_cmd_impl(void *buf)
     data[0] = HCI_H4_CMD;
     memcpy(data + 1, buf, len - 1);
     hci_uart_send(data, len);
+#if MYNEWT_VAL(MP_RUNTIME_ALLOC)
+    ble_transport_free(BLE_HCI_CMD, buf);
+#else
     ble_transport_free(buf);
+#endif
     return 0;
 }
 

@@ -35,37 +35,16 @@
 #include "bta_gattc_int.h"
 #include "stack/l2c_api.h"
 #include "osi/allocator.h"
+#include "gatt_int.h"
 
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
 
-
-static const UINT8  base_uuid[LEN_UUID_128] = {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-                                               0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-                                              };
-
 static const BD_ADDR dummy_bda = {0, 0, 0, 0, 0, 0};
 
 #define GATTC_COMMAND_QUEUE_SIZE_MAX    30
 
-/*******************************************************************************
-**
-** Function         bta_gatt_convert_uuid16_to_uuid128
-**
-** Description      Convert a 16 bits UUID to be an standard 128 bits one.
-**
-** Returns          TRUE if two uuid match; FALSE otherwise.
-**
-*******************************************************************************/
-void bta_gatt_convert_uuid16_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT16 uuid_16)
-{
-    UINT8   *p = &uuid_128[LEN_UUID_128 - 4];
-
-    memcpy (uuid_128, base_uuid, LEN_UUID_128);
-
-    UINT16_TO_STREAM(p, uuid_16);
-}
 /*******************************************************************************
 **
 ** Function         bta_gattc_uuid_compare
@@ -77,11 +56,8 @@ void bta_gatt_convert_uuid16_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT16 uui
 *******************************************************************************/
 BOOLEAN bta_gattc_uuid_compare (const tBT_UUID *p_src, const tBT_UUID *p_tar, BOOLEAN is_precise)
 {
-    UINT8  su[LEN_UUID_128], tu[LEN_UUID_128];
-    const UINT8  *ps, *pt;
-
     /* any of the UUID is unspecified */
-    if (p_src == 0 || p_tar == 0) {
+    if (p_src == 0 || p_tar == 0 || p_src->len == 0 || p_tar->len == 0) {
         if (is_precise) {
             return FALSE;
         } else {
@@ -89,29 +65,7 @@ BOOLEAN bta_gattc_uuid_compare (const tBT_UUID *p_src, const tBT_UUID *p_tar, BO
         }
     }
 
-    /* If both are 16-bit, we can do a simple compare */
-    if (p_src->len == 2 && p_tar->len == 2) {
-        return p_src->uu.uuid16 == p_tar->uu.uuid16;
-    }
-
-    /* One or both of the UUIDs is 128-bit */
-    if (p_src->len == LEN_UUID_16) {
-        /* convert a 16 bits UUID to 128 bits value */
-        bta_gatt_convert_uuid16_to_uuid128(su, p_src->uu.uuid16);
-        ps = su;
-    } else {
-        ps = p_src->uu.uuid128;
-    }
-
-    if (p_tar->len == LEN_UUID_16) {
-        /* convert a 16 bits UUID to 128 bits value */
-        bta_gatt_convert_uuid16_to_uuid128(tu, p_tar->uu.uuid16);
-        pt = tu;
-    } else {
-        pt = p_tar->uu.uuid128;
-    }
-
-    return (memcmp(ps, pt, LEN_UUID_128) == 0);
+    return gatt_uuid_compare(*p_src, *p_tar);
 }
 
 /*******************************************************************************
@@ -171,8 +125,13 @@ tBTA_GATTC_CLCB *bta_gattc_find_clcb_by_cif (UINT8 client_if, BD_ADDR remote_bda
     tBTA_GATTC_CLCB *p_clcb = &bta_gattc_cb.clcb[0];
     UINT8   i;
 
+    if (remote_bda == NULL) {
+        return NULL;
+    }
+
     for (i = 0; i < BTA_GATTC_CLCB_MAX; i ++, p_clcb ++) {
         if (p_clcb->in_use &&
+                p_clcb->p_rcb != NULL &&
                 p_clcb->p_rcb->client_if == client_if &&
                 p_clcb->transport == transport &&
                 bdcmp(p_clcb->bda, remote_bda) == 0) {
@@ -242,6 +201,10 @@ tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bd
                 p_clcb->p_srcb->num_clcb ++;
                 p_clcb->p_rcb->num_clcb ++;
             } else {
+                if (p_clcb->p_cmd_list) {
+                     list_free(p_clcb->p_cmd_list);
+                     p_clcb->p_cmd_list = NULL;
+                }
                 /* release this clcb if clcb or srcb allocation failed */
                 p_clcb->in_use = FALSE;
                 p_clcb = NULL;
@@ -286,16 +249,16 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
 
     if (p_clcb) {
         p_srcb = p_clcb->p_srcb;
-        if (p_srcb->num_clcb) {
+        if (p_srcb != NULL && p_srcb->num_clcb) {
             p_srcb->num_clcb --;
         }
 
-        if (p_clcb->p_rcb->num_clcb) {
+        if (p_clcb->p_rcb != NULL && p_clcb->p_rcb->num_clcb) {
             p_clcb->p_rcb->num_clcb --;
         }
 
         /* if the srcb is no longer needed, reset the state */
-        if ( p_srcb->num_clcb == 0) {
+        if (p_srcb != NULL && p_srcb->num_clcb == 0) {
             p_srcb->connected = FALSE;
             p_srcb->state = BTA_GATTC_SERV_IDLE;
             p_srcb->mtu = 0;
@@ -305,15 +268,18 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
                 list_free(p_srcb->p_srvc_cache);
                 p_srcb->p_srvc_cache = NULL;
             }
+#if (GATTC_CACHE_NVS == TRUE)
+            bta_gattc_co_cache_close(p_srcb->server_bda, 0);
+#endif
         }
 
-        if ( p_clcb->p_q_cmd != NULL && !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd)){
+        if (p_clcb->p_q_cmd != NULL &&
+            (p_clcb->p_cmd_list == NULL || !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd))) {
             osi_free(p_clcb->p_q_cmd);
             p_clcb->p_q_cmd = NULL;
         }
         // don't forget to clear the command queue before dealloc the clcb.
-        list_clear(p_clcb->p_cmd_list);
-        osi_free((void *)p_clcb->p_cmd_list);
+        list_free(p_clcb->p_cmd_list);
         p_clcb->p_cmd_list = NULL;
         //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
@@ -740,12 +706,12 @@ BOOLEAN bta_gattc_mark_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR_PTR remote_bda
             if (add)
                 /* mask on the cif bit */
             {
-                *p_cif_mask |= (1 << (client_if - 1));
+                *p_cif_mask |= BTA_GATTC_CIF_MASK_BIT(client_if);
             } else {
-                if (client_if != 0) {
-                    *p_cif_mask &= (~(1 << (client_if - 1)));
-                } else {
+                if (client_if == 0) {
                     *p_cif_mask = 0;
+                } else {
+                    *p_cif_mask &= (~BTA_GATTC_CIF_MASK_BIT(client_if));
                 }
             }
             /* no BG connection for this device, make it available */
@@ -777,7 +743,7 @@ BOOLEAN bta_gattc_mark_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR_PTR remote_bda
 
                 p_cif_mask = is_listen ? &p_bg_tck->cif_adv_mask : &p_bg_tck->cif_mask;
 
-                *p_cif_mask = (1 << (client_if - 1));
+                *p_cif_mask = BTA_GATTC_CIF_MASK_BIT(client_if);
                 return TRUE;
             }
         }
@@ -804,12 +770,12 @@ BOOLEAN bta_gattc_check_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR remote_bda, U
         if (p_bg_tck->in_use &&
                 (bdcmp(p_bg_tck->remote_bda, remote_bda) == 0 ||
                  bdcmp(p_bg_tck->remote_bda, dummy_bda) == 0)) {
-            if (((p_bg_tck->cif_mask & (1 << (client_if - 1))) != 0) &&
+            if (((p_bg_tck->cif_mask & BTA_GATTC_CIF_MASK_BIT(client_if)) != 0) &&
                     role == HCI_ROLE_MASTER) {
                 is_bg_conn = TRUE;
             }
 
-            if (((p_bg_tck->cif_adv_mask & (1 << (client_if - 1))) != 0) &&
+            if (((p_bg_tck->cif_adv_mask & BTA_GATTC_CIF_MASK_BIT(client_if)) != 0) &&
                     role == HCI_ROLE_SLAVE) {
                 is_bg_conn = TRUE;
             }
@@ -1009,6 +975,10 @@ tBTA_GATTC_CLCB *bta_gattc_find_int_conn_clcb(tBTA_GATTC_DATA *p_msg)
 {
     tBTA_GATTC_CLCB *p_clcb = NULL;
 
+    if (p_msg == NULL) {
+        return NULL;
+    }
+
     if (p_msg->int_conn.role == HCI_ROLE_SLAVE) {
         bta_gattc_conn_find_alloc(p_msg->int_conn.remote_bda);
     }
@@ -1044,6 +1014,10 @@ tBTA_GATTC_CLCB *bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA *p_msg)
 {
     tBTA_GATTC_CLCB         *p_clcb = NULL;
 
+    if (p_msg == NULL) {
+        return NULL;
+    }
+
     bta_gattc_conn_dealloc(p_msg->int_conn.remote_bda);
     if ((p_clcb = bta_gattc_find_clcb_by_conn_id(p_msg->int_conn.hdr.layer_specific)) == NULL) {
         /* connection attempt failed, send connection callback event */
@@ -1072,6 +1046,8 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
     switch (p_src->len)
     {
         case 0:
+            /* Invalid/empty UUID: zero p_dest so callers don't use garbage */
+            memset(p_dest->uu, 0, sizeof(p_dest->uu));
             break;
 
         case LEN_UUID_16:
@@ -1080,8 +1056,8 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
             break;
 
         case LEN_UUID_32:
-            p_dest->uu[12] = p_src->uu.uuid16 & 0xff;
-            p_dest->uu[13] = (p_src->uu.uuid16 >> 8) & 0xff;
+            p_dest->uu[12] = p_src->uu.uuid32 & 0xff;
+            p_dest->uu[13] = (p_src->uu.uuid32 >> 8) & 0xff;
             p_dest->uu[14] = (p_src->uu.uuid32 >> 16) & 0xff;
             p_dest->uu[15] = (p_src->uu.uuid32 >> 24) & 0xff;
             break;
@@ -1093,6 +1069,7 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
 
         default:
             APPL_TRACE_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
+            memset(p_dest->uu, 0, sizeof(p_dest->uu));
             break;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,13 +23,13 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define IDF_TARGET_MAX_SPI_CLK_FREQ                 40*1000*1000
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          15
-#define IDF_TARGET_MAX_TRANS_TIME_POLL_CPU          15
+#define IDF_TARGET_MAX_TRANS_TIME_POLL_CPU          13
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          32
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_CPU          30
 
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define IDF_TARGET_MAX_SPI_CLK_FREQ                 40*1000*1000
-#define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          15
+#define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          17
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_CPU          15
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          32
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_CPU          30
@@ -44,9 +44,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define IDF_TARGET_MAX_SPI_CLK_FREQ                 40*1000*1000
 #if !CONFIG_FREERTOS_SMP // IDF-5826
-#define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          15
+#define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          17
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_CPU          15
-#define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          33
+#define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          35
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_CPU          30
 #else
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          17
@@ -58,7 +58,7 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define IDF_TARGET_MAX_SPI_CLK_FREQ                 26666*1000
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          35  //TODO: IDF-9551, check perform
-#define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          17
+#define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          19
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_CPU          32
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_CPU          15
 

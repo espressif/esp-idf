@@ -601,34 +601,63 @@ esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_off
     uint32_t src_current_offset = src_offset;
     uint32_t dest_current_offset = dest_offset;
     size_t remaining_size = size;
-    /* Read the portion that fits in the free MMU pages */
-    uint32_t mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
-    int attempts_for_mmap = 0;
-    while (remaining_size > 0) {
-        uint32_t chunk_size = MIN(remaining_size, mmu_free_pages_count * SPI_FLASH_MMU_PAGE_SIZE);
-        esp_partition_mmap_handle_t src_part_map;
-        const void *src_data = NULL;
-        error = esp_partition_mmap(src_part, src_current_offset, chunk_size, ESP_PARTITION_MMAP_DATA, &src_data, &src_part_map);
-        if (error == ESP_OK) {
-            attempts_for_mmap = 0;
+    if (src_part->encrypted) {
+        /* Read the portion that fits in the free MMU pages */
+        uint32_t mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+        int attempts_for_mmap = 0;
+        while (remaining_size > 0) {
+            uint32_t chunk_size = MIN(remaining_size, mmu_free_pages_count * SPI_FLASH_MMU_PAGE_SIZE);
+            esp_partition_mmap_handle_t src_part_map;
+            const void *src_data = NULL;
+            error = esp_partition_mmap(src_part, src_current_offset, chunk_size, ESP_PARTITION_MMAP_DATA, &src_data, &src_part_map);
+            if (error == ESP_OK) {
+                attempts_for_mmap = 0;
+                error = esp_partition_write(dest_part, dest_current_offset, src_data, chunk_size);
+                if (error != ESP_OK) {
+                    ESP_LOGE(TAG, "Writing to destination partition failed (err=0x%x)", error);
+                    esp_partition_munmap(src_part_map);
+                    break;
+                }
+                esp_partition_munmap(src_part_map);
+            } else {
+                mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+                chunk_size = 0;
+                if (++attempts_for_mmap >= 3) {
+                    ESP_LOGE(TAG, "Failed to mmap source partition after a few attempts, mmu_free_pages = %" PRIu32 " (err=0x%x)", mmu_free_pages_count, error);
+                    break;
+                }
+            }
+            src_current_offset += chunk_size;
+            dest_current_offset += chunk_size;
+            remaining_size -= chunk_size;
+        }
+    } else {
+        // In case of unencrypted partition, we can read and write directly
+        while (remaining_size > 0) {
+            uint32_t chunk_size = MIN(remaining_size, SPI_FLASH_SEC_SIZE);
+            void *src_data = malloc(chunk_size);
+            if (src_data == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for chunk (size: %" PRIu32 ")", chunk_size);
+                error = ESP_ERR_NO_MEM;
+                break;
+            }
+            error = esp_partition_read(src_part, src_current_offset, src_data, chunk_size);
+            if (error != ESP_OK) {
+                ESP_LOGE(TAG, "Reading from source partition failed (err=0x%x)", error);
+                free(src_data);
+                break;
+            }
             error = esp_partition_write(dest_part, dest_current_offset, src_data, chunk_size);
             if (error != ESP_OK) {
                 ESP_LOGE(TAG, "Writing to destination partition failed (err=0x%x)", error);
-                esp_partition_munmap(src_part_map);
+                free(src_data);
                 break;
             }
-            esp_partition_munmap(src_part_map);
-        } else {
-            mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
-            chunk_size = 0;
-            if (++attempts_for_mmap >= 3) {
-                ESP_LOGE(TAG, "Failed to mmap source partition after a few attempts, mmu_free_pages = %" PRIu32 " (err=0x%x)", mmu_free_pages_count, error);
-                break;
-            }
+            free(src_data);
+            src_current_offset += chunk_size;
+            dest_current_offset += chunk_size;
+            remaining_size -= chunk_size;
         }
-        src_current_offset += chunk_size;
-        dest_current_offset += chunk_size;
-        remaining_size -= chunk_size;
     }
     return error;
 }

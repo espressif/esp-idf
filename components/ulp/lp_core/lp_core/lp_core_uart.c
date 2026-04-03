@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,19 +22,14 @@ uart_hal_context_t hal = {
     .dev = (uart_dev_t *)UART_LL_GET_HW(LP_UART_NUM_0),
 };
 
-static esp_err_t lp_core_uart_check_timeout(uint32_t intr_mask, int32_t timeout, uint32_t *cycle_count)
+static esp_err_t lp_core_uart_check_timeout(uint32_t intr_mask, int32_t timeout, uint32_t timeout_start)
 {
-    if (timeout > -1) {
-        /* If the timeout value is not -1, delay for 1 CPU cycle and keep track of cycles */
-        ulp_lp_core_delay_cycles(1);
-        (*cycle_count)++;
-        if (*cycle_count >= (uint32_t)timeout) {
-            /* Disable and clear interrupt bits */
-            uart_hal_disable_intr_mask(&hal, intr_mask);
-            uart_hal_clr_intsts_mask(&hal, intr_mask);
+    if (ulp_lp_core_is_timeout_elapsed(timeout_start, timeout)) {
+        /* Disable and clear interrupt bits */
+        uart_hal_disable_intr_mask(&hal, intr_mask);
+        uart_hal_clr_intsts_mask(&hal, intr_mask);
 
-            return ESP_ERR_TIMEOUT;
-        }
+        return ESP_ERR_TIMEOUT;
     }
 
     return ESP_OK;
@@ -106,7 +101,7 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
     int32_t remaining_bytes = size;
     esp_err_t ret = ESP_OK;
     uint32_t intr_status = 0;
-    uint32_t to = 0;
+    uint32_t timeout_start = ulp_lp_core_get_cpu_cycles();
 
     while (remaining_bytes > 0) {
         /* Write to the Tx FIFO */
@@ -129,7 +124,7 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
                 }
 
                 /* Check for transaction timeout */
-                ret = lp_core_uart_check_timeout(intr_mask, timeout, &to);
+                ret = lp_core_uart_check_timeout(intr_mask, timeout, timeout_start);
                 if (ret == ESP_ERR_TIMEOUT) {
                     /* Timeout. Clear interrupt status and break */
                     uart_hal_clr_intsts_mask(&hal, intr_mask);
@@ -142,7 +137,7 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
             remaining_bytes -= tx_len;
         } else {
             /* Tx FIFO does not have empty slots. Check for transaction timeout */
-            ret = lp_core_uart_check_timeout(intr_mask, timeout, &to);
+            ret = lp_core_uart_check_timeout(intr_mask, timeout, timeout_start);
             if (ret == ESP_ERR_TIMEOUT) {
                 /* Timeout. Clear interrupt status and break */
                 uart_hal_clr_intsts_mask(&hal, intr_mask);
@@ -182,7 +177,7 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
     int32_t remaining_bytes = size;
     esp_err_t ret = ESP_OK;
     uint32_t intr_status = 0;
-    uint32_t to = 0;
+    uint32_t timeout_start = ulp_lp_core_get_cpu_cycles();
 
     while (remaining_bytes > 0) {
         /* Read from the Rx FIFO
@@ -215,7 +210,7 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
             remaining_bytes -= rx_len;
         } else {
             /* We have no data to read from the Rx FIFO. Check for transaction timeout */
-            ret = lp_core_uart_check_timeout(intr_mask, timeout, &to);
+            ret = lp_core_uart_check_timeout(intr_mask, timeout, timeout_start);
             if (ret == ESP_ERR_TIMEOUT) {
                 /* Timeout. Clear interrupt status and break */
                 uart_hal_clr_intsts_mask(&hal, intr_mask);

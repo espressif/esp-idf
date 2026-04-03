@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
+#include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
 
 static const char *TAG = "lcd_panel.io.spi";
@@ -347,10 +348,13 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
             // use 8 lines for transmitting command, address and data
             lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
         }
+
         // command is short, using polling mode
         ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
     }
+
+    bool color_in_psram = color && color_size && esp_ptr_external_ram(color);
 
     // if the color buffer is big, we want to split it into chunks, and queue the chunks one by one
     do {
@@ -367,6 +371,10 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
             spi_panel_io->num_trans_inflight--;
         }
         memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
+        if (color_in_psram) {
+            // When the color buffer resides in PSRAM, set the DMA PSRAM flag
+            lcd_trans->base.flags |= SPI_TRANS_DMA_USE_PSRAM;
+        }
 
         // SPI per-transfer size has its limitation, if the color buffer is too big, we need to split it into multiple chunks
         if (chunk_size > spi_panel_io->spi_trans_max_bytes) {

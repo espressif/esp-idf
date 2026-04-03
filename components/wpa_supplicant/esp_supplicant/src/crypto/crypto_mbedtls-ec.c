@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,12 @@
 
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
+#include "esp_random.h"
 #include "mbedtls/bignum.h"
 #include "mbedtls/esp_mbedtls_random.h"
+#if CONFIG_MBEDTLS_HARDWARE_ECC
+#include "ecc_impl.h"
+#endif
 #endif
 
 #include "utils/includes.h"
@@ -23,7 +27,9 @@
 #include "mbedtls/asn1write.h"
 #include "mbedtls/error.h"
 #include "mbedtls/oid.h"
+#include "mbedtls/platform_util.h"
 #include <mbedtls/psa_util.h>
+#include "p256_common.h"
 #include "psa/crypto.h"
 #include "psa/crypto_sizes.h"
 #include "esp_heap_caps.h"
@@ -38,6 +44,70 @@
 #endif
 
 #define ESP_SUP_MAX_ECC_KEY_SIZE 256
+
+#if CONFIG_MBEDTLS_HARDWARE_ECC
+static bool crypto_ec_point_mul_curve_supported(const mbedtls_ecp_group *grp)
+{
+    switch (grp->id) {
+    case MBEDTLS_ECP_DP_SECP192R1:
+    case MBEDTLS_ECP_DP_SECP256R1:
+#if SOC_ECC_SUPPORT_CURVE_P384
+    case MBEDTLS_ECP_DP_SECP384R1:
+#endif
+        return true;
+    default:
+        return false;
+    }
+}
+
+static int crypto_ec_point_mul_ecc_hw(const mbedtls_ecp_group *grp,
+                                      const mbedtls_ecp_point *p,
+                                      const mbedtls_mpi *k,
+                                      mbedtls_ecp_point *res)
+{
+    int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    ecc_point_t p_hw = { 0 };
+    ecc_point_t r_hw = { 0 };
+    unsigned char scalar_le[MAX_SIZE] = { 0 };
+    size_t curve_len = grp->pbits / 8;
+
+    if (!crypto_ec_point_mul_curve_supported(grp)) {
+        return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+    }
+
+    if (curve_len != P192_LEN && curve_len != P256_LEN
+#if SOC_ECC_SUPPORT_CURVE_P384
+            && curve_len != P384_LEN
+#endif
+       ) {
+        return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+    }
+
+    /* Preserve mbedTLS input validation semantics for this fast path. */
+    MBEDTLS_MPI_CHK(mbedtls_ecp_check_privkey(grp, k));
+    MBEDTLS_MPI_CHK(mbedtls_ecp_check_pubkey(grp, p));
+
+    p_hw.len = curve_len;
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(&p->MBEDTLS_PRIVATE(X), p_hw.x, MAX_SIZE));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(&p->MBEDTLS_PRIVATE(Y), p_hw.y, MAX_SIZE));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(k, scalar_le, MAX_SIZE));
+
+    if (esp_ecc_point_multiply(&p_hw, scalar_le, &r_hw, false) != 0) {
+        ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&res->MBEDTLS_PRIVATE(X), r_hw.x, curve_len));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&res->MBEDTLS_PRIVATE(Y), r_hw.y, curve_len));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&res->MBEDTLS_PRIVATE(Z), 1));
+
+cleanup:
+    mbedtls_platform_zeroize(scalar_le, sizeof(scalar_le));
+    mbedtls_platform_zeroize(&p_hw, sizeof(p_hw));
+    mbedtls_platform_zeroize(&r_hw, sizeof(r_hw));
+    return ret;
+}
+#endif
 
 #ifdef CONFIG_ECC
 
@@ -287,6 +357,306 @@ cleanup:
     return NULL;
 }
 
+#if CONFIG_MBEDTLS_HARDWARE_MPI && !CONFIG_MBEDTLS_HARDWARE_ECC
+typedef struct {
+    u32 X[P256_WORDS];
+    u32 Y[P256_WORDS];
+    u32 Z[P256_WORDS];
+} p256_fast_jac_point;
+
+static u32 p256_fast_words_add_carry(u32 *z, const u32 *x, const u32 *y)
+{
+    size_t i;
+    u64 carry = 0;
+
+    for (i = 0; i < P256_WORDS; i++) {
+        u64 sum = (u64) x[i] + y[i] + carry;
+
+        z[i] = (u32) sum;
+        carry = sum >> 32;
+    }
+
+    return (u32) carry;
+}
+
+static void p256_fast_words_add_mod(u32 *z, const u32 *x, const u32 *y)
+{
+    u32 reduced[P256_WORDS];
+    u32 carry = p256_fast_words_add_carry(z, x, y);
+    u32 borrow = p256_words_sub_borrow(reduced, z, p256_p_le);
+    u32 use_sub = carry | (1U - borrow);
+
+    p256_words_cmov(z, reduced, use_sub);
+}
+
+static void p256_fast_words_sub_mod(u32 *z, const u32 *x, const u32 *y)
+{
+    u32 tmp[P256_WORDS];
+
+    if (p256_words_sub_borrow(z, x, y) != 0) {
+        (void) p256_fast_words_add_carry(tmp, z, p256_p_le);
+        os_memcpy(z, tmp, sizeof(tmp));
+    }
+}
+
+static void p256_fast_to_mont(u32 out[P256_WORDS],
+                              const u32 in[P256_WORDS])
+{
+    p256_mont_mul(out, in, p256_r2_le);
+}
+
+static void p256_fast_from_mont(u32 out[P256_WORDS],
+                                const u32 in[P256_WORDS])
+{
+    static const u32 one[P256_WORDS] = {1};
+
+    p256_mont_mul(out, in, one);
+}
+
+static void p256_fast_sqr(u32 out[P256_WORDS], const u32 in[P256_WORDS])
+{
+    p256_mont_mul(out, in, in);
+}
+
+static void p256_fast_mul(u32 out[P256_WORDS],
+                          const u32 a[P256_WORDS],
+                          const u32 b[P256_WORDS])
+{
+    p256_mont_mul(out, a, b);
+}
+
+static void p256_fast_dbl(u32 out[P256_WORDS], const u32 in[P256_WORDS])
+{
+    p256_fast_words_add_mod(out, in, in);
+}
+
+static void p256_fast_triple(u32 out[P256_WORDS], const u32 in[P256_WORDS])
+{
+    u32 tmp[P256_WORDS];
+
+    p256_fast_dbl(tmp, in);
+    p256_fast_words_add_mod(out, tmp, in);
+}
+
+static void p256_fast_eight(u32 out[P256_WORDS], const u32 in[P256_WORDS])
+{
+    u32 tmp[P256_WORDS];
+
+    p256_fast_dbl(tmp, in);
+    p256_fast_dbl(tmp, tmp);
+    p256_fast_dbl(out, tmp);
+}
+
+static void p256_fast_point_set_zero(p256_fast_jac_point *p)
+{
+    os_memset(p, 0, sizeof(*p));
+}
+
+static void p256_fast_point_from_affine(p256_fast_jac_point *p,
+                                        const u32 x[P256_WORDS],
+                                        const u32 y[P256_WORDS],
+                                        const u32 one_mont[P256_WORDS])
+{
+    os_memcpy(p->X, x, sizeof(p->X));
+    os_memcpy(p->Y, y, sizeof(p->Y));
+    os_memcpy(p->Z, one_mont, sizeof(p->Z));
+}
+
+static void p256_fast_point_double(p256_fast_jac_point *r)
+{
+    u32 z2[P256_WORDS], y2[P256_WORDS], y4[P256_WORDS];
+    u32 s[P256_WORDS], m[P256_WORDS], x3[P256_WORDS];
+    u32 y3[P256_WORDS], z3[P256_WORDS], tmp1[P256_WORDS];
+    u32 tmp2[P256_WORDS];
+
+    if (p256_words_is_zero(r->Z) || p256_words_is_zero(r->Y)) {
+        p256_fast_point_set_zero(r);
+        return;
+    }
+
+    p256_fast_sqr(z2, r->Z);
+    p256_fast_sqr(y2, r->Y);
+    p256_fast_sqr(y4, y2);
+
+    p256_fast_mul(s, r->X, y2);
+    p256_fast_dbl(s, s);
+    p256_fast_dbl(s, s);
+
+    p256_fast_words_add_mod(tmp1, r->X, z2);
+    p256_fast_words_sub_mod(tmp2, r->X, z2);
+    p256_fast_mul(m, tmp1, tmp2);
+    p256_fast_triple(m, m);
+
+    p256_fast_sqr(x3, m);
+    p256_fast_words_sub_mod(x3, x3, s);
+    p256_fast_words_sub_mod(x3, x3, s);
+
+    p256_fast_words_sub_mod(tmp1, s, x3);
+    p256_fast_mul(y3, m, tmp1);
+    p256_fast_eight(tmp2, y4);
+    p256_fast_words_sub_mod(y3, y3, tmp2);
+
+    p256_fast_mul(z3, r->Y, r->Z);
+    p256_fast_dbl(z3, z3);
+
+    os_memcpy(r->X, x3, sizeof(r->X));
+    os_memcpy(r->Y, y3, sizeof(r->Y));
+    os_memcpy(r->Z, z3, sizeof(r->Z));
+}
+
+static void p256_fast_point_add_mixed(p256_fast_jac_point *r,
+                                      const u32 qx[P256_WORDS],
+                                      const u32 qy[P256_WORDS],
+                                      const u32 one_mont[P256_WORDS])
+{
+    u32 z1z1[P256_WORDS], z1z1z1[P256_WORDS];
+    u32 u2[P256_WORDS], s2[P256_WORDS], h[P256_WORDS];
+    u32 rr[P256_WORDS], hh[P256_WORDS], hhh[P256_WORDS];
+    u32 v[P256_WORDS], x3[P256_WORDS], y3[P256_WORDS];
+    u32 z3[P256_WORDS], tmp[P256_WORDS], y1[P256_WORDS];
+
+    if (p256_words_is_zero(r->Z)) {
+        p256_fast_point_from_affine(r, qx, qy, one_mont);
+        return;
+    }
+
+    os_memcpy(y1, r->Y, sizeof(y1));
+
+    p256_fast_sqr(z1z1, r->Z);
+    p256_fast_mul(z1z1z1, z1z1, r->Z);
+    p256_fast_mul(u2, qx, z1z1);
+    p256_fast_mul(s2, qy, z1z1z1);
+    p256_fast_words_sub_mod(h, u2, r->X);
+    p256_fast_words_sub_mod(rr, s2, y1);
+
+    if (p256_words_is_zero(h)) {
+        if (p256_words_is_zero(rr)) {
+            p256_fast_point_double(r);
+        } else {
+            p256_fast_point_set_zero(r);
+        }
+        return;
+    }
+
+    p256_fast_sqr(hh, h);
+    p256_fast_mul(hhh, hh, h);
+    p256_fast_mul(v, r->X, hh);
+
+    p256_fast_sqr(x3, rr);
+    p256_fast_words_sub_mod(x3, x3, hhh);
+    p256_fast_words_sub_mod(x3, x3, v);
+    p256_fast_words_sub_mod(x3, x3, v);
+
+    p256_fast_words_sub_mod(tmp, v, x3);
+    p256_fast_mul(y3, rr, tmp);
+    p256_fast_mul(tmp, y1, hhh);
+    p256_fast_words_sub_mod(y3, y3, tmp);
+
+    p256_fast_mul(z3, r->Z, h);
+
+    os_memcpy(r->X, x3, sizeof(r->X));
+    os_memcpy(r->Y, y3, sizeof(r->Y));
+    os_memcpy(r->Z, z3, sizeof(r->Z));
+}
+
+static int p256_fast_point_normalize(const mbedtls_ecp_group *grp,
+                                     const p256_fast_jac_point *p,
+                                     mbedtls_ecp_point *res)
+{
+    mbedtls_mpi z_mpi, inv_mpi;
+    u32 z_std[P256_WORDS], inv_std[P256_WORDS], inv_mont[P256_WORDS];
+    u32 x_std[P256_WORDS], y_std[P256_WORDS], tmp[P256_WORDS];
+    int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+
+    if (p256_words_is_zero(p->Z)) {
+        return mbedtls_ecp_set_zero(res);
+    }
+
+    mbedtls_mpi_init(&z_mpi);
+    mbedtls_mpi_init(&inv_mpi);
+
+    p256_fast_from_mont(z_std, p->Z);
+    MBEDTLS_MPI_CHK(p256_words_to_mpi(z_std, &z_mpi));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_inv_mod(&inv_mpi, &z_mpi, &grp->P));
+    if (p256_words_from_mpi_reduced(&inv_mpi, inv_std) != 0) {
+        ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    p256_fast_to_mont(inv_mont, inv_std);
+    p256_fast_mul(y_std, p->Y, inv_mont);
+    p256_fast_sqr(tmp, inv_mont);
+    p256_fast_mul(x_std, p->X, tmp);
+    p256_fast_mul(y_std, y_std, tmp);
+    p256_fast_from_mont(x_std, x_std);
+    p256_fast_from_mont(y_std, y_std);
+
+    MBEDTLS_MPI_CHK(p256_words_to_mpi(x_std, &res->MBEDTLS_PRIVATE(X)));
+    MBEDTLS_MPI_CHK(p256_words_to_mpi(y_std, &res->MBEDTLS_PRIVATE(Y)));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&res->MBEDTLS_PRIVATE(Z), 1));
+
+cleanup:
+    mbedtls_mpi_free(&z_mpi);
+    mbedtls_mpi_free(&inv_mpi);
+    return ret;
+}
+
+static int crypto_ec_point_mul_p256_jacobian_fast(const mbedtls_ecp_group *grp,
+                                                  const mbedtls_ecp_point *p,
+                                                  const mbedtls_mpi *k,
+                                                  mbedtls_ecp_point *res)
+{
+    p256_fast_jac_point r;
+    u32 scalar[P256_WORDS], x_std[P256_WORDS], y_std[P256_WORDS];
+    u32 x_mont[P256_WORDS], y_mont[P256_WORDS], one_mont[P256_WORDS];
+    static const u32 one_std[P256_WORDS] = {1};
+    int bit;
+    int ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+
+    if (!grp || grp->id != MBEDTLS_ECP_DP_SECP256R1 ||
+            mbedtls_mpi_cmp_int(&p->MBEDTLS_PRIVATE(Z), 1) != 0) {
+        return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_ecp_check_privkey(grp, k));
+    MBEDTLS_MPI_CHK(mbedtls_ecp_check_pubkey(grp, p));
+
+    if (p256_words_from_mpi(k, scalar) != 0 ||
+            p256_words_from_mpi_reduced(&p->MBEDTLS_PRIVATE(X), x_std) != 0 ||
+            p256_words_from_mpi_reduced(&p->MBEDTLS_PRIVATE(Y), y_std) != 0) {
+        ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+        goto cleanup;
+    }
+
+    bit = (int) p256_words_bitlen(scalar);
+    if (bit <= 0) {
+        ret = mbedtls_ecp_set_zero(res);
+        goto cleanup;
+    }
+
+    p256_fast_to_mont(x_mont, x_std);
+    p256_fast_to_mont(y_mont, y_std);
+    p256_fast_to_mont(one_mont, one_std);
+    p256_fast_point_from_affine(&r, x_mont, y_mont, one_mont);
+
+    for (bit -= 2; bit >= 0; bit--) {
+        p256_fast_point_double(&r);
+        if ((scalar[bit / 32] >> (bit % 32)) & 1U) {
+            p256_fast_point_add_mixed(&r, x_mont, y_mont, one_mont);
+        }
+    }
+
+    ret = p256_fast_point_normalize(grp, &r, res);
+
+cleanup:
+    mbedtls_platform_zeroize(scalar, sizeof(scalar));
+    mbedtls_platform_zeroize(&r, sizeof(r));
+    mbedtls_platform_zeroize(x_mont, sizeof(x_mont));
+    mbedtls_platform_zeroize(y_mont, sizeof(y_mont));
+    return ret;
+}
+#endif
+
 int crypto_ec_point_add(struct crypto_ec *e, const struct crypto_ec_point *a,
                         const struct crypto_ec_point *b,
                         struct crypto_ec_point *c)
@@ -308,7 +678,31 @@ int crypto_ec_point_mul(struct crypto_ec *e, const struct crypto_ec_point *p,
                         const struct crypto_bignum *b,
                         struct crypto_ec_point *res)
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+
+#if CONFIG_MBEDTLS_HARDWARE_ECC
+    ret = crypto_ec_point_mul_ecc_hw((mbedtls_ecp_group *)e,
+                                     (const mbedtls_ecp_point *)p,
+                                     (const mbedtls_mpi *)b,
+                                     (mbedtls_ecp_point *)res);
+    if (ret == 0) {
+        goto cleanup;
+    }
+    if (ret != MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE) {
+        goto cleanup;
+    }
+#elif CONFIG_MBEDTLS_HARDWARE_MPI
+    ret = crypto_ec_point_mul_p256_jacobian_fast((mbedtls_ecp_group *) e,
+                                                 (const mbedtls_ecp_point *) p,
+                                                 (const mbedtls_mpi *) b,
+                                                 (mbedtls_ecp_point *) res);
+    if (ret == 0) {
+        goto cleanup;
+    }
+    if (ret != MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE) {
+        goto cleanup;
+    }
+#endif
     MBEDTLS_MPI_CHK(mbedtls_ecp_mul((mbedtls_ecp_group *)e,
                                     (mbedtls_ecp_point *) res,
                                     (const mbedtls_mpi *)b,
@@ -401,6 +795,7 @@ struct crypto_bignum *crypto_ec_point_compute_y_sqr(struct crypto_ec *e,
                                                     const struct crypto_bignum *x)
 {
     mbedtls_mpi temp, temp2, num;
+    mbedtls_ecp_group *grp = (mbedtls_ecp_group *) e;
     int ret = 0;
 
     mbedtls_mpi *y_sqr = os_zalloc(sizeof(mbedtls_mpi));
@@ -414,30 +809,48 @@ struct crypto_bignum *crypto_ec_point_compute_y_sqr(struct crypto_ec *e,
     mbedtls_mpi_init(y_sqr);
 
     /* y^2 = x^3 + ax + b  mod  P */
-    /* X*X*X is faster on esp32 whereas X^3 is faster on other chips */
-#if CONFIG_IDF_TARGET_ESP32
-    /* Calculate x*x*x  mod P*/
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp, (const mbedtls_mpi *) x, (const mbedtls_mpi *) x));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp, &temp, (const mbedtls_mpi *) x));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp, &temp, &((mbedtls_ecp_group *)e)->P));
-#else
-    /* Calculate x^3  mod P*/
-    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&num, 3));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&temp, (const mbedtls_mpi *) x, &num, &((mbedtls_ecp_group *)e)->P, NULL));
-#endif
+    MBEDTLS_MPI_CHK(crypto_bignum_mulmod(x, x,
+                                         (const struct crypto_bignum *) &grp->P,
+                                         (struct crypto_bignum *) &temp));
+    MBEDTLS_MPI_CHK(crypto_bignum_mulmod((const struct crypto_bignum *) &temp, x,
+                                         (const struct crypto_bignum *) &grp->P,
+                                         (struct crypto_bignum *) &temp));
 
-    /* Calculate ax  mod P*/
-    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&num, -3));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp2, (const mbedtls_mpi *) x, &num));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp2, &temp2, &((mbedtls_ecp_group *)e)->P));
+    if (mbedtls_ecp_group_a_is_minus_3(grp)) {
+        /*
+         * For NIST P-curves used in SAE, a == -3. Compute (-3x + b) mod p
+         * with additions/subtractions instead of a generic multiply+mod path.
+         */
+        MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&temp2, (const mbedtls_mpi *) x,
+                                            (const mbedtls_mpi *) x));
+        if (mbedtls_mpi_cmp_mpi(&temp2, &grp->P) >= 0) {
+            MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(&temp2, &temp2, &grp->P));
+        }
 
-    /* Calculate ax + b  mod P. Note that b is already < P*/
-    MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&temp2, &temp2, &((mbedtls_ecp_group *)e)->B));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp2, &temp2, &((mbedtls_ecp_group *)e)->P));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&temp2, &temp2,
+                                            (const mbedtls_mpi *) x));
+        while (mbedtls_mpi_cmp_mpi(&temp2, &grp->P) >= 0) {
+            MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(&temp2, &temp2, &grp->P));
+        }
 
-    /* Calculate x^3 + ax + b  mod P*/
-    MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&temp2, &temp2, &temp));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(y_sqr, &temp2, &((mbedtls_ecp_group *)e)->P));
+        if (mbedtls_mpi_cmp_int(&temp2, 0) != 0) {
+            MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(&temp2, &grp->P, &temp2));
+        }
+    } else {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp2, (const mbedtls_mpi *) x,
+                                            &grp->A));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp2, &temp2, &grp->P));
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&temp2, &temp2, &grp->B));
+    while (mbedtls_mpi_cmp_mpi(&temp2, &grp->P) >= 0) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(&temp2, &temp2, &grp->P));
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(y_sqr, &temp2, &temp));
+    while (mbedtls_mpi_cmp_mpi(y_sqr, &grp->P) >= 0) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(y_sqr, y_sqr, &grp->P));
+    }
 
 cleanup:
     mbedtls_mpi_free(&temp);
@@ -458,8 +871,9 @@ int crypto_ec_point_is_at_infinity(struct crypto_ec *e,
     return mbedtls_ecp_is_zero((mbedtls_ecp_point *) p);
 }
 
-int crypto_ec_point_is_on_curve(struct crypto_ec *e,
-                                const struct crypto_ec_point *p)
+#if !CONFIG_MBEDTLS_HARDWARE_ECC
+static int crypto_ec_point_is_on_curve_mpi(struct crypto_ec *e,
+                                           const struct crypto_ec_point *p)
 {
     mbedtls_mpi y_sqr_lhs, *y_sqr_rhs = NULL, two;
     int ret = 0, on_curve = 0;
@@ -467,11 +881,15 @@ int crypto_ec_point_is_on_curve(struct crypto_ec *e,
     mbedtls_mpi_init(&y_sqr_lhs);
     mbedtls_mpi_init(&two);
 
-    /* Calculate y^2  mod P*/
+    /* Calculate y^2  mod P */
     MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&two, 2));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&y_sqr_lhs, &((const mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Y), &two, &((mbedtls_ecp_group *)e)->P, NULL));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&y_sqr_lhs,
+                                        &((const mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Y),
+                                        &two, &((mbedtls_ecp_group *)e)->P, NULL));
 
-    y_sqr_rhs = (mbedtls_mpi *) crypto_ec_point_compute_y_sqr(e, (const struct crypto_bignum *) & ((const mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X));
+    y_sqr_rhs = (mbedtls_mpi *) crypto_ec_point_compute_y_sqr(
+                    e, (const struct crypto_bignum *)
+                    & ((const mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X));
 
     if (y_sqr_rhs && (mbedtls_mpi_cmp_mpi(y_sqr_rhs, &y_sqr_lhs) == 0)) {
         on_curve = 1;
@@ -483,6 +901,20 @@ cleanup:
     mbedtls_mpi_free(y_sqr_rhs);
     os_free(y_sqr_rhs);
     return (ret == 0) && (on_curve == 1);
+}
+#endif
+
+int crypto_ec_point_is_on_curve(struct crypto_ec *e,
+                                const struct crypto_ec_point *p)
+{
+#if CONFIG_MBEDTLS_HARDWARE_ECC
+    /* ECC HW verify path via mbedTLS alt hooks. */
+    return mbedtls_ecp_check_pubkey((const mbedtls_ecp_group *)e,
+                                    (const mbedtls_ecp_point *)p) == 0;
+#else
+    /* MPI implementation. */
+    return crypto_ec_point_is_on_curve_mpi(e, p);
+#endif
 }
 
 int crypto_ec_point_cmp(const struct crypto_ec *e,

@@ -69,6 +69,8 @@ TEST_CASE("GPIO Input hysteresis filter", "[gpio_filter][timeout=50][ignore]")
 
     gpio_isr_handler_remove(TEST_GPIO_HYS_IO);
     gpio_uninstall_isr_service();
+    TEST_ESP_OK(gpio_reset_pin(TEST_GPIO_HYS_IO));
+    TEST_ESP_OK(gpio_reset_pin(TEST_GPIO_WAVE_IO));
     // should shot ISR exactly 10 times
     TEST_ASSERT_UINT32_WITHIN(1, 10, intr_cnt);
 }

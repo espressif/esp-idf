@@ -10,6 +10,7 @@
 
 #include "sdkconfig.h"
 
+#if SOC_APM_CTRL_FILTER_SUPPORTED
 /**
  * Test default access behavior for TEE mode
  *
@@ -243,4 +244,5 @@ TEST_CASE("Test LP_CPU -> LP_PERI access", "[PERI_APM]")
     test_peri_apm_master_lp_cpu_slave_lp_peri();
 }
 #endif /* CONFIG_ULP_COPROC_ENABLED */
-#endif /* SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL */
+#endif
+#endif /* SOC_APM_CTRL_FILTER_SUPPORTED */

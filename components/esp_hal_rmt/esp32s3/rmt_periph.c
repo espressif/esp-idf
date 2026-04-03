@@ -10,6 +10,7 @@
 const soc_rmt_signal_desc_t soc_rmt_signals[1] = {
     [0] = {
         .irq = ETS_RMT_INTR_SOURCE,
+        .module_name = "rmt0",
         .channels = {
             [0] = {
                 .tx_sig = RMT_SIG_OUT0_IDX,

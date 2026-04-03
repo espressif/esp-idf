@@ -169,8 +169,12 @@ gatt_svr_init(void)
 {
     struct ble_svc_cts_cfg cfg;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif /* CONFIG_BT_NIMBLE_GAP_SERVICE */
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
 
     cfg.fetch_time_cb = fetch_current_time;
     cfg.local_time_info_cb = fetch_local_time_info;

@@ -188,6 +188,23 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
         io_mode = trans->io_mode;
     }
 
+#if SOC_IS(ESP32S3)
+    // On ESP32S3, PMS is enabled only if user_command = 1, user_addr = 1, and user_mosi = 1
+    // While for other targets, user_command = 1, user_addr = 1, and user_miso = 0 are the conditions to enable PMS.
+    // While erase command doesn't have mosi data, so PMS cannot be enabled
+    // The workaround is to send the low 8 bits of the address in data phase, in such way, user_mosi will be set to 1
+    if (command != 0x00 && trans->address_bitlen > 0 && trans->mosi_len == 0 && trans->miso_len == 0) {
+        uint32_t addr = trans->address;
+        // Split addr into two phases
+        trans->address_bitlen -= 8;
+        trans->address = addr >> 8; // the high bits of the addr
+        trans->mosi_len = 1;
+        trans->mosi_data = (uint8_t[]) {
+            (uint8_t)(addr & 0xFF)
+        }; // the low 8 bits of the addr
+    }
+#endif
+
     host->driver->configure_host_io_mode(host, command, trans->address_bitlen, dummy_bitlen, io_mode);
 
     spi_flash_ll_set_usr_address(dev, trans->address, trans->address_bitlen);

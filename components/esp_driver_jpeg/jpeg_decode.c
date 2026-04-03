@@ -526,13 +526,15 @@ static void jpeg_dec_config_dma_trans_ability(jpeg_decoder_handle_t decoder_engi
 {
     // set transfer ability
     dma2d_transfer_ability_t transfer_ability_config_tx = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = true, // in most cases
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
 
     dma2d_transfer_ability_t transfer_ability_config_rx = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .access_ext_mem = true, // in most cases
+        .data_burst_length = 128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -633,6 +635,17 @@ static esp_err_t jpeg_color_space_support_check(jpeg_decoder_handle_t decoder_en
         }
     }
 #endif
+    if (decoder_engine->sample_method == JPEG_DOWN_SAMPLING_GRAY) {
+        if (decoder_engine->output_format != JPEG_DECODE_OUT_FORMAT_GRAY) {
+            ESP_LOGE(TAG, "Detected GRAY but want to convert to other format, which is not supported");
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else {
+        if (decoder_engine->output_format == JPEG_DECODE_OUT_FORMAT_GRAY) {
+            ESP_LOGE(TAG, "Detected not GRAY but want to convert to GRAY, which is not supported");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
     return ESP_OK;
 }
 

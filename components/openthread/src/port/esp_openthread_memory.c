@@ -13,7 +13,7 @@
 
 void *otPlatCAlloc(size_t num, size_t size)
 {
-    return heap_caps_calloc(num, size, esp_openthread_get_alloc_caps());
+    return heap_caps_calloc_prefer(num, size, 3, esp_openthread_get_alloc_caps(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 }
 
 void otPlatFree(void *ptr)

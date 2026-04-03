@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -38,8 +38,10 @@
 
 #define LP_U0RXD_GPIO_NUM 7
 #define LP_U0TXD_GPIO_NUM 6
-#define LP_U0RTS_GPIO_NUM (-1)
-#define LP_U0CTS_GPIO_NUM (-1)
+#define LP_U0RTS_GPIO_NUM 4
+#define LP_U0CTS_GPIO_NUM 5
+#define LP_U0DTR_GPIO_NUM 2
+#define LP_U0DSR_GPIO_NUM 3
 
 /* The following defines are necessary for reconfiguring the UART
  * to use IOMUX, at runtime. */
@@ -70,5 +72,7 @@
 
 #define LP_U0TXD_MUX_FUNC  (0)
 #define LP_U0RXD_MUX_FUNC  (0)
-#define LP_U0RTS_MUX_FUNC  (-1)
-#define LP_U0CTS_MUX_FUNC  (-1)
+#define LP_U0RTS_MUX_FUNC  (0)
+#define LP_U0CTS_MUX_FUNC  (0)
+#define LP_U0DTR_MUX_FUNC  (0)
+#define LP_U0DSR_MUX_FUNC  (0)

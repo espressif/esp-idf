@@ -23,12 +23,7 @@
     - [Grammar](#grammar)
     - [Special Rules](#special-rules)
   - [Upload/Download Artifacts to Internal Minio Server](#uploaddownload-artifacts-to-internal-minio-server)
-    - [Users Without Access to Minio](#users-without-access-to-minio)
-    - [Users With Access to Minio](#users-with-access-to-minio)
-      - [Env Vars for Minio](#env-vars-for-minio)
-      - [Artifacts Types and File Patterns](#artifacts-types-and-file-patterns)
-      - [Upload](#upload)
-      - [Download](#download)
+  - [Revision Marker Naming Rules](#revision-marker-naming-rules)
 
 ## General Workflow
 
@@ -256,3 +251,11 @@ In ESP-IDF CI, there's a few more special rules are additionally supported to di
 ## Upload/Download Artifacts to Internal Minio Server
 
 Please refer to the documentation [here](https://docs.espressif.com/projects/idf-ci/en/latest/guides/cli.html)
+
+## Revision Marker Naming Rules
+
+When specifying chip revisions for testing markers, configurations or filenames, strictly follow the format `esp32<series>_rev<number>` (or similarly `<series>_rev<number>` when brief).
+
+> e.g., `esp32_rev3`, `esp32c2_rev2`, `esp32c3_rev1`, `esp32p4_rev1`, `esp32c5_rev1`
+
+This convention replaces the legacy `eco` naming format (e.g., `esp32c2eco4`).

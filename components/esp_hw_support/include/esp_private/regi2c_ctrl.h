@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
-#include "esp_rom_regi2c.h"
+#include "hal/regi2c_impl.h"
 #include "soc/soc_caps.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/regi2c_ctrl_ll.h"
@@ -72,36 +72,35 @@ static inline __attribute__((always_inline)) void ANA_I2C_SRC_CLOCK_ENABLE(bool 
 #define REGI2C_CLOCK_DISABLE()     ANALOG_CLOCK_DISABLE()
 
 
-#define regi2c_read_reg_raw        esp_rom_regi2c_read
-#define regi2c_read_reg_mask_raw   esp_rom_regi2c_read_mask
-#define regi2c_write_reg_raw       esp_rom_regi2c_write
-#define regi2c_write_reg_mask_raw  esp_rom_regi2c_write_mask
-
-
 #if NON_OS_BUILD
 /**
- * If compiling for the non-FreeRTOS builds (e.g. bootloader), ROM functions can be called directly,
+ * If compiling for the non-FreeRTOS builds (e.g. bootloader), regi2c_impl functions can be called directly,
  * without the need of a lock.
  */
-#define regi2c_ctrl_read_reg         regi2c_read_reg_raw
-#define regi2c_ctrl_read_reg_mask    regi2c_read_reg_mask_raw
-#define regi2c_ctrl_write_reg        regi2c_write_reg_raw
-#define regi2c_ctrl_write_reg_mask   regi2c_write_reg_mask_raw
+#define regi2c_ctrl_read_reg         regi2c_impl_read
+#define regi2c_ctrl_read_reg_mask    regi2c_impl_read_mask
+#define regi2c_ctrl_write_reg        regi2c_impl_write
+#define regi2c_ctrl_write_reg_mask   regi2c_impl_write_mask
 
 #define REGI2C_ENTER_CRITICAL()
 #define REGI2C_EXIT_CRITICAL()
 #else
 
-/* Access internal registers, don't use in application */
+/* Access regi2c registers, don't use in application
+ * The following four functions have considered the atomicity of the operations and the clock gating enable/disable for
+ * the analog i2c master clock.
+ */
 uint8_t regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add);
 uint8_t regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb);
 void regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
 void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
 
-/* enter the critical section that protects internal registers. Don't use it in SDK. Use the functions above. */
+/* Enter the critical section that protects regi2c operations.
+ * Use it if multiple regi2c operations are called in a row, a lock wrapped outside saves lock acquire/release time.
+ */
 void regi2c_enter_critical(void);
 void regi2c_exit_critical(void);
-#define REGI2C_ENTER_CRITICAL()  regi2c_enter_critical()
+#define REGI2C_ENTER_CRITICAL()  int __DECLARE_REGI2C_ATOMIC_ENV __attribute__((unused)); regi2c_enter_critical()
 #define REGI2C_EXIT_CRITICAL()   regi2c_exit_critical()
 #endif // NON_OS_BUILD
 
@@ -119,29 +118,6 @@ void regi2c_exit_critical(void);
 
 #define REGI2C_READ(block, reg_add) \
       regi2c_ctrl_read_reg(block, block##_HOSTID,  reg_add)
-
-/**
- * Restore regi2c analog calibration related configuration registers.
- * This is a workaround, and is fixed on later chips
- */
-#if REGI2C_LL_ANA_CALI_PD_WORKAROUND
-void regi2c_analog_cali_reg_read(void);
-void regi2c_analog_cali_reg_write(void);
-#endif   //#if ADC_CALI_PD_WORKAROUND
-
-#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
-// regi2c would be powered down in light sleep, but measure range is recorded
-// in regi2c, so this function is used for record.
-void regi2c_tsens_reg_read(void);
-void regi2c_tsens_reg_write(void);
-#endif
-
-/* Enable/Disable regi2c_saradc with calling these two functions.
-   With reference count protection inside.
-   Internal use only.
-*/
-void regi2c_saradc_enable(void);
-void regi2c_saradc_disable(void);
 
 #ifdef __cplusplus
 }

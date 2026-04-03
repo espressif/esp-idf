@@ -96,6 +96,7 @@ TEST_CASE("light sleep stress test", "[lightsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);  // Give some time for the test task to suspend itself
     vSemaphoreDelete(done);
 }
 
@@ -122,6 +123,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[lightsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);  // Give some time for the test task to suspend itself
     vSemaphoreDelete(done);
     esp_timer_stop(timer);
     esp_timer_delete(timer);

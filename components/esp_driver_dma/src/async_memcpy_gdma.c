@@ -254,7 +254,7 @@ static void try_start_pending_transaction(async_memcpy_gdma_context_t *mcp_gdma)
 {
     async_memcpy_fsm_t expected_fsm = MCP_FSM_IDLE;
     async_memcpy_transaction_t *trans = NULL;
-    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
         trans = try_pop_trans_from_ready_queue(mcp_gdma);
         if (trans) {
             atomic_store(&mcp_gdma->fsm, MCP_FSM_RUN);
@@ -452,7 +452,7 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
 
     // switch driver state from RUN to IDLE
     async_memcpy_fsm_t expected_fsm = MCP_FSM_RUN;
-    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_IDLE_WAIT)) {
+    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
         // merge the cache aligned buffers to the original buffer
         esp_dma_merge_aligned_rx_buffers(rx_buf_array);
 
@@ -469,6 +469,7 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
         esp_os_enter_critical_isr(&mcp_gdma->spin_lock);
         // insert the trans object to the idle queue
         STAILQ_INSERT_TAIL(&mcp_gdma->idle_queue_head, trans, idle_queue_entry);
+        mcp_gdma->current_transaction = NULL;
         esp_os_exit_critical_isr(&mcp_gdma->spin_lock);
 
         atomic_store(&mcp_gdma->fsm, MCP_FSM_IDLE);

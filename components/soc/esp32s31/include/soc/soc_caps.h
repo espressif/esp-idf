@@ -39,7 +39,7 @@
 // #define SOC_LCDCAM_CAM_SUPPORTED        1      // TODO: [ESP32S31] IDF-14722
 // #define SOC_LCDCAM_I80_LCD_SUPPORTED    1      // TODO: [ESP32S31] IDF-14722
 // #define SOC_LCDCAM_RGB_LCD_SUPPORTED    1      // TODO: [ESP32S31] IDF-14722
-// #define SOC_MCPWM_SUPPORTED             1      // TODO: [ESP32S31] IDF-14756
+#define SOC_MCPWM_SUPPORTED             1
 // #define SOC_TWAI_SUPPORTED              1      // TODO: [ESP32S31] IDF-14719
 // #define SOC_ETM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14724
 // #define SOC_PARLIO_SUPPORTED            1      // TODO: [ESP32S31] IDF-14711
@@ -72,29 +72,34 @@
 // #define SOC_SECURE_BOOT_SUPPORTED       1      // TODO: [ESP32S31] IDF-14629
 // #define SOC_BOD_SUPPORTED               1      // TODO: [ESP32S31] IDF-14658
 // #define SOC_APM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14620
-// #define SOC_PMU_SUPPORTED               1      // TODO: [ESP32S31] IDF-14642
-// #define SOC_RTC_TIMER_V2_SUPPORTED      1      // TODO: [ESP32S31] IDF-14638
+#define SOC_PAU_SUPPORTED                  1
+#define SOC_PMU_SUPPORTED                  1
+#define SOC_RTC_TIMER_SUPPORTED            1
 // #define SOC_ULP_LP_UART_SUPPORTED       1      // TODO: [ESP32S31] IDF-14634
-// #define SOC_LP_GPIO_MATRIX_SUPPORTED    1      // TODO: [ESP32S31] IDF-14785
-// #define SOC_LP_PERIPHERALS_SUPPORTED    1      // TODO: [ESP32S31] IDF-14785
+#define SOC_LP_GPIO_MATRIX_SUPPORTED    1
+#define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1      // TODO: [ESP32S31] IDF-14635
 // #define SOC_LP_SPI_SUPPORTED            1      // TODO: [ESP32S31] IDF-14639
-// #define SOC_SPIRAM_SUPPORTED            1      // TODO: [ESP32S31] IDF-14718
+#define SOC_SPIRAM_SUPPORTED            1      // TODO: [ESP32S31] IDF-14718
 #define SOC_PSRAM_DMA_CAPABLE           1
 // #define SOC_SDMMC_HOST_SUPPORTED        1      // TODO: [ESP32S31] IDF-14705
 // #define SOC_CLK_TREE_SUPPORTED          1      // TODO: [ESP32S31] IDF-14733
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1      // TODO: [ESP32S31] IDF-14675
 // #define SOC_DEBUG_PROBE_SUPPORTED       1      // TODO: [ESP32S31] IDF-14798
-// #define SOC_WDT_SUPPORTED               1      // TODO: [ESP32S31] IDF-14656
+#define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1         // TODO: [ESP32S31] IDF-14777
 // #define SOC_TOUCH_SENSOR_SUPPORTED      1      // TODO: [ESP32S31] IDF-14796
 // #define SOC_RNG_SUPPORTED               1      // TODO: [ESP32S31] IDF-14632
 // #define SOC_PPA_SUPPORTED               1      // TODO: [ESP32S31] IDF-14769
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1      // TODO: [ESP32S31] IDF-14645
 // #define SOC_DEEP_SLEEP_SUPPORTED        1      // TODO: [ESP32S31] IDF-14643
+#define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1      // TODO: [ESP32S31] IDF-14648
 // #define SOC_BITSCRAMBLER_SUPPORTED      1      // TODO: [ESP32S31] IDF-14714
 // #define SOC_SIMD_INSTRUCTION_SUPPORTED  1      // TODO: [ESP32S31] IDF-14661
+#define SOC_CORDIC_SUPPORTED            1
+#define SOC_REGI2C_SUPPORTED            1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -145,7 +150,7 @@
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION                2
 #define SOC_GDMA_SUPPORT_ETM                1
-#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+// #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1 // TODO: [ESP32S31] IDF-14760
 #define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- APM CAPS ----------------------------------------*/
@@ -191,6 +196,11 @@
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
+                                                * so the RTC GPIOs can be used as general purpose RTC GPIOs.
+                                                */
+#define SOC_RTCIO_HOLD_SUPPORTED            1
+#define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION     1
@@ -213,24 +223,29 @@
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_BITWIDTH(host_id)   ((host_id == 2) ? 4 : 8) // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
 
+/*-------------------------- SPIRAM CAPS ----------------------------------------*/
+#define SOC_SPIRAM_XIP_SUPPORTED        1
+
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
+#define SOC_SPI_MEM_SUPPORT_TIMING_TUNING         (1)
+#define SOC_MEMSPI_TIMING_TUNING_BY_DQS           (1)
+
 #define SOC_MSPI_HAS_INDEPENT_IOMUX               1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 #define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 
-#define SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT        1
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 // TODO: [ESP32S31] IDF-14693
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_SUPPORT_ETM             (1)
-#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
+// #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1) // TODO: [ESP32S31] IDF-14746
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
-// TODO: [ESP32S31] IDF-14656
 #define SOC_MWDT_SUPPORT_XTAL              (1)
-#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
+// #define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- eFuse CAPS----------------------------*/
 // TODO: [ESP32S31] IDF-14688
@@ -276,6 +291,7 @@
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 #define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
+#define SOC_CLK_MPLL_SUPPORTED                    (1)     /*!< Support MSPI PLL */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
 
 #define SOC_CLK_LP_FAST_SUPPORT_LP_PLL            (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
@@ -284,3 +300,51 @@
 #define SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE         (1)     /*!< Any regi2c operation needs enable the analog i2c master clock first */
 
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control has own registers for each module */
+
+/*-------------------------- Power Management CAPS ----------------------------*/
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+#define SOC_PM_EXT1_WAKEUP_BY_PMU       (1)
+#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+#define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
+// #define SOC_PM_SUPPORT_CPU_PD           (1) // TODO: [ESP32S31] IDF-14647
+#define SOC_PM_SUPPORT_XTAL32K_PD       (1)
+#define SOC_PM_SUPPORT_RC32K_PD         (1)
+#define SOC_PM_SUPPORT_RC_FAST_PD       (1)
+#define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
+// #define SOC_PM_SUPPORT_TOP_PD           (1)  // TODO: [ESP32S31] IDF-14647
+#define SOC_PM_SUPPORT_HP_AON_PD        (1)
+#define SOC_PM_SUPPORT_CNNT_PD          (1)
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
+#define SOC_PM_SUPPORT_MODEM_PD         (1) /*!<modem includes BLE and 15.4 and wifi*/
+#define SOC_PM_SUPPORT_MAC_BB_PD        (1)
+
+#define SOC_PM_SUPPORT_MODEM_CLOCK_DOMAIN_ICG      (1)
+
+#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
+
+#define SOC_PM_CPU_RETENTION_BY_SW          (1)
+#define SOC_PM_CACHE_RETENTION_BY_PAU       (1)
+#define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
+
+#define SOC_PM_PAU_LINK_NUM                 (5)
+#define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
+#define SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC  (4) // The range of values for the link index is [0, SOC_PM_PAU_LINK_NUM)
+
+#define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
+// #define SOC_PM_SUPPORT_PMU_MODEM_STATE      (1) // TODO: [ESP32S31] IDF-14582
+
+#define SOC_PM_RETENTION_MODULE_NUM         (64)
+
+/*-------------------------- LP_TIMER CAPS ----------------------------------*/
+#define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
+#define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+#define SOC_RTC_TIMER_V3                    1
+
+/*-------------------------- MCPWM CAPS --------------------------------------*/
+#define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
+#define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
+#define SOC_MCPWM_SUPPORT_EVENT_COMPARATOR   (1)    ///< Support event comparator (based on ETM)
+#define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
+// #define SOC_MCPWM_SUPPORT_SLEEP_RETENTION    (1)    ///< Support back up registers before sleep

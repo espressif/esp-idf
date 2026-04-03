@@ -1,27 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// TODO: [ESP32S31] IDF-14785
-// RTC IO peripheral implementation is temporarily bypassed
-// This file provides a stub implementation to allow the build to succeed.
-// Full RTC IO support for ESP32-S31 needs to be implemented in the future.
-// Related: Need to create soc/esp32s31/include/soc/rtc_io_channel.h and
-// implement proper RTC IO pin mapping and descriptor tables.
-
 #include "hal/rtc_io_periph.h"
+#include "soc/rtc_io_channel.h"
 
 const int8_t rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
-    -1,//GPIO0
-    -1,//GPIO1
-    -1,//GPIO2
-    -1,//GPIO3
-    -1,//GPIO4
-    -1,//GPIO5
-    -1,//GPIO6
-    -1,//GPIO7
+    RTCIO_GPIO0_CHANNEL,    //GPIO0
+    RTCIO_GPIO1_CHANNEL,    //GPIO1
+    RTCIO_GPIO2_CHANNEL,    //GPIO2
+    RTCIO_GPIO3_CHANNEL,    //GPIO3
+    RTCIO_GPIO4_CHANNEL,    //GPIO4
+    RTCIO_GPIO5_CHANNEL,    //GPIO5
+    RTCIO_GPIO6_CHANNEL,    //GPIO6
+    RTCIO_GPIO7_CHANNEL,    //GPIO7
     -1,//GPIO8
     -1,//GPIO9
     -1,//GPIO10
@@ -77,14 +71,3 @@ const int8_t rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     -1,//GPIO60
     -1,//GPIO61
 };
-
-// TODO: [ESP32S31] IDF-14785
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-// This requires soc/esp32s31/include/soc/rtc_io_channel.h and
-// soc/esp32s31/include/soc/rtc_io_reg.h to be created first
-// Currently providing empty array as placeholder - all fields will be 0
-const rtc_io_desc_t rtc_io_desc[SOC_RTCIO_PIN_COUNT] = {
-    // TODO: Initialize 8 entries (SOC_RTCIO_PIN_COUNT = 8) with proper register addresses
-    // and bit masks once rtc_io_channel.h and rtc_io_reg.h are available
-};
-#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

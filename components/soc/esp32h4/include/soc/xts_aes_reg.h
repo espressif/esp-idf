@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/spi1_mem_reg.h"
 #ifdef __cplusplus
 extern "C" {

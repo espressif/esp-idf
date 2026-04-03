@@ -203,7 +203,7 @@ function(__ldgen_create_target exe_target)
         message(STATUS "Mapping check enabled in ldgen")
     endif()
 
-    if(CONFIG_ESPTOOLPY_FAST_REFLASHING)
+    if(CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES)
         # Create a file containing a list of mutable libraries used by ldgen
         # for fast reflashing.
         set(mutable_libs_path "${build_dir}/ldgen_mutable_libraries")

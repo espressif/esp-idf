@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from pathlib import Path
 
@@ -11,19 +11,16 @@ from pytest_embedded_idf.utils import idf_parametrize
 CUR_DIR = Path(__file__).parent.resolve()
 
 
-# Case 1: gatt client and gatt server test
+# Case 1: gatt client and gatt server test (config: name, smp_off, min_bin, log_off)
 # EXAMPLE_CI_ID=3
+GATT_APP_PATH = f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}'
+GATT_CI_CONFIGS = ['name', 'smp_off|smp_off', 'min_bin|min_bin', 'log_off|log_off']
+
+
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
-    [
-        (
-            2,
-            f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}',
-            'name',
-            'y',
-        ),
-    ],
+    [(2, GATT_APP_PATH, c, 'y') for c in GATT_CI_CONFIGS],
     indirect=True,
 )
 @idf_parametrize(
@@ -109,19 +106,16 @@ def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> N
     assert 'Disconnected' not in str(gatt_server_output)
 
 
-# Case 3: gatt security server and gatt security client test
+# Case 3: gatt security server and gatt security client test (config: name, min_bin, log_off)
 # EXAMPLE_CI_ID=5
+GATT_SECURITY_APP_PATH = f'{str(CUR_DIR / "gatt_security_server")}|{str(CUR_DIR / "gatt_security_client")}'
+GATT_SECURITY_CI_CONFIGS = ['name', 'min_bin|min_bin', 'log_off|log_off']
+
+
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
-    [
-        (
-            2,
-            f'{str(CUR_DIR / "gatt_security_server")}|{str(CUR_DIR / "gatt_security_client")}',
-            'name',
-            'y',
-        ),
-    ],
+    [(2, GATT_SECURITY_APP_PATH, c, 'y') for c in GATT_SECURITY_CI_CONFIGS],
     indirect=True,
 )
 @idf_parametrize(
@@ -277,7 +271,7 @@ def test_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     ibeacon_receiver.expect_exact('RSSI of packet: ', timeout=30)
 
 
-# Case 5: ble ibeacon test for ESP32C2 26mhz xtal
+# Case 6: ble ibeacon test for ESP32C2 26mhz xtal
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
@@ -315,7 +309,7 @@ def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) ->
     ibeacon_receiver.expect_exact('RSSI of packet: ', timeout=30)
 
 
-# Case 6: gatt client and gatt server config test
+# Case 7: gatt client and gatt server config test
 # EXAMPLE_CI_ID=4
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
@@ -364,7 +358,7 @@ def test_gatt_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     assert 'Disconnected' not in str(gatt_server_output)
 
 
-# Case 7: gatt client and gatt server config test for ESP32C2 26mhz xtal
+# Case 8: gatt client and gatt server config test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=3
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
@@ -413,7 +407,7 @@ def test_c2_26mhz_xtal_gatt_config_func(app_path: str, dut: tuple[IdfDut, IdfDut
     assert 'Disconnected' not in str(gatt_server_output)
 
 
-# Case 8: BLE init deinit loop test
+# Case 9: BLE init deinit loop test
 @pytest.mark.generic
 @pytest.mark.parametrize('config, app_path', [('init_deinit', f'{str(CUR_DIR / "gatt_client")}')], indirect=True)
 @idf_parametrize(
@@ -429,7 +423,7 @@ def test_bluedroid_host_init_deinit(dut: Dut) -> None:
     assert len(list(set(all_hp))) == 1
 
 
-# # Case 9: BLE init deinit loop test for ESP32C2 26mhz xtal
+# Case 10: BLE init deinit loop test for ESP32C2 26mhz xtal
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(

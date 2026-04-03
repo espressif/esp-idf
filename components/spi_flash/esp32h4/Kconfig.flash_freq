@@ -1,6 +1,5 @@
 choice ESPTOOLPY_FLASHFREQ
     prompt "Flash SPI speed"
-    default ESPTOOLPY_FLASHFREQ_32M if IDF_ENV_FPGA
     default ESPTOOLPY_FLASHFREQ_64M
     config ESPTOOLPY_FLASHFREQ_64M
         bool "64 MHz"

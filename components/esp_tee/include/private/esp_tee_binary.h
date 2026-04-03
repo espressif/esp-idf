@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@ extern "C" {
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)      (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)    ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
 
+/* Alignment Checks */
 #if ((CONFIG_SECURE_TEE_IRAM_SIZE) & (0xFF))
 #error "CONFIG_SECURE_TEE_IRAM_SIZE must be 256-byte (0x100) aligned"
 #endif
@@ -41,6 +42,14 @@ extern "C" {
 
 #if ((CONFIG_SECURE_TEE_INTR_STACK_SIZE) & 0xF)
 #error "CONFIG_SECURE_TEE_INTR_STACK_SIZE must be 16-byte (0x10) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_IROM_SIZE) % SOC_MMU_PAGE_SIZE)
+#error "CONFIG_SECURE_TEE_IROM_SIZE must be a multiple of SOC_MMU_PAGE_SIZE"
+#endif
+
+#if ((CONFIG_SECURE_TEE_DROM_SIZE) % SOC_MMU_PAGE_SIZE)
+#error "CONFIG_SECURE_TEE_DROM_SIZE must be a multiple of SOC_MMU_PAGE_SIZE"
 #endif
 
 /* TEE Secure Storage partition label and NVS namespace */

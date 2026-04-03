@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#if SOC_HAS(PAU)
+#if SOC_HAS(PAU) && SOC_ETM_SUPPORT_SLEEP_RETENTION
 
 typedef struct {
     periph_retention_module_t module;                  // ID of the ETM as a retention module

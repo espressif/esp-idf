@@ -287,4 +287,28 @@ menu "Power Management"
             Only enabled when SPI_FLASH_FREQ_LIMIT_C5_240MHZ is enabled.
             This is an internal configuration, automatically set based on SPI Flash configuration.
 
+    config PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+        bool "Enable halfsleep mode for PSRAM in light sleep"
+        depends on SPIRAM
+        default y
+        help
+            Enable PSRAM halfsleep mode feature to reduce power consumption during light sleep, if the PSRAM used
+            support halfsleep mode.
+
+            When enabled, the PSRAM chip will be configured to enter halfsleep mode (if applicable) before entering
+            light sleep. This reduces power consumption by:
+            1. Setting refresh rate to 0.5x
+            2. Setting PSRAM to halfsleep mode
+
+            The PSRAM will automatically exit halfsleep mode after waking up from light sleep.
+
+    config PM_SLP_SPIRAM_HALFSLEEP_EXIT_WAIT_DELAY
+        int "The time to wait for PSRAM to be able to access after exiting halfsleep mode (in us)"
+        depends on SPIRAM
+        default 150
+        range 50 250
+        help
+            Configure the delay time between waking up PSRAM halfsleep mode and the first access to PSRAM.
+            Refer to the tXHS parameter in datasheet of the used PSRAM to configure this option.
+
 endmenu # "Power Management"

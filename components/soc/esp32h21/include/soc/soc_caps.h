@@ -24,9 +24,10 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1    //TODO: [ESP32H21] IDF-11589, IDF-11592
-// #define SOC_ANA_CMPR_SUPPORTED          1
+#define SOC_ANA_CMPR_SUPPORTED          1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
+#define SOC_UHCI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
@@ -58,19 +59,20 @@
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
-// #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
+#define SOC_BOD_SUPPORTED               1
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
 #define SOC_PMU_SUPPORTED               1
-#define SOC_RTC_TIMER_V2_SUPPORTED      1
+#define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32H21] IDF-11526
 // #define SOC_RNG_SUPPORTED               1    //TODO: [ESP32H21] IDF-11503
 #define SOC_MODEM_CLOCK_SUPPORTED       1
-#define SOC_REG_I2C_SUPPORTED           1
+#define SOC_REGI2C_SUPPORTED           1
 // #define SOC_PHY_SUPPORTED               1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
@@ -237,10 +239,6 @@
 #define SOC_RTCIO_PIN_COUNT         (7U)
 #define SOC_RTCIO_HOLD_SUPPORTED    (1)
 
-/*------------------------- Analog Comparator CAPS ---------------------------*/
-#define SOC_ANA_CMPR_NUM                    (1U)
-#define SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO   (1)
-
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #define SOC_I2C_NUM                             (2U)
 #define SOC_HP_I2C_NUM                          (2U)
@@ -360,13 +358,15 @@
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 #define SOC_MEMSPI_IS_INDEPENDENT                          1
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V2_SUPPORTED
+#define SOC_RTC_TIMER_V2                    1
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_SUPPORT_ETM             (1)
@@ -461,6 +461,7 @@
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE        (1)
 #define SOC_PM_CPU_RETENTION_BY_SW                 (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
+#define SOC_PM_MODEM_CLK_CONF_RETENTION            (1) /*!< In esp32H21, i2c lpcon is placed in top domain*/
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)

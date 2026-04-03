@@ -53,14 +53,6 @@
         -
             re_variables: ['(esp_spiram_get_chip_size|esp_spiram_get_size)']
             hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
-        -
-            re_variables: ['sdm_channel_set_duty']
-            hint_variables: ['sdm_channel_set_duty()', 'sdm_channel_set_pulse_density()']
-
--
-    re: "error: implicit declaration of function '(MCPWM_GEN_TIMER_EVENT_ACTION_END|MCPWM_GEN_COMPARE_EVENT_ACTION_END|MCPWM_GEN_BRAKE_EVENT_ACTION_END)'"
-    hint: "Macro function '{}()' has been removed. Please don't use variadic APIs when setting MCPWM generator actions."
-    match_to_output: True
 
 -
     re: "error: implicit declaration of function 'esp_secure_boot_verify_rsa_signature_block'"
@@ -116,15 +108,6 @@
             re_variables: ['esp_panic.h']
             hint_variables: ['esp_panic.h', 'use functionalities provided in esp_debug_helpers.h']
 
-        -   re_variables: ['driver/can.h']
-            hint_variables: ['driver/can.h', 'driver/twai.h']
-
-        -   re_variables: ['driver/periph_ctrl.h']
-            hint_variables: ['driver/periph_ctrl.h', 'esp_private/periph_ctrl.h']
-
-        -   re_variables: ['driver/rtc_cntl.h']
-            hint_variables: ['driver/rtc_cntl.h', 'esp_private/rtc_ctrl.h']
-
 -
     re: "error: implicit declaration of function 'esp_int_wdt_\\w+'"
     hint: 'The Interrupt Watchdog API has been made private, it shall not be used anymore. You can still force its inclusion with #include "esp_private/esp_int_wdt.h" (not recommended)'
@@ -177,14 +160,6 @@
             hint_variables: ['Backtrace Parser API', 'eh_frame_parser', 'eh_frame_parser']
 
 -
-    re: "fatal error: esp_adc_cal.h: No such file or directory"
-    hint: "``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc``. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. For more information run 'idf.py docs -sp migration-guides/release-5.x/peripherals.html'."
-
--
-    re: "fatal error: .*atca_mbedtls_wrap\\.h: No such file or directory"
-    hint: "To use CONFIG_ESP_TLS_USE_SECURE_ELEMENT option, please install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib'"
-
--
     re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
     hint: "Try to reinstall the toolchain for the chip that you trying to use. \nFor more information run 'idf.py docs -sp get-started/#installation' and follow the instructions for your system"
 
@@ -232,10 +207,6 @@
     hint: "newlib component has been renamed to esp_libc. Any `REQUIRES newlib` can simply be deleted as esp_libc is REQUIRED by default."
 
 -
-    re: "error: invalid use of incomplete typedef 'esp_tls_t'"
-    hint: "The struct 'esp_tls_t' has now been made private - its elements can be only be accessed/modified through respective getter/setter functions. Please refer to the migration guide for more information."
-
--
     re: "error: enumeration value 'HTTP_EVENT_REDIRECT' not handled in switch"
     hint: "The event handler, specified in the 'event_handler' element, of the 'esp_http_client_config_t' struct now needs to handle the new 'HTTP_EVENT_REDIRECT' event case."
 
@@ -245,46 +216,12 @@
     match_to_output: True
 
 -
-    re: "fatal error: (esp_rom_tjpgd.h): No such file or directory"
-    hint: "{} was removed. Please use esp_jpeg component from IDF component manager instead.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
-    match_to_output: True
-
--
     re: "fatal error: esp_private/freertos_debug.h: No such file or directory"
     hint: "esp_private/freertos_debug.h has been moved to freertos/freertos_debug.h.\nThe task snapshot APIs are now public. Update your include to use the new public header."
 
 -
     re: "(fatal error: tcpip_adapter.h: No such file or directory|error: implicit declaration of function 'tcpip_adapter_init')"
     hint: "TCP/IP adapter compatibility layer has been removed. Please migrate to ESP-NETIF.\nRefer to the Networking migration guide, section TCP/IP adapter, for more details."
-
--
-    re: "error: macro \"(ETH_\\w+_CONFIG)\" requires 2 arguments, but only 1 given"
-    hint: "Macro {} now accepts both SPI host and SPI device related configuration. The SPI-Ethernet Module initialization has been simplified to allocate an SPI device internally so the configuration structure requires the related configuration.\nPlease refer to the Networking migration guide, section SPI-Ethernet Module Initialization, for more details."
-    match_to_output: True
-
--
-    re: "error: implicit declaration of function '(esp_eth_detect_phy_addr)'"
-    hint: "Function {}() has been renamed to esp_eth_phy_802_3_detect_phy_addr().\nPlease refer to the Networking migration guide, section PHY Address Auto-detect, for more details."
-    match_to_output: True
-
--
-    re: "error: too few arguments to function '(esp_eth_mac_\\w+)'"
-    hint: "Function {}() has been refactored to accept device specific configuration and MAC specific configuration.\nPlease refer to the Ethernet section of Networking migration guide for more details."
-    match_to_output: True
-
--
-    re: "error: implicit declaration of function 'esp_eth_phy_new_{}'"
-    hint: "Function {}() has been removed, please use {}() instead.\nPlease refer to the Networking migration guide, section PHY Address Auto-detect, for more details."
-    variables:
-        -
-            re_variables: ['ksz8081']
-            hint_variables: ['esp_eth_phy_new_ksz8081', 'esp_eth_phy_new_ksz80xx']
-        -
-            re_variables: ['ksz8041']
-            hint_variables: ['esp_eth_phy_new_ksz8041', 'esp_eth_phy_new_ksz80xx']
-        -
-            re_variables: ['lan8720']
-            hint_variables: ['esp_eth_phy_new_lan8720', 'esp_eth_phy_new_lan87xx']
 
 -
     re: "`iram0_0_seg' overflowed"
@@ -450,10 +387,6 @@
             hint_variables: ['ESP_HF_CME_MEMEORY_FAILURE', 'ESP_HF_CME_MEMORY_FAILURE ']
 
 -
-    re: "error: 'USBPHY_\\w+' undeclared"
-    hint: "USBPHY_* pin definitions from <soc/usb_pins.h> have been removed.\nTo use an external USB PHY, wire it to any GPIOs and declare those pin mappings in your application to match your hardware."
-
--
     re: "intr_alloc: No free interrupt inputs for [_\\w]+ interrupt"
     hint: "For troubleshooting instructions related to interrupt allocation, run 'idf.py docs -sp api-reference/system/intr_alloc.html'"
 
@@ -505,70 +438,6 @@
     match_to_output: True
 
 -
-    re: "spi_hal: The clock_speed_hz should less than"
-    hint: "When operating in full-duplex mode at high frequencies, the device may not read data correctly.\nTry using IOMUX pins to increase the frequency limit or switch to half-duplex mode.\nNote that the SPI master can only operate at divisors of 80 MHz, and the driver always selects the closest available frequency to your configuration.\nSpecify SPI_DEVICE_NO_DUMMY to bypass this check. This allows higher output speeds but may result in unreliable data reads."
-
--
-    re: "has no member named 'io_loop_back'"
-    hint: "If you want to bind different driver objects to the same GPIO, just set them with the same GPIO number."
-
--
-    re: "has no member named '{}'"
-    hint: "Please include 'driver/gpio.h' and call 'gpio_set_pull_mode' to set the correct pull mode."
-    variables:
-        -
-            re_variables: ['pull_up']
-            hint_variables: []
-        -
-            re_variables: ['pull_down']
-            hint_variables: []
-
--
-    re: "has no member named 'io_od_mode'"
-    hint: "Please include 'driver/gpio.h' and call 'gpio_od_enable' to enable the open-drain mode."
-
--
-    re: "(error: implicit declaration of function|undefined reference to) '(gpio_pad_set_drv|gpio_pad_pullup|gpio_pad_select_gpio|gpio_pad_unhold|gpio_matrix_in|gpio_matrix_out)'"
-    hint: "The rom GPIO functions have been renamed. Please replace with the APIs in 'esp_rom_gpio.h'."
-
--
-    re: "error: implicit declaration of function '(esp_dma_capable_malloc|esp_dma_capable_calloc|esp_cache_aligned_malloc|esp_cache_aligned_calloc)'"
-    hint: "Use the memory allocation functions from the esp_heap_caps.h with proper capability flags.\nFor example, use heap_caps_malloc() with the MALLOC_CAP_CACHE_ALIGNED flag to allocate memory that is aligned to cache line."
-
--
-    re: "fatal error: {}: No such file or directory"
-    hint: "The {} driver is removed. It should be replaced by '{}' in the '{}' component. Please read the migration guide for more details."
-    variables:
-        -
-            re_variables: ['driver/timer.h']
-            hint_variables: ['legacy timer group', 'driver/gptimer.h', 'esp_driver_gptimer']
-        -
-            re_variables: ['driver/i2s.h']
-            hint_variables: ['legacy I2S', 'driver/i2s_std.h, driver/i2s_pdm.h, driver/i2s_tdm.h', 'esp_driver_i2s']
-        -
-            re_variables: ['driver/pcnt.h']
-            hint_variables: ['legacy pcnt', 'driver/pulse_cnt.h', 'esp_driver_pcnt']
-        -
-            re_variables: ['driver/dac.h']
-            hint_variables: ['legacy DAC', 'driver/dac_oneshot.h, driver/dac_continuous.h, driver/dac_cosine.h', 'esp_driver_dac']
-        -
-            re_variables: ['driver/adc.h']
-            hint_variables: ['legacy ADC', 'esp_adc/adc_oneshot.h, esp_adc/adc_continuous.h, esp_adc/adc_cali.h, esp_adc/adc_cali_scheme.h', 'esp_adc']
-        -
-            re_variables: ['driver/mcpwm.h']
-            hint_variables: ['legacy MCPWM', 'driver/mcpwm_prelude', 'esp_driver_mcpwm']
-        -
-            re_variables: ['driver/sigmadelta.h']
-            hint_variables: ['legacy Sigma-Delta', 'driver/sdm.h', 'esp_driver_sdm']
-        -
-            re_variables: ['driver/rmt.h']
-            hint_variables: ['legacy RMT', 'driver/rmt_tx.h, driver/rmt_rx.h, driver/rmt_encoder.h', 'esp_driver_rmt']
-
--
-    re: undefined reference to `i3c_new_master_bus'
-    hint: "The I3C master driver is not fully supported in IDF. To use this driver please enable `IDF_EXPERIMENTAL_FEATURES`"
-
--
     re: "error: implicit declaration of function '{}'"
     hint: "The FreeRTOS compatibility function '{}' has been removed in ESP-IDF v6.0. Please use {} instead."
     variables:
@@ -592,10 +461,6 @@
 -
     re: "error: implicit declaration of function 'vPortCleanUpTCB'"
     hint: "The legacy FreeRTOS hook vPortCleanUpTCB() has been removed from ESP-IDF. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK with vTaskPreDeletionHook( void * pxTCB ) instead."
-
--
-    re: "error: implicit declaration of function 'esp_lcd_new_panel_nt35510'"
-    hint: "The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/esp_lcd_nt35510\""
 
 -
     re: "cannot open linker script file bootloader.ld"
@@ -717,39 +582,6 @@
     match_to_output: True
 
 -
-    re: "error: implicit declaration of function 'esp_eth_phy_new_{}'"
-    hint: "The Ethernet {} driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/{}\""
-    variables:
-        -
-            re_variables: ['ip101']
-            hint_variables: ['IP101', 'ip101']
-        -
-            re_variables: ['lan87xx']
-            hint_variables: ['LAN87XX', 'lan87xx']
-        -
-            re_variables: ['rtl8201']
-            hint_variables: ['RTL8201', 'rtl8201']
-        -
-            re_variables: ['dp83848']
-            hint_variables: ['DP83848', 'dp83848']
-        -
-            re_variables: ['ksz80xx']
-            hint_variables: ['KSZ80XX', 'ksz80xx']
-        -
-            re_variables: ['dm9051']
-            hint_variables: ['DM9051', 'dm9051']
-        -
-            re_variables: ['ksz8851snl']
-            hint_variables: ['KSZ8851SNL', 'ksz8851snl']
-        -
-            re_variables: ['w5500']
-            hint_variables: ['W5500', 'w5500']
-
--
-    re: "error: 'struct extra_dpi_panel_flags' has no member named 'use_dma2d'"
-    hint: "The `use_dma2d` member has been removed in ESP-IDF v6.0. Please use the `esp_lcd_dpi_panel_enable_dma2d()` function to enable DMA2D for the DPI panel."
-
--
     re: "error: 'MALLOC_CAP_EXEC' undeclared \\(first use in this function\\)"
     hint: "MALLOC_CAP_EXEC capability cannot be used if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT or CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is enabled. \nFor further information about those configurations, run 'idf.py docs -sp api-reference/kconfig-reference.html#memory-protection'"
 
@@ -760,7 +592,3 @@
 -
     re: "error: 'WIFI_BW_HT40' undeclared \\(first use in this function\\)"
     hint: "The enum value 'WIFI_BW_HT40' has been removed. Use 'WIFI_BW40' instead."
-
--
-    re: "fatal error: soc/uart_channel.h: No such file or directory"
-    hint: "The header file 'soc/uart_channel.h' has been removed. All equivalent UART GPIO lookup macros can be found in 'soc/uart_pins.h' now."

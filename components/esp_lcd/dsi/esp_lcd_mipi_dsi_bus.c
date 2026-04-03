@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,8 +103,8 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
 
     // initialize the DSI operation mode: command mode
     mipi_dsi_host_ll_enable_video_mode(hal->host, false);
-    // place the clock lane in low power mode, we will switch to high speed mode later when DPI stream is ready
-    mipi_dsi_host_ll_set_clock_lane_state(hal->host, MIPI_DSI_LL_CLOCK_LANE_STATE_LP);
+    // set clock lane state: force HS keeps clock in high-speed mode continuously, auto lets the DSI host manage transitions
+    mipi_dsi_host_ll_set_clock_lane_state(hal->host, bus_config->flags.clock_lane_force_hs ? MIPI_DSI_LL_CLOCK_LANE_STATE_HS : MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO);
     // Set the time that is required by the clock and data lanes to go from high-speed to low-power and from low-power to high-speed
     mipi_dsi_phy_ll_set_switch_time(hal->host, 50, 104, 46, 128);
 

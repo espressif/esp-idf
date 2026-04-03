@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,10 +29,13 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/hp_alive_sys_reg.h"
 #include "hal/uart_ll.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 
@@ -62,7 +65,7 @@ __attribute__((weak)) void esp_clk_init(void)
 
     rtc_clk_8m_enable(true);
 
-#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+#if defined(CONFIG_BOOTLOADER_WDT_ENABLE) && SOC_RTC_WDT_SUPPORTED
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
     // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (1.6 sec).
@@ -83,7 +86,7 @@ __attribute__((weak)) void esp_clk_init(void)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
 
-#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+#if defined(CONFIG_BOOTLOADER_WDT_ENABLE) && SOC_RTC_WDT_SUPPORTED
     // After changing a frequency WDT timeout needs to be set for new frequency.
     stage_timeout_ticks = (uint32_t)((uint64_t)CONFIG_BOOTLOADER_WDT_TIME_MS * rtc_clk_slow_freq_get_hz() / 1000);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);

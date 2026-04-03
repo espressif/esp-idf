@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -322,6 +322,28 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     //0: disable APLL clock, I2S module will using PLL_D2_CLK(160M) as source clock
     //1: Enable APLL clock, I2S module will using APLL as source clock
     hw->clkm_conf.clka_en = (src == I2S_CLK_SRC_APLL) ? 1 : 0;
+}
+
+/**
+ * @brief Get TX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current TX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_tx_clk_get_src(i2s_dev_t *hw)
+{
+    return (hw->clkm_conf.clka_en) ? (i2s_clock_src_t)I2S_CLK_SRC_APLL : (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
+}
+
+/**
+ * @brief Get RX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current RX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_rx_clk_get_src(i2s_dev_t *hw)
+{
+    return (hw->clkm_conf.clka_en) ? (i2s_clock_src_t)I2S_CLK_SRC_APLL : (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
 }
 
 /**

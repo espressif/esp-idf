@@ -193,6 +193,7 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
             :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
+            :SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION: - I80 LCD
 
         一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
 

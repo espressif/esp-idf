@@ -1100,22 +1100,78 @@ tBTM_STATUS BTM_ClearInqDb (BD_ADDR p_bda)
 *******************************************************************************/
 tBTM_STATUS BTM_ReadInquiryRspTxPower (tBTM_CMPL_CB *p_cb)
 {
-    if (btm_cb.devcb.p_txpwer_cmpl_cb) {
+    tBTM_READ_TX_PWR_LVL_RESULTS result;
+
+    if (btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb) {
+        memset(&result, 0, sizeof(result));
+        result.type = BTM_TX_PWR_LVL_ISCAN;
+        result.status = BTM_BUSY;
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
         return (BTM_BUSY);
     }
 
-    btu_start_timer (&btm_cb.devcb.txpwer_timer, BTU_TTYPE_BTM_ACL, BTM_INQ_REPLY_TIMEOUT );
-
-
-    btm_cb.devcb.p_txpwer_cmpl_cb = p_cb;
+    btu_start_timer (&btm_cb.devcb.read_iscan_txpwer_timer, BTU_TTYPE_BTM_BREDR_PWR_CTRL, BTM_INQ_REPLY_TIMEOUT );
+    btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb = p_cb;
 
     if (!btsnd_hcic_read_inq_tx_power ()) {
-        btm_cb.devcb.p_txpwer_cmpl_cb = NULL;
-        btu_stop_timer (&btm_cb.devcb.txpwer_timer);
+        btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb = NULL;
+        btu_stop_timer (&btm_cb.devcb.read_iscan_txpwer_timer);
+        memset(&result, 0, sizeof(result));
+        result.type = BTM_TX_PWR_LVL_ISCAN;
+        result.status = BTM_NO_RESOURCES;
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
         return (BTM_NO_RESOURCES);
     } else {
         return (BTM_CMD_STARTED);
     }
+}
+
+/*******************************************************************************
+**
+** Function         BTM_WriteInquiryTxPower
+**
+** Description      This command writes the inquiry transmit power level used
+**                  to transmit inquiry response packets.
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_BUSY if command is already in progress
+**
+*******************************************************************************/
+tBTM_STATUS BTM_WriteInquiryTxPower(INT8 tx_power, tBTM_CMPL_CB *p_cb)
+{
+    tBTM_WRITE_TX_PWR_LVL_RESULTS result;
+
+    if (btm_cb.devcb.p_write_inq_txpwer_cmpl_cb) {
+        memset(&result, 0, sizeof(result));
+        result.type = BTM_TX_PWR_LVL_INQ;
+        result.status = BTM_BUSY;
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
+        return BTM_BUSY;
+    }
+
+    btu_start_timer(&btm_cb.devcb.write_inq_txpwer_timer, BTU_TTYPE_BTM_BREDR_PWR_CTRL, BTM_INQ_REPLY_TIMEOUT);
+    btm_cb.devcb.p_write_inq_txpwer_cmpl_cb = p_cb;
+
+    if (!btsnd_hcic_write_inq_tx_power(tx_power)) {
+        btm_cb.devcb.p_write_inq_txpwer_cmpl_cb = NULL;
+        btu_stop_timer(&btm_cb.devcb.write_inq_txpwer_timer);
+        memset(&result, 0, sizeof(result));
+        result.type = BTM_TX_PWR_LVL_INQ;
+        result.status = BTM_NO_RESOURCES;
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
+        return BTM_NO_RESOURCES;
+    }
+
+    return BTM_CMD_STARTED;
 }
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -2187,40 +2243,77 @@ void btm_inq_rmt_name_failed (void)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
-** Function         btm_read_linq_tx_power_complete
+** Function         btm_read_iscan_tx_power_complete
 **
-** Description      read inquiry tx power level complete callback function.
+** Description      read inquiry scan tx power level complete callback function.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_linq_tx_power_complete(UINT8 *p)
+void btm_read_iscan_tx_power_complete(UINT8 *p)
 {
-    tBTM_CMPL_CB                *p_cb = btm_cb.devcb.p_txpwer_cmpl_cb;
-    tBTM_INQ_TXPWR_RESULTS        results;
+    tBTM_CMPL_CB                *p_cb = btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb;
+    tBTM_READ_TX_PWR_LVL_RESULTS results;
 
-    btu_stop_timer (&btm_cb.devcb.txpwer_timer);
+    memset(&results, 0, sizeof(results));
+    results.type = BTM_TX_PWR_LVL_ISCAN;
+
+    btu_stop_timer (&btm_cb.devcb.read_iscan_txpwer_timer);
     /* If there was a callback registered for read inq tx power, call it */
-    btm_cb.devcb.p_txpwer_cmpl_cb = NULL;
+    btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb = NULL;
 
     if (p_cb) {
-        STREAM_TO_UINT8  (results.hci_status, p);
+        if (p) {
+            STREAM_TO_UINT8  (results.hci_status, p);
 
-        if (results.hci_status == HCI_SUCCESS) {
-            results.status = BTM_SUCCESS;
+            if (results.hci_status == HCI_SUCCESS) {
+                results.status = BTM_SUCCESS;
 
-            STREAM_TO_UINT8 (results.tx_power, p);
-            BTM_TRACE_EVENT ("BTM INQ TX POWER Complete: tx_power %d, hci status 0x%02x\n",
-                             results.tx_power, results.hci_status);
+                STREAM_TO_UINT8 (results.tx_power, p);
+                BTM_TRACE_EVENT ("BTM INQ TX POWER Complete: tx_power %d, hci status 0x%02x\n",
+                                results.tx_power, results.hci_status);
+            } else {
+                results.status = BTM_ERR_PROCESSING;
+            }
         } else {
             results.status = BTM_ERR_PROCESSING;
         }
-
         (*p_cb)(&results);
     }
+}
 
+/*******************************************************************************
+**
+** Function         btm_write_inq_tx_power_complete
+**
+** Description      write inquiry tx power level complete callback function.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_write_inq_tx_power_complete(UINT8 *p)
+{
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_write_inq_txpwer_cmpl_cb;
+    tBTM_WRITE_TX_PWR_LVL_RESULTS results;
+
+    memset(&results, 0, sizeof(results));
+    results.type = BTM_TX_PWR_LVL_INQ;
+
+    btu_stop_timer(&btm_cb.devcb.write_inq_txpwer_timer);
+    btm_cb.devcb.p_write_inq_txpwer_cmpl_cb = NULL;
+
+    if (p_cb) {
+        if (p) {
+            STREAM_TO_UINT8(results.hci_status, p);
+            results.status = (results.hci_status == HCI_SUCCESS) ? BTM_SUCCESS : BTM_ERR_PROCESSING;
+        } else {
+            results.status = BTM_ERR_PROCESSING;
+        }
+        (*p_cb)(&results);
+    }
 }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTM_WriteEIR

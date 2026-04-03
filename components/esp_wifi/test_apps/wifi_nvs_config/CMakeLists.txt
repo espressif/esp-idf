@@ -9,13 +9,13 @@ set(COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 if($ENV{CI_PIPELINE_ID})
-    idf_build_set_property(COMPILE_DEFINITIONS TEST_SUFFIX_STR="_$ENV{CI_PIPELINE_ID}" APPEND)
+    idf_build_set_property(COMPILE_DEFINITIONS TEST_SUFFIX_STR="_${IDF_TARGET}_$ENV{CI_PIPELINE_ID}" APPEND)
 endif()
 
 if(DEFINED ENV{CI_PIPELINE_ID})
-    set(TEST_SUFFIX_STR "_$ENV{CI_PIPELINE_ID}")
+    set(TEST_SUFFIX_STR "_${IDF_TARGET}_$ENV{CI_PIPELINE_ID}")
 else()
-    string(TIMESTAMP TEST_SUFFIX_STR "%Y%m%d%H%M%S")
+    string(TIMESTAMP TEST_SUFFIX_STR "_${IDF_TARGET}_%Y%m%d%H%M%S")
 endif()
 
 execute_process(

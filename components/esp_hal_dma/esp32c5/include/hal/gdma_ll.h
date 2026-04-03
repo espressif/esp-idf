@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 
 #define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1  // AHB GDMA supports adjustable burst size
 #define GDMA_LL_MAX_BURST_SIZE_PSRAM      32 // PSRAM controller doesn't support burst access with size > 32 bytes
-#define GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 // The alignment of the memory and size when DMA accesses encrypted memory
 
 #ifdef __cplusplus
 extern "C" {

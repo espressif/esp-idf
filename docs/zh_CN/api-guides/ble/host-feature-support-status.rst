@@ -89,7 +89,7 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |experimental|
-      - |developing202512|
+      - |experimental|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
@@ -116,7 +116,7 @@ ESP 主机主要功能支持状态
       - |supported|
     * -
       - Encrypted Advertising Data
-      - |developing202512|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic

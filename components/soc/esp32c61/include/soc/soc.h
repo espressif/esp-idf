@@ -193,7 +193,7 @@
 #define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x4084ea70
+#define SOC_ROM_STACK_START         0x4084e670
 #define SOC_ROM_STACK_SIZE          0x2000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.

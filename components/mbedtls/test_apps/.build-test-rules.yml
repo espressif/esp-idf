@@ -18,3 +18,4 @@ components/mbedtls/test_apps:
     - esp_driver_dma
     - esp_hal_dma
     - esp_mm
+    - esp_hw_support

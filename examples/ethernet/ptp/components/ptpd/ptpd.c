@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2024-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 /****************************************************************************
@@ -81,6 +81,9 @@
 #include <math.h>
 #include "esp_eth_time.h"
 
+#include <sys/timex.h>
+#include "esp_eth_clock.h"
+
 #define ETH_TYPE_PTP 0x88F7
 
 #define SET_MAC_ADDR(addr, a, b, c, d, e, f) do { \
@@ -100,6 +103,8 @@
 
 // gPTP required values
 #define GPTP_DELAYREQ_INTERVAL_MS 1000
+#define CONFIG_CLOCK_ADJTIME_PERIOD_MS (CONFIG_ETH_CLOCK_ADJTIME_PERIOD_MS)
+#define CONFIG_CLOCK_ADJTIME_SLEWLIMIT_PPM  (CONFIG_ETH_CLOCK_ADJTIME_SLEWLIMIT_PPB / 1000)
 
 // To able to set either only server or only client
 #ifndef CONFIG_NETUTILS_PTPD_TIMEOUT_MS
@@ -656,7 +661,7 @@ static int ptp_gettime(FAR struct ptp_state_s *state,
 {
   UNUSED(state);
 #ifdef ESP_PTP
-  return esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, ts);
+  return clock_gettime(CLOCK_PTP_SYSTEM, ts);
 #else
   return clock_gettime(CLOCK_REALTIME, ts);
 #endif // ESP_PTP
@@ -669,25 +674,30 @@ static int ptp_settime(FAR struct ptp_state_s *state,
 {
   UNUSED(state);
 #ifdef ESP_PTP
-  return esp_eth_clock_settime(CLOCK_PTP_SYSTEM, ts);
+  return clock_settime(CLOCK_PTP_SYSTEM, ts);
 #else
   return clock_settime(CLOCK_REALTIME, ts);
 #endif // ESP_PTP
 }
 
-#ifndef ESP_PTP
 /* Smoothly adjust timestamp. */
 
 static int ptp_adjtime(FAR struct ptp_state_s *state, int64_t delta_ns)
 {
+#ifdef ESP_PTP
+  struct timex tx = {
+    .modes = ADJ_OFFSET | ADJ_NANO,
+    .offset = (long)delta_ns,
+  };
+  return clock_adjtime(CLOCK_PTP_SYSTEM, &tx);
+#else
   struct timeval delta;
-
   delta.tv_sec = delta_ns / NSEC_PER_SEC;
   delta_ns -= (int64_t)delta.tv_sec * NSEC_PER_SEC;
   delta.tv_usec = delta_ns / NSEC_PER_USEC;
   return adjtime(&delta, NULL);
+#endif
 }
-#endif // !ESP_PTP
 
 #ifndef ESP_PTP
 /* Get timestamp of latest received packet */
@@ -761,9 +771,12 @@ static int ptp_initialize_state(FAR struct ptp_state_s *state,
     return ERROR;
   }
   esp_eth_clock_cfg_t clk_cfg = {
-    .eth_hndl = eth_handle,
+    .clock_id = CLOCK_PTP_SYSTEM,
   };
-  esp_eth_clock_init(CLOCK_PTP_SYSTEM, &clk_cfg);
+  if (esp_eth_clock_init(eth_handle, &clk_cfg) != ESP_OK) {
+    ptperr("failed to initialize PTP clock");
+    return ERROR;
+  }
 
   // Enable time stamping in L2TAP
   if(ioctl(state->ptp_socket, L2TAP_S_TIMESTAMP_EN) < 0)
@@ -1458,11 +1471,12 @@ static void ptp_lock_local_clock_freq(FAR struct ptp_state_s *state,
 
   // compute how to scale the slave frequency to lock with master frequency and also try to catch-up the offset
   double freq_scale = ((double)(remote_delta_ns /*+ tick_diff*/ + adj)) / (double)local_delta_ns;
-  esp_eth_clock_adj_param_t clk_adj_param = {
-    .mode = ETH_CLK_ADJ_FREQ_SCALE,
-    .freq_scale = freq_scale
+  long freq_ppb = (long)((freq_scale - 1.0) * 1e9);
+  struct timex tx = {
+    .modes = ADJ_FREQUENCY,
+    .freq = freq_ppb,
   };
-  esp_eth_clock_adjtime(CLOCK_PTP_SYSTEM, &clk_adj_param);
+  clock_adjtime(CLOCK_PTP_SYSTEM, &tx);
 
   state->remote_time_ns_prev = remote_time_ns;
   state->local_time_ns_prev = local_time_ns;

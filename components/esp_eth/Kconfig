@@ -56,6 +56,28 @@ menu "Ethernet"
                 If enabled, functions related to RX/TX are placed into IRAM. It can improve Ethernet throughput.
                 If disabled, all functions are placed into FLASH.
 
+        menu "Ethernet Clock"
+            depends on SOC_EMAC_IEEE1588V2_SUPPORTED
+
+            config ETH_CLOCK_ADJTIME_PERIOD_MS
+                int "Period over which adjtime() applies corrections (ms)"
+                default 1000
+                range 100 10000
+                help
+                    The time period over which a clock_adjtime() correction is applied
+                    by adjusting the hardware clock rate. The PTP clock's tick rate (ppb)
+                    is computed as: ppb = delta_ns * 1000 / ETH_CLOCK_ADJTIME_PERIOD_MS.
+
+            config ETH_CLOCK_ADJTIME_SLEWLIMIT_PPB
+                int "Maximum clock slew rate (ppb)"
+                default 500000
+                range 1000 5000000
+                help
+                    Drift estimates exceeding this limit (in ppb) are rejected as
+                    out of range. Typical crystal oscillators drift less than 50 ppm
+                    (50000 ppb).
+        endmenu
+
     endif # ETH_USE_ESP32_EMAC
     menuconfig ETH_USE_SPI_ETHERNET
         bool "Support SPI to Ethernet Module"

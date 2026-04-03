@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,9 @@
 #include "soc/gdma_struct.h"
 #endif
 
+#if CONFIG_ULP_COPROC_ENABLED
 #include "soc/lp_aon_reg.h"
 #include "soc/lpperi_reg.h"
-#if CONFIG_ULP_COPROC_ENABLED
 #include "ulp_lp_core.h"
 #endif
 
@@ -222,25 +222,4 @@ void test_gdma_wait_done(void)
             break;
         }
     }
-}
-
-/***************************** Miscellaneous *****************************/
-
-IRAM_ATTR void test_delay_ms(uint32_t ms)
-{
-    uint32_t us = ms * 1000U;
-#if SOC_CPU_HAS_CSR_PC
-    esp_rom_delay_us(us);
-#else
-    if (RV_READ_CSR(CSR_PRV_MODE) == PRV_M) {
-        esp_rom_delay_us(us);
-    } else {
-        uint32_t start = RV_READ_CSR(cycle);
-        uint32_t end = us * esp_rom_get_cpu_ticks_per_us();
-
-        while ((RV_READ_CSR(cycle) - start) < end) {
-            /* nothing to do */
-        }
-    }
-#endif
 }

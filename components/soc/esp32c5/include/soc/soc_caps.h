@@ -73,7 +73,7 @@
 #define SOC_PMU_SUPPORTED               1
 #define SOC_PMU_PVT_SUPPORTED           1
 #define SOC_PAU_SUPPORTED               1
-#define SOC_RTC_TIMER_V2_SUPPORTED      1
+#define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_LP_AON_SUPPORTED            1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
@@ -81,6 +81,7 @@
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_ECDSA_SUPPORTED             1
@@ -88,6 +89,7 @@
 #define SOC_KEY_MANAGER_SUPPORTED       1
 #define SOC_HUK_SUPPORTED               1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
+#define SOC_REGI2C_SUPPORTED            1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
@@ -235,7 +237,6 @@
 #define SOC_GPIO_OUT_RANGE_MAX          28
 
 #define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK          (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6)
-#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT       (7)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_7~GPIO_NUM_28)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000001FFFF80ULL
@@ -266,8 +267,6 @@
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
-#define SOC_ANA_CMPR_NUM                       (1U)
-#define SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE      (1)  // Support positive/negative/any cross interrupt
 #define SOC_ANA_CMPR_SUPPORT_ETM               (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
@@ -426,13 +425,15 @@
 
 #define SOC_SPI_MEM_FLASH_SUPPORT_HPM                         (1) /*!< Support High Performance Mode */
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V2_SUPPORTED
+#define SOC_RTC_TIMER_V2                    1
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_SUPPORT_ETM             (1)
@@ -443,9 +444,10 @@
 #define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_CONTROLLER_NUM         2
-#define SOC_TWAI_MASK_FILTER_NUM        3
-#define SOC_TWAI_RANGE_FILTER_NUM       1U
+#define SOC_TWAI_CONTROLLER_NUM             2
+#define SOC_TWAI_MASK_FILTER_NUM            3
+#define SOC_TWAI_RANGE_FILTER_NUM           1U
+#define SOC_TWAI_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_PAD_JTAG 1
@@ -485,9 +487,12 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128        1  /* SOC_EFUSE_XTS_AES_KEY_128 (1) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 (1) */
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256        1  /* SOC_EFUSE_XTS_AES_KEY_256 (0) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 (1) */
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
+#define SOC_FLASH_ENCRYPTION_PAGE_CONFIGURABLE  1  /* Flash encryption can be configured on a MMU page basis */
 
 /*-------------------------- PSRAM Encryption CAPS----------------------------*/
-#define SOC_PSRAM_ENCRYPTION_XTS_AES_128    (1)
+#define SOC_PSRAM_ENCRYPTION_XTS_AES_128        1
+#define SOC_PSRAM_ENCRYPTION_SEPARATE_KEY       1  /* PSRAM encryption can use independent key */
+#define SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE  1  /* PSRAM encryption can be configured on a MMU page basis */
 
 /*------------------------Bootloader CAPS---------------------------------*/
 /* Support Recovery Bootloader */
@@ -529,9 +534,6 @@
 #define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)
 #define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
 #define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
-
-/*--------------------------- UHCI CAPS -------------------------------------*/
-#define SOC_UHCI_NUM               (1UL)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

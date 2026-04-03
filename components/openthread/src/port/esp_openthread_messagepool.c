@@ -1,35 +1,48 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "openthread-core-config.h"
 #include "esp_openthread_common_macro.h"
+#include "esp_openthread_platform.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_psram.h"
 #include "openthread/instance.h"
 #include "openthread/platform/messagepool.h"
 
-int s_buffer_pool_head = -1;
-otMessageBuffer **s_buffer_pool_pointer = NULL;
-otMessageBuffer *s_buffer_pool = NULL;
+// Fallback buffer count at runtime for non-PSRAM targets (matches Kconfig default)
+#define OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM 65
+
+static int s_buffer_pool_head = -1;
+static otMessageBuffer **s_buffer_pool_pointer = NULL;
+static otMessageBuffer *s_buffer_pool = NULL;
 
 void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, size_t aBufferSize)
 {
-    otMessageBuffer *buffer_pool = (otMessageBuffer *)heap_caps_calloc(aMinNumFreeBuffers, aBufferSize, MALLOC_CAP_SPIRAM);
-    s_buffer_pool_pointer = (otMessageBuffer **)heap_caps_calloc(aMinNumFreeBuffers, sizeof(otMessageBuffer **), MALLOC_CAP_SPIRAM);
+    uint16_t num_buffers = aMinNumFreeBuffers;
+
+    if (!esp_psram_is_initialized() && num_buffers > OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM) {
+        ESP_LOGW(OT_PLAT_LOG_TAG, "PSRAM not available, reducing message pool from %u to %u buffers",
+                 num_buffers, OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM);
+        num_buffers = OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM;
+    }
+
+    otMessageBuffer *buffer_pool = (otMessageBuffer *)heap_caps_calloc_prefer(num_buffers, aBufferSize, 3, esp_openthread_get_alloc_caps(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_buffer_pool_pointer = (otMessageBuffer **)heap_caps_calloc_prefer(num_buffers, sizeof(otMessageBuffer **), 3, esp_openthread_get_alloc_caps(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (buffer_pool == NULL || s_buffer_pool_pointer == NULL) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to create message buffer pool");
         assert(false);
     }
-    for (uint16_t i = 0; i < aMinNumFreeBuffers; i++) {
+    for (uint16_t i = 0; i < num_buffers; i++) {
         s_buffer_pool_pointer[i] = buffer_pool + i * aBufferSize / sizeof(otMessageBuffer);
     }
-    s_buffer_pool_head = aMinNumFreeBuffers - 1;
+    s_buffer_pool_head = num_buffers - 1;
     s_buffer_pool = buffer_pool;
-    ESP_LOGI(OT_PLAT_LOG_TAG, "Create message buffer pool successfully, size %d", aMinNumFreeBuffers*aBufferSize);
+    ESP_LOGI(OT_PLAT_LOG_TAG, "Create message buffer pool successfully, size %d", num_buffers * aBufferSize);
 }
 
 otMessageBuffer *otPlatMessagePoolNew(otInstance *aInstance)

@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-`bleprph_throughput` demonstrates server side implementation required for NimBLE throughput example. It has characteristics supporting READ, WRITE and NOTIFY (`PTS_LONG_CHR_READ_WRITE`,`PTS_CHR_READ_WRITE`,`PTS_CHR_NOTIFY`). The data of 500 Bytes (`READ_THROUGHPUT_PAYLOAD`) and 400 Bytes (`WRITE_THROUGHPUT_PAYLOAD`) is transferred for throughput GATT read and write operations respectively.
+`bleprph_throughput` demonstrates server side implementation required for NimBLE throughput example. It has characteristics supporting READ, WRITE and NOTIFY (`THRPT_LONG_CHR_READ_WRITE`, `THRPT_CHR_READ_WRITE`, `THRPT_CHR_NOTIFY`). The read characteristic holds 510 bytes (`READ_THROUGHPUT_PAYLOAD`) and the write characteristic accepts up to 509 bytes (`WRITE_THROUGHPUT_PAYLOAD`). Notifications are sent with a 509-byte payload (`NOTIFY_THROUGHPUT_PAYLOAD`). These sizes are chosen to maximize ATT PDU utilization with the default MTU of 512.
 
 `bleprph_throughput` uses the `nimble` component as BLE host.
 
@@ -61,7 +61,9 @@ I (83943) bleprph_throughput:  Notification test completed for stipulated time o
 
 > Here, bps is bits per second; count is number of Notifications successfully sent.
 
-## Example scope
+## Example Scope
 
-This demo example along with `blecent_throughput` tries to demonstrate stable implementation of GATT operations like read/write and notify. For `bleprph_throughput` app, notifications are sent almost continuously for stipulated period of time. The almost part is because we use counting semaphore (~100) to mimic continuous notifications.  Here one needs to understand that notifications are sent in `os_mbufs` packets and there can always be chance of them getting full because of continuous operation, so one may need to allocate higher number of mbufs through menuconfig, whenever there is `os_mbuf` memory exhaustion, app provides delay so NimBLE host stack can breathe and free `mbuf chains`.
+This demo example along with `blecent_throughput` demonstrates stable GATT read/write and notify operations at high throughput. For notifications, the peripheral uses a pipelined approach: a counting semaphore (max 100) allows multiple notifications to be queued simultaneously (pipeline depth of 15). This enables the BLE controller to pack multiple PDUs into each connection event for maximum throughput.
+
+Notifications are sent in `os_mbufs` packets. The example is configured with `CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=50` to provide sufficient buffer space. If mbuf exhaustion occurs during continuous transfer, the app yields briefly to allow the NimBLE host stack to free completed `mbuf chains` before retrying.
 

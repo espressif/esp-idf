@@ -697,11 +697,14 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num)
 
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
 {
+    (void)enable;
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((thresh < UART_HW_FIFO_LEN(uart_num)), ESP_FAIL, UART_TAG, "empty intr threshold error");
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+    if (thresh != -1) {
+        uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+    }
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
@@ -920,7 +923,7 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
             if (uart_num < SOC_UART_HP_NUM) {
                 gpio_matrix_output(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_TX), false, false);
             }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
             else {
                 rtc_gpio_init(tx_io_num); // set as a LP_GPIO pin
                 lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_TX), 0, 0);
@@ -943,7 +946,7 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
             if (uart_num < SOC_UART_HP_NUM) {
                 gpio_matrix_input(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX), false);
             }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
             else {
                 rtc_gpio_mode_t mode = (tx_rx_same_io ? RTC_GPIO_MODE_INPUT_OUTPUT : RTC_GPIO_MODE_INPUT_ONLY);
                 rtc_gpio_set_direction(rx_io_num, mode);
@@ -961,7 +964,7 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_matrix_output(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RTS), false, false);
         }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
         else {
             rtc_gpio_init(rts_io_num); // set as a LP_GPIO pin
             lp_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RTS), 0, 0);
@@ -975,7 +978,7 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_matrix_input(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_CTS), false);
         }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
         else {
             rtc_gpio_set_direction(cts_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(cts_io_num); // set as a LP_GPIO pin
@@ -988,7 +991,7 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_matrix_output(dtr_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_DTR), false, false);
         }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
         else {
             rtc_gpio_init(dtr_io_num); // set as a LP_GPIO pin
             lp_gpio_connect_out_signal(dtr_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_DTR), 0, 0);
@@ -1002,7 +1005,7 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_matrix_input(dsr_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_DSR), false);
         }
-#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
         else {
             rtc_gpio_set_direction(dsr_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(dsr_io_num); // set as a LP_GPIO pin
@@ -1661,7 +1664,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
                 size -= send_size;
                 offset += send_size;
-                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+                uart_enable_tx_intr(uart_num, 1, -1);
             }
         }
     } else {
@@ -1671,7 +1674,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
-                    uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+                    uart_enable_tx_intr(uart_num, 1, -1);
                 }
                 size -= sent;
                 src += sent;
@@ -2275,6 +2278,9 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
                         "wakeup_threshold out of bounds");
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_wakeup_edge_thrd(&(uart_context[uart_num].hal), wakeup_threshold);
+    PERIPH_RCC_ATOMIC() {
+        uart_ll_enable_pad_sleep_clock(uart_context[uart_num].hal.dev, true);
+    }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }

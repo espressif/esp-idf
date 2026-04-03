@@ -425,6 +425,7 @@ typedef enum {
  * @brief Array initializer for all supported clock sources of LEDC
  */
 #define SOC_LEDC_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_APB, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_REF_TICK}
+#define SOC_LEDC_CLK_STRS {"LEDC_USE_XTAL_CLK", "LEDC_USE_APB_CLK", "LEDC_USE_RC_FAST_CLK", "LEDC_USE_REF_TICK"}
 
 /**
  * @brief Type of LEDC clock source, reserved for the legacy LEDC driver

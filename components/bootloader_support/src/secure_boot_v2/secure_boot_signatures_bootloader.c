@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,13 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
         ESP_LOGE(TAG, "%s signing scheme selected but signature block generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), esp_secure_boot_get_scheme_name(block->version));
         return ESP_FAIL;
     }
+
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    if (block->ecdsa.key.curve_id != ESP_SECURE_BOOT_ECDSA_CURVE_ID) {
+        ESP_LOGE(TAG, "ECDSA curve mismatch: actual (curve_id %u), expected (curve_id %u)", (unsigned) block->ecdsa.key.curve_id, (unsigned) ESP_SECURE_BOOT_ECDSA_CURVE_ID);
+        return ESP_FAIL;
+    }
+#endif
 
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED && CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     if (block->ecdsa.key.curve_id == ECDSA_CURVE_P192) {

@@ -6,10 +6,6 @@
 
 #pragma once
 
-/**
- * @brief      ESP-TLS Connection Handle
- */
-
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -23,12 +19,15 @@
 #include "mbedtls/error.h"
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
-#endif
+#endif /* CONFIG_ESP_TLS_SERVER_SESSION_TICKETS */
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 #include "psa/crypto.h"
-#endif
-#endif
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
+#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
+/**
+ * @brief      ESP-TLS Connection Handle
+ */
 struct esp_tls {
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
     mbedtls_ssl_context ssl;                                                    /*!< TLS/SSL context */

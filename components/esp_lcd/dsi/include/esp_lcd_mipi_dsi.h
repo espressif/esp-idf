@@ -25,6 +25,10 @@ typedef struct {
     uint8_t num_data_lanes;                  /*!< Number of data lanes, if set to 0, the driver will fallback to use maximum number of lanes */
     mipi_dsi_phy_pllref_clock_source_t phy_clk_src; /*!< The clock source for the PHY PLL */
     float lane_bit_rate_mbps;                /*!< Lane bit rate in Mbps */
+    /// Extra configuration flags for MIPI DSI bus
+    struct extra_dsi_bus_flags {
+        uint32_t clock_lane_force_hs: 1;     /*!< Force the clock lane to high speed mode */
+    } flags;                                 /*!< Extra configuration flags */
 } esp_lcd_dsi_bus_config_t;
 
 /**

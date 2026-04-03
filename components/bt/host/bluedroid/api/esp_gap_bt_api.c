@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -240,6 +240,103 @@ esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr)
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_READ_RSSI_DELTA;
     memcpy(arg.read_rssi_delta.bda.address, remote_addr, sizeof(esp_bd_addr_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+esp_err_t esp_bt_gap_read_acl_real_rssi(esp_bd_addr_t remote_addr)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_READ_ACL_REAL_RSSI;
+    memcpy(arg.read_acl_real_rssi.bda.address, remote_addr, sizeof(esp_bd_addr_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_read_new_conn_tx_pwr_rng(void)
+{
+    btc_msg_t msg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_READ_NEW_CONN_TX_PWR_LVL;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_write_new_conn_tx_pwr_rng(int8_t pwr_lvl_min, int8_t pwr_lvl_max)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (pwr_lvl_min < ESP_TX_PWR_LVL_MIN || pwr_lvl_min > ESP_TX_PWR_LVL_MAX ||
+        pwr_lvl_max < ESP_TX_PWR_LVL_MIN || pwr_lvl_max > ESP_TX_PWR_LVL_MAX ||
+        pwr_lvl_min > pwr_lvl_max) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_WRITE_NEW_CONN_TX_PWR_LVL;
+    arg.write_new_conn_tx_pwr_lvl.pwr_lvl_min = pwr_lvl_min;
+    arg.write_new_conn_tx_pwr_lvl.pwr_lvl_max = pwr_lvl_max;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+esp_err_t esp_bt_gap_read_tx_pwr_lvl(esp_bt_gap_tx_pwr_lvl_type_t type)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+    if (type >= ESP_BT_GAP_TX_PWR_LVL_TYPE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+#else
+    if (type != ESP_BT_GAP_TX_PWR_LVL_ISCAN) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_READ_TX_PWR_LVL;
+    arg.read_tx_pwr_lvl.type = type;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_write_tx_pwr_lvl(esp_bt_gap_tx_pwr_lvl_type_t type, int8_t tx_power)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+    if (type >= ESP_BT_GAP_TX_PWR_LVL_TYPE_MAX ||
+        tx_power < ESP_TX_PWR_LVL_MIN || tx_power > ESP_TX_PWR_LVL_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+#else
+    if (type != ESP_BT_GAP_TX_PWR_LVL_INQ) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (tx_power < ESP_TX_PWR_LVL_MIN || tx_power > ESP_TX_PWR_LVL_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_WRITE_TX_PWR_LVL;
+    arg.write_tx_pwr_lvl.type = type;
+    arg.write_tx_pwr_lvl.tx_power = tx_power;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

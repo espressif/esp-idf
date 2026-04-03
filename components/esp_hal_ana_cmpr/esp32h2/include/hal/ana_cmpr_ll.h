@@ -12,6 +12,12 @@
 #include "hal/ana_cmpr_types.h"
 #include "soc/ana_cmpr_struct.h"
 
+#define ANALOG_CMPR_LL_GET(_attr) ANALOG_CMPR_LL_ ## _attr
+#define ANALOG_CMPR_LL_SUPPORT(_feat) ANALOG_CMPR_LL_SUPPORT_ ## _feat
+
+// Number of Analog Comparator instances
+#define ANALOG_CMPR_LL_INST_NUM 1
+
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
 

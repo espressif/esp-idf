@@ -2,17 +2,17 @@ menu "Test-app related"
 
     config SOC_SUPPORT_TEE_SYS_APM_TEST
         bool
-        depends on SOC_APM_CTRL_FILTER_SUPPORTED
+        depends on SOC_APM_SUPPORTED
         default y
 
     config SOC_SUPPORT_TEE_PERI_APM_TEST
         bool
-        depends on SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
+        depends on SOC_APM_SUPPORTED && SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
         default y
 
     config SOC_SUPPORT_TEE_INTR_TEST
         bool
-        depends on IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
+        depends on IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61 || (IDF_TARGET_ESP32P4 && !ESP32P4_SELECTS_REV_LESS_V3)
         default y
 
 endmenu

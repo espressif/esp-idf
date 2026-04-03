@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
@@ -32,4 +32,22 @@ def test_rtc_no_xtal32k(dut: IdfDut) -> None:
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1'), indirect=['target'])
 def test_rtc_calib_compensation_across_dslp(case_tester: CaseTester) -> None:
+    case_tester.run_all_multi_stage_cases()
+
+
+@pytest.mark.flash_suspend
+@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='flash clock lose in startup')  # TODO [ESP32H2]: IDF-15212
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rtc_clk_flash',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1 and IDF_TARGET not in ["esp32", "esp32s2"]'),
+    indirect=['target'],
+)
+def test_rtc_clk_flash(case_tester: CaseTester) -> None:
     case_tester.run_all_multi_stage_cases()

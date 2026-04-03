@@ -177,6 +177,8 @@ static void bta_hh_snd_write_dev(UINT8 dev_handle, UINT8 t_type, UINT8 param,
         p_buf->rpt_id   = rpt_id;
 
         bta_sys_sendmsg(p_buf);
+    } else {
+        utl_freebuf((void **)&p_data);
     }
 }
 /*******************************************************************************
@@ -336,7 +338,7 @@ void BTA_HhGetDscpInfo(UINT8 dev_handle)
 **
 ** Description      Add a virtually cabled device into HID-Host device list
 **                  to manage and assign a device handle for future API call,
-**                  host applciation call this API at start-up to initialize its
+**                  host application call this API at start-up to initialize its
 **                  virtually cabled devices.
 **
 ** Returns          void
@@ -452,7 +454,7 @@ void BTA_HhParseBootRpt(tBTA_HH_BOOT_RPT *p_data, UINT8 *p_report,
 {
     p_data->dev_type = BTA_HH_DEVT_UNKNOWN;
 
-    if (p_report) {
+    if (p_report && (report_len > 0)) {
         /* first byte is report ID */
         switch (p_report[0]) {
         case BTA_HH_KEYBD_RPT_ID: /* key board report ID */

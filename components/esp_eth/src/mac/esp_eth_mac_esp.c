@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -484,7 +484,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
     uint32_t expt_freq = RMII_CLK_HZ; // 50 MHz
     uint32_t real_freq = 0;
 
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_EMAC_REF_CLK_FROM_APLL
     // the RMII reference comes from the APLL
     periph_rtc_apll_acquire();
     emac->use_pll = true;
@@ -493,13 +493,14 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
     if (ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "APLL is occupied already, it is working at %" PRIu32 " Hz", real_freq);
     }
-#elif CONFIG_IDF_TARGET_ESP32P4
+#elif SOC_EMAC_REF_CLK_FROM_MPLL
     // the RMII reference comes from the MPLL
     periph_rtc_mpll_acquire();
     emac->use_pll = true;
     esp_err_t ret = periph_rtc_mpll_freq_set(expt_freq * 2, &real_freq); // cannot set 50MHz at MPLL, the nearest possible freq is 100 MHz
     if (ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "MPLL is occupied already, it is working at %" PRIu32 " Hz", real_freq);
+        ESP_LOGW(TAG, "Trying to derive RMII clock to be %" PRIu32 " Hz...", RMII_CLK_HZ);
     }
     // Set divider of MPLL clock
     if (real_freq > RMII_CLK_HZ) {
@@ -513,7 +514,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
 #endif
     // If the difference of real RMII CLK frequency is not within 50 ppm, i.e. 2500 Hz, the (A/M)PLL is unusable
     ESP_RETURN_ON_FALSE(abs((int)real_freq - (int)expt_freq) <= 2500,
-                        ESP_ERR_INVALID_STATE, TAG, "The (A/M)PLL is working at an unusable frequency %" PRIu32 " Hz", real_freq);
+                        ESP_ERR_INVALID_STATE, TAG, "EMAC RMII clock is working at an unusable frequency %" PRIu32 " Hz", real_freq);
     return ESP_OK;
 }
 
@@ -888,6 +889,14 @@ esp_err_t esp_eth_mac_adj_ptp_time(esp_eth_mac_t *mac, int32_t adj_ppb)
     return ESP_OK;
 }
 
+esp_err_t esp_eth_mac_adj_ptp_freq_ppb(esp_eth_mac_t *mac, int32_t adj_ppb)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_hal_ptp_adj_freq(&emac->hal, adj_ppb), TAG, "failed to adjust PTP frequency");
+    return ESP_OK;
+}
+
 esp_err_t esp_eth_mac_set_target_time(esp_eth_mac_t *mac, const eth_mac_time_t *target)
 {
     ESP_RETURN_ON_FALSE(mac && target, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
@@ -927,6 +936,13 @@ esp_err_t esp_eth_mac_set_pps_out_freq(esp_eth_mac_t *mac, uint32_t freq_hz)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     ESP_RETURN_ON_ERROR(emac_hal_set_pps0_out_freq(&emac->hal, freq_hz), TAG, "failed to set PPS0 output frequency");
     return ESP_OK;
+}
+
+uint32_t esp_eth_mac_get_ts_resolution(esp_eth_mac_t *mac)
+{
+    ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    return emac_hal_get_ts_resolution(&emac->hal);
 }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 

@@ -561,6 +561,11 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (key_recovery_info->magic != KEY_HUK_SECTOR_MAGIC) {
+        ESP_LOGE(TAG, "Invalid key recovery info magic");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_key_mgr_key_type_t key_type = key_recovery_info->key_type;
 
     ESP_LOGD(TAG, "Activating key of type %d", key_type);

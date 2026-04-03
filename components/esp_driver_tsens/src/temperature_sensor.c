@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,7 @@ static const char *TAG = "temperature_sensor";
 static int s_deltaT = INT_MIN; // unused number
 
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
-static int8_t s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval);
+static int s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval);
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
 static temperature_sensor_attribute_t *s_tsens_attribute_copy;
@@ -326,9 +326,10 @@ static uint8_t s_temperature_celsius_2_regval(temperature_sensor_handle_t tsens,
     return (uint8_t)((celsius + TEMPERATURE_SENSOR_LL_OFFSET_FACTOR + TEMPERATURE_SENSOR_LL_DAC_FACTOR * tsens->tsens_attribute->offset) / TEMPERATURE_SENSOR_LL_ADC_FACTOR);
 }
 
-IRAM_ATTR static int8_t s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval)
+IRAM_ATTR static int s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval)
 {
-    return TEMPERATURE_SENSOR_LL_ADC_FACTOR * regval - TEMPERATURE_SENSOR_LL_DAC_FACTOR * tsens->tsens_attribute->offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR;
+    int result = TEMPERATURE_SENSOR_LL_ADC_FACTOR_INT * regval - TEMPERATURE_SENSOR_LL_DAC_FACTOR_INT * tsens->tsens_attribute->offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR_INT;
+    return (result / TEMPERATURE_SENSOR_LL_DENOMINATOR);
 }
 
 esp_err_t temperature_sensor_set_absolute_threshold(temperature_sensor_handle_t tsens, const temperature_sensor_abs_threshold_config_t *abs_cfg)

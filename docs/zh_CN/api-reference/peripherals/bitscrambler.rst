@@ -14,10 +14,10 @@
 
 .. list::
 
-    -  `比特调节器汇编程序 <#bitscrambler-assembly>`__：介绍比特调节器汇编程序的结构
-    -  `构建系统集成 <#bitscrambler-build>`__：介绍比特调节器程序如何与 ESP-IDF 构建系统集成
-    -  `资源分配与程序加载 <#bitscrambler-load>`__：介绍如何分配比特调节器实例以及如何加载程序
-    -  `回环模式 <#bitscrambler-loopback>`__：介绍如何在回环模式下使用比特调节器
+    -  :ref:`bitscrambler-assembly`：介绍比特调节器汇编程序的结构
+    -  :ref:`bitscrambler-build`：介绍比特调节器程序如何与 ESP-IDF 构建系统集成
+    -  :ref:`bitscrambler-load`：介绍如何分配比特调节器实例以及如何加载程序
+    -  :ref:`bitscrambler-loopback`：介绍如何在回环模式下使用比特调节器
 
 .. _bitscrambler-assembly:
 
@@ -214,6 +214,8 @@ LUT 内容元指令
 ^^^^^^^^^
 
 比特调节器支持回环模式，适用于不涉及外设的数据转换任务。回环模式下，TX 和 RX 通道都会被占用，但实际上只有 TX 比特调节器执行代码。注意，即使回环模式不涉及外设，仍然需要选择一个外设。此外设无需初始化或使用，但如果使用，将无法使用其 DMA 功能。
+
+.. _bitscrambler-load:
 
 资源分配和程序加载
 ^^^^^^^^^^^^^^^^^^^^^

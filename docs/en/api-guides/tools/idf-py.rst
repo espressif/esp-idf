@@ -109,20 +109,54 @@ Delete the Entire Build Contents: ``fullclean``
 
 This command deletes the entire build directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
 
+.. _flash-with-idf-py:
+
 Flash the Project: ``flash``
 ----------------------------
 
 .. code-block:: bash
 
-  idf.py flash
+    idf.py flash
 
 This command automatically builds the project if necessary, and then flash it to the target. You can use ``-p`` and ``-b`` options to set serial port name and flasher baud rate, respectively.
 
-.. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
+.. note::
+
+    The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
 ``idf.py`` uses the ``write-flash`` command of ``esptool`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool write-flash --help`` or see the `esptool documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
 
 Similarly to the ``build`` command, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader or partition table as applicable.
+
+By default, ``idf.py flash`` attempts fast reflashing (reflashing the changed data sectors only, not the whole binary) when previously flashed binaries are present: if ``*_flashed.bin`` files exist in the build directory, the build system configures ``esptool`` to write only changed flash regions. This speeds up repeated flashing during development. All the flashed files in flash are then verified to ensure they match the expected content. If any of the files in flash do not match the expected content, a full flash will be performed instead.
+
+When no ``*_flashed.bin`` files are present, ``idf.py flash`` configures esptool to check the device flash content first and skip flashing any files that are already present in flash (this does not apply when using ``idf.py flash -a`` or ``--all``).
+
+After each successful flash, the build system saves copies of all flashed files (bootloader, partition table, app, and any other assets) with an ``_flashed`` suffix in the build directory (e.g., ``bootloader_flashed.bin``, ``partition-table_flashed.bin``). These are used automatically on the next ``idf.py flash`` for fast reflashing.
+
+Fast reflashing works with or without the :ref:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` option. Enabling that option can further improve reflash effectiveness by laying out the application binary so that changes are localized. This results in less flash sectors needing to be rewritten. This option may increase the size of the application binary and is not recommended for production builds.
+
+Full Flash
+^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -a
+
+    idf.py flash --all
+
+The ``-a`` or ``--all`` option always performs a full flash (does not reflash the changed sectors only, but the whole binary). Use it after erasing flash, when flashing to a new device with empty flash, or when you do not want to rely on previous binaries.
+
+Trust Flash Content Mode
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -t
+
+    idf.py flash --trust-flash-content
+
+When using fast reflash, ``-t`` or ``--trust-flash-content`` skips MD5 verification of files which do not need reflashing (e.g., if ``bootloader.bin`` didn't change since the last flash) to speed up the flashing process. Only use this when you are sure the device flash content has not been modified since the last ``idf.py flash`` operation.
 
 .. _merging-binaries:
 
@@ -161,7 +195,7 @@ There are also some format specific options, which are listed below:
 Hints on How to Resolve Errors
 ==============================
 
-``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml` and the hints will be printed if a match is found for the given error. The menuconfig target is not supported at the moment by automatic hints on resolving errors.
+``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml`. In addition, it loads component-specific hints from ``hints.yml`` file located in the root directory of any ESP-IDF or project component. The hints will be printed if a match is found for the given error. The menuconfig target is not supported at the moment by automatic hints on resolving errors.
 
 The ``--no-hints`` argument of ``idf.py`` can be used to turn the hints off in case they are not desired.
 
@@ -267,44 +301,96 @@ Read Otadata Partition: ``read-otadata``
 
 This command prints the contents of the ``otadata`` partition which stores the information about the currently selected OTA app slot. Refer to :doc:`/api-reference/system/ota` for more about the ``otadata`` partition.
 
-Start MCP Server: ``mcp-server``
----------------------------------
+ESP-IDF MCP Server
+-------------------
+
+The ESP-IDF MCP (Model Context Protocol) server enables AI integration with ESP-IDF projects. The MCP server provides tools and resources that allow AI assistants to interact with your ESP-IDF project through a standardized protocol. Using natural language, you can tell the AI assistant commands like "set target to esp32" or "build this project".
+
+Starting the MCP Server
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use the MCP server with an AI assistant, configure your agent or IDE to start the server. You can do that in two ways:
+
+1. Using ``eim run`` (recommended): Use the ESP-IDF Installation Manager (EIM) to start a new process with an active ESP-IDF environment. This feature is available from EIM 0.8.1 and **ESP-IDF must be installed via the EIM installer**. This is the easiest option and does not require you to activate ESP-IDF in your shell first.
+
+.. code-block:: bash
+
+  eim run "idf.py mcp-server"
+
+2. Using ``idf.py`` directly: Run the MCP server with ``idf.py mcp-server`` from a shell where the ESP-IDF environment is already activated. The command must be executed from a valid ESP-IDF project directory, or use ``idf.py -C <project_dir> mcp-server`` to specify the project.
 
 .. code-block:: bash
 
   idf.py mcp-server
 
-This command starts an MCP (Model Context Protocol) server that enables AI integration with ESP-IDF projects. The MCP server provides tools and resources that allow AI assistants to interact with your ESP-IDF project through a standardized protocol.
+.. note::
 
-The MCP server provides the following tools:
+    The MCP server requires the ``mcp`` feature to be installed. Install it using the EIM installer. See `EIM documentation > CLI Configuration - Global features <https://docs.espressif.com/projects/idf-im-ui/en/latest/cli_configuration.html#global-features-all-versions>`_ for how to install specific features.
 
-- ``build_project``: Build the ESP-IDF project with specified target
-- ``set_target``: Set the ESP-IDF target (esp32, esp32s3, esp32c6, etc.)
-- ``flash_project``: Flash the built project to a connected device
-- ``monitor_serial``: Start serial monitor (runs in background)
-- ``clean_project``: Clean build artifacts
-- ``menuconfig``: Open menuconfig interface (terminal-based)
+Available Tools and Resources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The MCP server provides the following commands you can use:
+
+- ``set target``: Set the ESP-IDF target (esp32, esp32s3, esp32c6, etc.)
+- ``build project``: Build the ESP-IDF project with the current target
+- ``flash project``: Flash the built project to a connected device. Specify it by port name.
+- ``clean project``: Clean build artifacts
 
 The MCP server also provides these resources:
 
 - ``project://config``: Get current project configuration
-- ``project://status``: Get current project build status
-- ``project://devices``: Get list of connected ESP devices
+- ``project://status``: Get current project build status and artifacts
+- ``project://devices``: Get list of connected devices
 
-.. note::
+Adding ESP-IDF MCP Server to IDEs and AI agents
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The MCP server requires the ``mcp`` Python package to be installed. Install it with: ``./install.sh --enable-mcp``.
+Cursor IDE
+~~~~~~~~~~
 
-Adding ESP-IDF MCP Server to IDEs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Add the ESP-IDF MCP server configuration to your Cursor ``mcp.json`` file:
 
-**Claude Desktop:**
+.. code-block:: json
 
-Use the Claude CLI to add the ESP-IDF MCP server:
+  {
+    "mcpServers": {
+      "esp-idf-eim": {
+        "command": "eim",
+        "args": [
+          "run",
+          "idf.py mcp-server"
+        ],
+        "env": {
+          "IDF_MCP_WORKSPACE_FOLDER": "${workspaceFolder}"
+        }
+      }
+    }
+  }
+
+To use the ESP-IDF MCP server with Cursor IDE, open your ESP-IDF project folder and use the AI chat window. The AI assistant will have access to ESP-IDF specific tools and can help you build, flash, and manage your project.
+
+The ``IDF_MCP_WORKSPACE_FOLDER`` environment variable tells the MCP server which directory contains your ESP-IDF project. This ensures the server operates in the correct project context, allowing it to access your project's configuration, build files, and perform operations like building and flashing in the right location.
+
+Claude Desktop
+~~~~~~~~~~~~~~
+
+Use the Claude CLI to add the ESP-IDF MCP server.
+
+With ``eim`` (no need to activate ESP-IDF first):
 
 .. code-block:: bash
 
-  claude mcp add esp-idf python /path/to/esp-idf/tools/idf.py mcp-server --env IDF_PATH=/path/to/esp-idf
+  claude mcp add --transport stdio esp-idf-eim -- eim run "idf.py mcp-server"
+
+With ``idf.py`` (must be executed from an activated ESP-IDF environment):
+
+.. code-block:: bash
+
+  claude mcp add --transport stdio esp-idf -- idf.py mcp-server
+
+Navigate to your ESP-IDF project directory and run the ``claude`` command to chat with the AI assistant.
+
 
 Configuration Presets: ``--preset``
 ====================================

@@ -50,5 +50,6 @@ if(CONFIG_ESP_COEX_ENABLED)
         endif()
 
         target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_coex_init_include_func")
      endif()
 endif()

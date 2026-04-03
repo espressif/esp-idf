@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_log.h"
 #include "nvs_flash.h"
 
 /* BLE */
@@ -12,7 +11,6 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/util/util.h"
-#include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "multi_adv.h"
 
@@ -512,7 +510,6 @@ app_main(void)
     ble_hs_cfg.sm_bonding = 1;
     ble_hs_cfg.sm_mitm = 1;
     ble_hs_cfg.sm_sc = 1;
-    ble_hs_cfg.sm_sc = 0;
     /* Enable the appropriate bit masks to make sure the keys
      * that are needed are exchanged
      */

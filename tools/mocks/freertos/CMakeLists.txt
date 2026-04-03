@@ -30,3 +30,7 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
 
 idf_component_get_property(freertos_lib freertos COMPONENT_LIB)
 target_compile_definitions(${freertos_lib} PUBLIC "projCOVERAGE_TEST=0")
+
+# When using FreeRTOS mocks, prevent esp_system from providing main() so tests can provide their own
+idf_component_get_property(esp_system_lib esp_system COMPONENT_LIB)
+target_compile_definitions(${esp_system_lib} PRIVATE ESP_SYSTEM_LINUX_NO_MAIN)

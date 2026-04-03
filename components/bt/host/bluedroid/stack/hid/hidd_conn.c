@@ -250,7 +250,10 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result)
         }
 
         hidd_conn_disconnect();
-        hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, HID_L2CAP_CONN_FAIL | (uint32_t)result, NULL);
+        p_hcon->disc_reason = HID_L2CAP_CONN_FAIL | (uint32_t)result;
+        if (p_hcon->conn_state == HID_CONN_STATE_UNUSED) {
+            hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, p_hcon->disc_reason, NULL);
+        }
         return;
     }
     /* CTRL connect conf */
@@ -329,7 +332,6 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO *p_cfg)
 static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO *p_cfg)
 {
     tHID_CONN *p_hcon;
-    uint32_t reason;
     HIDD_TRACE_EVENT("%s: cid=%04x pcfg->result=%d", __func__, cid, p_cfg->result);
     p_hcon = &hd_cb.device.conn;
     if (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid) {
@@ -353,8 +355,10 @@ static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO *p_cfg)
     } else if (p_cfg->result != L2CAP_CFG_OK) {
         HIDD_TRACE_WARNING("%s: config failed, disconnecting", __func__);
         hidd_conn_disconnect();
-        reason = HID_L2CAP_CFG_FAIL | (uint32_t)p_cfg->result;
-        hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, reason, NULL);
+        p_hcon->disc_reason = HID_L2CAP_CFG_FAIL | (uint32_t)p_cfg->result;
+        if (p_hcon->conn_state == HID_CONN_STATE_UNUSED) {
+            hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, p_hcon->disc_reason, NULL);
+        }
         return;
     }
     // update flags

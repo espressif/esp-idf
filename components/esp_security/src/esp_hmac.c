@@ -77,6 +77,14 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
     esp_crypto_ds_enable_periph_clk(true);
 
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    /*  Key Manager holds the key usage selector register(efuse vs own key).
+        Thus, we need to enable the Key Manager peripheral clock to ensure
+        that the key usage selector register is properly set.
+     */
+    esp_crypto_key_mgr_enable_periph_clk(true);
+#endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
+
     hmac_hal_start();
 
     uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_USER, key_id);
@@ -136,6 +144,10 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
     // Read back result (bit swapped)
     hmac_hal_read_result_256(hmac);
+
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    esp_crypto_key_mgr_enable_periph_clk(false);
+#endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
 
     esp_crypto_ds_enable_periph_clk(false);
 

@@ -59,7 +59,7 @@ static void test_parlio_bitscrambler(void)
         .trans_queue_depth = 8,
         .max_transfer_size = 128,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,
     };
 
     parlio_rx_unit_handle_t rx_unit = NULL;

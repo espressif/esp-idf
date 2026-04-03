@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,24 +19,12 @@
 #include "hal/lp_i2s_ll.h"
 #endif
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if SOC_RTC_TIMER_SUPPORTED
 #include "hal/rtc_timer_ll.h"
 #endif
 
 #include "esp_cpu.h"
-
-/* LP_FAST_CLK is not very accurate, for now use a rough estimate */
-#if CONFIG_RTC_FAST_CLK_SRC_RC_FAST
-#define LP_CORE_CPU_FREQUENCY_HZ 16000000 // For P4 TRM says 20 MHz by default, but we tune it closer to 16 MHz
-#elif CONFIG_RTC_FAST_CLK_SRC_XTAL
-#if SOC_XTAL_SUPPORT_48M
-#define LP_CORE_CPU_FREQUENCY_HZ 48000000
-#else
-#define LP_CORE_CPU_FREQUENCY_HZ 40000000
-#endif
-#else  // Default value in chip without rtc fast clock sel option
-#define LP_CORE_CPU_FREQUENCY_HZ 16000000
-#endif
+#include "ulp_lp_core_cpu_freq_shared.h"
 
 static uint32_t lp_wakeup_cause = 0;
 
@@ -82,13 +70,13 @@ void ulp_lp_core_update_wakeup_cause(void)
     }
 #endif /* SOC_ETM_SUPPORTED */
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if SOC_RTC_TIMER_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER) \
             && (rtc_timer_ll_get_intr_raw(&LP_TIMER, 1) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER;
         rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, 1);
     }
-#endif /* SOC_RTC_TIMER_V2_SUPPORTED */
+#endif /* SOC_RTC_TIMER_SUPPORTED */
 
 }
 
@@ -117,11 +105,14 @@ void ulp_lp_core_wakeup_main_processor(void)
  */
 void ulp_lp_core_delay_us(uint32_t us)
 {
-    uint32_t start = RV_READ_CSR(mcycle);
-    uint32_t end = us * (LP_CORE_CPU_FREQUENCY_HZ / 1000000);
+    if (us == 0) {
+        return;
+    }
+    uint32_t start = RV_READ_CSR(mcycle) - ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES;
+    uint32_t req_delay = us * LP_CORE_CYCLES_PER_US_NUM / LP_CORE_CYCLES_PER_US_DENOM;
 
-    while ((RV_READ_CSR(mcycle) - start) < end) {
-        /* nothing to do */
+    while ((uint32_t)(RV_READ_CSR(mcycle) - start) < req_delay) {
+        /* busy wait */
     }
 }
 
@@ -132,11 +123,13 @@ void ulp_lp_core_delay_us(uint32_t us)
  */
 void ulp_lp_core_delay_cycles(uint32_t cycles)
 {
-    uint32_t start = RV_READ_CSR(mcycle);
-    uint32_t end = cycles;
+    if (cycles <= ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES) {
+        return;
+    }
 
-    while ((RV_READ_CSR(mcycle) - start) < end) {
-        /* nothing to do */
+    uint32_t start = RV_READ_CSR(mcycle) - ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES;
+    while ((uint32_t)(RV_READ_CSR(mcycle) - start) < cycles) {
+        /* busy wait */
     }
 }
 
@@ -196,7 +189,7 @@ void ulp_lp_core_sw_intr_from_hp_clear(void)
     pmu_ll_lp_clear_sw_intr_status(&PMU);
 }
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if SOC_RTC_TIMER_SUPPORTED
 void ulp_lp_core_lp_timer_intr_enable(bool enable)
 {
     rtc_timer_ll_alarm_intr_enable(&LP_TIMER, 1, enable);

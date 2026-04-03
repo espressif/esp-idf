@@ -86,10 +86,6 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     mcpwm_hal_context_t *hal = &group->hal;
     int fault_id = fault->fault_id;
 
-    // if interrupt priority specified before, it cannot be changed until the group is released
-    // check if the new priority specified consistents with the old one
-    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
-
     // GPIO configuration
     gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
     gpio_input_enable(config->gpio_num);
@@ -107,6 +103,7 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     // fill in other operator members
     fault->base.type = MCPWM_FAULT_TYPE_GPIO;
     fault->gpio_num = config->gpio_num;
+    fault->intr_priority = config->intr_priority;
     fault->base.del = mcpwm_del_gpio_fault;
     *ret_fault = &fault->base;
     ESP_LOGD(TAG, "new gpio fault (%d,%d) at %p, GPIO: %d", group_id, fault_id, fault, config->gpio_num);
@@ -229,11 +226,18 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     // lazy install interrupt service
     if (!gpio_fault->intr) {
         // we want the interrupt service to be enabled after allocation successfully
-        int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ESP_INTR_FLAG_INTRDISABLED;
-        isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_mcpwm_signals[group_id].irq_id, isr_flags,
-                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_FAULT_MASK(fault_id),
-                                                      mcpwm_gpio_fault_default_isr, gpio_fault, &gpio_fault->intr), TAG, "install interrupt service for gpio fault failed");
+        int isr_flags = (MCPWM_INTR_ALLOC_FLAG & ~ESP_INTR_FLAG_INTRDISABLED) |
+                        (gpio_fault->intr_priority ? (1 << gpio_fault->intr_priority) : MCPWM_ALLOW_INTR_PRIORITY_MASK);
+        esp_intr_alloc_info_t intr_info = {
+            .source = soc_mcpwm_signals[group_id].irq_id,
+            .flags = isr_flags,
+            .intrstatusreg = (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev),
+            .intrstatusmask = MCPWM_LL_EVENT_FAULT_MASK(fault_id),
+            .handler = mcpwm_gpio_fault_default_isr,
+            .arg = gpio_fault,
+            .bind_by.name = soc_mcpwm_signals[group_id].module_name,
+        };
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_info(&intr_info, &gpio_fault->intr), TAG, "install interrupt service for gpio fault failed");
     }
 
     // different mcpwm events share the same interrupt control register

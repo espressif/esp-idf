@@ -19,6 +19,10 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 
 如需注册 FS 驱动程序，应用程序首先要定义一个 :cpp:type:`esp_vfs_fs_ops_t` 结构体实例，并用指向 FS API 的函数指针填充它。
 
+.. warning::
+
+    不带上下文指针的 API 版本已弃用，未来将被移除，请参见 :ref:`context_api`。
+
 .. highlight:: c
 
 ::
@@ -65,6 +69,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
         ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_DEFAULT, NULL));
     }
 
+.. _context_api:
 
 上下文感知文件系统
 ^^^^^^^^^^^^^^^^^^

@@ -6,7 +6,7 @@
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "soc/soc_caps.h"
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if SOC_RTC_TIMER_SUPPORTED
 #include "hal/rtc_timer_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc.h"
@@ -45,4 +45,4 @@ uint64_t ulp_lp_core_lp_timer_calculate_sleep_ticks(uint64_t sleep_duration_us)
     return (sleep_duration_us * (1 << RTC_CLK_CAL_FRACT) / clk_ll_rtc_slow_load_cal());
 }
 
-#endif // SOC_RTC_TIMER_V2_SUPPORTED
+#endif // SOC_RTC_TIMER_SUPPORTED

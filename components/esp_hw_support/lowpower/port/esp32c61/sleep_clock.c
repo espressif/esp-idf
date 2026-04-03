@@ -8,7 +8,7 @@
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/pcr_reg.h"
 #include "soc/pmu_reg.h"
-#include "soc/i2c_ana_mst_reg.h"
+#include "modem/i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
 #include "modem/modem_syscon_reg.h"
 

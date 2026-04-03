@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,8 +45,14 @@ typedef struct {
 
 typedef struct {
     esp_console_repl_com_t repl_com; // base class
-    int uart_channel;                // uart channel number
+    void *dev_config;
 } esp_console_repl_universal_t;
+
+_Static_assert(offsetof(esp_console_repl_com_t, repl_core) == 0,
+               "repl_core must be the first member of esp_console_repl_com_t");
+
+_Static_assert(offsetof(esp_console_repl_universal_t, repl_com) == 0,
+               "repl_com must be the first member of esp_console_repl_universal_t");
 
 void esp_console_repl_task(void *args);
 
@@ -57,3 +63,5 @@ esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *r
 esp_err_t esp_console_setup_history(const char *history_path,
                                     uint32_t max_history_len,
                                     esp_console_repl_com_t *repl_com);
+
+void esp_console_setup_standard_stream(void *dev_config);

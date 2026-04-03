@@ -412,6 +412,11 @@ static void btu_general_alarm_process(void *param)
     case BTU_TTYPE_BTM_SET_PAGE_TO:
         btm_page_to_setup_timeout(p_tle);
         break;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    case BTU_TTYPE_BTM_BREDR_PWR_CTRL:
+        btm_bredr_pwr_ctrl_timeout(p_tle);
+        break;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     default:
         for (int i = 0; i < BTU_MAX_REG_TIMER; i++) {
             if (btu_cb.timer_reg[i].timer_cb == NULL) {
@@ -444,7 +449,17 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     osi_mutex_lock(&btu_general_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_general_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_gen", btu_general_alarm_cb, (void *)p_tle, 0);
-        hash_map_set(btu_general_alarm_hash_map, p_tle, alarm);
+        if (alarm == NULL) {
+            HCI_TRACE_ERROR("%s Unable to create new alarm", __func__);
+            osi_mutex_unlock(&btu_general_alarm_lock);
+            return;
+        }
+        if (!hash_map_set(btu_general_alarm_hash_map, p_tle, alarm)) {
+            HCI_TRACE_ERROR("%s Unable to set alarm in map", __func__);
+            osi_alarm_free(alarm);
+            osi_mutex_unlock(&btu_general_alarm_lock);
+            return;
+        }
     }
     osi_mutex_unlock(&btu_general_alarm_lock);
 
@@ -559,7 +574,17 @@ void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ti
     osi_mutex_lock(&btu_l2cap_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_l2cap_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, 0);
-        hash_map_set(btu_l2cap_alarm_hash_map, p_tle, (void *)alarm);
+        if (alarm == NULL) {
+            HCI_TRACE_ERROR("%s Unable to create alarm", __func__);
+            osi_mutex_unlock(&btu_l2cap_alarm_lock);
+            return;
+        }
+        if (!hash_map_set(btu_l2cap_alarm_hash_map, p_tle, (void *)alarm)) {
+            HCI_TRACE_ERROR("%s Unable to set alarm in map", __func__);
+            osi_alarm_free(alarm);
+            osi_mutex_unlock(&btu_l2cap_alarm_lock);
+            return;
+        }
     }
     osi_mutex_unlock(&btu_l2cap_alarm_lock);
 
@@ -645,7 +670,17 @@ void btu_start_timer_oneshot(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_
     osi_mutex_lock(&btu_oneshot_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_oneshot_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_oneshot", btu_oneshot_alarm_cb, (void *)p_tle, 0);
-        hash_map_set(btu_oneshot_alarm_hash_map, p_tle, alarm);
+        if (alarm == NULL) {
+            HCI_TRACE_ERROR("%s Unable to create new alarm", __func__);
+            osi_mutex_unlock(&btu_oneshot_alarm_lock);
+            return;
+        }
+        if (!hash_map_set(btu_oneshot_alarm_hash_map, p_tle, alarm)) {
+            HCI_TRACE_ERROR("%s Unable to set alarm in map", __func__);
+            osi_alarm_free(alarm);
+            osi_mutex_unlock(&btu_oneshot_alarm_lock);
+            return;
+        }
     }
     osi_mutex_unlock(&btu_oneshot_alarm_lock);
 

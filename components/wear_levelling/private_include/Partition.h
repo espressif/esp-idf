@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,21 +22,21 @@ class Partition : public Flash_Access
 public:
     Partition(const esp_partition_t *partition);
 
-    virtual size_t get_flash_size();
+    size_t get_flash_size() override;
 
-    virtual esp_err_t erase_sector(size_t sector);
-    virtual esp_err_t erase_range(size_t start_address, size_t size);
+    esp_err_t erase_sector(size_t sector) override;
+    esp_err_t erase_range(size_t start_address, size_t size) override;
 
-    virtual esp_err_t write(size_t dest_addr, const void *src, size_t size);
-    virtual esp_err_t read(size_t src_addr, void *dest, size_t size);
+    esp_err_t write(size_t dest_addr, const void *src, size_t size) override;
+    esp_err_t read(size_t src_addr, void *dest, size_t size) override;
 
-    virtual size_t get_sector_size();
-    virtual bool is_readonly();
+    size_t get_sector_size() override;
+    bool is_readonly() override;
 
-    virtual ~Partition();
+    ~Partition() override;
+
 protected:
     const esp_partition_t *partition;
-
 };
 
 #endif // _Partition_H_

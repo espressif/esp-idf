@@ -88,6 +88,8 @@ typedef struct {
     void *dram_start_uart_rom;
     void *dram_end_uart_rom;
 
+    void *eh_frame_vaddr_rom;
+    void *eh_frame_hdr_vaddr_rom;
 #if CONFIG_ESP32H21_SELECTS_REV_MP
     void *drom_start;
 #endif

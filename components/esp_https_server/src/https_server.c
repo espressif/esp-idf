@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -448,8 +448,9 @@ esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *conf
 
     ret = httpd_start(&handle, &config->httpd);
     if (ret != ESP_OK) {
-        free(ssl_ctx);
-        ssl_ctx = NULL;
+        if (ssl_ctx) {
+            free_secure_context(ssl_ctx);
+        }
         return ret;
     }
 

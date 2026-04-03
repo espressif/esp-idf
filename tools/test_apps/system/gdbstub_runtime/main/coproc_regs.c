@@ -93,7 +93,7 @@ static void test_fpu(void * arg)
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
     __asm__ volatile ("ssi f0, %0, 0" :: "a" (&fpu_regs));
 #endif
-#if 0 // TODO IDF-15053: set CONFIG_IDF_TARGET_ARCH_RISCV
+#if CONFIG_IDF_TARGET_ARCH_RISCV
     __asm__ volatile ("fsw ft0, %0" : "=m" (fpu_regs.ft0));
 #endif
 

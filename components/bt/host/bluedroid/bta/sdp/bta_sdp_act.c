@@ -425,7 +425,10 @@ static void bta_sdp_search_cback(UINT16 result, void *user_data)
 
     bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
 
-    if (bta_sdp_cb.p_dm_cback == NULL) {
+    if ((bta_sdp_cb.p_dm_cback == NULL) || (user_data == NULL)) {
+        if (user_data) {
+            osi_free(user_data);
+        }
         return;
     }
 
@@ -517,10 +520,13 @@ void bta_sdp_enable(tBTA_SDP_MSG *p_data)
 void bta_sdp_search(tBTA_SDP_MSG *p_data)
 {
     int x = 0;
-    // TODO: Leaks!!! but needed as user-data pointer
-    tBT_UUID *bta_sdp_search_uuid = osi_malloc(sizeof(tBT_UUID));
     if (p_data == NULL) {
         APPL_TRACE_DEBUG("SDP control block handle is null\n");
+        return;
+    }
+    tBT_UUID *bta_sdp_search_uuid = osi_malloc(sizeof(tBT_UUID));
+    if (bta_sdp_search_uuid == NULL) {
+        APPL_TRACE_DEBUG("SDP search param malloc failed\n");
         return;
     }
     tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
@@ -537,6 +543,7 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
             result.status = status;
             bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP *)&result, NULL);
         }
+        osi_free(bta_sdp_search_uuid);
         return;
     }
 
@@ -560,6 +567,7 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
 
     if (!SDP_ServiceSearchAttributeRequest2(p_data->get_search.bd_addr, p_bta_sdp_cfg->p_sdp_db,
                                             bta_sdp_search_cback, (void *)bta_sdp_search_uuid)) {
+        osi_free(bta_sdp_search_uuid);
         bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
 
         /* failed to start SDP. report the failure right away */

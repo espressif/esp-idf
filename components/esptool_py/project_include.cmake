@@ -197,6 +197,8 @@ function(esptool_py_flash_target target_name main_args sub_args)
         -D "IDF_PATH=${idf_path}"
         -D "SERIAL_TOOL=${esptool_py_cmd}"
         -D "SERIAL_TOOL_ARGS=${main_args};write-flash;@${filename_prefix}_args"
+        -D "SERIAL_TOOL_IS_WRITE_FLASH=1"
+        -D "SERIAL_TOOL_FLASH_ARGS_FILE=${filename_prefix}_args"
         -D "WORKING_DIRECTORY=${build_dir}"
         -P ${esptool_py_dir}/run_serial_tool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -243,6 +245,8 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
             -D "IDF_PATH=${idf_path}"
             -D "SERIAL_TOOL=${esptool_py_cmd}"
             -D "SERIAL_TOOL_ARGS=${main_args};write-flash;@encrypted_${filename_prefix}_args"
+            -D "SERIAL_TOOL_IS_WRITE_FLASH=1"
+            -D "SERIAL_TOOL_FLASH_ARGS_FILE=encrypted_${filename_prefix}_args"
             -D "WORKING_DIRECTORY=${build_dir}"
             -P ${esptool_py_dir}/run_serial_tool.cmake
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}

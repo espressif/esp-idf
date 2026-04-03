@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,7 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
+        .access_ext_mem = true, // in most cases the buffers are located in external memory, will not bother checking the memory region of the buffers
         .data_burst_length = srm_trans_desc->data_burst_length,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
@@ -184,9 +185,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
-    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
-    ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     ESP_RETURN_ON_FALSE(ppa_ll_srm_is_color_mode_supported(config->in.srm_cm) &&
                         (ppa_ll_srm_is_color_mode_supported(config->out.srm_cm) && config->out.srm_cm != PPA_SRM_COLOR_MODE_YUV444),
                         ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
@@ -218,18 +216,28 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     ESP_RETURN_ON_FALSE(config->scale_x < PPA_LL_SRM_SCALING_INT_MAX && config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
                         config->scale_y < PPA_LL_SRM_SCALING_INT_MAX && config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
                         ESP_ERR_INVALID_ARG, TAG, "invalid scale");
+    uint32_t scale_x_int = (uint32_t)config->scale_x;
+    uint32_t scale_x_frag = (uint32_t)(config->scale_x * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
+    uint32_t scale_y_int = (uint32_t)config->scale_y;
+    uint32_t scale_y_frag = (uint32_t)(config->scale_y * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
     uint32_t new_block_w = 0;
     uint32_t new_block_h = 0;
     if (config->rotation_angle == PPA_SRM_ROTATION_ANGLE_0 || config->rotation_angle == PPA_SRM_ROTATION_ANGLE_180) {
-        new_block_w = (uint32_t)(config->scale_x * config->in.block_w);
-        new_block_h = (uint32_t)(config->scale_y * config->in.block_h);
+        new_block_w = (uint32_t)(scale_x_int * config->in.block_w + scale_x_frag * config->in.block_w / PPA_LL_SRM_SCALING_FRAG_MAX);
+        new_block_h = (uint32_t)(scale_y_int * config->in.block_h + scale_y_frag * config->in.block_h / PPA_LL_SRM_SCALING_FRAG_MAX);
     } else {
-        new_block_w = (uint32_t)(config->scale_y * config->in.block_h);
-        new_block_h = (uint32_t)(config->scale_x * config->in.block_w);
+        new_block_w = (uint32_t)(scale_y_int * config->in.block_h + scale_y_frag * config->in.block_h / PPA_LL_SRM_SCALING_FRAG_MAX);
+        new_block_h = (uint32_t)(scale_x_int * config->in.block_w + scale_x_frag * config->in.block_w / PPA_LL_SRM_SCALING_FRAG_MAX);
     }
     ESP_RETURN_ON_FALSE(new_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
                         new_block_h <= (config->out.pic_h - config->out.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "scale does not fit in the out pic");
+
+    if (!ppa_check_buffer_alignment(ppa_client, &config->in, true, config->in.block_w) ||
+            !ppa_check_buffer_alignment(ppa_client, &config->out, false, new_block_w)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (config->byte_swap) {
         PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in.srm", (uint32_t)config->in.srm_cm);
     }
@@ -248,6 +256,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back in_buffer extended window (alignment not necessary on C2M direction)
+    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     uint32_t in_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->in.srm_cm); // bits
     uint32_t in_ext_window = (uint32_t)config->in.buffer + config->in.block_offset_y * config->in.pic_w * in_pixel_depth / 8;
     uint32_t in_ext_window_len = config->in.pic_w * config->in.block_h * in_pixel_depth / 8;
@@ -269,10 +278,10 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
         ppa_srm_oper_t *srm_trans_desc = (ppa_srm_oper_t *)trans_on_picked_desc->srm_desc;
         memcpy(srm_trans_desc, config, sizeof(ppa_srm_oper_config_t));
-        srm_trans_desc->scale_x_int = (uint32_t)srm_trans_desc->scale_x;
-        srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
-        srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
-        srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
+        srm_trans_desc->scale_x_int = scale_x_int;
+        srm_trans_desc->scale_x_frag = scale_x_frag;
+        srm_trans_desc->scale_y_int = scale_y_int;
+        srm_trans_desc->scale_y_frag = scale_y_frag;
         // SRM processes in blocks. Block x/(y) cannot be scaled to odd number when YUV422/YUV420 is the output color mode
         // When block size is 16x16, odd number is possible, so needs to make them even
         // When block size is 32x32, calculated frag values are always even

@@ -42,12 +42,15 @@ entries:
             systimer (noflash)
         if IDF_TARGET_ESP32H21 != y && IDF_TARGET_ESP32H4 != y:
             sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
+            sar_periph_ctrl:adc_reset_lock_acquire (noflash)
+            sar_periph_ctrl:adc_reset_lock_release (noflash)
+            sar_periph_ctrl:sar_periph_ctrl_adc_reset (noflash)
         if SOC_TEMP_SENSOR_SUPPORTED = y:
             sar_tsens_ctrl:temperature_sensor_power_acquire (noflash)
             sar_tsens_ctrl:temperature_sensor_power_release (noflash)
             sar_tsens_ctrl:temp_sensor_get_raw_value (noflash)
-        regi2c_ctrl:regi2c_saradc_enable (noflash)
-        regi2c_ctrl:regi2c_saradc_disable (noflash)
+        sar_periph_ctrl_common:regi2c_saradc_enable (noflash)
+        sar_periph_ctrl_common:regi2c_saradc_disable (noflash)
         if SOC_ADC_SUPPORTED = y:
             adc_share_hw_ctrl:adc_apb_periph_claim (noflash)
             adc_share_hw_ctrl:adc_apb_periph_free (noflash)

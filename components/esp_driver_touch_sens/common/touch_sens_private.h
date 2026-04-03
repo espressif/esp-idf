@@ -152,8 +152,6 @@ struct touch_channel_s {
 #endif
 };
 
-extern touch_sensor_handle_t g_touch;  /*!< Global touch sensor controller handle for `esp_driver_touch_sens` use only */
-
 /**
  * @brief Touch sensor module enable interface
  * @note  This is a private interface of `esp_driver_touch_sens`

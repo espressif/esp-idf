@@ -6,8 +6,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2026 Espressif Systems (Shanghai) CO LTD
  */
+#include "sdkconfig.h"
+
+#if !CONFIG_IDF_ENV_FPGA
+
 #include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
@@ -567,3 +571,4 @@ TEST_CASE("custom certificate bundle init API - bound checking - Incorrect certi
     esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
 }
+#endif /* !CONFIG_IDF_ENV_FPGA */

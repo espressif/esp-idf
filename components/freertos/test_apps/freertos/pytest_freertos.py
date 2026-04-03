@@ -39,6 +39,8 @@ from pytest_embedded_idf.utils import idf_parametrize
             'esp32c3',
             (pytest.mark.flash_suspend,),
         ),
+        # IRAM as 8-bit accessible memory
+        ('iram_as_8bit_access_mem', 'esp32'),
     ],
     indirect=['config', 'target'],
 )

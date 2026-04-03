@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,12 +86,6 @@ esp_err_t esp_efuse_utility_check_errors(void)
         }
     }
     return ESP_OK;
-}
-
-// Burn values written to the efuse write registers
-esp_err_t esp_efuse_utility_burn_chip(void)
-{
-    return esp_efuse_utility_burn_chip_opt(false, true);
 }
 
 esp_err_t esp_efuse_utility_burn_chip_opt(bool ignore_coding_errors, bool verify_written_data)

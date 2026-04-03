@@ -96,7 +96,7 @@ Reducing Stack Sizes
 
 - Avoid stack heavy functions. String formatting functions (like ``printf()``) are particularly heavy users of the stack, so any task which does not ever call these can usually have its stack size reduced.
 
-  - Using experimental :ref:`picolibc-instead-of-newlib` reduces the stack usage of ``printf()`` calls significantly.
+  - Using :ref:`picolibc-instead-of-newlib` reduces the stack usage of ``printf()`` calls significantly.
   - Enabling :ref:`newlib-nano-formatting` reduces the stack usage of any task that calls ``printf()`` or other C string formatting functions.
 
 - Avoid allocating large variables on the stack. In C, any large structures or arrays allocated as an automatic variable (i.e., default scope of a C declaration) uses space on the stack. To minimize the sizes of these, allocate them statically and/or see if you can save memory by dynamically allocating them from the heap only when they are needed.
@@ -193,7 +193,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
     - Disable :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM` if no ISRs that run while cache is disabled (i.e. IRAM ISRs) use libc lock APIs.
     :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - Disable :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` to save approximately 1000 bytes of IRAM, at the cost of reduced performance.
-    :SOC_SPIRAM_SUPPORTED: - Enable :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM` to force esp_event to place event loop related allocations in external RAM instead of internal RAM.
+    :SOC_SPIRAM_SUPPORTED: - Enable :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM` to force ``esp_event`` to place event loop related allocations in external RAM instead of internal RAM.
 
 .. only:: esp32
 

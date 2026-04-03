@@ -125,6 +125,15 @@ The following HCI VS debugging commands are implemented in Bluetooth Low Energy 
     .. doxygendefine:: ESP_BT_VS_SET_AFH_REPORTING_MODE_OCF
     .. doxygendefine:: ESP_BT_VS_MASK_RMT_CHANNEL_CLASSIFICATION_OCF
     .. doxygendefine:: ESP_BT_VS_WR_AUTO_RATE_INIT_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_ACL_REAL_RSSI_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_NEW_CONN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_NEW_CONN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_PAGE_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_PAGE_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_PSCAN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_PSCAN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_INQ_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_ISCAN_TX_PWR_LVL_OCF
 
 
 .. only:: esp32c3 or esp32s3

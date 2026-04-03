@@ -1,4 +1,0 @@
-# Misspelled Kconfig file checks whether it is picked up by the build system
-config FROM_MISSPELLED_KCONFIG
-    bool "From misspelled Kconfig"
-    default y

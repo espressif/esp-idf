@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import time
@@ -32,7 +32,7 @@ def test_light_sleep(dut: Dut) -> None:
     # enter sleep second time
     dut.expect_exact(ENTERING_SLEEP_STR)
     match = dut.expect(EXIT_SLEEP_REGEX)
-    logging.info('Got second sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
+    logging.info(f'Got second sleep period, wakeup from {match.group(1)}, slept for {match.group(3)}')
     # sleep time error should be less than 1ms
     # TODO: Need to update sleep overhead_out time for esp32c5 (PM-209)
     assert (
@@ -47,7 +47,7 @@ def test_light_sleep(dut: Dut) -> None:
     dut.serial.proc.setDTR(True)
     time.sleep(1)
     match = dut.expect(EXIT_SLEEP_PIN_REGEX)
-    logging.info('Got third sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
+    logging.info(f'Got third sleep period, wakeup from {match.group(1)}, slept for {match.group(3)}')
     assert int(match.group(3)) < WAKEUP_INTERVAL_MS
 
     dut.expect(WAITING_FOR_GPIO_STR)
@@ -57,11 +57,11 @@ def test_light_sleep(dut: Dut) -> None:
     dut.expect_exact(ENTERING_SLEEP_STR)
     logging.info('Went to sleep again')
 
-    # Write 'a' to uart, 'a' in ascii is 0x61 which contains 3 rising edges in total (including the stop bit)
-    dut.write('a')
+    # Write 'tt' to uart, 'tt' in ascii is 0x74 0x74 which contains 6 rising edges in total (including the stop bit)
+    dut.serial.proc.write(b'tt')
     time.sleep(1)
     match = dut.expect(EXIT_SLEEP_UART_REGEX)
-    logging.info('Got third sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
+    logging.info(f'Got third sleep period, wakeup from {match.group(1)}, slept for {match.group(3)}')
     assert int(match.group(3)) < WAKEUP_INTERVAL_MS
     logging.info('Went to sleep again')
 

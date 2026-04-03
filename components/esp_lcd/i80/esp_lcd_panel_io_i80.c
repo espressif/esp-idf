@@ -10,6 +10,10 @@
 #include "hal/lcd_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
+#include "esp_private/sleep_retention.h"
+
+// Use retention link only when the target supports sleep retention is enabled
+#define I80_USE_RETENTION_LINK  (SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #if defined(SOC_GDMA_TRIG_PERIPH_LCD0_BUS) && (SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AHB)
 #define LCD_GDMA_NEW_CHANNEL gdma_new_ahb_channel
@@ -30,6 +34,11 @@
 typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
 typedef struct lcd_panel_io_i80_t lcd_panel_io_i80_t;
 typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
+
+#if I80_USE_RETENTION_LINK
+static esp_err_t lcd_i80_create_sleep_retention_link_cb(void *arg);
+static void lcd_i80_create_retention_module(esp_lcd_i80_bus_t *bus);
+#endif // I80_USE_RETENTION_LINK
 
 static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
 static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
@@ -117,6 +126,10 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // although LCD_CAM can support up to 24 data lines, we restrict users to only use 8 or 16 bit width
     ESP_RETURN_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG,
                         TAG, "invalid bus width:%d", bus_config->bus_width);
+#if !SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(bus_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION
+
     // allocate i80 bus memory
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
@@ -143,6 +156,26 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
             lcd_ll_reset_register(bus_id);
         }
     }
+#if I80_USE_RETENTION_LINK
+    // no need to acquire mutex, because the bus is exclusive
+    sleep_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = lcd_i80_create_sleep_retention_link_cb,
+                .arg = bus,
+            },
+        },
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    if (sleep_retention_module_init(module_id, &init_param) != ESP_OK) {
+        // even though the sleep retention module init failed, LCD driver should still work, so just warning here
+        ESP_LOGW(TAG, "init sleep retention failed, power domain may be turned off during sleep");
+    }
+    if (bus_config->flags.allow_pd) {
+        lcd_i80_create_retention_module(bus);
+    }
+#endif // I80_USE_RETENTION_LINK
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
     PERIPH_RCC_ATOMIC() {
@@ -240,6 +273,16 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
+#if I80_USE_RETENTION_LINK
+    const periph_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    if (sleep_retention_is_module_created(module_id)) {
+        assert(sleep_retention_is_module_inited(module_id));
+        sleep_retention_module_free(module_id);
+    }
+    if (sleep_retention_is_module_inited(module_id)) {
+        sleep_retention_module_deinit(module_id);
+    }
+#endif // I80_USE_RETENTION_LINK
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus_id);
     PERIPH_RCC_RELEASE_ATOMIC(soc_lcd_i80_signals[bus_id].module, ref_count) {
         if (ref_count == 0) {
@@ -545,6 +588,33 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_intr_enable(bus->intr);
     return ESP_OK;
 }
+
+#if I80_USE_RETENTION_LINK
+static esp_err_t lcd_i80_create_sleep_retention_link_cb(void *arg)
+{
+    esp_lcd_i80_bus_t *bus = (esp_lcd_i80_bus_t *)arg;
+    int bus_id = bus->bus_id;
+    sleep_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    esp_err_t err = sleep_retention_entries_create(soc_i80_lcd_retention_info[bus_id].regdma_entry_array,
+                                                   soc_i80_lcd_retention_info[bus_id].array_size,
+                                                   REGDMA_LINK_PRI_LCDCAM, module_id);
+    ESP_RETURN_ON_ERROR(err, TAG, "create retention link failed");
+    return ESP_OK;
+}
+
+static void lcd_i80_create_retention_module(esp_lcd_i80_bus_t *bus)
+{
+    int bus_id = bus->bus_id;
+    sleep_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+
+    if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
+        if (sleep_retention_module_allocate(module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, LCD driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        }
+    }
+}
+#endif // I80_USE_RETENTION_LINK
 
 static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src)
 {

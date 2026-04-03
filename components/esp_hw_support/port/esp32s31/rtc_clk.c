@@ -32,7 +32,7 @@ static const char *TAG = "rtc_clk";
 static int s_cur_cpll_freq = 0;
 
 // MPLL frequency option, 400MHz. Zero if MPLL is not enabled.
-static TCM_DRAM_ATTR uint32_t s_cur_mpll_freq = 0;
+static uint32_t s_cur_mpll_freq = 0;
 
 void rtc_clk_32k_enable(bool enable)
 {
@@ -204,7 +204,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 
 soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
-    uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
+    uint32_t xtal_freq_mhz = clk_ll_xtal_get_freq_mhz();
     if (xtal_freq_mhz == 0) {
         ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value, assume 40MHz");
         return SOC_XTAL_FREQ_40M;
@@ -214,7 +214,7 @@ soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 
 void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
 {
-    clk_ll_xtal_store_freq_mhz(xtal_freq);
+    // clk_ll_xtal_store_freq_mhz(xtal_freq);
 }
 
 uint32_t rtc_clk_apb_freq_get(void)
@@ -331,7 +331,26 @@ IRAM_ATTR void rtc_clk_mpll_enable(void)
 
 void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_safe)
 {
-    // TODO: ["ESP32S31"] IDF-14678
+    /* Analog part */
+    if (thread_safe) {
+        _regi2c_ctrl_ll_master_enable_clock(true);
+    } else {
+        ANALOG_CLOCK_ENABLE();
+    }
+    /* MPLL calibration start */
+    clk_ll_mpll_calibration_start();
+    clk_ll_mpll_set_config(mpll_freq, xtal_freq);
+    /* wait calibration done */
+    while(!clk_ll_mpll_calibration_is_done());
+    /* MPLL calibration stop */
+    clk_ll_mpll_calibration_stop();
+
+    if (thread_safe) {
+        _regi2c_ctrl_ll_master_enable_clock(false);
+    } else {
+        ANALOG_CLOCK_DISABLE();
+    }
+    s_cur_mpll_freq = mpll_freq;
 }
 
 IRAM_ATTR uint32_t rtc_clk_mpll_get_freq(void)

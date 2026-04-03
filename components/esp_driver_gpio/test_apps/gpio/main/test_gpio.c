@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "driver/gpio.h"
-#include "hal/gpio_ll.h"
+#include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -50,6 +50,7 @@ static volatile int edge_intr_times = 0;   // use this to get how many times the
 static gpio_config_t test_init_io(gpio_num_t num)
 {
     TEST_ASSERT(GPIO_IS_VALID_OUTPUT_GPIO(num));
+    TEST_ESP_OK(gpio_reset_pin(num));
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
@@ -503,12 +504,11 @@ TEST_CASE("GPIO_iram_interrupt_safe_test", "[gpio]")
 // Inter-connect input pin and output pin through an internal signal
 static void gpio_interconnect_input_output_pin(uint32_t input_pin, uint32_t output_pin, uint32_t signal_idx)
 {
+    gpio_hal_context_t hal = {
+        .dev = &GPIO,
+    };
     // signal256 -> output pin -> signal_idx -> input_pin
-    // Set output pin IE to be able to connect to the signal
-    gpio_ll_input_enable(&GPIO, output_pin);
-    esp_rom_gpio_connect_in_signal(output_pin, signal_idx, 0);
-    // Input pin OE to be able to connect to the signal is done by the esp_rom_gpio_connect_out_signal function
-    esp_rom_gpio_connect_out_signal(input_pin, signal_idx, 0, 0);
+    gpio_hal_matrix_interconnect(&hal, output_pin, input_pin, signal_idx);
 }
 #endif
 
@@ -808,13 +808,8 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 
     for (int i = 0; i < sizeof(test_pins) / sizeof(int); i++) {
         int pin = test_pins[i];
-        gpio_config_t io_conf = {
-            .intr_type = GPIO_INTR_DISABLE,
-            .mode = GPIO_MODE_INPUT_OUTPUT,
-            .pin_bit_mask = BIT64(pin),
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
-        };
+        gpio_config_t io_conf = test_init_io(pin);
+        io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
         gpio_config(&io_conf);
 
         // test pin
@@ -893,13 +888,8 @@ static void gpio_deep_sleep_hold_test_first_stage(void)
 
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
 
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
+    gpio_config_t io_conf = test_init_io(io_num);
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
     TEST_ESP_OK(gpio_config(&io_conf));
 
     const bool initial_level = gpio_get_level(io_num);
@@ -938,13 +928,8 @@ static void gpio_deep_sleep_hold_test_second_stage(void)
 #endif
     TEST_ESP_OK(gpio_hold_dis(io_num));
 
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
+    gpio_config_t io_conf = test_init_io(io_num);
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
     TEST_ESP_OK(gpio_config(&io_conf));
 
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3 // DIG-399

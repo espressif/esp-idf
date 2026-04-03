@@ -46,10 +46,10 @@ HTTP 基本请求
 
 .. only:: SOC_ECDSA_SUPPORTED
 
-    为 TLS 使用 ECDSA 外设
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    为 TLS 使用 ECDSA_DS 外设
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ECDSA 外设可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **在 ESP-TLS 中使用 ECDSA 外设** 小节。可以按如下方式配置 HTTP 客户端以使用 ECDSA 外设：
+    ECDSA_DS 外设可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **在 ESP-TLS 中使用 ECDSA_DS 外设** 小节。可以按如下方式配置 HTTP 客户端以使用 ECDSA_DS 外设：
 
     .. code-block:: c
 

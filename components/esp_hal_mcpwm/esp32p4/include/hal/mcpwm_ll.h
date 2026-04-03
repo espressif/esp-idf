@@ -72,7 +72,8 @@ extern "C" {
 #define MCPWM_LL_GEN_ACTION_TO_REG_CAL(action) ((uint8_t[]) {0, 1, 2, 3}[(action)])
 #define MCPWM_LL_BRAKE_MODE_TO_REG_VAL(mode)  ((uint8_t[]) {0, 1}[(mode)])
 
-#define MCPWM_LL_TIMER_ETM_EVENT_TABLE(group, timer_id, event)            \
+// MCPWM ETM timer event table
+#define MCPWM_LL_ETM_TIMER_EVENT_TABLE(group, timer_id, event)            \
     (uint32_t[2][MCPWM_TIMER_ETM_EVENT_MAX]){                           \
         {                                                                              \
             [MCPWM_TIMER_ETM_EVENT_TEZ] = MCPWM0_EVT_TIMER0_TEZ + timer_id, \

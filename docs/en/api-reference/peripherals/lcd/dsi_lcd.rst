@@ -94,7 +94,7 @@ MIPI DSI Interfaced LCD
 
     .. note::
 
-        Due to hardware limitation, if external memory encryption is enabled, DMA2D can only access address and length that are aligned to 16 bytes. You need to ensure that your draw buffer's address and length are aligned to 16 bytes. :example:`peripherals/lcd/mipi_dsi` shows how to use LVGL to constrain the redrawn area to ensure alignment.
+        Due to hardware limitation, if external memory encryption is enabled, DMA2D can only access address and length that are aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. You need to ensure that your draw buffer's address and length are aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. :example:`peripherals/lcd/mipi_dsi` shows how to use LVGL to constrain the redrawn area to ensure alignment.
 
     If you need more advanced applications, you can add a custom hook for draw bitmap, such as using PPA to implement rotation, scaling, etc.
 

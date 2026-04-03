@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import contextlib
 import logging
@@ -51,7 +51,7 @@ class EthTestIntf:
     def configure_eth_if(self, eth_type: int = 0) -> Iterator[socket.socket]:
         if eth_type == 0:
             eth_type = self.eth_type
-        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
+        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))  # type: ignore
         so.bind((self.target_if, 0))
         try:
             yield so
@@ -205,8 +205,10 @@ def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
             ),
         )
         tx_proc.start()
-        dut.expect_exact('Ethernet Stopped')
-        pipe_send.send(0)  # just send some dummy data
+        try:
+            dut.expect_exact('Ethernet Stopped')
+        finally:
+            pipe_send.send(0)  # just send some dummy data to stop traffic generation
         tx_proc.join(5)
         if tx_proc.exitcode is None:
             tx_proc.terminate()
@@ -214,17 +216,16 @@ def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
     dut.expect_unity_test_output(extra_before=res.group(1))
 
 
-def ethernet_heap_alloc_test(dut: IdfDut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
-
+def ethernet_heap_alloc_test(dut: IdfDut, test_if: str = '') -> None:
+    target_if = EthTestIntf(ETH_TYPE, test_if)
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
     dut.expect_exact('Enter test for running.')
     dut.write('"heap utilization"')
-    res = dut.expect(r'DUT PHY: (\w+)')
-    dut_phy = res.group(1).decode('utf-8')
-    # W5500 does not support internal loopback, we need to loopback for it
-    if 'W5500' in dut_phy:
+    res = dut.expect(r'PHY loopback is (enabled|disabled)')
+    phy_loopback = res.group(1).decode('utf-8')
+    # Some chips do not support internal loopback, we need to loopback at test PC side
+    if phy_loopback == 'disabled':
         logging.info('Starting loopback server...')
         res = dut.expect(
             r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
@@ -251,7 +252,7 @@ def ethernet_heap_alloc_test(dut: IdfDut) -> None:
 
 
 # ----------- IP101 -----------
-@pytest.mark.ethernet
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize('config', ['default_generic', 'release_generic', 'single_core_generic'], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
@@ -259,7 +260,7 @@ def test_esp_ethernet(dut: IdfDut) -> None:
     ethernet_test(dut)
 
 
-@pytest.mark.ethernet
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [
@@ -287,12 +288,25 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
     ethernet_l2_test(dut)
 
 
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rmii_clko_esp32',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_esp32_emac_clko(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='esp_emac_clk_out')
+
+
 # ----------- IP101 ESP32P4 -----------
 @pytest.mark.parametrize(
     'config, target',
     [
         pytest.param('default_generic_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )
@@ -306,7 +320,7 @@ def test_esp32p4_ethernet(dut: IdfDut) -> None:
     'config, target',
     [
         pytest.param('default_generic_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )
@@ -320,7 +334,7 @@ def test_esp32p4_emac(dut: IdfDut) -> None:
     'config, target',
     [
         pytest.param('rmii_clko_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('rmii_clko_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('rmii_clko_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )
@@ -329,7 +343,6 @@ def test_esp32p4_emac_clko(dut: IdfDut) -> None:
 
 
 # ----------- LAN8720 -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_lan8720
 @pytest.mark.parametrize(
     'config',
@@ -346,7 +359,6 @@ def test_esp_eth_lan8720(dut: IdfDut) -> None:
 
 
 # ----------- RTL8201 -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_rtl8201
 @pytest.mark.parametrize(
     'config',
@@ -363,7 +375,6 @@ def test_esp_eth_rtl8201(dut: IdfDut) -> None:
 
 
 # ----------- KSZ8041 -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_ksz8041
 @pytest.mark.parametrize(
     'config',
@@ -380,7 +391,6 @@ def test_esp_eth_ksz8041(dut: IdfDut) -> None:
 
 
 # ----------- DP83848 -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_dp83848
 @pytest.mark.parametrize(
     'config',
@@ -397,13 +407,11 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
 
 
 # ----------- W5500 -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_w5500
 @pytest.mark.parametrize(
     'config',
     [
         'default_w5500',
-        'poll_w5500',
     ],
     indirect=True,
 )
@@ -417,13 +425,11 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
 
 
 # ----------- KSZ8851SNL -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_ksz8851snl
 @pytest.mark.parametrize(
     'config',
     [
         'default_ksz8851snl',
-        'poll_ksz8851snl',
     ],
     indirect=True,
 )
@@ -437,13 +443,11 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
 
 
 # ----------- DM9051 -----------
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_dm9051
 @pytest.mark.parametrize(
     'config',
     [
         'default_dm9051',
-        'poll_dm9051',
     ],
     indirect=True,
 )

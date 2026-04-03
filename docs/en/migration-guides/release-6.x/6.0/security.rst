@@ -6,7 +6,7 @@ Security
 Mbed TLS
 --------
 
-Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files like ``esp32/aes.h``, ``esp32/sha.h``, ``esp32s2/aes.h``, ``esp32s2/sha.h`` and ``esp32s2/gcm.h`` have been removed, instead, you should include ``aes/esp_aes.h``, ``sha/sha_core.h`` and ``aes/esp_aes_gcm.h`` respectively.
+Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files like ``esp32/aes.h``, ``esp32/sha.h``, ``esp32s2/aes.h``, ``esp32s2/sha.h`` and ``esp32s2/gcm.h`` have been removed. Please use ``aes/esp_aes.h``, ``sha/sha_core.h`` and ``aes/esp_aes_gcm.h`` instead.
 
 .. only:: SOC_SHA_SUPPORTED
 
@@ -102,6 +102,27 @@ The following deprecated functions have been removed:
 
 Note that the new AES functions return error codes for better error handling, unlike the old void functions.
 
+.. only:: SOC_DIG_SIGN_SUPPORTED
+
+    Digital Signature (DS) Peripheral
+    ---------------------------------
+
+    The DS peripheral is now used via the **PSA Crypto RSA DS driver** instead of the legacy Mbed TLS RSA sign/decrypt alternates. The application-facing flow (obtain DS context from secure cert/NVS, pass to ESP-TLS or use for signing/decryption) is unchanged; only the internal implementation uses the PSA driver.
+
+    - **Breaking change**: The legacy DS integration has been removed and replaced by the PSA RSA DS driver.
+
+    - **Migration**:
+
+      * **For TLS (ESP-TLS):** Enable ``CONFIG_ESP_TLS_USE_DS_PERIPHERAL`` and pass ``esp_ds_data_ctx_t`` as ``ds_data`` in :cpp:type:`esp_tls_cfg_t`. See :ref:`digital-signature-with-esp-tls` in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>`.
+      * **For direct use (signing/decryption in application code):** Enable ``CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL``, import ``esp_rsa_ds_opaque_key_t`` with ``psa_import_key()`` using ``PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE``, then use ``psa_sign_hash()`` or ``psa_asymmetric_decrypt()``. See the :doc:`Digital Signature (DS) </api-reference/peripherals/ds>` documentation, section **Using DS with PSA Crypto**.
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    HMAC Peripheral
+    ---------------
+
+    The HMAC peripheral is now used via the **PSA Crypto HMAC driver** instead of the legacy :cpp:func:`esp_hmac_calculate` API. The applications are expected to populate the :cpp:type:`esp_hmac_opaque_key_t` structure and import it via :cpp:func:`psa_import_key` API using the ``PSA_KEY_LIFETIME_ESP_HMAC`` lifetime attribute. Then, they can use the :cpp:func:`psa_mac_compute` API to compute HMAC.
+
 BluFi
 -----
 
@@ -124,6 +145,12 @@ Bootloader Support
 The following function has been deprecated:
 
 - :cpp:func:`esp_flash_encryption_enabled` – Use :cpp:func:`esp_efuse_is_flash_encryption_enabled` instead. The component dependency has been changed from ``bootloader_support`` to ``efuse``.
+
+**Secure Boot ECDSA curve selection**
+
+- In ESP-IDF v6.0, secure boot ECDSA should use NISTP256/NISTP384.
+- Legacy NISTP192 support is deprecated and is only available when explicitly enabled via ``CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS``.
+- Legacy NISTP192 support may be disabled in the next ESP-IDF release, so migration to NISTP256/NISTP384 is strongly recommended.
 
 **Removed Deprecated APIs**
 

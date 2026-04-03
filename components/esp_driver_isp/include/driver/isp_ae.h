@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,12 @@ extern "C" {
  * @brief AE controller config
  */
 typedef struct {
-    isp_ae_sample_point_t   sample_point;           ///< The input data source, ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC: AE input data after demosaic, ISP_AE_SAMPLE_POINT_AFTER_GAMMA: AE input data after gamma
+    isp_ae_sample_point_t   sample_point;           /*!< AE sample point in the ISP pipeline. See TRM for more details.
+                                                     *   ISP_AE_SAMPLE_POINT_x: see TRM for more details
+                                                     *
+                                                     *   Different sample points collect different color statistics, which can be used
+                                                     *   to match different hardware pipelines and AE tuning strategies.
+                                                     */
     isp_window_t            window;                 ///< The sampling windows of AE
     int                     intr_priority;          ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
 } esp_isp_ae_config_t;

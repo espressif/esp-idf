@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -104,7 +104,7 @@ ext_bleprph_advertise(void)
 {
     struct ble_gap_ext_adv_params params;
     struct os_mbuf *data = NULL;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     int rc;
 
     /* use defaults for non-set params */
@@ -118,8 +118,8 @@ ext_bleprph_advertise(void)
     /*enable connectable advertising for all Phy*/
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using the inferred address type */
+    params.own_addr_type = own_addr_type;
 
     /* Set current phy; get mbuf for scan rsp data; fill mbuf with scan rsp data */
     switch (s_current_phy) {
@@ -145,8 +145,13 @@ ext_bleprph_advertise(void)
         break;
     }
 
-    params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
-    params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    if (s_current_phy == BLE_HCI_LE_PHY_CODED_PREF_MASK) {
+        params.itvl_min = BLE_GAP_ADV_ITVL_MS(20);
+        params.itvl_max = BLE_GAP_ADV_ITVL_MS(20);
+    }else{
+        params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+        params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    }
 
     /* configure instance 0 */
     rc = ble_gap_ext_adv_configure(instance, &params, NULL,

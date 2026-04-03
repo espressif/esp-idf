@@ -138,7 +138,7 @@ Press TAB when typing command name to auto-complete.
 
 ### Line Endings
 
-The line endings in the Console Example are configured to match particular serial monitors. Therefore, if the following log output appears, consider using a different serial monitor (e.g. Putty for Windows) or modify the example's [UART configuration](#Configuring-UART-and-VFS).
+The line endings in the Console Example are configured to match particular serial monitors. Therefore, if the following log output appears, consider using a different serial monitor (e.g. Putty for Windows) or see [console/advanced](../advanced/main/console_settings.c) for how to initialize a console with custom settings.
 
 ```
 This is an example of ESP-IDF console component.

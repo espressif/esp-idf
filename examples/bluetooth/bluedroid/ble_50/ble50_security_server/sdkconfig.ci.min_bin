@@ -1,0 +1,15 @@
+# CI config: Minimal binary size for ble50_security_server.
+# Disable GATTC; keep BLE 5.0 and SMP (required for this example).
+# Disable 5.0 DTM test to reduce size.
+CONFIG_EXAMPLE_CI_ID=14
+CONFIG_EXAMPLE_CI_PIPELINE_ID=${CI_PIPELINE_ID}
+# GATT client not needed for server-only app
+# CONFIG_BT_GATTC_ENABLE is not set
+# BLE 5.0 only, disable 4.2 features
+# CONFIG_BT_BLE_42_FEATURES_SUPPORTED is not set
+# BLE 5.0: disable unused features (DTM, periodic adv, periodic sync)
+# CONFIG_BT_BLE_50_DTM_TEST_EN is not set
+# CONFIG_BT_BLE_50_PERIODIC_ADV_EN is not set
+# CONFIG_BT_BLE_50_EXTEND_SYNC_EN is not set
+CONFIG_BT_ACL_CONNECTIONS=1
+CONFIG_BT_MULTI_CONNECTION_ENBALE=n

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -521,6 +521,68 @@ static inline void _i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         _i2s_ll_rx_clk_set_src(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Get TX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current TX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_tx_clk_get_src(i2s_dev_t *hw)
+{
+    uint32_t clk_src;
+    switch (I2S_LL_GET_ID(hw)) {
+    case 0:
+        clk_src = HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_src_sel;
+        break;
+    case 1:
+        clk_src = HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_src_sel;
+        break;
+    case 2:
+        clk_src = HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_src_sel;
+        break;
+    default:
+        return (i2s_clock_src_t)I2S_CLK_SRC_DEFAULT;
+    }
+    switch (clk_src) {
+    case 0: return (i2s_clock_src_t)I2S_CLK_SRC_XTAL;
+    case 1: return (i2s_clock_src_t)I2S_CLK_SRC_APLL;
+    case 2: return (i2s_clock_src_t)I2S_CLK_SRC_EXTERNAL;
+    case 3: return (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
+    default: return (i2s_clock_src_t)I2S_CLK_SRC_DEFAULT;
+    }
+}
+
+/**
+ * @brief Get RX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current RX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_rx_clk_get_src(i2s_dev_t *hw)
+{
+    uint32_t clk_src;
+    switch (I2S_LL_GET_ID(hw)) {
+    case 0:
+        clk_src = HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_src_sel;
+        break;
+    case 1:
+        clk_src = HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_src_sel;
+        break;
+    case 2:
+        clk_src = HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_src_sel;
+        break;
+    default:
+        return (i2s_clock_src_t)I2S_CLK_SRC_DEFAULT;
+    }
+    switch (clk_src) {
+    case 0: return (i2s_clock_src_t)I2S_CLK_SRC_XTAL;
+    case 1: return (i2s_clock_src_t)I2S_CLK_SRC_APLL;
+    case 2: return (i2s_clock_src_t)I2S_CLK_SRC_EXTERNAL;
+    case 3: return (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
+    default: return (i2s_clock_src_t)I2S_CLK_SRC_DEFAULT;
+    }
+}
 
 /**
  * @brief Set I2S tx bck div num

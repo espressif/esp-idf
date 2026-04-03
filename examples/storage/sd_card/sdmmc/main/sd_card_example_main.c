@@ -162,6 +162,7 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    host.unaligned_multi_block_rw_max_chunk_size = 8;
 #if CONFIG_EXAMPLE_SDMMC_SPEED_HS
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 #elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50

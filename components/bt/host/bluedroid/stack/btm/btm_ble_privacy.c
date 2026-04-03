@@ -32,6 +32,7 @@
 #include "btm_int.h"
 #include "device/controller.h"
 #include "stack/hcidefs.h"
+#include "bta_dm_gap.h"
 
 #define HCI_VENDOR_BLE_RPA_VSC          (0x0155 | HCI_GRP_VENDOR_SPECIFIC)
 
@@ -49,6 +50,7 @@
 #define BTM_BLE_META_CLEAR_IRK_LEN      1
 #define BTM_BLE_META_READ_IRK_LEN       2
 #define BTM_BLE_META_ADD_WL_ATTR_LEN    9
+#define BTM_BLE_IRK_LIST_INVALID_INDEX  0xFF
 
 #if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
 static bool is_deleting_zero_addr;
@@ -71,7 +73,14 @@ static bool is_deleting_zero_addr;
 void btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, UINT8 op_code)
 {
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
-
+    UINT8 max_size = controller_get_interface()->get_ble_resolving_list_max_size();
+    if (max_size <= 1) {
+        return;
+    }
+    if (((p_q->q_next + 1) % max_size) == p_q->q_pending) {
+        BTM_TRACE_ERROR("%s, resolving pending queue full\n", __func__);
+        return;
+    }
     memcpy(p_q->resolve_q_random_pseudo[p_q->q_next], pseudo_bda, BD_ADDR_LEN);
     p_q->resolve_q_action[p_q->q_next] = op_code;
     p_q->q_next ++;
@@ -159,7 +168,7 @@ void btm_ble_clear_irk_index(UINT8 index)
 **
 ** Description      find the first available IRK list index
 **
-** Returns          index from 0 ~ max (127 default)
+** Returns          index from 0 ~ max-1, or BTM_BLE_IRK_LIST_INVALID_INDEX if full
 **
 *******************************************************************************/
 UINT8 btm_ble_find_irk_index(void)
@@ -180,7 +189,7 @@ UINT8 btm_ble_find_irk_index(void)
     }
 
     BTM_TRACE_ERROR ("%s failed, list full", __func__);
-    return i;
+    return BTM_BLE_IRK_LIST_INVALID_INDEX;
 }
 
 /*******************************************************************************
@@ -202,7 +211,13 @@ void btm_ble_update_resolving_list(BD_ADDR pseudo_bda, BOOLEAN add)
     if (add) {
         p_dev_rec->ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
         if (!controller_get_interface()->supports_ble_privacy()) {
-            p_dev_rec->ble.resolving_list_index = btm_ble_find_irk_index();
+            UINT8 irk_index = btm_ble_find_irk_index();
+            if (irk_index != BTM_BLE_IRK_LIST_INVALID_INDEX) {
+                p_dev_rec->ble.resolving_list_index = irk_index;
+            } else {
+                p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
+                BTM_TRACE_WARNING("%s: IRK list full, cannot add to resolving list", __func__);
+            }
         }
     } else {
         p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
@@ -244,10 +259,11 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
             if (controller_get_interface()->get_ble_resolving_list_max_size() == 0) {
                 btm_ble_resolving_list_init(irk_list_sz_max);
             }
-
-            uint8_t irk_mask_size = (irk_list_sz_max % 8) ?
+            if (btm_cb.ble_ctr_cb.irk_list_mask != NULL) {
+                uint8_t irk_mask_size = (irk_list_sz_max % 8) ?
                                     (irk_list_sz_max / 8 + 1) : (irk_list_sz_max / 8);
-            memset(btm_cb.ble_ctr_cb.irk_list_mask, 0, irk_mask_size);
+                memset(btm_cb.ble_ctr_cb.irk_list_mask, 0, irk_mask_size);
+            }
         }
 
         btm_cb.ble_ctr_cb.resolving_list_avail_size =
@@ -279,14 +295,10 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
     STREAM_TO_UINT8(status, p);
-    if (btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb) {
-        tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK   *p_cb = btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb;
-        if (p_cb) {
-            (*p_cb)(status);
-        }
-    } else {
-        BTM_TRACE_DEBUG("no resolving list callback");
-    }
+
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
@@ -426,19 +438,17 @@ void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
 
     tBTM_LE_RANDOM_CB *random_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-    if (!(random_cb && random_cb->set_local_privacy_cback)) {
+    if (random_cb->cb_is_triggered) {
         return;
     }
 
-    if (status == HCI_SUCCESS) {
-        random_cb->set_local_privacy_cback(BTM_SUCCESS);
-        return;
-    } else if (status == HCI_ERR_COMMAND_DISALLOWED) {
-        BTM_TRACE_ERROR("a non-connected activity is ongoing, such as advertising and scanning");
-    } else {
-        BTM_TRACE_ERROR("set local privacy failed");
+    if (status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("set local privacy failed with status: 0x%x", status);
     }
-    random_cb->set_local_privacy_cback(BTM_ILLEGAL_VALUE);
+    random_cb->cb_is_triggered = true;
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = (status == HCI_SUCCESS)? BTM_SUCCESS : BTM_ILLEGAL_VALUE;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
 }
 
 /*******************************************************************************
@@ -463,11 +473,9 @@ void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len)
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
-    tBTM_SET_RPA_TIMEOUT_CMPL_CBACK   *p_cb = btm_cb.devcb.p_ble_set_rpa_timeout_cmpl_cb;
-
-    if (p_cb) {
-        (*p_cb)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RPA_TIMEOUT_EVT, &cb_params);
 
 }
 
@@ -492,11 +500,9 @@ void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len)
 
     BTM_TRACE_DEBUG("%s status = 0x%x", __func__, status);
 
-    tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_cb = btm_cb.devcb.p_set_privacy_mode_cmpl_cb;
-
-    if (p_cb) {
-        (*p_cb)(status);
-    }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT, &cb_params);
 }
 
 #if (0)
@@ -709,8 +715,9 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
 
 #if (BLE_42_ADV_EN == TRUE)
     if (p_ble_cb->inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
-        btm_ble_stop_adv();
-        p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
+        if (btm_ble_stop_adv() == BTM_SUCCESS) {
+            p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
+        }
     }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
@@ -1124,14 +1131,31 @@ void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
     UINT8 irk_mask_size =  (max_irk_list_sz % 8) ?
                            (max_irk_list_sz / 8 + 1) : (max_irk_list_sz / 8);
+    // free them if they are already allocated.
+    btm_ble_resolving_list_cleanup();
+
+    p_q->q_next = 0;
+    p_q->q_pending = 0;
 
     if (max_irk_list_sz > 0) {
         p_q->resolve_q_random_pseudo = (BD_ADDR *)osi_malloc(sizeof(BD_ADDR) * max_irk_list_sz);
+        if (p_q->resolve_q_random_pseudo == NULL) {
+            BTM_TRACE_ERROR("%s - Out of memory for random pseudo address", __FUNCTION__);
+            goto _mem_error;
+        }
         p_q->resolve_q_action = (UINT8 *)osi_malloc(max_irk_list_sz);
+        if (p_q->resolve_q_action == NULL) {
+            BTM_TRACE_ERROR("%s - Out of memory for resolve action", __FUNCTION__);
+            goto _mem_error;
+        }
 
         /* RPA offloading feature */
         if (btm_cb.ble_ctr_cb.irk_list_mask == NULL) {
             btm_cb.ble_ctr_cb.irk_list_mask = (UINT8 *)osi_malloc(irk_mask_size);
+            if (btm_cb.ble_ctr_cb.irk_list_mask == NULL) {
+                BTM_TRACE_ERROR("%s - Out of memory for IRK list mask", __FUNCTION__);
+                goto _mem_error;
+            }
         }
 
         BTM_TRACE_DEBUG ("%s max_irk_list_sz = %d", __func__, max_irk_list_sz);
@@ -1140,6 +1164,12 @@ void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
     controller_get_interface()->set_ble_resolving_list_max_size(max_irk_list_sz);
     btm_ble_clear_resolving_list();
     btm_cb.ble_ctr_cb.resolving_list_avail_size = max_irk_list_sz;
+
+    return;
+
+_mem_error:
+    btm_ble_resolving_list_cleanup();
+    btm_cb.ble_ctr_cb.resolving_list_avail_size = 0;
 }
 
 /*******************************************************************************

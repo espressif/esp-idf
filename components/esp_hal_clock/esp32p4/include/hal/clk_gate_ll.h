@@ -383,6 +383,8 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
                         LP_CLKRST_HP_SDIO_PLL2_CLK_EN |
                         LP_CLKRST_HP_SDIO_PLL1_CLK_EN |
                         LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
+            // now, hp root clock use PMU_HP_ACTIVE/SLEEP_ICG_SYS_CLOCK_EN to control
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_ROOT_CLK_EN);
             if (config->disable_spiram_boot_clk) {
                 REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
             }

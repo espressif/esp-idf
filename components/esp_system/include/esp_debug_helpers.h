@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +17,8 @@ extern "C" {
 #include "esp_err.h"
 #include "esp_cpu.h"
 
-/*
- * @brief   Structure used for backtracing
+/**
+ * @brief Structure used for backtracing.
  *
  * This structure stores the backtrace information of a particular stack frame
  * (i.e. the PC and SP). This structure is used iteratively with the
@@ -26,14 +26,14 @@ extern "C" {
  * single stack. The next_pc represents the PC of the current frame's caller, thus
  * a next_pc of 0 indicates that the current frame is the last frame on the stack.
  *
- * @note    Call esp_backtrace_get_start() to obtain initialization values for
- *          this structure
+ * @note Call esp_backtrace_get_start() to obtain initialization values for
+ *       this structure.
  */
 typedef struct {
-    uint32_t pc;       /* PC of the current frame */
-    uint32_t sp;       /* SP of the current frame */
-    uint32_t next_pc;  /* PC of the current frame's caller */
-    const void *exc_frame;  /* Pointer to the full frame data structure, if applicable */
+    uint32_t pc;              /**< PC of the current frame */
+    uint32_t sp;              /**< SP of the current frame */
+    uint32_t next_pc;         /**< PC of the current frame's caller */
+    const void *exc_frame;    /**< Pointer to the full frame data structure, if applicable */
 } esp_backtrace_frame_t;
 
 /**

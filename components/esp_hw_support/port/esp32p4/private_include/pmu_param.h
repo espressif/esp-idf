@@ -13,6 +13,10 @@
 #include "hal/pmu_hal.h"
 #include "sdkconfig.h"
 
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+#include "pmu_icg_mapping.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -110,6 +114,11 @@ typedef struct {
 } pmu_lp_system_analog_param_t;
 
 const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mode_t mode);
+
+
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA && !defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+void pmu_sleep_clock_icg_config(void *icg_context, const uint32_t icg_func);
+#endif
 
 
 /* Following software configuration instance type from pmu_struct.h used for the PMU state machine in sleep flow*/
@@ -328,38 +337,43 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
+    uint32_t                icg_func[2];
 } pmu_sleep_digital_config_t;
 
 
 #if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
-    }                                                                   \
+    },                                                                  \
+    .icg_func = { 0, 0 }                                                \
 }
 
-#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
-    }                                                                   \
+    },                                                                  \
+    .icg_func = { 0, clk_flags }                                        \
 }
 #else // !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
-    }                                                                   \
+    },                                                                  \
+    .icg_func = { 0, 0 }                                                \
 }
 
-#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
-    }                                                                   \
+    },                                                                  \
+    .icg_func = { 0, clk_flags }                                        \
 }
 #endif
 

@@ -15,7 +15,6 @@ def test_esp_rom(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_esp_rom_qemu(dut: Dut) -> None:

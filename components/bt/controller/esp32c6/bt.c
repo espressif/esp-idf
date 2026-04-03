@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,7 @@
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/pm_impl.h"
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #include "freertos/FreeRTOS.h"
@@ -176,6 +177,7 @@ extern void esp_ble_controller_flash_only_param_config(void);
 #endif // CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 extern sleep_retention_entries_config_t *r_esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
+extern bool r_ble_lll_sleep_should_skip_light_sleep_check(void);
 extern void r_esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #if CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE
@@ -234,10 +236,10 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 static bool esp_bt_check_wakeup_by_bt(void);
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
 #include "tinycrypt/ecc.h"
 static int ecc_rand_func(uint8_t *dst, unsigned int len);
-#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
 /* Local variable definition
  ***************************************************************************
  */
@@ -862,7 +864,7 @@ esp_err_t controller_sleep_init(void)
 #endif // CONFIG_BT_LE_SLEEP_ENABLE
 
 #ifdef CONFIG_PM_ENABLE
-    rc = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "bt", &s_pm_lock);
+    rc = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock);
     if (rc != ESP_OK) {
         goto error;
     }
@@ -883,6 +885,12 @@ esp_err_t controller_sleep_init(void)
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
 
+    rc = esp_pm_register_skip_light_sleep_callback(r_ble_lll_sleep_should_skip_light_sleep_check);
+    if (rc != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Should skip cb register error");
+        goto error;
+    }
+
     rc = esp_pm_register_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
     if (rc != ESP_OK) {
         goto error;
@@ -899,6 +907,7 @@ esp_err_t controller_sleep_init(void)
 error:
 #endif // CONFIG_PM_ENABLE
 #if CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    esp_pm_unregister_skip_light_sleep_callback(r_ble_lll_sleep_should_skip_light_sleep_check);
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                      sleep_modem_mac_bb_power_up_prepare);
@@ -920,6 +929,7 @@ error:
 void controller_sleep_deinit(void)
 {
 #if CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    esp_pm_unregister_skip_light_sleep_callback(r_ble_lll_sleep_should_skip_light_sleep_check);
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                      sleep_modem_mac_bb_power_up_prepare);
@@ -1201,9 +1211,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Controller lib version mismatch!");
     }
 
-#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
     uECC_set_rng(ecc_rand_func);
-#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
     return ESP_OK;
 free_controller:
     hci_transport_deinit();
@@ -1656,7 +1666,7 @@ void esp_ble_controller_log_dump_all(bool output)
 #if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #define BLE_SM_KEY_ERR 0x17
 #define BLE_PUB_KEY_LEN 65
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 #if CONFIG_BT_LE_SM_SC
 #include "psa/crypto.h"
 static const char *TAG_SM_ALG = "ble_sm_alg";
@@ -1690,7 +1700,7 @@ static int ecc_rand_func(uint8_t *dst, unsigned int len)
 }
 #endif // CONFIG_BT_CONTROLLER_ONLY
 #endif // CONFIG_BT_LE_SM_SC
-#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 
 /* Based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
@@ -1709,7 +1719,7 @@ int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_
 
     swap_buf(priv, our_priv_key, 32);
 
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
     // PSA/mbedTLS expects 65 bytes: 0x04 prefix + X (32 bytes) + Y (32 bytes)
     pk[0] = 0x04; // Uncompressed format for public key
     swap_buf(&pk[1], peer_pub_key_x, 32);
@@ -1762,13 +1772,13 @@ exit:
     if (rc == TC_CRYPTO_FAIL) {
         return BLE_SM_KEY_ERR;
     }
-#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 
     swap_buf(out_dhkey, dh, 32);
     return 0;
 }
 
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 static int mbedtls_gen_keypair(uint8_t *public_key, uint8_t *private_key)
 {
     int rc = BLE_SM_KEY_ERR;
@@ -1809,7 +1819,7 @@ exit:
 
     return 0;
 }
-#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif  // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 
 /**
  * pub: 64 bytes
@@ -1825,7 +1835,7 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
     uint8_t pk[BLE_PUB_KEY_LEN];
 
     do {
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
         if (mbedtls_gen_keypair(pk, priv) != 0) {
             return BLE_SM_KEY_ERR;
         }
@@ -1833,11 +1843,11 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
         if (uECC_make_key(pk, priv, uECC_secp256r1()) != TC_CRYPTO_SUCCESS) {
             return BLE_SM_KEY_ERR;
         }
-#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif  // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
         /* Make sure generated key isn't debug key. */
     } while (memcmp(priv, ble_sm_alg_dbg_priv_key, 32) == 0);
 
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
     // PSA returns 65 bytes: 0x04 prefix + X (32 bytes) + Y (32 bytes)
     // Skip the 0x04 prefix when copying to pub
     swap_buf(pub, &pk[1], 32);

@@ -4,6 +4,9 @@ set(srcs
          "rtc_clk.c"
          "rtc_time.c"
          "chip_info.c"
+         "pmu_param.c"
+         "pmu_init.c"
+         "pmu_sleep.c"
          )
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

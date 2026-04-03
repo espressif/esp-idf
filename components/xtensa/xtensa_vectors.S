@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -99,11 +99,11 @@
  */
 
 #include "xtensa_rtos.h"
+#include "xtensa/xtensa_zol_macros.h"
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "xt_asm_utils.h"
-
 
 /*
 --------------------------------------------------------------------------------
@@ -127,6 +127,21 @@
 #ifdef CONFIG_FREERTOS_INTERRUPT_BACKTRACE
 #define XT_DEBUG_BACKTRACE    1
 #endif
+
+
+#if defined(XT_DEBUG_BACKTRACE) && defined(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+    /*
+     * For CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY we cannot rely on EXCSAVE_1
+     * because accessing unaligned IRAM memory from a level-1 ISR would cause
+     * LoadStore/Alignment exceptions and will overwrite EXCSAVE_1 before we read
+     * it for backtracing. Keep a copy of EXCSAVE_1 in RAM instead.
+     */
+    .section .noinit,"aw",@nobits
+    .align 4
+_xt_excsave1_sp:
+    .word 0
+    .section .text
+#endif /* XT_DEBUG_BACKTRACE CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY */
 
 
 /*
@@ -229,7 +244,17 @@
     */
     #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
+    #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+        .if \level == 1
+            /* For level 1, nested LoadStore/Alignment Exceptions may clobber EXCSAVE_1, this is why we use _xt_excsave1_sp. */
+            movi    a0, _xt_excsave1_sp
+            l32i    a0, a0, 0
+        .else
+            rsr     a0, XT_REG_EXCSAVE_1 + \level - 1      /* EXCSAVE_x for this level */
+        .endif
+    #else
     rsr     a0, XT_REG_EXCSAVE_1 + \level - 1      /* Get exception frame pointer stored in EXCSAVE_x */
+    #endif /* CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY */
     l32i    a3, a0, XT_STK_A0               /* Copy pre-exception a0 (return address) */
     s32e    a3, a1, -16
     l32i    a3, a0, XT_STK_A1               /* Copy pre-exception a1 (stack pointer) */
@@ -880,22 +905,13 @@ _xt_syscall_exc:
     #endif
 
     /*
-    Grab the interruptee's PC and skip over the 'syscall' instruction.
-    If it's at the end of a zero-overhead loop and it's not on the last
-    iteration, decrement loop counter and skip to beginning of loop.
+    Adjust EPC to point to next instruction, so when we return to user code
+       it will be at the instruction after the 'syscall' that caused the exception.
     */
     rsr     a2, XT_REG_EPC_1                /* a2 = PC of 'syscall' */
     addi    a3, a2, 3                       /* ++PC                 */
-    #if XCHAL_HAVE_LOOPS
-    rsr     a0, XT_REG_LEND                 /* if (PC == LEND       */
-    bne     a3, a0, 1f
-    rsr     a0, XT_REG_LCOUNT               /*     && LCOUNT != 0)  */
-    beqz    a0, 1f                          /* {                    */
-    addi    a0, a0, -1                      /*   --LCOUNT           */
-    rsr     a3, XT_REG_LBEG                 /*   PC = LBEG          */
-    wsr     a0, XT_REG_LCOUNT               /* }                    */
-    #endif
-1:  wsr     a3, XT_REG_EPC_1                /* update PC            */
+    XT_ZOL_EPC_LCOUNT_RESTORE a3, a0        /* If faulted at LEND, rewinds loop and leaves adjusted PC in a3 */
+    wsr     a3, XT_REG_EPC_1                /* update PC to next instruction */
 
     /* Restore interruptee's context and return from exception. */
     #ifdef __XTENSA_CALL0_ABI__
@@ -1212,12 +1228,20 @@ _xt_lowint1:
     movi    a0, _xt_user_exit               /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_EXIT
 
-    /* EXCSAVE_1 should now be free to use. Use it to keep a copy of the
-    current stack pointer that points to the exception frame (XT_STK_FRAME).*/
     #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
+    #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    /* EXCSAVE_1 can not be used to store a copy of the current stack pointer for debug backtrace,
+    because it is used to store the return address for the load/store error handler.
+    Use a fixed memory location (_xt_excsave1_sp) in RAM instead. */
+    movi    a0, _xt_excsave1_sp
+    s32i    sp, a0, 0                        /* store frame pointer (SP) to RAM */
+    #else
+    /* EXCSAVE_1 should now be free to use. Use it to keep a copy of the
+    current stack pointer that points to the exception frame (XT_STK_FRAME).*/
     mov     a0, sp
     wsr     a0, XT_REG_EXCSAVE_1
+    #endif  /* CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY */
     #endif
     #endif
 

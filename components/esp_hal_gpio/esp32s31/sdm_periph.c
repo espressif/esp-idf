@@ -53,7 +53,7 @@ static const regdma_entries_config_t gpio_ext_regdma_entries[] = {
     // backup stage: save configuration and status registers
     // restore stage: restore the configuration and status registers
     [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GPIO_EXT_LINK(0x00),
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_SDM_LINK(0x00),
                                             GPIO_EXT_RETENTION_REGS_BASE, GPIO_EXT_RETENTION_REGS_BASE,
                                             GPIO_EXT_RETENTION_REGS_CNT, 0, 0,
                                             gpio_ext_regs_map[0], gpio_ext_regs_map[1],

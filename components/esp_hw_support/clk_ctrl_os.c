@@ -33,6 +33,8 @@ static int s_apll_ref_cnt = 0;
 #if SOC_CLK_MPLL_SUPPORTED
 static uint32_t s_cur_mpll_freq_hz = 0;
 static int s_mpll_ref_cnt = 0;
+#endif
+#if CONFIG_ESP_LDO_RESERVE_PSRAM
 static esp_ldo_channel_handle_t s_ldo_chan = NULL;
 #endif
 

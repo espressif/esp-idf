@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 import subprocess
@@ -8,6 +8,7 @@ import typing as t
 from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
+from idf_build_apps.constants import BuildStatus
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import idf_relpath
 
@@ -29,16 +30,22 @@ class IdfCMakeApp(CMakeApp):
 
         # only upload in CI
         if os.getenv('CI_JOB_ID'):
-            subprocess.run(
+            result = subprocess.run(
                 [
                     'idf-ci',
                     'gitlab',
                     'upload-artifacts',
                     self.app_dir,
+                    '--build-dir',
+                    self.build_dir,
                 ],
                 stdout=sys.stdout,
                 stderr=sys.stderr,
             )
+            if result.returncode != 0:
+                self.build_status = BuildStatus.FAILED
+                self.build_comment = 'Failed to upload artifacts'
+
             rmdir(
                 self.build_path,
                 exclude_file_patterns=['build_log.txt', 'size*.json'],

@@ -367,20 +367,66 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
     Any IO can be used as the external input to wake up the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using the :cpp:func:`gpio_wakeup_enable` function. Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
 
 
+.. _uart_wakeup_light_sleep:
+
 UART Wakeup (Light-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When {IDF_TARGET_NAME} receives UART input from external devices, it is often necessary to wake up the chip when input data is available. The UART peripheral contains a feature which allows waking up the chip from Light-sleep when a certain number of positive edges on RX pin are seen. This number of positive edges can be set using :cpp:func:`uart_set_wakeup_threshold` function. Note that the character which triggers wakeup (and any characters before it) will not be received by the UART after wakeup. This means that the external device typically needs to send an extra character to the {IDF_TARGET_NAME} to trigger wakeup before sending the data.
+When {IDF_TARGET_NAME} receives UART input from external devices, it is often necessary to wake up the chip when input data is available. The UART peripheral supports multiple wakeup modes that can wake up the chip from Light-sleep. The wakeup mode and its parameters can be configured using :cpp:func:`uart_wakeup_setup` function.
+
+The UART wakeup supports the following modes:
+
+.. only:: SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+
+    **Mode 0 (UART_WK_MODE_ACTIVE_THRESH) - Active Edge Threshold Wakeup**
+
+        When all clocks are powered down, the chip can be woken up by toggling the RXD pin for a certain number of cycles. The chip wakes up when the number of rising edges is greater than or equal to threshold value. The threshold value can be configured using the ``rx_edge_threshold`` field in :cpp:type:`uart_wakeup_cfg_t` structure.
+
+.. only:: SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+
+    **Mode 1 (UART_WK_MODE_FIFO_THRESH) - RX FIFO Threshold Wakeup**
+
+        Since the UART Core clock remains active, the UART RX can still receive data and store it in the RX FIFO. The chip can be woken up from Light-sleep when the number of bytes in the RX FIFO exceeds the configured threshold. The threshold value can be configured using the ``rx_fifo_threshold`` field in :cpp:type:`uart_wakeup_cfg_t` structure.
+
+.. only:: SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+
+    **Mode 2 (UART_WK_MODE_START_BIT) - Start Bit Detection Wakeup**
+
+        The chip wakes up when the UART RX detects a start bit.
+
+.. only:: SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+
+    **Mode 3 (UART_WK_MODE_CHAR_SEQ) - Character Sequence Detection Wakeup**
+
+        The chip wakes up when the UART RX receives a specific character sequence. The character sequence can be configured using the ``wake_chars_seq`` field in :cpp:type:`uart_wakeup_cfg_t` structure. The character sequence supports wildcard matching using '*' to represent any symbol.
 
 :cpp:func:`esp_sleep_enable_uart_wakeup` function can be used to enable this wakeup source.
 
-After waking-up from UART, you should send some extra data through the UART port in Active mode, so that the internal wakeup indication signal can be cleared. Otherwises, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
+.. only:: SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+
+    After waking-up from UART wakeup mode 0, you should send some extra data through the UART port or reset the UART module in Active mode, otherwise, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
 
     .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
            In Light-sleep mode, setting Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate UART wakeup.
+
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    LP_UART can wake up the ULP LP core coprocessor. LP_UART supports the same wakeup modes as the HP UART described above, including active edge threshold wakeup, RX FIFO threshold wakeup, start bit detection wakeup, and character sequence detection wakeup.
+
+    To use LP_UART to wake up the ULP LP core, follow these steps:
+
+    #. Set the :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` flag in the ``wakeup_source`` field of the :cpp:type:`ulp_lp_core_cfg_t` structure.
+    #. Initialize the LP UART (call :cpp:func:`lp_core_uart_init`).
+    #. Configure the LP_UART wakeup mode using the :cpp:func:`lp_core_uart_wakeup_setup` function with a :cpp:type:`uart_wakeup_cfg_t` structure, using the same configuration method as HP UART.
+
+    .. note::
+
+        Once the LP core wakes up due to LP_UART, you must call :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` or reset the LP UART module to clear the wakeup signal before the LP core goes to sleep, otherwise, it will be repeated wakeup.
+
+    For example code on LP_UART wakeup, refer to :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup`.
 
 .. _disable_sleep_wakeup_source:
 
@@ -494,9 +540,45 @@ It is also possible to enter sleep modes with no wakeup sources configured. In t
 UART Output Handling
 ^^^^^^^^^^^^^^^^^^^^
 
-Before entering sleep mode, :cpp:func:`esp_deep_sleep_start` will flush the contents of UART FIFOs.
+Before entering sleep, the sleep flow prepares the **console UART** (the UART used for debug output, selected by :ref:`CONFIG_ESP_CONSOLE_UART_NUM`) so that APB clock changes or power-down do not cause garbled output or undefined behavior. The strategy applied is configurable and affects data integrity, sleep entry time, and power consumption.
 
-When entering Light-sleep mode using :cpp:func:`esp_light_sleep_start`, UART FIFOs will not be flushed. Instead, UART output will be suspended, and remaining characters in the FIFO will be sent out after wakeup from Light-sleep.
+**Default behavior (auto mode)**
+
+If you do not call :cpp:func:`esp_sleep_set_console_uart_handling_mode`, the following default strategy is used:
+
+- **Deep-sleep**: Always wait until all data in the console UART FIFO has been transmitted before entering sleep, so that all debug output is sent and no data is lost.
+- **Light-sleep**: Behavior depends on whether the UART power domain is powered down:
+    - If the UART remains powered (e.g. HP peripheral domain not powered down): UART output is **suspended** after the current frame completes; after wakeup it is resumed and any remaining data in the UART TX FIFO before sleep continues to be sent.
+    - If the UART power domain is powered down: The sleep flow waits until all data in the console UART TX FIFO has been transmitted before entering sleep; data in other UARTs is discarded to enter sleep faster.
+
+**Configuring console UART handling**
+
+You can override the default by calling :cpp:func:`esp_sleep_set_console_uart_handling_mode` and choosing one of the following modes (see :cpp:enum:`esp_sleep_uart_handling_mode_t`):
+
+- :cpp:enumerator:`ESP_SLEEP_AUTO_FLUSH_SUSPEND_UART` (default): Automatically choose flush or suspend based on sleep type and power domain, as described above.
+- :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` : Always wait until all data in the console UART TX FIFO has been transmitted before entering sleep. Use when you must guarantee that all debug output is visible; sleep entry will take longer and the chip will stay in Active state longer, increasing power consumption.
+- :cpp:enumerator:`ESP_SLEEP_ALWAYS_SUSPEND_UART` : Wait for the current UART frame to complete, then suspend the UART. If the UART stays powered during Light-sleep, transmission continues after wake. If the UART power domain is powered down, unsent data will be lost.
+- :cpp:enumerator:`ESP_SLEEP_ALWAYS_DISCARD_UART` : Discard all unsent data in the console UART FIFO and enter sleep immediately. Use for the fastest sleep entry and lowest power when debug output can be discarded.
+- :cpp:enumerator:`ESP_SLEEP_NO_HANDLING` : Do not perform any handling on the console UART before sleep. Use only when the UART state is known to be safe (e.g. no pending output or the console UART is disabled).
+
+.. note::
+
+   The sleep flow runs in a critical section. When using a mode that flushes the console UART (e.g. :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` , or the default behavior for Light-sleep/Deep-sleep when the HP peripheral domain is powered down), set :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` to be **greater than** ``SOC_UART_FIFO_LEN`` × (time to send one character at the current baud rate). Otherwise, if too much data is queued in the TX FIFO, the flush may take longer than the interrupt watchdog timeout and trigger a watchdog reset during sleep entry.
+
+Example: ensure all debug output is sent before every sleep::
+
+.. code-block:: C
+
+    fflush(stdout);
+    esp_sleep_set_console_uart_handling_mode(ESP_SLEEP_ALWAYS_FLUSH_UART);
+    esp_light_sleep_start();
+
+Example: minimize sleep entry time and allow discarding console output::
+
+.. code-block:: C
+
+    esp_sleep_set_console_uart_handling_mode(ESP_SLEEP_ALWAYS_DISCARD_UART);
+    esp_deep_sleep_start();
 
 .. _wakeup_cause:
 
@@ -527,6 +609,7 @@ Application Examples
     :esp32h2: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, EXT0, EXT1, supported by ESP32-H2.
     - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, supported by {IDF_TARGET_NAME}.
     :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` demonstrates the usage of Light-sleep and Deep-sleep wakeup triggered by the touch sensor.
+    :SOC_VBAT_SUPPORTED: - :example:`lowpower/vbat` demonstrates the use of backup battery power (VBAT) during Deep-sleep, allowing the RTC timer to keep running after the main power is removed.
 
 API Reference
 -------------

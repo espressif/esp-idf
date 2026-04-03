@@ -203,7 +203,5 @@ This image is also used as a reference, you can check output image without ISP a
 
 ## Reference
 
-- Link to the ESP-IDF camera controller driver API reference, [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/camera_driver.html)
-- Link to the ESP-IDF ISP driver API reference, [ESP-IDF: Image Signal Processor](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/isp.html)
-- [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
-- [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)
+- [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/camera_driver.html)
+- [ESP-IDF: Image Signal Processor](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/isp.html)

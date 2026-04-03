@@ -225,7 +225,6 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
-        .mdc_freq_hz = 0,                                                     \
         .emac_dataif_gpio =                                                   \
         {                                                                     \
             .rmii =                                                           \
@@ -246,6 +245,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
                 .clock_gpio = -1                                              \
             }                                                                 \
         },                                                                    \
+        .mdc_freq_hz = 0,                                                     \
     }
 #endif // CONFIG_IDF_TARGET_ESP32P4
 
@@ -340,6 +340,23 @@ esp_err_t esp_eth_mac_adj_ptp_freq(esp_eth_mac_t *mac, double scale_factor);
 esp_err_t esp_eth_mac_adj_ptp_time(esp_eth_mac_t *mac, int32_t adj_ppb);
 
 /**
+ * @brief Adjust PTP frequency relative to its current addend value by ppb
+ *
+ * Unlike esp_eth_mac_adj_ptp_time (absolute from base) or esp_eth_mac_adj_ptp_freq
+ * (relative by double scale factor), this adjusts the current addend by ppb:
+ * addend_new = current * (1 + adj_ppb / 10^9). Calling with adj_ppb=0 is a no-op.
+ *
+ * @param mac: Ethernet MAC instance
+ * @param adj_ppb: relative frequency adjustment in parts per billion
+ *
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_FAIL: failure
+ */
+esp_err_t esp_eth_mac_adj_ptp_freq_ppb(esp_eth_mac_t *mac, int32_t adj_ppb);
+
+/**
  * @brief Set Target Time at which interrupt is invoked when PTP time exceeds this value
  *
  * @param mac: Ethernet MAC instance
@@ -404,6 +421,16 @@ esp_err_t esp_eth_mac_set_pps_out_gpio(esp_eth_mac_t *mac, int gpio_num);
  *      - ESP_FAIL: failure
  */
 esp_err_t esp_eth_mac_set_pps_out_freq(esp_eth_mac_t *mac, uint32_t freq_hz);
+
+/**
+ * @brief Get PTP timestamp resolution
+ *
+ * @param mac: Ethernet MAC instance
+ *
+ * @return
+ *      - PTP timestamp resolution in nanoseconds
+ */
+uint32_t esp_eth_mac_get_ts_resolution(esp_eth_mac_t *mac);
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 #endif // CONFIG_ETH_USE_ESP32_EMAC

@@ -178,9 +178,24 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - Randomized Advertising Channel Indexing
-      - |developing202603|
-      - |NA|
-      - |NA|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |developing202603|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |NA|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |NA|
     * -
       - Periodic Advertising Sync Transfer
       - .. only:: esp32 or esp32c3 or esp32s3
@@ -253,22 +268,22 @@ If none of our chip series meet your needs, please contact `customer support tea
             |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - .. only:: esp32
+      - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32
+      - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32
+      - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
     * -
@@ -293,28 +308,28 @@ If none of our chip series meet your needs, please contact `customer support tea
             |experimental|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - .. only:: esp32
+      - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32
+      - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32
+      - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
     * -
       - Encrypted Advertising Data
       - |NA|
-      - |developing202512|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
@@ -323,22 +338,22 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - Periodic Advertising with Responses
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
     * - .. centered:: |6.0|
@@ -348,22 +363,22 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |unsupported|
     * -
       - LL Extended Feature Set
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |developing202606|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |developing202606|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |developing202606|
     * -
@@ -378,22 +393,22 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |unsupported|
     * -
       - Monitoring Advertisers
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |developing202606|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |developing202606|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |developing202606|
     * -

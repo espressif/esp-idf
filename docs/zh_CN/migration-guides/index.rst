@@ -23,3 +23,4 @@
     :maxdepth: 1
 
     release-6.x/6.0/index
+    release-6.x/6.1/index

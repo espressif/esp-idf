@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <assert.h>
@@ -62,9 +62,11 @@ static STAILQ_HEAD(, os_mbuf_pool) g_msys_pool_list =
                     SYSINIT_MSYS_1_MEMBLOCK_SIZE)
 
 #if !CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
+#if !CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 static os_membuf_t *os_msys_init_1_data;
 static struct os_mbuf_pool os_msys_init_1_mbuf_pool;
 static struct os_mempool os_msys_init_1_mempool;
+#endif // !CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 #endif // !CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
 #endif
 
@@ -76,11 +78,58 @@ static struct os_mempool os_msys_init_1_mempool;
                     SYSINIT_MSYS_2_MEMBLOCK_SIZE)
 
 #if !CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
+#if !CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 static os_membuf_t *os_msys_init_2_data;
 static struct os_mbuf_pool os_msys_init_2_mbuf_pool;
 static struct os_mempool os_msys_init_2_mempool;
+#endif // !CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 #endif // !CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
 #endif
+
+#if !CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER && CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
+/* Context structure holding all MSYS resources */
+typedef struct {
+#if OS_MSYS_1_BLOCK_COUNT > 0
+    os_membuf_t *init_1_data;
+    struct os_mbuf_pool init_1_mbuf_pool;
+    struct os_mempool   init_1_mempool;
+#endif
+
+#if OS_MSYS_2_BLOCK_COUNT > 0
+    os_membuf_t *init_2_data;
+    struct os_mbuf_pool init_2_mbuf_pool;
+    struct os_mempool   init_2_mempool;
+#endif
+} os_msys_ctx_t;
+static os_msys_ctx_t *os_msys_ctx = NULL;
+
+#if OS_MSYS_1_BLOCK_COUNT > 0
+#define os_msys_init_1_data       (os_msys_ctx->init_1_data)
+#define os_msys_init_1_mbuf_pool  (os_msys_ctx->init_1_mbuf_pool)
+#define os_msys_init_1_mempool    (os_msys_ctx->init_1_mempool)
+#endif // OS_MSYS_1_BLOCK_COUNT
+
+#if OS_MSYS_2_BLOCK_COUNT > 0
+#define os_msys_init_2_data       (os_msys_ctx->init_2_data)
+#define os_msys_init_2_mbuf_pool  (os_msys_ctx->init_2_mbuf_pool)
+#define os_msys_init_2_mempool    (os_msys_ctx->init_2_mempool)
+#endif // OS_MSYS_2_BLOCK_COUNT
+
+static int
+ble_os_msys_ensure_ctx(void)
+{
+    if(os_msys_ctx) {
+        return 0;
+    }
+
+    os_msys_ctx = nimble_platform_mem_calloc(1, sizeof(*os_msys_ctx));
+    if(!os_msys_ctx) {
+        return -1;
+    }
+
+    return 0;
+}
+#endif // !CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER && CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 
 #if CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
 extern int  r_esp_ble_msys_init(uint16_t msys_size1, uint16_t msys_size2, uint16_t msys_cnt1, uint16_t msys_cnt2, uint8_t from_heap);
@@ -168,6 +217,44 @@ os_msys_init_once(void *data, struct os_mempool *mempool,
 int
 os_msys_buf_alloc(void)
 {
+#if CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
+    if (ble_os_msys_ensure_ctx()){
+        return ESP_FAIL;
+    }
+#endif // CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
+
+#if MYNEWT_VAL(MP_RUNTIME_ALLOC)
+    return ESP_OK;
+#endif
+
+#if CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
+#if OS_MSYS_1_BLOCK_COUNT > 0
+        if (!os_msys_ctx->init_1_data) {
+            os_msys_ctx->init_1_data = nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_1_MEMPOOL_SIZE));
+            if(!os_msys_ctx->init_1_data){
+                nimble_platform_mem_free(os_msys_ctx);
+                os_msys_ctx = NULL;
+                return ESP_FAIL;
+            }
+        }
+#endif
+
+#if OS_MSYS_2_BLOCK_COUNT > 0
+      if (!os_msys_ctx->init_2_data) {
+          os_msys_ctx->init_2_data = nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_2_MEMPOOL_SIZE));
+          if(!os_msys_ctx->init_2_data) {
+#if OS_MSYS_1_BLOCK_COUNT > 0
+              nimble_platform_mem_free(os_msys_ctx->init_1_data);
+              os_msys_ctx->init_1_data = NULL;
+#endif
+              nimble_platform_mem_free(os_msys_ctx);
+              os_msys_ctx = NULL;
+              return ESP_FAIL;
+          }
+      }
+
+#endif
+#else
 #if OS_MSYS_1_BLOCK_COUNT > 0
     os_msys_init_1_data = (os_membuf_t *)nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_1_MEMPOOL_SIZE));
     if (!os_msys_init_1_data) {
@@ -185,6 +272,7 @@ os_msys_buf_alloc(void)
         return ESP_ERR_NO_MEM;
     }
 #endif
+#endif // CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 
     return ESP_OK;
 }
@@ -192,16 +280,40 @@ os_msys_buf_alloc(void)
 void
 os_msys_buf_free(void)
 {
+#if CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
+    if (os_msys_ctx) {
 #if OS_MSYS_1_BLOCK_COUNT > 0
+        if (os_msys_ctx->init_1_data) {
+            nimble_platform_mem_free(os_msys_ctx->init_1_data);
+            os_msys_ctx->init_1_data = NULL;
+        }
+        os_mempool_unregister(&os_msys_ctx->init_1_mempool);
+#endif
+#if OS_MSYS_2_BLOCK_COUNT > 0
+        if (os_msys_ctx->init_2_data) {
+            nimble_platform_mem_free(os_msys_ctx->init_2_data);
+            os_msys_ctx->init_2_data = NULL;
+        }
+        os_mempool_unregister(&os_msys_ctx->init_2_mempool);
+#endif
+        nimble_platform_mem_free(os_msys_ctx);
+        os_msys_ctx = NULL;
+    }
+
+#else
+#if OS_MSYS_1_BLOCK_COUNT > 0
+
     nimble_platform_mem_free(os_msys_init_1_data);
     os_msys_init_1_data = NULL;
+    os_mempool_unregister(&os_msys_init_1_mempool);
 #endif
 
 #if OS_MSYS_2_BLOCK_COUNT > 0
     nimble_platform_mem_free(os_msys_init_2_data);
     os_msys_init_2_data = NULL;
+    os_mempool_unregister(&os_msys_init_1_mempool);
 #endif
-
+#endif // CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 }
 
 void os_msys_init(void)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,10 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
+#include "hal/clk_gate_ll.h"
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -54,7 +57,7 @@ __attribute__((weak)) void esp_clk_init(void)
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #endif
 
-#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+#if defined(CONFIG_BOOTLOADER_WDT_ENABLE) && SOC_RTC_WDT_SUPPORTED
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
     // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (2 sec).
@@ -80,7 +83,7 @@ __attribute__((weak)) void esp_clk_init(void)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW_D4);
 #endif
 
-#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+#if defined(CONFIG_BOOTLOADER_WDT_ENABLE) && SOC_RTC_WDT_SUPPORTED
     // After changing a frequency WDT timeout needs to be set for new frequency.
     stage_timeout_ticks = (uint32_t)((uint64_t)CONFIG_BOOTLOADER_WDT_TIME_MS * rtc_clk_slow_freq_get_hz() / 1000);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -197,5 +200,30 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    periph_ll_clk_gate_config_t clk_gate_config = {0};
+
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
+    clk_gate_config.disable_uart0_clk = true;
+#endif
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
+    clk_gate_config.disable_uart1_clk = true;
+#endif
+#if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    clk_gate_config.disable_mspi_flash_clk = true;
+#endif
+#if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
+    clk_gate_config.disable_assist_clk = true;
+#endif
+#if !CONFIG_SECURE_ENABLE_TEE
+    clk_gate_config.disable_crypto_periph_clk = true;
+#endif
+#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+    clk_gate_config.disable_usb_serial_jtag = true;
+#endif
+#if !CONFIG_ESP_ENABLE_PVT
+    clk_gate_config.disable_pvt_clk = true;
+#endif
+
+    periph_ll_clk_gate_set_default(rst_reason, &clk_gate_config);
 }

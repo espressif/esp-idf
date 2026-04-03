@@ -11,7 +11,7 @@ SECTIONS
 {
 #include "ld.rtc.sections"
 
-#include "ld.tcm.sections"
+#include "ld.spm.sections"
 
 #include "ld.iram.sections"
 

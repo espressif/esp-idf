@@ -99,7 +99,7 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V1_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
@@ -195,11 +195,19 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_REGI2C_SUPPORTED
+    bool
+    default y
+
 config SOC_MPU_SUPPORTED
     bool
     default y
 
 config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_WDT_SUPPORTED
     bool
     default y
 
@@ -427,6 +435,18 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
 
+config SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+    bool
+    default y
+
+config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
+    int
+    default 0
+
 config SOC_DEDIC_GPIO_HAS_INTERRUPT
     bool
     default y
@@ -579,6 +599,10 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -586,6 +610,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V1
+    bool
+    default y
 
 config SOC_TOUCH_SENSOR_VERSION
     int

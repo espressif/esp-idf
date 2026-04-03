@@ -425,6 +425,10 @@ static void do_ecdsa_sign_and_verify(const esp_tee_sec_storage_key_cfg_t *cfg, c
     TEST_ESP_OK(verify_ecdsa_sign(cfg->type, digest, digest_len, &pubkey, &sign));
 }
 
+/* NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test expects
+ * the eFuse-burned HMAC key used for TEE secure storage to be available at
+ * the path "test_keys/tee_sec_stg_hmac_key.bin"
+ */
 TEST_CASE("Test TEE Secure Storage - Host-generated keys", "[sec_storage_host_keygen]")
 {
     const char *aes_key_ids[] = { "aes256_key0", "aes256_key1" };

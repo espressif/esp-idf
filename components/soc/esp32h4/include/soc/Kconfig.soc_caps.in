@@ -11,6 +11,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_UHCI_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
     bool
     default y
@@ -139,7 +143,7 @@ config SOC_PAU_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V2_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
@@ -151,7 +155,7 @@ config SOC_TOUCH_SENSOR_SUPPORTED
     bool
     default y
 
-config SOC_REG_I2C_SUPPORTED
+config SOC_REGI2C_SUPPORTED
     bool
     default y
 
@@ -164,6 +168,10 @@ config SOC_ASSIST_DEBUG_SUPPORTED
     default y
 
 config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_WDT_SUPPORTED
     bool
     default y
 
@@ -410,10 +418,6 @@ config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
     int
     default 0
-
-config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT
-    int
-    default 6
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
@@ -767,6 +771,10 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_SYSTIMER_SUPPORT_ETM
     bool
     default y
@@ -778,6 +786,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V2
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_ETM
     bool
@@ -802,6 +814,10 @@ config SOC_TWAI_MASK_FILTER_NUM
 config SOC_TWAI_RANGE_FILTER_NUM
     int
     default 1
+
+config SOC_TWAI_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     bool
@@ -833,9 +849,13 @@ config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
 config SOC_EFUSE_ECDSA_KEY
     bool
-    default n
+    default y
 
 config SOC_EFUSE_XTS_AES_KEY_128
+    bool
+    default y
+
+config SOC_EFUSE_XTS_AES_KEY_256
     bool
     default y
 
@@ -868,6 +888,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
 
@@ -1011,6 +1035,10 @@ config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
 
+config SOC_PM_FPU_RETENTION_BY_SW
+    bool
+    default y
+
 config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
@@ -1098,3 +1126,7 @@ config SOC_TOUCH_SAMPLE_CFG_NUM
 config SOC_USB_OTG_PERIPH_NUM
     int
     default 1
+
+config SOC_ASRC_SUPPORTED
+    bool
+    default y

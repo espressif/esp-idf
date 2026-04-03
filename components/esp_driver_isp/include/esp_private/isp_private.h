@@ -117,6 +117,7 @@ typedef enum {
     ISP_SUBMODULE_AWB,
     ISP_SUBMODULE_SHARPEN,
     ISP_SUBMODULE_HIST,
+    ISP_SUBMODULE_GENERAL,
 } isp_submodule_t;
 
 /*---------------------------------------------------------------

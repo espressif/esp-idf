@@ -144,7 +144,7 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     /* When transmit alternately, twice frequency is needed to guarantee the convert frequency in one channel */
     uint32_t trans_freq_hz = freq_hz * (is_alternate ? 2 : 1);
     ESP_GOTO_ON_ERROR(s_dac_dma_periph_set_clock(trans_freq_hz, is_apll), err, TAG, "Failed to set clock of DMA peripheral");
-    ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO),
+    ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO, 0),
                       err, TAG, "Failed to allocate dma peripheral channel");
     s_ddp->dma_chan = spi_bus_get_dma_ctx(DAC_DMA_PERIPH_SPI_HOST)->rx_dma_chan.chan_id;
     spi_ll_enable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);

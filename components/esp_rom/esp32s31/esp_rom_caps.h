@@ -19,7 +19,6 @@
 #define ESP_ROM_HAS_HAL_SYSTIMER            (1) // ROM has the implementation of Systimer HAL driver
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
-#define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs
 #define ESP_ROM_HAS_HEAP_TLSF               (1) // ROM has the implementation of the tlsf and multi-heap library
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano version of formatting functions

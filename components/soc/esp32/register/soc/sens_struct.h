@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-typedef volatile struct sens_dev_s {
-    union {
+typedef struct sens_dev_t {
+    volatile union {
         struct {
             uint32_t sar1_clk_div:      8;
             uint32_t sar1_sample_cycle: 8;
@@ -26,15 +26,15 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_read_ctrl;
-    uint32_t sar_read_status1;                            /**/
-    union {
+    volatile uint32_t sar_read_status1;                            /**/
+    volatile union {
         struct {
             uint32_t sar_amp_wait1:16;
             uint32_t sar_amp_wait2:16;
         };
         uint32_t val;
     } sar_meas_wait1;
-    union {
+    volatile union {
         struct {
             uint32_t sar_amp_wait3: 16;
             uint32_t force_xpd_amp:  2;
@@ -44,7 +44,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas_wait2;
-    union {
+    volatile union {
         struct {
             uint32_t xpd_sar_amp_fsm:       4;
             uint32_t amp_rst_fb_fsm:        4;
@@ -56,13 +56,13 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas_ctrl;
-    uint32_t sar_read_status2;                            /**/
-    uint32_t ulp_cp_sleep_cyc0;                          /**/
-    uint32_t ulp_cp_sleep_cyc1;                          /**/
-    uint32_t ulp_cp_sleep_cyc2;                          /**/
-    uint32_t ulp_cp_sleep_cyc3;                          /**/
-    uint32_t ulp_cp_sleep_cyc4;                          /**/
-    union {
+    volatile uint32_t sar_read_status2;                            /**/
+    volatile uint32_t ulp_cp_sleep_cyc0;                          /**/
+    volatile uint32_t ulp_cp_sleep_cyc1;                          /**/
+    volatile uint32_t ulp_cp_sleep_cyc2;                          /**/
+    volatile uint32_t ulp_cp_sleep_cyc3;                          /**/
+    volatile uint32_t ulp_cp_sleep_cyc4;                          /**/
+    volatile union {
         struct {
             uint32_t sar1_bit_width:         2;
             uint32_t sar2_bit_width:         2;
@@ -79,7 +79,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_start_force;
-    union {
+    volatile union {
         struct {
             uint32_t mem_wr_addr_init:    11;
             uint32_t mem_wr_addr_size:    11;
@@ -88,9 +88,9 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_mem_wr_ctrl;
-    uint32_t sar_atten1;                                  /**/
-    uint32_t sar_atten2;                                  /**/
-    union {
+    volatile uint32_t sar_atten1;                                  /**/
+    volatile uint32_t sar_atten2;                                  /**/
+    volatile union {
         struct {
             uint32_t i2c_slave_addr1:   11;
             uint32_t i2c_slave_addr0:   11;
@@ -107,7 +107,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr2;
-    union {
+    volatile union {
         struct {
             uint32_t i2c_slave_addr5:11;
             uint32_t i2c_slave_addr4:11;
@@ -117,7 +117,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr3;
-    union {
+    volatile union {
         struct {
             uint32_t i2c_slave_addr7:11;
             uint32_t i2c_slave_addr6:11;
@@ -127,7 +127,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr4;
-    union {
+    volatile union {
         struct {
             uint32_t tsens_xpd_wait:      12;
             uint32_t tsens_xpd_force:      1;
@@ -142,7 +142,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_tctrl;
-    union {
+    volatile union {
         struct {
             uint32_t sar_i2c_ctrl:       28;
             uint32_t sar_i2c_start:       1;
@@ -151,7 +151,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_i2c_ctrl;
-    union {
+    volatile union {
         struct {
             uint32_t meas1_data_sar:   16;
             uint32_t meas1_done_sar:    1;
@@ -162,7 +162,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas_start1;
-    union {
+    volatile union {
         struct {
             uint32_t touch_meas_delay:16;
             uint32_t touch_xpd_wait:   8;
@@ -174,21 +174,21 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_ctrl1;
-    union {
+    volatile union {
         struct {
             uint32_t l_thresh: 16;
             uint32_t h_thresh: 16;
         };
         uint32_t val;
     } touch_thresh[5];
-    union {
+    volatile union {
         struct {
             uint32_t l_val: 16;
             uint32_t h_val: 16;
         };
         uint32_t val;
     } touch_meas[5];
-    union {
+    volatile union {
         struct {
             uint32_t touch_meas_en:     10;
             uint32_t touch_meas_done:    1;
@@ -202,7 +202,7 @@ typedef volatile struct sens_dev_s {
         uint32_t val;
     } sar_touch_ctrl2;
     uint32_t reserved_88;
-    union {
+    volatile union {
         struct {
             uint32_t touch_pad_worken:10;
             uint32_t touch_pad_outen2:10;
@@ -211,7 +211,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_enable;
-    union {
+    volatile union {
         struct {
             uint32_t sar2_clk_div:      8;
             uint32_t sar2_sample_cycle: 8;
@@ -225,7 +225,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_read_ctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t meas2_data_sar:   16;
             uint32_t meas2_done_sar:    1;
@@ -236,7 +236,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas_start2;
-    union {
+    volatile union {
         struct {
             uint32_t sw_fstep:          16;
             uint32_t sw_tone_en:         1;
@@ -249,7 +249,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_dac_ctrl1;
-    union {
+    volatile union {
         struct {
             uint32_t dac_dc1:    8;
             uint32_t dac_dc2:    8;
@@ -263,7 +263,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_dac_ctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t sar1_dac_xpd_fsm:           4;
             uint32_t sar1_dac_xpd_fsm_idle:      1;
@@ -302,8 +302,8 @@ typedef volatile struct sens_dev_s {
     uint32_t reserved_ec;
     uint32_t reserved_f0;
     uint32_t reserved_f4;
-    uint32_t sar_nouse;                                   /**/
-    union {
+    volatile uint32_t sar_nouse;                                   /**/
+    volatile union {
         struct {
             uint32_t sar_date:  28;
             uint32_t reserved28: 4;

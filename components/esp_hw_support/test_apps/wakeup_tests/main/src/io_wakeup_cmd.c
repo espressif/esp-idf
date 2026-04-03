@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,7 +8,6 @@
 #include "unity_test_utils.h"
 #include "test_utils.h"
 #include "esp_sleep.h"
-#include "driver/rtc_io.h"
 #include "driver/gpio.h"
 #include "hal/gpio_ll.h"
 #include "esp_console.h"
@@ -384,9 +383,9 @@ static int process_get_wakeup_cause(int argc, char **argv)
     if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
         if (esp_reset_reason() == ESP_RST_DEEPSLEEP) {
 #if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
-            uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
-            if (wakeup_pin_mask != 0) {
-                int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+            uint64_t wakeup_channel_mask = esp_sleep_get_gpio_wakeup_status();
+            if (wakeup_channel_mask != 0) {
+                int pin = esp_sleep_wakeup_io_bit2num((uint32_t)__builtin_ctzll(wakeup_channel_mask));
                 printf("Wake up from GPIO at IO%d\n", pin);
             } else {
                 printf("Wake up from GPIO triggered, but unknown wake-up IO\n");

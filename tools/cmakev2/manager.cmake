@@ -20,6 +20,8 @@ function(__init_component_manager)
                         OUTPUT component_manager_env)
     if(component_manager_env STREQUAL "" OR NOT component_manager_env STREQUAL "0")
         idf_build_set_property(IDF_COMPONENT_MANAGER 1)
+    else()
+        idf_build_set_property(IDF_COMPONENT_MANAGER 0)
     endif()
 
     # Set IDF_COMPONENT_MANAGER_INTERFACE_VERSION.
@@ -29,13 +31,9 @@ function(__init_component_manager)
                         OUTPUT cmgr_iface)
     idf_build_set_property(IDF_COMPONENT_MANAGER_INTERFACE_VERSION ${cmgr_iface})
 
-    # Set DEPENDENCIES_LOCK if set by the user. Otherwise, use the
-    # project directory and IDF_TARGET to determine the lock file path.
-    # Note: This deviates from the build system v1 behavior where we allow
-    # users to specify the lock file path via idf_build_set_property.
-    idf_build_get_property(deps_lock_file DEPENDENCIES_LOCK)
+    # Set DEPENDENCIES_LOCK if provided via environment or CMake variable.
     __get_default_value(VARIABLE DEPENDENCIES_LOCK
-                        DEFAULT "${deps_lock_file}"
+                        DEFAULT ""
                         OUTPUT deps_lock_file)
     idf_build_set_property(DEPENDENCIES_LOCK "${deps_lock_file}")
 endfunction()
@@ -48,15 +46,11 @@ endfunction()
     kconfig option. This behavior is similar to the build system v1.
 
     This routine performs the following steps:
-    1. Initialize the component manager.
-    2. Run the component manager for all discovered components.
-    3. Re-collect Kconfig and regenerate sdkconfig with managed components included.
-    4. If the component manager run failed, error out.
+    1. Run the component manager for all discovered components.
+    2. Re-collect Kconfig and regenerate sdkconfig with managed components included.
+    3. If the component manager run failed, error out.
 #]]
 function(__fetch_components_from_registry)
-    # Initialize the component manager.
-    __init_component_manager()
-
     # Iteratively run the component manager and Kconfig until stable or error out.
     set(__cmgr_round 0)
     while(TRUE)
@@ -71,8 +65,6 @@ function(__fetch_components_from_registry)
 
         # If component manager run failed, use the failure result
         if(cmgr_result EQUAL 0)
-            # If manager is disabled but manifests were detected, issue a warning
-            __component_manager_warn_if_disabled_and_manifests_exist()
             break()
         elseif(cmgr_result EQUAL 10 AND __cmgr_round LESS 2)
             # We can retry once if the manager fails with a missing kconfig option
@@ -83,6 +75,15 @@ function(__fetch_components_from_registry)
             idf_die("IDF Component Manager error: ${cmgr_result}")
         endif()
     endwhile()
+
+    # All managed components are now fetched and their Kconfig definitions
+    # are available. Point __SDKCONFIG_ORIG back to the real sdkconfig so
+    # that subsequent operations (menuconfig, save-defconfig, confserver)
+    # read and write the actual file, not the preserved copy.
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
+    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
+    __create_base_kconfgen_command("${sdkconfig}" "${sdkconfig_defaults}")
 endfunction()
 
 #[[
@@ -119,12 +120,6 @@ function(__download_managed_component)
     endif()
     if(NOT DEFINED ARG_RESULT)
         idf_die("RESULT option is required")
-    endif()
-
-    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
-    if(NOT idf_component_manager EQUAL 1)
-        set(${ARG_RESULT} 0 PARENT_SCOPE)
-        return()
     endif()
 
     idf_build_get_property(python PYTHON)

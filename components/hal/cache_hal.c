@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "soc/soc_caps.h"
-#include "rom/cache.h"
 
 /*------------------------------------------------------------------------------
  * Unified Cache Control
@@ -82,6 +81,8 @@ void cache_hal_init(const cache_hal_config_t *config)
 {
     s_cache_hal_init_ctx();
 
+    cache_ll_clk_init();
+
     if (CACHE_LL_LEVEL_EXT_MEM == 1) {
         cache_ll_enable_cache(1, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, ctx.l1.i_autoload_en, ctx.l1.d_autoload_en);
     } else if (CACHE_LL_LEVEL_EXT_MEM == 2) {
@@ -103,6 +104,8 @@ void cache_hal_init(const cache_hal_config_t *config)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     cache_hal_init_l2_cache(config);
 #endif
+    //CACHE_LL_PRELOAD_ARBITRARY will have better performance for preload
+    cache_ll_preload_set_strategy(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, CACHE_LL_PRELOAD_ARBITRARY);
 }
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
@@ -323,4 +326,14 @@ uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type)
 #endif
 
     return line_size;
+}
+
+void cache_hal_preload(uint32_t cache_level, cache_type_t type, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    cache_ll_preload(cache_level, type, CACHE_LL_ID_ALL, vaddr, size, ascending);
+}
+
+void cache_hal_preload_wait_done(uint32_t cache_level, cache_type_t type)
+{
+    cache_ll_preload_wait_done(cache_level, type, CACHE_LL_ID_ALL);
 }

@@ -208,6 +208,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     time.sleep(0.5)
             except KeyboardInterrupt:
                 print('Terminated -> exiting debug utility targets')
+        if processes['allow_hints']:
+            ensure_build_directory(args, ctx.info_name)  # initialize build context for hints
         _terminate_async_target('openocd')
         _terminate_async_target('gdbgui')
 

@@ -65,17 +65,32 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-static int lwip_fcntl_r_wrapper(int fd, int cmd, int arg)
+static int lwip_write_r_wrapper(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
+{
+    return lwip_write(fd, data, size);
+}
+
+static int lwip_read_r_wrapper(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
+{
+    return lwip_read(fd, data, size);
+}
+
+static int lwip_close_r_wrapper(__attribute__((unused)) void *ctx, int fd)
+{
+    return lwip_close(fd);
+}
+
+static int lwip_fcntl_r_wrapper(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     return lwip_fcntl(fd, cmd, arg);
 }
 
-static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
+static int lwip_ioctl_r_wrapper(__attribute__((unused)) void *ctx, int fd, int cmd, va_list args)
 {
     return lwip_ioctl(fd, cmd, va_arg(args, void *));
 }
 
-static int lwip_fstat(int fd, struct stat * st)
+static int lwip_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 {
     if (st == NULL || fd < LWIP_SOCKET_OFFSET || fd > (MAX_FDS - 1)) {
         errno = EBADF;
@@ -102,12 +117,12 @@ void esp_vfs_lwip_sockets_register(void)
 #endif
 
     static const esp_vfs_fs_ops_t s_lwip_vfs = {
-        .write  = &lwip_write,
-        .read   = &lwip_read,
-        .close  = &lwip_close,
-        .fstat  = &lwip_fstat,
-        .fcntl  = &lwip_fcntl_r_wrapper,
-        .ioctl  = &lwip_ioctl_r_wrapper,
+        .write_p  = &lwip_write_r_wrapper,
+        .read_p   = &lwip_read_r_wrapper,
+        .close_p  = &lwip_close_r_wrapper,
+        .fstat_p  = &lwip_fstat,
+        .fcntl_p  = &lwip_fcntl_r_wrapper,
+        .ioctl_p  = &lwip_ioctl_r_wrapper,
 #ifdef CONFIG_VFS_SUPPORT_SELECT
         .select = &s_lwip_select_ops,
 #endif
@@ -120,7 +135,7 @@ void esp_vfs_lwip_sockets_register(void)
      * No context pointer needed -> flags have no ESP_VFS_FLAG_CONTEXT_PTR.
      */
     ESP_ERROR_CHECK(esp_vfs_register_fd_range(&s_lwip_vfs,
-                                              ESP_VFS_FLAG_STATIC,
+                                              ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR,
                                               NULL /* ctx */,
                                               LWIP_SOCKET_OFFSET,
                                               MAX_FDS));

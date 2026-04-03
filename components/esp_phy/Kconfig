@@ -207,5 +207,19 @@ menu "PHY"
                 PLL track helps the PHY module adapt to temperature changes, ensuring stable performance.
                 When pll enabled, the ESP PHY module will periodically track and adjust PLL parameters.
 
+        config ESP_PHY_INIT_IRAM
+            bool "Place PHY (de)init in IRAM"
+            depends on SOC_IEEE802154_BLE_ONLY
+            default n
+            help
+                Select this option to place esp_phy and PHY library functions related to phy_init in IRAM.
+                This config applies to ESP32-H2, ESP32-H21, and ESP32-H4.
+
+        config ESP_PHY_ENABLE_VERSION_PRINT
+            bool "Print PHY version"
+            default y
+            help
+                Select to print PHY version in esp_phy_enable. This config only applies to esp32hxx for now.
+
     endif
 endmenu  # PHY

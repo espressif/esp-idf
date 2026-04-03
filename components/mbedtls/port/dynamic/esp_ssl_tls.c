@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -379,15 +379,9 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
                  * and prepare for the next read. So we have to update the msglen
                  * by ourselves and free the rx buffer if no more data is available.
                  */
-                if (ssl->MBEDTLS_PRIVATE(in_hslen) < ssl->MBEDTLS_PRIVATE(in_msglen)) {
+                if (ssl->MBEDTLS_PRIVATE(in_hslen) == ssl->MBEDTLS_PRIVATE(in_msglen)) {
                     ssl->MBEDTLS_PRIVATE(in_msglen) -= ssl->MBEDTLS_PRIVATE(in_hslen);
-                    memmove(ssl->MBEDTLS_PRIVATE(in_msg), ssl->MBEDTLS_PRIVATE(in_msg) + ssl->MBEDTLS_PRIVATE(in_hslen),
-                        ssl->MBEDTLS_PRIVATE(in_msglen));
-                    MBEDTLS_PUT_UINT16_BE(ssl->MBEDTLS_PRIVATE(in_msglen), ssl->in_len, 0);
-                } else {
-                    ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
                 }
-                ssl->MBEDTLS_PRIVATE(in_hslen) = 0;
             }
         }
 #endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3

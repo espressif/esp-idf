@@ -47,34 +47,6 @@ Each I2S controller has the following features that can be configured by the I2S
 
     Each controller has separate RX and TX channels. That means they are able to work under different clocks and slot configurations with separate GPIO pins. Note that although the internal MCLKs of TX channel and RX channel are separate on a controller, the output MCLK signal can only be attached to one channel. If independent MCLK output is required for each channel, they must be allocated on different I2S controllers.
 
-I2S File Structure
-------------------
-
-.. figure:: ../../../_static/diagrams/i2s/i2s_file_structure.png
-    :align: center
-    :alt: I2S file structure
-
-    I2S File Structure
-
-**Public headers that need to be included in the I2S application are as follows:**
-
-.. list::
-
-    - ``i2s.h``: The header file that provides legacy I2S APIs (for apps using legacy driver).
-    - ``i2s_std.h``: The header file that provides standard communication mode specific APIs (for apps using new driver with standard mode).
-    :SOC_I2S_SUPPORTS_PDM: - ``i2s_pdm.h``: The header file that provides PDM communication mode specific APIs (for apps using new driver with PDM mode).
-    :SOC_I2S_SUPPORTS_TDM: - ``i2s_tdm.h``: The header file that provides TDM communication mode specific APIs (for apps using new driver with TDM mode).
-
-.. note::
-
-    The legacy driver cannot coexist with the new driver. Include ``i2s.h`` to use the legacy driver, or include the other three headers to use the new driver. The legacy driver might be removed in future.
-
-**Public headers that have been included in the headers above are as follows:**
-
-- ``i2s_types_legacy.h``: The header file that provides legacy public types that are only used in the legacy driver.
-- ``i2s_types.h``: The header file that provides public types.
-- ``i2s_common.h``: The header file that provides common APIs for all communication modes.
-
 I2S Clock
 ---------
 
@@ -324,6 +296,8 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
 - :cpp:func:`i2s_channel_preload_data`: Preloading audio data into the I2S internal cache, enabling the TX channel to immediately send data upon activation, thereby reducing the initial audio output delay.
 - :cpp:func:`i2s_channel_tune_rate`: Dynamically fine-tuning the audio rate at runtime to match the speed of the audio data producer and consumer, thereby preventing the accumulation or shortage of intermediate buffered data that caused by rate mismatches.
 
+.. _i2s-iram-safe:
+
 IRAM Safe
 ^^^^^^^^^
 
@@ -345,7 +319,7 @@ All the public I2S APIs are guaranteed to be thread safe by the driver, which me
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_I2S_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled. See `IRAM Safe <#iram-safe>`__ for more information.
+- :ref:`CONFIG_I2S_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled. See :ref:`i2s-iram-safe` for more information.
 - :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
 
 Application Example

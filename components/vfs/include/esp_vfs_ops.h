@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,10 +27,15 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_IDF_TARGET_LINUX
-#ifndef _SYS_TYPES_FD_SET
-#error "VFS should be used with FD_SETSIZE and FD_SET from sys/types.h"
-#endif
+#ifndef __DOXYGEN__
+#  pragma push_macro("deprecated")
+#  undef deprecated
+
+#  if defined(CONFIG_VFS_SUPPRESS_CTX_DEPRECATION) || defined(_VFS_SUPPRESS_CTX_DEPRECATION)
+#    define deprecated(msg)
+#  else
+#    define deprecated(msg) deprecated("Context pointer-less API is deprecated, please use the version with context pointer")
+#  endif
 #endif
 
 /*
@@ -91,67 +96,67 @@ typedef           int  (*esp_vfs_utime_op_t)         (           const char *pat
 typedef struct {
     union {
         const esp_vfs_stat_ctx_op_t      stat_p;      /*!< stat with context pointer */
-        const esp_vfs_stat_op_t          stat;        /*!< stat without context pointer */
+        const esp_vfs_stat_op_t          stat __attribute__((deprecated("Context pointer-less API is deprecated")));        /*!< stat without context pointer */
     };
     union {
         const esp_vfs_link_ctx_op_t      link_p;      /*!< link with context pointer */
-        const esp_vfs_link_op_t          link;        /*!< link without context pointer */
+        const esp_vfs_link_op_t          link __attribute__((deprecated("Context pointer-less API is deprecated")));        /*!< link without context pointer */
     };
     union {
         const esp_vfs_unlink_ctx_op_t    unlink_p;    /*!< unlink with context pointer */
-        const esp_vfs_unlink_op_t        unlink;      /*!< unlink without context pointer */
+        const esp_vfs_unlink_op_t        unlink __attribute__((deprecated("Context pointer-less API is deprecated")));      /*!< unlink without context pointer */
     };
     union {
         const esp_vfs_rename_ctx_op_t    rename_p;    /*!< rename with context pointer */
-        const esp_vfs_rename_op_t        rename;      /*!< rename without context pointer */
+        const esp_vfs_rename_op_t        rename __attribute__((deprecated("Context pointer-less API is deprecated")));      /*!< rename without context pointer */
     };
     union {
         const esp_vfs_opendir_ctx_op_t   opendir_p;   /*!< opendir with context pointer */
-        const esp_vfs_opendir_op_t       opendir;     /*!< opendir without context pointer */
+        const esp_vfs_opendir_op_t       opendir __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< opendir without context pointer */
     };
     union {
         const esp_vfs_readdir_ctx_op_t   readdir_p;   /*!< readdir with context pointer */
-        const esp_vfs_readdir_op_t       readdir;     /*!< readdir without context pointer */
+        const esp_vfs_readdir_op_t       readdir __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< readdir without context pointer */
     };
     union {
         const esp_vfs_readdir_r_ctx_op_t readdir_r_p; /*!< readdir_r with context pointer */
-        const esp_vfs_readdir_r_op_t     readdir_r;   /*!< readdir_r without context pointer */
+        const esp_vfs_readdir_r_op_t     readdir_r __attribute__((deprecated("Context pointer-less API is deprecated")));   /*!< readdir_r without context pointer */
     };
     union {
         const esp_vfs_telldir_ctx_op_t   telldir_p;   /*!< telldir with context pointer */
-        const esp_vfs_telldir_op_t       telldir;     /*!< telldir without context pointer */
+        const esp_vfs_telldir_op_t       telldir __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< telldir without context pointer */
     };
     union {
         const esp_vfs_seekdir_ctx_op_t   seekdir_p;   /*!< seekdir with context pointer */
-        const esp_vfs_seekdir_op_t       seekdir;     /*!< seekdir without context pointer */
+        const esp_vfs_seekdir_op_t       seekdir __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< seekdir without context pointer */
     };
     union {
         const esp_vfs_closedir_ctx_op_t  closedir_p;  /*!< closedir with context pointer */
-        const esp_vfs_closedir_op_t      closedir;    /*!< closedir without context pointer */
+        const esp_vfs_closedir_op_t      closedir __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< closedir without context pointer */
     };
     union {
         const esp_vfs_mkdir_ctx_op_t     mkdir_p;     /*!< mkdir with context pointer */
-        const esp_vfs_mkdir_op_t         mkdir;       /*!< mkdir without context pointer */
+        const esp_vfs_mkdir_op_t         mkdir __attribute__((deprecated("Context pointer-less API is deprecated")));       /*!< mkdir without context pointer */
     };
     union {
         const esp_vfs_rmdir_ctx_op_t     rmdir_p;     /*!< rmdir with context pointer */
-        const esp_vfs_rmdir_op_t         rmdir;       /*!< rmdir without context pointer */
+        const esp_vfs_rmdir_op_t         rmdir __attribute__((deprecated("Context pointer-less API is deprecated")));       /*!< rmdir without context pointer */
     };
     union {
         const esp_vfs_access_ctx_op_t    access_p;    /*!< access with context pointer */
-        const esp_vfs_access_op_t        access;      /*!< access without context pointer */
+        const esp_vfs_access_op_t        access __attribute__((deprecated("Context pointer-less API is deprecated")));      /*!< access without context pointer */
     };
     union {
         const esp_vfs_truncate_ctx_op_t  truncate_p;  /*!< truncate with context pointer */
-        const esp_vfs_truncate_op_t      truncate;    /*!< truncate without context pointer */
+        const esp_vfs_truncate_op_t      truncate __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< truncate without context pointer */
     };
     union {
         const esp_vfs_ftruncate_ctx_op_t ftruncate_p; /*!< ftruncate with context pointer */
-        const esp_vfs_ftruncate_op_t     ftruncate;   /*!< ftruncate without context pointer */
+        const esp_vfs_ftruncate_op_t     ftruncate __attribute__((deprecated("Context pointer-less API is deprecated")));   /*!< ftruncate without context pointer */
     };
     union {
         const esp_vfs_utime_ctx_op_t     utime_p;     /*!< utime with context pointer */
-        const esp_vfs_utime_op_t         utime;       /*!< utime without context pointer */
+        const esp_vfs_utime_op_t         utime __attribute__((deprecated("Context pointer-less API is deprecated")));       /*!< utime without context pointer */
     };
 } esp_vfs_dir_ops_t;
 
@@ -181,31 +186,31 @@ typedef   int (*esp_vfs_tcsendbreak_op_t)     (           int fd, int duration);
 typedef struct {
     union {
         const esp_vfs_tcsetattr_ctx_op_t   tcsetattr_p;   /*!< tcsetattr with context pointer */
-        const esp_vfs_tcsetattr_op_t       tcsetattr;     /*!< tcsetattr without context pointer */
+        const esp_vfs_tcsetattr_op_t       tcsetattr __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< tcsetattr without context pointer */
     };
     union {
         const esp_vfs_tcgetattr_ctx_op_t   tcgetattr_p;   /*!< tcgetattr with context pointer */
-        const esp_vfs_tcgetattr_op_t       tcgetattr;     /*!< tcgetattr without context pointer */
+        const esp_vfs_tcgetattr_op_t       tcgetattr __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< tcgetattr without context pointer */
     };
     union {
         const esp_vfs_tcdrain_ctx_op_t     tcdrain_p;     /*!< tcdrain with context pointer */
-        const esp_vfs_tcdrain_op_t         tcdrain;       /*!< tcdrain without context pointer */
+        const esp_vfs_tcdrain_op_t         tcdrain __attribute__((deprecated("Context pointer-less API is deprecated")));       /*!< tcdrain without context pointer */
     };
     union {
         const esp_vfs_tcflush_ctx_op_t     tcflush_p;     /*!< tcflush with context pointer */
-        const esp_vfs_tcflush_op_t         tcflush;       /*!< tcflush without context pointer */
+        const esp_vfs_tcflush_op_t         tcflush __attribute__((deprecated("Context pointer-less API is deprecated")));       /*!< tcflush without context pointer */
     };
     union {
         const esp_vfs_tcflow_ctx_op_t      tcflow_p;      /*!< tcflow with context pointer */
-        const esp_vfs_tcflow_op_t          tcflow;        /*!< tcflow without context pointer */
+        const esp_vfs_tcflow_op_t          tcflow __attribute__((deprecated("Context pointer-less API is deprecated")));        /*!< tcflow without context pointer */
     };
     union {
         const esp_vfs_tcgetsid_ctx_op_t    tcgetsid_p;    /*!< tcgetsid with context pointer */
-        const esp_vfs_tcgetsid_op_t        tcgetsid;      /*!< tcgetsid without context pointer */
+        const esp_vfs_tcgetsid_op_t        tcgetsid __attribute__((deprecated("Context pointer-less API is deprecated")));      /*!< tcgetsid without context pointer */
     };
     union {
         const esp_vfs_tcsendbreak_ctx_op_t tcsendbreak_p; /*!< tcsendbreak with context pointer */
-        const esp_vfs_tcsendbreak_op_t     tcsendbreak;   /*!< tcsendbreak without context pointer */
+        const esp_vfs_tcsendbreak_op_t     tcsendbreak __attribute__((deprecated("Context pointer-less API is deprecated")));   /*!< tcsendbreak without context pointer */
     };
 } esp_vfs_termios_ops_t;
 
@@ -276,47 +281,47 @@ typedef     int (*esp_vfs_fsync_op_t)      (           int fd);                 
 typedef struct {
     union {
         const esp_vfs_write_ctx_op_t  write_p;  /*!< Write with context pointer */
-        const esp_vfs_write_op_t      write;    /*!< Write without context pointer */
+        const esp_vfs_write_op_t      write __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< Write without context pointer */
     };
     union {
         const esp_vfs_lseek_ctx_op_t  lseek_p;  /*!< Seek with context pointer */
-        const esp_vfs_lseek_op_t      lseek;    /*!< Seek without context pointer */
+        const esp_vfs_lseek_op_t      lseek __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< Seek without context pointer */
     };
     union {
         const esp_vfs_read_ctx_op_t   read_p;   /*!< Read with context pointer */
-        const esp_vfs_read_op_t       read;     /*!< Read without context pointer */
+        const esp_vfs_read_op_t       read __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< Read without context pointer */
     };
     union {
         const esp_vfs_pread_ctx_op_t  pread_p;  /*!< pread with context pointer */
-        const esp_vfs_pread_op_t      pread;    /*!< pread without context pointer */
+        const esp_vfs_pread_op_t      pread __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< pread without context pointer */
     };
     union {
         const esp_vfs_pwrite_ctx_op_t pwrite_p; /*!< pwrite with context pointer */
-        const esp_vfs_pwrite_op_t     pwrite;   /*!< pwrite without context pointer */
+        const esp_vfs_pwrite_op_t     pwrite __attribute__((deprecated("Context pointer-less API is deprecated")));   /*!< pwrite without context pointer */
     };
     union {
         const esp_vfs_open_ctx_op_t   open_p;   /*!< open with context pointer */
-        const esp_vfs_open_op_t       open;     /*!< open without context pointer */
+        const esp_vfs_open_op_t       open __attribute__((deprecated("Context pointer-less API is deprecated")));     /*!< open without context pointer */
     };
     union {
         const esp_vfs_close_ctx_op_t  close_p;  /*!< close with context pointer */
-        const esp_vfs_close_op_t      close;    /*!< close without context pointer */
+        const esp_vfs_close_op_t      close __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< close without context pointer */
     };
     union {
         const esp_vfs_fstat_ctx_op_t  fstat_p;  /*!< fstat with context pointer */
-        const esp_vfs_fstat_op_t      fstat;    /*!< fstat without context pointer */
+        const esp_vfs_fstat_op_t      fstat __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< fstat without context pointer */
     };
     union {
         const esp_vfs_fcntl_ctx_op_t  fcntl_p;  /*!< fcntl with context pointer */
-        const esp_vfs_fcntl_op_t      fcntl;    /*!< fcntl without context pointer */
+        const esp_vfs_fcntl_op_t      fcntl __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< fcntl without context pointer */
     };
     union {
         const esp_vfs_ioctl_ctx_op_t  ioctl_p;  /*!< ioctl with context pointer */
-        const esp_vfs_ioctl_op_t      ioctl;    /*!< ioctl without context pointer */
+        const esp_vfs_ioctl_op_t      ioctl __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< ioctl without context pointer */
     };
     union {
         const esp_vfs_fsync_ctx_op_t  fsync_p;  /*!< fsync with context pointer */
-        const esp_vfs_fsync_op_t      fsync;    /*!< fsync without context pointer */
+        const esp_vfs_fsync_op_t      fsync __attribute__((deprecated("Context pointer-less API is deprecated")));    /*!< fsync without context pointer */
     };
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
@@ -379,6 +384,10 @@ esp_err_t esp_vfs_unregister_fs(const char *base_path);
  * Alias for esp_vfs_unregister_with_id for naming consistency
  */
 esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t id);
+
+#if !defined(__DOXYGEN__)
+  #pragma pop_macro("deprecated")
+#endif
 
 #ifdef __cplusplus
 }

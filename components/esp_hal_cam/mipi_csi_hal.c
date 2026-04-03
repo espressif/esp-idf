@@ -71,7 +71,5 @@ void mipi_csi_hal_init(mipi_csi_hal_context_t *hal, const mipi_csi_hal_config_t 
     mipi_csi_brg_ll_set_intput_data_h_pixel_num(hal->bridge_dev, config->frame_height);
     mipi_csi_brg_ll_set_intput_data_v_row_num(hal->bridge_dev, config->frame_width);
     mipi_csi_brg_ll_set_flow_ctl_buf_afull_thrd(hal->bridge_dev, 960);
-    mipi_csi_brg_ll_set_data_type_min(hal->bridge_dev, 0x12);
-    mipi_csi_brg_ll_set_data_type_max(hal->bridge_dev, 0x2f);
     mipi_csi_brg_ll_set_output_byte_endian(hal->bridge_dev, config->byte_swap_en);
 }

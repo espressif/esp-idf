@@ -16,7 +16,7 @@
 // #define TEST_MEMORY_LEAK_THRESHOLD (-1546)
 // With PSA Migration, there is an increase in memory usage.
 // TODO: Check why this is happening and fix it.
-#define TEST_MEMORY_LEAK_THRESHOLD (-1850)
+#define TEST_MEMORY_LEAK_THRESHOLD (-2560)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

@@ -13,6 +13,7 @@
 #include "soc/pmu_struct.h"
 #include "soc/pvt_reg.h"
 #include "soc/pmu_reg.h"
+#include "soc/hp_sys_clkrst_reg.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_rom_sys.h"

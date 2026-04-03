@@ -5,7 +5,7 @@ components/vfs/test_apps:
       reason: not support yet # TODO: [esp32h21] IDF-11593 [ESP32H4] IDF-12372
 
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32c2", "esp32c3", "esp32c6", "esp32h2"]
       temporary: true
       reason: lack of runners
 

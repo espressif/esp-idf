@@ -1,4 +1,4 @@
-set(srcs "test_app_main.c" "test_touch_sens_common.c")
+set(srcs "test_app_main.c" "test_touch_sens_common.cpp")
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS "."

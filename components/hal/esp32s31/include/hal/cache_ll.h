@@ -15,6 +15,7 @@
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 #include "esp32s31/rom/cache.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,27 @@ extern "C" {
 #define CACHE_LL_L2_ACCESS_EVENT_MASK               (1<<6)
 #define CACHE_LL_L1_CORE0_EVENT_MASK                (1<<0)
 #define CACHE_LL_L1_CORE1_EVENT_MASK                (1<<1)
+
+/**
+ * @brief Preload strategy
+ */
+typedef enum {
+    CACHE_LL_PRELOAD_UNTIL_FETCH_DONE = 0,
+    CACHE_LL_PRELOAD_AFTER_FETCH = 1,
+    CACHE_LL_PRELOAD_ARBITRARY = 2,
+} cache_ll_preload_strategy_t;
+
+/**
+ * @brief Initialize the cache clock
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clk_init(void)
+{
+    HP_SYS_CLKRST.cache_ctrl0.reg_cpu_acache_cpu_clk_force_on = 1;
+    HP_SYS_CLKRST.cache_ctrl0.reg_rom_acache_mem_clk_force_on = 1;
+    HP_SYS_CLKRST.cache_ctrl0.reg_cpu_cache_cpu_clk_force_on = 1;
+    HP_SYS_CLKRST.cache_ctrl0.reg_mspi_cache_sys_clk_force_on = 1;
+}
 
 /*------------------------------------------------------------------------------
  * Autoload
@@ -840,6 +862,34 @@ __attribute__((always_inline))
 static inline uint32_t cache_ll_l2_cache_get_line_size(uint32_t cache_id)
 {
     return 0;
+}
+
+/**
+ * @brief Set the preload strategy (no-op)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_set_strategy(uint32_t cache_level, cache_type_t type, uint32_t cache_id, cache_ll_preload_strategy_t strategy)
+{
+    (void)cache_level;
+    (void)type;
+    (void)cache_id;
+    (void)strategy;
+}
+
+/**
+ * @brief Preload cache
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+}
+
+/**
+ * @brief Wait until cache preload is done
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
 }
 
 /**

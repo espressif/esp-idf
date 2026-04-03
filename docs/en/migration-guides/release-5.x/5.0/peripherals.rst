@@ -481,12 +481,6 @@ LCD
 
     Meanwhile, the old driver's APIs in ``driver/i2s.h`` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option ``CONFIG_I2S_SUPPRESS_DEPRECATE_WARN``.
 
-    Here is the general overview of the current I2S files:
-
-    .. figure:: ../../../../_static/diagrams/i2s/i2s_file_structure.png
-        :align: center
-        :alt: I2S File Structure
-
     Breaking changes in Concepts
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

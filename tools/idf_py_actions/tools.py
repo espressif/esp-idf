@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
 import importlib
@@ -14,6 +14,7 @@ from re import Match
 from types import FunctionType
 from typing import Any
 from typing import TextIO
+from typing import cast
 
 import click
 import yaml
@@ -183,32 +184,98 @@ def debug_print_idf_version() -> None:
     print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
-def load_hints() -> dict:
-    """Helper function to load hints yml file"""
-    hints: dict = {'yml': [], 'modules': []}
+def _load_hints_from_directory(directory: str) -> list:
+    """Load hints file in the given directory"""
+    hints_file = os.path.join(directory, 'hints.yml')
+    if not os.path.exists(hints_file):
+        return []
 
-    current_module_dir = os.path.dirname(__file__)
-    with open(os.path.join(current_module_dir, 'hints.yml'), encoding='utf-8') as file:
-        hints['yml'] = yaml.safe_load(file)
+    try:
+        with open(hints_file, encoding='utf-8') as file:
+            hints = yaml.safe_load(file)
+            return hints if hints else []
+    except (OSError, yaml.YAMLError):
+        yellow_print(f'HINT WARNING: Failed to load hints from "{hints_file}"')
+        return []
 
-    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
-    if not os.path.exists(hint_modules_dir):
-        return hints
 
-    sys.path.append(hint_modules_dir)
-    for _, name, _ in iter_modules([hint_modules_dir]):
-        # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
-        # If the module doesn't have the function 'generate_hint', it will raise an exception
-        try:
-            hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
-        except ModuleNotFoundError:
-            red_print(f'Failed to import "{name}" from "{hint_modules_dir}" as a module')
-            raise SystemExit(1)
-        except AttributeError:
-            red_print(f'Module "{name}" does not have function generate_hint.')
-            raise SystemExit(1)
+def _load_hints_from_project_components(proj_desc: dict) -> list:
+    """
+    Load hints from project components
+    Excluding ESP-IDF components to avoid duplicates
+    """
+    hints = []
+    all_component_info = proj_desc.get('all_component_info', {})
+    for comp_name, comp_info in proj_desc.get('build_component_info', {}).items():
+        comp_dir = comp_info.get('dir')
+        if comp_dir and os.path.isdir(comp_dir) and os.path.exists(os.path.join(comp_dir, 'hints.yml')):
+            if comp_name in all_component_info and all_component_info[comp_name].get('source') != 'idf_components':
+                hints.extend(_load_hints_from_directory(comp_dir))
 
     return hints
+
+
+def _load_idf_hints() -> dict:
+    """Load global hints and IDF component hints"""
+    hints: dict[str, list[Any]] = {'yml': [], 'modules': []}
+    current_module_dir = os.path.dirname(__file__)
+    # Load global hints
+    hints['yml'] = _load_hints_from_directory(current_module_dir)
+
+    # Load hint modules
+    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
+    if os.path.exists(hint_modules_dir):
+        sys.path.append(hint_modules_dir)
+        for _, name, _ in iter_modules([hint_modules_dir]):
+            # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
+            # If the module doesn't have the function 'generate_hint', it will raise an exception
+            try:
+                hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
+            except ModuleNotFoundError:
+                red_print(f'Failed to import "{name}" from "{hint_modules_dir}" as a module')
+                raise SystemExit(1)
+            except AttributeError:
+                red_print(f'Module "{name}" does not have function generate_hint.')
+                raise SystemExit(1)
+
+    # Load ESP-IDF components
+    idf_path = os.environ.get('IDF_PATH')
+    if idf_path:
+        components_dir = os.path.join(os.path.abspath(idf_path), 'components')
+        if os.path.isdir(components_dir):
+            try:
+                for comp_name in os.listdir(components_dir):
+                    comp_dir = os.path.join(components_dir, comp_name)
+                    if os.path.isdir(comp_dir):
+                        hints['yml'].extend(_load_hints_from_directory(comp_dir))
+            except OSError:
+                pass
+
+    return hints
+
+
+def load_hints(cache: dict = {}) -> dict:
+    """
+    Helper function to load hints.yml files from global and component sources
+
+    Uses mutable default argument as cache - same dict (argument 'cache') persists its data across all calls.
+    See: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+    """
+
+    # Initialize cache structure if first call with IDF hints (global + IDF components)
+    if 'hints' not in cache:
+        cache['hints'] = _load_idf_hints()
+        cache['project_components_loaded'] = False
+
+    # Extend Cached hints with hints from project components if available
+    if not cache.get('project_components_loaded'):
+        proj_desc = get_build_context().get('proj_desc')
+        if proj_desc:
+            project_hints = _load_hints_from_project_components(proj_desc)
+            cache['hints']['yml'].extend(project_hints)
+            cache['project_components_loaded'] = True
+
+    return cast(dict, cache['hints'])
 
 
 def generate_hints_buffer(output: str, hints: dict) -> Generator:

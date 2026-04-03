@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -25,7 +25,17 @@ typedef union {
          *  Reserved
          */
         uint32_t l1_icache_shut_ibus3:1;
-        uint32_t reserved_4:28;
+        uint32_t reserved_4:4;
+        /** l1_icache_undef_op : R/W; bitpos: [15:8]; default: 0;
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
+         *  bit[5]: 1: Disable auto clock gating.
+         */
+        uint32_t l1_icache_undef_op:8;
+        uint32_t reserved_16:16;
     };
     uint32_t val;
 } cache_l1_icache_ctrl_reg_t;

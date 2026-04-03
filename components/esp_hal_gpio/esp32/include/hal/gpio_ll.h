@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -365,6 +365,19 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_input_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return REG_GET_BIT(DR_REG_IO_MUX_BASE + GPIO_PIN_MUX_REG_OFFSET[gpio_num], FUN_IE) ? true : false;
+}
+
+/**
   * @brief Disable output mode on GPIO.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -578,21 +591,31 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   *
   * @param hw Peripheral GPIO hardware instance address.
   */
-static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
+static inline void _gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+/// When operating RTC_CNTL_DIG_ISO_REG, PERIPH_RCC_ATOMIC() must be used to ensure atomicity.
+#define gpio_ll_deep_sleep_hold_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gpio_ll_deep_sleep_hold_en(__VA_ARGS__)
 
 /**
   * @brief Disable all digital gpio pad hold function during Deep-sleep.
   *
   * @param hw Peripheral GPIO hardware instance address.
   */
-static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
+static inline void _gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+/// When operating RTC_CNTL_DIG_ISO_REG, PERIPH_RCC_ATOMIC() must be used to ensure atomicity.
+#define gpio_ll_deep_sleep_hold_dis(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gpio_ll_deep_sleep_hold_dis(__VA_ARGS__)
 
 /**
  * @brief  Get deep sleep hold status
@@ -716,6 +739,7 @@ static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in
   * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
   * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
+__attribute__((always_inline))
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
     hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO

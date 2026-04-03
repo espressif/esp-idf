@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -253,9 +253,15 @@ int dynamic_service(const uint8_t operation, const struct ble_gatt_svc_def *svcs
 int
 gatt_svr_init(void)
 {
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif /* CONFIG_BT_NIMBLE_GAP_SERVICE */
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
+#if CONFIG_BT_NIMBLE_ANS_SERVICE
     ble_svc_ans_init();
+#endif
 
     /* Setting a value for the read-only descriptor */
     gatt_svr_dsc_val = 0x99;

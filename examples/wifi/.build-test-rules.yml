@@ -64,6 +64,13 @@ examples/wifi/iperf:
     - lwip
     - esp_coex
     - wpa_supplicant
+  depends_components-:
+    # remove these components from "*common_components"
+    # because they have minimal impact on performance test results
+    - esp_common
+    - cxx
+    - log
+
 
 examples/wifi/itwt:
   <<: *wifi_depends_default

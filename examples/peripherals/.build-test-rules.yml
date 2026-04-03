@@ -95,6 +95,13 @@ examples/peripherals/dac/dac_cosine_wave:
     - esp_driver_dac
     - soc
 
+examples/peripherals/dma/async_crc:
+  disable:
+    - if: SOC_GDMA_SUPPORT_CRC != 1
+  depends_components:
+    - esp_driver_dma
+    - esp_console
+
 examples/peripherals/gpio:
   depends_components:
     - esp_driver_gpio
@@ -320,7 +327,7 @@ examples/peripherals/lcd/i80_controller:
 
 examples/peripherals/lcd/mipi_dsi:
   disable:
-    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+    - if: SOC_MIPI_DSI_SUPPORTED != 1
   depends_components:
     - esp_driver_dma
     - esp_hal_lcd

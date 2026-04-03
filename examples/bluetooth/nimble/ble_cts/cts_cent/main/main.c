@@ -15,6 +15,9 @@
 #include "services/gap/ble_svc_gap.h"
 #include "ble_cts_cent.h"
 #include "services/cts/ble_svc_cts.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_CTS_CENT";
 static int ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg);
@@ -520,7 +523,7 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                       (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
           /* Perform service discovery */
           rc = peer_disc_all(event->cache_assoc.conn_handle,
-                             blecent_on_disc_complete, NULL);
+                             ble_cts_cent_on_disc_complete, NULL);
           if(rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;

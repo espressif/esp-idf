@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,12 +39,6 @@ void esp_sleep_gpio_pupd_config_workaround_apply(void);
 void esp_sleep_gpio_pupd_config_workaround_unapply(void);
 
 #endif // CONFIG_IDF_TARGET_ESP32
-
-/**
- * @brief Call once in startup to disable the wakeup IO pins and release their holding state after waking up from Deep-sleep
- */
-void esp_deep_sleep_wakeup_io_reset(void);
-
 #ifdef __cplusplus
 }
 #endif

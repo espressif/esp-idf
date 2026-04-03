@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,6 +144,29 @@ void cache_hal_unfreeze(uint32_t cache_level, cache_type_t type);
  * @return cache line size, in bytes. 0 stands for no such cache in this type or level
  */
 uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type);
+
+/**
+ * @brief Start cache preload for a region (manual preload)
+ *
+ * Preloads the given address range into cache, this can improve
+ * performance when the region will be read soon.
+ *
+ * @param cache_level  Level of the cache (e.g. CACHE_LL_LEVEL_EXT_MEM)
+ * @param type         CACHE_TYPE_DATA, CACHE_TYPE_INSTRUCTION, or CACHE_TYPE_ALL
+ * @param vaddr        Start virtual address of the region to preload
+ * @param size         Size in bytes. Should be cache-line aligned; if not,
+ *                     the actual preloaded length is rounded down to cache-line boundary.
+ * @param ascending    true for ascending order, false for descending
+ */
+void cache_hal_preload(uint32_t cache_level, cache_type_t type, uint32_t vaddr, uint32_t size, bool ascending);
+
+/**
+ * @brief Wait until cache preload started by cache_hal_preload() is done
+ *
+ * @param cache_level  Level of the cache (must match the level used in cache_hal_preload)
+ * @param type         CACHE_TYPE_DATA, CACHE_TYPE_INSTRUCTION, or CACHE_TYPE_ALL
+ */
+void cache_hal_preload_wait_done(uint32_t cache_level, cache_type_t type);
 
 /**
  * @brief Get Cache level and the ID of the vaddr

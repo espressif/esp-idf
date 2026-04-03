@@ -46,8 +46,8 @@ MEMORY
    *  of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
    *  are connected to the data port of the CPU and eg allow byte-wise access.
    */
-  /* TCM */
-  tcm_idram_seg (RX) :               org = 0x30100000, len = 0x2000
+  /* SPM */
+  spm_idram_seg (RX) :               org = 0x30100000, len = 0x2000
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS

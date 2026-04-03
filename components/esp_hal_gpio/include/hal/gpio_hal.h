@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,15 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param gpio_num GPIO number
   */
 #define gpio_hal_input_enable(hal, gpio_num) gpio_ll_input_enable((hal)->dev, gpio_num)
+
+/**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+#define gpio_hal_input_is_enabled(hal, gpio_num) gpio_ll_input_is_enabled((hal)->dev, gpio_num)
 
 /**
   * @brief Disable output mode on GPIO.
@@ -402,6 +411,16 @@ void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t sig
  * @param oen_inv Whether the output enable control is inverted or not.
  */
 void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv);
+
+/**
+ * @brief Connect two GPIOs through the GPIO matrix by a signal.
+ *
+ * @param hal Context of the HAL layer
+ * @param sig_src_pin Source GPIO number
+ * @param sig_dst_pin Destination GPIO number
+ * @param signal_idx Peripheral signal index (tagged as input attribute). One of the ``SIG_IN_FUNC`` signals in ``soc/gpio_sig_map.h``.
+ */
+void gpio_hal_matrix_interconnect(gpio_hal_context_t *hal, uint32_t sig_src_pin, uint32_t sig_dst_pin, uint32_t signal_idx);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**

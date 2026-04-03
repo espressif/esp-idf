@@ -47,7 +47,6 @@
 #define DR_REG_TEE_BASE                           0x60098000
 #define DR_REG_HP_APM_BASE                        0x60099000
 #define DR_REG_LP_APM0_BASE                       0x60099800
-#define DR_REG_I2C_ANA_MST_BASE                   0x600AD800
 #define DR_REG_PMU_BASE                           0x600B0000
 #define DR_REG_LP_CLKRST_BASE                     0x600B0400
 #define DR_REG_LP_TIMER_BASE                      0x600B0C00

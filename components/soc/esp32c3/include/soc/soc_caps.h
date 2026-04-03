@@ -44,7 +44,7 @@
 #define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
-#define SOC_RTC_TIMER_V1_SUPPORTED      1
+#define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
@@ -66,8 +66,10 @@
 #define SOC_MEMPROT_SUPPORTED           1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_CLK_TREE_SUPPORTED          1
+#define SOC_REGI2C_SUPPORTED            1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
@@ -180,7 +182,6 @@
 #define SOC_GPIO_OUT_RANGE_MAX          21
 
 #define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK          (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
-#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT       (6)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_6~GPIO_NUM_21)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000003FFFC0ULL
@@ -245,6 +246,10 @@
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
+/* RTC_CNTL registers on this SoC are not atomic and require software protection
+ * (e.g., spinlocks) when accessed from multiple cores or threads. */
+#define SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS 1
+
 #define SOC_SLEEP_SYSTIMER_STALL_WORKAROUND     1
 #define SOC_SLEEP_TGWDT_STOP_WORKAROUND         1
 
@@ -302,10 +307,12 @@
 #define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V1_SUPPORTED
+#define SOC_RTC_TIMER_V1                    1
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
@@ -352,9 +359,6 @@
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
-
-/*--------------------------- UHCI CAPS -------------------------------------*/
-#define SOC_UHCI_NUM               (1UL)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

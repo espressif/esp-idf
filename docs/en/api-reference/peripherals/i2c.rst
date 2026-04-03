@@ -36,6 +36,12 @@ Typically, an I2C slave device has a 7-bit address or 10-bit address. {IDF_TARGE
 
     Keep in mind that the higher the frequency, the smaller the pull-up resistor should be (but not less than 1 kΩ). Indeed, large resistors will decline the current, which will increase the clock switching time and reduce the frequency. A range of 2 kΩ to 5 kΩ is recommended, but adjustments may also be necessary depending on their current draw requirements.
 
+.. only:: esp32
+
+    .. note::
+
+        The ESP32 I2C controller does not support clock stretching when operating as a slave. Therefore, in addition to driver configuration, the application layer should pay attention to speed matching and synchronization between master and slave devices: if the master processes too fast while the slave responds slowly, communication errors or data loss may occur. It is recommended to use application-layer data verification, GPIO signal synchronization, or other methods to achieve data synchronization between master and slave. Please confirm whether the ESP32 slave mode meets your project requirements according to your use case before use.
+
 I2C Clock Configuration
 -----------------------
 
@@ -47,42 +53,20 @@ I2C Clock Configuration
     :SOC_I2C_SUPPORT_APB: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_APB`: APB clock as I2C clock source.
     :SOC_I2C_SUPPORT_REF_TICK: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_REF_TICK`: 1 MHZ clock.
 
-I2C File Structure
-------------------
-
-.. figure:: ../../../_static/diagrams/i2c/i2c_code_structure.png
-    :align: center
-    :alt: I2C file structure
-
-    I2C file structure
-
-**Public headers that need to be included in the I2C application**
-
-- ``i2c.h``: The header file of legacy I2C APIs (for apps using legacy driver).
-- ``i2c_master.h``: The header file that provides standard communication mode specific APIs (for apps using new driver with master mode).
-- ``i2c_slave.h``: The header file that provides standard communication mode specific APIs (for apps using new driver with slave mode).
-
-.. note::
-
-    The legacy driver can't coexist with the new driver. Include ``i2c.h`` to use the legacy driver or the other two headers to use the new driver. Please keep in mind that the legacy driver is now deprecated and will be removed in future.
-
-**Public headers that have been included in the headers above**
-
-- ``i2c_types_legacy.h``: The legacy public types that are only used in the legacy driver.
-- ``i2c_types.h``: The header file that provides public types.
-
 Functional Overview
 -------------------
 
 The I2C driver offers following services:
 
-- `Resource Allocation <#resource-allocation>`__ - covers how to allocate I2C bus with properly set of configurations. It also covers how to recycle the resources when they finished working.
-- `I2C Master Controller <#i2c_master_controller>`__ - covers behavior of I2C master controller. Introduce data transmit, data receive, and data transmit and receive.
-- `I2C Slave Controller <#i2c_slave_controller>`__ - covers behavior of I2C slave controller. Involve data transmit and data receive.
-- `Power Management <#power-management>`__ - describes how different source clock will affect power consumption.
-- `IRAM Safe <#iram-safe>`__ - describes tips on how to make the I2C interrupt work better along with a disabled cache.
-- `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
-- `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
+- :ref:`i2c-resource-allocation` - covers how to allocate I2C bus with properly set of configurations. It also covers how to recycle the resources when they finished working.
+- :ref:`i2c-master-controller` - covers behavior of I2C master controller. Introduce data transmit, data receive, and data transmit and receive.
+- :ref:`i2c-slave-controller` - covers behavior of I2C slave controller. Involve data transmit and data receive.
+- :ref:`i2c-power-management` - describes how different source clock will affect power consumption.
+- :ref:`i2c-iram-safe` - describes tips on how to make the I2C interrupt work better along with a disabled cache.
+- :ref:`i2c-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
+- :ref:`i2c-kconfig-options` - lists the supported Kconfig options that can bring different effects to the driver.
+
+.. _i2c-resource-allocation:
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -105,7 +89,7 @@ I2C master bus requires the configuration that specified by :cpp:type:`i2c_maste
 - :cpp:member:`i2c_master_bus_config_t::i2c_port` sets the I2C port used by the controller.
 - :cpp:member:`i2c_master_bus_config_t::sda_io_num` sets the GPIO number for the serial data bus (SDA).
 - :cpp:member:`i2c_master_bus_config_t::scl_io_num` sets the GPIO number for the serial clock bus (SCL).
-- :cpp:member:`i2c_master_bus_config_t::clk_source` selects the source clock for I2C bus. The available clocks are listed in :cpp:type:`i2c_clock_source_t`. For the effect on power consumption of different clock source, please refer to `Power Management <#power-management>`__  section.
+- :cpp:member:`i2c_master_bus_config_t::clk_source` selects the source clock for I2C bus. The available clocks are listed in :cpp:type:`i2c_clock_source_t`. For the effect on power consumption of different clock source, please refer to :ref:`i2c-power-management`  section.
 - :cpp:member:`i2c_master_bus_config_t::glitch_ignore_cnt` sets the glitch period of master bus, if the glitch period on the line is less than this value, it can be filtered out, typically value is 7.
 - :cpp:member:`i2c_master_bus_config_t::intr_priority` sets the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1, 2 or 3), otherwise use the priority indicated by :cpp:member:`i2c_master_bus_config_t::intr_priority`. Please use the number form (1, 2, 3) , not the bitmask form ((1<<1), (1<<2), (1<<3)).
 - :cpp:member:`i2c_master_bus_config_t::trans_queue_depth` sets the depth of internal transfer queue. Only valid in asynchronous transaction.
@@ -218,7 +202,7 @@ I2C slave requires the configuration specified by :cpp:type:`i2c_slave_config_t`
     - :cpp:member:`i2c_slave_config_t::i2c_port` sets the I2C port used by the controller.
     - :cpp:member:`i2c_slave_config_t::sda_io_num` sets the GPIO number for serial data bus (SDA).
     - :cpp:member:`i2c_slave_config_t::scl_io_num` sets the GPIO number for serial clock bus (SCL).
-    - :cpp:member:`i2c_slave_config_t::clk_source` selects the source clock for I2C bus. The available clocks are listed in :cpp:type:`i2c_clock_source_t`. For the effect on power consumption of different clock source, please refer to `Power Management <#power-management>`__  section.
+    - :cpp:member:`i2c_slave_config_t::clk_source` selects the source clock for I2C bus. The available clocks are listed in :cpp:type:`i2c_clock_source_t`. For the effect on power consumption of different clock source, please refer to :ref:`i2c-power-management`  section.
     - :cpp:member:`i2c_slave_config_t::send_buf_depth` sets the sending software buffer length.
     - :cpp:member:`i2c_slave_config_t::receive_buf_depth` sets the receiving software buffer length.
     - :cpp:member:`i2c_slave_config_t::intr_priority` sets the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1, 2 or 3), otherwise use the priority indicated by :cpp:member:`i2c_slave_config_t::intr_priority`. Please use the number form (1, 2, 3), instead of the bitmask form ((1<<1), (1<<2), (1<<3)). Please pay attention that once the interrupt priority is set, it cannot be changed until :cpp:func:`i2c_del_slave_device` is called.
@@ -249,6 +233,7 @@ Uninstall I2C slave device
 
 If a previously installed I2C bus is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`i2c_del_slave_device`, so that to release the underlying hardware.
 
+.. _i2c-master-controller:
 
 I2C Master Controller
 ^^^^^^^^^^^^^^^^^^^^^
@@ -502,6 +487,8 @@ The principle of read operations is the same as that of write operations. Note t
 
     i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
 
+.. _i2c-slave-controller:
+
 I2C Slave Controller
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -631,6 +618,8 @@ I2C slave event callbacks are listed in the :cpp:type:`i2c_slave_event_callbacks
     - :cpp:member:`i2c_slave_event_callbacks_t::on_request` sets a callback function for request event.
     - :cpp:member:`i2c_slave_event_callbacks_t::on_receive` sets a callback function for receive event. The function prototype is declared in :cpp:type:`i2c_slave_received_callback_t`.
 
+.. _i2c-power-management:
+
 Power Management
 ^^^^^^^^^^^^^^^^
 
@@ -648,6 +637,8 @@ Power Management
 
     If the controller clock source is selected to :cpp:enumerator:`I2C_CLK_SRC_XTAL`, then the driver won't install power management lock for it, which is more suitable for a low power application as long as the source clock can still provide sufficient resolution.
 
+.. _i2c-iram-safe:
+
 IRAM Safe
 ^^^^^^^^^
 
@@ -660,6 +651,8 @@ There's a Kconfig option :ref:`CONFIG_I2C_ISR_IRAM_SAFE` that will:
 3. Place driver object into DRAM (in case it's mapped to PSRAM by accident).
 
 This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
+
+.. _i2c-thread-safety:
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -680,10 +673,12 @@ I2C slave operation functions are also guaranteed to be thread safe by bus opera
 
 Other functions are not guaranteed to be thread-safe. Thus, you should avoid calling them in different tasks without mutex protection.
 
+.. _i2c-kconfig-options:
+
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also `IRAM Safe <#iram-safe>`__ for more information.
+- :ref:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`i2c-iram-safe` for more information.
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
 
 Application Examples

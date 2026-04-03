@@ -47,13 +47,14 @@ ISP Pipeline
         isp_chs [label = "Contrast &\n Hue & Saturation", width = 150, height = 70];
         isp_yuv [label = "YUV Limit\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BLC -> BF -> LSC -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> CROP -> isp_tail;
+        isp_header -> BLC -> BF -> LSC -> Demosaic -> WBG -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> CROP -> isp_tail;
 
         LSC -> HIST
+        Demosaic -> WBG
         Demosaic -> AWB
         Demosaic -> AE
         Demosaic -> HIST
-        CCM -> AWB
+        WBG -> AWB
         Gamma -> AE
         RGB2YUV -> HIST
         RGB2YUV -> AF
@@ -144,7 +145,7 @@ If an :cpp:type:`esp_isp_awb_config_t` configuration is specified, you can call 
     uint32_t image_height = 600;
     /* The AWB configuration, please refer to the API comment for how to tune these parameters */
     esp_isp_awb_config_t awb_config = {
-        .sample_point = ISP_AWB_SAMPLE_POINT_AFTER_CCM,
+        .sample_point = ISP_AWB_SAMPLE_POINT_1,
         ...
     };
     ESP_ERROR_CHECK(esp_isp_new_awb_controller(isp_proc, &awb_config, &awb_ctlr));
@@ -161,7 +162,7 @@ If the configurations in :cpp:type:`esp_isp_ae_config_t` is specified, call :cpp
 .. code-block:: c
 
     esp_isp_ae_config_t ae_config = {
-        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        .sample_point = ISP_AE_SAMPLE_POINT_0,
         ...
     };
     isp_ae_ctlr_t ae_ctlr = NULL;
@@ -342,7 +343,7 @@ Note that if you want to use the continuous statistics, you need to register the
     uint32_t image_height = 600;
     /* The AWB configuration, please refer to the API comment for how to tune these parameters */
     esp_isp_awb_config_t awb_config = {
-        .sample_point = ISP_AWB_SAMPLE_POINT_AFTER_CCM,
+        .sample_point = ISP_AWB_SAMPLE_POINT_1,
         ...
     };
     isp_awb_stat_result_t stat_res = {};
@@ -401,7 +402,7 @@ Note that if you want to use the continuous statistics, you need to register the
 .. code-block:: c
 
     esp_isp_ae_config_t ae_config = {
-        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        .sample_point = ISP_AE_SAMPLE_POINT_0,
     };
     isp_ae_ctlr_t ae_ctlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_ae_controller(isp_proc, &ae_config, &ae_ctlr));

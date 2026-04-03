@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,20 +13,13 @@ extern "C" {
 
 typedef struct {
     i2c_device_config_t eeprom_device;  /*!< Configuration for eeprom device */
+    uint8_t page_size;                  /*!< eeprom page size */
     uint8_t addr_wordlen;               /*!< block address wordlen */
     uint8_t write_time_ms;              /*!< eeprom write time, typically 10ms*/
 } i2c_eeprom_config_t;
 
-struct i2c_eeprom_t {
-    i2c_master_dev_handle_t i2c_dev;      /*!< I2C device handle */
-    uint8_t addr_wordlen;                 /*!< block address wordlen */
-    uint8_t *buffer;                      /*!< I2C transaction buffer */
-    uint8_t write_time_ms;                /*!< I2C eeprom write time(ms)*/
-};
-
-typedef struct i2c_eeprom_t i2c_eeprom_t;
-
 /* handle of EEPROM device */
+typedef struct i2c_eeprom_t i2c_eeprom_t;
 typedef struct i2c_eeprom_t *i2c_eeprom_handle_t;
 
 /**

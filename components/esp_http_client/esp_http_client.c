@@ -1721,6 +1721,7 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
         const bool length_required = (client->connection_info.method != HTTP_METHOD_GET &&
                                       client->connection_info.method != HTTP_METHOD_HEAD &&
                                       client->connection_info.method != HTTP_METHOD_DELETE);
+        http_header_delete(client->request->headers, "Transfer-Encoding");
         if (write_len != 0 || length_required) {
             http_header_set_format(client->request->headers, "Content-Length", "%d", write_len);
         } else {
@@ -1728,6 +1729,12 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
         }
     } else {
         esp_http_client_set_header(client, "Transfer-Encoding", "chunked");
+        /*
+         * RFC 9112, §6.2 (https://datatracker.ietf.org/doc/html/rfc9112#section-6.2-2)
+         * RFC 7230, §3.3.2 (https://www.rfc-editor.org/rfc/rfc7230.html#section-3.3.2)
+         * A sender MUST NOT send a Content-Length header field in any message that contains a Transfer-Encoding header field.
+         */
+        http_header_delete(client->request->headers, "Content-Length");
     }
 
     const char *method = HTTP_METHOD_MAPPING[client->connection_info.method];

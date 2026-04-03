@@ -84,6 +84,7 @@ extern "C" {
 
 #define MSPI_LL_AXI_DISABLE_SUPPORTED                 1
 #define MSPI_LL_INTR_EVENT_SUPPORTED                  1
+#define MSPI_LL_PSRAM_DQS1_SUPPORTED                  1
 
 /**
  * MSPI DQS ID

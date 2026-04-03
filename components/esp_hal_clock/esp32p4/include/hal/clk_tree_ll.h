@@ -420,10 +420,36 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
     uint8_t i2c_cpll_dcur = (1 << I2C_CPLL_OC_DLREF_SEL_LSB) | (3 << I2C_CPLL_OC_DHREF_SEL_LSB) | dcur;
     // There are sequential regi2c operations in `clk_ll_cpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
     REGI2C_ENTER_CRITICAL();
-    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_REF_DIV, i2c_cpll_lref);
-    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DIV_7_0, i2c_cpll_div_7_0);
-    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DCUR, i2c_cpll_dcur);
+    regi2c_impl_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_REF_DIV, i2c_cpll_lref);
+    regi2c_impl_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DIV_7_0, i2c_cpll_div_7_0);
+    regi2c_impl_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DCUR, i2c_cpll_dcur);
     REGI2C_EXIT_CRITICAL();
+}
+
+/**
+ * @brief Start CPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_cpll_calibration_start(void)
+{
+    HP_SYS_CLKRST.ana_pll_ctrl0.reg_cpu_pll_cal_stop = 0;
+}
+
+/**
+ * @brief Stop CPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_cpll_calibration_stop(void)
+{
+    HP_SYS_CLKRST.ana_pll_ctrl0.reg_cpu_pll_cal_stop = 1;
+}
+
+/**
+ * @brief Check whether CPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_cpll_calibration_is_done(void)
+{
+    return HP_SYS_CLKRST.ana_pll_ctrl0.reg_cpu_pll_cal_end;
 }
 
 /**
@@ -452,18 +478,44 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
 
     // There are sequential regi2c operations in `clk_ll_mpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
     REGI2C_ENTER_CRITICAL();
-    uint8_t mpll_dhref_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF);
-    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
-    uint8_t mpll_rstb_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB);
-    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
-    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
+    uint8_t mpll_dhref_val = regi2c_impl_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF);
+    regi2c_impl_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
+    uint8_t mpll_rstb_val = regi2c_impl_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB);
+    regi2c_impl_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
+    regi2c_impl_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
 
     // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
     uint8_t ref_div = 1;
     uint8_t div = mpll_freq_mhz / 20 - 1;
     uint8_t val = ((div << 3) | ref_div);
-    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DIV_REG_ADDR, val);
+    regi2c_impl_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DIV_REG_ADDR, val);
     REGI2C_EXIT_CRITICAL();
+}
+
+/**
+ * @brief Start MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_calibration_start(void)
+{
+    HP_SYS_CLKRST.ana_pll_ctrl0.reg_mspi_cal_stop = 0;
+}
+
+/**
+ * @brief Stop MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_calibration_stop(void)
+{
+    HP_SYS_CLKRST.ana_pll_ctrl0.reg_mspi_cal_stop = 1;
+}
+
+/**
+ * @brief Check whether MPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_mpll_calibration_is_done(void)
+{
+    return HP_SYS_CLKRST.ana_pll_ctrl0.reg_mspi_cal_end;
 }
 
 /**

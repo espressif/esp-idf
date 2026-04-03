@@ -161,7 +161,7 @@ void ieee802154_pib_set_cca_threshold(int8_t cca_threshold);
  * @return
  *        - The CCA threshold has been set in the PIB.
  */
- int8_t ieee802154_pib_get_cca_threshold(void);
+int8_t ieee802154_pib_get_cca_threshold(void);
 
 /**
  * @brief  Set the CCA mode to the PIB.
@@ -262,16 +262,16 @@ ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(esp_ieee802154_mult
 /**
  * @brief  Configure the radio mode when the radio is going to enter idle to the PIB.
  *
- * @param[in]  enable  True for continuing to receive when the radio is going to enter ilde, otherwise false.
+ * @param[in]  enable  True for continuing to receive when the radio is going to enter idle, otherwise false.
  *
  */
 void ieee802154_pib_set_rx_when_idle(bool enable);
 
 /**
- * @brief  Get the radio mode when the radio is going to enter ilde to the PIB.
+ * @brief  Get the radio mode when the radio is going to enter idle to the PIB.
  *
  * @return
- *        - True for continuing to receive when the radio is going to enter ilde, otherwise false.
+ *        - True for continuing to receive when the radio is going to enter idle, otherwise false.
  *
  */
 bool ieee802154_pib_get_rx_when_idle(void);

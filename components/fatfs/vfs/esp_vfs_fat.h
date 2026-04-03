@@ -68,7 +68,7 @@ typedef struct {
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_register was already called
  *      - ESP_ERR_NO_MEM if not enough memory or too many VFSes already registered
  */
-esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
+esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
 
 /**
  * @brief Un-register FATFS from VFS
@@ -449,14 +449,13 @@ esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* 
  */
 esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous);
 
-#ifndef CONFIG_IDF_TARGET_LINUX
 /** @cond */
 /**
- * @deprecated Please use `esp_vfs_fat_register_cfg` instead
+ * @deprecated Please use `esp_vfs_fat_register` instead
  */
-esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
-        size_t max_files, FATFS** out_fs);
+esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /**
  * @deprecated Please use `esp_vfs_fat_spiflash_mount_rw_wl` instead
  */
@@ -485,9 +484,9 @@ esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
  */
 esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
     __attribute__((deprecated("esp_vfs_fat_rawflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_ro instead")));
+#endif
 /** @endcond */
 
-#endif
 #ifdef __cplusplus
 }
 #endif

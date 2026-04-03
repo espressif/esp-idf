@@ -40,8 +40,9 @@ if(CONFIG_ULP_COPROC_TYPE_FSM OR CONFIG_ULP_COPROC_TYPE_RISCV)
         list(APPEND srcs
             "ulp_fsm/ulp.c"
             "ulp_fsm/ulp_macro.c")
+    endif()
 
-    elseif(CONFIG_ULP_COPROC_TYPE_RISCV)
+    if(CONFIG_ULP_COPROC_TYPE_RISCV)
         list(APPEND srcs
             "ulp_riscv/ulp_riscv.c"
             "ulp_riscv/ulp_riscv_lock.c"
@@ -65,7 +66,7 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
         list(APPEND srcs "lp_core/lp_core_i2c.c")
     endif()
 
-    if(CONFIG_SOC_RTC_TIMER_V2_SUPPORTED)
+    if(CONFIG_SOC_RTC_TIMER_V2)
         list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
     endif()
 

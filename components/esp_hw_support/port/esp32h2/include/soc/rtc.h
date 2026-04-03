@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,9 +54,6 @@ extern "C" {
 #define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)
 #define RTC_FAST_CLK_8M_CAL_TIMEOUT_THRES(cycles)    (TIMG_RTC_CALI_TIMEOUT_THRES_V) // Just use the max timeout thres value
 
-#define OTHER_BLOCKS_POWERUP        1
-#define OTHER_BLOCKS_WAIT           1
-
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
  */
@@ -68,45 +65,9 @@ extern "C" {
 #define SOC_DELAY_LP_PLL_SWITCH             3
 #define SOC_DELAY_LP_PLL_ENABLE             50
 
-#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
-#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
-
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT  860
 #define RTC_CNTL_SCK_DCAP_DEFAULT    85
 #define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
-
-/* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
-#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (1)
-#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
-#define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
-#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
-#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
-#define RTC_CNTL_MIN_SLP_VAL_MIN                (2)
-
-/*
-set sleep_init default param
-*/
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
-#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
-#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
-#define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
-#define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
-#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
-
-/*
-The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-storing in efuse (based on ATE 5k ECO3 chips)
-*/
-#define K_RTC_MID_MUL10000 215
-#define K_DIG_MID_MUL10000 213
-#define V_RTC_MID_MUL10000  10800
-#define V_DIG_MID_MUL10000  10860
 
 /**
  * @brief CPU clock configuration structure
@@ -119,9 +80,6 @@ typedef struct rtc_cpu_freq_config_s {
 } rtc_cpu_freq_config_t;
 
 #define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
-
-#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
-#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
 #define RTC_CAL_RTC_MUX _Pragma ("GCC warning \"'RTC_CAL_RTC_MUX' macro is deprecated\"") CLK_CAL_RTC_SLOW
 #define RTC_CAL_RC_SLOW _Pragma ("GCC warning \"'RTC_CAL_RC_SLOW' macro is deprecated\"") CLK_CAL_RC_SLOW

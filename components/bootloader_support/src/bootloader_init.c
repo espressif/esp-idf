@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,11 @@
 #include "bootloader_common.h"
 #include "esp_cpu.h"
 #include "soc/soc_caps.h"
+
 #include "soc/rtc.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
 #include "hal/efuse_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/mmu_hal.h"
@@ -72,6 +75,7 @@ esp_err_t bootloader_check_bootloader_validity(void)
 
 void bootloader_config_wdt(void)
 {
+#if SOC_RTC_WDT_SUPPORTED
     /*
      * At this point, the flashboot protection of RWDT and MWDT0 will have been
      * automatically enabled. We can disable flashboot protection as it's not
@@ -95,11 +99,16 @@ void bootloader_config_wdt(void)
     wdt_hal_write_protect_enable(&rwdt_ctx);
 #endif
 
-    //Disable MWDT0 flashboot protection. But only after we've enabled the RWDT first so that there's not gap in WDT protection.
+#endif /* SOC_RTC_WDT_SUPPORTED */
+
+#if SOC_WDT_SUPPORTED
+    //Disable MWDT0 flashboot protection. When RTC WDT is present, run this after RWDT
+    //setup above so there is no gap in WDT protection during bootloader.
     wdt_hal_context_t mwdt_ctx = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
     wdt_hal_write_protect_disable(&mwdt_ctx);
     wdt_hal_set_flashboot_en(&mwdt_ctx, false);
     wdt_hal_write_protect_enable(&mwdt_ctx);
+#endif /* SOC_WDT_SUPPORTED */
 }
 
 void bootloader_enable_random(void)

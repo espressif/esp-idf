@@ -149,6 +149,20 @@ def test_target_guessing()
 def test_target_guessing()
 ```
 
+### `pytest.mark.revert_later` Marker
+
+This marker reverts all files to their original state after the test is finished. should pass a list of file paths (absolute or relative to `IDF_PATH`) to the marker. The files will be reverted even if the test fails.
+
+```python
+@pytest.mark.revert_later(['tools/idf_extra_components.yml'])
+def test_modify_file(idf_copy):
+    path = os.path.join(os.getenv('IDF_PATH'), 'tools', 'idf_extra_components.yml')
+    with open(path, 'a') as f:
+        f.write('# some changes\n')
+    # The changes to idf_extra_components.yml will be reverted after the test
+```
+
+
 ### Build snapshots
 
 `get_snapshot(list_of_globs)` function takes a list of glob expressions, finds the files matching these expressions, and returns a `Snapshot` instance. `Snapshot` instances record file names and their modification timestamps. Two `Snapshot` instances can be compared using `assert_same` and `assert_different` methods:

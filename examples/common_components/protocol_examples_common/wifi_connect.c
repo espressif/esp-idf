@@ -32,7 +32,7 @@ static void example_handler_on_wifi_disconnect(void *arg, esp_event_base_t event
                                int32_t event_id, void *event_data)
 {
     s_retry_num++;
-    if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
+    if (CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY >= 0 && s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
         ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", s_retry_num);
         /* let example_wifi_sta_do_connect() return */
         if (s_semph_get_ip_addrs) {
@@ -180,7 +180,7 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
         vSemaphoreDelete(s_semph_get_ip6_addrs);
         s_semph_get_ip6_addrs = NULL;
 #endif
-        if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
+        if (CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY >= 0 && s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
             return ESP_FAIL;
         }
     }

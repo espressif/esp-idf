@@ -11,6 +11,10 @@
 #include "psa/crypto_driver_common.h"
 #include "sdkconfig.h"
 
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "esp_key_mgr.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,8 +50,10 @@ typedef struct {
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
     const char *tee_key_id;                 /**< TEE secure storage key id */
 #endif
-    bool use_km_key;                        /**< Use key deployed in the key manager */
-    uint8_t efuse_block;                    /**< eFuse block id for ECDSA private key */
+#if SOC_KEY_MANAGER_SUPPORTED
+    esp_key_mgr_key_recovery_info_t *key_recovery_info;                /**< Pointer to the key recovery info for ECDSA key */
+#endif
+    uint8_t efuse_block;                    /**< eFuse block id for ECDSA private key e.g. EFUSE_BLK_KEY0, EFUSE_BLK_KEY1 */
 } esp_ecdsa_opaque_key_t;
 
 #if !(__DOXYGEN__) // No need to document these structures, these are internal to the driver
@@ -66,7 +72,7 @@ typedef struct {
 /* The buffers are stored in the little-endian format */
 typedef struct {
     psa_algorithm_t alg;
-    esp_ecdsa_opaque_key_t *opaque_key;
+    const esp_ecdsa_opaque_key_t *opaque_key;
     uint8_t r[MAX_ECDSA_COMPONENT_LEN];
     uint8_t s[MAX_ECDSA_COMPONENT_LEN];
     uint8_t sha[MAX_ECDSA_SHA_LEN];

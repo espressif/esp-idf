@@ -104,13 +104,15 @@ esp_err_t spicommon_bus_free(spi_host_device_t host_id);
  *
  * @param host_id                  SPI host ID
  * @param dma_chan                 DMA channel to be used
+ * @param dma_burst_size           DMA data burst size in bytes. Set to 0 to use driver default (32). Only applied when chip supports configurable burst size.
  *
  * @return
  *        - ESP_OK:                On success
+ *        - ESP_ERR_INVALID_ARG:   Invalid dma_burst_size (not in chip-supported list)
  *        - ESP_ERR_NO_MEM:        No enough memory
  *        - ESP_ERR_NOT_FOUND:     There is no available DMA channel
  */
-esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan);
+esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size);
 
 /**
  * @brief Alloc DMA descriptors for SPI

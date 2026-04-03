@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -18,6 +18,22 @@
 #define I2C_ULP 0x61
 #define I2C_ULP_HOSTID 0
 
-#define I2C_ULP_IR_RESETB 0
-#define I2C_ULP_IR_RESETB_MSB 0
-#define I2C_ULP_IR_RESETB_LSB 0
+#define I2C_ULP_OCODE 4
+#define I2C_ULP_OCODE_MSB 7
+#define I2C_ULP_OCODE_LSB 0
+
+#define I2C_ULP_IR_FORCE_CODE 5
+#define I2C_ULP_IR_FORCE_CODE_MSB 3
+#define I2C_ULP_IR_FORCE_CODE_LSB 3
+
+#define I2C_ULP_EXT_CODE 6
+#define I2C_ULP_EXT_CODE_MSB 7
+#define I2C_ULP_EXT_CODE_LSB 0
+
+#define I2C_ULP_CPREG_DREG      8
+#define I2C_ULP_CPREG_DREG_MSB  2
+#define I2C_ULP_CPREG_DREG_LSB  0
+
+#define I2C_ULP_CPREG_DREG1P1      8
+#define I2C_ULP_CPREG_DREG1P1_MSB  4
+#define I2C_ULP_CPREG_DREG1P1_LSB  3

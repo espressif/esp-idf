@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -108,7 +108,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             // choose subevents in range 0 to (num_subevents - 1)
             uint8_t subevents[] = {0, 1, 2, 3, 4};
             int result = ble_gap_periodic_adv_sync_subev(event->periodic_sync.sync_handle, 0, sizeof(subevents), subevents);
-            if (result == ESP_OK) {
+            if (result == 0) {
                 ESP_LOGI(TAG, "[Subevent Sync OK] sync handle:%d, sync_subevents:%d", event->periodic_sync.sync_handle, sizeof(subevents));
             } else {
                 ESP_LOGE(TAG, "Failed to sync subevents, rc = 0x%x", result);
@@ -172,7 +172,14 @@ start_scan(void)
     /* Tell the controller to filter duplicates; we don't want to process
      * repeated advertisements from the same device.
      */
-    rc = ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 1, 0, 0,  NULL, &disc_params,
+    uint8_t own_addr_type;
+    int rc_addr = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc_addr != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc_addr);
+        return;
+    }
+
+    rc = ble_gap_ext_disc(own_addr_type, 0, 0, 1, 0, 0,  NULL, &disc_params,
                           gap_event_cb, NULL);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error initiating GAP discovery procedure; rc=%d\n", rc);

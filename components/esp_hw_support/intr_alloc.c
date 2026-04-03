@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,9 +77,36 @@ struct shared_vector_desc_t {
 
 #define VECDESC_FL_RESERVED     (1<<0)
 #define VECDESC_FL_INIRAM       (1<<1)
+/**
+ * The following two bits are used to mark whether the interrupt is shared or not (public or private).
+ * Here is a table to explain the behavior:
+ * | FL_SHARED | FL_NONSHARED | Description              |
+ * |-----------|------------- |------------------------- |
+ * | 0         | 0            | Initialization phase     |
+ * | 0         | 1            | Non-shared interrupt     |
+ * | 1         | 0            | Public shared interrupt  |
+ * | 1         | 1            | Private shared interrupt |
+ * |-----------|------------- |------------------------- |
+ *
+ * Private shared interrupt is used for interrupts that are shared with `*_bind` functions only, they cannot
+ * be allocated using `esp_intr_alloc` functions.
+ *
+ * During initialization, both flags are low, it will result in the usage of `esp_cpu_intr_has_handler`
+ * to determine if the interrupt is in use outside of the interrupt allocator.
+ */
 #define VECDESC_FL_SHARED       (1<<2)
 #define VECDESC_FL_NONSHARED    (1<<3)
 #define VECDESC_FL_TYPE_MASK    (0xf)
+
+/* Define an alias for visibility flags */
+#define VECDESC_FL_PRIVATE      (VECDESC_FL_NONSHARED)
+
+#define VECDESC_IS_PUBLIC_SHARED(vd)    ((((vd)->flags & (VECDESC_FL_SHARED | VECDESC_FL_PRIVATE)) == VECDESC_FL_SHARED))
+#define VECDESC_IS_NONSHARED(vd)        ((((vd)->flags & VECDESC_FL_NONSHARED) != 0) && (((vd)->flags & VECDESC_FL_SHARED) == 0))
+#define VECDESC_IS_PRIVATE_SHARED(vd)   ((((vd)->flags & (VECDESC_FL_SHARED | VECDESC_FL_PRIVATE)) == (VECDESC_FL_SHARED | VECDESC_FL_PRIVATE)))
+#define VECDESC_IS_SHARED_FAMILY(vd)    (VECDESC_IS_PUBLIC_SHARED(vd) || VECDESC_IS_PRIVATE_SHARED(vd))
+#define VECDESC_IS_UNINITIALIZED(vd)    (((vd)->flags & (VECDESC_FL_SHARED | VECDESC_FL_NONSHARED)) == 0)
+
 
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 /* On targets that have configurable interrupts levels, store the assigned level in the flags */
@@ -96,7 +123,8 @@ struct vector_desc_t {
     unsigned int cpu: 1;
     unsigned int intno: 5;
     int source: 16;                 //Interrupt mux flags, used when not shared
-    shared_vector_desc_t *shared_vec_info;  //used when VECDESC_FL_SHARED
+    shared_vector_desc_t *shared_vec_info;  //used when VECDESC_FL_SHARED is set
+    char* group_name; // used when VECDESC_FL_SHARED is set
     vector_desc_t *next;
 };
 
@@ -189,7 +217,7 @@ static vector_desc_t * find_desc_for_source(int source, int cpu)
 {
     vector_desc_t *vd = vector_desc_head;
     while(vd != NULL) {
-        if (!(vd->flags & VECDESC_FL_SHARED)) {
+        if (!VECDESC_IS_SHARED_FAMILY(vd)) {
             if (vd->source == source && cpu == vd->cpu) {
                 break;
             }
@@ -208,6 +236,24 @@ static vector_desc_t * find_desc_for_source(int source, int cpu)
             if (found) {
                 break;
             }
+        }
+        vd = vd->next;
+    }
+    return vd;
+}
+
+/**
+ * @brief Find a vector descriptor for a given name
+ *
+ * @param name The name of the vector descriptor to find
+ * @return The vector descriptor if found, NULL otherwise
+ */
+static vector_desc_t *find_desc_for_name(const char *name)
+{
+    vector_desc_t *vd = vector_desc_head;
+    while (vd != NULL) {
+        if (vd->group_name != NULL && strcmp(vd->group_name, name) == 0) {
+            break;
         }
         vd = vd->next;
     }
@@ -259,12 +305,18 @@ esp_err_t esp_intr_reserve(int intno, int cpu)
     return ESP_OK;
 }
 
-static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force)
+static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force, bool new_group)
 {
     //Check if interrupt is not reserved by design
     int x = vd->intno;
     esp_cpu_intr_desc_t intr_desc;
     esp_cpu_intr_get_desc(cpu, x, &intr_desc);
+
+    /* If the vector descriptor already contains a name but we need to create a new group, it's unusable */
+    if (vd->group_name != NULL && new_group) {
+        ALCHLOG("....Unusable: already defines a group (%s)", vd->group_name);
+        return false;
+    }
 
     if (intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD) {
         ALCHLOG("....Unusable: reserved");
@@ -305,29 +357,48 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         return false;
     }
 
-    //Ints can't be both shared and non-shared.
-    assert(!((vd->flags & VECDESC_FL_SHARED) && (vd->flags & VECDESC_FL_NONSHARED)));
-    //check if interrupt already is in use by a non-shared interrupt
-    if (vd->flags & VECDESC_FL_NONSHARED) {
+    //check if interrupt is already in use by a non-shared interrupt
+    if (VECDESC_IS_NONSHARED(vd)) {
         ALCHLOG("....Unusable: already in (non-shared) use.");
         return false;
     }
-    // check shared interrupt flags
-    if (vd->flags & VECDESC_FL_SHARED) {
-        if (flags & ESP_INTR_FLAG_SHARED) {
-            bool in_iram_flag = ((flags & ESP_INTR_FLAG_IRAM) != 0);
-            bool desc_in_iram_flag = ((vd->flags & VECDESC_FL_INIRAM) != 0);
-            //Bail out if int is shared, but iram property doesn't match what we want.
-            if ((vd->flags & VECDESC_FL_SHARED) && (desc_in_iram_flag != in_iram_flag))  {
-                ALCHLOG("....Unusable: shared but iram prop doesn't match");
-                return false;
-            }
-        } else {
-            //We need an unshared IRQ; can't use shared ones; bail out if this is shared.
-            ALCHLOG("...Unusable: int is shared, we need non-shared.");
+    //Check shared interrupt flags
+    if (VECDESC_IS_SHARED_FAMILY(vd)) {
+        const bool vect_private = VECDESC_IS_PRIVATE_SHARED(vd);
+        const bool flag_shared = (flags & ESP_INTR_FLAG_SHARED) != 0;
+        const bool flag_shared_private = (flags & ESP_INTR_FLAG_SHARED_PRIVATE) != 0;
+
+        /* Check if requested flag is shared, if not bail out */
+        if (!flag_shared && !flag_shared_private) {
+            ALCHLOG("...Unusable: int is shared, we need non-shared");
             return false;
         }
-    } else if (esp_cpu_intr_has_handler(x)) {
+
+        /* Make sure the IRAM attribute matches */
+        bool flag_iram = ((flags & ESP_INTR_FLAG_IRAM) != 0);
+        bool desc_iram = ((vd->flags & VECDESC_FL_INIRAM) != 0);
+        if (desc_iram != flag_iram)  {
+            ALCHLOG("....Unusable: shared but iram prop doesn't match");
+            return false;
+        }
+
+        /* Make sure the visibilities match (both private or both public) */
+        if (vect_private != flag_shared_private) {
+            ALCHLOG("....Unusable: shared but visibility doesn't match");
+            return false;
+        }
+
+        /* Make sure the interrupt number matches! */
+        if (vect_private && force != vd->intno) {
+            ALCHLOG("....Unusable: privately shared but interrupt number doesn't match");
+            return false;
+        }
+
+        /* Success! */
+    }
+    //Both shared and non-shared flags are low, this happens when the descriptor has just been allocated.
+    //Check if the interrupt is used outside of the interrupt allocator.
+    else if (esp_cpu_intr_has_handler(x)) {
         //Check if interrupt already is allocated by esp_cpu_intr_set_handler
         ALCHLOG("....Unusable: already allocated");
         return false;
@@ -339,7 +410,8 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
 //Locate a free interrupt compatible with the flags given.
 //The 'force' argument can be -1, or 0-31 to force checking a certain interrupt.
 //When a CPU is forced, the ESP_CPU_INTR_DESC_FLAG_SPECIAL marked interrupts are also accepted.
-static int get_available_int(int flags, int cpu, int force, int source)
+//If new_group is true, we will try to find a free interrupt line vector to attach the new interrupt to.
+static int get_available_int(int flags, int cpu, int force, int source, bool new_group)
 {
     int x;
     int best=-1;
@@ -362,7 +434,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
         ALCHLOG("get_available_int: existing vd found. intno: %d", vd->intno);
         if ( force != -1 && force != vd->intno ) {
             ALCHLOG("get_available_int: intr forced but does not match existing. existing intno: %d, force: %d", vd->intno, force);
-        } else if (!is_vect_desc_usable(vd, flags, cpu, force)) {
+        } else if (!is_vect_desc_usable(vd, flags, cpu, force, new_group)) {
             ALCHLOG("get_available_int: existing vd invalid.");
         } else {
             best = vd->intno;
@@ -378,7 +450,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
             empty_vect_desc.intno = force;
             vd = &empty_vect_desc;
         }
-        if (is_vect_desc_usable(vd, flags, cpu, force)) {
+        if (is_vect_desc_usable(vd, flags, cpu, force, new_group)) {
             best = vd->intno;
         } else {
             ALCHLOG("get_avalaible_int: forced vd invalid.");
@@ -403,15 +475,15 @@ static int get_available_int(int flags, int cpu, int force, int source)
                 x, intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD, intr_desc.priority,
                 intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL? "LEVEL" : "EDGE", esp_cpu_intr_has_handler(x));
 
-        if (!is_vect_desc_usable(vd, flags, cpu, force)) {
+        if (!is_vect_desc_usable(vd, flags, cpu, force, new_group)) {
             continue;
         }
 
-        if (flags & ESP_INTR_FLAG_SHARED) {
+        if (flags & (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_SHARED_PRIVATE)) {
             //We're allocating a shared int.
 
-            //See if int already is used as a shared interrupt.
-            if (vd->flags & VECDESC_FL_SHARED) {
+            //See if int is already used as a shared interrupt.
+            if (VECDESC_IS_SHARED_FAMILY(vd)) {
                 //We can use this already-marked-as-shared interrupt. Count the already attached isrs in order to see
                 //how useful it is.
                 int no = 0;
@@ -506,10 +578,26 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
 }
 
 
-//We use ESP_EARLY_LOG* here because this can be called before the scheduler is running.
-esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
-                                    void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle)
-{
+/**
+ * Allocate an interrupt with all the parameters in a single structure
+ */
+ esp_err_t esp_intr_alloc_info(const esp_intr_alloc_info_t *info, intr_handle_t *ret_handle)
+ {
+    /* Info parameter is strictly required, the return handle is optional */
+    if (info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* Retrieve back the variables  */
+    int source = info->source;
+    int flags = info->flags;
+    uint32_t intrstatusreg = info->intrstatusreg;
+    uint32_t intrstatusmask = info->intrstatusmask;
+    intr_handler_t handler = info->handler;
+    void *arg = info->arg;
+    intr_handle_t shared_handle = info->bind_by.handle;
+    const char* name = info->bind_by.name;
+    bool create_new_group = false;
+
     intr_handle_data_t *ret=NULL;
     int force = -1;
     ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %u): checking args", esp_cpu_get_core_id());
@@ -537,12 +625,19 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
         return ESP_ERR_INVALID_ARG;
     }
     //Shared handler must be passed with share interrupt flag
-    if (shared_handle != NULL && (flags & ESP_INTR_FLAG_SHARED) == 0) {
+    const int shared_flags = (flags & ESP_INTR_FLAG_SHARED) != 0 || (flags & ESP_INTR_FLAG_SHARED_PRIVATE) != 0;
+    // We must only have a handle or a name if shared_flags is set
+    if ((shared_handle != NULL || name != NULL) && !shared_flags) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // We must not have both a handle and a name
+    if (shared_handle != NULL && name != NULL) {
+        ESP_LOGE(TAG, "Invalid arguments: both shared_handle and name are set");
         return ESP_ERR_INVALID_ARG;
     }
     //Default to prio 1 for shared interrupts. Default to prio 1, 2 or 3 for non-shared interrupts.
     if ((flags & ESP_INTR_FLAG_LEVELMASK) == 0) {
-        if (flags & ESP_INTR_FLAG_SHARED) {
+        if (shared_flags) {
             flags |= ESP_INTR_FLAG_LEVEL1;
         } else {
             flags |= ESP_INTR_FLAG_LOWMED;
@@ -583,19 +678,41 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
         /* Sanity check, should not occur */
         if (shared_handle->vector_desc == NULL) {
             esp_os_exit_critical(&spinlock);
-            return ESP_ERR_INVALID_ARG;
+            free(ret);
+            return ESP_ERR_INVALID_STATE;
         }
         /* If a shared vector was given, force the current interrupt source to same CPU interrupt line */
         force = shared_handle->vector_desc->intno;
         /* Allocate the interrupt on the same core as the given handle */
         cpu = shared_handle->vector_desc->cpu;
+    } else if (name != NULL) {
+        /* Find the interrupt with the given name, we still want to call `get_available_int` since it does
+         * further checks so let's keep it like this for now. */
+        vector_desc_t *vd = find_desc_for_name(name);
+        if (vd == NULL) {
+            /* Allow the descriptor to be NULL, we will need to create it */
+            create_new_group = true;
+        } else {
+            force = vd->intno;
+            /* Allocate the interrupt on the same core as the group's descriptor */
+            cpu = vd->cpu;
+        }
     }
-    int intr = get_available_int(flags, cpu, force, source);
+    if (cpu != esp_cpu_get_core_id()) {
+        esp_os_exit_critical(&spinlock);
+        free(ret);
+        return ESP_ERR_INVALID_STATE;
+    }
+    int intr = get_available_int(flags, cpu, force, source, create_new_group);
     if (intr == -1) {
         //None found. Bail out.
         esp_os_exit_critical(&spinlock);
         free(ret);
         ESP_LOGE(TAG, "No free interrupt inputs for %s interrupt (flags 0x%X)", esp_isr_names[source], flags);
+        /* If a handler (or a name) is provided, we should return ESP_ERR_INVALID_ARG instead */
+        if (shared_handle != NULL || name != NULL) {
+            return ESP_ERR_INVALID_ARG;
+        }
         return ESP_ERR_NOT_FOUND;
     }
     //Get an int vector desc for int.
@@ -607,10 +724,25 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
     }
 
     //Allocate that int!
-    if (flags & ESP_INTR_FLAG_SHARED) {
+    if (shared_flags) {
+        if (create_new_group) {
+            /* If we reach here, the vector's name should be empty (else, get_desc_for_int assigned an incorrect vector) */
+            assert(vd->group_name == NULL);
+            vd->group_name = strdup(name);
+            if (vd->group_name == NULL) {
+                esp_os_exit_critical(&spinlock);
+                free(ret);
+                return ESP_ERR_NO_MEM;
+            }
+        }
         //Populate vector entry and add to linked list.
         shared_vector_desc_t *sh_vec = heap_caps_malloc(sizeof(shared_vector_desc_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (sh_vec == NULL) {
+            if (create_new_group) {
+                assert(vd->group_name != NULL);
+                free(vd->group_name);
+                vd->group_name = NULL;
+            }
             esp_os_exit_critical(&spinlock);
             free(ret);
             return ESP_ERR_NO_MEM;
@@ -625,6 +757,9 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
         sh_vec->disabled = 0;
         vd->shared_vec_info = sh_vec;
         vd->flags |= VECDESC_FL_SHARED;
+        if (flags & ESP_INTR_FLAG_SHARED_PRIVATE) {
+            vd->flags |= VECDESC_FL_PRIVATE;
+        }
         //(Re-)set shared isr handler to new value.
         esp_cpu_intr_set_handler(intr, (esp_cpu_intr_handler_t)shared_intr_isr, vd);
     } else {
@@ -712,6 +847,22 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
     return ESP_OK;
 }
 
+//We use ESP_EARLY_LOG* here because this can be called before the scheduler is running.
+esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
+                                         void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle)
+{
+    esp_intr_alloc_info_t info = {
+        .source = source,
+        .flags = flags,
+        .intrstatusreg = intrstatusreg,
+        .intrstatusmask = intrstatusmask,
+        .handler = handler,
+        .arg = arg,
+        .bind_by.handle = shared_handle,
+    };
+    return esp_intr_alloc_info(&info, ret_handle);
+}
+
 esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
                                     void *arg, intr_handle_t *ret_handle)
 {
@@ -742,7 +893,7 @@ esp_err_t ESP_INTR_IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_
         return ESP_ERR_INVALID_ARG;
     }
     vector_desc_t *vd = handle->vector_desc;
-    if (vd->flags & VECDESC_FL_SHARED) {
+    if (VECDESC_IS_SHARED_FAMILY(vd)) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_os_enter_critical(&spinlock);
@@ -800,7 +951,7 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
 
     esp_os_enter_critical(&spinlock);
     esp_intr_disable(handle);
-    if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
+    if (VECDESC_IS_SHARED_FAMILY(handle->vector_desc)) {
         //Find and kill the shared int
         shared_vector_desc_t *svd = handle->vector_desc->shared_vec_info;
         shared_vector_desc_t *prevsvd = NULL;
@@ -822,6 +973,11 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
         //If nothing left, disable interrupt.
         if (handle->vector_desc->shared_vec_info == NULL) {
             free_shared_vector = true;
+            /* If the interrupt was a named group, free the name (free the group) */
+            if (handle->vector_desc->group_name != NULL) {
+                free(handle->vector_desc->group_name);
+                handle->vector_desc->group_name = NULL;
+            }
         }
         ESP_EARLY_LOGV(TAG,
                        "esp_intr_free: Deleting shared int: %s. Shared int is %s",
@@ -829,7 +985,7 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
                        free_shared_vector ? "empty now." : "still in use");
     }
 
-    if ((handle->vector_desc->flags & VECDESC_FL_NONSHARED) || free_shared_vector) {
+    if (VECDESC_IS_NONSHARED(handle->vector_desc) || free_shared_vector) {
         ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
 #if CONFIG_ESP_TRACE_ENABLE
         if (!free_shared_vector) {
@@ -1065,7 +1221,7 @@ esp_err_t esp_intr_dump(FILE *stream)
             } else if (intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_SPECIAL) {
                 fprintf(stream, "CPU-internal");
             } else {
-                if (vd == NULL || (vd->flags & (VECDESC_FL_RESERVED | VECDESC_FL_NONSHARED | VECDESC_FL_SHARED)) == 0) {
+                if (vd == NULL || VECDESC_IS_UNINITIALIZED(vd)) {
                     fprintf(stream, "Free");
                     if (is_general_use) {
                         ++general_use_ints_free;
@@ -1074,9 +1230,9 @@ esp_err_t esp_intr_dump(FILE *stream)
                     }
                 } else if (vd->flags & VECDESC_FL_RESERVED)  {
                     fprintf(stream, "Reserved (run-time)");
-                } else if (vd->flags & VECDESC_FL_NONSHARED) {
+                } else if (VECDESC_IS_NONSHARED(vd)) {
                     fprintf(stream, "Used: %s", esp_isr_names[vd->source]);
-                } else if (vd->flags & VECDESC_FL_SHARED) {
+                } else if (VECDESC_IS_SHARED_FAMILY(vd)) {
                     fprintf(stream, "Shared: ");
                     for (shared_vector_desc_t *svd = vd->shared_vec_info; svd != NULL; svd = svd->next) {
                         fprintf(stream, "%s ", esp_isr_names[svd->source]);

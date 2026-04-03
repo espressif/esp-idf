@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,9 +50,6 @@ extern "C" {
 
 #define MHZ (1000000)
 
-#define OTHER_BLOCKS_POWERUP        1
-#define OTHER_BLOCKS_WAIT           1
-
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
  */
@@ -68,16 +65,6 @@ extern "C" {
 
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT  100
 #define RTC_CNTL_SCK_DCAP_DEFAULT    28
-
-/* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
-#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (1)
-#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
-#define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
-#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
-#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
-#define RTC_CNTL_MIN_SLP_VAL_MIN                (2)
-
 // /*
 // set sleep_init default param
 // */

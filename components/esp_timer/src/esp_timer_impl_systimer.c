@@ -153,6 +153,7 @@ esp_err_t esp_timer_impl_early_init(void)
         if (ref_count == 0) {
             systimer_ll_enable_bus_clock(true);
             systimer_ll_reset_register();
+            systimer_ll_enable_sys_clock(true);
         }
     }
     systimer_hal_tick_rate_ops_t ops = {

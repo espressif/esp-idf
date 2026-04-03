@@ -176,6 +176,8 @@ entries:
                 port:xPortInIsrContext (noflash_text)
                 port:vPortAssertIfInISR (noflash_text)
                 port:xPortInterruptedFromISRContext (noflash_text)
+            if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW:
+                port:xPortFPUContextIsDirty (noflash_text)
 
         # --------------------------------------------------------------------------------------------------------------
         # portasm.S

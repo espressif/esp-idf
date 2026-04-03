@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,7 +91,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     }
 
     /* Validate client verifier data before processing */
-    if (!in || !in->sc1 ||
+    if (!in || in->payload_case != SEC1_PAYLOAD__PAYLOAD_SC1 || !in->sc1 ||
         in->sc1->client_verify_data.data == NULL ||
         in->sc1->client_verify_data.len != PUBLIC_KEY_LEN) {
         ESP_LOGE(TAG, "Invalid client verifier (ptr=%p len=%d)",
@@ -235,6 +235,14 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         ESP_LOGW(TAG, "Invalid state of session %d (expected %d). Restarting session.",
                 SESSION_STATE_CMD0, cur_session->state);
         sec1_new_session(cur_session, session_id);
+    }
+
+    if (in->payload_case != SEC1_PAYLOAD__PAYLOAD_SC0 || !in->sc0) {
+        ESP_LOGE(TAG, "Missing or mismatched sc0 payload in session command0");
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
+        }
+        return ESP_ERR_INVALID_ARG;
     }
 
     if (in->sc0->client_pubkey.len != PUBLIC_KEY_LEN) {
@@ -581,6 +589,11 @@ static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
     }
     if (req->sec_ver != protocomm_security1.ver) {
         ESP_LOGE(TAG, "Security version mismatch. Closing connection");
+        session_data__free_unpacked(req, NULL);
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (req->proto_case != SESSION_DATA__PROTO_SEC1) {
+        ESP_LOGE(TAG, "Security scheme mismatch. Closing connection");
         session_data__free_unpacked(req, NULL);
         return ESP_ERR_INVALID_ARG;
     }

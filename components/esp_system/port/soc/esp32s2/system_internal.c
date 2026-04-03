@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "esp_macros.h"
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
@@ -20,7 +21,9 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/syscon_reg.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
 #include "hal/uart_ll.h"
 #include "soc/soc_memory_layout.h"
 
@@ -69,6 +72,7 @@ void esp_restart_noos(void)
     // Disable interrupts
     esp_cpu_intr_disable(0xFFFFFFFF);
 
+#if SOC_RTC_WDT_SUPPORTED
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -79,7 +83,9 @@ void esp_restart_noos(void)
     //Enable flash boot mode so that flash booting after restart is protected by the RTC WDT.
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+#endif /* SOC_RTC_WDT_SUPPORTED */
 
+#if SOC_WDT_SUPPORTED
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
@@ -91,6 +97,7 @@ void esp_restart_noos(void)
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
+#endif /* SOC_WDT_SUPPORTED */
 
 #ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
     if (esp_ptr_external_ram(esp_cpu_get_sp())) {

@@ -21,6 +21,33 @@ Application Examples
 
 - :example:`protocols/http_server/advanced_tests` demonstrates how to use the HTTP server for advanced testing.
 
+Interface Binding
+-----------------
+
+By default, the server listens on all available interfaces (``INADDR_ANY``). This is the behavior when ``httpd_config_t.if_name`` is ``NULL``.
+
+To bind the HTTP server to a specific network interface, set ``httpd_config_t.if_name`` to point to a ``struct ifreq`` with ``ifr_name`` populated (for example ``"eth0"``, ``"en0"``, or ``"lo"`` depending on platform).
+
+.. code-block:: c
+
+    #include <net/if.h>
+
+    httpd_handle_t server = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    struct ifreq ifr = {0};
+    strncpy(ifr.ifr_name, "eth0", sizeof(ifr.ifr_name) - 1);
+    ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
+
+    config.if_name = &ifr;
+    config.server_port = 80;
+
+    ESP_ERROR_CHECK(httpd_start(&server, &config));
+
+Notes:
+
+- ``if_name`` is only used during ``httpd_start()``. The ``ifreq`` object only needs to stay valid for the duration of that call.
+
 Persistent Connections
 ----------------------
 
@@ -77,6 +104,15 @@ The HTTP server component provides a pre-handshake callback for WebSocket endpoi
 The pre-handshake callback can be used for authentication, authorization, or other checks. If the callback returns :c:macro:`ESP_OK`, the WebSocket handshake will proceed. If the callback returns any other value, the handshake will be aborted and the connection will be closed.
 
 To use the WebSocket pre-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` in your project configuration.
+
+WebSocket Post-Handshake Callback
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Similar to the pre-handshake callback, the HTTP server component also provides a post-handshake callback for WebSocket endpoints. This callback is invoked after the WebSocket handshake is processed.
+
+At this point the connection has been upgraded to WebSocket, and the server has responded with the WebSocket handshake response. This post handshake callback can be used for logging, sending initial messages, or other setup tasks.
+
+To use the WebSocket post-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in your project configuration.
 
 .. code-block:: c
 

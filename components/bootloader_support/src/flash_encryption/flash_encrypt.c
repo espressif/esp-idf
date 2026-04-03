@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,9 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
+#if SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 
@@ -675,12 +677,16 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
         return ESP_FAIL;
     }
 
+#if SOC_RTC_WDT_SUPPORTED
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+#endif
 
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
+#if SOC_RTC_WDT_SUPPORTED
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_feed(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+#endif
         uint32_t sec_start = i + src_addr;
         err = bootloader_flash_read(sec_start, buf, FLASH_SECTOR_SIZE, false);
         if (err != ESP_OK) {

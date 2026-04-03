@@ -14,6 +14,7 @@
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "modem/i2c_ana_mst_reg.h"
 #include "soc/regi2c_pmu.h"
 #include "soc/timer_group_struct.h"
 #include "soc/io_mux_reg.h"
@@ -324,6 +325,34 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DIV, oc_div);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DHREF_SEL, oc_dhref_sel);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, oc_dlref_sel);
+}
+
+/**
+ * @brief Start BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_start(void)
+{
+    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+}
+
+/**
+ * @brief Stop BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_stop(void)
+{
+    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+}
+
+/**
+ * @brief Check whether BBPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_bbpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
 }
 
 /**

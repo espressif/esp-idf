@@ -2,7 +2,7 @@
 在 Linux 上安装 ESP-IDF 及工具链
 ************************************************
 
-:link_to_translation:`zh_CN:[中文]`
+:link_to_translation:`en:[English]`
 
 本章节将介绍如何使用 ESP-IDF 安装管理器 (EIM) 在 Linux 发行版（例如 Ubuntu）上安装 ESP-IDF 及其所需工具。
 
@@ -22,7 +22,7 @@
 
     ESP-IDF  要求 Python 版本至少为 3.10。
 
-    但如需使用 EIM 进行 `离线安装 <https://docs.espressif.com/projects/idf-im-ui/en/latest/offline_installation.html>`_，则必须使用 **Python 3.11 或更高版本**。
+    EIM 所需的 Python 版本，请参考 `EIM 文档 <https://docs.espressif.com/projects/idf-im-ui/en/latest/prerequisites.html#python-version>`_。
 
 
 第二步：安装 EIM
@@ -30,11 +30,23 @@
 
 您可以使用以下任一方法安装 EIM：
 
+- `下载 EIM`_
 - `通过 APT 安装（Debian 发行版）`_
 - `通过 DNF 安装（RPM 发行版）`_
-- `下载 EIM 安装包`_
 
 通过 APT 或 DNF 安装 EIM 便于后续升级更新。
+
+
+下载 EIM
+~~~~~~~~~
+
+.. figure:: ../../_static/get-started-eim-download.drawio.png
+   :alt: EIM 下载页面
+   :align: left
+   :width: 35%
+   :target: https://dl.espressif.com/dl/eim/
+
+可选择下载在线或离线安装程序的图形用户界面 (GUI) 或命令行界面 (CLI) 版本。
 
 
 .. _install-eim-linux-apt:
@@ -89,12 +101,6 @@
     .. code-block:: bash
 
         sudo dnf install eim-cli
-
-
-下载 EIM 安装包
-~~~~~~~~~~~~~~~~
-
-您也可以从 `Espressif 下载页面 <https://dl.espressif.com/dl/eim/>`__ 下载适用于 Linux 的 EIM 安装包，该页面提供了 CLI 和 GUI 版本的在线和离线安装程序。
 
 
 第三步：使用 EIM 安装 ESP-IDF

@@ -163,7 +163,7 @@ static void try_start_pending_transaction(async_memcpy_cpdma_context_t *mcp_dma)
 {
     async_memcpy_fsm_t expected_fsm = MCP_FSM_IDLE;
     async_memcpy_transaction_t *trans = NULL;
-    if (atomic_compare_exchange_strong(&mcp_dma->fsm, &expected_fsm, MCP_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&mcp_dma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
         trans = try_pop_trans_from_ready_queue(mcp_dma);
         if (trans) {
             atomic_store(&mcp_dma->fsm, MCP_FSM_RUN);
@@ -301,7 +301,7 @@ static void mcp_default_isr_handler(void *args)
 
         // switch driver state from RUN to IDLE
         async_memcpy_fsm_t expected_fsm = MCP_FSM_RUN;
-        if (atomic_compare_exchange_strong(&mcp_dma->fsm, &expected_fsm, MCP_FSM_IDLE_WAIT)) {
+        if (atomic_compare_exchange_strong(&mcp_dma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
             // invoked callback registered by user
             async_memcpy_isr_cb_t cb = trans->cb;
             if (cb) {

@@ -276,13 +276,10 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         twai_ll_err_dir_t dir;
         twai_ll_err_seg_t seg;
         twai_ll_parse_err_code_cap(hal_ctx->dev, &type, &dir, &seg);    //Decode error interrupt
-        twai_error_flags_t errors = {
-            .bit_err = (type == TWAI_LL_ERR_BIT),
-            .form_err = (type == TWAI_LL_ERR_FORM),
-            .stuff_err = (type == TWAI_LL_ERR_STUFF),
-            .ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT),
-        };
-        hal_ctx->errors = errors;
+        hal_ctx->errors.bit_err = (type == TWAI_LL_ERR_BIT);
+        hal_ctx->errors.form_err = (type == TWAI_LL_ERR_FORM);
+        hal_ctx->errors.stuff_err = (type == TWAI_LL_ERR_STUFF);
+        hal_ctx->errors.ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT);
 #if TWAI_LL_HAS_RX_FRAME_ISSUE
         //Check for errata condition (RX message has bus error at particular segments)
         if (dir == TWAI_LL_ERR_DIR_RX &&
@@ -293,6 +290,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         }
 #endif
     }
+    hal_ctx->errors.arb_lost = !!(events & TWAI_HAL_EVENT_ARB_LOST);
     if (events & TWAI_HAL_EVENT_ARB_LOST) {
         twai_ll_clear_arb_lost_cap(hal_ctx->dev);
     }

@@ -14,10 +14,10 @@ Functional Overview
 
 .. list::
 
-    -  `BitScrambler Assembly <#bitscrambler-assembly>`__ covers how a BitScrambler assembly program is structured.
-    -  `Build System Integration <#bitscrambler-build>`__ covers how BitScrambler programs are integrated in the ESP-IDF build system.
-    -  `Resource Allocation and Program Loading <#bitscrambler-load>`__ covers how to allocate BitScrambler instances and how to load a program into them.
-    -  `Loopback Mode <#bitscrambler-loopback>`__ covers how to use the BitScrambler in loopback mode.
+    -  :ref:`bitscrambler-assembly` covers how a BitScrambler assembly program is structured.
+    -  :ref:`bitscrambler-build` covers how BitScrambler programs are integrated in the ESP-IDF build system.
+    -  :ref:`bitscrambler-load` covers how to allocate BitScrambler instances and how to load a program into them.
+    -  :ref:`bitscrambler-loopback` covers how to use the BitScrambler in loopback mode.
 
 .. _bitscrambler-assembly:
 
@@ -214,6 +214,8 @@ Loopback Mode
 ^^^^^^^^^^^^^
 
 The BitScrambler supports a loopback mode which is useful for data transformations that do not involve a peripheral. The loopback mode occupies both the TX and RX channels of the BitScrambler, although only the TX BitScrambler actually executes code. Note that even if loopback mode does not involve a peripheral, one still needs to be selected; the peripheral does not need to be initialized or used, but if it is, its DMA features will be unavailable.
+
+.. _bitscrambler-load:
 
 Resource Allocation and Program Loading
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

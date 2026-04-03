@@ -1041,7 +1041,7 @@ void btc_spp_call_handler(btc_msg_t *msg)
 
 void btc_spp_cb_handler(btc_msg_t *msg)
 {
-    esp_spp_cb_param_t param;
+    esp_spp_cb_param_t param = {0};
     tBTA_JV *p_data = (tBTA_JV *)msg->arg;
     spp_slot_t *slot = NULL;
     uint8_t serial = 0;
@@ -1054,10 +1054,12 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         break;
     case BTA_JV_DISCOVERY_COMP_EVT:
         param.disc_comp.status = p_data->disc_comp.status;
-        param.disc_comp.scn_num = p_data->disc_comp.scn_num;
-        memcpy(param.disc_comp.scn, p_data->disc_comp.scn, p_data->disc_comp.scn_num);
-        memcpy(param.disc_comp.service_name, p_data->disc_comp.service_name,
-               p_data->disc_comp.scn_num * sizeof(const char *));
+        if (param.disc_comp.status == BTA_JV_SUCCESS) {
+            param.disc_comp.scn_num = p_data->disc_comp.scn_num;
+            memcpy(param.disc_comp.scn, p_data->disc_comp.scn, p_data->disc_comp.scn_num);
+            memcpy(param.disc_comp.service_name, p_data->disc_comp.service_name,
+                p_data->disc_comp.scn_num * sizeof(const char *));
+        }
         btc_spp_cb_to_app(ESP_SPP_DISCOVERY_COMP_EVT, &param);
         break;
     case BTA_JV_RFCOMM_CL_INIT_EVT:

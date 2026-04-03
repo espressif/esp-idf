@@ -39,13 +39,13 @@ typedef struct {
     const pmu_lp_system_analog_param_t *analog;
 } pmu_lp_system_param_t;
 
-pmu_context_t * __attribute__((weak)) TCM_IRAM_ATTR PMU_instance(void)
+pmu_context_t * __attribute__((weak)) SPM_IRAM_ATTR PMU_instance(void)
 {
     /* It should be explicitly defined in the internal RAM, because this
      * instance will be used in pmu_sleep.c */
-    static TCM_DRAM_ATTR pmu_hal_context_t pmu_hal = { .dev = &PMU };
-    static TCM_DRAM_ATTR pmu_sleep_machine_constant_t pmu_mc = PMU_SLEEP_MC_DEFAULT();
-    static TCM_DRAM_ATTR pmu_context_t pmu_context = { .hal = &pmu_hal, .mc = (void *)&pmu_mc };
+    static SPM_DRAM_ATTR pmu_hal_context_t pmu_hal = { .dev = &PMU };
+    static SPM_DRAM_ATTR pmu_sleep_machine_constant_t pmu_mc = PMU_SLEEP_MC_DEFAULT();
+    static SPM_DRAM_ATTR pmu_context_t pmu_context = { .hal = &pmu_hal, .mc = (void *)&pmu_mc };
     return &pmu_context;
 }
 

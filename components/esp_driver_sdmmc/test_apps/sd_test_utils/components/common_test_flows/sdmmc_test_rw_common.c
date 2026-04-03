@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -220,4 +220,78 @@ void sdmmc_test_rw_highprio_task(sdmmc_card_t* card)
     vTaskDelay(1);
     vSemaphoreDelete(args.stop);
     vSemaphoreDelete(args.done);
+}
+
+void sdmmc_test_rw_unaligned_buffer_multiblock(sdmmc_card_t* card, size_t chunk_size)
+{
+    const size_t block_size = card->csd.sector_size;
+    /* Use 10 blocks so that with chunk_size=4,
+     * the transfer is split into chunks: 4 + 4 + 2 blocks */
+    const size_t block_count = 10;
+    const size_t buffer_size = block_size * block_count;
+    const size_t extra = 4;
+    const size_t total_alloc = buffer_size + extra;
+
+    /* Apply the chunk_size to the card's host config */
+    card->host.unaligned_multi_block_rw_max_chunk_size = chunk_size;
+
+    uint8_t *buffer = heap_caps_malloc(total_alloc, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(buffer);
+
+    printf("Testing multi-block unaligned R/W: %d blocks, chunk_size=%d\n",
+           (int)block_count, (int)chunk_size);
+
+    /* Test A: Multi-block unaligned write, then unaligned read.
+     * The +1 offset makes the buffer unaligned, forcing the bounce-buffer
+     * chunking path in sdmmc_write_sectors / sdmmc_read_sectors. */
+    const uint32_t seed_a = 0x12345678;
+    fill_buffer(seed_a, buffer + 1, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, buffer + 1, 0, block_count));
+    memset(buffer, 0xcc, total_alloc);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer + 1, 0, block_count));
+    check_buffer(seed_a, buffer + 1, buffer_size / sizeof(uint32_t));
+
+    /* Test B: Aligned write, then unaligned read — verifies read chunking path. */
+    const uint32_t seed_b = 0xdeadbeef;
+    fill_buffer(seed_b, buffer, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, buffer, 0, block_count));
+    memset(buffer, 0xcc, total_alloc);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer + 1, 0, block_count));
+    check_buffer(seed_b, buffer + 1, buffer_size / sizeof(uint32_t));
+
+    /* Test C: Unaligned write, then aligned read — verifies write chunking path. */
+    const uint32_t seed_c = 0xcafebabe;
+    fill_buffer(seed_c, buffer + 1, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, buffer + 1, 8, block_count));
+    memset(buffer, 0xcc, total_alloc);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer, 8, block_count));
+    check_buffer(seed_c, buffer, buffer_size / sizeof(uint32_t));
+
+    /* Test D: dma_aligned_buffer reuse path.
+     * Pre-set card->host.dma_aligned_buffer so sdmmc_write/read_sectors
+     * uses it instead of allocating a temporary buffer. */
+    void *orig_dma_buf = card->host.dma_aligned_buffer;
+    size_t chunk_blocks = chunk_size;
+    if (chunk_blocks < block_count) {
+        /* Allocate a DMA-capable buffer large enough for chunk_blocks */
+        void *dma_buf = heap_caps_malloc(block_size * chunk_blocks, MALLOC_CAP_DMA);
+        TEST_ASSERT_NOT_NULL(dma_buf);
+        card->host.dma_aligned_buffer = dma_buf;
+
+        printf("Testing dma_aligned_buffer reuse path (%d block buffer)\n", (int)chunk_blocks);
+
+        const uint32_t seed_d = 0xfeedface;
+        fill_buffer(seed_d, buffer + 1, buffer_size / sizeof(uint32_t));
+        TEST_ESP_OK(sdmmc_write_sectors(card, buffer + 1, 0, block_count));
+        memset(buffer, 0xcc, total_alloc);
+        TEST_ESP_OK(sdmmc_read_sectors(card, buffer + 1, 0, block_count));
+        check_buffer(seed_d, buffer + 1, buffer_size / sizeof(uint32_t));
+
+        card->host.dma_aligned_buffer = orig_dma_buf;
+        free(dma_buf);
+    } else {
+        printf("Skipping dma_aligned_buffer reuse test (chunk_size >= block_count)\n");
+    }
+
+    free(buffer);
 }

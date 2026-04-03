@@ -5,3 +5,5 @@ CONFIG_OPENTHREAD_BORDER_ROUTER_AUTO_START=y
 # Enable PPP support as a workaround to ensure LWIP thread-lib compatibility for Ethernet builds
 CONFIG_LWIP_PPP_SUPPORT=y
 CONFIG_LWIP_PPP_SERVER_SUPPORT=y
+# Increase size of bootloader due to frame pointer. Only overflowed on P4.
+CONFIG_PARTITION_TABLE_OFFSET=0x9000

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_htp_cent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_HTP_CENT";
 static int ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg);
@@ -354,8 +357,8 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
 
         /* Search if HTP UUID is advertised */
-        if (disc->data[offset + 1] == 0x03) {
-            if (disc->data[offset + 2] == 0x09 && disc->data[offset + 3] == 0x18) {
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
+            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x09 ) {
                 return 1;
             }
         }
@@ -628,8 +631,8 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
                       event->cache_assoc.status,
                       (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
           /* Perform service discovery */
-          rc = peer_disc_all(event->cache_assoc.conn_handle,
-                             blecent_on_disc_complete, NULL);
+          rc = peer_disc_all(event->connect.conn_handle,
+                             ble_htp_cent_on_disc_complete, NULL);
           if(rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;

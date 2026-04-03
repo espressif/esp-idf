@@ -75,8 +75,8 @@ typedef enum {
 #define RTC_GPIO_TRIG_EN            (PMU_GPIO_WAKEUP_EN)
 #endif
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
-#define RTC_TIMER_TRIG_EN           PMU_LP_TIMER_WAKEUP_EN  //!< Timer wakeup
+#if !SOC_RTC_TIMER_V1
+#define RTC_TIMER_TRIG_EN           PMU_RTC_TIMER_WAKEUP_EN  //!< Timer wakeup
 #else
 #define RTC_TIMER_TRIG_EN           0
 #endif
@@ -87,18 +87,25 @@ typedef enum {
 #define RTC_WIFI_TRIG_EN            0
 #endif
 
-#if SOC_UART_SUPPORT_WAKEUP_INT
 #define RTC_UART0_TRIG_EN           PMU_UART0_WAKEUP_EN     //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
+#define RTC_UART2_TRIG_EN           0
+#define RTC_UART3_TRIG_EN           0
+#define RTC_UART4_TRIG_EN           0
+
 #if SOC_UART_HP_NUM > 2
+#undef RTC_UART2_TRIG_EN
 #define RTC_UART2_TRIG_EN           PMU_UART2_WAKEUP_EN     //!< UART2 wakeup (light sleep only)
-#else
-#define RTC_UART2_TRIG_EN           0
 #endif
-#else
-#define RTC_UART0_TRIG_EN           0
-#define RTC_UART1_TRIG_EN           0
-#define RTC_UART2_TRIG_EN           0
+
+#if SOC_UART_HP_NUM > 3
+#undef RTC_UART3_TRIG_EN
+#define RTC_UART3_TRIG_EN           PMU_UART3_WAKEUP_EN     //!< UART3 wakeup (light sleep only)
+#endif
+
+#if SOC_UART_HP_NUM > 4
+#undef RTC_UART4_TRIG_EN
+#define RTC_UART4_TRIG_EN           PMU_UART4_WAKEUP_EN     //!< UART4 wakeup (light sleep only)
 #endif
 
 #if SOC_BT_SUPPORTED
@@ -149,6 +156,8 @@ typedef enum {
                                RTC_UART0_TRIG_EN        | \
                                RTC_UART1_TRIG_EN        | \
                                RTC_UART2_TRIG_EN        | \
+                               RTC_UART3_TRIG_EN        | \
+                               RTC_UART4_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
                                RTC_LP_CORE_TRIG_EN      | \
                                RTC_TOUCH_TRIG_EN        | \
@@ -187,6 +196,9 @@ typedef enum {
 typedef struct {
     pmu_hal_context_t *hal;
     void *mc;
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+    void *priv;
+#endif
 } pmu_context_t;
 
 pmu_context_t * PMU_instance(void);

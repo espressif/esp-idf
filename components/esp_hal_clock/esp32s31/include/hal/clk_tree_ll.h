@@ -139,7 +139,8 @@ static inline __attribute__((always_inline)) void clk_ll_lp_pll_disable(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_mpll_enable(void)
 {
-    // TODO: [ESP32S31] IDF-14733
+    REG_SET_BIT(PMU_PSRAM_CFG_REG, PMU_PSRAM_XPD);
+    REG_SET_BIT(HP_ALIVE_SYS_HP_CLK_CTRL_REG, HP_ALIVE_SYS_HP_MPLL_500M_CLK_EN);
 }
 
 /**
@@ -147,7 +148,7 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_enable(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_mpll_disable(void)
 {
-    // TODO: [ESP32S31] IDF-14733
+    REG_CLR_BIT(PMU_PSRAM_CFG_REG, PMU_PSRAM_XPD);
 }
 
 /**
@@ -290,6 +291,18 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_digi_is_enabled
 }
 
 /**
+ * @brief Get XTAL_CLK frequency
+ *
+ * @return Main XTAL clock frequency, in MHz.
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(void)
+{
+    return 40;
+}
+
+#define clk_ll_xtal_load_freq_mhz() clk_ll_xtal_get_freq_mhz()
+
+/**
  * @brief Enable the digital RC32K_CLK, which is used to support peripherals.
  */
 static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_enable(void)
@@ -352,6 +365,32 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
 }
 
 /**
+ * @brief Start CPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_cpll_calibration_start(void)
+{
+    CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP);
+}
+
+/**
+ * @brief Stop CPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_cpll_calibration_stop(void)
+{
+    SET_PERI_REG_MASK(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP);
+}
+
+/**
+ * @brief Check whether CPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_cpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_CPU_PLL_CAL_END);
+}
+
+/**
  * @brief Get MPLL_CLK frequency (only reliable when MPLL power is on)
  *
  * @param xtal_freq_mhz XTAL frequency, in MHz
@@ -360,9 +399,8 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_mpll_get_freq_mhz(uint32_t xtal_freq_mhz)
 {
-    // uint8_t div = REGI2C_READ_MASK(I2C_MPLL, I2C_MPLL_DIV_ADDR);
-    // uint8_t ref_div = REGI2C_READ_MASK(I2C_MPLL, I2C_MPLL_REF_DIV_ADDR);
-    return 0;//xtal_freq_mhz * (div + 1) / (ref_div + 1);
+    uint8_t fb_div = REG_GET_FIELD(LP_AONCLKRST_MSPI_DIV_REG, LP_AONCLKRST_MSPI_FB_DIV);
+    return xtal_freq_mhz * (fb_div + 1) / 2;
 }
 
 /**
@@ -373,7 +411,37 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_mpll_get_freq_mhz(u
  */
 static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    // TODO: [ESP32S31] IDF-14733
+    HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
+
+    uint8_t ref_div = 1;
+    uint8_t fb_div = mpll_freq_mhz * (ref_div + 1) / xtal_freq_mhz - 1;
+    REG_SET_FIELD(LP_AONCLKRST_MSPI_DIV_REG, LP_AONCLKRST_MSPI_FB_DIV, fb_div);
+}
+
+/**
+ * @brief Start MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_calibration_start(void)
+{
+    CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_MSPI_CAL_STOP);
+}
+
+/**
+ * @brief Stop MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_calibration_stop(void)
+{
+    SET_PERI_REG_MASK(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_MSPI_CAL_STOP);
+}
+
+/**
+ * @brief Check whether MPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_mpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_MSPI_CAL_END);
 }
 
 /**
@@ -807,35 +875,6 @@ static inline __attribute__((always_inline)) void clk_ll_rc_slow_set_divider(uin
 // }
 
 /************************** LP STORAGE REGISTER STORE/LOAD **************************/
-/**
- * @brief Store XTAL_CLK frequency in RTC storage register
- *
- * Value of RTC_XTAL_FREQ_REG is stored as two copies in lower and upper 16-bit
- * halves. These are the routines to work with that representation.
- *
- * @param xtal_freq_mhz XTAL frequency, in MHz. The frequency must necessarily be even,
- * otherwise there will be a conflict with the low bit, which is used to disable logs
- * in the ROM code.
- */
-static inline __attribute__((always_inline)) void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
-{
-    // TODO: [ESP32S31] IDF-14733
-}
-
-/**
- * @brief Load XTAL_CLK frequency from RTC storage register
- *
- * Value of RTC_XTAL_FREQ_REG is stored as two copies in lower and upper 16-bit
- * halves. These are the routines to work with that representation.
- *
- * @return XTAL frequency, in MHz. Returns 0 if value in reg is invalid.
- */
-static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_load_freq_mhz(void)
-{
-    // TODO: [ESP32S31] IDF-14733
-    return 0;
-}
-
 /**
  * @brief Store RTC_SLOW_CLK calibration value in RTC storage register
  *

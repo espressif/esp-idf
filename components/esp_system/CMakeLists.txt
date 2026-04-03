@@ -8,8 +8,18 @@ if(${target} STREQUAL "linux")
                         "port/soc/linux/reset_reason.c"
                         "port/soc/linux/system_internal.c"
                         "port/esp_system_linux.c"
+                        "freertos_hooks.c"
+                        "startup.c"
                         INCLUDE_DIRS "include"
                         PRIV_REQUIRES spi_flash)
+
+    # Add custom ld file (used to place system init functions).
+    # Mach-O (Apple) does not support linker scripts; section bounds are resolved
+    # at runtime via getsectiondata() so no -T flag is needed there.
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        target_link_options(${COMPONENT_TARGET} INTERFACE "-Wl,-T,${CMAKE_CURRENT_SOURCE_DIR}/ld/linux/sections.ld")
+    endif()
+
     return()
 endif()
 
@@ -37,15 +47,19 @@ else()
             "esp_ipc.c"
             "esp_err.c"
             "freertos_hooks.c"
-            "int_wdt.c"
             "panic.c"
             "esp_system.c"
             "startup.c"
             "startup_funcs.c"
             "system_time.c"
             "stack_check.c"
-            "ubsan.c"
-            "xt_wdt.c")
+            "ubsan.c")
+    if(CONFIG_SOC_WDT_SUPPORTED)
+        list(APPEND srcs "int_wdt.c")
+    endif()
+    if(CONFIG_SOC_XT_WDT_SUPPORTED)
+        list(APPEND srcs "xt_wdt.c")
+    endif()
 
     if(CONFIG_ESP_TASK_WDT_EN)
         list(APPEND srcs "task_wdt/task_wdt.c")
@@ -147,10 +161,6 @@ endif()
 
 if(CONFIG_VFS_SUPPORT_IO)
     idf_component_optional_requires(PRIVATE vfs)
-endif()
-
-if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
-    idf_component_optional_requires(PRIVATE esp_coex)
 endif()
 
 if(NOT BOOTLOADER_BUILD)

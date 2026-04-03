@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,10 @@
 */
 const ledc_signal_conn_t ledc_periph_signal[1] = {
     {
-        .sig_out0_idx = LEDC_LS_SIG_OUT_PAD_OUT0_IDX,
+        .irq_id = ETS_LEDC_INTR_SOURCE,
+        .speed_mode = {
+            [0] = { .sig_out0_idx = LEDC_LS_SIG_OUT_PAD_OUT0_IDX },
+        },
     }
 };
 
@@ -124,58 +127,59 @@ static const regdma_entries_config_t ledc_channel5_regdma_entries[] = LEDC_CHANN
 static const regdma_entries_config_t ledc_channel6_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(6);
 static const regdma_entries_config_t ledc_channel7_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(7);
 
-const ledc_reg_retention_info_t ledc_reg_retention_info = {
-    .common = {
-        .regdma_entry_array = ledc_common_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_common_regdma_entries),
-    },
-    .timer[0] = {
-        .regdma_entry_array = ledc_timer0_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_timer0_regdma_entries),
-    },
-    .timer[1] = {
-        .regdma_entry_array = ledc_timer1_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_timer1_regdma_entries),
-    },
-    .timer[2] = {
-        .regdma_entry_array = ledc_timer2_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_timer2_regdma_entries),
-    },
-    .timer[3] = {
-        .regdma_entry_array = ledc_timer3_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_timer3_regdma_entries),
-    },
-    .channel[0] = {
-        .regdma_entry_array = ledc_channel0_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel0_regdma_entries),
-    },
-    .channel[1] = {
-        .regdma_entry_array = ledc_channel1_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel1_regdma_entries),
-    },
-    .channel[2] = {
-        .regdma_entry_array = ledc_channel2_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel2_regdma_entries),
-    },
-    .channel[3] = {
-        .regdma_entry_array = ledc_channel3_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel3_regdma_entries),
-    },
-    .channel[4] = {
-        .regdma_entry_array = ledc_channel4_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel4_regdma_entries),
-    },
-    .channel[5] = {
-        .regdma_entry_array = ledc_channel5_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel5_regdma_entries),
-    },
-    .channel[6] = {
-        .regdma_entry_array = ledc_channel6_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel6_regdma_entries),
-    },
-    .channel[7] = {
-        .regdma_entry_array = ledc_channel7_regdma_entries,
-        .array_size = ARRAY_SIZE(ledc_channel7_regdma_entries),
-    },
-    .module_id = SLEEP_RETENTION_MODULE_LEDC,
+const ledc_reg_retention_info_t ledc_reg_retention_info[1] = {{
+        .common = {
+            .regdma_entry_array = ledc_common_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_common_regdma_entries),
+        },
+        .timer[0] = {
+            .regdma_entry_array = ledc_timer0_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_timer0_regdma_entries),
+        },
+        .timer[1] = {
+            .regdma_entry_array = ledc_timer1_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_timer1_regdma_entries),
+        },
+        .timer[2] = {
+            .regdma_entry_array = ledc_timer2_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_timer2_regdma_entries),
+        },
+        .timer[3] = {
+            .regdma_entry_array = ledc_timer3_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_timer3_regdma_entries),
+        },
+        .channel[0] = {
+            .regdma_entry_array = ledc_channel0_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel0_regdma_entries),
+        },
+        .channel[1] = {
+            .regdma_entry_array = ledc_channel1_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel1_regdma_entries),
+        },
+        .channel[2] = {
+            .regdma_entry_array = ledc_channel2_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel2_regdma_entries),
+        },
+        .channel[3] = {
+            .regdma_entry_array = ledc_channel3_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel3_regdma_entries),
+        },
+        .channel[4] = {
+            .regdma_entry_array = ledc_channel4_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel4_regdma_entries),
+        },
+        .channel[5] = {
+            .regdma_entry_array = ledc_channel5_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel5_regdma_entries),
+        },
+        .channel[6] = {
+            .regdma_entry_array = ledc_channel6_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel6_regdma_entries),
+        },
+        .channel[7] = {
+            .regdma_entry_array = ledc_channel7_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc_channel7_regdma_entries),
+        },
+        .module_id = SLEEP_RETENTION_MODULE_LEDC,
+    }
 };

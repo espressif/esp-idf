@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@ static const char* TAG = "esp_local_ctrl_handler";
 
 typedef struct esp_local_ctrl_cmd {
     int cmd_num;
+    int expected_payload_case;
     esp_err_t (*command_handler)(LocalCtrlMessage *req,
                                  LocalCtrlMessage *resp, void **ctx);
 } esp_local_ctrl_cmd_t;
@@ -41,14 +42,17 @@ static esp_err_t cmd_set_prop_vals_handler(LocalCtrlMessage *req,
 static esp_local_ctrl_cmd_t cmd_table[] = {
     {
         .cmd_num = LOCAL_CTRL_MSG_TYPE__TypeCmdGetPropertyCount,
+        .expected_payload_case = LOCAL_CTRL_MESSAGE__PAYLOAD_CMD_GET_PROP_COUNT,
         .command_handler = cmd_get_prop_count_handler
     },
     {
         .cmd_num = LOCAL_CTRL_MSG_TYPE__TypeCmdGetPropertyValues,
+        .expected_payload_case = LOCAL_CTRL_MESSAGE__PAYLOAD_CMD_GET_PROP_VALS,
         .command_handler = cmd_get_prop_vals_handler
     },
     {
         .cmd_num = LOCAL_CTRL_MSG_TYPE__TypeCmdSetPropertyValues,
+        .expected_payload_case = LOCAL_CTRL_MESSAGE__PAYLOAD_CMD_SET_PROP_VALS,
         .command_handler = cmd_set_prop_vals_handler
     }
 };
@@ -235,6 +239,12 @@ static esp_err_t esp_local_ctrl_command_dispatcher(LocalCtrlMessage *req,
     int cmd_index = lookup_cmd_handler(req->msg);
     if (cmd_index < 0) {
         ESP_LOGE(TAG, "Invalid command handler lookup");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (req->payload_case != cmd_table[cmd_index].expected_payload_case) {
+        ESP_LOGE(TAG, "Payload type mismatch: msg_type %d expects payload %d, got %d",
+                 req->msg, cmd_table[cmd_index].expected_payload_case, req->payload_case);
         return ESP_ERR_INVALID_ARG;
     }
 

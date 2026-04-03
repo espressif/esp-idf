@@ -370,6 +370,8 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456; // This is the passkey to be entered on peer
             ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
@@ -600,6 +602,8 @@ app_main(void)
 #endif
 
 #if MYNEWT_VAL(STATIC_PASSKEY) && NIMBLE_BLE_CONNECT
+    /* WARNING: Hardcoded passkey for demonstration only.
+     * In production, generate a random passkey per pairing. */
     ble_sm_configure_static_passkey(456789, true);
 #endif
 

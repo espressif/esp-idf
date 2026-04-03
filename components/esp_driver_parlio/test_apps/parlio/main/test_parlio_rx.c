@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -213,14 +213,12 @@ static void level_delimiter_sender_task_spi(void *args)
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &dev_handle));
 
     // Initialize CS gpio
-    gpio_set_level(TEST_VALID_GPIO, 0);
-    gpio_config_t cs_cfg = {
-        .pin_bit_mask = BIT64(TEST_VALID_GPIO),
-        .mode = GPIO_MODE_OUTPUT,
-    };
-    gpio_config(&cs_cfg);
+    gpio_set_level(TEST_VALID_GPIO, 0); // output enable set in following code
 
     // Connect SPI signals to parlio rx signals
+    gpio_reset_pin(TEST_CLK_GPIO);
+    gpio_reset_pin(TEST_VALID_GPIO);
+    gpio_reset_pin(TEST_DATA0_GPIO);
     connect_signal_internally(TEST_CLK_GPIO,
                               spi_periph_signal[TEST_SPI_HOST].spiclk_out,
                               soc_parlio_signals[0].rx_units[0].clk_in_sig);
@@ -582,6 +580,7 @@ TEST_CASE("parallel_rx_unit_receive_external_memory_test", "[parlio_rx]")
 TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
 {
     printf("init a gpio to simulate valid signal\r\n");
+    TEST_ESP_OK(gpio_reset_pin(TEST_VALID_GPIO));
     gpio_config_t test_gpio_conf = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = BIT64(TEST_VALID_GPIO),

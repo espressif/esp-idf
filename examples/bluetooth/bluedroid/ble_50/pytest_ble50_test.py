@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from pathlib import Path
 
@@ -9,19 +9,16 @@ from pytest_embedded_idf.utils import idf_parametrize
 CUR_DIR = Path(__file__).parent.resolve()
 
 
-# Case 1: ble50 security client and ble50 security server test
+# Case 1: ble50 security client and ble50 security server test (config: name, min_bin, log_off)
 # EXAMPLE_CI_ID=6
+BLE50_SECURITY_APP_PATH = f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DIR / "ble50_security_client")}'
+BLE50_SECURITY_CI_CONFIGS = ['name']
+
+
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
-    [
-        (
-            2,
-            f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DIR / "ble50_security_client")}',
-            'name',
-            'y',
-        ),
-    ],
+    [(2, BLE50_SECURITY_APP_PATH, c, 'y') for c in BLE50_SECURITY_CI_CONFIGS],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])

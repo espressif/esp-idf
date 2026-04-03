@@ -283,6 +283,7 @@ static void hci_sco_data_to_lower(BT_HDR *p_buf)
     if (p_buf->offset == 0) {
         BTM_TRACE_ERROR("offset cannot be 0");
         osi_free(p_buf);
+        return;
     }
 
     bte_main_hci_send(p_buf, (UINT16)(BT_EVT_TO_LM_HCI_SCO | LOCAL_BLE_CONTROLLER_ID));
@@ -322,7 +323,7 @@ void btm_sco_check_send_pkts (UINT16 sco_inx)
     }
 }
 
-void btm_sco_process_num_completed_pkts (UINT8 *p)
+void btm_sco_process_num_completed_pkts (UINT8 *p, UINT8 evt_len)
 {
     UINT8       num_handles, xx;
     UINT16      handle;
@@ -330,7 +331,20 @@ void btm_sco_process_num_completed_pkts (UINT8 *p)
     UINT16      sco_inx;
     tSCO_CB  *p_cb = &btm_cb.sco_cb;
     tSCO_CONN * p_ccb;
+
+    if (evt_len < 1) {
+        BTM_TRACE_ERROR ("btm_sco_process_num_completed_pkts: evt too short (len=%u)", evt_len);
+        return;
+    }
+
     STREAM_TO_UINT8 (num_handles, p);
+
+    if (num_handles > (evt_len - 1) / 4) {
+        BTM_TRACE_ERROR ("btm_sco_process_num_completed_pkts: num_handles %u exceeds evt_len %u, truncating",
+                         num_handles, evt_len);
+        num_handles = (evt_len - 1) / 4;
+    }
+
     for (xx = 0; xx < num_handles; xx++) {
         STREAM_TO_UINT16 (handle, p);
         STREAM_TO_UINT16 (num_sent, p);
@@ -1153,11 +1167,15 @@ UINT16  btm_find_scb_by_handle (UINT16 handle)
 tBTM_STATUS BTM_RemoveSco (UINT16 sco_inx)
 {
 #if (BTM_MAX_SCO_LINKS>0)
+    if (sco_inx >= BTM_MAX_SCO_LINKS) {
+        return (BTM_UNKNOWN_ADDR);
+    }
+
     tSCO_CONN   *p = &btm_cb.sco_cb.sco_db[sco_inx];
     UINT16       tempstate;
 
     /* Validity check */
-    if ((sco_inx >= BTM_MAX_SCO_LINKS) || (p->state == SCO_ST_UNUSED)) {
+    if (p->state == SCO_ST_UNUSED) {
         return (BTM_UNKNOWN_ADDR);
     }
 

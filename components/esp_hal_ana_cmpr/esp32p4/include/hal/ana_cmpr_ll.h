@@ -17,6 +17,15 @@
 extern "C" {
 #endif
 
+#define ANALOG_CMPR_LL_GET(_attr) ANALOG_CMPR_LL_ ## _attr
+#define ANALOG_CMPR_LL_SUPPORT(_feat) ANALOG_CMPR_LL_SUPPORT_ ## _feat
+
+// Number of Analog Comparator instances
+#define ANALOG_CMPR_LL_INST_NUM 2
+
+// Can detect positive/negative/any cross type
+#define ANALOG_CMPR_LL_SUPPORT_EDGE_TYPE  1
+
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_GET_UNIT(hw)     ((hw) == (&ANALOG_CMPR[0]) ? 0 : 1)
 

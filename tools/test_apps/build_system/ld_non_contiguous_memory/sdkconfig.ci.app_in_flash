@@ -1,0 +1,2 @@
+# Default app-in-flash configuration for CI discovery.
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -868,4 +868,18 @@ TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
 {
     esp_efuse_utility_update_virt_blocks();
     TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), efuse_ll_get_chip_ver_pkg());
+}
+
+TEST_CASE("Test deferred WR_DIS programming", "[efuse]")
+{
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_update_virt_blocks();
+
+    esp_efuse_batch_write_begin();
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK_KEY0));
+    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK_KEY0));
+    esp_efuse_batch_write_commit();
+
+    TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(EFUSE_BLK_KEY0));
+    TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(EFUSE_BLK_KEY0));
 }

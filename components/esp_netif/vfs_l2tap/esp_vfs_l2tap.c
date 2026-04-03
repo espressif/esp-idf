@@ -259,7 +259,7 @@ esp_err_t esp_vfs_l2tap_eth_filter_frame(l2tap_iodriver_handle driver_handle, vo
 }
 
 /* ====================== vfs ====================== */
-static int l2tap_open(const char *path, int flags, int mode)
+static int l2tap_open(__attribute__((unused)) void *ctx, const char *path, int flags, int mode)
 {
     int fd;
 
@@ -307,7 +307,7 @@ static int l2tap_tx_esp_err_to_errno(esp_err_t esp_err)
     }
 }
 
-static ssize_t l2tap_write(int fd, const void *data, size_t size)
+static ssize_t l2tap_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
     void *eth_buff;
     l2tap_extended_buff_t *ext_buff;
@@ -402,7 +402,7 @@ static int l2tap_rx_esp_err_to_errno(esp_err_t esp_err)
     }
 }
 
-static ssize_t l2tap_read(int fd, void *data, size_t size)
+static ssize_t l2tap_read(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
 {
     // fd might be in process of opening/closing (close was already called but preempted)
     if (atomic_load(&s_l2tap_sockets[fd].state) != L2TAP_SOCK_STATE_OPENED) {
@@ -441,7 +441,7 @@ static ssize_t l2tap_read(int fd, void *data, size_t size)
     return actual_size;
 }
 
-void l2tap_clean_task(void *task_param)
+static void l2tap_clean_task(void *task_param)
 {
     l2tap_context_t *l2tap_socket = (l2tap_context_t *)task_param;
 
@@ -465,7 +465,7 @@ void l2tap_clean_task(void *task_param)
     vTaskDelete(NULL);
 }
 
-static int l2tap_close(int fd)
+static int l2tap_close(__attribute__((unused)) void *ctx, int fd)
 {
     if (atomic_load(&s_l2tap_sockets[fd].state) != L2TAP_SOCK_STATE_OPENED) {
         // not valid opened fd
@@ -503,7 +503,7 @@ static bool netif_driver_matches(esp_netif_t *netif, void* driver)
     return esp_netif_get_io_driver(netif) == driver;
 }
 
-static int l2tap_ioctl(int fd, int cmd, va_list args)
+static int l2tap_ioctl(__attribute__((unused)) void *ctx, int fd, int cmd, va_list args)
 {
     esp_netif_t *esp_netif;
     switch (cmd) {
@@ -608,7 +608,7 @@ static void l2tap_set_nonblocking(l2tap_context_t *l2tap_socket, bool nonblock)
     l2tap_exit_critical();
 }
 
-static int l2tap_fcntl(int fd, int cmd, int arg)
+static int l2tap_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     int result = 0;
     if (cmd == F_GETFL) {
@@ -801,12 +801,12 @@ static const esp_vfs_select_ops_t s_vfs_l2tap_select = {
 #endif //CONFIG_VFS_SUPPORT_SELECT
 
 static const esp_vfs_fs_ops_t s_vfs_l2tap = {
-    .write = &l2tap_write,
-    .open = &l2tap_open,
-    .close = &l2tap_close,
-    .read = &l2tap_read,
-    .fcntl = &l2tap_fcntl,
-    .ioctl = &l2tap_ioctl,
+    .write_p = &l2tap_write,
+    .open_p = &l2tap_open,
+    .close_p = &l2tap_close,
+    .read_p = &l2tap_read,
+    .fcntl_p = &l2tap_fcntl,
+    .ioctl_p = &l2tap_ioctl,
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     .select = &s_vfs_l2tap_select,
 #endif // CONFIG_VFS_SUPPORT_SELECT
@@ -823,7 +823,7 @@ esp_err_t esp_vfs_l2tap_intf_register(l2tap_vfs_config_t *config)
 
     ESP_RETURN_ON_FALSE(!s_is_registered, ESP_ERR_INVALID_STATE, TAG, "vfs is already registered");
     s_is_registered = true;
-    ESP_RETURN_ON_ERROR(esp_vfs_register_fs(config->base_path, &s_vfs_l2tap, ESP_VFS_FLAG_STATIC, NULL), TAG, "vfs register error");
+    ESP_RETURN_ON_ERROR(esp_vfs_register_fs(config->base_path, &s_vfs_l2tap, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL), TAG, "vfs register error");
 
     return ESP_OK;
 }

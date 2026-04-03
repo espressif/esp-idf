@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,10 +36,17 @@ extern "C" {
 #define ESP_BLOCKDEV_CMD_SYSTEM_BASE        0x00                                /*!< System commands base value */
 #define ESP_BLOCKDEV_CMD_USER_BASE          0x80                                /*!< User commands base value */
 
-#define ESP_BLOCKDEV_CMD_MARK_DELETED       ESP_BLOCKDEV_CMD_SYSTEM_BASE        /*!< mark given range as invalid, data to be deleted/overwritten eventually */
-#define ESP_BLOCKDEV_CMD_ERASE_CONTENTS     ESP_BLOCKDEV_CMD_SYSTEM_BASE + 1    /*!< erase required range and set the contents to the device's default bit values */
+//      Command name                        Code                                     Description                                                                    Argument type
+#define ESP_BLOCKDEV_CMD_MARK_DELETED       ESP_BLOCKDEV_CMD_SYSTEM_BASE        /*!< mark given range as invalid, data to be deleted/overwritten eventually       [ esp_blockdev_cmd_arg_erase_t* ]*/
+#define ESP_BLOCKDEV_CMD_ERASE_CONTENTS    (ESP_BLOCKDEV_CMD_SYSTEM_BASE + 1)   /*!< erase required range and set the contents to the device's default bit values [ esp_blockdev_cmd_arg_erase_t* ]*/
 
-typedef struct esp_blockdev_cmd_arg_erase_t {
+/**
+ * @brief Arguments for block device erase control commands
+ *
+ * Supplied to ESP_BLOCKDEV_CMD_ERASE_CONTENTS and similar ioctls to describe
+ * the erase window.
+ */
+typedef struct esp_blockdev_cmd_arg_erase {
     uint64_t start_addr;                            /*!< IN  - starting address of the disk space to erase/trim/discard/sanitize (in bytes), must be a multiple of erase block size */
     size_t erase_len;                               /*!< IN  - size of the area to erase/trim/discard/sanitize (in bytes), must be a multiple of erase block size */
 } esp_blockdev_cmd_arg_erase_t;
@@ -51,17 +58,29 @@ typedef struct esp_blockdev_cmd_arg_erase_t {
  *
  *  @note Convenience macros ESP_BLOCKDEV_FLAGS_<INST>_CONFIG_DEFAULT() provide the most common setup of usual ESP-IDF component equipped with BDL interface. They can be used as a starting point for own initializers.
  */
-typedef union {
+#if defined(__DOXYGEN__)
+typedef struct esp_blockdev_flags {
+    uint32_t read_only: 1;                          /*!< no erase/write operations allowed */
+    uint32_t encrypted: 1;                          /*!< the device data is encrypted */
+    uint32_t erase_before_write: 1;                 /*!< erasing required before any write operation */
+    uint32_t and_type_write: 1;                     /*!< 0-bits can't be changed to 1-bits - NAND/NOR flash behavior */
+    uint32_t default_val_after_erase: 1;            /*!< default bit value after erasing (0 or 1) */
+    uint32_t reserved: 27;                          /*!< Reserved for future blockdev flags */
+    uint32_t val;                                   /*!< Raw bitfield view for bulk initialization */
+} esp_blockdev_flags_t;
+#else
+typedef union esp_blockdev_flags {
     struct {
         uint32_t read_only: 1;                      /*!< no erase/write operations allowed */
         uint32_t encrypted: 1;                      /*!< the device data is encrypted */
         uint32_t erase_before_write: 1;             /*!< erasing required before any write operation */
         uint32_t and_type_write: 1;                 /*!< 0-bits can't be changed to 1-bits - NAND/NOR flash behavior */
         uint32_t default_val_after_erase: 1;        /*!< default bit value after erasing (0 or 1) */
-        uint32_t reserved: 27;
+        uint32_t reserved: 27;                      /*!< Reserved for future blockdev flags */
     };
-    uint32_t val;
+    uint32_t val;                                   /*!< Raw bitfield view for bulk initialization */
 } esp_blockdev_flags_t;
+#endif
 
 #define ESP_BLOCKDEV_FLAGS_CONFIG_DEFAULT() {  \
     {  \
@@ -88,7 +107,7 @@ typedef union {
  *
  * Various block size parameters needed for proper R/W/E processing on given device.
  */
-typedef struct esp_blockdev_geometry_t {
+typedef struct esp_blockdev_geometry {
 
     /** Size of the device disk space (in bytes).
      *  Mandatory parameter.
@@ -129,10 +148,12 @@ typedef struct esp_blockdev_geometry_t {
 
 } esp_blockdev_geometry_t;
 
+typedef struct esp_blockdev esp_blockdev_t;
+
 /** Standard BDL access handle, the only public BDL instance identifier.
  *  Allocated and initialized by the device's class factory, optionally closed by the device release handler.
  */
-typedef struct esp_blockdev_t* esp_blockdev_handle_t;
+typedef esp_blockdev_t* esp_blockdev_handle_t;
 #define ESP_BLOCKDEV_HANDLE_INVALID NULL
 
 /**
@@ -140,7 +161,7 @@ typedef struct esp_blockdev_t* esp_blockdev_handle_t;
  *
  * Various block operations needed for proper R/W/E processing on given device.
  */
-typedef struct esp_blockdev_ops_t {
+typedef struct esp_blockdev_ops {
 
     /** READ operation:
      *   Read required number of bytes from the device at given offset, store the data into the output buffer.
@@ -212,16 +233,16 @@ typedef struct esp_blockdev_ops_t {
  *  @note The device context pointer is used to store the device-specific context. It is not used by the BDL layer and is intended to be used by the device implementation.
  *  @note The ops pointer holds the address of the device operations structure which can be shared by multiple device instances of the same type (driver).
  */
-typedef struct esp_blockdev_t {
+struct esp_blockdev {
 
     /* Device context pointer */
-    void* ctx;
+    void* ctx;                                      /*!< Owner-provided private data */
 
-    esp_blockdev_flags_t device_flags;
-    esp_blockdev_geometry_t geometry;
-    const esp_blockdev_ops_t* ops;
+    esp_blockdev_flags_t device_flags;              /*!< Capabilities and requirements */
+    esp_blockdev_geometry_t geometry;               /*!< Operation granularity and capacity */
+    const esp_blockdev_ops_t* ops;                  /*!< Function table implementing the device */
 
-} esp_blockdev_t;
+};
 
 #ifdef __cplusplus
 } // extern "C"

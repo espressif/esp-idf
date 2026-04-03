@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,7 @@
 
 static const char *TAG = "touch";
 
-touch_sensor_handle_t g_touch = NULL;
+static touch_sensor_handle_t s_sens_handle = NULL;  /* Only used to enforce the controller singleton */
 
 static void touch_channel_pin_init(int id)
 {
@@ -68,8 +68,8 @@ static void s_touch_free_resource(touch_sensor_handle_t sens_handle)
         vSemaphoreDeleteWithCaps(sens_handle->mutex);
         sens_handle->mutex = NULL;
     }
-    free(g_touch);
-    g_touch = NULL;
+    free(sens_handle);
+    s_sens_handle = NULL;
 }
 
 esp_err_t touch_sensor_new_controller(const touch_sensor_config_t *sens_cfg, touch_sensor_handle_t *ret_sens_handle)
@@ -80,38 +80,38 @@ esp_err_t touch_sensor_new_controller(const touch_sensor_config_t *sens_cfg, tou
     esp_err_t ret = ESP_OK;
     TOUCH_NULL_POINTER_CHECK(sens_cfg);
     TOUCH_NULL_POINTER_CHECK(ret_sens_handle);
-    ESP_RETURN_ON_FALSE(!g_touch, ESP_ERR_INVALID_STATE, TAG, "Touch sensor has been allocated");
+    ESP_RETURN_ON_FALSE(!s_sens_handle, ESP_ERR_INVALID_STATE, TAG, "Touch sensor has been allocated");
 
-    g_touch = (touch_sensor_handle_t)heap_caps_calloc(1, sizeof(struct touch_sensor_s), TOUCH_MEM_ALLOC_CAPS);
-    ESP_RETURN_ON_FALSE(g_touch, ESP_ERR_NO_MEM, TAG, "No memory for touch sensor struct");
+    s_sens_handle = (touch_sensor_handle_t)heap_caps_calloc(1, sizeof(struct touch_sensor_s), TOUCH_MEM_ALLOC_CAPS);
+    ESP_RETURN_ON_FALSE(s_sens_handle, ESP_ERR_NO_MEM, TAG, "No memory for touch sensor struct");
 
-    g_touch->mutex = xSemaphoreCreateRecursiveMutexWithCaps(TOUCH_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(g_touch->mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex semaphore");
+    s_sens_handle->mutex = xSemaphoreCreateRecursiveMutexWithCaps(TOUCH_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(s_sens_handle->mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex semaphore");
 
     touch_priv_enable_module(true);
 #if SOC_TOUCH_SENSOR_VERSION >= 2
     touch_ll_reset_module();
 #endif
-    ESP_GOTO_ON_ERROR(touch_priv_config_controller(g_touch, sens_cfg), err, TAG, "Failed to configure the touch controller");
+    ESP_GOTO_ON_ERROR(touch_priv_config_controller(s_sens_handle, sens_cfg), err, TAG, "Failed to configure the touch controller");
 #if SOC_TOUCH_SENSOR_VERSION <= 2
-    ESP_GOTO_ON_ERROR(rtc_isr_register(touch_priv_default_intr_handler, NULL, TOUCH_LL_INTR_MASK_ALL, 0), err, TAG, "Failed to register interrupt handler");
+    ESP_GOTO_ON_ERROR(rtc_isr_register(touch_priv_default_intr_handler, s_sens_handle, TOUCH_LL_INTR_MASK_ALL, 0), err, TAG, "Failed to register interrupt handler");
 #else
-    ESP_GOTO_ON_ERROR(esp_intr_alloc(TOUCH_LL_INTR_SOURCE, TOUCH_INTR_ALLOC_FLAGS, touch_priv_default_intr_handler, NULL, &(g_touch->intr_handle)),
+    ESP_GOTO_ON_ERROR(esp_intr_alloc(TOUCH_LL_INTR_SOURCE, TOUCH_INTR_ALLOC_FLAGS, touch_priv_default_intr_handler, s_sens_handle, &(s_sens_handle->intr_handle)),
                       err, TAG, "Failed to register interrupt handler");
 #endif
-    *ret_sens_handle = g_touch;
+    *ret_sens_handle = s_sens_handle;
     return ret;
 
 err:
     touch_priv_enable_module(false);
-    s_touch_free_resource(g_touch);
+    s_touch_free_resource(s_sens_handle);
     return ret;
 }
 
 esp_err_t touch_sensor_del_controller(touch_sensor_handle_t sens_handle)
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
-    ESP_RETURN_ON_FALSE(g_touch == sens_handle, ESP_ERR_INVALID_ARG, TAG, "The input touch sensor handle is unmatched");
+    ESP_RETURN_ON_FALSE(s_sens_handle == sens_handle, ESP_ERR_INVALID_ARG, TAG, "The input touch sensor handle is unmatched");
 
     esp_err_t ret = ESP_OK;
     // Take the semaphore to make sure the touch has stopped
@@ -123,7 +123,7 @@ esp_err_t touch_sensor_del_controller(touch_sensor_handle_t sens_handle)
 
     ESP_GOTO_ON_ERROR(touch_priv_deinit_controller(sens_handle), err, TAG, "Failed to deinitialize the controller");
 #if SOC_TOUCH_SENSOR_VERSION <= 2
-    ESP_GOTO_ON_ERROR(rtc_isr_deregister(touch_priv_default_intr_handler, NULL), err, TAG, "Failed to deregister the interrupt handler");
+    ESP_GOTO_ON_ERROR(rtc_isr_deregister(touch_priv_default_intr_handler, sens_handle), err, TAG, "Failed to deregister the interrupt handler");
 #else
     ESP_GOTO_ON_ERROR(esp_intr_free(sens_handle->intr_handle), err, TAG, "Failed to deregister the interrupt handler");
 #endif
@@ -134,10 +134,9 @@ esp_err_t touch_sensor_del_controller(touch_sensor_handle_t sens_handle)
 
     touch_priv_enable_module(false);
     s_touch_free_resource(sens_handle);
+    return ret;
 err:
-    if (g_touch && g_touch->mutex) {
-        xSemaphoreGiveRecursive(g_touch->mutex);
-    }
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -151,7 +150,7 @@ esp_err_t touch_sensor_new_channel(touch_sensor_handle_t sens_handle, int chan_i
     TOUCH_CHANNEL_CHECK(chan_id);
     uint32_t ch_offset = chan_id - TOUCH_MIN_CHAN_ID;
 
-    ESP_RETURN_ON_FALSE(g_touch == sens_handle, ESP_ERR_INVALID_ARG, TAG, "The input touch sensor handle is unmatched");
+    ESP_RETURN_ON_FALSE(s_sens_handle == sens_handle, ESP_ERR_INVALID_ARG, TAG, "The input touch sensor handle is unmatched");
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
@@ -226,8 +225,8 @@ esp_err_t touch_sensor_del_channel(touch_channel_handle_t chan_handle)
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     touch_channel_pin_deinit(chan_handle->id);
 
-    free(g_touch->ch[ch_offset]);
-    g_touch->ch[ch_offset] = NULL;
+    free(sens_handle->ch[ch_offset]);
+    sens_handle->ch[ch_offset] = NULL;
 err:
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
@@ -397,8 +396,8 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
             TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
             while (!touch_ll_is_measure_done()) {
 #if SOC_TOUCH_SENSOR_VERSION >= 2
-                if (g_touch->is_meas_timeout) {
-                    g_touch->is_meas_timeout = false;
+                if (sens_handle->is_meas_timeout) {
+                    sens_handle->is_meas_timeout = false;
                     ESP_LOGW(TAG, "The measurement time on channel %d exceed the limitation", i);
                     break;
                 }

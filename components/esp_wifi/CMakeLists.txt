@@ -1,7 +1,9 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
 if(${idf_target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
+    idf_component_register()    # Register empty component for first CMake pass for potential *Remote* functionality
+    add_subdirectory(remote)    # wifi-remote on linux host
+    return() # *Local* esp-wifi component is not supported by the POSIX/Linux simulator
 endif()
 
 if( NOT CONFIG_ESP_WIFI_ENABLED
@@ -13,10 +15,27 @@ if( NOT CONFIG_ESP_WIFI_ENABLED
             "src/wifi_netif.c"
             "src/wifi_default_ap.c")
 
+    # In build system v2, idf_component_optional_requires() includes the target
+    # component into the build immediately, so these stub sources are compiled
+    # even on targets where Wi-Fi is not supported. The stubs need esp_event and
+    # esp_netif headers, so those dependencies must be declared here for v2.
+    #
+    # In build system v1, idf_component_optional_requires() only links a
+    # component that is already part of the build. On non-Wi-Fi targets, this
+    # component is never pulled in, so the stubs are never compiled and the
+    # dependencies are not needed. Additionally, the CMAKE_BUILD_EARLY_EXPANSION
+    # guard ensures that the stubs are not compiled for v1.
+    set(priv_reqs "")
+    if(IDF_BUILD_V2)
+        set(priv_reqs "esp_event" "esp_netif")
+    endif()
+
     # This component provides "esp_wifi" "wifi_apps/nan_app" headers if WiFi not enabled
     # (implementation supported optionally in a managed component esp_wifi_remote)
     idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "wifi_apps/nan_app/include")
+                    INCLUDE_DIRS "include" "wifi_apps/nan_app/include"
+                    PRIV_REQUIRES ${priv_reqs})
+    add_subdirectory(remote)    # wifi-remote on esp32p4/h2 (no wifi)
     return()
 endif()
 
@@ -113,3 +132,5 @@ endif()
 if(CONFIG_SPIRAM)
     idf_component_optional_requires(PRIVATE esp_psram)
 endif()
+
+add_subdirectory(remote)    # wifi-remote as a secondary wifi interface (on wifi targets)

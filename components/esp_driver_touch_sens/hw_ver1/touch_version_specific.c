@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,10 +124,7 @@ void touch_priv_enable_module(bool enable)
 
 void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
 {
-    /* If the touch controller object has not been allocated, return directly */
-    if (!g_touch) {
-        return;
-    }
+    touch_sensor_handle_t sens_handle = (touch_sensor_handle_t)arg;
     bool need_yield = false;
     touch_hw_active_event_data_t data;
     // Only one `on_active` interrupt source, clear directly
@@ -135,8 +132,8 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_ll_get_active_channel_mask(&(data.active_mask));
     touch_ll_clear_active_channel_status();
     // Get the activated channels
-    if (g_touch->cbs.on_hw_active) {
-        need_yield |= g_touch->cbs.on_hw_active(g_touch, &data, g_touch->user_ctx);
+    if (sens_handle->cbs.on_hw_active) {
+        need_yield |= sens_handle->cbs.on_hw_active(sens_handle, &data, sens_handle->user_ctx);
     }
 
     if (need_yield) {

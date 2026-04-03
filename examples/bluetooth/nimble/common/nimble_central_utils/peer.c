@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include <assert.h>
-#include <string.h>
 #include "host/ble_hs.h"
 #include "esp_central.h"
 
@@ -515,7 +513,7 @@ peer_inc_add(struct peer *peer,  uint16_t svc_start_handle,
         }
     }
 
-    /* Including the services into inlucding list */
+    /* Including the services into including list */
 
     cur_svc = peer_svc_find_range(peer, gatt_incl_svc->handle);
 

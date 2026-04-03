@@ -63,6 +63,17 @@ static inline void systimer_ll_enable_bus_clock(bool enable)
     } while(0)
 
 /**
+ * @brief Enable the sys clock for systimer module
+ *        This chip does not have a separate sys clock gate, this is a no-op.
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void systimer_ll_enable_sys_clock(bool enable)
+{
+    (void)enable;
+}
+
+/**
  * @brief Reset the systimer module
  *
  * @param group_id Group ID

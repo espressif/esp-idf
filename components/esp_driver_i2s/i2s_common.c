@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,7 @@
 
 #include "clk_ctrl_os.h"
 #include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_intr_alloc.h"
 #include "esp_check.h"
 #include "esp_attr.h"
@@ -1028,6 +1029,7 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         i2s_obj->tx_chan->start = i2s_tx_channel_start;
         i2s_obj->tx_chan->stop = i2s_tx_channel_stop;
         *tx_handle = i2s_obj->tx_chan;
+        esp_clk_tree_enable_src((soc_module_clk_t)i2s_ll_tx_clk_get_src(i2s_obj->hal.dev), true);
         ESP_LOGD(TAG, "tx channel is registered on I2S%d successfully", i2s_obj->id);
     }
     /* Register and specify the rx handle */
@@ -1042,6 +1044,7 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         i2s_obj->rx_chan->start = i2s_rx_channel_start;
         i2s_obj->rx_chan->stop = i2s_rx_channel_stop;
         *rx_handle = i2s_obj->rx_chan;
+        esp_clk_tree_enable_src((soc_module_clk_t)i2s_ll_rx_clk_get_src(i2s_obj->hal.dev), true);
         ESP_LOGD(TAG, "rx channel is registered on I2S%d successfully", i2s_obj->id);
     }
 
@@ -1086,7 +1089,18 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
             i2s_ll_rx_disable_clock(handle->controller->hal.dev);
         }
     }
+    if (handle->clk_src != I2S_CLK_SRC_EXTERNAL)
 #endif
+    {
+        i2s_clock_src_t clk_src = handle->clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+        if (clk_src == I2S_CLK_SRC_DEFAULT) {
+            clk_src = I2S_LL_DEFAULT_CLK_SRC;
+        }
+#endif
+        esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    }
+
 #if SOC_I2S_SUPPORTS_APLL
     if (handle->apll_en) {
         /* Must switch back to D2CLK on ESP32-S2,

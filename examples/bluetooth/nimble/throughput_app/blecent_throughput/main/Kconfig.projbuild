@@ -8,15 +8,17 @@ menu "Example Configuration"
 
     config EXAMPLE_CONN_ITVL_MIN
         int "Minimum connection itvl"
-        default 104
+        default 6
         help
             Set the minimum connection interval in 1.25msec units.
+            Default 6 (7.5ms) for maximum throughput.
 
     config EXAMPLE_CONN_ITVL_MAX
         int "Maximum connection itvl"
-        default 104
+        default 6
         help
             Set the maximum connection interval in 1.25msec units.
+            Default 6 (7.5ms) for maximum throughput.
 
     config EXAMPLE_CONN_LATENCY
         int "Connection latency"
@@ -35,12 +37,14 @@ menu "Example Configuration"
         default 12
         help
             Set the minimum connection event length in 0.625msec units.
+            Default 12 (7.5ms) matches the minimum connection interval.
 
     config EXAMPLE_CONN_CE_LEN_MAX
         int "Maximum connection event length"
-        default 12
+        default 24
         help
             Set the maximum connection event length in 0.625msec units.
+            Default 24 (15ms) allows controller to extend events when possible.
 
     config EXAMPLE_EXTENDED_ADV
         bool

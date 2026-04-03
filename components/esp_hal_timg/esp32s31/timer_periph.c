@@ -33,7 +33,7 @@ const soc_timg_gptimer_signal_desc_t soc_timg_gptimer_signals[2][2] = {
     }
 };
 
-#if SOC_PAU_SUPPORTED
+#if SOC_PAU_SUPPORTED && SOC_TIMER_SUPPORT_SLEEP_RETENTION
 /*  Registers in retention context:
  *      TIMG_T0CONFIG_REG
  *      TIMG_T0ALARMLO_REG

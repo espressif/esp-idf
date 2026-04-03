@@ -481,12 +481,6 @@ LCD
 
     为保证前向兼容，旧版驱动的 API 仍然在 ``driver/i2s.h`` 可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 ``CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`` 来关闭。
 
-    以下是更新后的 I2S 文件概况。
-
-    .. figure:: ../../../../_static/diagrams/i2s/i2s_file_structure.png
-        :align: center
-        :alt: I2S File Structure
-
     主要概念更新
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

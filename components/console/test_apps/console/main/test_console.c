@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,10 +89,8 @@ TEST_CASE("esp console register with normal and context aware function set to NU
 TEST_CASE("esp console init function NULL param fails", "[console]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_uart(NULL, &repl_config, &s_repl));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_uart(&uart_config, NULL, &s_repl));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_uart(&uart_config, &repl_config, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_stdio(NULL, &s_repl));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_stdio(&repl_config, NULL));
 }
 
 TEST_CASE("esp console init/deinit test", "[console]")
@@ -161,8 +159,7 @@ TEST_CASE("esp console repl test", "[console][ignore]")
     TEST_ASSERT_NOT_NULL(s_test_console_mutex);
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
 
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
 
@@ -195,8 +192,7 @@ TEST_CASE("esp console repl deinit", "[console][ignore]")
     set_leak_threshold(248);
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
 
     /* start the repl task */
     TEST_ESP_OK(esp_console_start_repl(s_repl));
@@ -227,11 +223,28 @@ static const esp_console_cmd_t cmd_z = {
     .func = do_hello_cmd,
 };
 
-TEST_CASE("esp console help command - sorted registration", "[console][ignore]")
+/* To keep testing the old API esp_console_new_repl_uart, the following
+ * 2 test cases will initialize repl using this API when run on other target
+ * than linux and will use the new API on linux. */
+#if !CONFIG_IDF_TARGET_LINUX
+static void test_console_repl_init(void)
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    /* use the old API to register the IO so we keep some coverage for it in the tests */
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+}
+#else
+static void test_console_repl_init(void)
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+}
+#endif // !CONFIG_IDF_TARGET_LINUX
+
+TEST_CASE("esp console help command - sorted registration", "[console][ignore]")
+{
+    test_console_repl_init();
 
     TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
     TEST_ESP_OK(esp_console_register_help_command());
@@ -248,9 +261,7 @@ TEST_CASE("esp console help command - sorted registration", "[console][ignore]")
  */
 TEST_CASE("esp console help command - reverse registration", "[console][ignore]")
 {
-    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    test_console_repl_init();
 
     TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
@@ -336,8 +347,7 @@ TEST_CASE("esp console test with context", "[console]")
 TEST_CASE("esp console help command - set verbose level = 0", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
     TEST_ESP_OK(esp_console_register_help_command());
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
     TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_0));
@@ -348,8 +358,7 @@ TEST_CASE("esp console help command - set verbose level = 0", "[console][ignore]
 TEST_CASE("esp console help command - set verbose level = 1", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
     TEST_ESP_OK(esp_console_register_help_command());
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
     TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_1));
@@ -360,8 +369,7 @@ TEST_CASE("esp console help command - set verbose level = 1", "[console][ignore]
 TEST_CASE("esp console help command - --verbose sub command", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
     TEST_ESP_OK(esp_console_register_help_command());
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(5000));
@@ -370,8 +378,7 @@ TEST_CASE("esp console help command - --verbose sub command", "[console][ignore]
 TEST_CASE("esp console deregister commands", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
 
     TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
@@ -388,8 +395,7 @@ TEST_CASE("esp console deregister commands", "[console][ignore]")
 TEST_CASE("esp console re-register commands", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
 
     TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
@@ -409,7 +415,6 @@ TEST_CASE("esp console re-register commands", "[console][ignore]")
 }
 
 #if !CONFIG_IDF_TARGET_LINUX
-
 TEST_CASE("esp console repl custom_uart test", "[console][ignore]")
 {
     set_leak_threshold(248);

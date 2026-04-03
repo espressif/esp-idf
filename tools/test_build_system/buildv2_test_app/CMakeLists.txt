@@ -8,7 +8,11 @@ include($ENV{IDF_PATH}/tools/cmakev2/idf.cmake)
 
 project(build_test_app C CXX ASM)
 
+# placeholder_before_project_default
+
 idf_project_default()
+
+# placeholder_after_project_default
 
 #[[
 When doing idf.py add-dependency, the component manager

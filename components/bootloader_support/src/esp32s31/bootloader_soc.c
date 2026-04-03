@@ -8,7 +8,7 @@
 
 void bootloader_ana_super_wdt_reset_config(bool enable)
 {
-    //TODO: IDF-14656
+    //TODO: IDF-14678
 }
 
 void bootloader_ana_clock_glitch_reset_config(bool enable)

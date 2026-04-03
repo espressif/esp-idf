@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-set(includes "include")
+set(includes "include" "device/include")
 
 if(CONFIG_SOC_SPIRAM_XIP_SUPPORTED)
     list(APPEND includes xip_impl/include)
@@ -15,10 +15,16 @@ if(${target} STREQUAL "esp32")
     list(APPEND priv_requires bootloader_support esp_driver_gpio)
 endif()
 
+if(${target} STREQUAL "esp32s31")
+    # only esp32s31 needs esp_hal_pmu for ldo.
+    list(APPEND priv_requires esp_hal_pmu)
+endif()
+
 set(srcs "system_layer/esp_psram_mspi.c")
 
 if(CONFIG_SPIRAM)
     list(APPEND srcs "system_layer/esp_psram.c")
+    list(APPEND srcs "system_layer/esp_psram_ldo_supply.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs "esp32/esp_psram_extram_cache.c"
@@ -31,13 +37,14 @@ if(CONFIG_SPIRAM)
         endif()
 
     elseif(CONFIG_SPIRAM_MODE_OCT)
-        list(APPEND srcs "${target}/esp_psram_impl_octal.c")
+        if(${target} STREQUAL "esp32s3")
+            list(APPEND srcs "${target}/esp_psram_impl_octal.c")
+        endif()
     endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_INCLUDE_DIRS device/include
                        PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
 

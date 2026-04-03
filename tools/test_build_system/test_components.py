@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import logging
@@ -578,4 +578,26 @@ def test_component_validation_with_common_platform_example(idf_py: IdfPyFunc, te
     )
     assert re_source.search(ret.stderr) is None, (
         f'Unexpected source file ownership warning for common path: {ret.stderr}'
+    )
+
+
+@pytest.mark.buildv2_skip('Build system v2 does not support MINIMAL_BUILD')
+def test_minimal_build_without_main_component(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Verify that the build fails when using `MINIMAL_BUILD` without main component')
+
+    # Rename main to no_main
+    shutil.move(test_app_copy / 'main', test_app_copy / 'no_main')
+
+    # Set minimal build property
+    replace_in_file(
+        (test_app_copy / 'CMakeLists.txt'),
+        '# placeholder_after_include_project_cmake',
+        'idf_build_set_property(MINIMAL_BUILD ON)',
+    )
+
+    # Reconfigure should fail
+    ret = idf_py('reconfigure', check=False)
+
+    assert 'MINIMAL_BUILD is enabled but component main was not found.' in ret.stderr, (
+        'Reconfiguration should fail with missing main component and MINIMAL_BUILD ON'
     )

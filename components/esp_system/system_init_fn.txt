@@ -93,6 +93,8 @@ SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/p
 SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32h21/sleep_clock.c on BIT(0)
 SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32h4/sleep_clock.c on BIT(0)
 SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32p4/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32s31/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_icg_startup_init in components/esp_hw_support/port/esp32p4/pmu_sleep_clock_icg.c on BIT(0)
 SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
 
 # app_trace doesn't have init dependencies
@@ -116,7 +118,7 @@ SECONDARY: 151: nvs_sec_provider_register_hmac_scheme in components/nvs_sec_prov
 SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 202: init_pm_flash_freq_limit in components/esp_pm/pm_c5_flash_freq_limit.c on BIT(0)
 SECONDARY: 203: init_apb_dma in components/esp_system/startup_funcs.c on BIT(0)
-SECONDARY: 204: init_coexist in components/esp_system/startup_funcs.c on BIT(0)
+SECONDARY: 204: init_coexist in components/esp_coex/src/coexist.c on BIT(0)
 SECONDARY: 205: init_bootloader_offset in components/esp_system/startup_funcs.c on BIT(0)
 
 # usb_console needs to create an esp_timer at startup.

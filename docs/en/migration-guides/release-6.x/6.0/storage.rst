@@ -3,10 +3,12 @@ Storage
 
 :link_to_translation:`zh_CN:[中文]`
 
-Removed VFS SDMMC Deprecated API
---------------------------------
+Breaking Changes
+----------------
 
 Deprecated ``esp_vfs_fat_sdmmc_unmount`` function is now removed. Please use ``esp_vfs_fat_sdcard_unmount`` instead.
+
+Function prototype for ``esp_vfs_fat_register`` has been changed to match ``esp_vfs_fat_register_cfg`` function. ``esp_vfs_fat_register_cfg`` is now deprecated.
 
 
 VFS
@@ -17,6 +19,7 @@ VFS
 - ``esp_vfs_register_fd_range`` is now considered private and its signature was changed to match the new VFS API style. Projects that still rely on this internal helper must include ``esp_private/socket.h`` and should be aware that the API may change without notice.
 - Legacy VFS APIs (such as ``esp_vfs_register``) that operate on ``esp_vfs_t`` instead of ``esp_vfs_fs_ops_t`` are deprecated and will be removed in the next major release. Switch to the new ``esp_vfs_fs_ops_t``-based APIs.
 - TERMIOS support is now disabled by default. Re-enable :ref:`CONFIG_VFS_SUPPORT_TERMIOS` in menuconfig if your application calls POSIX ``termios`` APIs, such as ``tcsetattr``/``tcgetattr`` for UART configuration.
+- Context-less VFS function pointers are deprecated. Switch to the context-aware ``*_p`` callbacks, register the VFS with ``ESP_VFS_FLAG_CONTEXT_PTR``, and pass ``NULL`` as the context pointer if the driver does not need per-instance state. This change simplifies the API surface and reduces runtime overhead in the VFS call path.
 
 
 ``esp_vfs_console``

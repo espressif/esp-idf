@@ -72,12 +72,12 @@ def test_power_save_conn_esp32c2_26mhz(dut: tuple[IdfDut, IdfDut]) -> None:
 # Case 2: BLE power save test for ESP32C2ECO4
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.parametrize(
     'config, count, app_path, baud',
     [
         (
-            'esp32c2eco4_xtal26m',
+            'esp32c2_rev2_xtal26m',
             2,
             f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
             '74880',
@@ -86,7 +86,7 @@ def test_power_save_conn_esp32c2_26mhz(dut: tuple[IdfDut, IdfDut]) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_power_save_conn_esp32c2eco4(dut: tuple[IdfDut, IdfDut]) -> None:
+def test_power_save_conn_esp32c2_rev2(dut: tuple[IdfDut, IdfDut]) -> None:
     peripheral = dut[0]
     central = dut[1]
 
@@ -102,12 +102,12 @@ def test_power_save_conn_esp32c2eco4(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: BLE power save test for ESP32C3ECO7
 @pytest.mark.two_duts
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.parametrize(
     'config, count, app_path',
     [
         (
-            'esp32c3eco7',
+            'esp32c3_rev1',
             2,
             f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
         ),
@@ -115,7 +115,7 @@ def test_power_save_conn_esp32c2eco4(dut: tuple[IdfDut, IdfDut]) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
-def test_power_save_conn_esp32c3eco7(dut: tuple[IdfDut, IdfDut]) -> None:
+def test_power_save_conn_esp32c3_rev1(dut: tuple[IdfDut, IdfDut]) -> None:
     peripheral = dut[0]
     central = dut[1]
 

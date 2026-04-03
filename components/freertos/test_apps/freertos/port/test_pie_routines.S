@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,5 +46,24 @@ pie_vector_signed_add:
     esp.vst.128.ip  q2, a2, 0
     ret
     .size  pie_vector_signed_add, .-pie_vector_signed_add
+
+
+/**
+ * @brief Performs a XOR operation on two 4-word vectors using the PIE.
+ *
+ * @param a0 First vector
+ * @param a1 Second vector
+ * @param a2 Destination to store the result
+ */
+    .type pie_vector_unsigned_add, @function
+    .global pie_vector_xor
+pie_vector_xor:
+    esp.vld.128.ip  q0, a0, 0
+    esp.vld.128.ip  q1, a1, 0
+    esp.xorq        q2, q0, q1
+    esp.vst.128.ip  q2, a2, 0
+    ret
+    .size  pie_vector_xor, .-pie_vector_xor
+
 
 #endif /* SOC_CPU_HAS_PIE */

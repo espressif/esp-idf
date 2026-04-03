@@ -40,6 +40,7 @@ static esp_err_t panel_st7789_invert_color(esp_lcd_panel_t *panel, bool invert_c
 static esp_err_t panel_st7789_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_st7789_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
+static esp_err_t panel_st7789_set_brightness(esp_lcd_panel_t *panel, int brightness);
 static esp_err_t panel_st7789_disp_on_off(esp_lcd_panel_t *panel, bool off);
 static esp_err_t panel_st7789_sleep(esp_lcd_panel_t *panel, bool sleep);
 
@@ -125,6 +126,7 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
     st7789->base.draw_bitmap = panel_st7789_draw_bitmap;
     st7789->base.invert_color = panel_st7789_invert_color;
     st7789->base.set_gap = panel_st7789_set_gap;
+    st7789->base.set_brightness = panel_st7789_set_brightness;
     st7789->base.mirror = panel_st7789_mirror;
     st7789->base.swap_xy = panel_st7789_swap_xy;
     st7789->base.disp_on_off = panel_st7789_disp_on_off;
@@ -284,6 +286,18 @@ static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_g
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
     st7789->x_gap = x_gap;
     st7789->y_gap = y_gap;
+    return ESP_OK;
+}
+
+static esp_err_t panel_st7789_set_brightness(esp_lcd_panel_t *panel, int brightness)
+{
+    st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
+    esp_lcd_panel_io_handle_t io = st7789->io;
+    ESP_RETURN_ON_FALSE(brightness >= 0 && brightness <= 0xFF, ESP_ERR_INVALID_ARG, TAG,
+                        "brightness out of range");
+    uint8_t brightness_value = (uint8_t)brightness;
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_WRDISBV, &brightness_value, 1), TAG,
+                        "io tx param failed");
     return ESP_OK;
 }
 

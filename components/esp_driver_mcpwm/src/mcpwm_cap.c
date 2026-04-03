@@ -275,10 +275,6 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     mcpwm_hal_context_t *hal = &group->hal;
     int cap_chan_id = cap_chan->cap_chan_id;
 
-    // if interrupt priority specified before, it cannot be changed until the group is released
-    // check if the new priority specified consistents with the old one
-    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
-
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_chan_id, config->flags.neg_edge);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_chan_id, config->flags.pos_edge);
     mcpwm_ll_invert_input(hal->dev, cap_chan_id, config->flags.invert_cap_signal);
@@ -293,6 +289,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
 
     cap_chan->gpio_num = config->gpio_num;
     cap_chan->fsm = MCPWM_CAP_CHAN_FSM_INIT;
+    cap_chan->intr_priority = config->intr_priority;
 
     *ret_cap_channel = cap_chan;
     ESP_LOGD(TAG, "new capture channel (%d,%d) at %p", group->group_id, cap_chan_id, cap_chan);
@@ -384,11 +381,18 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
     // lazy install interrupt service
     if (!cap_channel->intr) {
         ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
-        int isr_flags = MCPWM_INTR_ALLOC_FLAG;
-        isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_mcpwm_signals[group_id].irq_id, isr_flags,
-                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
-                                                      mcpwm_capture_default_isr, cap_channel, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");
+        int isr_flags = MCPWM_INTR_ALLOC_FLAG |
+                        (cap_channel->intr_priority ? (1 << cap_channel->intr_priority) : MCPWM_ALLOW_INTR_PRIORITY_MASK);
+        esp_intr_alloc_info_t intr_info = {
+            .source = soc_mcpwm_signals[group_id].irq_id,
+            .flags = isr_flags,
+            .intrstatusreg = (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev),
+            .intrstatusmask = MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
+            .handler = mcpwm_capture_default_isr,
+            .arg = cap_channel,
+            .bind_by.name = soc_mcpwm_signals[group_id].module_name,
+        };
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_info(&intr_info, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");
     }
 
     portENTER_CRITICAL(&group->spinlock);

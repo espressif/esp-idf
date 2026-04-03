@@ -657,7 +657,7 @@ API Reference
 
 
 .. [1]
-   Different ESP chip series might have different numbers of RMT channels. Please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] for details. The driver does not forbid you from applying for more RMT channels, but it returns an error when there are no hardware resources available. Please always check the return value when doing `Resource Allocation <#resource-allocation>`__.
+   Different ESP chip series might have different numbers of RMT channels. Please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] for details. The driver does not forbid you from applying for more RMT channels, but it returns an error when there are no hardware resources available. Please always check the return value when doing :ref:`rmt-resource-allocation`.
 
 .. [2]
    The callback function, e.g., :cpp:member:`rmt_tx_event_callbacks_t::on_trans_done`, and the functions invoked by itself should also reside in IRAM, users need to take care of this by themselves.

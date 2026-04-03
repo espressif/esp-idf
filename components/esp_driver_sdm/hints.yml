@@ -1,0 +1,7 @@
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "Function '{}' has been removed. Please use the function {}."
+    variables:
+        -
+            re_variables: ['sdm_channel_set_duty']
+            hint_variables: ['sdm_channel_set_duty()', 'sdm_channel_set_pulse_density()']

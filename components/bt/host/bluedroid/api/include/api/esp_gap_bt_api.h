@@ -289,6 +289,11 @@ typedef enum {
     ESP_BT_GAP_ENC_CHG_EVT,                         /*!< Encryption change event */
     ESP_BT_GAP_SET_MIN_ENC_KEY_SIZE_EVT,            /*!< Set minimum encryption key size */
     ESP_BT_GAP_GET_DEV_NAME_CMPL_EVT,               /*!< Get device name complete event */
+    ESP_BT_GAP_READ_ACL_REAL_RSSI_EVT,              /*!< Read ACL real RSSI event (vendor-specific) */
+    ESP_BT_GAP_READ_NEW_CONN_TX_PWR_RNG_EVT,        /*!< Read new connection transmit power range event (for ACL) */
+    ESP_BT_GAP_WRITE_NEW_CONN_TX_PWR_RNG_EVT,       /*!< Write new connection transmit power range event (for ACL) */
+    ESP_BT_GAP_READ_TX_PWR_LVL_EVT,                 /*!< Read inq/iscan/page/pscan transmit power level event */
+    ESP_BT_GAP_WRITE_TX_PWR_LVL_EVT,                /*!< Write inq/iscan/page/pscan transmit power level event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -297,6 +302,19 @@ typedef enum {
     ESP_BT_INQ_MODE_GENERAL_INQUIRY,                /*!< General inquiry mode */
     ESP_BT_INQ_MODE_LIMITED_INQUIRY,                /*!< Limited inquiry mode */
 } esp_bt_inq_mode_t;
+
+#define ESP_TX_PWR_LVL_MIN      (-70)               /*!< TX power level min */
+#define ESP_TX_PWR_LVL_MAX      (+20)               /*!< TX power level max */
+/**
+ * @brief BR/EDR TX power level type for inq/iscan/page/pscan control
+ */
+typedef enum {
+    ESP_BT_GAP_TX_PWR_LVL_INQ = 0,                  /*!< Inquiry TX power level (read/write) */
+    ESP_BT_GAP_TX_PWR_LVL_ISCAN,                    /*!< Inquiry scan TX power level (read/write) */
+    ESP_BT_GAP_TX_PWR_LVL_PAGE,                     /*!< Page TX power level (read/write) */
+    ESP_BT_GAP_TX_PWR_LVL_PSCAN,                    /*!< Page scan TX power level (read/write) */
+    ESP_BT_GAP_TX_PWR_LVL_TYPE_MAX,                 /*!< TX power level type max */
+} esp_bt_gap_tx_pwr_lvl_type_t;
 
 /* Minimum and Maximum inquiry length */
 #define ESP_BT_GAP_MIN_INQ_LEN                (0x01)  /*!< Minimum inquiry duration, unit is 1.28s */
@@ -359,6 +377,48 @@ typedef union {
         esp_bt_status_t stat;                  /*!< read rssi status */
         int8_t rssi_delta;                     /*!< rssi delta value range -128 ~127, The value zero indicates that the RSSI is inside the Golden Receive Power Range */
     } read_rssi_delta;                         /*!< read rssi parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_READ_ACL_REAL_RSSI_EVT
+     */
+    struct read_acl_real_rssi_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        esp_bt_status_t stat;                  /*!< read rssi status */
+        int8_t rssi;                           /*!< ACL real RSSI value range -128 ~127 */
+    } read_acl_real_rssi;                      /*!< read acl real rssi parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_READ_NEW_CONN_TX_PWR_RNG_EVT
+     */
+    struct read_new_conn_tx_pwr_lvl_param {
+        esp_bt_status_t stat;                  /*!< read new connection transmit power level status */
+        int8_t pwr_lvl_min;                    /*!< new connection transmit power level value range -70 ~ 20 dbm*/
+        int8_t pwr_lvl_max;                    /*!< new connection transmit power level value range -70 ~ 20 dbm*/
+    } read_new_conn_tx_pwr_lvl;                /*!< read new connection transmit power level parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_WRITE_NEW_CONN_TX_PWR_RNG_EVT
+     */
+    struct write_new_conn_tx_pwr_lvl_param {
+        esp_bt_status_t stat;                  /*!< write new connection transmit power level status */
+    } write_new_conn_tx_pwr_lvl;               /*!< write new connection transmit power level parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_READ_TX_PWR_LVL_EVT
+     */
+    struct read_tx_pwr_lvl_param {
+        esp_bt_status_t stat;                  /*!< read inq/iscan/page/pscan transmit power level status */
+        esp_bt_gap_tx_pwr_lvl_type_t type;     /*!< read tx power level type */
+        int8_t tx_power;                       /*!< inq/iscan/page/pscan transmit power level value range -70 ~ 20 dBm */
+    } read_tx_pwr_lvl;                         /*!< read inq/iscan/page/pscan transmit power level parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_WRITE_TX_PWR_LVL_EVT
+     */
+    struct write_tx_pwr_lvl_param {
+        esp_bt_status_t stat;                  /*!< write inq/iscan/page/pscan transmit power level status */
+        esp_bt_gap_tx_pwr_lvl_type_t type;     /*!< write tx power level type */
+    } write_tx_pwr_lvl;                        /*!< write inq/iscan/page/pscan transmit power level parameter struct */
 
     /**
      * @brief ESP_BT_GAP_CONFIG_EIR_DATA_EVT
@@ -755,6 +815,103 @@ esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod);
  *
  */
 esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr);
+
+/**
+ * @brief           This function is called to read ACL real RSSI by address after connected.
+ *                  The RSSI value returned by ESP_BT_GAP_READ_ACL_REAL_RSSI_EVT.
+ *
+ * @note
+ *                  1. This function relies on Espressif vendor-specific HCI and is only used for internal testing.
+ *                  2. This function requires the `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` configuration to be enabled when used.
+ *                     And it will disable `esp_bredr_tx_power_set()` and `esp_bredr_tx_power_get()`.
+ *
+ * @param[in]       remote_addr - remote device address, corresponding to a certain connection handle
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_read_acl_real_rssi(esp_bd_addr_t remote_addr);
+
+/**
+ * @brief           This function is called to read new connection transmit power level (for ACL).
+ *                  The new connection transmit power level value returned by ESP_BT_GAP_READ_NEW_CONN_TX_PWR_RNG_EVT.
+ *
+ * @note
+ *                  1. This function relies on Espressif vendor-specific HCI and is only used for internal testing.
+ *                  2. This function requires the `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` configuration to be enabled when used.
+ *                     And it will disable `esp_bredr_tx_power_set()` and `esp_bredr_tx_power_get()`.
+ *
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_read_new_conn_tx_pwr_rng(void);
+
+/**
+ * @brief           This function is called to write new connection transmit power level (for ACL).
+ *                  The write status returned by ESP_BT_GAP_WRITE_NEW_CONN_TX_PWR_RNG_EVT.
+ *
+ * @note
+ *                  1. This function relies on Espressif vendor-specific HCI and is only used for internal testing.
+ *                  2. This function requires the `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` configuration to be enabled when used.
+ *                     And it will disable `esp_bredr_tx_power_set()` and `esp_bredr_tx_power_get()`.
+ *
+ * @param[in]       pwr_lvl_min - new connection transmit power level value range -70 ~ 20 dBm
+ * @param[in]       pwr_lvl_max - new connection transmit power level value range -70 ~ 20 dBm
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG： Invalid arg
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_write_new_conn_tx_pwr_rng(int8_t pwr_lvl_min, int8_t pwr_lvl_max);
+
+/**
+ * @brief           This function is called to read inquiry response transmit power level by standard HCI,
+ *                  and inquiry/page/page scan transmit power level by vendor specific HCI.
+ *                  The value is returned by ESP_BT_GAP_READ_TX_PWR_LVL_EVT.
+ *
+ * @note
+ *                  1. This function relies on Espressif vendor-specific HCI and is only used for internal testing
+ *                     when type is inquiry/page/page scan.
+ *                  2. This function requires the `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` configuration to be enabled when read
+ *                     inquiry/page/page scan transmit power level, and it will disable `esp_bredr_tx_power_set()`
+ *                     and `esp_bredr_tx_power_get()`.
+ *
+ * @param[in]       type - read type, supports INQ/ISCAN/PAGE/PSCAN
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG: Invalid arg
+ *                  - ESP_ERR_NOT_SUPPORTED: Not supported
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_read_tx_pwr_lvl(esp_bt_gap_tx_pwr_lvl_type_t type);
+
+/**
+ * @brief           This function is called to write inquiry transmit power level by standard HCI,
+ *                  and inquiry response/page/page scan transmit power level by vendor specific HCI.
+ *                  The write status returned by ESP_BT_GAP_WRITE_TX_PWR_LVL_EVT.
+ *
+ * @note
+ *                  1. This function relies on Espressif vendor-specific HCI and is only used for internal testing
+ *                     when type is inquiry response/page/page scan.
+ *                  2. This function requires the `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` configuration to be enabled when write
+ *                     inquiry response/page/page scan transmit power level, and it will disable `esp_bredr_tx_power_set()`
+ *                     and `esp_bredr_tx_power_get()`.
+ *
+ * @param[in]       type - write type, supports INQ/ISCAN/PAGE/PSCAN
+ * @param[in]       tx_power - transmit power level value range -70 ~ 20 dBm
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG: Invalid arg
+ *                  - ESP_ERR_NOT_SUPPORTED: Not supported
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_write_tx_pwr_lvl(esp_bt_gap_tx_pwr_lvl_type_t type, int8_t tx_power);
 
 /**
 * @brief           Removes a device from the security database list of

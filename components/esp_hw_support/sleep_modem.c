@@ -173,7 +173,9 @@ __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
 
 void IRAM_ATTR sleep_modem_wifi_do_phy_retention(bool restore)
 {
+    sleep_modem_state_phy_link_config(s_sleep_modem.wifi.phy_link, 1);
     sleep_retention_do_phy_retention(!restore);
+    sleep_modem_state_phy_link_config(s_sleep_modem.wifi.phy_link, 0);
     if (!restore) {
         s_sleep_modem.wifi.modem_state_phy_done = 1;
     }

@@ -509,6 +509,8 @@ static int read_block(httpd_req_t *req, http_parser *parser, size_t offset, size
     if (new_scratch == NULL) {
         free(raux->scratch);
         raux->scratch = NULL;
+        /* Set last.at to NULL to avoid accidental dereference of dangling pointer */
+        parser_data->last.at = NULL;
         ESP_LOGE(TAG, "Unable to allocate the scratch buffer");
         return 0;
     }
@@ -809,9 +811,16 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
             ESP_LOGD(TAG, LOG_FMT("Received PONG frame"));
         }
 
-        /* Call handler if it's a non-control frame (or if handler requests control frames, as well) */
+        /* Call handler if it's a non-control frame, a PONG frame,
+         * or if handler requests control frames as well.
+         * PONG must be dispatched so that:
+         *  1. User code that sends PINGs can track responses (heartbeat)
+         *  2. The PONG frame bytes are consumed from the socket via
+         *     httpd_ws_recv_frame(), preventing TCP stream misalignment */
         if (ret == ESP_OK &&
-            (ra->ws_type < HTTPD_WS_TYPE_CLOSE || sd->ws_control_frames)) {
+            (ra->ws_type < HTTPD_WS_TYPE_CLOSE ||
+             ra->ws_type == HTTPD_WS_TYPE_PONG ||
+             sd->ws_control_frames)) {
             ret = sd->ws_handler(r);
         }
 

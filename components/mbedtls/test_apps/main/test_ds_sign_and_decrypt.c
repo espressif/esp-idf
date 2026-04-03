@@ -57,43 +57,44 @@ TEST_CASE("ds sign test pkcs1_v15 PSA validation", "[ds_rsa_psa]")
     psa_status_t status;
     psa_algorithm_t alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256);
 
-    esp_ds_data_ctx_t *ds_key = esp_secure_cert_get_ds_ctx();
-    TEST_ASSERT_NOT_NULL(ds_key);
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = esp_secure_cert_get_ds_ctx();
+    TEST_ASSERT_NOT_NULL(rsa_ds_opaque_key.ds_data_ctx);
 
-    ds_key->efuse_key_id = EFUSE_BLK_MAX; // Invalid efuse key id to trigger validation failure
+    rsa_ds_opaque_key.ds_data_ctx->efuse_key_id = EFUSE_BLK_KEY_MAX; // Invalid efuse block to trigger validation failure
 
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-    psa_set_key_bits(&attributes, ds_key->rsa_length_bits);
+    psa_set_key_bits(&attributes, rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH);
     psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_ERROR_INVALID_ARGUMENT, status);
 
-    ds_key->efuse_key_id = EFUSE_BLK0 + 0; // Reset to valid efuse key id
-    ds_key->rsa_length_bits = 1000; // Invalid RSA length to trigger validation failure
+    rsa_ds_opaque_key.ds_data_ctx->efuse_key_id = EFUSE_BLK_KEY0; // Reset to valid efuse block
+    rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits = 1000; // Invalid RSA length to trigger validation failure
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_ERROR_INVALID_ARGUMENT, status);
 
-    ds_key->rsa_length_bits = 2048; // Reset to valid RSA length
-    esp_ds_data_t *ds_data_backup = ds_key->esp_ds_data;
-    ds_key->esp_ds_data = NULL; // NULL esp_ds_data to trigger validation failure
+    rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits = 2048; // Reset to valid RSA length
+    esp_ds_data_t *ds_data_backup = rsa_ds_opaque_key.ds_data_ctx->esp_ds_data;
+    rsa_ds_opaque_key.ds_data_ctx->esp_ds_data = NULL; // NULL esp_ds_data to trigger validation failure
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_ERROR_INVALID_ARGUMENT, status);
 
-    ds_key->esp_ds_data = ds_data_backup; // Restore esp_ds_data
+    rsa_ds_opaque_key.ds_data_ctx->esp_ds_data = ds_data_backup; // Restore esp_ds_data
 
-    esp_secure_cert_free_ds_ctx(ds_key);
+    esp_secure_cert_free_ds_ctx(rsa_ds_opaque_key.ds_data_ctx);
 }
 
 TEST_CASE("ds sign test pkcs1_v15 PSA", "[ds_rsa_psa]")
@@ -102,18 +103,19 @@ TEST_CASE("ds sign test pkcs1_v15 PSA", "[ds_rsa_psa]")
     psa_status_t status;
     psa_algorithm_t alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256);
 
-    esp_ds_data_ctx_t *ds_key = esp_secure_cert_get_ds_ctx();
-    TEST_ASSERT_NOT_NULL(ds_key);
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = esp_secure_cert_get_ds_ctx();
+    TEST_ASSERT_NOT_NULL(rsa_ds_opaque_key.ds_data_ctx);
 
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-    psa_set_key_bits(&attributes, ds_key->rsa_length_bits);
+    psa_set_key_bits(&attributes, rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH);
     psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
@@ -136,7 +138,7 @@ TEST_CASE("ds sign test pkcs1_v15 PSA", "[ds_rsa_psa]")
     psa_reset_key_attributes(&attributes);
 
     // Free the DS context to prevent memory leak
-    esp_secure_cert_free_ds_ctx(ds_key);
+    esp_secure_cert_free_ds_ctx(rsa_ds_opaque_key.ds_data_ctx);
 
     // Because we have wrapped around the ds_start_sign and ds_finish_sign functions,
     // we are not actually performing the real signing operation. That test is done in the
@@ -169,18 +171,19 @@ TEST_CASE("ds sign test pkcs1_v21 PSA", "[ds_rsa_psa]")
     psa_key_id_t keyt_id;
     psa_status_t status;
     psa_algorithm_t alg = PSA_ALG_RSA_PSS(PSA_ALG_SHA_256);
-    esp_ds_data_ctx_t *ds_key = esp_secure_cert_get_ds_ctx();
-    TEST_ASSERT_NOT_NULL(ds_key);
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = esp_secure_cert_get_ds_ctx();
+    TEST_ASSERT_NOT_NULL(rsa_ds_opaque_key.ds_data_ctx);
 
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-    psa_set_key_bits(&attributes, ds_key->rsa_length_bits);
+    psa_set_key_bits(&attributes, rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH);
     psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
@@ -203,7 +206,7 @@ TEST_CASE("ds sign test pkcs1_v21 PSA", "[ds_rsa_psa]")
     psa_reset_key_attributes(&attributes);
 
     // Free the DS context to prevent memory leak
-    esp_secure_cert_free_ds_ctx(ds_key);
+    esp_secure_cert_free_ds_ctx(rsa_ds_opaque_key.ds_data_ctx);
 }
 
 /* Generated external data for OAEP padding */
@@ -232,20 +235,21 @@ TEST_CASE("ds decrypt test pkcs1_v21 PSA", "[ds_rsa]")
     psa_status_t status;
     psa_algorithm_t alg = PSA_ALG_RSA_OAEP(PSA_ALG_SHA_256);
 
-    esp_ds_data_ctx_t *ds_key = esp_secure_cert_get_ds_ctx();
-    TEST_ASSERT_NOT_NULL(ds_key);
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = esp_secure_cert_get_ds_ctx();
+    TEST_ASSERT_NOT_NULL(rsa_ds_opaque_key.ds_data_ctx);
 
-    printf("DS Key RSA Length Bits: %d\n", ds_key->rsa_length_bits);
+    printf("DS Key RSA Length Bits: %d\n", rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
 
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-    psa_set_key_bits(&attributes, ds_key->rsa_length_bits);
+    psa_set_key_bits(&attributes, rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
     psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
@@ -265,7 +269,7 @@ TEST_CASE("ds decrypt test pkcs1_v21 PSA", "[ds_rsa]")
 
     psa_reset_key_attributes(&attributes);
     // Free the DS context to prevent memory leak
-    esp_secure_cert_free_ds_ctx(ds_key);
+    esp_secure_cert_free_ds_ctx(rsa_ds_opaque_key.ds_data_ctx);
 }
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
@@ -294,20 +298,21 @@ TEST_CASE("ds decrypt test pkcs1_v15 PSA", "[ds_rsa]")
     psa_status_t status;
     psa_algorithm_t alg = PSA_ALG_RSA_PKCS1V15_CRYPT;
 
-    esp_ds_data_ctx_t *ds_key = esp_secure_cert_get_ds_ctx();
-    TEST_ASSERT_NOT_NULL(ds_key);
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = esp_secure_cert_get_ds_ctx();
+    TEST_ASSERT_NOT_NULL(rsa_ds_opaque_key.ds_data_ctx);
 
-    printf("DS Key RSA Length Bits: %d\n", ds_key->rsa_length_bits);
+    printf("DS Key RSA Length Bits: %d\n", rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
 
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
-    psa_set_key_bits(&attributes, ds_key->rsa_length_bits);
+    psa_set_key_bits(&attributes, rsa_ds_opaque_key.ds_data_ctx->rsa_length_bits);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
     psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
     status = psa_import_key(&attributes,
-                            (const uint8_t *)ds_key,
-                            sizeof(*ds_key),
+                            (const uint8_t *)&rsa_ds_opaque_key,
+                            sizeof(rsa_ds_opaque_key),
                             &keyt_id);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
@@ -327,7 +332,7 @@ TEST_CASE("ds decrypt test pkcs1_v15 PSA", "[ds_rsa]")
 
     psa_reset_key_attributes(&attributes);
     // Free the DS context to prevent memory leak
-    esp_secure_cert_free_ds_ctx(ds_key);
+    esp_secure_cert_free_ds_ctx(rsa_ds_opaque_key.ds_data_ctx);
 }
 
 int __wrap_esp_ds_start_sign(const void *message, const esp_ds_data_t *data, hmac_key_id_t key_id, esp_ds_context_t **esp_ds_ctx)

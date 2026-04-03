@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "modem/i2c_ana_mst_reg.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32h21/rom/rtc.h"
@@ -23,7 +24,7 @@
 #define MHZ                 (1000000)
 
 #define CLK_LL_PLL_48M_FREQ_MHZ   (48)
-// #define CLK_LL_PLL_64M_FREQ_MHZ   (64)
+#define CLK_LL_PLL_64M_FREQ_MHZ   (64)
 #define CLK_LL_PLL_96M_FREQ_MHZ   (96)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
@@ -64,8 +65,7 @@ typedef struct {
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
 {
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C | PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
 }
 
 /**
@@ -73,32 +73,30 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 {
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C | PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_BBPLL_I2C | PMU_TIE_LOW_XPD_BBPLL | PMU_TIE_LOW_XPD_BBPLL_I2C);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_BBPLL_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_BBPLL_ICG) ;
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_BBPLL | PMU_TIE_LOW_XPD_BBPLL_I2C);
 }
 
-// /**
-//  * @brief Power up XTAL_X2 circuit
-//  */
-// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
-// {
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-// }
+/**
+ * @brief Power up XTAL_X2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+}
 
-// /**
-//  * @brief Power down XTAL_X2 circuit
-//  */
-// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
-// {
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-// }
+/**
+ * @brief Power down XTAL_X2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+}
 
 /**
  * @brief Enable the 32kHz crystal oscillator
@@ -277,15 +275,43 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, oc_dlref_sel);
 }
 
-// /**
-//  * @brief Get XTAL_X2_CLK frequency
-//  *
-//  * @return XTAL_X2 clock frequency, in MHz
-//  */
-// static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
-// {
-//     return SOC_XTAL_FREQ_32M * 2;
-// }
+/**
+ * @brief Start BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_start(void)
+{
+    REG_CLR_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_SET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+}
+
+/**
+ * @brief Stop BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_stop(void)
+{
+    REG_CLR_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+    REG_SET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+}
+
+/**
+ * @brief Check whether BBPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_bbpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
+}
+
+/**
+ * @brief Get XTAL_X2_CLK frequency
+ *
+ * @return XTAL_X2 clock frequency, in MHz
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
+{
+    return SOC_XTAL_FREQ_32M * 2;
+}
 
 /**
  * @brief To enable the change of soc_clk_sel, cpu_div_num, and ahb_div_num
@@ -313,9 +339,9 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
     case SOC_CPU_CLK_SRC_RC_FAST:
         PCR.sysclk_conf.soc_clk_sel = 2;
         break;
-    // case SOC_CPU_CLK_SRC_XTAL_X2:
-    //     PCR.sysclk_conf.soc_clk_sel = 3;
-    //     break;
+    case SOC_CPU_CLK_SRC_XTAL_X2:
+        PCR.sysclk_conf.soc_clk_sel = 3;
+        break;
     default:
         // Unsupported CPU_CLK mux input sel
         abort();
@@ -337,8 +363,8 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
         return SOC_CPU_CLK_SRC_PLL;
     case 2:
         return SOC_CPU_CLK_SRC_RC_FAST;
-    // case 3:
-    //     return SOC_CPU_CLK_SRC_XTAL_X2;
+    case 3:
+        return SOC_CPU_CLK_SRC_XTAL_X2;
     default:
         // Invalid SOC_CLK_SEL value
         return SOC_CPU_CLK_SRC_INVALID;

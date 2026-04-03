@@ -87,14 +87,16 @@ test_tools_win:
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}\tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME} --durations=10
 
 pytest_build_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
-  parallel: 6
-  needs: []
+  parallel: 10
+  needs:
+    - job: manual_gate
+      optional: true
   tags: [windows-build, brew]
   artifacts:
     paths:
@@ -109,7 +111,10 @@ pytest_build_system_win_minimal_cmake:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
-  needs: []
+  parallel: 2
+  needs:
+    - job: manual_gate
+      optional: true
   tags: [windows-build, brew]
   artifacts:
     paths:
@@ -135,14 +140,16 @@ pytest_build_system_win_minimal_cmake:
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}\tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest -k cmake --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest -k cmake --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME} --durations=10
 
 pytest_buildv2_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:buildv2
-  parallel: 2
-  needs: []
+  parallel: 10
+  needs:
+    - job: manual_gate
+      optional: true
   tags: [windows-build, brew]
   artifacts:
     paths:
@@ -164,20 +171,3 @@ pytest_buildv2_system_win:
       --parallel-index ${CI_NODE_INDEX}
       --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --
-      buildv2
-      test_non_default_target.py
-      test_component_manager.py
-      test_build.py
-      test_bootloader.py
-      test_git.py
-      test_kconfig.py
-      test_partition.py
-      test_reproducible_build.py
-      test_sdkconfig.py
-      test_versions.py
-      test_common.py
-      test_components.py
-      test_cmake.py
-      test_idf_extension.py
-      test_rebuild.py

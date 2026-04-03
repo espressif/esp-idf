@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -264,6 +264,29 @@ _panic_handler:
     csrrw a0, EXT_ILL_CSR, zero
 
 #if SOC_CPU_HAS_PIE
+    /* On the ESP32-S31, the PIE is only available on core 1, so on core 0 we need to parse the
+     * mtval to check if the PIE bit is set. */
+#if CONFIG_IDF_TARGET_ESP32S31
+    csrr  a1, mhartid
+    bnez  a1, _ill_check_pie_bit
+    /* Check if the instruction is a PIE instruction. The PIE instructions opcodes (lowest 7 bits) are of
+     * the type:
+     *  0110011
+     *  xx11x11 (x: don't care)
+     */
+    csrr  t0, mtval
+    /* Start with the special case 0110011 */
+    andi  a1, t0,  0b1111111
+    addi  a1, a1, -0b0110011
+    beqz  a1, rtos_pie_used_cpu0
+    /* Continue with the opcodes that only care about bits 0, 1, 3 and 4 */
+    andi  t0, t0,  0b0011011
+    addi  a1, t0, -0b0011011
+    beqz  a1, rtos_pie_used_cpu0
+    /* Not PIE instruction, continue the exception, we can fall-through, the EXT_ILL CSR
+     * will not have the PIE bit set anyway, we save a branch instruction. */
+_ill_check_pie_bit:
+#endif
     /* Check if the PIE bit is set. */
     andi a1, a0, EXT_ILL_RSN_PIE
     bnez a1, rtos_save_pie_coproc
@@ -278,8 +301,9 @@ _panic_handler:
     /* We cannot check the HWLP bit in a0 since a hardware bug may set this bit even though no HWLP
      * instruction was executed in the program at all, so check mtval (`t0`) */
 #if SOC_CPU_HAS_HWLOOP
-    /* HWLP instructions  all have an opcode of 0b0101011 */
-    andi  a1, t0, 0b1111111
+    /* HWLP instructions all have an opcode of 0b0101011 */
+    csrr  t0, mtval
+    andi  a1, t0,  0b1111111
     addi  a1, a1, -0b0101011
     bnez a1, hwlp_not_used
     /* HWLP used in an ISR, abort */

@@ -1051,7 +1051,7 @@ typedef struct {
     volatile ledc_timern_cnt_cap_reg_t cnt_cap[4];
 } ledc_timer_cnt_cap_group_reg_t;
 
-typedef struct {
+typedef struct ledc_dev_t {
     volatile ledc_ch_group_reg_t channel_group[1];
     uint32_t reserved_078[10];
     volatile ledc_timer_group_reg_t timer_group[1];

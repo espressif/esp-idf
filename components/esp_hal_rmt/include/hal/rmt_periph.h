@@ -25,6 +25,7 @@ extern "C" {
 
 typedef struct {
     const int irq;
+    const char *module_name;
     struct {
         struct {
             const int tx_sig;

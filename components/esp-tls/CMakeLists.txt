@@ -12,6 +12,11 @@ endif()
 set(priv_req http_parser esp_timer)
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     list(APPEND priv_req lwip)
+else()
+    # For linux target on Build system v2, add lwip to PRIV_REQUIRES when CONFIG_LWIP_ENABLE is set.
+    if(CONFIG_LWIP_ENABLE AND IDF_BUILD_V2)
+        list(APPEND priv_req lwip)
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"
@@ -27,8 +32,7 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
 idf_component_get_property(lwip lwip COMPONENT_LIB)
 set_property(TARGET ${lwip} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 5)
 else()
-    # Check if LWIP in the build for linux target to adapt esp-tls compatibility layer
-    idf_build_get_property(build_components BUILD_COMPONENTS)
+    # For linux target, define ESP_TLS_WITH_LWIP if LWIP is enabled in the build
     if(CONFIG_LWIP_ENABLE)
         target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_TLS_WITH_LWIP=1)
     endif()

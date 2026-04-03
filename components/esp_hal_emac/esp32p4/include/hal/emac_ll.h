@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -767,6 +767,11 @@ static inline bool emac_ll_is_ts_init_done(emac_ptp_dev_t *ptp_regs)
 static inline void emac_ll_set_ts_sub_second_incre_val(emac_ptp_dev_t *ptp_regs, uint8_t increment)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(ptp_regs->sub_sec_incre, sub_second_incre_value, increment);
+}
+
+static inline uint8_t emac_ll_get_ts_sub_second_incre_val(emac_ptp_dev_t *ptp_regs)
+{
+    return ptp_regs->sub_sec_incre.sub_second_incre_value;
 }
 
 /* addend control */

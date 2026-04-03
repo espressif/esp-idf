@@ -31,10 +31,9 @@
 #if (defined(MBEDTLS_MAJOR_VERSION) && (MBEDTLS_MAJOR_VERSION < 4))
 #include "mbedtls/mbedtls_config.h"
 #endif // MBEDTLS_MAJOR_VERSION < 4
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "soc/soc_caps.h"
 
-
-#ifndef CONFIG_IDF_TARGET_LINUX
 #undef MBEDTLS_PSA_BUILTIN_GET_ENTROPY
 #define MBEDTLS_PSA_DRIVER_GET_ENTROPY
 #define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
@@ -189,33 +188,39 @@
    with software fallback.
 */
 #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
-#define ESP_SHA_DRIVER_ENABLED
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_1
-#undef MBEDTLS_PSA_BUILTIN_ALG_SHA_1
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_224
-#undef MBEDTLS_PSA_BUILTIN_ALG_SHA_224
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_256
-#undef MBEDTLS_PSA_BUILTIN_ALG_SHA_256
-#undef MBEDTLS_SHA1_C
-#undef MBEDTLS_SHA224_C
+    #define ESP_SHA_DRIVER_ENABLED
+    #define MBEDTLS_PSA_ACCEL_ALG_HMAC
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
+    #if SOC_SHA_SUPPORT_SHA1
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_1
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_1
+        #undef MBEDTLS_SHA1_C
+    #endif // SOC_SHA_SUPPORT_SHA1
+    #if SOC_SHA_SUPPORT_SHA224
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_224
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_224
+        #undef MBEDTLS_SHA224_C
+    #endif // SOC_SHA_SUPPORT_SHA224
+    #if SOC_SHA_SUPPORT_SHA256
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_256
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_256
+    #endif // SOC_SHA_SUPPORT_SHA256
+    #if SOC_SHA_SUPPORT_SHA512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_384
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_512
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_384
+        #undef MBEDTLS_SHA512_C
+        #undef MBEDTLS_SHA384_C
+        #undef MBEDTLS_PSA_BUILTIN_ALG_HMAC
+    #else
+        #undef MBEDTLS_SHA512_ALT
+    #endif // SOC_SHA_SUPPORT_SHA512
 #define ESP_HMAC_TRANSPARENT_DRIVER_ENABLED
-#define MBEDTLS_PSA_ACCEL_ALG_HMAC
-#define MBEDTLS_PSA_BUILTIN_ALG_HMAC
-#if SOC_SHA_SUPPORT_SHA512
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_384
-#undef MBEDTLS_PSA_BUILTIN_ALG_SHA_384
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_512
-#undef MBEDTLS_PSA_BUILTIN_ALG_SHA_512
-#undef MBEDTLS_SHA512_C
-#undef MBEDTLS_SHA384_C
-#undef MBEDTLS_PSA_BUILTIN_ALG_HMAC
 #else
-#undef MBEDTLS_SHA512_ALT
-#endif
-#else
-#undef MBEDTLS_SHA1_ALT
-#undef MBEDTLS_SHA256_ALT
-#undef MBEDTLS_SHA512_ALT
+    #undef MBEDTLS_SHA1_ALT
+    #undef MBEDTLS_SHA256_ALT
+    #undef MBEDTLS_SHA512_ALT
 #endif
 
 /* MBEDTLS_MDx_ALT to enable ROM MD support
@@ -538,6 +543,11 @@
 #else
 #undef MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #undef PSA_WANT_ECC_SECP_R1_384
+#endif
+#ifdef CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
+#define PSA_WANT_ECC_SECP_R1_192 1
+#else
+#undef PSA_WANT_ECC_SECP_R1_192
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
@@ -2008,7 +2018,6 @@
 #ifdef CONFIG_MBEDTLS_CHACHA20_C
 #define PSA_WANT_KEY_TYPE_CHACHA20 1
 #else
-#undef MBEDTLS_CHACHA20_C
 #undef PSA_WANT_KEY_TYPE_CHACHA20
 #endif
 
@@ -2019,12 +2028,11 @@
  *
  * Module:  library/chachapoly.c
  *
- * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
+ * This module requires: MBEDTLS_CHACHA20_C
  */
 #ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
 #define PSA_WANT_ALG_CHACHA20_POLY1305 1
 #else
-#undef MBEDTLS_CHACHAPOLY_C
 #undef PSA_WANT_ALG_CHACHA20_POLY1305
 #endif
 
@@ -2521,20 +2529,6 @@
 #define MBEDTLS_PLATFORM_C
 
 /**
- * \def MBEDTLS_POLY1305_C
- *
- * Enable the Poly1305 MAC algorithm.
- *
- * Module:  library/poly1305.c
- * Caller:  library/chachapoly.c
- */
-#ifdef CONFIG_MBEDTLS_POLY1305_C
-#define MBEDTLS_POLY1305_C
-#else
-#undef MBEDTLS_POLY1305_C
-#endif
-
-/**
  * \def MBEDTLS_RIPEMD160_C
  *
  * Enable the RIPEMD-160 hash algorithm.
@@ -2597,6 +2591,7 @@
 #define PSA_WANT_ALG_SHA_1 1
 #else
 #undef PSA_WANT_ALG_SHA_1
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_1
 #endif
 /**
  * \def MBEDTLS_SHA224_C
@@ -2635,6 +2630,7 @@
 #define PSA_WANT_ALG_SHA_512 1
 #else
 #undef PSA_WANT_ALG_SHA_512
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_512
 #endif
 
 /**
@@ -2655,6 +2651,7 @@
 #define PSA_WANT_ALG_SHA_384 1
 #else
 #undef PSA_WANT_ALG_SHA_384
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_384
 #endif
 
 /**
@@ -2678,7 +2675,9 @@
 #define PSA_WANT_ALG_SHA_224 1
 #else
 #undef PSA_WANT_ALG_SHA_256
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_256
 #undef PSA_WANT_ALG_SHA_224
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_224
 #endif
 
 /* MBEDTLS_MD_CAN_SHA* macros indicate whether a hash algorithm is available

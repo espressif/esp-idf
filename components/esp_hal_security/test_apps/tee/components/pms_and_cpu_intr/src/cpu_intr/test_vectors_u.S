@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
     .equ SAVE_REGS, 32
     .equ CONTEXT_SIZE, (SAVE_REGS * 4)
     .equ UINTTHRESH_CSR,  0x047
+    .equ UINTSTATUS_CSR,  0xCB1
     .equ RV_INTR_NUM, (CLIC_EXT_INTR_NUM_OFFSET + SOC_CPU_INTR_NUM)
 
 /* Macro which first allocates space on the stack to save general
@@ -192,6 +193,15 @@ _test_uintr_handler:
 
     /* Disable nested interrupts */
     csrci   ustatus, USTATUS_UIE
+
+    /* Restore the U-mode interrupt threshold level */
+    csrr    t0, UINTSTATUS_CSR
+    bnez    t0, _skip_thresh_reset
+    csrr    t0, UINTTHRESH_CSR
+    li      t1, (1 << (8 - NLBITS)) - 1
+    beq     t0, t1, _skip_thresh_reset
+    csrw    UINTTHRESH_CSR, t1
+_skip_thresh_reset:
 
     /* Restore the rest of the registers. */
     csrw    ucause, s1

@@ -32,7 +32,7 @@ Overview
 
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
-A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc`, :cpp:func:`esp_intr_alloc_bind`, :cpp:func:`esp_intr_alloc_intrstatus`, or :cpp:func:`esp_intr_alloc_intrstatus_bind`. It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
+A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc`, :cpp:func:`esp_intr_alloc_bind`, :cpp:func:`esp_intr_alloc_intrstatus`, :cpp:func:`esp_intr_alloc_intrstatus_bind`, or :cpp:func:`esp_intr_alloc_info`. It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
 
 The interrupt allocator presents two different types of interrupts, namely shared interrupts and non-shared interrupts, both of which require different handling. Non-shared interrupts will allocate a separate interrupt for every :cpp:func:`esp_intr_alloc` call, and this interrupt is use solely for the peripheral attached to it, with only one ISR that will get called. Shared interrupts can have multiple peripherals triggering them, with multiple ISRs being called when one of the peripherals attached signals an interrupt. Thus, ISRs that are intended for shared interrupts should check the interrupt status of the peripheral they service in order to check if any action is required.
 
@@ -140,6 +140,12 @@ Sources attached to non-shared interrupt do not support this feature.
 
 By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only priority level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at priority levels 2 and 3.
 
+**Private shared interrupts** (``ESP_INTR_FLAG_SHARED_PRIVATE``) behave like ``ESP_INTR_FLAG_SHARED`` in that they allow multiple sources to share the same CPU interrupt line. However, unlike regular shared interrupts, these lines are never selected automatically by the interrupt allocator.
+
+In other words, even when using ``ESP_INTR_FLAG_SHARED``, no allocation function will ever choose an interrupt line that was created with ``ESP_INTR_FLAG_SHARED_PRIVATE``. These lines are effectively reserved and can only be used by explicitly binding new sources to them (e.g., via ``esp_intr_alloc_bind()`` or related APIs).
+
+This allows you to define a fixed set of interrupt sources sharing a single CPU line (for example, multiple GPIO sources) without the risk of the allocator reusing that line for unrelated interrupts.
+
 Though the framework supports this feature, you have to use it **very carefully**. There usually exist two ways to stop an interrupt from being triggered: **disable the source** or **mask peripheral interrupt status**. ESP-IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
 
 **Status bits shall either be masked before the handler responsible for it is disabled, or be masked and then properly handled in another enabled interrupt**.
@@ -150,6 +156,12 @@ Though the framework supports this feature, you have to use it **very carefully*
 
 When calling :cpp:func:`esp_intr_alloc` or :cpp:func:`esp_intr_alloc_intrstatus`, the interrupt allocator selects the first interrupt that meets the level requirements for mapping the specified source, without considering other sources already mapped to the shared interrupt line. However, by using the functions :cpp:func:`esp_intr_alloc_bind` or :cpp:func:`esp_intr_alloc_intrstatus_bind`, you can explicitly specify the interrupt handler to be shared with the given interrupt source.
 
+For private shared interrupts, the first allocation uses ``ESP_INTR_FLAG_SHARED_PRIVATE`` (with :cpp:func:`esp_intr_alloc` or :cpp:func:`esp_intr_alloc_intrstatus`), and subsequent sources are attached via the same functions, still with ``ESP_INTR_FLAG_SHARED_PRIVATE`` flag and the returned handle.
+
+Named groups
+^^^^^^^^^^^^
+
+Shared interrupts groups, public or private, can be defined by name. This is done via the ``bind_by.name`` field of the :cpp:type:`esp_intr_alloc_info_t` structure. If a shared interrupt group with the specified name already exists (created by an earlier call using the same name), the new source is attached to that group. Otherwise, a new shared interrupt group is allocated and tagged with that name. Only one of ``bind_by.handle`` or ``bind_by.name`` may be set. The usual flag rules (e.g., level, SHARED vs SHARED_PRIVATE) still apply. This does not affect the behavior of public shared interrupts: interrupt allocation functions can still attach new sources to existing public shared lines without specifying a name or handle.
 
 Troubleshooting Interrupt Allocation
 ------------------------------------

@@ -215,7 +215,8 @@ FreeRTOS 定时器
 
 3. 暂停定时器
 
-    - 调用函数 :cpp:func:`esp_timer_stop`，可暂停运行中的定时器。
+    - 调用函数 :cpp:func:`esp_timer_stop` 可以暂停运行中的定时器。但在调用此函数之后，回调函数可能还会再执行一次或多次。使用 :cpp:func:`esp_timer_is_active`，可以检查暂停定时器后回调函数是否仍在运行；也可以使用阻塞式停止 API。
+    - 使用 :cpp:func:`esp_timer_stop_blocking` 可以阻塞定时器停止操作，直到所有正在执行的回调函数执行完毕。
 
 4. 删除定时器
 

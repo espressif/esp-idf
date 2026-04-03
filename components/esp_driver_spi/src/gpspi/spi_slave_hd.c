@@ -127,7 +127,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->bus_attr = (spi_bus_attr_t *)spi_bus_get_attr(host_id);
     host->cs_io_num = config->spics_io_num;
 
-    ret = spicommon_dma_chan_alloc(host_id, config->dma_chan);
+    ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, bus_config->dma_burst_size);
     if (ret != ESP_OK) {
         goto cleanup;
     }

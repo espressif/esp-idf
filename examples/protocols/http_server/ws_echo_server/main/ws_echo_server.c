@@ -52,6 +52,18 @@ static void ws_async_send(void *arg)
     free(resp_arg);
 }
 
+static void ws_ping_send(void *arg)
+{
+    struct async_resp_arg *resp_arg = arg;
+    httpd_handle_t hd = resp_arg->hd;
+    int fd = resp_arg->fd;
+    httpd_ws_frame_t ping_pkt;
+    memset(&ping_pkt, 0, sizeof(httpd_ws_frame_t));
+    ping_pkt.type = HTTPD_WS_TYPE_PING;
+    httpd_ws_send_frame_async(hd, fd, &ping_pkt);
+    free(resp_arg);
+}
+
 static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
 {
     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
@@ -61,6 +73,22 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
     resp_arg->hd = req->handle;
     resp_arg->fd = httpd_req_to_sockfd(req);
     esp_err_t ret = httpd_queue_work(handle, ws_async_send, resp_arg);
+    if (ret != ESP_OK) {
+        free(resp_arg);
+    }
+    return ret;
+}
+
+
+static esp_err_t trigger_ping_send(httpd_handle_t handle, httpd_req_t *req)
+{
+    struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+    if (resp_arg == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    resp_arg->hd = req->handle;
+    resp_arg->fd = httpd_req_to_sockfd(req);
+    esp_err_t ret = httpd_queue_work(handle, ws_ping_send, resp_arg);
     if (ret != ESP_OK) {
         free(resp_arg);
     }
@@ -87,16 +115,36 @@ static esp_err_t ws_pre_handshake_cb(httpd_req_t *req)
 }
 #endif
 
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB
+static esp_err_t ws_post_handshake_cb(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "=== ws_post_handshake_cb called ===");
+
+    // Get the URI with query string
+    const char *uri = req->uri;
+    ESP_LOGI(TAG, "WebSocket connection established for URI: %s", uri ? uri : "NULL");
+
+    // Send a welcome message to the client
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    ws_pkt.payload = (uint8_t *)"Welcome to the WebSocket Echo Server (post-handshake)!";
+    ws_pkt.len = strlen((char *)ws_pkt.payload);
+    esp_err_t ret = httpd_ws_send_frame(req, &ws_pkt);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+        return ret;
+    }
+    return ESP_OK;
+}
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB */
+
 /*
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
  */
 static esp_err_t echo_handler(httpd_req_t *req)
 {
-    if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
-        return ESP_OK;
-    }
     httpd_ws_frame_t ws_pkt;
     uint8_t *buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -127,10 +175,14 @@ static esp_err_t echo_handler(httpd_req_t *req)
     }
     ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
-        ws_pkt.payload != NULL &&
-        strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
-        free(buf);
-        return trigger_async_send(req->handle, req);
+        ws_pkt.payload != NULL) {
+        if (strncmp((char *)ws_pkt.payload, "Trigger async", strlen("Trigger async")) == 0) {
+            free(buf);
+            return trigger_async_send(req->handle, req);
+        } else if (strncmp((char *)ws_pkt.payload, "Ping", strlen("Ping")) == 0) {
+            free(buf);
+            return trigger_ping_send(req->handle, req);
+        }
     }
 
     ret = httpd_ws_send_frame(req, &ws_pkt);
@@ -148,10 +200,6 @@ static esp_err_t echo_handler(httpd_req_t *req)
  */
 static esp_err_t echo_partial_handler(httpd_req_t *req)
 {
-    if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened (partial)");
-        return ESP_OK;
-    }
     httpd_ws_frame_t ws_pkt;
     uint8_t *chunk_buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -248,8 +296,11 @@ static const httpd_uri_t ws_auth = {
         .user_ctx   = NULL,
         .is_websocket = true,
 #ifdef CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB
-        .ws_pre_handshake_cb = ws_pre_handshake_cb
-#endif
+        .ws_pre_handshake_cb = ws_pre_handshake_cb,
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_PRE_HANDSHAKE_CB */
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB
+        .ws_post_handshake_cb = ws_post_handshake_cb,
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB */
 };
 
 
@@ -302,7 +353,6 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
         *server = start_webserver();
     }
 }
-
 
 void app_main(void)
 {

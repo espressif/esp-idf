@@ -172,6 +172,14 @@ static void cacheReset(BD_ADDR bda, BOOLEAN update)
             return;
         }
 
+        // Free the assoc_addr list_t structure before array shift to prevent memory leak
+        // Note: bta_gattc_co_cache_clear_assoc_addr only calls list_clear which clears nodes
+        // but doesn't free the list_t structure itself
+        if (cache_env->cache_addr[index].assoc_addr != NULL) {
+            list_free(cache_env->cache_addr[index].assoc_addr);
+            cache_env->cache_addr[index].assoc_addr = NULL;
+        }
+
         UINT8 num = cache_env->num_addr;
         //delete the server_bda in the addr_info list.
         for(UINT8 i = index; i < (num - 1); i++) {
@@ -435,6 +443,8 @@ void bta_gattc_co_cache_addr_init(void)
     } else {
         APPL_TRACE_ERROR("%s, Line = %d, nvs flash open fail, err_code = %x", __func__, __LINE__, err_code);
         osi_free(p_buf);
+        osi_free(cache_env);
+        cache_env = NULL;
         return;
     }
 
@@ -444,11 +454,18 @@ void bta_gattc_co_cache_addr_init(void)
 
 void bta_gattc_co_cache_addr_deinit(void)
 {
-    APPL_TRACE_DEBUG("%s is_open=%d", __func__, cache_env->is_open);
-
-    if(!cache_env->is_open) {
+    if(cache_env == NULL) {
         return;
     }
+
+    APPL_TRACE_DEBUG("%s is_open=%d", __func__, cache_env->is_open);
+
+    if (!cache_env->is_open) {
+        osi_free(cache_env);
+        cache_env = NULL;
+        return;
+    }
+
     nvs_close(cache_env->addr_fp);
     cache_env->is_open = false;
 
@@ -608,9 +625,30 @@ BOOLEAN bta_gattc_co_cache_append_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_add
     if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
         addr_info = &cache_env->cache_addr[addr_index];
         if (addr_info->assoc_addr == NULL) {
-            addr_info->assoc_addr =list_new(NULL);
+            addr_info->assoc_addr =list_new(osi_free_func);
         }
-        return list_append(addr_info->assoc_addr, p_assoc_buf);
+        if (addr_info->assoc_addr == NULL) {
+            APPL_TRACE_ERROR("assoc_addr list creation failed");
+            osi_free(p_assoc_buf);
+            return FALSE;
+        }
+
+        for (list_node_t *sn = list_begin(addr_info->assoc_addr);
+             sn != list_end(addr_info->assoc_addr); sn = list_next(sn)) {
+            if (!memcmp(list_node(sn), assoc_addr, sizeof(BD_ADDR))) {
+                APPL_TRACE_WARNING("Association already exists");
+                osi_free(p_assoc_buf);
+                return TRUE;
+            }
+        }
+
+        if (!list_append(addr_info->assoc_addr, p_assoc_buf)) {
+            APPL_TRACE_ERROR("Failed to append to assoc_addr list");
+            osi_free(p_assoc_buf);
+            return FALSE;
+
+        }
+        return TRUE;
     } else {
         osi_free(p_assoc_buf);
     }
@@ -643,16 +681,15 @@ BOOLEAN bta_gattc_co_cache_remove_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_add
 
 UINT8* bta_gattc_co_cache_find_src_addr(BD_ADDR assoc_addr, UINT8 *index)
 {
-    UINT8 num = cache_env->num_addr;
+    UINT8 num = (cache_env->num_addr > MAX_DEVICE_IN_CACHE) ? MAX_DEVICE_IN_CACHE : cache_env->num_addr;
     cache_addr_info_t *addr_info = &cache_env->cache_addr[0];
     UINT8 *addr_data;
-    //Check the assoc_addr list is NULL or not
-    if (addr_info->assoc_addr == NULL) {
-        *index = INVALID_ADDR_NUM;
-        return NULL;
-    }
 
     for (int i = 0; i < num; i++) {
+        if (addr_info->assoc_addr == NULL) {
+            addr_info++;
+            continue;
+        }
        for (const list_node_t *node = list_begin(addr_info->assoc_addr); node != list_end(addr_info->assoc_addr);
             node = list_next(node)) {
             addr_data = (UINT8 *)list_node(node);
@@ -662,11 +699,6 @@ UINT8* bta_gattc_co_cache_find_src_addr(BD_ADDR assoc_addr, UINT8 *index)
            }
        }
        addr_info++;
-
-       if (addr_info->assoc_addr == NULL) {
-           *index = INVALID_ADDR_NUM;
-           return NULL;
-       }
     }
 
     *index = INVALID_ADDR_NUM;

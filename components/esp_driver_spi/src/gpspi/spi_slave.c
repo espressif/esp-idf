@@ -186,7 +186,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     spihost[host]->bus_attr->dma_enabled = (dma_chan != SPI_DMA_DISABLED);
     spihost[host]->bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     if (spihost[host]->bus_attr->dma_enabled) {
-        ret = spicommon_dma_chan_alloc(host, dma_chan);
+        ret = spicommon_dma_chan_alloc(host, dma_chan, bus_config->dma_burst_size);
         if (ret != ESP_OK) {
             goto cleanup;
         }

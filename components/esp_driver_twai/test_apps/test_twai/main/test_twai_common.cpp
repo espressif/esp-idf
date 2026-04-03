@@ -19,11 +19,17 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "hal/twai_periph.h"
+#include "soc/gpio_sig_map.h"
 #include "esp_private/gpio.h"
 #include "driver/uart.h" // for baudrate detection
 
+#if CONFIG_IDF_TARGET_ESP32H4
+#define TEST_TX_GPIO                GPIO_NUM_2
+#define TEST_RX_GPIO                GPIO_NUM_3
+#else
 #define TEST_TX_GPIO                GPIO_NUM_4
 #define TEST_RX_GPIO                GPIO_NUM_5
+#endif
 #define TEST_TWAI_QUEUE_DEPTH       5
 #define TEST_TRANS_LEN              100
 #define TEST_FRAME_LEN              7
@@ -570,6 +576,55 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     printf("node recovered! current tec %d rec %d, continue\n", node_status.tx_error_count, node_status.rx_error_count);
     TEST_ASSERT_LESS_THAN(96, node_status.tx_error_count);
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
+
+static IRAM_ATTR bool test_arb_error_cb(twai_node_handle_t handle, const twai_error_event_data_t *edata, void *user_ctx)
+{
+    esp_rom_printf("bus error: 0x%lx\n", edata->err_flags.val);
+    // only arb lost or stuff err is expected, stuff_err comes from RX section after arb lost
+    // test using loopback mode, arb_lost -> switch to RX -> no one is sending -> can't receive new waves -> stuff err
+    TEST_ASSERT(edata->err_flags.arb_lost || edata->err_flags.stuff_err);
+    return true;
+}
+
+TEST_CASE("test arb lost and stuff err", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO;   // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 50000;  //slow bitrate to ensure soft error trigger
+    node_config.tx_queue_depth = 1;
+    node_config.flags.enable_self_test = true;
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_error = test_arb_error_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, NULL));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    twai_node_status_t node_status = {};
+    twai_frame_t tx_frame = {};
+    tx_frame.header.id = 0x7F0; // send high id range to easier trigger arb lost
+    gpio_set_level(TEST_TX_GPIO, 0);
+    while (node_status.state != TWAI_ERROR_BUS_OFF && (tx_frame.header.id > 0x7F0 - 10)) {
+        printf("sending frame %lx last tec %d rec %d\n", tx_frame.header.id --, node_status.tx_error_count, node_status.rx_error_count);
+        TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
+        if (tx_frame.header.id < 0x7F0 - 2) {    // trigger error after 2 frames
+            printf("trigger arb lost now!\n");
+            esp_rom_delay_us(5 * (1000000 / node_config.bit_timing.bitrate)); // trigger error at 30 bits after frame start
+            gpio_matrix_output(TEST_TX_GPIO, SIG_GPIO_OUT_IDX, false, false);
+            esp_rom_delay_us(2 * (1000000 / node_config.bit_timing.bitrate)); // trigger error for 2 bits
+            gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, false, false);
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // some time for hardware report errors
+        twai_node_get_info(node_hdl, &node_status, NULL);
+    }
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));

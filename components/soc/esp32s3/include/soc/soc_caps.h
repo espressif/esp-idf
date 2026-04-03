@@ -61,7 +61,7 @@
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
-#define SOC_RTC_TIMER_V1_SUPPORTED      1
+#define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_PSRAM_DMA_CAPABLE           1
 #define SOC_XT_WDT_SUPPORTED            1
 #define SOC_I2S_SUPPORTED               1
@@ -84,8 +84,10 @@
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_CLK_TREE_SUPPORTED          1
+#define SOC_REGI2C_SUPPORTED            1
 #define SOC_MPU_SUPPORTED               1
 #define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
@@ -200,6 +202,11 @@
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
 
+// GPIO0~21 on ESP32-S3 can support chip deep sleep wakeup
+#define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP          (1)
+#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP                   SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK           (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7 | BIT8 | BIT9 | BIT10 | BIT11 | BIT12 | BIT13 | BIT14 | BIT15 | BIT16 | BIT17 | BIT18 | BIT19 | BIT20 | BIT21)
+
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #define SOC_I2C_NUM                             (2U)
 #define SOC_HP_I2C_NUM                          (2U)
@@ -265,6 +272,10 @@
 #define SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH    (128)
 #define SOC_RTC_CNTL_TAGMEM_PD_DMA_ADDR_ALIGN   (SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH >> 3)
 
+/* RTC_CNTL registers on this SoC are not atomic and require software protection
+ * (e.g., spinlocks) when accessed from multiple cores or threads. */
+#define SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS 1
+
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT   22
 #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
@@ -285,10 +296,6 @@
 #define SOC_SPI_MAX_BITWIDTH(host_id)       ((host_id == 2) ? 4 : 8) // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
 #define SOC_SPI_SCT_SUPPORTED(host_id)      ((host_id) == 1)
 
-// Peripheral supports output given level during its "dummy phase"
-#define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT       1
-#define SOC_MEMSPI_IS_INDEPENDENT                  1
-
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_SPIRAM_XIP_SUPPORTED        1
@@ -296,7 +303,7 @@
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V1_SUPPORTED
+#define SOC_RTC_TIMER_V1                    1
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (2)  /*!< Hardware version of touch sensor */
@@ -327,9 +334,6 @@
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
-
-/*--------------------------- UHCI CAPS -------------------------------------*/
-#define SOC_UHCI_NUM               (1UL)
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_OTG_PERIPH_NUM          (1U)
@@ -397,6 +401,8 @@
 #define SOC_PM_MODEM_RETENTION_BY_BACKUPDMA     (1)
 #define SOC_PM_MODEM_PD_BY_SW                   (1)
 
+#define SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP     (1)
+
 /*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
@@ -456,6 +462,12 @@
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 
 #define SOC_SPI_MEM_FLASH_SUPPORT_HPM                         (1) /*!< Support High Performance Mode */
+
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT       1
+#define SOC_MEMSPI_IS_INDEPENDENT                  1
+
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

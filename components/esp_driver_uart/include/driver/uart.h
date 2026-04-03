@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -365,7 +365,7 @@ esp_err_t uart_enable_rx_intr(uart_port_t uart_num);
 esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 
 /**
- * @brief Disable UART TX interrupt (TX_FULL & TX_TIMEOUT INTERRUPT)
+ * @brief Disable UART TX interrupt (TX_FIFO_EMPTY INTERRUPT)
  *
  * @param uart_num  UART port number
  *
@@ -376,11 +376,11 @@ esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
 
 /**
- * @brief Enable UART TX interrupt (TX_FULL & TX_TIMEOUT INTERRUPT)
+ * @brief Enable UART TX interrupt (TX_FIFO_EMPTY INTERRUPT)
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- * @param enable  1: enable; 0: disable
- * @param thresh  Threshold of TX interrupt, 0 ~ UART_HW_FIFO_LEN(uart_num)
+ * @param enable  Set to 1 to enable the interrupt
+ * @param thresh  Threshold of TX FIFO empty interrupt, 0 ~ UART_HW_FIFO_LEN(uart_num). If -1 is given, threshold configuration will be skipped.
  *
  * @return
  *     - ESP_OK   Success
@@ -833,7 +833,8 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
  *      - ESP_ERR_INVALID_ARG if uart_num is incorrect or wakeup_threshold is
  *        outside of [3, 0x3ff] range.
  */
-esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold);
+esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
+__attribute__((deprecated("use uart_wakeup_setup instead")));
 
 /**
  * @brief Get the number of RX pin signal edges for light sleep wakeup.
@@ -848,7 +849,8 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if out_wakeup_threshold is NULL
  */
-esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_threshold);
+esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_threshold)
+__attribute__((deprecated));
 
 /**
   * @brief Wait until UART tx memory empty and the last char send ok (polling mode).

@@ -544,7 +544,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
         def _print_closing_message(self, args: PropertyDict, actions: KeysView) -> None:
             # print a closing message of some kind,
             # except if any of the following actions were requested
-            if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app', 'qemu')):
+            if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app', 'qemu', 'sbom-create')):
                 print('Done')
                 return
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ typedef enum {
     ESP_GATTC_PREP_WRITE_EVT          = 11,       /*!< This event is triggered upon the completion of a GATT prepare-write operation using `esp_ble_gattc_prepare_write`. */
     ESP_GATTC_EXEC_EVT                = 12,       /*!< This event is triggered upon the completion of a GATT write execution using `esp_ble_gattc_execute_write` .*/
     ESP_GATTC_ACL_EVT                 = 13,       /*!< Deprecated. */
-    ESP_GATTC_CANCEL_OPEN_EVT         = 14,       /*!< Deprecated. */
+    ESP_GATTC_CANCEL_OPEN_EVT         = 14,       /*!< This event is triggered when a pending GATT connection open is cancelled via `esp_ble_gattc_cancel_open`. */
     ESP_GATTC_SRVC_CHG_EVT            = 15,       /*!< This event is triggered when a service changed indication is received from the Server, indicating that the attribute database on the Server has been modified (e.g., services have been added, removed). */
     ESP_GATTC_ENC_CMPL_CB_EVT         = 17,       /*!< Deprecated. */
     ESP_GATTC_CFG_MTU_EVT             = 18,       /*!< This event is triggered upon the completion of the MTU configuration with `esp_ble_gattc_send_mtu_req`. */
@@ -256,6 +256,14 @@ typedef union {
         uint16_t conn_id;              /*!< Connection ID */
     } dis_srvc_cmpl;                   /*!< Callback parameter for the event `ESP_GATTC_DIS_SRVC_CMPL_EVT` */
 
+    /**
+     * @brief Callback parameter for the event `ESP_GATTC_CANCEL_OPEN_EVT`
+     */
+    struct gattc_cancel_open_evt_param {
+        esp_gatt_status_t status;      /*!< Operation status */
+        esp_bd_addr_t remote_bda;      /*!< Remote device address that was cancelled */
+    } cancel_open;                     /*!< Callback parameter for the event `ESP_GATTC_CANCEL_OPEN_EVT` */
+
 } esp_ble_gattc_cb_param_t;
 
 /**
@@ -416,6 +424,34 @@ esp_err_t esp_ble_gattc_aux_open_with_pawr_synced(esp_gatt_if_t gattc_if, esp_bl
  *       - ESP_FAIL: Failure
  */
 esp_err_t esp_ble_gattc_close(esp_gatt_if_t gattc_if, uint16_t conn_id);
+
+/**
+ * @brief  Parameters for cancelling a pending GATT connection open
+ */
+typedef struct {
+    esp_gatt_if_t gattc_if;     /*!< GATT client access interface */
+    esp_bd_addr_t remote_bda;   /*!< Remote device address to cancel */
+} esp_ble_gattc_cancel_open_params_t;
+
+/**
+ * @brief  Cancel a pending GATT connection open
+ *
+ * Call this API to cancel a connection that was initiated by `esp_ble_gattc_enh_open`
+ * before it completes or times out. If the connection is already established,
+ * use `esp_ble_gap_disconnect` instead.
+ *
+ * @param[in]       params  Pointer to cancel open parameters (gattc_if, remote_bda)
+ *
+ * @note
+ *      1. This function triggers `ESP_GATTC_CANCEL_OPEN_EVT` on completion.
+ *      2. If no matching pending connection is found, the callback receives status `ESP_GATT_ERROR`.
+ *
+ * @return
+ *       - ESP_OK: Request sent successfully
+ *       - ESP_ERR_INVALID_ARG: Invalid argument (e.g. params is NULL or remote_bda is NULL)
+ *       - ESP_FAIL: Bluedroid not enabled or transfer failed
+ */
+esp_err_t esp_ble_gattc_cancel_open(const esp_ble_gattc_cancel_open_params_t *params);
 
 /**
  * @brief  Configure the MTU size in the GATT channel

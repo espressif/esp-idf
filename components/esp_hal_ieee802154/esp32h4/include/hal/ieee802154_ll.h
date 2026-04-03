@@ -12,11 +12,6 @@
 extern "C" {
 #endif
 
-// todo: TZ-2155
-#define IEEE802154_TXPOWER_VALUE_MAX  10
-#define IEEE802154_TXPOWER_VALUE_MIN -14
-#define IEEE802154_TXPOWER_INDEX_MIN   0
-
 #define IEEE802154_RSSI_COMPENSATION_VALUE 0
 
 static inline uint32_t ieee802154_ll_get_rx_filter_not_work_cnt(void)

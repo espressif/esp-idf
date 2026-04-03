@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 #include "esp_heap_caps.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
-#include "soc/uart_pins.h"
+#include "esp_stdio.h"
 
 // Forward declaration. Definition in linenoise/linenoise.h.
 typedef struct linenoiseCompletions linenoiseCompletions;
@@ -71,65 +71,6 @@ typedef struct {
         .prompt = NULL,                   \
         .max_cmdline_length = 0,          \
 }
-
-#if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
-/**
- * @brief Parameters for console device: UART
- *
- */
-typedef struct {
-    int channel;     //!< UART channel number (count from zero)
-    int baud_rate;   //!< Communication baud rate
-    int tx_gpio_num; //!< GPIO number for TX path, -1 means using default one
-    int rx_gpio_num; //!< GPIO number for RX path, -1 means using default one
-} esp_console_dev_uart_config_t;
-
-#if CONFIG_ESP_CONSOLE_UART_CUSTOM
-#define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT()       \
-{                                                   \
-    .channel = CONFIG_ESP_CONSOLE_UART_NUM,         \
-    .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,  \
-    .tx_gpio_num = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM, \
-    .rx_gpio_num = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM, \
-}
-#else
-#define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT()      \
-{                                                  \
-    .channel = CONFIG_ESP_CONSOLE_UART_NUM,        \
-    .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE, \
-    .tx_gpio_num = -1,                             \
-    .rx_gpio_num = -1,                             \
-}
-#endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
-#endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
-
-#if CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
-/**
- * @brief Parameters for console device: USB CDC
- *
- * @note It's an empty structure for now, reserved for future
- *
- */
-typedef struct {
-
-} esp_console_dev_usb_cdc_config_t;
-
-#define ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT() {}
-#endif // CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
-
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || (defined __DOXYGEN__ && SOC_USB_SERIAL_JTAG_SUPPORTED)
-/**
- * @brief Parameters for console device: USB-SERIAL-JTAG
- *
- * @note It's an empty structure for now, reserved for future
- *
- */
-typedef struct {
-
-} esp_console_dev_usb_serial_jtag_config_t;
-
-#define ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT() {}
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || (defined __DOXYGEN__ && SOC_USB_SERIAL_JTAG_SUPPORTED)
 
 typedef enum {
     ESP_CONSOLE_HELP_VERBOSE_LEVEL_0       = 0,
@@ -377,7 +318,13 @@ struct esp_console_repl_s {
     esp_err_t (*del)(esp_console_repl_t *repl);
 };
 
+#if !CONFIG_IDF_TARGET_LINUX
+
+/* TODO IDF-14810: Remove the whole section under the #if */
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
+#include "driver/esp_private/uart_vfs.h"
+#include "driver/uart_vfs.h"
+
 /**
  * @brief Establish a console REPL environment over UART driver
  *
@@ -399,10 +346,17 @@ struct esp_console_repl_s {
  *      - ESP_OK on success
  *      - ESP_FAIL Parameter error
  */
-esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config,
+                                    const esp_console_repl_config_t *repl_config,
+                                    esp_console_repl_t **ret_repl);
 #endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 
+/* TODO IDF-14810: Remove the whole section under the #if */
 #if CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
+
+#include "esp_private/esp_vfs_cdcacm.h"
+#include "esp_vfs_cdcacm.h"
+
 /**
  * @brief Establish a console REPL environment over USB CDC
  *
@@ -422,10 +376,17 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
  *      - ESP_OK on success
  *      - ESP_FAIL Parameter error
  */
-esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config,
+                                       const esp_console_repl_config_t *repl_config,
+                                       esp_console_repl_t **ret_repl);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
 
+/* TODO IDF-14810: Remove the whole section under the #if */
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || (defined __DOXYGEN__ && SOC_USB_SERIAL_JTAG_SUPPORTED)
+
+#include "driver/esp_private/usb_serial_jtag_vfs.h"
+#include "driver/usb_serial_jtag_vfs.h"
+
 /**
  * @brief Establish a console REPL (Read-eval-print loop) environment over USB-SERIAL-JTAG
  *
@@ -445,8 +406,38 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
  *      - ESP_OK on success
  *      - ESP_FAIL Parameter error
  */
-esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config,
+                                               const esp_console_repl_config_t *repl_config,
+                                               esp_console_repl_t **ret_repl);
 #endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || (defined __DOXYGEN__ && SOC_USB_SERIAL_JTAG_SUPPORTED)
+
+#endif // !CONFIG_IDF_TARGET_LINUX
+
+/**
+ * @brief Create a new console REPL instance that uses the active stdio driver.
+ *
+ * This sets up a Read-Eval-Print-Loop (REPL) environment where user input and
+ * output are handled through the configured stdio backend. This allows the
+ * console shell to operate over UART, USB, or another configured console port
+ * without requiring backend-specific setup in user code.
+ *
+ * @param repl_config Pointer to the REPL configuration structure.
+ * @param ret_repl Output pointer that will be assigned the created REPL instance.
+ * @return ESP_OK if the REPL instance was created successfully, or an error code if creation failed.
+ */
+esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+
+/**
+ * @brief Destroy and clean up a stdio-based console REPL instance.
+ *
+ * This releases resources associated with a REPL created using
+ * esp_console_new_repl_stdio. Call this when the REPL is no longer required or
+ * before replacing it with another console interface.
+ *
+ * @param repl Pointer to the REPL instance to delete.
+ * @return ESP_OK if the REPL instance was deleted successfully, or an error code on failure.
+ */
+esp_err_t esp_console_delete_repl_stdio(esp_console_repl_t *repl);
 
 /**
  * @brief Start REPL environment

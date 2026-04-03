@@ -369,7 +369,9 @@ void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable);
 #elif SOC_IS(ESP32S31)
 #include "soc/hp_apm_reg.h"
 #include "soc/hp_mem_apm_reg.h"
+#include "soc/lp_apm_reg.h"
 #define apm_hal_enable_ctrl_filter_all(en) \
+    REG_WRITE(LP_APM_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0); \
     REG_WRITE(HP_APM_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0); \
     REG_WRITE(HP_MEM_APM_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0);
 #else

@@ -407,8 +407,9 @@ void BTM_BlePasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
         BTM_TRACE_ERROR("Passkey reply to Unknown device");
         return;
     }
-
-    p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
+    if (res_smp == SMP_SUCCESS) {
+        p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
+    }
     BTM_TRACE_DEBUG ("BTM_BlePasskeyReply");
     SMP_PasskeyReply(bd_addr, res_smp, passkey);
 #endif
@@ -487,8 +488,9 @@ void BTM_BleOobDataReply(BD_ADDR bd_addr, UINT8 res, UINT8 len, UINT8 *p_data)
         BTM_TRACE_ERROR("BTM_BleOobDataReply() to Unknown device");
         return;
     }
-
-    p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+    if (res_smp == SMP_SUCCESS) {
+        p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+    }
     SMP_OobDataReply(bd_addr, res_smp, len, p_data);
 #endif
 }
@@ -902,7 +904,7 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
         } else if (tx_pdu_length < BTM_BLE_DATA_SIZE_MIN) {
             tx_pdu_length =  BTM_BLE_DATA_SIZE_MIN;
         }
-
+        p_acl->data_len_updating = true;
         /* always set the TxTime to be max, as controller does not care for now */
         btsnd_hcic_ble_set_data_length(p_acl->hci_handle, tx_pdu_length,
                                        BTM_BLE_DATA_TX_TIME_MAX);
@@ -1431,6 +1433,7 @@ void btm_ble_link_sec_check(BD_ADDR bd_addr, tBTM_LE_AUTH_REQ auth_req, tBTM_BLE
 
     if (p_dev_rec == NULL) {
         BTM_TRACE_ERROR ("btm_ble_link_sec_check received for unknown device");
+        *p_sec_req_act = BTM_BLE_SEC_REQ_ACT_NONE;
         return;
     }
 
@@ -2170,9 +2173,7 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
         case SMP_OOB_REQ_EVT:
         case SMP_NC_REQ_EVT:
         case SMP_SC_OOB_REQ_EVT:
-            /* fall through */
-            p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
-
+        /* fall through */
         case SMP_SEC_REQUEST_EVT:
             if (event == SMP_SEC_REQUEST_EVT && btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
                 BTM_TRACE_DEBUG("%s: Ignoring SMP Security request", __func__);

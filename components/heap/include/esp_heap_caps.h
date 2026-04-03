@@ -44,7 +44,8 @@ extern "C" {
 #define MALLOC_CAP_IRAM_8BIT        (1<<13) ///< Memory must be in IRAM and allow unaligned access
 #define MALLOC_CAP_RETENTION        (1<<14) ///< Memory must be able to accessed by retention DMA
 #define MALLOC_CAP_RTCRAM           (1<<15) ///< Memory must be in RTC fast memory
-#define MALLOC_CAP_TCM              (1<<16) ///< Memory must be in TCM memory
+#define MALLOC_CAP_SPM              (1<<16) ///< Memory must be in SPM memory
+#define MALLOC_CAP_TCM              MALLOC_CAP_SPM _Pragma ("GCC warning \"'MALLOC_CAP_TCM' macro is deprecated, please use `MALLOC_CAP_SPM`\"")
 #define MALLOC_CAP_DMA_DESC_AHB     (1<<17) ///< Memory must be capable of containing AHB DMA descriptors
 #define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
 #define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches

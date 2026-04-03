@@ -213,7 +213,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    return 0;// TODO: ["ESP32S31"] IDF-14678
+    return rtc_timer_hal_get_cycle_count(0);
 }
 
 uint32_t rtc_clk_freq_cal(uint32_t cal_val)

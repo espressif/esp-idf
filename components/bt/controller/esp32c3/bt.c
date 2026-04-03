@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,8 @@
 
 #define BT_LOG_TAG                          "BLE_INIT"
 
+#define RTC_CNTL_ATOMIC()        PERIPH_RCC_ATOMIC()
+
 #define BTDM_INIT_PERIOD                    (5000)    /* ms */
 
 /* Low Power Clock Selection */
@@ -127,7 +129,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x0001000A
+#define OSI_VERSION              0x0001000B
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 #define BLE_PWR_HDL_INVL 0xFFFF
@@ -232,6 +234,7 @@ struct osi_funcs_t {
     void (* _esp_hw_power_down)(void);
     void (* _esp_hw_power_up)(void);
     void (* _ets_backup_dma_copy)(uint32_t reg, uint32_t mem_addr, uint32_t num, bool to_rem);
+    void *(* _malloc_retention)(size_t size);
     void (* _ets_delay_us)(uint32_t us);
     void (* _btdm_rom_table_ready)(void);
     bool (* _coex_bt_wakeup_request)(void);
@@ -373,6 +376,7 @@ static int task_create_wrapper(void *task_func, const char *name, uint32_t stack
 static void task_delete_wrapper(void *task_handle);
 static bool is_in_isr_wrapper(void);
 static void *malloc_internal_wrapper(size_t size);
+static void *malloc_retention_wrapper(size_t size);
 static int read_mac_wrapper(uint8_t mac[6]);
 static void srand_wrapper(unsigned int seed);
 static int rand_wrapper(void);
@@ -452,6 +456,7 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._cause_sw_intr_to_core = NULL,
     ._malloc = malloc,
     ._malloc_internal = malloc_internal_wrapper,
+    ._malloc_retention = malloc_retention_wrapper,
     ._free = free,
     ._read_efuse_mac = read_mac_wrapper,
     ._srand = srand_wrapper,
@@ -801,8 +806,10 @@ void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 #if CONFIG_MAC_BB_PD
 #if SOC_PM_SUPPORT_BT_PD
     // Bluetooth module power down
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    RTC_CNTL_ATOMIC() {
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    }
 #endif
     esp_mac_bb_power_down();
 #endif
@@ -813,8 +820,10 @@ void IRAM_ATTR btdm_hw_mac_power_up_wrapper(void)
 #if CONFIG_MAC_BB_PD
 #if SOC_PM_SUPPORT_BT_PD
     // Bluetooth module power up
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    RTC_CNTL_ATOMIC() {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    }
 #endif
     esp_mac_bb_power_up();
 #endif
@@ -831,8 +840,10 @@ static inline void esp_bt_power_domain_on(void)
 {
     // Bluetooth module power up
 #if SOC_PM_SUPPORT_BT_PD
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    RTC_CNTL_ATOMIC() {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+    }
 #endif
     esp_wifi_bt_power_domain_on();
 }
@@ -841,8 +852,10 @@ static inline void esp_bt_power_domain_off(void)
 {
     // Bluetooth module power down
 #if SOC_PM_SUPPORT_BT_PD
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    RTC_CNTL_ATOMIC() {
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
+    }
 #endif
     esp_wifi_bt_power_domain_off();
 }
@@ -1053,6 +1066,15 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
 static void *malloc_internal_wrapper(size_t size)
 {
     void *p = heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+    if(p == NULL) {
+        ESP_LOGE(BT_LOG_TAG, "Malloc failed");
+    }
+    return p;
+}
+
+static void *malloc_retention_wrapper(size_t size)
+{
+    void *p = heap_caps_malloc(size, MALLOC_CAP_RETENTION);
     if(p == NULL) {
         ESP_LOGE(BT_LOG_TAG, "Malloc failed");
     }
@@ -1845,14 +1867,17 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     ESP_LOGI(BT_LOG_TAG,"Put all controller code in flash");
 #endif
 
-    if ((err = btdm_low_power_mode_init(cfg)) != ESP_OK) {
-        ESP_LOGE(BT_LOG_TAG, "Low power module initialization failed");
-        goto error;
-    }
 
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
+
+    /* Must call periph_module_enable(BT) before any step that may goto error,
+     * otherwise bt_controller_deinit_internal() will call periph_module_disable(BT)
+     * when ref is still 0, causing ref underflow (0-1=255) and subsequent
+     * init/enable failures (EM BASE MISMATCH, BLE assert, etc.) */
+     periph_module_enable(PERIPH_BT_MODULE);
+     periph_module_reset(PERIPH_BT_MODULE);
 
 #if CONFIG_BLE_LOG_ENABLED
     if (!ble_log_init()) {
@@ -1870,8 +1895,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #endif /* CONFIG_BLE_LOG_ENABLED */
 
-    periph_module_enable(PERIPH_BT_MODULE);
-    periph_module_reset(PERIPH_BT_MODULE);
+if ((err = btdm_low_power_mode_init(cfg)) != ESP_OK) {
+    ESP_LOGE(BT_LOG_TAG, "Low power module initialization failed");
+    goto error;
+}
+
 
 #if CONFIG_BT_CTRL_LE_LOG_EN
     err = esp_bt_controller_log_init(log_output_mode);

@@ -73,12 +73,6 @@ esp_err_t esp_efuse_utility_check_errors(void)
     return ESP_OK;
 }
 
-// Burn values written to the efuse write registers
-esp_err_t esp_efuse_utility_burn_chip(void)
-{
-    return esp_efuse_utility_burn_chip_opt(false, true);
-}
-
 esp_err_t esp_efuse_utility_burn_chip_opt(bool ignore_coding_errors, bool verify_written_data)
 {
     esp_err_t error = ESP_OK;

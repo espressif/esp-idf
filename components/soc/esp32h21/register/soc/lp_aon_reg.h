@@ -1,11 +1,10 @@
 /**
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -454,18 +453,26 @@ extern "C" {
 #define LP_AON_LINK_ADDR_AON_S  0
 
 /** LP_AON_DATE_REG register
- *  need_des
+ *  reserved
  */
 #define LP_AON_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
-/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 38814352;
+/** LP_AON_CLK_EN : R/W; bitpos: [5]; default: 0;
+ *  0: DREG_LDO control by SW;
+ *  1: DREG_LDO control by HW;
+ */
+#define LP_AON_DREG_LDO_HW  BIT(5)
+#define LP_AON_DREG_LDO_HW_M  (LP_AON_DREG_LDO_HW_V << LP_AON_DREG_LDO_HW_S)
+#define LP_AON_DREG_LDO_HW_V  0x00000001U
+#define LP_AON_DREG_LDO_HW_S  5
+/** LP_AON_IO_LDO_ADJUST_SW : R/W; bitpos: [14:11]; default: 8;
  *  need_des
  */
-#define LP_AON_DATE    0x7FFFFFFFU
-#define LP_AON_DATE_M  (LP_AON_DATE_V << LP_AON_DATE_S)
-#define LP_AON_DATE_V  0x7FFFFFFFU
-#define LP_AON_DATE_S  0
+#define LP_AON_DREG_LDO_SW    0x0000000FU
+#define LP_AON_DREG_LDO_SW_M  (LP_AON_DREG_LDO_SW_V << LP_AON_DREG_LDO_SW_S)
+#define LP_AON_DREG_LDO_SW_V  0x0000000FU
+#define LP_AON_DREG_LDO_SW_S  11
 /** LP_AON_CLK_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  version register
  */
 #define LP_AON_CLK_EN    (BIT(31))
 #define LP_AON_CLK_EN_M  (LP_AON_CLK_EN_V << LP_AON_CLK_EN_S)

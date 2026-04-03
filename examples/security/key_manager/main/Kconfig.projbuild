@@ -1,0 +1,22 @@
+menu "Key Manager Signing Example Configuration"
+
+    config EXAMPLE_KEY_MGR_ECDSA_SIGN
+        bool "Enable ECDSA signing example"
+        default y
+        depends on SOC_KEY_MANAGER_SUPPORTED && SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+        help
+            Enable the ECDSA signing example using Key Manager deployed key.
+            This demonstrates deploying an ECDSA private key via Key Manager
+            and using it for signing operations through the PSA Crypto API.
+
+    config EXAMPLE_KEY_MGR_RSA_DS_SIGN
+        bool "Enable RSA-DS signing example"
+        default y
+        depends on SOC_KEY_MANAGER_SUPPORTED && SOC_KEY_MANAGER_DS_KEY_DEPLOY
+        help
+            Enable the RSA Digital Signature (DS) signing example using
+            Key Manager deployed key. This demonstrates deploying a DS key
+            via Key Manager and using it for RSA signing operations through
+            the PSA Crypto API.
+
+endmenu

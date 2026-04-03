@@ -18,6 +18,7 @@ typedef enum {
     ESP_TRACE_LINK_UNKNOWN = 0,
     ESP_TRACE_LINK_DEBUG_PROBE,
     ESP_TRACE_LINK_UART,
+    ESP_TRACE_LINK_USB_SERIAL_JTAG,
 } esp_trace_link_types_t;
 
 /* Timeout constants for trace operations */

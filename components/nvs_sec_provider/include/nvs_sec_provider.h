@@ -23,17 +23,21 @@ extern "C" {
 
 #define ESP_ERR_NVS_SEC_BASE                        0xF000                         /*!< Starting number of error codes */
 
+#if SOC_HMAC_SUPPORTED
 #define ESP_ERR_NVS_SEC_HMAC_KEY_NOT_FOUND          (ESP_ERR_NVS_SEC_BASE + 0x01)  /*!< HMAC Key required to generate the NVS encryption keys not found */
 #define ESP_ERR_NVS_SEC_HMAC_KEY_BLK_ALREADY_USED   (ESP_ERR_NVS_SEC_BASE + 0x02)  /*!< Provided eFuse block for HMAC key generation is already in use */
 #define ESP_ERR_NVS_SEC_HMAC_KEY_GENERATION_FAILED  (ESP_ERR_NVS_SEC_BASE + 0x03)  /*!< Failed to generate/write the HMAC key to eFuse */
 #define ESP_ERR_NVS_SEC_HMAC_XTS_KEYS_DERIV_FAILED  (ESP_ERR_NVS_SEC_BASE + 0x04)  /*!< Failed to derive the NVS encryption keys based on the HMAC-based scheme */
+#endif
 
 /**
  * @brief NVS Encryption Keys Protection Scheme
  */
 typedef enum {
     NVS_SEC_SCHEME_FLASH_ENC = 0, /*!<  Protect NVS encryption keys using Flash Encryption */
+#if SOC_HMAC_SUPPORTED
     NVS_SEC_SCHEME_HMAC,          /*!<  Protect NVS encryption keys using HMAC peripheral */
+#endif
     NVS_SEC_SCHEME_MAX
 } nvs_sec_scheme_id_t;
 
@@ -77,7 +81,7 @@ typedef struct {
  *
  * @return
  *      - ESP_OK, if `sec_scheme_handle_out` was populated successfully with the scheme configuration;
- *      - ESP_ERR_INVALID_ARG, if `scheme_cfg_hmac` is NULL;
+ *      - ESP_ERR_INVALID_ARG, if `sec_scheme_cfg` is NULL;
  *      - ESP_ERR_NO_MEM, No memory for the scheme-specific handle `sec_scheme_handle_out`
  *      - ESP_ERR_NOT_FOUND, if no `nvs_keys` partition is found
  */
@@ -92,7 +96,7 @@ esp_err_t nvs_sec_provider_register_flash_enc(const nvs_sec_config_flash_enc_t *
  *
  * @return
  *      - ESP_OK, if `sec_scheme_handle_out` was populated successfully with the scheme configuration;
- *      - ESP_ERR_INVALID_ARG, if `scheme_cfg_hmac` is NULL;
+ *      - ESP_ERR_INVALID_ARG, if `sec_scheme_cfg` is NULL;
  *      - ESP_ERR_NO_MEM, No memory for the scheme-specific handle `sec_scheme_handle_out`
  */
 esp_err_t nvs_sec_provider_register_hmac(const nvs_sec_config_hmac_t *sec_scheme_cfg, nvs_sec_scheme_t **sec_scheme_handle_out);

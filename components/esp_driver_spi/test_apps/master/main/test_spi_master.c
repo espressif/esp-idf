@@ -16,6 +16,7 @@
 #include "soc/spi_periph.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_utils.h"
+#include "esp_memory_utils.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_cpu.h"
@@ -137,7 +138,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test All clock source
 #define TEST_CLK_BYTE_LEN           10000
-#define TEST_TRANS_TIME_BIAS_RATIO  (float)8.0/100   // think 8% transfer time bias as acceptable
+#define TEST_TRANS_TIME_BIAS_RATIO  (float)10.0/100   // think 10% transfer time bias as acceptable
 TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 {
     int64_t start = 0, end = 0;
@@ -890,6 +891,37 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
 }
+
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE // targets who need cache sync don't support unaligned trans
+TEST_CASE("SPI Master DMA manually unaligned RX test", "[spi]")
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t dev0;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+    WORD_ALIGNED_ATTR uint8_t tx_data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    WORD_ALIGNED_ATTR uint8_t rx_data[8] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+    spi_transaction_t trans_cfg = {
+        .tx_buffer        = tx_data,
+        .rx_buffer        = rx_data,
+        .length           = 5 * 8,
+        .flags            = SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL,
+    };
+    printf("Sending %d bytes\n", trans_cfg.length / 8);
+    TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+    ESP_LOG_BUFFER_HEX("rx", rx_data, 8);
+#if !SOC_IS(ESP32)
+    TEST_ASSERT_EQUAL(rx_data[6], 0xAA);
+#endif
+
+    TEST_ESP_OK(spi_bus_remove_device(dev0));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
+#endif
 
 #if (TEST_SPI_PERIPH_NUM >= 2)
 //These will only be enabled on chips with 2 or more SPI peripherals

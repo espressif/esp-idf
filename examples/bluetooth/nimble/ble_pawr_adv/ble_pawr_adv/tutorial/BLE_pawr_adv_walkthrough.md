@@ -15,6 +15,7 @@ This example is located in the examples folder of the ESP-IDF under the [ble_paw
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/util/util.h"
 ```
 These includes provide:
 
@@ -25,6 +26,8 @@ These includes provide:
 - NimBLE stack porting and FreeRTOS integration
 
 - BLE host stack functionality
+
+- BLE utility functions for address management (util.h)
 
 ## Main Entry Point
 
@@ -156,10 +159,10 @@ These parameters control:
 
 ## PAwR Advertisement
 
-The start_periodic_adv() function configures and starts PAwR:
+The start_periodic_adv() function configures and starts PAwR. It takes `own_addr_type` as a parameter, which is determined dynamically via `ble_hs_id_infer_auto()` in the `on_sync` callback:
 ```c
 static void
-start_periodic_adv(void)
+start_periodic_adv(uint8_t own_addr_type)
 {
     int rc;
     uint8_t addr[6];
@@ -170,12 +173,13 @@ start_periodic_adv(void)
     uint8_t instance = 0;
 
 #if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
-    struct ble_gap_periodic_adv_enable_params eparams;
+    struct ble_gap_periodic_adv_start_params eparams;
     memset(&eparams, 0, sizeof(eparams));
 #endif
 
-    /* Get the local public address. */
-    rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, addr, NULL);
+    /* Get the local address. */
+    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
     assert (rc == 0);
 
     ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],
@@ -183,7 +187,7 @@ start_periodic_adv(void)
 
     /* For periodic we use instance with non-connectable advertising */
     memset (&params, 0, sizeof(params));
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
@@ -275,6 +279,32 @@ It processes two main events:
 - BLE_GAP_EVENT_PER_SUBEV_DATA_REQ: Triggered when data needs to be prepared for subevents
 
 - BLE_GAP_EVENT_PER_SUBEV_RESP: Triggered when responses are received from scanners
+
+## Sync Callback
+
+When the BLE host and controller are synced, the `on_sync` callback is invoked. It ensures a valid identity address is set and determines the appropriate address type before starting PAwR:
+
+```c
+static void
+on_sync(void)
+{
+    int rc;
+    uint8_t own_addr_type;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+    /* Begin advertising. */
+    start_periodic_adv(own_addr_type);
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
+- `ble_hs_id_infer_auto(0, &own_addr_type)`: Automatically determines the best address type to use based on what is available on the device.
 
 ## Host Task
 

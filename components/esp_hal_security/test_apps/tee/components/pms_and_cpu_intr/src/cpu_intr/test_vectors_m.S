@@ -1,13 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#include "soc/clic_reg.h"
 #include "soc/interrupt_reg.h"
-#include "soc/interrupt_matrix_reg.h"
 
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
@@ -23,9 +23,8 @@
     .equ ECALL_M_MODE, 0xb
     .equ INTR_M2U_MAGIC,  0x1f
     .equ INTR_U2M_RTNVAL, 0xc0de
-    .equ INTMTX_SEC_STATUS_REG, INTERRUPT_CORE0_SECURE_STATUS_REG
-    .equ INTMTX_SIG_IDX_ASSERT_IN_SEC_REG, INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG
     .equ VECTORS_XCAUSE_XPIE_MASK, 0x08000000
+    .equ CSR_UINTTHRESH, 0x047
     .equ panic_from_excp, test_panicHandler
 
     .global _test_uintr_handler
@@ -415,12 +414,26 @@ _find_intr_loop:
     li      t1, -1
     unimp
 _found_intr:
-    addi    t0, t1, CLIC_EXT_INTR_NUM_OFFSET
-    csrr    t1, ucause
-    or      t1, t1, t0
-    li      t2, (VECTORS_MCAUSE_INTBIT_MASK | VECTORS_XCAUSE_XPIE_MASK)
-    or      t1, t1, t2
-    csrw    ucause, t1
+    addi    t6, t1, CLIC_EXT_INTR_NUM_OFFSET
+
+    /* Update ucause */
+    csrr    t0, ucause
+    li      t1, VECTORS_MCAUSE_REASON_MASK
+    not     t1, t1
+    and     t0, t0, t1
+    or      t0, t0, t6
+    li      t1, VECTORS_MCAUSE_INTBIT_MASK
+    or      t0, t0, t1
+    csrw    ucause, t0
+
+    /* Update the U-mode interrupt threshold */
+    li      t1, DR_REG_CLIC_CTRL_BASE
+    slli    t2, t6, 2
+    add     t1, t1, t2
+    lw      t2, 0(t1)
+    fence
+    srli    t2, t2, CLIC_INT_CTL_S
+    csrw    CSR_UINTTHRESH, t2
 
     /* Enable the U-mode interrupt delegation */
     li      t0, INTMTX_SIG_IDX_ASSERT_IN_SEC_REG

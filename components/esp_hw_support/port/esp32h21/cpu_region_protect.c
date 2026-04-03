@@ -63,6 +63,11 @@ static void esp_cpu_configure_invalid_regions(void)
     // 7. End of address space
     PMA_RESET_AND_ENTRY_SET_TOR(11, SOC_PERIPHERAL_HIGH, PMA_NONE);
     PMA_RESET_AND_ENTRY_SET_TOR(12, UINT32_MAX, PMA_TOR | PMA_NONE);
+
+    // 8. Reset all unused pma entries in IDF
+    PMA_ENTRY_CFG_RESET(13);
+    PMA_ENTRY_CFG_RESET(14);
+    PMA_ENTRY_CFG_RESET(15);
 }
 
 void esp_cpu_configure_region_protection(void)

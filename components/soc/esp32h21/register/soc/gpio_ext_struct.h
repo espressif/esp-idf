@@ -575,20 +575,20 @@ typedef struct {
     uint32_t reserved_000;
     volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_018[16];
-    volatile gpio_ext_pad_comp_config_0_reg_t ext_pad_comp_config_0;
-    volatile gpio_ext_pad_comp_filter_0_reg_t ext_pad_comp_filter_0;
+    volatile gpio_ext_pad_comp_config_0_reg_t pad_comp_config;
+    volatile gpio_ext_pad_comp_filter_0_reg_t pad_comp_filter;
     uint32_t reserved_060[30];
     volatile gpio_glitch_filter_dev_t glitch_filter;
     uint32_t reserved_0f8[8];
     volatile gpio_etm_dev_t etm;
     uint32_t reserved_170[24];
-    volatile gpio_ext_int_raw_reg_t ext_int_raw;
-    volatile gpio_ext_int_st_reg_t ext_int_st;
-    volatile gpio_ext_int_ena_reg_t ext_int_ena;
-    volatile gpio_ext_int_clr_reg_t ext_int_clr;
-    volatile gpio_ext_pin_ctrl_reg_t ext_pin_ctrl;
+    volatile gpio_ext_int_raw_reg_t int_raw;
+    volatile gpio_ext_int_st_reg_t int_st;
+    volatile gpio_ext_int_ena_reg_t int_ena;
+    volatile gpio_ext_int_clr_reg_t int_clr;
+    volatile gpio_ext_pin_ctrl_reg_t pin_ctrl;
     uint32_t reserved_1e4[6];
-    volatile gpio_ext_version_reg_t ext_version;
+    volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
 extern gpio_sd_dev_t SDM;

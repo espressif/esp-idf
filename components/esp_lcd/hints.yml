@@ -1,0 +1,7 @@
+-
+    re: "error: implicit declaration of function 'esp_lcd_new_panel_nt35510'"
+    hint: "The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/esp_lcd_nt35510\""
+
+-
+    re: "error: 'struct extra_dpi_panel_flags' has no member named 'use_dma2d'"
+    hint: "The `use_dma2d` member has been removed in ESP-IDF v6.0. Please use the `esp_lcd_dpi_panel_enable_dma2d()` function to enable DMA2D for the DPI panel."

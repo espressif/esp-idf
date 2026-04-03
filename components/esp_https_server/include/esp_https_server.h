@@ -207,6 +207,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .keep_alive_idle = 0,                     \
         .keep_alive_interval = 0,                 \
         .keep_alive_count = 0,                    \
+        .if_name = NULL,                          \
         .open_fn = NULL,                          \
         .close_fn = NULL,                         \
         .uri_match_fn = NULL                      \

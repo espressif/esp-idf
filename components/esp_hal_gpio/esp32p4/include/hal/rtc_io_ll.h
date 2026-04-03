@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,9 @@
 #include "hal/assert.h"
 #include "hal/config.h"
 
-#define RTCIO_LL_PIN_FUNC       1 // LP_GPIO function
+#define RTCIO_LL_PIN_FUNC           1 // LP_GPIO function
+
+#define RTCIO_LL_GPIO_NUM_OFFSET    0 // rtcio 0-15 correspond to gpio 0-15
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,7 +89,7 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
     LP_IOMUX.pad[rtcio_num].fun_sel = func;
     // When using as normal (output) LP_GPIO, it is reasonable to ensure that no peripheral signal is routed to the pin
     if (func == RTCIO_LL_PIN_FUNC) {
-        LP_GPIO.func_out_sel_cfg[rtcio_num].func_out_sel = SIG_LP_GPIO_OUT_IDX;
+        LP_GPIO.func_out_sel_cfg[rtcio_num].func_out_sel = LP_SIG_GPIO_OUT_IDX;
     }
 }
 
@@ -103,11 +105,7 @@ static inline void _rtcio_ll_enable_io_clock(bool enable)
         ;
     }
 }
-
-#define rtcio_ll_enable_io_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        _rtcio_ll_enable_io_clock(__VA_ARGS__); \
-    } while(0)
+#define rtcio_ll_enable_io_clock(...) _rtcio_ll_enable_io_clock(__VA_ARGS__)
 
 /**
  * @brief Select the lp_gpio/hp_gpio function to control the pad.
@@ -151,7 +149,7 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 {
     LP_GPIO.enable_w1tc.val = BIT(rtcio_num);
     // Ensure no other output signal is routed via LP_GPIO matrix to this pin
-    LP_GPIO.func_out_sel_cfg[rtcio_num].func_out_sel = SIG_LP_GPIO_OUT_IDX;
+    LP_GPIO.func_out_sel_cfg[rtcio_num].func_out_sel = LP_SIG_GPIO_OUT_IDX;
 }
 
 /**

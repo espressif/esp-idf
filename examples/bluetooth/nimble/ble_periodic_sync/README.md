@@ -8,11 +8,11 @@
 This example performs passive scan for non-connectable non-scannable extended advertisement, it then establishes the periodic sync with the advertiser and then listens to the periodic advertisements.
 
 
-It uses ESP32C3's Bluetooth controller and NimBLE stack based BLE host.
+It uses Bluetooth controller and NimBLE stack based BLE host.
 
 This example aims at understanding BLE periodic sync establishment and periodic advertisement reports.
 
-To test this demo, use any periodic advertiser with uses extended adv data as "ESP_PERIODIC_ADV".
+To test this demo, use the `ble_periodic_adv` example or any periodic advertiser with SID 2.
 
 
 Note :
@@ -30,22 +30,10 @@ idf.py set-target <chip_name>
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with a supported SoC (e.g., ESP32-C3, ESP32-C6, ESP32-H2, ESP32-S3, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
-
-### Configure the Project
-
-Open the project configuration menu:
-
-```bash
-idf.py menuconfig
-```
-
-In the `Example Configuration` menu:
-
-* Change the `Peer Address` option if needed.
 
 ### Build and Flash
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,10 +174,13 @@ typedef struct {
     usb_dwc_hal_fifo_config_t fifo_config;      /**< FIFO sizes configuration */
 
     // Configuration of the USB-DWC core. Read from read-only HW registers
+    // These constants are cached from HW registers to avoid repeated reads
     struct {
         unsigned chan_num_total;                /**< Total number of channels for this configuration */
         unsigned hsphy_type;                    /**< HS PHY type of this configuration */
         unsigned fifo_size;                     /**< Total FIFO size [in lines] in this configuration */
+        unsigned max_size_byte_limit;           /**< Maximum size of a transfer in bytes */
+        unsigned max_size_packet_limit;         /**< Maximum size of a transfer in packets */
     } constant_config;
 
     union {
@@ -289,6 +292,25 @@ void usb_dwc_hal_set_fifo_config(usb_dwc_hal_context_t *hal, const usb_dwc_hal_f
  * @param[out] mps_limits MPS limits
  */
 void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_limits_t *mps_limits);
+
+/**
+ * @brief Get Transfer Size limit
+ *
+ * There are 2 constraints on the size of a transfer:
+ * 1. Maximum transfer size: The maximum total size of data that can be transferred in a single transfer.
+ *    This is determined by the width of the transfer size counter in the hardware
+ * 2. Maximum packet count: The maximum number of packets that can be transferred in a single transfer.
+ *    This is determined by the width of the packet counter in the hardware
+ *
+ * The actual maximum transfer size of a transfer is the minimum of (xfer_size, packet_count * MPS), where MPS is the maximum packet size of the endpoint.
+ *
+ * @see USB-DWC databook Table 5-26
+ *
+ * @param[in] hal Context of the HAL layer
+ * @param[in] mps Maximum packet size of the endpoint in bytes
+ * @return Maximum transfer size in bytes based on the hardware counters
+ */
+size_t usb_dwc_hal_get_xfer_size_limit(usb_dwc_hal_context_t *hal, uint16_t mps);
 
 // ---------------------------------------------------- Host Port ------------------------------------------------------
 

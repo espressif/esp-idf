@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -49,6 +49,11 @@ static esp_err_t pkt_wifi2usb(void *buffer, uint16_t len, void *eb)
     return ESP_OK;
 }
 
+static void usb_device_set_link_state(bool link_up)
+{
+    tud_network_link_state(0, link_up);
+}
+
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
@@ -58,11 +63,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "WiFi STA disconnected");
         *is_connected = false;
         esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL);
+        usb_device_set_link_state(false);
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
         ESP_LOGI(TAG, "WiFi STA connected");
         esp_wifi_internal_reg_rxcb(WIFI_IF_STA, pkt_wifi2usb);
         *is_connected = true;
+        usb_device_set_link_state(true);
     }
 }
 
@@ -113,6 +120,7 @@ void app_main(void)
     uint8_t *mac = net_config.mac_addr;
     ESP_LOGI(TAG, "Network interface HW address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     ESP_GOTO_ON_ERROR(tinyusb_net_init(&net_config), err, TAG, "Failed to initialize TinyUSB NCM device class");
+    usb_device_set_link_state(false);
 
     ESP_LOGI(TAG, "WiFi initialization");
     ESP_GOTO_ON_ERROR(start_wifi(&s_is_wifi_connected), err, TAG, "Failed to init and start WiFi");

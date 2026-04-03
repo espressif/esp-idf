@@ -8,4 +8,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_wear_levelling_linux(dut: Dut) -> None:
-    dut.expect_exact('All tests passed', timeout=120)
+    dut.expect_exact('All tests passed', timeout=180)

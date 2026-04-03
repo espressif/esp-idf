@@ -22,8 +22,19 @@ extern "C" {
 
 #define PSA_KEY_LOCATION_ESP_RSA_DS ((psa_key_location_t) 0x800003)
 
-
+/* IDF-15427: ESP-PSA driver does not support persistent RSA DS keys as of now */
+#if 0
+/* @brief Construct a lifetime for ESP RSA DS keys with default persistence */
 #define PSA_KEY_LIFETIME_ESP_RSA_DS \
+    PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION( \
+        PSA_KEY_PERSISTENCE_DEFAULT, \
+        PSA_KEY_LOCATION_ESP_RSA_DS)
+#endif
+
+/**
+ * @brief Construct a volatile lifetime for ESP RSA DS keys
+ */
+#define PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE \
     PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION( \
         PSA_KEY_PERSISTENCE_VOLATILE, \
         PSA_KEY_LOCATION_ESP_RSA_DS)
@@ -110,7 +121,7 @@ psa_status_t esp_rsa_ds_opaque_signature_sign_hash(
 
 /**
  * @brief Import the RSA DS opaque key
- *        The data should be of type esp_ds_data_ctx_t and should be
+ *        The data should be of type esp_rsa_ds_opaque_key_t and should be
  *        already initialised with DS data and efuse key id.
  *
  * @param attributes Key attributes

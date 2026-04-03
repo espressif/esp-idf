@@ -300,18 +300,18 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     rmt_hal_tx_channel_reset(&group->hal, channel_id);
     portEXIT_CRITICAL(&group->spinlock);
     // install tx interrupt
-    // --- install interrupt service
     // interrupt is mandatory to run basic RMT transactions, so it's not lazy installed in `rmt_tx_register_event_callbacks()`
-    // 1-- Set user specified priority to `group->intr_priority`
-    bool priority_conflict = rmt_set_intr_priority_to_group(group, config->intr_priority);
-    ESP_GOTO_ON_FALSE(!priority_conflict, ESP_ERR_INVALID_ARG, err, TAG, "intr_priority conflict");
-    // 2-- Get interrupt allocation flag
-    int isr_flags = rmt_isr_priority_to_flags(group) | RMT_TX_INTR_ALLOC_FLAG;
-    // 3-- Allocate interrupt using isr_flag
-    ret = esp_intr_alloc_intrstatus(soc_rmt_signals[group_id].irq, isr_flags,
-                                    (uint32_t) rmt_ll_get_interrupt_status_reg(hal->regs),
-                                    RMT_LL_EVENT_TX_MASK(channel_id), rmt_tx_default_isr, tx_channel,
-                                    &tx_channel->base.intr);
+    int isr_flags = (config->intr_priority ? (1 << config->intr_priority) : RMT_ALLOW_INTR_PRIORITY_MASK) | RMT_TX_INTR_ALLOC_FLAG;
+    esp_intr_alloc_info_t intr_info = {
+        .source = soc_rmt_signals[group_id].irq,
+        .flags = isr_flags,
+        .intrstatusreg = (uint32_t)rmt_ll_get_interrupt_status_reg(hal->regs),
+        .intrstatusmask = RMT_LL_EVENT_TX_MASK(channel_id),
+        .handler = rmt_tx_default_isr,
+        .arg = tx_channel,
+        .bind_by.name = soc_rmt_signals[group_id].module_name,
+    };
+    ret = esp_intr_alloc_info(&intr_info, &tx_channel->base.intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install tx interrupt failed");
     // install DMA service
 #if SOC_RMT_SUPPORT_DMA

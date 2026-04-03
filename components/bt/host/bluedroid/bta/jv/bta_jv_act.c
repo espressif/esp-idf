@@ -288,8 +288,7 @@ tBTA_JV_RFC_CB *bta_jv_rfc_port_to_cb(UINT16 port_handle)
             p_cb = &bta_jv_cb.rfc_cb[handle - 1];
         }
     } else {
-        APPL_TRACE_WARNING("bta_jv_rfc_port_to_cb(port_handle:0x%x):jv handle:0x%x not"
-                           " FOUND", port_handle, bta_jv_cb.port_cb[port_handle - 1].handle);
+        APPL_TRACE_WARNING("bta_jv_rfc_port_to_cb(port_handle:0x%x)", port_handle);
     }
     return p_cb;
 }
@@ -748,7 +747,20 @@ void bta_jv_disable (tBTA_JV_MSG *p_data)
 {
     tBTA_JV_STATUS evt_data;
     evt_data = BTA_JV_SUCCESS;
-    // UNUSED(p_data);
+
+    // clear all the pm_cb slots
+    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
+        if (bta_jv_cb.pm_cb[i].state != BTA_JV_PM_FREE_ST) {
+            bta_jv_clear_pm_cb(&bta_jv_cb.pm_cb[i], TRUE);
+        }
+    }
+
+    // reset the control block
+    memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
+    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
+        bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
+    }
+
     if (p_data->disable.p_cback) {
         p_data->disable.p_cback(BTA_JV_DISABLE_EVT, (tBTA_JV *)&evt_data, NULL);
     }
@@ -980,8 +992,11 @@ static void bta_jv_start_discovery_cback(UINT16 result, void *user_data)
                     } else {
                         dcomp.service_name[dcomp.scn_num] = NULL;
                     }
-                    dcomp.scn_num++;
                     status = BTA_JV_SUCCESS;
+                    dcomp.scn_num++;
+                    if (dcomp.scn_num == BTA_JV_MAX_SCN) {
+                        break;
+                    }
                 }
             } while (p_sdp_rec);
         }
@@ -1002,13 +1017,14 @@ static void bta_jv_start_discovery_cback(UINT16 result, void *user_data)
 *******************************************************************************/
 void bta_jv_start_discovery(tBTA_JV_MSG *p_data)
 {
-    tBTA_JV_STATUS status = BTA_JV_FAILURE;
+    tBTA_JV_DISCOVERY_COMP disc_comp = {0};
+
     APPL_TRACE_DEBUG("bta_jv_start_discovery in, sdp_active:%d", bta_jv_cb.sdp_active);
     if (bta_jv_cb.sdp_active != BTA_JV_SDP_ACT_NONE) {
-        /* SDP is still in progress */
-        status = BTA_JV_BUSY;
+        /* SDP is still in progress: report BUSY with a full tBTA_JV so BTC can copy safely */
+        disc_comp.status = BTA_JV_BUSY;
         if (bta_jv_cb.p_dm_cback) {
-            bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV *)&status, p_data->start_discovery.user_data);
+            bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV *)&disc_comp, p_data->start_discovery.user_data);
         }
         return;
     }
@@ -1031,9 +1047,10 @@ void bta_jv_start_discovery(tBTA_JV_MSG *p_data)
                                             p_bta_jv_cfg->p_sdp_db,
                                             bta_jv_start_discovery_cback, p_data->start_discovery.user_data)) {
         bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_NONE;
-        /* failed to start SDP. report the failure right away */
+        /* failed to start SDP: report failure with a full tBTA_JV so BTC can copy safely */
+        disc_comp.status = BTA_JV_FAILURE;
         if (bta_jv_cb.p_dm_cback) {
-            bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV *)&status, p_data->start_discovery.user_data);
+            bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV *)&disc_comp, p_data->start_discovery.user_data);
         }
     }
     /*
@@ -2845,6 +2862,7 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
             open_evt.l2c_open.status = BTA_JV_SUCCESS;
         } else {
             fcclient_free(t);
+            t = NULL;
             open_evt.l2c_open.status = BTA_JV_FAILURE;
         }
     }
@@ -2856,7 +2874,7 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
     //call this with lock taken so socket does not disappear from under us */
     if (p_cback) {
         p_cback(BTA_JV_L2CAP_OPEN_EVT, &open_evt, user_data);
-        if (!t->p_cback) { /* no callback set, means they do not want this one... */
+        if (t && !t->p_cback) { /* no callback set, means they do not want this one... */
             fcclient_free(t);
         }
     }

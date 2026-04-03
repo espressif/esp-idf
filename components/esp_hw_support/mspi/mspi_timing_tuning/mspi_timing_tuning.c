@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -481,6 +481,18 @@ void mspi_timing_psram_tuning(void)
 /*------------------------------------------------------------------------------
  * APIs to make SPI0 (and SPI1) FLASH work for high/low freq
  *----------------------------------------------------------------------------*/
+void __attribute__((weak)) mspi_timing_flash_config_clear_tuning_regs(bool control_both_mspi)
+{
+    (void)control_both_mspi;
+    //for compatibility, will be replaced by the actual implementation once flash timing tuning is ready
+}
+
+void __attribute__((weak)) mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
+{
+    (void)control_both_mspi;
+    //for compatibility, will be replaced by the actual implementation once flash timing tuning is ready
+}
+
 uint32_t mspi_timing_get_psram_low_speed_freq_mhz(void)
 {
     return 20;

@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
+import itertools
 import multiprocessing
 import os
 import ssl
@@ -76,16 +77,19 @@ server_key = (
     '-----END PRIVATE KEY-----\n'
 )
 
+CONFIG_PARTITIONS_OTA = [
+    ('on_update_no_sb_ecdsa', 'esp32'),
+    *itertools.product(
+        ['on_update_no_sb_rsa', 'virt_sb_v2_and_fe', 'virt_sb_v2_and_fe_2'],
+        ['esp32', 'esp32c3', 'esp32s3'],
+    ),
+]
+
 
 @pytest.mark.wifi_high_traffic
-@pytest.mark.parametrize(
-    'config',
-    ['on_update_no_sb_ecdsa', 'on_update_no_sb_rsa', 'virt_sb_v2_and_fe', 'virt_sb_v2_and_fe_2'],
-    indirect=True,
-)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @pytest.mark.timeout(2400)
-@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('config, target', CONFIG_PARTITIONS_OTA, indirect=['config', 'target'])
 def test_examples_partitions_ota(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -93,7 +97,7 @@ def test_examples_partitions_ota(dut: Dut) -> None:
     dut.serial.bootloader_flash()
     print(' - Start app (flash partition_table and app)')
     dut.serial.write_flash_no_enc()
-    update_partitions(dut, 'wifi_high_traffic')
+    update_partitions(dut, 'wifi_high_traffic', False)
 
 
 @pytest.mark.flash_encryption_wifi_high_traffic
@@ -105,19 +109,32 @@ def test_examples_partitions_ota(dut: Dut) -> None:
 def test_examples_partitions_ota_with_flash_encryption_wifi(dut: Dut) -> None:
     dut.serial.erase_flash()
     dut.serial.flash()
-    update_partitions(dut, 'flash_encryption_wifi_high_traffic')
+    update_partitions(dut, 'flash_encryption_wifi_high_traffic', False)
 
 
-def update_partitions(dut: Dut, env_name: str | None) -> None:
+@pytest.mark.flash_encryption_wifi_high_traffic
+@pytest.mark.parametrize('config', ['flash_enc_wifi_2.data_partition_verification'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+def test_examples_partitions_ota_with_flash_enc_wifi_2_data_partition_verification(dut: Dut) -> None:
+    dut.serial.erase_flash()
+    dut.serial.flash()
+    update_partitions(dut, 'flash_encryption_wifi_high_traffic', True)
+
+
+def update_partitions(dut: Dut, env_name: str | None, signed_storage: bool | None) -> None:
     port = 8000
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', port))
     thread1.daemon = True
     thread1.start()
     try:
+        if signed_storage:
+            update(dut, port, 'signed_storage.bin', env_name)
+        else:
+            update(dut, port, 'storage.bin', env_name)
         update(dut, port, 'partitions_ota.bin', env_name)
         update(dut, port, 'bootloader/bootloader.bin', env_name)
         update(dut, port, 'partition_table/partition-table.bin', env_name)
-        update(dut, port, 'storage.bin', env_name)
     finally:
         thread1.terminate()
 

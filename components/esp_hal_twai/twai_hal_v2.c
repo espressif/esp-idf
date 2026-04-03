@@ -218,6 +218,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         hal_ctx->errors = twaifd_ll_get_err_reason(hal_ctx->dev);
         hal_events |= TWAI_HAL_EVENT_BUS_ERR;
     }
+    hal_ctx->errors.arb_lost = !!(int_stat & TWAIFD_LL_INTR_ARBIT_LOST);
     if (int_stat & TWAIFD_LL_INTR_ARBIT_LOST) {
         hal_events |= TWAI_HAL_EVENT_ARB_LOST;
     }

@@ -236,7 +236,6 @@ int k_delayed_work_free(struct k_delayed_work *work)
     }
 
     osi_alarm_cancel(alarm);
-    osi_alarm_free(alarm);
     hash_map_erase(bm_alarm_hash_map, work);
 
     bt_mesh_alarm_unlock();

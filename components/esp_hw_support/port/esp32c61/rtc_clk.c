@@ -17,11 +17,9 @@
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "hal/gpio_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
-#include "esp_private/regi2c_ctrl.h"
 #include "esp_attr.h"
 #include "esp_private/esp_pmu.h"
 
@@ -152,13 +150,13 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     /* Analog part */
     ANALOG_CLOCK_ENABLE();
     /* BBPLL CALIBRATION START */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while(!clk_ll_bbpll_calibration_is_done());
     esp_rom_delay_us(10); // wait for true stop
     /* BBPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
     ANALOG_CLOCK_DISABLE();
 
     s_cur_pll_freq = pll_freq;
@@ -177,10 +175,6 @@ static FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
     clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
-#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    charge_pump_enable(false);
-    pvt_func_enable(false);
-#endif
 }
 
 static void rtc_clk_cpu_freq_to_rc_fast(void)
@@ -190,10 +184,6 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(20);
-#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    charge_pump_enable(false);
-    pvt_func_enable(false);
-#endif
 }
 
 /**
@@ -355,6 +345,10 @@ FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 {
     rtc_clk_cpu_set_to_default_config();
+#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
+    charge_pump_enable(false);
+    pvt_func_enable(false);
+#endif
 }
 
 void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)

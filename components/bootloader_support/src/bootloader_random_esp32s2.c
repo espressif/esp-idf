@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "soc/apb_saradc_reg.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_ll.h"
 
 #include "esp_rom_sys.h"

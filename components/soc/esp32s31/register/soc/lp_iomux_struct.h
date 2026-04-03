@@ -134,6 +134,8 @@ typedef struct {
     volatile lp_io_mux_date_reg_t date;
 } lp_io_mux_dev_t;
 
+extern lp_io_mux_dev_t LP_IO_MUX;
+
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_io_mux_dev_t) == 0x200, "Invalid size of lp_io_mux_dev_t structure");

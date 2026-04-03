@@ -18,7 +18,6 @@
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "esp_attr.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
@@ -172,7 +171,7 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
     /* Analog part */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
 
     s_cur_pll_freq = pll_freq;

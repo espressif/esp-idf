@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,15 @@ typedef enum {
     PMU_HP_PD_HPMEM = 2,
     PMU_HP_PD_CPU = 3,
 } pmu_hp_power_domain_t;
+#elif SOC_IS(ESP32S31)
+typedef enum {
+    PMU_HP_PD_TOP = 0,      /*!< Power domain of digital top */
+    PMU_HP_PD_HPALIVE,
+    PMU_HP_PD_MODEMPWR,
+    PMU_HP_PD_HPCPU,
+    PMU_HP_PD_HPCNNT,
+    PMU_HP_PD_MODEM
+} pmu_hp_power_domain_t;
 #else
 typedef enum {
     PMU_HP_PD_TOP = 0,      /*!< Power domain of digital top */
@@ -52,6 +61,7 @@ typedef enum {
     PMU_HP_PD_CPU = 2,      /*!< Power domain of HP CPU */
     PMU_HP_PD_RESERVED = 3, /*!< Reserved power domain */
     PMU_HP_PD_WIFI = 4,     /*!< Power domain of WIFI */
+    PMU_HP_PD_BT_154 = PMU_HP_PD_WIFI,   /*!< Power domain of BT 154 */
 } pmu_hp_power_domain_t;
 #endif
 

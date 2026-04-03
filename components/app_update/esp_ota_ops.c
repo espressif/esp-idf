@@ -31,6 +31,9 @@
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
 #include "esp_private/esp_flash_internal.h" //For dangerous write protection
+#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#include "psa/crypto.h"
+#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
 
 #define OTA_SLOT(i) (i & 0x0F)
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
@@ -470,6 +473,81 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle)
     return ESP_OK;
 }
 
+#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#define SHA_CHUNK 256
+static esp_err_t ota_calc_partition_bin_sha(const esp_partition_t *partition, uint32_t length, uint8_t out_digest[ESP_SECURE_BOOT_DIGEST_LEN], psa_algorithm_t alg)
+{
+    esp_err_t err = ESP_OK;
+
+    psa_hash_operation_t hash_operation = PSA_HASH_OPERATION_INIT;
+    uint8_t sha_buf[SHA_CHUNK];
+    size_t sha_length = 0;
+    uint32_t i = 0;
+    psa_status_t status = psa_hash_setup(&hash_operation, alg);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup psa, status: %d", status);
+        return ESP_FAIL;
+    }
+    while (i < length) {
+        uint32_t n = (length - i > SHA_CHUNK) ? SHA_CHUNK : (length - i);//take a chunk, or the last of it
+        err = esp_partition_read(partition, i, sha_buf, n);
+        if (err != ESP_OK) {
+            psa_hash_abort(&hash_operation);
+            return err;
+        }
+        status = psa_hash_update(&hash_operation, sha_buf, n);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "Failed to update psa hash, status: %d", status);
+            psa_hash_abort(&hash_operation);
+            return ESP_FAIL;
+        }
+
+        i += n;
+    }
+    status = psa_hash_finish(&hash_operation, out_digest, ESP_SECURE_BOOT_DIGEST_LEN, &sha_length);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to finish psa hash, status: %d", status);
+        psa_hash_abort(&hash_operation);
+        return ESP_FAIL;
+    }
+    return err;
+}
+
+static esp_err_t ota_verify_data_partition_signature(const esp_partition_t *partition, uint32_t total_written_size)
+{
+    esp_err_t err = ESP_FAIL;
+    uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
+
+    /* Calculate data length by excluding the signature sector from total written size */
+    uint32_t data_length = ((total_written_size) & ~((SPI_FLASH_SEC_SIZE) - 1)) - SPI_FLASH_SEC_SIZE;
+
+    /* Rounding off data length to the upper 4k boundary for hash calculation */
+    uint32_t padded_length = ALIGN_UP(data_length, SPI_FLASH_SEC_SIZE);
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    err = ota_calc_partition_bin_sha(partition, padded_length, digest, PSA_ALG_SHA_384);
+#else
+    err = ota_calc_partition_bin_sha(partition, padded_length, digest, PSA_ALG_SHA_256);
+#endif
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Digest calculation failed partition: %s", partition->label);
+        return err;
+    }
+
+    const ets_secure_boot_signature_t sig_block = {0};
+    err = esp_partition_read(partition, data_length, (void*)&sig_block, sizeof(ets_secure_boot_signature_t));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Reading signature block failed for partition: %s", partition->label);
+        return err;
+    }
+
+    err = esp_secure_boot_verify_sbv2_signature_block(&sig_block, digest, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
+    }
+    return err;
+}
+#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+
 static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
 {
     esp_err_t ret = ESP_OK;
@@ -495,6 +573,17 @@ static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
             esp_partition_munmap(partition_table_map);
         }
     }
+#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+    else if (ota_ops->partition.final->type == ESP_PARTITION_TYPE_DATA &&
+            ota_ops->partition.final->subtype == ESP_PARTITION_SUBTYPE_DATA_UNDEFINED) {
+        esp_err_t err = ota_verify_data_partition_signature(ota_ops->partition.staging, ota_ops->wrote_size);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG,"esp_secure_boot_verify_signature failed for partition %s, return %d", ota_ops->partition.final->label, err);
+            return ESP_ERR_OTA_VALIDATE_FAILED;
+        }
+        return ESP_OK;
+    }
+#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
     return ret;
 }
 

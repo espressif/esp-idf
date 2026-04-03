@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,12 +82,15 @@ static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol,
     /* Get first subprotocol from comma separated list */
     char *rest = NULL;
     char *s = strtok_r(subprotocol, ", ", &rest);
-    do {
-        if (strncmp(s, supported_subprotocol, sizeof(subprotocol)) == 0) {
+    int supported_subprotocol_len = strlen(supported_subprotocol);
+    while (s != NULL) {
+        if (strlen(s) == supported_subprotocol_len &&
+                strncmp(s, supported_subprotocol, supported_subprotocol_len) == 0) {
             ESP_LOGD(TAG, "Requested subprotocol supported: %s", s);
             return true;
         }
-    } while ((s = strtok_r(NULL, ", ", &rest)) != NULL);
+        s = strtok_r(NULL, ", ", &rest);
+    }
 
     ESP_LOGW(TAG, "Sec-WebSocket-Protocol %s not supported, supported subprotocol is %s", subprotocol, supported_subprotocol);
 

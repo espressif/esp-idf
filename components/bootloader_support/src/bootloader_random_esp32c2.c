@@ -11,6 +11,7 @@
 #include "soc/apb_saradc_reg.h"
 #include "soc/system_reg.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "soc/regi2c_saradc.h"
 #include "hal/adc_ll.h"
 #include "hal/sar_ctrl_ll.h"

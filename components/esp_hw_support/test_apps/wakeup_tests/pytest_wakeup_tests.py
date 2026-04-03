@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from time import sleep
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 TEST_CONFIGS = [
     pytest.param('default'),
@@ -26,7 +27,7 @@ available_gpio_nums = {
 }
 
 available_rtcio_nums = {
-    'esp32': [36, 37, 38, 39, 34, 35, 4, 0, 2, 15, 13, 12, 14, 27],
+    'esp32': [36, 37, 38, 39, 34, 35, 25, 26, 33, 32, 4, 0, 2, 15, 13, 12, 14, 27],
     'esp32s2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
     'esp32s3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
     'esp32c2': [0, 1, 2, 3, 4, 5],
@@ -42,11 +43,7 @@ available_rtcio_nums = {
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
-@idf_parametrize(
-    'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'],
-    indirect=['target'],
-)
+@idf_parametrize('target', soc_filtered_targets('SOC_PM_SUPPORT_EXT1_WAKEUP == 1'), indirect=['target'])
 def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -97,7 +94,7 @@ def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
-@idf_parametrize('target', ['esp32c2', 'esp32c3', 'esp32c6', 'esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP == 1'), indirect=['target'])
 def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -143,7 +140,6 @@ def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='p4 rev3 migration')
 def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]

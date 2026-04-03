@@ -17,7 +17,7 @@
 #ifndef ESP_SUPPLICANT
 #define NAN_DE_MAX_SERVICE 20
 #else
-#define NAN_DE_MAX_SERVICE 2
+#define NAN_DE_MAX_SERVICE 1
 #endif
 #endif /* NAN_DE_MAX_SERVICE */
 

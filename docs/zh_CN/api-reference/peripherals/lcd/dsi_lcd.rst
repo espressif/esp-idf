@@ -94,7 +94,7 @@ MIPI DSI 接口的 LCD
 
     .. note::
 
-        由于硬件限制，如果启用了外部存储加密，则 DMA2D 只能访问地址和长度都对齐到 16 字节的地址空间。你需要确保你的绘制 buffer 的地址和长度都对齐到 16 字节。 :example:`peripherals/lcd/mipi_dsi` 演示了如何使用 LVGL 控制重新绘制区域来确保对齐。
+        由于硬件限制，如果启用了外部存储加密，则 DMA2D 只能访问地址和长度都对齐到 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节的地址空间。你需要确保你的绘制 buffer 的地址和长度都对齐到 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节。 :example:`peripherals/lcd/mipi_dsi` 演示了如何使用 LVGL 控制重新绘制区域来确保对齐。
 
     若需更高级的应用，用户可为绘制位图添加自定义钩子，例如通过 PPA 实现旋转、缩放等操作。
 

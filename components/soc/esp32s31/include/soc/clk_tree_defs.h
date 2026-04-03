@@ -274,6 +274,23 @@ typedef enum {
     SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_SPLL,        /*!< Select XTAL as default source clock */
 } soc_periph_spi_clk_src_t;
 
+/////////////////////////////////////////////////PSRAM////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of PSRAM
+ */
+#define SOC_PSRAM_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_CPLL, SOC_MOD_CLK_MPLL}
+
+/**
+ * @brief Type of PSRAM clock source.
+ */
+typedef enum {
+    PSRAM_CLK_SRC_DEFAULT = SOC_MOD_CLK_MPLL,         /*!< Select SOC_MOD_CLK_MPLL as PSRAM source clock */
+    PSRAM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select SOC_MOD_CLK_XTAL as PSRAM source clock */
+    PSRAM_CLK_SRC_CPLL = SOC_MOD_CLK_CPLL,            /*!< Select SOC_MOD_CLK_CPLL as PSRAM source clock */
+    PSRAM_CLK_SRC_MPLL = SOC_MOD_CLK_MPLL,            /*!< Select SOC_MOD_CLK_MPLL as PSRAM source clock */
+} soc_periph_psram_clk_src_t;
+
 /////////////////////////////////////////////////FLASH////////////////////////////////////////////////////////////////////
 
 /**
@@ -317,6 +334,53 @@ typedef enum {
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
 } soc_periph_sdm_clk_src_t;
 
+//////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Timer
+ */
+#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F160M}
+
+/**
+ * @brief Type of MCPWM timer clock source
+ */
+typedef enum {
+    MCPWM_TIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,             /*!< Select XTAL as the source clock */
+    MCPWM_TIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,       /*!< Select RC_FAST as the source clock */
+    MCPWM_TIMER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M,     /*!< Select PLL_F160M as the source clock */
+    MCPWM_TIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,     /*!< Select PLL_F160M as the default choice */
+} soc_periph_mcpwm_timer_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Capture Timer
+ */
+#define SOC_MCPWM_CAPTURE_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F160M}
+
+/**
+ * @brief Type of MCPWM capture clock source
+ */
+typedef enum {
+    MCPWM_CAPTURE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M,   /*!< Select PLL_F160M as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,   /*!< Select PLL_F160M as the default choice */
+} soc_periph_mcpwm_capture_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Carrier
+ */
+#define SOC_MCPWM_CARRIER_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F20M, SOC_MOD_CLK_PLL_F160M}
+
+/**
+ * @brief Type of MCPWM carrier clock source
+ */
+typedef enum {
+    MCPWM_CARRIER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    MCPWM_CARRIER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    MCPWM_CARRIER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M,   /*!< Select PLL_F160M as the source clock */
+    MCPWM_CARRIER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,   /*!< Select PLL_F160M as the default choice */
+} soc_periph_mcpwm_carrier_clk_src_t;
+
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {
     CLKOUT_SIG_MPLL     = 0,    /*!< MPLL is from 40MHz XTAL oscillator frequency multipliers */
@@ -357,6 +421,20 @@ typedef enum {
     CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
     CLK_CAL_LP_PLL,                                  /*!< Select to calculate frequency of LP_PLL_CLK */
 } soc_clk_freq_calculation_src_t;
+
+//////////////////////////////////////////////////CORDIC///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of CORDIC
+ */
+#define SOC_CORDIC_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F160M}
+
+typedef enum {
+    CORDIC_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
+    CORDIC_CLK_SRC_PLL_F160M = SOC_MOD_CLK_PLL_F160M,
+    CORDIC_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,
+    CORDIC_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,
+} soc_periph_cordic_clk_src_t;
 
 #ifdef __cplusplus
 }

@@ -26,12 +26,18 @@
 {IDF_TARGET_NAME} 上的 HMAC
 -----------------------------
 
-在 {IDF_TARGET_NAME} HMAC 模块的 eFuse 中会烧录一个密钥，可将该 eFuse 密钥设置为禁止所有外部资源访问，避免密钥泄露。
+在 {IDF_TARGET_NAME} 上，HMAC 模块会使用烧录到 eFuse 中的密钥。
+
+.. only:: SOC_KEY_MANAGER_SUPPORTED
+
+    在 {IDF_TARGET_NAME} 上，HMAC 模块也支持将密钥存储在密钥管理器中，详情请参阅 :ref:`key-manager`。
+
+可将该密钥设置为禁止所有外部资源访问，避免密钥泄露。
 
 此外，在 {IDF_TARGET_NAME} 上的 HMAC 有以下三种应用场景：
 
 #. HMAC 支持软件使用
-#. HMAC 用作数字签名 (DS) 的密钥
+#. HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
 #. HMAC 用于启用软禁用的 JTAG 接口
 
 第一种应用场景称为 **上行** 模式，后两种应用场景称为 **下行** 模式。
@@ -52,11 +58,11 @@ HMAC 的 eFuse 密钥
    * - 8
      - HMAC 支持软件使用
    * - 7
-     - HMAC 用作数字签名 (DS) 的密钥
+     - HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
    * - 6
      - HMAC 启用软禁用的 JTAG 接口
    * - 5
-     - HMAC 既用作数字签名 (DS) 的密钥，又用于启用 JTAG 接口
+     - HMAC 既用作 RSA 数字签名外设 (RSA_DS) 的密钥，又用于启用 JTAG 接口
 
 这样一来，可以确保密钥用于原定场景。
 
@@ -73,16 +79,16 @@ HMAC 支持软件使用
 
 :cpp:func:`psa_mac_compute` 用于计算 HMAC，该函数接收一个不透明的 PSA 密钥，该密钥引用了包含密钥机密的 eFuse 密钥块，并且该密钥块的用途被设置为上行模式。
 
-HMAC 用作数字签名 (DS) 的密钥
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 密钥功能值：7、5
 
-HMAC 可用作密钥派生函数，解码数字签名模块使用的私钥参数。在此情况下，硬件使用标准信息进行计算。在 HMAC 部分只需提供 eFuse 密钥块和功能；而在数字签名模块则还需要一些额外参数。
+HMAC 可用作密钥派生函数，解码 RSA_DS 模块使用的私钥参数。在此情况下，硬件使用标准信息进行计算。在 HMAC 部分只需提供 eFuse 密钥块和功能；而在 RSA_DS 模块则还需要一些额外参数。
 
-无论是密钥还是实际的 HMAC，都不会暴露在 HMAC 和数字签名模块之外。对 HMAC 的计算，以及将其传递给数字签名模块的过程，均在内部进行。
+无论是密钥还是实际的 HMAC，都不会暴露在 HMAC 和 RSA_DS 模块之外。对 HMAC 的计算，以及将其传递给 RSA_DS 模块的过程，均在内部进行。
 
-详情请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **数字签名 (DS)** [`PDF <{IDF_TARGET_TRM_CN_URL}#digsig>`__]。
+详情请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **RSA 数字签名外设 (RSA_DS)** [`PDF <{IDF_TARGET_TRM_CN_URL}#digsig>`__]。
 
 .. _hmac_for_enabling_jtag:
 
@@ -142,6 +148,8 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
 
 以下为针对特定应用场景的实例代码，可用于设置 eFuse 密钥，并将其用于计算支持软件使用的 HMAC。
 
+使用 eFuse 存储 HMAC 密钥：
+
 ``esp_efuse_write_key`` 可以设置 eFuse 中的物理密钥块 4，并设置其功能。``ESP_EFUSE_KEY_PURPOSE_HMAC_UP`` (8) 表明，该密钥仅适用于生成支持软件使用的 HMAC。
 
 .. code-block:: c
@@ -162,6 +170,8 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
 
 接下来可以通过 PSA Crypto API，使用已存储的密钥来计算供软件使用的 HMAC。
 
+使用基于 eFuse 的 HMAC 密钥：
+
 .. code-block:: c
 
     #include "psa/crypto.h"
@@ -181,10 +191,9 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
     psa_set_key_bits(&attributes, 256);
     psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_HMAC_VOLATILE);
 
-    // 创建不透明密钥引用
+    // 为基于 eFuse 的密钥创建不透明密钥引用
     esp_hmac_opaque_key_t opaque_key = {
-        .use_km_key = false,
-        .efuse_block = EFUSE_BLK_KEY4,
+        .efuse_key_id = HMAC_KEY4,
     };
 
     // 导入不透明密钥

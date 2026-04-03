@@ -303,7 +303,7 @@ typedef union {
 } cordic_version_reg_t;
 
 
-typedef struct {
+typedef struct cordic_dev_t {
     volatile cordic_csr_cfg_reg_t csr_cfg;
     volatile cordic_arg1_reg_t arg1;
     volatile cordic_arg2_reg_t arg2;
@@ -319,6 +319,7 @@ typedef struct {
     volatile cordic_version_reg_t version;
 } cordic_dev_t;
 
+extern cordic_dev_t CORDIC;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(cordic_dev_t) == 0x44, "Invalid size of cordic_dev_t structure");

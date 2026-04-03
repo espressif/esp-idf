@@ -37,9 +37,9 @@ menu "GDMA Configurations"
         bool "GDMA enable weighted arbitration (Experimental)"
         default n
         help
-            Whether to enable the weighted arbitration for GDMA driver.
+            Whether to enable weighted arbitration for GDMA driver.
             The default weight of each channel is 1. You need to set weight for each channel before transmissions.
-            If this option is enabled, the buffer should be aligned to the burst size.
+            If this option is enabled, buffer should be aligned to the burst size.
 endmenu # GDMA Configurations
 
 menu "DW_GDMA Configurations"

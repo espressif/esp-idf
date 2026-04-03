@@ -14,13 +14,22 @@ if(CONFIG_ESP_TRACE_ENABLE)
     if(CONFIG_ESP_TRACE_TRANSPORT_APPTRACE)
         list(APPEND srcs "adapters/transport/adapter_transport_apptrace.c")
     endif()
+
+    if(CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG)
+        list(APPEND srcs "adapters/transport/adapter_transport_usb_serial_jtag.c")
+    endif()
 endif()
 
 set(includes
     "include"
 )
 
-set(priv_requires "esp_driver_gptimer")
+set(priv_requires
+    "esp_driver_gptimer"
+    "esp_hal_usb"
+    "esp_driver_usb_serial_jtag"
+    "esp_timer"
+)
 set(priv_includes "")
 set(requires "app_trace")
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,24 @@ extern "C" {
 #define CACHE_LL_LEVEL_NUMS                              1   //Number of cache levels
 #define CACHE_LL_L1_ICACHE_AUTOLOAD                      (1<<2)
 #define CACHE_LL_L1_DCACHE_AUTOLOAD                      (1<<2)
+
+/**
+ * @brief Preload strategy
+ */
+typedef enum {
+    CACHE_LL_PRELOAD_UNTIL_FETCH_DONE = 0,
+    CACHE_LL_PRELOAD_AFTER_FETCH = 1,
+    CACHE_LL_PRELOAD_ARBITRARY = 2,
+} cache_ll_preload_strategy_t;
+
+/**
+ * @brief Initialize the cache clock
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clk_init(void)
+{
+    //for compatibility
+}
 
 /**
  * @brief Check if ICache auto preload is enabled or not
@@ -103,6 +121,161 @@ static inline bool cache_ll_is_cache_autoload_enabled(uint32_t cache_level, cach
         break;
     }
     return enabled;
+}
+
+/*------------------------------------------------------------------------------
+ * Preload (manual preload only; no autoload, via ROM API)
+ *----------------------------------------------------------------------------*/
+/**
+ * @brief Check if L1 ICache preload is in progress
+ *
+ * @param cache_id  id of the cache (0 or CACHE_LL_ID_ALL on S3)
+ * @return true: preload in progress; false: idle
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_l1_is_icache_preload_busy(uint32_t cache_id)
+{
+    (void)cache_id;
+    return Cache_ICache_Preload_Done() == 0;
+}
+
+/**
+ * @brief Check if L1 DCache preload is in progress
+ *
+ * @param cache_id  id of the cache (0 or CACHE_LL_ID_ALL on S3)
+ * @return true: preload in progress; false: idle
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_l1_is_dcache_preload_busy(uint32_t cache_id)
+{
+    (void)cache_id;
+    return Cache_DCache_Preload_Done() == 0;
+}
+
+/**
+ * @brief Set L1 ICache preload address and start preload (ROM: suspends autoload)
+ *
+ * @param cache_id   id of the cache (0 or CACHE_LL_ID_ALL on S3)
+ * @param vaddr      start virtual address for preload
+ * @param size_bytes size of region in bytes
+ * @param ascending  true: ascending (order 0); false: descending (order 1)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_icache_preload(uint32_t cache_id, uint32_t vaddr, uint32_t size_bytes, bool ascending)
+{
+    (void)cache_id;
+    Cache_Start_ICache_Preload(vaddr, size_bytes, ascending ? 0 : 1);
+}
+
+/**
+ * @brief Set L1 DCache preload address and start preload (ROM: suspends autoload)
+ *
+ * @param cache_id   id of the cache (0 or CACHE_LL_ID_ALL on S3)
+ * @param vaddr      start virtual address for preload
+ * @param size_bytes size of region in bytes
+ * @param ascending  true: ascending (order 0); false: descending (order 1)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_dcache_preload(uint32_t cache_id, uint32_t vaddr, uint32_t size_bytes, bool ascending)
+{
+    (void)cache_id;
+    Cache_Start_DCache_Preload(vaddr, size_bytes, ascending ? 0 : 1);
+}
+
+/**
+ * @brief Wait until L1 ICache preload is done
+ *
+ * @param cache_id  id of the cache (0 or CACHE_LL_ID_ALL on S3)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_icache_preload_wait_done(uint32_t cache_id)
+{
+    (void)cache_id;
+    while (Cache_ICache_Preload_Done() == 0) {
+    }
+}
+
+/**
+ * @brief Wait until L1 DCache preload is done
+ *
+ * @param cache_id  id of the cache (0 or CACHE_LL_ID_ALL on S3)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_dcache_preload_wait_done(uint32_t cache_id)
+{
+    (void)cache_id;
+    while (Cache_DCache_Preload_Done() == 0) {
+    }
+}
+
+/**
+ * @brief Set the preload strategy (no-op)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_set_strategy(uint32_t cache_level, cache_type_t type, uint32_t cache_id, cache_ll_preload_strategy_t strategy)
+{
+    (void)cache_level;
+    (void)type;
+    (void)cache_id;
+    (void)strategy;
+}
+
+/**
+ * @brief Preload cache (L1 only)
+ *
+ * Starts preload for the given region and does not wait. Use
+ * cache_ll_l1_*_preload_wait_done() to wait for completion.
+ *
+ * @param cache_level  level of the cache (must be 1)
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache (0 or CACHE_LL_ID_ALL)
+ * @param vaddr        start virtual address for preload
+ * @param size         size of region in bytes
+ * @param ascending    true: ascending order; false: descending
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    HAL_ASSERT(cache_level == 1);
+    switch (type) {
+    case CACHE_TYPE_INSTRUCTION:
+        cache_ll_l1_icache_preload(cache_id, vaddr, size, ascending);
+        break;
+    case CACHE_TYPE_DATA:
+        cache_ll_l1_dcache_preload(cache_id, vaddr, size, ascending);
+        break;
+    case CACHE_TYPE_ALL:
+    default:
+        cache_ll_l1_icache_preload(cache_id, vaddr, size, ascending);
+        cache_ll_l1_dcache_preload(cache_id, vaddr, size, ascending);
+        break;
+    }
+}
+
+/**
+ * @brief Wait until cache preload is done (L1 only)
+ *
+ * @param cache_level  level of the cache (must be 1)
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache (0 or CACHE_LL_ID_ALL)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    HAL_ASSERT(cache_level == 1);
+    switch (type) {
+    case CACHE_TYPE_INSTRUCTION:
+        cache_ll_l1_icache_preload_wait_done(cache_id);
+        break;
+    case CACHE_TYPE_DATA:
+        cache_ll_l1_dcache_preload_wait_done(cache_id);
+        break;
+    case CACHE_TYPE_ALL:
+    default:
+        cache_ll_l1_icache_preload_wait_done(cache_id);
+        cache_ll_l1_dcache_preload_wait_done(cache_id);
+        break;
+    }
 }
 
 /**

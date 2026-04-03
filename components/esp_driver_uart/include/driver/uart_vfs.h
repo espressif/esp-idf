@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,25 @@
 #pragma once
 
 #include "esp_vfs_common.h"
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* TODO IDF-14810: Rename so esp_console does not appear in the name. */
+/**
+ * @brief UART VFS configuration structure.
+ *
+ * Defines the configuration parameters required to initialize and register
+ * a UART VFS driver instance.
+ */
+typedef struct esp_console_dev_uart_config {
+    int channel;     //!< UART channel number (count from zero)
+    int baud_rate;   //!< Communication baud rate
+    int tx_gpio_num; //!< GPIO number for TX path, -1 means using default one
+    int rx_gpio_num; //!< GPIO number for RX path, -1 means using default one
+} esp_console_dev_uart_config_t;
 
 /**
  * @brief Add /dev/uart virtual filesystem driver

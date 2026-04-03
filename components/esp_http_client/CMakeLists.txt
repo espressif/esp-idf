@@ -4,17 +4,10 @@ else()
     set(req linux esp_event)
 endif()
 
-if(CONFIG_ESP_HTTP_CLIENT_PSA_CRYPTO_MIGRATE)
-    set(HTTP_CRYPTO_SRC "lib/http_crypto_psa.c")
-else()
-    set(HTTP_CRYPTO_SRC "lib/http_crypto_mbedtls.c")
-endif()
-
 idf_component_register(SRCS "esp_http_client.c"
                             "lib/http_auth.c"
                             "lib/http_header.c"
                             "lib/http_utils.c"
-                            ${HTTP_CRYPTO_SRC}
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "lib/include"
                     # lwip is a public requirement because esp_http_client.h includes sys/socket.h

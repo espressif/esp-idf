@@ -365,8 +365,13 @@ SECTIONS
     KEEP (*(.preinit_array))
     __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
+#if CONFIG_IDF_TOOLCHAIN_CLANG
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
+#else
     KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors))
+#endif
     __init_array_end = ABSOLUTE(.);
     __bothinit_array_end = ABSOLUTE(.);
 
@@ -376,9 +381,9 @@ SECTIONS
     soc_reserved_memory_region_end = ABSOLUTE(.);
 
     /* System init functions registered via ESP_SYSTEM_INIT_FN */
-    ALIGNED_SYMBOL(4, _esp_system_init_fn_array_start)
-    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
-    _esp_system_init_fn_array_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _esp_sys_init_fn_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_sys_init_fn.*)))
+    _esp_sys_init_fn_end = ABSOLUTE(.);
 
     _rodata_end = ABSOLUTE(.);
 

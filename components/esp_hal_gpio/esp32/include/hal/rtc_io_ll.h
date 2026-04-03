@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -331,6 +331,17 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 }
 
 /**
+ * Enable interrupt function and set interrupt type for RTC IO.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param type  Interrupt type (disable, edge, or level). Matches gpio_int_type_t encoding.
+ */
+static inline void rtcio_ll_intr_enable(int rtcio_num, gpio_int_type_t type)
+{
+    RTCIO.pin[rtcio_num].int_type = type;
+}
+
+/**
  * Enable rtc io output in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -405,6 +416,36 @@ static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
     REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtcio_num);
     // Set level which will trigger wakeup
     SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1, level, RTC_CNTL_EXT_WAKEUP0_LV_S);
+}
+
+/**
+ * @brief Get the status of whether an IO is used for sleep wake-up.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
+{
+    HAL_ASSERT(rtcio_num >= 0 && rtcio_num < SOC_RTCIO_PIN_COUNT && "io does not support deep sleep wake-up function");
+    return RTCIO.pin[rtcio_num].wakeup_enable;
+}
+
+/**
+ * @brief Get the rtc io interrupt status
+ *
+ * @return  bit 0~17 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ */
+static inline uint32_t rtcio_ll_get_interrupt_status(void)
+{
+    return RTCIO.status.status;
+}
+
+/**
+ * @brief Clear all LP IO pads status
+ */
+static inline void rtcio_ll_clear_interrupt_status(void)
+{
+    RTCIO.status_w1tc.w1tc = 0x3FFFF; // Clear all 18 RTCIO pins
 }
 
 #ifdef __cplusplus

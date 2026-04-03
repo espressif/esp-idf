@@ -86,6 +86,7 @@ struct wpa_state_machine {
 	unsigned int mgmt_frame_prot:1;
 	unsigned int rx_eapol_key_secure:1;
 	unsigned int update_snonce:1;
+	unsigned int alt_snonce_valid:1;
 #ifdef CONFIG_IEEE80211R_AP
 	unsigned int ft_completed:1;
 	unsigned int pmk_r1_name_valid:1;
@@ -95,6 +96,9 @@ struct wpa_state_machine {
 
 	u8 req_replay_counter[WPA_REPLAY_COUNTER_LEN];
 	int req_replay_counter_used;
+
+	u8 alt_SNonce[WPA_NONCE_LEN];
+	u8 alt_replay_counter[WPA_REPLAY_COUNTER_LEN];
 
 	u8 *wpa_ie;
 	size_t wpa_ie_len;

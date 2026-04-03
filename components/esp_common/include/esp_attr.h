@@ -29,14 +29,19 @@ extern "C" {
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
 
-// Places code into TCM instead of flash
-#define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".tcm.text", __COUNTER__)
+// Places code into SPM instead of flash
+#define SPM_IRAM_ATTR _SECTION_ATTR_IMPL(".spm.text", __COUNTER__)
 
-// Forces code into TCM instead of flash
-#define FORCE_TCM_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".tcm.text", __COUNTER__)
+// Forces code into SPM instead of flash
+#define FORCE_SPM_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".spm.text", __COUNTER__)
 
-// Forces data into TCM instead of L2MEM
-#define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
+// Forces data into SPM instead of L2MEM
+#define SPM_DRAM_ATTR _SECTION_ATTR_IMPL(".spm.data", __COUNTER__)
+
+// Deprecated macros for TCM (SPM)
+#define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".spm.text", __COUNTER__) _Pragma ("GCC warning \"'TCM_IRAM_ATTR' macro is deprecated, please use `SPM_IRAM_ATTR`\"")
+#define FORCE_TCM_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".spm.text", __COUNTER__) _Pragma ("GCC warning \"'FORCE_TCM_IRAM_ATTR' macro is deprecated, please use `FORCE_SPM_IRAM_ATTR`\"")
+#define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".spm.data", __COUNTER__) _Pragma ("GCC warning \"'TCM_DRAM_ATTR' macro is deprecated, please use `SPM_DRAM_ATTR`\"")
 
 // Forces data to be removed from the final binary but keeps it in the ELF file
 #define NOLOAD_ATTR _SECTION_ATTR_IMPL(".noload_keep_in_elf", __COUNTER__)
@@ -205,16 +210,96 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 //
 // Using unique sections also means --gc-sections can remove unused
 // data with a custom section type set
+#define _COUNTER_STRINGIFY(COUNTER) #COUNTER
+
 #ifndef CONFIG_IDF_TARGET_LINUX
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER) __attribute__((section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
 #define _SECTION_FORCE_ATTR_IMPL(SECTION, COUNTER) __attribute__((noinline, section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
-#define _COUNTER_STRINGIFY(COUNTER) #COUNTER
 #else
 // Custom section attributes are generally not used in the port files for Linux target, but may be found
 // in the common header files. Don't declare custom sections in that case.
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER)
 #define _SECTION_FORCE_ATTR_IMPL(SECTION, COUNTER)
 #endif
+
+/*
+ * Portable link-time section macros.
+ *
+ * Unlike _SECTION_ATTR_IMPL (which is a no-op on Linux), these macros emit
+ * real section attributes on every platform: embedded ELF, Linux ELF, and
+ * macOS Mach-O.  Use them when data MUST be placed in a custom section
+ * regardless of the target (e.g. error-code tables, init-function arrays).
+ *
+ * PLACE_IN_SECTION("name")
+ *   Place a variable into section "name" with used + aligned(4).
+ *   Section name is given WITHOUT a leading dot; the macro adds the
+ *   appropriate prefix ("." for ELF, "__DATA," for Mach-O).
+ *
+ * _SECTION_ATTR_IMPL_GENERIC("name", counter)
+ *   Like PLACE_IN_SECTION but appends a unique counter suffix so that
+ *   multiple definitions in the same translation unit get unique sub-sections
+ *   (enables SORT in the linker).
+ *
+ * _SECTION_ATTR_SYMBOL_DECL_GENERIC(TYPE, section_name)
+ *   Declare the start/end boundary symbols for iterating over all entries
+ *   placed in a section.  On ELF these are plain extern symbols provided
+ *   by the linker script; on macOS a constructor resolves them at runtime
+ *   via getsectiondata().
+ *
+ * _SECTION_START(section_name) / _SECTION_END(section_name)
+ *   Evaluate to a (const TYPE *) pointing to the first / past-the-last
+ *   entry — works uniformly across platforms.
+ */
+#if defined(__APPLE__) && defined(__MACH__)
+/* ---------- macOS (Mach-O) ---------- */
+#include <mach-o/getsect.h>
+#include <mach-o/ldsyms.h>
+#include <mach-o/dyld.h>
+
+#define _SECTION_ATTR_IMPL_GENERIC(SECTION, COUNTER) \
+    __attribute__((used, section("__DATA," SECTION)))
+
+#define PLACE_IN_SECTION(SECTION) _SECTION_ATTR_IMPL_GENERIC(SECTION, __COUNTER__)
+
+#define _SECTION_ATTR_SYMBOL_DECL_GENERIC(TYPE, SECTION_NAME) \
+    static const TYPE *_##SECTION_NAME##_start_ptr; \
+    static const TYPE *_##SECTION_NAME##_end_ptr; \
+    __attribute__((constructor)) \
+    static void _init_section_##SECTION_NAME(void) { \
+        unsigned long size = 0; \
+        const TYPE *s = (const TYPE *)getsectiondata( \
+            &_mh_execute_header, "__DATA", #SECTION_NAME, &size); \
+        if (s && size > 0) { \
+            _##SECTION_NAME##_start_ptr = s; \
+            _##SECTION_NAME##_end_ptr = s + (size / sizeof(TYPE)); \
+        } else { \
+            _##SECTION_NAME##_start_ptr = (const TYPE *)0; \
+            _##SECTION_NAME##_end_ptr = (const TYPE *)0; \
+        } \
+    }
+
+#define _SECTION_START(SECTION_NAME)  (_##SECTION_NAME##_start_ptr)
+#define _SECTION_END(SECTION_NAME)    (_##SECTION_NAME##_end_ptr)
+
+#else /* ELF targets (Linux and embedded) */
+
+/* Use the variable's own natural alignment so that pointer arithmetic over
+ * the section (end - start) gives the correct entry count with no padding gaps.
+ * On 32-bit embedded targets uint32_t aligns to 4; on 64-bit hosts a struct
+ * with a pointer member aligns to 8 — both correct without an explicit override. */
+#define _SECTION_ATTR_IMPL_GENERIC(SECTION, COUNTER) \
+    __attribute__((used, section("." SECTION "." _COUNTER_STRINGIFY(COUNTER))))
+
+#define PLACE_IN_SECTION(SECTION) _SECTION_ATTR_IMPL_GENERIC(SECTION, __COUNTER__)
+
+#define _SECTION_ATTR_SYMBOL_DECL_GENERIC(TYPE, SECTION_NAME) \
+    extern TYPE _##SECTION_NAME##_start; \
+    extern TYPE _##SECTION_NAME##_end;
+
+#define _SECTION_START(SECTION_NAME)  (&_##SECTION_NAME##_start)
+#define _SECTION_END(SECTION_NAME)    (&_##SECTION_NAME##_end)
+
+#endif /* platform selection */
 
 /* Use IDF_DEPRECATED attribute to mark anything deprecated from use in
    ESP-IDF's own source code, but not deprecated for external users.

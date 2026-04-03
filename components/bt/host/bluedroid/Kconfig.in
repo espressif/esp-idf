@@ -48,6 +48,13 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+    bool "Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth
+
 choice BT_ENC_KEY_SIZE_CTRL_ENABLED
     prompt "configure encryption key size"
     depends on BT_CLASSIC_ENABLED
@@ -1443,11 +1450,11 @@ config BT_BLE_FEAT_ISO_60_EN
         Enable iso 6.0 feature
 
 config BT_BLE_FEAT_ISO_BIG_BROCASTER
-    bool "Enable BLE iso BIG brocaster"
+    bool "Enable BLE iso BIG broadcaster"
     depends on BT_BLE_FEAT_ISO_EN
     default y
     help
-        Enable BLE 5.2 BIG brocaster
+        Enable BLE 5.2 BIG broadcaster
 
 config BT_BLE_FEAT_ISO_BIG_SYNCER
     bool "Enable BLE iso BIG syncer"
@@ -1560,6 +1567,15 @@ config BT_BLE_FEAT_CHANNEL_SOUNDING
     default n
     help
         Enable BLE channel sounding
+
+config BT_BLE_FEAT_ADV_MONITOR
+    bool "Enable BLE Advertising Monitor (LE Monitor Advertisement)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_MONITOR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LE Monitor Advertisement feature (Bluetooth Core 6.0).
+        Allows the host to add devices to a monitor list and receive reports when
+        the controller detects advertising from those devices (e.g. RSSI threshold).
 
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"

@@ -19,7 +19,6 @@
 #include "esp_rom_sys.h"
 #include "esp_hw_log.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "hal/rtc_io_ll.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_dig_reg.h"
@@ -189,13 +188,13 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     clk_ll_bbpll_set_freq_mhz(pll_freq);
     /* Analog part */
     /* BBPLL CALIBRATION START */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while(!clk_ll_bbpll_calibration_is_done());
     esp_rom_delay_us(10);
     /* BBPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
 
     s_cur_pll_freq = pll_freq;
 }

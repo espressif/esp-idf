@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -21,6 +21,7 @@ def clean_app_dir(app_path: Path) -> None:
     shutil.rmtree(app_path / 'build', ignore_errors=True)
 
 
+@pytest.mark.buildv2_skip('Examples (spiffsgen, ulp, etc.) not yet ported to buildv2')
 @pytest.mark.idf_copy_with_space
 def test_spaces_bundle1(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 1')
@@ -29,9 +30,12 @@ def test_spaces_bundle1(idf_copy: Path) -> None:
     # test build ulp_fsm
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
     # test build ulp_riscv
-    run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
+    run_idf_py(
+        '-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio')
+    )
 
 
+@pytest.mark.buildv2_skip('Examples (flash_encryption, https_x509_bundle) not yet ported to buildv2')
 @pytest.mark.idf_copy_with_space
 def test_spaces_bundle2(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 2')
@@ -41,33 +45,38 @@ def test_spaces_bundle2(idf_copy: Path) -> None:
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'protocols' / 'https_x509_bundle'))
 
 
+@pytest.mark.buildv2_skip('secure_boot test app not yet ported to buildv2')
 @pytest.mark.idf_copy_with_space
 def test_spaces_bundle3(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 3')
-    secure_boot_app_path = (idf_copy / 'tools' / 'test_apps' / 'security' / 'secure_boot')
+    secure_boot_app_path = idf_copy / 'tools' / 'test_apps' / 'security' / 'secure_boot'
     # test secure_boot_v1
-    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.00', 'build',
-               workdir=secure_boot_app_path)
+    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.00', 'build', workdir=secure_boot_app_path)
     clean_app_dir(secure_boot_app_path)
     # test secure_boot_v2
-    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.01', 'build',
-               workdir=secure_boot_app_path)
+    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.01', 'build', workdir=secure_boot_app_path)
     clean_app_dir(secure_boot_app_path)
     # test app_signing
-    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.02', 'build',
-               workdir=secure_boot_app_path)
+    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.02', 'build', workdir=secure_boot_app_path)
     clean_app_dir(secure_boot_app_path)
     # test secure_boot_release_mode
-    run_idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.04', '-DIDF_TARGET=esp32s2', 'build',
-               workdir=secure_boot_app_path)
+    run_idf_py(
+        '-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.ci.04',
+        '-DIDF_TARGET=esp32s2',
+        'build',
+        workdir=secure_boot_app_path,
+    )
 
 
 @pytest.mark.xfail(sys.platform == 'win32', reason='Bug with reproducible build')
 # Use this bundle for tests which can be done with the default build_test_app
-@pytest.mark.parametrize('dummy_', [
-    # Dummy parameter with a space in it, used so that the test directory name contains a space
-    pytest.param('test spaces')
-])
+@pytest.mark.parametrize(
+    'dummy_',
+    [
+        # Dummy parameter with a space in it, used so that the test directory name contains a space
+        pytest.param('test spaces')
+    ],
+)
 @pytest.mark.idf_copy_with_space
 @pytest.mark.usefixtures('idf_copy')
 def test_spaces_bundle4(dummy_: str, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -91,9 +100,9 @@ def test_install_export_unix(idf_copy: Path) -> None:
     install_cmd = './install.sh esp32'
     export_cmd = '. ./export.sh'
 
-    logging.debug('running {} in {}'.format(install_cmd, idf_copy))
+    logging.debug(f'running {install_cmd} in {idf_copy}')
     subprocess.check_call(install_cmd, env=env, shell=True, cwd=idf_copy)
-    logging.debug('running {} in {}'.format(export_cmd, idf_copy))
+    logging.debug(f'running {export_cmd} in {idf_copy}')
     # The default shell used by subprocess.Popen on POSIX platforms is '/bin/sh',
     # which in esp-env Docker image is 'dash'. The export script doesn't support
     # IDF_PATH detection when used in dash, so we have to override the shell here.
@@ -108,7 +117,7 @@ def test_install_export_win(idf_copy: Path) -> None:
     install_cmd = 'install.bat esp32'
     export_cmd = 'export.bat'
 
-    logging.debug('running {} in {}'.format(install_cmd, idf_copy))
+    logging.debug(f'running {install_cmd} in {idf_copy}')
     subprocess.check_call(install_cmd, env=env, shell=True, cwd=idf_copy)
-    logging.debug('running {} in {}'.format(export_cmd, idf_copy))
+    logging.debug(f'running {export_cmd} in {idf_copy}')
     subprocess.check_call(export_cmd, env=env, shell=True, cwd=idf_copy)

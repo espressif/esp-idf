@@ -50,55 +50,64 @@ include:
   - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
 """
 
-[gitlab.artifacts.s3.debug]
-bucket = "idf-artifacts"
-patterns = [
-    '**/build*/bootloader/*.map',
-    '**/build*/bootloader/*.elf',
-    '**/build*/*.map',
-    '**/build*/*.elf',
-    # customized
-    '**/build*/esp_tee/*.map',
-    '**/build*/esp_tee/*.elf',
-    '**/build*/gdbinit/*',
-]
+[gitlab.artifacts.s3]
+enable = true
 
-[gitlab.artifacts.s3.flash]
+[gitlab.artifacts.s3.configs.debug]
 bucket = "idf-artifacts"
+zip_first = true
+build_dir_pattern = "**/build*/"
 patterns = [
-    '**/build*/bootloader/*.bin',
-    '**/build*/*.bin',
-    '**/build*/partition_table/*.bin',
-    '**/build*/flasher_args.json',
-    '**/build*/flash_project_args',
-    '**/build*/config/sdkconfig.json',
-    '**/build*/sdkconfig',
-    '**/build*/project_description.json',
+    'bootloader/*.map',
+    'bootloader/*.elf',
+    '*.map',
+    '*.elf',
     # customized
-    '**/build*/esp_tee/*.bin',
+    'esp_tee/*.map',
+    'esp_tee/*.elf',
+    'gdbinit/*',
 ]
+if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
 
-[gitlab.artifacts.s3.log]
+[gitlab.artifacts.s3.configs.flash]
+bucket = "idf-artifacts"
+zip_first = true
+build_dir_pattern = "**/build*/"
+patterns = [
+    'bootloader/*.bin',
+    '*.bin',
+    'partition_table/*.bin',
+    'flasher_args.json',
+    'flash_project_args',
+    'config/sdkconfig.json',
+    'sdkconfig',
+    'project_description.json',
+    # customized
+    'esp_tee/*.bin',
+]
+if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
+
+[gitlab.artifacts.s3.configs.log]
 bucket = "idf-artifacts"
 patterns = [
     '**/build*/build_log.txt',
     '**/build*/size*.json',
 ]
 
-[gitlab.artifacts.s3.junit]
+[gitlab.artifacts.s3.configs.junit]
 bucket = "idf-artifacts"
 patterns = [
     '**/XUNIT_RESULT_*.xml',
     '**/build_summary_*.xml',
 ]
 
-[gitlab.artifacts.s3.env]
+[gitlab.artifacts.s3.configs.env]
 bucket = "idf-artifacts"
 patterns = [
     '**/pipeline.env',
 ]
 
-[gitlab.artifacts.s3.longterm]
+[gitlab.artifacts.s3.configs.longterm]
 bucket = "longterm"
 if_clause = 'CI_COMMIT_REF_NAME == "master"'
 patterns = [

@@ -6,10 +6,8 @@
 
 #include "sdkconfig.h"
 #include <unistd.h>
-#include <sys/cdefs.h> // __containerof
 #include <sys/param.h>
 #include <sys/fcntl.h>
-#include "esp_console.h"
 #include "console_private.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"

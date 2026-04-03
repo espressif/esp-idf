@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C3 |
+| ----------------- | -------- |
 
 # Secure Signed On Update No Secure Boot
 

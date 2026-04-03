@@ -1,0 +1,23 @@
+# This file is auto-generated
+choice SLAVE_IDF_TARGET
+    prompt "choose slave target"
+    default SLAVE_IDF_TARGET_ESP32C6 if IDF_TARGET_ESP32P4  # To support common use-cases
+    default SLAVE_IDF_TARGET_ESP32
+
+    config SLAVE_IDF_TARGET_ESP32
+        bool "esp32"
+    config SLAVE_IDF_TARGET_ESP32S2
+        bool "esp32s2"
+    config SLAVE_IDF_TARGET_ESP32C3
+        bool "esp32c3"
+    config SLAVE_IDF_TARGET_ESP32S3
+        bool "esp32s3"
+    config SLAVE_IDF_TARGET_ESP32C2
+        bool "esp32c2"
+    config SLAVE_IDF_TARGET_ESP32C6
+        bool "esp32c6"
+    config SLAVE_IDF_TARGET_ESP32C5
+        bool "esp32c5"
+    config SLAVE_IDF_TARGET_ESP32C61
+        bool "esp32c61"
+endchoice

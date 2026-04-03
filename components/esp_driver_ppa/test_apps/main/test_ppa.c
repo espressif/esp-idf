@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "esp_cache.h"
 #include "ppa_performance.h"
 #include "esp_random.h"
+#include "esp_efuse.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -76,7 +77,9 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
         .mode = PPA_TRANS_MODE_BLOCKING,
     };
     // A SRM client can request to do a SRM operation
-    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_srm_handle, &srm_oper_config));
+    if (!esp_efuse_is_flash_encryption_enabled()) {
+        TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_srm_handle, &srm_oper_config));
+    }
     // A non-SRM client can not request to do a SRM operation
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_scale_rotate_mirror(ppa_client_blend_handle, &srm_oper_config));
 
@@ -159,6 +162,11 @@ static bool ppa_trans_done_cb(ppa_client_handle_t ppa_client, ppa_event_data_t *
 
 TEST_CASE("ppa_pending_transactions_in_queue", "[PPA]")
 {
+    // this test tests software correctness, and SRM does not work with flash encrypted if buffer is in external memory, so skip
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    }
+
     // A big picture block takes longer time to process, desired for this test case
     const uint32_t w = 1920;
     const uint32_t h = 1080;
@@ -267,7 +275,7 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
 
     const uint32_t buf_len = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)cm) / 8; // 32
     uint32_t out_buf_size = ALIGN_UP(buf_len, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA); // located in internal RAM so even w/ flash encrypted, it won't be affected
     TEST_ASSERT_NOT_NULL(out_buf);
     esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     const uint16_t in_buf[16] = {
@@ -565,6 +573,11 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
 
 TEST_CASE("ppa_srm_performance", "[PPA]")
 {
+    // SRM does not work with flash encrypted if buffer is in external memory, so skip
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    }
+
     // Configurable parameters
     const uint32_t w = 1920; // 1920 / 1280 / 800 / 640
     const uint32_t h = 1080; // 1080 / 720 / 480
@@ -655,8 +668,12 @@ TEST_CASE("ppa_blend_performance", "[PPA]")
     const ppa_blend_color_mode_t in_fg_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
     const ppa_blend_color_mode_t out_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
 
-    uint32_t in_bg_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8;
-    uint32_t in_fg_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8;
+    size_t in_buf_alignment = 4; // no special alignment requirement for input buffers
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        in_buf_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+    }
+    uint32_t in_bg_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8, in_buf_alignment);
+    uint32_t in_fg_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8, in_buf_alignment);
     uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
@@ -722,10 +739,12 @@ TEST_CASE("ppa_blend_performance", "[PPA]")
     printf("PPA Blend - Process Time: %lld us\n", oper_time);
 
     // Check performance
-    uint64_t num_pixels_processed = block_w * block_h;
-    uint64_t px_per_second = (num_pixels_processed - PPA_BLEND_TIME_OFFSET) * 1000 * 1000 / oper_time;
-    printf("PPA Blend performance = %lld pixels/sec\n", px_per_second);
-    TEST_ASSERT_GREATER_THAN(PPA_BLEND_MIN_PERFORMANCE_PX_PER_SEC, px_per_second);
+    if (!esp_efuse_is_flash_encryption_enabled()) { // flash encryption slows down the performance, so skip the check
+        uint64_t num_pixels_processed = block_w * block_h;
+        uint64_t px_per_second = (num_pixels_processed - PPA_BLEND_TIME_OFFSET) * 1000 * 1000 / oper_time;
+        printf("PPA Blend performance = %lld pixels/sec\n", px_per_second);
+        TEST_ASSERT_GREATER_THAN(PPA_BLEND_MIN_PERFORMANCE_PX_PER_SEC, px_per_second);
+    }
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 
@@ -780,10 +799,12 @@ TEST_CASE("ppa_fill_performance", "[PPA]")
     printf("PPA Fill - Process Time: %lld us\n", oper_time);
 
     // Check performance
-    uint64_t num_pixels_processed = block_w * block_h;
-    uint64_t px_per_second = (num_pixels_processed - PPA_FILL_TIME_OFFSET) * 1000 * 1000 / oper_time;
-    printf("PPA Blend performance = %lld pixels/sec\n", px_per_second);
-    TEST_ASSERT_GREATER_THAN(PPA_FILL_MIN_PERFORMANCE_PX_PER_SEC, px_per_second);
+    if (!esp_efuse_is_flash_encryption_enabled()) { // flash encryption slows down the performance, so skip the check
+        uint64_t num_pixels_processed = block_w * block_h;
+        uint64_t px_per_second = (num_pixels_processed - PPA_FILL_TIME_OFFSET) * 1000 * 1000 / oper_time;
+        printf("PPA Blend performance = %lld pixels/sec\n", px_per_second);
+        TEST_ASSERT_GREATER_THAN(PPA_FILL_MIN_PERFORMANCE_PX_PER_SEC, px_per_second);
+    }
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 
@@ -792,6 +813,11 @@ TEST_CASE("ppa_fill_performance", "[PPA]")
 
 TEST_CASE("ppa_srm_stress_test", "[PPA]")
 {
+    // SRM does not work with flash encrypted if buffer is in external memory, so skip
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    }
+
     // Configurable parameters
     const uint32_t w = 200;
     const uint32_t h = 200;

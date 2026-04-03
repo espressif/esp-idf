@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,7 @@ TEST_CASE("UHCI driver memory leaking check", "[uhci]")
     TEST_ASSERT_INT_WITHIN(300, size, esp_get_free_heap_size());
 }
 
-TEST_CASE("UHCI controller install-uninstall test", "[i2c]")
+TEST_CASE("UHCI controller install-uninstall test", "[uhci]")
 {
     uhci_controller_config_t uhci_cfg = {
         .uart_port = EX_UART_NUM,
@@ -119,8 +119,10 @@ IRAM_ATTR static bool s_uhci_rx_event_cbs(uhci_controller_handle_t uhci_ctrl, co
 
 static void uhci_receive_test(void *arg)
 {
-    uhci_controller_handle_t uhci_ctrl = ((uhci_controller_handle_t *)arg)[0];
-    SemaphoreHandle_t exit_sema = ((SemaphoreHandle_t *)arg)[1];
+    void **args = (void **)arg;
+    uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t)args[0];
+    SemaphoreHandle_t exit_sema = (SemaphoreHandle_t)args[1];
+    int trans_count = *(int *)args[2];
 
     uhci_context_t *ctx = heap_caps_calloc(1, sizeof(uhci_context_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     assert(ctx);
@@ -137,20 +139,25 @@ static void uhci_receive_test(void *arg)
         .on_rx_trans_event = s_uhci_rx_event_cbs,
     };
     TEST_ESP_OK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, ctx));
-    TEST_ESP_OK(uhci_receive(uhci_ctrl, pdata, DATA_LENGTH / 4));
 
     uhci_event_t evt;
-    while (1) {
-        if (xQueueReceive(ctx->uhci_queue, &evt, portMAX_DELAY) == pdTRUE) {
-            if (evt == UHCI_EVT_EOF) {
-                disp_buf(receive_data, ctx->receive_size);
-                for (int i = 0; i < ctx->receive_size; i++) {
-                    TEST_ASSERT(receive_data[i] == (uint8_t)i);
+
+    for (int i = 0; i < trans_count; i++) {
+        TEST_ESP_OK(uhci_receive(uhci_ctrl, pdata, DATA_LENGTH / 4));
+        while (1) {
+            if (xQueueReceive(ctx->uhci_queue, &evt, portMAX_DELAY) == pdTRUE) {
+                if (evt == UHCI_EVT_EOF) {
+                    disp_buf(receive_data, ctx->receive_size);
+                    for (int i = 0; i < ctx->receive_size; i++) {
+                        TEST_ASSERT(receive_data[i] == (uint8_t)i);
+                    }
+                    printf("Received size: %d\n", ctx->receive_size);
+                    break;
                 }
-                printf("Received size: %d\n", ctx->receive_size);
-                break;
             }
         }
+
+        ctx->receive_size = 0;
     }
 
     vQueueDelete(ctx->uhci_queue);
@@ -164,7 +171,7 @@ static void uhci_receive_test(void *arg)
 TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
 {
     uart_config_t uart_config = {
-        .baud_rate = 5 * 1000 * 1000,
+        .baud_rate = 2 * 1000 * 1000,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -188,7 +195,8 @@ TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
     SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
     TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
 
-    void *args[] = { uhci_ctrl, exit_sema };
+    int trans_count = 2;
+    void *args[] = { uhci_ctrl, exit_sema, &trans_count };
     xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
 
     uint8_t data_wr[DATA_LENGTH];
@@ -196,6 +204,9 @@ TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
         data_wr[i] = i;
     }
     TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, DATA_LENGTH));
+    uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, 10));
     uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
     xSemaphoreTake(exit_sema, portMAX_DELAY);
     vTaskDelay(2);
@@ -206,7 +217,7 @@ TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
 TEST_CASE("UHCI write and receive with length eof", "[uhci]")
 {
     uart_config_t uart_config = {
-        .baud_rate = 5 * 1000 * 1000,
+        .baud_rate = 2 * 1000 * 1000,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -231,7 +242,8 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
     SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
     TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
 
-    void *args[] = { uhci_ctrl, exit_sema };
+    int trans_count = 1;
+    void *args[] = { uhci_ctrl, exit_sema, &trans_count };
     xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
 
     uint8_t data_wr[DATA_LENGTH];
@@ -250,8 +262,9 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
 #if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
 static void uhci_receive_test_in_psram(void *arg)
 {
-    uhci_controller_handle_t uhci_ctrl = ((uhci_controller_handle_t *)arg)[0];
-    SemaphoreHandle_t exit_sema = ((SemaphoreHandle_t *)arg)[1];
+    void **args = (void **)arg;
+    uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t)args[0];
+    SemaphoreHandle_t exit_sema = (SemaphoreHandle_t)args[1];
 
     uhci_context_t *ctx = heap_caps_calloc(1, sizeof(uhci_context_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     assert(ctx);
@@ -295,7 +308,7 @@ static void uhci_receive_test_in_psram(void *arg)
 TEST_CASE("UHCI write and receive in psram", "[uhci]")
 {
     uart_config_t uart_config = {
-        .baud_rate = 5 * 1000 * 1000,
+        .baud_rate = 2 * 1000 * 1000,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,

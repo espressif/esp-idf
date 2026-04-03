@@ -84,7 +84,7 @@ HEAP_IRAM_ATTR void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t 
 
 #if SOC_HAS(GDMA) && (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH)
     if ((caps & MALLOC_CAP_DMA) && esp_efuse_is_flash_encryption_enabled()) {
-        alignment = (alignment > GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT)) ? alignment : GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT);
+        alignment = (alignment > SOC_MEMSPI_ENCRYPTION_ALIGNMENT) ? alignment : SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
     }
 #endif
 

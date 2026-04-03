@@ -23,6 +23,7 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         .low_limit = -100,
         .high_limit = 100,
         .intr_priority = 0,
+        .flags.accum_count = true,
     };
     pcnt_unit_handle_t units[PCNT_LL_GET(UNITS_PER_INST)];
     int count_value = 0;
@@ -36,7 +37,7 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
 
     // unit with a different interrupt priority
     unit_config.intr_priority = 3;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
     unit_config.intr_priority = 0;
     TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
 

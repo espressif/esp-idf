@@ -69,8 +69,7 @@ void esp_flash_encryption_init_checks()
     mode = esp_get_flash_encryption_mode();
     if (mode == ESP_FLASH_ENC_MODE_DEVELOPMENT) {
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-        ESP_LOGE(TAG, "Flash encryption settings error: app is configured for RELEASE but efuses are set for DEVELOPMENT");
-        ESP_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
+        ESP_LOGE(TAG, "Flash encryption error: app is set for RELEASE, but efuses are DEVELOPMENT (device is not secure). See Flash Encryption docs to transition.");
 #else
         ESP_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
 #endif // CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
@@ -433,7 +432,8 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     // are mutually exclusive because this will make the chip not functional.
     // Only one type key must be configured in eFuses.
     secure = false;
-    for (unsigned i = 0; i < sizeof(purposes) / sizeof(esp_efuse_purpose_t); i++) {
+    size_t purpose_count = sizeof(purposes) / sizeof(esp_efuse_purpose_t);
+    for (size_t i = 0; i < purpose_count; i++) {
         esp_efuse_block_t block;
         if (esp_efuse_find_purpose(purposes[i], &block)) {
             secure = esp_efuse_get_key_dis_read(block);

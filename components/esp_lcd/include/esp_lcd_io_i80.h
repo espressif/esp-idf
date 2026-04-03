@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,11 @@ typedef struct {
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
     size_t dma_burst_size;     /*!< DMA burst size, in bytes */
+    /// Extra configuration flags for I80 bus
+    struct extra_i80_bus_flags {
+        uint32_t allow_pd: 1;   /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                     This can save power, but at the expense of more RAM being consumed to save register context. */
+    } flags;                    /*!< Extra bus config flags */
 } esp_lcd_i80_bus_config_t;
 
 /**
@@ -67,19 +72,21 @@ typedef struct {
     void *user_ctx;    /*!< User private data, passed directly to on_color_trans_done's user_ctx */
     int lcd_cmd_bits;   /*!< Bit-width of LCD command */
     int lcd_param_bits; /*!< Bit-width of LCD parameter */
-    struct {
+    /// D/C line levels configuration
+    struct i80_panel_io_dc_levels {
         unsigned int dc_idle_level: 1;  /*!< Level of DC line in IDLE phase */
         unsigned int dc_cmd_level: 1;   /*!< Level of DC line in CMD phase */
         unsigned int dc_dummy_level: 1; /*!< Level of DC line in DUMMY phase */
         unsigned int dc_data_level: 1;  /*!< Level of DC line in DATA phase */
     } dc_levels; /*!< Each i80 device might have its own D/C control logic */
-    struct {
+    /// Extra configuration flags for I80 panel IO
+    struct extra_i80_panel_io_flags {
         unsigned int cs_active_high: 1;     /*!< If set, a high level of CS line will select the device, otherwise, CS line is low level active */
         unsigned int reverse_color_bits: 1; /*!< Reverse the data bits, D[N:0] -> D[0:N] */
         unsigned int swap_color_bytes: 1;   /*!< Swap adjacent two color bytes */
         unsigned int pclk_active_neg: 1;    /*!< The display will write data lines when there's a falling edge on WR signal (a.k.a the PCLK) */
         unsigned int pclk_idle_low: 1;      /*!< The WR signal (a.k.a the PCLK) stays at low level in IDLE phase */
-    } flags;                                /*!< Panel IO config flags */
+    } flags;                                /*!< Extra panel IO config flags */
 } esp_lcd_panel_io_i80_config_t;
 
 /**

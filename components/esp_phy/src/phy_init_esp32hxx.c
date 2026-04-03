@@ -21,8 +21,6 @@
 #define PHY_INIT_MODEM_CLOCK_REQUIRED_BITS 0
 #endif
 
-#define PHY_ENABLE_VERSION_PRINT 1
-
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
 extern void phy_version_print(void);
@@ -117,7 +115,9 @@ void esp_phy_enable(esp_phy_modem_t modem)
         assert(phy_module_has_clock_bits(PHY_INIT_MODEM_CLOCK_REQUIRED_BITS));
         if (!s_phy_is_enabled) {
             register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
+#if CONFIG_ESP_PHY_ENABLE_VERSION_PRINT
             phy_version_print();
+#endif
             s_phy_is_enabled = true;
         } else {
             phy_wakeup_init();

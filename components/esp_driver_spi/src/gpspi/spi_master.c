@@ -719,13 +719,13 @@ static inline SPI_MASTER_ISR_ATTR bool spi_bus_device_is_polling(spi_device_t *d
 // The interrupt may get invoked by the bus lock.
 static void SPI_MASTER_ISR_ATTR spi_bus_intr_enable(void *host)
 {
-    esp_intr_enable(((spi_host_t*)host)->intr);
+    (void)esp_intr_enable(((spi_host_t *)host)->intr);
 }
 
 // The interrupt is always disabled by the ISR itself, not exposed
 static void SPI_MASTER_ISR_ATTR spi_bus_intr_disable(void *host)
 {
-    esp_intr_disable(((spi_host_t*)host)->intr);
+    (void)esp_intr_disable(((spi_host_t *)host)->intr);
 }
 
 #if SOC_GDMA_SUPPORTED  // AHB_DMA_V1 and AXI_DMA

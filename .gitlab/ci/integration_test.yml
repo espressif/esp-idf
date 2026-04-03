@@ -40,7 +40,9 @@ gen_integration_pipeline:
     GIT_STRATEGY: "fetch"
     SUBMODULES_TO_FETCH: "none"
     GIT_LFS_SKIP_SMUDGE: 1
-  needs: []
+  needs:
+    - job: manual_gate
+      optional: true
   artifacts:
     paths:
       - idf-integration-ci/child_pipeline/

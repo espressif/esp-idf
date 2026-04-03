@@ -353,7 +353,6 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
 {
     UINT8 dhandle;
     tHID_CONN    *p_hcon = NULL;
-    UINT32  reason;
     tHID_HOST_DEV_CTB *p_dev = NULL;
 
     /* Find CCB based on CID, and verify we are in a state to accept this message */
@@ -388,8 +387,10 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
         } else
 #endif
         {
-            reason = HID_L2CAP_CONN_FAIL | (UINT32) result ;
-            hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
+            p_hcon->disc_reason = HID_L2CAP_CONN_FAIL | (UINT32) result;
+            if (p_hcon->conn_state == HID_CONN_STATE_UNUSED) {
+                hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason, NULL ) ;
+            }
         }
         return;
     }
@@ -521,8 +522,10 @@ static void hidh_l2cif_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     /* If configuration failed, disconnect the channel(s) */
     if (p_cfg->result != L2CAP_CFG_OK) {
         hidh_conn_disconnect (dhandle);
-        reason = HID_L2CAP_CFG_FAIL | (UINT32) p_cfg->result ;
-        hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
+        p_hcon->disc_reason = HID_L2CAP_CFG_FAIL | (UINT32) p_cfg->result ;
+        if (p_hcon->conn_state == HID_CONN_STATE_UNUSED) {
+            hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason, NULL ) ;
+        }
         return;
     }
 

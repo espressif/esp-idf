@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_prox_cent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_PROX_CENT";
 static uint8_t link_supervision_timeout;
@@ -261,29 +264,22 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for Proximity sensor (link loss)
     * service (0x1803).
     */
-    do {
+    while (offset < disc->length_data) {
         ad_struct_len = disc->data[offset];
 
-        if (!ad_struct_len) {
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
             break;
         }
 
         /* Search if Proximity Sensor (Link loss) UUID is advertised */
-        if (disc->data[offset + 1] == 0x03) {
-            int uuid_offset = offset + 2;
-            int uuid_end = offset + 1 + disc->data[offset];  // len includes type+data
-            while (uuid_offset + 1 < uuid_end) {
-                // BLE uses little-endian: 0x1803 is stored as 0x03 0x18
-                if (disc->data[uuid_offset] == 0x03 && disc->data[uuid_offset + 1] == 0x18) {
-                    return 1;
-                }
-                uuid_offset += 2;
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
+            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x03 ) {
+                return 1;
             }
         }
 
         offset += ad_struct_len + 1;
-
-    } while ( offset < disc->length_data );
+    }
 
     return 0;
 }
@@ -506,8 +502,9 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
                         event->connect.status);
+
+            ble_prox_cent_scan();
         }
-        ble_prox_cent_scan();
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
@@ -581,8 +578,8 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
                       event->cache_assoc.status,
                       (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
           /* Perform service discovery */
-          rc = peer_disc_all(event->cache_assoc.conn_handle,
-                             blecent_on_disc_complete, NULL);
+          rc = peer_disc_all(event->connect.conn_handle,
+                             ble_prox_cent_on_disc_complete, NULL);
           if(rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;

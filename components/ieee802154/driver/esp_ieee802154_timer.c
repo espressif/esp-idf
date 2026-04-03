@@ -30,10 +30,7 @@ void ieee802154_timer0_stop(void)
 
 esp_err_t ieee802154_timer0_set_threshold(uint32_t value)
 {
-    ESP_RETURN_ON_FALSE((value < IEEE802154_TIMER0_THRESHOLD), ESP_ERR_INVALID_ARG, IEEE802154_TAG, "invalid timer0 threshold");
-
     ieee802154_ll_timer0_set_threshold(value);
-
     return ESP_OK;
 }
 
@@ -56,10 +53,7 @@ void ieee802154_timer1_stop(void)
 
 esp_err_t ieee802154_timer1_set_threshold(uint32_t value)
 {
-    ESP_RETURN_ON_FALSE((value < IEEE802154_TIMER1_THRESHOLD), ESP_ERR_INVALID_ARG, IEEE802154_TAG, "invalid timer1 threshold");
-
     ieee802154_ll_timer1_set_threshold(value);
-
     return ESP_OK;
 }
 

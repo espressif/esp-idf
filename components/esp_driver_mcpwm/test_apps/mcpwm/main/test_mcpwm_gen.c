@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -231,63 +231,68 @@ TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
     };
     TEST_ESP_OK(gpio_config(&gen_gpio_conf));
 
-    printf("create timer and operator\r\n");
-    mcpwm_timer_config_t timer_config = {
-        .group_id = 0,
-        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-        .resolution_hz = 1000000,
-        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
-        .period_ticks = 1000,
-    };
-    mcpwm_timer_handle_t timer = NULL;
-    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
-    TEST_ESP_OK(mcpwm_timer_enable(timer));
+    for (int group_id = 0; group_id < MCPWM_LL_GET(GROUP_NUM); group_id++) {
+        printf("test MCPWM group %d/%d\r\n", group_id, MCPWM_LL_GET(GROUP_NUM));
 
-    mcpwm_operator_config_t oper_config = {
-        .group_id = 0,
-    };
-    mcpwm_oper_handle_t oper = NULL;
-    TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
+        printf("create timer and operator\r\n");
+        mcpwm_timer_config_t timer_config = {
+            .group_id = group_id,
+            .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+            .resolution_hz = 1000000,
+            .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+            .period_ticks = 1000,
+        };
+        mcpwm_timer_handle_t timer = NULL;
+        TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+        TEST_ESP_OK(mcpwm_timer_enable(timer));
 
-    printf("connect timer and operator\r\n");
-    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
+        mcpwm_operator_config_t oper_config = {
+            .group_id = group_id,
+        };
+        mcpwm_oper_handle_t oper = NULL;
+        TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
 
-    printf("create generator\r\n");
-    mcpwm_generator_config_t gen_config = {
-        .gen_gpio_num = generator_gpio,
-    };
-    mcpwm_gen_handle_t gen = NULL;
-    TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
+        printf("connect timer and operator\r\n");
+        TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
-    printf("set generator to output high on timer full\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH)));
-    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP)));
-    printf("start timer\r\n");
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    printf("stop timer on full\r\n");
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_FULL));
-    TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
+        printf("create generator\r\n");
+        mcpwm_generator_config_t gen_config = {
+            .gen_gpio_num = generator_gpio,
+        };
+        mcpwm_gen_handle_t gen = NULL;
+        TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
 
-    printf("set generator to output low on timer full\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW)));
-    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP)));
-    printf("start timer\r\n");
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    printf("stop timer on full\r\n");
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_FULL));
-    TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+        printf("set generator to output high on timer full\r\n");
+        TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                              MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH)));
+        TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                              MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP)));
+        printf("start timer\r\n");
+        TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+        vTaskDelay(pdMS_TO_TICKS(100));
+        printf("stop timer on full\r\n");
+        TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_FULL));
+        TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
 
-    printf("delete timer, operator, generator\r\n");
-    TEST_ESP_OK(mcpwm_timer_disable(timer));
-    TEST_ESP_OK(mcpwm_del_generator(gen));
-    TEST_ESP_OK(mcpwm_del_operator(oper));
-    TEST_ESP_OK(mcpwm_del_timer(timer));
+        printf("set generator to output low on timer full\r\n");
+        TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                              MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW)));
+        TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                              MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP)));
+        printf("start timer\r\n");
+        TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+        vTaskDelay(pdMS_TO_TICKS(100));
+        printf("stop timer on full\r\n");
+        TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_FULL));
+        TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+
+        printf("delete timer, operator, generator for group %d\r\n", group_id);
+        TEST_ESP_OK(mcpwm_timer_disable(timer));
+        TEST_ESP_OK(mcpwm_del_generator(gen));
+        TEST_ESP_OK(mcpwm_del_operator(oper));
+        TEST_ESP_OK(mcpwm_del_timer(timer));
+    }
+
     TEST_ESP_OK(gpio_reset_pin(generator_gpio));
 }
 
@@ -305,12 +310,12 @@ static bool test_capture_callback(mcpwm_cap_channel_handle_t cap_channel, const 
 
 typedef void (*set_gen_actions_cb_t)(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb);
 
-static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t period, mcpwm_timer_count_mode_t count_mode,
+static void mcpwm_gen_action_test_template(int group_id, uint32_t timer_resolution, uint32_t period, mcpwm_timer_count_mode_t count_mode,
                                            uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob, set_gen_actions_cb_t set_generator_actions,
                                            uint32_t *ret_capa, uint32_t *ret_capb)
 {
     mcpwm_timer_config_t timer_config = {
-        .group_id = 0,
+        .group_id = group_id,
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
         .count_mode = count_mode,
         .resolution_hz = timer_resolution,
@@ -320,7 +325,7 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
 
     mcpwm_operator_config_t operator_config = {
-        .group_id = 0,
+        .group_id = group_id,
     };
     mcpwm_oper_handle_t oper = NULL;
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
@@ -355,7 +360,7 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     esp_clk_tree_src_get_freq_hz(MCPWM_CAPTURE_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     mcpwm_capture_timer_config_t cap_timer_config = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
-        .group_id = 0,
+        .group_id = group_id,
         .resolution_hz = clk_src_freq_hz,
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
@@ -417,18 +422,18 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     }
 
     TEST_ESP_OK(mcpwm_timer_disable(timer));
-    TEST_ESP_OK(mcpwm_del_generator(generator_a));
-    TEST_ESP_OK(mcpwm_del_generator(generator_b));
-    TEST_ESP_OK(mcpwm_del_comparator(comparator_a));
-    TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
-    TEST_ESP_OK(mcpwm_del_operator(oper));
-    TEST_ESP_OK(mcpwm_del_timer(timer));
     TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_a));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_a));
     TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_b));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_b));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
+    TEST_ESP_OK(mcpwm_del_generator(generator_a));
+    TEST_ESP_OK(mcpwm_del_generator(generator_b));
+    TEST_ESP_OK(mcpwm_del_comparator(comparator_a));
+    TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
 static void single_edge_active_high(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
@@ -504,47 +509,52 @@ static void dual_edge_complementary(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t 
 TEST_CASE("mcpwm_generator_action_on_compare_event", "[mcpwm]")
 {
     uint32_t capa, capb;
-    printf("[Asymmetric, SingleEdge, ActiveHigh]\r\n");
-    // PWMA: high = [1->350], low = [351->499,0]
-    // PWMB: high = [1->200], low = [201->499,0]
-    mcpwm_gen_action_test_template(1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 350, 200, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_high, &capa, &capb);
-    TEST_ASSERT_UINT_WITHIN(2, 150, capa);
-    TEST_ASSERT_UINT_WITHIN(2, 300, capb);
 
-    printf("[Asymmetric, SingleEdge, ActiveLow]\r\n");
-    // PWMA: low = [0->300], high = [301->499]
-    // PWMB: low = [0->150], high = [151->499]
-    mcpwm_gen_action_test_template(1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 300, 150, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_low, &capa, &capb);
-    TEST_ASSERT_UINT_WITHIN(2, 200, capa);
-    TEST_ASSERT_UINT_WITHIN(2, 350, capb);
+    for (int group_id = 0; group_id < MCPWM_LL_GET(GROUP_NUM); group_id++) {
+        printf("test MCPWM group %d/%d\r\n", group_id, MCPWM_LL_GET(GROUP_NUM));
 
-    printf("[Asymmetric, PulsePlacement]\r\n");
-    // PWMA: low = [0->200], high = [201->400], low = [401->599]
-    // PWMB: high = [0->599], low = [0->599]
-    mcpwm_gen_action_test_template(1000000, 600, MCPWM_TIMER_COUNT_MODE_UP, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, pulse_placement, &capa, &capb);
-    TEST_ASSERT_UINT_WITHIN(2, 200, capa);
-    TEST_ASSERT_UINT_WITHIN(2, 600, capb);
+        printf("[Asymmetric, SingleEdge, ActiveHigh]\r\n");
+        // PWMA: high = [1->350], low = [351->499,0]
+        // PWMB: high = [1->200], low = [201->499,0]
+        mcpwm_gen_action_test_template(group_id, 1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 350, 200, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_high, &capa, &capb);
+        TEST_ASSERT_UINT_WITHIN(2, 150, capa);
+        TEST_ASSERT_UINT_WITHIN(2, 300, capb);
 
-    printf("[Asymmetric, DualEdge, ActiveLow]\r\n");
-    // PWMA: low = [0->250], high = [251->599, 600->450], low = [451->1]
-    // PWMB: low = [0->599], low = [600->1]
-    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 250, 450, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_asym, &capa, &capb);
-    TEST_ASSERT_UINT_WITHIN(2, 500, capa);
-    TEST_ASSERT_UINT_WITHIN(2, 600, capb);
+        printf("[Asymmetric, SingleEdge, ActiveLow]\r\n");
+        // PWMA: low = [0->300], high = [301->499]
+        // PWMB: low = [0->150], high = [151->499]
+        mcpwm_gen_action_test_template(group_id, 1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 300, 150, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_low, &capa, &capb);
+        TEST_ASSERT_UINT_WITHIN(2, 200, capa);
+        TEST_ASSERT_UINT_WITHIN(2, 350, capb);
 
-    printf("[Symmetric, DualEdge, ActiveLow]\r\n");
-    // PWMA: low = [0->400], high = [401->599, 600->400], low = [399->1]
-    // PWMB: low = [0->500], high = [501->599, 600->500], low = [499->1]
-    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 400, 500, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_sym, &capa, &capb);
-    TEST_ASSERT_UINT_WITHIN(2, 400, capa);
-    TEST_ASSERT_UINT_WITHIN(2, 200, capb);
+        printf("[Asymmetric, PulsePlacement]\r\n");
+        // PWMA: low = [0->200], high = [201->400], low = [401->599]
+        // PWMB: high = [0->599], low = [0->599]
+        mcpwm_gen_action_test_template(group_id, 1000000, 600, MCPWM_TIMER_COUNT_MODE_UP, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, pulse_placement, &capa, &capb);
+        TEST_ASSERT_UINT_WITHIN(2, 200, capa);
+        TEST_ASSERT_UINT_WITHIN(2, 600, capb);
 
-    printf("[Symmetric, DualEdge, Complementary]\r\n");
-    // PWMA: low = [0->350], high = [351->599, 600->350], low = [349->1]
-    // PWMB: low = [0->400], high = [401->599, 600->400], low = [399->1]
-    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 350, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_complementary, &capa, &capb);
-    TEST_ASSERT_UINT_WITHIN(2, 500, capa);
-    TEST_ASSERT_UINT_WITHIN(2, 400, capb);
+        printf("[Asymmetric, DualEdge, ActiveLow]\r\n");
+        // PWMA: low = [0->250], high = [251->599, 600->450], low = [451->1]
+        // PWMB: low = [0->599], low = [600->1]
+        mcpwm_gen_action_test_template(group_id, 1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 250, 450, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_asym, &capa, &capb);
+        TEST_ASSERT_UINT_WITHIN(2, 500, capa);
+        TEST_ASSERT_UINT_WITHIN(2, 600, capb);
+
+        printf("[Symmetric, DualEdge, ActiveLow]\r\n");
+        // PWMA: low = [0->400], high = [401->599, 600->400], low = [399->1]
+        // PWMB: low = [0->500], high = [501->599, 600->500], low = [499->1]
+        mcpwm_gen_action_test_template(group_id, 1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 400, 500, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_sym, &capa, &capb);
+        TEST_ASSERT_UINT_WITHIN(2, 400, capa);
+        TEST_ASSERT_UINT_WITHIN(2, 200, capb);
+
+        printf("[Symmetric, DualEdge, Complementary]\r\n");
+        // PWMA: low = [0->350], high = [351->599, 600->350], low = [349->1]
+        // PWMB: low = [0->400], high = [401->599, 600->400], low = [399->1]
+        mcpwm_gen_action_test_template(group_id, 1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 350, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_complementary, &capa, &capb);
+        TEST_ASSERT_UINT_WITHIN(2, 500, capa);
+        TEST_ASSERT_UINT_WITHIN(2, 400, capb);
+    }
 }
 
 typedef void (*set_dead_time_cb_t)(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb);
@@ -651,18 +661,18 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     ret_capb[1] = cap_value_b[1] * 1000 / clk_src_res;
 
     TEST_ESP_OK(mcpwm_timer_disable(timer));
-    TEST_ESP_OK(mcpwm_del_generator(generator_a));
-    TEST_ESP_OK(mcpwm_del_generator(generator_b));
-    TEST_ESP_OK(mcpwm_del_comparator(comparator_a));
-    TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
-    TEST_ESP_OK(mcpwm_del_operator(oper));
-    TEST_ESP_OK(mcpwm_del_timer(timer));
     TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_a));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_a));
     TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_b));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_b));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
+    TEST_ESP_OK(mcpwm_del_generator(generator_a));
+    TEST_ESP_OK(mcpwm_del_generator(generator_b));
+    TEST_ESP_OK(mcpwm_del_comparator(comparator_a));
+    TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
 static void ahc_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
@@ -897,77 +907,82 @@ TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
     };
     TEST_ESP_OK(gpio_config(&gen_gpio_conf));
 
-    mcpwm_timer_handle_t timer;
-    mcpwm_oper_handle_t oper;
-    mcpwm_cmpr_handle_t comparator;
-    mcpwm_gen_handle_t gen;
+    for (int group_id = 0; group_id < MCPWM_LL_GET(GROUP_NUM); group_id++) {
+        printf("test MCPWM group %d/%d\r\n", group_id, MCPWM_LL_GET(GROUP_NUM));
 
-    mcpwm_timer_config_t timer_config = {
-        .group_id = 0,
-        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-        .resolution_hz = 1 * 1000 * 1000,
-        .period_ticks = 50, // 50us <-> 20KHz
-        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
-    };
-    mcpwm_operator_config_t operator_config = {
-        .group_id = 0,
-    };
-    mcpwm_comparator_config_t comparator_config = {
-        .flags.update_cmp_on_tep = true,
-        .flags.update_cmp_on_tez = true,
-    };
-    printf("install timer, operator and comparator\r\n");
-    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
-    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator));
+        mcpwm_timer_handle_t timer = NULL;
+        mcpwm_oper_handle_t oper = NULL;
+        mcpwm_cmpr_handle_t comparator = NULL;
+        mcpwm_gen_handle_t gen = NULL;
 
-    printf("connect MCPWM timer and operators\r\n");
-    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
-    TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 0));
+        mcpwm_timer_config_t timer_config = {
+            .group_id = group_id,
+            .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+            .resolution_hz = 1 * 1000 * 1000,
+            .period_ticks = 50, // 50us <-> 20KHz
+            .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        };
+        mcpwm_operator_config_t operator_config = {
+            .group_id = group_id,
+        };
+        mcpwm_comparator_config_t comparator_config = {
+            .flags.update_cmp_on_tep = true,
+            .flags.update_cmp_on_tez = true,
+        };
+        printf("install timer, operator and comparator\r\n");
+        TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+        TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+        TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator));
 
-    printf("install MCPWM generator\r\n");
-    mcpwm_generator_config_t gen_config = {
-        .gen_gpio_num = gen_gpio_num,
-    };
-    TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
+        printf("connect MCPWM timer and operators\r\n");
+        TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
+        TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 0));
 
-    printf("set generator actions on timer and compare events\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
-    TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gen,
-                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
+        printf("install MCPWM generator\r\n");
+        mcpwm_generator_config_t gen_config = {
+            .gen_gpio_num = gen_gpio_num,
+        };
+        TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
 
-    printf("start timer\r\n");
-    TEST_ESP_OK(mcpwm_timer_enable(timer));
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+        printf("set generator actions on timer and compare events\r\n");
+        TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                              MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+        TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gen,
+                                                                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
 
-    // check if the output is a const low level
-    for (int i = 0; i < 100; i++) {
-        TEST_ASSERT_EQUAL(0, gpio_get_level(gen_gpio_num));
-        esp_rom_delay_us(1);
+        printf("start timer\r\n");
+        TEST_ESP_OK(mcpwm_timer_enable(timer));
+        TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+
+        // check if the output is a const low level
+        for (int i = 0; i < 100; i++) {
+            TEST_ASSERT_EQUAL(0, gpio_get_level(gen_gpio_num));
+            esp_rom_delay_us(1);
+        }
+
+        // set the compare equals to the period
+        TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 50));
+        vTaskDelay(pdMS_TO_TICKS(10));
+        // so the output should be a const high level
+        for (int i = 0; i < 100; i++) {
+            TEST_ASSERT_EQUAL(1, gpio_get_level(gen_gpio_num));
+            esp_rom_delay_us(1);
+        }
+
+        TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 49));
+        vTaskDelay(pdMS_TO_TICKS(100));
+        TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 1));
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        printf("uninstall timer, operator and comparator for group %d\r\n", group_id);
+        TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
+        TEST_ESP_OK(mcpwm_timer_disable(timer));
+        TEST_ESP_OK(mcpwm_del_generator(gen));
+        TEST_ESP_OK(mcpwm_del_comparator(comparator));
+        TEST_ESP_OK(mcpwm_del_operator(oper));
+        TEST_ESP_OK(mcpwm_del_timer(timer));
     }
 
-    // set the compare equals to the period
-    TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 50));
-    vTaskDelay(pdMS_TO_TICKS(10));
-    // so the output should be a const high level
-    for (int i = 0; i < 100; i++) {
-        TEST_ASSERT_EQUAL(1, gpio_get_level(gen_gpio_num));
-        esp_rom_delay_us(1);
-    }
-
-    TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 49));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 1));
-    vTaskDelay(pdMS_TO_TICKS(100));
-
-    printf("uninstall timer, operator and comparator\r\n");
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
-    TEST_ESP_OK(mcpwm_timer_disable(timer));
-    TEST_ESP_OK(mcpwm_del_generator(gen));
-    TEST_ESP_OK(mcpwm_del_comparator(comparator));
-    TEST_ESP_OK(mcpwm_del_operator(oper));
-    TEST_ESP_OK(mcpwm_del_timer(timer));
     TEST_ESP_OK(gpio_reset_pin(gen_gpio_num));
 }
 

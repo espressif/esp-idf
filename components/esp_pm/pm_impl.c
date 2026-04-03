@@ -125,7 +125,7 @@ static uint32_t s_mode_mask;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#define PERIPH_SKIP_LIGHT_SLEEP_NO 2
+#define PERIPH_SKIP_LIGHT_SLEEP_NO 3
 
 /* Indicates if light sleep should be skipped by peripherals. */
 static skip_light_sleep_cb_t s_periph_skip_light_sleep_cb[PERIPH_SKIP_LIGHT_SLEEP_NO];

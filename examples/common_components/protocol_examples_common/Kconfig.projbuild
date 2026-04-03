@@ -46,6 +46,7 @@ menu "Example Connection Configuration"
             help
                 Set the Maximum retry to avoid station reconnecting to the AP unlimited,
                 in case the AP is really inexistent.
+                Set to -1 for infinite retries.
 
         choice EXAMPLE_WIFI_SCAN_METHOD
             prompt "WiFi Scan Method"

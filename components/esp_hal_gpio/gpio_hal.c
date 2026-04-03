@@ -68,6 +68,12 @@ void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t si
 #endif
 }
 
+void gpio_hal_matrix_interconnect(gpio_hal_context_t *hal, uint32_t sig_src_pin, uint32_t sig_dst_pin, uint32_t signal_idx)
+{
+    gpio_hal_matrix_in(hal, sig_src_pin, signal_idx, false);
+    gpio_hal_matrix_out(hal, sig_dst_pin, signal_idx, false, false);
+}
+
 #if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num, bool enable)
 {

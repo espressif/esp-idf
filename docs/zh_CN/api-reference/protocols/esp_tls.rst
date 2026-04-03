@@ -247,9 +247,9 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
     ESP-TLS 的数字签名
     ----------------------------------
 
-    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用数字签名 (DS)，但只有当 ESP-TLS 以 MbedTLS（默认协议栈）为底层 SSL/TLS 协议栈时，才支持使用 TLS 的数字签名。有关数字签名的详细信息，请参阅 :doc:`数字签名 (DS) </api-reference/peripherals/ds>`。有关数字签名的技术细节（例如私钥参数计算），请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **数字签名 (DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]。在使用数字签名前，应预先配置数字签名外设，请参阅 :ref:`configure-the-ds-peripheral`。
+    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 RSA 数字签名外设 (RSA_DS)，但只有当 ESP-TLS 以 MbedTLS（默认协议栈）为底层 SSL/TLS 协议栈时，才支持使用 TLS 的 RSA 数字签名。有关 RSA_DS 的详细信息，请参阅 :doc:`RSA 数字签名外设 (RSA_DS) </api-reference/peripherals/ds>`。有关 RSA 数字签名的技术细节（例如私钥参数计算），请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **RSA 数字签名外设 (RSA_DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]。在使用 RSA 数字签名前，应预先配置 RSA 数字签名外设，请参阅 :ref:`configure-the-ds-peripheral`。
 
-    数字签名外设必须用所需的加密私钥参数初始化，相应参数在配置数字签名外设时获取。具备所需的数字签名上下文，即数字签名参数时，ESP-TLS 会在内部初始化数字签名外设。要将数字签名上下文传递给 ESP-TLS 上下文，请参阅以下代码段。注意，在删除 TLS 连接之前，不应释放传递给 ESP-TLS 上下文的数字签名上下文。
+    RSA 数字签名外设必须用所需的加密私钥参数初始化，相应参数在配置 RSA 数字签名外设时获取。具备所需的数字签名上下文，即数字签名参数时，ESP-TLS 会在内部初始化 RSA 数字签名外设。要将数字签名上下文传递给 ESP-TLS 上下文，请参阅以下代码段。注意，在删除 TLS 连接之前，不应释放传递给 ESP-TLS 上下文的数字签名上下文。
 
     .. code-block:: c
 
@@ -265,20 +265,20 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
 
     .. note::
 
-        当使用数字签名进行 TLS 连接时，除其他必要参数外，仅需提供客户端证书 (``clientcert_buf``) 和数字签名参数 (``ds_data``) ，此时可将客户端密钥 (``clientkey_buf``) 设置为 NULL。
+        当使用 RSA 数字签名进行 TLS 连接时，除其他必要参数外，仅需提供客户端证书 (``clientcert_buf``) 和数字签名参数 (``ds_data``) ，此时可将客户端密钥 (``clientkey_buf``) 设置为 NULL。
 
-    * 现有一个基于 DS 外设的双向认证示例，已随独立的 `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ 组件一同提供，其内部依赖 ESP-TLS 建立 TLS 连接。请参照组件文档获取并构建该示例。
+    * 现有一个基于 RSA_DS 外设的双向认证示例，已随独立的 `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ 组件一同提供，其内部依赖 ESP-TLS 建立 TLS 连接。请参照组件文档获取并构建该示例。
 
 .. only:: SOC_ECDSA_SUPPORTED
 
     .. _ecdsa-peri-with-esp-tls:
 
-    在 ESP-TLS 中使用 ECDSA 外设
-    -----------------------------
+    在 ESP-TLS 中使用 ECDSA_DS 外设
+    ----------------------------------
 
-    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 ECDSA 外设。使用 ECDSA 外设时，ESP-TLS 必须与 MbedTLS 一起作为底层 SSL/TLS 协议栈，并且 ECDSA 的私钥应存储在 eFuse 中。请参考 :doc:`ECDSA 指南 <../peripherals/ecdsa>`，了解如何在 eFuse 中烧写 ECDSA 密钥。
+    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 ECDSA 数字签名外设 (ECDSA_DS)。使用 ECDSA_DS 外设时，ESP-TLS 必须与 MbedTLS 一起作为底层 SSL/TLS 协议栈，并且 ECDSA 的私钥应存储在 eFuse 中。请参考 :doc:`ECDSA 数字签名外设 (ECDSA_DS) 指南 <../peripherals/ecdsa>`，了解如何在 eFuse 中烧写 ECDSA 密钥。
 
-    这样就可以使用 ECDSA 外设进行私钥操作。由于客户私钥已经存储在 eFuse 中，因此无需将其传递给 :cpp:type:`esp_tls_cfg_t`。
+    这样就可以使用 ECDSA_DS 外设进行私钥操作。由于客户私钥已经存储在 eFuse 中，因此无需将其传递给 :cpp:type:`esp_tls_cfg_t`。请参见下面的代码片段，了解如何为给定的 ESP-TLS 连接启用 ECDSA_DS 外设。
 
     .. code-block:: c
 
@@ -292,7 +292,7 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
 
     .. note::
 
-        在 TLS 中使用 ECDSA 外设时，只支持 ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` 密码套件。如果使用 TLS v1.3，则支持 ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` 密码套件。
+        在 TLS 中使用 ECDSA_DS 外设时，只支持 ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` 密码套件。如果使用 TLS v1.3，则支持 ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` 密码套件。
 
 
 .. _esp_tls_client_session_tickets:

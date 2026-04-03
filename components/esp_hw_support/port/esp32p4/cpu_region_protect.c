@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,12 +50,12 @@ static void esp_cpu_configure_invalid_regions(void)
     // 0. Gap at bottom of address space
     PMA_RESET_AND_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
 
-    // 1. Gap between CPU subsystem region & HP TCM
+    // 1. Gap between CPU subsystem region & HP SPM
     PMA_RESET_AND_ENTRY_SET_TOR(1, SOC_CPU_SUBSYSTEM_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_TCM_LOW, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_SPM_LOW, PMA_TOR | PMA_NONE);
 
-    // 2. Gap between HP TCM and CPU Peripherals
-    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_TCM_HIGH, PMA_NONE);
+    // 2. Gap between HP SPM and CPU Peripherals
+    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_SPM_HIGH, PMA_NONE);
     PMA_RESET_AND_ENTRY_SET_TOR(4, CPU_PERIPH_LOW, PMA_TOR | PMA_NONE);
 
     // 3. Gap between CPU Peripherals and I_Cache
@@ -106,8 +106,8 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_RESET_AND_ENTRY_SET(0, pmpaddr0, PMP_NAPOT | RW);
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
-    // 2. HP-CPU TCM
-    // The default memory permissions are RWX and TCM should be RWX, so we can skip configuring it
+    // 2. HP-CPU SPM
+    // The default memory permissions are RWX and SPM should be RWX, so we can skip configuring it
 
     // 3. CPU Peripherals
     const uint32_t pmpaddr1 = PMPADDR_NAPOT(CPU_PERIPH_LOW, CPU_PERIPH_HIGH);

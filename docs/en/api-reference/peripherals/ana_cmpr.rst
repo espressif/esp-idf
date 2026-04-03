@@ -3,8 +3,9 @@ Analog Comparator
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="NOT UPDATED", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="NOT UPDATED", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8"}
+{IDF_TARGET_ANA_CMPR_UNITS: default="1", esp32p4="2"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="NOT UPDATED", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9", esp32h21="GPIO7"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="NOT UPDATED", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8", esp32h21="GPIO6"}
 {IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="NOT UPDATED", esp32p4="GPIO54"}
 {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="NOT UPDATED", esp32p4="GPIO53"}
 
@@ -15,7 +16,7 @@ Analog comparator is a peripheral that can be used to compare a source signal wi
 
 Under the scenario of comparing the analog signals, the integrated analog comparator is a cost effective scheme to replace an operational amplifier. But unlike the continuous comparing of the operational amplifier, ESP analog comparator is driven by a source clock, which decides the sampling frequency.
 
-Analog comparator on {IDF_TARGET_NAME} has {IDF_TARGET_SOC_ANA_CMPR_NUM} unit(s), the channels in the unit(s) are:
+Analog comparator on {IDF_TARGET_NAME} has {IDF_TARGET_ANA_CMPR_UNITS} unit(s), the channels in the unit(s) are:
 
 **UNIT0**
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -224,8 +224,14 @@ typedef struct {
   * @brief Channel bitmap for setting specific channels to be scanned
   */
 typedef struct {
-    uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels, that bits can be set as wifi_2g_channel_bit_t shown. */
-    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels, that bits can be set as wifi_5g_channel_bit_t shown. */
+    uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels.
+                                      bit0: band bypass, 0: scan as bitmap, 1: bypass all channels of 2.4GHz.
+                                      bit1-bit14: represents channels can be set as wifi_2g_channel_bit_t shown.
+                                      bit15: reserved. */
+    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels.
+                                      bit0: band bypass, 0: scan as bitmap, 1: bypass all channels of 5GHz.
+                                      bit1-bit28: represents channels can be set as wifi_5g_channel_bit_t shown.
+                                      bit29-bit31: reserved. */
 } wifi_scan_channel_bitmap_t;
 
 /**
@@ -509,7 +515,7 @@ typedef enum {
   * @brief Configuration structure for BSS max idle
   */
 typedef struct {
-    uint16_t period;                /**< Sets BSS Max idle period (1 Unit = 1000TUs OR 1.024 Seconds). If there are no frames for this period from a STA, SoftAP will disassociate due to inactivity. Setting it to 0 disables the feature */
+    uint16_t period;                /**< Sets BSS Max idle period (1 Unit = 1000TUs OR 1.024 Seconds). If there are no frames for this period from a STA, SoftAP will disassociate due to inactivity. Setting it to 0 disables the feature. Minimum value will be 10 */
     bool protected_keep_alive;      /**< Requires clients to use protected keep alive frames for BSS Max Idle period */
 } wifi_bss_max_idle_config_t;
 
@@ -520,7 +526,7 @@ typedef struct {
     uint8_t ssid[32];                         /**< SSID of soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
     uint8_t password[64];                     /**< Password of soft-AP. */
     uint8_t ssid_len;                         /**< Optional length of SSID field. */
-    uint8_t channel;                          /**< Channel of soft-AP */
+    uint8_t channel;                          /**< Channel of soft-AP. Set to 0 for auto selection (min channel: typically 1 for 2.4G, 36 for 5G). Other invalid values return ESP_ERR_INVALID_ARG. */
     wifi_auth_mode_t authmode;                /**< Auth mode of soft-AP. Do not support AUTH_WEP, AUTH_WAPI_PSK and AUTH_OWE in soft-AP mode. When the auth mode is set to WPA2_PSK, WPA2_WPA3_PSK or WPA3_PSK, the pairwise cipher will be overwritten with WIFI_CIPHER_TYPE_CCMP by default, unless explicitly set.  */
     uint8_t ssid_hidden;                      /**< Broadcast SSID or not, default 0, broadcast the SSID */
     uint8_t max_connection;                   /**< Max number of stations allowed to connect in */

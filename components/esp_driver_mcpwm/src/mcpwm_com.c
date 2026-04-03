@@ -35,7 +35,6 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             new_group = true;
             s_platform.groups[group_id] = group;
             group->group_id = group_id;
-            group->intr_priority = -1;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 #if MCPWM_USE_RETENTION_LINK
             sleep_retention_module_t module = mcpwm_reg_retention_info[group_id].retention_module;
@@ -129,32 +128,6 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
     if (do_deinitialize) {
         ESP_LOGD(TAG, "del group(%d)", group_id);
     }
-}
-
-esp_err_t mcpwm_check_intr_priority(mcpwm_group_t *group, int intr_priority)
-{
-    esp_err_t ret = ESP_OK;
-    bool intr_priority_conflict = false;
-    portENTER_CRITICAL(&group->spinlock);
-    if (group->intr_priority == -1) {
-        group->intr_priority = intr_priority;
-    } else if (intr_priority != 0) {
-        intr_priority_conflict = (group->intr_priority != intr_priority);
-    }
-    portEXIT_CRITICAL(&group->spinlock);
-    ESP_RETURN_ON_FALSE(!intr_priority_conflict, ESP_ERR_INVALID_STATE, TAG, "intr_priority conflict, already is %d but attempt to %d", group->intr_priority, intr_priority);
-    return ret;
-}
-
-int mcpwm_get_intr_priority_flag(mcpwm_group_t *group)
-{
-    int isr_flags = 0;
-    if (group->intr_priority) {
-        isr_flags |= 1 << (group->intr_priority);
-    } else {
-        isr_flags |= MCPWM_ALLOW_INTR_PRIORITY_MASK;
-    }
-    return isr_flags;
 }
 
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src)

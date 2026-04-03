@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,30 @@
 static ieee802154_pib_t s_ieee802154_pib;
 static bool is_pending = false;
 
+extern const int8_t* bt_bb_get_tx_pwr_table(uint8_t *length);
+
+static inline int8_t IEEE802154_TXPOWER_VALUE_MAX(void)
+{
+    uint8_t length = 0;
+    const int8_t *tx_pwr_table = bt_bb_get_tx_pwr_table(&length);
+    if (!tx_pwr_table || length == 0) {
+        ESP_LOGE(IEEE802154_TAG, "Failed to get tx power table");
+        return 0;
+    }
+    return tx_pwr_table[length - 1];
+}
+
+static inline int8_t IEEE802154_TXPOWER_VALUE_MIN(void)
+{
+    uint8_t length = 0;
+    const int8_t *tx_pwr_table = bt_bb_get_tx_pwr_table(&length);
+    if (!tx_pwr_table || length == 0) {
+        ESP_LOGE(IEEE802154_TAG, "Failed to get tx power table");
+        return 0;
+    }
+    return tx_pwr_table[0];
+}
+
 static inline void set_pending(void)
 {
     is_pending = true;
@@ -25,7 +49,7 @@ static inline void clr_pending(void)
     is_pending = false;
 }
 
-bool inline ieee802154_pib_is_pending(void)
+inline bool ieee802154_pib_is_pending(void)
 {
     return is_pending;
 }
@@ -42,22 +66,38 @@ void ieee802154_pib_init(void)
     s_ieee802154_pib.channel = 11;
     s_ieee802154_pib.cca_threshold = CONFIG_IEEE802154_CCA_THRESHOLD;
     s_ieee802154_pib.cca_mode = CONFIG_IEEE802154_CCA_MODE;
-    memset(&s_ieee802154_pib.power_table, IEEE802154_TXPOWER_VALUE_MAX, sizeof(s_ieee802154_pib.power_table));
+    for (int i = 0; i < 16; i++) {
+        s_ieee802154_pib.power_table.channel[i] = IEEE802154_TXPOWER_VALUE_MAX();
+    }
 
     set_pending();
 }
 
 IEEE802154_NOINLINE static uint8_t ieee802154_txpower_convert(int8_t txpower)
 {
-    uint8_t ieee820154_txpower_index = 0;
-    if (txpower >= IEEE802154_TXPOWER_VALUE_MAX) {
-        ieee820154_txpower_index = 15;
-    } else if (txpower <= IEEE802154_TXPOWER_VALUE_MIN) {
-        ieee820154_txpower_index = IEEE802154_TXPOWER_INDEX_MIN;
-    } else {
-        ieee820154_txpower_index = (uint8_t)((txpower - IEEE802154_TXPOWER_VALUE_MIN) / 3) + IEEE802154_TXPOWER_INDEX_MIN;
+    uint8_t ieee802154_txpower_index = 0;
+    uint8_t length = 0;
+    const int8_t *tx_pwr_table = bt_bb_get_tx_pwr_table(&length);
+    if (!tx_pwr_table || length == 0) {
+        ESP_LOGE(IEEE802154_TAG, "Failed to get tx power table");
+        return 0;
     }
-    return ieee820154_txpower_index;
+
+    if (txpower <= tx_pwr_table[0]) {
+        ieee802154_txpower_index = 0;
+    } else if (txpower >= tx_pwr_table[length - 1]) {
+        ieee802154_txpower_index = length - 1;
+    } else {
+        uint8_t i = 0;
+        for (i = length-1; i != 0; i--) {
+            if (tx_pwr_table[i] <= txpower) {
+                break;
+            }
+        }
+        ieee802154_txpower_index = i;
+    }
+
+    return ieee802154_txpower_index;
 }
 
 void ieee802154_pib_update(void)
@@ -95,7 +135,7 @@ uint8_t ieee802154_pib_get_channel(void)
 
 void ieee802154_pib_set_channel(uint8_t channel)
 {
-    ESP_RETURN_ON_FALSE(ieee802154_is_valid_channel(channel), , IEEE802154_TAG, "Failed to set channel, reason: Invalid channel: %d", channel);
+    ESP_RETURN_VOID_ON_FALSE(ieee802154_is_valid_channel(channel), IEEE802154_TAG, "Failed to set channel, reason: Invalid channel: %d", channel);
     if (s_ieee802154_pib.channel != channel) {
         s_ieee802154_pib.channel = channel;
         set_pending();

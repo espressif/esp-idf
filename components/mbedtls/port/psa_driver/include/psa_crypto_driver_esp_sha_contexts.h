@@ -113,7 +113,7 @@ typedef struct {
     unsigned char buffer[128];  /**< The data block being processed. */
     bool first_block;           /**< First block flag for hardware initialization */
     int sha_state;              /**< SHA operation state */
-    int mode;                   /**< SHA2_224 or SHA2_256 */
+    int mode;                   /**< SHA2_384 or SHA2_512 */
     uint32_t t_val;             /**< t_val for 512/t mode */
 #if CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG
     esp_sha_mode_t operation_mode;        /**< Hardware or Software mode */

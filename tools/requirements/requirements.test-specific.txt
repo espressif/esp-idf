@@ -18,3 +18,6 @@ pyecharts
 
 # for twai tests, communicate with socket can device (e.g. Canable)
 python-can
+
+# Calculate CRC checksums
+crc

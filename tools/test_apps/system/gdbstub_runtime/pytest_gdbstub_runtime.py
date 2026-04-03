@@ -318,6 +318,14 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert payload['frame']['line'] == str(get_line_number('var_2+=2;'))
     assert payload['stopped-threads'] == 'all'
 
+    # Test next command
+    cmd = '-exec-next'
+    payload = run_and_break(dut, cmd)
+    assert payload['reason'] == 'end-stepping-range'
+    assert payload['frame']['line'] == str(get_line_number('var_2--;', 0))
+    assert payload['frame']['func'] == 'foo'
+    assert payload['stopped-threads'] == 'all'
+
     # Test finish command
     cmd = '-exec-finish'
     payload = run_and_break(dut, cmd)
@@ -368,14 +376,11 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert dut.find_gdb_response('done', 'result', responses) is not None
     cmd = '-exec-continue'
     payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'signal-received'
+    assert payload['reason'] == 'watchpoint-trigger'
+    assert int(payload['value']['new']) == int(payload['value']['old']) + 2
     assert payload['frame']['func'] == 'foo'
+    assert payload['frame']['line'] == str(get_line_number('var_2--;'))
     assert payload['stopped-threads'] == 'all'
-    # Uncomment this when implement send reason to gdb: GCC-313
-    #
-    # assert payload['reason'] == 'watchpoint-trigger'
-    # assert int(payload['value']['new']) == int(payload['value']['old']) + 1
-    # assert payload['frame']['line'] == '14'
 
     cmd = '-break-delete 2'
     responses = dut.gdb_write(cmd)
@@ -391,41 +396,4 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert payload['signal-name'] == 'SIGSEGV'
     assert payload['frame']['func'] == 'app_main'
     assert payload['frame']['line'] == str(get_line_number('label_5', 1))
-    assert payload['stopped-threads'] == 'all'
-
-
-@pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
-def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
-    start_gdb(dut)
-
-    dut_enable_test(dut)
-
-    # Test breakpoint
-    cmd = '-break-insert --source test_app_main.c --function app_main --label label_1'
-    response = dut.find_gdb_response('done', 'result', dut.gdb_write(cmd))
-    assert response is not None
-    cmd = '-exec-continue'
-    payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'breakpoint-hit'
-    assert payload['bkptno'] == '1'
-    assert payload['frame']['func'] == 'app_main'
-    assert payload['frame']['line'] == str(get_line_number('label_1:', 1))
-    assert payload['stopped-threads'] == 'all'
-
-    # Test step command
-    cmd = '-exec-step'
-    payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'end-stepping-range'
-    assert payload['frame']['func'] == 'foo'
-    assert payload['frame']['line'] == str(get_line_number('var_2+=2;'))
-    assert payload['stopped-threads'] == 'all'
-
-    # Test next command
-    cmd = '-exec-next'
-    payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'end-stepping-range'
-    assert payload['frame']['line'] == str(get_line_number('var_2--;', 0))
-    assert payload['frame']['func'] == 'foo'
     assert payload['stopped-threads'] == 'all'

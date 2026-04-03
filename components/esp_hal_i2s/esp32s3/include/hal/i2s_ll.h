@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -281,6 +281,41 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
         break;
     }
 }
+
+/**
+ * @brief Get TX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current TX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_tx_clk_get_src(i2s_dev_t *hw)
+{
+    switch (hw->tx_clkm_conf.tx_clk_sel) {
+    case 0: return (i2s_clock_src_t)I2S_CLK_SRC_XTAL;
+    case 1: return (i2s_clock_src_t)I2S_CLK_SRC_PLL_240M;
+    case 2: return (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
+    case 3: return (i2s_clock_src_t)I2S_CLK_SRC_EXTERNAL;
+    default: return (i2s_clock_src_t)I2S_CLK_SRC_DEFAULT;
+    }
+}
+
+/**
+ * @brief Get RX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current RX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_rx_clk_get_src(i2s_dev_t *hw)
+{
+    switch (hw->rx_clkm_conf.rx_clk_sel) {
+    case 0: return (i2s_clock_src_t)I2S_CLK_SRC_XTAL;
+    case 1: return (i2s_clock_src_t)I2S_CLK_SRC_PLL_240M;
+    case 2: return (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
+    case 3: return (i2s_clock_src_t)I2S_CLK_SRC_EXTERNAL;
+    default: return (i2s_clock_src_t)I2S_CLK_SRC_DEFAULT;
+    }
+}
+
 /**
  * @brief Set I2S tx bck div num
  *

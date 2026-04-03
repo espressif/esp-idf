@@ -20,9 +20,8 @@ extern "C" {
 #endif
 
 typedef enum {
-    MCP_FSM_IDLE_WAIT, /// intermediate state, for state changes from others to IDLE
+    MCP_FSM_WAIT, /// intermediate state, for state changes between IDLE and RUN
     MCP_FSM_IDLE,
-    MCP_FSM_RUN_WAIT, /// intermediate state, for state changes from others to RUN
     MCP_FSM_RUN,
 } async_memcpy_fsm_t;
 

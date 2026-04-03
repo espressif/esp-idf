@@ -3,16 +3,26 @@ idf_build_get_property(non_os_build NON_OS_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
+    # "include/linux" MUST come before "include" so that Linux-specific header
+    # overrides (e.g. esp_cpu.h) take precedence over the generic versions.
     idf_component_register(SRCS "port/linux/esp_random.c"
                                  "port/linux/chip_info.c"
-                           INCLUDE_DIRS "include" "etm/include")
+                                 "port/linux/cpu.c"
+                           INCLUDE_DIRS "include/linux" "include" "etm/include")
     return()
 endif()
 
-set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu)
-# only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt esp_hal_rtc_timer
-    esp_hal_clock esp_hal_security esp_hal_systimer)
+set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu esp_hal_regi2c)
+set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
+                  spi_flash
+                  bootloader_support
+                  esp_hal_wdt
+                  esp_hal_rtc_timer
+                  esp_hal_clock
+                  esp_hal_security
+                  esp_hal_systimer
+                  esp_hal_ana_conv      # sleep process requires backup/restore some ADC, TSENS registers
+                  )
 
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT non_os_build)
@@ -27,6 +37,7 @@ if(NOT non_os_build)
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
                      "sar_tsens_ctrl.c"
+                     "sar_periph_ctrl_common.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "spi_bus_lock.c"

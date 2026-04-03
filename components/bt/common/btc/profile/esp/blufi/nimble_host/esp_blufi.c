@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,7 +112,9 @@ static size_t write_value(uint16_t conn_handle, uint16_t attr_handle,
                           void *arg)
 {
     struct gatt_value *value = (struct gatt_value *)arg;
+    uint8_t *flat_buf = NULL;
     uint16_t len;
+    uint16_t pkt_len;
     int rc;
     if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
         if (ctxt->chr->flags & BLE_GATT_CHR_F_WRITE_AUTHOR) {
@@ -124,38 +126,45 @@ static size_t write_value(uint16_t conn_handle, uint16_t attr_handle,
         }
     }
 
-    /* Data may come in linked om. So retrieve all data */
-    if (SLIST_NEXT(ctxt->om, om_next) != NULL) {
-	uint8_t *fw_buf = (uint8_t *)malloc(517 * sizeof(uint8_t));
-	memset(fw_buf, 0x0, 517);
-
-        memcpy(fw_buf, &ctxt->om->om_data[0], ctxt->om->om_len);
-        struct os_mbuf *last;
-        last = ctxt->om;
-        uint32_t offset = ctxt->om->om_len;
-
-        while (SLIST_NEXT(last, om_next) != NULL) {
-              struct os_mbuf *temp = SLIST_NEXT(last, om_next);
-	      memcpy(fw_buf + offset  , &temp->om_data[0], temp->om_len);
-	      offset += temp->om_len;
-	      last = SLIST_NEXT(last, om_next);
-              temp = NULL;
-        }
-	btc_blufi_recv_handler(fw_buf, offset);
-
-	free(fw_buf);
-    }
-    else {
-        btc_blufi_recv_handler(&ctxt->om->om_data[0], ctxt->om->om_len);
+    pkt_len = OS_MBUF_PKTLEN(ctxt->om);
+    if (pkt_len > MAX_VAL_SIZE) {
+        return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
     }
 
-    rc = ble_hs_mbuf_to_flat(ctxt->om, value->buf->om_data,
-                             value->buf->om_len, &len);
-    if (rc != 0) {
+    flat_buf = malloc(pkt_len);
+    if (flat_buf == NULL) {
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+
+    rc = ble_hs_mbuf_to_flat(ctxt->om, flat_buf, pkt_len, &len);
+    if (rc != 0 || len != pkt_len) {
+        free(flat_buf);
         return BLE_ATT_ERR_UNLIKELY;
     }
-    /* Maximum attribute value size is 512 bytes */
-    assert(value->buf->om_len < MAX_VAL_SIZE);
+
+    btc_blufi_recv_handler(flat_buf, pkt_len);
+
+    if (value->buf != NULL) {
+        os_mbuf_free_chain(value->buf);
+        value->buf = NULL;
+    }
+
+    value->buf = os_msys_get(0, 0);
+    if (value->buf == NULL) {
+        free(flat_buf);
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+
+    if (pkt_len > 0) {
+        if (os_mbuf_append(value->buf, flat_buf, pkt_len) != 0) {
+            os_mbuf_free_chain(value->buf);
+            value->buf = NULL;
+            free(flat_buf);
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+    }
+
+    free(flat_buf);
 
     return 0;
 }
@@ -331,7 +340,9 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         }
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
-           ((void(*)(void))arg)();
+           if (arg != NULL) {
+	       ((void(*)(void))arg)();
+	   }
         }
         return 0;
     case BLE_GAP_EVENT_DISCONNECT:
@@ -366,7 +377,9 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         ESP_LOGI(TAG, "advertise complete; reason=%d",
                  event->adv_complete.reason);
-        ((void(*)(void))arg)();
+        if (arg != NULL) {
+            ((void(*)(void))arg)();
+        }
         return 0;
 
     case BLE_GAP_EVENT_SUBSCRIBE:

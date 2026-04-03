@@ -18,11 +18,12 @@
 
 #include "http_utils.h"
 #include "http_auth.h"
-#include "http_crypto.h"
 
 #include "psa/crypto.h"
 
 #define MD5_MAX_LEN (33)
+#define SHA256_LEN (32)
+#define SHA256_HEX_LEN (65)
 #define HTTP_AUTH_BUF_LEN (1024)
 
 static const char *TAG = "HTTP_AUTH";

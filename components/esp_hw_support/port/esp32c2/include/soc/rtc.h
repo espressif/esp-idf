@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,15 +131,6 @@ use together with RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT
 #define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V6   5
 #define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V6   5
 
-/*
-The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-storing in efuse (based on ATE 5k ECO3 chips)
-*/
-#define K_RTC_MID_MUL10000 215
-#define K_DIG_MID_MUL10000 213
-#define V_RTC_MID_MUL10000  10800
-#define V_DIG_MID_MUL10000  10860
-
 /**
  * @brief CPU clock configuration structure
  */
@@ -151,9 +142,6 @@ typedef struct rtc_cpu_freq_config_s {
 } rtc_cpu_freq_config_t;
 
 #define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
-
-#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
-#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
 #define RTC_CAL_RTC_MUX _Pragma ("GCC warning \"'RTC_CAL_RTC_MUX' macro is deprecated\"") CLK_CAL_RTC_SLOW
 #define RTC_CAL_8MD256 _Pragma ("GCC warning \"'RTC_CAL_8MD256' macro is deprecated\"") CLK_CAL_RC_FAST_D256

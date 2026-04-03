@@ -8,41 +8,24 @@ Introduction
 
 Non-volatile storage (NVS) library is designed to store key-value pairs in flash. This section introduces some concepts used by NVS.
 
-Underlying Storage
-^^^^^^^^^^^^^^^^^^
+Initialization
+^^^^^^^^^^^^^^
 
-Currently, NVS uses a portion of main flash memory through the :ref:`esp_partition <flash-partition-apis>` API. The library uses all the partitions with ``data`` type and ``nvs`` subtype.  The application can choose to use the partition with the label ``nvs`` through the :cpp:func:`nvs_open` API function or any other partition by specifying its name using the :cpp:func:`nvs_open_from_partition` API function.
+NVS uses partitions from the partition table with ``data`` type and ``nvs`` subtype. The library can be initialized using:
 
-Future versions of this library may have other storage backends to keep data in another flash chip (SPI or I2C), RTC, FRAM, etc.
+- :cpp:func:`nvs_flash_init` initializes the default NVS partition with label ``nvs``.
+- :cpp:func:`nvs_flash_init_partition` initializes a specific NVS partition by its label.
+- :cpp:func:`nvs_flash_init_partition_ptr` initializes NVS from an ``esp_partition_t`` pointer.
 
-.. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``idf.py erase-flash`` target to erase all contents of the flash chip.
+Once initialized, applications access NVS namespaces using :cpp:func:`nvs_open` (for the default partition) or :cpp:func:`nvs_open_from_partition` (for a specific partition by label).
 
-.. note:: NVS works best for storing many small values, rather than a few large values of the type 'string' and 'blob'. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
+.. note::
 
-.. note:: NVS component includes flash wear levelling by design. Set operations are appending new data to the free space after existing entries. Invalidation of old values doesn't require immediate flash erase operations. The organization of NVS space to pages and entries effectively reduces the frequency of flash erase to flash write operations by a factor of 126.
+    NVS can also operate through the Block Device Layer (BDL) when :ref:`CONFIG_NVS_BDL_STACK` is enabled, allowing use of alternative storage backends beyond standard flash partitions. In BDL mode, :cpp:func:`nvs_flash_init_partition_ptr` is not available, but :cpp:func:`nvs_flash_init_partition_bdl` becomes available for custom block device initialization. See :ref:`nvs_internals` > :ref:`nvs_underlying_storage` for details.
 
-Large Amount of Data in NVS
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
 
-Although not recommended, NVS can store tens of thousands of keys and NVS partition can reach up to megabytes in size.
-
-.. note:: NVS component leaves RAM footprint on the heap. The footprint depends on the size of the NVS partition on flash and the number of keys in use. For RAM usage estimation, please use the following approximate figures: each 1 MB of NVS flash partition consumes 22 KB of RAM and each 1000 keys consumes 5.5 KB of RAM.
-
-.. note:: Duration of NVS initialization using :cpp:func:`nvs_flash_init` is proportional to the number of existing keys. Initialization of NVS requires approximately 0.5 seconds per 1000 keys.
-
-.. only:: SOC_SPIRAM_SUPPORTED
-
-    By default, internal NVS allocates a heap in internal RAM. With a large NVS partition or big number of keys, the application can exhaust the internal RAM heap just on NVS overhead.
-    Applications using modules with SPI-connected PSRAM can overcome this limitation by enabling the Kconfig option :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` which redirects RAM allocation to the SPI-connected PSRAM.
-    This option is available in the nvs_flash component of the menuconfig menu when SPIRAM is enabled and and :ref:`CONFIG_SPIRAM_USE` is set to ``CONFIG_SPIRAM_USE_CAPS_ALLOC``.
-    .. note:: Using SPI-connected PSRAM slows down NVS API for integer operations by an approximate factor of 2.5.
-
-.. _nvs_bootloader:
-
-Use of NVS in Bootloader code
------------------------------
-
-The standard NVS API described in this guide is available to the running application. It is also possible to read data from NVS in the custom bootloader code. More information can be found in the :doc:`nvs_bootloader` guide.
+    If an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``idf.py erase-flash`` target to erase all contents of the flash chip.
 
 Keys and Values
 ^^^^^^^^^^^^^^^
@@ -55,13 +38,17 @@ NVS operates on key-value pairs. Keys are ASCII strings; the maximum key length 
 
 .. note::
 
+    NVS works best for storing many small values, rather than a few large values of the type ``string`` and ``blob``. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
+
+.. note::
+
     String values are currently limited to 4000 bytes. This includes the null terminator. Blob values are limited to 508,000 bytes or 97.6% of the partition size - 4000 bytes, whichever is lower.
 
 .. note::
 
-    Before setting new or updating existing key-value pair, free entries in nvs pages have to be available. For integer types, at least one free entry has to be available. For the String value, at least one page capable of keeping the whole string in a contiguous row of free entries has to be available. For the Blob value, the size of new data has to be available in free entries.
+    Before setting new or updating existing key-value pair, free entries in nvs pages have to be available. For integer types, at least one free entry has to be available. For the string value, at least one page capable of keeping the whole string in a contiguous row of free entries has to be available. For the blob value, the size of new data has to be available in free entries.
 
-Additional types, such as ``float`` and ``double`` might be added later.
+Additional data types, such as ``float`` and ``double`` might be added later.
 
 Keys are required to be unique. Assigning a new value to an existing key replaces the old value and data type with the value and data type specified by a write operation.
 
@@ -71,7 +58,7 @@ A data type check is performed when reading a value. An error is returned if the
 Namespaces
 ^^^^^^^^^^
 
-To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Furthermore, there can be no more than 254 different namespaces in one NVS partition. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call.
+To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of the namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Furthermore, there can be no more than 254 different namespaces in one NVS partition. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace and partition, and key names will not collide with same names in other namespaces.
 
 The open mode parameter controls the access level and security behavior:
 
@@ -79,26 +66,9 @@ The open mode parameter controls the access level and security behavior:
 - ``NVS_READWRITE``: Standard read-write access. Erased data is marked as deleted but remains in flash.
 - ``NVS_READWRITE_PURGE``: Secure read-write access. Erased data is physically purged from flash memory.
 
-This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace, and key names will not collide with same names in other namespaces. Please note that the namespaces with the same name in different NVS partitions are considered as separate namespaces.
-
-.. _data_purging_security:
-
-Data Purging and Security
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By default, when NVS updates or erases key-value pairs, the old data is only marked as erased but remains physically present in flash memory. This approach optimizes write performance and flash wear leveling, but the erased data could potentially be recovered with physical access to the flash chip.
-
-For applications requiring enhanced security where sensitive data must be physically removed from flash memory, NVS provides two mechanisms:
-
-**Purging Mode**
-    When opening a namespace with ``NVS_READWRITE_PURGE`` mode, all write and erase operations automatically purge (physically wipe) the previously stored data in addition to writing new values. This ensures that old data cannot be recovered from flash memory.
-
-**Manual Purging**
-    The :cpp:func:`nvs_purge_all` function allows applications to explicitly purge all erased items within a namespace at any time. This can be used with handles opened in either ``NVS_READWRITE`` or ``NVS_READWRITE_PURGE`` mode.
-
 .. note::
 
-    Purging operations require additional flash write cycles compared to standard erase operations. Applications should balance security requirements with flash wear considerations when deciding whether to use purging features.
+    Namespaces with the same name in different NVS partitions are considered as separate namespaces.
 
 NVS Iterators
 ^^^^^^^^^^^^^
@@ -127,18 +97,86 @@ Security, Tampering, and Robustness
 
     NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption or with the help of the HMAC peripheral. Please refer to :doc:`nvs_encryption` for more details.
 
-If NVS encryption is not used, it is possible for anyone with physical access to the flash chip to alter, erase, or add key-value pairs. With NVS encryption enabled, it is not possible to alter or add a key-value pair and get recognized as a valid pair without knowing corresponding NVS encryption keys. However, there is no tamper-resistance against the erase operation.
-
-**Data Recovery Prevention**: By default, when key-value pairs are updated or erased, the old data remains physically present in flash memory and is only marked as invalid. For sensitive applications where old data must not be recoverable, use the ``NVS_READWRITE_PURGE`` mode when opening namespaces, or call :cpp:func:`nvs_purge_all` to explicitly purge erased data. See the :ref:`Data Purging and Security <data_purging_security>` section for details.
+If NVS encryption is not used, it is possible for anyone with physical access to the flash chip to read, alter, erase, or add key-value pairs. With NVS encryption enabled, it is not possible to read, alter or add a key-value pair and get recognized as a valid pair without knowing corresponding NVS encryption keys. However, there is no tamper-resistance against the erase operation.
 
 The library does try to recover from conditions when flash memory is in an inconsistent state. In particular, one should be able to power off the device at any point and time and then power it back on. This should not result in loss of data, except for the new key-value pair if it was being written at the moment of powering off. The library should also be able to initialize properly with any random data present in flash memory.
 
+.. _data_purging_security:
+
+Data Purging and Security
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, when NVS updates or erases key-value pairs, the data in flash is only marked as erased in metadata section. The values still remain in flash memory. This approach optimizes write performance.
+
+For applications requiring enhanced security where sensitive data must be physically removed (purged in terms of setting all bits to zeroes) from flash memory after calling erase or update functions, NVS provides two mechanisms:
+
+**One Time Purge**
+
+    The :cpp:func:`nvs_purge_all` function purges all existing items marked as erased within a namespace. It is useful in scenarios where the continuous purging mode was not used yet and the application needs to purge existing erased flash content. This function may be used with handles opened either using ``NVS_READWRITE`` or ``NVS_READWRITE_PURGE`` mode.
+
+**Continuous Purging Mode**
+
+    Namespace handle opened with ``NVS_READWRITE_PURGE`` mode automatically purges the flash space occupied by the erased or overwritten values on top of just marking them as erased.
+
+.. note::
+
+    Opening NVS namespace in ``NVS_READWRITE_PURGE`` mode does not purge data marked as erased already present in the flash. Perform One Time Purge before using Continuous Purging Mode if the namespace already contains some updated or erased data.
+
+.. note::
+
+    Purging operations represent additional flash write cycles compared to standard marking as erased mode. Applications should balance security requirements with flash write performance when deciding whether to use data purging features.
+
+
+Special Use Cases
+-----------------
+
+Large Amount of Data in NVS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Although not recommended, NVS can store tens of thousands of keys and NVS partition can reach up to megabytes in size.
+
+.. note::
+
+    NVS component leaves RAM footprint on the heap. The footprint depends on the size of the NVS partition on flash and the number of keys in use. For RAM usage estimation, please use the following approximate figures: each 1 MB of NVS flash partition consumes 22 KB of RAM and each 1000 keys consumes 5.5 KB of RAM.
+
+.. note::
+
+    Duration of NVS initialization using :cpp:func:`nvs_flash_init` is proportional to the number of existing keys. Initialization of NVS requires typically 0.5 seconds per 1000 keys.
+
+.. note::
+
+    The duration of initialization gradually grows with the population of NVS partition and number of value updates. To avoid unexpected watchdog timeout during initialization when your application is already in customer use, test your NVS initialization in advance on a NVS partition containing all keys including expected history of updates.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    By default, internal NVS allocates a heap in internal RAM. With a large NVS partition or big number of keys, the application can exhaust the internal RAM heap just on NVS overhead.
+
+    Applications using modules with SPI-connected PSRAM can overcome this limitation by enabling the Kconfig option :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` which redirects RAM allocation to the SPI-connected PSRAM.
+
+    This option is available in the nvs_flash component of the menuconfig menu when SPIRAM is enabled and :ref:`CONFIG_SPIRAM_USE` is set to ``CONFIG_SPIRAM_USE_CAPS_ALLOC``.
+
+    .. note::
+
+        Using SPI-connected PSRAM slows down NVS API for integer operations by an approximate factor of 2.5.
+
 Unstable Power Conditions
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When NVS is used in systems powered by weak or unstable energy sources (such as solar or battery), flash erase operations may occasionally fail to complete without being detected by the application. This can create a mismatch between the actual flash contents and the expected layout of reserved pages. In rare cases, especially during unexpected power loss, this may exhaust the available NVS pages and cause partition initialization to fail with the error ``ESP_ERR_NVS_NO_FREE_PAGES``.
 
 To address this issue, the Kconfig option :ref:`CONFIG_NVS_FLASH_VERIFY_ERASE` enables verification of flash erase operations by reading back the affected page. If the page is not fully erased to ``0xFF`` after a ``flash_erase`` operation, the erase is retried until the page is correctly cleared. The total number of erase attempts, including the initial attempt, is controlled by the Kconfig option :ref:`CONFIG_NVS_FLASH_ERASE_ATTEMPTS`.
+
+.. note::
+
+    When NVS is initialized on the writeable partition, the library will attempt to perform recovery operations if the partition is found to be in an inconsistent state. This may involve erasing and rewriting some pages and in continuously unstable power environment subsequently lead to the unintended loss of factory default data. For this reason, it is recommended to keep vital factory default data in separate, read-only partition where the recovery is not performed.
+
+
+.. _nvs_bootloader:
+
+Use of NVS in Bootloader Code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The standard NVS API described in this guide is available to the running application. It is also possible to read data from NVS in the custom bootloader code. More information can be found in the :doc:`nvs_bootloader` guide.
 
 .. _nvs_encryption:
 
@@ -228,6 +266,8 @@ You can find code examples in the :example:`storage/nvs` directory of ESP-IDF ex
 
   After that, the example iterates over each individual data type as well as the generic ``NVS_TYPE_ANY`` type, and logs the information obtained from each iteration.
 
+.. _nvs_internals:
+
 Internals
 ---------
 
@@ -236,9 +276,9 @@ Log of Key-Value Pairs
 
 NVS stores key-value pairs sequentially, with new key-value pairs being added at the end. When a value of any given key has to be updated, a new key-value pair is added at the end of the log and the old key-value pair is marked as erased.
 
-**Standard Erase Behavior**: By default, erased entries remain physically present in flash memory with only their state bits changed to indicate they are no longer valid. This optimizes performance and reduces flash wear.
+.. note::
 
-**Purge Behavior**: When using ``NVS_READWRITE_PURGE`` mode or calling :cpp:func:`nvs_purge_all`, the library physically overwrites the content of erased entries to prevent data recovery. This operation incurs additional flash write cycles but provides enhanced security for sensitive data.
+    NVS component includes flash wear levelling by design. Set operations are appending new data to the free space after existing entries. Invalidation of old values doesn't require immediate flash erase operations. The organization of NVS space to pages and entries effectively reduces the frequency of flash erase to flash write operations for data types fitting one entry by a factor of 126.
 
 Pages and Entries
 ^^^^^^^^^^^^^^^^^
@@ -259,7 +299,7 @@ Erasing
     Non-erased key-value pairs are being moved into another page so that the current page can be erased. This is a transient state, i.e., page should never stay in this state at the time when any API call returns. In case of a sudden power off, the move-and-erase process will be completed upon the next power-on.
 
 Corrupted
-    Page header contains invalid data, and further parsing of page data was canceled. Any items previously written into this page will not be accessible. The corresponding flash sector will not be erased immediately and will be kept along with sectors in **uninitialized** state for later use. This may be useful for debugging.
+    Page header contains invalid data, and further parsing of page data was cancelled. Any items previously written into this page will not be accessible. The corresponding flash sector will not be erased immediately and will be kept along with sectors in **uninitialized** state for later use. This may be useful for debugging.
 
 Mapping from flash sectors to logical pages does not have any particular order. The library will inspect sequence numbers of pages found in each flash sector and organize pages in a list based on these numbers.
 
@@ -429,7 +469,46 @@ Each node in the hash list contains a 24-bit hash and 8-bit item index. Hash is 
 Read-only NVS
 ^^^^^^^^^^^^^^
 
-The default minimal size for NVS to function properly is 12kiB (``0x3000``), meaning there have to be at least 3 pages with one of them being in Empty state. However if the NVS partition is flagged as ``readonly`` in the partition table CSV and is being opened in read-only mode, the partition can be as small as 4kiB (``0x1000``) with only one page in Active state and no Empty page. This is because the library does not need to write any data to the partition in this case. The partition can be used to store data that is not expected to change, such as calibration data or factory settings. Partitions of sizes 0x1000 and 0x2000 are always read-only and partitions of size 0x3000 and above are always read-write capable (still can be opened in read-only mode in the code).
+There are two levels of read-only NVS support:
+
+- At the partition table level, a partition can be flagged as ``readonly`` in the partition table CSV file.
+- At the application level, NVS partitions can be opened in read-only mode using the :cpp:func:`nvs_open_from_partition` function with the ``NVS_READONLY`` flag.
+
+The default minimal size for NVS to function properly is 12 KiB (``0x3000``), meaning there have to be at least 3 pages with at least one of them being in Empty state. However if the NVS partition is flagged as ``readonly`` in the partition table CSV and is being opened in read-only mode, the partition can be as small as 4 KiB (``0x1000``).
+
+.. note::
+
+    At the moment read-only flag is not reflected if NVS is using Block Device Layer as a storage.
+
+.. _nvs_underlying_storage:
+
+Underlying Storage
+^^^^^^^^^^^^^^^^^^
+
+At build time the mode NVS will use for accessing its underlying storage can be configured. Two options are available in menuconfig option :ref:`CONFIG_NVS_BDL_STACK`.
+
+**ESP Partition API (default)**: NVS accesses storage using the :ref:`esp_partition <flash-partition-apis>`. This is the default mode of operation, where NVS uses SPI flash partitions defined in the partition table. In this mode:
+
+- Initialization functions (:cpp:func:`nvs_flash_init`, :cpp:func:`nvs_flash_init_partition`) look up the partition and use :ref:`esp_partition <flash-partition-apis>` APIs to access it.
+- The application can provide custom ``esp_partition_t`` pointer and call :cpp:func:`nvs_flash_init_partition_ptr`. This enables applications to overcome limitations of partition table based partitions, such as using partitions not defined in the partition table.
+- This mode provides the best performance, as there is no additional abstraction layer between NVS and the underlying storage.
+
+**Block Device Layer (BDL)**: NVS accesses storage using esp_blockdev. This option enables NVS to operate on a block device that implements the esp_blockdev interface. In this mode:
+
+- Initialization functions (:cpp:func:`nvs_flash_init`, :cpp:func:`nvs_flash_init_partition`) transparently create block devices using :ref:`esp_partition <flash-partition-apis>`, manage their lifecycles and internally use the esp_blockdev. For the application, this mode is similar to the default mode of operation.
+- The application can provide custom block device handle and call :cpp:func:`nvs_flash_init_partition_bdl` to register it for NVS. The application is responsible for managing the block device handle lifecycle.
+- As the BDL abstracts the underlying storage, there is an overhead compared to using :ref:`esp_partition <flash-partition-apis>` APIs directly. Choose this mode when esp_partition backed storage is not sufficient for the needs of the application.
+
+.. note::
+
+    If custom Block Device is used in NVS, it has to satisfy the following requirements:
+
+    - ``read_size`` and ``write_size`` must be 1 byte (NVS requires byte-level granular access).
+    - ``erase_size`` must be a divisor of 4096 (NVS page size is fixed at 4096 bytes).
+    - ``disk_size`` must be a multiple of 4096 bytes.
+    - ``default_val_after_erase`` flag must be set to 1 (erased memory reads as ``0xFF``).
+    - Operations (``read``, ``write``, ``erase``) must be implemented.
+
 
 
 API Reference

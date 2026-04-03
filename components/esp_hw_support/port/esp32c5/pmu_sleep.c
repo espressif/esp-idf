@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
+#include "soc/chip_revision.h"
 #include "hal/lp_aon_hal.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
@@ -27,6 +28,9 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
+
+// In the ESP32-C5 v1.2 and later versions, need to set PMU_POWER_WAIT_TIMER0_REG->PMU_DG_HP_PD_WAIT_TIMER[1:0] to 0b11 to avoid excessive inrush current.
+#define POWER_DOMAIN_INRUSH_CURRENT_WORKAROUND (BIT(0) | BIT(1))
 
 static bool s_pmu_sleep_regdma_backup_enabled;
 
@@ -355,7 +359,11 @@ static void pmu_sleep_param_init(pmu_context_t *ctx, const pmu_sleep_param_confi
     pmu_ll_hp_set_analog_wait_target_cycle(ctx->hal->dev, param->hp_sys.analog_wait_target_cycle);
     pmu_ll_lp_set_analog_wait_target_cycle(ctx->hal->dev, param->lp_sys.analog_wait_target_cycle);
 
-    pmu_hal_hp_set_digital_power_up_wait_cycle(ctx->hal, param->hp_sys.digital_power_supply_wait_cycle, param->hp_sys.digital_power_up_wait_cycle);
+    uint32_t hp_digital_power_supply_wait_cycle = param->hp_sys.digital_power_supply_wait_cycle;
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        hp_digital_power_supply_wait_cycle |= POWER_DOMAIN_INRUSH_CURRENT_WORKAROUND; // Enable power domain power-down to avoid excessive inrush current
+    }
+    pmu_hal_hp_set_digital_power_up_wait_cycle(ctx->hal, hp_digital_power_supply_wait_cycle, param->hp_sys.digital_power_up_wait_cycle);
     pmu_hal_lp_set_digital_power_up_wait_cycle(ctx->hal, param->lp_sys.digital_power_supply_wait_cycle, param->lp_sys.digital_power_up_wait_cycle);
 
     pmu_hal_hp_set_control_ready_wait_cycle(ctx->hal, param->hp_sys.isolate_wait_cycle, param->hp_sys.reset_wait_cycle);

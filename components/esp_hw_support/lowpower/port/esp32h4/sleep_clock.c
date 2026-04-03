@@ -8,11 +8,11 @@
 #include "soc/pcr_reg.h"
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
-#include "soc/i2c_ana_mst_reg.h"
+#include "modem/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/lp_analog_peri_reg.h"
 
-static const char *TAG = "sleep_clock";
+ESP_LOG_ATTR_TAG(TAG, "sleep_clock");
 
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
@@ -39,7 +39,7 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
     #define N_REGS_LPCON()  (((MODEM_LPCON_MEM_CONF_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
 
-    /* In ESP32H4, the I2C control registers (syscon, lpcon) are placed in the modem domain,
+    /* In ESP32H4, the I2C control registers, syscon is placed in the modem domain, lpcon is placed in the top domain,
        and the BBPL requires I2C for calibration. This is the reason why the code for the BPLL enableq
        section needs to be placed in this function.*/
     const static sleep_retention_entries_config_t modem_regs_retention[] = {

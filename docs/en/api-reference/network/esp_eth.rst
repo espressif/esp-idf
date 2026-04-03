@@ -167,6 +167,13 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, {IDF_TARGET_SOC_REF_CLK_IN_GPIO} can be selected as input pin for the ``REF_CLK`` signal via IO_MUX.
 
+    .. only:: esp32p4
+
+        .. warning::
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, the EMAC derives the 50 MHz RMII reference clock from the MPLL via an integer divider. When PSRAM is also enabled, both peripherals share the MPLL, and PSRAM locks it to a frequency determined by its speed configuration. If PSRAM speed is configured to 80 MHz (:ref:`CONFIG_SPIRAM_SPEED`), the MPLL runs at 320 MHz, and no integer divisor of 320 MHz can produce 50 MHz within the required ±50 ppm tolerance (the closest candidate is 320 / 6 ≈ 53.33 MHz). EMAC initialization will fail in this configuration.
+
+            If you must use 80 MHz PSRAM speed, provide the ``REF_CLK`` from an external source (PHY or oscillator) and configure :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` instead.
+
     .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 
         .. warning::

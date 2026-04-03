@@ -20,7 +20,6 @@
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_HAS_LP_ROM                  (1) // ROM also has a LP ROM placed in LP memory
-#define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano version of formatting functions
 #define ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG  (1) // ROM has the printf float bug with newlib nano version

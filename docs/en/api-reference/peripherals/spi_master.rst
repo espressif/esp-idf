@@ -852,6 +852,10 @@ Please note that the ISR is disabled during flash operation by default. To keep 
 
     4. ``cs_ena_pretrans`` is not compatible with the Command and Address phases of full-duplex transactions.
 
+    .. only:: esp32
+
+        5. If DMA is enabled, the RX buffer should be word-aligned (starting from a 32-bit boundary and having a length of multiples of 4 bytes). Otherwise, DMA may overwrite the data in the unaligned part.
+
 
 Application Examples
 --------------------

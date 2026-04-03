@@ -26,6 +26,7 @@ set(esp_hal_components
     esp_hal_clock
     esp_hal_security
     esp_hal_systimer
+    esp_hal_regi2c
 )
 set(COMPONENTS ${g0_components} ${g1_components} ${esp_hal_components} main)
 

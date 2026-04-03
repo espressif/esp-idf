@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 #include "unity.h"
 #include <string.h>
 #include "utils/common.h"
@@ -19,12 +20,14 @@
 #include "mbedtls/pk.h"
 #include "test_utils.h"
 #include "test_wpa_supplicant_common.h"
+#include "esp_log.h"
+#include <inttypes.h>
 
 #include "psa/crypto.h"
 #include "mbedtls/psa_util.h"
 #include "esp_heap_caps.h"
 #include "crypto/sha384.h"
-#include "esp_log.h"
+#include "esp_timer.h"
 
 typedef struct crypto_bignum crypto_bignum;
 
@@ -32,6 +35,93 @@ typedef struct crypto_bignum crypto_bignum;
 typedef struct {
     psa_key_id_t key_id;
 } crypto_ec_key_wrapper_test_t;
+
+static const uint8_t test_secp256r1_prime[32] = {
+    0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x01,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+static int test_mbedtls_rng(void *ctx, unsigned char *buf, size_t len)
+{
+    (void) ctx;
+    return os_get_random(buf, len) == 0 ? 0 : MBEDTLS_ERR_ECP_RANDOM_FAILED;
+}
+
+static void test_load_valid_p256_scalar(const mbedtls_ecp_group *grp,
+                                        const uint8_t *seed, size_t seed_len,
+                                        mbedtls_mpi *scalar)
+{
+    mbedtls_mpi range;
+
+    mbedtls_mpi_init(&range);
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_sub_int(&range, &grp->N, 1));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_read_binary(scalar, seed, seed_len));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_mod_mpi(scalar, scalar, &range));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_add_int(scalar, scalar, 1));
+    mbedtls_mpi_free(&range);
+}
+
+static void test_make_p256_affine_point(mbedtls_ecp_group *grp,
+                                        unsigned int multiplier,
+                                        mbedtls_ecp_point *point)
+{
+    mbedtls_mpi k;
+
+    mbedtls_mpi_init(&k);
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_lset(&k, multiplier));
+    TEST_ASSERT_EQUAL(0, mbedtls_ecp_mul(grp, point, &k, &grp->G,
+                                         test_mbedtls_rng, NULL));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_cmp_int(&point->MBEDTLS_PRIVATE(Z), 1));
+    mbedtls_mpi_free(&k);
+}
+
+static int test_legendre_reference(const mbedtls_mpi *a, const mbedtls_mpi *p)
+{
+    mbedtls_mpi a_mod, exp, res, one, pm1;
+    int legendre = -2;
+
+    mbedtls_mpi_init(&a_mod);
+    mbedtls_mpi_init(&exp);
+    mbedtls_mpi_init(&res);
+    mbedtls_mpi_init(&one);
+    mbedtls_mpi_init(&pm1);
+
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_mod_mpi(&a_mod, a, p));
+    if (mbedtls_mpi_cmp_int(&a_mod, 0) == 0) {
+        legendre = 0;
+        goto cleanup;
+    }
+
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_copy(&exp, p));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_sub_int(&exp, &exp, 1));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_shift_r(&exp, 1));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_exp_mod(&res, &a_mod, &exp, p, NULL));
+
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_lset(&one, 1));
+    if (mbedtls_mpi_cmp_mpi(&res, &one) == 0) {
+        legendre = 1;
+        goto cleanup;
+    }
+
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_copy(&pm1, p));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_sub_int(&pm1, &pm1, 1));
+    if (mbedtls_mpi_cmp_mpi(&res, &pm1) == 0) {
+        legendre = -1;
+        goto cleanup;
+    }
+
+    TEST_FAIL_MESSAGE("Unexpected Legendre reference result");
+
+cleanup:
+    mbedtls_mpi_free(&a_mod);
+    mbedtls_mpi_free(&exp);
+    mbedtls_mpi_free(&res);
+    mbedtls_mpi_free(&one);
+    mbedtls_mpi_free(&pm1);
+    return legendre;
+}
 
 TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 {
@@ -216,6 +306,38 @@ TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 
     }
 
+    {   /** BN mul mod on secp256r1 prime */
+        uint8_t val[32];
+        uint8_t one[32] = {0};
+        crypto_bignum *bn1, *bn2, *bn3, *mulmod;
+
+        one[0] = 1;
+        os_memcpy(val, test_secp256r1_prime, sizeof(val));
+        val[31]--;
+
+        mulmod = crypto_bignum_init();
+        TEST_ASSERT_NOT_NULL(mulmod);
+
+        bn1 = crypto_bignum_init_set(val, sizeof(val));
+        TEST_ASSERT_NOT_NULL(bn1);
+
+        bn2 = crypto_bignum_init_set(val, sizeof(val));
+        TEST_ASSERT_NOT_NULL(bn2);
+
+        bn3 = crypto_bignum_init_set(test_secp256r1_prime,
+                                     sizeof(test_secp256r1_prime));
+        TEST_ASSERT_NOT_NULL(bn3);
+
+        TEST_ASSERT(crypto_bignum_mulmod(bn1, bn2, bn3, mulmod) == 0);
+        TEST_ASSERT(crypto_bignum_to_bin(mulmod, val, sizeof(val), 0) == 1);
+        TEST_ASSERT_EQUAL_UINT8_ARRAY(one, val, 1);
+
+        crypto_bignum_deinit(bn1, 1);
+        crypto_bignum_deinit(bn2, 1);
+        crypto_bignum_deinit(bn3, 1);
+        crypto_bignum_deinit(mulmod, 1);
+    }
+
     {   /** BN exp mod*/
         uint8_t buf1[32], buf2[32], buf3[32], buf4[32], buf5[32];
 
@@ -286,6 +408,134 @@ TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
         crypto_bignum_deinit(bn2, 1);
 
     }
+
+    {   /** BN Legendre symbol test on secp256r1 prime */
+        uint8_t val[32] = {0};
+        crypto_bignum *bn_val, *bn_p;
+
+        bn_p = crypto_bignum_init_set(test_secp256r1_prime,
+                                      sizeof(test_secp256r1_prime));
+        TEST_ASSERT_NOT_NULL(bn_p);
+
+        val[31] = 1;
+        bn_val = crypto_bignum_init_set(val, sizeof(val));
+        TEST_ASSERT_NOT_NULL(bn_val);
+        TEST_ASSERT(crypto_bignum_legendre(bn_val, bn_p) == 1);
+        crypto_bignum_deinit(bn_val, 1);
+
+        os_memset(val, 0, sizeof(val));
+        bn_val = crypto_bignum_init_set(val, sizeof(val));
+        TEST_ASSERT_NOT_NULL(bn_val);
+        TEST_ASSERT(crypto_bignum_legendre(bn_val, bn_p) == 0);
+        crypto_bignum_deinit(bn_val, 1);
+
+        os_memcpy(val, test_secp256r1_prime, sizeof(val));
+        val[31]--;
+        bn_val = crypto_bignum_init_set(val, sizeof(val));
+        TEST_ASSERT_NOT_NULL(bn_val);
+        TEST_ASSERT(crypto_bignum_legendre(bn_val, bn_p) == -1);
+        crypto_bignum_deinit(bn_val, 1);
+
+        crypto_bignum_deinit(bn_p, 1);
+    }
+}
+
+TEST_CASE("Test secp256r1 fast bignum paths against mbedtls reference", "[wpa_crypto]")
+{
+    static const uint8_t a_cases[][32] = {
+        {
+            0xa5, 0xa5, 0xa5, 0xa5, 0x5a, 0x5a, 0x5a, 0x5a,
+            0x11, 0x22, 0x33, 0x44, 0x88, 0x77, 0x66, 0x55,
+            0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef
+        },
+        {
+            0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+            0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00,
+            0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe,
+            0xca, 0xfe, 0xba, 0xbe, 0x13, 0x57, 0x9b, 0xdf
+        },
+        {
+            0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+            0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+            0x0f, 0x1e, 0x2d, 0x3c, 0x4b, 0x5a, 0x69, 0x78,
+            0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0
+        }
+    };
+    static const uint8_t b_cases[][32] = {
+        {
+            0x13, 0x57, 0x9b, 0xdf, 0xca, 0xfe, 0xba, 0xbe,
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+            0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe,
+            0x55, 0xaa, 0x55, 0xaa, 0x12, 0x34, 0x56, 0x78
+        },
+        {
+            0x24, 0x68, 0xac, 0xe0, 0x0f, 0x1e, 0x2d, 0x3c,
+            0x4b, 0x5a, 0x69, 0x78, 0x87, 0x96, 0xa5, 0xb4,
+            0xc3, 0xd2, 0xe1, 0xf0, 0xff, 0x00, 0xee, 0x11,
+            0xdd, 0x22, 0xcc, 0x33, 0xbb, 0x44, 0xaa, 0x55
+        },
+        {
+            0x7f, 0x6e, 0x5d, 0x4c, 0x3b, 0x2a, 0x19, 0x08,
+            0xf1, 0xe2, 0xd3, 0xc4, 0xb5, 0xa6, 0x97, 0x88,
+            0x79, 0x6a, 0x5b, 0x4c, 0x3d, 0x2e, 0x1f, 0x10,
+            0x89, 0x9a, 0xab, 0xbc, 0xcd, 0xde, 0xef, 0xf1
+        }
+    };
+    mbedtls_mpi ref_a, ref_b, ref_p, ref_mul;
+    struct crypto_bignum *bn_a, *bn_b, *bn_p, *bn_mul;
+    int i;
+    uint8_t got[32], expected[32];
+
+    set_leak_threshold(620);
+
+    mbedtls_mpi_init(&ref_a);
+    mbedtls_mpi_init(&ref_b);
+    mbedtls_mpi_init(&ref_p);
+    mbedtls_mpi_init(&ref_mul);
+
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_read_binary(&ref_p,
+                                                 test_secp256r1_prime,
+                                                 sizeof(test_secp256r1_prime)));
+    bn_p = crypto_bignum_init_set(test_secp256r1_prime,
+                                  sizeof(test_secp256r1_prime));
+    TEST_ASSERT_NOT_NULL(bn_p);
+    bn_mul = crypto_bignum_init();
+    TEST_ASSERT_NOT_NULL(bn_mul);
+
+    for (i = 0; i < ARRAY_SIZE(a_cases); i++) {
+        TEST_ASSERT_EQUAL(0, mbedtls_mpi_read_binary(&ref_a,
+                                                     a_cases[i],
+                                                     sizeof(a_cases[i])));
+        TEST_ASSERT_EQUAL(0, mbedtls_mpi_read_binary(&ref_b,
+                                                     b_cases[i],
+                                                     sizeof(b_cases[i])));
+        TEST_ASSERT_EQUAL(0, mbedtls_mpi_mul_mpi(&ref_mul, &ref_a, &ref_b));
+        TEST_ASSERT_EQUAL(0, mbedtls_mpi_mod_mpi(&ref_mul, &ref_mul, &ref_p));
+        TEST_ASSERT_EQUAL(0, mbedtls_mpi_write_binary(&ref_mul, expected,
+                                                      sizeof(expected)));
+
+        bn_a = crypto_bignum_init_set(a_cases[i], sizeof(a_cases[i]));
+        TEST_ASSERT_NOT_NULL(bn_a);
+        bn_b = crypto_bignum_init_set(b_cases[i], sizeof(b_cases[i]));
+        TEST_ASSERT_NOT_NULL(bn_b);
+
+        TEST_ASSERT_EQUAL(0, crypto_bignum_mulmod(bn_a, bn_b, bn_p, bn_mul));
+        TEST_ASSERT_EQUAL(32, crypto_bignum_to_bin(bn_mul, got, sizeof(got), 0));
+        TEST_ASSERT_EQUAL_UINT8_ARRAY(expected, got, sizeof(got));
+        TEST_ASSERT_EQUAL(test_legendre_reference(&ref_a, &ref_p),
+                          crypto_bignum_legendre(bn_a, bn_p));
+
+        crypto_bignum_deinit(bn_a, 1);
+        crypto_bignum_deinit(bn_b, 1);
+    }
+
+    crypto_bignum_deinit(bn_p, 1);
+    crypto_bignum_deinit(bn_mul, 1);
+    mbedtls_mpi_free(&ref_a);
+    mbedtls_mpi_free(&ref_b);
+    mbedtls_mpi_free(&ref_p);
+    mbedtls_mpi_free(&ref_mul);
 }
 
 /*
@@ -548,6 +798,80 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
 
     }
 
+}
+
+TEST_CASE("Test secp256r1 point multiply against mbedtls reference", "[wpa_crypto]")
+{
+    static const uint8_t scalar_seeds[][32] = {
+        {
+            0xff, 0xff, 0xff, 0xff, 0xde, 0xad, 0xbe, 0xef,
+            0xca, 0xfe, 0xba, 0xbe, 0x88, 0x99, 0xaa, 0xbb,
+            0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe,
+            0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0
+        },
+        {
+            0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a,
+            0x5a, 0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a, 0xa5,
+            0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78,
+            0x89, 0x9a, 0xab, 0xbc, 0xcd, 0xde, 0xef, 0xf0
+        },
+        {
+            0x0f, 0x1e, 0x2d, 0x3c, 0x4b, 0x5a, 0x69, 0x78,
+            0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0,
+            0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87,
+            0x78, 0x69, 0x5a, 0x4b, 0x3c, 0x2d, 0x1e, 0x0f
+        }
+    };
+    const unsigned int point_multipliers[] = { 7, 13 };
+    struct crypto_ec *e;
+    struct crypto_ec_point *p = NULL;
+    struct crypto_ec_point *res = NULL;
+    mbedtls_ecp_point ref;
+    int i, j;
+
+    set_leak_threshold(620);
+
+    e = crypto_ec_init(19);
+    TEST_ASSERT_NOT_NULL(e);
+
+    p = crypto_ec_point_init(e);
+    TEST_ASSERT_NOT_NULL(p);
+    res = crypto_ec_point_init(e);
+    TEST_ASSERT_NOT_NULL(res);
+    mbedtls_ecp_point_init(&ref);
+
+    for (i = 0; i < ARRAY_SIZE(point_multipliers); i++) {
+        test_make_p256_affine_point((mbedtls_ecp_group *) e,
+                                    point_multipliers[i],
+                                    (mbedtls_ecp_point *) p);
+
+        for (j = 0; j < ARRAY_SIZE(scalar_seeds); j++) {
+            mbedtls_mpi scalar;
+
+            mbedtls_mpi_init(&scalar);
+            test_load_valid_p256_scalar((const mbedtls_ecp_group *) e,
+                                        scalar_seeds[j],
+                                        sizeof(scalar_seeds[j]),
+                                        &scalar);
+
+            TEST_ASSERT_EQUAL(0, crypto_ec_point_mul(e, p,
+                                                     (struct crypto_bignum *) &scalar,
+                                                     res));
+            TEST_ASSERT_EQUAL(0, mbedtls_ecp_mul((mbedtls_ecp_group *) e,
+                                                 &ref, &scalar,
+                                                 (const mbedtls_ecp_point *) p,
+                                                 test_mbedtls_rng, NULL));
+            TEST_ASSERT_EQUAL(0, crypto_ec_point_cmp(e, res,
+                                                     (const struct crypto_ec_point *) &ref));
+
+            mbedtls_mpi_free(&scalar);
+        }
+    }
+
+    mbedtls_ecp_point_free(&ref);
+    crypto_ec_point_deinit(p, 1);
+    crypto_ec_point_deinit(res, 1);
+    crypto_ec_deinit(e);
 }
 
 TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
@@ -1484,4 +1808,90 @@ TEST_CASE("Test crypto_ecdh_set_peerkey with X-only coordinate (OWE case)", "[wp
         crypto_ecdh_deinit(ecdh);
         crypto_ecdh_deinit(peer_ecdh);
     }
+}
+
+TEST_CASE("crypto_ec_point_mul Performance", "[wpa_crypto][performance]")
+{
+
+    /* Test vectors for SECP256R1 - same as mbedtls test */
+    static const uint8_t test_point_x[] = {
+        0x6b, 0x17, 0xd1, 0xf2, 0xe1, 0x2c, 0x42, 0x47,
+        0xf8, 0xbc, 0xe6, 0xe5, 0x63, 0xa4, 0x40, 0xf2,
+        0x77, 0x03, 0x7d, 0x81, 0x2d, 0xeb, 0x33, 0xa0,
+        0xf4, 0xa1, 0x39, 0x45, 0xd8, 0x98, 0xc2, 0x96
+    };
+
+    static const uint8_t test_point_y[] = {
+        0x4f, 0xe3, 0x42, 0xe2, 0xfe, 0x1a, 0x7f, 0x9b,
+        0x8e, 0xe7, 0xeb, 0x4a, 0x7c, 0x0f, 0x9e, 0x16,
+        0x2b, 0xce, 0x33, 0x57, 0x6b, 0x31, 0x5e, 0xce,
+        0xcb, 0xb6, 0x40, 0x68, 0x37, 0xbf, 0x51, 0xf5
+    };
+
+    static const uint8_t test_scalar[] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05  /* scalar = 5 */
+    };
+
+    struct crypto_ec *e;
+    struct crypto_ec_point *P, *R;
+    struct crypto_bignum *scalar;
+    int ret;
+    const int iterations = 10;
+    int64_t total_time = 0;
+    int64_t min_time = INT64_MAX;
+    int64_t max_time = 0;
+    uint8_t point_bin[64]; /* 32 bytes X + 32 bytes Y */
+
+    /* Initialize EC context for SECP256R1 (group 19) */
+    e = crypto_ec_init(19);
+    TEST_ASSERT_NOT_NULL(e);
+
+    /* Initialize result point */
+    R = crypto_ec_point_init(e);
+    TEST_ASSERT_NOT_NULL(R);
+
+    /* Initialize scalar */
+    scalar = crypto_bignum_init_set(test_scalar, sizeof(test_scalar));
+    TEST_ASSERT_NOT_NULL(scalar);
+
+    /* Set point P from test vector */
+    memcpy(point_bin, test_point_x, 32);
+    memcpy(point_bin + 32, test_point_y, 32);
+    P = crypto_ec_point_from_bin(e, point_bin);
+    TEST_ASSERT_NOT_NULL(P);
+
+    /* Warm-up run */
+    ret = crypto_ec_point_mul(e, P, scalar, R);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    /* Benchmark iterations */
+    for (int i = 0; i < iterations; i++) {
+        int64_t start = esp_timer_get_time();
+        ret = crypto_ec_point_mul(e, P, scalar, R);
+        int64_t elapsed = esp_timer_get_time() - start;
+        TEST_ASSERT_EQUAL(0, ret);
+
+        total_time += elapsed;
+        if (elapsed < min_time) {
+            min_time = elapsed;
+        }
+        if (elapsed > max_time) {
+            max_time = elapsed;
+        }
+    }
+
+    int64_t avg_time = total_time / iterations;
+
+    ESP_LOGI("WPA_CRYPTO",
+             "crypto_ec_point_mul timing(us): loops=%d total=%" PRId64 " avg=%" PRId64 " (%.2f ms) min=%" PRId64 " max=%" PRId64,
+             iterations, total_time, avg_time, avg_time / 1000.0, min_time, max_time);
+
+    /* Cleanup */
+    crypto_ec_point_deinit(P, 1);
+    crypto_ec_point_deinit(R, 1);
+    crypto_bignum_deinit(scalar, 1);
+    crypto_ec_deinit(e);
 }

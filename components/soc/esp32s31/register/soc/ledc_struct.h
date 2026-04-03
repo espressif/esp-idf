@@ -1442,7 +1442,7 @@ typedef union {
 } ledc_date_reg_t;
 
 
-typedef struct {
+typedef struct ledc_dev_t {
     volatile ledc_chn_conf0_reg_t ch0_conf0;
     volatile ledc_chn_hpoint_reg_t ch0_hpoint;
     volatile ledc_chn_duty_reg_t ch0_duty;

@@ -29,8 +29,9 @@ list(APPEND app_sources "test_lp_core_prefix.c")
 
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
+set(lp_core_sources_wake_stub "lp_core/test_main_wake_stub.c")
 
-if(CONFIG_SOC_RTC_TIMER_V2_SUPPORTED)
+if(CONFIG_SOC_RTC_TIMER_SUPPORTED)
     set(lp_core_sources_set_timer_wakeup "lp_core/test_main_set_timer_wakeup.c")
 endif()
 
@@ -61,7 +62,7 @@ endif()
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
-                       PRIV_REQUIRES driver esp_driver_gptimer esp_driver_tsens
+                       PRIV_REQUIRES driver esp_driver_gptimer esp_driver_tsens esp_hal_rtc_timer
                        WHOLE_ARCHIVE
                        EMBED_FILES "test_vad_8k.pcm")
 
@@ -69,9 +70,10 @@ set(lp_core_exp_dep_srcs ${app_sources})
 
 ulp_embed_binary(lp_core_test_app "${lp_core_sources}" "${lp_core_exp_dep_srcs}")
 ulp_embed_binary(lp_core_test_app_counter "${lp_core_sources_counter}" "${lp_core_exp_dep_srcs}")
+ulp_embed_binary(lp_core_test_app_wake_stub "${lp_core_sources_wake_stub}" "${lp_core_exp_dep_srcs}")
 ulp_embed_binary(lp_core_test_app_isr "lp_core/test_main_isr.c"  "${lp_core_exp_dep_srcs}")
 
-if(CONFIG_SOC_RTC_TIMER_V2_SUPPORTED)
+if(CONFIG_SOC_RTC_TIMER_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_set_timer_wakeup "${lp_core_sources_set_timer_wakeup}" "${lp_core_exp_dep_srcs}")
 endif()
 

@@ -43,7 +43,7 @@ To install an ADC instance, set up the required initial configuration structure 
 
 .. todo::
 
-   Add ULP ADC-related docs here.
+    Add ULP ADC-related docs here.
 
 After setting up the initial configurations for the ADC, call :cpp:func:`adc_oneshot_new_unit` with the prepared :cpp:type:`adc_oneshot_unit_init_cfg_t`. This function will return an ADC unit handle if the allocation is successful.
 
@@ -200,7 +200,7 @@ Above functions are guaranteed to be thread-safe. Therefore, you can call them f
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM` controls where to place the ADC fast read function (IRAM or Flash), see `IRAM Safe <#iram-safe>`__ for more details.
+- :ref:`CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM` controls where to place the ADC fast read function (IRAM or Flash), see :ref:`adc-oneshot-iram-safe` for more details.
 
 
 Application Examples

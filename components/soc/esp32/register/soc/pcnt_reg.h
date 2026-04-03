@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 
 #define PCNT_U0_CONF0_REG          (DR_REG_PCNT_BASE + 0x0000)

@@ -22,13 +22,6 @@ api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
-api-reference/peripherals/usb_host.rst
-api-reference/peripherals/usb_host/usb_host_notes_arch.rst
-api-reference/peripherals/usb_host/usb_host_notes_index.rst
-api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
-api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
-api-reference/peripherals/usb_host/usb_host_notes_design.rst
-api-reference/peripherals/usb_device.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/network/esp_eth.rst
 api-reference/network/esp_netif_driver.rst

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,9 +74,6 @@
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 
-#if !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
-#include "ble_dummy.h"
-#endif // !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 /* Macro definition
  ************************************************************************
  */
@@ -235,10 +232,10 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 static bool esp_bt_check_wakeup_by_bt(void);
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
-#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
 #include "tinycrypt/ecc.h"
 static int ecc_rand_func(uint8_t *dst, unsigned int len);
-#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
 /* Local variable definition
  ***************************************************************************
  */
@@ -779,7 +776,7 @@ esp_err_t controller_sleep_init(modem_clock_lpclk_src_t slow_clk_src)
 
     // enable light sleep
 #ifdef CONFIG_PM_ENABLE
-    rc = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "bt", &s_pm_lock);
+    rc = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock);
     if (rc != ESP_OK) {
         goto error;
     }
@@ -1031,9 +1028,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "hci transport init failed %d", ret);
         goto free_controller;
     }
-#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
     uECC_set_rng(ecc_rand_func);
-#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
     return ESP_OK;
 free_controller:
     hci_transport_deinit();
@@ -1447,7 +1444,7 @@ uint8_t esp_ble_get_chip_rev_version(void)
 #if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #define BLE_SM_KEY_ERR 0x17
 #define BLE_PUB_KEY_LEN 65
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 #if CONFIG_BT_LE_SM_SC
 #include "psa/crypto.h"
 static const char *TAG_SM_ALG = "ble_sm_alg";
@@ -1484,7 +1481,7 @@ static int ecc_rand_func(uint8_t *dst, unsigned int len)
 
 #endif // CONFIG_BT_CONTROLLER_ONLY
 #endif // CONFIG_BT_LE_SM_SC
-#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 
 /* Based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
@@ -1503,7 +1500,7 @@ int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_
 
     swap_buf(priv, our_priv_key, 32);
 
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
     // PSA expects 65 bytes: 0x04 prefix + X (32 bytes) + Y (32 bytes)
     pk[0] = 0x04; // Uncompressed format for public key
     swap_buf(&pk[1], peer_pub_key_x, 32);
@@ -1554,13 +1551,13 @@ exit:
     if (rc == TC_CRYPTO_FAIL) {
         return BLE_SM_KEY_ERR;
     }
-#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 
     swap_buf(out_dhkey, dh, 32);
     return 0;
 }
 
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 static int mbedtls_gen_keypair(uint8_t *public_key, uint8_t *private_key)
 {
     int rc = BLE_SM_KEY_ERR;
@@ -1601,7 +1598,7 @@ exit:
 
     return 0;
 }
-#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif  // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 
 /**
  * pub: BLE_PUB_KEY_LEN bytes
@@ -1617,7 +1614,7 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
     uint8_t pk[BLE_PUB_KEY_LEN];
 
     do {
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
         if (mbedtls_gen_keypair(pk, priv) != 0) {
             return BLE_SM_KEY_ERR;
         }
@@ -1625,11 +1622,11 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
         if (uECC_make_key(pk, priv, uECC_secp256r1()) != TC_CRYPTO_SUCCESS) {
             return BLE_SM_KEY_ERR;
         }
-#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#endif  // CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
         /* Make sure generated key isn't debug key. */
     } while (memcmp(priv, ble_sm_alg_dbg_priv_key, 32) == 0);
 
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
     // PSA returns 65 bytes: 0x04 prefix + X (32 bytes) + Y (32 bytes)
     // Skip the 0x04 prefix when copying to pub
     swap_buf(pub, &pk[1], 32);

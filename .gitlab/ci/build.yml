@@ -132,6 +132,8 @@ generate_build_child_pipeline:
       -p examples
       -p tools/test_apps
       --modified-files $MR_MODIFIED_FILES
+    - shuf test_related_apps.txt -o test_related_apps.txt
+    - shuf non_test_related_apps.txt -o non_test_related_apps.txt
 
 build_child_pipeline:
   stage: build

@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_coexist.h"
 #include "private/esp_coexist_internal.h"
+#include "esp_private/startup_internal.h"
 #include "soc/soc_caps.h"
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
@@ -295,3 +296,17 @@ esp_err_t esp_coex_wifi_i154_enable(void)
     return ESP_OK;
 }
 #endif
+
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+void esp_coex_init_include_func(void)
+{
+    // Hook to force the linker to include this file
+}
+
+ESP_SYSTEM_INIT_FN(init_coexist, SECONDARY, BIT(0), 204)
+{
+    esp_coex_adapter_register(&g_coex_adapter_funcs);
+    coex_pre_init();
+    return ESP_OK;
+}
+#endif // CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE

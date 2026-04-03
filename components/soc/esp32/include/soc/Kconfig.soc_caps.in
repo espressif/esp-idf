@@ -83,7 +83,7 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V1_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
@@ -159,11 +159,19 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_REGI2C_SUPPORTED
+    bool
+    default y
+
 config SOC_MPU_SUPPORTED
     bool
     default y
 
 config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_WDT_SUPPORTED
     bool
     default y
 
@@ -339,6 +347,14 @@ config SOC_GPIO_PIN_COUNT
     int
     default 40
 
+config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+    bool
+    default y
+
+config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
+    int
+    default 0
+
 config SOC_GPIO_VALID_GPIO_MASK
     hex
     default 0xFFFFFFFFFF
@@ -499,6 +515,10 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
+config SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+    bool
+    default y
+
 config SOC_SPI_PERIPH_NUM
     int
     default 3
@@ -511,6 +531,10 @@ config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -518,6 +542,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V1
+    bool
+    default y
 
 config SOC_TOUCH_SENSOR_VERSION
     int
@@ -695,6 +723,10 @@ config SOC_PM_MODEM_PD_BY_SW
     bool
     default y
 
+config SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP
+    bool
+    default y
+
 config SOC_CLK_APLL_SUPPORTED
     bool
     default y
@@ -788,5 +820,9 @@ config SOC_PHY_COMBO_MODULE
     default y
 
 config SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+    bool
+    default y
+
+config SOC_EMAC_REF_CLK_FROM_APLL
     bool
     default y

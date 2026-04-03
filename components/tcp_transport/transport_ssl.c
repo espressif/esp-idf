@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,8 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
         ssl->ssl_initialized = true;
         ssl->tls = esp_tls_init();
         if (!ssl->tls) {
+            ESP_LOGE(TAG, "Failed to initialize TLS");
+            ssl->ssl_initialized = false;
             return -1;
         }
         ssl->conn_state = TRANS_SSL_CONNECTING;
@@ -82,6 +84,10 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
             if (esp_tls_get_conn_sockfd(ssl->tls, &ssl->sockfd) != ESP_OK) {
                 ESP_LOGE(TAG, "Error in obtaining socket fd for the session");
                 esp_tls_conn_destroy(ssl->tls);
+                ssl->tls = NULL;
+                ssl->conn_state = TRANS_SSL_INIT;
+                ssl->ssl_initialized = false;
+                ssl->sockfd = INVALID_SOCKET;
                 return -1;
             }
         }
@@ -112,6 +118,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     ssl->tls = esp_tls_init();
     if (ssl->tls == NULL) {
         ESP_LOGE(TAG, "Failed to initialize new connection object");
+        ssl->ssl_initialized = false;
         capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_NO_MEM);
         return -1;
     }
@@ -135,6 +142,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
 exit_failure:
         esp_tls_conn_destroy(ssl->tls);
         ssl->tls = NULL;
+        ssl->ssl_initialized = false;
         ssl->sockfd = INVALID_SOCKET;
         return -1;
 }

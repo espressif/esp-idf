@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,23 @@ void static test_isr(void*arg)
 }
 
 
+TEST_CASE("Intr_alloc test, private ints cannot have names", "[intr_alloc]")
+{
+    intr_handle_t handle_1;
+
+    const char *name = "test_private_interrupt_line";
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = name,
+    };
+
+    esp_err_t err = esp_intr_alloc_info(&info, &handle_1);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+}
+
 TEST_CASE("Intr_alloc test, shared interrupts don't affect level", "[intr_alloc]")
 {
     intr_handle_t handle_lvl_1;
@@ -156,6 +173,40 @@ TEST_CASE("Intr_alloc test, shared interrupts don't affect level", "[intr_alloc]
 
     TEST_ESP_OK(esp_intr_free(handle_lvl_1));
     TEST_ESP_OK(esp_intr_free(handle_lvl_2));
+}
+
+TEST_CASE("Intr_alloc test, shared interrupts groups don't affect each other", "[intr_alloc]")
+{
+    intr_handle_t handle_group1;
+    intr_handle_t handle_group2;
+
+    /* Create a first group of interrupts with name "group1" */
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = "group1",
+    };
+    esp_err_t err = esp_intr_alloc_info(&info, &handle_group1);
+    TEST_ESP_OK(err);
+
+    /* Allocate a second group of interrupts with name "group2" */
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    info.flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED;
+    info.bind_by.name = "group2";
+    err = esp_intr_alloc_info(&info, &handle_group2);
+    TEST_ESP_OK(err);
+
+    /* Make sure the allocated CPU line is NOT the same for both sources */
+    const int intlvl1 = esp_intr_get_intno(handle_group1);
+    const int intlvl2 = esp_intr_get_intno(handle_group2);
+    printf("Group 1 interrupt allocated: %d\n", intlvl1);
+    printf("Group 2 interrupt allocated: %d\n", intlvl2);
+    TEST_ASSERT(intlvl1 != intlvl2);
+
+    TEST_ESP_OK(esp_intr_free(handle_group1));
+    TEST_ESP_OK(esp_intr_free(handle_group2));
 }
 
 
@@ -223,12 +274,297 @@ TEST_CASE("Intr_alloc test, shared interrupt line for two sources", "[intr_alloc
     err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
                               ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
                               test_isr, NULL, handle_1, &handle_2);
-    TEST_ASSERT(err != ESP_OK);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+
+    /* Try to allocate a new interrupt to the same handler but with IRAM attribute, it must fail */
+    err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
+                              ESP_INTR_FLAG_LEVEL1  | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM,
+                              test_isr, NULL, handle_1, &handle_2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
 
     /* Free the remaining handler */
     TEST_ESP_OK(esp_intr_free(handle_1));
 }
 
+
+
+/**
+ * Make sure we can map two given sources to the same interrupt line thanks to a name.
+ */
+TEST_CASE("Intr_alloc test, shared interrupt line for two sources using name", "[intr_alloc]")
+{
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    const char *name = "test_shared_interrupt_line";
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = name,
+    };
+    esp_err_t err = esp_intr_alloc_info(&info, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Map another source to the exact same interrupt line */
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    info.flags = ESP_INTR_FLAG_LEVEL1  | ESP_INTR_FLAG_SHARED;
+    err = esp_intr_alloc_info(&info, &handle_2);
+    TEST_ESP_OK(err);
+    /* Make sure they are both using the same interrupt line */
+    TEST_ASSERT_EQUAL(esp_intr_get_intno(handle_1), esp_intr_get_intno(handle_2));
+
+    /* Reallocate the second interrupt source with a higher level, it must fail */
+    TEST_ESP_OK(esp_intr_free(handle_2));
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    info.flags = ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED;
+    err = esp_intr_alloc_info(&info, &handle_2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
+
+
+/**
+ * Make sure we can allocate a privately shared interrupt line and map two given sources to it.
+ */
+ TEST_CASE("Intr_alloc test, privately shared interrupt line for two sources", "[intr_alloc]")
+ {
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    esp_err_t err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+                                ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+                                test_isr, NULL, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Map another source to the exact same interrupt line */
+    err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
+                            ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+                            test_isr, NULL, handle_1, &handle_2);
+    TEST_ESP_OK(err);
+    /* Make sure they are both using the same interrupt line */
+    TEST_ASSERT_EQUAL(esp_intr_get_intno(handle_1), esp_intr_get_intno(handle_2));
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_2));
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
+
+/**
+ * Make sure we can allocate a privately shared interrupt line and map two given sources to it thanks to a name.
+ */
+ TEST_CASE("Intr_alloc test, privately shared interrupt line for two sources using name", "[intr_alloc]")
+ {
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    const char *name = "test_shared_interrupt_line";
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = name,
+    };
+
+    esp_err_t err = esp_intr_alloc_info(&info, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Map another source to the exact same interrupt line */
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    info.flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE;
+    err = esp_intr_alloc_info(&info, &handle_2);
+    TEST_ESP_OK(err);
+
+    /* Make sure they are both using the same interrupt line */
+    TEST_ASSERT_EQUAL(esp_intr_get_intno(handle_1), esp_intr_get_intno(handle_2));
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_2));
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
+
+/**
+ * Make sure we can allocate a privately shared interrupt line and other shared interrupts would NOT be mapped to it.
+ */
+TEST_CASE("Intr_alloc test, privately shared interrupt line does not affect other shared interrupts", "[intr_alloc]")
+{
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    esp_err_t err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+                                ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+                                test_isr, NULL, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Try to map the other interrupt source to the same interrupt line, it should fail because of the different flags */
+    err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
+                            ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+                            test_isr, NULL, handle_1, &handle_2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+
+    /* Map another source to any other interrupt line */
+    printf("Allocating second source to the same interrupt line...\n");
+    err = esp_intr_alloc_bind(SYS_CPU_INTR_FROM_CPU_3_SOURCE,
+                            ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+                            test_isr, NULL, NULL, &handle_2);
+    TEST_ESP_OK(err);
+
+    /* Make sure the allocated interrupt lines are different */
+    TEST_ASSERT_NOT_EQUAL(esp_intr_get_intno(handle_1), esp_intr_get_intno(handle_2));
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_2));
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
+
+
+TEST_CASE("Intr_alloc test, public shared interrupt cannot be allocated to a private group using a name", "[intr_alloc]")
+{
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    const char *name = "test_shared_interrupt_line";
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = name,
+    };
+
+    esp_err_t err = esp_intr_alloc_info(&info, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Mark this interrupt source as looking for a publicly shared interrupt line */
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    info.flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED;
+    err = esp_intr_alloc_info(&info, &handle_2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
+
+
+TEST_CASE("Intr_alloc test, shared ints fails giving both handler and name", "[intr_alloc]")
+{
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    const char *name = "test_shared_interrupt_line";
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = name,
+    };
+
+    esp_err_t err = esp_intr_alloc_info(&info, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Provide the returned handle and a name, it should fail */
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    info.bind_by.handle = handle_1;
+    info.flags = ESP_INTR_FLAG_LEVEL1  | ESP_INTR_FLAG_SHARED_PRIVATE;
+    err = esp_intr_alloc_info(&info, &handle_2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
+
+/* Allocate an interrupt on the other core */
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+
+typedef struct {
+    TaskHandle_t main_task;
+    esp_intr_alloc_info_t info;
+} args_t;
+
+void IRAM_ATTR test_isr_other_core(void *arg)
+{
+    args_t *args = (args_t *)arg;
+    printf("Interrupt on other core called.\n");
+
+    /* Should return an error */
+    esp_err_t err = esp_intr_alloc_info(&args->info, NULL);
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, err);
+
+    /* Send a signal to the main task to continue */
+    xTaskNotifyGive(args->main_task);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Intr_alloc test, shared ints fails giving a handler on other core", "[intr_alloc]")
+{
+    intr_handle_t isr_handle;
+    args_t args = {
+        .main_task = NULL,
+        .info = {
+            .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+            .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+            .handler = test_isr,
+            .arg = NULL,
+            .bind_by.name = "test_shared_interrupt_line",
+        },
+    };
+    args.main_task = xTaskGetCurrentTaskHandle();
+
+    esp_err_t err = esp_intr_alloc_info(&args.info, &isr_handle);
+    TEST_ESP_OK(err);
+
+    int core_id = esp_cpu_get_core_id();
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(test_isr_other_core, "test_isr_other_core",
+                                                      2048, (void *)&args, 10, NULL, core_id == 0 ? 1 : 0));
+
+    /* Wait for the task to finish */
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, portMAX_DELAY));
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(isr_handle));
+}
+#endif
+
+
+TEST_CASE("Intr_alloc test, named group gets freed when the last interrupt is freed", "[intr_alloc]")
+{
+    intr_handle_t handle;
+
+    esp_intr_alloc_info_t info = {
+        .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
+        .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+        .handler = test_isr,
+        .arg = NULL,
+        .bind_by.name = "test_shared_interrupt_line_1",
+    };
+
+    esp_err_t err = esp_intr_alloc_info(&info, &handle);
+    TEST_ESP_OK(err);
+
+    /* ave the interrupt number */
+    int intno = esp_intr_get_intno(handle);
+    TEST_ASSERT_NOT_EQUAL(-1, intno);
+
+    /* Free the interrupt we just allocated and make sure we can get it back with another name right after */
+    TEST_ESP_OK(esp_intr_free(handle));
+
+    /* Allocate a new interrupt with the same name, it should succeed */
+    info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    /* Change the name to make sure the former interrupt name got renamed */
+    info.bind_by.name = "test_shared_interrupt_line_2";
+    err = esp_intr_alloc_info(&info, &handle);
+    TEST_ESP_OK(err);
+
+    /* Make sure that the interrupt number is the same */
+    TEST_ASSERT_EQUAL(intno, esp_intr_get_intno(handle));
+
+    TEST_ESP_OK(esp_intr_free(handle));
+}
 
 TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_alloc]")
 {

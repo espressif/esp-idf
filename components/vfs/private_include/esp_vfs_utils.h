@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
  * It is enough to check just one of them for NULL, as both variants are part of a union.
  */
 #define CHECK_AND_CALL(ret, r, pvfs, func, ...) \
-    if (pvfs->vfs->func == NULL) { \
+    if (pvfs->vfs->func ## _p == NULL) { \
         __errno_r(r) = ENOSYS; \
         return -1; \
     } \
@@ -29,7 +29,7 @@
     }
 
 #define CHECK_AND_CALL_SUBCOMPONENT(ret, r, pvfs, component, func, ...) \
-    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
+    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func ## _p == NULL) { \
         __errno_r(r) = ENOSYS; \
         return -1; \
     } \
@@ -40,7 +40,7 @@
     }
 
 #define CHECK_AND_CALLV(r, pvfs, func, ...) \
-    if (pvfs->vfs->func == NULL) { \
+    if (pvfs->vfs->func ## _p == NULL) { \
         __errno_r(r) = ENOSYS; \
         return; \
     } \
@@ -51,7 +51,7 @@
     }
 
 #define CHECK_AND_CALL_SUBCOMPONENTV(r, pvfs, component, func, ...) \
-    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
+    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func ## _p == NULL) { \
         __errno_r(r) = ENOSYS; \
         return; \
     } \
@@ -62,7 +62,7 @@
     }
 
 #define CHECK_AND_CALLP(ret, r, pvfs, func, ...) \
-    if (pvfs->vfs->func == NULL) { \
+    if (pvfs->vfs->func ## _p == NULL) { \
         __errno_r(r) = ENOSYS; \
         return NULL; \
     } \
@@ -73,7 +73,7 @@
     }
 
 #define CHECK_AND_CALL_SUBCOMPONENTP(ret, r, pvfs, component, func, ...) \
-    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
+    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func ## _p == NULL) { \
         __errno_r(r) = ENOSYS; \
         return NULL; \
     } \

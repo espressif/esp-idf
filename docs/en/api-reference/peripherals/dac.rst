@@ -22,27 +22,6 @@ The DAC peripheral supports outputting analog signal in the following ways:
 
 For other analog output options, see :doc:`Sigma-Delta Modulation <sdm>` and :doc:`LED Control <ledc>`. Both modules produce high-frequency PWM/PDM output, which can be hardware low-pass filtered in order to generate a lower frequency analog output.
 
-DAC File Structure
-------------------
-
-.. figure:: ../../../_static/diagrams/dac/dac_file_structure.png
-    :align: center
-    :alt: DAC file structure
-
-    DAC File Structure
-
-
-**Public headers that need to be included in the DAC application are listed as follows:**
-
-- ``dac.h``: The top header file of the legacy DAC driver, which should be only included in the apps which use the legacy driver API.
-- ``dac_oneshot.h``: The top header file of the new DAC driver, which should be included in the apps which use the new driver API with one-shot mode.
-- ``dac_cosine.h``: The top header file of the new DAC driver, which should be included in the apps which use the new driver API with cosine mode.
-- ``dac_continuous.h``: The top header file of the new DAC driver, which should be included in the apps which use the new driver API with continuous mode.
-
-.. note::
-
-    The legacy driver cannot coexist with the new driver. Include ``dac.h`` to use the legacy driver or ``dac_oneshot.h``, ``dac_cosine.h``, and ``dac_continuous.h`` to use the new driver. The legacy driver might be removed in the future.
-
 Functional Overview
 -------------------
 
@@ -98,6 +77,8 @@ When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the 
 
 When using DAC driver in continuous mode, it can prevent the system from changing or stopping the clock source in DMA or cosine mode by acquiring a power management lock. When the clock source is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`. When the clock source is APLL (only in DMA mode), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Whenever the DAC is converting (i.e., DMA or cosine wave generator is working), the driver guarantees that the power management lock is acquired after calling :cpp:func:`dac_continuous_enable`. Likewise, the driver will release the lock when :cpp:func:`dac_continuous_disable` is called.
 
+.. _dac-iram-safe:
+
 IRAM Safe
 ^^^^^^^^^
 
@@ -119,7 +100,7 @@ All the public DAC APIs are guaranteed to be thread safe by the driver, which me
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled. See `IRAM Safe <#iram-safe>`__ for more information.
+- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`dac-iram-safe` for more information.
 - :ref:`CONFIG_DAC_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
 
 .. only:: esp32

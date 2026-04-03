@@ -196,6 +196,106 @@ function(target_linker_script target deptype scriptfiles)
 endfunction()
 
 #[[
+    __idf_component_process_optional_requires()
+
+    Called by idf_build_library() before LIBRARY_COMPONENTS_LINKED is computed.
+    For each pending (caller, type, req) entry recorded by
+    idf_component_optional_requires, links req's interface target to the
+    caller's real target if both are present in this library.
+#]]
+function(__idf_component_process_optional_requires)
+    # Nothing to do if no component has called idf_component_optional_requires.
+    idf_build_get_property(callers __DEFERRED_OPTIONAL_CALLERS)
+    if(NOT callers)
+        return()
+    endif()
+
+    # DEFERRED mode + multiple libraries is disallowed
+    idf_build_get_property(libraries_list LIBRARY_INTERFACES)
+    list(LENGTH libraries_list lib_count)
+    if(lib_count GREATER 1)
+        idf_die("DEFERRED optional requires mode cannot be used when building "
+                "multiple libraries (detected ${lib_count} libraries). "
+                "Set IDF_COMPONENT_OPTIONAL_REQUIRES_MODE to IMMEDIATE for multi-library projects.")
+    endif()
+
+    # Fetch the components included in the project (single library only here,
+    # so this equals the library's component set).
+    idf_build_get_property(components_included COMPONENTS_INCLUDED)
+    set(library_component_interfaces "")
+    foreach(comp_name IN LISTS components_included)
+        __get_component_interface(COMPONENT "${comp_name}" OUTPUT dep_interface)
+        if(dep_interface AND NOT "${dep_interface}" IN_LIST library_component_interfaces)
+            list(APPEND library_component_interfaces "${dep_interface}")
+        endif()
+    endforeach()
+
+    # For every caller that recorded optional requirements, check whether it is
+    # part of this library and, if so, apply any pending pairs whose
+    # requirement is also in the library.
+    foreach(caller_target IN LISTS callers)
+        # Resolve the caller target to its component interface.
+        __get_component_interface(COMPONENT "${caller_target}" OUTPUT caller_interface)
+        if(NOT caller_interface)
+            continue()
+        endif()
+
+        # Skip if this caller is not linked into the current library.
+        if(NOT "${caller_interface}" IN_LIST library_component_interfaces)
+            continue()
+        endif()
+
+        # Fetch this caller's pending pairs and the pairs already processed in
+        # earlier idf_build_library() calls.
+        idf_build_get_property(pairs "__OPT_REQ_${caller_target}")
+        idf_build_get_property(done  "__OPT_REQ_DONE_${caller_target}")
+
+        foreach(pair IN LISTS pairs)
+            # Skip pairs already processed for a previous library. The
+            # target_link_libraries call and property updates are permanent
+            # global mutations; repeating them would be redundant.
+            if("${pair}" IN_LIST done)
+                continue()
+            endif()
+
+            # Decode the "type::::req_interface" entry.
+            string(REPLACE "::::" ";" split "${pair}")
+            list(GET split 0 link_type)
+            list(GET split 1 req_interface)
+
+            # Skip if the optional requirement is not part of this library.
+            if(NOT "${req_interface}" IN_LIST library_component_interfaces)
+                continue()
+            endif()
+
+            # Link the caller's real target to the requirement's interface target.
+            target_link_libraries("${caller_target}" "${link_type}" "${req_interface}")
+
+            # Update the caller's REQUIRES or PRIV_REQUIRES property.
+            idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
+            if("${link_type}" STREQUAL "PRIVATE")
+                idf_component_get_property(existing "${caller_interface}" PRIV_REQUIRES)
+                if(NOT "${req_name}" IN_LIST existing)
+                    idf_component_set_property("${caller_interface}" PRIV_REQUIRES
+                                               "${req_name}" APPEND)
+                endif()
+            elseif("${link_type}" STREQUAL "PUBLIC" OR "${link_type}" STREQUAL "INTERFACE")
+                idf_component_get_property(existing "${caller_interface}" REQUIRES)
+                if(NOT "${req_name}" IN_LIST existing)
+                    idf_component_set_property("${caller_interface}" REQUIRES
+                                               "${req_name}" APPEND)
+                endif()
+            endif()
+
+            # Mark this pair as done so it is not processed again for subsequent
+            # libraries.
+            idf_build_set_property("__OPT_REQ_DONE_${caller_target}" "${pair}" APPEND)
+        endforeach()
+    endforeach()
+endfunction()
+
+
+#[[api
 .. cmakev2:function:: idf_component_optional_requires
 
     .. code-block:: cmake
@@ -212,44 +312,86 @@ endfunction()
         evaluated component. It may be provided multiple times.
 
     Add a dependency on a specific component only if the component is
-    recognized by the build system. The component is included if needed and
-    added as a requirement for the currently evaluated component using
-    target_link_libraries. This function should be avoided in cmakev2, where
-    dependencies should be added based on configuration options. This is purely
-    for backward compatibility with cmakev1.
+    recognized by the build system. The behavior is controlled by the
+    ``IDF_COMPONENT_OPTIONAL_REQUIRES_MODE`` build property:
+
+    * **IMMEDIATE** (default): Include the component and link it to the
+      caller if it is discovered. Safe for multi-library projects but may
+      pull in more components than strictly needed.
+    * **DEFERRED**: Do not include or link immediately; record the request
+      and resolve it in :cmakev2:ref:`idf_build_library` so that the
+      component is linked only when it is part of the library's dependency
+      graph. Matches v1 semantics and reduces unnecessary components, but
+      must not be used when building multiple libraries (see docs).
+
+    .. note::
+        This function should be avoided in cmakev2, where
+        dependencies should be added based on configuration options. This is purely
+        for backward compatibility with cmakev1.
+
+    .. warning::
+        In multi-library projects with **DEFERRED** mode, optional requires
+        resolved when processing a later library apply globally to shared
+        component targets. Earlier libraries then link that optional component
+        too, but their per-library metadata (e.g. linker fragments) was
+        already computed and is not updated. DEFERRED mode is therefore
+        disallowed when more than one library is built.
 #]]
 function(idf_component_optional_requires type)
     set(optional_reqs ${ARGN})
-    foreach(req ${optional_reqs})
-        __get_component_interface(COMPONENT "${req}" OUTPUT req_interface)
-        if("${req_interface}" STREQUAL "NOTFOUND")
-            # The component is not recognized by the build system.
-            continue()
-        endif()
-        idf_component_include("${req}")
 
-        # Map the requested type into PRIV_REQUIRES and REQUIRES, allowing the
-        # requirement to be added to the appropriate component dependency
-        # property.
-        if("${type}" STREQUAL "PRIVATE")
-            set(req_type PRIV_REQUIRES)
-        elseif("${type}" STREQUAL "PUBLIC")
-            set(req_type REQUIRES)
-        else()
-            set(req_type "")
-        endif()
+    idf_build_get_property(mode IDF_COMPONENT_OPTIONAL_REQUIRES_MODE)
+    if(NOT mode)
+        set(mode IMMEDIATE)
+    endif()
 
-        if(req_type)
-            idf_component_get_property(req_name "${req}" COMPONENT_NAME)
-            idf_component_get_property(target_reqs ${COMPONENT_TARGET} ${req_type})
-            if(NOT "${req_name}" IN_LIST target_reqs)
-                idf_component_set_property(${COMPONENT_TARGET} ${req_type} "${req_name}" APPEND)
+    if("${mode}" STREQUAL "DEFERRED")
+        # DEFERRED mode: record for resolution in idf_build_library.
+        # The component is linked only if it is part of the library's dependency graph.
+        foreach(req ${optional_reqs})
+            __get_component_interface(COMPONENT "${req}" OUTPUT req_interface)
+            if("${req_interface}" STREQUAL "NOTFOUND")
+                continue()
+            endif()
+
+            idf_build_get_property(callers __DEFERRED_OPTIONAL_CALLERS)
+            if(NOT "${COMPONENT_TARGET}" IN_LIST callers)
+                idf_build_set_property(__DEFERRED_OPTIONAL_CALLERS "${COMPONENT_TARGET}" APPEND)
+            endif()
+
+            # Store the optional requirement in the __OPT_REQ_<component_target> property.
+            idf_build_set_property("__OPT_REQ_${COMPONENT_TARGET}"
+                                   "${type}::::${req_interface}" APPEND)
+        endforeach()
+    else()
+        # IMMEDIATE mode: include and link discovered components unconditionally.
+        foreach(req ${optional_reqs})
+            __get_component_interface(COMPONENT "${req}" OUTPUT req_interface)
+            if("${req_interface}" STREQUAL "NOTFOUND")
+                continue()
+            endif()
+            idf_component_include("${req}")
+
+            if("${type}" STREQUAL "PRIVATE")
+                set(req_type PRIV_REQUIRES)
+            elseif("${type}" STREQUAL "PUBLIC")
+                set(req_type REQUIRES)
+            else()
+                set(req_type "")
+            endif()
+
+            if(req_type)
+                idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
+                idf_component_get_property(target_reqs "${COMPONENT_NAME}" ${req_type})
+                if(NOT "${req_name}" IN_LIST target_reqs)
+                    idf_component_set_property("${COMPONENT_NAME}" ${req_type} "${req_name}" APPEND)
+                    target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
+                endif()
+            else()
                 target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
             endif()
-        else()
-            target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
-        endif()
-    endforeach()
+        endforeach()
+    endif()
 endfunction()
 
 #[[
@@ -277,10 +419,14 @@ function(__init_common_components)
 
     idf_build_get_property(idf_target IDF_TARGET)
     idf_build_get_property(idf_target_arch IDF_TARGET_ARCH)
+    idf_build_get_property(explicit_requires_common __COMPONENT_REQUIRES_COMMON)
 
     # Define common components that are included as dependencies for each
     # component.
-    if("${idf_target}" STREQUAL "linux")
+    if(explicit_requires_common)
+        set(requires_common "${explicit_requires_common}")
+
+    elseif("${idf_target}" STREQUAL "linux")
         set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux
                             esp_stdio)
     else()
@@ -427,7 +573,7 @@ function(idf_component_register)
     idf_build_get_property(compile_definitions COMPILE_DEFINITIONS GENERATOR_EXPRESSION)
     add_compile_definitions("${compile_definitions}")
 
-    __get_compile_options(OUTPUT compile_options)
+    idf_build_get_compile_options(compile_options)
     add_compile_options("${compile_options}")
 
     idf_build_get_property(common_component_interfaces __COMMON_COMPONENT_INTERFACES)

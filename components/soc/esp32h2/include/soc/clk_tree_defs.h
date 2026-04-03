@@ -382,7 +382,7 @@ typedef enum {
 #define SOC_ANA_CMPR_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL}
 
 /**
- * @brief Sigma Delta Modulator clock source
+ * @brief Analog Comparator clock source
  */
 typedef enum {
     ANA_CMPR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                   /*!< Select XTAL clock as the source clock */
@@ -462,6 +462,7 @@ typedef enum {
  * @brief Array initializer for all supported clock sources of LEDC
  */
 #define SOC_LEDC_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F96M, SOC_MOD_CLK_RC_FAST}
+#define SOC_LEDC_CLK_STRS {"LEDC_USE_XTAL_CLK", "LEDC_USE_PLL_DIV_CLK", "LEDC_USE_RC_FAST_CLK"}
 
 /**
  * @brief Type of LEDC clock source, reserved for the legacy LEDC driver

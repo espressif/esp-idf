@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,26 +10,26 @@
 #include "esp_rom_sys.h"
 #include "esp_stdio.h"
 #include <sys/errno.h>
+
 #if CONFIG_VFS_SUPPORT_IO
 
 #if CONFIG_ESP_CONSOLE_USB_CDC
 #include "esp_vfs_cdcacm.h"
-#include "esp_private/usb_console.h"
-#endif
-#if CONFIG_ESP_CONSOLE_USB_CDC
 #include "esp_private/esp_vfs_cdcacm.h"
-#endif
+#endif // CONFIG_ESP_CONSOLE_USB_CDC
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
 #include "driver/esp_private/usb_serial_jtag_vfs.h"
-#endif
+#include "driver/usb_serial_jtag_vfs.h"
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+
 #if CONFIG_ESP_CONSOLE_UART
 #include "driver/esp_private/uart_vfs.h"
-#endif
+#include "driver/uart_vfs.h"
+#endif // CONFIG_ESP_CONSOLE_UART
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/nullfs.h"
-#endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -47,8 +47,6 @@ typedef struct {
     int fd_secondary;
 } vfs_console_context_t;
 
-#if CONFIG_VFS_SUPPORT_IO
-
 // Secondary register part.
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 const static esp_vfs_fs_ops_t *secondary_vfs = NULL;
@@ -60,7 +58,7 @@ static vfs_console_context_t vfs_console = {0};
 
 static size_t s_open_count = 0;
 
-int console_open(const char * path, int flags, int mode)
+int console_open(__attribute__((unused)) void *ctx, const char * path, int flags, int mode)
 {
     if (s_open_count > 0) {
         // Underlying fd is already open, so just increment the open count
@@ -90,7 +88,7 @@ int console_open(const char * path, int flags, int mode)
     return 0;
 }
 
-ssize_t console_write(int fd, const void *data, size_t size)
+ssize_t console_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
     write(vfs_console.fd_primary, data, size);
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
@@ -99,12 +97,12 @@ ssize_t console_write(int fd, const void *data, size_t size)
     return size;
 }
 
-int console_fstat(int fd, struct stat * st)
+int console_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 {
     return fstat(vfs_console.fd_primary, st);
 }
 
-int console_close(int fd)
+int console_close(__attribute__((unused)) void *ctx, int fd)
 {
     if (s_open_count == 0) {
         errno = EBADF;
@@ -126,17 +124,17 @@ int console_close(int fd)
     return 0;
 }
 
-ssize_t console_read(int fd, void * dst, size_t size)
+ssize_t console_read(__attribute__((unused)) void *ctx, int fd, void * dst, size_t size)
 {
     return read(vfs_console.fd_primary, dst, size);
 }
 
-int console_fcntl(int fd, int cmd, int arg)
+int console_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     return fcntl(vfs_console.fd_primary, cmd, arg);
 }
 
-int console_fsync(int fd)
+int console_fsync(__attribute__((unused)) void *ctx, int fd)
 {
     const int ret_val = fsync(vfs_console.fd_primary);
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
@@ -146,7 +144,7 @@ int console_fsync(int fd)
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-int console_access(const char *path, int amode)
+int console_access(__attribute__((unused)) void *ctx, const char *path, int amode)
 {
     // currently only UART support DIR.
     return access("/dev/uart/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), amode);
@@ -179,22 +177,22 @@ esp_err_t console_end_select(void *end_select_args)
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 
-int console_tcsetattr(int fd, int optional_actions, const struct termios *p)
+int console_tcsetattr(__attribute__((unused)) void *ctx, int fd, int optional_actions, const struct termios *p)
 {
     return tcsetattr(vfs_console.fd_primary, optional_actions, p);
 }
 
-int console_tcgetattr(int fd, struct termios *p)
+int console_tcgetattr(__attribute__((unused)) void *ctx, int fd, struct termios *p)
 {
     return tcgetattr(vfs_console.fd_primary, p);
 }
 
-int console_tcdrain(int fd)
+int console_tcdrain(__attribute__((unused)) void *ctx, int fd)
 {
     return tcdrain(vfs_console.fd_primary);
 }
 
-int console_tcflush(int fd, int select)
+int console_tcflush(__attribute__((unused)) void *ctx, int fd, int select)
 {
     return tcflush(vfs_console.fd_primary, select);
 }
@@ -202,7 +200,7 @@ int console_tcflush(int fd, int select)
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 static const esp_vfs_dir_ops_t s_vfs_console_dir = {
-    .access = &console_access,
+    .access_p = &console_access,
 };
 #endif // CONFIG_VFS_SUPPORT_DIR
 
@@ -215,21 +213,21 @@ static const esp_vfs_select_ops_t s_vfs_console_select = {
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static const esp_vfs_termios_ops_t s_vfs_console_termios = {
-    .tcsetattr = &console_tcsetattr,
-    .tcgetattr = &console_tcgetattr,
-    .tcdrain = &console_tcdrain,
-    .tcflush = &console_tcflush,
+    .tcsetattr_p = &console_tcsetattr,
+    .tcgetattr_p = &console_tcgetattr,
+    .tcdrain_p = &console_tcdrain,
+    .tcflush_p = &console_tcflush,
 };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 static const esp_vfs_fs_ops_t s_vfs_console = {
-    .write = &console_write,
-    .open = &console_open,
-    .fstat = &console_fstat,
-    .close = &console_close,
-    .read = &console_read,
-    .fcntl = &console_fcntl,
-    .fsync = &console_fsync,
+    .write_p = &console_write,
+    .open_p = &console_open,
+    .fstat_p = &console_fstat,
+    .close_p = &console_close,
+    .read_p = &console_read,
+    .fcntl_p = &console_fcntl,
+    .fsync_p = &console_fsync,
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
     .dir = &s_vfs_console_dir,
@@ -246,7 +244,7 @@ static const esp_vfs_fs_ops_t s_vfs_console = {
 
 static esp_err_t esp_vfs_dev_console_register(void)
 {
-    return esp_vfs_register_fs(ESP_VFS_DEV_CONSOLE, &s_vfs_console, ESP_VFS_FLAG_STATIC, NULL);
+    return esp_vfs_register_fs(ESP_VFS_DEV_CONSOLE, &s_vfs_console, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
 }
 
 esp_err_t esp_stdio_register(void)

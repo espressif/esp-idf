@@ -14,7 +14,9 @@
 #include "driver/gpio.h"
 #include "ptpd.h"
 
-#include "esp_eth_time.h"
+#if CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
+#include "esp_eth_clock.h" // for esp_eth_clock_set_target_time and esp_eth_clock_register_target_cb
+#endif //CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 #include "esp_eth_mac_esp.h"
 
 #define ETH_IF_KEY "ETH_0"
@@ -78,7 +80,7 @@ IRAM_ATTR bool ts_callback(esp_eth_mediator_t *eth, void *user_args)
     timespecadd(&s_next_time, &interval, &s_next_time);
 
     struct timespec curr_time;
-    esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &curr_time);
+    clock_gettime(CLOCK_PTP_SYSTEM, &curr_time);
     // check the next time is in the future
     if (timespeccmp(&s_next_time, &curr_time, >)) {
         esp_eth_clock_set_target_time(CLOCK_PTP_SYSTEM, &s_next_time);
@@ -105,7 +107,7 @@ void app_main(void)
 #elif CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
     struct timespec cur_time;
     // wait for the clock to be available
-    while (esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &cur_time) == -1) {
+    while (clock_gettime(CLOCK_PTP_SYSTEM, &cur_time) == -1) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
     // register callback function which will toggle output pin
@@ -149,7 +151,7 @@ void app_main(void)
         if ((clock_source_valid == true && clock_source_valid_last == false) || first_pass) {
             first_pass = false;
             // get the most recent (now synced) time
-            esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &cur_time);
+            clock_gettime(CLOCK_PTP_SYSTEM, &cur_time);
             // compute the next target time
             s_next_time.tv_sec = 1;
             timespecadd(&s_next_time, &cur_time, &s_next_time);

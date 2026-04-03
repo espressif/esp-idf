@@ -2,6 +2,7 @@
 # Default Variables #
 #####################
 stages:
+  - manual_gate
   - upload_cache
   - pre_check
   - build
@@ -146,7 +147,7 @@ variables:
   # install.sh
   if [[ "${CI_JOB_STAGE}" != "target_test" ]]; then
     section_start "running_install_sh" "Running install.sh"
-    if [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
+    if [[ "${CI_JOB_STAGE}" == "build_doc" || "${CI_JOB_GROUP_NAME}" == *docs* ]]; then
       run_cmd bash install.sh --enable-ci --enable-docs
     else
       run_cmd bash install.sh --enable-ci

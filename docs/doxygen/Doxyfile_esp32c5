@@ -22,4 +22,6 @@ INPUT += \
         $(PROJECT_PATH)/components/esp_tee/include/esp_tee.h \
         $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_sec_storage/include/esp_tee_sec_storage.h \
         $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_ota_ops/include/esp_tee_ota_ops.h \
+        $(PROJECT_PATH)/components/esp_security/include/esp_key_mgr.h \
+        $(PROJECT_PATH)/components/esp_hal_security/include/hal/key_mgr_types.h \
         $(PROJECT_PATH)/components/mbedtls/port/include/psa/initial_attestation.h \

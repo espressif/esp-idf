@@ -147,8 +147,10 @@ function(__build_get_idf_git_revision)
     if(EXISTS "${idf_path}/version.txt")
         file(STRINGS "${idf_path}/version.txt" idf_ver_t)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/version.txt")
-    else()
+    elseif(idf_ver_git)
         set(idf_ver_t ${idf_ver_git})
+    else()
+        set(idf_ver_t "v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
     endif()
     # cut IDF_VER to required 32 characters.
     string(SUBSTRING "${idf_ver_t}" 0 31 idf_ver)
@@ -722,6 +724,21 @@ macro(idf_build_process target)
                     "However, the component manager is not enabled.")
         endif()
     endif()
+
+    idf_build_get_property(prefix __PREFIX)
+
+    file(GLOB root_dep_component_dirs
+        ${IDF_TOOLS_PATH}/root_managed_components/idf${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}/*)
+    list(SORT root_dep_component_dirs)
+    foreach(component_dir ${root_dep_component_dirs})
+        # A potential component must be a directory
+        if(IS_DIRECTORY ${component_dir})
+            __component_dir_quick_check(is_component ${component_dir})
+            if(is_component)
+                __component_add(${component_dir} ${prefix} "idf_managed_components")
+            endif()
+        endif()
+    endforeach()
 
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -460,8 +460,6 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
 
     // enable the video mode
     mipi_dsi_host_ll_enable_video_mode(hal->host, true);
-    // switch the clock lane to high speed mode
-    mipi_dsi_host_ll_set_clock_lane_state(hal->host, MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO);
 
     // enable the DPI output of the DSI bridge
     mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
@@ -620,7 +618,20 @@ static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, i
         do_copy = true;
     }
 
-    if (dpi_panel->draw_bitmap_hook) { // copy using draw bitmap hook
+    if (!do_copy) { // no copy, just do cache memory write back
+        ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
+        // only write back the LCD lines that updated by the draw buffer
+        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
+        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
+        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
+        esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+
+        dpi_panel->cur_fb_index = draw_buf_fb_index;
+        // invoke the trans done callback
+        if (dpi_panel->on_color_trans_done) {
+            dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
+        }
+    } else if (dpi_panel->draw_bitmap_hook) { // copy using draw bitmap hook
         ESP_LOGV(TAG, "copy draw buffer by draw bitmap hook");
         // Note, whether the previous draw operation is finished should be ensured by the hook
 
@@ -642,21 +653,7 @@ static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, i
             .bits_per_pixel = bits_per_pixel,
             .on_hook_end = dpi_panel_draw_bitmap_hook_end,
         };
-
         ESP_RETURN_ON_ERROR(dpi_panel->draw_bitmap_hook(panel, &hook_data, dpi_panel->hook_ctx), TAG, "draw_bitmap_hook failed");
-    } else if (!do_copy) { // no copy, just do cache memory write back
-        ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
-        // only write back the LCD lines that updated by the draw buffer
-        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
-        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
-        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
-        esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-
-        dpi_panel->cur_fb_index = draw_buf_fb_index;
-        // invoke the trans done callback
-        if (dpi_panel->on_color_trans_done) {
-            dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
-        }
     } else { // copy by CPU
         ESP_LOGV(TAG, "copy draw buffer by CPU");
         const uint8_t *from = draw_buffer + (src_y_start * src_x_size + src_x_start) * bits_per_pixel / 8;

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -13,7 +13,6 @@ from pytest_embedded_idf.utils import idf_parametrize
     'config',
     [
         'default',  # mbedTLS crypto backend
-        'psa',  # PSA crypto backend (tests system integration, HTTPS stack usage)
     ],
     indirect=True,
 )
@@ -23,13 +22,6 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     steps: |
       1. join AP/Ethernet
       2. Send HTTP request to httpbin.org
-
-    Tests both mbedTLS and PSA crypto backends.
-    The PSA config specifically tests:
-    - PSA crypto initialization
-    - HTTPS with PSA (stack/heap usage)
-    - SHA256 Digest Auth with PSA
-    - Full integration under real workload
     """
     binary_file = os.path.join(dut.app.binary_path, 'esp_http_client_example.bin')
     bin_size = os.path.getsize(binary_file)

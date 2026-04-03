@@ -1302,7 +1302,7 @@ typedef struct {
     volatile ledc_timerx_reg_t timer[4];
 } ledc_timer_group_reg_t;
 
-typedef struct {
+typedef struct ledc_dev_t {
     volatile ledc_ch_group_reg_t channel_group[1];
     volatile ledc_timer_group_reg_t timer_group[1];
     volatile ledc_int_raw_reg_t int_raw;

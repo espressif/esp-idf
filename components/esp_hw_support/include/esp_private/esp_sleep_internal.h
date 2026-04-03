@@ -118,6 +118,12 @@ typedef enum {
 #if SOC_UART_HP_NUM > 2
     ESP_SLEEP_CLOCK_UART2,   //!< The clock ICG cell mapping of UART2
 #endif
+#if SOC_UART_HP_NUM > 3
+    ESP_SLEEP_CLOCK_UART3,   //!< The clock ICG cell mapping of UART3
+#endif
+#if SOC_UART_HP_NUM > 4
+    ESP_SLEEP_CLOCK_UART4,   //!< The clock ICG cell mapping of UART4
+#endif
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
     ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK,  //!< The clock ICG cell remapping of RETENTION
 #endif

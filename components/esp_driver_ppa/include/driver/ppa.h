@@ -124,6 +124,7 @@ typedef struct {
         ppa_srm_color_mode_t srm_cm;        /*!< Color mode of the picture in a PPA SRM operation. Supported color mode in `ppa_srm_color_mode_t` */
         ppa_blend_color_mode_t blend_cm;    /*!< Color mode of the picture in a PPA blend operation. Supported color mode in `ppa_blend_color_mode_t` */
         ppa_fill_color_mode_t fill_cm;      /*!< Color mode of the picture in a PPA fill operation. Supported color mode in `ppa_fill_color_mode_t` */
+        esp_color_fourcc_t cm;              /*!< Four Character Code of the color mode */
     };
     ppa_color_range_t yuv_range;            /*!< When the color mode is any YUV color space, this field is to describe its color range */
     ppa_color_conv_std_rgb_yuv_t yuv_std;   /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
@@ -143,6 +144,7 @@ typedef struct {
         ppa_srm_color_mode_t srm_cm;        /*!< Color mode of the picture in a PPA SRM operation. Supported color mode in `ppa_srm_color_mode_t` */
         ppa_blend_color_mode_t blend_cm;    /*!< Color mode of the picture in a PPA blend operation. Supported color mode in `ppa_blend_color_mode_t` */
         ppa_fill_color_mode_t fill_cm;      /*!< Color mode of the picture in a PPA fill operation. Supported color mode in `ppa_fill_color_mode_t` */
+        esp_color_fourcc_t cm;              /*!< Four Character Code of the color mode */
     };
     ppa_color_range_t yuv_range;            /*!< When the color mode is any YUV color space, this field is to describe its color range */
     ppa_color_conv_std_rgb_yuv_t yuv_std;   /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */

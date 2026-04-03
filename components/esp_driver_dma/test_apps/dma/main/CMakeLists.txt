@@ -12,7 +12,7 @@ if(CONFIG_SOC_GDMA_SUPPORTED)
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-        list(APPEND srcs "test_gdma_crc.c")
+        list(APPEND srcs "test_gdma_crc.c" "test_async_crc.c")
     endif()
 endif()
 

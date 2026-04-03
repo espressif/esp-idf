@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,11 +82,13 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 
 static void IRAM_ATTR bootloader_flash_clock_init(void)
 {
-    // // To raise the MSPI clock to 64MHz, needs to enable the 64MHz clock source, which is XTAL_X2_CLK
-    // // (FPGA image fixed MSPI0/1 clock to 64MHz)
-    // clk_ll_xtal_x2_enable();
-    // _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_PLL_F64M);
-    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_PLL_F48M);
+    // To raise the MSPI clock to 64MHz, needs to enable the 64MHz clock source, which is XTAL_X2_CLK
+    // (FPGA image fixed MSPI0/1 clock to 64MHz)
+    clk_ll_xtal_x2_enable();
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_REF_F64M);
+    // Note: MSPI clock source cannot be set to 48MHz in bootloader
+    //       48MHz is derived from SPLL, and SPLL is not ready to be used in bootloader for H21
+    //       (calibration not done since bootloader CPU clock source is also set to 64MHz, which does not rely on SPLL)
 }
 
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)

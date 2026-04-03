@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded_idf import CaseTester
@@ -79,13 +79,14 @@ def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
 
 # ESP32 only supports uart wakeup if signal routes through IOMUX
 # ESP32S3 multi device runner has no psram IDF-12837,
-# ESP32P4 not yet supported IDF-12839.
-@pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s3', 'esp32p4'], reason='no multi-dev runner')
+@pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s3'], reason='no multi-dev runner')
 @pytest.mark.generic_multi_device
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 @pytest.mark.parametrize(
     'config',
     [
+        'iram_safe',
+        # Note: Software clock ICG (Idle Clock Gating) feature in ESP32-P4 won't work in release test.
         'release',
     ],
     indirect=True,

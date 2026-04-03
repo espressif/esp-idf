@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "WL_Ext_Perf.h"
-#include "Partition.h"
 #include <stdlib.h>
 #include <inttypes.h>
 #include "esp_log.h"
@@ -27,7 +26,7 @@ WL_Ext_Perf::~WL_Ext_Perf()
     free(this->sector_buffer);
 }
 
-esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Partition *partition)
+esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Flash_Access *partition)
 {
     wl_ext_cfg_t *ext_cfg = (wl_ext_cfg_t *)cfg;
 

@@ -126,7 +126,7 @@ esp_err_t esp_task_wdt_impl_timer_stop(twdt_ctx_t obj)
         ret = ESP_ERR_INVALID_STATE;
     }
 
-    if (ret == ESP_OK) {
+    if (ret == ESP_OK && esp_timer_is_active(ctx->sw_timer)) {
         ret = esp_timer_stop(ctx->sw_timer);
     }
 

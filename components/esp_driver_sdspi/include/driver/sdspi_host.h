@@ -61,6 +61,7 @@ typedef int sdspi_dev_handle_t;
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
     .set_input_delay = NULL, \
     .set_input_delayline = NULL, \
+    .unaligned_multi_block_rw_max_chunk_size = 16, \
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
     .check_buffer_alignment = sdspi_host_check_buffer_alignment, \

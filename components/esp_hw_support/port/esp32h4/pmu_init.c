@@ -20,8 +20,9 @@
 #include "esp_rom_sys.h"
 #include "soc/regi2c_ulp.h"
 #include "hal/lp_aon_ll.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -96,7 +97,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
     if (mode == PMU_MODE_HP_ACTIVE) {
         pmu_ll_hp_set_regulator_lp_dbias_voltage(ctx->hal->dev, mode, anlg->regulator0.lp_dbias_vol);
         pmu_ll_hp_set_regulator_hp_dbias_voltage(ctx->hal->dev, mode, anlg->regulator0.hp_dbias_vol);
-        pmu_ll_hp_set_regulator_dbias_sel       (ctx->hal->dev, mode, anlg->regulator0.dbias_sel);
+        pmu_ll_hp_set_regulator_dbias_select    (ctx->hal->dev, mode, anlg->regulator0.dbias_sel);
         pmu_ll_hp_set_regulator_dbias_init      (ctx->hal->dev, mode, anlg->regulator0.dbias_init);
     }
     pmu_ll_hp_set_regulator_power_detect_bypass(ctx->hal->dev, mode, anlg->regulator0.power_det_bypass);
@@ -122,6 +123,9 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
     /* set dcdc ccm mode software enable */
     pmu_ll_set_dcdc_ccm_sw_en(ctx->hal->dev, true);
 
+    //For dcdc ldo mode when VDD is low than about a certion value, eg 2.6v
+    lp_aon_ll_set_ldo_sw(15);
+
     /* set ble bandgap ocode */
     uint32_t ulp_ocode = 0;
 #if !CONFIG_IDF_ENV_FPGA
@@ -132,8 +136,8 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
         ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_OCODE);
     }
 #endif
-    REG_SET_FIELD(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_OCODE, ulp_ocode);
-    SET_PERI_REG_MASK(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_FORCE_OCODE);
+    pmu_ll_set_ble_bandgap_ext_ocode(ctx->hal->dev, ulp_ocode);
+    pmu_ll_set_ble_bandgap_ext_force_ocode(ctx->hal->dev, true);
 }
 
 void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_system_param_t *param)
@@ -147,6 +151,7 @@ void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_sys
     pmu_ll_lp_set_clk_power(ctx->hal->dev, mode, power->clk_power.val);
     pmu_ll_lp_set_xtal_xpd (ctx->hal->dev, PMU_MODE_LP_SLEEP, power->xtal.xpd_xtal);
     pmu_ll_lp_set_xtalx2_xpd (ctx->hal->dev, PMU_MODE_LP_SLEEP, power->xtal.xpd_xtalx2);
+
     /* Default configuration of lp-system analog sub-system in active and
      * sleep modes */
     if (mode == PMU_MODE_LP_SLEEP) {
@@ -176,21 +181,23 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
         PMU_HP_PD_TOP,
         PMU_HP_PD_HP_AON,
         PMU_HP_PD_CPU,
-        PMU_HP_PD_WIFI
+        PMU_HP_PD_BT_154
     };
 
     for (uint8_t idx = 0; idx < (sizeof(pmu_hp_domains) / sizeof(pmu_hp_power_domain_t)); idx++) {
         pmu_ll_hp_set_power_force_power_up  (ctx->hal->dev, pmu_hp_domains[idx], false);
-        pmu_ll_hp_set_power_force_reset     (ctx->hal->dev, pmu_hp_domains[idx], false);
-        pmu_ll_hp_set_power_force_isolate   (ctx->hal->dev, pmu_hp_domains[idx], false);
-        pmu_ll_hp_set_power_force_power_down(ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_no_isolate(ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_no_reset  (ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_power_down(ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_isolate   (ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_reset     (ctx->hal->dev, pmu_hp_domains[idx], false);
     }
     /* Isolate all memory banks while sleeping, avoid memory leakage current */
     pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
     /* Disable memory force pu for memory pd during deep sleep */
     pmu_ll_hp_set_memory_power_up       (ctx->hal->dev, 0);
+    /* Enable VDD flash fast discharge */
+    pmu_ll_hp_set_vdd_flash_tiel_enable (ctx->hal->dev, true);
 
     pmu_ll_lp_set_power_force_power_up  (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_no_reset  (ctx->hal->dev, false);

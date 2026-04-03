@@ -42,11 +42,11 @@ do {                                        \
     }                                       \
 } while(0)
 
-#define ANA_CMPR_UNIT_CHECK(unit)           ESP_RETURN_ON_FALSE((unit) >= 0 && (unit) < SOC_ANA_CMPR_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid unit number")
+#define ANA_CMPR_UNIT_CHECK(unit)           ESP_RETURN_ON_FALSE((unit) >= 0 && (unit) < ANALOG_CMPR_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid unit number")
 
 /* Global static object of the Analog Comparator unit */
-static ana_cmpr_handle_t s_ana_cmpr[SOC_ANA_CMPR_NUM] = {
-    [0 ...(SOC_ANA_CMPR_NUM - 1)] = NULL,
+static ana_cmpr_handle_t s_ana_cmpr[ANALOG_CMPR_LL_GET(INST_NUM)] = {
+    [0 ...(ANALOG_CMPR_LL_GET(INST_NUM) - 1)] = NULL,
 };
 
 /* Global spin lock */
@@ -64,13 +64,13 @@ void ana_cmpr_default_intr_handler(void *usr_data)
     /* Call the user callback function if it is specified and the corresponding event triggers*/
     if (cmpr_handle->cbs.on_cross && (status & cmpr_handle->intr_mask)) {
         // some chip can distinguish the edge of the cross event
-#if SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+#if ANALOG_CMPR_LL_SUPPORT(EDGE_TYPE)
         if (status & ANALOG_CMPR_LL_POS_CROSS_MASK(cmpr_handle->unit)) {
             evt_data.cross_type = ANA_CMPR_CROSS_POS;
         } else if (status & ANALOG_CMPR_LL_NEG_CROSS_MASK(cmpr_handle->unit)) {
             evt_data.cross_type = ANA_CMPR_CROSS_NEG;
         }
-#endif  // SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+#endif  // ANALOG_CMPR_LL_SUPPORT(EDGE_TYPE)
         need_yield = cmpr_handle->cbs.on_cross(cmpr_handle, &evt_data, cmpr_handle->user_data);
     }
     if (need_yield) {
@@ -140,10 +140,10 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     /* Configure the register */
     analog_cmpr_ll_set_ref_source(ana_cmpr_hdl->dev, config->ref_src);
     ana_cmpr_hdl->ref_src = config->ref_src;
-#if !SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+#if !ANALOG_CMPR_LL_SUPPORT(EDGE_TYPE)
     // set which cross type can trigger the interrupt
     analog_cmpr_ll_set_intr_cross_type(ana_cmpr_hdl->dev, config->cross_type);
-#endif  // SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+#endif  // !ANALOG_CMPR_LL_SUPPORT(EDGE_TYPE)
     // record the interrupt mask, the interrupt will be lazy installed when register user callbacks
     // different cross type means different interrupt mask
     ana_cmpr_hdl->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(ana_cmpr_hdl->dev, config->cross_type);
@@ -182,7 +182,7 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr)
     ANA_CMPR_NULL_POINTER_CHECK(cmpr);
     /* Search the global object array to check if the input handle is valid */
     int unit = -1;
-    for (int i = 0; i < SOC_ANA_CMPR_NUM; i++) {
+    for (int i = 0; i < ANALOG_CMPR_LL_GET(INST_NUM); i++) {
         if (s_ana_cmpr[i] == cmpr) {
             unit = i;
             break;
@@ -233,7 +233,7 @@ esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_
 
 esp_err_t ana_cmpr_set_cross_type(ana_cmpr_handle_t cmpr, ana_cmpr_cross_type_t cross_type)
 {
-#if SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+#if ANALOG_CMPR_LL_SUPPORT(EDGE_TYPE)
     /* Not support to set the cross type after initialized, because it relies on the interrupt types to distinguish the edge,
      * i.e. have to re-allocate the interrupt to change the cross type */
     (void)cmpr;

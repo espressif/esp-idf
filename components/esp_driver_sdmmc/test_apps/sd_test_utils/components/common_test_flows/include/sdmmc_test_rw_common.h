@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,23 @@ void sdmmc_test_rw_with_offset(sdmmc_card_t* card);
  * @param card Pointer to the card object, must be initialized before calling this function.
  */
 void sdmmc_test_rw_highprio_task(sdmmc_card_t* card);
+
+/**
+ * @brief Test multi-block read/write with unaligned buffers
+ *
+ * This function verifies that multi-block chunked transfers work correctly
+ * when the source/destination buffers are not DMA-aligned. It exercises:
+ * - Multi-block unaligned writes and reads with more blocks than the configured chunk size
+ * - The dma_aligned_buffer reuse path (when card->host.dma_aligned_buffer is pre-allocated)
+ *
+ * This test function works both with SDMMC and SDSPI hosts.
+ *
+ * @param card Pointer to the card object, must be initialized before calling this function.
+ * @param chunk_size Maximum number of blocks to transfer at once when using an
+ *                   unaligned bounce buffer. This value is written to
+ *                   card->host.unaligned_multi_block_rw_max_chunk_size before the test runs.
+ */
+void sdmmc_test_rw_unaligned_buffer_multiblock(sdmmc_card_t* card, size_t chunk_size);
 
 #ifdef __cplusplus
 };

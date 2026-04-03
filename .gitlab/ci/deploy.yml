@@ -7,8 +7,10 @@
   stage: deploy
   tags: [ fast_run, shiny ]
   image: python:3.13-slim
-  dependencies: []
-  needs: []
+  needs:
+    - job: manual_gate
+      optional: true
+  dependencies: null
   variables:
     PIP_CACHE_DIR: ".cache/pip"
     # Metrics - related env vars

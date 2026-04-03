@@ -45,6 +45,8 @@ Inside the ``IDF_TOOLS_PATH`` directory, the tools installation scripts create t
 - ``python_env`` —  not related to the tools; virtual Python environments are installed in the sub-directories. Note that the Python environment directory can be placed elsewhere by setting the ``IDF_PYTHON_ENV_PATH`` environment variable.
 
   - ``idf_version.txt`` — located within each specific Python environment sub-directory under ``python_env``, this file records the ESP-IDF version corresponding to that environment. The version is stored in a format like ``5.3`` to represent ESP-IDF version ``v5.3``.
+
+- ``root_managed_components`` — directory managed by ``idf-component-manager`` for components installed globally.
 - ``espidf.constraints.*.txt`` — one constraint file for each ESP-IDF release containing Python package version requirements.
 
 GitHub Assets Mirror

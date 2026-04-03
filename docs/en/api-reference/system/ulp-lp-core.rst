@@ -105,7 +105,7 @@ Building Your Project
 
 To compile and build your project:
 
-1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menuconfig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+1. Enable :ref:`CONFIG_ULP_COPROC_ENABLED` in menuconfig, and inside ``ULP Coprocessor types`` menu, select :ref:`CONFIG_ULP_COPROC_TYPE_LP_CORE`. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 2. Build the application as usual (e.g., ``idf.py app``).
 

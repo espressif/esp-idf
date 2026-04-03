@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #include "soc/chip_rev.h"
 

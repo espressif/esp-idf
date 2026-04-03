@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -225,7 +225,27 @@ typedef struct {
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
     esp_err_t (*set_input_delayline)(int slot, sdmmc_delay_line_t delay_line); /*!< set input delay line */
-    void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
+    /**
+     * @brief Maximum number of blocks to read/write at once when using an unaligned buffer.
+     *
+     * When a multi-block read/write is requested with an unaligned buffer, the driver
+     * splits the transfer into chunks of this many blocks. Set to 0 to use the default
+     * value of 1 (single-block transfers). Higher values improve throughput but require
+     * a larger DMA-capable temporary buffer.
+     */
+    size_t unaligned_multi_block_rw_max_chunk_size;
+    /**
+     * @brief Cache aligned buffer for multi-block RW and IO commands
+     *
+     * Use cases:
+     *  - Temporary buffer for multi-block read/write transactions to/from unaligned buffers.
+     *    Allocate with DMA capable memory, size should be an integer multiple of your card's sector size.
+     *    The number of blocks transferred per chunk is controlled by
+     *    `unaligned_multi_block_rw_max_chunk_size`.
+     *  - Cache aligned buffer for IO commands in SDIO mode.
+     *    If you allocate manually, make sure it is at least SDMMC_IO_BLOCK_SIZE bytes large.
+     */
+    void* dma_aligned_buffer;
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
     bool (*check_buffer_alignment)(int slot, const void *buf, size_t size); /*!< Check if buffer meets alignment requirements */
     esp_err_t (*is_slot_set_to_uhs1)(int slot, bool *is_uhs1); /*!< host slot is set to uhs1 or not*/

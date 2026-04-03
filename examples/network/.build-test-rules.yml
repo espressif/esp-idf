@@ -9,7 +9,6 @@ examples/network/bridge:
     - if: IDF_TARGET != "esp32"
       reason: Generic functionality, no need to be run on specific targets
   depends_components:
-    - *common_components
     - esp_eth
     - esp_netif
     - lwip
@@ -19,7 +18,6 @@ examples/network/eth2ap:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components:
-    - *common_components
     - esp_eth
     - esp_wifi
 
@@ -27,7 +25,6 @@ examples/network/simple_sniffer:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components:
-    - *common_components
     - esp_wifi
     - fatfs
     - esp_eth
@@ -36,7 +33,6 @@ examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components:
-    - *common_components
     - esp_eth
     - esp_wifi
     - protocomm
@@ -52,6 +48,5 @@ examples/network/vlan_support:
     - if: IDF_TARGET not in ["esp32"]
       reason: Runner uses esp32 ethernet kit
   depends_components:
-    - *common_components
     - esp_eth
     - esp_netif

@@ -35,6 +35,7 @@ typedef struct {
         uint32_t enable_loopback: 1;        /**< The TWAI controller receives back frames that it sends out, but does not acknowledge them */
         uint32_t enable_listen_only: 1;     /**< No transmissions or acknowledgements. The controller only monitors the bus without participating */
         uint32_t no_receive_rtr: 1;         /**< Don't receive remote frames */
+        uint32_t sleep_allow_pd: 1;         /**< Allow power down during sleep to save power, driver will backup/restore the TWAI registers to guarantee the peripheral features. */
     } flags;                                /**< Misc configuration flags */
 } twai_onchip_node_config_t;
 

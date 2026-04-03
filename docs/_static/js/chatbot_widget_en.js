@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", function () {
     script.src = "https://widget.kapa.ai/kapa-widget.bundle.js";
     script.setAttribute("data-bot-protection-mechanism", "hcaptcha");
     script.setAttribute("data-website-id", "e569d308-b8f4-43d1-a0d2-bebc1ece63de");
+    script.setAttribute("data-mcp-enabled", "true");
+    script.setAttribute("data-mcp-server-url", "https://mcp.espressif.com/docs");
+    script.setAttribute("data-mcp-button-text", "MCP Server");
     script.setAttribute("data-project-name", "ESP-IDF Programming Guide");
     script.setAttribute("data-project-color", "#C62817");
     script.setAttribute("data-project-logo", "https://dl.espressif.com/public/logo.png");

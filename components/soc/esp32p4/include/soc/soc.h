@@ -22,7 +22,6 @@
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_FLASH_SPI0_BASE + (i) * 0x1000)  // SPIMEM0 and SPIMEM1
 #define REG_SPI_BASE(i)                         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
-#define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE + (i) * 0x1000)
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x1000)       // TWAI0 and TWAI1
 
 //Registers Operation {{
@@ -156,8 +155,8 @@
 #define SOC_IROM_MASK_HIGH 0x4fc20000
 #define SOC_DROM_MASK_LOW  0x4fc00000
 #define SOC_DROM_MASK_HIGH 0x4fc20000
-#define SOC_TCM_LOW     0x30100000
-#define SOC_TCM_HIGH    0x30102000
+#define SOC_SPM_LOW     0x30100000
+#define SOC_SPM_HIGH    0x30102000
 #define SOC_IRAM_LOW    0x4ff00000
 #define SOC_IRAM_HIGH   0x4ffc0000
 #define SOC_DRAM_LOW    0x4ff00000

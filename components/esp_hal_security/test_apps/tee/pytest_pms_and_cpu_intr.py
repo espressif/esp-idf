@@ -8,7 +8,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 SOC_SUPPORT_SYS_APM_TEST = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
 SOC_SUPPORT_PERI_APM_TEST = ['esp32c5']
-SOC_SUPPORT_INTR_TEST = ['esp32c5', 'esp32c61']
+SOC_SUPPORT_INTR_TEST = ['esp32c5', 'esp32c61', 'esp32p4']
 
 CONFIG_SYS_APM = [
     # 'config, target, markers',

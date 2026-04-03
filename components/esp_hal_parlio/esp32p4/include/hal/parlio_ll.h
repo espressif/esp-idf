@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -623,16 +623,15 @@ static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 }
 
 /**
- * @brief Set the sample clock edge
+ * @brief Set the shift clock edge
  *
  * @param dev Parallel IO register base address
- * @param edge Sample clock edge
+ * @param edge Shift clock edge
  */
-static inline void parlio_ll_tx_set_sample_clock_edge(parl_io_dev_t *dev, parlio_sample_edge_t edge)
+static inline void parlio_ll_tx_set_shift_clock_edge(parl_io_dev_t *dev, parlio_shift_edge_t edge)
 {
-    bool invert = edge == PARLIO_SAMPLE_EDGE_NEG;
-    dev->tx_clk_cfg.tx_clk_i_inv = invert;
-    dev->tx_clk_cfg.tx_clk_o_inv = invert;
+    dev->tx_clk_cfg.tx_clk_i_inv = edge;
+    dev->tx_clk_cfg.tx_clk_o_inv = edge;
 }
 
 /**

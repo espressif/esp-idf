@@ -18,7 +18,6 @@
 #include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/gpio_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/esp_clk_tree_common.h"
@@ -153,13 +152,13 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     /* Analog part */
     ANALOG_CLOCK_ENABLE();
     /* BBPLL CALIBRATION START */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while (!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while (!clk_ll_bbpll_calibration_is_done());
     esp_rom_delay_us(10); // wait for true stop
     /* BBPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
     ANALOG_CLOCK_DISABLE();
 
     s_cur_pll_freq = pll_freq;
@@ -170,7 +169,7 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
  * Must satisfy: cpu_freq = XTAL_FREQ / div.
  * Does not disable the PLL.
  */
-static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+FORCE_IRAM_ATTR static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
     // let f_cpu = f_ahb
     clk_ll_ahb_set_divider(1);
@@ -187,7 +186,7 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     clk_ll_bus_update();
-    esp_rom_set_cpu_ticks_per_us(8);
+    esp_rom_set_cpu_ticks_per_us(20);
 }
 
 /**
@@ -357,7 +356,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         break;
     }
     case SOC_CPU_CLK_SRC_RC_FAST:
-        source_freq_mhz = 8;
+        source_freq_mhz = 20;
         break;
     case SOC_CPU_CLK_SRC_XTAL_X2:
         source_freq_mhz = clk_ll_xtal_x2_get_freq_mhz();
@@ -448,7 +447,7 @@ static uint32_t rtc_clk_ahb_freq_get(void)
         soc_root_freq_mhz = clk_ll_bbpll_get_freq_mhz();
         break;
     case SOC_CPU_CLK_SRC_RC_FAST:
-        soc_root_freq_mhz = 8;
+        soc_root_freq_mhz = 20;
         break;
     case SOC_CPU_CLK_SRC_XTAL_X2:
         soc_root_freq_mhz = clk_ll_xtal_x2_get_freq_mhz();

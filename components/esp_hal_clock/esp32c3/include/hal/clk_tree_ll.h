@@ -13,6 +13,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "soc/regi2c_defs.h"
 #include "soc/timer_group_struct.h"
 #include "soc/io_mux_reg.h"
 #include "hal/clkout_channel.h"
@@ -391,6 +392,15 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_VCO_DBIAS, dbias);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DHREF_SEL, 2);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, 1);
+}
+
+/**
+ * @brief Start BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_start(void)
+{
+    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
 }
 
 /**

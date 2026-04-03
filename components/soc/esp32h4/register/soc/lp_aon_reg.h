@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -676,16 +675,14 @@ extern "C" {
 #define LP_AON_DREG_LDO_HW  BIT(5)
 #define LP_AON_DREG_LDO_HW_M  (LP_AON_DREG_LDO_HW_V << LP_AON_DREG_LDO_HW_S)
 #define LP_AON_DREG_LDO_HW_V  0x00000001U
-#define LP_AON_DREG_LDO_HW_S  31
-
-/** LP_AON_IO_LDO_ADJUST_SW : R/W; bitpos: [30:23]; default: 0;
+#define LP_AON_DREG_LDO_HW_S  5
+/** LP_AON_IO_LDO_ADJUST_SW : R/W; bitpos: [14:11]; default: 8;
  *  need_des
  */
 #define LP_AON_DREG_LDO_SW    0x0000000FU
 #define LP_AON_DREG_LDO_SW_M  (LP_AON_DREG_LDO_SW_V << LP_AON_DREG_LDO_SW_S)
 #define LP_AON_DREG_LDO_SW_V  0x0000000FU
 #define LP_AON_DREG_LDO_SW_S  11
-
 /** LP_AON_CLK_EN : R/W; bitpos: [31]; default: 0;
  *  version register
  */

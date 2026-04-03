@@ -80,11 +80,13 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
 
     switch (p_result->pdu) {
     case AVRC_PDU_GET_CAPABILITIES:         /* 0x10 */
-        p_result->get_caps.capability_id = *p++;
-        if (!AVRC_IS_VALID_CAP_ID(p_result->get_caps.capability_id)) {
-            status = AVRC_STS_BAD_PARAM;
-        } else if (len != 1) {
+        if (len < 1) {
             status = AVRC_STS_INTERNAL_ERR;
+        } else {
+            p_result->get_caps.capability_id = *p++;
+            if (!AVRC_IS_VALID_CAP_ID(p_result->get_caps.capability_id)) {
+                status = AVRC_STS_BAD_PARAM;
+            }
         }
         break;
 
@@ -96,11 +98,13 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
         break;
 
     case AVRC_PDU_LIST_PLAYER_APP_VALUES:   /* 0x12 */
-        p_result->list_app_values.attr_id = *p++;
-        if (!AVRC_IS_VALID_ATTRIBUTE(p_result->list_app_values.attr_id)) {
-            status = AVRC_STS_BAD_PARAM;
-        } else if (len != 1) {
+        if (len < 1) {
             status = AVRC_STS_INTERNAL_ERR;
+        } else {
+            p_result->list_app_values.attr_id = *p++;
+            if (!AVRC_IS_VALID_ATTRIBUTE(p_result->list_app_values.attr_id)) {
+                status = AVRC_STS_BAD_PARAM;
+            }
         }
         break;
 

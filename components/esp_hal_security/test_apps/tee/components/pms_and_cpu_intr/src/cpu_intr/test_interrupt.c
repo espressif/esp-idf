@@ -1,21 +1,22 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <stdio.h>
 
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
-
-#include "soc/intpri_reg.h"
-#include "soc/pcr_reg.h"
 #include "hal/timer_ll.h"
 
 #include "esp_cpu.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
+
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk_tree_common.h"
 
 #include "test_rv_utils.h"
 
@@ -25,6 +26,12 @@
 #include "test_pms_priv.h"
 #include "test_cpu_intr_priv.h"
 #include "test_cpu_intr_params.h"
+
+#if SOC_RCC_IS_INDEPENDENT
+#define TIMER_RCC_ATOMIC()
+#else /* !SOC_RCC_IS_INDEPENDENT */
+#define TIMER_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#endif /* SOC_RCC_IS_INDEPENDENT */
 
 #define TEST_INTR_MAX_COUNT       (8)
 
@@ -41,11 +48,24 @@
 
 static timg_dev_t *timg_dev = TIMER_LL_GET_HW(TEST_TIMER_GROUP);
 
+/* ---------------------------------------------------- Utility - Common ---------------------------------------------------- */
+
+#define TEST_INTR_TK_INIT            0x8BADF00D
+#define TEST_INTR_TK_DONE            0xDEFEC8ED
+
+typedef struct {
+    volatile int id;
+    volatile int curr_count;
+    volatile int max_count;
+    volatile int token;
+    volatile int expected_mode;
+} test_intr_args_ctx_t;
+
 IRAM_ATTR static void test_timer_isr(void *arg)
 {
-    uint32_t *intr_count = (uint32_t *)arg;
-    *intr_count = *intr_count + 1;
-    esp_rom_printf("[mode: %d] TIMER-%d interrupt triggered (%d)\n", esp_cpu_get_curr_privilege_level(), TEST_TIMER_GROUP, *intr_count);
+    test_intr_args_ctx_t *ctx = (test_intr_args_ctx_t *)arg;
+    ctx->curr_count++;
+    TEST_ASSERT_EQUAL(ctx->expected_mode, esp_cpu_get_curr_privilege_level());
 
     /* Clear interrupt and re-enable the alarm */
     timer_ll_clear_intr_status(timg_dev, TIMER_LL_EVENT_ALARM(TEST_TIMER_ID));
@@ -70,10 +90,12 @@ static void test_timer_deinit(void)
     timer_ll_trigger_soft_reload(timg_dev, timer_id);
     timer_ll_set_reload_value(timg_dev, timer_id, prev_val);
 
-    timer_ll_enable_clock(TEST_TIMER_GROUP, timer_id, false);
+    TIMER_RCC_ATOMIC() {
+        timer_ll_enable_clock(TEST_TIMER_GROUP, timer_id, false);
+    }
 }
 
-static void test_timer_init(int mode, volatile uint32_t *arg)
+static void test_timer_init(int mode, int priority, test_intr_args_ctx_t *arg)
 {
     const uint32_t group_id = TEST_TIMER_GROUP;
     const uint32_t timer_id = TEST_TIMER_ID;
@@ -86,14 +108,16 @@ static void test_timer_init(int mode, volatile uint32_t *arg)
 
     // Select clock source and enable module clock
     // Enable the default clock source PLL_F80M
-    REG_SET_BIT(PCR_PLL_DIV_CLK_EN_REG, PCR_PLL_80M_CLK_EN);
-    timer_ll_set_clock_source(group_id, timer_id, GPTIMER_CLK_SRC_DEFAULT);
-    timer_ll_enable_clock(group_id, timer_id, true);
+    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F80M, true);
+    TIMER_RCC_ATOMIC() {
+        timer_ll_set_clock_source(group_id, timer_id, GPTIMER_CLK_SRC_DEFAULT);
+        timer_ll_enable_clock(group_id, timer_id, true);
+    }
     timer_ll_set_clock_prescale(timg_dev, timer_id, TEST_TIMER_DIVIDER);
     timer_ll_set_count_direction(timg_dev, timer_id, GPTIMER_COUNT_UP);
 
     // Register ISR
-    test_intr_alloc(mode, 2, TG0_T0_INTR_SRC, &test_timer_isr, (void *)arg);
+    test_intr_alloc(mode, priority, TG0_T0_INTR_SRC, &test_timer_isr, (void *)arg);
     timer_ll_enable_intr(timg_dev, TIMER_LL_EVENT_ALARM(timer_id), true);
 
     // Configure and enable timer alarm
@@ -104,18 +128,6 @@ static void test_timer_init(int mode, volatile uint32_t *arg)
 }
 
 /* ---------------------------------------------------- Utility - INTPRI ---------------------------------------------------- */
-
-#define TEST_INTR_TK_INIT            0x8BADF00D
-#define TEST_INTR_TK_DONE            0xDEFEC8ED
-
-#define CPU_INTR_FROM_CPU_N_REG(n)         (INTPRI_CPU_INTR_FROM_CPU_0_REG + 4 * (n))
-
-typedef struct {
-    volatile int id;
-    volatile int curr_count;
-    volatile int max_count;
-    volatile int token;
-} test_intr_args_ctx_t;
 
 FORCE_INLINE_ATTR void intpri_cpu_clr_intr(uint32_t n)
 {
@@ -144,36 +156,41 @@ IRAM_ATTR static void test_intpri_isr(void *arg)
         ctx->token = TEST_INTR_TK_DONE;
     }
 
-    esp_rom_printf("[mode: %d] INTPRI-%d interrupt triggered (%d)\n", esp_cpu_get_curr_privilege_level(), ctx->id, ctx->curr_count);
+    TEST_ASSERT_EQUAL(ctx->expected_mode, esp_cpu_get_curr_privilege_level());
 }
 
 /* ---------------------------------------------------- Test-cases ---------------------------------------------------- */
 
 void test_m_mode_intr_in_m_mode(void)
 {
+#if SOC_APM_CTRL_FILTER_SUPPORTED
     test_apm_ctrl_reset_all();
+#endif
     test_intr_utils_init();
 
-    test_intr_args_ctx_t ctx = {
+    test_intr_args_ctx_t ctx1 = {
         .id = 0,
         .curr_count = 0,
         .max_count = TEST_INTR_MAX_COUNT,
         .token = TEST_INTR_TK_INIT,
+        .expected_mode = PRV_M,
     };
+    test_intr_alloc(PRV_M, 1, CPU_FROM_CPU_N_INTR_SRC(ctx1.id), &test_intpri_isr, &ctx1);
 
-    test_intr_alloc(PRV_M, 1, CPU_FROM_CPU_N_INTR_SRC(ctx.id), &test_intpri_isr, &ctx);
+    test_intr_args_ctx_t ctx2 = {
+        .curr_count = 0,
+        .expected_mode = PRV_M,
+    };
+    test_timer_init(PRV_M, 2, &ctx2);
 
-    volatile uint32_t intr_count = 0;
-    test_timer_init(PRV_M, &intr_count);
-
-    while (ctx.token != TEST_INTR_TK_DONE) {
-        intpri_cpu_trig_intr(ctx.id);
+    while (ctx1.token != TEST_INTR_TK_DONE) {
+        intpri_cpu_trig_intr(ctx1.id);
         test_delay_ms(TEST_INTPRI_PERIOD_S * 1000U);
     }
-    TEST_ASSERT(ctx.curr_count == TEST_INTR_MAX_COUNT);
+    TEST_ASSERT(ctx1.curr_count == TEST_INTR_MAX_COUNT);
 
     test_timer_deinit();
-    TEST_ASSERT(intr_count >= TEST_TIMER_EXP_COUNT);
+    TEST_ASSERT(ctx2.curr_count >= TEST_TIMER_EXP_COUNT);
 
     test_intr_free_all();
     test_intr_utils_deinit();
@@ -181,31 +198,36 @@ void test_m_mode_intr_in_m_mode(void)
 
 void test_u_mode_intr_in_u_mode(void)
 {
+#if SOC_APM_CTRL_FILTER_SUPPORTED
     test_apm_ctrl_reset_all();
+#endif
     test_intr_utils_init();
 
-    test_intr_args_ctx_t ctx = {
+    test_intr_args_ctx_t ctx1 = {
         .id = 0,
         .curr_count = 0,
         .max_count = TEST_INTR_MAX_COUNT,
         .token = TEST_INTR_TK_INIT,
+        .expected_mode = PRV_U,
     };
+    test_intr_alloc(PRV_U, 1, CPU_FROM_CPU_N_INTR_SRC(ctx1.id), &test_intpri_isr, &ctx1);
 
-    test_intr_alloc(PRV_U, 1, CPU_FROM_CPU_N_INTR_SRC(ctx.id), &test_intpri_isr, &ctx);
-
-    volatile uint32_t intr_count = 0;
-    test_timer_init(PRV_U, &intr_count);
+    test_intr_args_ctx_t ctx2 = {
+        .curr_count = 0,
+        .expected_mode = PRV_U,
+    };
+    test_timer_init(PRV_U, 2, &ctx2);
 
     test_m2u_switch();
-    while (ctx.token != TEST_INTR_TK_DONE) {
-        intpri_cpu_trig_intr(ctx.id);
+    while (ctx1.token != TEST_INTR_TK_DONE) {
+        intpri_cpu_trig_intr(ctx1.id);
         test_delay_ms(TEST_INTPRI_PERIOD_S * 1000U);
     }
     test_u2m_switch();
-    TEST_ASSERT(ctx.curr_count == TEST_INTR_MAX_COUNT);
+    TEST_ASSERT(ctx1.curr_count == TEST_INTR_MAX_COUNT);
 
     test_timer_deinit();
-    TEST_ASSERT(intr_count >= TEST_TIMER_EXP_COUNT);
+    TEST_ASSERT(ctx2.curr_count >= TEST_TIMER_EXP_COUNT);
 
     test_intr_free_all();
     test_intr_utils_deinit();
@@ -213,33 +235,38 @@ void test_u_mode_intr_in_u_mode(void)
 
 void test_m_mode_intr_in_u_mode(void)
 {
+#if SOC_APM_CTRL_FILTER_SUPPORTED
     test_apm_ctrl_reset_all();
+#endif
     test_intr_utils_init();
 
-    test_intr_args_ctx_t ctx = {
+    test_intr_alloc(PRV_M, 1, ETS_MAX_INTR_SOURCE, NULL, NULL);
+
+    test_intr_args_ctx_t ctx1 = {
         .id = 0,
         .curr_count = 0,
         .max_count = TEST_INTR_MAX_COUNT,
         .token = TEST_INTR_TK_INIT,
+        .expected_mode = PRV_M,
     };
+    test_intr_alloc(PRV_M, 1, CPU_FROM_CPU_N_INTR_SRC(ctx1.id), &test_intpri_isr, &ctx1);
 
-    test_intr_alloc(PRV_M, 1, CPU_FROM_CPU_N_INTR_SRC(ctx.id), &test_intpri_isr, &ctx);
-
-    test_intr_alloc(PRV_M, 1, ETS_MAX_INTR_SOURCE, NULL, NULL);
-
-    volatile uint32_t intr_count = 0;
-    test_timer_init(PRV_U, &intr_count);
+    test_intr_args_ctx_t ctx2 = {
+        .curr_count = 0,
+        .expected_mode = PRV_U,
+    };
+    test_timer_init(PRV_U, 2, &ctx2);
 
     test_m2u_switch();
-    while (ctx.token != TEST_INTR_TK_DONE) {
-        intpri_cpu_trig_intr(ctx.id);
+    while (ctx1.token != TEST_INTR_TK_DONE) {
+        intpri_cpu_trig_intr(ctx1.id);
         test_delay_ms(TEST_INTPRI_PERIOD_S * 1000U);
     }
     test_u2m_switch();
-    TEST_ASSERT(ctx.curr_count == TEST_INTR_MAX_COUNT);
+    TEST_ASSERT(ctx1.curr_count == TEST_INTR_MAX_COUNT);
 
     test_timer_deinit();
-    TEST_ASSERT(intr_count >= TEST_TIMER_EXP_COUNT);
+    TEST_ASSERT(ctx2.curr_count >= TEST_TIMER_EXP_COUNT);
 
     test_intr_free_all();
     test_intr_utils_deinit();
@@ -247,31 +274,36 @@ void test_m_mode_intr_in_u_mode(void)
 
 void test_u_mode_intr_in_m_mode(void)
 {
+#if SOC_APM_CTRL_FILTER_SUPPORTED
     test_apm_ctrl_reset_all();
+#endif
     test_intr_utils_init();
 
     test_intr_alloc(PRV_M, 1, ETS_MAX_INTR_SOURCE, NULL, NULL);
 
-    test_intr_args_ctx_t ctx = {
+    test_intr_args_ctx_t ctx1 = {
         .id = 0,
         .curr_count = 0,
         .max_count = TEST_INTR_MAX_COUNT,
         .token = TEST_INTR_TK_INIT,
+        .expected_mode = PRV_U,
     };
+    test_intr_alloc(PRV_U, 1, CPU_FROM_CPU_N_INTR_SRC(ctx1.id), &test_intpri_isr, &ctx1);
 
-    test_intr_alloc(PRV_U, 1, CPU_FROM_CPU_N_INTR_SRC(ctx.id), &test_intpri_isr, &ctx);
+    test_intr_args_ctx_t ctx2 = {
+        .curr_count = 0,
+        .expected_mode = PRV_M,
+    };
+    test_timer_init(PRV_M, 2, &ctx2);
 
-    volatile uint32_t intr_count = 0;
-    test_timer_init(PRV_M, &intr_count);
-
-    while (ctx.token != TEST_INTR_TK_DONE) {
-        intpri_cpu_trig_intr(ctx.id);
+    while (ctx1.token != TEST_INTR_TK_DONE) {
+        intpri_cpu_trig_intr(ctx1.id);
         test_delay_ms(TEST_INTPRI_PERIOD_S * 1000U);
     }
-    TEST_ASSERT(ctx.curr_count == TEST_INTR_MAX_COUNT);
+    TEST_ASSERT(ctx1.curr_count == TEST_INTR_MAX_COUNT);
 
     test_timer_deinit();
-    TEST_ASSERT(intr_count >= TEST_TIMER_EXP_COUNT);
+    TEST_ASSERT(ctx2.curr_count >= TEST_TIMER_EXP_COUNT);
 
     test_intr_free_all();
     test_intr_utils_deinit();

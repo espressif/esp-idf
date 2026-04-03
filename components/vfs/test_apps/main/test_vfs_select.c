@@ -1,14 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <sys/param.h>
 #include <sys/select.h>
+#include <stdbool.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/uart.h"
@@ -36,6 +38,87 @@ typedef struct {
 } test_select_task_param_t;
 
 static const char message[] = "Hello world!";
+
+typedef struct {
+    fd_set *readfds;
+    fd_set *writefds;
+    int local_fd;
+    bool ready_read;
+    bool ready_write;
+} dummy_select_args_t;
+
+static int dummy_open(const char *path, int flags, int mode)
+{
+    return 0; // single local fd
+}
+
+static int dummy_close(int fd)
+{
+    return 0;
+}
+
+static esp_err_t dummy_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args)
+{
+    (void) nfds;
+
+    dummy_select_args_t *args = calloc(1, sizeof(dummy_select_args_t));
+    if (args == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    args->local_fd = 0;
+    args->readfds = readfds;
+    args->writefds = writefds;
+    args->ready_read = readfds && FD_ISSET(args->local_fd, readfds);
+    args->ready_write = writefds && FD_ISSET(args->local_fd, writefds);
+
+    // start_select receives requested events; clear all output sets and let
+    // end_select publish only actual readiness.
+    if (readfds) {
+        FD_ZERO(readfds);
+    }
+    if (writefds) {
+        FD_ZERO(writefds);
+    }
+    if (exceptfds) {
+        FD_ZERO(exceptfds);
+    }
+
+    if (!(args->ready_read || args->ready_write)) {
+        free(args);
+        *end_select_args = NULL;
+        return ESP_OK;
+    }
+
+    *end_select_args = args;
+    esp_vfs_select_triggered(sem);
+    return ESP_OK;
+}
+
+static esp_err_t dummy_end_select(void *end_select_args)
+{
+    dummy_select_args_t *args = end_select_args;
+    if (!args) {
+        return ESP_OK;
+    }
+
+    if (args->ready_read && args->readfds) {
+        FD_SET(args->local_fd, args->readfds);
+    }
+    if (args->ready_write && args->writefds) {
+        FD_SET(args->local_fd, args->writefds);
+    }
+
+    free(args);
+    return ESP_OK;
+}
+
+static const esp_vfs_t dummy_vfs = {
+    .flags = ESP_VFS_FLAG_DEFAULT,
+    .open = dummy_open,
+    .close = dummy_close,
+    .start_select = dummy_start_select,
+    .end_select = dummy_end_select,
+};
 
 static int open_dummy_socket(void)
 {
@@ -524,6 +607,33 @@ TEST_CASE("UART can do poll() with POLLIN event", "[vfs]")
     vSemaphoreDelete(test_task_param.sem);
 
     deinit(uart_fd, socket_fd);
+}
+
+TEST_CASE("poll() counts fd once when multiple events are set", "[vfs]")
+{
+    ESP_ERROR_CHECK(esp_vfs_register("/dummy", &dummy_vfs, NULL));
+    const int fd = open("/dummy/test", O_RDONLY);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    struct pollfd poll_fds[] = {
+        {
+            .fd = fd,
+            .events = POLLIN | POLLOUT,
+        },
+        {
+            .fd = -1,
+        },
+    };
+
+    int s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(1, s);
+    TEST_ASSERT_EQUAL(fd, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(POLLIN | POLLOUT, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(-1, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
+
+    close(fd);
+    ESP_ERROR_CHECK(esp_vfs_unregister("/dummy"));
 }
 
 TEST_CASE("UART can do poll() with POLLOUT event", "[vfs]")

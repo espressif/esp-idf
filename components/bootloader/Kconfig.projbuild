@@ -41,8 +41,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_CPU_CLK_FREQ_MHZ
         int
-        default 48 if IDF_TARGET_ESP32H21
-        default 64 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
+        default 64 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21
         default 90 if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
         default 100 if IDF_TARGET_ESP32P4 && !ESP32P4_SELECTS_REV_LESS_V3
         default 80
@@ -284,6 +283,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
+        depends on SOC_RTC_WDT_SUPPORTED
         default y
         help
             Tracks the execution time of startup code.
@@ -563,7 +563,7 @@ menu "Security features"
         help
             Select the ECDSA key size. Three key sizes are supported depending upon on the target:
 
-            - 192 bit key using NISTP192 curve
+            - 192 bit key using NISTP192 curve (Legacy, not recommended)
             - 256 bit key using NISTP256 curve (Recommended)
             - 384 bit key using NISTP384 curve (Recommended)
 
@@ -572,8 +572,10 @@ menu "Security features"
             At present, both key sizes are practically implausible to bruteforce.
 
         config SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
-            bool "Using ECC curve NISTP192"
+            bool "Using ECC curve NISTP192 (Legacy, not recommended)"
             depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+            help
+                This legacy option is not recommended for new designs. Prefer NISTP256 or NISTP384.
 
         config SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
             bool "Using ECC curve NISTP256 (Recommended)"
@@ -708,7 +710,8 @@ menu "Security features"
             Path to the key file used to sign app images.
 
             Key file is an ECDSA private key (NIST256p curve) in PEM format for Secure Boot V1.
-            Key file is an RSA private key in PEM format for Secure Boot V2.
+            Key file is an RSA private key in PEM format for Secure Boot V2 (RSA scheme).
+            Key file is an ECDSA private key (NIST 192p, 256p or 384p) in PEM format for Secure Boot V2 (ECDSA scheme).
 
             Path is evaluated relative to the project directory.
 

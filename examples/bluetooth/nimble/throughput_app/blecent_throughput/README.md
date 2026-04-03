@@ -7,19 +7,20 @@
 
 `blecent_throughput` demonstrates client side implementation required for NimBLE throughput example. It connects to `bleprph_throughput` based on name string `nimble_prph`. It has interactive CLI support to start READ/WRITE/NOTIFY GATT operation for user specified time.
 
-It performs read operation on peripheral's `THRPT_LONG_CHR_READ_WRITE` characteristic, write operation on `THRPT_CHR_READ_WRITE` and subscribes to `THRPT_CHR_NOTIFY` characteristic for notifications. If user does not specify any throughput test method for 30 seconds (`BLE_RX_TIMEOUT`) then the program starts with default READ operations for 60 seconds.
+It performs read operations on the peripheral's `THRPT_LONG_CHR_READ_WRITE` characteristic (510 bytes), write operations on `THRPT_CHR_READ_WRITE` (509-byte payload), and subscribes to `THRPT_CHR_NOTIFY` for notifications. If the user does not specify a throughput test method within 30 seconds (`BLE_RX_TIMEOUT`), the program defaults to READ operations for 60 seconds.
 
 `blecent_throughput` uses the `NimBLE` as BLE host.
 
-### Procedure to use this demo example
+### Procedure to Use This Demo Example
 
-* `idf.py menuconfig` and configure the parameters as needed (connection related parameters in example parameters).
+* `idf.py menuconfig` and configure the parameters as needed (connection related parameters in Example Configuration).
+* The default connection interval is set to 7.5ms (6 units) for maximum throughput. This can be changed via menuconfig or at runtime.
 * To test throughput on 1M PHY, make sure to disable the Example Configuration -> Enable Extended Adv flag in menuconfig on both sides.
 * To test on 2M PHY or Coded PHY (S2/S8), you must enable the Example Configuration -> Enable Extended Adv flag on both sides.
 * `bleprph_throughput` example needs to be run along with this client side example.
-* After connection link is established between these two devices, user is given a window of `YES_NO_PARAM` (5 seconds) to customize connection parameters. If user has configured parameters from menuconfig, this step can be skipped by either waiting it out or entering `Insert no`.
-* User needs to enter `Insert yes` to customize connection parameters. Enter `MTU` and other connection parameters as directed on console instructions e.g. `MTU 512` for MTU and `conn 6 120 0 500 0 0` for connection parameters in sequence of `min conn_itvl`, `max conn_itvl`, `latency`, `supervision timeout`, `min conn_evt_len` and `max_conn_evt_len`.
-* User will be now presented with throughput test related console prints, this suggests application is now ready to be run throughput test for user defined time. The prints may appear like below
+* After the connection link is established between the two devices, the user is given a window of `YES_NO_PARAM` (5 seconds) to customize connection parameters. If the user has configured parameters from menuconfig, this step can be skipped by either waiting it out or entering `Insert No`.
+* Enter `Insert Yes` to customize connection parameters. Enter `MTU` and other connection parameters as directed on console instructions, e.g. `MTU 512` for MTU and `conn 6 6 0 500 12 24` for connection parameters in sequence of `min conn_itvl`, `max conn_itvl`, `latency`, `supervision timeout`, `min conn_evt_len` and `max_conn_evt_len`.
+* The user will be presented with throughput test related console prints. The prints may appear like below
 
 ```
   ====================================================================================
@@ -41,8 +42,8 @@ It performs read operation on peripheral's `THRPT_LONG_CHR_READ_WRITE` character
 
 
 ```
-* If user fail to enter any values for next 30 seconds, the app falls to default behavior of READ for 60 seconds mode and 1M phy channel.
-* Read and write throughput numbers will be presented in `blecent_throughput` console output. For notification `bleprph_throughput` console shall be referred, as the peripheral is the one who is sending notifications. Below is the sample output of the app:
+* If the user fails to enter any values within 30 seconds, the app falls to the default behavior of READ for 60 seconds on 1M PHY.
+* Read and write throughput numbers are displayed on the `blecent_throughput` console. For notification throughput, refer to the `bleprph_throughput` console, as the peripheral is the one sending notifications. Below is sample output:
 
 ```
 Type 'help' to get the list of commands.
@@ -136,9 +137,11 @@ idf.py -p PORT flash monitor
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
-## Example scope
+## Example Scope
 
-This demo example tries to demonstrate stable implementation of GATT operations like read/write and notify. The READ and WRITE GATT operations require ACK from peer, so this central app makes sure that next GATT operation is performed after completion of previous one. In case of notification (`bleprph_throughput` sends) operation there is no waiting for ACK, however one needs to mind `os_mbufs` getting full, so one may need to allocate higher number of mbufs through menuconfig.
+This demo example demonstrates stable GATT read/write and notify operations at high throughput. The READ and WRITE GATT operations require an ACK from the peer, so this central app ensures that the next GATT operation is performed after completion of the previous one. For write operations, `ble_gattc_write_no_rsp_flat` is used (Write Without Response) which does not require an ATT-level ACK, allowing higher write throughput. If the mbuf pool is exhausted (`BLE_HS_ENOMEM`), the app yields briefly and retries.
+
+For notifications (`bleprph_throughput` sends), the peripheral uses pipelined notification sending with a configurable pipeline depth, allowing the controller to pack multiple PDUs per connection event. Both sides are configured with `CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=50` to provide sufficient buffer space for high-throughput operations.
 
 ## Example output
 

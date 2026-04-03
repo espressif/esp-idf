@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -284,6 +284,18 @@ esp_err_t __wrap_esp_ds_encrypt_params(esp_ds_data_t *data,
 {
     esp_crypto_sha_aes_lock_acquire();
     esp_err_t err = esp_tee_service_call(5, SS_ESP_DS_ENCRYPT_PARAMS, data, iv, p_data, key);
+    esp_crypto_sha_aes_lock_release();
+    return err;
+}
+
+esp_err_t __wrap_esp_ds_encrypt_params_using_key_type(esp_ds_data_t *data,
+                                                      const void *iv,
+                                                      const esp_ds_p_data_t *p_data,
+                                                      const void *key,
+                                                      esp_ds_key_type_t key_type)
+{
+    esp_crypto_sha_aes_lock_acquire();
+    esp_err_t err = esp_tee_service_call(6, SS_ESP_DS_ENCRYPT_PARAMS_USING_KEY_TYPE, data, iv, p_data, key, key_type);
     esp_crypto_sha_aes_lock_release();
     return err;
 }

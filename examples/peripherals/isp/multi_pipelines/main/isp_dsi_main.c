@@ -174,7 +174,7 @@ void app_main(void)
         .v_res = crop_v_res,
         .lane_bit_rate_mbps = EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS,
         .input_data_color_type = CAM_CTLR_COLOR_RAW8,
-        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RAW8,
         .data_lane_num = 2,
         .byte_swap_en = false,
         .queue_items = 1,

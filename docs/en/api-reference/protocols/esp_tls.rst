@@ -247,9 +247,9 @@ To enable the secure element support, and use it in your project for TLS connect
     Digital Signature with ESP-TLS
     ------------------------------
 
-    ESP-TLS provides support for using the Digital Signature (DS) with {IDF_TARGET_NAME}. Use of the DS for TLS is supported only when ESP-TLS is used with MbedTLS (default stack) as its underlying SSL/TLS stack. For more details on Digital Signature, please refer to the :doc:`Digital Signature (DS) </api-reference/peripherals/ds>`. The technical details of Digital Signature such as how to calculate private key parameters can be found in **{IDF_TARGET_NAME} Technical Reference Manual** > **Digital Signature (DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]. The DS peripheral must be configured before it can be used to perform Digital Signature, see :ref:`configure-the-ds-peripheral`.
+    ESP-TLS provides support for using the RSA Digital Signature Peripheral (RSA_DS) with {IDF_TARGET_NAME}. Use of the RSA_DS for TLS is supported only when ESP-TLS is used with MbedTLS (default stack) as its underlying SSL/TLS stack. For more details on the RSA_DS, please refer to the :doc:`RSA Digital Signature Peripheral (RSA_DS) </api-reference/peripherals/ds>`. The technical details such as how to calculate private key parameters can be found in **{IDF_TARGET_NAME} Technical Reference Manual** > **RSA Digital Signature Peripheral (RSA_DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]. The RSA_DS peripheral must be configured before it can be used to perform RSA digital signature, see :ref:`configure-the-ds-peripheral`.
 
-    The DS peripheral must be initialized with the required encrypted private key parameters, which are obtained when the DS peripheral is configured. ESP-TLS internally initializes the DS peripheral when provided with the required DS context, i.e., DS parameters. Please see the below code snippet for passing the DS context to the ESP-TLS context. The DS context passed to the ESP-TLS context should not be freed till the TLS connection is deleted.
+    The RSA_DS peripheral must be initialized with the required encrypted private key parameters, which are obtained when the RSA_DS peripheral is configured. ESP-TLS internally initializes the RSA_DS peripheral when provided with the required DS context, i.e., DS parameters. Please see the below code snippet for passing the DS context to the ESP-TLS context. The DS context passed to the ESP-TLS context should not be freed till the TLS connection is deleted.
 
     .. code-block:: c
 
@@ -265,20 +265,20 @@ To enable the secure element support, and use it in your project for TLS connect
 
     .. note::
 
-        When using Digital Signature for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
+        When using the RSA_DS for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
 
-    * A mutual-authentication example that utilizes the DS peripheral is shipped with the standalone `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ component and internally relies on ESP-TLS for the TLS connection. Follow the component documentation to fetch and build that example.
+    * A mutual-authentication example that utilizes the RSA_DS peripheral is shipped with the standalone `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ component and internally relies on ESP-TLS for the TLS connection. Follow the component documentation to fetch and build that example.
 
 .. only:: SOC_ECDSA_SUPPORTED
 
     .. _ecdsa-peri-with-esp-tls:
 
-    ECDSA Peripheral with ESP-TLS
-    -----------------------------
+    ECDSA Digital Signature Peripheral (ECDSA_DS) with ESP-TLS
+    -----------------------------------------------------------
 
-    ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA peripheral. Please refer to :doc:`ECDSA Guide <../peripherals/ecdsa>` for programming the ECDSA key in the eFuse.
+    ESP-TLS provides support for using the ECDSA Digital Signature Peripheral (ECDSA_DS) with {IDF_TARGET_NAME}. The use of the ECDSA_DS peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA_DS peripheral. Please refer to :doc:`ECDSA Digital Signature Peripheral (ECDSA_DS) <../peripherals/ecdsa>` for programming the ECDSA key in the eFuse.
 
-    This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it need not be supplied to the :cpp:type:`esp_tls_cfg_t` structure. Please see the below code snippet for enabling the use of ECDSA peripheral for a given ESP-TLS connection.
+    This will enable the use of the ECDSA_DS peripheral for private key operations. As the client private key is already present in the eFuse, it need not be supplied to the :cpp:type:`esp_tls_cfg_t` structure. Please see the below code snippet for enabling the use of the ECDSA_DS peripheral for a given ESP-TLS connection.
 
     .. code-block:: c
 
@@ -292,7 +292,7 @@ To enable the secure element support, and use it in your project for TLS connect
 
     .. note::
 
-        When using ECDSA peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
+        When using the ECDSA_DS peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
 
 
 .. _esp_tls_client_session_tickets:

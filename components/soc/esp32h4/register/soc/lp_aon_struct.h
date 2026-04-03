@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -598,9 +598,9 @@ typedef union {
 } lp_aon_puf_conf_reg_t;
 
 /** Type of aon_date register
- *  reserved
+ *  need_des
  */
-typedef union {
+ typedef union {
     struct {
         uint32_t reserved_0:5;
         /** aon_dreg_ldo_hw : R/W; bitpos: [5]; default: 0;
@@ -609,11 +609,12 @@ typedef union {
          *  1: DREG_LDO control by HW;
          */
         uint32_t aon_dreg_ldo_hw:1;
-        uint32_t reserved_6:17;
-        /** aon_dreg_ldo_sw : R/W; bitpos: [30:23]; default: 0;
-        *  control the ldo of dreg by sw
-        */
-        uint32_t aon_dreg_ldo_sw:8;
+        uint32_t reserved_6:5;
+        /** aon_dreg_ldo_sw : R/W; bitpos: [14:11]; default: 8;
+         *  control the ldo of dreg by sw
+         */
+        uint32_t aon_dreg_ldo_sw:4;
+        uint32_t reserved_7:16;
         /** aon_clk_en : R/W; bitpos: [31]; default: 0;
          *  version register
          */

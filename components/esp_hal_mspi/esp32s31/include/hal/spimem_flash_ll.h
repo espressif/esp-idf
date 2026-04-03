@@ -682,7 +682,7 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 
     switch (HP_SYS_CLKRST.flash_ctrl0.reg_flash_clk_src_sel) {
     case 0:
-        source_clk_mhz = clk_ll_xtal_load_freq_mhz();
+        source_clk_mhz = clk_ll_xtal_get_freq_mhz();
         break;
     case 1:
         source_clk_mhz = CLK_LL_PLL_480M_FREQ_MHZ; // SPLL

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@ typedef enum {
     ESP_KEY_MGR_PSRAM_XTS_AES_KEY,  /* PSRAM XTS-AES key */
 } esp_key_mgr_key_type_t;
 
-/*
+/**
  * @brief Key Manager key usage type
  */
 typedef enum {
@@ -112,30 +112,37 @@ typedef enum {
     ESP_KEY_MGR_FORCE_USE_KM_DS_KEY = 3,
 } esp_key_mgr_force_use_km_key_t;
 
-// store huk info, occupy 96 words
+/**
+ * @brief HUK info structure, stores HUK recovery information
+ */
 typedef struct PACKED_ATTR {
 #define HUK_INFO_LEN 660
-    uint8_t info[HUK_INFO_LEN];
-    uint32_t crc;
+    uint8_t info[HUK_INFO_LEN];    /*!< HUK info data */
+    uint32_t crc;                   /*!< CRC of the HUK info */
 } esp_key_mgr_huk_info_t;
 
-// store key info, occupy 512 bits
+/**
+ * @brief Key info structure, stores key recovery information (512 bits)
+ */
 typedef struct PACKED_ATTR {
 #define KEY_INFO_LEN 64
-    uint8_t info[KEY_INFO_LEN];
-    uint32_t crc;
+    uint8_t info[KEY_INFO_LEN];    /*!< Key info data */
+    uint32_t crc;                  /*!< CRC of the key info */
 } esp_key_mgr_key_info_t;
 
+/**
+ * @brief Key recovery info structure containing all data needed to recover a deployed key
+ */
 typedef struct WORD_ALIGNED_ATTR PACKED_ATTR {
 #define KEY_HUK_SECTOR_MAGIC 0xDEA5CE5A
-    uint32_t magic;
-    uint32_t version; // for backward compatibility
-    uint8_t key_type;
-    uint8_t key_len;
-    uint8_t key_deployment_mode;
-    uint8_t reserved[13];
-    esp_key_mgr_huk_info_t huk_info;
-    esp_key_mgr_key_info_t key_info[2]; // at most 2 key info (XTS-512_1 and XTS-512_2), at least use 1
+    uint32_t magic;                         /*!< Magic number for validation */
+    uint32_t version;                       /*!< Version for backward compatibility */
+    uint8_t key_type;                       /*!< Type of the deployed key */
+    uint8_t key_len;                        /*!< Length of the deployed key */
+    uint8_t key_deployment_mode;            /*!< Deployment mode used for the key */
+    uint8_t reserved[13];                   /*!< Reserved for future use */
+    esp_key_mgr_huk_info_t huk_info;        /*!< HUK recovery info */
+    esp_key_mgr_key_info_t key_info[2];     /*!< Key info (up to 2 entries for XTS-AES-256) */
 } esp_key_mgr_key_recovery_info_t;
 
 #ifdef __cplusplus

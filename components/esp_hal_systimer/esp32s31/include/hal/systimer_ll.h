@@ -29,7 +29,6 @@ extern "C" {
 #define SYSTIMER_LL_INT_LEVEL               1  // Systimer peripheral uses level interrupt
 #define SYSTIMER_LL_ALARM_MISS_COMPENSATE   1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 #define SYSTIMER_LL_FIXED_DIVIDER           1  // Clock source divider is fixed: 2.5
-
 /******************* Clock *************************/
 
 __attribute__((always_inline)) static inline void systimer_ll_enable_clock(systimer_dev_t *dev, bool en)

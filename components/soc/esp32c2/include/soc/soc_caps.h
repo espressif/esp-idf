@@ -47,10 +47,12 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_BOD_SUPPORTED               1
-#define SOC_RTC_TIMER_V1_SUPPORTED      1
+#define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_CLK_TREE_SUPPORTED          1
+#define SOC_REGI2C_SUPPORTED            1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
+#define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
@@ -141,7 +143,6 @@
 #define SOC_GPIO_OUT_RANGE_MAX          20
 
 #define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK          (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
-#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT       (6)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_6~GPIO_NUM_20)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000001FFFC0ULL
@@ -186,6 +187,10 @@
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
+/* RTC_CNTL registers on this SoC are not atomic and require software protection
+ * (e.g., spinlocks) when accessed from multiple cores or threads. */
+#define SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS 1
+
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated RTCIO subsystem on ESP32-C2. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
@@ -226,10 +231,12 @@
 #define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 
+#define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
+
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V1_SUPPORTED
+#define SOC_RTC_TIMER_V1                    1
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)

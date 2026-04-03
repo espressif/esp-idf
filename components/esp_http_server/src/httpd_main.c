@@ -12,6 +12,7 @@
 #include <esp_err.h>
 #include <assert.h>
 #include <netinet/tcp.h>
+#include <net/if.h>
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
@@ -384,6 +385,26 @@ static esp_err_t httpd_server_init(struct httpd_data *hd)
         /* This will fail if CONFIG_LWIP_SO_REUSE is not enabled. But
          * it does not affect the normal working of the HTTP Server */
         ESP_LOGW(TAG, LOG_FMT("error in setsockopt SO_REUSEADDR (%d)"), errno);
+    }
+
+    /* Bind to specific network interface if configured */
+    if (hd->config.if_name && hd->config.if_name->ifr_name[0] != 0) {
+        ESP_LOGI(TAG, LOG_FMT("Binding server to interface: %s"), hd->config.if_name->ifr_name);
+#ifndef __APPLE__
+        if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, hd->config.if_name, sizeof(struct ifreq)) < 0) {
+#else
+        int idx = if_nametoindex(hd->config.if_name->ifr_name);
+        if (idx == 0) {
+            ESP_LOGE(TAG, LOG_FMT("Invalid interface name %s"), hd->config.if_name->ifr_name);
+            close(fd);
+            return ESP_FAIL;
+        }
+        if (setsockopt(fd, IPPROTO_IP, IP_BOUND_IF, &idx, sizeof(idx)) < 0) {
+#endif
+            ESP_LOGE(TAG, LOG_FMT("Failed to bind to interface %s (%d)"), hd->config.if_name->ifr_name, errno);
+            close(fd);
+            return ESP_FAIL;
+        }
     }
 
     int ret = bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));

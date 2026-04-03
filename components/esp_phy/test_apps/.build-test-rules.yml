@@ -1,5 +1,19 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/esp_phy/test_apps/phy_iram:
+  enable:
+    - if: SOC_IEEE802154_BLE_ONLY == 1
+  disable:
+    - if: IDF_TARGET not in ["esp32h2"]
+      temporary: true
+      reason: not supported for esp32h21 and esp32h4 yet
+  depends_components:
+    - esp_hal_ana_conv
+    - esp_phy
+    - esp_pm
+    - esp_timer
+    - spi_flash
+    - nvs_flash
 components/esp_phy/test_apps/phy_multiple_init_data:
   disable:
     - if: IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved

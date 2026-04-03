@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "esp_rom_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/portmacro.h"
 #include "riscv/csr.h"
 #include "soc/pcr_reg.h"
 #include "soc/intpri_reg.h"
@@ -41,6 +42,8 @@
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
 static DRAM_ATTR smp_retention_state_t s_smp_retention_state[portNUM_PROCESSORS];
 #endif
+
+static bool s_fpu_saved[portNUM_PROCESSORS];
 
 static __attribute__((unused)) const char *TAG = "sleep";
 
@@ -337,6 +340,8 @@ static IRAM_ATTR void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t
 
 extern RvCoreCriticalSleepFrame * rv_core_critical_regs_save(void);
 extern RvCoreCriticalSleepFrame * rv_core_critical_regs_restore(void);
+extern void rv_core_fpu_save(RvCoreCriticalSleepFrame *frame);
+extern void rv_core_fpu_restore(RvCoreCriticalSleepFrame *frame);
 typedef uint32_t (* sleep_cpu_entry_cb_t)(uint32_t, uint32_t, uint32_t, bool);
 
 static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
@@ -344,14 +349,19 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
 {
     __attribute__((unused)) uint8_t core_id = esp_cpu_get_core_id();
     bool reject = false;
+    RvCoreCriticalSleepFrame * frame = s_cpu_retention.retent.critical_frame[core_id];
+
     /* mstatus is core privated CSR, do it near the core critical regs restore */
     uint32_t mstatus = save_mstatus_and_disable_global_int();
 #if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
     uint32_t mintthresh = save_mintthresh_and_disable_global_int();
 #endif
+    s_fpu_saved[core_id] = xPortFPUContextIsDirty(core_id);
+    if (s_fpu_saved[core_id]) {
+        rv_core_fpu_save(frame);
+    }
     rv_core_critical_regs_save();
 
-    RvCoreCriticalSleepFrame * frame = s_cpu_retention.retent.critical_frame[core_id];
     if ((frame->pmufunc & 0x3) == 0x1) {
         esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_END, (void *)0);
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
@@ -374,6 +384,9 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
     }
 #endif
+    if (s_fpu_saved[core_id]) {
+        rv_core_fpu_restore(frame);
+    }
 #if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
     restore_mintthresh(mintthresh);
 #endif
@@ -504,13 +517,16 @@ static IRAM_ATTR void smp_core_do_retention(void)
 #if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
         uint32_t mintthresh = save_mintthresh_and_disable_global_int();
 #endif
+        RvCoreCriticalSleepFrame *frame_critical = s_cpu_retention.retent.critical_frame[core_id];
+        s_fpu_saved[core_id] = xPortFPUContextIsDirty(core_id);
+        if (s_fpu_saved[core_id]) {
+            rv_core_fpu_save(frame_critical);
+        }
         rv_core_noncritical_regs_save();
         cpu_domain_dev_regs_save(s_cpu_retention.retent.clint_frame[core_id]);
         cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
         rv_core_critical_regs_save();
-        RvCoreCriticalSleepFrame *frame_critical = s_cpu_retention.retent.critical_frame[core_id];
         if ((frame_critical->pmufunc & 0x3) == 0x1) {
-
             atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_DONE);
             // wait another core trigger sleep and wakeup
             while (1) {
@@ -531,6 +547,9 @@ static IRAM_ATTR void smp_core_do_retention(void)
             cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
             cpu_domain_dev_regs_restore(s_cpu_retention.retent.clint_frame[core_id]);
             rv_core_noncritical_regs_restore();
+            if (s_fpu_saved[core_id]) {
+                rv_core_fpu_restore(frame_critical);
+            }
 #if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
             restore_mintthresh(mintthresh);
 #endif

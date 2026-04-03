@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,4 +40,11 @@
 void esp_cpu_configure_region_protection(void)
 {
     /* TODO: [ESP32S31] IDF-15238 */
+
+    __attribute__((unused)) const unsigned PMA_RW    = PMA_L | PMA_EN | PMA_R | PMA_W;
+    __attribute__((unused)) const unsigned PMA_RX    = PMA_L | PMA_EN | PMA_R | PMA_X;
+    __attribute__((unused)) const unsigned PMA_RWX   = PMA_L | PMA_EN | PMA_R | PMA_W | PMA_X;
+
+    //without setting this, psram cannot be reached
+    PMA_RESET_AND_ENTRY_SET_NAPOT(7, SOC_EXTRAM_LOW, (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RWX);
 }

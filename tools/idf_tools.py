@@ -185,8 +185,15 @@ def print_hints_on_download_error(err: str) -> None:
 
         info('The following commands may help resolve this issue:')
         if sys.platform == 'darwin':
-            info('    ./Install\\ Certificates.command')
-        info(f'    {sys.executable} -m pip install --upgrade pip-system-certs certifi')
+            # Python.org macOS installer puts Install Certificates.command in /Applications/Python X.Y/
+            app_certs = (
+                f'/Applications/Python {sys.version_info.major}.{sys.version_info.minor}/Install Certificates.command'
+            )
+            if os.path.isfile(app_certs):
+                info(f'\tRun: open "{app_certs}"  (or double-click it in Finder)')
+            else:
+                info('\tGo to Python installation location and execute: ./Install\\ Certificates.command')
+        info(f'\t{sys.executable} -m pip install --upgrade pip-system-certs certifi')
 
     # Certificate issue on Windows can be hidden under different errors which might be even translated,
     # e.g. "[WinError -2146881269] ASN1 valor de tag inválido encontrado"
@@ -202,6 +209,7 @@ PYTHON_PLATFORM = f'{platform.system()}-{platform.machine()}'
 # Identifiers used in tools.json for different platforms.
 PLATFORM_WIN32 = 'win32'
 PLATFORM_WIN64 = 'win64'
+PLATFORM_WIN_ARM64 = 'win-arm64'
 PLATFORM_MACOS = 'macos'
 PLATFORM_MACOS_ARM64 = 'macos-arm64'
 PLATFORM_LINUX32 = 'linux-i686'
@@ -232,7 +240,8 @@ class Platforms:
         'Windows-x86_64': PLATFORM_WIN64,
         'Windows-AMD64': PLATFORM_WIN64,
         'x86_64-w64-mingw32': PLATFORM_WIN64,
-        'Windows-ARM64': PLATFORM_WIN64,
+        PLATFORM_WIN_ARM64: PLATFORM_WIN_ARM64,
+        'Windows-ARM64': PLATFORM_WIN_ARM64,
         # macOS
         PLATFORM_MACOS: PLATFORM_MACOS,
         'osx': PLATFORM_MACOS,
@@ -773,11 +782,15 @@ class IDFToolVersion:
     def get_download_for_platform(self, platform_name: str | None) -> IDFToolDownload | None:
         """
         Get download for given platform if usable download already exists.
+        On win-arm64, falls back to win64 when no native build is available.
         """
         try:
             platform_name = Platforms.get(platform_name)
             if platform_name in self.downloads.keys():
                 return self.downloads[platform_name]
+            # On Windows ARM64, use win64 (x86_64) build when no native win-arm64 exists
+            if platform_name == PLATFORM_WIN_ARM64 and PLATFORM_WIN64 in self.downloads:
+                return self.downloads[PLATFORM_WIN64]
         # exception can be omitted, as not detected platform is handled without err message
         except ValueError:
             pass

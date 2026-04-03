@@ -3,10 +3,12 @@
 
 :link_to_translation:`en:[English]`
 
-移除已弃用的 VFS SDMMC API
----------------------------
+重大变更
+--------
 
-``esp_vfs_fat_sdmmc_unmount`` 函数已弃用且被移除，请使用 ``esp_vfs_fat_sdcard_unmount`` 代替。
+已被弃用的 API ``esp_vfs_fat_sdmmc_unmount`` 现已移除，请使用 ``esp_vfs_fat_sdcard_unmount`` 代替。
+
+``esp_vfs_fat_register`` 的函数原型已修改为与 ``esp_vfs_fat_register_cfg`` 函数保持一致。``esp_vfs_fat_register_cfg`` 现已弃用。
 
 
 VFS
@@ -17,6 +19,7 @@ VFS
 - ``esp_vfs_register_fd_range`` 现被视为私有接口，其函数签名已调整为匹配新的 VFS API 风格。仍依赖此内部辅助函数的项目需包含 ``esp_private/socket.h`` 头文件，并请注意该 API 可能在不另行通知的情况下发生变更。
 - 基于 ``esp_vfs_t`` 而非 ``esp_vfs_fs_ops_t`` 的传统 VFS API（如 ``esp_vfs_register``）已弃用，并将在下一个主版本中移除。请迁移至基于 ``esp_vfs_fs_ops_t`` 的新 API。
 - TERMIOS 支持现已默认禁用。若应用程序需调用 POSIX ``termios`` API（例如用于 UART 配置的 ``tcsetattr``/``tcgetattr`` 接口），请在 menuconfig 中重新启用 :ref:`CONFIG_VFS_SUPPORT_TERMIOS` 选项。
+- 不带上下文的 VFS 函数指针已弃用。请切换到带上下文感知的 ``*_p`` 系列回调函数，并使用 ``ESP_VFS_FLAG_CONTEXT_PTR`` 标志注册 VFS。如果驱动不需要每个实例各自的状态，则将上下文指针传入 ``NULL`` 即可。此项变更简化了 API 接口，并减少了 VFS 调用路径中的运行时开销。
 
 ``esp_vfs_console``
 --------------------

@@ -25,6 +25,9 @@
 #include "esp_private/sleep_retention.h"
 #include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
+#if SOC_GDMA_SUPPORTED
+#include "hal/gdma_ll.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -59,6 +62,8 @@ static const char *SPI_TAG = "spi_common";
             .max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE, \
         }, \
     }
+
+#define SPI_DMA_DEFAULT_BURST_SIZE  32
 
 typedef struct {
     int host_id;
@@ -199,7 +204,7 @@ static void connect_spi_and_dma(spi_host_device_t host, int dma_chan)
 #endif
 }
 
-static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, spi_dma_ctx_t *dma_ctx)
+static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size, spi_dma_ctx_t *dma_ctx)
 {
     assert(is_valid_host(host_id));
 #if CONFIG_IDF_TARGET_ESP32
@@ -207,6 +212,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 #elif CONFIG_IDF_TARGET_ESP32S2
     assert(dma_chan == (int)host_id || dma_chan == SPI_DMA_CH_AUTO);
 #endif
+    (void)dma_burst_size;  // not used on chips without GDMA burst size config
 
     esp_err_t ret = ESP_OK;
     bool success = false;
@@ -258,13 +264,33 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 #define SPI_GDMA_NEW_CHANNEL    gdma_new_ahb_channel
 #endif
 
-static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, spi_dma_ctx_t *dma_ctx)
+static esp_err_t resolve_dma_burst_size(uint32_t requested, uint32_t *out_burst_size)
+{
+    uint32_t burst_size = requested;
+    if (burst_size == 0) {
+        burst_size = SPI_DMA_DEFAULT_BURST_SIZE;
+        ESP_LOGD(SPI_TAG, "dma_burst_size is 0, using default %d", SPI_DMA_DEFAULT_BURST_SIZE);
+    }
+#if !SOC_AXI_GDMA_SUPPORTED && !GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE
+    if (requested != 0) {
+        ESP_LOGD(SPI_TAG, "Chip does not support configurable DMA burst size, using default %d", SPI_DMA_DEFAULT_BURST_SIZE);
+    }
+    burst_size = SPI_DMA_DEFAULT_BURST_SIZE;
+#endif
+    *out_burst_size = burst_size;
+    return ESP_OK;
+}
+
+static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size, spi_dma_ctx_t *dma_ctx)
 {
     assert(is_valid_host(host_id));
     assert(dma_chan == SPI_DMA_CH_AUTO);
     esp_err_t ret = ESP_OK;
 
     if (dma_chan == SPI_DMA_CH_AUTO) {
+        uint32_t burst_size = SPI_DMA_DEFAULT_BURST_SIZE;
+        ESP_RETURN_ON_ERROR(resolve_dma_burst_size(dma_burst_size, &burst_size), SPI_TAG, "invalid dma_burst_size");
+
         gdma_channel_alloc_config_t alloc_config = {
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
             .flags.isr_cache_safe = true,
@@ -285,8 +311,10 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
         }
 #endif
         gdma_transfer_config_t trans_cfg = {
-            .max_data_burst_size = 32,
+            .max_data_burst_size = burst_size,
+#if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
             .access_ext_mem = true, // allow to transfer data from/to external memory directly by DMA
+#endif
         };
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->tx_dma_chan, &trans_cfg), SPI_TAG, "config gdma tx transfer failed");
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->rx_dma_chan, &trans_cfg), SPI_TAG, "config gdma rx transfer failed");
@@ -299,7 +327,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 }
 #endif  //#if !SOC_GDMA_SUPPORTED
 
-esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan)
+esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size)
 {
     assert(is_valid_host(host_id));
 #if CONFIG_IDF_TARGET_ESP32
@@ -315,7 +343,7 @@ esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma
         goto cleanup;
     }
 
-    ret = alloc_dma_chan(host_id, dma_chan, dma_ctx);
+    ret = alloc_dma_chan(host_id, dma_chan, dma_burst_size, dma_ctx);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -413,9 +441,11 @@ esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t 
             alignment = MAX(dma_ctx->dma_align_rx_int, bus_attr->cache_align_int);
         }
     }
-    need_malloc |= (((uint32_t)buffer | len) & (alignment - 1));
+    // length also must be aligned if cache sync is required, otherwise don't need
+    need_malloc |= (use_psram || bus_attr->cache_align_int > 1) ? (((uint32_t)buffer | len) & (alignment - 1)) : (((uint32_t)buffer) & (alignment - 1));
     uint32_t align_len = (len + alignment - 1) & (~(alignment - 1));   // up align alignment
     ESP_EARLY_LOGV(SPI_TAG, "SPI%d %s %p, len %d, is_ptr_ext %d, use_psram: %d, alignment: %d, need_malloc: %d from %s", host_id + 1, is_tx ? "TX" : "RX", buffer, len, is_ptr_ext, use_psram, alignment, need_malloc, (mem_cap & MALLOC_CAP_SPIRAM) ? "psram" : "internal");
+
     if (need_malloc) {
         ESP_RETURN_ON_FALSE_ISR(auto_malloc, ESP_ERR_INVALID_STATE, SPI_TAG, "%s addr&len not align to %d, or not dma_capable, suggest use 'heap_caps_malloc' or enable auto_align", is_tx ? "TX" : "RX", alignment);
         uint32_t *temp = heap_caps_aligned_alloc(alignment, align_len, mem_cap);
@@ -907,7 +937,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     bus_attr->dma_enabled = (dma_chan != SPI_DMA_DISABLED);
     bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     if (bus_attr->dma_enabled) {
-        err = spicommon_dma_chan_alloc(host_id, dma_chan);
+        err = spicommon_dma_chan_alloc(host_id, dma_chan, bus_config->dma_burst_size);
         if (err != ESP_OK) {
             goto cleanup;
         }

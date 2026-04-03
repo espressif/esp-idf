@@ -881,6 +881,15 @@ menu "Wi-Fi"
                 This option enables assert checks to verify that modem RF power state
                 is correctly cleared before pmu sleep.
 
+        config ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT
+            bool "Support station connection to hidden APs using passive scan when country policy is auto"
+            default n
+            help
+                Select this option to enable/disable support for station connections
+                to hidden APs using passive scan when the country policy is set to auto.
+
     endif # wifi enabled
 
 endmenu # Wi-Fi
+
+rsource "remote/Kconfig.remote"

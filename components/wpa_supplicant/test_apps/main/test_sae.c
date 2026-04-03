@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,32 @@
 #include "utils/wpabuf.h"
 #include "test_utils.h"
 #include "test_wpa_supplicant_common.h"
+#include "esp_timer.h"
 
 typedef struct crypto_bignum crypto_bignum;
+
+static int sae_commit_parse_limit_us(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    return 400000;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    return 300000;
+#elif CONFIG_IDF_TARGET_ESP32S2
+    return 380000;
+#elif CONFIG_IDF_TARGET_ESP32C3
+    return 340000;
+#elif CONFIG_IDF_TARGET_ESP32C5
+    return 130000;
+#elif CONFIG_IDF_TARGET_ESP32C6
+    return 180000;
+#elif CONFIG_IDF_TARGET_ESP32C61
+    return 200000;
+#elif CONFIG_IDF_TARGET_ESP32C2
+    return 230000;
+#else
+    return 230000;
+#endif
+}
 
 static struct wpabuf *wpabuf_alloc2(size_t len)
 {
@@ -233,8 +257,12 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         u8 pwd[] = "ESP32-WPA3";
         struct wpabuf *buf;
         int default_groups[] = { IANA_SECP256R1, 0 };
+        int64_t start_us;
+        int64_t total_us;
+        int limit_us = sae_commit_parse_limit_us();
 
         memset(&sae, 0, sizeof(sae));
+        start_us = esp_timer_get_time();
 
         TEST_ASSERT(sae_set_group(&sae, IANA_SECP256R1) == 0);
 
@@ -253,6 +281,12 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         wpabuf_free2(buf);
         sae_clear_temp_data(&sae);
         sae_clear_data(&sae);
+        total_us = esp_timer_get_time() - start_us;
+
+        ESP_LOGI("SAE Test",
+                 "Commit/parse timing(us): total=%lld limit=%d",
+                 (long long) total_us, limit_us);
+        TEST_ASSERT_MESSAGE(total_us <= limit_us, "SAE commit/parse timing regression");
 
     }
     ESP_LOGI("SAE Test", "=========== Complete ============");

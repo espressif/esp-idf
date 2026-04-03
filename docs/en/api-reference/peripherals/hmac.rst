@@ -26,12 +26,18 @@ However, the HMAC itself is not bound to this use case. It can also be used for 
 HMAC on {IDF_TARGET_NAME}
 -----------------------------
 
-On {IDF_TARGET_NAME}, the HMAC module works with a secret key burnt into the eFuses. This eFuse key can be made completely inaccessible for any resources outside the cryptographic modules, thus avoiding key leakage.
+On {IDF_TARGET_NAME}, the HMAC module works with a secret key burnt into the eFuses.
+
+.. only:: SOC_KEY_MANAGER_SUPPORTED
+
+    On {IDF_TARGET_NAME}, the HMAC module also supports storing a secret key in the Key Manager. Refer to :ref:`key-manager` for more details.
+
+This key can be made completely inaccessible for any resources outside the cryptographic modules, thus avoiding key leakage.
 
 Furthermore, {IDF_TARGET_NAME} has three different application scenarios for its HMAC module:
 
 #. HMAC is generated for software use
-#. HMAC is used as a key for the Digital Signature (DS) module
+#. HMAC is used as a key for the RSA Digital Signature Peripheral (RSA_DS)
 #. HMAC is used for enabling the soft-disabled JTAG interface
 
 The first mode is called **Upstream** mode, while the last two modes are called **Downstream** modes.
@@ -52,11 +58,11 @@ Each key has a corresponding eFuse parameter **key purpose** determining for whi
    * - 8
      - HMAC generated for software use
    * - 7
-     - HMAC used as a key for the Digital Signature (DS) module
+     - HMAC used as a key for the RSA Digital Signature Peripheral (RSA_DS)
    * - 6
      - HMAC used for enabling the soft-disabled JTAG interface
    * - 5
-     - HMAC both as a key for the DS module and for enabling JTAG
+     - HMAC both as a key for the RSA_DS module and for enabling JTAG
 
 This is to prevent the usage of a key for a different function than originally intended.
 
@@ -73,16 +79,16 @@ In this case, the HMAC is given out to the software, e.g., to authenticate a mes
 
 The API to calculate the HMAC is :cpp:func:`psa_mac_compute`, which takes an opaque PSA key referencing an eFuse key block that contains the secret and has its purpose set to Upstream mode.
 
-HMAC for Digital Signature
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+HMAC for RSA Digital Signature
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Key purpose values: 7, 5
 
-The HMAC can be used as a key derivation function to decrypt private key parameters which are used by the Digital Signature module. A standard message is used by the hardware in that case. You only need to provide the eFuse key block and purpose on the HMAC side, additional parameters are required for the Digital Signature component in that case.
+The HMAC can be used as a key derivation function to decrypt private key parameters which are used by the RSA Digital Signature module. A standard message is used by the hardware in that case. You only need to provide the eFuse key block and purpose on the HMAC side, additional parameters are required for the RSA Digital Signature component in that case.
 
-Neither the key nor the actual HMAC is ever exposed outside the HMAC module and DS component. The calculation of the HMAC and its handover to the DS component happen internally.
+Neither the key nor the actual HMAC is ever exposed outside the HMAC module and RSA_DS component. The calculation of the HMAC and its handover to the RSA_DS component happen internally.
 
-For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **Digital Signature (DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
+For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **RSA Digital Signature Peripheral (RSA_DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
 .. _hmac_for_enabling_jtag:
 
@@ -142,6 +148,8 @@ Application Outline
 
 The following code is an outline of how to set an eFuse key and then use it to calculate an HMAC for software usage.
 
+Using eFuses to store the HMAC key:
+
 We use ``esp_efuse_write_key`` to set physical key block 4 in the eFuse for the HMAC module together with its purpose. ``ESP_EFUSE_KEY_PURPOSE_HMAC_UP`` (8) means that this key can only be used for HMAC generation for software usage:
 
 .. code-block:: c
@@ -162,6 +170,8 @@ We use ``esp_efuse_write_key`` to set physical key block 4 in the eFuse for the 
 
 Now we can calculate an HMAC for software usage with the saved key through the PSA Crypto API.
 
+Using an eFuse-based HMAC key:
+
 .. code-block:: c
 
     #include "psa/crypto.h"
@@ -181,10 +191,9 @@ Now we can calculate an HMAC for software usage with the saved key through the P
     psa_set_key_bits(&attributes, 256);
     psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_HMAC_VOLATILE);
 
-    // Create opaque key reference
+    // Create opaque key reference for eFuse-based key
     esp_hmac_opaque_key_t opaque_key = {
-        .use_km_key = false,
-        .efuse_block = EFUSE_BLK_KEY4,
+        .efuse_key_id = HMAC_KEY4,
     };
 
     // Import the opaque key

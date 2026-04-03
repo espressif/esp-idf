@@ -60,7 +60,7 @@ def esp_reset_and_wait_ready_esp32c5(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @idf_parametrize(
     'config',
     [
@@ -70,11 +70,11 @@ def esp_reset_and_wait_ready_esp32c5(dut: Dut) -> None:
     indirect=['config'],
 )
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_esp_system_esp32c5_eco3(dut: Dut) -> None:
+def test_esp_system_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=60)
 
 
-def esp_reset_and_wait_ready_esp32c5_eco3(dut: Dut) -> None:
+def esp_reset_and_wait_ready_esp32c5_rev1(dut: Dut) -> None:
     dut.serial.hard_reset()
     time.sleep(0.5)
     dut.expect_exact('Press ENTER to see the list of tests')

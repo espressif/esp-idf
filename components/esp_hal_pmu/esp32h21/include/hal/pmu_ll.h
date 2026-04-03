@@ -134,6 +134,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_xtal_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode,
     hw->hp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_set_xtalx2_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_xtalx2)
+{
+    hw->hp_sys[mode].xtal.xpd_xtalx2 = xpd_xtalx2;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_hp_mode_t mode, bool discnnt)
 {
     hw->hp_sys[mode].bias.discnnt_dig_rtc = discnnt;
@@ -299,6 +304,12 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_xtal_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode,
     hw->lp_sys[mode].xtal.xpd_xtal = slp_xpd;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_lp_set_xtalx2_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode, bool xpd_xtalx2)
+{
+    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
+    hw->lp_sys[mode].xtal.xpd_xtalx2 = xpd_xtalx2;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_power(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t flag)
 {
     hw->lp_sys[mode].dig_power.val = flag;
@@ -318,6 +329,12 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_dcdc_ccm_enable(pmu_dev_t *hw, pmu_lp_mode_
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
     hw->lp_sys[mode].bias.dcdc_ccm_enb = enable;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_set_dcdc_clear_ready(pmu_dev_t *hw, pmu_lp_mode_t mode, bool clear_rdy)
+{
+    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
+    hw->lp_sys[mode].bias.dcdc_clear_rdy = clear_rdy;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_reg_dpcur_bias(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t value)
@@ -352,9 +369,15 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode,
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem_mask)
 {
-    hw->power.mem_mask.mem0_mask = mem_mask & BIT(0);
-    hw->power.mem_mask.mem1_mask = mem_mask & BIT(1);
-    hw->power.mem_mask.mem2_mask = mem_mask & BIT(2);
+    hw->power.mem_mask.mem0_mask = (mem_mask & BIT(0)) ? 1 : 0;
+    hw->power.mem_mask.mem1_mask = (mem_mask & BIT(1)) ? 1 : 0;
+    hw->power.mem_mask.mem2_mask = (mem_mask & BIT(2)) ? 1 : 0;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_vdd_flash_tiel_enable(pmu_dev_t *hw, bool enable)
+{
+    hw->power.vdd_flash.ldo_tiel_en = enable;
+    hw->power.vdd_flash.ldo_tiel = enable;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_lp_mode_t mode, bool discnnt)
@@ -764,7 +787,8 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_get_dcdc_boost_dreg(pmu_dev_t *hw)
 
 FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_ext_ocode(pmu_dev_t *hw, uint32_t ocode)
 {
-    hw->ble_bandgap_ctrl.ext_ocode = ocode;
+    /* Field is 8 bits (see PMU_EXT_OCODE); mask matches REG_SET_FIELD(..., PMU_EXT_OCODE, x). */
+    hw->ble_bandgap_ctrl.ext_ocode = ocode & 0xFFU;
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_get_ble_bandgap_ext_ocode(pmu_dev_t *hw)

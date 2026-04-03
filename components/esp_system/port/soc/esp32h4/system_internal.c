@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,10 +20,13 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/uart_reg.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
 #include "hal/uart_ll.h"
 
 #include "esp32h4/rom/cache.h"
+#include "esp32h4/rom/ets_sys.h"
 // TODO: IDF-11911 need refactor
 
 void esp_system_reset_modules_on_exit(void)
@@ -92,6 +95,7 @@ void esp_restart_noos(void)
 {
     // Disable interrupts
     rv_utils_intr_global_disable();
+#if SOC_RTC_WDT_SUPPORTED
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -102,6 +106,7 @@ void esp_restart_noos(void)
     //Enable flash boot mode so that flash booting after restart is protected by the RTC WDT.
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+#endif /* SOC_RTC_WDT_SUPPORTED */
 
     const uint32_t core_id = esp_cpu_get_core_id();
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -110,6 +115,7 @@ void esp_restart_noos(void)
     esp_cpu_stall(other_core_id);
 #endif
 
+#if SOC_WDT_SUPPORTED
     // Disable TG0/TG1 watchdogs
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
     wdt_hal_write_protect_disable(&wdt0_context);
@@ -120,6 +126,7 @@ void esp_restart_noos(void)
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
+#endif /* SOC_WDT_SUPPORTED */
 
     // Disable cache
     Cache_Disable_Cache(CACHE_MAP_ALL);

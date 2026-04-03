@@ -205,16 +205,13 @@ config BT_LE_SUBRATE_ENABLED
 
 config BT_LE_CTE_FEATURE_ENABLED
     bool "Enable Bluetooth LE Direction Finding (AoA/AoD)"
-    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED && !(BT_LE_SECURITY_ENABLE)
+    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED
     default n
     help
         Enable this option to activate Bluetooth LE Direction Finding (AoA/AoD) feature.
         Note:
         This feature allows devices to determine the direction of a Bluetooth CTE signal,
         enabling Angle of Arrival (AoA) and Angle of Departure (AoD) functionality.
-        In chip esp32h2, Direction Finding is not supported in encrypted
-        communication scenarios. If you are using chip esp32h2, ensure that encryption is
-        disabled when using this feature.
 
 config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
     bool "Enable BLE periodic advertising with response"
@@ -503,15 +500,6 @@ config BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
     default y
     help
         Enable encryption connection
-
-config BT_LE_CRYPTO_STACK_MBEDTLS
-    bool "Override TinyCrypt with mbedTLS for crypto computations"
-    default y
-    depends on !BT_NIMBLE_ENABLED
-    select MBEDTLS_CMAC_C
-    help
-        Enable this option to choose mbedTLS instead of TinyCrypt for crypto
-        computations.
 
 config BT_LE_WHITELIST_SIZE
     int "BLE white list size"

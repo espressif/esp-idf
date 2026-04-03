@@ -892,7 +892,7 @@ esp_err_t esp_wifi_nan_sync_stop(void)
 
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 {
-    int pub_id;
+    int pub_id = 0;
 
     if (publish_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Publish function with USD Discovery "
@@ -977,7 +977,7 @@ fail:
 
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
-    int sub_id;
+    int sub_id = 0;
 
     if (subscribe_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Subscribe function with USD Discovery "

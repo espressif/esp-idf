@@ -103,8 +103,10 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(config->data_lane_num <= MIPI_CSI_HOST_LL_LANE_NUM_MAX, ESP_ERR_INVALID_ARG, TAG, "lane num should be equal or smaller than %d", MIPI_CSI_HOST_LL_LANE_NUM_MAX);
-    ESP_RETURN_ON_FALSE(config->input_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "input_data_color_type must be specified");
-    ESP_RETURN_ON_FALSE(config->output_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "output_data_color_type must be specified");
+    if (!config->data_type.bits_per_pixel) {
+        ESP_RETURN_ON_FALSE(config->input_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "input_data_color_type must be specified");
+        ESP_RETURN_ON_FALSE(config->output_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "output_data_color_type must be specified");
+    }
 
     bool is_less_v1 = false;  //version 1 since P4 rev3
 #if CONFIG_IDF_TARGET_ESP32P4
@@ -149,23 +151,32 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ESP_LOGD(TAG, "ctlr->h_res: 0d %"PRId32, ctlr->h_res);
     ESP_LOGD(TAG, "ctlr->v_res: 0d %"PRId32, ctlr->v_res);
 
+    ctlr->custom_data_depth = config->data_type.bits_per_pixel;
     //in color type
-    int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
-    ESP_GOTO_ON_FALSE(in_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported input color format");
-    ctlr->in_color_format = config->input_data_color_type;
-    ctlr->in_bpp = in_bits_per_pixel;
+    if (!config->data_type.bits_per_pixel) {
+        int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
+        ESP_GOTO_ON_FALSE(in_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported input color format");
+        ctlr->in_color_format = config->input_data_color_type;
+        ctlr->in_bpp = in_bits_per_pixel;
+    } else {
+        ctlr->in_bpp = config->data_type.bits_per_pixel;
+    }
     ESP_LOGD(TAG, "ctlr->in_bpp: 0d %d", ctlr->in_bpp);
 
-    //out color type
-    int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->output_data_color_type);
+    if (!config->data_type.bits_per_pixel) {
+        //out color type
+        int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->output_data_color_type);
 
-    ESP_GOTO_ON_FALSE(out_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported output color format");
-    ctlr->out_color_format = config->output_data_color_type;
-    ctlr->out_bpp = out_bits_per_pixel;
+        ESP_GOTO_ON_FALSE(out_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported output color format");
+        ctlr->out_color_format = config->output_data_color_type;
+        ctlr->out_bpp = out_bits_per_pixel;
+    } else {
+        ctlr->out_bpp = config->data_type.bits_per_pixel;
+    }
     ESP_LOGD(TAG, "ctlr->out_bpp: 0d %d", ctlr->out_bpp);
 
     // Note: Width * Height * BitsPerPixel must be divisible by 8
-    int fb_size_in_bits = config->v_res * config->h_res * out_bits_per_pixel;
+    int fb_size_in_bits = config->v_res * config->h_res * ctlr->out_bpp;
     ESP_GOTO_ON_FALSE((fb_size_in_bits % 8 == 0), ESP_ERR_INVALID_ARG, err, TAG, "framesize not 8bit aligned");
     ctlr->fb_size_in_bytes = fb_size_in_bits / 8;
     ESP_LOGD(TAG, "ctlr->fb_size_in_bytes=%d", ctlr->fb_size_in_bytes);
@@ -192,6 +203,15 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     hal_config.byte_swap_en = config->byte_swap_en;
     mipi_csi_hal_init(&ctlr->hal, &hal_config);
     mipi_csi_brg_ll_set_burst_len(ctlr->hal.bridge_dev, 512);
+    if (!config->data_type.bits_per_pixel) {
+        //for yuv, rgb and raw
+        mipi_csi_brg_ll_set_data_type_min(ctlr->hal.bridge_dev, 0x12);
+        mipi_csi_brg_ll_set_data_type_max(ctlr->hal.bridge_dev, 0x2f);
+    } else {
+        mipi_csi_brg_ll_set_data_type_min(ctlr->hal.bridge_dev, config->data_type.data_type_min);
+        mipi_csi_brg_ll_set_data_type_max(ctlr->hal.bridge_dev, config->data_type.data_type_max);
+    }
+    mipi_csi_brg_ll_enable_color_conversion(ctlr->hal.bridge_dev, true);
 
     cam_ctlr_format_conv_config_t format_conv_config = {
         .src_format = config->input_data_color_type,
@@ -612,9 +632,7 @@ static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_
     ESP_RETURN_ON_FALSE(handle && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
 
-    mipi_csi_brg_ll_enable_color_conversion(ctlr->hal.bridge_dev, true);
-
-    if (config->src_format == config->dst_format) {
+    if (ctlr->custom_data_depth || config->src_format == config->dst_format) {
         mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, true);
         return ESP_OK;
     } else {

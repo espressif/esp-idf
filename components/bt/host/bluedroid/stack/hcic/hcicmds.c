@@ -1672,6 +1672,28 @@ BOOLEAN btsnd_hcic_read_inq_tx_power (void)
     return (TRUE);
 }
 
+BOOLEAN btsnd_hcic_write_inq_tx_power (INT8 tx_power)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_W_INQ_TX_POWER)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_W_INQ_TX_POWER;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_WRITE_INQ_TX_POWER_LEVEL);
+    UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_W_INQ_TX_POWER);
+    INT8_TO_STREAM   (pp, tx_power);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    return (TRUE);
+}
+
 BOOLEAN btsnd_hcic_send_keypress_notif (BD_ADDR bd_addr, UINT8 notif)
 {
     BT_HDR *p;

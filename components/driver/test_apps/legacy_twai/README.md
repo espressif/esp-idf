@@ -4,5 +4,5 @@
 # Enable Socket CAN Device with bitrate 250Kbps
 
 ```bash
-sudo ip link set can0 up type can bitrate 250000 restart-ms 100
+sudo ip link set can0 up type can bitrate 250000
 ```

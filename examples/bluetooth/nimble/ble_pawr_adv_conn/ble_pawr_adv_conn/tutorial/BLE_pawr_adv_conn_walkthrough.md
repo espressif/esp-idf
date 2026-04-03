@@ -14,7 +14,8 @@ This example is located in the examples folder of the ESP-IDF under the [ble_paw
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
-#include "host/ble_hs.h
+#include "host/ble_hs.h"
+#include "host/util/util.h"
 ```
 These includes provide:
 
@@ -25,6 +26,8 @@ These includes provide:
 - NimBLE stack porting and FreeRTOS integration
 
 - BLE host stack functionality
+
+- BLE utility functions for address management (util.h)
 
 ## Main Entry Point
 
@@ -122,7 +125,6 @@ esp_err_t esp_nimble_init(void)
 
 ## PAwR Configuration
 ```c
-#define BLE_PAWR_EVENT_INTERVAL               (520)
 #define BLE_PAWR_EVENT_PERIODIC_INTERVAL_MS   (3000)
 #define BLE_PAWR_NUM_SUBEVTS                  (10)
 #define BLE_PAWR_SUB_INTERVAL                 (52)
@@ -133,7 +135,7 @@ esp_err_t esp_nimble_init(void)
 ```
 These parameters control:
 
-- The interval between periodic advertising events
+- The periodic advertising interval in milliseconds
 
 - Number of subevents per periodic interval
 
@@ -145,20 +147,20 @@ These parameters control:
 
 - num_subevents: Number of subevents per periodic interval (10)
 
-- subevent_interval: Time between subevents (44 × 1.25ms = 55ms)
+- subevent_interval: Time between subevents (52 × 1.25ms = 65ms)
 
-- response_slot_delay: First response slot delay (20 × 1.25ms = 25ms)
+- response_slot_delay: First response slot delay (5 × 1.25ms = 6.25ms)
 
-- response_slot_spacing: Time between slots (32 × 0.125ms = 4ms)
+- response_slot_spacing: Time between slots (10 × 0.125ms = 1.25ms)
 
-- num_response_slots: Number of response slots per subevent (5)
+- num_response_slots: Number of response slots per subevent (25)
 
 ## PAwR Advertisement
 
-The start_periodic_adv() function configures and starts PAwR:
+The start_periodic_adv() function configures and starts PAwR. It takes `own_addr_type` as a parameter, which is determined dynamically via `ble_hs_id_infer_auto()` in the `on_sync` callback:
 ```c
 static void
-start_periodic_adv(void)
+start_periodic_adv(uint8_t own_addr_type)
 {
     int rc;
     uint8_t addr[6];
@@ -169,12 +171,13 @@ start_periodic_adv(void)
     uint8_t instance = 0;
 
 #if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
-    struct ble_gap_periodic_adv_enable_params eparams;
+    struct ble_gap_periodic_adv_start_params eparams;
     memset(&eparams, 0, sizeof(eparams));
 #endif
 
-    /* Get the local public address. */
-    rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, addr, NULL);
+    /* Get the local address. */
+    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
     assert (rc == 0);
 
     ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],
@@ -182,7 +185,7 @@ start_periodic_adv(void)
 
     /* For periodic we use instance with non-connectable advertising */
     memset (&params, 0, sizeof(params));
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
@@ -271,12 +274,12 @@ The API ble_gap_connect_with_synced() is a NimBLE API used by a PAwR Advertiser 
 This is especially useful in use cases where on-demand, peer-to-peer data exchange is needed.
 ```c
 ble_gap_connect_with_synced(
-    BLE_OWN_ADDR_PUBLIC,
+    own_addr_type,
     adv_handle,
     subevent,
     &peer_addr,
     30000,
-    BLE_GAP_LE_PHY_1M_MASK,
+    phy_mask,
     NULL, NULL, NULL,
     gap_event_cb, NULL);
 ```
@@ -287,7 +290,32 @@ Highlights:
 - Avoids scanning (direct connection)
 - Enables faster, deterministic connection
 
-📌 Tip: Choose connection interval as a multiple of subevent interval for optimal scheduling.
+> Tip: Choose connection interval as a multiple of subevent interval for optimal scheduling.
+
+## Sync Callback
+
+When the BLE host and controller are synced, the `on_sync` callback is invoked. It ensures a valid identity address is set and determines the appropriate address type before starting PAwR:
+
+```c
+static void
+on_sync(void)
+{
+    int rc;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+    /* Begin advertising. */
+    start_periodic_adv(own_addr_type);
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
+- `ble_hs_id_infer_auto(0, &own_addr_type)`: Automatically determines the best address type to use based on what is available on the device.
 
 ## Host Task
 ```c

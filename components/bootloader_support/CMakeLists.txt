@@ -70,9 +70,16 @@ if(CONFIG_ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE)
 endif()
 
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
+    set(priv_include_dirs)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
-    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
+    # micro-ecc is only needed for secure boot sources built under BOOTLOADER_BUILD.
+    # For CONFIG_APP_BUILD_TYPE_RAM (loadable ELF app) we don't build those sources,
+    # and micro-ecc lives in the bootloader subproject so it isn't available in app builds.
+    set(priv_requires spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
+    if(BOOTLOADER_BUILD)
+        list(APPEND priv_requires micro-ecc)
+    endif()
     # `esp_hal_ana_conv` is required by bootloader_random_esp32xx.c
     list(APPEND priv_requires esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv esp_hal_rtc_timer
          esp_hal_clock esp_hal_security)

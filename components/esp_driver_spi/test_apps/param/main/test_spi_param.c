@@ -1460,14 +1460,16 @@ static void test_slave_fd_no_dma(void)
                     test_fill_random_to_buffers_dualboard(211 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
-                    spi_slave_transaction_t trans_cfg = {
+                    spi_slave_transaction_t *ret_trans, trans_cfg = {
                         .tx_buffer = slave_send,
                         .rx_buffer = slave_receive,
                         .length = test_trans_len * 8,
                         .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
+                    TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
                     unity_send_signal("Slave ready");
-                    TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
+                    TEST_ESP_OK(spi_slave_get_trans_result(TEST_SPI_HOST, &ret_trans, portMAX_DELAY));
+                    TEST_ASSERT_EQUAL(&trans_cfg, ret_trans);
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
                     ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_receive, test_trans_len, ESP_LOG_DEBUG);
@@ -1952,14 +1954,15 @@ static void test_slave_sio_no_dma(void)
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(122 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    spi_slave_transaction_t trans = {
+                    spi_slave_transaction_t *ret_trans, trans = {
                         .length = SOC_SPI_MAXIMUM_BUFFER_SIZE * 8,
                         .tx_buffer = slave_send,
                         .rx_buffer = slave_receive,
                         .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
+                    TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans, portMAX_DELAY));
                     unity_send_signal("Slave ready");
-                    TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans, portMAX_DELAY));
+                    TEST_ESP_OK(spi_slave_get_trans_result(TEST_SPI_HOST, &ret_trans, portMAX_DELAY));
 
                     if (sio_master_in) {
                         ESP_LOG_BUFFER_HEX("Slave tx", trans.tx_buffer, SOC_SPI_MAXIMUM_BUFFER_SIZE);

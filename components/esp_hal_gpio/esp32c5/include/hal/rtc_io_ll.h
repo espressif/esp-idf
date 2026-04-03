@@ -25,7 +25,9 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 
-#define RTCIO_LL_PIN_FUNC       1
+#define RTCIO_LL_PIN_FUNC           1
+
+#define RTCIO_LL_GPIO_NUM_OFFSET    0 // rtcio 0-6 correspond to gpio 0-6
 
 #ifdef __cplusplus
 extern "C" {

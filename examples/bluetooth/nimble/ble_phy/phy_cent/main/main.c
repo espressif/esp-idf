@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -236,7 +236,6 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     int ad_struct_len = 0;
     uint8_t test_addr[6];
     uint32_t peer_addr[6];
-    uint8_t type = 0;
 
     memset(peer_addr, 0x0, sizeof peer_addr);
 
@@ -268,13 +267,10 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         if (!ad_struct_len || (offset + ad_struct_len + 1 > disc->length_data)) {
             break;
         }
-        type = disc->data[offset + 1];
-        if ((type == 0x02 || type == 0x03) && ad_struct_len >= 3) {
-            /* Scan UUID bytes for LE_PHY_UUID16 (little-endian: 0xF2 0xAB) */
-            for (int i = 2; i + 1 < ad_struct_len; i += 2) {
-                if (disc->data[offset + i] == 0xF2 && disc->data[offset + i + 1] == 0xAB) {
-                    return 1;
-                }
+        /* Search if LE PHY UUID is advertised */
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
+            if ( disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2 ) {
+                return 1;
             }
         }
         offset += ad_struct_len + 1;

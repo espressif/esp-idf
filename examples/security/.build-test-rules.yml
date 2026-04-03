@@ -3,18 +3,18 @@
 examples/security/flash_encryption:
   disable:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14367
+    - if: CONFIG_NAME == "key_mgr" and SOC_KEY_MANAGER_SUPPORTED != 1
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: not support yet # TODO: [ESP32S31] IDF-14628
   disable_test:
+    - if: CONFIG_NAME == "key_mgr"
+      temporary: true
+      reason: lack of runners
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32c5", "esp32c61"]
       temporary: true
       reason: lack of runners
   depends_components:
-    - *common_components
     - bootloader_support
 
 examples/security/hmac_soft_jtag:
@@ -24,10 +24,19 @@ examples/security/hmac_soft_jtag:
     - if: IDF_TARGET not in ["esp32c6"]
       reason: sufficient to test on one HMAC-capable chip
   depends_components:
-    - *common_components
     - esp_hw_support
   depends_filepatterns:
     - examples/security/hmac_soft_jtag/**/*
+
+examples/security/key_manager:
+  disable:
+    - if: SOC_KEY_MANAGER_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c5"]
+      reason: sufficient to test on one Key Manager-supported chip
+  depends_components:
+    - esp_security
+    - mbedtls
 
 examples/security/nvs_encryption_hmac:
   disable:
@@ -37,7 +46,6 @@ examples/security/nvs_encryption_hmac:
       temporary: true
       reason: lack of runners
   depends_components:
-    - *common_components
     - nvs_flash
     - nvs_sec_provider
   depends_filepatterns:
@@ -47,7 +55,6 @@ examples/security/security_features_app:
   disable:
     - if: IDF_TARGET not in ["esp32c3", "esp32s3"]
   depends_components:
-    - *common_components
     - bootloader_support
 
 examples/security/tee/tee_attestation:

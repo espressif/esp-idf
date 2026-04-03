@@ -2,6 +2,9 @@ idf_build_get_property(target IDF_TARGET)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
+    set(srcs)
+    set(inc)
+    set(priv_inc)
 
     list(APPEND inc include)
     if(CONFIG_VFS_SUPPORT_IO)

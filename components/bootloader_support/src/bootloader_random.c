@@ -45,7 +45,7 @@
     assert(buffer != NULL);
 
     for (size_t i = 0; i < length; i++) {
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if !SOC_RTC_TIMER_V1
         random = REG_READ(WDEV_RND_REG);
         start = esp_cpu_get_cycle_count();
         do {

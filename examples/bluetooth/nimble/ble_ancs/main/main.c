@@ -340,9 +340,8 @@ ext_ble_ancs_advertise(void)
     /* use defaults for non-set params */
     memset(&params, 0, sizeof(params));
 
-    /* enable connectable, scannable advertising */
+    /* enable connectable advertising */
     params.connectable = 1;
-    params.scannable = 1;
 
     /* advertise using configured addr */
     params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
@@ -367,7 +366,7 @@ ext_ble_ancs_advertise(void)
     rc = os_mbuf_append(data, ext_adv_pattern_1, sizeof(ext_adv_pattern_1));
     assert(rc == 0);
 
-    rc = ble_gap_ext_adv_rsp_set_data(instance, data);
+    rc = ble_gap_ext_adv_set_data(instance, data);
     assert (rc == 0);
 
     /* start advertising */
@@ -646,6 +645,8 @@ ble_ancs_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456; // This is the passkey to be entered on peer
             ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);

@@ -117,3 +117,6 @@ components/console/private_include/console_private.h
 
 components/esp_driver_uart/include/driver/uart.h
 components/esp_driver_sdmmc/include/esp_private/sd_host_private.h
+
+# causes collisions between local/remote wifi headers (will be solved by #ifndef ESP_WIFI_HE_H)
+components/esp_wifi/include/esp_wifi_he.h

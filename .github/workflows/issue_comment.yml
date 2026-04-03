@@ -1,5 +1,9 @@
 name: Sync issue comments to JIRA
 
+permissions:
+  issues: write
+  pull-requests: write
+
 # This workflow will be triggered when new issue comment is created (including PR comments)
 on: issue_comment
 

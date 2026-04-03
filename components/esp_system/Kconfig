@@ -74,6 +74,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_SINGLE_CORE_MODE
         bool
+        default y if IDF_TARGET_LINUX
         default n
         help
             Only initialize and use the main core.
@@ -269,6 +270,7 @@ menu "ESP System Settings"
 
     config ESP_INT_WDT
         bool "Interrupt watchdog"
+        depends on SOC_WDT_SUPPORTED
         default y
         help
             This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
@@ -294,6 +296,7 @@ menu "ESP System Settings"
 
     config ESP_TASK_WDT_EN
         bool "Enable Task Watchdog Timer"
+        depends on SOC_WDT_SUPPORTED
         default y
         help
             The Task Watchdog Timer can be used to make sure individual tasks are still

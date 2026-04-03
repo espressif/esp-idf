@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,9 +29,9 @@ static bool ssl_ciphersuite_uses_rsa_key_ex(mbedtls_ssl_context *ssl)
 }
 #endif
 
-static int manage_resource(mbedtls_ssl_context *ssl, bool add)
+static int manage_resource(mbedtls_ssl_context *ssl, bool add, int prev_state)
 {
-    int state = add ? ssl->MBEDTLS_PRIVATE(state) : ssl->MBEDTLS_PRIVATE(state) - 1;
+    int state = add ? ssl->MBEDTLS_PRIVATE(state) : prev_state;
 
     if (mbedtls_ssl_is_handshake_over(ssl) || ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
         return 0;
@@ -207,11 +207,12 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 
 int __wrap_mbedtls_ssl_handshake_server_step(mbedtls_ssl_context *ssl)
 {
-    CHECK_OK(manage_resource(ssl, true));
+    int prev_state = ssl->MBEDTLS_PRIVATE(state);
+    CHECK_OK(manage_resource(ssl, true, prev_state));
 
     CHECK_OK(__real_mbedtls_ssl_handshake_server_step(ssl));
 
-    CHECK_OK(manage_resource(ssl, false));
+    CHECK_OK(manage_resource(ssl, false, prev_state));
 
     return 0;
 }

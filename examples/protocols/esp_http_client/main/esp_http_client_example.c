@@ -431,6 +431,7 @@ static void https_with_url(void)
         .url = "https://www.howsmyssl.com",
         .event_handler = _http_event_handler,
         .crt_bundle_attach = esp_crt_bundle_attach,
+        .timeout_ms = 5000,
     };
     ESP_LOGI(TAG, "HTTPS request with url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -477,6 +478,7 @@ static void https_with_hostname_path(void)
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
+        .timeout_ms = 5000,
     };
     ESP_LOGI(TAG, "HTTPS request with hostname and path =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);

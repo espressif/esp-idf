@@ -40,6 +40,7 @@ repos:
       - id: check-executables-have-shebangs
       - id: mixed-line-ending
         args: ['-f=lf']
+        exclude: *whitespace_excludes
       - id: double-quote-string-fixer
       - id: no-commit-to-branch
         name: Do not use more than one slash in the branch name
@@ -140,7 +141,7 @@ repos:
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
         language: python
-        files: 'tools/test_apps/.+|examples/.+|components/.+|tools/idf_py_actions/constants.py|tools/ci/check_build_test_rules.py'
+        files: 'tools/.+|examples/.+|components/.+'
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
@@ -231,3 +232,8 @@ repos:
     hooks:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
+  - repo: https://github.com/espressif/idf-ci
+    rev: v1.0.0
+    hooks:
+      - id: check-tests-missing-config
+        files: 'pytest_.*\.py$|sdkconfig(\..*)?$'

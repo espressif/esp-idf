@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -374,6 +374,41 @@ static inline uint32_t usb_dwc_ll_gsnpsid_get_id(usb_dwc_dev_t *hw)
 static inline unsigned usb_dwc_ll_ghwcfg_get_fifo_depth(usb_dwc_dev_t *hw)
 {
     return hw->ghwcfg3_reg.dfifodepth;
+}
+
+/**
+ * @brief Get transfer size counter width
+ *
+ * For each transfer, the USB-DWC core keeps track of number of bytes for the particular transfer.
+ * Hence, maximum transfer size is limited by (2^xfer_size_width - 1) bytes
+ *
+ * Minimum transfer size counter width is 11. So value of 0 of xfersizewidth field in the register must be interpreted as 11.
+ *
+ * @see USB-DWC databook Table 5-26
+ * @param[in] hw Start address of the DWC_OTG registers
+ * @return Effective bitwidth of the transfer size counter
+ */
+static inline unsigned usb_dwc_ll_ghwcfg_get_xfer_size_width(usb_dwc_dev_t *hw)
+{
+    return hw->ghwcfg3_reg.xfersizewidth + 11;
+}
+
+/**
+ * @brief Get packet counter width
+ *
+ * For each transfer, the USB-DWC core keeps track of the number of packets needed for the particular transfer
+ * and its endpoint's Maximum Packet Size.
+ * Hence, maximum transfer size is limited by MPS * (2^packet_counter_width - 1)
+ *
+ * Minimum packet counter width is 4. So value of 0 of pktsizewidth field in the register must be interpreted as 4.
+ *
+ * @see USB-DWC databook Table 5-26
+ * @param[in] hw Start address of the DWC_OTG registers
+ * @return Effective bitwidth of the packet counter
+ */
+static inline unsigned usb_dwc_ll_ghwcfg_get_packet_size_width(usb_dwc_dev_t *hw)
+{
+    return hw->ghwcfg3_reg.pktsizewidth + 4;
 }
 
 static inline unsigned usb_dwc_ll_ghwcfg_get_hsphy_type(usb_dwc_dev_t *hw)

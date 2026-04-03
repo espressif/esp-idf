@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <errno.h>
-#include <stdlib.h>
+#include <assert.h>
+#include <stdbool.h>
 #include <time.h>
 #include <limits.h>
 #include <reent.h>
@@ -13,8 +14,8 @@
 #include <sys/types.h>
 #include <sys/reent.h>
 #include <sys/time.h>
+#include <sys/timex.h>
 #include <sys/times.h>
-#include <sys/lock.h>
 
 #include "esp_system.h"
 #include "esp_attr.h"
@@ -27,123 +28,192 @@
 #include "soc/rtc.h"
 
 #include "esp_time_impl.h"
+#include "esp_libc_timekeeping.h"
 
 #include "sdkconfig.h"
+#include "esp_libc_clock.h"
 
 #if !CONFIG_ESP_TIME_FUNCS_USE_NONE
 #define IMPL_NEWLIB_TIME_FUNCS 1
 #endif
 
 #if IMPL_NEWLIB_TIME_FUNCS
+extern const esp_libc_clock_desc_t _esp_libc_clock_array_start[];
+extern const esp_libc_clock_desc_t _esp_libc_clock_array_end[];
+
 // time functions are implemented -- they should not be weak
 #define WEAK_UNLESS_TIMEFUNC_IMPL
 
-// stores the start time of the slew
-static uint64_t s_adjtime_start_us;
-// is how many microseconds total to slew
-static int64_t  s_adjtime_total_correction_us;
-
-static _lock_t s_time_lock;
-
-// This function gradually changes boot_time to the correction value and immediately updates it.
-static uint64_t adjust_boot_time(void)
+/* Built-in CLOCK_REALTIME: thin wrappers calling esp_libc_timekeeping (µs) API; unit conversion here. */
+static int realtime_gettime(struct timespec *tp, void *ctx)
 {
-#define ADJTIME_CORRECTION_FACTOR 6
+    (void)ctx;
+    uint64_t microseconds = esp_libc_timekeeping_get_realtime_us();
+    tp->tv_sec = microseconds / 1000000;
+    tp->tv_nsec = (microseconds % 1000000) * 1000L;
+    return 0;
+}
 
-    uint64_t boot_time = esp_time_impl_get_boot_time();
-    if ((boot_time == 0) || (esp_time_impl_get_time_since_boot() < s_adjtime_start_us)) {
-        s_adjtime_start_us = 0;
+static int realtime_settime(const struct timespec *tp, void *ctx)
+{
+    (void)ctx;
+    uint64_t us = ((uint64_t) tp->tv_sec) * 1000000LL + (tp->tv_nsec / 1000L);
+    esp_libc_timekeeping_set_realtime_us(us);
+    return 0;
+}
+
+static int realtime_adjtime(struct timex *buf, void *ctx)
+{
+    (void)ctx;
+    bool offset_in_ns = (buf->modes & ADJ_NANO) == ADJ_NANO;
+    if (buf->modes & ADJ_OFFSET) {
+        if (buf->modes == ADJ_OFFSET_SS_READ) {
+            // ADJ_OFFSET_SS_READ is always in microseconds
+            buf->offset = (long)esp_libc_timekeeping_adjtime_get_remaining_us();
+            return 0;
+        }
+        int64_t offset_us = offset_in_ns ? (int64_t)buf->offset / 1000 : (int64_t)buf->offset;
+        int64_t prev_us;
+        if (esp_libc_timekeeping_adjtime_apply(offset_us, &prev_us) != 0) {
+            return -1;
+        }
+        buf->offset = offset_in_ns ? (long)(prev_us * 1000) : (long)prev_us;
+        return 0;
     }
-    if (s_adjtime_start_us > 0) {
-        uint64_t since_boot = esp_time_impl_get_time_since_boot();
-        // If to call this function once per second, then (since_boot - s_adjtime_start_us) will be 1_000_000 (1 second),
-        // and the correction will be equal to (1_000_000us >> 6) = 15_625 us.
-        // The minimum possible correction step can be (64us >> 6) = 1us.
-        // Example: if the time error is 1 second, then it will be compensate for 1 sec / 0,015625 = 64 seconds.
-        int64_t correction = (since_boot >> ADJTIME_CORRECTION_FACTOR) - (s_adjtime_start_us >> ADJTIME_CORRECTION_FACTOR);
-        if (correction > 0) {
-            s_adjtime_start_us = since_boot;
-            if (s_adjtime_total_correction_us < 0) {
-                if ((s_adjtime_total_correction_us + correction) >= 0) {
-                    boot_time = boot_time + s_adjtime_total_correction_us;
-                    s_adjtime_start_us = 0;
-                } else {
-                    s_adjtime_total_correction_us += correction;
-                    boot_time -= correction;
-                }
-            } else {
-                if ((s_adjtime_total_correction_us - correction) <= 0) {
-                    boot_time = boot_time + s_adjtime_total_correction_us;
-                    s_adjtime_start_us = 0;
-                } else {
-                    s_adjtime_total_correction_us -= correction;
-                    boot_time += correction;
-                }
-            }
-            esp_time_impl_set_boot_time(boot_time);
+    if (buf->modes & ADJ_FREQUENCY) {
+        errno = EOPNOTSUPP;
+        return -1;
+    }
+    // if no known mode specified, just populate the timex structure with the current state
+    buf->offset = (long)esp_libc_timekeeping_adjtime_get_remaining_us();
+    buf->offset = offset_in_ns ? buf->offset * 1000 : buf->offset;
+    buf->freq = 0;
+    return 0;
+}
+
+static int realtime_getres(struct timespec *res, void *ctx)
+{
+    (void)ctx;
+    res->tv_sec = 0;
+    res->tv_nsec = esp_system_get_time_resolution();
+    return 0;
+}
+
+/* Built-in CLOCK_MONOTONIC (time since boot) */
+static int monotonic_gettime(struct timespec *tp, void *ctx)
+{
+    (void)ctx;
+    uint64_t monotonic_time_us = esp_time_impl_get_time();
+    tp->tv_sec = monotonic_time_us / 1000000LL;
+    tp->tv_nsec = (monotonic_time_us % 1000000LL) * 1000L;
+    return 0;
+}
+
+static int monotonic_getres(struct timespec *res, void *ctx)
+{
+    (void)ctx;
+    res->tv_sec = 0;
+    res->tv_nsec = esp_system_get_time_resolution();
+    return 0;
+}
+
+static const esp_libc_clock_ops_t s_realtime_ops = {
+    .gettime = realtime_gettime,
+    .settime = realtime_settime,
+    .adjtime = realtime_adjtime,
+    .getres = realtime_getres
+};
+
+static const esp_libc_clock_ops_t s_monotonic_ops = {
+    .gettime = monotonic_gettime,
+    .settime = NULL,
+    .adjtime = NULL,
+    .getres = monotonic_getres
+};
+
+ESP_LIBC_CLOCK_REGISTER(_realtime, CLOCK_REALTIME, s_realtime_ops, NULL);
+ESP_LIBC_CLOCK_REGISTER(_monotonic, CLOCK_MONOTONIC, s_monotonic_ops, NULL);
+
+static void esp_clock_registry_check_duplicates(void)
+{
+    for (const esp_libc_clock_desc_t *it = _esp_libc_clock_array_start;
+            it < _esp_libc_clock_array_end; ++it) {
+        for (const esp_libc_clock_desc_t *jt = it + 1;
+                jt < _esp_libc_clock_array_end; ++jt) {
+            assert(it->clk_id != jt->clk_id);
         }
     }
-    return boot_time;
 }
 
-// Get the adjusted boot time.
-static uint64_t get_adjusted_boot_time(void)
+static const esp_libc_clock_desc_t *esp_clock_find_entry(clockid_t clk_id)
 {
-    _lock_acquire(&s_time_lock);
-    uint64_t adjust_time = adjust_boot_time();
-    _lock_release(&s_time_lock);
-    return adjust_time;
-}
-
-// Applying the accumulated correction to base_time and stopping the smooth time adjustment.
-static void adjtime_corr_stop(void)
-{
-    _lock_acquire(&s_time_lock);
-    if (s_adjtime_start_us != 0) {
-        adjust_boot_time();
-        s_adjtime_start_us = 0;
+    for (const esp_libc_clock_desc_t *it = _esp_libc_clock_array_start;
+            it < _esp_libc_clock_array_end; ++it) {
+        if (it->clk_id == clk_id) {
+            return it;
+        }
     }
-    _lock_release(&s_time_lock);
+    return NULL;
 }
 #else
-
 // no time functions are actually implemented -- allow users to override them
 #define WEAK_UNLESS_TIMEFUNC_IMPL __attribute__((weak))
+#endif // IMPL_NEWLIB_TIME_FUNCS
+
+int clock_adjtime(clockid_t clk_id, struct timex *buf)
+{
+#if IMPL_NEWLIB_TIME_FUNCS
+    if (buf == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    const esp_libc_clock_desc_t *entry = esp_clock_find_entry(clk_id);
+    if (entry == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (entry->ops.adjtime != NULL) {
+        return entry->ops.adjtime(buf, entry->ctx);
+    }
+    errno = EOPNOTSUPP;
+    return -1;
+#else
+    errno = ENOSYS;
+    return -1;
 #endif
+}
 
 WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
-#if IMPL_NEWLIB_TIME_FUNCS
-    if (outdelta != NULL) {
-        _lock_acquire(&s_time_lock);
-        adjust_boot_time();
-        if (s_adjtime_start_us != 0) {
-            outdelta->tv_sec    = s_adjtime_total_correction_us / 1000000L;
-            outdelta->tv_usec   = s_adjtime_total_correction_us % 1000000L;
-        } else {
-            outdelta->tv_sec    = 0;
-            outdelta->tv_usec   = 0;
-        }
-        _lock_release(&s_time_lock);
-    }
+    struct timex tx = {0};
+
     if (delta != NULL) {
-        int64_t sec  = delta->tv_sec;
-        int64_t usec = delta->tv_usec;
-        if (llabs(sec) > ((INT_MAX / 1000000L) - 1L)) {
-            errno = EINVAL;
-            return -1;
-        }
-        /*
-        * If adjusting the system clock by adjtime () is already done during the second call adjtime (),
-        * and the delta of the second call is not NULL, the earlier tuning is stopped,
-        * but the already completed part of the adjustment is not canceled.
-        */
-        _lock_acquire(&s_time_lock);
-        // If correction is already in progress (s_adjtime_start_time_us != 0), then apply accumulated corrections.
-        adjust_boot_time();
-        s_adjtime_start_us = esp_time_impl_get_time_since_boot();
-        s_adjtime_total_correction_us = sec * 1000000L + usec;
-        _lock_release(&s_time_lock);
+        tx.modes = ADJ_OFFSET_SINGLESHOT;
+        tx.offset = delta->tv_sec * 1000000L + delta->tv_usec;
+    } else {
+        tx.modes = ADJ_OFFSET_SS_READ;
+    }
+
+    int ret = realtime_adjtime(&tx, NULL);
+
+    if (ret == 0 && outdelta != NULL) {
+        outdelta->tv_sec  = tx.offset / 1000000L;
+        outdelta->tv_usec = tx.offset % 1000000L;
+    }
+
+    return ret;
+}
+
+WEAK_UNLESS_TIMEFUNC_IMPL int settimeofday(const struct timeval *tv, const struct timezone *tz)
+{
+    (void) tz;
+#if IMPL_NEWLIB_TIME_FUNCS
+    if (tv) {
+        struct timespec ts;
+        ts.tv_sec = tv->tv_sec;
+        ts.tv_nsec = tv->tv_usec * 1000L;
+        return realtime_settime(&ts, NULL);
     }
     return 0;
 #else
@@ -170,9 +240,10 @@ WEAK_UNLESS_TIMEFUNC_IMPL int _gettimeofday_r(struct _reent *r, struct timeval *
 
 #if IMPL_NEWLIB_TIME_FUNCS
     if (tv) {
-        uint64_t microseconds = get_adjusted_boot_time() + esp_time_impl_get_time_since_boot();
-        tv->tv_sec = microseconds / 1000000;
-        tv->tv_usec = microseconds % 1000000;
+        struct timespec ts;
+        realtime_gettime(&ts, NULL);
+        tv->tv_sec = ts.tv_sec;
+        tv->tv_usec = ts.tv_nsec / 1000L;
     }
     return 0;
 #else
@@ -181,17 +252,62 @@ WEAK_UNLESS_TIMEFUNC_IMPL int _gettimeofday_r(struct _reent *r, struct timeval *
 #endif
 }
 
-WEAK_UNLESS_TIMEFUNC_IMPL int settimeofday(const struct timeval *tv, const struct timezone *tz)
+WEAK_UNLESS_TIMEFUNC_IMPL int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
-    (void) tz;
 #if IMPL_NEWLIB_TIME_FUNCS
-    if (tv) {
-        adjtime_corr_stop();
-        uint64_t now = ((uint64_t) tv->tv_sec) * 1000000LL + tv->tv_usec;
-        uint64_t since_boot = esp_time_impl_get_time_since_boot();
-        esp_time_impl_set_boot_time(now - since_boot);
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
     }
-    return 0;
+    const esp_libc_clock_desc_t *entry = esp_clock_find_entry(clock_id);
+    if (entry == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (entry->ops.settime != NULL) {
+        return entry->ops.settime(tp, entry->ctx);
+    }
+    errno = EOPNOTSUPP;
+    return -1;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+WEAK_UNLESS_TIMEFUNC_IMPL int clock_gettime(clockid_t clock_id, struct timespec *tp)
+{
+#if IMPL_NEWLIB_TIME_FUNCS
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    const esp_libc_clock_desc_t *entry = esp_clock_find_entry(clock_id);
+    if (entry == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    return entry->ops.gettime(tp, entry->ctx);
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+WEAK_UNLESS_TIMEFUNC_IMPL int clock_getres(clockid_t clock_id, struct timespec *res)
+{
+#if IMPL_NEWLIB_TIME_FUNCS
+    if (res == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    const esp_libc_clock_desc_t *entry = esp_clock_find_entry(clock_id);
+    if (entry == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    return entry->ops.getres(res, entry->ctx);
 #else
     errno = ENOSYS;
     return -1;
@@ -237,83 +353,12 @@ unsigned int sleep(unsigned int seconds)
     return 0;
 }
 
-WEAK_UNLESS_TIMEFUNC_IMPL int clock_settime(clockid_t clock_id, const struct timespec *tp)
-{
-#if IMPL_NEWLIB_TIME_FUNCS
-    if (tp == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    struct timeval tv;
-    switch (clock_id) {
-    case CLOCK_REALTIME:
-        tv.tv_sec = tp->tv_sec;
-        tv.tv_usec = tp->tv_nsec / 1000L;
-        settimeofday(&tv, NULL);
-        break;
-    default:
-        errno = EINVAL;
-        return -1;
-    }
-    return 0;
-#else
-    errno = ENOSYS;
-    return -1;
-#endif
-}
-
-WEAK_UNLESS_TIMEFUNC_IMPL int clock_gettime(clockid_t clock_id, struct timespec *tp)
-{
-#if IMPL_NEWLIB_TIME_FUNCS
-    if (tp == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    struct timeval tv;
-    uint64_t monotonic_time_us = 0;
-    switch (clock_id) {
-    case CLOCK_REALTIME:
-        _gettimeofday_r(NULL, &tv, NULL);
-        tp->tv_sec = tv.tv_sec;
-        tp->tv_nsec = tv.tv_usec * 1000L;
-        break;
-    case CLOCK_MONOTONIC:
-        monotonic_time_us = esp_time_impl_get_time();
-        tp->tv_sec = monotonic_time_us / 1000000LL;
-        tp->tv_nsec = (monotonic_time_us % 1000000LL) * 1000L;
-        break;
-    default:
-        errno = EINVAL;
-        return -1;
-    }
-    return 0;
-#else
-    errno = ENOSYS;
-    return -1;
-#endif
-}
-
-WEAK_UNLESS_TIMEFUNC_IMPL int clock_getres(clockid_t clock_id, struct timespec *res)
-{
-#if IMPL_NEWLIB_TIME_FUNCS
-    if (res == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    res->tv_sec = 0;
-    res->tv_nsec = esp_system_get_time_resolution();
-
-    return 0;
-#else
-    errno = ENOSYS;
-    return -1;
-#endif
-}
-
 /* TODO IDF-11226 */
 void esp_newlib_time_init(void) __attribute__((alias("esp_libc_time_init")));
 void esp_libc_time_init(void)
 {
+#if IMPL_NEWLIB_TIME_FUNCS
+    esp_clock_registry_check_duplicates();
+#endif
     esp_set_time_from_rtc();
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -16,8 +16,6 @@ extern "C" {
 Registers and fields were generated based on a set of USB-DWC configuration options.
 ESP32-P4 contains 2 instances of USB-DWC with different configurations and versions, the structure below corresponds to the High Speed v4.30a instance.
 The Full Speed instance contains a subset of registers from High Speed instance, the user (HAL) is responsible for accessing only existing fields.
-
-See ESP32-P4 "usb_dwc_cfg.h" for more details.
 
 List of changes v4.00a -> v4.30a
 - GRSTCTL register now contains the CSftRstDone bit which indicates the completion of a soft reset.

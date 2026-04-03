@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -271,22 +271,27 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
     } while (NULL == strstr(ws->buffer, delimiter) && header_len < WS_BUFFER_SIZE - 1);
 
-    if (header_len >= WS_BUFFER_SIZE - 1) {
+    if (header_len > WS_BUFFER_SIZE - 1) {
         ESP_LOGE(TAG, "Header size exceeded buffer size (need=%d, max=%d)", header_len + 1, WS_BUFFER_SIZE);
         return -1;
     }
 
     if(ws->response_header) {
+        int copy_len = header_len;
         if(ws->response_header_len - 1 < header_len) {
             ESP_LOGW(TAG, "Received header length exceedes the allocated buffer size (need=%d, allocated=%d), truncating to allocated size", header_len, ws->response_header_len);
-            header_len = ws->response_header_len;
+            copy_len = ws->response_header_len - 1;
         }
         // Copy response header to the static array
-        strncpy(ws->response_header, ws->buffer, header_len);
-        ws->response_header[ws->response_header_len - 1] = '\0';
+        strncpy(ws->response_header, ws->buffer, copy_len);
+        ws->response_header[copy_len] = '\0';
     }
 
     char* delim_ptr = strstr(ws->buffer, delimiter);
+    if (!delim_ptr) {
+        ESP_LOGE(TAG, "Header size exceeded buffer size or delimiter not found");
+        return -1;
+    }
 
     ws->http_status_code = get_http_status_code(ws->buffer);
     if (ws->http_status_code == -1)  {
@@ -510,7 +515,9 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
 
     // Receive and process payload
     if (bytes_to_read != 0 && (rlen = esp_transport_read_internal(ws, buffer, bytes_to_read, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data(%d)", rlen);
+        if (rlen < 0) {
+            ESP_LOGE(TAG, "Error read data(%d)", rlen);
+        }
         return rlen;
     }
     ws->frame_state.bytes_remaining -= rlen;
@@ -559,10 +566,12 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
     char *data_ptr = ws_header, mask;
     int rlen;
-    int poll_read;
     ws->frame_state.header_received = false;
-    if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
-        return poll_read;
+    if (ws->buffer_len == 0) {
+        int poll_read = esp_transport_poll_read(ws->parent, timeout_ms);
+        if (poll_read <= 0) {
+            return poll_read;
+        }
     }
 
     // Receive and process header first (based on header size)
@@ -575,11 +584,33 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     ws->frame_state.header_received = true;
     ws->frame_state.fin = (*data_ptr & 0x80) != 0;
     ws->frame_state.opcode = (*data_ptr & 0x0F);
+    uint8_t rsv = (*data_ptr & 0x70);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d", ws->frame_state.opcode, mask, payload_len);
+    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d, rsv: 0x%02X", ws->frame_state.opcode, mask, payload_len, rsv);
+
+    // RFC 6455 Section 5.2: RSV bits MUST be 0 unless an extension is negotiated
+    if (rsv != 0) {
+        ESP_LOGE(TAG, "Non-zero RSV bits detected (rsv=0x%02X) - protocol violation, no extensions negotiated", rsv);
+        return -1;
+    }
+
+    // RFC 6455 Section 5.2: Validate opcode (only 0x0-0x2 for data, 0x8-0xA for control are defined)
+    if ((ws->frame_state.opcode >= 0x3 && ws->frame_state.opcode <= 0x7) ||
+        (ws->frame_state.opcode >= 0xB && ws->frame_state.opcode <= 0xF)) {
+        ESP_LOGE(TAG, "Reserved opcode detected (opcode=0x%02X) - protocol violation", ws->frame_state.opcode);
+        return -1;
+    }
+
+    // RFC 6455 Section 5.5: Control frames MUST NOT be fragmented
+    if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && !ws->frame_state.fin) {
+        ESP_LOGE(TAG, "Fragmented control frame detected (opcode=0x%02X, fin=%d) - protocol violation",
+                ws->frame_state.opcode, ws->frame_state.fin);
+        return -1;
+    }
+
     if (payload_len == 126) {
         // headerLen += 2;
         if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
@@ -602,7 +633,12 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
             payload_len = (uint8_t)data_ptr[4] << 24 | (uint8_t)data_ptr[5] << 16 | (uint8_t)data_ptr[6] << 8 | data_ptr[7];
         }
     }
-
+    // RFC 6455 Section 5.5: Control frames MUST have payload length of 125 bytes or less
+    if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && payload_len > 125) {
+        ESP_LOGE(TAG, "Control frame with excessive payload detected (opcode=0x%02X, payload_len=%d) - protocol violation",
+                 ws->frame_state.opcode, payload_len);
+        return -1;
+    }
     if (mask) {
         // Read and store mask
         if (payload_len != 0 && (rlen = esp_transport_read_exact_size(ws, buffer, mask_len, timeout_ms)) <= 0) {
@@ -701,8 +737,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 
     if (ws->frame_state.payload_len) {
         if ( (rlen = ws_read_payload(t, buffer, len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error reading payload data(%d)", rlen);
-            ws->frame_state.bytes_remaining = 0;
+            if (rlen < 0) {
+                ESP_LOGE(TAG, "Error reading payload data(%d)", rlen);
+                ws->frame_state.bytes_remaining = 0;
+            }
             return rlen;
         }
     }
@@ -714,6 +752,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->buffer_len > 0) {
+        ESP_LOGD(TAG, "ws_poll_read: buffered data available (%zu bytes)", ws->buffer_len);
+        return 1;
+    }
     return esp_transport_poll_read(ws->parent, timeout_ms);
 }
 

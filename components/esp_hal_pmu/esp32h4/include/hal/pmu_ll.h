@@ -259,7 +259,7 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_power_detect_bypass(pmu_dev_t *hw
     hw->hp_sys[mode].regulator0.power_det_bypass = bypass;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias_sel(pmu_dev_t *hw, pmu_hp_mode_t mode, bool dbias_sel)
+FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias_select(pmu_dev_t *hw, pmu_hp_mode_t mode, bool dbias_sel)
 {
     HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
     hw->hp_sys[mode].regulator0.dbias_sel = dbias_sel;
@@ -573,9 +573,9 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_up(pmu_dev_t *hw, uint32_t fpu
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem_mask)
 {
-    hw->power.mem_mask.mem0_mask = mem_mask & BIT(0);
-    hw->power.mem_mask.mem1_mask = mem_mask & BIT(1);
-    hw->power.mem_mask.mem2_mask = mem_mask & BIT(2);
+    hw->power.mem_mask.mem0_mask = (mem_mask & BIT(0)) ? 1 : 0;
+    hw->power.mem_mask.mem1_mask = (mem_mask & BIT(1)) ? 1 : 0;
+    hw->power.mem_mask.mem2_mask = (mem_mask & BIT(2)) ? 1 : 0;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_off_mask(pmu_dev_t *hw, uint32_t mem0_pd_mask, uint32_t mem1_pd_mask, uint32_t mem2_pd_mask)
@@ -583,6 +583,12 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_off_mask(pmu_dev_t *hw, uint32
     hw->power.mem_mask.mem0_pd_mask = mem0_pd_mask;
     hw->power.mem_mask.mem1_pd_mask = mem1_pd_mask;
     hw->power.mem_mask.mem2_pd_mask = mem2_pd_mask;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_vdd_flash_tiel_enable(pmu_dev_t *hw, bool enable)
+{
+    hw->power.vdd_flash.ldo_tiel_en = enable;
+    hw->power.vdd_flash.ldo_tiel = enable;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_enable(pmu_dev_t *hw)
@@ -841,6 +847,27 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
 FORCE_INLINE_ATTR void pmu_ll_set_dcdc_ccm_sw_en(pmu_dev_t *hw, bool en)
 {
     hw->dcm_ctrl.dcdc_ccm_sw_en = en;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_ext_ocode(pmu_dev_t *hw, uint32_t ocode)
+{
+    /* Field is 8 bits (see PMU_EXT_OCODE); mask matches REG_SET_FIELD(..., PMU_EXT_OCODE, x). */
+    hw->ble_bandgap_ctrl.ext_ocode = ocode & 0xFFU;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_ble_bandgap_ext_ocode(pmu_dev_t *hw)
+{
+    return hw->ble_bandgap_ctrl.ext_ocode;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_ble_bandgap_ext_force_ocode(pmu_dev_t *hw, bool force)
+{
+    hw->ble_bandgap_ctrl.ext_force_ocode = force;
+}
+
+FORCE_INLINE_ATTR bool pmu_ll_get_ble_bandgap_ext_force_ocode(pmu_dev_t *hw)
+{
+    return hw->ble_bandgap_ctrl.ext_force_ocode;
 }
 
 #ifdef __cplusplus

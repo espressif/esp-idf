@@ -8,41 +8,24 @@
 
 非易失性存储 (NVS) 库主要用于在 flash 中存储键值格式的数据。本文档将详细介绍 NVS 常用的一些概念。
 
-底层存储
-^^^^^^^^^^^^^^^^^^
+初始化
+^^^^^^^^^^^^^^
 
-NVS 库通过调用 :ref:`esp_partition <flash-partition-apis>` API 使用主 flash 的部分空间，即类型为 ``data`` 且子类型为 ``nvs`` 的所有分区。应用程序可调用 :cpp:func:`nvs_open` API 选择使用带有 ``nvs`` 标签的分区，也可以通过调用 :cpp:func:`nvs_open_from_partition` API 选择使用指定名称的任意分区。
+NVS 使用分区表中类型为 ``data``、子类型为 ``nvs`` 的分区。该库可以通过以下方式初始化：
 
-NVS 库后续版本可能会增加其他存储器后端，来将数据保存至其他 flash 芯片（SPI 或 I2C 接口）、RTC 或 FRAM 中。
+- :cpp:func:`nvs_flash_init` 初始化标签为 ``nvs`` 的默认 NVS 分区。
+- :cpp:func:`nvs_flash_init_partition` 通过其标签初始化特定的 NVS 分区。
+- :cpp:func:`nvs_flash_init_partition_ptr` 从 ``esp_partition_t`` 指针初始化 NVS 分区。
 
-.. note:: 如果 NVS 分区被截断（例如，更改分区表布局时），则应擦除分区内容。可以使用 ESP-IDF 构建系统中的 ``idf.py erase-flash`` 命令擦除 flash 上的所有内容。
+初始化完成后，应用程序使用 :cpp:func:`nvs_open` （用于默认分区）或 :cpp:func:`nvs_open_from_partition` （用于按标签指定的特定分区）访问 NVS 命名空间。
 
-.. note:: NVS 最适合存储一些较小的数据，而非字符串或二进制大对象 (BLOB) 等较大的数据。如需存储较大的 BLOB 或者字符串，请考虑使用基于磨损均衡库的 FAT 文件系统。
+.. note::
 
-.. note:: NVS 组件在设计上支持磨损均衡。进行设置操作时，新数据会添加至现存条目之后。即便要使旧值失效，也无需立即执行 flash 擦除操作。通过将数据存储在页面和条目中，该 NVS 空间组织方式大幅降低了 flash 擦除和写入的频率，实现了 126 倍的效率提升。
+    启用 :ref:`CONFIG_NVS_BDL_STACK` 后，NVS 也可以通过块设备层 (BDL) 运行，从而支持标准 flash 分区以外的其他存储后端。在 BDL 模式下，:cpp:func:`nvs_flash_init_partition_ptr` 不可用，但 :cpp:func:`nvs_flash_init_partition_bdl` 可用于自定义块设备初始化。详情见 :ref:`nvs_internals` > :ref:`nvs_underlying_storage`。
 
-在 NVS 中存储大量数据
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
 
-NVS 支持至多存储数万个键，且 NVS 分区的大小也可以达到几兆字节（但并不推荐按此上限进行存储）。
-
-.. note:: NVS 组件会在堆上占用一定的 RAM 空间，具体占用量取决于 flash 上 NVS 分区的大小以及使用的键的数量。可以参考以下近似数值，估算 RAM 的使用情况：每 1 MB 的 NVS flash 分区会占用 22 KB 的 RAM，每 1000 个键会占用 5.5 KB 的 RAM。
-
-.. note:: 使用 :cpp:func:`nvs_flash_init` 初始化 NVS 的时间与已有键的数量成正比。每有 1000 个键，NVS 的初始化时间则增加约 0.5 秒。
-
-.. only:: SOC_SPIRAM_SUPPORTED
-
-    默认情况下，内部 NVS 会在设备的内部 RAM 中分配堆。当 NVS 分区较大或键的数量较多时，可能会因为使用内部 NVS 所需的内存开销过大，设备的内部 RAM 堆耗尽，导致应用程序遇到内存不足的问题。
-    如果应用程序使用了带有 SPI 连接的 PSRAM 模块，则可以通过启用 Kconfig 选项 :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` 来克服此限制。启用该选项后，RAM 分配会重定向至带有 SPI 连接的 PSRAM 上。
-    启用 SPIRAM 且将 :ref:`CONFIG_SPIRAM_USE` 设为 ``CONFIG_SPIRAM_USE_CAPS_ALLOC`` 后，即可在 menuconfig 菜单的 nvs_flash 组件中启用 :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` 选项。
-    .. note:: 使用带有 SPI 连接的 PSRAM 会导致 NVS API 的整数操作速度减慢约 2.5 倍。
-
-.. _nvs_bootloader:
-
-在引导加载程序代码中使用 NVS
----------------------------------
-
-运行中的应用程序可使用本指南中描述的标准 NVS API。也可以在自定义引导加载程序代码中从 NVS 读取数据。更多信息请参阅 :doc:`nvs_bootloader` 指南。
+    如果 NVS 分区被截断（例如，当分区表布局发生更改时），应擦除其内容。ESP-IDF 构建系统提供了 ``idf.py erase-flash`` 目标，用于擦除 flash 芯片的所有内容。
 
 键值对
 ^^^^^^^^^^^^^^^
@@ -55,13 +38,17 @@ NVS 的操作对象为键值对，其中键是 ASCII 字符串，当前支持的
 
 .. note::
 
-    字符串值当前上限为 4000 字节，其中包括空终止符。BLOB 值上限为 508,000 字节或分区大小的 97.6% 减去 4000 字节，以较低值为准。
+    NVS 最适合存储大量的小型数据值，而非存储少量的大型字符串或二进制大对象 (blob) 类型数据。如果需要存储大型 blob 或字符串，考虑使用磨损均衡库上层的 FAT 文件系统功能。
 
 .. note::
 
-    在设置新的或更新现有的键值对之前，需要确保 NVS 页面具备可用的空闲条目。对于整数类型，确保至少有一个可用的空闲条目。对于字符串值，确保至少有一个 NVS 页面，页面中有足够的连续空闲条目，以便能够完整地存储整个字符串。对于 Blob 值，确保在 NVS 中有足够的空闲条目，以容纳新数据的大小。
+    字符串值目前限制为 4000 字节（含终止符）。blob 值的限制为 508000 字节，或分区大小的 97.6% 减去 4000 字节，以两者较小值为准。
 
-后续可能会增加对 ``float`` 和 ``double`` 等其他类型数据的支持。
+.. note::
+
+    在设置新的键值对或更新现有键值对之前，NVS 页中必须有可用的空闲条目。对于整数类型，至少需要有一个空闲条目。对于字符串值，至少需要一个能够将整个字符串连续存储在空闲条目中的页面。对于 blob 值，空闲条目中需要有足够空间容纳新数据的大小。
+
+其他数据类型，例如 ``float`` 和 ``double``，可能会在以后添加。
 
 键必须唯一。为现有的键写入新值时，会将旧的值及数据类型更新为写入操作指定的值和数据类型。
 
@@ -71,7 +58,7 @@ NVS 的操作对象为键值对，其中键是 ASCII 字符串，当前支持的
 命名空间
 ^^^^^^^^
 
-为缓解不同组件间可能出现的键名冲突问题，NVS 将每个键值对分配到某个命名空间。命名空间的命名规则与键名相同，即最大长度为 15 个字符。此外，单个 NVS 分区中，最多支持 254 个不同的命名空间。调用 :cpp:func:`nvs_open` 或 :cpp:type:`nvs_open_from_partition` 可以指定命名空间名称。
+为减少不同组件之间键名的潜在冲突，NVS 将每个键值对分配到一个命名空间。命名空间的命名规则遵循键名的命名规则，例如，最多可占 15 个字符。此外，单个 NVS 分区最多只能容纳 254 个不同的命名空间。命名空间的名称在调用 :cpp:func:`nvs_open` 或 :cpp:type:`nvs_open_from_partition` 中指定。调用后将返回一个不透明句柄，用于后续调用 ``nvs_get_*``、``nvs_set_*`` 和 :cpp:func:`nvs_commit` 函数。这样，句柄就与命名空间和分区关联，键名不会与其他命名空间中的同名键发生冲突。
 
 open mode 参数控制访问级别和安全行为：
 
@@ -79,26 +66,9 @@ open mode 参数控制访问级别和安全行为：
 - ``NVS_READWRITE``：标准读写访问权限。被擦除的数据会被标记为已删除，但仍保留在 flash 中。
 - ``NVS_READWRITE_PURGE``：安全的读写访问权限。已擦除的数据将从 flash 中物理移除。
 
-此调用返回一个不透明句柄，用于后续对 ``nvs_get_*``、``nvs_set_*`` 和 :cpp:func:`nvs_commit` 函数的调用。这样，句柄与某个命名空间关联，键名不会与其他命名空间中的同名键发生冲突。请注意，不同 NVS 分区中同名的命名空间被视为相互独立的命名空间。
-
-.. _data_purging_security:
-
-数据清除与安全
-^^^^^^^^^^^^^^
-
-默认情况下，当 NVS 更新或擦除键值对时，旧数据被标记为已擦除，但实际仍存在于 flash 中。这种做法可以提升写入性能，并且有助于减轻 flash 芯片的磨损。但如果能够物理访问 flash 芯片，被擦除的数据仍可能被恢复。
-
-对于需要更高安全性、必须将敏感数据从 flash 中物理删除的应用，NVS 提供了两种机制：
-
-**清除模式**
-    以 ``NVS_READWRITE_PURGE`` 模式打开命名空间时，所有写入和擦除操作在写入新值的同时会自动清除（物理擦除）先前存储的数据，确保旧数据无法从 flash 中恢复。
-
-**手动清除**
-    调用 :cpp:func:`nvs_purge_all` 函数，应用程序可以随时显式清理某个命名空间内所有已擦除的条目。可用于以 ``NVS_READWRITE`` 或 ``NVS_READWRITE_PURGE`` 模式打开的句柄。
-
 .. note::
 
-    相较于标准擦除操作，清除操作会增加 flash 擦写次数。应用程序在决定是否使用清除功能时，应在安全需求与 flash 磨损之间进行权衡。
+    在不同的 NVS 分区中，同名的的命名空间被视为相互独立的命名空间。
 
 NVS 迭代器
 ^^^^^^^^^^^^^
@@ -113,7 +83,7 @@ NVS 迭代器
 
 总的来说，所有通过 :cpp:func:`nvs_entry_find` 获得的迭代器（包括 ``NULL`` 迭代器）都必须使用 :cpp:func:`nvs_release_iterator` 释放。
 
-一般情况下，:cpp:func:`nvs_entry_find` 和 :cpp:func:`nvs_entry_next` 会将给定的迭代器设置为 ``NULL`` 或为一个有效的迭代器。但如果出现参数错误（如返回 ``ESP_ERR_NVS_NOT_FOUND``），给定的迭代器不会被修改。因此，在调用 :cpp:func:`nvs_entry_find` 之前最好将迭代器初始化为 ``NULL``，这样可以避免在释放迭代器之前进行复杂的错误检查。
+:cpp:func:`nvs_entry_find` 和 :cpp:func:`nvs_entry_next` 在除发生参数错误之外的所有情况下，都会将给定的迭代器设为 ``NULL`` 或有效的迭代器（即返回 ``ESP_ERR_NVS_NOT_FOUND`` 时除外）。发生参数错误时，给定的迭代器不会被修改。因此，最佳实践是在调用 :cpp:func:`nvs_entry_find` 之前先将迭代器初始化为 ``NULL``，以避免在释放迭代器之前进行繁琐的错误检查。
 
 
 安全性、篡改性及鲁棒性
@@ -127,18 +97,86 @@ NVS 迭代器
 
     NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。然而，如果 NVS 加密与 {IDF_TARGET_NAME} flash 加密或 HMAC 外设一起使用，数据仍可以加密形式存储。详情请参考 :doc:`nvs_encryption`。
 
-如果未启用 NVS 加密，任何对 flash 芯片有物理访问权限的用户都可以修改、擦除或添加键值对。NVS 加密启用后，如果不知道相应的 NVS 加密密钥，则无法修改或添加键值对并将其识别为有效键值对。但是，针对擦除操作没有相应的防篡改功能。
-
-**防止数据恢复**：默认情况下，当键值对被更新或擦除时，旧数据实际仍然存在于 flash 中，仅被标记为无效。对于禁止恢复旧数据的敏感应用，打开命名空间时应使用 ``NVS_READWRITE_PURGE`` 模式，或调用 :cpp:func:`nvs_purge_all` 以显式清除已擦除的数据。详情参见 :ref:`数据清除与安全 <data_purging_security>` 部分。
+如果未启用 NVS 加密，任何对 flash 芯片有物理访问权限的用户都可以读取、修改、擦除或添加键值对。启用 NVS 加密后，在不知道相应的 NVS 加密密钥的情况下，无法读取、修改或添加键值对并将其识别为有效键值对。但是，针对擦除操作没有相应的防篡改功能。
 
 当 flash 处于不一致状态时，NVS 库会尝试恢复。在任何时间点关闭设备电源，然后重新打开电源，不会导致数据丢失；但如果关闭设备电源时正在写入新的键值对，这一键值对可能会丢失。该库还应该能够在 flash 中存在任何随机数据的情况下正常初始化。
 
+.. _data_purging_security:
+
+数据清除与安全
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+默认情况下，当 NVS 更新或擦除键值对时，flash 中的数据仅在元数据部分被标记为已擦除。这些值实际仍存在于 flash 中。这种做法可以提升写入性能。
+
+对于需要更高安全性、必须将敏感数据从 flash 中物理删除的应用（即通过将所有位清零），NVS 提供了两种机制：
+
+**一次性清除**
+
+    :cpp:func:`nvs_purge_all` 函数会清除命名空间内所有标记为已擦除的条目。该功能适用于尚未使用连续清除模式，且应用需要清理现有已擦除 flash 内容的场景。此函数可与以 ``NVS_READWRITE`` 或 ``NVS_READWRITE_PURGE`` 模式打开的句柄配合使用。
+
+**连续清除模式**
+
+    以 ``NVS_READWRITE_PURGE`` 模式打开的命名空间句柄，除了将已擦除或覆盖的值标记为已擦除外，还会自动清除这些值所占用的 flash 空间。
+
+.. note::
+
+    以 ``NVS_READWRITE_PURGE`` 模式打开 NVS 命名空间时，不会清理 flash 中被标记为已擦除的数据。若命名空间中存在已更新或已擦除的数据，在使用连续清除模式前，请先执行一次性清除。
+
+.. note::
+
+    相较于标准的标记为已擦除模式，清除操作会增加额外的 flash 写入次数。在决定是否使用数据清除功能时，应用程序需要在安全需求和 flash 写入性能之间进行权衡。
+
+
+特殊使用场景
+-----------------
+
+NVS 中的大量数据
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+虽然不推荐这样做，但 NVS 可以存储数以万计的键，且 NVS 分区的大小可达数兆字节级别。
+
+.. note::
+
+    NVS 组件会在堆上占用 RAM。占用量取决于 flash 上的 NVS 分区大小以及正在使用的键数量。为估算 RAM 用量，请参考以下近似数值：每 1 MB NVS flash 分区消耗 22 KB RAM；每 1000 个键消耗 5.5 KB RAM。
+
+.. note::
+
+    使用 :cpp:func:`nvs_flash_init` 进行 NVS 初始化所需的时间与现有键的数量成正比。初始化 NVS 时，通常每 1000 个键需要 0.5 秒。
+
+.. note::
+
+    NVS 初始化耗时会随着分区内数据量的增加以及值更新次数的增多而逐渐增长。为避免应用程序在客户实际使用过程中因初始化过程意外触发看门狗超时，请提前在包含所有键（包括预期更新历史）的 NVS 分区上测试初始化过程。
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    默认情况下，内部 NVS 会在内部 RAM 中分配堆内存。对于较大的 NVS 分区或大量键，应用程序可能仅因 NVS 的开销就耗尽内部 RAM 的堆内存。
+
+    如果应用程序所使用的模组配备了通过 SPI 连接的 PSRAM，则可通过启用 Kconfig 选项 :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` 来克服这一限制。该选项会将 RAM 分配重定向到通过 SPI 连接的 PSRAM。
+
+    当启用 SPIRAM 且 :ref:`CONFIG_SPIRAM_USE` 设为 ``CONFIG_SPIRAM_USE_CAPS_ALLOC`` 时，此选项可在 menuconfig 菜单的 nvs_flash 组件中使用。
+
+    .. note::
+
+        使用 SPI 接口的 PSRAM 后，NVS 整数操作的 API 耗时约为原来的 2.5 倍。
+
 电源不稳定状态
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 当 NVS 用于弱电源或不稳定电源系统（如太阳能或电池供电系统）时，flash 擦除操作可能偶尔无法彻底完成，而应用程序无法检测到这一问题。这会导致实际 flash 内容与预留页面的预期布局不一致。在极少数情况下（特别是在意外断电时），可能造成可用 NVS 页面耗尽，导致分区初始化失败并返回 ``ESP_ERR_NVS_NO_FREE_PAGES`` 错误。
 
 为解决此问题，可通过 Kconfig 选项 :ref:`CONFIG_NVS_FLASH_VERIFY_ERASE` 启用 flash 擦除操作的验证机制，通过回读受影响页面进行检测。若在 ``flash_erase`` 操作后页面未完全擦除为 ``0xFF``，系统将重试擦除操作直至页面被正确清空。包括首次尝试在内的擦除尝试总次数可通过 Kconfig 选项 :ref:`CONFIG_NVS_FLASH_ERASE_ATTEMPTS` 进行配置。
+
+.. note::
+
+    在可写分区上初始化 NVS 时，如果发现分区处于不一致的状态，NVS 库会尝试执行恢复操作。该操作可能涉及擦除和重写部分页面，而在电源持续不稳定的环境下，进而可能导致出厂默认数据意外丢失。因此，建议将关键的出厂默认数据保存在单独的只读分区中，这样就不会对其执行恢复操作。
+
+
+.. _nvs_bootloader:
+
+在引导加载程序代码中使用 NVS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+本指南所述的标准 NVS API 可供正在运行的应用程序使用。此外，还可以在自定义引导加载程序代码中从 NVS 读取数据。更多信息见 :doc:`nvs_bootloader` 指南。
 
 .. _nvs_encryption:
 
@@ -228,6 +266,8 @@ ESP-IDF :example:`storage/nvs` 目录下提供了数个代码示例：
 
   之后，本示例会遍历各个数据类型以及通用的 ``NVS_TYPE_ANY`` 类型，并记录在每次遍历过程中获取到的信息。
 
+.. _nvs_internals:
+
 内部实现
 ---------
 
@@ -236,9 +276,9 @@ ESP-IDF :example:`storage/nvs` 目录下提供了数个代码示例：
 
 NVS 按顺序存储键值对，新的键值对添加在最后。因此，如需更新某一键值对，实际是在日志最后增加一对新的键值对，同时将旧的键值对标记为已擦除。
 
-**标准擦除行为**：默认情况下，被擦除的条目实际仍存在于 flash 中，仅修改其状态位以表明不再有效。这样可以优化性能并减少 flash 磨损。
+.. note::
 
-**清除行为**：使用 ``NVS_READWRITE_PURGE`` 模式或调用 :cpp:func:`nvs_purge_all` 时，NVS 库会对已擦除的条目内容进行物理覆盖，防止数据被恢复。此操作会增加 flash 擦写次数，但能为敏感数据提供更高的安全性。
+    NVS 组件在设计上内置了 flash 磨损均衡功能。写入操作会将新数据追加到现有条目之后的空闲空间中，而将旧值标记为无效时，并不需要立即执行 flash 擦除操作。通过将 NVS 空间划分为页面和条目的结构，对于占用单个条目的数据类型，flash 擦除与写入操作的频率比可以有效降低为原来的 1/126。
 
 页面和条目
 ^^^^^^^^^^^^^^^^^
@@ -429,7 +469,46 @@ CRC32
 只读 NVS
 ^^^^^^^^
 
-NVS 正常运行所需的最小大小默认为 12kiB (``0x3000``)，这意味着至少需要 3 个页面，其中一个页面必须处于 Empty 状态。但是，如果 NVS 分区在分区表 CSV 中标记为 ``readonly`` 并以只读 (read-only) 模式打开，则该分区大小最少只需 4kiB（``0x1000``），此时仅需一个 Active 状态的页面，无需 Empty 页面。因为在这种情况下，库无需向分区写入任何数据。此类型分区适用于存储不会更改的数据，如校准数据或出厂设置。大小为 0x1000 和 0x2000 的分区始终为只读分区。大小为 0x3000 及以上的分区始终支持读写 (read-write)，但仍可以在代码中以只读模式打开。
+NVS 支持两种级别的只读模式：
+
+- 在分区表层面，可在分区表 CSV 文件中将分区标记为 ``readonly``。
+- 在应用层面，可通过 :cpp:func:`nvs_open_from_partition` 函数并传入 ``NVS_READONLY`` 标志，以只读模式打开 NVS 分区。
+
+NVS 正常运行所需的默认最小空间为 12 KiB (``0x3000``)，即至少需要 3 页，且其中至少有一页处于空状态。但如果 NVS 分区在分区表 CSV 文件中被标记为 ``readonly``，并以只读模式打开，那么分区大小可以只有 4 KiB（``0x1000``）。
+
+.. note::
+
+    目前，如果 NVS 使用块设备层作为存储后端时，则不会反映只读标志。
+
+.. _nvs_underlying_storage:
+
+底层存储
+^^^^^^^^^^^^^^^^^^
+
+在构建时，可以配置 NVS 访问其底层存储的模式。menuconfig 选项 :ref:`CONFIG_NVS_BDL_STACK` 提供了两种模式。
+
+**ESP 分区 API（默认）**： NVS 使用 :ref:`esp_partition <flash-partition-apis>` 访问存储。这是默认运行模式，其中 NVS 使用由分区表定义的 SPI flash 分区。在此模式下：
+
+- 初始化函数 (:cpp:func:`nvs_flash_init`, :cpp:func:`nvs_flash_init_partition`) 会查找该分区，并使用 :ref:`esp_partition <flash-partition-apis>` API 访问它。
+- 应用程序可以提供自定义的 ``esp_partition_t`` 指针并调用 :cpp:func:`nvs_flash_init_partition_ptr`。这使应用程序能够克服基于分区表的分区所带来的限制，例如使用分区表中未定义的分区。
+- 该模式提供最佳性能，因为 NVS 与底层存储之间没有额外的抽象层。
+
+**块设备层 (BDL)**：NVS 通过 esp_blockdev 访问存储。此选项使 NVS 能在实现 esp_blockdev 接口的块设备上运行。在此模式下：
+
+- 初始化函数（:cpp:func:`nvs_flash_init`，:cpp:func:`nvs_flash_init_partition`）会通过 :ref:`esp_partition <flash-partition-apis>` 透明地创建块设备，管理其生命周期，并在内部使用 esp_blockdev。对于应用而言，此模式与默认的运行模式类似。
+- 应用程序可以提供自定义块设备句柄，并调用 :cpp:func:`nvs_flash_init_partition_bdl` 将其注册到 NVS。应用程序负责管理该块设备句柄的生命周期。
+- 由于 BDL 抽象了底层存储，与直接使用 :ref:`esp_partition <flash-partition-apis>` API 相比，会有额外开销。仅当基于 esp_partition 的存储无法满足应用需求时，才选择此模式。
+
+.. note::
+
+    如果在 NVS 中使用自定义块设备，则必须满足以下要求：
+
+    - ``read_size`` 和 ``write_size`` 必须为 1 字节（NVS 要求按字节粒度进行访问）。
+    - ``erase_size`` 必须是 4096 的约数（NVS 页大小固定为 4096 字节）。
+    - ``disk_size`` 必须是 4096 字节的整数倍。
+    - 必须将 ``default_val_after_erase`` 标志位设为 1（即擦除后的存储器读出的值为 ``0xFF``）。
+    - 操作（``read``、``write``、``erase``）必须实现。
+
 
 
 API 参考

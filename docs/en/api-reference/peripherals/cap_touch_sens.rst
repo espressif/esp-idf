@@ -114,19 +114,19 @@ Categorized by functionality, the APIs of Capacitive Touch Sensor mainly include
 
 .. list::
 
-  - `Touch Sensor Controller Management <#touch-ctrl>`__
-  - `Touch Sensor Channel Management <#touch-chan>`__
-  - `Filter Configuration <#touch-filter>`__
-  - `Callback <#touch-callback>`__
-  - `Enable and Disable <#touch-enable>`__
-  - `Continuous Scan <#touch-conti-scan>`__
-  - `Oneshot Scan <#touch-oneshot-scan>`__
-  - `Read Measurement Data <#touch-read>`__
-  :SOC_TOUCH_SUPPORT_BENCHMARK: - `Benchmark Configuration <#touch-benchmark>`__
-  :SOC_TOUCH_SUPPORT_WATERPROOF: - `Waterproof Configuration <#touch-waterproof>`__
-  :SOC_TOUCH_SUPPORT_PROX_SENSING: - `Proximity Sensing Configuration <#touch-prox-sensing>`__
-  :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - `Sleep Wake-up Configuration <#touch-sleep-wakeup>`__
-  :SOC_TOUCH_SUPPORT_DENOISE_CHAN: - `Denoise Channel Configuration <#touch-denoise-chan>`__
+  - :ref:`touch-ctrl`
+  - :ref:`touch-chan`
+  - :ref:`touch-filter`
+  - :ref:`touch-callback`
+  - :ref:`touch-enable`
+  - :ref:`touch-conti-scan`
+  - :ref:`touch-oneshot-scan`
+  - :ref:`touch-read`
+  :SOC_TOUCH_SUPPORT_BENCHMARK: - :ref:`touch-benchmark`
+  :SOC_TOUCH_SUPPORT_WATERPROOF: - :ref:`touch-waterproof`
+  :SOC_TOUCH_SUPPORT_PROX_SENSING: - :ref:`touch-prox-sensing`
+  :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - :ref:`touch-sleep-wakeup`
+  :SOC_TOUCH_SUPPORT_DENOISE_CHAN: - :ref:`touch-denoise-chan`
 
 .. _touch-ctrl:
 
@@ -322,9 +322,9 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
     // Read the smooth data
     ESP_ERROR_CHECK(touch_channel_read_data(chan_handle, TOUCH_CHAN_DATA_TYPE_SMOOTH, smooth_data));
 
-.. _touch-benchmark:
-
 .. only:: SOC_TOUCH_SUPPORT_BENCHMARK
+
+    .. _touch-benchmark:
 
     Benchmark Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -339,9 +339,9 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         };
         ESP_ERROR_CHECK(touch_channel_config_benchmark(chan_handle, &benchmark_cfg));
 
-.. _touch-waterproof:
-
 .. only:: SOC_TOUCH_SUPPORT_WATERPROOF
+
+    .. _touch-waterproof:
 
     Waterproof Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -365,9 +365,9 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         // Deregister waterproof function
         ESP_ERROR_CHECK(touch_sensor_config_waterproof(sens_handle, NULL));
 
-.. _touch-prox-sensing:
-
 .. only:: SOC_TOUCH_SUPPORT_PROX_SENSING
+
+    .. _touch-prox-sensing:
 
     Proximity Sensing Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -398,9 +398,10 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         // Deregister the proximity sensing
         ESP_ERROR_CHECK(touch_sensor_config_proximity_sensing(sens_handle, NULL));
 
-.. _touch-sleep-wakeup:
 
 .. only:: SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
+
+    .. _touch-sleep-wakeup:
 
     Sleep Wake-up Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -444,9 +445,9 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         // Register the deep sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
-.. _touch-denoise-chan:
-
 .. only:: SOC_TOUCH_SUPPORT_DENOISE_CHAN
+
+    .. _touch-denoise-chan:
 
     Denoise Channel Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

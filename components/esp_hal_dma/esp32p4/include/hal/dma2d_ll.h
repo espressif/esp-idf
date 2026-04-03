@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -245,23 +245,23 @@ static inline void dma2d_ll_rx_enable_page_bound_wrap(dma2d_dev_t *dev, uint32_t
  * @brief Set 2D-DMA RX channel maximum burst reading data length in bytes
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_rx_set_data_burst_length(dma2d_dev_t *dev, uint32_t channel, dma2d_data_burst_length_t length)
+static inline void dma2d_ll_rx_set_data_burst_length(dma2d_dev_t *dev, uint32_t channel, uint32_t length)
 {
     uint32_t sel;
     switch (length) {
-    case DMA2D_DATA_BURST_LENGTH_8:
+    case 8:
         sel = 0;
         break;
-    case DMA2D_DATA_BURST_LENGTH_16:
+    case 16:
         sel = 1;
         break;
-    case DMA2D_DATA_BURST_LENGTH_32:
+    case 32:
         sel = 2;
         break;
-    case DMA2D_DATA_BURST_LENGTH_64:
+    case 64:
         sel = 3;
         break;
-    case DMA2D_DATA_BURST_LENGTH_128:
+    case 128:
         sel = 4;
         break;
     default:
@@ -761,23 +761,23 @@ static inline void dma2d_ll_tx_enable_page_bound_wrap(dma2d_dev_t *dev, uint32_t
  * @brief Set 2D-DMA TX channel maximum burst reading data length in bytes
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_tx_set_data_burst_length(dma2d_dev_t *dev, uint32_t channel, dma2d_data_burst_length_t length)
+static inline void dma2d_ll_tx_set_data_burst_length(dma2d_dev_t *dev, uint32_t channel, uint32_t length)
 {
     uint32_t sel;
     switch (length) {
-    case DMA2D_DATA_BURST_LENGTH_8:
+    case 8:
         sel = 0;
         break;
-    case DMA2D_DATA_BURST_LENGTH_16:
+    case 16:
         sel = 1;
         break;
-    case DMA2D_DATA_BURST_LENGTH_32:
+    case 32:
         sel = 2;
         break;
-    case DMA2D_DATA_BURST_LENGTH_64:
+    case 64:
         sel = 3;
         break;
-    case DMA2D_DATA_BURST_LENGTH_128:
+    case 128:
         sel = 4;
         break;
     default:

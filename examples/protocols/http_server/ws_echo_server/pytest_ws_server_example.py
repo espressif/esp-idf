@@ -117,6 +117,36 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
         data = data.decode()
         if opcode != OPCODE_TEXT or data != 'Async data':
             raise RuntimeError(f'Failed to receive correct opcode:{opcode} or data:{data}')
+        # Test ping from server
+        logging.info('Testing server-initiated ping')
+        ws.write(data='Ping', opcode=OPCODE_TEXT)
+        # Wait for server to receive the message and send a ping
+        dut.expect(r'Got packet with message: Ping', timeout=10)
+        # Now read the ping response
+        opcode, data = ws.read()
+        logging.info(f'Testing server-initiated ping: Received opcode:{opcode}, data:{data}')
+        data = data.decode()
+        if opcode != OPCODE_PING:
+            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
+        # Now we should get a pong in response to our ping
+        opcode, data = ws.read()
+        data = data.decode()
+        if opcode != OPCODE_PONG:
+            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
+        ws.write(data='Ping', opcode=OPCODE_TEXT)
+        # Wait for server to receive the message and send a ping
+        dut.expect(r'Got packet with message: Ping', timeout=10)
+        # Now read the ping response
+        opcode, data = ws.read()
+        logging.info(f'Testing server-initiated ping: Received opcode:{opcode}, data:{data}')
+        data = data.decode()
+        if opcode != OPCODE_PING:
+            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
+        # Now we should get a pong in response to our ping
+        opcode, data = ws.read()
+        data = data.decode()
+        if opcode != OPCODE_PONG:
+            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
 
 
 @pytest.mark.wifi_router
@@ -228,11 +258,30 @@ def test_ws_auth_handshake(dut: Dut) -> None:
     handshake_success = False
     try:
         # Attempt to use WSClient, expecting it to fail handshake
-        with WsClient(got_ip, int(got_port), uri='auth?token=valid') as ws:  # type: ignore  # noqa: F841
+        with WsClient(got_ip, int(got_port), uri='auth?token=invalid') as ws:  # type: ignore  # noqa: F841
             handshake_success = True
     except Exception as e:
         logging.info(f'WebSocket handshake failed: {e}')
         handshake_success = False
 
-    if handshake_success is False:
+    if handshake_success is True:
         raise RuntimeError('WebSocket handshake succeeded, but it should have been rejected by ws_pre_handshake_cb')
+
+    try:
+        # Attempt to use WSClient, expecting it to succeed handshake
+        with WsClient(got_ip, int(got_port), uri='auth?token=valid') as ws:  # type: ignore  # noqa: F841
+            handshake_success = True
+            dut.expect(r'ws_pre_handshake_cb called', timeout=10)
+            dut.expect(r'Valid token found, accepting handshake', timeout=10)
+            opcode, data = ws.read()
+            logging.info(f'Received opcode:{opcode}, data:{data}')
+            if opcode != OPCODE_TEXT or data.decode() != 'Welcome to the WebSocket Echo Server (post-handshake)!':
+                raise RuntimeError(
+                    f'Failed to receive correct welcome message after handshake. Opcode:{opcode}, data:{data}'
+                )
+    except Exception as e:
+        logging.info(f'WebSocket handshake failed: {e}')
+        handshake_success = False
+
+    if handshake_success is False:
+        raise RuntimeError('WebSocket handshake failed, but it should have succeeded with valid token')

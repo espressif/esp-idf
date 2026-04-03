@@ -7,6 +7,7 @@
 #include "bootloader_random.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_ll.h"
 #include "hal/temperature_sensor_ll.h"
 #include "esp_private/sar_periph_ctrl.h"

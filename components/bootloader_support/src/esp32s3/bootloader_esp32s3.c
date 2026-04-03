@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/extmem_reg.h"
+#include "soc/soc_caps.h"
+
 
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
@@ -45,6 +47,7 @@
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32s3");
 
+#if SOC_RTC_WDT_SUPPORTED
 static void wdt_reset_cpu0_info_enable(void)
 {
     REG_SET_BIT(SYSTEM_CPU_PERI_CLK_EN_REG, SYSTEM_CLK_EN_ASSIST_DEBUG);
@@ -128,6 +131,7 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_SET_BIT(RTC_CNTL_SWD_CONF_REG, RTC_CNTL_SWD_AUTO_FEED_EN);
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
+#endif // SOC_RTC_WDT_SUPPORTED
 
 static inline void bootloader_ana_reset_config(void)
 {
@@ -147,7 +151,9 @@ esp_err_t bootloader_init(void)
 #endif // XCHAL_ERRATUM_572
 
     bootloader_ana_reset_config();
+#if SOC_RTC_WDT_SUPPORTED
     bootloader_super_wdt_auto_feed();
+#endif
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`
 #if !CONFIG_APP_BUILD_TYPE_RAM
@@ -202,10 +208,14 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
+#if SOC_RTC_WDT_SUPPORTED
     // check whether a WDT reset happened
     bootloader_check_wdt_reset();
+#endif
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
     return ret;

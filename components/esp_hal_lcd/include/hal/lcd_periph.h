@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,17 @@ typedef struct {
 
 extern const soc_lcd_i2s_signal_desc_t soc_lcd_i2s_signals[I2S_LL_GET(INST_NUM)];
 #endif // SOC_HAS(I2S_I80_LCD)
+
+#if SOC_HAS(PAU) && SOC_HAS(LCDCAM_I80_LCD)
+// Only LCDCAM I80 LCD supports sleep retention
+typedef struct {
+    const periph_retention_module_t retention_module;
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+} soc_i80_lcd_retention_info_t;
+
+extern const soc_i80_lcd_retention_info_t soc_i80_lcd_retention_info[LCD_LL_GET(I80_BUS_NUM)];
+#endif // SOC_HAS(PAU) && SOC_HAS(LCDCAM_I80_LCD)
 
 #ifdef __cplusplus
 }

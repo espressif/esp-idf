@@ -221,7 +221,7 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [skip_loaded]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [no_skip_loaded]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
@@ -232,7 +232,7 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
  - ``no_clock_boost`` - Optional. Disable setting target clock frequency to its maximum possible value before programming. Clock boost is enabled by default.
  - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
- - ``skip_loaded`` - Optional. Skip flashing if the binary is already loaded. Disabled by default.
+ - ``no_skip_loaded`` - Optional. Do not check whether the binary is already loaded before flashing. Disabled by default.
 
 Alternative Method: Using ``program_esp_bins``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -256,7 +256,7 @@ Command Format
 
 The OpenOCD flashing command ``program_esp_bins`` has the following format:
 
-``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [skip_loaded]``
+``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [no_skip_loaded]``
 
  - ``build_dir`` - Path to the build directory containing the ``flasher_args.json`` file.
  - ``json_file`` - Name of the JSON file containing flash configuration (typically ``flasher_args.json``).

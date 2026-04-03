@@ -130,7 +130,7 @@ esp_err_t mcpwm_timer_new_etm_event(mcpwm_timer_handle_t timer, const mcpwm_time
     portENTER_CRITICAL(&group->spinlock);
     mcpwm_ll_etm_enable_timer_event(hal->dev, timer_id, config->event_type, true);
     portEXIT_CRITICAL(&group->spinlock);
-    event_id = MCPWM_LL_TIMER_ETM_EVENT_TABLE(group_id, timer_id, config->event_type);
+    event_id = MCPWM_LL_ETM_TIMER_EVENT_TABLE(group_id, timer_id, config->event_type);
     event->event_type = config->event_type;
     ESP_GOTO_ON_FALSE(event_id != 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported event type");
     ESP_LOGD(TAG, "MCPWM (%d) timer (%d) event_id (%"PRId32")", group_id, timer_id, event_id);

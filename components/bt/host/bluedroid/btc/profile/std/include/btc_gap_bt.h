@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,11 @@ typedef enum {
     BTC_GAP_BT_KEY_NOTIF_EVT,
     BTC_GAP_BT_KEY_REQ_EVT,
     BTC_GAP_BT_READ_RSSI_DELTA_EVT,
+    BTC_GAP_BT_READ_ACL_REAL_RSSI_EVT,
+    BTC_GAP_BT_READ_NEW_CONN_TX_PWR_LVL_EVT,
+    BTC_GAP_BT_WRITE_NEW_CONN_TX_PWR_LVL_EVT,
+    BTC_GAP_BT_READ_TX_PWR_LVL_EVT,
+    BTC_GAP_BT_WRITE_TX_PWR_LVL_EVT,
     BTC_GAP_BT_CONFIG_EIR_DATA_EVT,
     BTC_GAP_BT_SET_AFH_CHANNELS_EVT,
     BTC_GAP_BT_READ_REMOTE_NAME_EVT,
@@ -50,6 +55,13 @@ typedef enum {
     BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD,
     BTC_GAP_BT_ACT_SET_COD,
     BTC_GAP_BT_ACT_READ_RSSI_DELTA,
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+    BTC_GAP_BT_ACT_READ_ACL_REAL_RSSI,
+    BTC_GAP_BT_ACT_READ_NEW_CONN_TX_PWR_LVL,
+    BTC_GAP_BT_ACT_WRITE_NEW_CONN_TX_PWR_LVL,
+#endif // (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+    BTC_GAP_BT_ACT_READ_TX_PWR_LVL,
+    BTC_GAP_BT_ACT_WRITE_TX_PWR_LVL,
     BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE,
     BTC_GAP_BT_ACT_SET_PIN_TYPE,
     BTC_GAP_BT_ACT_PIN_REPLY,
@@ -104,6 +116,30 @@ typedef union {
     struct bt_read_rssi_delta_args {
         bt_bdaddr_t bda;
     } read_rssi_delta;
+
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+    //BTC_GAP_BT_ACT_READ_ACL_REAL_RSSI,
+    struct bt_read_acl_real_rssi_args {
+        bt_bdaddr_t bda;
+    } read_acl_real_rssi;
+
+    // BTC_GAP_BT_ACT_WRITE_NEW_CONN_TX_PWR_LVL
+    struct bt_write_new_conn_tx_pwr_lvl_args {
+        int8_t pwr_lvl_min;
+        int8_t pwr_lvl_max;
+    } write_new_conn_tx_pwr_lvl;
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+    // BTC_GAP_BT_ACT_READ_TX_PWR_LVL
+    struct bt_read_tx_pwr_lvl_args {
+        esp_bt_gap_tx_pwr_lvl_type_t type;
+    } read_tx_pwr_lvl;
+
+    // BTC_GAP_BT_ACT_WRITE_TX_PWR_LVL
+    struct bt_write_tx_pwr_lvl_args {
+        esp_bt_gap_tx_pwr_lvl_type_t type;
+        int8_t tx_power;
+    } write_tx_pwr_lvl;
 
     // BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE
     struct rm_bond_device_args {

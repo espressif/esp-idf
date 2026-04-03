@@ -2,24 +2,46 @@ include(${SDKCONFIG_CMAKE})
 enable_language(C ASM)
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
+# Logic to determine ULP type and set reusable flags
+set(BUILD_RISCV OFF)
+set(BUILD_FSM OFF)
+set(BUILD_LP_CORE OFF)
+
+# If ULP_TYPE is explicitly set, use it; otherwise fall back to CONFIG checks
+if(ULP_TYPE)
+    string(TOLOWER "${ULP_TYPE}" ulp_type_lower)
+    if(ulp_type_lower STREQUAL "riscv")
+        set(BUILD_RISCV ON)
+    elseif(ulp_type_lower STREQUAL "fsm")
+        set(BUILD_FSM ON)
+    elseif(ulp_type_lower STREQUAL "lp_core")
+        set(BUILD_LP_CORE ON)
+    endif()
+elseif(CONFIG_ULP_COPROC_TYPE_RISCV)
+    set(BUILD_RISCV ON)
+elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+    set(BUILD_LP_CORE ON)
+elseif(CONFIG_ULP_COPROC_TYPE_FSM)
+    set(BUILD_FSM ON)
+endif()
+
 # Check the supported assembler version
-if(CONFIG_ULP_COPROC_TYPE_FSM)
+if(BUILD_FSM)
     check_expected_tool_version("esp32ulp-elf" ${CMAKE_ASM_COMPILER})
 endif()
 
 function(ulp_apply_default_options ulp_app_name)
-    if(CONFIG_ULP_COPROC_TYPE_RISCV)
+    if(BUILD_RISCV)
         target_link_options(${ulp_app_name} PRIVATE "-nostartfiles")
         target_link_options(${ulp_app_name} PRIVATE -Wl,--gc-sections)
         target_link_options(${ulp_app_name} PRIVATE "-Wl,--no-warn-rwx-segments")
         target_link_options(${ulp_app_name} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.map)
-
-    elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+    elseif(BUILD_LP_CORE)
         target_link_options(${ulp_app_name} PRIVATE "-nostartfiles")
         target_link_options(${ulp_app_name} PRIVATE "-Wl,--no-warn-rwx-segments")
         target_link_options(${ulp_app_name} PRIVATE -Wl,--gc-sections)
         target_link_options(${ulp_app_name} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.map)
-    else()
+    elseif(BUILD_FSM)
         target_link_options(${ulp_app_name} PRIVATE -Map=${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.map)
     endif()
 endfunction()
@@ -49,15 +71,17 @@ function(ulp_apply_default_sources ulp_app_name)
     list(APPEND ULP_PREPRO_ARGS -I${sdkconfig_dir})
     list(APPEND ULP_PREPRO_ARGS -I${IDF_PATH}/components/esp_system/ld)
 
-    target_include_directories(${ulp_app_name} PRIVATE ${COMPONENT_INCLUDES})
+    target_include_directories(${ulp_app_name} PRIVATE ${COMPONENT_INCLUDES} ${sdkconfig_dir})
 
     # Pre-process the linker script
-    if(CONFIG_ULP_COPROC_TYPE_RISCV)
+    if(BUILD_RISCV)
         set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
-    elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+    elseif(BUILD_LP_CORE)
         set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld)
-    else()
+    elseif(BUILD_FSM)
         set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
+    else()
+        message(FATAL_ERROR "Unable to determine ULP type. ")
     endif()
 
     get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
@@ -81,8 +105,15 @@ function(ulp_apply_default_sources ulp_app_name)
     # To avoid warning "Manually-specified variables were not used by the project"
     set(bypassWarning "${IDF_TARGET}")
     set(bypassWarning "${ULP_VAR_PREFIX}")
+    set(bypassWarning "${ULP_TYPE}")
 
-    if(CONFIG_ULP_COPROC_TYPE_RISCV)
+    # Save user sources before adding core sources
+    set(ULP_USER_SOURCES ${ULP_S_SOURCES})
+
+    # Clear ULP_S_SOURCES and rebuild it with only the sources we need
+    set(ULP_S_SOURCES ${ULP_USER_SOURCES})
+
+    if(BUILD_RISCV)
         #risc-v ulp uses extra files for building:
         list(APPEND ULP_S_SOURCES
             "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_vectors.S"
@@ -97,7 +128,6 @@ function(ulp_apply_default_sources ulp_app_name)
             "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_gpio.c"
             "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_interrupt.c")
 
-
         target_sources(${ulp_app_name} PRIVATE ${ULP_S_SOURCES})
         #Makes the csr utillies for riscv visible:
         target_include_directories(${ulp_app_name} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
@@ -107,7 +137,32 @@ function(ulp_apply_default_sources ulp_app_name)
         target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
         target_compile_definitions(${ulp_app_name} PRIVATE ULP_RISCV_REGISTER_OPS)
 
-    elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+    elseif(BUILD_FSM)
+        foreach(ulp_s_source ${ULP_S_SOURCES})
+            get_filename_component(ulp_ps_source ${ulp_s_source} NAME_WE)
+            set(ulp_ps_output ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.ulp.S)
+            # Put all arguments to the list
+            set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ulp_ps_output} ${ULP_PREPRO_ARGS} ${ulp_s_source})
+
+            set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}_args.txt)
+            create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+
+            # Generate preprocessed assembly files.
+            add_custom_command(OUTPUT ${ulp_ps_output}
+                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                            COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
+                            DEPENDS ${ulp_s_source}
+                            VERBATIM)
+            # During assembly file compilation, output listing files as well.
+            set_source_files_properties(${ulp_ps_output}
+                                        PROPERTIES COMPILE_FLAGS
+                                        "-al=${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.lst")
+            list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
+        endforeach()
+
+        target_sources(${ulp_app_name} PRIVATE ${ULP_PS_SOURCES})
+
+    elseif(BUILD_LP_CORE)
         list(APPEND ULP_S_SOURCES
         "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
@@ -167,31 +222,6 @@ function(ulp_apply_default_sources ulp_app_name)
                                                         "${IDF_PATH}/components/ulp/lp_core/shared/include")
         target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
 
-    else()
-        foreach(ulp_s_source ${ULP_S_SOURCES})
-            get_filename_component(ulp_ps_source ${ulp_s_source} NAME_WE)
-            set(ulp_ps_output ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.ulp.S)
-            # Put all arguments to the list
-            set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ulp_ps_output} ${ULP_PREPRO_ARGS} ${ulp_s_source})
-
-            set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}_args.txt)
-            create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
-
-            # Generate preprocessed assembly files.
-            add_custom_command(OUTPUT ${ulp_ps_output}
-                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                            COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
-                            DEPENDS ${ulp_s_source}
-                            VERBATIM)
-            # During assembly file compilation, output listing files as well.
-            set_source_files_properties(${ulp_ps_output}
-                                        PROPERTIES COMPILE_FLAGS
-                                        "-al=${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.lst")
-            list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
-        endforeach()
-
-        target_sources(${ulp_app_name} PRIVATE ${ULP_PS_SOURCES})
-
     endif()
 endfunction()
 
@@ -206,7 +236,7 @@ function(ulp_add_build_binary_targets ulp_app_name)
         target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-specs=picolibcpp.specs>)
     endif()
 
-    if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+    if(BUILD_LP_CORE)
         set(ULP_BASE_ADDR "0x0")
     else()
         set(ULP_BASE_ADDR "0x50000000")

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
+#include "hal/config.h"
 #include "hal/assert.h"
 #include "esp32p4/rom/cache.h"
 
@@ -52,6 +53,24 @@ extern "C" {
 #define CACHE_LL_L2_ACCESS_EVENT_MASK               (1<<6)
 #define CACHE_LL_L1_CORE0_EVENT_MASK                (1<<0)
 #define CACHE_LL_L1_CORE1_EVENT_MASK                (1<<1)
+
+/**
+ * @brief Preload strategy
+ */
+typedef enum {
+    CACHE_LL_PRELOAD_UNTIL_FETCH_DONE = 0,
+    CACHE_LL_PRELOAD_AFTER_FETCH = 1,
+    CACHE_LL_PRELOAD_ARBITRARY = 2,
+} cache_ll_preload_strategy_t;
+
+/**
+ * @brief Initialize the cache clock
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clk_init(void)
+{
+    //for compatibility
+}
 
 /*------------------------------------------------------------------------------
  * Autoload
@@ -893,6 +912,221 @@ static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t ty
         default:
             cache_ll_l1_unfreeze_dcache(cache_id);
             cache_ll_l1_unfreeze_icache(CACHE_LL_ID_ALL);
+            break;
+        }
+    }
+}
+
+/*------------------------------------------------------------------------------
+ * Preload (L1 / L2)
+ *----------------------------------------------------------------------------*/
+/**
+ * @brief Start L1 ICache manual preload
+ *
+ * Starts preload for the given region and does not wait. Use
+ * cache_ll_l1_icache_preload_wait_done() to wait for completion.
+ *
+ * @param cache_id   id of the cache in this type and level (0: Core0, 1: Core1, CACHE_LL_ID_ALL: both)
+ * @param vaddr      start virtual address of the preload region
+ * @param size       size of the preload region in bytes
+ * @param ascending  true: ascending (positive) order; false: descending (negative) order
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_icache_preload(uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    uint32_t order = ascending ? 0 : 1;
+    if (cache_id == 0) {
+        Cache_Start_L1_CORE0_ICache_Preload(vaddr, size, order);
+    } else if (cache_id == 1) {
+        Cache_Start_L1_CORE1_ICache_Preload(vaddr, size, order);
+    } else if (cache_id == CACHE_LL_ID_ALL) {
+        Cache_Start_L1_CORE0_ICache_Preload(vaddr, size, order);
+        Cache_Start_L1_CORE1_ICache_Preload(vaddr, size, order);
+    }
+}
+
+/**
+ * @brief Wait until L1 ICache manual preload is done
+ *
+ * @param cache_id  id of the cache in this type and level (0: Core0, 1: Core1, CACHE_LL_ID_ALL: both)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_icache_preload_wait_done(uint32_t cache_id)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        while (Cache_L1_CORE0_ICache_Preload_Done() == 0) {
+        }
+    }
+    if (cache_id == 1 || cache_id == CACHE_LL_ID_ALL) {
+        while (Cache_L1_CORE1_ICache_Preload_Done() == 0) {
+        }
+    }
+}
+
+/**
+ * @brief Start L1 DCache manual preload
+ *
+ * Starts preload for the given region and does not wait. Use
+ * cache_ll_l1_dcache_preload_wait_done() to wait for completion.
+ *
+ * @param cache_id   id of the cache in this type and level (0 or CACHE_LL_ID_ALL)
+ * @param vaddr      start virtual address of the preload region
+ * @param size       size of the preload region in bytes
+ * @param ascending  true: ascending (positive) order; false: descending (negative) order
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_dcache_preload(uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        Cache_Start_L1_DCache_Preload(vaddr, size, ascending ? 0 : 1);
+    }
+}
+
+/**
+ * @brief Wait until L1 DCache manual preload is done
+ *
+ * @param cache_id  id of the cache in this type and level (0 or CACHE_LL_ID_ALL)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_dcache_preload_wait_done(uint32_t cache_id)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        while (Cache_L1_DCache_Preload_Done() == 0) {
+        }
+    }
+}
+
+/**
+ * @brief Start L2 Cache manual preload
+ *
+ * Starts preload for the given region and does not wait. Use
+ * cache_ll_l2_preload_wait_done() to wait for completion.
+ *
+ * @param cache_id   id of the cache in this type and level (0 or CACHE_LL_ID_ALL)
+ * @param vaddr      start virtual address of the preload region
+ * @param size       size of the preload region in bytes
+ * @param ascending  true: ascending (positive) order; false: descending (negative) order
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l2_preload(uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        Cache_Start_L2_Cache_Preload(vaddr, size, ascending ? 0 : 1);
+    }
+}
+
+/**
+ * @brief Wait until L2 Cache manual preload is done
+ *
+ * @param cache_id  id of the cache in this type and level (0 or CACHE_LL_ID_ALL)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l2_preload_wait_done(uint32_t cache_id)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        while (Cache_L2_Cache_Preload_Done() == 0) {
+        }
+    }
+}
+
+/*------------------------------------------------------------------------------
+ * Cache Preload
+ *----------------------------------------------------------------------------*/
+/**
+ * @brief Set the preload strategy
+ *
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
+ * @param strategy     the preload strategy
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_set_strategy(uint32_t cache_level, cache_type_t type, uint32_t cache_id, cache_ll_preload_strategy_t strategy)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    if (cache_level == 2 || cache_level == CACHE_LL_LEVEL_ALL) {
+        CACHE.l2_cache_ctrl.l2_cache_undef_op = strategy;
+    }
+    if (cache_level == 1 || cache_level == CACHE_LL_LEVEL_ALL) {
+        switch (type) {
+        case CACHE_TYPE_INSTRUCTION:
+            CACHE.l1_icache_ctrl.l1_icache_undef_op = strategy;
+            break;
+        case CACHE_TYPE_DATA:
+            CACHE.l1_dcache_ctrl.l1_dcache_undef_op = strategy;
+            break;
+        case CACHE_TYPE_ALL:
+        default:
+            CACHE.l1_icache_ctrl.l1_icache_undef_op = strategy;
+            CACHE.l1_dcache_ctrl.l1_dcache_undef_op = strategy;
+            break;
+        }
+    }
+#endif
+}
+
+/**
+ * @brief Preload cache
+ *
+ * Starts preload for the given level/type and does not wait. Use
+ * cache_ll_preload_wait_done() to wait for completion.
+ *
+ * @param cache_level  level of the cache (1: L1, 2: L2)
+ * @param type         see `cache_type_t` (INSTRUCTION, DATA, or ALL)
+ * @param cache_id     id of the cache in this type and level (0, 1, or CACHE_LL_ID_ALL)
+ * @param vaddr        start virtual address of the preload region
+ * @param size         size of the preload region in bytes
+ * @param ascending    true: ascending (positive) order; false: descending (negative) order
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    if (cache_level == 2 || cache_level == CACHE_LL_LEVEL_ALL) {
+        cache_ll_l2_preload(cache_id, vaddr, size, ascending);
+    }
+    if (cache_level == 1 || cache_level == CACHE_LL_LEVEL_ALL) {
+        switch (type) {
+        case CACHE_TYPE_INSTRUCTION:
+            cache_ll_l1_icache_preload(cache_id, vaddr, size, ascending);
+            break;
+        case CACHE_TYPE_DATA:
+            cache_ll_l1_dcache_preload(cache_id, vaddr, size, ascending);
+            break;
+        case CACHE_TYPE_ALL:
+        default:
+            cache_ll_l1_icache_preload(cache_id, vaddr, size, ascending);
+            cache_ll_l1_dcache_preload(cache_id, vaddr, size, ascending);
+            break;
+        }
+    }
+}
+
+/**
+ * @brief Wait until cache preload is done
+ *
+ * @param cache_level  level of the cache (1: L1, 2: L2)
+ * @param type         see `cache_type_t` (INSTRUCTION, DATA, or ALL)
+ * @param cache_id     id of the cache in this type and level (0, 1, or CACHE_LL_ID_ALL)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    if (cache_level == 2 || cache_level == CACHE_LL_LEVEL_ALL) {
+        cache_ll_l2_preload_wait_done(cache_id);
+    }
+
+    if (cache_level == 1 || cache_level == CACHE_LL_LEVEL_ALL) {
+        switch (type) {
+        case CACHE_TYPE_INSTRUCTION:
+            cache_ll_l1_icache_preload_wait_done(cache_id);
+            break;
+        case CACHE_TYPE_DATA:
+            cache_ll_l1_dcache_preload_wait_done(cache_id);
+            break;
+        case CACHE_TYPE_ALL:
+        default:
+            cache_ll_l1_icache_preload_wait_done(cache_id);
+            cache_ll_l1_dcache_preload_wait_done(cache_id);
             break;
         }
     }

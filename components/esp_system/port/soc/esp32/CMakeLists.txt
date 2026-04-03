@@ -4,6 +4,10 @@ set(srcs "highint_hdl.S"
          "system_internal.c"
          "cache_err_int.c")
 
+if(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX)
+    list(APPEND srcs "eco3_livelock_workaround.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})

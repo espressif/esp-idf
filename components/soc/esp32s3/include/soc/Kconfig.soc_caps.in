@@ -135,7 +135,7 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V1_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
@@ -227,11 +227,19 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_REGI2C_SUPPORTED
+    bool
+    default y
+
 config SOC_MPU_SUPPORTED
     bool
     default y
 
 config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_WDT_SUPPORTED
     bool
     default y
 
@@ -479,6 +487,14 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
 
+config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+    bool
+    default y
+
+config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
+    int
+    default 0
+
 config SOC_I2C_NUM
     int
     default 2
@@ -639,6 +655,10 @@ config SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH
     int
     default 128
 
+config SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+    bool
+    default y
+
 config SOC_RTCIO_PIN_COUNT
     int
     default 22
@@ -675,14 +695,6 @@ config SOC_SPI_SUPPORT_OCT
     bool
     default y
 
-config SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT
-    bool
-    default y
-
-config SOC_MEMSPI_IS_INDEPENDENT
-    bool
-    default y
-
 config SOC_SPIRAM_SUPPORTED
     bool
     default y
@@ -698,6 +710,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V1
+    bool
+    default y
 
 config SOC_TOUCH_SENSOR_VERSION
     int
@@ -782,10 +798,6 @@ config SOC_UART_SUPPORT_XTAL_CLK
 config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
     bool
     default y
-
-config SOC_UHCI_NUM
-    int
-    default 1
 
 config SOC_USB_OTG_PERIPH_NUM
     int
@@ -936,6 +948,10 @@ config SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     default y
 
 config SOC_PM_MODEM_PD_BY_SW
+    bool
+    default y
+
+config SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP
     bool
     default y
 
@@ -1102,6 +1118,18 @@ config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
 config SOC_SPI_MEM_FLASH_SUPPORT_HPM
     bool
     default y
+
+config SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT
+    bool
+    default y
+
+config SOC_MEMSPI_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
 
 config SOC_COEX_HW_PTI
     bool

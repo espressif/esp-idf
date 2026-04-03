@@ -54,7 +54,7 @@ def esp_reset_and_wait_ready(dut: Dut) -> None:
 @pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
-    start_command = 'sudo -n ip link set can0 up type can bitrate 250000 restart-ms 100'
+    start_command = 'sudo -n ip link set can0 up type can bitrate 250000'
     stop_command = 'sudo -n ip link set can0 down'
     status_command = 'sudo -n ip -details link show can0'
 

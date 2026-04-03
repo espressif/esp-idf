@@ -267,7 +267,7 @@ config SOC_PAU_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V2_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
@@ -323,6 +323,10 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_REGI2C_SUPPORTED
+    bool
+    default y
+
 config SOC_ASSIST_DEBUG_SUPPORTED
     bool
     default y
@@ -332,6 +336,10 @@ config SOC_DEBUG_PROBE_SUPPORTED
     default y
 
 config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_WDT_SUPPORTED
     bool
     default y
 
@@ -711,10 +719,6 @@ config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
     int
     default 0
 
-config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_PIN_CNT
-    int
-    default 16
-
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x007FFFFFFFFF0000
@@ -768,14 +772,6 @@ config SOC_SDM_SUPPORT_SLEEP_RETENTION
     default y
 
 config SOC_ETM_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
-config SOC_ANA_CMPR_NUM
-    int
-    default 2
-
-config SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
     bool
     default y
 
@@ -1415,6 +1411,10 @@ config SOC_SPI_MEM_FLASH_SUPPORT_HPM
     bool
     default y
 
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    int
+    default 16
+
 config SOC_SYSTIMER_SUPPORT_ETM
     bool
     default y
@@ -1426,6 +1426,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V2
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_ETM
     bool
@@ -1603,6 +1607,18 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_PAGE_CONFIGURABLE
+    bool
+    default y
+
+config SOC_PSRAM_ENCRYPTION_SEPARATE_KEY
+    bool
+    default y
+
+config SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+    bool
+    default y
+
 config SOC_UART_NUM
     int
     default 6
@@ -1671,10 +1687,6 @@ config SOC_LP_I2S_SUPPORT_VAD
     bool
     default y
 
-config SOC_UHCI_NUM
-    int
-    default 1
-
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -1696,10 +1708,6 @@ config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
     default y
 
 config SOC_PM_EXT1_WAKEUP_BY_PMU
-    bool
-    default y
-
-config SOC_PM_SUPPORT_WIFI_WAKEUP
     bool
     default y
 
@@ -1743,6 +1751,10 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_CLK_ICG
+    bool
+    default y
+
 config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     bool
     default y
@@ -1751,7 +1763,15 @@ config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
 
+config SOC_PM_FPU_RETENTION_BY_SW
+    bool
+    default y
+
 config SOC_PM_CACHE_RETENTION_BY_PAU
+    bool
+    default y
+
+config SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
     bool
     default y
 
@@ -1831,7 +1851,7 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
-config SOC_MEM_TCM_SUPPORTED
+config SOC_MEM_SPM_SUPPORTED
     bool
     default y
 
@@ -1855,6 +1875,10 @@ config SOC_EMAC_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_EMAC_REF_CLK_FROM_MPLL
+    bool
+    default y
+
 config SOC_JPEG_CODEC_SUPPORTED
     bool
     default y
@@ -1868,6 +1892,10 @@ config SOC_JPEG_ENCODE_SUPPORTED
     default y
 
 config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
+
+config SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION
     bool
     default y
 

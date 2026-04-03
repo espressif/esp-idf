@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "driver/gpio.h"
 #include "driver/i2s_tdm.h"
 #include "i2s_private.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "clk_ctrl_os.h"
 #include "esp_intr_alloc.h"
 #include "esp_check.h"
@@ -82,6 +83,19 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     /* Calculate clock parameters */
     ESP_RETURN_ON_ERROR(i2s_tdm_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
 
+#if SOC_I2S_HW_VERSION_2
+    i2s_clock_src_t old_clk_src = handle->clk_src;
+    if (clk_cfg->clk_src != I2S_CLK_SRC_EXTERNAL)
+#endif
+    {
+        i2s_clock_src_t clk_src = clk_cfg->clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+        if (clk_src == I2S_CLK_SRC_DEFAULT) {
+            clk_src = I2S_LL_DEFAULT_CLK_SRC;
+        }
+#endif
+        esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    }
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
@@ -103,6 +117,12 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
     handle->bclk_hz = clk_info.bclk;
+
+#if SOC_I2S_HW_VERSION_2
+    if (old_clk_src != I2S_CLK_SRC_EXTERNAL) {
+        esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false);
+    }
+#endif
 
     ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %"PRIu32" %"PRIu32"/%"PRIu32" [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
