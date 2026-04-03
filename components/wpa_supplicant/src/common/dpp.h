@@ -317,7 +317,18 @@ struct dpp_authentication {
 	char *groups_override;
 	unsigned int ignore_netaccesskey_mismatch:1;
 #endif /* CONFIG_TESTING_OPTIONS */
+#ifdef CONFIG_TESTING_OPTIONS
+	u64 auth_req_parse_us;
+	u64 auth_resp_form_us;
+	u64 auth_req_total_us;
+#endif
 };
+
+#ifdef CONFIG_TESTING_OPTIONS
+extern u64 dpp_last_auth_req_parse_us;
+extern u64 dpp_last_auth_resp_form_us;
+extern u64 dpp_last_auth_req_total_us;
+#endif
 
 struct dpp_configurator {
 	struct dl_list list;
