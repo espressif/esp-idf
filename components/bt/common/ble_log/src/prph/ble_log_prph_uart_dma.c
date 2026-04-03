@@ -10,10 +10,10 @@
 
 /* INCLUDE */
 #include "ble_log_prph_uart_dma.h"
-
-#if BLE_LOG_PRPH_UART_DMA_REDIR
 #include "ble_log.h"
 #include "ble_log_lbm.h"
+
+#if BLE_LOG_PRPH_UART_DMA_REDIR
 
 #include "esp_timer.h"
 #include "driver/uart.h"
@@ -56,7 +56,9 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool uart_dma_tx_done_cb(
     );
     ble_log_prph_trans_t *trans = uart_trans_ctx->trans;
     trans->pos = 0;
-    trans->prph_owned = false;
+    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
     return true;
 }
 
@@ -128,11 +130,12 @@ bool ble_log_prph_init(size_t trans_cnt)
     redir_lbm->lock_type = BLE_LOG_LBM_LOCK_MUTEX;
 
     /* Transport initialization */
-    for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+    for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
         if (!ble_log_prph_trans_init(&(redir_lbm->trans[i]),
                                      BLE_LOG_UART_REDIR_BUF_SIZE)) {
             goto exit;
         }
+        redir_lbm->trans[i]->owner = (void *)redir_lbm;
     }
 
     /* Mutex initialization */
@@ -197,7 +200,7 @@ void ble_log_prph_deinit(void)
         }
 
         /* Release transport */
-        for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+        for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
             ble_log_prph_trans_deinit(&(redir_lbm->trans[i]));
         }
 
@@ -271,7 +274,9 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     if (uhci_transmit(dev_handle, trans->buf, trans->pos) != ESP_OK) {
-        trans->prph_owned = false;
+        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
     }
 }
 
@@ -316,4 +321,19 @@ int __wrap_uart_write_bytes_with_break(uart_port_t uart_num, const void *src, si
         return __wrap_uart_write_bytes(uart_num, src, size);
     }
 }
+
+ble_log_lbm_t *ble_log_prph_get_redir_lbm(void)
+{
+    return redir_lbm;
+}
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
+
+void ble_log_prph_reset_util_counters(void)
+{
+#if BLE_LOG_PRPH_UART_DMA_REDIR
+    if (redir_lbm) {
+        __atomic_store_n(&redir_lbm->trans_inflight, 0, __ATOMIC_RELAXED);
+        __atomic_store_n(&redir_lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED);
+    }
+#endif
+}
