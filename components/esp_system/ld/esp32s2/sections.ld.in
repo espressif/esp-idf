@@ -372,9 +372,9 @@ SECTIONS
     soc_reserved_memory_region_end = ABSOLUTE(.);
 
     /* System init functions registered via ESP_SYSTEM_INIT_FN */
-    ALIGNED_SYMBOL(4, _esp_system_init_fn_array_start)
-    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
-    _esp_system_init_fn_array_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _esp_sys_init_fn_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_sys_init_fn.*)))
+    _esp_sys_init_fn_end = ABSOLUTE(.);
 
     _rodata_end = ABSOLUTE(.);
 

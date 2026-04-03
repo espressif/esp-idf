@@ -74,6 +74,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_SINGLE_CORE_MODE
         bool
+        default y if IDF_TARGET_LINUX
         default n
         help
             Only initialize and use the main core.

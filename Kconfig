@@ -276,6 +276,72 @@ mainmenu "Espressif IoT Development Framework Configuration"
         config APP_BUILD_USE_FLASH_SECTIONS
             bool # Whether to place code/data into memory-mapped flash sections
 
+        menu "Minimize binary changes between builds"
+            depends on APP_BUILD_TYPE_APP_2NDBOOT
+
+            config APP_BUILD_MINIMIZE_BINARY_CHANGES
+                bool "Minimize binary changes between builds"
+                select COMPILER_NO_MERGE_CONSTANTS if IDF_TOOLCHAIN_GCC
+                help
+                    Optimize the application binary so that "idf.py flash" can
+                    flash only the data sectors that changed. Fast reflashing works
+                    without this option, enabling it improves reflash effectiveness
+                    by reducing the amount of data written on each reflash.
+
+                    Enabling this option classifies component libraries into two
+                    categories: mutable and immutable. Mutable libraries are
+                    expected to change frequently during development, while
+                    immutable libraries are considered stable. All project
+                    component libraries are treated as mutable; all other libraries
+                    are treated as immutable.
+
+                    In the generated linker script, input sections from immutable
+                    libraries are placed before those from mutable libraries. This
+                    layout helps localize changes in the output sections of the ELF
+                    file, so that recompilation primarily affects a confined area
+                    associated with the mutable libraries.
+
+                    To support this, some compiler optimizations, such as constant
+                    merging, are disabled, which helps minimize differences in the
+                    binary image between builds. However, this may increase the
+                    overall image size and flash usage.
+
+                    Additionally, this option inserts a padding, defined by the
+                    APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING option, after the input
+                    sections of mutable libraries. This allows further isolation of
+                    changes but also increases the size of the binary image and
+                    flash consumption.
+
+                    This option is primarily intended for development. It increases
+                    binary size and disables optimizations; it is not recommended
+                    for production builds.
+
+            choice APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_SIZE
+                prompt "Padding size"
+                default APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_4KB
+                depends on APP_BUILD_MINIMIZE_BINARY_CHANGES
+                help
+                    Selects the amount of padding (in kilobytes) to add after input
+                    sections of mutable libraries when "Minimize binary changes
+                    between builds" is enabled.
+
+                config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_2KB
+                    bool "2 KB"
+                config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_4KB
+                    bool "4 KB"
+                config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_8KB
+                    bool "8 KB"
+            endchoice
+
+            config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING
+                int
+                depends on APP_BUILD_MINIMIZE_BINARY_CHANGES
+                default 2048 if APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_2KB
+                default 4096 if APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_4KB
+                default 8192 if APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_8KB
+
+        endmenu  # Minimize binary changes between builds
+
         config APP_REPRODUCIBLE_BUILD
             bool "Enable reproducible build"
             default n
@@ -575,7 +641,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             bool
             depends on IDF_TOOLCHAIN_GCC
             depends on IDF_TARGET_ARCH_XTENSA
-            default y if ESPTOOLPY_FAST_REFLASHING
+            default y if APP_BUILD_MINIMIZE_BINARY_CHANGES
             help
                 Intersperse Xtensa literals within the text section to keep
                 them as close as possible to their references. This prevents
@@ -790,4 +856,3 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
-            - CONFIG_ESPTOOLPY_FAST_REFLASHING

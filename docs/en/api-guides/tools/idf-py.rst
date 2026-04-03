@@ -109,20 +109,54 @@ Delete the Entire Build Contents: ``fullclean``
 
 This command deletes the entire build directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
 
+.. _flash-with-idf-py:
+
 Flash the Project: ``flash``
 ----------------------------
 
 .. code-block:: bash
 
-  idf.py flash
+    idf.py flash
 
 This command automatically builds the project if necessary, and then flash it to the target. You can use ``-p`` and ``-b`` options to set serial port name and flasher baud rate, respectively.
 
-.. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
+.. note::
+
+    The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
 ``idf.py`` uses the ``write-flash`` command of ``esptool`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool write-flash --help`` or see the `esptool documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
 
 Similarly to the ``build`` command, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader or partition table as applicable.
+
+By default, ``idf.py flash`` attempts fast reflashing (reflashing the changed data sectors only, not the whole binary) when previously flashed binaries are present: if ``*_flashed.bin`` files exist in the build directory, the build system configures ``esptool`` to write only changed flash regions. This speeds up repeated flashing during development. All the flashed files in flash are then verified to ensure they match the expected content. If any of the files in flash do not match the expected content, a full flash will be performed instead.
+
+When no ``*_flashed.bin`` files are present, ``idf.py flash`` configures esptool to check the device flash content first and skip flashing any files that are already present in flash (this does not apply when using ``idf.py flash -a`` or ``--all``).
+
+After each successful flash, the build system saves copies of all flashed files (bootloader, partition table, app, and any other assets) with an ``_flashed`` suffix in the build directory (e.g., ``bootloader_flashed.bin``, ``partition-table_flashed.bin``). These are used automatically on the next ``idf.py flash`` for fast reflashing.
+
+Fast reflashing works with or without the :ref:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` option. Enabling that option can further improve reflash effectiveness by laying out the application binary so that changes are localized. This results in less flash sectors needing to be rewritten. This option may increase the size of the application binary and is not recommended for production builds.
+
+Full Flash
+^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -a
+
+    idf.py flash --all
+
+The ``-a`` or ``--all`` option always performs a full flash (does not reflash the changed sectors only, but the whole binary). Use it after erasing flash, when flashing to a new device with empty flash, or when you do not want to rely on previous binaries.
+
+Trust Flash Content Mode
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -t
+
+    idf.py flash --trust-flash-content
+
+When using fast reflash, ``-t`` or ``--trust-flash-content`` skips MD5 verification of files which do not need reflashing (e.g., if ``bootloader.bin`` didn't change since the last flash) to speed up the flashing process. Only use this when you are sure the device flash content has not been modified since the last ``idf.py flash`` operation.
 
 .. _merging-binaries:
 

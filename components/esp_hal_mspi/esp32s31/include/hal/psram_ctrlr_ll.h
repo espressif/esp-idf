@@ -59,6 +59,7 @@ extern "C" {
                                                  PSRAM_CTRLR_LL_EVENT_TX_TRANS_UDF)
 
 #define PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED      1
+#define PSRAM_CTRLR_LL_DEDICATED_LDO             1
 
 /**
  * @brief Set PSRAM write cmd

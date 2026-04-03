@@ -11,6 +11,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_UHCI_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
     bool
     default y
@@ -845,9 +849,13 @@ config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
 config SOC_EFUSE_ECDSA_KEY
     bool
-    default n
+    default y
 
 config SOC_EFUSE_XTS_AES_KEY_128
+    bool
+    default y
+
+config SOC_EFUSE_XTS_AES_KEY_256
     bool
     default y
 
@@ -880,6 +888,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
 

@@ -94,6 +94,7 @@
 // #define SOC_PPA_SUPPORTED               1      // TODO: [ESP32S31] IDF-14769
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1      // TODO: [ESP32S31] IDF-14645
 // #define SOC_DEEP_SLEEP_SUPPORTED        1      // TODO: [ESP32S31] IDF-14643
+#define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1      // TODO: [ESP32S31] IDF-14648
 // #define SOC_BITSCRAMBLER_SUPPORTED      1      // TODO: [ESP32S31] IDF-14714
 // #define SOC_SIMD_INSTRUCTION_SUPPORTED  1      // TODO: [ESP32S31] IDF-14661
@@ -318,6 +319,8 @@
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1) /*!<modem includes BLE and 15.4 and wifi*/
 #define SOC_PM_SUPPORT_MAC_BB_PD        (1)
+
+#define SOC_PM_SUPPORT_MODEM_CLOCK_DOMAIN_ICG      (1)
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 

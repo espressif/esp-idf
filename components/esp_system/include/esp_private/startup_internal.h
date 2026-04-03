@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,14 +69,14 @@ typedef struct {
  * discarded if the related feature is not used.
  */
 #define ESP_SYSTEM_INIT_FN(f, stage_, c, priority, ...) \
-    static esp_err_t __VA_ARGS__ __esp_system_init_fn_##f(void); \
-    static __attribute__((used)) _SECTION_ATTR_IMPL(".esp_system_init_fn", priority) \
-        esp_system_init_fn_t esp_system_init_fn_##f = { \
-            .fn = ( __esp_system_init_fn_##f), \
+    static esp_err_t __VA_ARGS__ __esp_sys_init_fn_##f(void); \
+    static _SECTION_ATTR_IMPL_GENERIC("esp_sys_init_fn", priority) \
+        esp_system_init_fn_t esp_sys_init_fn_##f = { \
+            .fn = ( __esp_sys_init_fn_##f), \
             .cores = (c), \
             .stage = ESP_SYSTEM_INIT_STAGE_##stage_ \
         }; \
-    static esp_err_t __esp_system_init_fn_##f(void)
+    static esp_err_t __esp_sys_init_fn_##f(void)
 
 #ifdef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #define ESP_SYSTEM_INIT_ALL_CORES BIT(0)

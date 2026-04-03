@@ -220,18 +220,6 @@ typedef struct {
 #define ledc_hal_set_idle_level(hal, speed_mode, channel_num, idle_level)  ledc_ll_set_idle_level((hal)->dev, speed_mode, channel_num, idle_level)
 
 /**
- * @brief Set fade end interrupt enable
- *
- * @param hal Context of the HAL layer
- * @param speed_mode LEDC speed_mode
- * @param channel_num LEDC channel index, select from ledc_channel_t
- * @param fade_end_intr_en The fade end interrupt enable status
- *
- * @return None
- */
-#define ledc_hal_set_fade_end_intr(hal, speed_mode, channel_num, fade_end_intr_en)  ledc_ll_set_fade_end_intr((hal)->dev, speed_mode, channel_num, fade_end_intr_en)
-
-/**
  * @brief Set timer index of the specified channel
  *
  * @param hal Context of the HAL layer
@@ -406,29 +394,6 @@ void ledc_hal_clear_left_off_fade_param(ledc_hal_context_t *hal, ledc_mode_t spe
 #endif //SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
 /**
- * @brief Get interrupt status of the specified channel
- *
- * @param hal Context of the HAL layer
- * @param speed_mode LEDC speed_mode
- * @param channel_num LEDC channel index, select from ledc_channel_t
- * @param intr_status Pointer to accept the interrupt status
- *
- * @return None
- */
-void ledc_hal_get_fade_end_intr_status(ledc_hal_context_t *hal, ledc_mode_t speed_mode, uint32_t *intr_status);
-
-/**
- * @brief Clear interrupt status of the specified channel
- *
- * @param hal Context of the HAL layer
- * @param speed_mode LEDC speed_mode
- * @param channel_num LEDC channel index, select from ledc_channel_t
- *
- * @return None
- */
-void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_mode_t speed_mode, ledc_channel_t channel_num);
-
-/**
  * @brief Get clock config of LEDC timer
  *
  * @param hal Context of the HAL layer
@@ -439,17 +404,6 @@ void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_mode_t sp
  * @return None
  */
 void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_cfg_t *clk_cfg);
-
-/**
- * @brief Get the address of the fade end interrupt status register.
- *
- * @param hal Context of the HAL layer
- * @return Pointer to the fade end interrupt status register.
- */
-static inline volatile void* ledc_hal_get_fade_end_intr_addr(ledc_hal_context_t *hal)
-{
-    return ledc_ll_get_fade_end_intr_addr(hal->dev);
-}
 
 #endif  //#if SOC_LEDC_SUPPORTED
 

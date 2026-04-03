@@ -44,6 +44,7 @@ menu "FreeRTOS"
         # Linux FreeRTOS port supports single-core only.
         bool
         default y
+        select ESP_SYSTEM_SINGLE_CORE_MODE
 
     config FREERTOS_NUMBER_OF_CORES
         # Invisible option to configure the number of cores on which FreeRTOS runs

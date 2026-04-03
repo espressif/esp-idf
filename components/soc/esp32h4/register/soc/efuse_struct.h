@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -46,9 +46,7 @@ typedef union {
     struct {
         /** wr_dis : RO; bitpos: [31:0]; default: 0;
          *  Represents whether programming of individual eFuse memory bit is disabled or
-         *  enabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  enabled.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t wr_dis:32;
     };
@@ -62,108 +60,95 @@ typedef union {
     struct {
         /** rd_dis : RO; bitpos: [6:0]; default: 0;
          *  Represents whether reading of individual eFuse block(block4~block10) is disabled or
-         *  enabled.
-         *  1: disabled
-         *  0: enabled
+         *  enabled.\\ 1: disabled\\ 0: enabled\\
          */
         uint32_t rd_dis:7;
         /** dis_usb_jtag : RO; bitpos: [7]; default: 0;
-         *  Represents whether the function of usb switch to jtag is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether the function of usb switch to jtag is disabled or enabled.\\ 1:
+         *  disabled\\ 0: enabled\\
          */
         uint32_t dis_usb_jtag:1;
         /** dis_usb_serial_jtag : RO; bitpos: [8]; default: 0;
-         *  Represents whether USB-Serial-JTAG is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
-         *
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+         *  Represents whether USB-Serial-JTAG is disabled or enabled.\\ 1: disabled\\ 0:
+         *  enabled\\
          */
         uint32_t dis_usb_serial_jtag:1;
         /** dis_force_download : RO; bitpos: [9]; default: 0;
          *  Represents whether the function that forces chip into download mode is disabled or
-         *  enabled.
-         *  1: disabled
-         *  0: enabled
+         *  enabled.\\ 1: disabled\\ 0: enabled\\
          */
         uint32_t dis_force_download:1;
         /** spi_download_mspi_dis : RO; bitpos: [10]; default: 0;
-         *  Represents whether SPI0 controller during boot_mode_download is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether SPI0 controller during boot_mode_download is disabled or
+         *  enabled.\\ 1: disabled\\ 0: enabled\\
          */
         uint32_t spi_download_mspi_dis:1;
         /** dis_twai : RO; bitpos: [11]; default: 0;
-         *  Represents whether TWAI function is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether TWAI function is disabled or enabled.\\ 1: disabled\\ 0:
+         *  enabled\\
          */
         uint32_t dis_twai:1;
         /** jtag_sel_enable : RO; bitpos: [12]; default: 0;
          *  Represents whether the selection between usb_to_jtag and pad_to_jtag through
          *  strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0
-         *  is enabled or disabled.
-         *  1: enabled
-         *  0: disabled
+         *  is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
          */
         uint32_t jtag_sel_enable:1;
         /** dis_pad_jtag : RO; bitpos: [13]; default: 0;
-         *  Represents whether JTAG is disabled in the hard way(permanently).
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether JTAG is disabled in the hard way(permanently).\\ 1: disabled\\
+         *  0: enabled\\
          */
         uint32_t dis_pad_jtag:1;
         /** dis_download_manual_encrypt : RO; bitpos: [14]; default: 0;
          *  Represents whether flash encrypt function is disabled or enabled(except in SPI boot
-         *  mode).
-         *  1: disabled
-         *  0: enabled
+         *  mode).\\ 1: disabled\\ 0: enabled\\
          */
         uint32_t dis_download_manual_encrypt:1;
-        uint32_t reserved_15:3;
+        /** rd_reserve_0_47 : RW; bitpos: [17:15]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_47:3;
         /** pvt_glitch_en : RO; bitpos: [18]; default: 0;
-         *  Represents whether to enable PVT power glitch monitor function.
-         *  1:Enable.
-         *  0:Disable
+         *  Represents whether to enable PVT power glitch monitor function.\\1:Enable.
+         *  \\0:Disable
          */
         uint32_t pvt_glitch_en:1;
-        uint32_t reserved_19:1;
+        /** rd_reserve_0_51 : RW; bitpos: [19]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_51:1;
         /** pvt_glitch_mode : RO; bitpos: [21:20]; default: 0;
          *  Use to configure glitch mode
          */
         uint32_t pvt_glitch_mode:2;
         /** dis_core1 : RO; bitpos: [22]; default: 0;
-         *  Represents whether the CPU-Core1 is disabled.
-         *  1: Disabled.
-         *  0: Not disable.
+         *  Represents whether the CPU-Core1 is disabled. \\ 1: Disabled. \\ 0: Not disable.
          */
         uint32_t dis_core1:1;
         /** spi_boot_crypt_cnt : RO; bitpos: [25:23]; default: 0;
-         *  Represents whether SPI boot encrypt/decrypt is disabled or enabled.
-         *  Odd number of 1: enabled
-         *  Even number of 1: disabled
+         *  Represents whether SPI boot encrypt/decrypt is disabled or enabled.\\ Odd number of
+         *  1: enabled\\ Even number of 1: disabled\\
          */
         uint32_t spi_boot_crypt_cnt:3;
         /** secure_boot_key_revoke0 : RO; bitpos: [26]; default: 0;
-         *  Represents whether revoking first secure boot key is enabled or disabled.
-         *  1: enabled
-         *  0: disabled
+         *  Represents whether revoking first secure boot key is enabled or disabled.\\ 1:
+         *  enabled\\ 0: disabled\\
          */
         uint32_t secure_boot_key_revoke0:1;
         /** secure_boot_key_revoke1 : RO; bitpos: [27]; default: 0;
-         *  Represents whether revoking second secure boot key is enabled or disabled.
-         *  1: enabled
-         *  0: disabled
+         *  Represents whether revoking second secure boot key is enabled or disabled.\\ 1:
+         *  enabled\\ 0: disabled\\
          */
         uint32_t secure_boot_key_revoke1:1;
         /** secure_boot_key_revoke2 : RO; bitpos: [28]; default: 0;
-         *  Represents whether revoking third secure boot key is enabled or disabled.
-         *  1: enabled
-         *  0: disabled
+         *  Represents whether revoking third secure boot key is enabled or disabled.\\ 1:
+         *  enabled\\ 0: disabled\\
          */
         uint32_t secure_boot_key_revoke2:1;
-        uint32_t reserved_29:3;
+        /** rd_reserve_0_61 : RW; bitpos: [31:29]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_61:3;
     };
     uint32_t val;
 } efuse_rd_repeat_data0_reg_t;
@@ -211,22 +196,18 @@ typedef union {
 typedef union {
     struct {
         /** xts_dpa_pseudo_level : RO; bitpos: [1:0]; default: 0;
-         *  Represents the pseudo round level of xts-aes anti-dpa attack.
-         *  3: High.
-         *  2: Moderate 1. Low
-         *  0: Disabled
+         *  Represents the pseudo round level of xts-aes anti-dpa attack.\\ 3: High.\\ 2:
+         *  Moderate 1. Low\\ 0: Disabled\\
          */
         uint32_t xts_dpa_pseudo_level:2;
         /** xts_dpa_clk_enable : RO; bitpos: [2]; default: 0;
-         *  Represents whether xts-aes anti-dpa attack clock is enabled.
-         *  1. Enable.
-         *  0: Disable.
+         *  Represents whether xts-aes anti-dpa attack clock is enabled.\\ 1. Enable.\\ 0:
+         *  Disable.\\
          */
         uint32_t xts_dpa_clk_enable:1;
         /** ecc_force_const_time : RO; bitpos: [3]; default: 0;
-         *  Represents whether to force ecc to use const-time calculation mode.
-         *  1: Enable.
-         *  0: Disable.
+         *  Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable.
+         *  \\ 0: Disable.
          */
         uint32_t ecc_force_const_time:1;
         /** secure_boot_sha384_en : RO; bitpos: [4]; default: 0;
@@ -234,15 +215,12 @@ typedef union {
          */
         uint32_t secure_boot_sha384_en:1;
         /** secure_boot_en : RO; bitpos: [5]; default: 0;
-         *  Represents whether secure boot is enabled or disabled.
-         *  1: enabled
-         *  0: disabled
+         *  Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
          */
         uint32_t secure_boot_en:1;
         /** secure_boot_aggressive_revoke : RO; bitpos: [6]; default: 0;
-         *  Represents whether revoking aggressive secure boot is enabled or disabled.
-         *  1: enabled.
-         *  0: disabled
+         *  Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1:
+         *  enabled.\\ 0: disabled\\
          */
         uint32_t secure_boot_aggressive_revoke:1;
         /** km_disable_deploy_mode : RO; bitpos: [11:7]; default: 0;
@@ -263,8 +241,8 @@ typedef union {
          */
         uint32_t km_disable_deploy_mode:5;
         /** km_rnd_switch_cycle : RO; bitpos: [13:12]; default: 0;
-         *  Represents the cycle at which the Key Manager switches random numbers.
-         *  0: Controlled by the
+         *  Represents the cycle at which the Key Manager switches random numbers.\\0:
+         *  Controlled by the
          *  \hyperref[fielddesc:KEYMNGRNDSWITCHCYCLE]{KEYMNG\_RND\_SWITCH\_CYCLE} register. For
          *  more information, please refer to Chapter \ref{mod:keymng}
          *  \textit{\nameref{mod:keymng}}
@@ -331,11 +309,13 @@ typedef union {
          *  is 2 times the programmed value.
          */
         uint32_t flash_tpuw:3;
-        uint32_t reserved_30:1;
+        /** rd_reserve_0_126 : RW; bitpos: [30]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_126:1;
         /** dis_download_mode : RO; bitpos: [31]; default: 0;
-         *  Represents whether Download mode is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether Download mode is disabled or enabled.\\ 1: disabled\\ 0:
+         *  enabled\\
          */
         uint32_t dis_download_mode:1;
     };
@@ -348,41 +328,34 @@ typedef union {
 typedef union {
     struct {
         /** dis_direct_boot : RO; bitpos: [0]; default: 0;
-         *  Represents whether direct boot mode is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether direct boot mode is disabled or enabled.\\ 1: disabled\\ 0:
+         *  enabled\\
          */
         uint32_t dis_direct_boot:1;
         /** dis_usb_serial_jtag_rom_print : RO; bitpos: [1]; default: 0;
-         *  Represents whether print from USB-Serial-JTAG is disabled or enabled.
-         *  1: disabled
-         *  0: enabled
+         *  Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1:
+         *  disabled\\ 0: enabled\\
          */
         uint32_t dis_usb_serial_jtag_rom_print:1;
         /** dis_usb_serial_jtag_download_mode : RO; bitpos: [2]; default: 0;
-         *  Represents whether the USB-Serial-JTAG download function is disabled or enabled.
-         *  1: Disable
-         *  0: Enable
+         *  Represents whether the USB-Serial-JTAG download function is disabled or enabled.\\
+         *  1: Disable\\ 0: Enable\\
          */
         uint32_t dis_usb_serial_jtag_download_mode:1;
         /** enable_security_download : RO; bitpos: [3]; default: 0;
-         *  Represents whether security download is enabled or disabled.
-         *  1: enabled
-         *  0: disabled
+         *  Represents whether security download is enabled or disabled.\\ 1: enabled\\ 0:
+         *  disabled\\
          */
         uint32_t enable_security_download:1;
         /** uart_print_control : RO; bitpos: [5:4]; default: 0;
-         *  Represents the type of UART printing.
-         *  00: force enable printing
-         *  01: enable printing when GPIO8 is reset at low level
-         *  10: enable printing when GPIO8 is reset at high level
-         *  11: force disable printing
+         *  Represents the type of UART printing.\\ 00: force enable printing\\ 01: enable
+         *  printing when GPIO8 is reset at low level\\ 10: enable printing when GPIO8 is reset
+         *  at high level\\ 11: force disable printing\\
          */
         uint32_t uart_print_control:2;
         /** force_send_resume : RO; bitpos: [6]; default: 0;
-         *  Represents whether ROM code is forced to send a resume command during SPI boot.
-         *  1: forced
-         *  0:not forced
+         *  Represents whether ROM code is forced to send a resume command during SPI boot.\\
+         *  1: forced\\ 0:not forced\\
          */
         uint32_t force_send_resume:1;
         /** secure_version : RO; bitpos: [22:7]; default: 0;
@@ -390,17 +363,19 @@ typedef union {
          */
         uint32_t secure_version:16;
         /** huk_gen_state : RO; bitpos: [27:23]; default: 0;
-         *  Represents whether the HUK generate mode is valid.
-         *  Odd count of bits with a value of 1: Invalid
-         *  Even count of bits with a value of 1: Valid
+         *  Represents whether the HUK generate mode is valid.\\Odd count of bits with a value
+         *  of 1: Invalid\\Even count of bits with a value of 1: Valid\\
          */
         uint32_t huk_gen_state:5;
         /** flash_ldo_efuse_sel : RO; bitpos: [28]; default: 0;
-         *  Represents whether to select efuse control flash ldo default voltage.
-         *  1 : efuse 0 : strapping
+         *  Represents whether to select efuse control flash ldo default voltage. \\ 1 : efuse
+         *  0 : strapping
          */
         uint32_t flash_ldo_efuse_sel:1;
-        uint32_t reserved_29:3;
+        /** rd_reserve_0_157 : RW; bitpos: [31:29]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_157:3;
     };
     uint32_t val;
 } efuse_rd_repeat_data3_reg_t;
@@ -413,66 +388,59 @@ typedef union {
         /** usb_drefh : RO; bitpos: [1:0]; default: 0;
          *  Represents the single-end input threshold vrefh of USB_SERIAL_JTAG PHY, 1.76 V to 2
          *  V with step of 80 mV.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t usb_drefh:2;
         /** usb_drefl : RO; bitpos: [3:2]; default: 0;
          *  Represents the single-end input threshold vrefl of USB_SERIAL_JTAG PHY, 1.76 V to 2
          *  V with step of 80 mV.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t usb_drefl:2;
         /** usb_otg_fs_drefh : RO; bitpos: [5:4]; default: 0;
          *  Represents the single-end input threshold vrefh of USB_OTG_FS PHY, 1.76 V to 2 V
          *  with step of 80 mV.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t usb_otg_fs_drefh:2;
         /** usb_otg_fs_drefl : RO; bitpos: [7:6]; default: 0;
          *  Represents the single-end input threshold vrefl of USB_OTG_FS PHY, 1.76 V to 2 V
          *  with step of 80 mV.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t usb_otg_fs_drefl:2;
         /** usb_exchg_pins : RO; bitpos: [8]; default: 0;
-         *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.
-         *  1: exchanged
-         *  0: not exchanged
+         *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.\\ 1:
+         *  exchanged\\ 0: not exchanged\\
          */
         uint32_t usb_exchg_pins:1;
         /** usb_otg_fs_exchg_pins : RO; bitpos: [9]; default: 0;
-         *  Represents whether the D+ and D- pins of USB_OTG_FS PHY is exchanged.
-         *  1: exchanged
-         *  0: not exchanged
+         *  Represents whether the D+ and D- pins of USB_OTG_FS PHY is exchanged.\\ 1:
+         *  exchanged\\ 0: not exchanged\\
          */
         uint32_t usb_otg_fs_exchg_pins:1;
         /** usb_phy_sel : RO; bitpos: [10]; default: 0;
-         *  Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY.
-         *  1: exchanged.
-         *  0: not exchanged.
+         *  Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY. \\ 1:
+         *  exchanged. \\ 0: not exchanged.
          */
         uint32_t usb_phy_sel:1;
         /** soft_dis_jtag : RO; bitpos: [13:11]; default: 0;
-         *  Represents whether JTAG is disabled in soft way.
-         *  Odd number: disabled
-         *  Even number: enabled
+         *  Represents whether JTAG is disabled in soft way.\\ Odd number: disabled\\ Even
+         *  number: enabled\\
          */
         uint32_t soft_dis_jtag:3;
         /** io_ldo_adjust : RO; bitpos: [21:14]; default: 0;
-         *  Represents configuration of IO LDO mode and voltage.
+         *  Represents configuration of IO LDO mode and voltage.\\
          */
         uint32_t io_ldo_adjust:8;
         /** io_ldo_1p8 : RO; bitpos: [22]; default: 0;
-         *  Represents select IO LDO voltage to 1.8V or 3.3V.
-         *  1: 1.8V
-         *  0: 3.3V
+         *  Represents select IO LDO voltage to 1.8V or 3.3V.\\ 1: 1.8V\\ 0: 3.3V\\
          */
         uint32_t io_ldo_1p8:1;
         /** dcdc_ccm_en : RO; bitpos: [23]; default: 0;
          *  Represents whether change DCDC to CCM mode
          */
         uint32_t dcdc_ccm_en:1;
-        uint32_t reserved_24:8;
+        /** rd_reserve_0_184 : RW; bitpos: [31:24]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_184:8;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;
@@ -526,7 +494,10 @@ typedef union {
          *  Use to configure voltage monitor limit for charge pump
          */
         uint32_t pvt_pump_limit:8;
-        uint32_t reserved_31:1;
+        /** rd_reserve_1_95 : RW; bitpos: [31]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_1_95:1;
     };
     uint32_t val;
 } efuse_rd_mac_sys2_reg_t;
@@ -549,32 +520,55 @@ typedef union {
          */
         uint32_t wdt_delay_sel:2;
         /** hys_en_pad : RO; bitpos: [6]; default: 0;
-         *  Represents whether the hysteresis function of corresponding PAD is enabled.
-         *  1: enabled
-         *  0:disabled
+         *  Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1:
+         *  enabled\\ 0:disabled\\
          */
         uint32_t hys_en_pad:1;
         /** pvt_glitch_charge_reset : RO; bitpos: [7]; default: 0;
-         *  Represents whether to trigger reset or charge pump when PVT power glitch happened.
-         *  1:Trigger charge pump.
-         *  0:Trigger reset
+         *  Represents whether to trigger reset or charge pump when PVT power glitch
+         *  happened.\\1:Trigger charge pump. \\0:Trigger reset
          */
         uint32_t pvt_glitch_charge_reset:1;
-        uint32_t reserved_8:1;
+        /** rd_reserve_1_104 : RW; bitpos: [8]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_1_104:1;
         /** vdd_spi_ldo_adjust : RO; bitpos: [16:9]; default: 0;
-         *  Represents configuration of FLASH LDO mode and voltage.
+         *  Represents configuration of FLASH LDO mode and voltage.\\
          */
         uint32_t vdd_spi_ldo_adjust:8;
         /** flash_ldo_power_sel : RO; bitpos: [17]; default: 0;
-         *  Represents which flash ldo be select:
-         *  1: FLASH LDO 1P2
-         *  0 : FLASH LDO 1P8
+         *  Represents which flash ldo be select:\\ 1: FLASH LDO 1P2\\ 0 : FLASH LDO 1P8\\
          */
         uint32_t flash_ldo_power_sel:1;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        /** wafer_version_minor : R; bitpos: [21:18]; default: 0;
+         *  Minor chip version
          */
-        uint32_t sys_data_part0_0:14;
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : R; bitpos: [23:22]; default: 0;
+         *  Major chip version
+         */
+        uint32_t wafer_version_major:2;
+        /** disable_wafer_version_major : R; bitpos: [24]; default: 0;
+         *  Disables check of wafer version major
+         */
+        uint32_t disable_wafer_version_major:1;
+        /** disable_blk_version_major : R; bitpos: [25]; default: 0;
+         *  Disables check of blk version major
+         */
+        uint32_t disable_blk_version_major:1;
+        /** blk_version_minor : R; bitpos: [28:26]; default: 0;
+         *  BLK_VERSION_MINOR of BLOCK2
+         */
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [30:29]; default: 0;
+         *  BLK_VERSION_MAJOR of BLOCK2
+         */
+        uint32_t blk_version_major:2;
+        /** flash_cap : R; bitpos: [31]; default: 0;
+         *  Flash capacity
+         */
+        uint32_t flash_cap:1;
     };
     uint32_t val;
 } efuse_rd_mac_sys3_reg_t;
@@ -584,10 +578,46 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part0_1 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        /** flash_cap_1 : R; bitpos: [1:0]; default: 0;
+         *  Flash capacity
          */
-        uint32_t sys_data_part0_1:32;
+        uint32_t flash_cap_1:2;
+        /** flash_vendor : R; bitpos: [4:2]; default: 0;
+         *  Flash vendor
+         */
+        uint32_t flash_vendor:3;
+        /** psram_cap : R; bitpos: [7:5]; default: 0;
+         *  Psram capacity
+         */
+        uint32_t psram_cap:3;
+        /** psram_vendor : R; bitpos: [9:8]; default: 0;
+         *  Psram vendor
+         */
+        uint32_t psram_vendor:2;
+        /** temp : R; bitpos: [11:10]; default: 0;
+         *  Temp (die embedded inside)
+         */
+        uint32_t temp:2;
+        /** pkg_version : R; bitpos: [14:12]; default: 0;
+         *  Package version
+         */
+        uint32_t pkg_version:3;
+        /** pvt_dbias : R; bitpos: [19:15]; default: 0;
+         *  PVT DBIAS
+         */
+        uint32_t pvt_dbias:5;
+        /** adjust_1v2 : R; bitpos: [23:20]; default: 0;
+         *  SPI LDO adjust of 1.2v
+         */
+        uint32_t adjust_1v2:4;
+        /** adjust_1v8 : R; bitpos: [27:24]; default: 0;
+         *  SPI LDO adjust of 1.8v
+         */
+        uint32_t adjust_1v8:4;
+        /** active_dcdc_1v25 : R; bitpos: [31:28]; default: 0;
+         *  DCDC-DCDC DBIAS of 1.25v
+         */
+        uint32_t active_dcdc_1v25:4;
     };
     uint32_t val;
 } efuse_rd_mac_sys4_reg_t;
@@ -597,43 +627,326 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part0_2 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the second 32-bit of zeroth part of system data.
+        /** active_dcdc_1v35 : R; bitpos: [3:0]; default: 0;
+         *  DCDC-DCDC DBIAS of 1.35v
          */
-        uint32_t sys_data_part0_2:32;
+        uint32_t active_dcdc_1v35:4;
+        /** slp_dcdc : R; bitpos: [8:4]; default: 0;
+         *  DCDC DBIAS in sleep
+         */
+        uint32_t slp_dcdc:5;
+        /** lslp_hp_drvb : R; bitpos: [13:9]; default: 0;
+         *  HP DRVB in light sleep
+         */
+        uint32_t lslp_hp_drvb:5;
+        /** dslp_lp_dbias : R; bitpos: [15:14]; default: 0;
+         *  LP DBIAS in deep sleep
+         */
+        uint32_t dslp_lp_dbias:2;
+        /** temp_calib : R; bitpos: [25:16]; default: 0;
+         *  Temperature calibration data
+         */
+        uint32_t temp_calib:10;
+        /** reserved_1_186 : R; bitpos: [31:26]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_186:6;
     };
     uint32_t val;
 } efuse_rd_mac_sys5_reg_t;
 
 
 /** Group: block2 registers */
-/** Type of rd_sys_part1_datan register
- *  Represents rd_sys_part1_datan
+/** Type of rd_sys_part1_data0 register
+ *  Represents rd_sys_part1_data0
  */
 typedef union {
     struct {
-        /** sys_data_part1_n : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_n:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
-} efuse_rd_sys_part1_datan_reg_t;
+} efuse_rd_sys_part1_data0_reg_t;
+
+/** Type of rd_sys_part1_data1 register
+ *  Represents rd_sys_part1_data1
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_1:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data1_reg_t;
+
+/** Type of rd_sys_part1_data2 register
+ *  Represents rd_sys_part1_data2
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_2:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data2_reg_t;
+
+/** Type of rd_sys_part1_data3 register
+ *  Represents rd_sys_part1_data3
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_3:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data3_reg_t;
+
+/** Type of rd_sys_part1_data4 register
+ *  Represents rd_sys_part1_data4
+ */
+typedef union {
+    struct {
+        /** ocode : R; bitpos: [7:0]; default: 0;
+         *  ADC OCode
+         */
+        uint32_t ocode:8;
+        /** dcdc_ocode : R; bitpos: [15:8]; default: 0;
+         *  DCDC OCode
+         */
+        uint32_t dcdc_ocode:8;
+        /** vdd_3v4_dout : R; bitpos: [25:16]; default: 0;
+         *  ADC dout of vdd 3.4v
+         */
+        uint32_t vdd_3v4_dout:10;
+        /** adc1_ave_initcode_atten0 : R; bitpos: [31:26]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten0:6;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data4_reg_t;
+
+/** Type of rd_sys_part1_data5 register
+ *  Represents rd_sys_part1_data5
+ */
+typedef union {
+    struct {
+        /** adc1_ave_initcode_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten0_1:3;
+        /** adc1_ave_initcode_atten1 : R; bitpos: [11:3]; default: 0;
+         *  Average initcode of ADC1 atten1
+         */
+        uint32_t adc1_ave_initcode_atten1:9;
+        /** adc1_ave_initcode_atten2 : R; bitpos: [20:12]; default: 0;
+         *  Average initcode of ADC1 atten2
+         */
+        uint32_t adc1_ave_initcode_atten2:9;
+        /** adc1_ave_initcode_atten3 : R; bitpos: [29:21]; default: 0;
+         *  Average initcode of ADC1 atten3
+         */
+        uint32_t adc1_ave_initcode_atten3:9;
+        /** adc1_hi_dout_atten0 : R; bitpos: [31:30]; default: 0;
+         *  HI dout of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0:2;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data5_reg_t;
+
+/** Type of rd_sys_part1_data6 register
+ *  Represents rd_sys_part1_data6
+ */
+typedef union {
+    struct {
+        /** adc1_hi_dout_atten0_1 : R; bitpos: [6:0]; default: 0;
+         *  HI dout of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0_1:7;
+        /** adc1_hi_dout_atten1 : R; bitpos: [15:7]; default: 0;
+         *  HI dout of ADC1 atten1
+         */
+        uint32_t adc1_hi_dout_atten1:9;
+        /** adc1_hi_dout_atten2 : R; bitpos: [24:16]; default: 0;
+         *  HI dout of ADC1 atten2
+         */
+        uint32_t adc1_hi_dout_atten2:9;
+        /** adc1_hi_dout_atten3 : R; bitpos: [31:25]; default: 0;
+         *  HI dout of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3:7;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data6_reg_t;
+
+/** Type of rd_sys_part1_data7 register
+ *  Represents rd_sys_part1_data7
+ */
+typedef union {
+    struct {
+        /** adc1_hi_dout_atten3_1 : R; bitpos: [1:0]; default: 0;
+         *  HI dout of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3_1:2;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [4:2]; default: 0;
+         *  Gap between ADC1 CH0 and average initcode
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:3;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [7:5]; default: 0;
+         *  Gap between ADC1 CH1 and average initcode
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:3;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [10:8]; default: 0;
+         *  Gap between ADC1 CH2 and average initcode
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:3;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [13:11]; default: 0;
+         *  Gap between ADC1 CH3 and average initcode
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:3;
+        /** adc1_ch4_atten0_initcode_diff : R; bitpos: [16:14]; default: 0;
+         *  Gap between ADC1 CH4 and average initcode
+         */
+        uint32_t adc1_ch4_atten0_initcode_diff:3;
+        /** initcode_diff_1p8_3p3 : R; bitpos: [21:17]; default: 0;
+         *  Initcode diff between IO LDO 1.8v and 3.3v
+         */
+        uint32_t initcode_diff_1p8_3p3:5;
+        /** hi_dout_diff_1p8_3p3 : R; bitpos: [26:22]; default: 0;
+         *  HI dout diff between IO LDO 1.8v and 3.3v
+         */
+        uint32_t hi_dout_diff_1p8_3p3:5;
+        /** reserved_2_251 : R; bitpos: [31:27]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_251:5;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data7_reg_t;
 
 
 /** Group: block3 registers */
-/** Type of rd_usr_datan register
- *  Represents rd_usr_datan
+/** Type of rd_usr_data0 register
+ *  Represents rd_usr_data0
  */
 typedef union {
     struct {
-        /** usr_datan : RO; bitpos: [31:0]; default: 0;
+        /** usr_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of block3 (user).
          */
-        uint32_t usr_datan:32;
+        uint32_t usr_data0:32;
     };
     uint32_t val;
-} efuse_rd_usr_datan_reg_t;
+} efuse_rd_usr_data0_reg_t;
+
+/** Type of rd_usr_data1 register
+ *  Represents rd_usr_data1
+ */
+typedef union {
+    struct {
+        /** usr_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data1_reg_t;
+
+/** Type of rd_usr_data2 register
+ *  Represents rd_usr_data2
+ */
+typedef union {
+    struct {
+        /** usr_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data2_reg_t;
+
+/** Type of rd_usr_data3 register
+ *  Represents rd_usr_data3
+ */
+typedef union {
+    struct {
+        /** usr_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data3_reg_t;
+
+/** Type of rd_usr_data4 register
+ *  Represents rd_usr_data4
+ */
+typedef union {
+    struct {
+        /** usr_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data4_reg_t;
+
+/** Type of rd_usr_data5 register
+ *  Represents rd_usr_data5
+ */
+typedef union {
+    struct {
+        /** usr_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data5_reg_t;
+
+/** Type of rd_usr_data6 register
+ *  Represents rd_usr_data6
+ */
+typedef union {
+    struct {
+        /** reserved_3_192 : R; bitpos: [7:0]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_192:8;
+        /** custom_mac : R; bitpos: [31:8]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac:24;
+    };
+    uint32_t val;
+} efuse_rd_usr_data6_reg_t;
+
+/** Type of rd_usr_data7 register
+ *  Represents rd_usr_data7
+ */
+typedef union {
+    struct {
+        /** custom_mac_1 : R; bitpos: [23:0]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac_1:24;
+        /** reserved_3_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_248:8;
+    };
+    uint32_t val;
+} efuse_rd_usr_data7_reg_t;
+
 
 
 /** Group: block4 registers */
@@ -739,6 +1052,7 @@ typedef union {
     };
     uint32_t val;
 } efuse_rd_sys_part2_datan_reg_t;
+
 
 
 /** Group: block0 error report registers */
@@ -3667,8 +3981,22 @@ typedef struct {
     volatile efuse_rd_mac_sys3_reg_t rd_mac_sys3;
     volatile efuse_rd_mac_sys4_reg_t rd_mac_sys4;
     volatile efuse_rd_mac_sys5_reg_t rd_mac_sys5;
-    volatile efuse_rd_sys_part1_datan_reg_t rd_sys_part1_datan[8];
-    volatile efuse_rd_usr_datan_reg_t rd_usr_datan[8];
+    volatile efuse_rd_sys_part1_data0_reg_t rd_sys_part1_data0;
+    volatile efuse_rd_sys_part1_data1_reg_t rd_sys_part1_data1;
+    volatile efuse_rd_sys_part1_data2_reg_t rd_sys_part1_data2;
+    volatile efuse_rd_sys_part1_data3_reg_t rd_sys_part1_data3;
+    volatile efuse_rd_sys_part1_data4_reg_t rd_sys_part1_data4;
+    volatile efuse_rd_sys_part1_data5_reg_t rd_sys_part1_data5;
+    volatile efuse_rd_sys_part1_data6_reg_t rd_sys_part1_data6;
+    volatile efuse_rd_sys_part1_data7_reg_t rd_sys_part1_data7;
+    volatile efuse_rd_usr_data0_reg_t rd_usr_data0;
+    volatile efuse_rd_usr_data1_reg_t rd_usr_data1;
+    volatile efuse_rd_usr_data2_reg_t rd_usr_data2;
+    volatile efuse_rd_usr_data3_reg_t rd_usr_data3;
+    volatile efuse_rd_usr_data4_reg_t rd_usr_data4;
+    volatile efuse_rd_usr_data5_reg_t rd_usr_data5;
+    volatile efuse_rd_usr_data6_reg_t rd_usr_data6;
+    volatile efuse_rd_usr_data7_reg_t rd_usr_data7;
     volatile efuse_rd_key0_datan_reg_t rd_key0_datan[8];
     volatile efuse_rd_key1_datan_reg_t rd_key1_datan[8];
     volatile efuse_rd_key2_datan_reg_t rd_key2_datan[8];

@@ -118,23 +118,23 @@ static const ledc_clk_src_t s_timer_specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLO
 static esp_err_t ledc_create_sleep_retention_link_cb(void *arg)
 {
 #if SOC_LEDC_SUPPORT_SLEEP_RETENTION
-    sleep_retention_module_t module = ledc_reg_retention_info.module_id;
+    sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
 
-    esp_err_t err = sleep_retention_entries_create(ledc_reg_retention_info.common.regdma_entry_array,
-                                                   ledc_reg_retention_info.common.array_size,
+    esp_err_t err = sleep_retention_entries_create(ledc_reg_retention_info[0].common.regdma_entry_array,
+                                                   ledc_reg_retention_info[0].common.array_size,
                                                    REGDMA_LINK_PRI_LEDC, module);
     bool slp_retention_create_failed = (err != ESP_OK);
 
     for (int i = 0; i < SOC_LEDC_TIMER_NUM && !slp_retention_create_failed; i++) {
-        err = sleep_retention_entries_create(ledc_reg_retention_info.timer[i].regdma_entry_array,
-                                             ledc_reg_retention_info.timer[i].array_size,
+        err = sleep_retention_entries_create(ledc_reg_retention_info[0].timer[i].regdma_entry_array,
+                                             ledc_reg_retention_info[0].timer[i].array_size,
                                              REGDMA_LINK_PRI_LEDC, module);
         slp_retention_create_failed |= (err != ESP_OK);
     }
 
     for (int j = 0; j < SOC_LEDC_CHANNEL_NUM && !slp_retention_create_failed; j++) {
-        err = sleep_retention_entries_create(ledc_reg_retention_info.channel[j].regdma_entry_array,
-                                             ledc_reg_retention_info.channel[j].array_size,
+        err = sleep_retention_entries_create(ledc_reg_retention_info[0].channel[j].regdma_entry_array,
+                                             ledc_reg_retention_info[0].channel[j].array_size,
                                              REGDMA_LINK_PRI_LEDC, module);
         slp_retention_create_failed |= (err != ESP_OK);
     }
@@ -176,23 +176,13 @@ static bool ledc_slow_clk_calibrate(void)
     return false;
 }
 
-static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_intr_type_t type)
-{
-    if (type == LEDC_INTR_FADE_END) {
-        ledc_hal_set_fade_end_intr(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, true);
-    } else {
-        ledc_hal_set_fade_end_intr(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, false);
-    }
-    return ESP_OK;
-}
-
 static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
 {
     ledc_fade_t *fade = s_ledc_fade_rec[mode][channel];
     if (fade) {
         xSemaphoreTake(fade->ledc_fade_sem, portMAX_DELAY);
         portENTER_CRITICAL(&ledc_spinlock);
-        ledc_enable_intr_type(mode, channel, LEDC_INTR_DISABLE);
+        ledc_ll_enable_interrupt(p_ledc_obj[mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(mode, channel), false);
         portEXIT_CRITICAL(&ledc_spinlock);
     }
 }
@@ -433,7 +423,7 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
             ledc_new_mode_obj->sleep_mode = LEDC_SLEEP_MODE_INVALID;
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP // for targets that is !SOC_LEDC_SUPPORT_SLEEP_RETENTION, retention module should still be inited to avoid TOP PD
             // Initialize sleep retention module for LEDC
-            sleep_retention_module_t module = ledc_reg_retention_info.module_id;
+            sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
             sleep_retention_module_init_param_t init_param = {
                 .cbs = {
                     .create = {
@@ -818,7 +808,7 @@ static esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mod
     if (old_gpio_rsv_mask & BIT64(gpio_num)) {
         ESP_LOGW(LEDC_TAG, "GPIO %d is not usable, maybe conflict with others", gpio_num);
     }
-    gpio_matrix_output(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + channel, out_inv, false);
+    gpio_matrix_output(gpio_num, ledc_periph_signal[0].speed_mode[speed_mode].sig_out0_idx + channel, out_inv, false);
     portENTER_CRITICAL(&ledc_spinlock);
     p_ledc_obj[speed_mode]->occupied_pin_mask[channel] |= BIT64(gpio_num);
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -966,12 +956,12 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     }
 #if LEDC_USE_RETENTION_LINK
     if (slp_retention_alloc) {
-        if (sleep_retention_module_allocate(ledc_reg_retention_info.module_id) != ESP_OK) {
+        if (sleep_retention_module_allocate(ledc_reg_retention_info[0].module_id) != ESP_OK) {
             ESP_LOGW(LEDC_TAG, "create retention module failed, power domain can't turn off");
         }
     }
     if (slp_retention_free) {
-        sleep_retention_module_free(ledc_reg_retention_info.module_id);
+        sleep_retention_module_free(ledc_reg_retention_info[0].module_id);
     }
 #endif
 
@@ -1215,12 +1205,13 @@ static void IRAM_ATTR ledc_fade_isr(void *arg)
         if (p_ledc_obj[speed_mode] == NULL) {
             continue;
         }
-        ledc_hal_get_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, &intr_status);
+        intr_status = ledc_ll_get_intr_status(p_ledc_obj[speed_mode]->ledc_hal.dev) & LEDC_LL_DUTY_CHANGE_END_INTR_MASK(speed_mode);
+        intr_status >>= __builtin_ctzll(intr_status);
         while (intr_status) {
             ledc_calc_fade_end_channel(&intr_status, &channel);
 
             // clear interrupt
-            ledc_hal_clear_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel);
+            ledc_ll_clear_intr_status(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel));
 
             if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
                 //fade object not initialized yet.
@@ -1454,10 +1445,10 @@ static void _ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, led
     ledc_fade_t *fade = s_ledc_fade_rec[speed_mode][channel];
     fade->mode = fade_mode;
     // Clear interrupt status of channel
-    ledc_hal_clear_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel);
+    ledc_ll_clear_intr_status(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel));
     // Enable interrupt for channel
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_FADE_END);
+    ledc_ll_enable_interrupt(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel), true);
     // Set fade state to HW_FADE state for starting the fade
     assert(fade->fsm == LEDC_FSM_IDLE);
     fade->fsm = LEDC_FSM_HW_FADE;
@@ -1534,7 +1525,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
     }
     // Fade state is either HW_FADE or ISR_CAL (there is a fade in process)
     // Disable ledc channel interrupt first
-    ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_DISABLE);
+    ledc_ll_enable_interrupt(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel), false);
     // Config duty to the duty cycle at this moment
     uint32_t duty_cur = ledc_get_duty(speed_mode, channel);
     ledc_duty_config(speed_mode,
@@ -1580,12 +1571,17 @@ esp_err_t ledc_fade_func_install(int intr_alloc_flags)
     }
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "LEDC not initialized, call ledc_timer_config first", ESP_ERR_INVALID_STATE);
 
+    uint32_t intr_mask = LEDC_LL_DUTY_CHANGE_END_INTR_MASK(LEDC_LOW_SPEED_MODE);
+#if SOC_LEDC_SUPPORT_HS_MODE
+    intr_mask |= LEDC_LL_DUTY_CHANGE_END_INTR_MASK(LEDC_HIGH_SPEED_MODE);
+#endif
+
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
     return esp_intr_alloc_intrstatus(
-               ETS_LEDC_INTR_SOURCE,
+               ledc_periph_signal[0].irq_id,
                intr_alloc_flags | ESP_INTR_FLAG_IRAM,
-               (uint32_t)ledc_hal_get_fade_end_intr_addr(&(p_ledc_obj[speed_mode]->ledc_hal)),
-               LEDC_LL_FADE_END_INTR_MASK,
+               (uint32_t)ledc_ll_get_intr_status_reg(p_ledc_obj[speed_mode]->ledc_hal.dev),
+               intr_mask,
                ledc_fade_isr,
                NULL,
                &s_ledc_fade_isr_handle

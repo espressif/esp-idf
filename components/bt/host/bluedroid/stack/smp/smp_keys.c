@@ -2299,9 +2299,10 @@ BOOLEAN smp_calculate_link_key_from_long_term_key(tSMP_CB *p_cb)
                 link_key_type = BTM_LKEY_TYPE_UNAUTH_COMB;
             }
         } else {
-            SMP_TRACE_ERROR ("%s failed to update link_key. Sec Mode = %d, sm4 = 0x%02x",
-                             __func__, btm_cb.security_mode, p_dev_rec->sm4);
-            return FALSE;
+            SMP_TRACE_WARNING ("%s BR/EDR transport not available (Sec Mode = %d, sm4 = 0x%02x), "
+                               "skip LK derivation",
+                               __func__, btm_cb.security_mode, p_dev_rec->sm4);
+            return TRUE;
         }
 
         link_key_type += BTM_LTK_DERIVED_LKEY_OFFSET;

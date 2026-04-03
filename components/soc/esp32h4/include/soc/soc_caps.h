@@ -35,6 +35,7 @@
 // #define SOC_ANA_CMPR_SUPPORTED          1    // TODO: [ESP32H4] IDF-12395 big change!!
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
+#define SOC_UHCI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
@@ -54,8 +55,8 @@
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 // #define SOC_TEMP_SENSOR_SUPPORTED       1    // TODO: [ESP32H4] IDF-12404
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1
-#define SOC_EFUSE_KEY_PURPOSE_FIELD     1       // TODO: [ESP32H4] IDF-12268
-#define SOC_EFUSE_SUPPORTED             1       // TODO: [ESP32H4] IDF-12268
+#define SOC_EFUSE_KEY_PURPOSE_FIELD     1
+#define SOC_EFUSE_SUPPORTED             1
 // #define SOC_RTC_MEM_SUPPORTED           1    // TODO: [ESP32H4] IDF-12313
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
@@ -413,8 +414,9 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 0
 #define SOC_EFUSE_DIS_ICACHE 0
 #define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES key purpose not supported for this block
-#define SOC_EFUSE_ECDSA_KEY 0 // TODO: [ESP32H4] IDF-12259
+#define SOC_EFUSE_ECDSA_KEY 1
 #define SOC_EFUSE_XTS_AES_KEY_128 1
+#define SOC_EFUSE_XTS_AES_KEY_256 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
@@ -427,6 +429,7 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 
 /*-------------------------- APM CAPS ----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */

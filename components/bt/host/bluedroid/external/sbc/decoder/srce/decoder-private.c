@@ -36,11 +36,11 @@ This file drives SBC decoding.
 #include "common/bt_target.h"
 #include "oi_codec_sbc_private.h"
 #include "oi_bitstream.h"
-#include <stdio.h>
+#include <string.h>
 
 #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
-OI_CHAR *const OI_Codec_Copyright = "Copyright 2002-2007 Open Interface North America, Inc. All rights reserved";
+const OI_CHAR *const OI_Codec_Copyright = "Copyright 2002-2007 Open Interface North America, Inc. All rights reserved";
 
 INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_UINT32 *decoderData,
@@ -50,12 +50,9 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_BOOL enhanced,
                                        OI_BOOL msbc_enable)
 {
-    OI_UINT i;
     OI_STATUS status;
 
-    for (i = 0; i < sizeof(*context); i++) {
-        ((char *)context)[i] = 0;
-    }
+    memset(context, 0, sizeof(*context));
 
 #ifdef SBC_ENHANCED
     context->enhancedEnabled = enhanced ? TRUE : FALSE;
@@ -126,7 +123,7 @@ INLINE void OI_SBC_ReadHeader(OI_CODEC_SBC_COMMON_CONTEXT *common, const OI_BYTE
         return;
     }
 
-    /* Avoid filling out all these strucutures if we already remember the values
+    /* Avoid filling out all these structures if we already remember the values
      * from last time. Just in case we get a stream corresponding to data[1] ==
      * 0, DecoderReset is responsible for ensuring the lookup table entries have
      * already been populated
@@ -179,10 +176,10 @@ PRIVATE void OI_SBC_ReadScalefactors(OI_CODEC_SBC_COMMON_CONTEXT *common,
             common->frameInfo.join = 0;
         }
         i /= 2;
-        do {
+        while (i--) {
             *scale_factor++ = HIGH(f = *b++);
             *scale_factor++ = LOW(f);
-        } while (--i);
+        }
         /*
          * In this case we know that the scale factors end on a byte boundary so all we need to do
          * is initialize the bitstream.
@@ -192,10 +189,10 @@ PRIVATE void OI_SBC_ReadScalefactors(OI_CODEC_SBC_COMMON_CONTEXT *common,
         OI_ASSERT(common->frameInfo.nrof_subbands == 4 && common->frameInfo.mode == SBC_JOINT_STEREO);
         common->frameInfo.join = HIGH(f = *b++);
         i = (i - 1) / 2;
-        do {
+        while(i--) {
             *scale_factor++ = LOW(f);
             *scale_factor++ = HIGH(f = *b++);
-        } while (--i);
+        }
         *scale_factor++ = LOW(f);
         /*
          * In 4-subband joint stereo mode, the joint stereo information ends on a half-byte
@@ -218,7 +215,7 @@ PRIVATE void OI_SBC_ReadSamples(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_BITSTR
     OI_UINT bitPtr = global_bs->bitPtr;
 
     const OI_UINT iter_count = common->frameInfo.nrof_channels * common->frameInfo.nrof_subbands / 4;
-    do {
+    while (nrof_blocks--) {
         OI_UINT i;
         for (i = 0; i < iter_count; ++i) {
             OI_UINT32 sf_by4 = ((OI_UINT32 *)common->scale_factor)[i];
@@ -250,7 +247,7 @@ PRIVATE void OI_SBC_ReadSamples(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_BITSTR
                 *s++ = dequant;
             }
         }
-    } while (--nrof_blocks);
+    }
 }
 
 /**

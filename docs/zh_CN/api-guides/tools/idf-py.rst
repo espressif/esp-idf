@@ -109,20 +109,54 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将删除所有 build 目录下的内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除 build 目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
 
+.. _flash-with-idf-py:
+
 烧录工程：``flash``
 ------------------------
 
 .. code-block:: bash
 
-  idf.py flash
+    idf.py flash
 
 此命令将在需要时自动构建工程，随后将其烧录到目标芯片。使用 ``-p`` 和 ``-b`` 选项可分别设置串口名称和烧录程序的波特率。
 
-.. note:: 环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别设置 ``-p`` 和 ``-b`` 选项的默认值，在命令行上设置这些选项的参数可覆盖默认值。
+.. note::
 
-``idf.py`` 在内部使用 ``esptool`` 的 ``write-flash`` 命令来烧录目标设备。通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令： ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool write-flash --help`` 或查看 `esptool 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
+    环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别用于设置 ``-p`` 和 ``-b`` 选项的默认值。若在命令行中显式提供这些选项，则将覆盖默认值。
 
-与 ``build`` 命令类似，使用 ``app``、``bootloader`` 或 ``partition-table`` 参数运行此命令，可选择仅烧录应用程序、引导加载程序或分区表。
+``idf.py`` 在内部使用 ``esptool`` 的 ``write-flash`` 命令来烧录目标设备。可以通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令：``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool write-flash --help`` 或查看 `esptool 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
+
+与 ``build`` 命令类似，运行 ``flash`` 命令时还可以添加 ``app``、``bootloader`` 或 ``partition-table`` 参数，选择仅烧录应用程序、引导加载程序或分区表。
+
+默认情况下，若存在已烧录的二进制文件，则 ``idf.py flash`` 命令会尝试进行快速重新烧录（只重新烧录已更改的数据扇区，而非整个二进制文件）：如果构建目录中存在 ``*_flashed.bin`` 文件，构建系统会配置 ``esptool`` 仅写入已更改的 flash 区域，加快开发过程中的重复烧录速度。随后会对 flash 中所有已烧录的文件进行校验，确保其内容符合预期。若 flash 中的任何文件与预期内容不一致，则会改为执行全量烧录。
+
+若不存在 ``*_flashed.bin`` 文件，则 ``idf.py flash`` 会配置 esptool 先检查设备的 flash 内容，并跳过已存在于 flash 中的文件（使用 ``idf.py flash -a`` 或 ``--all`` 参数时不适用此行为）。
+
+每次成功烧录后，构建系统会在构建目录中保存所有已烧录文件（引导加载程序、分区表、应用程序以及其他任何资源）的副本，文件名带有 ``_flashed`` 后缀（例如，``bootloader_flashed.bin``、``partition-table_flashed.bin``）。下次执行 ``idf.py flash`` 命令时会自动使用这些文件，以便快速重新烧录。
+
+无论是否启用 :ref:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` 选项，快速重新烧录都可正常工作。启用该选项可调整应用程序二进制文件的布局，使修改集中在局部区域，从而进一步提升重新烧录的效率，需要重写的 flash 扇区会减少。但该选项可能会增加应用程序二进制文件的大小，不建议用于生产构建。
+
+全量烧录
+^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -a
+
+    idf.py flash --all
+
+``-a`` 或 ``--all`` 选项始终执行全量烧录（并非仅重新烧录已更改的扇区，而是烧录整个二进制文件）。在擦除 flash 之后、在烧录 flash 为空的新设备时，或在不想依赖先前的二进制文件时可以使用该参数。
+
+信任 flash 内容模式
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -t
+
+    idf.py flash --trust-flash-content
+
+使用快速重新烧录时，使用 ``-t`` 或 ``--trust-flash-content`` 参数可以跳过对不需要重新烧录的文件（例如，如果 ``bootloader.bin`` 自上次烧录以来没有变化）的 MD5 校验，以加快烧录过程。仅在确定设备 flash 内容自上次执行 ``idf.py flash`` 以来未被修改的情况下使用此选项。
 
 .. _merging-binaries:
 

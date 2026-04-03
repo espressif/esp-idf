@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -250,15 +250,28 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_M  (EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_V << EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_S)
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_V  0x00000001U
 #define EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT_S  14
+/** EFUSE_RD_RESERVE_0_47 : RW; bitpos: [17:15]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_47    0x00000007U
+#define EFUSE_RD_RESERVE_0_47_M  (EFUSE_RD_RESERVE_0_47_V << EFUSE_RD_RESERVE_0_47_S)
+#define EFUSE_RD_RESERVE_0_47_V  0x00000007U
+#define EFUSE_RD_RESERVE_0_47_S  15
 /** EFUSE_PVT_GLITCH_EN : RO; bitpos: [18]; default: 0;
- *  Represents whether to enable PVT power glitch monitor function.
- *  1:Enable.
- *  0:Disable
+ *  Represents whether to enable PVT power glitch monitor function.\\1:Enable.
+ *  \\0:Disable
  */
 #define EFUSE_PVT_GLITCH_EN    (BIT(18))
 #define EFUSE_PVT_GLITCH_EN_M  (EFUSE_PVT_GLITCH_EN_V << EFUSE_PVT_GLITCH_EN_S)
 #define EFUSE_PVT_GLITCH_EN_V  0x00000001U
 #define EFUSE_PVT_GLITCH_EN_S  18
+/** EFUSE_RD_RESERVE_0_51 : RW; bitpos: [19]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_51    (BIT(19))
+#define EFUSE_RD_RESERVE_0_51_M  (EFUSE_RD_RESERVE_0_51_V << EFUSE_RD_RESERVE_0_51_S)
+#define EFUSE_RD_RESERVE_0_51_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_51_S  19
 /** EFUSE_PVT_GLITCH_MODE : RO; bitpos: [21:20]; default: 0;
  *  Use to configure glitch mode
  */
@@ -267,50 +280,51 @@ extern "C" {
 #define EFUSE_PVT_GLITCH_MODE_V  0x00000003U
 #define EFUSE_PVT_GLITCH_MODE_S  20
 /** EFUSE_DIS_CORE1 : RO; bitpos: [22]; default: 0;
- *  Represents whether the CPU-Core1 is disabled.
- *  1: Disabled.
- *  0: Not disable.
+ *  Represents whether the CPU-Core1 is disabled. \\ 1: Disabled. \\ 0: Not disable.
  */
 #define EFUSE_DIS_CORE1    (BIT(22))
 #define EFUSE_DIS_CORE1_M  (EFUSE_DIS_CORE1_V << EFUSE_DIS_CORE1_S)
 #define EFUSE_DIS_CORE1_V  0x00000001U
 #define EFUSE_DIS_CORE1_S  22
 /** EFUSE_SPI_BOOT_CRYPT_CNT : RO; bitpos: [25:23]; default: 0;
- *  Represents whether SPI boot encrypt/decrypt is disabled or enabled.
- *  Odd number of 1: enabled
- *  Even number of 1: disabled
+ *  Represents whether SPI boot encrypt/decrypt is disabled or enabled.\\ Odd number of
+ *  1: enabled\\ Even number of 1: disabled\\
  */
 #define EFUSE_SPI_BOOT_CRYPT_CNT    0x00000007U
 #define EFUSE_SPI_BOOT_CRYPT_CNT_M  (EFUSE_SPI_BOOT_CRYPT_CNT_V << EFUSE_SPI_BOOT_CRYPT_CNT_S)
 #define EFUSE_SPI_BOOT_CRYPT_CNT_V  0x00000007U
 #define EFUSE_SPI_BOOT_CRYPT_CNT_S  23
 /** EFUSE_SECURE_BOOT_KEY_REVOKE0 : RO; bitpos: [26]; default: 0;
- *  Represents whether revoking first secure boot key is enabled or disabled.
- *  1: enabled
- *  0: disabled
+ *  Represents whether revoking first secure boot key is enabled or disabled.\\ 1:
+ *  enabled\\ 0: disabled\\
  */
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0    (BIT(26))
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0_M  (EFUSE_SECURE_BOOT_KEY_REVOKE0_V << EFUSE_SECURE_BOOT_KEY_REVOKE0_S)
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0_V  0x00000001U
 #define EFUSE_SECURE_BOOT_KEY_REVOKE0_S  26
 /** EFUSE_SECURE_BOOT_KEY_REVOKE1 : RO; bitpos: [27]; default: 0;
- *  Represents whether revoking second secure boot key is enabled or disabled.
- *  1: enabled
- *  0: disabled
+ *  Represents whether revoking second secure boot key is enabled or disabled.\\ 1:
+ *  enabled\\ 0: disabled\\
  */
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1    (BIT(27))
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1_M  (EFUSE_SECURE_BOOT_KEY_REVOKE1_V << EFUSE_SECURE_BOOT_KEY_REVOKE1_S)
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1_V  0x00000001U
 #define EFUSE_SECURE_BOOT_KEY_REVOKE1_S  27
 /** EFUSE_SECURE_BOOT_KEY_REVOKE2 : RO; bitpos: [28]; default: 0;
- *  Represents whether revoking third secure boot key is enabled or disabled.
- *  1: enabled
- *  0: disabled
+ *  Represents whether revoking third secure boot key is enabled or disabled.\\ 1:
+ *  enabled\\ 0: disabled\\
  */
 #define EFUSE_SECURE_BOOT_KEY_REVOKE2    (BIT(28))
 #define EFUSE_SECURE_BOOT_KEY_REVOKE2_M  (EFUSE_SECURE_BOOT_KEY_REVOKE2_V << EFUSE_SECURE_BOOT_KEY_REVOKE2_S)
 #define EFUSE_SECURE_BOOT_KEY_REVOKE2_V  0x00000001U
 #define EFUSE_SECURE_BOOT_KEY_REVOKE2_S  28
+/** EFUSE_RD_RESERVE_0_61 : RW; bitpos: [31:29]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_61    0x00000007U
+#define EFUSE_RD_RESERVE_0_61_M  (EFUSE_RD_RESERVE_0_61_V << EFUSE_RD_RESERVE_0_61_S)
+#define EFUSE_RD_RESERVE_0_61_V  0x00000007U
+#define EFUSE_RD_RESERVE_0_61_S  29
 
 /** EFUSE_RD_REPEAT_DATA1_REG register
  *  Represents rd_repeat_data
@@ -371,28 +385,24 @@ extern "C" {
  */
 #define EFUSE_RD_REPEAT_DATA2_REG (DR_REG_EFUSE_BASE + 0x38)
 /** EFUSE_XTS_DPA_PSEUDO_LEVEL : RO; bitpos: [1:0]; default: 0;
- *  Represents the pseudo round level of xts-aes anti-dpa attack.
- *  3: High.
- *  2: Moderate 1. Low
- *  0: Disabled
+ *  Represents the pseudo round level of xts-aes anti-dpa attack.\\ 3: High.\\ 2:
+ *  Moderate 1. Low\\ 0: Disabled\\
  */
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL    0x00000003U
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL_M  (EFUSE_XTS_DPA_PSEUDO_LEVEL_V << EFUSE_XTS_DPA_PSEUDO_LEVEL_S)
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL_V  0x00000003U
 #define EFUSE_XTS_DPA_PSEUDO_LEVEL_S  0
 /** EFUSE_XTS_DPA_CLK_ENABLE : RO; bitpos: [2]; default: 0;
- *  Represents whether xts-aes anti-dpa attack clock is enabled.
- *  1. Enable.
- *  0: Disable.
+ *  Represents whether xts-aes anti-dpa attack clock is enabled.\\ 1. Enable.\\ 0:
+ *  Disable.\\
  */
 #define EFUSE_XTS_DPA_CLK_ENABLE    (BIT(2))
 #define EFUSE_XTS_DPA_CLK_ENABLE_M  (EFUSE_XTS_DPA_CLK_ENABLE_V << EFUSE_XTS_DPA_CLK_ENABLE_S)
 #define EFUSE_XTS_DPA_CLK_ENABLE_V  0x00000001U
 #define EFUSE_XTS_DPA_CLK_ENABLE_S  2
 /** EFUSE_ECC_FORCE_CONST_TIME : RO; bitpos: [3]; default: 0;
- *  Represents whether to force ecc to use const-time calculation mode.
- *  1: Enable.
- *  0: Disable.
+ *  Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable.
+ *  \\ 0: Disable.
  */
 #define EFUSE_ECC_FORCE_CONST_TIME    (BIT(3))
 #define EFUSE_ECC_FORCE_CONST_TIME_M  (EFUSE_ECC_FORCE_CONST_TIME_V << EFUSE_ECC_FORCE_CONST_TIME_S)
@@ -406,38 +416,27 @@ extern "C" {
 #define EFUSE_SECURE_BOOT_SHA384_EN_V  0x00000001U
 #define EFUSE_SECURE_BOOT_SHA384_EN_S  4
 /** EFUSE_SECURE_BOOT_EN : RO; bitpos: [5]; default: 0;
- *  Represents whether secure boot is enabled or disabled.
- *  1: enabled
- *  0: disabled
+ *  Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
  */
 #define EFUSE_SECURE_BOOT_EN    (BIT(5))
 #define EFUSE_SECURE_BOOT_EN_M  (EFUSE_SECURE_BOOT_EN_V << EFUSE_SECURE_BOOT_EN_S)
 #define EFUSE_SECURE_BOOT_EN_V  0x00000001U
 #define EFUSE_SECURE_BOOT_EN_S  5
 /** EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE : RO; bitpos: [6]; default: 0;
- *  Represents whether revoking aggressive secure boot is enabled or disabled.
- *  1: enabled.
- *  0: disabled
+ *  Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1:
+ *  enabled.\\ 0: disabled\\
  */
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE    (BIT(6))
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_M  (EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V << EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S)
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V  0x00000001U
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S  6
 /** EFUSE_KM_DISABLE_DEPLOY_MODE : RO; bitpos: [11:7]; default: 0;
- *  Represents whether the new key deployment of key manager is disabled.
- *  Bit0: Represents whether the new ECDSA key deployment is disabled
- *  0: Enabled
- *  1: Disabled
- *  Bit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment is
- *  disabled
- *  0: Enabled
- *  1: Disabled
- *  Bit2: Represents whether the new HMAC key deployment is disabled
- *  0: Enabled
- *  1: Disabled
- *  Bit3: Represents whether the new DS key deployment is disabled
- *  0: Enabled
- *  1: Disabled
+ *  Represents whether the new key deployment of key manager is disabled. \\Bit0:
+ *  Represents whether the new ECDSA key deployment is disabled\\0: Enabled\\1:
+ *  Disabled\\Bit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment
+ *  is disabled\\0: Enabled\\1: Disabled\\Bit2: Represents whether the new HMAC key
+ *  deployment is disabled\\0: Enabled\\1: Disabled\\Bit3: Represents whether the new
+ *  DS key deployment is disabled\\0: Enabled\\1: Disabled\\
  */
 #define EFUSE_KM_DISABLE_DEPLOY_MODE    0x0000001FU
 #define EFUSE_KM_DISABLE_DEPLOY_MODE_M  (EFUSE_KM_DISABLE_DEPLOY_MODE_V << EFUSE_KM_DISABLE_DEPLOY_MODE_S)
@@ -498,27 +497,23 @@ extern "C" {
 #define EFUSE_FORCE_USE_KEY_MANAGER_KEY_S  19
 /** EFUSE_FORCE_DISABLE_SW_INIT_KEY : RO; bitpos: [24]; default: 0;
  *  Represents whether to disable the use of the initialization key written by software
- *  and instead force use efuse\_init\_key.
- *  0: Enable
- *  1: Disable
+ *  and instead force use efuse\_init\_key.\\0: Enable\\1: Disable\\
  */
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY    (BIT(24))
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY_M  (EFUSE_FORCE_DISABLE_SW_INIT_KEY_V << EFUSE_FORCE_DISABLE_SW_INIT_KEY_S)
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY_V  0x00000001U
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY_S  24
 /** EFUSE_KM_XTS_KEY_LENGTH_256 : RO; bitpos: [25]; default: 0;
- *  Represents which key flash encryption uses.
- *  0: XTS-AES-256 key
- *  1: XTS-AES-128 key
+ *  Represents which key flash encryption uses.\\0: XTS-AES-256 key\\1: XTS-AES-128
+ *  key\\
  */
 #define EFUSE_KM_XTS_KEY_LENGTH_256    (BIT(25))
 #define EFUSE_KM_XTS_KEY_LENGTH_256_M  (EFUSE_KM_XTS_KEY_LENGTH_256_V << EFUSE_KM_XTS_KEY_LENGTH_256_S)
 #define EFUSE_KM_XTS_KEY_LENGTH_256_V  0x00000001U
 #define EFUSE_KM_XTS_KEY_LENGTH_256_S  25
 /** EFUSE_LOCK_KM_KEY : RO; bitpos: [26]; default: 0;
- *  Represents whether the keys in the Key Manager are locked after deployment.
- *  0: Not locked
- *  1: Locked
+ *  Represents whether the keys in the Key Manager are locked after deployment.\\0: Not
+ *  locked\\1: Locked\\
  */
 #define EFUSE_LOCK_KM_KEY    (BIT(26))
 #define EFUSE_LOCK_KM_KEY_M  (EFUSE_LOCK_KM_KEY_V << EFUSE_LOCK_KM_KEY_S)
@@ -533,10 +528,16 @@ extern "C" {
 #define EFUSE_FLASH_TPUW_M  (EFUSE_FLASH_TPUW_V << EFUSE_FLASH_TPUW_S)
 #define EFUSE_FLASH_TPUW_V  0x00000007U
 #define EFUSE_FLASH_TPUW_S  27
+/** EFUSE_RD_RESERVE_0_126 : RW; bitpos: [30]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_126    (BIT(30))
+#define EFUSE_RD_RESERVE_0_126_M  (EFUSE_RD_RESERVE_0_126_V << EFUSE_RD_RESERVE_0_126_S)
+#define EFUSE_RD_RESERVE_0_126_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_126_S  30
 /** EFUSE_DIS_DOWNLOAD_MODE : RO; bitpos: [31]; default: 0;
- *  Represents whether Download mode is disabled or enabled.
- *  1: disabled
- *  0: enabled
+ *  Represents whether Download mode is disabled or enabled.\\ 1: disabled\\ 0:
+ *  enabled\\
  */
 #define EFUSE_DIS_DOWNLOAD_MODE    (BIT(31))
 #define EFUSE_DIS_DOWNLOAD_MODE_M  (EFUSE_DIS_DOWNLOAD_MODE_V << EFUSE_DIS_DOWNLOAD_MODE_S)
@@ -548,56 +549,49 @@ extern "C" {
  */
 #define EFUSE_RD_REPEAT_DATA3_REG (DR_REG_EFUSE_BASE + 0x3c)
 /** EFUSE_DIS_DIRECT_BOOT : RO; bitpos: [0]; default: 0;
- *  Represents whether direct boot mode is disabled or enabled.
- *  1: disabled
- *  0: enabled
+ *  Represents whether direct boot mode is disabled or enabled.\\ 1: disabled\\ 0:
+ *  enabled\\
  */
 #define EFUSE_DIS_DIRECT_BOOT    (BIT(0))
 #define EFUSE_DIS_DIRECT_BOOT_M  (EFUSE_DIS_DIRECT_BOOT_V << EFUSE_DIS_DIRECT_BOOT_S)
 #define EFUSE_DIS_DIRECT_BOOT_V  0x00000001U
 #define EFUSE_DIS_DIRECT_BOOT_S  0
 /** EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT : RO; bitpos: [1]; default: 0;
- *  Represents whether print from USB-Serial-JTAG is disabled or enabled.
- *  1: disabled
- *  0: enabled
+ *  Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1:
+ *  disabled\\ 0: enabled\\
  */
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT    (BIT(1))
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_M  (EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V << EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S)
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V  0x00000001U
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S  1
 /** EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE : RO; bitpos: [2]; default: 0;
- *  Represents whether the USB-Serial-JTAG download function is disabled or enabled.
- *  1: Disable
- *  0: Enable
+ *  Represents whether the USB-Serial-JTAG download function is disabled or enabled.\\
+ *  1: Disable\\ 0: Enable\\
  */
 #define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE    (BIT(2))
 #define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_M  (EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_V << EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_S)
 #define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_V  0x00000001U
 #define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_S  2
 /** EFUSE_ENABLE_SECURITY_DOWNLOAD : RO; bitpos: [3]; default: 0;
- *  Represents whether security download is enabled or disabled.
- *  1: enabled
- *  0: disabled
+ *  Represents whether security download is enabled or disabled.\\ 1: enabled\\ 0:
+ *  disabled\\
  */
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD    (BIT(3))
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_M  (EFUSE_ENABLE_SECURITY_DOWNLOAD_V << EFUSE_ENABLE_SECURITY_DOWNLOAD_S)
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_V  0x00000001U
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_S  3
 /** EFUSE_UART_PRINT_CONTROL : RO; bitpos: [5:4]; default: 0;
- *  Represents the type of UART printing.
- *  00: force enable printing
- *  01: enable printing when GPIO8 is reset at low level
- *  10: enable printing when GPIO8 is reset at high level
- *  11: force disable printing
+ *  Represents the type of UART printing.\\ 00: force enable printing\\ 01: enable
+ *  printing when GPIO8 is reset at low level\\ 10: enable printing when GPIO8 is reset
+ *  at high level\\ 11: force disable printing\\
  */
 #define EFUSE_UART_PRINT_CONTROL    0x00000003U
 #define EFUSE_UART_PRINT_CONTROL_M  (EFUSE_UART_PRINT_CONTROL_V << EFUSE_UART_PRINT_CONTROL_S)
 #define EFUSE_UART_PRINT_CONTROL_V  0x00000003U
 #define EFUSE_UART_PRINT_CONTROL_S  4
 /** EFUSE_FORCE_SEND_RESUME : RO; bitpos: [6]; default: 0;
- *  Represents whether ROM code is forced to send a resume command during SPI boot.
- *  1: forced
- *  0:not forced
+ *  Represents whether ROM code is forced to send a resume command during SPI boot.\\
+ *  1: forced\\ 0:not forced\\
  */
 #define EFUSE_FORCE_SEND_RESUME    (BIT(6))
 #define EFUSE_FORCE_SEND_RESUME_M  (EFUSE_FORCE_SEND_RESUME_V << EFUSE_FORCE_SEND_RESUME_S)
@@ -611,22 +605,28 @@ extern "C" {
 #define EFUSE_SECURE_VERSION_V  0x0000FFFFU
 #define EFUSE_SECURE_VERSION_S  7
 /** EFUSE_HUK_GEN_STATE : RO; bitpos: [27:23]; default: 0;
- *  Represents whether the HUK generate mode is valid.
- *  Odd count of bits with a value of 1: Invalid
- *  Even count of bits with a value of 1: Valid
+ *  Represents whether the HUK generate mode is valid.\\Odd count of bits with a value
+ *  of 1: Invalid\\Even count of bits with a value of 1: Valid\\
  */
 #define EFUSE_HUK_GEN_STATE    0x0000001FU
 #define EFUSE_HUK_GEN_STATE_M  (EFUSE_HUK_GEN_STATE_V << EFUSE_HUK_GEN_STATE_S)
 #define EFUSE_HUK_GEN_STATE_V  0x0000001FU
 #define EFUSE_HUK_GEN_STATE_S  23
 /** EFUSE_FLASH_LDO_EFUSE_SEL : RO; bitpos: [28]; default: 0;
- *  Represents whether to select efuse control flash ldo default voltage.
- *  1 : efuse 0 : strapping
+ *  Represents whether to select efuse control flash ldo default voltage. \\ 1 : efuse
+ *  0 : strapping
  */
 #define EFUSE_FLASH_LDO_EFUSE_SEL    (BIT(28))
 #define EFUSE_FLASH_LDO_EFUSE_SEL_M  (EFUSE_FLASH_LDO_EFUSE_SEL_V << EFUSE_FLASH_LDO_EFUSE_SEL_S)
 #define EFUSE_FLASH_LDO_EFUSE_SEL_V  0x00000001U
 #define EFUSE_FLASH_LDO_EFUSE_SEL_S  28
+/** EFUSE_RD_RESERVE_0_157 : RW; bitpos: [31:29]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_157    0x00000007U
+#define EFUSE_RD_RESERVE_0_157_M  (EFUSE_RD_RESERVE_0_157_V << EFUSE_RD_RESERVE_0_157_S)
+#define EFUSE_RD_RESERVE_0_157_V  0x00000007U
+#define EFUSE_RD_RESERVE_0_157_S  29
 
 /** EFUSE_RD_REPEAT_DATA4_REG register
  *  Represents rd_repeat_data
@@ -635,7 +635,6 @@ extern "C" {
 /** EFUSE_USB_DREFH : RO; bitpos: [1:0]; default: 0;
  *  Represents the single-end input threshold vrefh of USB_SERIAL_JTAG PHY, 1.76 V to 2
  *  V with step of 80 mV.
- *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define EFUSE_USB_DREFH    0x00000003U
 #define EFUSE_USB_DREFH_M  (EFUSE_USB_DREFH_V << EFUSE_USB_DREFH_S)
@@ -644,7 +643,6 @@ extern "C" {
 /** EFUSE_USB_DREFL : RO; bitpos: [3:2]; default: 0;
  *  Represents the single-end input threshold vrefl of USB_SERIAL_JTAG PHY, 1.76 V to 2
  *  V with step of 80 mV.
- *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define EFUSE_USB_DREFL    0x00000003U
 #define EFUSE_USB_DREFL_M  (EFUSE_USB_DREFL_V << EFUSE_USB_DREFL_S)
@@ -653,7 +651,6 @@ extern "C" {
 /** EFUSE_USB_OTG_FS_DREFH : RO; bitpos: [5:4]; default: 0;
  *  Represents the single-end input threshold vrefh of USB_OTG_FS PHY, 1.76 V to 2 V
  *  with step of 80 mV.
- *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define EFUSE_USB_OTG_FS_DREFH    0x00000003U
 #define EFUSE_USB_OTG_FS_DREFH_M  (EFUSE_USB_OTG_FS_DREFH_V << EFUSE_USB_OTG_FS_DREFH_S)
@@ -662,59 +659,52 @@ extern "C" {
 /** EFUSE_USB_OTG_FS_DREFL : RO; bitpos: [7:6]; default: 0;
  *  Represents the single-end input threshold vrefl of USB_OTG_FS PHY, 1.76 V to 2 V
  *  with step of 80 mV.
- *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define EFUSE_USB_OTG_FS_DREFL    0x00000003U
 #define EFUSE_USB_OTG_FS_DREFL_M  (EFUSE_USB_OTG_FS_DREFL_V << EFUSE_USB_OTG_FS_DREFL_S)
 #define EFUSE_USB_OTG_FS_DREFL_V  0x00000003U
 #define EFUSE_USB_OTG_FS_DREFL_S  6
 /** EFUSE_USB_EXCHG_PINS : RO; bitpos: [8]; default: 0;
- *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.
- *  1: exchanged
- *  0: not exchanged
+ *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.\\ 1:
+ *  exchanged\\ 0: not exchanged\\
  */
 #define EFUSE_USB_EXCHG_PINS    (BIT(8))
 #define EFUSE_USB_EXCHG_PINS_M  (EFUSE_USB_EXCHG_PINS_V << EFUSE_USB_EXCHG_PINS_S)
 #define EFUSE_USB_EXCHG_PINS_V  0x00000001U
 #define EFUSE_USB_EXCHG_PINS_S  8
 /** EFUSE_USB_OTG_FS_EXCHG_PINS : RO; bitpos: [9]; default: 0;
- *  Represents whether the D+ and D- pins of USB_OTG_FS PHY is exchanged.
- *  1: exchanged
- *  0: not exchanged
+ *  Represents whether the D+ and D- pins of USB_OTG_FS PHY is exchanged.\\ 1:
+ *  exchanged\\ 0: not exchanged\\
  */
 #define EFUSE_USB_OTG_FS_EXCHG_PINS    (BIT(9))
 #define EFUSE_USB_OTG_FS_EXCHG_PINS_M  (EFUSE_USB_OTG_FS_EXCHG_PINS_V << EFUSE_USB_OTG_FS_EXCHG_PINS_S)
 #define EFUSE_USB_OTG_FS_EXCHG_PINS_V  0x00000001U
 #define EFUSE_USB_OTG_FS_EXCHG_PINS_S  9
 /** EFUSE_USB_PHY_SEL : RO; bitpos: [10]; default: 0;
- *  Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY.
- *  1: exchanged.
- *  0: not exchanged.
+ *  Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY. \\ 1:
+ *  exchanged. \\ 0: not exchanged.
  */
 #define EFUSE_USB_PHY_SEL    (BIT(10))
 #define EFUSE_USB_PHY_SEL_M  (EFUSE_USB_PHY_SEL_V << EFUSE_USB_PHY_SEL_S)
 #define EFUSE_USB_PHY_SEL_V  0x00000001U
 #define EFUSE_USB_PHY_SEL_S  10
 /** EFUSE_SOFT_DIS_JTAG : RO; bitpos: [13:11]; default: 0;
- *  Represents whether JTAG is disabled in soft way.
- *  Odd number: disabled
- *  Even number: enabled
+ *  Represents whether JTAG is disabled in soft way.\\ Odd number: disabled\\ Even
+ *  number: enabled\\
  */
 #define EFUSE_SOFT_DIS_JTAG    0x00000007U
 #define EFUSE_SOFT_DIS_JTAG_M  (EFUSE_SOFT_DIS_JTAG_V << EFUSE_SOFT_DIS_JTAG_S)
 #define EFUSE_SOFT_DIS_JTAG_V  0x00000007U
 #define EFUSE_SOFT_DIS_JTAG_S  11
 /** EFUSE_IO_LDO_ADJUST : RO; bitpos: [21:14]; default: 0;
- *  Represents configuration of IO LDO mode and voltage.
+ *  Represents configuration of IO LDO mode and voltage.\\
  */
 #define EFUSE_IO_LDO_ADJUST    0x000000FFU
 #define EFUSE_IO_LDO_ADJUST_M  (EFUSE_IO_LDO_ADJUST_V << EFUSE_IO_LDO_ADJUST_S)
 #define EFUSE_IO_LDO_ADJUST_V  0x000000FFU
 #define EFUSE_IO_LDO_ADJUST_S  14
 /** EFUSE_IO_LDO_1P8 : RO; bitpos: [22]; default: 0;
- *  Represents select IO LDO voltage to 1.8V or 3.3V.
- *  1: 1.8V
- *  0: 3.3V
+ *  Represents select IO LDO voltage to 1.8V or 3.3V.\\ 1: 1.8V\\ 0: 3.3V\\
  */
 #define EFUSE_IO_LDO_1P8    (BIT(22))
 #define EFUSE_IO_LDO_1P8_M  (EFUSE_IO_LDO_1P8_V << EFUSE_IO_LDO_1P8_S)
@@ -727,6 +717,13 @@ extern "C" {
 #define EFUSE_DCDC_CCM_EN_M  (EFUSE_DCDC_CCM_EN_V << EFUSE_DCDC_CCM_EN_S)
 #define EFUSE_DCDC_CCM_EN_V  0x00000001U
 #define EFUSE_DCDC_CCM_EN_S  23
+/** EFUSE_RD_RESERVE_0_184 : RW; bitpos: [31:24]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_184    0x000000FFU
+#define EFUSE_RD_RESERVE_0_184_M  (EFUSE_RD_RESERVE_0_184_V << EFUSE_RD_RESERVE_0_184_S)
+#define EFUSE_RD_RESERVE_0_184_V  0x000000FFU
+#define EFUSE_RD_RESERVE_0_184_S  24
 
 /** EFUSE_RD_MAC_SYS0_REG register
  *  Represents rd_mac_sys
@@ -784,6 +781,13 @@ extern "C" {
 #define EFUSE_PVT_PUMP_LIMIT_M  (EFUSE_PVT_PUMP_LIMIT_V << EFUSE_PVT_PUMP_LIMIT_S)
 #define EFUSE_PVT_PUMP_LIMIT_V  0x000000FFU
 #define EFUSE_PVT_PUMP_LIMIT_S  23
+/** EFUSE_RD_RESERVE_1_95 : RW; bitpos: [31]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_1_95    (BIT(31))
+#define EFUSE_RD_RESERVE_1_95_M  (EFUSE_RD_RESERVE_1_95_V << EFUSE_RD_RESERVE_1_95_S)
+#define EFUSE_RD_RESERVE_1_95_V  0x00000001U
+#define EFUSE_RD_RESERVE_1_95_S  31
 
 /** EFUSE_RD_MAC_SYS3_REG register
  *  Represents rd_mac_sys
@@ -797,177 +801,445 @@ extern "C" {
 #define EFUSE_PUMP_DRV_V  0x0000000FU
 #define EFUSE_PUMP_DRV_S  0
 /** EFUSE_WDT_DELAY_SEL : RO; bitpos: [5:4]; default: 0;
- *  Represents the threshold level of the RTC watchdog STG0 timeout.
- *  0: Original threshold configuration value of STG0 *2
- *  1: Original threshold configuration value of STG0 *4
- *  2: Original threshold configuration value of STG0 *8
- *  3: Original threshold configuration value of STG0 *16
+ *  Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original
+ *  threshold configuration value of STG0 *2 \\1: Original threshold configuration
+ *  value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3:
+ *  Original threshold configuration value of STG0 *16 \\
  */
 #define EFUSE_WDT_DELAY_SEL    0x00000003U
 #define EFUSE_WDT_DELAY_SEL_M  (EFUSE_WDT_DELAY_SEL_V << EFUSE_WDT_DELAY_SEL_S)
 #define EFUSE_WDT_DELAY_SEL_V  0x00000003U
 #define EFUSE_WDT_DELAY_SEL_S  4
 /** EFUSE_HYS_EN_PAD : RO; bitpos: [6]; default: 0;
- *  Represents whether the hysteresis function of corresponding PAD is enabled.
- *  1: enabled
- *  0:disabled
+ *  Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1:
+ *  enabled\\ 0:disabled\\
  */
 #define EFUSE_HYS_EN_PAD    (BIT(6))
 #define EFUSE_HYS_EN_PAD_M  (EFUSE_HYS_EN_PAD_V << EFUSE_HYS_EN_PAD_S)
 #define EFUSE_HYS_EN_PAD_V  0x00000001U
 #define EFUSE_HYS_EN_PAD_S  6
 /** EFUSE_PVT_GLITCH_CHARGE_RESET : RO; bitpos: [7]; default: 0;
- *  Represents whether to trigger reset or charge pump when PVT power glitch happened.
- *  1:Trigger charge pump.
- *  0:Trigger reset
+ *  Represents whether to trigger reset or charge pump when PVT power glitch
+ *  happened.\\1:Trigger charge pump. \\0:Trigger reset
  */
 #define EFUSE_PVT_GLITCH_CHARGE_RESET    (BIT(7))
 #define EFUSE_PVT_GLITCH_CHARGE_RESET_M  (EFUSE_PVT_GLITCH_CHARGE_RESET_V << EFUSE_PVT_GLITCH_CHARGE_RESET_S)
 #define EFUSE_PVT_GLITCH_CHARGE_RESET_V  0x00000001U
 #define EFUSE_PVT_GLITCH_CHARGE_RESET_S  7
+/** EFUSE_RD_RESERVE_1_104 : RW; bitpos: [8]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_1_104    (BIT(8))
+#define EFUSE_RD_RESERVE_1_104_M  (EFUSE_RD_RESERVE_1_104_V << EFUSE_RD_RESERVE_1_104_S)
+#define EFUSE_RD_RESERVE_1_104_V  0x00000001U
+#define EFUSE_RD_RESERVE_1_104_S  8
 /** EFUSE_VDD_SPI_LDO_ADJUST : RO; bitpos: [16:9]; default: 0;
- *  Represents configuration of FLASH LDO mode and voltage.
+ *  Represents configuration of FLASH LDO mode and voltage.\\
  */
 #define EFUSE_VDD_SPI_LDO_ADJUST    0x000000FFU
 #define EFUSE_VDD_SPI_LDO_ADJUST_M  (EFUSE_VDD_SPI_LDO_ADJUST_V << EFUSE_VDD_SPI_LDO_ADJUST_S)
 #define EFUSE_VDD_SPI_LDO_ADJUST_V  0x000000FFU
 #define EFUSE_VDD_SPI_LDO_ADJUST_S  9
 /** EFUSE_FLASH_LDO_POWER_SEL : RO; bitpos: [17]; default: 0;
- *  Represents which flash ldo be select:
- *  1: FLASH LDO 1P2
- *  0 : FLASH LDO 1P8
+ *  Represents which flash ldo be select:\\ 1: FLASH LDO 1P2\\ 0 : FLASH LDO 1P8\\
  */
 #define EFUSE_FLASH_LDO_POWER_SEL    (BIT(17))
 #define EFUSE_FLASH_LDO_POWER_SEL_M  (EFUSE_FLASH_LDO_POWER_SEL_V << EFUSE_FLASH_LDO_POWER_SEL_S)
 #define EFUSE_FLASH_LDO_POWER_SEL_V  0x00000001U
 #define EFUSE_FLASH_LDO_POWER_SEL_S  17
-/** EFUSE_SYS_DATA_PART0_0 : RO; bitpos: [31:18]; default: 0;
- *  Represents the first 14-bit of zeroth part of system data.
+/** EFUSE_WAFER_VERSION_MINOR : R; bitpos: [21:18]; default: 0;
+ *  Minor chip version
  */
-#define EFUSE_SYS_DATA_PART0_0    0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_M  (EFUSE_SYS_DATA_PART0_0_V << EFUSE_SYS_DATA_PART0_0_S)
-#define EFUSE_SYS_DATA_PART0_0_V  0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_S  18
+#define EFUSE_WAFER_VERSION_MINOR    0x0000000FU
+#define EFUSE_WAFER_VERSION_MINOR_M  (EFUSE_WAFER_VERSION_MINOR_V << EFUSE_WAFER_VERSION_MINOR_S)
+#define EFUSE_WAFER_VERSION_MINOR_V  0x0000000FU
+#define EFUSE_WAFER_VERSION_MINOR_S  18
+/** EFUSE_WAFER_VERSION_MAJOR : R; bitpos: [23:22]; default: 0;
+ *  Major chip version
+ */
+#define EFUSE_WAFER_VERSION_MAJOR    0x00000003U
+#define EFUSE_WAFER_VERSION_MAJOR_M  (EFUSE_WAFER_VERSION_MAJOR_V << EFUSE_WAFER_VERSION_MAJOR_S)
+#define EFUSE_WAFER_VERSION_MAJOR_V  0x00000003U
+#define EFUSE_WAFER_VERSION_MAJOR_S  22
+/** EFUSE_DISABLE_WAFER_VERSION_MAJOR : R; bitpos: [24]; default: 0;
+ *  Disables check of wafer version major
+ */
+#define EFUSE_DISABLE_WAFER_VERSION_MAJOR    (BIT(24))
+#define EFUSE_DISABLE_WAFER_VERSION_MAJOR_M  (EFUSE_DISABLE_WAFER_VERSION_MAJOR_V << EFUSE_DISABLE_WAFER_VERSION_MAJOR_S)
+#define EFUSE_DISABLE_WAFER_VERSION_MAJOR_V  0x00000001U
+#define EFUSE_DISABLE_WAFER_VERSION_MAJOR_S  24
+/** EFUSE_DISABLE_BLK_VERSION_MAJOR : R; bitpos: [25]; default: 0;
+ *  Disables check of blk version major
+ */
+#define EFUSE_DISABLE_BLK_VERSION_MAJOR    (BIT(25))
+#define EFUSE_DISABLE_BLK_VERSION_MAJOR_M  (EFUSE_DISABLE_BLK_VERSION_MAJOR_V << EFUSE_DISABLE_BLK_VERSION_MAJOR_S)
+#define EFUSE_DISABLE_BLK_VERSION_MAJOR_V  0x00000001U
+#define EFUSE_DISABLE_BLK_VERSION_MAJOR_S  25
+/** EFUSE_BLK_VERSION_MINOR : R; bitpos: [28:26]; default: 0;
+ *  BLK_VERSION_MINOR of BLOCK2
+ */
+#define EFUSE_BLK_VERSION_MINOR    0x00000007U
+#define EFUSE_BLK_VERSION_MINOR_M  (EFUSE_BLK_VERSION_MINOR_V << EFUSE_BLK_VERSION_MINOR_S)
+#define EFUSE_BLK_VERSION_MINOR_V  0x00000007U
+#define EFUSE_BLK_VERSION_MINOR_S  26
+/** EFUSE_BLK_VERSION_MAJOR : R; bitpos: [30:29]; default: 0;
+ *  BLK_VERSION_MAJOR of BLOCK2
+ */
+#define EFUSE_BLK_VERSION_MAJOR    0x00000003U
+#define EFUSE_BLK_VERSION_MAJOR_M  (EFUSE_BLK_VERSION_MAJOR_V << EFUSE_BLK_VERSION_MAJOR_S)
+#define EFUSE_BLK_VERSION_MAJOR_V  0x00000003U
+#define EFUSE_BLK_VERSION_MAJOR_S  29
+/** EFUSE_FLASH_CAP : R; bitpos: [31]; default: 0;
+ *  Flash capacity
+ */
+#define EFUSE_FLASH_CAP    (BIT(31))
+#define EFUSE_FLASH_CAP_M  (EFUSE_FLASH_CAP_V << EFUSE_FLASH_CAP_S)
+#define EFUSE_FLASH_CAP_V  0x00000001U
+#define EFUSE_FLASH_CAP_S  31
 
 /** EFUSE_RD_MAC_SYS4_REG register
  *  Represents rd_mac_sys
  */
 #define EFUSE_RD_MAC_SYS4_REG (DR_REG_EFUSE_BASE + 0x54)
-/** EFUSE_SYS_DATA_PART0_1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the first 14-bit of zeroth part of system data.
+/** EFUSE_FLASH_CAP_1 : R; bitpos: [1:0]; default: 0;
+ *  Flash capacity
  */
-#define EFUSE_SYS_DATA_PART0_1    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART0_1_M  (EFUSE_SYS_DATA_PART0_1_V << EFUSE_SYS_DATA_PART0_1_S)
-#define EFUSE_SYS_DATA_PART0_1_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART0_1_S  0
+#define EFUSE_FLASH_CAP_1    0x00000003U
+#define EFUSE_FLASH_CAP_1_M  (EFUSE_FLASH_CAP_1_V << EFUSE_FLASH_CAP_1_S)
+#define EFUSE_FLASH_CAP_1_V  0x00000003U
+#define EFUSE_FLASH_CAP_1_S  0
+/** EFUSE_FLASH_VENDOR : R; bitpos: [4:2]; default: 0;
+ *  Flash vendor
+ */
+#define EFUSE_FLASH_VENDOR    0x00000007U
+#define EFUSE_FLASH_VENDOR_M  (EFUSE_FLASH_VENDOR_V << EFUSE_FLASH_VENDOR_S)
+#define EFUSE_FLASH_VENDOR_V  0x00000007U
+#define EFUSE_FLASH_VENDOR_S  2
+/** EFUSE_PSRAM_CAP : R; bitpos: [7:5]; default: 0;
+ *  Psram capacity
+ */
+#define EFUSE_PSRAM_CAP    0x00000007U
+#define EFUSE_PSRAM_CAP_M  (EFUSE_PSRAM_CAP_V << EFUSE_PSRAM_CAP_S)
+#define EFUSE_PSRAM_CAP_V  0x00000007U
+#define EFUSE_PSRAM_CAP_S  5
+/** EFUSE_PSRAM_VENDOR : R; bitpos: [9:8]; default: 0;
+ *  Psram vendor
+ */
+#define EFUSE_PSRAM_VENDOR    0x00000003U
+#define EFUSE_PSRAM_VENDOR_M  (EFUSE_PSRAM_VENDOR_V << EFUSE_PSRAM_VENDOR_S)
+#define EFUSE_PSRAM_VENDOR_V  0x00000003U
+#define EFUSE_PSRAM_VENDOR_S  8
+/** EFUSE_TEMP : R; bitpos: [11:10]; default: 0;
+ *  Temp (die embedded inside)
+ */
+#define EFUSE_TEMP    0x00000003U
+#define EFUSE_TEMP_M  (EFUSE_TEMP_V << EFUSE_TEMP_S)
+#define EFUSE_TEMP_V  0x00000003U
+#define EFUSE_TEMP_S  10
+/** EFUSE_PKG_VERSION : R; bitpos: [14:12]; default: 0;
+ *  Package version
+ */
+#define EFUSE_PKG_VERSION    0x00000007U
+#define EFUSE_PKG_VERSION_M  (EFUSE_PKG_VERSION_V << EFUSE_PKG_VERSION_S)
+#define EFUSE_PKG_VERSION_V  0x00000007U
+#define EFUSE_PKG_VERSION_S  12
+/** EFUSE_PVT_DBIAS : R; bitpos: [19:15]; default: 0;
+ *  PVT DBIAS
+ */
+#define EFUSE_PVT_DBIAS    0x0000001FU
+#define EFUSE_PVT_DBIAS_M  (EFUSE_PVT_DBIAS_V << EFUSE_PVT_DBIAS_S)
+#define EFUSE_PVT_DBIAS_V  0x0000001FU
+#define EFUSE_PVT_DBIAS_S  15
+/** EFUSE_ADJUST_1V2 : R; bitpos: [23:20]; default: 0;
+ *  SPI LDO adjust of 1.2v
+ */
+#define EFUSE_ADJUST_1V2    0x0000000FU
+#define EFUSE_ADJUST_1V2_M  (EFUSE_ADJUST_1V2_V << EFUSE_ADJUST_1V2_S)
+#define EFUSE_ADJUST_1V2_V  0x0000000FU
+#define EFUSE_ADJUST_1V2_S  20
+/** EFUSE_ADJUST_1V8 : R; bitpos: [27:24]; default: 0;
+ *  SPI LDO adjust of 1.8v
+ */
+#define EFUSE_ADJUST_1V8    0x0000000FU
+#define EFUSE_ADJUST_1V8_M  (EFUSE_ADJUST_1V8_V << EFUSE_ADJUST_1V8_S)
+#define EFUSE_ADJUST_1V8_V  0x0000000FU
+#define EFUSE_ADJUST_1V8_S  24
+/** EFUSE_ACTIVE_DCDC_1V25 : R; bitpos: [31:28]; default: 0;
+ *  DCDC-DCDC DBIAS of 1.25v
+ */
+#define EFUSE_ACTIVE_DCDC_1V25    0x0000000FU
+#define EFUSE_ACTIVE_DCDC_1V25_M  (EFUSE_ACTIVE_DCDC_1V25_V << EFUSE_ACTIVE_DCDC_1V25_S)
+#define EFUSE_ACTIVE_DCDC_1V25_V  0x0000000FU
+#define EFUSE_ACTIVE_DCDC_1V25_S  28
 
 /** EFUSE_RD_MAC_SYS5_REG register
  *  Represents rd_mac_sys
  */
 #define EFUSE_RD_MAC_SYS5_REG (DR_REG_EFUSE_BASE + 0x58)
-/** EFUSE_SYS_DATA_PART0_2 : RO; bitpos: [31:0]; default: 0;
- *  Represents the second 32-bit of zeroth part of system data.
+/** EFUSE_ACTIVE_DCDC_1V35 : R; bitpos: [3:0]; default: 0;
+ *  DCDC-DCDC DBIAS of 1.35v
  */
-#define EFUSE_SYS_DATA_PART0_2    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART0_2_M  (EFUSE_SYS_DATA_PART0_2_V << EFUSE_SYS_DATA_PART0_2_S)
-#define EFUSE_SYS_DATA_PART0_2_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART0_2_S  0
+#define EFUSE_ACTIVE_DCDC_1V35    0x0000000FU
+#define EFUSE_ACTIVE_DCDC_1V35_M  (EFUSE_ACTIVE_DCDC_1V35_V << EFUSE_ACTIVE_DCDC_1V35_S)
+#define EFUSE_ACTIVE_DCDC_1V35_V  0x0000000FU
+#define EFUSE_ACTIVE_DCDC_1V35_S  0
+/** EFUSE_SLP_DCDC : R; bitpos: [8:4]; default: 0;
+ *  DCDC DBIAS in sleep
+ */
+#define EFUSE_SLP_DCDC    0x0000001FU
+#define EFUSE_SLP_DCDC_M  (EFUSE_SLP_DCDC_V << EFUSE_SLP_DCDC_S)
+#define EFUSE_SLP_DCDC_V  0x0000001FU
+#define EFUSE_SLP_DCDC_S  4
+/** EFUSE_LSLP_HP_DRVB : R; bitpos: [13:9]; default: 0;
+ *  HP DRVB in light sleep
+ */
+#define EFUSE_LSLP_HP_DRVB    0x0000001FU
+#define EFUSE_LSLP_HP_DRVB_M  (EFUSE_LSLP_HP_DRVB_V << EFUSE_LSLP_HP_DRVB_S)
+#define EFUSE_LSLP_HP_DRVB_V  0x0000001FU
+#define EFUSE_LSLP_HP_DRVB_S  9
+/** EFUSE_DSLP_LP_DBIAS : R; bitpos: [15:14]; default: 0;
+ *  LP DBIAS in deep sleep
+ */
+#define EFUSE_DSLP_LP_DBIAS    0x00000003U
+#define EFUSE_DSLP_LP_DBIAS_M  (EFUSE_DSLP_LP_DBIAS_V << EFUSE_DSLP_LP_DBIAS_S)
+#define EFUSE_DSLP_LP_DBIAS_V  0x00000003U
+#define EFUSE_DSLP_LP_DBIAS_S  14
+/** EFUSE_TEMP_CALIB : R; bitpos: [25:16]; default: 0;
+ *  Temperature calibration data
+ */
+#define EFUSE_TEMP_CALIB    0x000003FFU
+#define EFUSE_TEMP_CALIB_M  (EFUSE_TEMP_CALIB_V << EFUSE_TEMP_CALIB_S)
+#define EFUSE_TEMP_CALIB_V  0x000003FFU
+#define EFUSE_TEMP_CALIB_S  16
+/** EFUSE_RESERVED_1_186 : R; bitpos: [31:26]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_186    0x0000003FU
+#define EFUSE_RESERVED_1_186_M  (EFUSE_RESERVED_1_186_V << EFUSE_RESERVED_1_186_S)
+#define EFUSE_RESERVED_1_186_V  0x0000003FU
+#define EFUSE_RESERVED_1_186_S  26
 
 /** EFUSE_RD_SYS_PART1_DATA0_REG register
  *  Represents rd_sys_part1_data0
  */
 #define EFUSE_RD_SYS_PART1_DATA0_REG (DR_REG_EFUSE_BASE + 0x5c)
-/** EFUSE_SYS_DATA_PART1_0 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_OPTIONAL_UNIQUE_ID : R; bitpos: [31:0]; default: 0;
+ *  Optional unique 128-bit ID
  */
-#define EFUSE_SYS_DATA_PART1_0    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_0_M  (EFUSE_SYS_DATA_PART1_0_V << EFUSE_SYS_DATA_PART1_0_S)
-#define EFUSE_SYS_DATA_PART1_0_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_0_S  0
+#define EFUSE_OPTIONAL_UNIQUE_ID    0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_M  (EFUSE_OPTIONAL_UNIQUE_ID_V << EFUSE_OPTIONAL_UNIQUE_ID_S)
+#define EFUSE_OPTIONAL_UNIQUE_ID_V  0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_S  0
 
 /** EFUSE_RD_SYS_PART1_DATA1_REG register
  *  Represents rd_sys_part1_data1
  */
 #define EFUSE_RD_SYS_PART1_DATA1_REG (DR_REG_EFUSE_BASE + 0x60)
-/** EFUSE_SYS_DATA_PART1_1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_OPTIONAL_UNIQUE_ID_1 : R; bitpos: [31:0]; default: 0;
+ *  Optional unique 128-bit ID
  */
-#define EFUSE_SYS_DATA_PART1_1    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_1_M  (EFUSE_SYS_DATA_PART1_1_V << EFUSE_SYS_DATA_PART1_1_S)
-#define EFUSE_SYS_DATA_PART1_1_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_1_S  0
+#define EFUSE_OPTIONAL_UNIQUE_ID_1    0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_1_M  (EFUSE_OPTIONAL_UNIQUE_ID_1_V << EFUSE_OPTIONAL_UNIQUE_ID_1_S)
+#define EFUSE_OPTIONAL_UNIQUE_ID_1_V  0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_1_S  0
 
 /** EFUSE_RD_SYS_PART1_DATA2_REG register
  *  Represents rd_sys_part1_data2
  */
 #define EFUSE_RD_SYS_PART1_DATA2_REG (DR_REG_EFUSE_BASE + 0x64)
-/** EFUSE_SYS_DATA_PART1_2 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_OPTIONAL_UNIQUE_ID_2 : R; bitpos: [31:0]; default: 0;
+ *  Optional unique 128-bit ID
  */
-#define EFUSE_SYS_DATA_PART1_2    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_2_M  (EFUSE_SYS_DATA_PART1_2_V << EFUSE_SYS_DATA_PART1_2_S)
-#define EFUSE_SYS_DATA_PART1_2_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_2_S  0
+#define EFUSE_OPTIONAL_UNIQUE_ID_2    0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_2_M  (EFUSE_OPTIONAL_UNIQUE_ID_2_V << EFUSE_OPTIONAL_UNIQUE_ID_2_S)
+#define EFUSE_OPTIONAL_UNIQUE_ID_2_V  0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_2_S  0
 
 /** EFUSE_RD_SYS_PART1_DATA3_REG register
  *  Represents rd_sys_part1_data3
  */
 #define EFUSE_RD_SYS_PART1_DATA3_REG (DR_REG_EFUSE_BASE + 0x68)
-/** EFUSE_SYS_DATA_PART1_3 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_OPTIONAL_UNIQUE_ID_3 : R; bitpos: [31:0]; default: 0;
+ *  Optional unique 128-bit ID
  */
-#define EFUSE_SYS_DATA_PART1_3    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_3_M  (EFUSE_SYS_DATA_PART1_3_V << EFUSE_SYS_DATA_PART1_3_S)
-#define EFUSE_SYS_DATA_PART1_3_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_3_S  0
+#define EFUSE_OPTIONAL_UNIQUE_ID_3    0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_3_M  (EFUSE_OPTIONAL_UNIQUE_ID_3_V << EFUSE_OPTIONAL_UNIQUE_ID_3_S)
+#define EFUSE_OPTIONAL_UNIQUE_ID_3_V  0xFFFFFFFFU
+#define EFUSE_OPTIONAL_UNIQUE_ID_3_S  0
 
 /** EFUSE_RD_SYS_PART1_DATA4_REG register
  *  Represents rd_sys_part1_data4
  */
 #define EFUSE_RD_SYS_PART1_DATA4_REG (DR_REG_EFUSE_BASE + 0x6c)
-/** EFUSE_SYS_DATA_PART1_4 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_OCODE : R; bitpos: [7:0]; default: 0;
+ *  ADC OCode
  */
-#define EFUSE_SYS_DATA_PART1_4    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_4_M  (EFUSE_SYS_DATA_PART1_4_V << EFUSE_SYS_DATA_PART1_4_S)
-#define EFUSE_SYS_DATA_PART1_4_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_4_S  0
+#define EFUSE_OCODE    0x000000FFU
+#define EFUSE_OCODE_M  (EFUSE_OCODE_V << EFUSE_OCODE_S)
+#define EFUSE_OCODE_V  0x000000FFU
+#define EFUSE_OCODE_S  0
+/** EFUSE_DCDC_OCODE : R; bitpos: [15:8]; default: 0;
+ *  DCDC OCode
+ */
+#define EFUSE_DCDC_OCODE    0x000000FFU
+#define EFUSE_DCDC_OCODE_M  (EFUSE_DCDC_OCODE_V << EFUSE_DCDC_OCODE_S)
+#define EFUSE_DCDC_OCODE_V  0x000000FFU
+#define EFUSE_DCDC_OCODE_S  8
+/** EFUSE_VDD_3V4_DOUT : R; bitpos: [25:16]; default: 0;
+ *  ADC dout of vdd 3.4v
+ */
+#define EFUSE_VDD_3V4_DOUT    0x000003FFU
+#define EFUSE_VDD_3V4_DOUT_M  (EFUSE_VDD_3V4_DOUT_V << EFUSE_VDD_3V4_DOUT_S)
+#define EFUSE_VDD_3V4_DOUT_V  0x000003FFU
+#define EFUSE_VDD_3V4_DOUT_S  16
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN0 : R; bitpos: [31:26]; default: 0;
+ *  Average initcode of ADC1 atten0
+ */
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0    0x0000003FU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN0_V << EFUSE_ADC1_AVE_INITCODE_ATTEN0_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_V  0x0000003FU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_S  26
 
 /** EFUSE_RD_SYS_PART1_DATA5_REG register
  *  Represents rd_sys_part1_data5
  */
 #define EFUSE_RD_SYS_PART1_DATA5_REG (DR_REG_EFUSE_BASE + 0x70)
-/** EFUSE_SYS_DATA_PART1_5 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN0_1 : R; bitpos: [2:0]; default: 0;
+ *  Average initcode of ADC1 atten0
  */
-#define EFUSE_SYS_DATA_PART1_5    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_5_M  (EFUSE_SYS_DATA_PART1_5_V << EFUSE_SYS_DATA_PART1_5_S)
-#define EFUSE_SYS_DATA_PART1_5_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_5_S  0
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_1    0x00000007U
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_1_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN0_1_V << EFUSE_ADC1_AVE_INITCODE_ATTEN0_1_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_1_V  0x00000007U
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_1_S  0
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN1 : R; bitpos: [11:3]; default: 0;
+ *  Average initcode of ADC1 atten1
+ */
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1    0x000001FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN1_V << EFUSE_ADC1_AVE_INITCODE_ATTEN1_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1_V  0x000001FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1_S  3
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN2 : R; bitpos: [20:12]; default: 0;
+ *  Average initcode of ADC1 atten2
+ */
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN2    0x000001FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN2_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN2_V << EFUSE_ADC1_AVE_INITCODE_ATTEN2_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN2_V  0x000001FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN2_S  12
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN3 : R; bitpos: [29:21]; default: 0;
+ *  Average initcode of ADC1 atten3
+ */
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN3    0x000001FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN3_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN3_V << EFUSE_ADC1_AVE_INITCODE_ATTEN3_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN3_V  0x000001FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN3_S  21
+/** EFUSE_ADC1_HI_DOUT_ATTEN0 : R; bitpos: [31:30]; default: 0;
+ *  HI dout of ADC1 atten0
+ */
+#define EFUSE_ADC1_HI_DOUT_ATTEN0    0x00000003U
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_M  (EFUSE_ADC1_HI_DOUT_ATTEN0_V << EFUSE_ADC1_HI_DOUT_ATTEN0_S)
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_V  0x00000003U
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_S  30
 
 /** EFUSE_RD_SYS_PART1_DATA6_REG register
  *  Represents rd_sys_part1_data6
  */
 #define EFUSE_RD_SYS_PART1_DATA6_REG (DR_REG_EFUSE_BASE + 0x74)
-/** EFUSE_SYS_DATA_PART1_6 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_ADC1_HI_DOUT_ATTEN0_1 : R; bitpos: [6:0]; default: 0;
+ *  HI dout of ADC1 atten0
  */
-#define EFUSE_SYS_DATA_PART1_6    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_6_M  (EFUSE_SYS_DATA_PART1_6_V << EFUSE_SYS_DATA_PART1_6_S)
-#define EFUSE_SYS_DATA_PART1_6_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_6_S  0
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_1    0x0000007FU
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_1_M  (EFUSE_ADC1_HI_DOUT_ATTEN0_1_V << EFUSE_ADC1_HI_DOUT_ATTEN0_1_S)
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_1_V  0x0000007FU
+#define EFUSE_ADC1_HI_DOUT_ATTEN0_1_S  0
+/** EFUSE_ADC1_HI_DOUT_ATTEN1 : R; bitpos: [15:7]; default: 0;
+ *  HI dout of ADC1 atten1
+ */
+#define EFUSE_ADC1_HI_DOUT_ATTEN1    0x000001FFU
+#define EFUSE_ADC1_HI_DOUT_ATTEN1_M  (EFUSE_ADC1_HI_DOUT_ATTEN1_V << EFUSE_ADC1_HI_DOUT_ATTEN1_S)
+#define EFUSE_ADC1_HI_DOUT_ATTEN1_V  0x000001FFU
+#define EFUSE_ADC1_HI_DOUT_ATTEN1_S  7
+/** EFUSE_ADC1_HI_DOUT_ATTEN2 : R; bitpos: [24:16]; default: 0;
+ *  HI dout of ADC1 atten2
+ */
+#define EFUSE_ADC1_HI_DOUT_ATTEN2    0x000001FFU
+#define EFUSE_ADC1_HI_DOUT_ATTEN2_M  (EFUSE_ADC1_HI_DOUT_ATTEN2_V << EFUSE_ADC1_HI_DOUT_ATTEN2_S)
+#define EFUSE_ADC1_HI_DOUT_ATTEN2_V  0x000001FFU
+#define EFUSE_ADC1_HI_DOUT_ATTEN2_S  16
+/** EFUSE_ADC1_HI_DOUT_ATTEN3 : R; bitpos: [31:25]; default: 0;
+ *  HI dout of ADC1 atten3
+ */
+#define EFUSE_ADC1_HI_DOUT_ATTEN3    0x0000007FU
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_M  (EFUSE_ADC1_HI_DOUT_ATTEN3_V << EFUSE_ADC1_HI_DOUT_ATTEN3_S)
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_V  0x0000007FU
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_S  25
 
 /** EFUSE_RD_SYS_PART1_DATA7_REG register
  *  Represents rd_sys_part1_data7
  */
 #define EFUSE_RD_SYS_PART1_DATA7_REG (DR_REG_EFUSE_BASE + 0x78)
-/** EFUSE_SYS_DATA_PART1_7 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_ADC1_HI_DOUT_ATTEN3_1 : R; bitpos: [1:0]; default: 0;
+ *  HI dout of ADC1 atten3
  */
-#define EFUSE_SYS_DATA_PART1_7    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_7_M  (EFUSE_SYS_DATA_PART1_7_V << EFUSE_SYS_DATA_PART1_7_S)
-#define EFUSE_SYS_DATA_PART1_7_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_7_S  0
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_1    0x00000003U
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_1_M  (EFUSE_ADC1_HI_DOUT_ATTEN3_1_V << EFUSE_ADC1_HI_DOUT_ATTEN3_1_S)
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_1_V  0x00000003U
+#define EFUSE_ADC1_HI_DOUT_ATTEN3_1_S  0
+/** EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF : R; bitpos: [4:2]; default: 0;
+ *  Gap between ADC1 CH0 and average initcode
+ */
+#define EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF    0x00000007U
+#define EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF_M  (EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF_V << EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF_S)
+#define EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF_V  0x00000007U
+#define EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF_S  2
+/** EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF : R; bitpos: [7:5]; default: 0;
+ *  Gap between ADC1 CH1 and average initcode
+ */
+#define EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF    0x00000007U
+#define EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF_M  (EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF_V << EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF_S)
+#define EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF_V  0x00000007U
+#define EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF_S  5
+/** EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF : R; bitpos: [10:8]; default: 0;
+ *  Gap between ADC1 CH2 and average initcode
+ */
+#define EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF    0x00000007U
+#define EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF_M  (EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF_V << EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF_S)
+#define EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF_V  0x00000007U
+#define EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF_S  8
+/** EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF : R; bitpos: [13:11]; default: 0;
+ *  Gap between ADC1 CH3 and average initcode
+ */
+#define EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF    0x00000007U
+#define EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF_M  (EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF_V << EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF_S)
+#define EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF_V  0x00000007U
+#define EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF_S  11
+/** EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF : R; bitpos: [16:14]; default: 0;
+ *  Gap between ADC1 CH4 and average initcode
+ */
+#define EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF    0x00000007U
+#define EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF_M  (EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF_V << EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF_S)
+#define EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF_V  0x00000007U
+#define EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF_S  14
+/** EFUSE_INITCODE_DIFF_1P8_3P3 : R; bitpos: [21:17]; default: 0;
+ *  Initcode diff between IO LDO 1.8v and 3.3v
+ */
+#define EFUSE_INITCODE_DIFF_1P8_3P3    0x0000001FU
+#define EFUSE_INITCODE_DIFF_1P8_3P3_M  (EFUSE_INITCODE_DIFF_1P8_3P3_V << EFUSE_INITCODE_DIFF_1P8_3P3_S)
+#define EFUSE_INITCODE_DIFF_1P8_3P3_V  0x0000001FU
+#define EFUSE_INITCODE_DIFF_1P8_3P3_S  17
+/** EFUSE_HI_DOUT_DIFF_1P8_3P3 : R; bitpos: [26:22]; default: 0;
+ *  HI dout diff between IO LDO 1.8v and 3.3v
+ */
+#define EFUSE_HI_DOUT_DIFF_1P8_3P3    0x0000001FU
+#define EFUSE_HI_DOUT_DIFF_1P8_3P3_M  (EFUSE_HI_DOUT_DIFF_1P8_3P3_V << EFUSE_HI_DOUT_DIFF_1P8_3P3_S)
+#define EFUSE_HI_DOUT_DIFF_1P8_3P3_V  0x0000001FU
+#define EFUSE_HI_DOUT_DIFF_1P8_3P3_S  22
+/** EFUSE_RESERVED_2_251 : R; bitpos: [31:27]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_2_251    0x0000001FU
+#define EFUSE_RESERVED_2_251_M  (EFUSE_RESERVED_2_251_V << EFUSE_RESERVED_2_251_S)
+#define EFUSE_RESERVED_2_251_V  0x0000001FU
+#define EFUSE_RESERVED_2_251_S  27
 
 /** EFUSE_RD_USR_DATA0_REG register
  *  Represents rd_usr_data0
@@ -1045,25 +1317,39 @@ extern "C" {
  *  Represents rd_usr_data6
  */
 #define EFUSE_RD_USR_DATA6_REG (DR_REG_EFUSE_BASE + 0x94)
-/** EFUSE_USR_DATA6 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of block3 (user).
+/** EFUSE_RESERVED_3_192 : R; bitpos: [7:0]; default: 0;
+ *  reserved
  */
-#define EFUSE_USR_DATA6    0xFFFFFFFFU
-#define EFUSE_USR_DATA6_M  (EFUSE_USR_DATA6_V << EFUSE_USR_DATA6_S)
-#define EFUSE_USR_DATA6_V  0xFFFFFFFFU
-#define EFUSE_USR_DATA6_S  0
+#define EFUSE_RESERVED_3_192    0x000000FFU
+#define EFUSE_RESERVED_3_192_M  (EFUSE_RESERVED_3_192_V << EFUSE_RESERVED_3_192_S)
+#define EFUSE_RESERVED_3_192_V  0x000000FFU
+#define EFUSE_RESERVED_3_192_S  0
+/** EFUSE_CUSTOM_MAC : R; bitpos: [31:8]; default: 0;
+ *  Custom MAC
+ */
+#define EFUSE_CUSTOM_MAC    0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_M  (EFUSE_CUSTOM_MAC_V << EFUSE_CUSTOM_MAC_S)
+#define EFUSE_CUSTOM_MAC_V  0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_S  8
 
 /** EFUSE_RD_USR_DATA7_REG register
  *  Represents rd_usr_data7
  */
 #define EFUSE_RD_USR_DATA7_REG (DR_REG_EFUSE_BASE + 0x98)
-/** EFUSE_USR_DATA7 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of block3 (user).
+/** EFUSE_CUSTOM_MAC_1 : R; bitpos: [23:0]; default: 0;
+ *  Custom MAC
  */
-#define EFUSE_USR_DATA7    0xFFFFFFFFU
-#define EFUSE_USR_DATA7_M  (EFUSE_USR_DATA7_V << EFUSE_USR_DATA7_S)
-#define EFUSE_USR_DATA7_V  0xFFFFFFFFU
-#define EFUSE_USR_DATA7_S  0
+#define EFUSE_CUSTOM_MAC_1    0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_1_M  (EFUSE_CUSTOM_MAC_1_V << EFUSE_CUSTOM_MAC_1_S)
+#define EFUSE_CUSTOM_MAC_1_V  0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_1_S  0
+/** EFUSE_RESERVED_3_248 : R; bitpos: [31:24]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_3_248    0x000000FFU
+#define EFUSE_RESERVED_3_248_M  (EFUSE_RESERVED_3_248_V << EFUSE_RESERVED_3_248_S)
+#define EFUSE_RESERVED_3_248_V  0x000000FFU
+#define EFUSE_RESERVED_3_248_S  24
 
 /** EFUSE_RD_KEY0_DATA0_REG register
  *  Represents rd_key0_data0

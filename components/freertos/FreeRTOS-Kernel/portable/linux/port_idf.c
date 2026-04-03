@@ -98,7 +98,7 @@ static void main_task(void* args)
     vTaskDelete(NULL);
 }
 
-int main(int argc, const char **argv)
+void esp_startup_start_app(void)
 {
     // This makes sure that stdio is always synchronized so that idf.py monitor
     // and other tools read text output on time.

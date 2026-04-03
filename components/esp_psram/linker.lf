@@ -26,3 +26,5 @@ entries:
             esp_psram: esp_psram_init (noflash)
             esp_psram: s_psram_chip_init (noflash)
             esp_psram: s_xip_psram_placement (noflash)
+            if IDF_TARGET_ESP32S31 = y:
+                esp_psram_ldo_supply: esp_psram_power_init (noflash)

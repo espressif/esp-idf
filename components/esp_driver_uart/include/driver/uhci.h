@@ -72,7 +72,7 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
  *                            The buffer must be pre-allocated by the caller.
  * @param[in] buffer_size     The size of read buffer.
  *
- * @note @note The function is non-blocking, it just mounts the user buffer to the DMA.
+ * @note The function is non-blocking, it just mounts the user buffer to the DMA.
  * The return from the function doesn't mean a finished receive. You need to register corresponding
  * callback function to get notification.
  *

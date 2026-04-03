@@ -83,7 +83,7 @@ function(__ldgen_process_template)
         idf_msg("Mapping check enabled in ldgen")
     endif()
 
-    if(CONFIG_ESPTOOLPY_FAST_REFLASHING)
+    if(CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES)
         # Create a file containing a list of mutable libraries used by ldgen
         # for fast reflashing.
         idf_library_get_property(ldgen_mutable_libs "${ARG_LIBRARY}" __LDGEN_MUTABLE_LIBS)

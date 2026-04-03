@@ -143,7 +143,7 @@ uint32_t mspi_timing_psram_select_best_tuning_phase(const void *configs, uint32_
     }
 
     if (success) {
-        ESP_DRAM_LOGI(TAG, "tuning success, best phase id is %"PRIu32, best_phase_id);
+        ESP_DRAM_LOGD(TAG, "tuning success, best phase id is %"PRIu32, best_phase_id);
     } else {
         ESP_DRAM_LOGW(TAG, "tuning fail, best phase id is fallen back to index %"PRIu32"", best_phase_id);
     }
@@ -197,7 +197,7 @@ uint32_t mspi_timing_psram_select_best_tuning_delayline(const void *configs, uin
         ESP_DRAM_LOGW(TAG, "tuning fail, best delayline id is fallen back to index %"PRIu32"", bset_delayline_id);
     } else {
         bset_delayline_id = end - consecutive_length / 2;
-        ESP_DRAM_LOGI(TAG, "tuning success, best delayline id is %"PRIu32, bset_delayline_id);
+        ESP_DRAM_LOGD(TAG, "tuning success, best delayline id is %"PRIu32, bset_delayline_id);
     }
 
     return bset_delayline_id;

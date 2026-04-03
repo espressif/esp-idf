@@ -7,3 +7,4 @@ Migration from 6.0 to 6.1
     :maxdepth: 1
 
     peripherals
+    tools

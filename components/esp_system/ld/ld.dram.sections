@@ -95,7 +95,7 @@
 
     mapping[dram0_data]
     mutable[dram0_data]
-    FAST_REFLASHING_PADDING();
+    APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING();
 
     _data_end_high = ABSOLUTE(.);
   } > dram_high_seg

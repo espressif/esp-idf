@@ -65,13 +65,3 @@ void ledc_hal_clear_left_off_fade_param(ledc_hal_context_t *hal, ledc_mode_t spe
     }
 }
 #endif //SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-
-void ledc_hal_get_fade_end_intr_status(ledc_hal_context_t *hal, ledc_mode_t speed_mode, uint32_t *intr_status)
-{
-    ledc_ll_get_fade_end_intr_status(hal->dev, speed_mode, intr_status);
-}
-
-void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_mode_t speed_mode, ledc_channel_t channel_num)
-{
-    ledc_ll_clear_fade_end_intr_status(hal->dev, speed_mode, channel_num);
-}

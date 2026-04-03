@@ -12,8 +12,6 @@
 #include "hal/efuse_ll.h"
 #include_next "hal/efuse_hal.h"
 
-//TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif

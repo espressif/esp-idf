@@ -252,7 +252,7 @@ def ethernet_heap_alloc_test(dut: IdfDut, test_if: str = '') -> None:
 
 
 # ----------- IP101 -----------
-@pytest.mark.ethernet
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize('config', ['default_generic', 'release_generic', 'single_core_generic'], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
@@ -260,7 +260,7 @@ def test_esp_ethernet(dut: IdfDut) -> None:
     ethernet_test(dut)
 
 
-@pytest.mark.ethernet
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [

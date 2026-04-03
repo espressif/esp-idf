@@ -11,6 +11,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/esp_psram_impl.h"
+#include "esp_private/esp_psram_ldo.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"
@@ -413,6 +414,12 @@ static void s_configure_psram_ecc(void)
 
 esp_err_t esp_psram_impl_enable(void)
 {
+#if PSRAM_CTRLR_LL_DEDICATED_LDO
+    esp_psram_power_cfg_t config = {
+        .voltage_mv = CONFIG_SPIRAM_LDO_VOLTAGE_DOMAIN,
+    };
+    esp_psram_power_init(&config);
+#endif
 #if SOC_CLK_MPLL_SUPPORTED
     periph_rtc_mpll_acquire();
     uint32_t real_mpll_freq = 0;

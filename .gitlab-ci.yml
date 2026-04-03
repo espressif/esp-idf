@@ -6,6 +6,7 @@ include:
       - "templates/stable/default-workflow.yml"
       - "templates/idf/deploy-github.yml"
       - "templates/idf/deploy-docs.yml"
+      - "templates/idf/pre_check.yml"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"
     inputs:

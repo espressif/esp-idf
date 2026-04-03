@@ -95,6 +95,10 @@ config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
 
+config SOC_MODEM_CLOCK_SUPPORTED
+    bool
+    default y
+
 config SOC_CORDIC_SUPPORTED
     bool
     default y
@@ -528,6 +532,10 @@ config SOC_PM_SUPPORT_MODEM_PD
     default y
 
 config SOC_PM_SUPPORT_MAC_BB_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_MODEM_CLOCK_DOMAIN_ICG
     bool
     default y
 

@@ -11,6 +11,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/esp_psram_impl.h"
+#include "esp_private/esp_psram_ldo.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"

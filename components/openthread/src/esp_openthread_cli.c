@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,39 @@
 #define ESP_CONSOLE_PREFIX_LENGTH   4
 
 static TaskHandle_t s_cli_task;
+
+static ssize_t ot_cli_read_bytes(int fd, void *buf, size_t max_bytes)
+{
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    int nread = select(fd + 1, &read_fds, NULL, NULL, NULL);
+    if (nread <= 0) {
+        return -1;
+    }
+
+    if (FD_ISSET(fd, &read_fds)) {
+        return read(fd, buf, max_bytes);
+    }
+
+    return -1;
+}
+
+static void ot_cli_set_read_characteristics(void)
+{
+    int stdin_fileno = fileno(stdin);
+    int flags = fcntl(stdin_fileno, F_GETFL);
+    if (flags == -1) {
+        ESP_LOGW(OT_PLAT_LOG_TAG, "Failed to get stdin flags: %d", errno);
+    } else {
+        flags |= O_NONBLOCK;
+        if (fcntl(stdin_fileno, F_SETFL, flags) == -1) {
+            ESP_LOGW(OT_PLAT_LOG_TAG, "Failed to set stdin non-blocking: %d", errno);
+        }
+    }
+    linenoiseSetReadFunction(ot_cli_read_bytes);
+}
 
 static int cli_output_callback(void *context, const char *format, va_list args)
 {
@@ -116,10 +149,14 @@ static void ot_cli_loop(void *context)
     if (linenoiseProbe()) {
         linenoiseSetDumbMode(1);
     }
+    ot_cli_set_read_characteristics();
 
     while (true) {
         char *line = linenoise(prompt);
-        if (line && strnlen(line, OT_CLI_MAX_LINE_LENGTH)) {
+        if (line == NULL) {
+            continue;
+        }
+        if (strnlen(line, OT_CLI_MAX_LINE_LENGTH)) {
             printf("\r\n");
             if (memcmp(line, ESP_CONSOLE_PREFIX, ESP_CONSOLE_PREFIX_LENGTH) == 0) {
                 esp_err_t err = esp_console_run(line + ESP_CONSOLE_PREFIX_LENGTH, &ret);
