@@ -1,5 +1,14 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+examples/lowpower/power_management:
+  disable:
+    - if: CONFIG_NAME == "pd_top" and SOC_PM_SUPPORT_TOP_PD != 1
+    - if: SOC_PM_SUPPORTED != 1
+      temporary: true
+      reason: not supported yet # TODO: [ESP32H21] IDF-11522, [ESP32H4] IDF-12286 [ESP32S31] IDF-14645
+  depends_components:
+    - esp_pm
+
 examples/lowpower/vbat:
   enable:
     - if: SOC_VBAT_SUPPORTED == 1
