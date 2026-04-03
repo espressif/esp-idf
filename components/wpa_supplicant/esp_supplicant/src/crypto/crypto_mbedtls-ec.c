@@ -637,6 +637,12 @@ static void p256_fast_point_from_affine(p256_fast_jac_point *p,
     os_memcpy(p->Z, one_mont, sizeof(p->Z));
 }
 
+#define P256_WINDOW_BITS               4U
+#define P256_WINDOW_ENTRY_COUNT        (1U << P256_WINDOW_BITS)
+#define P256_WINDOW_PRECOMP_COUNT      (P256_WINDOW_ENTRY_COUNT - 1U)
+#define P256_WINDOW_BATCH_COUNT        (P256_WINDOW_PRECOMP_COUNT - 1U)
+#define P256_SCALAR_WINDOW_COUNT       ((P256_WORDS * 32U) / P256_WINDOW_BITS)
+
 static void p256_fast_point_double(p256_fast_jac_point *r)
 {
     u32 z2[P256_WORDS], y2[P256_WORDS], y4[P256_WORDS];
@@ -772,7 +778,7 @@ static int p256_fast_points_batch_to_affine_mont(
     const p256_fast_jac_point *points, size_t num,
     u32(*xs)[P256_WORDS], u32(*ys)[P256_WORDS])
 {
-    u32 prefix[14][P256_WORDS];
+    u32 prefix[P256_WINDOW_BATCH_COUNT][P256_WORDS];
     u32 prod_std[P256_WORDS], inv_std[P256_WORDS];
     u32 running_inv[P256_WORDS], inv_z[P256_WORDS];
     u32 tmp[P256_WORDS];
@@ -822,9 +828,9 @@ static int p256_fast_points_batch_to_affine_mont(
 }
 
 struct p256_window4_scratch {
-    p256_fast_jac_point precomp[15];
-    u32 table_x[16][P256_WORDS];
-    u32 table_y[16][P256_WORDS];
+    p256_fast_jac_point precomp[P256_WINDOW_PRECOMP_COUNT];
+    u32 table_x[P256_WINDOW_ENTRY_COUNT][P256_WORDS];
+    u32 table_y[P256_WINDOW_ENTRY_COUNT][P256_WORDS];
 };
 
 static int crypto_ec_point_mul_p256_window4_core(const mbedtls_ecp_group *grp,
@@ -879,14 +885,15 @@ static int crypto_ec_point_mul_p256_window4_core(const mbedtls_ecp_group *grp,
     p256_fast_point_from_affine(&scratch->precomp[0], x_mont, y_mont, one_mont);
     os_memcpy(&scratch->precomp[1], &scratch->precomp[0], sizeof(scratch->precomp[1]));
     p256_fast_point_double(&scratch->precomp[1]);
-    for (window = 2; window < 15; window++) {
+    for (window = 2; window < P256_WINDOW_PRECOMP_COUNT; window++) {
         os_memcpy(&scratch->precomp[window], &scratch->precomp[window - 1],
                   sizeof(scratch->precomp[window]));
         p256_fast_point_add_mixed(&scratch->precomp[window], x_mont, y_mont,
                                   one_mont);
     }
 
-    if (p256_fast_points_batch_to_affine_mont(&scratch->precomp[1], 14,
+    if (p256_fast_points_batch_to_affine_mont(&scratch->precomp[1],
+                                              P256_WINDOW_BATCH_COUNT,
                                               &scratch->table_x[2],
                                               &scratch->table_y[2]) != 0) {
         ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
@@ -895,14 +902,17 @@ static int crypto_ec_point_mul_p256_window4_core(const mbedtls_ecp_group *grp,
 
     p256_fast_point_set_zero(r);
 
-    for (window = 63; window >= 0; window--) {
-        u32 idx = p256_words_get_window(scalar, (unsigned) window * 4, 4);
+    for (window = P256_SCALAR_WINDOW_COUNT - 1; window >= 0; window--) {
+        u32 idx = p256_words_get_window(scalar,
+                                        (unsigned) window * P256_WINDOW_BITS,
+                                        P256_WINDOW_BITS);
 
         if (started) {
-            p256_fast_point_double(r);
-            p256_fast_point_double(r);
-            p256_fast_point_double(r);
-            p256_fast_point_double(r);
+            unsigned int dbl;
+
+            for (dbl = 0; dbl < P256_WINDOW_BITS; dbl++) {
+                p256_fast_point_double(r);
+            }
         }
 
         if (idx == 0U) {
@@ -1034,9 +1044,7 @@ static int crypto_ec_point_mul_fast(const mbedtls_ecp_group *grp,
     if (ret != MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE) {
         return ret;
     }
-#endif
-
-#if ESP_WIFI_P256_SOFT_ACCEL
+#elif ESP_WIFI_P256_SOFT_ACCEL
     if (crypto_ec_is_p256_group(grp)) {
         return crypto_ec_point_mul_p256_jacobian_fast(grp, p, k, res);
     }
@@ -1185,7 +1193,6 @@ struct crypto_bignum *crypto_ec_point_compute_y_sqr(struct crypto_ec *e,
                                          (const struct crypto_bignum *) &grp->P,
                                          (struct crypto_bignum *) &temp));
 
-#if CONFIG_ESP_WIFI_P256_ACCEL
     if (mbedtls_ecp_group_a_is_minus_3(grp)) {
         /*
          * For NIST P-curves used in SAE, a == -3. Compute (-3x + b) mod p
@@ -1211,11 +1218,6 @@ struct crypto_bignum *crypto_ec_point_compute_y_sqr(struct crypto_ec *e,
                                             &grp->A));
         MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp2, &temp2, &grp->P));
     }
-#else
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&temp2, (const mbedtls_mpi *) x,
-                                        &grp->A));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&temp2, &temp2, &grp->P));
-#endif
 
     MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&temp2, &temp2, &grp->B));
     while (mbedtls_mpi_cmp_mpi(&temp2, &grp->P) >= 0) {

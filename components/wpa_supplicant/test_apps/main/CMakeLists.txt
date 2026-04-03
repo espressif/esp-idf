@@ -9,7 +9,7 @@ idf_component_register(SRCS
                         "test_wpa_supplicant_main.c"
                         "test_wifi_external_bss.c"
                     PRIV_INCLUDE_DIRS "."
-                    PRIV_REQUIRES wpa_supplicant mbedtls esp_wifi esp_event unity esp_psram
+                    PRIV_REQUIRES wpa_supplicant mbedtls esp_wifi esp_event unity esp_psram esp_timer
                     WHOLE_ARCHIVE)
 
 idf_component_get_property(esp_supplicant_dir wpa_supplicant COMPONENT_DIR)
@@ -25,3 +25,7 @@ target_include_directories(${COMPONENT_LIB} PRIVATE ${esp_supplicant_dir}/src)
 add_definitions(-DWIFI_SUPPLICANT_MD5=\"${WIFI_SUPPLICANT_MD5}\")
 add_definitions(-DCONFIG_WPA3_SAE)
 add_definitions(-DCONFIG_DPP)
+
+if(CONFIG_ESP_WIFI_TESTING_OPTIONS)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TESTING_OPTIONS)
+endif()
