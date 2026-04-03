@@ -5,12 +5,12 @@
 
 Verifies that reset("init") and reset("flush") dispatch correctly per the spec:
 
-| Group            | Components                                  | INIT_DONE          | FLUSH                              |
-|------------------|---------------------------------------------|--------------------|------------------------------------|
-| SN-coupled       | SNGapTracker                                | full reset         | full reset                         |
-| ENH_STAT-coupled | FirmwareLossTracker, FirmwareWrittenTracker  | full reset         | reset baselines, preserve accumulators |
-| Console-local    | TransportMetrics, PeakBurstTracker,         | preserve           | preserve                           |
-|                  | per_source_received, throughput cache        |                    |                                    |
+| Group            | Components                              | INIT_DONE    | FLUSH                              |
+|------------------|-----------------------------------------|--------------|------------------------------------|
+| SN-coupled       | SNGapTracker                            | full reset   | full reset                         |
+| ENH_STAT-coupled | FirmwareLossTracker, FirmwareWritten    | full reset   | reset baselines, keep accumulators |
+| Console-local    | TransportMetrics, PeakBurstTracker,     | preserve     | preserve                           |
+|                  | per_source_received, throughput cache   |              |                                    |
 """
 
 from src.backend.stats import StatsAccumulator

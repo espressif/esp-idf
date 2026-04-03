@@ -7,6 +7,7 @@ exclude_dirs = [
     'tools/test_bsasm',
     'tools/ci/test_autocomplete',
     'tools/test_build_system',
+    'tools/bt/ble_log_console',
 ]
 
 [local_runtime_envs]

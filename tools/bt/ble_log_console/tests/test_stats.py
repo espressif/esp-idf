@@ -55,7 +55,7 @@ class TestStatsAccumulator:
         self, stats: StatsAccumulator, src_code: int, lost_frames: int, lost_bytes: int
     ) -> tuple[int, int]:
         """Helper: call record_enh_stat with dummy written/baudrate, return loss delta."""
-        return stats.record_enh_stat(
+        return stats.record_enh_stat(  # type: ignore[no-any-return]
             src_code=src_code,
             written_frames=0,
             lost_frames=lost_frames,

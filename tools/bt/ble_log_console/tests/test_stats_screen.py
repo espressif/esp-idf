@@ -19,15 +19,15 @@ _ZERO_TP = ThroughputInfo(
 
 
 def _snap(
-    src,
-    produced=(0, 0),
-    written=(0, 0),
-    received=(0, 0),
-    buf_loss=(0, 0),
-    tx_loss=(0, 0),
-    tp_fps=0.0,
-    peak_frames=0,
-):
+    src: int,
+    produced: tuple[int, int] = (0, 0),
+    written: tuple[int, int] = (0, 0),
+    received: tuple[int, int] = (0, 0),
+    buf_loss: tuple[int, int] = (0, 0),
+    tx_loss: tuple[int, int] = (0, 0),
+    tp_fps: float = 0.0,
+    peak_frames: int = 0,
+) -> FunnelSnapshot:
     return FunnelSnapshot(
         source=src,
         produced=FrameByteCount(*produced),
@@ -85,29 +85,29 @@ class TestFormatThroughput:
 
 
 class TestBuildFirmwareTable:
-    def test_empty_returns_no_rows(self):
+    def test_empty_returns_no_rows(self) -> None:
         table = _build_firmware_table([])
         assert table.row_count == 0
 
-    def test_column_headers(self):
+    def test_column_headers(self) -> None:
         table = _build_firmware_table([])
         headers = [str(col.header) for col in table.columns]
         assert 'Source' in headers
         assert any('Written' in h for h in headers)
         assert any('Loss' in h for h in headers)
 
-    def test_single_source(self):
+    def test_single_source(self) -> None:
         snap = _snap(_SRC_HOST, written=(120, 6000))
         table = _build_firmware_table([snap])
         assert table.row_count == 1
         assert len(table.columns) == 5
 
-    def test_with_loss_shows_red(self):
+    def test_with_loss_shows_red(self) -> None:
         snap = _snap(_SRC_HOST, written=(110, 5500), buf_loss=(10, 500))
         table = _build_firmware_table([snap])
         assert table.row_count == 1
 
-    def test_multiple_sources(self):
+    def test_multiple_sources(self) -> None:
         snaps = [
             _snap(_SRC_HOST, written=(100, 5000)),
             _snap(_SRC_LL_TASK, written=(200, 10000)),
@@ -117,11 +117,11 @@ class TestBuildFirmwareTable:
 
 
 class TestBuildConsoleTable:
-    def test_empty_returns_no_rows(self):
+    def test_empty_returns_no_rows(self) -> None:
         table = _build_console_table([])
         assert table.row_count == 0
 
-    def test_column_headers(self):
+    def test_column_headers(self) -> None:
         table = _build_console_table([])
         headers = [str(col.header) for col in table.columns]
         assert 'Source' in headers
@@ -129,13 +129,13 @@ class TestBuildConsoleTable:
         assert any('Average' in h for h in headers)
         assert any('Peak' in h for h in headers)
 
-    def test_single_source(self):
+    def test_single_source(self) -> None:
         snap = _snap(_SRC_HOST, tp_fps=850.0, peak_frames=12)
         table = _build_console_table([snap])
         assert table.row_count == 1
         assert len(table.columns) == 7
 
-    def test_zero_throughput_shows_dash(self):
+    def test_zero_throughput_shows_dash(self) -> None:
         snap = _snap(_SRC_HOST, tp_fps=0.0, peak_frames=0)
         table = _build_console_table([snap])
         assert table.row_count == 1
