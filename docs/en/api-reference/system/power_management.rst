@@ -93,6 +93,11 @@ Light-sleep duration is chosen to wake up the chip before the nearest event (tas
 To skip unnecessary wake-up, you can consider initializing an ``esp_timer`` with the ``skip_unhandled_events`` option as ``true``. Timers with this flag will not wake up the system and it helps to reduce consumption.
 
 
+Application Example
+-------------------
+
+The :example:`lowpower/power_management` example demonstrates dynamic frequency scaling, automatic Light-sleep, and power management locks.
+
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------
 
