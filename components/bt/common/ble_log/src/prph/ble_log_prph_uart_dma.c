@@ -13,7 +13,6 @@
 
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 #include "ble_log.h"
-#include "ble_log_rt.h"
 #include "ble_log_lbm.h"
 
 #include "esp_timer.h"
@@ -71,16 +70,10 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void esp_timer_cb_flush_log(void *arg)
     }
 
     /* Non-blocking trylock: skip if mutex is held by a writer.
-     * The periodic timer will retry on the next tick. */
+     * The periodic timer will retry on the next tick.
+     * stream_flush is a no-op when buffer is empty. */
     if (xSemaphoreTake(redir_lbm->mutex, 0) == pdTRUE) {
-        int trans_idx = redir_lbm->trans_idx;
-        for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
-            ble_log_prph_trans_t **trans = &(redir_lbm->trans[trans_idx]);
-            if (!(*trans)->prph_owned && (*trans)->pos) {
-                ble_log_rt_queue_trans(trans);
-            }
-            trans_idx = !trans_idx;
-        }
+        ble_log_lbm_stream_flush(redir_lbm, BLE_LOG_SRC_REDIR);
         xSemaphoreGive(redir_lbm->mutex);
     }
 }
@@ -132,6 +125,7 @@ bool ble_log_prph_init(size_t trans_cnt)
         goto exit;
     }
     BLE_LOG_MEMSET(redir_lbm, 0, sizeof(ble_log_lbm_t));
+    redir_lbm->lock_type = BLE_LOG_LBM_LOCK_MUTEX;
 
     /* Transport initialization */
     for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
@@ -195,9 +189,9 @@ void ble_log_prph_deinit(void)
 
     /* Release redirection LBM */
     if (redir_lbm) {
-        /* Release mutex */
         if (redir_lbm->mutex) {
             xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
+            ble_log_lbm_stream_flush(redir_lbm, BLE_LOG_SRC_REDIR);
             xSemaphoreGive(redir_lbm->mutex);
             vSemaphoreDelete(redir_lbm->mutex);
         }
@@ -287,16 +281,8 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_redir_uart_tx_chars(const char *src, size_t len)
 {
     xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
-    ble_log_prph_trans_t **trans = ble_log_lbm_get_trans(redir_lbm, len);
-    if (trans) {
-        uint8_t *buf = (*trans)->buf + (*trans)->pos;
-        BLE_LOG_MEMCPY(buf, src, len);
-        (*trans)->pos += len;
-
-        if (BLE_LOG_TRANS_FREE_SPACE((*trans)) <= BLE_LOG_FRAME_OVERHEAD) {
-            ble_log_rt_queue_trans(trans);
-        }
-    }
+    ble_log_lbm_stream_write(redir_lbm, BLE_LOG_SRC_REDIR,
+                              (const uint8_t *)src, len);
     xSemaphoreGive(redir_lbm->mutex);
 }
 
