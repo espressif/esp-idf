@@ -35,9 +35,6 @@ ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
 static inline void bootloader_hardware_init(void)
 {
-    /* Disable RF pll by default */
-    REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_RF_CIRCUIT, 0xFFFF);
-
     modem_lpcon_ll_enable_bus_clock(true);
 
 #if !CONFIG_IDF_ENV_FPGA

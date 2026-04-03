@@ -46,7 +46,7 @@ entries:
             if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
                 pmu_sleep_clock_icg:pmu_sleep_clock_icg_config (noflash)
             sleep_mspi (noflash)
-            if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
+            if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32S31 != y:
                 pmu_param:get_act_lp_dbias (noflash)
                 if IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21 = y:
                     pmu_param:get_act_hp_drvb (noflash)

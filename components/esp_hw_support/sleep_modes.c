@@ -288,7 +288,7 @@ typedef struct {
 #endif
     portMUX_TYPE lock;
     uint64_t sleep_duration;
-    uint32_t wakeup_triggers : 20;
+    uint32_t wakeup_triggers;
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
     uint32_t ext1_trigger_mode : 22;  // 22 is the maximum RTCIO number in all chips
     uint32_t ext1_rtc_gpio_mask : 22;

@@ -19,9 +19,10 @@ extern "C" {
 #define PMU_UART0_WAKEUP_EN         BIT(6)
 #define PMU_UART1_WAKEUP_EN         BIT(7)
 #define PMU_BLE_SOC_WAKEUP_EN       BIT(10)
-#define PMU_LP_CORE_WAKEUP_EN       BIT(11)
+#define PMU_LP_CORE_WAKEUP_HP_EN    BIT(11)
 #define PMU_LP_CORE_TRAP_WAKEUP_EN  BIT(12)
 #define PMU_USB_WAKEUP_EN           BIT(14)
+#define PMU_MODEM_WAKEUP_PROTECT    BIT(16)
 
 #ifdef __cplusplus
 }
