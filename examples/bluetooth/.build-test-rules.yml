@@ -458,14 +458,10 @@ examples/bluetooth/nimble/throughput_app:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
-  depends_components+:
-    - esp_driver_gpio
-    - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
-    - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
 
-examples/bluetooth/nimble/throughput_app/blecent_throughput:
+examples/bluetooth/nimble/throughput_app/gatt/blecent_throughput:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
@@ -474,4 +470,20 @@ examples/bluetooth/nimble/throughput_app/blecent_throughput:
     - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
-    - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
+    - examples/bluetooth/nimble/throughput_app/gatt/blecent_throughput/components/**/*
+
+examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent/**/*
+
+examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph/**/*

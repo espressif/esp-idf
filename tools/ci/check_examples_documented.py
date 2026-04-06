@@ -103,8 +103,10 @@ KNOWN_MISSING = {
     'bluetooth/nimble/bleprph_host_only',
     'bluetooth/nimble/bleprph_wifi_coex',
     'bluetooth/nimble/hci',
-    'bluetooth/nimble/throughput_app/blecent_throughput',
-    'bluetooth/nimble/throughput_app/bleprph_throughput',
+    'bluetooth/nimble/throughput_app/gatt/blecent_throughput',
+    'bluetooth/nimble/throughput_app/gatt/bleprph_throughput',
+    'bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent',
+    'bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph',
     # TODO IDF-15385: add :example: references for build_system examples
     'build_system/cmake/import_prebuilt/prebuilt',
     'build_system/cmakev2/features/component_manager',
