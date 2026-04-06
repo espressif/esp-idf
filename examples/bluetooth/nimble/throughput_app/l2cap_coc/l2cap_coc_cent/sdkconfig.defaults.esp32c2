@@ -1,0 +1,6 @@
+# ACL_FROM_LL_COUNT kept at 67 (not reduced like MSYS pools) to avoid 0 kbps
+# throughput after Coded S2 <-> S8 PHY switches on this RAM-limited target.
+CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=12
+CONFIG_BT_NIMBLE_MSYS_1_BLOCK_SIZE=292
+CONFIG_BT_NIMBLE_MSYS_2_BLOCK_COUNT=0
+CONFIG_BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT=67
