@@ -1521,13 +1521,13 @@ int wps_init_cfg_pin(struct wps_config *cfg)
         unsigned int spin = 0;
 
         cfg->dev_pw_id = DEV_PW_DEFAULT;
-        cfg->pin_len = 8;
         if (wps_generate_pin(&spin) < 0) {
             return -1;
         }
         wpa_printf(MSG_DEBUG, "WPS: Invalid PIN provided, generated a new PIN");
         os_snprintf((char *)cfg->pin, 9, "%08d", spin);
     }
+    cfg->pin_len = 8;
 
     return 0;
 }
