@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import Optional
 from unittest.mock import patch
 
 from src.backend.models import BleLogSource
@@ -839,7 +840,7 @@ class TestTrafficSpikeDetection:
 
     def _trigger_spike(
         self, stats: StatsAccumulator, mock_time: object, t: float, hot_bytes: int, src: int = 1
-    ) -> TrafficSpikeResult | None:
+    ) -> Optional[TrafficSpikeResult]:
         """Helper: inject traffic, enter spike, then exit and return result."""
         mock_time.perf_counter.return_value = t  # type: ignore[attr-defined]
         stats.record_frame_traffic(hot_bytes, src)

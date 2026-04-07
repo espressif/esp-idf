@@ -8,6 +8,8 @@ without them being received, tolerating out-of-order delivery up to
 REORDER_WINDOW frames.
 """
 
+from typing import Optional
+
 from src.backend.models import SourceCode
 
 SN_MAX = 1 << 24  # 24-bit SN space
@@ -63,7 +65,7 @@ class SNGapTracker:
         """Return cumulative confirmed gap count per source."""
         return dict(self._gap_accum)
 
-    def reset(self, src_code: SourceCode | None = None) -> None:
+    def reset(self, src_code: Optional[SourceCode] = None) -> None:
         """Reset tracker state.
 
         If src_code is None, resets all sources.

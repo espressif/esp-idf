@@ -8,6 +8,7 @@ Dismissed with a LaunchConfig result on Connect, or None on quit.
 """
 
 from pathlib import Path
+from typing import Optional
 
 from textual import on
 from textual import work
@@ -29,7 +30,7 @@ BAUD_RATES: list[int] = [115200, 230400, 460800, 921600, 1500000, 2000000, 30000
 DEFAULT_BAUD_RATE: int = 3000000
 
 
-class LaunchScreen(Screen[LaunchConfig | None]):
+class LaunchScreen(Screen[Optional[LaunchConfig]]):
     """Interactive setup screen for BLE Log Console."""
 
     DEFAULT_CSS = """
@@ -93,7 +94,7 @@ class LaunchScreen(Screen[LaunchConfig | None]):
         Binding('ctrl+c', 'quit', show=False, priority=True),
     ]
 
-    def __init__(self, default_log_dir: Path | None = None) -> None:
+    def __init__(self, default_log_dir: Optional[Path] = None) -> None:
         super().__init__()
         self._default_log_dir = default_log_dir or Path.cwd()
 

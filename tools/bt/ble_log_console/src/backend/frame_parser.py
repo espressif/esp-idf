@@ -8,6 +8,8 @@ See Spec Sections 7, 8.
 """
 
 from collections.abc import Callable
+from typing import Optional
+from typing import Union
 
 from src.backend.checksum import sum_checksum
 from src.backend.checksum import xor_checksum
@@ -42,7 +44,7 @@ class FrameParser:
     def __init__(self) -> None:
         self._remained = b''
         self._sync_state = SyncState.SEARCHING
-        self._checksum_mode: ChecksumMode | None = None
+        self._checksum_mode: Optional[ChecksumMode] = None
         self._confirm_count = 0
         self._loss_count = 0
         self._ascii_buffer = ''
@@ -53,10 +55,10 @@ class FrameParser:
         return self._sync_state
 
     @property
-    def checksum_mode(self) -> ChecksumMode | None:
+    def checksum_mode(self) -> Optional[ChecksumMode]:
         return self._checksum_mode
 
-    def feed(self, data: bytes) -> list[ParsedFrame | str]:
+    def feed(self, data: bytes) -> list[Union[ParsedFrame, str]]:
         """Feed raw bytes into the parser.
 
         Returns a list of:
@@ -64,7 +66,7 @@ class FrameParser:
         - str for ASCII log lines or warning messages
         """
         self._remained += data
-        results: list[ParsedFrame | str] = []
+        results: list[Union[ParsedFrame, str]] = []
 
         # Bounded buffer check (Review Correction #2)
         if len(self._remained) > MAX_REMAINDER_SIZE:
@@ -132,7 +134,7 @@ class FrameParser:
         offset: int,
         checksum_fn: Callable[[bytes], int],
         scope: ChecksumScope,
-    ) -> tuple[ParsedFrame, int] | None:
+    ) -> Optional[tuple[ParsedFrame, int]]:
         """Try to parse a frame at the given offset with specific checksum params."""
         if offset + FRAME_HEADER_SIZE > len(buf):
             return None
@@ -177,7 +179,7 @@ class FrameParser:
         next_offset = offset + FRAME_OVERHEAD + payload_len
         return frame, next_offset
 
-    def _try_parse_with_probe(self, buf: bytes, offset: int) -> tuple[ParsedFrame, int, ChecksumMode] | None:
+    def _try_parse_with_probe(self, buf: bytes, offset: int) -> Optional[tuple[ParsedFrame, int, ChecksumMode]]:
         """Try all checksum combinations at the given offset (SEARCHING mode)."""
         for algo, scope, fn in _CHECKSUM_PROBES:
             result = self._try_parse_at(buf, offset, fn, scope)
@@ -187,7 +189,7 @@ class FrameParser:
                 return frame, next_offset, mode
         return None
 
-    def _try_parse_locked(self, buf: bytes, offset: int) -> tuple[ParsedFrame, int] | None:
+    def _try_parse_locked(self, buf: bytes, offset: int) -> Optional[tuple[ParsedFrame, int]]:
         """Try to parse with the locked checksum mode."""
         if self._checksum_mode is None:
             return None
@@ -250,7 +252,7 @@ class FrameParser:
             self._ever_synced = True
         self._sync_state = new_state
 
-    def _collect_ascii(self, byte_data: bytes, results: list[ParsedFrame | str]) -> None:
+    def _collect_ascii(self, byte_data: bytes, results: list[Union[ParsedFrame, str]]) -> None:
         """Collect bytes for ASCII line assembly.
 
         Only printable ASCII (0x20-0x7E) and newline (0x0A) are collected.
@@ -265,7 +267,7 @@ class FrameParser:
                     results.append(self._ascii_buffer)
                     self._ascii_buffer = ''
 
-    def _flush_ascii(self, results: list[ParsedFrame | str]) -> None:
+    def _flush_ascii(self, results: list[Union[ParsedFrame, str]]) -> None:
         """Flush any pending ASCII buffer."""
         if self._ascii_buffer:
             results.append(self._ascii_buffer)

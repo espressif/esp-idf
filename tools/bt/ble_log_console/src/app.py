@@ -11,6 +11,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 from typing import cast
 
 import serial
@@ -85,21 +86,21 @@ class BLELogApp(App):
 
     def __init__(
         self,
-        port: str | None = None,
+        port: Optional[str] = None,
         baudrate: int = 3_000_000,
-        log_dir: Path | None = None,
+        log_dir: Optional[Path] = None,
     ) -> None:
         super().__init__()
         self._port = port
         self._baudrate = baudrate
         self._log_dir = log_dir or Path.cwd()
-        self._output_path: Path | None = None
-        self._serial: serial.Serial | None = None
+        self._output_path: Optional[Path] = None
+        self._serial: Optional[serial.Serial] = None
         # All-time per-source chip write peak (updated from StatsUpdated messages)
-        self._max_per_source_peak: dict[int, SourcePeakWrite] | None = None
-        self._ll_max_per_source_peak: dict[int, SourcePeakWrite] | None = None
+        self._max_per_source_peak: Optional[dict[int, SourcePeakWrite]] = None
+        self._ll_max_per_source_peak: Optional[dict[int, SourcePeakWrite]] = None
         # Console-side per-source received bytes (from StatsUpdated snapshots)
-        self._per_source_rx_bytes: dict[int, int] | None = None
+        self._per_source_rx_bytes: Optional[dict[int, int]] = None
         self._funnel_snapshots: list[FunnelSnapshot] = []
         self._buf_util_snapshots: list[BufUtilEntry] = []
         # Wall-clock capture start (set when backend loop begins)
@@ -125,7 +126,7 @@ class BLELogApp(App):
     def buf_util_snapshots(self) -> list[BufUtilEntry]:
         return self._buf_util_snapshots
 
-    def _on_launch_result(self, config: LaunchConfig | None) -> None:
+    def _on_launch_result(self, config: Optional[LaunchConfig]) -> None:
         """Handle Launch Screen dismissal."""
         if config is None:
             self.exit()

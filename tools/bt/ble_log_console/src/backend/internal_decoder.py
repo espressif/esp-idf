@@ -8,6 +8,7 @@ See Spec Section 9.
 """
 
 import struct
+from typing import Optional
 
 from src.backend.models import BufUtilResult
 from src.backend.models import EnhStatResult
@@ -28,7 +29,7 @@ _ENH_STAT_STRUCT = struct.Struct('<BBIIII')
 _BUF_UTIL_STRUCT = struct.Struct('<BBBB')
 
 
-def decode_internal_frame(payload: bytes) -> InternalDecoderResult | None:
+def decode_internal_frame(payload: bytes) -> Optional[InternalDecoderResult]:
     """Decode an INTERNAL frame payload.
 
     Args:

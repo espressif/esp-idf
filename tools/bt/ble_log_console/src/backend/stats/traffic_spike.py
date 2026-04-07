@@ -6,6 +6,7 @@
 import time
 from collections import deque
 from dataclasses import dataclass
+from typing import Optional
 
 from src.backend.models import SourceCode
 
@@ -14,7 +15,7 @@ TRAFFIC_THRESHOLD_PCT = 0.8  # 80% of wire max
 TRAFFIC_ALERT_COOLDOWN_SEC = 2.0  # minimum interval between alerts
 
 
-@dataclass(slots=True)
+@dataclass
 class TrafficSpikeResult:
     throughput_kbs: float
     wire_max_kbs: float
@@ -43,7 +44,7 @@ class TrafficSpikeDetector:
         if self._spike_active:
             self._spike_per_source[src_code] = self._spike_per_source.get(src_code, 0) + frame_size
 
-    def check(self) -> TrafficSpikeResult | None:
+    def check(self) -> Optional[TrafficSpikeResult]:
         now = time.perf_counter()
         window = self._window
         cutoff = now - TRAFFIC_WINDOW_SEC
