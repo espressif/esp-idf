@@ -1,11 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Scrollable log view widget.
 
 See Spec Section 11.
 """
-
 from rich.text import Text
 from textual.widgets import RichLog
 

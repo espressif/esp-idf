@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Sliding receive window gap tracker for per-source frame sequence numbers.
 
 Frames are only declared lost when the receive window advances past their SN
 without them being received, tolerating out-of-order delivery up to
 REORDER_WINDOW frames.
 """
+from typing import Optional
 
 from src.backend.models import SourceCode
 
@@ -63,7 +63,7 @@ class SNGapTracker:
         """Return cumulative confirmed gap count per source."""
         return dict(self._gap_accum)
 
-    def reset(self, src_code: SourceCode | None = None) -> None:
+    def reset(self, src_code: Optional[SourceCode] = None) -> None:
         """Reset tracker state.
 
         If src_code is None, resets all sources.

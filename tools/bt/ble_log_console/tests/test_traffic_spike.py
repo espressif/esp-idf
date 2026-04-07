@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
+from typing import Optional
 from unittest.mock import patch
 
 from src.backend.stats.traffic_spike import TRAFFIC_ALERT_COOLDOWN_SEC
@@ -17,7 +17,7 @@ def _make_detector(baudrate: int = 3_000_000) -> TrafficSpikeDetector:
 
 def _trigger_spike(
     d: TrafficSpikeDetector, mock_time: object, t: float, hot_bytes: int, src: int = 1
-) -> TrafficSpikeResult | None:
+) -> Optional[TrafficSpikeResult]:
     mock_time.perf_counter.return_value = t  # type: ignore[attr-defined]
     d.record(hot_bytes, src)
     mock_time.perf_counter.return_value = t + 0.05  # type: ignore[attr-defined]

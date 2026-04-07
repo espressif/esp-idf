@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Real-time traffic spike detection using a sliding window over wall-clock time."""
-
 import time
 from collections import deque
 from dataclasses import dataclass
+from typing import Optional
 
 from src.backend.models import SourceCode
 
@@ -14,7 +13,7 @@ TRAFFIC_THRESHOLD_PCT = 0.8  # 80% of wire max
 TRAFFIC_ALERT_COOLDOWN_SEC = 2.0  # minimum interval between alerts
 
 
-@dataclass(slots=True)
+@dataclass
 class TrafficSpikeResult:
     throughput_kbs: float
     wire_max_kbs: float
@@ -41,9 +40,11 @@ class TrafficSpikeDetector:
     def record(self, frame_size: int, src_code: SourceCode) -> None:
         self._window.append((time.perf_counter(), frame_size, src_code))
         if self._spike_active:
-            self._spike_per_source[src_code] = self._spike_per_source.get(src_code, 0) + frame_size
+            self._spike_per_source[src_code] = (
+                self._spike_per_source.get(src_code, 0) + frame_size
+            )
 
-    def check(self) -> TrafficSpikeResult | None:
+    def check(self) -> Optional[TrafficSpikeResult]:
         now = time.perf_counter()
         window = self._window
         cutoff = now - TRAFFIC_WINDOW_SEC
@@ -83,7 +84,9 @@ class TrafficSpikeDetector:
 
         spike_bps = self._spike_peak_bps
         src_total = max(sum(self._spike_per_source.values()), 1)
-        src_pcts = {src: v / src_total * 100.0 for src, v in self._spike_per_source.items()}
+        src_pcts = {
+            src: v / src_total * 100.0 for src, v in self._spike_per_source.items()
+        }
 
         return TrafficSpikeResult(
             throughput_kbs=spike_bps / 1024.0,

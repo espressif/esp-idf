@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import struct
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 from typing import TypedDict
+from typing import Union
 
 from textual.message import Message
 
@@ -87,7 +88,9 @@ _NO_OS_TS_SOURCES: frozenset[int] = frozenset(
 )
 
 
-_LL_SOURCES: frozenset[int] = frozenset({BleLogSource.LL_TASK, BleLogSource.LL_HCI, BleLogSource.LL_ISR})
+_LL_SOURCES: frozenset[int] = frozenset(
+    {BleLogSource.LL_TASK, BleLogSource.LL_HCI, BleLogSource.LL_ISR}
+)
 
 LL_TS_OFFSET = 2  # lc_ts starts at payload[2:6]
 LL_TS_SIZE = 4
@@ -130,13 +133,13 @@ class BufUtilPool(int, Enum):
 # --- Data classes ---
 
 
-@dataclass(slots=True)
+@dataclass
 class ChecksumMode:
     algorithm: ChecksumAlgorithm
     scope: ChecksumScope
 
 
-@dataclass(slots=True)
+@dataclass
 class ParsedFrame:
     source_code: int
     frame_sn: int
@@ -144,7 +147,7 @@ class ParsedFrame:
     os_ts_ms: int  # extracted from first 4 bytes of payload; only valid when has_os_ts(source_code) is True
 
 
-@dataclass(slots=True)
+@dataclass
 class SourcePeakWrite:
     """Peak write burst for a single source within a 1ms window."""
 
@@ -152,7 +155,7 @@ class SourcePeakWrite:
     peak_bytes: int = 0  # total bytes in that same window
 
 
-@dataclass(slots=True)
+@dataclass
 class SourceStats:
     """Console-side accumulated per-source statistics (resilient to firmware counter resets)."""
 
@@ -202,7 +205,7 @@ def resolve_lbm_name(pool: int, index: int) -> str:
     return f'lbm_{pool}_{index}'
 
 
-@dataclass(slots=True)
+@dataclass
 class TransportSnapshot:
     """Snapshot of transport-layer metrics for the current stats interval."""
 
@@ -212,7 +215,7 @@ class TransportSnapshot:
     fps: float = 0.0
 
 
-@dataclass(slots=True)
+@dataclass
 class LossSnapshot:
     """Snapshot of firmware-reported cumulative loss."""
 
@@ -220,12 +223,12 @@ class LossSnapshot:
     total_bytes: int = 0
 
 
-@dataclass(slots=True)
+@dataclass
 class PeakBurstSnapshot:
     """Peak write burst metrics for a single clock domain (os_ts or lc_ts)."""
 
-    per_source: dict[SourceCode, SourcePeakWrite] | None = None
-    max_per_source: dict[SourceCode, SourcePeakWrite] | None = None
+    per_source: Optional[dict[SourceCode, SourcePeakWrite]] = None
+    max_per_source: Optional[dict[SourceCode, SourcePeakWrite]] = None
 
 
 class LossType(str, Enum):
@@ -271,7 +274,7 @@ class FunnelSnapshot:
     throughput: ThroughputInfo
 
 
-@dataclass(slots=True)
+@dataclass
 class LaunchConfig:
     """Configuration returned by the Launch Screen."""
 
@@ -280,7 +283,7 @@ class LaunchConfig:
     log_dir: Path
 
 
-@dataclass(slots=True)
+@dataclass
 class FrameStats:
     """Periodic stats snapshot with metrics grouped by dimension."""
 
@@ -288,10 +291,10 @@ class FrameStats:
     loss: LossSnapshot = field(default_factory=LossSnapshot)
     os_peak: PeakBurstSnapshot = field(default_factory=PeakBurstSnapshot)
     ll_peak: PeakBurstSnapshot = field(default_factory=PeakBurstSnapshot)
-    per_source_rx_bytes: dict[SourceCode, int] | None = None
+    per_source_rx_bytes: Optional[dict[SourceCode, int]] = None
     sync_state: SyncState = SyncState.SEARCHING
-    checksum_algorithm: ChecksumAlgorithm | None = None
-    checksum_scope: ChecksumScope | None = None
+    checksum_algorithm: Optional[ChecksumAlgorithm] = None
+    checksum_scope: Optional[ChecksumScope] = None
 
 
 # --- TypedDicts for internal decoder results ---
@@ -323,7 +326,7 @@ class BufUtilResult(TypedDict):
     os_ts_ms: int
 
 
-InternalDecoderResult = InfoResult | EnhStatResult | BufUtilResult
+InternalDecoderResult = Union[InfoResult, EnhStatResult, BufUtilResult]
 
 
 # --- Textual Messages (backend -> frontend) ---
@@ -339,8 +342,8 @@ class StatsUpdated(Message):
     def __init__(
         self,
         stats: FrameStats,
-        funnel_snapshots: list[FunnelSnapshot] | None = None,
-        buf_util_snapshots: list[BufUtilEntry] | None = None,
+        funnel_snapshots: Optional[list[FunnelSnapshot]] = None,
+        buf_util_snapshots: Optional[list[BufUtilEntry]] = None,
     ) -> None:
         super().__init__()
         self.stats = stats
@@ -368,7 +371,7 @@ class FrameLossDetected(Message):
         loss_type: LossType,
         lost_frames: int,
         lost_bytes: int,
-        sn_range: tuple[int, int] | None = None,
+        sn_range: Optional[tuple[int, int]] = None,
     ) -> None:
         super().__init__()
         self.source_name = source_name

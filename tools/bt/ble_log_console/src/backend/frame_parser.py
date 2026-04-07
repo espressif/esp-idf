@@ -1,25 +1,25 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Frame sync state machine with checksum auto-detection.
 
 Parses BLE Log module frames from a raw byte stream.
 See Spec Sections 7, 8.
 """
-
 from collections.abc import Callable
+from typing import Optional
+from typing import Union
 
 from src.backend.checksum import sum_checksum
 from src.backend.checksum import xor_checksum
 from src.backend.models import CHECKSUM_STRUCT
+from src.backend.models import ChecksumAlgorithm
+from src.backend.models import ChecksumMode
+from src.backend.models import ChecksumScope
 from src.backend.models import FRAME_HEADER_SIZE
 from src.backend.models import FRAME_OVERHEAD
 from src.backend.models import HEADER_STRUCT
 from src.backend.models import MAX_FRAME_SIZE
 from src.backend.models import MAX_REMAINDER_SIZE
-from src.backend.models import ChecksumAlgorithm
-from src.backend.models import ChecksumMode
-from src.backend.models import ChecksumScope
 from src.backend.models import ParsedFrame
 from src.backend.models import SyncState
 
@@ -42,7 +42,7 @@ class FrameParser:
     def __init__(self) -> None:
         self._remained = b''
         self._sync_state = SyncState.SEARCHING
-        self._checksum_mode: ChecksumMode | None = None
+        self._checksum_mode: Optional[ChecksumMode] = None
         self._confirm_count = 0
         self._loss_count = 0
         self._ascii_buffer = ''
@@ -53,10 +53,10 @@ class FrameParser:
         return self._sync_state
 
     @property
-    def checksum_mode(self) -> ChecksumMode | None:
+    def checksum_mode(self) -> Optional[ChecksumMode]:
         return self._checksum_mode
 
-    def feed(self, data: bytes) -> list[ParsedFrame | str]:
+    def feed(self, data: bytes) -> list[Union[ParsedFrame, str]]:
         """Feed raw bytes into the parser.
 
         Returns a list of:
@@ -64,7 +64,7 @@ class FrameParser:
         - str for ASCII log lines or warning messages
         """
         self._remained += data
-        results: list[ParsedFrame | str] = []
+        results: list[Union[ParsedFrame, str]] = []
 
         # Bounded buffer check (Review Correction #2)
         if len(self._remained) > MAX_REMAINDER_SIZE:
@@ -85,7 +85,10 @@ class FrameParser:
                     results.append(frame)
                     offset = next_offset
                     self._on_frame_found(mode)
-                elif self._sync_state == SyncState.CONFIRMING_SYNC and self._might_be_incomplete_frame(buf, offset):
+                elif (
+                    self._sync_state == SyncState.CONFIRMING_SYNC
+                    and self._might_be_incomplete_frame(buf, offset)
+                ):
                     break
                 elif (
                     self._sync_state == SyncState.SEARCHING
@@ -95,7 +98,7 @@ class FrameParser:
                     break
                 else:
                     if not self._ever_synced:
-                        self._collect_ascii(buf[offset : offset + 1], results)
+                        self._collect_ascii(buf[offset:offset + 1], results)
                     offset += 1
             else:
                 # SYNCED or CONFIRMING_LOSS: use locked checksum mode
@@ -132,7 +135,7 @@ class FrameParser:
         offset: int,
         checksum_fn: Callable[[bytes], int],
         scope: ChecksumScope,
-    ) -> tuple[ParsedFrame, int] | None:
+    ) -> Optional[tuple[ParsedFrame, int]]:
         """Try to parse a frame at the given offset with specific checksum params."""
         if offset + FRAME_HEADER_SIZE > len(buf):
             return None
@@ -145,8 +148,10 @@ class FrameParser:
         if offset + FRAME_OVERHEAD + payload_len > len(buf):
             return None
 
-        header = buf[offset : offset + FRAME_HEADER_SIZE]
-        payload = buf[offset + FRAME_HEADER_SIZE : offset + FRAME_HEADER_SIZE + payload_len]
+        header = buf[offset:offset + FRAME_HEADER_SIZE]
+        payload = buf[
+            offset + FRAME_HEADER_SIZE:offset + FRAME_HEADER_SIZE + payload_len
+        ]
         checksum_offset = offset + FRAME_HEADER_SIZE + payload_len
         stored_checksum = CHECKSUM_STRUCT.unpack_from(buf, checksum_offset)[0]
 
@@ -177,7 +182,9 @@ class FrameParser:
         next_offset = offset + FRAME_OVERHEAD + payload_len
         return frame, next_offset
 
-    def _try_parse_with_probe(self, buf: bytes, offset: int) -> tuple[ParsedFrame, int, ChecksumMode] | None:
+    def _try_parse_with_probe(
+        self, buf: bytes, offset: int
+    ) -> Optional[tuple[ParsedFrame, int, ChecksumMode]]:
         """Try all checksum combinations at the given offset (SEARCHING mode)."""
         for algo, scope, fn in _CHECKSUM_PROBES:
             result = self._try_parse_at(buf, offset, fn, scope)
@@ -187,11 +194,17 @@ class FrameParser:
                 return frame, next_offset, mode
         return None
 
-    def _try_parse_locked(self, buf: bytes, offset: int) -> tuple[ParsedFrame, int] | None:
+    def _try_parse_locked(
+        self, buf: bytes, offset: int
+    ) -> Optional[tuple[ParsedFrame, int]]:
         """Try to parse with the locked checksum mode."""
         if self._checksum_mode is None:
             return None
-        fn = xor_checksum if self._checksum_mode.algorithm == ChecksumAlgorithm.XOR else sum_checksum
+        fn = (
+            xor_checksum
+            if self._checksum_mode.algorithm == ChecksumAlgorithm.XOR
+            else sum_checksum
+        )
         return self._try_parse_at(buf, offset, fn, self._checksum_mode.scope)
 
     def _on_frame_found(self, mode: ChecksumMode) -> None:
@@ -241,7 +254,10 @@ class FrameParser:
             return True
         if remaining >= FRAME_HEADER_SIZE:
             payload_len, _ = HEADER_STRUCT.unpack_from(buf, offset)
-            if payload_len <= MAX_FRAME_SIZE and remaining < FRAME_OVERHEAD + payload_len:
+            if (
+                payload_len <= MAX_FRAME_SIZE
+                and remaining < FRAME_OVERHEAD + payload_len
+            ):
                 return True
         return False
 
@@ -250,7 +266,9 @@ class FrameParser:
             self._ever_synced = True
         self._sync_state = new_state
 
-    def _collect_ascii(self, byte_data: bytes, results: list[ParsedFrame | str]) -> None:
+    def _collect_ascii(
+        self, byte_data: bytes, results: list[Union[ParsedFrame, str]]
+    ) -> None:
         """Collect bytes for ASCII line assembly.
 
         Only printable ASCII (0x20-0x7E) and newline (0x0A) are collected.
@@ -265,7 +283,7 @@ class FrameParser:
                     results.append(self._ascii_buffer)
                     self._ascii_buffer = ''
 
-    def _flush_ascii(self, results: list[ParsedFrame | str]) -> None:
+    def _flush_ascii(self, results: list[Union[ParsedFrame, str]]) -> None:
         """Flush any pending ASCII buffer."""
         if self._ascii_buffer:
             results.append(self._ascii_buffer)
