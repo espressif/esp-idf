@@ -63,7 +63,9 @@ typedef struct {
  * @param[out] out_fs  pointer to FATFS structure which can be used for FATFS f_mount call is returned via this argument.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_register was already called
+ *      - ESP_ERR_INVALID_STATE if a filesystem is already registered at this base path.
+ *        If @p out_fs is not NULL, @p *out_fs is set to the existing FATFS object so callers
+ *        can run f_mount (e.g. remount the same path).
  *      - ESP_ERR_NO_MEM if not enough memory or too many VFSes already registered
  */
 esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);

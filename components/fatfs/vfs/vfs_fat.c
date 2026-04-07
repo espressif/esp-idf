@@ -179,6 +179,9 @@ esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
 {
     size_t ctx = find_context_index_by_path(conf->base_path);
     if (ctx < FF_VOLUMES) {
+        if (out_fs) {
+            *out_fs = &s_fat_ctxs[ctx]->fs;
+        }
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -221,7 +224,9 @@ esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
     //compatibility
     s_fat_ctx = fat_ctx;
 
-    *out_fs = &fat_ctx->fs;
+    if (out_fs) {
+        *out_fs = &fat_ctx->fs;
+    }
 
     return ESP_OK;
 }
