@@ -130,6 +130,8 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp32p4/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/opi_flash.h"
 #endif
 #include "spi_flash/spi_flash_defs.h"
 
@@ -290,7 +292,7 @@ static void rom_read_api_workaround(void)
  */
 static inline bool spi1_wb_mode_save_and_disable(void)
 {
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
     if (REG_GET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN)) {
         REG_CLR_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
         return true;
@@ -301,7 +303,7 @@ static inline bool spi1_wb_mode_save_and_disable(void)
 
 static inline void spi1_wb_mode_restore(bool saved_state)
 {
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
     if (saved_state) {
         REG_SET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
     }
