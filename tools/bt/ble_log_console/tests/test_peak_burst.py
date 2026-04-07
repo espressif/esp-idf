@@ -1,9 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from src.backend.stats.peak_burst import WRITE_RATE_WINDOW_MS
-from src.backend.stats.peak_burst import PeakBurstTracker
 from src.backend.stats.peak_burst import _ts_delta_ms
+from src.backend.stats.peak_burst import PeakBurstTracker
+from src.backend.stats.peak_burst import WRITE_RATE_WINDOW_MS
 
 _SRC = 1
 _SRC_B = 2

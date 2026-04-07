@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Transport-layer metrics: RX bytes, throughput (bps), frame rate (fps)."""
-
 from src.backend.models import TransportSnapshot
 
 UART_BITS_PER_BYTE = 10  # 8 data + 1 start + 1 stop

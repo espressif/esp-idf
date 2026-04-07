@@ -1,11 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Modal screen showing available keyboard shortcuts.
 
 Pushed by the 'h' keybinding; dismissed by Escape or 'h' again.
 """
-
 from rich.table import Table
 from textual.app import ComposeResult
 from textual.binding import Binding

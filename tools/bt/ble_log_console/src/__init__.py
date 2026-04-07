@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import sys
 
 if sys.version_info < (3, 10):  # noqa: UP036 — runtime guard for users on old Python

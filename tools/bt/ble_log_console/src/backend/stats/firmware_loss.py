@@ -1,11 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Firmware ENH_STAT loss tracking with incremental delta accumulation.
 
 Resilient to firmware counter resets from ``ble_log_bench_reset_stat``.
 """
-
 from src.backend.models import LossSnapshot
 from src.backend.models import SourceCode
 

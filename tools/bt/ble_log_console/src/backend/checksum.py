@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Checksum implementations matching BLE Log firmware (ble_log_util.c).
 
 Two algorithms:
@@ -11,7 +10,6 @@ The firmware's ror32 alignment compensation makes the XOR checksum
 alignment-independent — simple word-by-word XOR produces the same result
 regardless of the original buffer alignment.
 """
-
 import struct
 
 

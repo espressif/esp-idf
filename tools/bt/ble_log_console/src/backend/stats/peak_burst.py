@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Sliding-window peak write burst tracker.
 
 Tracks the densest burst of log writes within a configurable time window
@@ -12,7 +11,6 @@ happen at microsecond frequency, many frames share the same ms timestamp.
 Instead of computing an inaccurate fps, we count frames and bytes within
 the densest window.
 """
-
 from collections import deque
 
 from src.backend.models import PeakBurstSnapshot

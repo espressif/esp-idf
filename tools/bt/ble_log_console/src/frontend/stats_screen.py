@@ -1,31 +1,28 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Modal screen for per-source frame statistics display.
 
 Pushed by the 'd' keybinding; dismissed by Escape or 'd' again.
 Refreshes every second to show live throughput data.
 """
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from rich.table import Table
 from rich.text import Text
+from src.backend.models import BufUtilEntry
+from src.backend.models import format_bytes
+from src.backend.models import format_throughput
+from src.backend.models import FunnelSnapshot
+from src.backend.models import resolve_lbm_name
+from src.backend.models import resolve_pool_name
+from src.backend.models import resolve_source_name
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Static
-
-from src.backend.models import BufUtilEntry
-from src.backend.models import FunnelSnapshot
-from src.backend.models import format_bytes
-from src.backend.models import format_throughput
-from src.backend.models import resolve_lbm_name
-from src.backend.models import resolve_pool_name
-from src.backend.models import resolve_source_name
 
 if TYPE_CHECKING:
     from src.app import BLELogApp
