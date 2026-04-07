@@ -567,7 +567,12 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
     f_res = f_write(file, src, size, &wr);
     if (((wr == 0) && (size != 0)) && (f_res == 0)) {
         errno = ENOSPC;
-        return -1;
+        ret = -1;
+        FRESULT seek_res = f_lseek(file, prev_pos);
+        if (seek_res != FR_OK) {
+            ESP_LOGE(TAG, "%s: f_lseek restore after ENOSPC write failed (fresult=%d)", __func__, seek_res);
+        }
+        goto pwrite_release;
     }
     if (f_res == FR_OK) {
         ret = wr;
@@ -1014,7 +1019,7 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
         if (res != FR_OK) {
             ESP_LOGD(TAG, "%s: rewinddir fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
-            return;
+            goto seekdir_done;
         }
         fat_dir->offset = 0;
     }
@@ -1023,10 +1028,11 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
         if (res != FR_OK) {
             ESP_LOGD(TAG, "%s: f_readdir fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
-            return;
+            goto seekdir_done;
         }
         fat_dir->offset++;
     }
+seekdir_done:
     _lock_release(&fat_ctx->lock);
 }
 
