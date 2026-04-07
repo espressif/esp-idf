@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,28 +128,8 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
 static void example_change_led_state(esp_ble_mesh_model_t *model,
                                      esp_ble_mesh_msg_ctx_t *ctx, uint8_t onoff)
 {
-    uint16_t primary_addr = esp_ble_mesh_get_primary_element_address();
-    uint8_t elem_count = esp_ble_mesh_get_element_count();
-    uint8_t rgb[3] = {0};
-    uint8_t i;
-
-    if (ESP_BLE_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
-        for (i = 0; i < elem_count; i++) {
-            if (ctx->recv_dst == (primary_addr + i)) {
-                rgb[i] = onoff ? LED_ON : LED_OFF;
-            }
-        }
-    } else if (ESP_BLE_MESH_ADDR_IS_GROUP(ctx->recv_dst)) {
-        if (esp_ble_mesh_is_model_subscribed_to_group(model, ctx->recv_dst)) {
-            rgb[model->element->element_addr - primary_addr] = onoff ? LED_ON : LED_OFF;
-        }
-    } else if (ctx->recv_dst == 0xFFFF) {
-        rgb[0] = onoff ? LED_ON : LED_OFF;
-        rgb[1] = onoff ? LED_ON : LED_OFF;
-        rgb[2] = onoff ? LED_ON : LED_OFF;
-    }
-
-    board_led_operation(rgb[0], rgb[1], rgb[2]);
+    ESP_LOGI(TAG, "Recv onoff message, element addr 0x%04x, onoff %s",
+             ctx->recv_dst, onoff ? "ON" : "OFF");
 }
 
 static void example_handle_gen_onoff_msg(esp_ble_mesh_model_t *model,
@@ -197,7 +177,6 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
     case ESP_BLE_MESH_NODE_PROV_LINK_OPEN_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_NODE_PROV_LINK_OPEN_EVT, bearer %s",
             param->node_prov_link_open.bearer == ESP_BLE_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT");
-        board_led_operation(LED_OFF, LED_ON, LED_OFF);
         break;
     case ESP_BLE_MESH_NODE_PROV_LINK_CLOSE_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_NODE_PROV_LINK_CLOSE_EVT, bearer %s",
@@ -280,7 +259,6 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
                 param->value.state_change.mod_app_bind.app_idx,
                 param->value.state_change.mod_app_bind.company_id,
                 param->value.state_change.mod_app_bind.model_id);
-                board_led_operation(LED_OFF, LED_OFF, LED_OFF);
             break;
         case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD:
             ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD");
@@ -400,11 +378,9 @@ static void example_remote_prov_server_callback(esp_ble_mesh_rpr_server_cb_event
     case ESP_BLE_MESH_RPR_SERVER_LINK_OPEN_EVT:
         ESP_LOGW(TAG, "ESP_BLE_MESH_RPR_SERVER_LINK_OPEN_EVT");
         print_link_open_evt(param);
-        board_led_operation(LED_OFF, LED_OFF, LED_ON);
         break;
     case ESP_BLE_MESH_RPR_SERVER_LINK_CLOSE_EVT:
         ESP_LOGW(TAG, "ESP_BLE_MESH_RPR_SERVER_LINK_CLOSE_EVT");
-        board_led_operation(LED_OFF, LED_OFF, LED_OFF);
         print_link_close_evt(param);
         break;
     case ESP_BLE_MESH_RPR_SERVER_PROV_COMP_EVT:
@@ -438,8 +414,6 @@ static esp_err_t ble_mesh_init(void)
     }
 
     ESP_LOGI(TAG, "BLE Mesh Node initialized");
-
-    board_led_operation(LED_ON, LED_OFF, LED_OFF);
 
     return err;
 }
