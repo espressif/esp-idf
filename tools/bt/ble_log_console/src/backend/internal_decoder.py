@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Decode BLE_LOG_SRC_INTERNAL(0) frame payloads.
 
 Payload format on wire: [4B os_ts][1B int_src_code][variable sub-payload]
 See Spec Section 9.
 """
+from __future__ import annotations
 
 import struct
 
@@ -65,9 +65,14 @@ def decode_internal_frame(payload: bytes) -> InternalDecoderResult | None:
     if int_src == InternalSource.ENH_STAT:
         if len(sub_payload) < _ENH_STAT_STRUCT.size:
             return None
-        _, src_code, written_frame_cnt, lost_frame_cnt, written_bytes_cnt, lost_bytes_cnt = (
-            _ENH_STAT_STRUCT.unpack_from(sub_payload, 0)
-        )
+        (
+            _,
+            src_code,
+            written_frame_cnt,
+            lost_frame_cnt,
+            written_bytes_cnt,
+            lost_bytes_cnt,
+        ) = _ENH_STAT_STRUCT.unpack_from(sub_payload, 0)
         return EnhStatResult(
             int_src=int_src,
             src_code=src_code,
@@ -81,7 +86,9 @@ def decode_internal_frame(payload: bytes) -> InternalDecoderResult | None:
     if int_src == InternalSource.BUF_UTIL:
         if len(sub_payload) < _BUF_UTIL_STRUCT.size:
             return None
-        _, lbm_id, trans_cnt, inflight_peak = _BUF_UTIL_STRUCT.unpack_from(sub_payload, 0)
+        _, lbm_id, trans_cnt, inflight_peak = _BUF_UTIL_STRUCT.unpack_from(
+            sub_payload, 0
+        )
         pool = (lbm_id >> 4) & 0x0F
         index = lbm_id & 0x0F
         return BufUtilResult(

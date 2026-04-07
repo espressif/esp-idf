@@ -1,14 +1,16 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Launch Screen — interactive setup for port, baud rate, and log directory.
 
 Shown on startup when --port is not provided via CLI.
 Dismissed with a LaunchConfig result on Connect, or None on quit.
 """
+from __future__ import annotations
 
 from pathlib import Path
 
+from src.backend.models import LaunchConfig
+from src.backend.uart_transport import list_serial_ports
 from textual import on
 from textual import work
 from textual.app import ComposeResult
@@ -22,14 +24,11 @@ from textual.widgets import Label
 from textual.widgets import Select
 from textual_fspicker import SelectDirectory
 
-from src.backend.models import LaunchConfig
-from src.backend.uart_transport import list_serial_ports
-
 BAUD_RATES: list[int] = [115200, 230400, 460800, 921600, 1500000, 2000000, 3000000]
 DEFAULT_BAUD_RATE: int = 3000000
 
 
-class LaunchScreen(Screen[LaunchConfig | None]):
+class LaunchScreen(Screen[LaunchConfig | None]):  # type: ignore[misc]
     """Interactive setup screen for BLE Log Console."""
 
     DEFAULT_CSS = """

@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """Sliding receive window gap tracker for per-source frame sequence numbers.
 
 Frames are only declared lost when the receive window advances past their SN
 without them being received, tolerating out-of-order delivery up to
 REORDER_WINDOW frames.
 """
+from __future__ import annotations
 
 from src.backend.models import SourceCode
 

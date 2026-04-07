@@ -1,12 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """UART read loop with raw binary file writing.
 
 See Spec Sections 6, 12.
 """
+from __future__ import annotations
 
-import serial
 import serial.tools.list_ports
 
 UART_READ_TIMEOUT = 0.1
@@ -28,6 +27,8 @@ def validate_uart_port(port: str) -> str | None:
 
 def open_serial(port: str, baudrate: int) -> serial.Serial:
     try:
-        return serial.Serial(port, baudrate=baudrate, timeout=UART_READ_TIMEOUT, exclusive=True)
+        return serial.Serial(
+            port, baudrate=baudrate, timeout=UART_READ_TIMEOUT, exclusive=True
+        )
     except (ValueError, serial.SerialException):
         return serial.Serial(port, baudrate=baudrate, timeout=UART_READ_TIMEOUT)
