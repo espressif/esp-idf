@@ -35,7 +35,7 @@ typedef struct {
 #define BLE_LOG_FRAME_HEAD_LEN                  (sizeof(ble_log_frame_head_t))
 #define BLE_LOG_FRAME_TAIL_LEN                  (sizeof(uint32_t))
 #define BLE_LOG_FRAME_OVERHEAD                  (BLE_LOG_FRAME_HEAD_LEN + BLE_LOG_FRAME_TAIL_LEN)
-#define BLE_LOG_MAKE_FRAME_META(src_code, sn)   ((src_code & 0xFF) | (sn << 8))
+#define BLE_LOG_MAKE_FRAME_META(src_code, sn)   (((src_code) & 0xFF) | ((sn) << 8))
 
 /* ---------------------------------- */
 /*     Log Buffer Manager Defines     */
