@@ -27,7 +27,7 @@ typedef struct {
     void *owner;
 } ble_log_prph_trans_t;
 
-#define BLE_LOG_TRANS_FREE_SPACE(trans)         (trans->size - trans->pos)
+#define BLE_LOG_TRANS_FREE_SPACE(trans)         ((trans)->size - (trans)->pos)
 #define BLE_LOG_TRANS_BUF_CNT                   (4)
 
 /* INTERFACE */
