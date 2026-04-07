@@ -6,6 +6,7 @@ import re
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 LOCK_PCT_TOL = 5
 
@@ -38,14 +39,23 @@ def _run_pm_example_test(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_PM_SUPPORTED == 1'), indirect=['target'])
 def test_esp_pm_mode_stats(dut: Dut) -> None:
     _run_pm_example_test(dut)
 
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['pd_top'], indirect=True)
-@idf_parametrize('target', ['esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    list(
+        filter(
+            lambda t: t != 'esp32c5',
+            soc_filtered_targets('SOC_PM_SUPPORTED == 1 and SOC_PM_SUPPORT_TOP_PD == 1'),
+        )
+    ),
+    indirect=['target'],
+)
 def test_esp_pm_mode_stats_pd_top(dut: Dut) -> None:
     _run_pm_example_test(dut)
 
