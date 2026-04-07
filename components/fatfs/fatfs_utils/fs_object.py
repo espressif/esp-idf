@@ -208,7 +208,7 @@ class Directory:
         # type: (Entry, str, str, Directory, int, int, DATETIME, DATETIME) -> Entry
         lfn_full_name: str = build_lfn_full_name(name, extension)
         lfn_unique_entry_order: int = build_lfn_unique_entry_name_order(target_dir.entities, name)
-        lfn_short_entry_name: str = build_lfn_short_entry_name(name, extension, lfn_unique_entry_order)
+        lfn_short_entry_name: str = build_lfn_short_entry_name(name, extension, lfn_unique_entry_order, lfn=lfn_full_name)
         checksum: int = lfn_checksum(lfn_short_entry_name)
         entries_count: int = get_required_lfn_entries_count(lfn_full_name)
 

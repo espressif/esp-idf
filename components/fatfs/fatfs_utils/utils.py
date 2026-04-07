@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import binascii
@@ -112,9 +112,45 @@ def right_strip_string(content: str, pad: int = PAD_CHAR) -> str:
     return content.rstrip(chr(pad))
 
 
-def build_lfn_short_entry_name(name: str, extension: str, order: int) -> str:
-    return '{}{}'.format(pad_string(content=name[:MAX_NAME_SIZE - 2] + '~' + chr(order), size=MAX_NAME_SIZE),
-                         pad_string(extension[:MAX_EXT_SIZE], size=MAX_EXT_SIZE))
+def _gen_numname_suffix(seq: int, lfn: str) -> str:
+    """
+    Generate the numeric tail suffix for a short filename entry, matching
+    the logic of gen_numname() in ff.c.
+
+    For seq > 5, a CRC-based hash is computed from seq and the LFN to reduce
+    collision probability. The suffix is rendered as hexadecimal digits
+    (e.g. '~1', '~A', '~3F2') and always starts with '~'.
+    """
+    if seq > 5:
+        # Hash path: CRC16-CCITT seeded with seq, fed with LFN characters
+        sreg = seq
+        for ch in lfn:
+            wc = ord(ch)
+            for _ in range(16):
+                sreg = (sreg << 1) + (wc & 1)
+                wc >>= 1
+                if sreg & 0x10000:
+                    sreg ^= 0x11021
+        seq = sreg & 0xFFFF
+
+    # Convert seq to uppercase hexadecimal digits (no '0x' prefix)
+    hex_str = format(seq, 'X')
+    return '~' + hex_str
+
+
+def build_lfn_short_entry_name(name: str, extension: str, order: int, lfn: str = '') -> str:
+    """
+    Build the 8.3 short entry name for a long filename entry.
+
+    Mirrors gen_numname() from ff.c: the suffix ('~' + hex digits) is built
+    first, then the stem (beginning of the long name) is truncated to fit
+    within MAX_NAME_SIZE (8) characters together with the suffix.
+    """
+    suffix = _gen_numname_suffix(order, lfn)
+    name_part = name[: MAX_NAME_SIZE - len(suffix)] + suffix
+    padded_name = pad_string(content=name_part, size=MAX_NAME_SIZE)
+    padded_ext = pad_string(extension[:MAX_EXT_SIZE], size=MAX_EXT_SIZE)
+    return f'{padded_name}{padded_ext}'
 
 
 def lfn_checksum(short_entry_name: str) -> int:
