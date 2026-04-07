@@ -463,6 +463,10 @@ config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
     bool
     default y
 
+config SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+    bool
+    default y
+
 config SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE
     bool
     default y

@@ -85,6 +85,8 @@ entries:
         sleep_modes: esp_sleep_enable_vbat_under_volt_wakeup (noflash)
         sleep_modes: esp_sleep_sub_mode_config (noflash)
         sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
+    if (SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP = n || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD = y):
+        esp_gpio_reserve (noflash)
 
 [mapping:hal_gpio_pm]
 archive: libesp_hal_gpio.a

@@ -187,7 +187,7 @@
 
 // GPIO0~7 on ESP32S31 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1)
-#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP           SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+#define SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD        (1)
 #define SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE     (1)
 
 // LP IO peripherals have independent clock gating to manage

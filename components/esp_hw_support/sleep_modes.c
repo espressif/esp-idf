@@ -251,7 +251,7 @@
 #define LDO_POWER_TAKEOVER_PREPARATION_TIME_US  (185)
 #elif CONFIG_IDF_TARGET_ESP32S31
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US           (324)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (240)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (780)
 #endif
 
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
@@ -894,16 +894,16 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     }
 #endif
     if (deep_sleep) {
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
-        esp_sleep_isolate_digital_gpio();
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+        esp_sleep_isolate_digital_gpio(false);
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_SLEEP_SET_FLASH_DPD
-    if ((sleep_flags & RTC_SLEEP_FLASH_DPD) && (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300))) {
-        /* Switch Flash from standby mode to deep powerdown mode */
-        /* During bootloader phase following wakeup from deepsleep, flash will exit dpd mode */
-        spi_flash_enable_deep_power_down_mode(true);
-    }
+        if ((sleep_flags & RTC_SLEEP_FLASH_DPD) && (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300))) {
+            /* Switch Flash from standby mode to deep powerdown mode */
+            /* During bootloader phase following wakeup from deepsleep, flash will exit dpd mode */
+            spi_flash_enable_deep_power_down_mode(true);
+        }
 #endif
 
 #if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB && SOC_DEEP_SLEEP_SUPPORTED
@@ -924,7 +924,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #endif
 
         // Enter Deep Sleep
-#if!ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB || SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY || !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+#if !ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB || SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY || !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 #if SOC_PMU_SUPPORTED
         result = call_rtc_sleep_start(reject_triggers, config->power.hp_sys.dig_power.mem_dslp, deep_sleep);
 #else
@@ -935,6 +935,11 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
     } else {
+#if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+        if (sleep_flags & RTC_SLEEP_PD_DIG) {
+            esp_sleep_isolate_digital_gpio(true);
+        }
+#endif
         /* Cache Suspend 1: will wait cache idle in cache suspend */
         suspend_cache();
         if (!(sleep_flags & RTC_SLEEP_PD_VDDSDIO)) {
@@ -958,6 +963,9 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
                 /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
                 gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
+#endif
+#if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+                esp_sleep_isolate_mspi_gpio();
 #endif
 #endif // !SOC_MSPI_HAS_INDEPENT_IOMUX
             }
@@ -1016,6 +1024,11 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
             gpio_ll_hold_dis(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
 #endif
 #endif // !SOC_MSPI_HAS_INDEPENT_IOMUX
+        }
+#endif
+#if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+        if (sleep_flags & RTC_SLEEP_PD_DIG) {
+            esp_sleep_restore_isolated_digital_gpio();
         }
 #endif
 #if CONFIG_ESP_SLEEP_SET_FLASH_DPD

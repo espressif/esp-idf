@@ -97,14 +97,36 @@ esp_err_t esp_sleep_acquire_lp_use_xtal(void);
 esp_err_t esp_sleep_release_lp_use_xtal(void);
 #endif
 
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
 /**
- * @brief Isolate all digital IOs except those that are held during deep sleep
+ * @brief Soft-isolate valid digital IO pads (SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK) for leakage control
  *
- * Reduce digital IOs current leakage during deep sleep.
+ * Skips pads that are digitally held and pads reserved by the driver.
+ * MSPI signal pads are not in this pass; use esp_sleep_isolate_mspi_gpio() after cache/MSPI idle.
+ *
+ * @param do_backup  If true, back up each pad's pu/pd/ie/oe/fun_sel before isolating so that
+ *                   esp_sleep_restore_isolated_digital_gpio() can restore them later.
+ *                   Pass false when restore is not needed (e.g. deep sleep).
  */
-void esp_sleep_isolate_digital_gpio(void);
-#endif
+void esp_sleep_isolate_digital_gpio(bool do_backup);
+
+/**
+ * @brief Backup and isolate (or pull up) the five base MSPI lines (CLK/Q/D/HD/WP)
+ *
+ * If CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU && !SOC_MSPI_HAS_INDEPENT_IOMUX, enables pull-up only;
+ * otherwise full pad isolate like esp_sleep_isolate_digital_gpio. Intended after SPI bus is idle
+ * (e.g. light sleep with TOP power-down).
+ */
+void esp_sleep_isolate_mspi_gpio(void);
+
+/**
+ * @brief Restore pu/pd/ie/oe and IOMUX fun_sel for every GPIO in the soft-isolate backup bitmap
+ *
+ * Reverses esp_sleep_isolate_digital_gpio / esp_sleep_isolate_mspi_gpio. Call after wake before
+ * normal Flash access.
+ */
+void esp_sleep_restore_isolated_digital_gpio(void);
+#endif // !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
 
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
 /**
