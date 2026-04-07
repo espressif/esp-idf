@@ -185,10 +185,6 @@ static esp_err_t wifi_deinit_internal(void)
 
     esp_supplicant_deinit();
 
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    roam_deinit_app();
-#endif
-
     err = esp_wifi_deinit_internal();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
@@ -462,10 +458,6 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
             goto _deinit;
         }
-
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-        roam_init_app();
-#endif
 
     } else {
         goto _deinit;
