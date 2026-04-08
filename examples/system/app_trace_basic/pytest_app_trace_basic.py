@@ -64,7 +64,7 @@ def test_examples_app_trace_basic_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> No
 @pytest.mark.generic
 @idf_parametrize('config', ['apptrace_uart'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
+@pytest.mark.temp_skip_ci(targets=['esp32s31', 'esp32h4'], reason='bringup on this module is not done')
 def test_examples_app_trace_basic_uart(dut: IdfDut) -> None:
     dut.serial.close()
     with serial.Serial(dut.serial.port, baudrate=1000000, timeout=3) as ser:

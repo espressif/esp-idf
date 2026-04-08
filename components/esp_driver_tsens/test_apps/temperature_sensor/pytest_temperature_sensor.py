@@ -4,6 +4,7 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.unity_tester import CaseTester
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -16,7 +17,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize(
     'target',
-    ['esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c61'],
+    soc_filtered_targets('SOC_TEMP_SENSOR_SUPPORTED == 1'),
     indirect=['target'],
 )
 def test_temperature_sensor_driver(dut: Dut) -> None:

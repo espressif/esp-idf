@@ -751,7 +751,7 @@ examples/peripherals/twai/twai_network/twai_listen_only:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32s31","esp32h4"]
       temporary: true
       reason: no runner
   depends_components:
@@ -763,7 +763,7 @@ examples/peripherals/twai/twai_network/twai_sender:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32s31","esp32h4"]
       temporary: true
       reason: no runner
   depends_components:

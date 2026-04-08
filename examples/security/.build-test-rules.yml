@@ -4,9 +4,9 @@ examples/security/flash_encryption:
   disable:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "key_mgr" and SOC_KEY_MANAGER_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32s31", "esp32h4"]
       temporary: true
-      reason: not support yet # TODO: [ESP32S31] IDF-14628
+      reason: not support yet # TODO: [ESP32S31] IDF-14628 [ESP32H4] IDF-12261
   disable_test:
     - if: CONFIG_NAME == "key_mgr"
       temporary: true

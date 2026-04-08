@@ -76,7 +76,7 @@ tools/test_apps/system/g1_components:
 
 tools/test_apps/system/gdb:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31", "esp32h4"]
       temporary: true
       reason: not supported yet # TODO: IDF-13142
 
@@ -145,6 +145,9 @@ tools/test_apps/system/ram_loadable_app:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14370
   disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass yet
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: cannot pass # TODO: IDF-15525

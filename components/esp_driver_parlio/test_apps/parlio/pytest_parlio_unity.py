@@ -14,7 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32p4', 'esp32h4'], indirect=['target'])
 def test_parlio(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -27,7 +27,7 @@ def test_parlio(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32h4'], indirect=['target'])
 def test_parlio_with_virt_flash_enc(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()

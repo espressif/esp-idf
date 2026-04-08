@@ -17,6 +17,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='bringup on this module is not done')
 def test_esp_pm(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

@@ -1,12 +1,15 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32s31'], indirect=['target'])
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_GPTIMER_SUPPORTED == 1 and SOC_ETM_SUPPORTED == 1'), indirect=['target']
+)
 def test_gptimer_capture(dut: Dut) -> None:
     dut.expect_exact('Configure trig gpio')
     dut.expect_exact('Configure echo gpio')

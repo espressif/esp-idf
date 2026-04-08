@@ -43,9 +43,9 @@ examples/system/efuse:
       reason: Security features are not yet supported for Linux.
     - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
       reason: Secure Boot V2 with ECDSA P384 is not supported.
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32s31", "esp32h4"]
       temporary: true
-      reason: not support yet # TODO: [ESP32S31] IDF-14442
+      reason: not support yet # TODO: [ESP32S31] IDF-14442 [ESP32H4] IDF-12262
   depends_components:
     - *common_components
     - efuse
@@ -269,9 +269,6 @@ examples/system/sysview_tracing:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1136
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: not support yet   #TODO: OCD-1289
