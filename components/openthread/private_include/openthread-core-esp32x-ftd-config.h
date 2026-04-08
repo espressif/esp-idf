@@ -899,13 +899,22 @@
 #endif
 
 /**
- * @OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL
+ * @def OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL
  *
  * Specifies the time-in-queue threshold interval in milliseconds to mark ECN on a message if it is ECN-capable or
  * drop the message if not ECN-capable.
  */
 #ifndef OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL
 #define OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL 1000
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE
+ *
+ * Define as 1 to enable the MeshCoP Steering Data public APIs (in `openthread/steering_data.h`).
+ */
+#ifndef OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE
+#define OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE 1
 #endif
 
 #ifndef OPENTHREAD_CONFIG_THREAD_VERSION
