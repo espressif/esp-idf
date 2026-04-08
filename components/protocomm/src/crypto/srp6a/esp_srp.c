@@ -651,6 +651,28 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
     if (! hd->A) {
         goto error;
     }
+
+    /* RFC 5054 Section 2.5.4: abort if A % N == 0
+     * This prevents an attacker from sending A=0 (or A=k*N) which would
+     * force the shared secret S to zero, yielding a deterministic session
+     * key regardless of the password. */
+    esp_mpi_t *a_mod_n = esp_mpi_new();
+    if (!a_mod_n) {
+        goto error;
+    }
+    if (esp_mpi_a_mod_b(a_mod_n, hd->A, hd->n) != 0) {
+        esp_mpi_free(a_mod_n);
+        ESP_LOGE(TAG, "Failed to compute A mod N");
+        goto error;
+    }
+    int a_mod_n_is_zero = (esp_mpi_cmp_int(a_mod_n, 0) == 0);
+    esp_mpi_free(a_mod_n);
+    if (a_mod_n_is_zero) {
+        ESP_LOGE(TAG, "Rejected client public key: A mod N == 0 (RFC 5054 Section 2.5.4)");
+        ret = ESP_ERR_INVALID_ARG;
+        goto error;
+    }
+
     u = calculate_u(hd, bytes_A, len_A);
     if (! u) {
         goto error;

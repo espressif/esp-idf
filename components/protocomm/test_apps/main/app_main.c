@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,6 +9,7 @@
 #include "test_utils.h"
 #include "memory_checks.h"
 #include "esp_newlib.h"
+#include "nvs_flash.h"
 #include "psa/crypto.h"
 // #include "mbedtls/aes.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
@@ -105,5 +106,13 @@ static void test_task(void *pvParameters)
 
 void app_main(void)
 {
+    /* Initialize NVS — required by PSA crypto's ITS backend */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
     xTaskCreatePinnedToCore(test_task, "testTask", CONFIG_UNITY_FREERTOS_STACK_SIZE, NULL, CONFIG_UNITY_FREERTOS_PRIORITY, NULL, CONFIG_UNITY_FREERTOS_CPU);
 }
