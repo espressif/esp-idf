@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -183,7 +183,21 @@ static esp_err_t openthread_netif_transmit(void *handle, void *buffer, size_t le
     otError ot_error = OT_ERROR_NONE;
 
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-    otMessage *message = otIp6NewMessage(esp_openthread_get_instance(), NULL);
+
+    otMessageSettings settings = {};
+    switch (otThreadGetDeviceRole(esp_openthread_get_instance()))
+    {
+    case OT_DEVICE_ROLE_DISABLED:
+        settings.mLinkSecurityEnabled = false;
+        settings.mPriority = OT_MESSAGE_PRIORITY_LOW;
+        break;
+    default:
+        settings.mLinkSecurityEnabled = true;
+        settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+        break;
+    }
+
+    otMessage *message = otIp6NewMessage(esp_openthread_get_instance(), &settings);
     if (message == NULL) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate OpenThread message");
         ExitNow(error = ESP_ERR_NO_MEM);
