@@ -360,7 +360,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
 static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
-    bt_app_work_dispatch(bt_app_av_sm_hdlr, event, param, sizeof(esp_a2d_cb_param_t), NULL);
+    bt_app_work_dispatch(bt_app_av_sm_hdlr, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
 }
 
 /* generate some random noise to simulate source audio */
@@ -380,7 +380,7 @@ static int32_t bt_app_a2d_data_cb(uint8_t *data, int32_t len)
 
 static void bt_app_a2d_heart_beat(TimerHandle_t arg)
 {
-    bt_app_work_dispatch(bt_app_av_sm_hdlr, BT_APP_HEART_BEAT_EVT, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_app_av_sm_hdlr, BT_APP_HEART_BEAT_EVT, NULL, 0, NULL, NULL);
 }
 
 static void bt_app_av_sm_hdlr(uint16_t event, void *param)
@@ -726,13 +726,12 @@ static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t
     switch (event) {
     case ESP_AVRC_CT_CONNECTION_STATE_EVT:
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
-    case ESP_AVRC_CT_METADATA_RSP_EVT:
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
     case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
     case ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT:
     case ESP_AVRC_CT_PROF_STATE_EVT: {
-        bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL, NULL);
         break;
     }
     default: {
@@ -791,12 +790,6 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough response: key_code 0x%x, key_state %d, rsp_code %d", rc->psth_rsp.key_code,
                     rc->psth_rsp.key_state, rc->psth_rsp.rsp_code);
-        break;
-    }
-    /* when metadata responded, this event comes */
-    case ESP_AVRC_CT_METADATA_RSP_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata response: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
-        free(rc->meta_rsp.attr_text);
         break;
     }
     /* when notification changed, this event comes */
@@ -906,5 +899,5 @@ void app_main(void)
     ESP_LOGI(BT_AV_TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
     bt_app_task_start_up();
     /* Bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_STACK_UP_EVT, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_STACK_UP_EVT, NULL, 0, NULL, NULL);
 }

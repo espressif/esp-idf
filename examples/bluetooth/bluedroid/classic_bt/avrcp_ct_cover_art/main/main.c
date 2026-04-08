@@ -129,5 +129,5 @@ void app_main(void)
 
     bt_app_task_start_up();
     /* bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL, NULL);
 }
