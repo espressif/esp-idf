@@ -2,7 +2,9 @@ idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(non_os_build NON_OS_BUILD)
 
 if(${target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
+    # On linux, only provide headers (esp_key_config.h) without any source files
+    idf_component_register(INCLUDE_DIRS "include")
+    return()
 endif()
 
 set(srcs "")

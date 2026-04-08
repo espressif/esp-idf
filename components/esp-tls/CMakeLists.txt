@@ -22,7 +22,10 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
-                    REQUIRES mbedtls
+                    # mbedtls is public requirements because esp_tls.h
+                    # includes mbedtls header files.
+                    # esp_security is public because esp_tls.h includes esp_key_config.h
+                    REQUIRES mbedtls esp_security
                     PRIV_REQUIRES ${priv_req})
 
 
@@ -33,9 +36,4 @@ else()
     if(CONFIG_LWIP_ENABLE)
         target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_TLS_WITH_LWIP=1)
     endif()
-endif()
-
-
-if(CONFIG_ESP_TLS_USE_SECURE_ELEMENT)
-    idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
 endif()

@@ -502,14 +502,6 @@ void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int
     ssl->cfg.ciphersuites_list = ciphersuites_list;
 }
 
-#ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
-void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
-{
-    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
-    ssl->cfg.use_secure_element = true;
-}
-#endif
-
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*crt_bundle_attach)(void *conf)))
 {
@@ -574,6 +566,12 @@ void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data)
     ssl->cfg.ds_data = ds_data;
 }
 #endif
+
+void esp_transport_ssl_set_client_key_config(esp_transport_handle_t t, const esp_key_config_t *client_key)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.client_key = client_key;
+}
 
 void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
 {
