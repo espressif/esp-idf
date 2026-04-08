@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1189,9 +1189,4 @@ TEST_CASE("security 1 insecure client test", "[PROTOCOMM]")
 TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
-}
-
-void app_main(void)
-{
-    unity_run_menu();
 }
