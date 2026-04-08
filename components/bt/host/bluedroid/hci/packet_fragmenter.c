@@ -147,7 +147,6 @@ static void reassemble_and_dispatch(BT_HDR *packet)
     if ((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ACL) {
         uint8_t *stream = packet->data + packet->offset;
         uint16_t handle;
-        uint16_t l2cap_length;
         uint16_t acl_length __attribute__((unused));
 
         /* All ACL packets need at least the 4-byte HCI ACL preamble (handle + length) */
@@ -165,6 +164,8 @@ static void reassemble_and_dispatch(BT_HDR *packet)
 
         assert(acl_length == packet->len - HCI_ACL_PREAMBLE_SIZE);
 
+        BT_HDR *partial_packet = (BT_HDR *)hash_map_get(partial_packets, (void *)(uintptr_t)handle);
+
         if (boundary_flag == START_PACKET_BOUNDARY) {
             /* START packets must also contain the L2CAP header (length field) */
             if (packet->len < HCI_ACL_PREAMBLE_SIZE + L2CAP_LENGTH_SIZE) {
@@ -172,14 +173,8 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 osi_free(packet);
                 return;
             }
+            uint16_t l2cap_length;
             STREAM_TO_UINT16(l2cap_length, stream);
-        } else {
-            l2cap_length = 0; /* Not used for continuation packets */
-        }
-
-        BT_HDR *partial_packet = (BT_HDR *)hash_map_get(partial_packets, (void *)(uintptr_t)handle);
-
-        if (boundary_flag == START_PACKET_BOUNDARY) {
             if (partial_packet) {
                 HCI_TRACE_WARNING("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
