@@ -189,6 +189,12 @@ repos:
           )$
         pass_filenames: false
         verbose: true
+      - id: check-err-codes-registration
+        name: Check error code headers are registered
+        entry: tools/ci/check_err_codes_registration.py
+        language: python
+        files: 'components/.+\.h$|components/.+CMakeLists\.txt$'
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
