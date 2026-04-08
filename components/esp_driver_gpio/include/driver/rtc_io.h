@@ -208,6 +208,31 @@ esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* s
  */
 esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func);
 
+/**
+  * @brief Set pad input to an LP peripheral signal through the LP(RTC) IOMUX.
+  *
+  * @param gpio_num GPIO number
+  * @param func The index number of the LP(RTC) IOMUX function to be selected for the pin
+  * @param signal_idx Peripheral signal index to input. One of the ``*_IN_IDX`` signals in ``soc/lp_gpio_sig_map.h``.
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG GPIO number error
+  */
+esp_err_t rtc_gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx);
+
+/**
+  * @brief Set LP peripheral output to an RTC IO pad through the LP(RTC) IOMUX.
+  *
+  * @param gpio_num GPIO number
+  * @param func The index number of the LP(RTC) IOMUX function to be selected for the pin
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG GPIO number error
+  */
+esp_err_t rtc_gpio_iomux_output(gpio_num_t gpio_num, int func);
+
 #endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_RTCIO_HOLD_SUPPORTED
