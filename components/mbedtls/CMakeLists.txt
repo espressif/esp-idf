@@ -481,6 +481,14 @@ if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u mbedtls_rom_osi_functions_init")
 endif()
 
+if(CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED)
+    target_sources(tfpsacrypto PRIVATE
+        "${COMPONENT_DIR}/port/psa_driver/secure_element/psa_crypto_driver_secure_element.c")
+    target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
+    target_compile_definitions(tfpsacrypto PRIVATE
+        SECURE_ELEMENT_DRIVER_ENABLED)
+endif()
+
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
     target_compile_options(tfpsacrypto PRIVATE "-fno-analyzer")
@@ -547,11 +555,6 @@ endfunction()
 if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_timer)
 endif()
-
-# # Link esp-cryptoauthlib to mbedtls
-# if(CONFIG_ATCA_MBEDTLS_ECDSA)
-#     mbedcrypto_optional_deps(espressif__esp-cryptoauthlib esp-cryptoauthlib)
-# endif()
 
 # Apply -fno-analyzer to ALL mbedTLS targets at the very end when all targets are created
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
