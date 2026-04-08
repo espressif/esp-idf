@@ -158,9 +158,9 @@ const char *c_at_response_code_str[] = {
 
 // esp_hf_subscriber_service_type_t
 const char *c_subscriber_service_type_str[] = {
-    "unknown",
-    "voice",
-    "fax",
+    [ESP_HF_SUBSCRIBER_SERVICE_TYPE_UNKNOWN] = "unknown",
+    [ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE]   = "voice",
+    [ESP_HF_SUBSCRIBER_SERVICE_TYPE_FAX]     = "fax",
 };
 
 // esp_hf_client_in_band_ring_state_t
@@ -190,6 +190,7 @@ static void bt_app_hf_client_audio_close(void)
     }
 
     vRingbufferDelete(m_rb);
+    m_rb = NULL;
 }
 
 static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
