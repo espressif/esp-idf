@@ -105,6 +105,14 @@ static void esp_ecdsa_acquire_hardware(void)
 
     esp_crypto_ecc_enable_periph_clk(true);
 
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+    /*  Key Manager holds the key usage selector register (efuse vs own key).
+        Thus, we need to enable the Key Manager peripheral clock to ensure
+        that the key usage selector register is properly set.
+     */
+    esp_crypto_key_mgr_enable_periph_clk(true);
+#endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY */
+
 #if SOC_ECDSA_USES_MPI
     if (ecdsa_ll_is_mpi_required()) {
     /* We need to reset the MPI peripheral because ECDSA peripheral
@@ -120,6 +128,10 @@ static void esp_ecdsa_release_hardware(void)
     esp_crypto_ecdsa_enable_periph_clk(false);
 
     esp_crypto_ecc_enable_periph_clk(false);
+
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+    esp_crypto_key_mgr_enable_periph_clk(false);
+#endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY */
 
 #if SOC_ECDSA_USES_MPI
     if (ecdsa_ll_is_mpi_required()) {

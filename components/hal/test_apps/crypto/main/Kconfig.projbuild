@@ -37,9 +37,17 @@ menu "Test App Configuration"
 
     config CRYPTO_TESTAPP_USE_AES_INTERRUPT
         bool "Use interrupt for long AES operations"
-        depends on  SOC_AES_SUPPORTED
+        depends on SOC_AES_SUPPORTED
         default n
         help
             Use an interrupt to coordinate long AES operations.
+
+    config CRYPTO_IS_KEY_MANAGER_SUPPORTED
+        bool
+        default n if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
+        default y
+        depends on SOC_KEY_MANAGER_SUPPORTED
+        help
+            A hidden config to determine if the Key Manager tests should be included.
 
 endmenu

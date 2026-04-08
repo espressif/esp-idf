@@ -209,7 +209,11 @@ config SOC_ECDSA_SUPPORTED
 
 config SOC_KEY_MANAGER_SUPPORTED
     bool
-    default n
+    default y
+
+config SOC_HUK_SUPPORTED
+    bool
+    default y
 
 config SOC_FLASH_ENC_SUPPORTED
     bool
@@ -1916,6 +1920,14 @@ config SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
     default y
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
+    bool
+    default y
+
+config SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_DS_KEY_DEPLOY
     bool
     default y
 

@@ -15,6 +15,7 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 
+#if SOC_KEY_MANAGER_SUPPORTED
 esp_huk_state_t huk_hal_get_state(void)
 {
     return huk_ll_get_state();
@@ -51,4 +52,5 @@ void huk_hal_recharge_huk_memory(void)
 {
     huk_ll_recharge_huk_memory();
 }
+#endif
 #endif
