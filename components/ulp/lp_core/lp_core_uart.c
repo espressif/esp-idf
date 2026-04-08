@@ -34,9 +34,9 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     esp_err_t ret = ESP_OK;
 
     /* Argument sanity check */
-    if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh > SOC_LP_UART_FIFO_LEN) ||
-            (cfg->uart_proto_cfg.flow_ctrl > UART_HW_FLOWCTRL_MAX) ||
-            (cfg->uart_proto_cfg.data_bits > UART_DATA_BITS_MAX)) {
+    if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh >= SOC_LP_UART_FIFO_LEN) ||
+            (cfg->uart_proto_cfg.flow_ctrl >= UART_HW_FLOWCTRL_MAX) ||
+            (cfg->uart_proto_cfg.data_bits >= UART_DATA_BITS_MAX)) {
         // Invalid config
         return ESP_ERR_INVALID_ARG;
     }
