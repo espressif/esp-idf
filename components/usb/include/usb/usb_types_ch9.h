@@ -384,7 +384,7 @@ ESP_STATIC_ASSERT(sizeof(usb_config_desc_t) == USB_CONFIG_DESC_SIZE, "Size of us
 /**
  * @brief Size of a USB interface association descriptor in bytes
  */
-#define USB_IAD_DESC_SIZE    9
+#define USB_IAD_DESC_SIZE    8
 
 /**
  * @brief Structure representing a USB interface association descriptor
