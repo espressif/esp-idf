@@ -938,12 +938,6 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 #endif
 
-#if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
-    if (config->use_secure_element) {
-        esp_transport_ssl_use_secure_element(ssl);
-    }
-#endif
-
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     if (config->ds_data != NULL) {
         esp_transport_ssl_set_ds_data(ssl, config->ds_data);
@@ -962,26 +956,32 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 #endif
 
-    if (config->client_key_pem) {
-        if (!config->client_key_len) {
-            esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
-        } else {
-            esp_transport_ssl_set_client_key_data_der(ssl, config->client_key_pem, config->client_key_len);
+    /* Check for unified key config */
+    if (config->client_key != NULL) {
+        esp_transport_ssl_set_client_key_config(ssl, config->client_key);
+    } else {
+        /* Legacy key configuration */
+        if (config->client_key_pem) {
+            if (!config->client_key_len) {
+                esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+            } else {
+                esp_transport_ssl_set_client_key_data_der(ssl, config->client_key_pem, config->client_key_len);
+            }
         }
-    }
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-    if (config->use_ecdsa_peripheral) {
+        if (config->use_ecdsa_peripheral) {
 #if SOC_ECDSA_SUPPORT_CURVE_P384
-        esp_transport_ssl_set_client_key_ecdsa_peripheral_extended(ssl, config->ecdsa_key_efuse_blk, config->ecdsa_key_efuse_blk_high);
+            esp_transport_ssl_set_client_key_ecdsa_peripheral_extended(ssl, config->ecdsa_key_efuse_blk, config->ecdsa_key_efuse_blk_high);
 #else
-        esp_transport_ssl_set_client_key_ecdsa_peripheral(ssl, config->ecdsa_key_efuse_blk);
+            esp_transport_ssl_set_client_key_ecdsa_peripheral(ssl, config->ecdsa_key_efuse_blk);
 #endif
-        // Set the ECDSA curve
-        esp_transport_ssl_set_ecdsa_curve(ssl, config->ecdsa_curve);
-    }
+            // Set the ECDSA curve
+            esp_transport_ssl_set_ecdsa_curve(ssl, config->ecdsa_curve);
+        }
 #endif
-    if (config->client_key_password && config->client_key_password_len > 0) {
-        esp_transport_ssl_set_client_key_password(ssl, config->client_key_password, config->client_key_password_len);
+        if (config->client_key_password && config->client_key_password_len > 0) {
+            esp_transport_ssl_set_client_key_password(ssl, config->client_key_password, config->client_key_password_len);
+        }
     }
 
     if (config->skip_cert_common_name_check) {
