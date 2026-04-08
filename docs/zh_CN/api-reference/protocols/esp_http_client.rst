@@ -35,13 +35,18 @@ HTTP 基本请求
 为 TLS 使用安全元件 (ATECC608)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-安全元件 (ATECC608) 也可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）支持** 小节。如需支持安全元素，必须首先在 menuconfig 中通过 :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT` 对其进行启用，此后，可配置 HTTP 客户端使用安全元素，如下所示：
+安全元件 (ATECC608) 可通过 PSA Crypto 不透明驱动接口用于 HTTP 客户端连接中的底层 TLS 连接。有关设置 PSA 密钥的详细内容，请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）** 小节。然后通过 :cpp:type:`esp_tls_cfg_t` 中的 ``client_key`` 字段配置 HTTP 客户端使用安全元件：
 
 .. code-block:: c
 
+    esp_key_config_t key_config = {
+        .source = ESP_KEY_SOURCE_PSA,
+        .psa.key_id = psa_key_id,  /* 通过 psa_import_key() 获取 */
+    };
+
     esp_http_client_config_t cfg = {
-        /* other configurations options */
-        .use_secure_element = true,
+        /* 其他配置选项 */
+        .client_key = &key_config,
     };
 
 .. only:: SOC_ECDSA_SUPPORTED
