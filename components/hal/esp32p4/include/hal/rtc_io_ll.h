@@ -73,9 +73,35 @@ static inline void rtcio_ll_matrix_out(int rtcio_num, uint32_t signal_idx, bool 
     reg.func_out_sel = signal_idx;
     reg.out_inv_sel = out_inv;
     reg.oe_inv_sel = oen_inv;
+    reg.oe_sel = 0; // output enable signal controlled by peripheral
     LP_GPIO.func_out_sel_cfg[rtcio_num].val = reg.val;
 
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1ts, reg_gpio_enable_data_w1ts, BIT(rtcio_num));
+}
+
+/**
+  * @brief Configure peripheral signal input whether to bypass LP_GPIO matrix.
+  *
+  * @param signal_idx LP peripheral signal index.
+  * @param from_gpio_matrix True if not to bypass LP_GPIO matrix, otherwise False.
+  */
+static inline void rtcio_ll_set_input_signal_from(uint32_t signal_idx, bool from_gpio_matrix)
+{
+    LP_GPIO.func_in_sel_cfg[signal_idx].sig_in_sel = from_gpio_matrix;
+}
+
+/**
+  * @brief Configure the source of output enable signal for the pad (only takes effect if func sel is selected to be LP_GPIO).
+  *
+  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of LP_GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
+  */
+__attribute__((always_inline))
+static inline void rtcio_ll_set_output_enable_ctrl(int rtcio_num, bool ctrl_by_periph, bool oen_inv)
+{
+    LP_GPIO.func_out_sel_cfg[rtcio_num].oe_inv_sel = oen_inv;       // control valid only when using lp gpio matrix to route signal to the LP IO
+    LP_GPIO.func_out_sel_cfg[rtcio_num].oe_sel = !ctrl_by_periph;
 }
 
 /**
