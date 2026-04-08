@@ -164,7 +164,7 @@ static void esp_bt_l2cap_cb(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_cb_param
     case ESP_BT_L2CAP_START_EVT:
     case ESP_BT_L2CAP_SRV_STOP_EVT:
     case ESP_BT_L2CAP_VFS_REGISTER_EVT: {
-        bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL);
+        bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -239,7 +239,7 @@ static void esp_sdp_cb(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
     case ESP_SDP_SEARCH_COMP_EVT:
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
     case ESP_SDP_REMOVE_RECORD_COMP_EVT: {
-        bt_app_work_dispatch(esp_hdl_sdp_cb_evt, event, param, sizeof(esp_sdp_cb_param_t), NULL);
+        bt_app_work_dispatch(esp_hdl_sdp_cb_evt, event, param, sizeof(esp_sdp_cb_param_t), NULL, NULL);
         break;
     }
     default:

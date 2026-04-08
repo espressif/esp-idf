@@ -72,7 +72,9 @@ static void audio_sink_srv_i2s_task_handler(void *arg)
                     break;
                 }
 
-                i2s_channel_write(s_i2s_cb.tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
+                if (s_i2s_cb.chan_st == CHANNEL_STATUS_ENABLED) {
+                    i2s_channel_write(s_i2s_cb.tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
+                }
                 vRingbufferReturnItem(s_i2s_cb.ringbuf, (void *)data);
             }
         }
@@ -85,7 +87,10 @@ static void audio_sink_srv_i2s_task_handler(void *arg)
 
 void audio_sink_srv_open(void)
 {
-    memset(&s_i2s_cb, 0, sizeof(audio_sink_srv_i2s_cb_t));
+    if (s_i2s_cb.chan_st != CHANNEL_STATUS_IDLE) {
+        ESP_LOGW(AUDIO_SNK_SRV_I2S_TAG, "Service already open, skipping initialization");
+        return;
+    }
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true;
     i2s_std_config_t std_cfg = {
@@ -114,10 +119,6 @@ void audio_sink_srv_close(void)
 {
     audio_sink_srv_stop();
 
-    if (s_i2s_cb.chan_st == CHANNEL_STATUS_OPENED) {
-        ESP_ERROR_CHECK(i2s_del_channel(s_i2s_cb.tx_chan));
-        s_i2s_cb.chan_st = CHANNEL_STATUS_IDLE;
-    }
     if (s_i2s_cb.write_task_handle) {
         vTaskDelete(s_i2s_cb.write_task_handle);
         s_i2s_cb.write_task_handle = NULL;
@@ -130,6 +131,10 @@ void audio_sink_srv_close(void)
         vSemaphoreDelete(s_i2s_cb.write_semaphore);
         s_i2s_cb.write_semaphore = NULL;
     }
+    if (s_i2s_cb.chan_st == CHANNEL_STATUS_OPENED) {
+        ESP_ERROR_CHECK(i2s_del_channel(s_i2s_cb.tx_chan));
+        s_i2s_cb.chan_st = CHANNEL_STATUS_IDLE;
+    }
     memset(&s_i2s_cb, 0, sizeof(audio_sink_srv_i2s_cb_t));
 }
 
@@ -140,19 +145,36 @@ void audio_sink_srv_start(void)
         return;
     }
     ESP_ERROR_CHECK(i2s_channel_enable(s_i2s_cb.tx_chan));
-    s_i2s_cb.chan_st = CHANNEL_STATUS_ENABLED;
 
     ESP_LOGI(AUDIO_SNK_SRV_I2S_TAG, "ringbuffer data empty! mode changed: RINGBUFFER_MODE_PREFETCHING");
     s_i2s_cb.ringbuffer_mode = RINGBUFFER_MODE_PREFETCHING;
-    if ((s_i2s_cb.write_semaphore = xSemaphoreCreateBinary()) == NULL) {
+    if ((s_i2s_cb.write_semaphore == NULL) && (s_i2s_cb.write_semaphore = xSemaphoreCreateBinary()) == NULL) {
         ESP_LOGE(AUDIO_SNK_SRV_I2S_TAG, "%s, Semaphore create failed", __func__);
-        return;
+        goto err_sem;
     }
-    if ((s_i2s_cb.ringbuf = xRingbufferCreate(RINGBUF_HIGHEST_WATER_LEVEL, RINGBUF_TYPE_BYTEBUF)) == NULL) {
+    if ((s_i2s_cb.ringbuf == NULL) &&
+        (s_i2s_cb.ringbuf = xRingbufferCreate(RINGBUF_HIGHEST_WATER_LEVEL, RINGBUF_TYPE_BYTEBUF)) == NULL) {
         ESP_LOGE(AUDIO_SNK_SRV_I2S_TAG, "%s, ringbuffer create failed", __func__);
-        return;
+        goto err_rb;
     }
-    xTaskCreate(audio_sink_srv_i2s_task_handler, "BtI2STask", 4 * 1024, NULL, configMAX_PRIORITIES - 3, &s_i2s_cb.write_task_handle);
+    if (s_i2s_cb.write_task_handle == NULL) {
+        if (xTaskCreate(audio_sink_srv_i2s_task_handler, "BtI2STask", 4 * 1024, NULL,
+                        configMAX_PRIORITIES - 3, &s_i2s_cb.write_task_handle) != pdPASS) {
+            ESP_LOGE(AUDIO_SNK_SRV_I2S_TAG, "%s, Task create failed", __func__);
+            goto err_task;
+        }
+    }
+    s_i2s_cb.chan_st = CHANNEL_STATUS_ENABLED;
+    return;
+
+err_task:
+    vRingbufferDelete(s_i2s_cb.ringbuf);
+    s_i2s_cb.ringbuf = NULL;
+err_rb:
+    vSemaphoreDelete(s_i2s_cb.write_semaphore);
+    s_i2s_cb.write_semaphore = NULL;
+err_sem:
+    i2s_channel_disable(s_i2s_cb.tx_chan);
 }
 
 void audio_sink_srv_stop(void)
@@ -166,6 +188,7 @@ void audio_sink_srv_stop(void)
 void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
 {
     ESP_LOGI(AUDIO_SNK_SRV_I2S_TAG, "A2DP audio stream configuration, codec type: %d", mcc->type);
+    audio_sink_srv_stop();
     /* for now only SBC stream is supported */
     if (mcc->type == ESP_A2D_MCT_SBC) {
         int sample_rate = 16000;
@@ -183,8 +206,8 @@ void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
         }
         i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
         i2s_std_slot_config_t slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, ch_count);
-        i2s_channel_reconfig_std_clock(s_i2s_cb.tx_chan, &clk_cfg);
-        i2s_channel_reconfig_std_slot(s_i2s_cb.tx_chan, &slot_cfg);
+        ESP_ERROR_CHECK(i2s_channel_reconfig_std_clock(s_i2s_cb.tx_chan, &clk_cfg));
+        ESP_ERROR_CHECK(i2s_channel_reconfig_std_slot(s_i2s_cb.tx_chan, &slot_cfg));
         ESP_LOGI(AUDIO_SNK_SRV_I2S_TAG, "Configure audio player: 0x%x-0x%x-0x%x-0x%x-0x%x-%d-%d",
                  mcc->cie.sbc_info.samp_freq,
                  mcc->cie.sbc_info.ch_mode,
@@ -201,6 +224,10 @@ size_t audio_sink_srv_data_output(const uint8_t *data, size_t size)
 {
     size_t item_size = 0;
     BaseType_t done = pdFALSE;
+
+    if (s_i2s_cb.ringbuf == NULL) {
+        return 0;
+    }
 
     if (s_i2s_cb.ringbuffer_mode == RINGBUFFER_MODE_DROPPING) {
         ESP_LOGW(AUDIO_SNK_SRV_I2S_TAG, "ringbuffer is full, drop this packet!");
