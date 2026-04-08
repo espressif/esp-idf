@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,6 +77,26 @@ TEST_CASE("LP-Core LP-UART initialization test", "[lp_core]")
     cfg5.uart_pin_cfg.rx_io_num--;
     TEST_ASSERT(ESP_OK == lp_core_uart_init(&cfg5));
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
+}
+
+TEST_CASE("LP-Core LP-UART data_bits parameter validation", "[lp_core]")
+{
+    /* Valid data_bits values (UART_DATA_5_BITS=0 through UART_DATA_8_BITS=3) must succeed */
+    ESP_LOGI(TAG, "Verifying LP UART data_bits valid range");
+    const uart_word_length_t valid_bits[] = {
+        UART_DATA_5_BITS, UART_DATA_6_BITS, UART_DATA_7_BITS, UART_DATA_8_BITS,
+    };
+    for (int i = 0; i < (int)(sizeof(valid_bits) / sizeof(valid_bits[0])); i++) {
+        lp_core_uart_cfg_t cfg = LP_CORE_UART_DEFAULT_CONFIG();
+        cfg.uart_proto_cfg.data_bits = valid_bits[i];
+        TEST_ASSERT_EQUAL(ESP_OK, lp_core_uart_init(&cfg));
+    }
+
+    /* UART_DATA_BITS_MAX (=4) is not a valid word length and must be rejected */
+    ESP_LOGI(TAG, "Verifying LP UART data_bits = UART_DATA_BITS_MAX is rejected");
+    lp_core_uart_cfg_t cfg_max = LP_CORE_UART_DEFAULT_CONFIG();
+    cfg_max.uart_proto_cfg.data_bits = UART_DATA_BITS_MAX;
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, lp_core_uart_init(&cfg_max));
 }
 
 /* LP UART default config */
