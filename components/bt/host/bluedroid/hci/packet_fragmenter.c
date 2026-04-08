@@ -160,22 +160,10 @@ static void reassemble_and_dispatch(BT_HDR *packet)
         STREAM_TO_UINT16(handle, stream);
         STREAM_TO_UINT16(acl_length, stream);
 
-        uint8_t boundary_flag = GET_BOUNDARY_FLAG(handle);
-        handle = handle & HANDLE_MASK;
-
         assert(acl_length == packet->len - HCI_ACL_PREAMBLE_SIZE);
 
-        if (boundary_flag == START_PACKET_BOUNDARY) {
-            /* START packets must also contain the L2CAP header (length field) */
-            if (packet->len < HCI_ACL_PREAMBLE_SIZE + L2CAP_LENGTH_SIZE) {
-                HCI_TRACE_ERROR("ACL START packet too short for L2CAP header (len=%u)\n", packet->len);
-                osi_free(packet);
-                return;
-            }
-            STREAM_TO_UINT16(l2cap_length, stream);
-        } else {
-            l2cap_length = 0; /* Not used for continuation packets */
-        }
+        uint8_t boundary_flag = GET_BOUNDARY_FLAG(handle);
+        handle = handle & HANDLE_MASK;
 
         BT_HDR *partial_packet = (BT_HDR *)hash_map_get(partial_packets, (void *)(uintptr_t)handle);
 
@@ -186,6 +174,14 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 osi_free(partial_packet);
             }
 
+            /* START packets must also contain the L2CAP header (length field) */
+            if (packet->len < HCI_ACL_PREAMBLE_SIZE + L2CAP_LENGTH_SIZE) {
+                HCI_TRACE_ERROR("ACL START packet too short for L2CAP header (len=%u)\n", packet->len);
+                osi_free(packet);
+                return;
+            }
+
+            STREAM_TO_UINT16(l2cap_length, stream);
             /* Check for integer overflow in length calculation */
             if (l2cap_length > (UINT16_MAX - L2CAP_HEADER_SIZE - HCI_ACL_PREAMBLE_SIZE)) {
                 HCI_TRACE_ERROR("L2CAP length too large: %u", l2cap_length);
