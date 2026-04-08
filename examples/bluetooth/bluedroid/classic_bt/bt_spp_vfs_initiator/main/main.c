@@ -290,7 +290,7 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 static void esp_spp_stack_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
     /* To avoid stucking Bluetooth stack, we dispatch the SPP callback event to the other lower priority task */
-    spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL);
+    spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL, NULL);
 }
 
 void app_main(void)

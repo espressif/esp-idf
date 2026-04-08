@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -46,10 +46,14 @@ void bt_avrc_md_ct_evt_hdl(uint16_t event, void *param)
     }
     /* when metadata response, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
-        /* save metadata to avrcp metadata service and then if there is a need to handle metadata,
-           functions can be added in the avrcp metadata service for processing */
-        avrc_metadata_srv_md_save((avrc_metadata_srv_param_t *)rc);
+        if (rc->meta_rsp.attr_text) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
+            /* save metadata to avrcp metadata service and then if there is a need to handle metadata,
+            functions can be added in the avrcp metadata service for processing */
+            avrc_metadata_srv_md_save((avrc_metadata_srv_param_t *)rc);
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRC metadata rsp: attr_text NULL");
+        }
         break;
     }
     /* when notified, this event comes */

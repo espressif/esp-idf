@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -43,6 +43,13 @@ uint8_t bt_avrc_common_alloc_tl(void);
  * @param [in] len      data length in byte
  */
 void bt_avrc_common_copy_metadata(void *p_dest, void *p_src, int len);
+
+/**
+ * @brief  AVRCP deep free function for copied metadata
+ *
+ * @param [in] p_param  pointer to copied callback parameter
+ */
+void bt_avrc_common_free_metadata(void *p_param);
 
 /**
  * @brief  AVRCP controller get notification capabilities command

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -49,7 +49,7 @@ static void console_uart_task(void *pvParameters)
 
     if ((tmp_buf = (uint8_t *)calloc(TMP_BUF_LEN, sizeof(uint8_t))) == NULL) {
         ESP_LOGE(TAG_CNSL,"temp buf malloc fail");
-        return;
+        vTaskDelete(NULL);
     }
 
     for (;;) {
@@ -118,8 +118,16 @@ esp_err_t console_uart_init(void)
     }
 
     uart_set_pin(CONSOLE_UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    uart_driver_install(CONSOLE_UART_NUM, 1024, 1024, 8, &uart_queue, 0);
-    xTaskCreate(console_uart_task, "uTask", 4 * 1024, NULL, 8, NULL);
+    ret = uart_driver_install(CONSOLE_UART_NUM, 1024, 1024, 8, &uart_queue, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG_CNSL, "Uart %d driver install err %04x", CONSOLE_UART_NUM, ret);
+        return ret;
+    }
+    if (xTaskCreate(console_uart_task, "uTask", 4 * 1024, NULL, 8, NULL) != pdPASS) {
+        ESP_LOGE(TAG_CNSL, "Create console task failed");
+        uart_driver_delete(CONSOLE_UART_NUM);
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }

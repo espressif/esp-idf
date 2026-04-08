@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -124,7 +124,7 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
     uint8_t *bdname = NULL;
     uint8_t bdname_len = 0;
     uint8_t *eir = NULL;
-    uint8_t eir_len = 0;
+    int eir_len = 0;
     esp_bt_gap_dev_prop_t *p;
 
     ESP_LOGI(GAP_TAG, "Device found: %s", bda2str(param->disc_res.bda, bda_str, sizeof(bda_str)));
@@ -177,8 +177,9 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
         p_dev->bdname_len = bdname_len;
     }
     if (eir_len > 0) {
-        memcpy(p_dev->eir, eir, eir_len);
-        p_dev->eir_len = eir_len;
+        uint8_t copy_len = (eir_len > ESP_BT_GAP_EIR_DATA_LEN) ? ESP_BT_GAP_EIR_DATA_LEN : eir_len;
+        memcpy(p_dev->eir, eir, copy_len);
+        p_dev->eir_len = copy_len;
     }
 
     if (p_dev->bdname_len == 0) {

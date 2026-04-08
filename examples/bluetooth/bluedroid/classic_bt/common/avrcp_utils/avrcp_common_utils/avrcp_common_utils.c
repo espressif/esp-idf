@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -54,7 +54,11 @@ void bt_avrc_common_ct_evt_def_hdl(uint16_t event, void *param)
     }
     /* when metadata response, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
+        if (rc->meta_rsp.attr_text) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRC metadata rsp: attr_text NULL");
+        }
         break;
     }
     /* when notified, this event comes */
@@ -161,8 +165,20 @@ void bt_avrc_common_copy_metadata(void *p_dest, void *p_src, int len)
     p_dest_rc->meta_rsp.attr_length = p_src_rc->meta_rsp.attr_length;
 
     p_dest_rc->meta_rsp.attr_text = (uint8_t *) malloc(p_dest_rc->meta_rsp.attr_length + 1);
-    memcpy(p_dest_rc->meta_rsp.attr_text, p_src_rc->meta_rsp.attr_text, p_dest_rc->meta_rsp.attr_length);
-    p_dest_rc->meta_rsp.attr_text[p_dest_rc->meta_rsp.attr_length] = 0;
+    if (p_dest_rc->meta_rsp.attr_text) {
+        memcpy(p_dest_rc->meta_rsp.attr_text, p_src_rc->meta_rsp.attr_text, p_dest_rc->meta_rsp.attr_length);
+        p_dest_rc->meta_rsp.attr_text[p_dest_rc->meta_rsp.attr_length] = 0;
+    }
+}
+
+void bt_avrc_common_free_metadata(void *p_param)
+{
+    esp_avrc_ct_cb_param_t *rc = (esp_avrc_ct_cb_param_t *)p_param;
+
+    if (rc && rc->meta_rsp.attr_text) {
+        free(rc->meta_rsp.attr_text);
+        rc->meta_rsp.attr_text = NULL;
+    }
 }
 
 void bt_avrc_common_ct_get_peer_rn_cap(void)

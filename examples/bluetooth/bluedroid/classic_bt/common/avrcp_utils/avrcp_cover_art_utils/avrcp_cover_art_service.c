@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -181,6 +181,11 @@ static void avrc_cover_art_srv_init_display(void)
 
 static void avrc_cover_art_srv_deinit_display(void)
 {
+    /* Check if initialized by looking at handles */
+    if (s_avrc_cover_art_srv_cb.panel_handle == NULL && s_avrc_cover_art_srv_cb.io_handle == NULL) {
+        return;
+    }
+
     /* Turn off backlight first */
     ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_PIN_NUM_BK_LIGHT, EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL));
 
@@ -320,6 +325,11 @@ void avrc_cover_art_srv_ca_req(void)
 
 void avrc_cover_art_srv_save_image_data(uint8_t *p_data, uint16_t data_len)
 {
+    if (s_avrc_cover_art_srv_cb.image_size > UINT32_MAX - data_len) {
+        ESP_LOGE(RC_CA_SRV_TAG, "Image size overflow");
+        avrc_cover_art_srv_free_image_data();
+        return;
+    }
     s_avrc_cover_art_srv_cb.image_size += data_len;
 
     uint8_t *p_buf = (uint8_t *)realloc(s_avrc_cover_art_srv_cb.image_data, s_avrc_cover_art_srv_cb.image_size * sizeof(uint8_t));

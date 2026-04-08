@@ -279,6 +279,7 @@ void bt_app_send_data_shut_down(void)
     if(s_periodic_timer) {
         ESP_ERROR_CHECK(esp_timer_stop(s_periodic_timer));
         ESP_ERROR_CHECK(esp_timer_delete(s_periodic_timer));
+        s_periodic_timer = NULL;
     }
     if (s_send_data_Semaphore) {
         vSemaphoreDelete(s_send_data_Semaphore);
@@ -286,6 +287,7 @@ void bt_app_send_data_shut_down(void)
     }
     if (s_m_rb) {
         vRingbufferDelete(s_m_rb);
+        s_m_rb = NULL;
     }
     return;
 }
