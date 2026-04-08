@@ -204,6 +204,8 @@ To use a custom TLS stack in your project, follow these steps:
     * For detailed function signatures and requirements, see :component_file:`esp-tls/esp_tls_custom_stack.h`.
 
 
+.. _atecc608a-with-esp-tls:
+
 ATECC608A (Secure Element) with ESP-TLS
 --------------------------------------------------
 
