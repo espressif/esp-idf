@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,9 +24,6 @@
 #include "ble_mesh_example_init.h"
 
 #define TAG "EXAMPLE"
-
-#define LED_OFF             0x0
-#define LED_ON              0x1
 
 #define CID_ESP             0x02E5
 
@@ -202,7 +199,7 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
         return ESP_FAIL;
     }
 
-    err = example_ble_mesh_store_node_info(uuid, unicast, elem_num, LED_OFF);
+    err = example_ble_mesh_store_node_info(uuid, unicast, elem_num, 0);
     if (err) {
         ESP_LOGE(TAG, "%s: Store node info failed", __func__);
         return ESP_FAIL;
