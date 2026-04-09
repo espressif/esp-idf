@@ -298,10 +298,10 @@ typedef struct {
     .ble_data_lenth_zero_aux    = DEFAULT_BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX,          \
     .vhci_enabled               = DEFAULT_BT_LE_VHCI_ENABLED,                           \
     .ptr_check_enabled          = DEFAULT_BT_LE_PTR_CHECK_ENABLED,                      \
-    .ble_adv_tx_options         = 0,                                                    \
+    .ble_adv_tx_options         = DEFAULT_BT_LE_ADV_TX_OPTIONS,                         \
     .skip_unnecessary_checks_en = 0,                                                    \
     .fast_conn_data_tx_en       = DEFAULT_BT_LE_CTRL_FAST_CONN_DATA_TX_EN,              \
-    .ch39_txpwr                 = BLE_LL_TX_PWR_DBM_N,                                  \
+    .ch39_txpwr                 = BLE_CH39_TX_PWR_DBM_N,                                \
     .adv_rsv_cnt                = BLE_LL_ADV_SM_RESERVE_CNT_N,                          \
     .conn_rsv_cnt               = BLE_LL_CONN_SM_RESERVE_CNT_N,                         \
     .priority_level_cfg         = BT_LL_CTRL_PRIO_LVL_CFG,                              \
@@ -365,10 +365,10 @@ typedef struct {
     .ble_data_lenth_zero_aux    = DEFAULT_BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX,          \
     .vhci_enabled               = DEFAULT_BT_LE_VHCI_ENABLED,                           \
     .ptr_check_enabled          = DEFAULT_BT_LE_PTR_CHECK_ENABLED,                      \
-    .ble_adv_tx_options         = 0,                                                    \
+    .ble_adv_tx_options         = DEFAULT_BT_LE_ADV_TX_OPTIONS,                         \
     .skip_unnecessary_checks_en = 0,                                                    \
     .fast_conn_data_tx_en       = DEFAULT_BT_LE_CTRL_FAST_CONN_DATA_TX_EN,              \
-    .ch39_txpwr                 = BLE_LL_TX_PWR_DBM_N,                                  \
+    .ch39_txpwr                 = BLE_CH39_TX_PWR_DBM_N,                                  \
     .adv_rsv_cnt                = BLE_LL_ADV_SM_RESERVE_CNT_N,                          \
     .conn_rsv_cnt               = BLE_LL_CONN_SM_RESERVE_CNT_N,                         \
     .priority_level_cfg         = BT_LL_CTRL_PRIO_LVL_CFG,                              \
