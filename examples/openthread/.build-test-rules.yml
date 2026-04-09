@@ -11,6 +11,7 @@
     - esp_system
     - ieee802154
     - lwip
+    - mbedtls
     - openthread
   depends_filepatterns:
     - examples/common_components/protocol_examples_common/*
