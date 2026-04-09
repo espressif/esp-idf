@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,12 @@
 #include <stdio.h>
 #include "esp_log.h"
 #include "iot_button.h"
+#include "sdkconfig.h"
 
 #define TAG "BOARD"
 
-#define BUTTON_IO_NUM           0
-#define BUTTON_ACTIVE_LEVEL     0
+#define BUTTON_IO_NUM           CONFIG_BUTTON_IO_NUM
+#define BUTTON_ACTIVE_LEVEL     CONFIG_BUTTON_ACTIVE_LEVEL
 
 extern void example_ble_mesh_send_vendor_message(bool resend);
 

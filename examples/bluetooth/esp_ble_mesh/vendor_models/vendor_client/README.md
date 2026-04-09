@@ -12,7 +12,7 @@ This example demonstrates how to create a vendor client model in Provisioner, an
 3. When the unprovisioned device starts, it will initialize mesh stack and enable its functionality;
 4. When the Provisioner and unprovisioned device are ready, the Provisioner will start to provision the unprovisioned device;
 5. After the device is provisioned successfully, Provisioner will configure the node, i.e. add application key, bind application key with the vendor server model of the node;
-6. After the configuration is completed, users can press the "Boot" button on the development board to send a vendor client message to the node;
+6. After the configuration is completed, users can press the "Boot" button on the development board to send a vendor client message to the node (the button pin can also be configured using `idf.py menuconfig`);
 7. When the node receives the vendor client message, it will send a vendor server message as a response;
 8. After the Provisioner receives the response, it will calculate the latency (in microseconds).
 
