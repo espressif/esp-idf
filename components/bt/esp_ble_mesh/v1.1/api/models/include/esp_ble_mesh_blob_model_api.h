@@ -13,7 +13,7 @@
 #if CONFIG_BLE_MESH_BLOB_CLI || CONFIG_BLE_MESH_BLOB_SRV
 #ifndef _BLE_MESH_BLOB_DEPRECATE_WARN
 #define _BLE_MESH_BLOB_DEPRECATE_WARN
-#warning Please note: All APIs published in this document are in Preview version and may undergo significant changes in the future.
+// #warning Please note: All APIs published in this document are in Preview version and may undergo significant changes in the future.
 #endif
 #endif /* CONFIG_BLE_MESH_BLOB_CLI || CONFIG_BLE_MESH_BLOB_SRV */
 

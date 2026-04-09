@@ -285,6 +285,7 @@ int bt_mesh_dfu_slot_del(const struct bt_mesh_dfu_slot *dfu_slot)
     }
 
     int idx = ARRAY_INDEX(slots, slot);
+    ARG_UNUSED(idx);
 
     BT_DBG("%u", idx);
 

@@ -121,7 +121,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
         bt_mesh_model_msg_init(model->pub->msg, opcode);
         net_buf_simple_add_mem(model->pub->msg, data, length);
     } else {
-        msg_data = (uint8_t *)bt_mesh_malloc(op_len + length);
+        msg_data = (uint8_t *)bt_mesh_calloc(op_len + length);
         if (msg_data == NULL) {
             return ESP_ERR_NO_MEM;
         }

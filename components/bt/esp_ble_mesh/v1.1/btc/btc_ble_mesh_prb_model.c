@@ -45,22 +45,26 @@ void btc_ble_mesh_prb_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_PRB_CLIENT_SEND:
-        dst->prb_send.params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        if (dst->prb_send.params) {
-            memcpy(dst->prb_send.params, src->prb_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-        } else {
+        dst->prb_send.params = NULL;
+        dst->prb_send.msg = NULL;
+
+        dst->prb_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
+        if (!dst->prb_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             break;
         }
+        memcpy(dst->prb_send.params, src->prb_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
         if (src->prb_send.msg) {
-            dst->prb_send.msg = bt_mesh_malloc(sizeof(esp_ble_mesh_prb_client_msg_t));
-            if (dst->prb_send.msg) {
-                memcpy(dst->prb_send.msg, src->prb_send.msg,
-                    sizeof(esp_ble_mesh_prb_client_msg_t));
-            } else {
+            dst->prb_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_prb_client_msg_t));
+            if (!dst->prb_send.msg) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->prb_send.params);
+                dst->prb_send.params = NULL;
+                break;
             }
+            memcpy(dst->prb_send.msg, src->prb_send.msg, sizeof(esp_ble_mesh_prb_client_msg_t));
         }
         break;
     default:
@@ -105,7 +109,7 @@ static void btc_ble_mesh_prb_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
     }
 
     if (p_src_data->params) {
-        p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        p_dest_data->params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             return;

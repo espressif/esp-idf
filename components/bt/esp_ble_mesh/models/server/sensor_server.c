@@ -599,6 +599,10 @@ static void sensor_get(struct bt_mesh_model *model,
                 ctx->recv_op == BLE_MESH_MODEL_OP_SENSOR_GET) {
             bool get_all = buf->len ? false : true;
             if (buf->len) {
+                if (buf->len != 2) {
+                    BT_ERR("Invalid Sensor Get msg length %u", buf->len);
+                    return;
+                }
                 prop_id = net_buf_simple_pull_le16(buf);
                 if (prop_id == INVALID_SENSOR_PROPERTY_ID) {
                     BT_ERR("Prohibited Sensor Property ID 0x0000");
@@ -806,11 +810,21 @@ static void sensor_cadence_set(struct bt_mesh_model *model,
     }
 
     if (state->cadence->trigger_delta_down) {
+        if (net_buf_simple_tailroom(state->cadence->trigger_delta_down) < trigger_len) {
+            BT_ERR("InsuffTriggerDeltaDownBufSize %d/%d",
+                    net_buf_simple_tailroom(state->cadence->trigger_delta_down), trigger_len);
+            return;
+        }
         net_buf_simple_reset(state->cadence->trigger_delta_down);
         net_buf_simple_add_mem(state->cadence->trigger_delta_down, buf->data, trigger_len);
         net_buf_simple_pull_mem(buf, trigger_len);
     }
     if (state->cadence->trigger_delta_up) {
+        if (net_buf_simple_tailroom(state->cadence->trigger_delta_up) < trigger_len) {
+            BT_ERR("InsuffTriggerDeltaUpBufSize %d/%d",
+                    net_buf_simple_tailroom(state->cadence->trigger_delta_up), trigger_len);
+            return;
+        }
         net_buf_simple_reset(state->cadence->trigger_delta_up);
         net_buf_simple_add_mem(state->cadence->trigger_delta_up, buf->data, trigger_len);
         net_buf_simple_pull_mem(buf, trigger_len);
@@ -831,11 +845,21 @@ static void sensor_cadence_set(struct bt_mesh_model *model,
     if (buf->len) {
         uint8_t range_len = buf->len / 2;
         if (state->cadence->fast_cadence_low) {
+            if (net_buf_simple_tailroom(state->cadence->fast_cadence_low) < range_len) {
+                BT_ERR("InsuffFastCadenceLowBufSize %d/%d",
+                        net_buf_simple_tailroom(state->cadence->fast_cadence_low), range_len);
+                return;
+            }
             net_buf_simple_reset(state->cadence->fast_cadence_low);
             net_buf_simple_add_mem(state->cadence->fast_cadence_low, buf->data, range_len);
             net_buf_simple_pull_mem(buf, range_len);
         }
         if (state->cadence->fast_cadence_high) {
+            if (net_buf_simple_tailroom(state->cadence->fast_cadence_high) < range_len) {
+                BT_ERR("InsuffFastCadenceHighBufSize %d/%d",
+                        net_buf_simple_tailroom(state->cadence->fast_cadence_high), range_len);
+                return;
+            }
             net_buf_simple_reset(state->cadence->fast_cadence_high);
             net_buf_simple_add_mem(state->cadence->fast_cadence_high, buf->data, range_len);
             net_buf_simple_pull_mem(buf, range_len);
@@ -1018,7 +1042,12 @@ static int check_sensor_server_init(struct bt_mesh_sensor_state *state_start,
                 return -EINVAL;
             }
         }
-        if (state->setting_count && state->settings) {
+        if (state->setting_count) {
+            if (state->settings == NULL) {
+                BT_ERR("NullSettingsWithNonZeroSettingCount %u", state->setting_count);
+                return -EINVAL;
+            }
+
             for (j = 0; j < state->setting_count; j++) {
                 setting = &state->settings[j];
                 if (setting->property_id == INVALID_SENSOR_SETTING_PROPERTY_ID || setting->raw == NULL) {

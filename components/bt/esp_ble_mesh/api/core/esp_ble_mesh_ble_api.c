@@ -107,8 +107,10 @@ esp_err_t esp_ble_mesh_scan_params_update(esp_ble_mesh_scan_param_t *scan_param)
     btc_msg_t msg = {0};
 
     if (!scan_param) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLE_MESH_BLE_COEX;

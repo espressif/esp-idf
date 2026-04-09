@@ -206,9 +206,10 @@ static void btc_ble_mesh_prov_copy_req_data(btc_msg_t *msg, void *p_dest, void *
 
     switch (msg->act) {
 #if CONFIG_BLE_MESH_CERT_BASED_PROV
-    case ESP_BLE_MESH_PROVISIONER_RECV_PROV_RECORDS_LIST_EVT: {
-        if (p_src_data->recv_provisioner_records_list.msg) {
-            p_dest_data->recv_provisioner_records_list.msg = (uint8_t *)bt_mesh_alloc_buf(p_src_data->recv_provisioner_records_list.len);
+    case ESP_BLE_MESH_PROVISIONER_RECV_PROV_RECORDS_LIST_EVT:
+        if (p_src_data->recv_provisioner_records_list.msg &&
+            p_src_data->recv_provisioner_records_list.len) {
+            p_dest_data->recv_provisioner_records_list.msg = (uint8_t *)bt_mesh_calloc(p_src_data->recv_provisioner_records_list.len);
             if (!p_dest_data->recv_provisioner_records_list.msg) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                 return;
@@ -219,7 +220,20 @@ static void btc_ble_mesh_prov_copy_req_data(btc_msg_t *msg, void *p_dest, void *
                    p_src_data->recv_provisioner_records_list.len);
         }
         break;
-    }
+    case ESP_BLE_MESH_PROVISIONER_PROV_RECORD_RECV_COMP_EVT:
+        if (p_src_data->provisioner_prov_record_recv_comp.record &&
+            p_src_data->provisioner_prov_record_recv_comp.total_len) {
+            p_dest_data->provisioner_prov_record_recv_comp.record = bt_mesh_calloc(p_src_data->provisioner_prov_record_recv_comp.total_len);
+            if (!p_dest_data->provisioner_prov_record_recv_comp.record) {
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                return;
+            }
+
+            memcpy(p_dest_data->provisioner_prov_record_recv_comp.record,
+                   p_src_data->provisioner_prov_record_recv_comp.record,
+                   p_src_data->provisioner_prov_record_recv_comp.total_len);
+        }
+        break;
 #endif /* CONFIG_BLE_MESH_CERT_BASED_PROV */
     default:
         break;
@@ -239,13 +253,17 @@ static void btc_ble_mesh_prov_free_req_data(btc_msg_t *msg)
 
     switch (msg->act) {
 #if CONFIG_BLE_MESH_CERT_BASED_PROV
-    case ESP_BLE_MESH_PROVISIONER_RECV_PROV_RECORDS_LIST_EVT: {
+    case ESP_BLE_MESH_PROVISIONER_RECV_PROV_RECORDS_LIST_EVT:
         if (arg->recv_provisioner_records_list.msg) {
             bt_mesh_free(arg->recv_provisioner_records_list.msg);
         }
         break;
-    }
-#else
+    case ESP_BLE_MESH_PROVISIONER_PROV_RECORD_RECV_COMP_EVT:
+        if (arg->provisioner_prov_record_recv_comp.record) {
+            bt_mesh_free(arg->provisioner_prov_record_recv_comp.record);
+        }
+        break;
+#else /* CONFIG_BLE_MESH_CERT_BASED_PROV */
     ARG_UNUSED(arg);
 #endif /* CONFIG_BLE_MESH_CERT_BASED_PROV */
     default:
@@ -266,24 +284,33 @@ void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND:
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
-        dst->model_send.data = src->model_send.length ? (uint8_t *)bt_mesh_malloc(src->model_send.length) : NULL;
-        dst->model_send.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+        dst->model_send.data = NULL;
+        dst->model_send.ctx = NULL;
+
         if (src->model_send.length) {
-            if (dst->model_send.data) {
-                memcpy(dst->model_send.data, src->model_send.data, src->model_send.length);
-            } else {
+            dst->model_send.data = (uint8_t *)bt_mesh_calloc(src->model_send.length);
+            if (!dst->model_send.data) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                break;
             }
+            memcpy(dst->model_send.data, src->model_send.data, src->model_send.length);
         }
-        if (dst->model_send.ctx) {
-            memcpy(dst->model_send.ctx, src->model_send.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
-        } else {
+
+        dst->model_send.ctx = bt_mesh_calloc(sizeof(esp_ble_mesh_msg_ctx_t));
+        if (!dst->model_send.ctx) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            if (dst->model_send.data) {
+                bt_mesh_free(dst->model_send.data);
+                dst->model_send.data = NULL;
+            }
+            break;
         }
+        memcpy(dst->model_send.ctx, src->model_send.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
-        dst->model_update_state.value = bt_mesh_malloc(sizeof(esp_ble_mesh_server_state_value_t));
+        dst->model_update_state.value = bt_mesh_calloc(sizeof(esp_ble_mesh_server_state_value_t));
         if (dst->model_update_state.value) {
             memcpy(dst->model_update_state.value, src->model_update_state.value,
                    sizeof(esp_ble_mesh_server_state_value_t));
@@ -340,46 +367,70 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
 
     switch (msg->act) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT: {
-        if (p_src_data->model_operation.ctx && p_src_data->model_operation.msg) {
-            p_dest_data->model_operation.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
-            p_dest_data->model_operation.msg = p_src_data->model_operation.length ? (uint8_t *)bt_mesh_malloc(p_src_data->model_operation.length) : NULL;
-            if (p_dest_data->model_operation.ctx) {
-                memcpy(p_dest_data->model_operation.ctx, p_src_data->model_operation.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
-            } else {
+        p_dest_data->model_operation.ctx = NULL;
+        p_dest_data->model_operation.msg = NULL;
+
+        if (p_src_data->model_operation.ctx) {
+            p_dest_data->model_operation.ctx = bt_mesh_calloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            if (!p_dest_data->model_operation.ctx) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                break;
             }
-            if (p_src_data->model_operation.length) {
-                if (p_dest_data->model_operation.msg) {
-                    memcpy(p_dest_data->model_operation.msg, p_src_data->model_operation.msg, p_src_data->model_operation.length);
-                } else {
-                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            memcpy(p_dest_data->model_operation.ctx, p_src_data->model_operation.ctx,
+                   sizeof(esp_ble_mesh_msg_ctx_t));
+        }
+
+        if (p_src_data->model_operation.msg &&
+            p_src_data->model_operation.length) {
+            p_dest_data->model_operation.msg = (uint8_t *)bt_mesh_calloc(p_src_data->model_operation.length);
+            if (!p_dest_data->model_operation.msg) {
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                if (p_dest_data->model_operation.ctx) {
+                    bt_mesh_free(p_dest_data->model_operation.ctx);
+                    p_dest_data->model_operation.ctx = NULL;
                 }
+                break;
             }
+            memcpy(p_dest_data->model_operation.msg, p_src_data->model_operation.msg,
+                   p_src_data->model_operation.length);
         }
         break;
     }
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT: {
-        if (p_src_data->client_recv_publish_msg.ctx && p_src_data->client_recv_publish_msg.msg) {
-            p_dest_data->client_recv_publish_msg.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
-            p_dest_data->client_recv_publish_msg.msg = p_src_data->client_recv_publish_msg.length ? (uint8_t *)bt_mesh_malloc(p_src_data->client_recv_publish_msg.length) : NULL;
-            if (p_dest_data->client_recv_publish_msg.ctx) {
-                memcpy(p_dest_data->client_recv_publish_msg.ctx, p_src_data->client_recv_publish_msg.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
-            } else {
+        p_dest_data->client_recv_publish_msg.ctx = NULL;
+        p_dest_data->client_recv_publish_msg.msg = NULL;
+
+        if (p_src_data->client_recv_publish_msg.ctx) {
+            p_dest_data->client_recv_publish_msg.ctx = bt_mesh_calloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            if (!p_dest_data->client_recv_publish_msg.ctx) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                break;
             }
-            if (p_src_data->client_recv_publish_msg.length) {
-                if (p_dest_data->client_recv_publish_msg.msg) {
-                    memcpy(p_dest_data->client_recv_publish_msg.msg, p_src_data->client_recv_publish_msg.msg, p_src_data->client_recv_publish_msg.length);
-                } else {
-                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            memcpy(p_dest_data->client_recv_publish_msg.ctx, p_src_data->client_recv_publish_msg.ctx,
+                   sizeof(esp_ble_mesh_msg_ctx_t));
+        }
+
+        if (p_src_data->client_recv_publish_msg.msg &&
+            p_src_data->client_recv_publish_msg.length) {
+            p_dest_data->client_recv_publish_msg.msg = (uint8_t *)bt_mesh_calloc(p_src_data->client_recv_publish_msg.length);
+            if (!p_dest_data->client_recv_publish_msg.msg) {
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                if (p_dest_data->client_recv_publish_msg.ctx) {
+                    bt_mesh_free(p_dest_data->client_recv_publish_msg.ctx);
+                    p_dest_data->client_recv_publish_msg.ctx = NULL;
                 }
+                break;
             }
+            memcpy(p_dest_data->client_recv_publish_msg.msg, p_src_data->client_recv_publish_msg.msg,
+                   p_src_data->client_recv_publish_msg.length);
         }
         break;
     }
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT: {
         if (p_src_data->model_send_comp.ctx) {
-            p_dest_data->model_send_comp.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            p_dest_data->model_send_comp.ctx = bt_mesh_calloc(sizeof(esp_ble_mesh_msg_ctx_t));
             if (p_dest_data->model_send_comp.ctx) {
                 memcpy(p_dest_data->model_send_comp.ctx, p_src_data->model_send_comp.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
@@ -390,7 +441,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
     }
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT: {
         if (p_src_data->client_send_timeout.ctx) {
-            p_dest_data->client_send_timeout.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            p_dest_data->client_send_timeout.ctx = bt_mesh_calloc(sizeof(esp_ble_mesh_msg_ctx_t));
             if (p_dest_data->client_send_timeout.ctx) {
                 memcpy(p_dest_data->client_send_timeout.ctx, p_src_data->client_send_timeout.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
@@ -654,6 +705,7 @@ static int btc_ble_mesh_output_string_cb(const char *str)
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
     bt_status_t ret = BT_STATUS_SUCCESS;
 
+    memset(mesh_param.node_prov_output_str.string, 0, sizeof(mesh_param.node_prov_output_str.string));
     strncpy(mesh_param.node_prov_output_str.string, str,
             MIN(strlen(str), sizeof(mesh_param.node_prov_output_str.string)));
 
@@ -2987,6 +3039,12 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND: {
+        assert(arg->model_send.model);
+        assert(arg->model_send.ctx);
+        if (arg->model_send.length) {
+            assert(arg->model_send.data);
+        }
+
         /* arg->model_send.length contains opcode & payload, plus extra 4-bytes TransMIC */
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
@@ -3007,6 +3065,12 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
+        assert(arg->model_send.model);
+        assert(arg->model_send.ctx);
+        if (arg->model_send.length) {
+            assert(arg->model_send.data);
+        }
+
         /* arg->model_send.length contains opcode & message, plus extra 4-bytes TransMIC */
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
