@@ -1,14 +1,30 @@
 # SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from inspect import getmembers, isroutine
-from typing import Optional
+from inspect import getmembers
+from inspect import isroutine
 
-from construct import Bytes, Const, Int8ul, Int16ul, Int32ul, PaddedString, Padding, Struct, core
+from construct import Bytes
+from construct import Const
+from construct import Int8ul
+from construct import Int16ul
+from construct import Int32ul
+from construct import PaddedString
+from construct import Padding
+from construct import Struct
+from construct import core
 
-from .exceptions import InconsistentFATAttributes, NotInitialized
+from .exceptions import InconsistentFATAttributes
+from .exceptions import NotInitialized
 from .fatfs_state import BootSectorState
-from .utils import (ALLOWED_SECTOR_SIZES, ALLOWED_SECTORS_PER_CLUSTER, EMPTY_BYTE, FAT32, FULL_BYTE,
-                    SHORT_NAMES_ENCODING, FATDefaults, generate_4bytes_random, pad_string)
+from .utils import ALLOWED_SECTOR_SIZES
+from .utils import ALLOWED_SECTORS_PER_CLUSTER
+from .utils import EMPTY_BYTE
+from .utils import FAT32
+from .utils import FULL_BYTE
+from .utils import SHORT_NAMES_ENCODING
+from .utils import FATDefaults
+from .utils import generate_4bytes_random
+from .utils import pad_string
 
 
 class BootSector:
@@ -21,6 +37,7 @@ class BootSector:
     Please beware, that the name of class BootSector refer to data both from the boot sector and BPB.
     ESP32 ignores fields with prefix "BS_"! Fields with prefix BPB_ are essential to read the filesystem.
     """
+
     MAX_VOL_LAB_SIZE = 11
     MAX_OEM_NAME_SIZE = 8
     MAX_FS_TYPE_SIZE = 8
@@ -50,11 +67,11 @@ class BootSector:
         'BS_VolLab' / PaddedString(MAX_VOL_LAB_SIZE, SHORT_NAMES_ENCODING),
         'BS_FilSysType' / PaddedString(MAX_FS_TYPE_SIZE, SHORT_NAMES_ENCODING),
         'BS_EMPTY' / Padding(448),
-        'Signature_word' / Const(FATDefaults.SIGNATURE_WORD)
+        'Signature_word' / Const(FATDefaults.SIGNATURE_WORD),
     )
     assert BOOT_SECTOR_HEADER.sizeof() == BOOT_HEADER_SIZE
 
-    def __init__(self, boot_sector_state: Optional[BootSectorState] = None) -> None:
+    def __init__(self, boot_sector_state: BootSectorState | None = None) -> None:
         self._parsed_header: dict = {}
         self.boot_sector_state: BootSectorState = boot_sector_state
 
@@ -64,36 +81,42 @@ class BootSector:
             raise NotInitialized('The BootSectorState instance is not initialized!')
         volume_uuid = generate_4bytes_random()
         pad_header: bytes = (boot_sector_state.sector_size - BootSector.BOOT_HEADER_SIZE) * EMPTY_BYTE
-        fat_tables_content: bytes = (boot_sector_state.sectors_per_fat_cnt
-                                     * boot_sector_state.fat_tables_cnt
-                                     * boot_sector_state.sector_size
-                                     * EMPTY_BYTE)
+        fat_tables_content: bytes = (
+            boot_sector_state.sectors_per_fat_cnt
+            * boot_sector_state.fat_tables_cnt
+            * boot_sector_state.sector_size
+            * EMPTY_BYTE
+        )
         root_dir_content: bytes = boot_sector_state.root_dir_sectors_cnt * boot_sector_state.sector_size * EMPTY_BYTE
         data_content: bytes = boot_sector_state.data_sectors * boot_sector_state.sector_size * FULL_BYTE
 
         self.boot_sector_state.binary_image = (
             BootSector.BOOT_SECTOR_HEADER.build(
-                dict(BS_jmpBoot=(b'\xeb\xfe\x90'),
-                     BS_OEMName=pad_string(boot_sector_state.oem_name, size=BootSector.MAX_OEM_NAME_SIZE),
-                     BPB_BytsPerSec=boot_sector_state.sector_size,
-                     BPB_SecPerClus=boot_sector_state.sectors_per_cluster,
-                     BPB_RsvdSecCnt=boot_sector_state.reserved_sectors_cnt,
-                     BPB_NumFATs=boot_sector_state.fat_tables_cnt,
-                     BPB_RootEntCnt=boot_sector_state.entries_root_count,
-                     # if fat type is 12 or 16 BPB_TotSec16 is filled and BPB_TotSec32 is 0x00 and vice versa
-                     BPB_TotSec16=0x00 if boot_sector_state.fatfs_type == FAT32 else boot_sector_state.sectors_count,
-                     BPB_Media=boot_sector_state.media_type,
-                     BPB_FATSz16=boot_sector_state.sectors_per_fat_cnt,
-                     BPB_SecPerTrk=boot_sector_state.sec_per_track,
-                     BPB_NumHeads=boot_sector_state.num_heads,
-                     BPB_HiddSec=boot_sector_state.hidden_sectors,
-                     BPB_TotSec32=boot_sector_state.sectors_count if boot_sector_state.fatfs_type == FAT32 else 0x00,
-                     BS_VolID=volume_uuid,
-                     BS_VolLab=pad_string(boot_sector_state.volume_label,
-                                          size=BootSector.MAX_VOL_LAB_SIZE),
-                     BS_FilSysType=pad_string(boot_sector_state.file_sys_type,
-                                              size=BootSector.MAX_FS_TYPE_SIZE))
-            ) + pad_header + fat_tables_content + root_dir_content + data_content
+                dict(
+                    BS_jmpBoot=(b'\xeb\xfe\x90'),
+                    BS_OEMName=pad_string(boot_sector_state.oem_name, size=BootSector.MAX_OEM_NAME_SIZE),
+                    BPB_BytsPerSec=boot_sector_state.sector_size,
+                    BPB_SecPerClus=boot_sector_state.sectors_per_cluster,
+                    BPB_RsvdSecCnt=boot_sector_state.reserved_sectors_cnt,
+                    BPB_NumFATs=boot_sector_state.fat_tables_cnt,
+                    BPB_RootEntCnt=boot_sector_state.entries_root_count,
+                    # if fat type is 12 or 16 BPB_TotSec16 is filled and BPB_TotSec32 is 0x00 and vice versa
+                    BPB_TotSec16=0x00 if boot_sector_state.fatfs_type == FAT32 else boot_sector_state.sectors_count,
+                    BPB_Media=boot_sector_state.media_type,
+                    BPB_FATSz16=boot_sector_state.sectors_per_fat_cnt,
+                    BPB_SecPerTrk=boot_sector_state.sec_per_track,
+                    BPB_NumHeads=boot_sector_state.num_heads,
+                    BPB_HiddSec=boot_sector_state.hidden_sectors,
+                    BPB_TotSec32=boot_sector_state.sectors_count if boot_sector_state.fatfs_type == FAT32 else 0x00,
+                    BS_VolID=volume_uuid,
+                    BS_VolLab=pad_string(boot_sector_state.volume_label, size=BootSector.MAX_VOL_LAB_SIZE),
+                    BS_FilSysType=pad_string(boot_sector_state.file_sys_type, size=BootSector.MAX_FS_TYPE_SIZE),
+                )
+            )
+            + pad_header
+            + fat_tables_content
+            + root_dir_content
+            + data_content
         )
 
     def parse_boot_sector(self, binary_data: bytes) -> None:
@@ -117,30 +140,36 @@ class BootSector:
             raise InconsistentFATAttributes('The number of FS sectors cannot be zero!')
 
         if self._parsed_header['BPB_BytsPerSec'] not in ALLOWED_SECTOR_SIZES:
-            raise InconsistentFATAttributes(f'The number of bytes '
-                                            f"per sector is {self._parsed_header['BPB_BytsPerSec']}! "
-                                            f'The accepted values are {ALLOWED_SECTOR_SIZES}')
+            raise InconsistentFATAttributes(
+                f'The number of bytes '
+                f'per sector is {self._parsed_header["BPB_BytsPerSec"]}! '
+                f'The accepted values are {ALLOWED_SECTOR_SIZES}'
+            )
         if self._parsed_header['BPB_SecPerClus'] not in ALLOWED_SECTORS_PER_CLUSTER:
-            raise InconsistentFATAttributes(f'The number of sectors per cluster '
-                                            f"is {self._parsed_header['BPB_SecPerClus']}"
-                                            f'The accepted values are {ALLOWED_SECTORS_PER_CLUSTER}')
+            raise InconsistentFATAttributes(
+                f'The number of sectors per cluster '
+                f'is {self._parsed_header["BPB_SecPerClus"]}'
+                f'The accepted values are {ALLOWED_SECTORS_PER_CLUSTER}'
+            )
 
         total_root_bytes: int = self._parsed_header['BPB_RootEntCnt'] * FATDefaults.ENTRY_SIZE
         root_dir_sectors_cnt_: int = total_root_bytes // self._parsed_header['BPB_BytsPerSec']
-        self.boot_sector_state = BootSectorState(oem_name=self._parsed_header['BS_OEMName'],
-                                                 sector_size=self._parsed_header['BPB_BytsPerSec'],
-                                                 sectors_per_cluster=self._parsed_header['BPB_SecPerClus'],
-                                                 reserved_sectors_cnt=self._parsed_header['BPB_RsvdSecCnt'],
-                                                 fat_tables_cnt=self._parsed_header['BPB_NumFATs'],
-                                                 root_dir_sectors_cnt=root_dir_sectors_cnt_,
-                                                 sectors_count=sectors_count_,
-                                                 media_type=self._parsed_header['BPB_Media'],
-                                                 sec_per_track=self._parsed_header['BPB_SecPerTrk'],
-                                                 num_heads=self._parsed_header['BPB_NumHeads'],
-                                                 hidden_sectors=self._parsed_header['BPB_HiddSec'],
-                                                 volume_label=self._parsed_header['BS_VolLab'],
-                                                 file_sys_type=self._parsed_header['BS_FilSysType'],
-                                                 volume_uuid=self._parsed_header['BS_VolID'])
+        self.boot_sector_state = BootSectorState(
+            oem_name=self._parsed_header['BS_OEMName'],
+            sector_size=self._parsed_header['BPB_BytsPerSec'],
+            sectors_per_cluster=self._parsed_header['BPB_SecPerClus'],
+            reserved_sectors_cnt=self._parsed_header['BPB_RsvdSecCnt'],
+            fat_tables_cnt=self._parsed_header['BPB_NumFATs'],
+            root_dir_sectors_cnt=root_dir_sectors_cnt_,
+            sectors_count=sectors_count_,
+            media_type=self._parsed_header['BPB_Media'],
+            sec_per_track=self._parsed_header['BPB_SecPerTrk'],
+            num_heads=self._parsed_header['BPB_NumHeads'],
+            hidden_sectors=self._parsed_header['BPB_HiddSec'],
+            volume_label=self._parsed_header['BS_VolLab'],
+            file_sys_type=self._parsed_header['BS_FilSysType'],
+            volume_uuid=self._parsed_header['BS_VolID'],
+        )
         self.boot_sector_state.binary_image = binary_data
         assert self.boot_sector_state.file_sys_type in (f'FAT{self.boot_sector_state.fatfs_type}   ', 'FAT     ')
 
@@ -155,7 +184,7 @@ class BootSector:
         res: str = 'FATFS properties:\n'
         for member in getmembers(self.boot_sector_state, lambda a: not (isroutine(a))):
             prop_ = getattr(self.boot_sector_state, member[0])
-            if isinstance(prop_, int) or isinstance(prop_, str) and not member[0].startswith('_'):
+            if (isinstance(prop_, int) or isinstance(prop_, str)) and not member[0].startswith('_'):
                 res += f'{member[0]}: {prop_}\n'
         return res
 
