@@ -18,6 +18,9 @@
 #include "esp_blufi.h"
 #include "osi/allocator.h"
 #include "console/console.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 
 /*nimBLE Host*/
 #include "nimble/nimble_port.h"
@@ -29,6 +32,7 @@
 
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
+#include "soc/soc_caps.h"
 
 #if (BLUFI_INCLUDED == TRUE)
 
@@ -36,6 +40,104 @@ static uint8_t own_addr_type;
 
 struct gatt_value gatt_values[SERVER_MAX_VALUES];
 const static char *TAG = "BLUFI_EXAMPLE";
+
+#if !SOC_MPI_SUPPORTED
+#define BLUFI_RX_QUEUE_LEN       8
+#define BLUFI_RX_TASK_STACK_SIZE 8192
+#define BLUFI_RX_TASK_PRIO       (tskIDLE_PRIORITY + 1)
+
+typedef struct {
+    uint8_t *data;
+    uint16_t len;
+} blufi_rx_item_t;
+
+static QueueHandle_t s_blufi_rx_queue;
+static TaskHandle_t s_blufi_rx_task_hdl;
+
+static void blufi_rx_task(void *arg)
+{
+    blufi_rx_item_t item;
+
+    while (xQueueReceive(s_blufi_rx_queue, &item, portMAX_DELAY) == pdTRUE) {
+        if (item.data == NULL) {
+            break;
+        }
+
+        btc_blufi_recv_handler(item.data, item.len);
+        free(item.data);
+    }
+
+    s_blufi_rx_task_hdl = NULL;
+    vTaskDelete(NULL);
+}
+
+static int blufi_rx_worker_start(void)
+{
+    if (s_blufi_rx_queue != NULL && s_blufi_rx_task_hdl != NULL) {
+        return 0;
+    }
+
+    if (s_blufi_rx_queue != NULL && s_blufi_rx_task_hdl == NULL) {
+        /* Recover from partial state: stale queue left after worker exit. */
+        blufi_rx_item_t item;
+        while (xQueueReceive(s_blufi_rx_queue, &item, 0) == pdTRUE) {
+            free(item.data);
+        }
+        vQueueDelete(s_blufi_rx_queue);
+        s_blufi_rx_queue = NULL;
+    }
+
+    s_blufi_rx_queue = xQueueCreate(BLUFI_RX_QUEUE_LEN, sizeof(blufi_rx_item_t));
+    if (s_blufi_rx_queue == NULL) {
+        ESP_LOGE(TAG, "failed to create BLUFI RX queue");
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+
+    BaseType_t ret = xTaskCreate(blufi_rx_task, "blufi_rx", BLUFI_RX_TASK_STACK_SIZE,
+                                 NULL, BLUFI_RX_TASK_PRIO, &s_blufi_rx_task_hdl);
+    if (ret != pdPASS) {
+        ESP_LOGE(TAG, "failed to create BLUFI RX task");
+        vQueueDelete(s_blufi_rx_queue);
+        s_blufi_rx_queue = NULL;
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+
+    return 0;
+}
+
+static void blufi_rx_worker_stop(void)
+{
+    if (s_blufi_rx_queue == NULL) {
+        return;
+    }
+
+    blufi_rx_item_t stop = {
+        .data = NULL,
+        .len = 0,
+    };
+    if (xQueueSend(s_blufi_rx_queue, &stop, 0) != pdTRUE) {
+        /* Queue is full; free pending packets and resend stop marker. */
+        blufi_rx_item_t item;
+        while (xQueueReceive(s_blufi_rx_queue, &item, 0) == pdTRUE) {
+            free(item.data);
+        }
+        (void)xQueueSend(s_blufi_rx_queue, &stop, 0);
+    }
+
+    while (s_blufi_rx_task_hdl != NULL) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    /* Drain and free any queued packets before deleting the queue. */
+    blufi_rx_item_t item;
+    while (xQueueReceive(s_blufi_rx_queue, &item, 0) == pdTRUE) {
+        free(item.data);
+    }
+
+    vQueueDelete(s_blufi_rx_queue);
+    s_blufi_rx_queue = NULL;
+}
+#endif /* !SOC_MPI_SUPPORTED */
 
 enum {
     GATT_VALUE_TYPE_CHR,
@@ -142,7 +244,12 @@ static size_t write_value(uint16_t conn_handle, uint16_t attr_handle,
         return BLE_ATT_ERR_UNLIKELY;
     }
 
-    btc_blufi_recv_handler(flat_buf, pkt_len);
+#if !SOC_MPI_SUPPORTED
+    if (s_blufi_rx_queue == NULL) {
+        free(flat_buf);
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+#endif
 
     if (value->buf != NULL) {
         os_mbuf_free_chain(value->buf);
@@ -164,7 +271,25 @@ static size_t write_value(uint16_t conn_handle, uint16_t attr_handle,
         }
     }
 
+#if !SOC_MPI_SUPPORTED
+    if (pkt_len > 0) {
+        blufi_rx_item_t item = {
+            .data = flat_buf,
+            .len = pkt_len,
+        };
+        if (xQueueSend(s_blufi_rx_queue, &item, 0) != pdTRUE) {
+            os_mbuf_free_chain(value->buf);
+            value->buf = NULL;
+            free(flat_buf);
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+    } else {
+        free(flat_buf);
+    }
+#else /* SOC_MPI_SUPPORTED */
+    btc_blufi_recv_handler(flat_buf, pkt_len);
     free(flat_buf);
+#endif
 
     return 0;
 }
@@ -278,16 +403,30 @@ static void deinit_gatt_values(void)
 int esp_blufi_gatt_svr_init(void)
 {
     int rc;
+
+#if !SOC_MPI_SUPPORTED
+    rc = blufi_rx_worker_start();
+    if (rc != 0) {
+        return rc;
+    }
+#endif
+
     ble_svc_gap_init();
     ble_svc_gatt_init();
 
     rc = ble_gatts_count_cfg(gatt_svr_svcs);
     if (rc != 0) {
+#if !SOC_MPI_SUPPORTED
+        blufi_rx_worker_stop();
+#endif
         return rc;
     }
 
     rc = ble_gatts_add_svcs(gatt_svr_svcs);
     if (rc != 0) {
+#if !SOC_MPI_SUPPORTED
+        blufi_rx_worker_stop();
+#endif
         return rc;
     }
 
@@ -297,6 +436,10 @@ int esp_blufi_gatt_svr_init(void)
 
 int esp_blufi_gatt_svr_deinit(void)
 {
+#if !SOC_MPI_SUPPORTED
+    blufi_rx_worker_stop();
+#endif
+
     deinit_gatt_values();
 
     ble_gatts_free_svcs();

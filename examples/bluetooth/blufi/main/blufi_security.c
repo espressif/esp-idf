@@ -10,10 +10,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include "nvs_flash.h"
 #include "esp_random.h"
 #if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
@@ -25,6 +27,7 @@
 
 #include "psa/crypto.h"
 #include "esp_crc.h"
+#include "soc/soc_caps.h"
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
@@ -42,6 +45,13 @@
 #define BLUFI_KEY_SIZE          32
 #define BLUFI_ENC_DOMAIN_STR "blufi_enc"
 #define BLUFI_DEC_DOMAIN_STR "blufi_dec"
+
+#if !SOC_MPI_SUPPORTED
+#define BLUFI_DH_PREGEN_STACK_SIZE   8192
+#define BLUFI_DH_PREGEN_PRIO        (tskIDLE_PRIORITY + 1)
+#define BLUFI_DH_PREGEN_WAIT_MS      30000
+#define BLUFI_DH_HEAVY_CRYPTO_WDT_MS 30000
+#endif
 
 struct blufi_security {
 #define DH_PARAM_LEN_MAX        1024
@@ -108,6 +118,135 @@ static void blufi_cleanup_negotiation(bool abort_enc, bool abort_dec)
     blufi_cleanup_aes_session(abort_enc, abort_dec);
     blufi_cleanup_dh_param();
 }
+
+#if !SOC_MPI_SUPPORTED
+/*
+ * DH keypair pre-generation: overlap the expensive G^X mod P computation
+ * with BLE advertising so only key agreement remains on the critical path
+ * when the phone sends its DH parameters.
+ */
+static psa_key_id_t s_pregen_private_key;
+static uint8_t s_pregen_public_key[DH_SELF_PUB_KEY_LEN];
+static size_t s_pregen_public_key_len;
+static SemaphoreHandle_t s_pregen_done;
+static bool s_pregen_ok;
+static TaskHandle_t s_pregen_task_hdl;
+static void (*s_pregen_complete_cb)(void);
+
+static void blufi_wdt_set_timeout(uint32_t timeout_ms)
+{
+    esp_task_wdt_config_t cfg = {
+        .timeout_ms = timeout_ms,
+        .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,
+        .trigger_panic = true,
+    };
+    esp_task_wdt_reconfigure(&cfg);
+}
+
+static void blufi_dh_pregen_task(void *arg)
+{
+    (void)arg;
+
+    blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
+
+    psa_key_attributes_t attr = psa_key_attributes_init();
+    psa_set_key_type(&attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
+    psa_set_key_bits(&attr, 3072);
+    psa_set_key_algorithm(&attr, PSA_ALG_FFDH);
+    psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
+
+    psa_status_t status = psa_generate_key(&attr, &s_pregen_private_key);
+    if (status == PSA_SUCCESS) {
+        status = psa_export_public_key(s_pregen_private_key,
+                                       s_pregen_public_key, DH_SELF_PUB_KEY_LEN,
+                                       &s_pregen_public_key_len);
+    }
+    psa_reset_key_attributes(&attr);
+
+    s_pregen_ok = (status == PSA_SUCCESS);
+    if (!s_pregen_ok && s_pregen_private_key != 0) {
+        psa_destroy_key(s_pregen_private_key);
+        s_pregen_private_key = 0;
+    }
+
+    BLUFI_INFO("DH keypair pre-generation %s", s_pregen_ok ? "done" : "FAILED");
+
+    blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+
+    xSemaphoreGive(s_pregen_done);
+
+    if (s_pregen_complete_cb) {
+        void (*cb)(void) = s_pregen_complete_cb;
+        s_pregen_complete_cb = NULL;
+        cb();
+    }
+
+    vTaskSuspend(NULL);
+}
+
+static void blufi_dh_pregen_start_impl(void (*done_cb)(void))
+{
+    if (s_pregen_done != NULL) {
+        return;
+    }
+
+    s_pregen_private_key = 0;
+    s_pregen_public_key_len = 0;
+    s_pregen_ok = false;
+    s_pregen_task_hdl = NULL;
+    s_pregen_complete_cb = done_cb;
+    s_pregen_done = xSemaphoreCreateBinary();
+    if (s_pregen_done == NULL) {
+        BLUFI_ERROR("Failed to create pre-gen semaphore");
+        return;
+    }
+
+    if (xTaskCreate(blufi_dh_pregen_task, "blufi_pregen",
+                    BLUFI_DH_PREGEN_STACK_SIZE, NULL,
+                    BLUFI_DH_PREGEN_PRIO, &s_pregen_task_hdl) != pdPASS) {
+        BLUFI_ERROR("Failed to create pre-gen task");
+        vSemaphoreDelete(s_pregen_done);
+        s_pregen_done = NULL;
+    }
+}
+
+void blufi_dh_pregen_start(void)
+{
+    blufi_dh_pregen_start_impl(NULL);
+}
+
+void blufi_dh_pregen_start_with_cb(void (*done_cb)(void))
+{
+    blufi_dh_pregen_start_impl(done_cb);
+}
+
+void blufi_dh_pregen_wait(void)
+{
+    if (s_pregen_done == NULL) {
+        return;
+    }
+    xSemaphoreTake(s_pregen_done, portMAX_DELAY);
+    xSemaphoreGive(s_pregen_done);
+}
+
+static void blufi_dh_pregen_cleanup(void)
+{
+    if (s_pregen_done != NULL) {
+        xSemaphoreTake(s_pregen_done, portMAX_DELAY);
+        vSemaphoreDelete(s_pregen_done);
+        s_pregen_done = NULL;
+    }
+    if (s_pregen_task_hdl != NULL) {
+        vTaskDelete(s_pregen_task_hdl);
+        s_pregen_task_hdl = NULL;
+    }
+    if (s_pregen_private_key != 0) {
+        psa_destroy_key(s_pregen_private_key);
+        s_pregen_private_key = 0;
+    }
+    s_pregen_ok = false;
+}
+#endif /* !SOC_MPI_SUPPORTED */
 
 void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 {
@@ -234,39 +373,114 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             return;
         }
 
-        psa_key_type_t key_type = PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919);
         psa_algorithm_t alg = PSA_ALG_FFDH;
-        psa_key_attributes_t attributes = psa_key_attributes_init();
-        psa_set_key_type(&attributes, key_type);
-        psa_set_key_bits(&attributes, key_bits);
-        psa_set_key_algorithm(&attributes, alg);
-        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-
         psa_key_id_t private_key = 0;
-        psa_status_t status = psa_generate_key(&attributes, &private_key);
-        if (status != PSA_SUCCESS) {
-            BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
-            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
-            blufi_cleanup_dh_param();
-            return;
-        }
-
-        psa_reset_key_attributes(&attributes);
         size_t public_key_len = 0;
-        status = psa_export_public_key(private_key, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, &public_key_len);
-        if (status != PSA_SUCCESS) {
-            BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
-            psa_destroy_key(private_key);
-            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
-            blufi_cleanup_dh_param();
-            return;
+        psa_status_t status;
+
+#if !SOC_MPI_SUPPORTED
+        /* On SoCs without hardware MPI, 3072-bit modular exponentiation takes
+         * ~12s in software.  Use the pre-generated keypair, free all possible
+         * heap before key agreement, and widen the task WDT window. */
+        bool used_pregen = false;
+
+        if (s_pregen_done != NULL &&
+            xSemaphoreTake(s_pregen_done, pdMS_TO_TICKS(BLUFI_DH_PREGEN_WAIT_MS)) == pdTRUE) {
+            xSemaphoreGive(s_pregen_done);
+            if (s_pregen_ok && s_pregen_private_key != 0) {
+                private_key = s_pregen_private_key;
+                s_pregen_private_key = 0;
+                memcpy(blufi_sec->self_public_key, s_pregen_public_key, s_pregen_public_key_len);
+                public_key_len = s_pregen_public_key_len;
+                used_pregen = true;
+                BLUFI_INFO("Using pre-generated DH keypair");
+            }
         }
 
-        status = psa_raw_key_agreement(alg, private_key, param, pub_len, blufi_sec->share_key, SHARE_KEY_LEN, &blufi_sec->share_len);
+        if (!used_pregen) {
+            BLUFI_INFO("Pre-gen unavailable, generating DH keypair inline");
+            blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
+
+            psa_key_attributes_t keygen_attr = psa_key_attributes_init();
+            psa_set_key_type(&keygen_attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
+            psa_set_key_bits(&keygen_attr, key_bits);
+            psa_set_key_algorithm(&keygen_attr, alg);
+            psa_set_key_usage_flags(&keygen_attr, PSA_KEY_USAGE_DERIVE);
+
+            status = psa_generate_key(&keygen_attr, &private_key);
+            if (status != PSA_SUCCESS) {
+                BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
+                blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+                blufi_cleanup_dh_param();
+                return;
+            }
+            psa_reset_key_attributes(&keygen_attr);
+
+            status = psa_export_public_key(private_key, blufi_sec->self_public_key,
+                                           DH_SELF_PUB_KEY_LEN, &public_key_len);
+            if (status != PSA_SUCCESS) {
+                BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
+                blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+                psa_destroy_key(private_key);
+                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+                blufi_cleanup_dh_param();
+                return;
+            }
+        }
+
+        uint8_t peer_pub[DH_SELF_PUB_KEY_LEN];
+        memcpy(peer_pub, param, pub_len);
+        blufi_cleanup_dh_param();
+
+        if (s_pregen_task_hdl != NULL) {
+            vTaskDelete(s_pregen_task_hdl);
+            s_pregen_task_hdl = NULL;
+        }
+
+        blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
+        status = psa_raw_key_agreement(alg, private_key, peer_pub, pub_len,
+                                       blufi_sec->share_key, SHARE_KEY_LEN,
+                                       &blufi_sec->share_len);
         psa_destroy_key(private_key);
+        blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+#else /* SOC_MPI_SUPPORTED */
+        {
+            psa_key_attributes_t keygen_attr = psa_key_attributes_init();
+            psa_set_key_type(&keygen_attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
+            psa_set_key_bits(&keygen_attr, key_bits);
+            psa_set_key_algorithm(&keygen_attr, alg);
+            psa_set_key_usage_flags(&keygen_attr, PSA_KEY_USAGE_DERIVE);
+
+            status = psa_generate_key(&keygen_attr, &private_key);
+            if (status != PSA_SUCCESS) {
+                BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
+                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+                blufi_cleanup_dh_param();
+                return;
+            }
+            psa_reset_key_attributes(&keygen_attr);
+
+            status = psa_export_public_key(private_key, blufi_sec->self_public_key,
+                                           DH_SELF_PUB_KEY_LEN, &public_key_len);
+            if (status != PSA_SUCCESS) {
+                BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
+                psa_destroy_key(private_key);
+                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+                blufi_cleanup_dh_param();
+                return;
+            }
+        }
+
+        status = psa_raw_key_agreement(alg, private_key, param, pub_len,
+                                       blufi_sec->share_key, SHARE_KEY_LEN,
+                                       &blufi_sec->share_len);
+        psa_destroy_key(private_key);
+        blufi_cleanup_dh_param();
+#endif /* !SOC_MPI_SUPPORTED */
+
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_raw_key_agreement failed %d\n", __func__, status);
-            blufi_cleanup_dh_param();
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
@@ -292,7 +506,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         blufi_cleanup_aes_session(true, true);
 
         /* Import AES key for CTR mode */
-        attributes = psa_key_attributes_init();
+        psa_key_attributes_t attributes = psa_key_attributes_init();
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
         psa_set_key_bits(&attributes, PSK_LEN * 8);
         psa_set_key_algorithm(&attributes, PSA_ALG_CTR);
@@ -386,7 +600,6 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         *output_data = &blufi_sec->self_public_key[0];
         *output_len = public_key_len;
         *need_free = false;
-
     }
         break;
     case SEC_TYPE_DH_P:
@@ -512,6 +725,10 @@ esp_err_t blufi_security_init(void)
     blufi_sec->enc_operation = psa_cipher_operation_init();
     blufi_sec->dec_operation = psa_cipher_operation_init();
 
+#if !SOC_MPI_SUPPORTED
+    blufi_dh_pregen_start();
+#endif
+
     return 0;
 }
 
@@ -520,6 +737,10 @@ void blufi_security_deinit(void)
     if (blufi_sec == NULL) {
         return;
     }
+
+#if !SOC_MPI_SUPPORTED
+    blufi_dh_pregen_cleanup();
+#endif
 
     /* Clean up all resources */
     blufi_cleanup_negotiation(true, true);
