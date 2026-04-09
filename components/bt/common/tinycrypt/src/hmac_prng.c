@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,6 +86,9 @@ static void update(TCHmacPrng_t prng, const uint8_t *e, unsigned int len)
 	const uint8_t separator0 = 0x00;
 	const uint8_t separator1 = 0x01;
 
+	/* tc_hmac_final wipes the HMAC context, so reload key before init */
+	(void)tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
+
 	/* use current state, e and separator 0 to compute a new prng key: */
 	(void)tc_hmac_init(&prng->h);
 	(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
@@ -101,6 +104,7 @@ static void update(TCHmacPrng_t prng, const uint8_t *e, unsigned int len)
 	(void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
 
 	/* use current state, e and separator 1 to compute a new prng key: */
+	(void)tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
 	(void)tc_hmac_init(&prng->h);
 	(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
 	(void)tc_hmac_update(&prng->h, &separator1, sizeof(separator1));
@@ -113,6 +117,9 @@ static void update(TCHmacPrng_t prng, const uint8_t *e, unsigned int len)
 	(void)tc_hmac_init(&prng->h);
 	(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
 	(void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
+
+	/* keep HMAC context prepared for callers that reuse prng->h */
+	(void)tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
 }
 
 int tc_hmac_prng_init(TCHmacPrng_t prng,
@@ -198,6 +205,7 @@ int tc_hmac_prng_generate(uint8_t *out, unsigned int outlen, TCHmacPrng_t prng)
 
 	while (outlen != 0) {
 		/* operate HMAC in OFB mode to create "random" outputs */
+		(void)tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
 		(void)tc_hmac_init(&prng->h);
 		(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
 		(void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
