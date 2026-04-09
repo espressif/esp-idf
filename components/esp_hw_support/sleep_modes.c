@@ -1813,7 +1813,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.wakeup_triggers &= ~RTC_VBAT_UNDER_VOLT_TRIG_EN;
 #endif
     } else {
-        ESP_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
+        ESP_EARLY_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
         return ESP_ERR_INVALID_STATE;
     }
     return ESP_OK;
