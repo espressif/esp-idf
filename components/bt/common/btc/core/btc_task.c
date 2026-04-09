@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -564,15 +564,19 @@ bt_status_t btc_init(void)
 
 void btc_deinit(void)
 {
+    osi_thread_t *thread = btc_thread;
+    if (!thread) {
+        return;
+    }
+    osi_thread_free(thread);
+    btc_thread = NULL;
+
 #if BTC_GAP_BT_INCLUDED
     btc_gap_bt_deinit();
 #endif
 #if BTC_DYNAMIC_MEMORY
     btc_deinit_mem();
 #endif
-
-    osi_thread_free(btc_thread);
-    btc_thread = NULL;
 #if (BLE_INCLUDED == TRUE)
     btc_gap_ble_deinit();
 #endif  ///BLE_INCLUDED == TRUE
