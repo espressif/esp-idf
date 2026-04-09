@@ -1066,6 +1066,9 @@ static FRESULT sync_window (	/* Returns FR_OK or FR_DISK_ERR */
 	if (fs->wflag) {	/* Is the disk access window dirty? */
 		if (disk_write(fs->pdrv, fs->win, fs->winsect, 1) == RES_OK) {	/* Write it back into the volume */
 			fs->wflag = 0;	/* Clear window dirty flag */
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+			fs->ra_base = (LBA_t)0 - 1; fs->ra_count = 0;	/* Invalidate readahead on write */
+#endif
 			if (fs->winsect - fs->fatbase < fs->fsize) {	/* Is it in the 1st FAT? */
 				if (fs->n_fats == 2) disk_write(fs->pdrv, fs->win, fs->winsect + fs->fsize, 1);	/* Reflect it to 2nd FAT if needed */
 			}
@@ -1091,10 +1094,36 @@ static FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 		res = sync_window(fs);		/* Flush the window */
 #endif
 		if (res == FR_OK) {			/* Fill sector window with new data */
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+			/* Check readahead buffer first */
+			if (sect >= fs->ra_base && sect < fs->ra_base + fs->ra_count) {
+				/* Readahead hit */
+				memcpy(fs->win, fs->ra_buf + (UINT)(sect - fs->ra_base) * SS(fs), SS(fs));
+			} else {
+				/* Readahead miss — read multiple consecutive sectors */
+				UINT n = CONFIG_FATFS_WINDOW_SECTORS;
+				if (disk_read(fs->pdrv, fs->ra_buf, sect, n) != RES_OK) {
+					/* Fall back to single-sector read */
+					n = 1;
+					if (disk_read(fs->pdrv, fs->ra_buf, sect, 1) != RES_OK) {
+						sect = (LBA_t)0 - 1;
+						fs->ra_base = (LBA_t)0 - 1;
+						fs->ra_count = 0;
+						res = FR_DISK_ERR;
+						fs->winsect = sect;
+						return res;
+					}
+				}
+				fs->ra_base = sect;
+				fs->ra_count = n;
+				memcpy(fs->win, fs->ra_buf, SS(fs));
+			}
+#else
 			if (disk_read(fs->pdrv, fs->win, sect, 1) != RES_OK) {
 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
 				res = FR_DISK_ERR;
 			}
+#endif
 			fs->winsect = sect;
 		}
 	}
@@ -1687,6 +1716,9 @@ static FRESULT dir_clear (	/* Returns FR_OK or FR_DISK_ERR */
 	if (sync_window(fs) != FR_OK) return FR_DISK_ERR;	/* Flush disk access window */
 	sect = clst2sect(fs, clst);		/* Top of the cluster */
 	fs->winsect = sect;				/* Set window to top of the cluster */
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+	fs->ra_base = (LBA_t)0 - 1; fs->ra_count = 0;	/* Invalidate readahead (direct disk_write below) */
+#endif
 	memset(fs->win, 0, SS(fs));	/* Clear window buffer */
 #if FF_USE_LFN == 3		/* Quick table clear by using multi-secter write */
 	/* Allocate a temporary buffer */
@@ -3376,6 +3408,9 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 
 
 	fs->wflag = 0; fs->winsect = (LBA_t)0 - 1;		/* Invaidate window */
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+	fs->ra_base = (LBA_t)0 - 1; fs->ra_count = 0;
+#endif
 	if (move_window(fs, sect) != FR_OK) return 4;	/* Load the boot sector */
 	sign = ld_16(fs->win + BS_55AA);
 #if FF_FS_EXFAT
@@ -3515,6 +3550,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #if FF_USE_DYN_BUFFER
     fs->win = ff_memalloc(SS(fs));		/* Allocate memory for sector buffer */
     if (!fs->win) return FR_NOT_ENOUGH_CORE;
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+    fs->ra_buf = ff_memalloc(SS(fs) * CONFIG_FATFS_WINDOW_SECTORS);
+    if (!fs->ra_buf) { ff_memfree(fs->win); fs->win = 0; return FR_NOT_ENOUGH_CORE; }
+#endif
 #endif
 
 	/* Find an FAT volume on the hosting drive */
@@ -3768,8 +3807,12 @@ FRESULT f_mount (
 		ff_mutex_delete(vol);
 #endif
 #if FF_USE_DYN_BUFFER
-        if (cfs->fs_type)           /* Check if the buffer was ever allocated */
+        if (cfs->fs_type) {         /* Check if the buffer was ever allocated */
             ff_memfree(cfs->win);   /* Deallocate buffer allocated for the filesystem object */
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+            ff_memfree(cfs->ra_buf);
+#endif
+        }
 #endif
 		cfs->fs_type = 0;		/* Invalidate the filesystem object to be unregistered */
 	}
