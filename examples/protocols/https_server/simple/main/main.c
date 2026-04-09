@@ -211,9 +211,9 @@ static httpd_handle_t start_webserver(void)
         .source = ESP_KEY_SOURCE_BUFFER,
         .buffer = {
             .data = prvtkey_pem_start,
-            .len = prvtkey_pem_end - prvtkey_pem_start,
         }
     };
+    server_key.buffer.len = prvtkey_pem_end - prvtkey_pem_start;
     conf.server_key = &server_key;
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
