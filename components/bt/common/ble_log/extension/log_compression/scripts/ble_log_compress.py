@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # The current project needs to support environments before Python 3.9,
@@ -283,7 +283,7 @@ class LogCompressor:
         for node in log_nodes:
             try:
                 log_info = self._process_log_node(node, function_boundaries)
-                if log_info:
+                if log_info and log_info['hexify']:
                     logs.append(log_info)
             except Exception as e:
                 LOGGER.error(f'Error processing log node: {e}\n{traceback.format_exc()}')
@@ -339,13 +339,23 @@ class LogCompressor:
         # Parse format tokens
         tokens = parse_format_string(f'"{log_fmt}"')
         tokens_tuple_map: list[int] = []
+        need_args = 0
         for idx, tk in enumerate(tokens):
             if isinstance(tk, tuple):
                 tokens_tuple_map.append(idx)
+                need_args = need_args + 1
+                if tk[4] == '*':  # dynamic width
+                    need_args = need_args + 1
+                    log_info['hexify'] = False
+                    return log_info
+                if tk[5] == '*':  # dynamic precision
+                    need_args = need_args + 1
+                    log_info['hexify'] = False
+                    return log_info
 
         arguments: list[Node] = valid_arg_childrn[1:]
 
-        if len(arguments) != len(tokens_tuple_map):
+        if len(arguments) != need_args:
             raise SyntaxError(f'LogSyntaxError:{node.text.decode("utf-8")}')
 
         # Process each argument

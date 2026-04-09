@@ -35,7 +35,7 @@ if(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_BLUEDROID_ENABLED)
     list(APPEND LOG_COMPRESSED_MODULE "BLE_HOST")
 
     # update config file
-    set(HOST_CODE_PATH "host/bluedroid/stack")
+    set(HOST_CODE_PATH "host/bluedroid")
     set(HOST_LOG_INDEX_HEADER "host_log_index.h")
     set(BLE_HOST_LOG_SCRIPT_PATH
         "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/bluedroid/make_bluedroid_log_macro.py")
@@ -175,16 +175,18 @@ if(LOG_COMPRESSED_MODULE)
             )
         endif()
 
+        # List of files with their compile flags: format "file_path|flag1;flag2;..."
+        set(FILES_WITH_COMPILE_FLAGS "")
+
         function(add_flags_if_in_list file file_list compile_flags)
             set(PROCESSED OFF PARENT_SCOPE)
             foreach(item IN LISTS file_list)
                 if(item STREQUAL file)
-                    set_source_files_properties("${LOG_COMPRESSED_SRCS_DIR}/${file}"
-                        PROPERTIES
-                            GENERATED TRUE
-                            COMPILE_FLAGS "${compile_flags}"
-                            OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/ble_log_compression"
-                    )
+                    set(abs_file_path "${LOG_COMPRESSED_SRCS_DIR}/${file}")
+                    # Append to global list with format: "file_path|compile_flags"
+                    list(APPEND FILES_WITH_COMPILE_FLAGS "${abs_file_path}|${compile_flags}")
+                    set(FILES_WITH_COMPILE_FLAGS "${FILES_WITH_COMPILE_FLAGS}" PARENT_SCOPE)
+                    message("set pro ${LOG_COMPRESSED_SRCS_DIR}/${file} ${compile_flags}")
                     set(PROCESSED ON PARENT_SCOPE)
                     break()
                 endif()
@@ -240,6 +242,7 @@ if(LOG_COMPRESSED_MODULE)
         set(LOG_COMPRESSION_TARGET ble_log_compression PARENT_SCOPE)
         # set(LOG_COMPRESSION_TARGET "" PARENT_SCOPE)
         set(LOG_COMPRESS_SRCS "${compressed_srcs_with_abs_path};${uncompressed_srcs}" PARENT_SCOPE)
+        set(LOG_COMPRESS_FILES_WITH_FLAGS "${FILES_WITH_COMPILE_FLAGS}" PARENT_SCOPE)
         if(NOT BLE_COMPRESSED_LIB_LOG_BUILD)
             list(APPEND include_dirs "common/ble_log/extension/log_compression/include")
         endif()
