@@ -94,6 +94,73 @@ I (18212) ESP_HIDH_DEMO: 00 00
 ...
 ```
 
+## NimBLE Logging Scheme
+
+The following are verbatim NimBLE log excerpts from `logs.txt` for each device role.
+
+### Media Mode (CCONTROL)
+
+```text
+I (2446) ESP_HIDH_DEMO: SCAN...
+I (2446) NimBLE: GAP procedure initiated: discovery;
+I (7456) NimBLE: discovery complete; reason=0
+I (7466) NimBLE: GAP procedure initiated: connect;
+I (7666) NimBLE: Connection established
+I (7676) NimBLE: GATT procedure initiated: exchange mtu
+I (7726) NimBLE: mtu update event; conn_handle=0 cid=4 mtu=256
+I (8446) NIMBLE_HIDH: PASSKEY INPUT injected rc=0
+I (9636) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 OPEN: nimble
+Report Maps: 1
+  Report Map Length: 111
+    CCONTROL   INPUT REPORT, ID:  3, Length:   2, Permissions: 0x1a, Handle:  37, CCC Handle:  38
+I (12776) NIMBLE_HIDH: ENC_CHANGE status=0 encrypted=1 authenticated=1 bonded=1
+I (12826) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT: CCONTROL, MAP:  0, ID:   3, Len: 2, Data:
+I (12826) ESP_HIDH_DEMO: 80 00
+I (12876) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT: CCONTROL, MAP:  0, ID:   3, Len: 2, Data:
+I (12876) ESP_HIDH_DEMO: 00 00
+I (14876) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT: CCONTROL, MAP:  0, ID:   3, Len: 2, Data:
+I (14876) ESP_HIDH_DEMO: 40 00
+```
+
+### Keyboard Mode
+
+```text
+I (7426) ESP_HIDH_DEMO: SCAN: 2 results
+  BLE: 68:2e:f7:f9:55:60, RSSI: -57, USAGE: GENERIC, APPEARANCE: 0x03c0, ADDR_TYPE: '0', NAME: ESP Mouse
+  BLE: 02:50:f7:f9:55:60, RSSI: -30, USAGE: GENERIC, APPEARANCE: 0x03c0, ADDR_TYPE: '0', NAME: ESP Keyboard
+I (7446) NimBLE: GAP procedure initiated: connect;
+I (7836) NimBLE: Connection established
+I (8606) NIMBLE_HIDH: PASSKEY INPUT injected rc=0
+I (10086) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 OPEN: nimble
+Report Maps: 1
+  Report Map Length: 65
+    KEYBOARD   INPUT REPORT, ID:  1, Length:   7, Permissions: 0x1a, Handle:  37, CCC Handle:  38
+I (12936) NIMBLE_HIDH: ENC_CHANGE status=0 encrypted=1 authenticated=1 bonded=1
+I (18636) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT: KEYBOARD, MAP:  0, ID:   1, Len: 8, Data:
+I (18636) ESP_HIDH_DEMO: 00 00 04 00 00 00 00 00
+I (18686) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT: KEYBOARD, MAP:  0, ID:   1, Len: 8, Data:
+I (18686) ESP_HIDH_DEMO: 00 00 00 00 00 00 00 00
+```
+
+### Mouse Mode
+
+```text
+I (7426) ESP_HIDH_DEMO: SCAN: 1 results
+  BLE: 02:50:f7:f9:55:60, RSSI: -29, USAGE: GENERIC, APPEARANCE: 0x03c0, ADDR_TYPE: '0', NAME: ESP Mouse
+I (7436) NimBLE: GAP procedure initiated: connect;
+I (7666) NimBLE: Connection established
+I (8436) NIMBLE_HIDH: PASSKEY INPUT injected rc=0
+I (9716) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 OPEN: nimble
+Report Maps: 1
+  Report Map Length: 52
+       MOUSE   INPUT REPORT, ID:  0, Length:   4, Permissions: 0x1a, Handle:  37, CCC Handle:  38
+I (12766) NIMBLE_HIDH: ENC_CHANGE status=0 encrypted=1 authenticated=1 bonded=1
+I (15316) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT:    MOUSE, MAP:  0, ID:   0, Len: 4, Data:
+I (15316) ESP_HIDH_DEMO: 00 f6 00 00
+I (15816) ESP_HIDH_DEMO: 02:50:f7:f9:55:60 INPUT:    MOUSE, MAP:  0, ID:   0, Len: 4, Data:
+I (15816) ESP_HIDH_DEMO: 00 00 0a 00
+```
+
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
