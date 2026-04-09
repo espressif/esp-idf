@@ -1095,35 +1095,43 @@ static FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 #endif
 		if (res == FR_OK) {			/* Fill sector window with new data */
 #if CONFIG_FATFS_WINDOW_SECTORS > 1
-			/* Check readahead buffer first */
-			if (sect >= fs->ra_base && sect < fs->ra_base + fs->ra_count) {
-				/* Readahead hit */
-				memcpy(fs->win, fs->ra_buf + (UINT)(sect - fs->ra_base) * SS(fs), SS(fs));
-			} else {
-				/* Readahead miss — read multiple consecutive sectors */
-				UINT n = CONFIG_FATFS_WINDOW_SECTORS;
-				if (disk_read(fs->pdrv, fs->ra_buf, sect, n) != RES_OK) {
-					/* Fall back to single-sector read */
-					n = 1;
-					if (disk_read(fs->pdrv, fs->ra_buf, sect, 1) != RES_OK) {
-						sect = (LBA_t)0 - 1;
-						fs->ra_base = (LBA_t)0 - 1;
-						fs->ra_count = 0;
-						res = FR_DISK_ERR;
-						fs->winsect = sect;
-						return res;
+			/* Readahead only for small-sector drives (SD cards over SPI, not WL flash).
+			   WL drives don't benefit from readahead (no SPI per-transaction overhead),
+			   and the static ra_buf is sized at FF_MIN_SS * N — a WL drive with
+			   SS(fs) > FF_MIN_SS would overflow it.  When FF_MIN_SS == FF_MAX_SS this
+			   comparison is compile-time true and the else branch is optimized out. */
+			if (SS(fs) == FF_MIN_SS) {
+				/* Check readahead buffer first */
+				if (sect >= fs->ra_base && sect < fs->ra_base + fs->ra_count) {
+					/* Readahead hit */
+					memcpy(fs->win, fs->ra_buf + (UINT)(sect - fs->ra_base) * SS(fs), SS(fs));
+				} else {
+					/* Readahead miss — read multiple consecutive sectors */
+					UINT n = CONFIG_FATFS_WINDOW_SECTORS;
+					if (disk_read(fs->pdrv, fs->ra_buf, sect, n) != RES_OK) {
+						/* Fall back to single-sector read */
+						n = 1;
+						if (disk_read(fs->pdrv, fs->ra_buf, sect, 1) != RES_OK) {
+							sect = (LBA_t)0 - 1;
+							fs->ra_base = (LBA_t)0 - 1;
+							fs->ra_count = 0;
+							res = FR_DISK_ERR;
+							fs->winsect = sect;
+							return res;
+						}
 					}
+					fs->ra_base = sect;
+					fs->ra_count = n;
+					memcpy(fs->win, fs->ra_buf, SS(fs));
 				}
-				fs->ra_base = sect;
-				fs->ra_count = n;
-				memcpy(fs->win, fs->ra_buf, SS(fs));
-			}
-#else
-			if (disk_read(fs->pdrv, fs->win, sect, 1) != RES_OK) {
-				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
-				res = FR_DISK_ERR;
-			}
+			} else
 #endif
+			{
+				if (disk_read(fs->pdrv, fs->win, sect, 1) != RES_OK) {
+					sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
+					res = FR_DISK_ERR;
+				}
+			}
 			fs->winsect = sect;
 		}
 	}
@@ -3551,8 +3559,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
     fs->win = ff_memalloc(SS(fs));		/* Allocate memory for sector buffer */
     if (!fs->win) return FR_NOT_ENOUGH_CORE;
 #if CONFIG_FATFS_WINDOW_SECTORS > 1
-    fs->ra_buf = ff_memalloc(SS(fs) * CONFIG_FATFS_WINDOW_SECTORS);
-    if (!fs->ra_buf) { ff_memfree(fs->win); fs->win = 0; return FR_NOT_ENOUGH_CORE; }
+    if (SS(fs) == FF_MIN_SS) {
+        fs->ra_buf = ff_memalloc(FF_MIN_SS * CONFIG_FATFS_WINDOW_SECTORS);
+        if (!fs->ra_buf) { ff_memfree(fs->win); fs->win = 0; return FR_NOT_ENOUGH_CORE; }
+    }
 #endif
 #endif
 
