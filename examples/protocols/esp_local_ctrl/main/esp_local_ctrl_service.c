@@ -244,9 +244,9 @@ void start_esp_local_ctrl_service(void)
         .source = ESP_KEY_SOURCE_BUFFER,
         .buffer = {
             .data = prvtkey_pem_start,
-            .len = prvtkey_pem_end - prvtkey_pem_start,
         }
     };
+    server_key.buffer.len = prvtkey_pem_end - prvtkey_pem_start;
     https_conf.server_key = &server_key;
 #else
     httpd_config_t http_conf = HTTPD_DEFAULT_CONFIG();

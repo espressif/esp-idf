@@ -216,9 +216,9 @@ static httpd_handle_t start_wss_echo_server(void)
         .source = ESP_KEY_SOURCE_BUFFER,
         .buffer = {
             .data = prvtkey_pem_start,
-            .len = prvtkey_pem_end - prvtkey_pem_start,
         }
     };
+    server_key.buffer.len = prvtkey_pem_end - prvtkey_pem_start;
     conf.server_key = &server_key;
 
     esp_err_t ret = httpd_ssl_start(&server, &conf);
