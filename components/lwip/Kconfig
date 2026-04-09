@@ -452,6 +452,14 @@ menu "LWIP"
                 Enabling this option allows DHCP server to support temporary static ARP entries
                 for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
 
+        config LWIP_DHCPS_TEST_PARSE_OPTIONS
+            bool "Expose parse_options() for unit testing"
+            default n
+            depends on LWIP_DHCPS
+            help
+                Enables a non-static wrapper around the internal parse_options() function
+                so it can be called from test code. Only enable this for testing builds.
+
     endmenu # DHCPS
 
     menuconfig LWIP_AUTOIP

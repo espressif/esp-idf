@@ -1726,4 +1726,18 @@ bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_
     return false;
 }
 #endif
+#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len)
+{
+    dhcps_t *dhcps = dhcps_new();
+    if (dhcps == NULL) {
+        return 0;
+    }
+    IP4_ADDR(&dhcps->client_address, 192, 168, 4, 2);
+    u8_t result = parse_options(dhcps, optptr, len);
+    mem_free(dhcps);
+    return result;
+}
+#endif
+
 #endif // ESP_DHCPS
