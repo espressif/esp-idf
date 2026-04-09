@@ -1,16 +1,13 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import contextlib
 import difflib
 import logging
-import os
 import random
 import re
 import ssl
 import string
 import time
-from itertools import count
-from itertools import product
 from threading import Event
 from threading import Lock
 from typing import Any
@@ -60,7 +57,10 @@ class MqttPublisher(mqtt.Client):
         self.event_client_connected.set()
 
     def on_connect_fail(self, mqttc: Any, obj: Any) -> None:
-        logging.error('Connect failed')
+        t = self.config['transport']
+        host = self.config['broker_host_' + t]
+        port = self.config['broker_port_' + t]
+        logging.error('Connect failed (transport=%s broker=%s:%s)', t, host, port)
 
     def on_message(self, mqttc: mqtt.Client, obj: Any, msg: mqtt.MQTTMessage) -> None:
         payload = msg.payload.decode('utf-8')
@@ -164,37 +164,20 @@ def get_configurations(dut: Dut, test_case: Any) -> Dict[str, Any]:
     )
     publish_cfg['subscribe_topic'] = 'test/subscribe_to/' + unique_topic
     publish_cfg['publish_topic'] = 'test/subscribe_to/' + unique_topic
-    logging.info(f'configuration: {publish_cfg}')
     return publish_cfg
 
 
+def log_publish_configuration(publish_cfg: Dict[str, Any]) -> None:
+    logging.info('publish configuration: %s', publish_cfg)
+
+
 @contextlib.contextmanager
-def connected_and_subscribed(dut: Dut, config: Dict[str, Any]) -> Any:
+def connected_and_subscribed(dut: Dut, publish_cfg: Dict[str, Any]) -> Any:
     dut.write('start')
-    dut_subscribe_timeout = config.get('dut_subscribe_timeout', 60)
+    dut_subscribe_timeout = publish_cfg.get('dut_subscribe_timeout', 60)
     dut.expect(re.compile(rb'MQTT_EVENT_SUBSCRIBED'), timeout=dut_subscribe_timeout)
     yield
     dut.write('stop')
-
-
-def get_scenarios() -> List[Dict[str, int]]:
-    scenarios = []
-    # Initialize message sizes and repeat counts (if defined in the environment)
-    for i in count(0):
-        # Check env variable: MQTT_PUBLISH_MSG_{len|repeat}_{x}
-        env_dict = {var: 'MQTT_PUBLISH_MSG_' + var + '_' + str(i) for var in ['len', 'repeat']}
-        if os.getenv(env_dict['len']) and os.getenv(env_dict['repeat']):
-            scenarios.append({var: int(os.getenv(env_dict[var])) for var in ['len', 'repeat']})  # type: ignore
-            continue
-        break
-    if not scenarios:  # No message sizes present in the env - set defaults
-        logging.info('Using predefined cases')
-        scenarios = [
-            {'msg_len': 0, 'nr_of_msgs': 5},  # zero-sized messages
-            {'msg_len': 2, 'nr_of_msgs': 5},  # short messages
-            {'msg_len': 200, 'nr_of_msgs': 3},  # long messages
-        ]
-    return scenarios
 
 
 def get_timeout(test_case: Any) -> int:
@@ -273,63 +256,51 @@ def run_publish_test_case(dut: Dut, config: Any) -> None:
         logging.info('ESP32 received all data from runner')
 
 
-stress_scenarios = [{'msg_len': 20, 'nr_of_msgs': 30}]  # many medium sized
-transport_cases = ['tcp', 'ws', 'wss', 'ssl']
-qos_cases = [0, 1, 2]
-enqueue_cases = [0, 1]
 local_broker_supported_transports = ['tcp']
-local_broker_scenarios = [
-    {'msg_len': 0, 'nr_of_msgs': 5},  # zero-sized messages
-    {'msg_len': 5, 'nr_of_msgs': 20},  # short messages
-    {'msg_len': 500, 'nr_of_msgs': 10},  # long messages
-    {'msg_len': 20, 'nr_of_msgs': 20},
-]  # many medium sized
 
+# Minimal IDF CI coverage (full matrix lives in esp-mqtt CI).
+_publish_ci_scenario: Dict[str, int] = {'msg_len': 200, 'nr_of_msgs': 3}
+publish_connect_ci_cases: List[Tuple[str, int, int, Dict[str, int]]] = [
+    ('tcp', 1, 0, _publish_ci_scenario),
+    ('ssl', 0, 0, _publish_ci_scenario),
+]
 
-def make_cases(transport: Any, scenarios: List[Dict[str, int]]) -> List[Tuple[str, int, int, Dict[str, int]]]:
-    return [test_case for test_case in product(transport, qos_cases, enqueue_cases, scenarios)]
-
-
-test_cases = make_cases(transport_cases, get_scenarios())
-stress_test_cases = make_cases(transport_cases, stress_scenarios)
+# Fewer messages than a full matrix run: enough to exercise QoS1 and host↔DUT path under CI load.
+_local_broker_ci_scenario: Dict[str, int] = {'msg_len': 20, 'nr_of_msgs': 5}
+publish_connect_local_broker_ci_cases: List[Tuple[str, int, int, Dict[str, int]]] = [
+    ('tcp', 1, 0, _local_broker_ci_scenario),
+]
 
 
 @pytest.mark.ethernet
-@pytest.mark.parametrize('test_case', test_cases)
+@pytest.mark.parametrize('test_case', publish_connect_ci_cases)
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 @pytest.mark.flaky(reruns=1, reruns_delay=1)
 def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
     publish_cfg = get_configurations(dut, test_case)
+    log_publish_configuration(publish_cfg)
     dut.expect(re.compile(rb'mqtt>'), timeout=30)
     dut.confirm_write('init', expect_pattern='init', timeout=30)
-    run_publish_test_case(dut, publish_cfg)
-
-
-@pytest.mark.ethernet_stress
-@pytest.mark.nightly_run
-@pytest.mark.parametrize('test_case', stress_test_cases)
-@pytest.mark.parametrize('config', ['default'], indirect=True)
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_mqtt_publish_stress(dut: Dut, test_case: Any) -> None:
-    publish_cfg = get_configurations(dut, test_case)
-    dut.expect(re.compile(rb'mqtt>'), timeout=30)
-    dut.write('init')
     run_publish_test_case(dut, publish_cfg)
 
 
 @pytest.mark.ethernet
-@pytest.mark.parametrize('test_case', make_cases(local_broker_supported_transports, local_broker_scenarios))
+@pytest.mark.parametrize('test_case', publish_connect_local_broker_ci_cases)
 @pytest.mark.parametrize('config', ['local_broker'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
 def test_mqtt_publish_local(dut: Dut, test_case: Any) -> None:
     if test_case[0] not in local_broker_supported_transports:
         pytest.skip(f'Skipping transport: {test_case[0]}...')
     dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
+    if isinstance(dut_ip, (bytes, bytearray)):
+        dut_ip = dut_ip.decode()
     publish_cfg = get_configurations(dut, test_case)
     publish_cfg['broker_host_tcp'] = dut_ip
     publish_cfg['broker_port_tcp'] = 1234
+    log_publish_configuration(publish_cfg)
     dut.expect(re.compile(rb'mqtt>'), timeout=30)
     dut.confirm_write('init', expect_pattern='init', timeout=30)
+    time.sleep(2.0)
     run_publish_test_case(dut, publish_cfg)

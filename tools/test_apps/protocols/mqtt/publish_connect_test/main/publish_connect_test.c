@@ -294,9 +294,15 @@ void register_connect_commands(void){
 #ifdef CONFIG_EXAMPLE_RUN_LOCAL_BROKER
 static void broker_task(void* ctx)
 {
-    // broker continues to run in this task
     struct mosq_broker_config config = { .host = CONFIG_EXAMPLE_BROKER_HOST, .port = CONFIG_EXAMPLE_BROKER_PORT };
-    mosq_broker_run(&config);
+    ESP_LOGI(TAG, "Embedded MQTT broker starting (bind %s port %d)", config.host, config.port);
+    int rc = mosq_broker_run(&config);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Embedded MQTT broker failed with exit code %d", rc);
+    } else {
+        ESP_LOGI(TAG, "Embedded MQTT broker stopped cleanly");
+    }
+    vTaskDelete(NULL);
 }
 #endif // CONFIG_EXAMPLE_RUN_LOCAL_BROKER
 
