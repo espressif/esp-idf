@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,14 +11,13 @@
 
 void touch_hal_init(void)
 {
-    touch_ll_stop_fsm();
-    touch_ll_intr_disable();
+    // Deinit to reset the registers in case of the registers are not reset when wakeup from deep sleep.
+    touch_hal_deinit();
     touch_ll_intr_clear();
     touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
     touch_ll_clear_group_mask(TOUCH_PAD_BIT_MASK_ALL, TOUCH_PAD_BIT_MASK_ALL);
     touch_ll_set_trigger_mode(TOUCH_TRIGGER_MODE_DEFAULT);
     touch_ll_set_trigger_source(TOUCH_TRIGGER_SOURCE_DEFAULT);
-    touch_ll_clear_trigger_status_mask();
     touch_ll_set_meas_time(TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
     touch_ll_set_sleep_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
     touch_ll_set_fsm_mode(TOUCH_FSM_MODE_DEFAULT);
