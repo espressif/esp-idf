@@ -53,9 +53,9 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
         .uuid = BLE_UUID16_DECLARE(BLUFI_SERVICE_UUID),
         .characteristics = (struct ble_gatt_chr_def[])
         { {
-                /* FALSE POSITIVE: No BLE_GATT_CHR_F_WRITE_ENC/READ_ENC by design.
-                 * BLUFI uses its own app-layer security (DH key exchange + AES + CRC).
-                 * BLE link-layer pairing is impossible before provisioning credentials exist. */
+                /* BLE_GATT_CHR_F_WRITE_ENC/READ_ENC are not set because BLUFI uses its
+                 * own application-layer security (DH key exchange + AES-128 + CRC).
+                 * BLE pairing cannot occur before Wi-Fi credentials are provisioned. */
                 /*** Characteristic: P2E */
                 .uuid = BLE_UUID16_DECLARE(BLUFI_CHAR_P2E_UUID),
                 .access_cb = gatt_svr_access_cb,

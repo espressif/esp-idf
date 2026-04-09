@@ -93,9 +93,9 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
     btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 }
 
-/* FALSE POSITIVE: blufi_env is a single-connection global by design.
- * The GAP layer rejects new connections while is_connected==true,
- * so concurrent multi-connection access to this state never occurs. */
+/* blufi_env is a global shared state but only one BLE connection is active at
+ * a time — the GAP layer rejects new connections while is_connected==true,
+ * so there is no concurrent access to this structure. */
 void btc_blufi_recv_handler(uint8_t *data, int len)
 {
     if (len < sizeof(struct blufi_hdr)) {
@@ -239,9 +239,10 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
         }
     }
 }
-/* Known limitation: this function runs in the BTC task (app-initiated sends)
- * AND in the NimBLE task (via recv_handler), racing on send_seq/frag_size.
- * portENTER_CRITICAL cannot protect here;  */
+
+/* This function is called from both the BTC task and the NimBLE task, so
+ * send_seq/frag_size may race.  portENTER_CRITICAL does not help across
+ * different FreeRTOS tasks; a mutex would be needed for full protection. */
 void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
 {
     struct blufi_hdr *hdr = NULL;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -856,9 +856,13 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
         /* Encryption has been enabled or disabled for this connection. */
         MODLOG_DFLT(INFO, "encryption change event; status=%d ",
                 event->enc_change.status);
-        rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
-        assert(rc == 0);
-        ble_hid_task_start_up();
+        if (event->enc_change.status == 0) {
+            rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
+            assert(rc == 0);
+            ble_hid_task_start_up();
+        } else {
+            ESP_LOGW(TAG, "encryption failed; waiting for disconnect/retry");
+        }
         return 0;
 
     case BLE_GAP_EVENT_NOTIFY_TX:
@@ -889,7 +893,7 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_PASSKEY_ACTION:
         ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT started");
         struct ble_sm_io pkey = {0};
-        int key = 0;
+        int key = 1;
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
