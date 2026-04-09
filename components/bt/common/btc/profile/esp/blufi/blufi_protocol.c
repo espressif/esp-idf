@@ -94,7 +94,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, NULL, 0, NULL, NULL);
             break;
         default:
-            BTC_TRACE_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
+            BTC_TRACE_ERROR("%s Unknown Ctrl pkt %02x\n", __func__, type);
             break;
         }
         break;
@@ -111,6 +111,10 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             }
             break;
         case BLUFI_TYPE_DATA_SUBTYPE_STA_BSSID:
+            if (len < 6) {
+                BTC_TRACE_ERROR("%s STA_BSSID data too short: %d\n", __func__, len);
+                return;
+            }
             msg.sig = BTC_SIG_API_CB;
             msg.pid = BTC_PID_BLUFI;
             msg.act = ESP_BLUFI_EVENT_RECV_STA_BSSID;
@@ -241,7 +245,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), btc_blufi_cb_deep_copy, btc_blufi_cb_deep_free);
             break;
         default:
-            BTC_TRACE_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
+            BTC_TRACE_ERROR("%s Unknown Ctrl pkt %02x\n", __func__, type);
             break;
         }
         break;

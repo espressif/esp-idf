@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,12 +61,6 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dsa.h>
 
-#if default_RNG_defined
-static uECC_RNG_Function g_rng_function = &default_CSPRNG;
-#else
-static uECC_RNG_Function g_rng_function = 0;
-#endif
-
 static void bits2int(uECC_word_t *native, const uint8_t *bits,
 		     unsigned bits_size, uECC_Curve curve)
 {
@@ -107,9 +101,11 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
 
 	uECC_word_t tmp[NUM_ECC_WORDS];
 	uECC_word_t s[NUM_ECC_WORDS];
+#if !SOC_ECC_SUPPORTED
 	uECC_word_t *k2[2] = {tmp, s};
-	uECC_word_t p[NUM_ECC_WORDS * 2];
 	uECC_word_t carry;
+#endif
+	uECC_word_t p[NUM_ECC_WORDS * 2];
 	wordcount_t num_words = curve->num_words;
 	wordcount_t num_n_words = BITS_TO_WORDS(curve->num_n_bits);
 	bitcount_t num_n_bits = curve->num_n_bits;
@@ -120,15 +116,20 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
 		return 0;
 	}
 
+#if SOC_ECC_SUPPORTED
+	EccPoint_mult(p, curve->G, k, 0, num_n_bits, curve);
+#else
 	carry = regularize_k(k, tmp, s, curve);
 	EccPoint_mult(p, curve->G, k2[!carry], 0, num_n_bits + 1, curve);
+#endif
 	if (uECC_vli_isZero(p, num_words)) {
 		return 0;
 	}
 
 	/* If an RNG function was specified, get a random number
 	to prevent side channel analysis of k. */
-	if (!g_rng_function) {
+	uECC_RNG_Function rng_function = uECC_get_rng();
+	if (!rng_function) {
 		uECC_vli_clear(tmp, num_n_words);
 		tmp[0] = 1;
 	}
@@ -154,7 +155,8 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
 	bits2int(tmp, message_hash, hash_size, curve);
 	uECC_vli_modAdd(s, tmp, s, curve->n, num_n_words); /* s = e + r*d */
 	uECC_vli_modMult(s, s, k, curve->n, num_n_words);  /* s = (e + r*d) / k */
-	if (uECC_vli_numBits(s, num_n_words) > (bitcount_t)curve->num_bytes * 8) {
+	if (uECC_vli_isZero(s, num_n_words) ||
+	    uECC_vli_numBits(s, num_n_words) > (bitcount_t)curve->num_bytes * 8) {
 		return 0;
 	}
 
