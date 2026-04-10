@@ -20,11 +20,9 @@ tools/test_apps/protocols/mqtt/publish_connect_test:
   depends_filepatterns:
     - tools/ci/python_packages/common_test_methods.py
     - examples/common_components/**/*
-    - examples/protocols/**/*
-    - examples/system/ota/**/*
-    - examples/ethernet/iperf/**/*
-    - examples/network/vlan_support/**/*
-    - components/esp_netif/esp_netif_handlers.c
+    - examples/protocols/mqtt/**/*
+    - components/mqtt/**/*
+    - tools/test_apps/protocols/mqtt/publish_connect_test/**/*
 
 tools/test_apps/protocols/netif_components:
   enable:
