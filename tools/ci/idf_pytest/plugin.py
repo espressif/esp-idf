@@ -20,7 +20,7 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_ignore_test_results.ignore_results import ChildCase
 from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
-from .constants import ECO_MARKERS
+from .constants import REV_MARKERS
 from .utils import format_case_id
 from .utils import merge_junit_files
 from .utils import normalize_testcase_file_path
@@ -181,8 +181,8 @@ class IdfLocalPlugin:
             if 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
-            for eco_marker in ECO_MARKERS:
-                if eco_marker in case.all_markers:
+            for rev_marker in REV_MARKERS:
+                if rev_marker in case.all_markers:
                     break
             else:
                 item.add_marker('rev_default')

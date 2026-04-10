@@ -22,11 +22,11 @@ def test_isp(dut: Dut) -> None:
 
 # TODO: IDF-15006
 # @pytest.mark.generic
-# @pytest.mark.esp32p4_eco4
+# @pytest.mark.esp32p4_rev1
 # @pytest.mark.parametrize(
 #     'config',
 #     [
-#         ('esp32p4_eco4'),
+#         ('esp32p4_rev1'),
 #     ],
 #     indirect=True,
 # )

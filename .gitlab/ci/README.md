@@ -23,12 +23,7 @@
     - [Grammar](#grammar)
     - [Special Rules](#special-rules)
   - [Upload/Download Artifacts to Internal Minio Server](#uploaddownload-artifacts-to-internal-minio-server)
-    - [Users Without Access to Minio](#users-without-access-to-minio)
-    - [Users With Access to Minio](#users-with-access-to-minio)
-      - [Env Vars for Minio](#env-vars-for-minio)
-      - [Artifacts Types and File Patterns](#artifacts-types-and-file-patterns)
-      - [Upload](#upload)
-      - [Download](#download)
+  - [Revision Marker Naming Rules](#revision-marker-naming-rules)
 
 ## General Workflow
 

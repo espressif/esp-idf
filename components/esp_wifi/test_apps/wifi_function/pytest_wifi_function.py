@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # @pytest.mark.esp32c2  # esp32c2 are using xtal_26mhz
 
 
@@ -28,30 +29,30 @@ def test_wifi_unit_test_esp32c2_xtal26m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.xtal_26mhz
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config, baud',
     [
-        ('esp32c2eco4_xtal26m', '74880'),
+        ('esp32c2_rev2_xtal26m', '74880'),
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_wifi_unit_test_esp32c2eco4_xtal26m(dut: Dut) -> None:
+def test_wifi_unit_test_esp32c2_rev2_xtal26m(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
     [
-        'esp32c3eco7',
+        'esp32c3_rev1',
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
-def test_wifi_unit_test_esp32c3eco7(dut: Dut) -> None:
+def test_wifi_unit_test_esp32c3_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases()
