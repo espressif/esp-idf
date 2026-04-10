@@ -8,7 +8,8 @@ Migration from 5.3 to 5.4
 
     gcc
     system
-    bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
+    :SOC_BT_SUPPORTED: bt_common
     storage
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi
     protocols

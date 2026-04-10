@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
-#include "esp_core_dump_summary_port.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +17,9 @@ extern "C" {
 
 #define APP_ELF_SHA256_SZ (CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1)
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
+#include "esp_core_dump_summary_port.h"
 
 /**
  * @brief Core dump summary, Most meaningful contents of the core dump
@@ -34,7 +35,7 @@ typedef struct {
     esp_core_dump_summary_extra_info_t ex_info; /*!< Architecture specific extra data */
 } esp_core_dump_summary_t;
 
-#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
@@ -52,27 +53,17 @@ void esp_core_dump_init(void);
 /**************************************************************************************/
 
 /**
- * Core dump file consists of header and data (in binary or ELF format) for every task in the system at the moment of crash.
+ * Core dump file consists of header and data (in ELF format) for every task in the system at the moment of crash.
  * For the data integrity, a checksum is used at the end of core the dump data.
  * The structure of core dump file is described below in details.
  * 1) Core dump starts with header:
  * 1.1) TOTAL_LEN is total length of core dump data in flash including the checksum. Size is 4 bytes.
  * 1.2) VERSION field keeps 4 byte version of core dump.
- * 1.2) TASKS_NUM is the number of tasks for which data are stored. Size is 4 bytes. Unused in ELF format
- * 1.3) TCB_SIZE is the size of task's TCB structure. Size is 4 bytes. Unused in ELF format
- * 1.4) MEM_SEG_NUM is the number of memory segment. Size is 4 bytes. Unused in ELF format
- * 1.5) CHIP_REV is the revision of the chip. Size is 4 bytes.
- * 2) Core dump header is followed by the data for every task in the system. Data part is differs for the binary
- *  and elf formats.
+ * 1.3) CHIP_REV is the revision of the chip. Size is 4 bytes.
+ * 2) Core dump header is followed by the data for every task in the system.
  * 2.1) The core dump file uses a subset of the ELF structures to store the crash information.
  *  Loadable ELF segments and ELF notes (ELF.PT_NOTE) used with a special name and type (CORE, NT_PRSTATUS type)
- * 2.2) In Binary format task data are started with the task header:
- * 2.2.1) TCB_ADDR is the address of TCB in memory. Size is 4 bytes.
- * 2.2.2) STACK_TOP is the top of task's stack (address of the topmost stack item). Size is 4 bytes.
- * 2.2.3) STACK_END is the end of task's stack (address from which task's stack starts). Size is 4 bytes.
- * 2.2.4) Task header is followed by TCB data. Size is TCB_SIZE bytes.
- * 2.2.5) Task's stack is placed after TCB data. Size is (STACK_END - STACK_TOP) bytes.
- * 2.3) The checksum is placed at the end of the data.
+ * 2.2) The checksum is placed at the end of the data.
  * 3) The structure of the uart data is the same as the data stored in flash
  * 3.1) Uart data is printed in base64 format surrounded with special messages to help user recognize the start and
  * end of actual data.
@@ -90,6 +81,7 @@ void esp_core_dump_init(void);
  */
 void esp_core_dump_write(panic_info_t *info);
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 /**
  * @brief  Check integrity of coredump data in flash.
  *         This function reads the coredump data while calculating their checksum. If it
@@ -122,8 +114,6 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_erase(void);
-
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 
 /**
  * @brief Get panic reason from the core dump.
@@ -171,7 +161,7 @@ esp_err_t esp_core_dump_get_panic_reason(char *reason_buffer, size_t buffer_size
  */
 esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary);
 
-#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
 #ifdef __cplusplus
 }

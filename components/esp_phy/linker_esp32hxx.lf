@@ -1,0 +1,90 @@
+# Linker fragment for ESP32-Hxx (H2/H21/H4) specific PHY IRAM placement
+# These entries are used when CONFIG_ESP_PHY_INIT_IRAM is enabled
+
+[mapping:phy_hxx]
+archive: libphy.a
+entries:
+    if ESP_PHY_INIT_IRAM = y:
+        # esp_phy_disable (basically phy_close_rf)
+        phy_init:phy_close_rf (noflash)
+        phy_tsens:tsens_temp_read (noflash)
+        phy_hw_freq:get_freq_mem_param (noflash)
+        phy_hw_freq:get_freq_mem_addr (noflash)
+        phy_basic:enter_critical_phy (noflash)
+        phy_hw_freq:phy_dis_hw_set_freq (noflash)
+        phy_hw_freq:wait_freq_set_busy (noflash)
+        phy_hw_freq:read_rf_freq_mem_new (noflash)
+        phy_init:phy_xpd_rf (noflash)
+        phy_pbus:pbus_debugmode (noflash)
+        phy_pbus:pbus_force_mode (noflash)
+        phy_basic:exit_critical_phy (noflash)
+        phy_api:phy_xpd_tsens (noflash)
+        phy_pbus:pbus_xpd_tx_off (noflash)
+        phy_reg:phy_bbpll_cal (noflash)
+        phy_reg:phy_modem_lo_clk (noflash)
+        phy_pbus:pbus_force_test (noflash)
+        phy_pbus:pbus_workmode (noflash)
+        # esp_phy_enable (basically phy_wakeup_init)
+        phy_init:phy_wakeup_init (noflash)
+        phy_tsens:tsens_read_init (noflash)
+        phy_hw_freq:phy_chan_hw_init (noflash)
+        phy_hw_freq:freq_reg_init (noflash)
+        phy_rfpll:chan_to_freq (noflash)
+        phy_hw_freq:freq_i2c_data_write (noflash)
+        phy_hw_freq:freq_get_i2c_data (noflash)
+        phy_hw_freq:freq_i2c_write_set_new (noflash)
+        phy_hw_freq:freq_i2c_num_addr (noflash)
+        phy_hw_freq:freq_num_get_data (noflash)
+        phy_reg:open_i2c_xpd (noflash)
+        phy_i2c:i2c_clk_sel (noflash)
+        phy_basic:i2c_master_reset (noflash)
+        phy_reg:set_pbus_reg (noflash)
+        phy_i2c:phy_i2c_init1 (noflash)
+        phy_i2c:i2c_paral_write_num (noflash)
+        phy_i2c:i2c_paral_write (noflash)
+        phy_i2c:chip_i2c_readReg (noflash)
+        phy_i2c:get_i2c_read_mask (noflash)
+        phy_i2c:get_i2c_hostid (noflash)
+        phy_i2c:chip_i2c_readReg_org (noflash)
+        phy_i2c:i2c_sar2_init_code (noflash)
+        phy_i2c:i2c_writeReg_Mask (noflash)
+        phy_i2c:chip_i2c_writeReg (noflash)
+        phy_hw_freq:write_chan_freq (noflash)
+        phy_hw_freq:freq_chan_en_sw (noflash)
+        phy_reg:fe_reg_init (noflash)
+        phy_reg:adc_cal_set (noflash)
+        phy_reg:logain_reg_init (noflash)
+        phy_init:phy_reg_init (noflash)
+        phy_reg:iq_corr_enable (noflash)
+        phy_reg:agc_reg_init (noflash)
+        phy_reg:phy_ant_init (noflash)
+        phy_reg:bt_filter_reg (noflash)
+        phy_hw_freq:phy_en_hw_set_freq (noflash)
+
+[mapping:esp_phy_hxx]
+archive: libesp_phy.a
+entries:
+    if ESP_PHY_INIT_IRAM = y:
+        phy_init_esp32hxx:esp_phy_enable (noflash)
+        phy_init_esp32hxx:esp_phy_disable (noflash)
+        phy_common:phy_clr_modem_flag (noflash)
+        phy_common:phy_get_modem_flag (noflash)
+        phy_common:phy_set_modem_flag (noflash)
+        phy_common:phy_track_pll_deinit (noflash)
+        phy_common:phy_track_pll_init (noflash)
+        phy_common:phy_track_pll (noflash)
+        phy_common:phy_enabled_modem_contains (noflash)
+
+[mapping:phy_hal_hxx]
+archive: libesp_hal_ana_conv.a
+entries:
+    if ESP_PHY_INIT_IRAM = y:
+        temperature_sensor_hal:temperature_sensor_hal_get_degree (noflash)
+        temperature_sensor_hal:temperature_sensor_hal_init (noflash)
+
+[mapping:esp_timer_hxx]
+archive: libesp_timer.a
+entries:
+    if ESP_PHY_INIT_IRAM = y:
+        esp_timer:esp_timer_create (noflash)
+        esp_timer:esp_timer_delete (noflash)

@@ -15,12 +15,12 @@
 #include "unity.h"
 #include "spi_flash_mmap.h"
 #include "esp_private/cache_utils.h"
-#include "soc/timer_periph.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_spiflash.h"
 #include "esp_flash.h"
 #include "esp_partition.h"
+#include "soc/soc.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 // Used for rom_fix function

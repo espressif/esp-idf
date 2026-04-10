@@ -1,5 +1,8 @@
 name: docker
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -21,7 +24,7 @@ jobs:
     # Disable the job in forks
     if: ${{ github.repository_owner == 'espressif' }}
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-X64-large
     steps:
       # Depending on the branch/tag, set CLONE_BRANCH_OR_TAG variable (used in the Dockerfile
       # as a build arg) and TAG_NAME (used when tagging the image).

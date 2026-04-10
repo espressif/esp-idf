@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,15 +9,14 @@
 #include "soc/soc_caps.h"
 #include "esp_eth_com.h"
 #include "esp_eth_mac.h"
-#include "sdkconfig.h"
 #include "driver/spi_master.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if CONFIG_ETH_USE_SPI_ETHERNET
-
 /**
  * @brief Custom SPI Driver Configuration.
  * This structure declares configuration and callback functions to access Ethernet SPI module via
@@ -112,125 +111,8 @@ typedef struct
         .read = NULL,    \
         .write = NULL    \
     }
+
 #endif // CONFIG_ETH_USE_SPI_ETHERNET
-
-#if CONFIG_ETH_SPI_ETHERNET_DM9051
-/**
- * @brief DM9051 specific configuration
- *
- */
-typedef struct {
-    int int_gpio_num;                                   /*!< Interrupt GPIO number, set -1 to not use interrupt and to poll rx status periodically */
-    uint32_t poll_period_ms;                            /*!< Period in ms to poll rx status when interrupt mode is not used */
-    spi_host_device_t spi_host_id;                      /*!< SPI peripheral (this field is invalid when custom SPI driver is defined) */
-    spi_device_interface_config_t *spi_devcfg;          /*!< SPI device configuration (this field is invalid when custom SPI driver is defined) */
-    eth_spi_custom_driver_config_t custom_spi_driver;   /*!< Custom SPI driver definitions */
-} eth_dm9051_config_t;
-
-/**
- * @brief Default DM9051 specific configuration
- *
- */
-#define ETH_DM9051_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
-    {                                           \
-        .int_gpio_num = 4,                      \
-        .poll_period_ms = 0,                    \
-        .spi_host_id = spi_host,                \
-        .spi_devcfg = spi_devcfg_p,             \
-        .custom_spi_driver = ETH_DEFAULT_SPI,   \
-    }
-
-/**
-* @brief Create DM9051 Ethernet MAC instance
-*
-* @param dm9051_config: DM9051 specific configuration
-* @param mac_config: Ethernet MAC configuration
-*
-* @return
-*      - instance: create MAC instance successfully
-*      - NULL: create MAC instance failed because some error occurred
-*/
-esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
-#endif // CONFIG_ETH_SPI_ETHERNET_DM9051
-
-#if CONFIG_ETH_SPI_ETHERNET_W5500
-/**
- * @brief W5500 specific configuration
- *
- */
-typedef struct {
-    int int_gpio_num;                                   /*!< Interrupt GPIO number, set -1 to not use interrupt and to poll rx status periodically */
-    uint32_t poll_period_ms;                            /*!< Period in ms to poll rx status when interrupt mode is not used */
-    spi_host_device_t spi_host_id;                      /*!< SPI peripheral (this field is invalid when custom SPI driver is defined)*/
-    spi_device_interface_config_t *spi_devcfg;          /*!< SPI device configuration (this field is invalid when custom SPI driver is defined)*/
-    eth_spi_custom_driver_config_t custom_spi_driver;   /*!< Custom SPI driver definitions */
-} eth_w5500_config_t;
-
-/**
- * @brief Default W5500 specific configuration
- *
- */
-#define ETH_W5500_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
-    {                                           \
-        .int_gpio_num = 4,                      \
-        .poll_period_ms = 0,                    \
-        .spi_host_id = spi_host,                \
-        .spi_devcfg = spi_devcfg_p,             \
-        .custom_spi_driver = ETH_DEFAULT_SPI,   \
-    }
-
-/**
-* @brief Create W5500 Ethernet MAC instance
-*
-* @param w5500_config: W5500 specific configuration
-* @param mac_config: Ethernet MAC configuration
-*
-* @return
-*      - instance: create MAC instance successfully
-*      - NULL: create MAC instance failed because some error occurred
-*/
-esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, const eth_mac_config_t *mac_config);
-#endif // CONFIG_ETH_SPI_ETHERNET_W5500
-
-#if CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL
-/**
- * @brief KSZ8851SNL specific configuration
- *
- */
-typedef struct {
-    int int_gpio_num;                                   /*!< Interrupt GPIO number, set -1 to not use interrupt and to poll rx status periodically */
-    uint32_t poll_period_ms;                            /*!< Period in ms to poll rx status when interrupt mode is not used */
-    spi_host_device_t spi_host_id;                      /*!< SPI peripheral (this field is invalid when custom SPI driver is defined) */
-    spi_device_interface_config_t *spi_devcfg;          /*!< SPI device configuration (this field is invalid when custom SPI driver is defined) */
-    eth_spi_custom_driver_config_t custom_spi_driver;   /*!< Custom SPI driver definitions */
-} eth_ksz8851snl_config_t;
-
-/**
- * @brief Default KSZ8851SNL specific configuration
- *
- */
-#define ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
-    {                                               \
-        .int_gpio_num = 4,                          \
-        .poll_period_ms = 0,                        \
-        .spi_host_id = spi_host,                    \
-        .spi_devcfg = spi_devcfg_p,                 \
-        .custom_spi_driver = ETH_DEFAULT_SPI,       \
-    }
-
-/**
-* @brief Create KSZ8851SNL Ethernet MAC instance
-*
-* @param ksz8851snl_config: KSZ8851SNL specific configuration
-* @param mac_config: Ethernet MAC configuration
-*
-* @return
-*      - instance: create MAC instance successfully
-*      - NULL: create MAC instance failed because some error occurred
-*/
-esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851snl_config, const eth_mac_config_t *mac_config);
-#endif // CONFIG_ETH_SPI_ETHERNET_KSZ8851
-
 #ifdef __cplusplus
 }
 #endif

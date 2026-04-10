@@ -31,7 +31,7 @@ extern "C" {
   * @param gpio_num GPIO number
   * @param level Output level, 0:low; 1:high
   */
-void gpio_set_output_level(uint32_t gpio_num, uint32_t level);
+void rom_gpio_set_output_level(uint32_t gpio_num, uint32_t level);
 
 /**
   * @brief Get GPIO input level
@@ -40,7 +40,7 @@ void gpio_set_output_level(uint32_t gpio_num, uint32_t level);
   *
   * @return 0:the GPIO_input level is low; 1:the GPIO input level is high
   */
-uint32_t gpio_get_input_level(uint32_t gpio_num);
+uint32_t rom_gpio_get_input_level(uint32_t gpio_num);
 
 /**
   * @brief set gpio input to a signal, one gpio can input to several signals.
@@ -55,13 +55,13 @@ uint32_t gpio_get_input_level(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_matrix_in(uint32_t gpio_num, uint32_t signal_idx, bool inv);
+void rom_gpio_matrix_in(uint32_t gpio_num, uint32_t signal_idx, bool inv);
 
 /**
  * @brief bypass gpio matrix input to signals
  * @param signal_idx  Internal signal index
  */
-void gpio_bypass_matrix_in(uint32_t signal_idx);
+void rom_gpio_bypass_matrix_in(uint32_t signal_idx);
 
 /**
   * @brief set signal output to gpio, one signal can output to several gpios.
@@ -77,25 +77,25 @@ void gpio_bypass_matrix_in(uint32_t signal_idx);
   *
   * @return None
   */
-void gpio_matrix_out(uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv);
+void rom_gpio_matrix_out(uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv);
 
-// /**
-//   * @brief enable gpio output.
-//   *
-//   * @param uint32_t gpio_num : gpio number
-//   *
-//   * @return None
-//   */
-// void gpio_output_enable(uint32_t gpio_num);
+/**
+  * @brief enable gpio output.
+  *
+  * @param uint32_t gpio_num : gpio number
+  *
+  * @return None
+  */
+void rom_gpio_output_enable(uint32_t gpio_num);
 
-// /**
-//   * @brief disable gpio output.
-//   *
-//   * @param uint32_t gpio_num : gpio number
-//   *
-//   * @return None
-//   */
-// void gpio_output_disable(uint32_t gpio_num);
+/**
+  * @brief disable gpio output.
+  *
+  * @param uint32_t gpio_num : gpio number
+  *
+  * @return None
+  */
+void rom_gpio_output_disable(uint32_t gpio_num);
 
 /**
   * @brief Select pad as a gpio function from IOMUX.
@@ -104,7 +104,7 @@ void gpio_matrix_out(uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool 
   *
   * @return None
   */
-void gpio_pad_select_gpio(uint32_t gpio_num);
+void rom_gpio_pad_select_gpio(uint32_t gpio_num);
 
 /**
   * @brief Set pad driver capability.
@@ -115,7 +115,7 @@ void gpio_pad_select_gpio(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
+void rom_gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
 
 /**
   * @brief Pull up the pad from gpio number.
@@ -124,7 +124,7 @@ void gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
   *
   * @return None
   */
-void gpio_pad_pullup(uint32_t gpio_num);
+void rom_gpio_pad_pullup(uint32_t gpio_num);
 
 /**
   * @brief Pull down the pad from gpio number.
@@ -133,7 +133,7 @@ void gpio_pad_pullup(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_pulldown(uint32_t gpio_num);
+void rom_gpio_pad_pulldown(uint32_t gpio_num);
 
 /**
   * @brief enable gpio pad input.
@@ -142,7 +142,7 @@ void gpio_pad_pulldown(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_input_enable(uint32_t gpio_num);
+void rom_gpio_pad_input_enable(uint32_t gpio_num);
 
 /**
   * @brief disable gpio pad input.
@@ -151,7 +151,7 @@ void gpio_pad_input_enable(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_input_disable(uint32_t gpio_num);
+void rom_gpio_pad_input_disable(uint32_t gpio_num);
 
 /**
   * @brief Unhold the pad from gpio number.
@@ -160,7 +160,7 @@ void gpio_pad_input_disable(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_unhold(uint32_t gpio_num);
+void rom_gpio_pad_unhold(uint32_t gpio_num);
 
 /**
   * @brief Hold the pad from gpio number.
@@ -169,7 +169,7 @@ void gpio_pad_unhold(uint32_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_hold(uint32_t gpio_num);
+void rom_gpio_pad_hold(uint32_t gpio_num);
 
 /**
   * @}

@@ -9,7 +9,7 @@
 #include "esp_tee_flash.h"
 #include "esp_log.h"
 
-static __attribute__((unused)) const char *TAG = "partition_tee";
+ESP_LOG_ATTR_TAG(TAG, "partition_tee");
 
 const esp_partition_t *esp_partition_find_first(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label)
 {

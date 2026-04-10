@@ -1,0 +1,103 @@
+# Code Coverage Configuration for FreeRTOS Tests
+# This is a configuration file for maximum code coverage.
+# It includes all necessary settings for GCOV coverage instrumentation and enables
+# many optional FreeRTOS features, hooks, and debugging options to maximize coverage.
+
+# ============================================================================
+# GCOV Coverage Infrastructure
+# ============================================================================
+CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
+CONFIG_APPTRACE_DEST_JTAG=y
+CONFIG_APPTRACE_LOCK_ENABLE=y
+CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO=-1
+CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH=0
+CONFIG_ESP_GCOV_ENABLE=y
+
+# GCOV needs __getreent() which currently newlib provides, and not picolibc
+CONFIG_LIBC_NEWLIB=y
+
+# ============================================================================
+# FreeRTOS Coverage Instrumentation
+# ============================================================================
+# Enable code coverage instrumentation for FreeRTOS kernel, port, and ESP additions
+CONFIG_FREERTOS_ENABLE_COVERAGE_TESTS=y
+
+# ============================================================================
+# Compiler Optimizations (Debug mode for maximum coverage)
+# ============================================================================
+# Use debug optimizations to prevent code elimination
+CONFIG_COMPILER_OPTIMIZATION_DEBUG=y
+# Keep assertions enabled to test error paths
+CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE=y
+
+# Bootloader should use size optimization to keep bootloader size small
+CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y
+
+# ============================================================================
+# FreeRTOS Kernel Options (from sdkconfig.ci.freertos_options)
+# ============================================================================
+# Core timer selection
+CONFIG_FREERTOS_CORETIMER_1=y
+CONFIG_FREERTOS_OPTIMIZED_SCHEDULER=n
+
+# Stack overflow checking
+CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL=y
+CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK=y
+
+# Interrupt backtrace
+CONFIG_FREERTOS_INTERRUPT_BACKTRACE=y
+
+# Static allocation support
+CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION=y
+
+# Task pre-deletion hook
+CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK=y
+
+# Queue registry
+CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE=10
+
+# Trace facility and stats
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
+CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID=y
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64=y
+
+# FreeRTOS in IRAM
+CONFIG_FREERTOS_IN_IRAM=y
+
+# FPU in ISR
+CONFIG_FREERTOS_FPU_IN_ISR=y
+
+# Task notifications
+CONFIG_FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES=2
+
+# List data integrity checks
+CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES=y
+
+# Timer task affinity
+CONFIG_FREERTOS_TIMER_TASK_AFFINITY_CPU1=y
+
+# Tick hook - enables vApplicationTickHook()
+CONFIG_FREERTOS_USE_TICK_HOOK=y
+
+# Idle hook - enables vApplicationIdleHook()
+CONFIG_FREERTOS_USE_IDLE_HOOK=y
+
+# Application task tag
+CONFIG_FREERTOS_USE_APPLICATION_TASK_TAG=y
+
+# ============================================================================
+# FreeRTOS Port Options
+# ============================================================================
+# Task function wrapper
+CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER=y
+
+# Thread local storage deletion callbacks
+CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS=y
+
+# Mutex owner check
+CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER=y
+
+# Port critical compliance check
+CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE=y

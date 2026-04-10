@@ -146,7 +146,7 @@ Application Example
     * :example:`peripherals/dedicated_gpio/soft_i2c` demonstrates how to configure and use dedicated/fast GPIOs to emulate an I2C master, perform write-read transactions on the bus, and handle strict timing requirements by placing certain functions in IRAM.
     * :example:`peripherals/dedicated_gpio/soft_uart` demonstrates how to emulate a UART bus using dedicated/fast GPIOs on {IDF_TARGET_NAME}, which can send and receive characters on the UART bus using a TX pin and an RX pin, with the baud rate and other configurations adjustable via `menuconfig`.
 
-    .. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2 or esp32p4
+    .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
         * :example:`peripherals/dedicated_gpio/soft_spi` demonstrates how to configure and use dedicated/fast GPIOs to emulate a full-duplex SPI bus on {IDF_TARGET_NAME}.
 

@@ -97,7 +97,7 @@
       - ESP32 target configuration file. Can be used together with one of the ``interface/`` configuration files.
     * - ``target/esp32-solo-1.cfg``
       - Target configuration file for ESP32-SOLO-1 module. Different from ``esp32.cfg`` in that it only configures one CPU.
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-WROVER-KIT and ESP-Prog boards.
 
 ---

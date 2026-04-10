@@ -2,43 +2,46 @@
 
 ## Introduction
 
-In this tutorial, the ble_periodic_adv example code for the espressif chipsets with BLE5.0 support is reviewed. This example aims at understanding periodic advertisements and related NimBLE APIs.This code implements the periodic advertisement functionality along with extended advertisement by generating a non-resolvable private address.
+In this tutorial, the ble_periodic_adv example code for the Espressif chipsets with BLE 5.0 support is reviewed. This example demonstrates periodic advertising using the NimBLE stack. It configures extended non-connectable advertising on instance 0, sets up periodic advertising parameters, and begins transmitting periodic advertisement data.
 
 ## Includes
 
 This example is located in the examples folder of the ESP-IDF under the [ble_periodic_adv/main](../main). The [main.c](../main/main.c) file located in the main folder contains all the functionality that we are going to review. The header files contained in [main.c](../main/main.c) are:
 
 ```c
+#include <assert.h>
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
-#include "host/util/util.h"
-#include "console/console.h"
-#include "services/gap/ble_svc_gap.h"
-#include "periodic_adv.h"
 #include "host/ble_gap.h"
 #include "host/ble_hs_adv.h"
-#include "patterns.h"
+#include "host/util/util.h"
+#include "services/gap/ble_svc_gap.h"
+#include "modlog/modlog.h"
+#include "esp_peripheral.h"
 ```
-These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“nimble_port.h”`, `“nimble_port_freertos.h”`, `"ble_hs.h"` and `“ble_svc_gap.h”`, `“periodic_adv.h”` which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"nimble_port.h"`, `"nimble_port_freertos.h"`, `"ble_hs.h"`, `"ble_gap.h"`, `"ble_hs_adv.h"` and `"ble_svc_gap.h"` which expose the BLE APIs required to implement this example.
 
 * `nimble_port.h`: Includes the declaration of functions required for the initialization of the nimble stack.
 * `nimble_port_freertos.h`: Initializes and enables nimble host task.
-* `ble_hs.h`: Defines the functionalities to handle the host event
-* `ble_svc_gap.h`:Defines the macros for device name, and device appearance and declares the function to set them.
-* `periodic_adv.h`:It includes the code containing forward declarations of 2 structs `ble_hs_cfg` , and `ble_gatt_register_ctxt` based on weather macro `H_BLE_PERIODIC_ADV_` is defined.
+* `ble_hs.h`: Defines the functionalities to handle the host event.
+* `ble_gap.h`: Defines GAP (Generic Access Profile) related APIs for advertising and scanning.
+* `ble_hs_adv.h`: Defines advertisement data field manipulation APIs.
+* `ble_svc_gap.h`: Defines the macros for device name, and device appearance and declares the function to set them.
+* `modlog/modlog.h`: Provides logging macros used throughout the example.
+* `esp_peripheral.h`: Provides the `print_addr` utility for printing BLE addresses.
 
 ## Main Entry Point
 
-The program’s entry point is the app_main() function:
+The program's entry point is the app_main() function:
 ```c
 void
 app_main(void)
 {
-    int rc;
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -57,17 +60,19 @@ app_main(void)
     ble_hs_cfg.reset_cb = periodic_adv_on_reset;
     ble_hs_cfg.sync_cb = periodic_adv_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
-    rc = ble_svc_gap_device_name_set("nimble_periodic_adv");
+    int rc = ble_svc_gap_device_name_set("nimble_periodic_adv");
     assert(rc == 0);
+#endif
 
-    /* XXX Need to have a template for store */
+    /* XXX Need to have template for store */
     ble_store_config_init();
 
     nimble_port_freertos_init(periodic_adv_host_task);
 }
 ```
-The main function starts by initializing the non-volatile storage library. This library allows us to save the key-value pairs in flash memory.`nvs_flash_init()` stores the PHY calibration data. In a Bluetooth Low Energy (BLE) device, cryptographic keys used for encryption and authentication are often stored in Non-Volatile Storage (NVS).BLE stores the peer keys, CCCD keys, peer records, etc on NVS. By storing these keys in NVS, the BLE device can quickly retrieve them when needed, without the need for time-consuming key generations.
+The main function starts by initializing the non-volatile storage library. This library allows us to save the key-value pairs in flash memory.`nvs_flash_init()` stores the PHY calibration data. In a Bluetooth Low Energy (BLE) device, cryptographic keys used for encryption and authentication are often stored in Non-Volatile Storage (NVS). BLE stores the peer keys, CCCD keys, peer records, etc on NVS. By storing these keys in NVS, the BLE device can quickly retrieve them when needed, without the need for time-consuming key generations.
 ```c
 esp_err_t ret = nvs_flash_init();
 if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -79,60 +84,9 @@ ESP_ERROR_CHECK( ret );
 
 ## BT Controller and Stack Initialization
 
-The main function calls `nimble_port_init()` to initialize BT Controller and nimble stack. This function initializes the BT controller by first creating its configuration structure named `esp_bt_controller_config_t` with default settings generated by the `BT_CONTROLLER_INIT_CONFIG_DEFAULT()` macro. It implements the Host Controller Interface (HCI) on the controller side, the Link Layer (LL), and the Physical Layer (PHY). The BT Controller is invisible to the user applications and deals with the lower layers of the BLE stack. The controller configuration includes setting the BT controller stack size, priority, and HCI baud rate. With the settings created, the BT controller is initialized and enabled with the `esp_bt_controller_init()` and `esp_bt_controller_enable()` functions:
+The main function calls `nimble_port_init()` to initialize BT Controller and nimble stack. This function initializes the BT controller by first creating its configuration structure named `esp_bt_controller_config_t` with default settings generated by the `BT_CONTROLLER_INIT_CONFIG_DEFAULT()` macro. It implements the Host Controller Interface (HCI) on the controller side, the Link Layer (LL), and the Physical Layer (PHY). The BT Controller is invisible to the user applications and deals with the lower layers of the BLE stack. The controller configuration includes setting the BT controller stack size, priority, and HCI baud rate. With the settings created, the BT controller is initialized and enabled with the `esp_bt_controller_init()` and `esp_bt_controller_enable()` functions.
 
-```c
-esp_bt_controller_config_t config_opts = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-ret = esp_bt_controller_init(&config_opts);
-```
-Next, the controller is enabled in BLE Mode.
-
-```c
-ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-```
-The controller should be enabled in `ESP_BT_MODE_BLE` if you want to use the BLE mode.
-
-There are four Bluetooth modes supported:
-
-1. `ESP_BT_MODE_IDLE`: Bluetooth not running
-2. `ESP_BT_MODE_BLE`: BLE mode
-3. `ESP_BT_MODE_CLASSIC_BT`: BT Classic mode
-4. `ESP_BT_MODE_BTDM`: Dual mode (BLE + BT Classic)
-
-After the initialization of the BT controller, the nimble stack, which includes the common definitions and APIs for BLE, is initialized by using `esp_nimble_init()`:
-
-```c
-esp_err_t esp_nimble_init(void)
-{
-
-#if !SOC_ESP_NIMBLE_CONTROLLER
-    /* Initialize the function pointers for OS porting */
-    npl_freertos_funcs_init();
-
-    npl_freertos_mempool_init();
-
-    if(esp_nimble_hci_init() != ESP_OK) {
-        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "hci inits failed\n");
-        return ESP_FAIL;
-    }
-
-    /* Initialize default event queue */
-    ble_npl_eventq_init(&g_eventq_dflt);
-
-    os_msys_init();
-
-    void ble_store_ram_init(void);
-    /* XXX Need to have a template for store */
-    ble_store_ram_init();
-#endif
-
-    /* Initialize the host */
-    ble_hs_init();
-    return ESP_OK;
-}
-```
-
-The host is configured by setting up the callbacks for Stack-reset, Stack-sync, and Storage status
+The host is configured by setting up the callbacks for Stack-reset, Stack-sync, and Storage status:
 
 ```c
 ble_hs_cfg.reset_cb = periodic_adv_on_reset;
@@ -140,102 +94,138 @@ ble_hs_cfg.sync_cb = periodic_adv_on_sync;
 ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
 
-The main function calls `ble_svc_gap_device_name_set()` to set the default device name. 'blecent_phy' is passed as the default device name to this function.
+The main function calls `ble_svc_gap_device_name_set()` to set the default device name. This call is guarded by `CONFIG_BT_NIMBLE_GAP_SERVICE` to handle cases where the GAP service is optionally disabled:
 ```c
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
 rc = ble_svc_gap_device_name_set("nimble_periodic_adv");
-```
-main function calls  `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
-```c
-/* XXX Need to have a template for store */
-    ble_store_config_init();
+assert(rc == 0);
+#endif
 ```
 
-The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`. 
+The main function calls `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
+
+The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`.
 
 ```c
 nimble_port_freertos_init(periodic_adv_host_task);
 ```
-`esp_nimble_enable()` create a task where the nimble host will run. It is not strictly necessary to have a separate task for the nimble host, but to handle the default queue, it is easier to create a separate task.
 
-## Generation of non-resolvable private address
+## Host Sync Callback - Address Inference
 
-In Bluetooth Low Energy (BLE), a non-resolvable private address is a type of Bluetooth device address that is used for privacy purposes. It is a randomly generated address that changes periodically to prevent long-term tracking of a device. The API call to `ble_hs_id_gen_rnd()` is responsible for generating a non-resolvable private address. NRPA is a 48-bit address that is stored in `addr.val`.
+When the NimBLE host and controller are synced, the `periodic_adv_on_sync()` callback is invoked. This function ensures a valid identity address is available and infers the appropriate address type before starting periodic advertising:
 
 ```c
-#if CONFIG_EXAMPLE_RANDOM_ADDR
 static void
-periodic_adv_set_addr(void)
+periodic_adv_on_sync(void)
 {
-    ble_addr_t addr;
     int rc;
+    uint8_t own_addr_type;
 
-    /* generate new non-resolvable private address */
-    rc = ble_hs_id_gen_rnd(0, &addr);
-    assert(rc == 0);
-
-    /* set generated address */
-    rc = ble_hs_id_set_rnd(addr.val);
-    
-    assert(rc == 0);
-}
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+    rc = ble_hs_util_ensure_addr(1);
+#else
+    rc = ble_hs_util_ensure_addr(0);
 #endif
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+    /* Begin advertising. */
+    start_periodic_adv(own_addr_type);
+}
 ```
+
+`ble_hs_util_ensure_addr()` ensures the device has a valid identity address. The argument `1` requests a random address, while `0` requests a public address. `ble_hs_id_infer_auto()` determines the best address type to use (public or random) based on what is available on the device. The inferred `own_addr_type` is passed to `start_periodic_adv()` so that the advertising instance uses the correct address type.
 
 ## Periodic Advertisement
 
-Periodic advertisement start by creating instances of structures `ble_gap_periodic_adv_params`, `ble_gap_ext_adv_params`, `ble_hs_adv_fields`, and `os_mbuf`. Advertising parameters such as connecting modes, advertising intervals, peer address, advertising-filter policy, etc are defined in these structures for periodic and extended advertisements. `pparams` and `params` instances have parameters for periodic advertisement and extended advertisement respectively. 
-Bluetooth device address is given by the structure ble_aadr_t which contains the fields for address type and address value. 
+Periodic advertisement starts by creating instances of structures `ble_gap_periodic_adv_params`, `ble_gap_ext_adv_params`, `ble_hs_adv_fields`, and `os_mbuf`. Advertising parameters such as connecting modes, advertising intervals, own address type, PHYs, etc. are defined in these structures for periodic and extended advertisements.
 
-## Need of Extended Advertisement in Periodic Advertisement
+### Need of Extended Advertisement in Periodic Advertisement
 
 Non-connectable and non-scannable advertising events containing synchronization information about a periodic advertising train are necessary for the scanner device to sync with the periodic advertising train. The periodic advertising will utilize the same physical layer (PHY) as the auxiliary packet, which is part of the extended advertisement.
 
-
-Below is the implementation to start periodic advertisement. 
+Below is the implementation to start periodic advertisement:
 
 ```c
 static void
-start_periodic_adv(void)
+start_periodic_adv(uint8_t own_addr_type)
 {
     int rc;
     struct ble_gap_periodic_adv_params pparams;
     struct ble_gap_ext_adv_params params;
     struct ble_hs_adv_fields adv_fields;
     struct os_mbuf *data;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     ble_addr_t addr;
+    uint8_t addr_type;
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+    struct ble_gap_periodic_adv_start_params eparams;
+    memset(&eparams, 0, sizeof(eparams));
+#endif
 
-    /* set random (NRPA) address for instance */
-    rc = ble_hs_id_gen_rnd(1, &addr);
+    /* For periodic we use instance with non-connectable advertising */
+    memset (&params, 0, sizeof(params));
+
+    params.own_addr_type = own_addr_type;
+    params.primary_phy = BLE_HCI_LE_PHY_1M;
+    params.secondary_phy = BLE_HCI_LE_PHY_2M;
+    /* Use controller-selected default TX power. */
+    params.tx_power = 0x7f;
+    params.sid = 2;
+
+    /* configure instance 0 */
+    rc = ble_gap_ext_adv_configure(instance, &params, NULL, NULL, NULL);
     assert (rc == 0);
+
+    addr_type = params.own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr.val, NULL);
+    assert(rc == 0);
 
     MODLOG_DFLT(INFO, "Device Address: ");
     print_addr(addr.val);
     MODLOG_DFLT(INFO, "\n");
 
-    /* For periodic we use instance with non-connectable advertising */
-    memset (&params, 0, sizeof(params));
+    ...
+```
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_RANDOM;
-    params.primary_phy = BLE_HCI_LE_PHY_1M;
-    params.secondary_phy = BLE_HCI_LE_PHY_2M;
-    params.sid = 2;
+The function takes `own_addr_type` as a parameter (inferred in `periodic_adv_on_sync`). Key aspects:
 
-    /* configure instance 1 */
-    rc = ble_gap_ext_adv_configure(instance, &params, NULL, NULL, NULL);
-    assert (rc == 0);
+1. **Instance 0** is used for the advertising instance.
+2. The address type is set dynamically from the inferred `own_addr_type` rather than being hardcoded. This ensures the example works correctly across all ESP32 variants, including those that only have a random address (e.g., some ESP32-C2, ESP32-H2 configurations).
+3. After configuring the instance, the device address is retrieved using `ble_hs_id_copy_addr()` based on the address type.
+4. `params.tx_power = 0x7f` tells the controller to use its default TX power.
 
-    rc = ble_gap_ext_adv_set_addr(instance, &addr );
-    assert (rc == 0);
+### Parameter Configuration
 
-    memset(&adv_fields, 0, sizeof(adv_fields));
-    adv_fields.name = (const uint8_t *)"Periodic ADV";
-    adv_fields.name_len = strlen((char *)adv_fields.name);
+#### For Extended Advertisement
 
-    /* Default to legacy PDUs size, mbuf chain will be increased if needed
-     */
-    data = os_msys_get_pkthdr(BLE_HCI_MAX_ADV_DATA_LEN, 0);
+```c
+    params.own_addr_type = own_addr_type;
+    params.primary_phy = BLE_HCI_LE_PHY_1M;    // Primary advertising PHY is set to 1M
+    params.secondary_phy = BLE_HCI_LE_PHY_2M;   // Secondary advertising PHY is set to 2M
+    params.tx_power = 0x7f;                      // Use controller-selected default TX power
+    params.sid = 2;                              // Advertising set ID is assigned value 2
+```
+
+The periodic advertisement uses a non-connectable advertising mode. `memset (&params, 0, sizeof(params))` initialises params to 0. This also sets `params.connectable` to 0.
+
+#### For Periodic Advertisement
+
+```c
+    memset(&pparams, 0, sizeof(pparams));
+    pparams.include_tx_power = 0;                           // TX power is not included in advertising PDU
+    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(120);      // Minimum periodic advertising interval of 120ms
+    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(240);      // Maximum periodic advertising interval of 240ms
+```
+
+### Setting Advertisement Data
+
+The extended advertisement data (device name) is set using `ble_hs_adv_set_fields_mbuf()`:
+
+```c
+    data = os_msys_get_pkthdr(BLE_HS_ADV_MAX_FIELD_SZ, 0);
     assert(data);
 
     rc = ble_hs_adv_set_fields_mbuf(&adv_fields, data);
@@ -243,78 +233,54 @@ start_periodic_adv(void)
 
     rc = ble_gap_ext_adv_set_data(instance, data);
     assert(rc == 0);
+```
 
-    /* configure periodic advertising */
-    memset(&pparams, 0, sizeof(pparams));
-    pparams.include_tx_power = 0;
-    pparams.itvl_min = BLE_GAP_ADV_ITVL_MS(120);
-    pparams.itvl_max = BLE_GAP_ADV_ITVL_MS(240);
+The periodic advertising data is set separately as raw data:
 
-    rc = ble_gap_periodic_adv_configure(instance, &pparams);
-    assert(rc == 0);
-
+```c
     data = os_msys_get_pkthdr(sizeof(periodic_adv_raw_data), 0);
     assert(data);
 
     rc = os_mbuf_append(data, periodic_adv_raw_data, sizeof(periodic_adv_raw_data));
     assert(rc == 0);
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+    rc = ble_gap_periodic_adv_set_data(instance, data, NULL);
+#else
     rc = ble_gap_periodic_adv_set_data(instance, data);
+#endif
     assert (rc == 0);
+```
 
+### Starting Periodic and Extended Advertising
+
+Periodic advertising is started first, then extended advertising. When `BLE_PERIODIC_ADV_ENH` is enabled, the enhanced API is used which accepts additional parameters (e.g., `include_adi`):
+
+```c
     /* start periodic advertising */
-    assert (rc == 0    rc = ble_gap_periodic_adv_start(instance);
-);
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+#if CONFIG_EXAMPLE_PERIODIC_ADV_ENH
+    eparams.include_adi = 1;
+#endif
+    rc = ble_gap_periodic_adv_start(instance, &eparams);
+#else
+    rc = ble_gap_periodic_adv_start(instance);
+#endif
+    assert (rc == 0);
 
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
     assert (rc == 0);
 
     MODLOG_DFLT(INFO, "instance %u started (periodic)\n", instance);
-}
 ```
 
-The periodic advertisement uses a non-connectable advertising mode. `memset (&params, 0, sizeof(params))` initialises params to 0. This also sets `params.connectable` to 0.
-
-## Parameter Configuration
-
-The below snippets represent the parameter configuration for extended and periodic advertisement.
-
-### For Extended Advertisement 
-
-```c
-    params.own_addr_type = BLE_OWN_ADDR_RANDOM; //Own address type is set to Random 
-    params.primary_phy = BLE_HCI_LE_PHY_1M; // Primary advertising PHY is set to 1M
-    params.secondary_phy = BLE_HCI_LE_PHY_2M; // Secondary advertising PHY is set to 2M
-    params.sid = 2; // Advertising set Id is assigned with value 2.
-```
-
-### For Periodic Advertisment
-
-```c
-    memset(&pparams, 0, sizeof(pparams));
-    pparams.include_tx_power = 0; // Indicates that TX power is not included in advertising PDU
-    pparams.itvl_min = BLE_GAP_ADV_ITVL_MS(120); // Minimum advertising interval of 240ms 
-    pparams.itvl_max = BLE_GAP_ADV_ITVL_MS(240); //Maximum advertising interval of 480ms
-```
-
-Periodic advertisement is started for a particular advertisement instance by calling the API `ble_gap_periodic_adv_start(instance)`. This function takes instance-id as an input parameter. It defines the hci command by initializing the command parameters which are represented in the following lines.
-
-```c
-    struct ble_hci_le_set_periodic_adv_enable_cp cmd;
-    cmd.enable = 0x01;
-    cmd.adv_handle = instance;
-```
-
-Extended advertising is invoked for a particular instance using the API call `ble_gap_ext_adv_start(instance, 0, 0)`.Instance-id, duration, and max_events are input parameters for this API call respectively.
-
-Duration represents the time for which the adverteiment will take place. Upon expiration, the advertising procedure ends, and the BLE_GAP_EVENT_ADV_COMPLETE event is reported.0 value is used for no expiration.
-
-max_events Number of advertising events that should be sent before advertising ends and a BLE_GAP_EVENT_ADV_COMPLETE event is reported.0 value is used for no limit.
+`ble_gap_ext_adv_start(instance, 0, 0)` starts extended advertising with no duration limit and no maximum event count.
 
 ## Conclusion
 
-This Walkthrough covers the code explanation of the BLE_PERIODIC_ADV. The following points are concluded through this walkthrough.
+This walkthrough covers the code explanation of the BLE_PERIODIC_ADV example. The following points are concluded:
 
-1. Periodic advertising allows the scanner to sync with the advertiser so the scanner and advertiser would wake up at the same time.
-2. Periodic advertisment uses NRPA (Non Resolvable private adress). It is a randomly generated address that changes periodically to prevent long-term tracking of a device.
-3. Extended advertising is used to indicate to the scanner that the advertiser is utilizing periodic advertising. Therefore, periodic advertising is started before extended advertising so that the scanner and advertiser can synchronize their actions and operate at the same time.
+1. Periodic advertising allows the scanner to sync with the advertiser so the scanner and advertiser wake up at the same time.
+2. The example uses `ble_hs_id_infer_auto()` to dynamically determine the correct address type, ensuring compatibility across all supported ESP32 variants.
+3. Extended advertising is used to indicate to the scanner that the advertiser is utilizing periodic advertising. Therefore, periodic advertising is started before extended advertising so that the scanner and advertiser can synchronize their actions.
+4. When `BLE_PERIODIC_ADV_ENH` is enabled, the enhanced periodic advertising API allows additional features such as ADI (Advertising Data Info) inclusion.

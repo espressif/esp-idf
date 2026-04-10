@@ -36,6 +36,7 @@
 #include <string.h>
 #include "osi/allocator.h"
 #include "l2c_int.h"
+#include "gatt_int.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -176,13 +177,15 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     tBTA_GATT_STATUS         status = BTA_GATT_OK;
     UINT8                    i, first_unuse = 0xff;
 
+    memset(&cb_data, 0, sizeof(tBTA_GATTS));
+
     if (p_cb->enabled == FALSE) {
         bta_gatts_enable(p_cb);
     }
 
     for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i ++) {
         if (p_cb->rcb[i].in_use) {
-            if (bta_gatts_uuid_compare(p_cb->rcb[i].app_uuid, p_msg->api_reg.app_uuid)) {
+            if (gatt_uuid_compare(p_cb->rcb[i].app_uuid, p_msg->api_reg.app_uuid)) {
                 APPL_TRACE_ERROR("application already registered.\n");
                 status = BTA_GATT_DUP_REG;
                 break;
@@ -199,9 +202,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
         }
 
         cb_data.reg_oper.server_if = BTA_GATTS_INVALID_IF;
-// btla-specific ++
         memcpy(&cb_data.reg_oper.uuid, &p_msg->api_reg.app_uuid, sizeof(tBT_UUID));
-// btla-specific --
         if (first_unuse != 0xff) {
             APPL_TRACE_VERBOSE("register application first_unuse rcb_idx = %d", first_unuse);
 
@@ -213,6 +214,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                     GATT_Register(&p_msg->api_reg.app_uuid, &bta_gatts_cback);
             if ( !p_cb->rcb[first_unuse].gatt_if) {
                 status = BTA_GATT_NO_RESOURCES;
+                memset( &p_cb->rcb[first_unuse], 0 , sizeof(tBTA_GATTS_RCB));
             } else {
                 if ((p_buf =
                             (tBTA_GATTS_INT_START_IF *) osi_malloc(sizeof(tBTA_GATTS_INT_START_IF))) != NULL) {
@@ -222,6 +224,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                     bta_sys_sendmsg(p_buf);
                 } else {
                     status = BTA_GATT_NO_RESOURCES;
+                    GATT_Deregister(p_cb->rcb[first_unuse].gatt_if);
                     memset( &p_cb->rcb[first_unuse], 0 , sizeof(tBTA_GATTS_RCB));
                 }
             }
@@ -309,7 +312,7 @@ void bta_gatts_deregister(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 {
     UINT8               rcb_idx;
-    tBTA_GATTS          cb_data;
+    tBTA_GATTS          cb_data = {0};
     UINT8               srvc_idx;
     UINT16              service_id = 0;
 
@@ -695,12 +698,13 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                                                         p_msg->api_indicate.len,
                                                         p_msg->api_indicate.value);
             }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
             /* if over BR_EDR, inform PM for mode change */
             if (transport == BTA_TRANSPORT_BR_EDR) {
                 bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
                 bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
             }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         } else {
             APPL_TRACE_ERROR("Unknown connection ID: %d fail sending notification",
                              p_msg->api_indicate.hdr.layer_specific);
@@ -757,7 +761,7 @@ void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     if ((p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_open.server_if)) != NULL) {
         /* should always get the connection ID */
         if (GATT_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda, BLE_ADDR_UNKNOWN_TYPE,
-                         p_msg->api_open.is_direct, p_msg->api_open.transport, FALSE)) {
+                         p_msg->api_open.is_direct, p_msg->api_open.transport, FALSE, FALSE, 0xFF, 0xFF)) {
             status = BTA_GATT_OK;
 
             if (GATT_GetConnIdIfConnected(p_rcb->gatt_if, p_msg->api_open.remote_bda,
@@ -839,10 +843,11 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
         p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
         if (p_rcb && p_rcb->p_cback) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             if (transport == BTA_TRANSPORT_BR_EDR) {
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, remote_bda);
             }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
             close.status = status;
             close.conn_id = p_msg->hdr.layer_specific;
             (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT,  (tBTA_GATTS *)&close);
@@ -867,7 +872,7 @@ void bta_gatts_send_service_change_indication (tBTA_GATTS_DATA *p_msg)
     tBTA_GATTS_RCB     *p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_send_service_change.server_if);
     tBTA_GATTS_SERVICE_CHANGE    service_change;
     tBTA_GATT_STATUS status = BTA_GATT_OK;
-    UINT16 addr[BD_ADDR_LEN] = {0};
+    UINT8 addr[BD_ADDR_LEN] = {0};
     if(memcmp(p_msg->api_send_service_change.remote_bda, addr, BD_ADDR_LEN) != 0) {
         BD_ADDR bd_addr;
         memcpy(bd_addr, p_msg->api_send_service_change.remote_bda, BD_ADDR_LEN);
@@ -925,12 +930,13 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
                           conn_id, trans_id, req_type);
 
         if (p_rcb && p_rcb->p_cback) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             /* if over BR_EDR, inform PM for mode change */
             if (transport == BTA_TRANSPORT_BR_EDR) {
                 bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
                 bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
             }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
             cb_data.req_data.conn_id    = conn_id;
             cb_data.req_data.trans_id   = trans_id;
             cb_data.req_data.p_data     = (tBTA_GATTS_REQ_DATA *)p_data;
@@ -980,6 +986,7 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
     p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
     if (p_reg && p_reg->p_cback) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* there is no RM for GATT */
         if (transport == BTA_TRANSPORT_BR_EDR) {
             if (connected) {
@@ -988,6 +995,7 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, bda);
             }
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         if(evt == BTA_GATTS_CONNECT_EVT) {
             tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
             if(p_lcb != NULL) {

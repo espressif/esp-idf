@@ -80,7 +80,7 @@ void app_main(void)
     gpio_config_t echo_io_conf = {
         .mode = GPIO_MODE_INPUT,
         .intr_type = GPIO_INTR_ANYEDGE, // capture signal on both edge
-        .pull_up_en = true, // pull up internally
+        .pull_up_en = GPIO_PULLUP_ENABLE, // pull up internally
         .pin_bit_mask = 1ULL << HC_SR04_ECHO_GPIO,
     };
     ESP_ERROR_CHECK(gpio_config(&echo_io_conf));

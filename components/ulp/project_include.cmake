@@ -2,7 +2,7 @@
 #
 # Create ULP binary and embed into the application.
 
-function(__setup_ulp_project app_name project_path prefix s_sources exp_dep_srcs)
+function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep_srcs)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         spaces2list(s_sources)
@@ -39,13 +39,36 @@ function(__setup_ulp_project app_name project_path prefix s_sources exp_dep_srcs
         idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
         if(IDF_TARGET STREQUAL "esp32")
+            # esp32 only supports FSM
+            if(type)
+                string(TOLOWER "${type}" type_lower)
+                if(type_lower STREQUAL "riscv")
+                    message(FATAL_ERROR "TYPE=riscv is not supported on ${IDF_TARGET}. "
+                                        "Only FSM type is available for ULP on this target.")
+                endif()
+            endif()
             set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
             set(ULP_IS_RISCV OFF)
         elseif(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
-            if(CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y")
-                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
+            # If both FSM and RISC-V are enabled in sdkconfig and a TYPE was
+            # provided by the caller, use TYPE to disambiguate which toolchain
+            # to select for this ULP external project.
+            if((CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y") AND (CONFIG_ULP_COPROC_TYPE_FSM STREQUAL "y"))
+                message(STATUS "Both RISCV and FSM are enabled, using '${type}' toolchain for ${app_name} ULP project.")
+                string(TOLOWER "${type}" type_lower)
+                if(type_lower STREQUAL "riscv")
+                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
+                elseif(type_lower STREQUAL "fsm")
+                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
+                else()
+                    message(FATAL_ERROR "Invalid ULP_TYPE '${type}'; expected 'fsm' or 'riscv'.")
+                endif()
             else()
-                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
+                if(CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y")
+                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
+                else()
+                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
+                endif()
             endif()
         elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-lp-core-riscv.cmake)
@@ -62,6 +85,7 @@ function(__setup_ulp_project app_name project_path prefix s_sources exp_dep_srcs
                             -DULP_APP_NAME=${app_name}
                             -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
                             -DULP_VAR_PREFIX=${prefix}
+                            -DULP_TYPE=${type}
                             -DCOMPONENT_DIR=${COMPONENT_DIR}
                             -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                             -DIDF_TARGET=${idf_target}
@@ -93,15 +117,46 @@ function(__setup_ulp_project app_name project_path prefix s_sources exp_dep_srcs
     endif()
 endfunction()
 
+function(validate_ulp_type ULP_TYPE)
+    if(CONFIG_ULP_COPROC_ENABLED)
+        if(NOT CONFIG_ULP_COPROC_TYPE_FSM AND NOT CONFIG_ULP_COPROC_TYPE_RISCV AND NOT CONFIG_ULP_COPROC_TYPE_LP_CORE)
+            message(FATAL_ERROR "ULP co-processor is enabled (CONFIG_ULP_COPROC_ENABLED=y), but no ULP type "
+                                "is selected. Please enable at least one of: CONFIG_ULP_COPROC_TYPE_FSM, "
+                                "CONFIG_ULP_COPROC_TYPE_RISCV, or CONFIG_ULP_COPROC_TYPE_LP_CORE in menuconfig.")
+        endif()
+    endif()
+
+    if(NOT ULP_TYPE)
+        # If the user didn't pass TYPE here and both ULP types are enabled in sdkconfig,
+        # require an explicit TYPE to decide which toolchain to use.
+        if((CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y") AND (CONFIG_ULP_COPROC_TYPE_FSM STREQUAL "y"))
+            message(FATAL_ERROR "Both CONFIG_ULP_COPROC_TYPE_FSM and CONFIG_ULP_COPROC_TYPE_RISCV are enabled "
+                                "in menuconfig, but calling ulp_embed_binary without TYPE, so the toolchain to use "
+                                "is ambiguous. Call ulp_embed_binary(... TYPE fsm) or ulp_embed_binary(... TYPE riscv)"
+                                " to select the desired ULP type in your CMakeLists.txt file.")
+        endif()
+    endif()
+endfunction()
+
 function(ulp_embed_binary app_name s_sources exp_dep_srcs)
-    cmake_parse_arguments(ULP "" "PREFIX" "" ${ARGN})
+    cmake_parse_arguments(ULP "" "PREFIX;TYPE" "" ${ARGN})
     if(NOT ULP_PREFIX)
         set(ULP_PREFIX "ulp_")
     endif()
+
+    validate_ulp_type("${ULP_TYPE}")
+
     __setup_ulp_project("${app_name}" "${idf_path}/components/ulp/cmake"
-                        "${ULP_PREFIX}" "${s_sources}" "${exp_dep_srcs}")
+                        "${ULP_PREFIX}" "${ULP_TYPE}" "${s_sources}" "${exp_dep_srcs}")
 endfunction()
 
 function(ulp_add_project app_name project_path)
-    __setup_ulp_project("${app_name}" "${project_path}" "ulp_"  "" "")
+    cmake_parse_arguments(ULP "" "PREFIX;TYPE" "" ${ARGN})
+    if(NOT ULP_PREFIX)
+        set(ULP_PREFIX "ulp_")
+    endif()
+
+    validate_ulp_type("${ULP_TYPE}")
+
+    __setup_ulp_project("${app_name}" "${project_path}" "${ULP_PREFIX}" "${ULP_TYPE}" "" "")
 endfunction()

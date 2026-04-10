@@ -10,6 +10,7 @@
 #include "hal/gpio_hal.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_cd_wp_common.h"
+#include "esp_heap_caps.h"
 
 void sdmmc_test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
 {

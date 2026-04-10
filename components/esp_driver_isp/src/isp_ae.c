@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,12 +39,12 @@ static esp_err_t s_isp_claim_ae_controller(isp_proc_handle_t isp_proc, isp_ae_ct
     assert(isp_proc && ae_ctlr);
 
     esp_err_t ret = ESP_ERR_NOT_FOUND;
-    portENTER_CRITICAL(&isp_proc->spinlock);
+    esp_os_enter_critical(&isp_proc->spinlock);
     if (!isp_proc->ae_ctlr) {
         isp_proc->ae_ctlr = ae_ctlr;
         ret = ESP_OK;
     }
-    portEXIT_CRITICAL(&isp_proc->spinlock);
+    esp_os_exit_critical(&isp_proc->spinlock);
 
     return ret;
 }
@@ -52,9 +52,9 @@ static esp_err_t s_isp_claim_ae_controller(isp_proc_handle_t isp_proc, isp_ae_ct
 static void s_isp_declaim_ae_controller(isp_ae_ctlr_t ae_ctlr)
 {
     if (ae_ctlr && ae_ctlr->isp_proc) {
-        portENTER_CRITICAL(&ae_ctlr->isp_proc->spinlock);
+        esp_os_enter_critical(&ae_ctlr->isp_proc->spinlock);
         ae_ctlr->isp_proc->ae_ctlr = NULL;
-        portEXIT_CRITICAL(&ae_ctlr->isp_proc->spinlock);
+        esp_os_exit_critical(&ae_ctlr->isp_proc->spinlock);
     }
 }
 

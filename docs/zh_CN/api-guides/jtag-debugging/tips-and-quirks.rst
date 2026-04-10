@@ -10,8 +10,13 @@
 可用的断点和观察点
 ^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：flash 或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：flash 断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在 flash 中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下文 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个观察点，所以可以观察 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
+    {IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：flash 或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：flash 断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在 flash 中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下文 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个观察点，所以可以观察 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    {IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} 个硬件断点和无限数量的软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：flash 或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：flash 断点（最多 32 个）和 IRAM 断点（无限数量）。目前 GDB 无法在 flash 中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下文 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个观察点，所以可以观察 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
 
 .. _jtag-debugging-tip-where-breakpoints:
 
@@ -63,7 +68,7 @@ ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设
 
 * :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 默认没有使能。在所有任务堆栈的末尾设置观察点，从 1 号开始索引。这是调试任务堆栈溢出的最准确的方式。
 
-更多有关设置编译时的选项的信息，请参阅 :ref:`项目配置菜单 <get-started-configure>`。
+更多有关设置编译时的选项的信息，请参阅 :ref:`Windows <get-started-configure>`、:ref:`Linux 或 macOS 项目配置菜单<get-started-configure-linux-macos>`。
 
 .. _jtag-debugging-tip-freertos-support:
 

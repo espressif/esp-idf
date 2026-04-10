@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_log.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "esp_adc/adc_oneshot.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"

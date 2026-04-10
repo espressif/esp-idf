@@ -50,6 +50,8 @@
 #define TEST_CI_ADDRESS_CHIP_OFFSET (7)
 #elif CONFIG_IDF_TARGET_ESP32C61
 #define TEST_CI_ADDRESS_CHIP_OFFSET (8)
+#elif CONFIG_IDF_TARGET_ESP32H4
+#define TEST_CI_ADDRESS_CHIP_OFFSET (9)
 #endif
 #endif
 
@@ -121,6 +123,10 @@ blecent_on_custom_write(uint16_t conn_handle,
                 error->status, conn_handle, attr->handle);
 
     peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(WARN,"Peer not found (conn_handle=%d), likely disconnected\n",conn_handle);
+        return 0;
+    }
     chr = peer_chr_find_uuid(peer,
                              remote_svc_uuid,
                              remote_chr_uuid);
@@ -257,6 +263,7 @@ blecent_on_subscribe(uint16_t conn_handle,
     if (peer == NULL) {
         MODLOG_DFLT(ERROR, "Error in finding peer, aborting...");
         ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+        return 0;
     }
     /* Subscribe to, write to, and read the custom characteristic*/
     blecent_custom_gatt_operations(peer);
@@ -286,7 +293,10 @@ blecent_on_write(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
-
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Error: peer not found for conn_handle=%d", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);  // Use conn_handle to avoid dereference
+    }
     dsc = peer_dsc_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
                              BLE_UUID16_DECLARE(BLECENT_CHR_UNR_ALERT_STAT_UUID),
@@ -338,7 +348,10 @@ blecent_on_read(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
-
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Error: peer not found for conn_handle=%d", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLECENT_SVC_ALERT_UUID),
                              BLE_UUID16_DECLARE(BLECENT_CHR_ALERT_NOT_CTRL_PT));
@@ -528,23 +541,24 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for the Alert Notification
     * service (0x1811).
     */
-    do {
+    while (offset < disc->length_data) {
         ad_struct_len = disc->data[offset];
 
-        if (!ad_struct_len) {
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
             break;
         }
 
-	/* Search if ANS UUID is advertised */
-        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x11 ) {
-                return 1;
+        /* Search if ANS UUID (0x1811) is advertised */
+        if (ad_struct_len >= 3 && (disc->data[offset + 1] == 0x02 || disc->data[offset + 1] == 0x03)) {
+            for (int i = 2; i + 1 <= ad_struct_len; i += 2) {
+                if (disc->data[offset + i] == 0x18 && disc->data[offset + i + 1] == 0x11) {
+                    return 1;
+                }
             }
         }
 
         offset += ad_struct_len + 1;
-
-     } while ( offset < disc->length_data );
+    }
 
     return 0;
 }
@@ -789,6 +803,13 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             }
 #else
 #if MYNEWT_VAL(BLE_GATTC)
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+            rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+                return 0;
+            }
+#else
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                         blecent_on_disc_complete, NULL);
@@ -796,8 +817,9 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
-#endif
-#endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif // BLE_GATTC
+#endif // EXAMPLE_ENCRYPTION
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
@@ -842,6 +864,13 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         print_conn_desc(&desc);
 #if !MYNEWT_VAL(BLE_EATT_CHAN_NUM)
 #if CONFIG_EXAMPLE_ENCRYPTION && MYNEWT_VAL(BLE_GATTC)
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+        rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+            return 0;
+        }
+#else
         /*** Go for service discovery after encryption has been successfully enabled ***/
         rc = peer_disc_all(event->enc_change.conn_handle,
                            blecent_on_disc_complete, NULL);
@@ -849,9 +878,27 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
-#endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif // EXAMPLE_ENCRYPTION
 #endif
         return 0;
+
+    case BLE_GAP_EVENT_CACHE_ASSOC:
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+          /* Cache association result for this connection */
+          MODLOG_DFLT(INFO, "cache association; conn_handle=%d status=%d cache_state=%s\n",
+                      event->cache_assoc.conn_handle,
+                      event->cache_assoc.status,
+                      (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
+          /* Perform service discovery */
+          rc = peer_disc_all(event->cache_assoc.conn_handle,
+                             blecent_on_disc_complete, NULL);
+          if(rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                return 0;
+          }
+#endif
+          return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */
@@ -1065,6 +1112,12 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
 #if NIMBLE_BLE_CONNECT
+#if MYNEWT_VAL(STATIC_PASSKEY)
+    /* WARNING: Hardcoded passkey for demonstration only.
+     * In production, generate a random passkey per pairing. */
+    ble_sm_configure_static_passkey(456789, true);
+#endif
+
     int rc;
     /* Initialize data structures to track connected peers. */
 #if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)

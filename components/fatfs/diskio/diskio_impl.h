@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -19,9 +11,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-typedef unsigned int UINT;
-typedef unsigned char BYTE;
-typedef uint32_t DWORD;
+#include "ff.h"
 
 #define FF_DRV_NOT_USED 0xFF
 
@@ -36,8 +26,8 @@ typedef uint32_t DWORD;
 typedef struct {
     DSTATUS (*init) (unsigned char pdrv);    /*!< disk initialization function */
     DSTATUS (*status) (unsigned char pdrv);  /*!< disk status check function */
-    DRESULT (*read) (unsigned char pdrv, unsigned char* buff, uint32_t sector, unsigned count);  /*!< sector read function */
-    DRESULT (*write) (unsigned char pdrv, const unsigned char* buff, uint32_t sector, unsigned count);   /*!< sector write function */
+    DRESULT (*read) (unsigned char pdrv, unsigned char* buff, uint32_t sector, UINT count);  /*!< sector read function */
+    DRESULT (*write) (unsigned char pdrv, const unsigned char* buff, uint32_t sector, UINT count);   /*!< sector write function */
     DRESULT (*ioctl) (unsigned char pdrv, unsigned char cmd, void* buff); /*!< function to get info about disk and do some misc operations */
 } ff_diskio_impl_t;
 

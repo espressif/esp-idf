@@ -18,11 +18,6 @@ extern "C" {
 
 
 /**
- * @brief get chip version
- */
-uint32_t efuse_hal_get_chip_revision(void);
-
-/**
  * @brief set eFuse timings
  *
  * @param apb_freq_hz APB frequency in Hz

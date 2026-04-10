@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,16 @@ void esp_gdbstub_send_char(char c)
     } else {
         esp_gdbstub_putchar(c);
         s_chsum += c;
+    }
+}
+
+// Send a string of limited length as part of a packet
+void esp_gdbstub_send_str_n(const char *c, size_t len)
+{
+    while (*c != 0 && len != 0) {
+        esp_gdbstub_send_char(*c);
+        c++;
+        len--;
     }
 }
 
@@ -84,7 +94,7 @@ uint32_t esp_gdbstub_gethex(const unsigned char **ptr, int bits)
     char c;
     no = bits / 4;
     if (bits == -1) {
-        no = 64;
+        no = 32 / 4;
     }
     for (i = 0; i < no; i++) {
         c = **ptr;

@@ -31,7 +31,7 @@
 #include "osi/future.h"
 #include "config/stack_config.h"
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x07\xff\xff\xff\xff" };
+const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\xff\xff\xff\xff\xff" };
 #else
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -87,7 +87,7 @@ typedef struct {
     uint16_t ble_ext_adv_data_max_len;
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
-    uint16_t get_ble_periodic_advertiser_list_size;
+    uint8_t get_ble_periodic_advertiser_list_size;
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 } controller_local_param_t;
@@ -223,13 +223,13 @@ static void start_up(void)
     }
 #endif
 
-if ((bluedroid_config_get()->get_sc_enabled())) {
-    controller_param.secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(controller_param.features_classic[2].as_array);
-    if (controller_param.secure_connections_supported) {
-        response = AWAIT_COMMAND(controller_param.packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED));
-        controller_param.packet_parser->parse_generic_command_complete(response);
+    if ((bluedroid_config_get()->get_sc_enabled())) {
+        controller_param.secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(controller_param.features_classic[2].as_array);
+        if (controller_param.secure_connections_supported) {
+            response = AWAIT_COMMAND(controller_param.packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED));
+            controller_param.packet_parser->parse_generic_command_complete(response);
+        }
     }
-}
 
 #if (BLE_INCLUDED == TRUE)
 #if (CLASSIC_BT_INCLUDED)
@@ -546,7 +546,7 @@ static uint8_t get_ble_resolving_list_max_size(void)
     return controller_param.ble_resolving_list_max_size;
 }
 
-static void set_ble_resolving_list_max_size(int resolving_list_max_size)
+static void set_ble_resolving_list_max_size(uint8_t resolving_list_max_size)
 {
     assert(controller_param.readable);
     assert(controller_param.ble_supported);

@@ -2,42 +2,44 @@
 
 ## Introduction
 
-In this tutorial, the ble_periodic_sync example code for the espressif chipsets with BLE5.0 support is reviewed. This example aims at understanding BLE periodic sync establishment and periodic advertisement reports.It supports the chips like ESP32-C2,
-ESP32-C3, ESP32-C6,ESP32-H2, and ESP32-S3.
+In this tutorial, the ble_periodic_sync example code for the Espressif chipsets with BLE 5.0 support is reviewed. This example demonstrates BLE periodic sync establishment and periodic advertisement reports. It performs a passive extended scan for non-connectable non-scannable extended advertisements, establishes periodic sync with the advertiser, and then listens to the periodic advertisement data.
 
 ## Includes
 
 This example is located in the examples folder of the ESP-IDF under the [ble_periodic_sync/main](../main). The [main.c](../main/main.c) file located in the main folder contains all the functionality that we are going to review. The header files contained in [main.c](../main/main.c) are:
 
 ```c
+#include <assert.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
-#include "host/util/util.h"
-#include "console/console.h"
-#include "services/gap/ble_svc_gap.h"
-#include "periodic_sync.h"
 #include "host/ble_gap.h"
+#include "host/util/util.h"
+#include "services/gap/ble_svc_gap.h"
+#include "modlog/modlog.h"
 ```
-These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“nimble_port.h”`, `“nimble_port_freertos.h”`, `"ble_hs.h"` and `“ble_svc_gap.h”`, `“periodic_sync.h”` which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"nimble_port.h"`, `"nimble_port_freertos.h"`, `"ble_hs.h"`, `"ble_gap.h"`, and `"ble_svc_gap.h"` which expose the BLE APIs required to implement this example.
 
 * `nimble_port.h`: Includes the declaration of functions required for the initialization of the nimble stack.
 * `nimble_port_freertos.h`: Initializes and enables nimble host task.
-* `ble_hs.h`: Defines the functionalities to handle the host event
-* `ble_svc_gap.h`:Defines the macros for device name, and device appearance and declares the function to set them.
-* `periodic_sync.h`:It includes the code containing forward declarations of structures for storing host_advertsing_fileds, host configrations and connection descriptors based on weather macro `H_BLE_PERIODIC_SYNC_` is defined.Also, it includes the unions for storing CCCD, Security values, and Keys for their lookups.  
+* `ble_hs.h`: Defines the functionalities to handle the host event.
+* `ble_gap.h`: Defines GAP related APIs for advertising, scanning, and periodic sync.
+* `ble_svc_gap.h`: Defines the macros for device name, and device appearance and declares the function to set them.
+* `modlog/modlog.h`: Provides logging macros used throughout the example.
 
 ## Main Entry Point
 
-The program’s entry point is the app_main() function:
+The program's entry point is the app_main() function:
 ```c
 void
 app_main(void)
 {
-    int rc;
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if  (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -57,88 +59,24 @@ app_main(void)
     ble_hs_cfg.sync_cb = periodic_sync_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-    /* Initialize data structures to track connected peers. */
-    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
-    assert(rc == 0);
-
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
-    rc = ble_svc_gap_device_name_set("nimble_periodic_sync");
+    int rc = ble_svc_gap_device_name_set("nimble_periodic_sync");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
     nimble_port_freertos_init(periodic_sync_host_task);
 }
 ```
-The main function starts by initializing the non-volatile storage library. This library allows us to save the key-value pairs in flash memory.`nvs_flash_init()` stores the PHY calibration data. In a Bluetooth Low Energy (BLE) device, cryptographic keys used for encryption and authentication are often stored in Non-Volatile Storage (NVS).BLE stores the peer keys, CCCD keys, peer records, etc on NVS. By storing these keys in NVS, the BLE device can quickly retrieve them when needed, without the need for time-consuming key 
-generations.
-
-```c
-esp_err_t ret = nvs_flash_init();
-if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-}
-ESP_ERROR_CHECK( ret );
-```
+The main function starts by initializing the non-volatile storage library. This library allows us to save the key-value pairs in flash memory.`nvs_flash_init()` stores the PHY calibration data. In a Bluetooth Low Energy (BLE) device, cryptographic keys used for encryption and authentication are often stored in Non-Volatile Storage (NVS). BLE stores the peer keys, CCCD keys, peer records, etc on NVS. By storing these keys in NVS, the BLE device can quickly retrieve them when needed, without the need for time-consuming key generations.
 
 ## BT Controller and Stack Initialization
 
-The main function calls `nimble_port_init()` to initialize BT Controller and nimble stack. This function initializes the BT controller by first creating its configuration structure named `esp_bt_controller_config_t` with default settings generated by the `BT_CONTROLLER_INIT_CONFIG_DEFAULT()` macro. It implements the Host Controller Interface (HCI) on the controller side, the Link Layer (LL), and the Physical Layer (PHY). The BT Controller is invisible to the user applications and deals with the lower layers of the BLE stack. The controller configuration includes setting the BT controller stack size, priority, and HCI baud rate. With the settings created, the BT controller is initialized and enabled with the `esp_bt_controller_init()` and `esp_bt_controller_enable()` functions:
+The main function calls `nimble_port_init()` to initialize BT Controller and nimble stack. This function initializes the BT controller by first creating its configuration structure named `esp_bt_controller_config_t` with default settings generated by the `BT_CONTROLLER_INIT_CONFIG_DEFAULT()` macro. It implements the Host Controller Interface (HCI) on the controller side, the Link Layer (LL), and the Physical Layer (PHY).
 
-```c
-esp_bt_controller_config_t config_opts = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-ret = esp_bt_controller_init(&config_opts);
-```
-
-Next, the controller is enabled in BLE Mode.
-
-```c
-ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-```
-The controller should be enabled in `ESP_BT_MODE_BLE` if you want to use the BLE mode.
-
-There are four Bluetooth modes supported:
-
-1. `ESP_BT_MODE_IDLE`: Bluetooth not running
-2. `ESP_BT_MODE_BLE`: BLE mode
-3. `ESP_BT_MODE_CLASSIC_BT`: BT Classic mode
-4. `ESP_BT_MODE_BTDM`: Dual mode (BLE + BT Classic)
-
-After the initialization of the BT controller, the nimble stack, which includes the common definitions and APIs for BLE, is initialized by using `esp_nimble_init()`:
-
-```c
-esp_err_t esp_nimble_init(void)
-{
-
-#if !SOC_ESP_NIMBLE_CONTROLLER
-    /* Initialize the function pointers for OS porting */
-    npl_freertos_funcs_init();
-
-    npl_freertos_mempool_init();
-
-    if(esp_nimble_hci_init() != ESP_OK) {
-        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "hci inits failed\n");
-        return ESP_FAIL;
-    }
-
-    /* Initialize default event queue */
-    ble_npl_eventq_init(&g_eventq_dflt);
-
-    os_msys_init();
-
-    void ble_store_ram_init(void);
-    /* XXX Need to have a template for store */
-    ble_store_ram_init();
-#endif
-
-    /* Initialize the host */
-    ble_hs_init();
-    return ESP_OK;
-}
-```
-
-The host is configured by setting up the callbacks for Stack-reset, Stack-sync, and Storage status
+The host is configured by setting up the callbacks for Stack-reset, Stack-sync, and Storage status:
 
 ```c
 ble_hs_cfg.reset_cb = periodic_sync_on_reset;
@@ -146,181 +84,111 @@ ble_hs_cfg.sync_cb = periodic_sync_on_sync;
 ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
 
-Further Data Structures are created and initialized to track connected peers using `peer_init()`. This function creates memory buffers to generate the memory pools like `peer_pool`, `peer_svc_pool`, `peer_chr_pool`, and `peer_dsc_pool`.
+The device name is set using `ble_svc_gap_device_name_set()`, guarded by `CONFIG_BT_NIMBLE_GAP_SERVICE` for cases where the GAP service may be disabled:
 ```c
- rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
-```
-
-## Structure of Peer
-
-The structure of a peer includes fields such as its connection handle, a pointer to the next peer, a list of discovered gatt services, tracking parameters for the service discovery process, and the callbacks that get executed when service discovery completes.
-
-```c
-struct peer {
-    SLIST_ENTRY(peer) next;
-    uint16_t conn_handle;
-    struct peer_svc_list svcs;
-    uint16_t disc_prev_chr_val;
-    struct peer_svc *cur_svc;
-    peer_disc_fn *disc_cb;
-    void *disc_cb_arg;
-};
-```
-The main function calls `ble_svc_gap_device_name_set()` to set the default device name. 'blecent_phy' is passed as the default device name to this function.
-```c
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
 rc = ble_svc_gap_device_name_set("nimble_periodic_sync");
-```
-main function calls  `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
-```c
-/* XXX Need to have a template for store */
-    ble_store_config_init();
+assert(rc == 0);
+#endif
 ```
 
-The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`. 
+The main function calls `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
+
+The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`:
 
 ```c
 nimble_port_freertos_init(periodic_sync_host_task);
 ```
-`esp_nimble_enable()` create a task where the nimble host will run. It is not strictly necessary to have a separate task for the nimble host but to handle the default queue, it is easier to create a separate task.
 
-## Periodic Synchronisation scanning
+## Host Sync Callback
 
-This example performs a passive scan for non-connectable non-scannable extended advertisements, it then establishes the periodic sync with the advertiser and then listens to the periodic advertisements.
-variable `own_addr_type` refers to the address type used by a BLE device to identify itself during communication. Its valid values are :
+When the NimBLE host and controller are synced, the `periodic_sync_on_sync()` callback is invoked. It ensures a valid identity address is set and begins scanning:
+
 ```c
-BLE_OWN_ADDR_PUBLIC
+static void
+periodic_sync_on_sync(void)
+{
+    int rc;
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
 
-BLE_OWN_ADDR_RANDOM
-
-BLE_OWN_ADDR_RPA_PUBLIC_DEFAULT
-
-BLE_OWN_ADDR_RPA_RANDOM_DEFAULT
+    /* Begin scanning for a periodic advertiser to sync with. */
+    periodic_sync_scan();
+}
 ```
 
-Discovery parameters are defined in the object disc_params which includes particulars of the discovery procedure such as scan interval, scan window, filter_policy, and flags to decide whether to use a limited discovery procedure, passive scanning, and enables duplicate filtering.
+## Periodic Synchronisation Scanning
+
+This example performs a passive extended scan for non-connectable non-scannable extended advertisements. It uses `ble_gap_ext_disc()` (extended discovery) rather than the legacy `ble_gap_disc()` API to receive extended advertisement reports that contain periodic advertising synchronization information.
 
 ```c
 static void
 periodic_sync_scan(void)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params;
+    struct ble_gap_ext_disc_params disc_params = {0};
     int rc;
 
-    /* Figure out address to use while advertising (no privacy for now) */
+    /* Figure out address to use while scanning (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
         return;
     }
 
-    /* Tell the controller to filter duplicates; we don't want to process
-     * repeated advertisements from the same device.
-     */
-    disc_params.filter_duplicates = 0;
-
-    /**
-     * Perform a passive scan.  I.e., don't send follow-up scan requests to
-     * each advertiser.
-     */
     disc_params.passive = 1;
 
-    /* Use defaults for the rest of the parameters. */
-    disc_params.itvl = 0;
-    disc_params.window = 0;
-    disc_params.filter_policy = 0;
-    disc_params.limited = 0;
-
-    rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                      periodic_sync_gap_event, NULL);
+    rc = ble_gap_ext_disc(own_addr_type, 0, 0,
+                          0, 0, 0, &disc_params, &disc_params,
+                          periodic_sync_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error initiating GAP discovery procedure; rc=%d\n",
                     rc);
     }
 }
 ```
-## Address Generation To establish the connection
-```c
- /* Figure out address to use while advertising (no privacy for now) */
-    rc = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
-           return;
-    }
-```
-The above function call `ble_hs_id_infer_auto(0,own_addr_type)` figures out the address to use while scanning. Depending on privacy parameters public address or private address can be assigned. Public address types are `BLE_OWN_ADDR_RANDOM`, `BLE_OWN_ADDR_PUBLIC`, and private address types are  `BLE_OWN_ADDR_RPA_RANDOM_DEFAULT`, `BLE_OWN_ADDR_RPA_PUBLIC_DEFAULT`.
-1st parameter of the function `ble_hs_id_infer_auto`  defines the privacy.0 value indicates that privacy is not used.
 
-## Configuration of discovery parameters
-
-`disc_params.filter_duplicates = 0;`
-Here we are telling the controller to filter the repeated advertisements from the same device.
-
-`disc_params.passive = 1;`
-To perform passive scanning `passive` field is set to 1. Other discovery parameters are set to default as follows.
-
-```c
- /* Use defaults for the rest of the parameters. */
-    disc_params.itvl = 0;
-    disc_params.window = 0;
-    disc_params.filter_policy = 0;
-    disc_params.limited = 0;
-```
-
-## Perform Discovery Procedures
-
-By utilizing the ble_gap_disc function and associated callbacks, you can initiate and manage the discovery procedure to scan for nearby BLE devices and gather information about their presence, capabilities, and services.
-
-```c
-rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                      periodic_sync_gap_event, NULL);
-```
-Above mentioned function `ble_gap_disc` performs the limited or general discovery procedures.
-It received the following parameter.
-
-1. `own_addr_type`: This refers to the address type that the stack should utilize when sending scan requests.
-
-2. `BLE_HS_FOREVER`: This refers to the duration of the discovery procedure. Once the expiration time is reached, the procedure concludes, and a BLE_GAP_EVENT_DISC_COMPLETE event is generated and reported. The duration is measured in milliseconds. If you want the procedure to have no expiration, you can specify BLE_HS_FOREVER. Alternatively, if you wish to use the default expiration time defined by the stack, you can specify 0.
-
-3. `disc_params`: This refers to discovery arguments.
-
-4. `periodic_sync_gap_event`:You can assign a callback function to be associated with the discovery procedure. This callback function will be responsible for handling and processing advertising reports received during the discovery process, as well as any events related to the termination of the discovery procedure.
-
-5. `NULL`: The optional argument to pass to the callback function.
+Key aspects:
+- `ble_hs_id_infer_auto()` determines the best address type (public or random) to use for scanning.
+- `ble_gap_ext_disc_params` is used instead of `ble_gap_disc_params` since we need extended discovery to receive `BLE_GAP_EVENT_EXT_DISC` events.
+- `disc_params.passive = 1` sets passive scanning — the scanner only listens for advertisements without sending scan requests.
+- `ble_gap_ext_disc()` initiates the extended discovery procedure with the configured parameters.
 
 ## GAP Events
 
-The nimble host executes this callback when a GAP event occurs. The application associates a GAP event callback with each connection that is established. periodic_sync uses the same callback for all connections.
-4 types of gap events are handled in the function`periodic_sync_gap_event`. Events are the following:
+The nimble host executes the `periodic_sync_gap_event` callback when a GAP event occurs. Four types of gap events are handled:
 
-1. BLE_GAP_EVENT_EXT_DISC
-2. BLE_GAP_EVENT_PERIODIC_REPORT
-3. BLE_GAP_EVENT_PERIODIC_SYNC_LOST
-4. BLE_GAP_EVENT_PERIODIC_SYNC
+1. `BLE_GAP_EVENT_EXT_DISC`
+2. `BLE_GAP_EVENT_PERIODIC_REPORT`
+3. `BLE_GAP_EVENT_PERIODIC_SYNC_LOST`
+4. `BLE_GAP_EVENT_PERIODIC_SYNC`
 
 ```c
 static int
 periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
 {
+    (void)arg;
+
     switch (event->type) {
-#if CONFIG_EXAMPLE_EXTENDED_ADV
-    case BLE_GAP_EVENT_EXT_DISC:
-        /* An advertisment report was received during GAP discovery. */
-        struct ble_gap_ext_disc_desc *disc = ((struct ble_gap_ext_disc_desc *)(&event->disc));
+    case BLE_GAP_EVENT_EXT_DISC: {
+        /* An advertisement report was received during GAP discovery. */
+        const struct ble_gap_ext_disc_desc *disc = &event->ext_disc;
         if (disc->sid == 2 && synced == 0) {
-            synced++;
-            const ble_addr_t addr;
-            uint8_t adv_sid;
-            struct ble_gap_periodic_sync_params params;
+            struct ble_gap_periodic_sync_params params = {0};
             int rc;
-            memcpy((void *)&addr, (void *)&disc->addr, sizeof(disc->addr));
-            memcpy(&adv_sid, &disc->sid, sizeof(disc->sid));
+            synced++;
             params.skip = 10;
             params.sync_timeout = 1000;
-            rc = ble_gap_periodic_adv_sync_create(&addr, adv_sid, &params, periodic_sync_gap_event, NULL);
+
+#if CONFIG_EXAMPLE_PERIODIC_ADV_ENH
+            params.filter_duplicates = 1;
+#endif
+            rc = ble_gap_periodic_adv_sync_create(&disc->addr, disc->sid, &params, periodic_sync_gap_event, NULL);
             assert(rc == 0);
         }
         return 0;
+    }
     case BLE_GAP_EVENT_PERIODIC_REPORT:
         MODLOG_DFLT(INFO, "Periodic adv report event: \n");
         print_periodic_adv_data(event);
@@ -329,12 +197,19 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "Periodic sync lost\n");
         print_periodic_sync_lost_data(event);
         synced = 0;
+        /* Restart scanning to re-sync */
+        periodic_sync_scan();
         return 0;
-    case  BLE_GAP_EVENT_PERIODIC_SYNC:
+    case BLE_GAP_EVENT_PERIODIC_SYNC:
         MODLOG_DFLT(INFO, "Periodic sync event : \n");
         print_periodic_sync_data(event);
+        if (event->periodic_sync.status != 0) {
+            synced = 0;
+        } else {
+            /* Cancel scanning since sync is established */
+            ble_gap_disc_cancel();
+        }
         return 0;
-#endif
     default:
         return 0;
     }
@@ -343,25 +218,28 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
 
 ### BLE_GAP_EVENT_EXT_DISC
 
-An extended advertising report is received during this event. Once the event is received it is handled by calling the function `ble_gap_periodic_adv_sync_create()`.This method performs the synchronization procedure with periodic advertisers.
+An extended advertising report is received during this event. The handler checks if the advertisement's SID (Set ID) matches the expected value (2) and if we haven't already synced. If both conditions are met, it creates a periodic sync using `ble_gap_periodic_adv_sync_create()` with the advertiser's address and SID directly from the extended discovery descriptor. When `CONFIG_EXAMPLE_PERIODIC_ADV_ENH` is enabled, duplicate filtering is turned on so periodic reports are only delivered when the advertising data changes or the Data-Id is updated.
 
 ### BLE_GAP_EVENT_PERIODIC_REPORT
 
-Periodic advertisement report is printed in this case.`print_periodic_adv_data()` performs the required printing task. It includes a sync handle, transmit power, data status, data length, and data itself.
+Periodic advertisement report data is printed. `print_periodic_adv_data()` displays the sync handle, transmit power, RSSI, data status, data length, and data contents using `ESP_LOG_BUFFER_HEX`.
 
-### BLE_GAP_EVENT_PERIODIC_SYNC_LOST:
+### BLE_GAP_EVENT_PERIODIC_SYNC_LOST
 
-Periodic synchronization lost data is printed in this case.`print_periodic_sync_lost_data()` prints the data which includes the sync handle and reason for data loss. here are 2 codes used for data loss reasons.
-    1. 13: Timeout
-    2. 14: Terminated locally
+Periodic synchronization lost data is printed. `print_periodic_sync_lost_data()` prints the sync handle and reason for sync loss:
+- 13: Timeout
+- 14: Terminated locally
+
+The `synced` flag is reset to 0 and `periodic_sync_scan()` is called to restart scanning, allowing the device to discover and re-sync with a periodic advertiser.
 
 ### BLE_GAP_EVENT_PERIODIC_SYNC
 
-Periodic synchronization data is printed in this. `print_periodic_sync_data()` prints the required data. It includes a periodic sync handle, advertising address, advertising physical channel, periodic advertising interval, and advertiser clock accuracy.
+Periodic synchronization establishment data is printed. `print_periodic_sync_data()` prints the status, periodic sync handle, SID, advertising address, advertising PHY, periodic advertising interval, and advertiser clock accuracy. If the sync status is non-zero (failure), the `synced` flag is reset to allow retry. On successful sync establishment (status == 0), `ble_gap_disc_cancel()` is called to stop scanning since a periodic sync has been established and further scanning is unnecessary.
 
 ## Conclusion
 
-1. This Walkthrough covers the code explanation for the BLE_PERIODIC_SYNC example.
-2. In this example, a passive scan is conducted to detect non-connectable and non-scannable extended advertisements from nearby devices.
-3. Once such an advertisement is found, the example establishes a periodic sync with the advertising device. After successfully establishing the periodic sync, the example starts listening to the periodic advertisements transmitted by the advertiser.
-4. Also walkthrough includes the periodic synchronization gap events and their handling. 
+1. This walkthrough covers the code explanation for the BLE_PERIODIC_SYNC example.
+2. In this example, an extended passive scan is conducted to detect non-connectable and non-scannable extended advertisements from nearby devices.
+3. Once such an advertisement with a matching SID is found, the example establishes a periodic sync with the advertising device. After successfully establishing the periodic sync, the example starts listening to the periodic advertisements transmitted by the advertiser.
+4. The example uses `ble_hs_id_infer_auto()` to dynamically determine the correct address type, ensuring compatibility across all supported ESP32 variants.
+5. The walkthrough also covers the periodic synchronization gap events and their handling.

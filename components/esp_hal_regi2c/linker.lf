@@ -1,0 +1,5 @@
+[mapping:esp_hal_regi2c]
+archive: libesp_hal_regi2c.a
+entries:
+    if ESP_REGI2C_CTRL_FUNC_IN_IRAM = y:
+        * (noflash)

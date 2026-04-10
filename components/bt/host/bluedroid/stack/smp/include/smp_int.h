@@ -197,7 +197,7 @@ enum {
 };
 typedef UINT8 tSMP_BR_STATE;
 
-/* random and encrption activity state */
+/* random and encryption activity state */
 enum {
     SMP_GEN_COMPARE = 1,
     SMP_GEN_CONFIRM,
@@ -363,6 +363,9 @@ extern tSMP_CB *smp_cb_ptr;
 /* Functions provided by att_main.c */
 extern void smp_init (void);
 
+/* SMP command sizes per spec - defined in smp_utils.c */
+extern const UINT8 smp_cmd_size_per_spec[];
+
 /* smp main */
 extern void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data);
 
@@ -507,7 +510,7 @@ extern void smp_generate_passkey (tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_generate_rand_cont(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_create_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_use_oob_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
-extern void smp_compute_dhkey(tSMP_CB *p_cb);
+extern BOOLEAN smp_compute_dhkey(tSMP_CB *p_cb);
 extern void smp_calculate_local_commitment(tSMP_CB *p_cb);
 extern void smp_calculate_peer_commitment(tSMP_CB *p_cb, BT_OCTET16 output_buf);
 extern void smp_calculate_numeric_comparison_display_number(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);

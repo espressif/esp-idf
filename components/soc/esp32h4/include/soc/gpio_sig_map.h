@@ -1,12 +1,12 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
 
-#define TIMER_IN_IDX                            0   // TODO: [ESP32H4] IDF-12499  need check
+#define TIMER_IN_IDX                            0
 #define LEDC_LS_SIG_OUT0_IDX                    0
 #define LEDC_LS_SIG_OUT1_IDX                    1
 #define LEDC_LS_SIG_OUT2_IDX                    2

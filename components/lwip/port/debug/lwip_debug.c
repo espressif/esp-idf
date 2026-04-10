@@ -87,9 +87,6 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
     ESP_LWIP_LOGI("rttest=%" PRIu32 " rtseq=%" PRIu32 " sa=%d sv=%d", pcb->rttest, pcb->rtseq, pcb->sa, pcb->sv);
     ESP_LWIP_LOGI("rto=%d nrtx=%d", pcb->rto, pcb->nrtx);
     ESP_LWIP_LOGI("dupacks=%d lastack=%" PRIu32, pcb->dupacks, pcb->lastack);
-#if ESP_PER_SOC_TCP_WND
-    ESP_LWIP_LOGI("per_soc_window=%d per_soc_snd_buf=%d", pcb->per_soc_tcp_wnd, pcb->per_soc_tcp_snd_buf);
-#endif
     ESP_LWIP_LOGI("cwnd=%"TCPWNDSIZE_F" ssthreash=%"TCPWNDSIZE_F, pcb->cwnd, pcb->ssthresh);
     ESP_LWIP_LOGI("snd_next=%" PRIu32 " snd_wl1=%" PRIu32 " snd_wl2=%" PRIu32, pcb->snd_nxt, pcb->snd_wl1, pcb->snd_wl2);
     ESP_LWIP_LOGI("snd_lbb=%" PRIu32 " snd_wnd=%"TCPWNDSIZE_F" snd_wnd_max=%"TCPWNDSIZE_F, pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max);

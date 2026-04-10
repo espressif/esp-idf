@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,9 +46,6 @@
 #endif
 #if __has_include("esp_ota_ops.h")
 #include "esp_ota_ops.h"
-#endif
-#if __has_include("esp_ping.h")
-#include "esp_ping.h"
 #endif
 #if __has_include("esp_tls_errors.h")
 #include "esp_tls_errors.h"
@@ -293,6 +290,15 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 post upgrade and hence firmware upgrade
                                                                                 is not possible */
 #   endif
+#   ifdef      ESP_ERR_OTA_ALREADY_IN_PROGRESS
+    ERR_TBL_IT(ESP_ERR_OTA_ALREADY_IN_PROGRESS),                /*  5383 0x1507 Error if another OTA operation is
+                                                                                already in progress on the same
+                                                                                partition */
+#   endif
+#   ifdef      ESP_ERR_OTA_SPI_MODE_MISMATCH
+    ERR_TBL_IT(ESP_ERR_OTA_SPI_MODE_MISMATCH),                  /*  5384 0x1508 Error if the firmware's SPI flash mode
+                                                                                doesn't match the running firmware */
+#   endif
     // components/efuse/include/esp_efuse.h
 #   ifdef      ESP_ERR_EFUSE
     ERR_TBL_IT(ESP_ERR_EFUSE),                                  /*  5632 0x1600 Base error code for efuse api. */
@@ -319,6 +325,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 data. This error is internal to the
                                                                                 efuse component and not returned by any
                                                                                 public API. */
+#   endif
+#   ifdef      ESP_ERR_BURN_WR_DIS
+    ERR_TBL_IT(ESP_ERR_BURN_WR_DIS),                            /*  5639 0x1607 Error to burn WR_DIS field. */
 #   endif
     // components/bootloader_support/include/esp_image_format.h
 #   ifdef      ESP_ERR_IMAGE_BASE
@@ -618,7 +627,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_FLASH_OP_TIMEOUT
     ERR_TBL_IT(ESP_ERR_FLASH_OP_TIMEOUT),                       /* 24578 0x6002 */
 #   endif
-    // components/hal/include/hal/esp_flash_err.h
+    // components/esp_hal_mspi/include/hal/esp_flash_err.h
 #   ifdef      ESP_ERR_FLASH_NOT_INITIALISED
     ERR_TBL_IT(ESP_ERR_FLASH_NOT_INITIALISED),                  /* 24579 0x6003 */
 #   endif
@@ -666,6 +675,13 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE
     ERR_TBL_IT(ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE),             /* 28682 0x700a HTTP 416 Range Not Satisfiable,
                                                                                 requested range in header is incorrect */
+#   endif
+#   ifdef      ESP_ERR_HTTP_READ_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_HTTP_READ_TIMEOUT),                      /* 28683 0x700b HTTP data read timeout */
+#   endif
+#   ifdef      ESP_ERR_HTTP_INCOMPLETE_DATA
+    ERR_TBL_IT(ESP_ERR_HTTP_INCOMPLETE_DATA),                   /* 28684 0x700c Incomplete data received, less than
+                                                                                Content-Length or last chunk */
 #   endif
     // components/esp-tls/esp_tls_errors.h
 #   ifdef      ESP_ERR_ESP_TLS_BASE
@@ -739,29 +755,8 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED
     ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED),        /* 32796 0x801c mbedtls api returned failed */
 #   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED),        /* 32817 0x8031 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED), /* 32818 0x8032 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED),       /* 32819 0x8033 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED),        /* 32820 0x8034 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED),           /* 32821 0x8035 wolfSSL api returned failed */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_CTX_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_CTX_SETUP_FAILED),               /* 32822 0x8036 wolfSSL api returned failed */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SETUP_FAILED),               /* 32823 0x8037 wolfSSL api returned failed */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_WRITE_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_WRITE_FAILED),               /* 32824 0x8038 wolfSSL api returned failed */
+#   ifdef      ESP_ERR_MBEDTLS_SSL_READ_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_READ_FAILED),                /* 32797 0x801d mbedtls api returned failed */
 #   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE
@@ -769,16 +764,6 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_HTTPS_OTA_IN_PROGRESS
     ERR_TBL_IT(ESP_ERR_HTTPS_OTA_IN_PROGRESS),                  /* 36865 0x9001 */
-#   endif
-    // components/lwip/include/apps/esp_ping.h
-#   ifdef      ESP_ERR_PING_BASE
-    ERR_TBL_IT(ESP_ERR_PING_BASE),                              /* 40960 0xa000 */
-#   endif
-#   ifdef      ESP_ERR_PING_INVALID_PARAMS
-    ERR_TBL_IT(ESP_ERR_PING_INVALID_PARAMS),                    /* 40961 0xa001 */
-#   endif
-#   ifdef      ESP_ERR_PING_NO_MEM
-    ERR_TBL_IT(ESP_ERR_PING_NO_MEM),                            /* 40962 0xa002 */
 #   endif
     // components/esp_http_server/include/esp_http_server.h
 #   ifdef      ESP_ERR_HTTPD_BASE
@@ -816,7 +801,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_HW_CRYPTO_BASE),                         /* 49152 0xc000 Starting number of HW cryptography
                                                                                 module error codes */
 #   endif
-    // components/esp_hw_support/include/esp_ds_err.h
+    // components/esp_security/include/esp_ds_err.h
 #   ifdef      ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL
     ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL),                 /* 49153 0xc001 HMAC peripheral problem */
 #   endif

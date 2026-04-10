@@ -20,6 +20,6 @@ if(CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_INCLUDE_DIRS "../../private_include"
+                       PRIV_INCLUDE_DIRS "../../private_include" "../include"
                        PRIV_REQUIRES cmock test_utils esp_timer spi_flash esp_psram esp_driver_gpio esp_pm
                        WHOLE_ARCHIVE)

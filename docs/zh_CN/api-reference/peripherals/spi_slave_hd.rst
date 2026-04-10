@@ -13,7 +13,7 @@ SPI 从机半双工模式
 协议
 ^^^^^^^^
 
-有关主设备与 SPI 从机通信的详细信息，请参阅 :doc:`/api-reference/protocols/esp_spi_slave_protocol`。
+有关主设备与 SPI 从机通信的详细信息，请参阅 `ESP SPI 从机半双工协议 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_ 。
 
 通过不同类型的事务，从设备为主设备提供以下服务：
 
@@ -62,6 +62,12 @@ SPI 从机半双工模式
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 要通过 DMA 通道向主设备发送数据，应用程序需要先将数据正确地封装在 :cpp:type:`spi_slave_hd_data_t` 描述符结构体中，然后再将数据描述符和通道参数 :cpp:enumerator:`SPI_SLAVE_CHAN_TX` 传递给 :cpp:func:`spi_slave_hd_queue_trans`。数据描述符的指针存储在队列中，一旦接收到主设备的 Rd_DMA 命令，就会按照调用 :cpp:func:`spi_slave_hd_queue_trans` 时数据进入队列的顺序，依次将数据发送给主设备。
+
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    驱动程序支持使用 PSRAM 进行传输。直接传入 PSRAM 地址作为 :cpp:member:`spi_slave_hd_data_t::data` 即可。对于 DMA 接收通道，其内存地址和传输长度有对齐要求，使用 :cpp:func:`heap_caps_malloc` 分配内存可以自动处理对齐要求。对于不能控制的内存，也可以使用 :c:macro:`SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO` 标志位，驱动会自动从 PSRAM 重新分配满足要求的内存。
+
+    请注意该功能共享 MSPI 总线带宽（总线频率 * 总线位宽），因此主机对该设备的传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**，此时获取传输结果会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
 应用程序需要检查数据发送的结果。为此，应用程序可以调用 :cpp:func:`spi_slave_hd_get_trans_res`，并将通道参数设置为 :cpp:enumerator:`SPI_SLAVE_CHAN_TX`。该函数将阻塞程序，直到主设备发起的 Rd_DMA 命令事务成功完成或超时。函数中的参数 ``out_trans`` 将输出刚刚完成的数据描述符的指针，从而提供有关已完成的发送操作的信息。
 

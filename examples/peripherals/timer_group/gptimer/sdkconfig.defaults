@@ -3,4 +3,4 @@
 #
 
 # Disable nano printf, because we need to print the timer count in %llu format
-CONFIG_NEWLIB_NANO_FORMAT=n
+CONFIG_LIBC_NEWLIB_NANO_FORMAT=n

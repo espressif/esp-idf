@@ -1,0 +1,6 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_IDF_TARGET="esp32"
+CONFIG_BT_ACL_CONNECTIONS=9
+CONFIG_BTDM_CTRL_BLE_MAX_CONN=9

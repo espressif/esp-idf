@@ -185,13 +185,10 @@ Initialize Console REPL Environment
 
 To establish a basic REPL environment, ``console`` component provides several useful APIs, combining those functions described above.
 
-In a typical application, you only need to call :cpp:func:`esp_console_new_repl_uart` to initialize the REPL environment based on UART device, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g., `help`).
+In a typical application, you only need to call :cpp:func:`esp_console_new_repl_stdio` to initialize the REPL environment, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g., `help`).
 
 After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in init state until you call :cpp:func:`esp_console_start_repl`.
 
-.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
-
-    Likewise, if your REPL environment is based on USB_SERIAL_JTAG device, you only need to call :cpp:func:`esp_console_new_repl_usb_serial_jtag` at first step. Then call other functions as usual.
 
 Application Examples
 --------------------

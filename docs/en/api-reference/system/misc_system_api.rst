@@ -39,7 +39,22 @@ To fetch the MAC address for a specific network interface (e.g., Wi-Fi, Bluetoot
 
 In ESP-IDF, the MAC addresses for the various network interfaces are calculated from a single **base MAC address**. By default, the Espressif base MAC address is used. This base MAC address is pre-programmed into the {IDF_TARGET_NAME} eFuse in the factory during production.
 
-.. only:: not esp32s2
+.. only:: esp32p4
+
+    .. list-table::
+        :widths: 20 80
+        :header-rows: 1
+
+        * - Interface
+          - MAC Address (1 universally administered, default)
+        * - Ethernet
+          - base_mac
+
+    .. note::
+
+        On ESP32-P4, :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one universally administered MAC address.
+
+.. only:: (not esp32s2) and (not esp32p4)
 
     .. list-table::
         :widths: 20 40 40
@@ -213,6 +228,18 @@ To get the version at build time, additional version macros are provided. They c
       #endif
 
 
+Debug Helpers
+-------------
+
+The debug helper APIs in ``esp_debug_helpers.h`` provide utilities for run-time debugging and stack backtrace output.
+
+- :cpp:func:`esp_backtrace_print` prints the current stack backtrace.
+- :cpp:func:`esp_backtrace_print_all_tasks` prints backtraces for all tasks.
+- :cpp:func:`esp_backtrace_get_start` and :cpp:func:`esp_backtrace_get_next_frame` allow manual iteration over backtrace frames.
+
+These APIs are useful when diagnosing crashes, watchdog timeouts, or unexpected control flow.
+
+
 .. _app-version:
 
 App Version
@@ -237,4 +264,5 @@ API Reference
 .. include-build-file:: inc/esp_mac.inc
 .. include-build-file:: inc/esp_chip_info.inc
 .. include-build-file:: inc/esp_cpu.inc
+.. include-build-file:: inc/esp_debug_helpers.inc
 .. include-build-file:: inc/esp_app_desc.inc

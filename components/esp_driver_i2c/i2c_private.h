@@ -25,23 +25,6 @@
 extern "C" {
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_RCC_ATOMIC()
-#endif
-
-#if SOC_LP_I2C_SUPPORTED
-#define LP_I2C_SRC_CLK_ATOMIC()    PERIPH_RCC_ATOMIC()
-#define LP_I2C_BUS_CLK_ATOMIC()    PERIPH_RCC_ATOMIC()
-#endif
-
 #ifdef CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM
 #define I2C_MASTER_ISR_ATTR IRAM_ATTR
 #else
@@ -66,7 +49,7 @@ extern "C" {
 
 #define I2C_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define I2C_STATIC_OPERATION_ARRAY_MAX SOC_I2C_CMD_REG_NUM
+#define I2C_STATIC_OPERATION_ARRAY_MAX I2C_LL_GET(CMD_REG_NUM)
 
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
 #define I2C_TRANS_WRITE_COMMAND(ack_check)   {.ack_en = (ack_check), .op_code = I2C_LL_CMD_WRITE}

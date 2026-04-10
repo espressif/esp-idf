@@ -19,9 +19,9 @@
 
 #include "esp_log.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
-static const char *TAG = "fpga_clk";
+ESP_LOG_ATTR_TAG(TAG, "fpga_clk");
 
 static void s_warn(void)
 {
@@ -52,7 +52,7 @@ void bootloader_clock_configure(void)
 #endif
 }
 
-void esp_rtc_init(void)
+void IRAM_ATTR esp_rtc_init(void)
 {
 #if SOC_PMU_SUPPORTED
     pmu_init();

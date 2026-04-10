@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
-#include "hal/clk_tree_ll.h"
+#include "hal/config.h"
 #include "esp_attr.h"
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
@@ -33,11 +33,9 @@ void efuse_hal_set_timing(uint32_t apb_freq_hz)
     efuse_ll_set_dac_clk_div(0x28);
     efuse_ll_set_pwr_on_num(0x3000);
     efuse_ll_set_pwr_off_num(0x190);
-    int xtal = clk_ll_xtal_load_freq_mhz();
-    HAL_ASSERT(xtal == 40 || xtal == 26);
     // for the XTAL = 40 MHz we use the default value = 200.
     // XTAL = 26 MHz the value = 130.
-    efuse_ll_set_tpgm_inactive(xtal * 5);
+    efuse_ll_set_tpgm_inactive(HAL_CONFIG(XTAL_HINT_FREQ_MHZ) * 5);
 }
 
 void efuse_hal_read(void)

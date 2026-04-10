@@ -68,10 +68,7 @@ struct ble_hci_iso_conn {
 };
 
 int ble_hci_set_iso_buf_sz(uint16_t pktlen, uint8_t max_pkts);
-
 void ble_hci_get_iso_buf_size(uint16_t *pktlen, uint8_t *max_pkts);
-
-void ble_hci_add_iso_avail_pkts(uint16_t delta);
 
 struct ble_hci_iso_conn *ble_hci_iso_conn_find(uint16_t conn_handle);
 

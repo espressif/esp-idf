@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,7 @@
  *
  * This file contains all the functions required by the core dump component to
  * calculate checksums for data to write (or already written) on the flash.
- * Currently, both CRC32 and SHA256 are supported, but this interface is
- * implementation independent.
+ * Currently, only SHA256 is supported.
  */
 
 #ifndef CORE_DUMP_CHECKSUM_H_
@@ -25,7 +24,7 @@ extern "C" {
 
 /**
  * @brief Maximum possible length for a checksum (regardless of the
- * implentation). This can be modified in the future if a new implementation
+ * implementation). This can be modified in the future if a new implementation
  * requires a larger size.
  */
 #define COREDUMP_CHECKSUM_MAX_LEN 32

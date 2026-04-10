@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/soc.h"
-#include "soc/interrupt_reg.h"
+#include "riscv/csr_clic.h"
 #include "riscv/rvruntime-frames.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
@@ -17,25 +17,23 @@
     .equ EXC_ILLEGAL_INSTRUCTION, 0x2
     .equ panic_from_exception, xt_unhandled_exception
     .equ panic_from_isr, panicHandler
+    .equ CSR_UINTSTATUS, 0xCB1
+    .equ CSR_UINTTHRESH, 0x047
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Targets with coprocessors present a special CSR to get Illegal Instruction exception reason */
-#ifdef __clang__
-    /* Clang does not support constant declared via `equ` as operand for csrrw
-    * TODO: LLVM-369
-    */
     #define EXT_ILL_CSR 0x7F0
-#else
-    .equ EXT_ILL_CSR, 0x7F0
-#endif
 
     /* EXT_ILL CSR reasons are stored as follows:
      * - Bit 0: FPU core instruction (Load/Store instructions NOT concerned)
      * - Bit 1: Hardware Loop instructions
-     * - Bit 2: PIE core */
+     * - Bit 2: PIE core
+     * - Bit 3: DSP core
+     */
     .equ EXT_ILL_RSN_FPU,  1
     .equ EXT_ILL_RSN_HWLP, 2
     .equ EXT_ILL_RSN_PIE,  4
+    .equ EXT_ILL_RSN_DSP,  8
 #endif /* SOC_CPU_COPROC_NUM > 0 */
 
 /* Macro which first allocates space on the stack to save general
@@ -94,8 +92,11 @@
     sw    t0, RV_STK_MSTATUS(sp)
     csrr  t0, utvec
     sw    t0, RV_STK_MTVEC(sp)
+    /* NOTE: C6 and H2 possess the utval CSR, but rest of the SoCs don't */
+    #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     csrr  t0, utval
     sw    t0, RV_STK_MTVAL(sp)
+    #endif
     #else
     csrr  t0, mstatus
     sw    t0, RV_STK_MSTATUS(sp)
@@ -180,6 +181,20 @@
 #endif
 .endm
 
+.macro mintthresh_csr_disable reg
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+    /* Workaround for triggering an interrupt even when mstatus.mie is 0, when cm.push is called. */
+    li t0, 0xff
+    csrrw \reg, MINTTHRESH_CSR, t0
+#endif
+.endm
+
+.macro mintthresh_csr_restore reg
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+    csrw MINTTHRESH_CSR, \reg
+#endif
+.endm
+
 .macro xret
 #if CONFIG_SECURE_ENABLE_TEE
     uret
@@ -215,6 +230,8 @@ _panic_handler:
     /* Allocate space on the stack and store general purpose registers */
     save_general_regs RV_STK_FRMSZ
 
+    mintthresh_csr_disable s5
+
     /* As gp register is not saved by the macro, save it here */
     sw    gp, RV_STK_GP(sp)
 
@@ -247,16 +264,46 @@ _panic_handler:
     csrrw a0, EXT_ILL_CSR, zero
 
 #if SOC_CPU_HAS_PIE
+    /* On the ESP32-S31, the PIE is only available on core 1, so on core 0 we need to parse the
+     * mtval to check if the PIE bit is set. */
+#if CONFIG_IDF_TARGET_ESP32S31
+    csrr  a1, mhartid
+    bnez  a1, _ill_check_pie_bit
+    /* Check if the instruction is a PIE instruction. The PIE instructions opcodes (lowest 7 bits) are of
+     * the type:
+     *  0110011
+     *  xx11x11 (x: don't care)
+     */
+    csrr  t0, mtval
+    /* Start with the special case 0110011 */
+    andi  a1, t0,  0b1111111
+    addi  a1, a1, -0b0110011
+    beqz  a1, rtos_pie_used_cpu0
+    /* Continue with the opcodes that only care about bits 0, 1, 3 and 4 */
+    andi  t0, t0,  0b0011011
+    addi  a1, t0, -0b0011011
+    beqz  a1, rtos_pie_used_cpu0
+    /* Not PIE instruction, continue the exception, we can fall-through, the EXT_ILL CSR
+     * will not have the PIE bit set anyway, we save a branch instruction. */
+_ill_check_pie_bit:
+#endif
     /* Check if the PIE bit is set. */
     andi a1, a0, EXT_ILL_RSN_PIE
     bnez a1, rtos_save_pie_coproc
 #endif /* SOC_CPU_HAS_PIE */
 
+#if SOC_CPU_HAS_DSP
+    /* Check if the DSP bit is set. */
+    andi a1, a0, EXT_ILL_RSN_DSP
+    bnez a1, rtos_save_dsp_coproc
+#endif /* SOC_CPU_HAS_DSP */
+
     /* We cannot check the HWLP bit in a0 since a hardware bug may set this bit even though no HWLP
      * instruction was executed in the program at all, so check mtval (`t0`) */
 #if SOC_CPU_HAS_HWLOOP
-    /* HWLP instructions  all have an opcode of 0b0101011 */
-    andi  a1, t0, 0b1111111
+    /* HWLP instructions all have an opcode of 0b0101011 */
+    csrr  t0, mtval
+    andi  a1, t0,  0b1111111
     addi  a1, a1, -0b0101011
     bnez a1, hwlp_not_used
     /* HWLP used in an ISR, abort */
@@ -271,7 +318,8 @@ hwlp_not_used:
      * For example, bit 1 can be set and bit 0 won't, even if the reason is an FPU instruction. */
     andi  a1, a0, EXT_ILL_RSN_FPU
     bnez  a1, rtos_save_fpu_coproc
-#if SOC_CPU_HAS_FPU_EXT_ILL_BUG
+    /* The FPU_EXT_ILL bug was fixed on revision 3.0 and higher */
+#if SOC_CPU_HAS_FPU_EXT_ILL_BUG && CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     /* If the SOC present the hardware EXT_ILL CSR bug, it doesn't support FPU load/store detection
      * so we have to check the instruction's opcode (in `mtval` = `t0`) */
     andi  a0, t0, 0b1011111
@@ -358,6 +406,8 @@ _store_mcause:
      * Restore the registers and return from the exception.
      */
 _return_from_exception:
+    mintthresh_csr_restore s5
+
     restore_xepc
     /* MTVEC and SP are assumed to be unmodified.
      * MSTATUS, MHARTID, MTVAL are read-only and not restored.
@@ -457,6 +507,8 @@ _tee_interrupt_handler:
 
     /* After dispatch c handler, disable interrupt to make freertos make context switch */
 
+    mintthresh_csr_disable s5
+
     disable_intr
     /* MIE cleared. Nested interrupts are disabled */
 
@@ -465,6 +517,24 @@ _tee_interrupt_handler:
     li      t0, INTERRUPT_CURRENT_CORE_INT_THRESH_REG
     sw      s3, 0(t0)
     fence
+#elif CONFIG_SECURE_ENABLE_TEE
+    /* Restore the U-mode interrupt threshold level.
+     *
+     * If uintstatus == 0, it means we have returned here after servicing a
+     * U-mode interrupt that was delegated via M-mode. In this case, we should
+     * reset the threshold to the minimum valid level.
+     *
+     * If uintstatus != 0, we are currently handling a U-mode interrupt that
+     * either originated directly in U-mode or is a nested U-mode interrupt.
+     * In this case, the threshold must be retained, so we skip the reset.
+     */
+    csrr    t0, CSR_UINTSTATUS
+    bnez    t0, _skip_thresh_reset
+    csrr    t0, CSR_UINTTHRESH
+    li      t1, (1 << (8 - NLBITS) - 1)
+    beq     t0, t1, _skip_thresh_reset
+    csrw    CSR_UINTTHRESH, t1
+_skip_thresh_reset:
 #endif // !SOC_INT_HW_NESTED_SUPPORTED
 
     /* The RTOS will restore the current TCB stack pointer. This routine will preserve s1 and s2.
@@ -484,6 +554,9 @@ _tee_interrupt_handler:
     csrw    mcause, s1
     csrw    mstatus, a0
 #endif
+
+    mintthresh_csr_restore s5
+
     restore_xepc
     restore_general_regs
     /* exit, this will also re-enable the interrupts */

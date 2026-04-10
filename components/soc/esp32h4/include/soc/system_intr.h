@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -15,3 +15,5 @@
 
 #define SYS_TG0_WDT_INTR_SOURCE         ETS_TG0_WDT_INTR_SOURCE
 #define SYS_TG1_WDT_INTR_SOURCE         ETS_TG1_WDT_INTR_SOURCE
+
+#define ETS_ASSIST_DEBUG_INTR_SOURCE    ETS_BUS_MONITOR_INTR_SOURCE

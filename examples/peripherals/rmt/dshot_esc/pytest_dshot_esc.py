@@ -3,14 +3,11 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@idf_parametrize(
-    'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4'],
-    indirect=['target'],
-)
+@idf_parametrize('target', soc_filtered_targets('SOC_RMT_SUPPORTED == 1'), indirect=['target'])
 def test_dshot_esc_example(dut: Dut) -> None:
     dut.expect_exact('example: Create RMT TX channel')
     dut.expect_exact('example: Install Dshot ESC encoder')

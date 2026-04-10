@@ -96,6 +96,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
 static void initialise_wifi(void)
 {
+    esp_eap_method_t eap_methods = ESP_EAP_TYPE_ALL;
 #ifdef SERVER_CERT_VALIDATION_ENABLED
     unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
 #endif /* SERVER_CERT_VALIDATION_ENABLED */
@@ -103,6 +104,7 @@ static void initialise_wifi(void)
 #ifdef CONFIG_EXAMPLE_EAP_METHOD_TLS
     unsigned int client_crt_bytes = client_crt_end - client_crt_start;
     unsigned int client_key_bytes = client_key_end - client_key_start;
+    eap_methods = ESP_EAP_TYPE_TLS;
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TLS */
 
     ESP_ERROR_CHECK(esp_netif_init());
@@ -148,7 +150,11 @@ static void initialise_wifi(void)
 
 #if defined CONFIG_EXAMPLE_EAP_METHOD_TTLS
     ESP_ERROR_CHECK(esp_eap_client_set_ttls_phase2_method(TTLS_PHASE2_METHOD) );
+    eap_methods = ESP_EAP_TYPE_TTLS;
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TTLS */
+#if defined (CONFIG_EXAMPLE_EAP_METHOD_PEAP)
+    eap_methods = ESP_EAP_TYPE_PEAP;
+#endif /* CONFIG_EXAMPLE_EAP_METHOD_PEAP */
 
 #if defined (CONFIG_EXAMPLE_WPA3_192BIT_ENTERPRISE)
     ESP_LOGI(TAG, "Enabling 192 bit certification");
@@ -160,6 +166,7 @@ static void initialise_wifi(void)
 #ifdef CONFIG_EXAMPLE_VALIDATE_SERVER_CERT_DOMAIN
     ESP_ERROR_CHECK(esp_eap_client_set_domain_name(EXAMPLE_SERVER_CERT_DOMAIN));
 #endif
+    ESP_ERROR_CHECK(esp_eap_client_set_eap_methods(eap_methods));
     ESP_ERROR_CHECK(esp_wifi_sta_enterprise_enable());
     ESP_ERROR_CHECK(esp_wifi_start());
 }

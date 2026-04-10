@@ -10,6 +10,7 @@ if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES "esp_mm"
+                       REQUIRES "esp_hal_dma"
+                       PRIV_REQUIRES "esp_mm" "esp_driver_dma"
                        INCLUDE_DIRS "include"
                        LDFRAGMENTS "linker.lf")

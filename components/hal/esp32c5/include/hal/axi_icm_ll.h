@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "hal/assert.h"
 #include "soc/hp_system_struct.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,15 @@ static inline void axi_icm_ll_set_cache_arbiter_prio(uint8_t priority)
 {
     HAL_ASSERT(priority < 2); // Ensure priority is within valid range (0-1)
     HP_SYSTEM.axi_mst_pri.cache_priority = priority;
+}
+
+/**
+ * @brief Reset system bus with soc core reset.
+ * @param reset_with_core_reset True to reset system bus with soc core reset.
+ */
+static inline void axi_icm_ll_reset_with_core_reset(bool reset_with_core_reset)
+{
+    PCR.reset_event_bypass.reset_event_bypass = !reset_with_core_reset;
 }
 
 #ifdef __cplusplus

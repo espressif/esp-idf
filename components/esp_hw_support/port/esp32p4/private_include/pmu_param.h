@@ -11,6 +11,11 @@
 #include <esp_types.h>
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
+#include "sdkconfig.h"
+
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+#include "pmu_icg_mapping.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +39,7 @@ extern "C" {
 // FOR LIGHTSLEEP
 #define PMU_HP_DRVB_LIGHTSLEEP      0
 #define PMU_LP_DRVB_LIGHTSLEEP      0
-#define PMU_HP_XPD_LIGHTSLEEP       1
+#define PMU_HP_XPD_LIGHTSLEEP       0 // Always use DCDC power supply in lightsleep
 
 #define PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT    0
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6 1
@@ -111,6 +116,11 @@ typedef struct {
 const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mode_t mode);
 
 
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA && !defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+void pmu_sleep_clock_icg_config(void *icg_context, const uint32_t icg_func);
+#endif
+
+
 /* Following software configuration instance type from pmu_struct.h used for the PMU state machine in sleep flow*/
 typedef union {
     struct {
@@ -118,7 +128,12 @@ typedef union {
         uint32_t dcdc_switch_pd_en: 1;
         uint32_t mem_dslp     : 1;
         uint32_t mem_pd_en    : 1;
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
         uint32_t reserved1    : 6;
+#else
+        uint32_t reserved1    : 5;
+        uint32_t cpu_pd_en    : 1;
+#endif
         uint32_t cnnt_pd_en   : 1;
         uint32_t top_pd_en    : 1;
     };
@@ -322,22 +337,45 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
+    uint32_t                icg_func[2];
 } pmu_sleep_digital_config_t;
 
 
-#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
-    }                                                                   \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
+    },                                                                  \
+    .icg_func = { 0, 0 }                                                \
 }
 
-#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {            \
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
-    }                                                                   \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
+    },                                                                  \
+    .icg_func = { 0, clk_flags }                                        \
 }
+#else // !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 0,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
+    },                                                                  \
+    .icg_func = { 0, 0 }                                                \
+}
+
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 0,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
+    },                                                                  \
+    .icg_func = { 0, clk_flags }                                        \
+}
+#endif
 
 typedef struct {
     struct {
@@ -351,6 +389,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags) {       \
     .hp_sys = {                                                   \
         .analog = {                                               \
+            .dcm_mode        = 1,                                 \
             .drv_b           = PMU_HP_DRVB_LIGHTSLEEP,            \
             .pd_cur          = PMU_PD_CUR_SLEEP_DEFAULT,          \
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,         \
@@ -385,6 +424,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags) {         \
     .hp_sys = {                                                     \
         .analog = {                                                 \
+            .dcm_mode        = 0,                                   \
             .pd_cur        = PMU_PD_CUR_SLEEP_DEFAULT,              \
             .bias_sleep    = PMU_BIASSLP_SLEEP_DEFAULT,             \
             .xpd           = PMU_HP_XPD_DEEPSLEEP,                  \
@@ -503,7 +543,7 @@ typedef struct pmu_sleep_machine_constant {
         .system_dfs_up_work_time_us     = 124,  \
         .analog_wait_time_us            = PMU_HP_ANA_WAIT_TIME_PD_TOP_US, \
         .power_supply_wait_time_us      = 2,    \
-        .power_up_wait_time_us          = 2,    \
+        .power_up_wait_time_us          = 26,   \
         .regdma_s2m_work_time_us        = 172,  \
         .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_US, \
         .regdma_m2a_work_time_us        = 278,  \

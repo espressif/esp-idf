@@ -6,3 +6,6 @@ components/esp_driver_ana_cmpr/test_apps/analog_comparator:
   depends_components:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
+    - esp_hal_ana_cmpr
+    - esp_hw_support
+    - soc

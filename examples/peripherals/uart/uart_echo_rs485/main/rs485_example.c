@@ -25,14 +25,17 @@
 
 // Note: Some pins on target chip cannot be assigned for UART communication.
 // Please refer to documentation for selected board and target to configure pins using Kconfig.
-#define ECHO_TEST_TXD           (CONFIG_ECHO_UART_TXD)
-#define ECHO_TEST_RXD           (CONFIG_ECHO_UART_RXD)
+#define ECHO_TEST_TXD           (CONFIG_ECHO_RS485_TX_IO)
+#define ECHO_TEST_RXD           (CONFIG_ECHO_RS485_RX_IO)
 
-// RTS for RS485 Half-Duplex Mode manages DE/~RE
-#define ECHO_TEST_RTS           (CONFIG_ECHO_UART_RTS)
-
-// CTS is not used in RS485 Half-Duplex Mode
-#define ECHO_TEST_CTS           (UART_PIN_NO_CHANGE)
+// DTR for RS485 Half-Duplex Mode manages DE/~RE
+// However, on ESP32 non-UART0 port, DTR signal does not exist, so we use RTS instead
+// RTS is managed by the software inside the driver, while DTR is controlled by the hardware directly, which eliminates latency
+#if CONFIG_IDF_TARGET_ESP32
+#define ECHO_TEST_RTS           (CONFIG_ECHO_RS485_DIRECTION_IO)
+#else
+#define ECHO_TEST_DTR           (CONFIG_ECHO_RS485_DIRECTION_IO)
+#endif
 
 #define BUF_SIZE                (127)
 #define BAUD_RATE               (CONFIG_ECHO_UART_BAUD_RATE)
@@ -84,7 +87,11 @@ static void echo_task(void *arg)
     ESP_LOGI(TAG, "UART set pins, mode and install driver.");
 
     // Set UART pins as per KConfig settings
-    ESP_ERROR_CHECK(uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS));
+#if CONFIG_IDF_TARGET_ESP32
+    ESP_ERROR_CHECK(uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+#else
+    ESP_ERROR_CHECK(uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, ECHO_TEST_DTR, UART_PIN_NO_CHANGE));
+#endif
 
     // Set RS485 half duplex mode
     ESP_ERROR_CHECK(uart_set_mode(uart_num, UART_MODE_RS485_HALF_DUPLEX));

@@ -3,16 +3,17 @@
 
 :link_to_translation:`en:[English]`
 
+本文介绍了将设备配入 `Wi-Fi <../network/esp_wifi.rst>`_ 或 `Thread <../network/esp_openthread.rst>`_ 网络中的方法。
+
 .. toctree::
     :maxdepth: 1
 
     protocomm
-    :SOC_WIFI_SUPPORTED: provisioning
-    :SOC_WIFI_SUPPORTED: wifi_provisioning
+    provisioning
+
+本部分的 API 示例代码存放在 idf-extra-compoenent 仓库的 `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning/examples>`_ 目录下。
 
 .. only:: SOC_WIFI_SUPPORTED
-
-    本部分的 API 示例代码存放在 ESP-IDF 示例项目的 :example:`provisioning` 目录下。
 
     .. toctree::
         :maxdepth: 1

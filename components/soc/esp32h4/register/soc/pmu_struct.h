@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -11,8 +11,6 @@
 extern "C"
 {
 #endif
-
-#include "soc/pmu_reg.h"
 
 typedef union {
     struct {
@@ -871,6 +869,21 @@ typedef union {
     uint32_t val;
 } pmu_touch_pwr_ctrl_reg_t;
 
+typedef union {
+    struct {
+        uint32_t reserved_0:23;
+        /** ext_ocode : R/W; bitpos: [30:23]; default: 120;
+         *  need_des
+         */
+        uint32_t ext_ocode:8;
+        /** ext_force_ocode : R/W; bitpos: [31]; default: 0;
+         *  need_des
+         */
+        uint32_t ext_force_ocode:1;
+    };
+    uint32_t val;
+} pmu_ble_bandgap_ctrl_reg_t;
+
 typedef struct pmu_dev {
     volatile pmu_hp_hw_regmap_t         hp_sys[3];
     volatile pmu_lp_hw_regmap_t         lp_sys[2];
@@ -892,8 +905,9 @@ typedef struct pmu_dev {
     volatile pmu_dcm_ctrl_reg_t         dcm_ctrl;
     volatile pmu_dcm_boost_ctrl_reg_t   dcm_boost_ctrl;
     volatile pmu_touch_pwr_ctrl_reg_t   touch_pwr_ctrl;
+    volatile pmu_ble_bandgap_ctrl_reg_t ble_bandgap_ctrl;
 
-    uint32_t reserved[142];
+    uint32_t reserved[141];
 
     union {
         struct {
@@ -908,8 +922,6 @@ extern pmu_dev_t PMU;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(pmu_dev_t) == 0x400, "Invalid size of pmu_dev_t structure");
-
-_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_TOUCH_PWR_CTRL_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure");
 #endif
 
 #ifdef __cplusplus

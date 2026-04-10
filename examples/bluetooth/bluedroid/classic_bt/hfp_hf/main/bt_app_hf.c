@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,6 +17,7 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_client_api.h"
+#include "esp_hf_client_legacy_api.h"
 #include "esp_pbac_api.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -174,7 +175,9 @@ extern esp_bd_addr_t peer_addr;
 // If you want to connect a specific device, add it's address here
 // esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+
+#if CONFIG_BT_HFP_USE_EXTERNAL_CODEC
 
 static esp_hf_sync_conn_hdl_t s_sync_conn_hdl;
 static bool s_msbc_air_mode = false;
@@ -222,7 +225,62 @@ static void bt_app_hf_client_audio_data_cb(esp_hf_sync_conn_hdl_t sync_conn_hdl,
     }
 }
 
-#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
+#else
+
+#define ESP_HFP_RINGBUF_SIZE 3600
+static RingbufHandle_t m_rb = NULL;
+
+static void bt_app_hf_client_audio_open(void)
+{
+    m_rb = xRingbufferCreate(ESP_HFP_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
+}
+
+static void bt_app_hf_client_audio_close(void)
+{
+    if (!m_rb) {
+        return ;
+    }
+
+    vRingbufferDelete(m_rb);
+}
+
+static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
+{
+    if (!m_rb) {
+        return 0;
+    }
+
+    size_t item_size = 0;
+    uint8_t *data = xRingbufferReceiveUpTo(m_rb, &item_size, 0, sz);
+    if (item_size == sz) {
+        memcpy(p_buf, data, item_size);
+        vRingbufferReturnItem(m_rb, data);
+        return sz;
+    } else if (0 < item_size) {
+        vRingbufferReturnItem(m_rb, data);
+        return 0;
+    } else {
+        // data not enough, do not read
+        return 0;
+    }
+}
+
+static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
+{
+    if (! m_rb) {
+        return;
+    }
+    BaseType_t done = xRingbufferSend(m_rb, (uint8_t *)buf, sz, 0);
+    if (! done) {
+        ESP_LOGE(BT_HF_TAG, "rb send fail");
+    }
+
+    esp_hf_client_outgoing_data_ready();
+}
+
+#endif /* #if CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
+
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 
 /* callback for HF_CLIENT */
 void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
@@ -251,7 +309,9 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
         {
             ESP_LOGI(BT_HF_TAG, "--audio state %s",
                     c_audio_state_str[param->audio_stat.state]);
-    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC
+    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+
+    #if CONFIG_BT_HFP_USE_EXTERNAL_CODEC
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
                 s_msbc_air_mode = true;
                 ESP_LOGI(BT_HF_TAG, "--audio air mode: mSBC , preferred_frame_size: %d", param->audio_stat.preferred_frame_size);
@@ -276,7 +336,18 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
                 vQueueDelete(s_audio_buff_queue);
                 s_audio_buff_cnt = 0;
             }
-    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
+    #else
+            if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
+                param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
+                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
+                                                    bt_app_hf_client_outgoing_cb);
+                bt_app_hf_client_audio_open();
+            } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
+                bt_app_hf_client_audio_close();
+            }
+    #endif /* #if CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
+
+    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             break;
         }
 

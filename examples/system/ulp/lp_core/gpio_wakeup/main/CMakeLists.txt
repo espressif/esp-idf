@@ -1,7 +1,7 @@
 # Set usual component variables
 set(COMPONENT_SRCS "lp_core_gpio_wake_up_example_main.c")
 set(COMPONENT_ADD_INCLUDEDIRS "")
-set(COMPONENT_REQUIRES ulp driver)
+set(COMPONENT_REQUIRES ulp)
 
 register_component()
 

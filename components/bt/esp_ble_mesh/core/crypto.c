@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,12 +11,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <tinycrypt/aes.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/hmac.h>
-#include <tinycrypt/sha256.h>
-
 #include "crypto.h"
 #include "mesh/config.h"
 #include "mesh/common.h"
@@ -24,34 +18,12 @@
 
 #if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
-#endif
+#endif /* CONFIG_BLE_MESH_V11_SUPPORT */
 
-#define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
+#define NET_MIC_LEN(pdu)    (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)
 
-int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
-                     size_t sg_len, uint8_t mac[16])
-{
-    struct tc_aes_key_sched_struct sched = {0};
-    struct tc_cmac_struct state = {0};
-
-    if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-        return -EIO;
-    }
-
-    for (; sg_len; sg_len--, sg++) {
-        if (tc_cmac_update(&state, sg->data,
-                           sg->len) == TC_CRYPTO_FAIL) {
-            return -EIO;
-        }
-    }
-
-    if (tc_cmac_final(mac, &state) == TC_CRYPTO_FAIL) {
-        return -EIO;
-    }
-
-    return 0;
-}
+/* bt_mesh_aes_cmac is now mapped to bt_mesh_aes_cmac_raw_key from common crypto module */
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
                const char *info, uint8_t okm[16])
@@ -199,325 +171,9 @@ int bt_mesh_id128(const uint8_t n[16], const char *s, uint8_t out[16])
     return bt_mesh_k1(n, 16, salt, id128, out);
 }
 
-static int bt_mesh_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13],
-                               const uint8_t *enc_msg, size_t msg_len,
-                               const uint8_t *aad, size_t aad_len,
-                               uint8_t *out_msg, size_t mic_size)
-{
-    uint8_t msg[16] = {0}, pmsg[16] = {0}, cmic[16] = {0},
-            cmsg[16] = {0}, Xn[16] = {0}, mic[16] = {0};
-    uint16_t last_blk = 0U, blk_cnt = 0U;
-    size_t i = 0U, j = 0U;
-    int err = 0;
-
-    if (msg_len < 1 || aad_len >= 0xff00) {
-        return -EINVAL;
-    }
-
-    /* C_mic = e(AppKey, 0x01 || nonce || 0x0000) */
-    pmsg[0] = 0x01;
-    memcpy(pmsg + 1, nonce, 13);
-    sys_put_be16(0x0000, pmsg + 14);
-
-    err = bt_mesh_encrypt_be(key, pmsg, cmic);
-    if (err) {
-        return err;
-    }
-
-    /* X_0 = e(AppKey, 0x09 || nonce || length) */
-    if (mic_size == sizeof(uint64_t)) {
-        pmsg[0] = 0x19 | (aad_len ? 0x40 : 0x00);
-    } else {
-        pmsg[0] = 0x09 | (aad_len ? 0x40 : 0x00);
-    }
-
-    memcpy(pmsg + 1, nonce, 13);
-    sys_put_be16(msg_len, pmsg + 14);
-
-    err = bt_mesh_encrypt_be(key, pmsg, Xn);
-    if (err) {
-        return err;
-    }
-
-    /* If AAD is being used to authenticate, include it here */
-    if (aad_len) {
-        sys_put_be16(aad_len, pmsg);
-
-        for (i = 0; i < sizeof(uint16_t); i++) {
-            pmsg[i] = Xn[i] ^ pmsg[i];
-        }
-
-        j = 0;
-        aad_len += sizeof(uint16_t);
-        while (aad_len > 16) {
-            do {
-                pmsg[i] = Xn[i] ^ aad[j];
-                i++, j++;
-            } while (i < 16);
-
-            aad_len -= 16;
-            i = 0;
-
-            err = bt_mesh_encrypt_be(key, pmsg, Xn);
-            if (err) {
-                return err;
-            }
-        }
-
-        for (; i < aad_len; i++, j++) {
-            pmsg[i] = Xn[i] ^ aad[j];
-        }
-
-        for (i = aad_len; i < 16; i++) {
-            pmsg[i] = Xn[i];
-        }
-
-        err = bt_mesh_encrypt_be(key, pmsg, Xn);
-        if (err) {
-            return err;
-        }
-    }
-
-    last_blk = msg_len % 16;
-    blk_cnt = (msg_len + 15) / 16;
-    if (!last_blk) {
-        last_blk = 16U;
-    }
-
-    for (j = 0; j < blk_cnt; j++) {
-        if (j + 1 == blk_cnt) {
-            /* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
-            pmsg[0] = 0x01;
-            memcpy(pmsg + 1, nonce, 13);
-            sys_put_be16(j + 1, pmsg + 14);
-
-            err = bt_mesh_encrypt_be(key, pmsg, cmsg);
-            if (err) {
-                return err;
-            }
-
-            /* Encrypted = Payload[0-15] ^ C_1 */
-            for (i = 0; i < last_blk; i++) {
-                msg[i] = enc_msg[(j * 16) + i] ^ cmsg[i];
-            }
-
-            memcpy(out_msg + (j * 16), msg, last_blk);
-
-            /* X_1 = e(AppKey, X_0 ^ Payload[0-15]) */
-            for (i = 0; i < last_blk; i++) {
-                pmsg[i] = Xn[i] ^ msg[i];
-            }
-
-            for (i = last_blk; i < 16; i++) {
-                pmsg[i] = Xn[i] ^ 0x00;
-            }
-
-            err = bt_mesh_encrypt_be(key, pmsg, Xn);
-            if (err) {
-                return err;
-            }
-
-            /* MIC = C_mic ^ X_1 */
-            for (i = 0; i < sizeof(mic); i++) {
-                mic[i] = cmic[i] ^ Xn[i];
-            }
-        } else {
-            /* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
-            pmsg[0] = 0x01;
-            memcpy(pmsg + 1, nonce, 13);
-            sys_put_be16(j + 1, pmsg + 14);
-
-            err = bt_mesh_encrypt_be(key, pmsg, cmsg);
-            if (err) {
-                return err;
-            }
-
-            /* Encrypted = Payload[0-15] ^ C_1 */
-            for (i = 0; i < 16; i++) {
-                msg[i] = enc_msg[(j * 16) + i] ^ cmsg[i];
-            }
-
-            memcpy(out_msg + (j * 16), msg, 16);
-
-            /* X_1 = e(AppKey, X_0 ^ Payload[0-15]) */
-            for (i = 0; i < 16; i++) {
-                pmsg[i] = Xn[i] ^ msg[i];
-            }
-
-            err = bt_mesh_encrypt_be(key, pmsg, Xn);
-            if (err) {
-                return err;
-            }
-        }
-    }
-
-    if (memcmp(mic, enc_msg + msg_len, mic_size)) {
-        return -EBADMSG;
-    }
-
-    return 0;
-}
-
-static int bt_mesh_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
-                               const uint8_t *msg, size_t msg_len,
-                               const uint8_t *aad, size_t aad_len,
-                               uint8_t *out_msg, size_t mic_size)
-{
-    uint8_t pmsg[16] = {0}, cmic[16] = {0}, cmsg[16] = {0},
-            mic[16] = {0}, Xn[16] = {0};
-    uint16_t blk_cnt = 0U, last_blk = 0U;
-    size_t i = 0U, j = 0U;
-    int err = 0;
-
-    BT_DBG("key %s", bt_hex(key, 16));
-    BT_DBG("nonce %s", bt_hex(nonce, 13));
-    BT_DBG("msg (len %u) %s", msg_len, bt_hex(msg, msg_len));
-    BT_DBG("aad_len %u mic_size %u", aad_len, mic_size);
-
-    /* Unsupported AAD size */
-    if (aad_len >= 0xff00) {
-        return -EINVAL;
-    }
-
-    /* C_mic = e(AppKey, 0x01 || nonce || 0x0000) */
-    pmsg[0] = 0x01;
-    memcpy(pmsg + 1, nonce, 13);
-    sys_put_be16(0x0000, pmsg + 14);
-
-    err = bt_mesh_encrypt_be(key, pmsg, cmic);
-    if (err) {
-        return err;
-    }
-
-    /* X_0 = e(AppKey, 0x09 || nonce || length) */
-    if (mic_size == sizeof(uint64_t)) {
-        pmsg[0] = 0x19 | (aad_len ? 0x40 : 0x00);
-    } else {
-        pmsg[0] = 0x09 | (aad_len ? 0x40 : 0x00);
-    }
-
-    memcpy(pmsg + 1, nonce, 13);
-    sys_put_be16(msg_len, pmsg + 14);
-
-    err = bt_mesh_encrypt_be(key, pmsg, Xn);
-    if (err) {
-        return err;
-    }
-
-    /* If AAD is being used to authenticate, include it here */
-    if (aad_len) {
-        sys_put_be16(aad_len, pmsg);
-
-        for (i = 0; i < sizeof(uint16_t); i++) {
-            pmsg[i] = Xn[i] ^ pmsg[i];
-        }
-
-        j = 0;
-        aad_len += sizeof(uint16_t);
-        while (aad_len > 16) {
-            do {
-                pmsg[i] = Xn[i] ^ aad[j];
-                i++, j++;
-            } while (i < 16);
-
-            aad_len -= 16;
-            i = 0;
-
-            err = bt_mesh_encrypt_be(key, pmsg, Xn);
-            if (err) {
-                return err;
-            }
-        }
-
-        for (; i < aad_len; i++, j++) {
-            pmsg[i] = Xn[i] ^ aad[j];
-        }
-
-        for (i = aad_len; i < 16; i++) {
-            pmsg[i] = Xn[i];
-        }
-
-        err = bt_mesh_encrypt_be(key, pmsg, Xn);
-        if (err) {
-            return err;
-        }
-    }
-
-    last_blk = msg_len % 16;
-    blk_cnt = (msg_len + 15) / 16;
-    if (!last_blk) {
-        last_blk = 16U;
-    }
-
-    for (j = 0; j < blk_cnt; j++) {
-        if (j + 1 == blk_cnt) {
-            /* X_1 = e(AppKey, X_0 ^ Payload[0-15]) */
-            for (i = 0; i < last_blk; i++) {
-                pmsg[i] = Xn[i] ^ msg[(j * 16) + i];
-            }
-            for (i = last_blk; i < 16; i++) {
-                pmsg[i] = Xn[i] ^ 0x00;
-            }
-
-            err = bt_mesh_encrypt_be(key, pmsg, Xn);
-            if (err) {
-                return err;
-            }
-
-            /* MIC = C_mic ^ X_1 */
-            for (i = 0; i < sizeof(mic); i++) {
-                mic[i] = cmic[i] ^ Xn[i];
-            }
-
-            /* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
-            pmsg[0] = 0x01;
-            memcpy(pmsg + 1, nonce, 13);
-            sys_put_be16(j + 1, pmsg + 14);
-
-            err = bt_mesh_encrypt_be(key, pmsg, cmsg);
-            if (err) {
-                return err;
-            }
-
-            /* Encrypted = Payload[0-15] ^ C_1 */
-            for (i = 0; i < last_blk; i++) {
-                out_msg[(j * 16) + i] =
-                    msg[(j * 16) + i] ^ cmsg[i];
-            }
-        } else {
-            /* X_1 = e(AppKey, X_0 ^ Payload[0-15]) */
-            for (i = 0; i < 16; i++) {
-                pmsg[i] = Xn[i] ^ msg[(j * 16) + i];
-            }
-
-            err = bt_mesh_encrypt_be(key, pmsg, Xn);
-            if (err) {
-                return err;
-            }
-
-            /* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
-            pmsg[0] = 0x01;
-            memcpy(pmsg + 1, nonce, 13);
-            sys_put_be16(j + 1, pmsg + 14);
-
-            err = bt_mesh_encrypt_be(key, pmsg, cmsg);
-            if (err) {
-                return err;
-            }
-
-            /* Encrypted = Payload[0-15] ^ C_N */
-            for (i = 0; i < 16; i++) {
-                out_msg[(j * 16) + i] =
-                    msg[(j * 16) + i] ^ cmsg[i];
-            }
-
-        }
-    }
-
-    memcpy(out_msg + msg_len, mic, mic_size);
-
-    return 0;
-}
+/* Use the unified crypto module for CCM operations */
+#define bt_mesh_ccm_decrypt bt_mesh_ccm_decrypt_raw_key
+#define bt_mesh_ccm_encrypt bt_mesh_ccm_encrypt_raw_key
 
 #if CONFIG_BLE_MESH_PROXY
 static void create_proxy_nonce(uint8_t nonce[13], const uint8_t *pdu,
@@ -580,7 +236,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
     uint8_t tmp[16] = {0};
     int err = 0, i;
 
-    BT_DBG("IVIndex %u, PrivacyKey %s", iv_index, bt_hex(privacy_key, 16));
+    BT_DBG("IVIndex %lu PrivacyKey %s", iv_index, bt_hex(privacy_key, 16));
 
     sys_put_be32(iv_index, &priv_rand[5]);
     memcpy(&priv_rand[9], &pdu[7], 7);
@@ -589,6 +245,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 
     err = bt_mesh_encrypt_be(privacy_key, priv_rand, tmp);
     if (err) {
+        BT_ERR("NetObfuscateFailed (%d)", err);
         return err;
     }
 
@@ -606,9 +263,9 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
     uint8_t nonce[13] = {0};
     int err = 0;
 
-    BT_DBG("IVIndex %u EncKey %s mic_len %u", iv_index, bt_hex(key, 16),
-           mic_len);
-    BT_DBG("PDU (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("IVIndex %u EncKey %s MicLen %u proxy %u/%u",
+           iv_index, bt_hex(key, 16), mic_len, proxy, proxy_solic);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 #if CONFIG_BLE_MESH_PROXY
     if (proxy) {
@@ -633,6 +290,8 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
                               NULL, 0, &buf->data[7], mic_len);
     if (!err) {
         net_buf_simple_add(buf, mic_len);
+    } else {
+        BT_ERR("NetEncryptFailed (%d)", err);
     }
 
     return err;
@@ -643,10 +302,11 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 {
     uint8_t mic_len = NET_MIC_LEN(buf->data);
     uint8_t nonce[13] = {0};
+    int err;
 
-    BT_DBG("PDU (%u bytes) %s", buf->len, bt_hex(buf->data, buf->len));
-    BT_DBG("iv_index %u, key %s mic_len %u", iv_index, bt_hex(key, 16),
-           mic_len);
+    BT_DBG("IVIndex %u EncKey %s MicLen %u proxy %u/%u",
+           iv_index, bt_hex(key, 16), mic_len, proxy, proxy_solic);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 #if CONFIG_BLE_MESH_PROXY
     if (proxy) {
@@ -667,10 +327,20 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 
     BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
+    if (buf->len < 8 + mic_len) {
+        BT_ERR("TooShortMsgToDecrypt[%u][%u]", buf->len, mic_len);
+        return -EINVAL;
+    }
+
     buf->len -= mic_len;
 
-    return bt_mesh_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7,
-                               NULL, 0, &buf->data[7], mic_len);
+    err = bt_mesh_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7,
+                              NULL, 0, &buf->data[7], mic_len);
+    if (err) {
+        BT_ERR("NetDecrypt failed (%d)", err);
+    }
+
+    return err;
 }
 
 static void create_app_nonce(uint8_t nonce[13], bool dev_key, uint8_t aszmic,
@@ -698,14 +368,15 @@ int bt_mesh_app_encrypt(const uint8_t key[16], bool dev_key, uint8_t aszmic,
     uint8_t nonce[13] = {0};
     int err = 0;
 
+    BT_DBG("AppEncrypt");
     BT_DBG("AppKey %s", bt_hex(key, 16));
-    BT_DBG("dev_key %u src 0x%04x dst 0x%04x", dev_key, src, dst);
-    BT_DBG("seq_num 0x%08x iv_index 0x%08x", seq_num, iv_index);
-    BT_DBG("Clear: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("DevKey %u Src 0x%04x Dst 0x%04x", dev_key, src, dst);
+    BT_DBG("SeqNum 0x%08lx IVIndex 0x%08lx", seq_num, iv_index);
+    BT_DBG("Data %u %s", buf->len, bt_hex(buf->data, buf->len));
 
     create_app_nonce(nonce, dev_key, aszmic, src, dst, seq_num, iv_index);
 
-    BT_DBG("Nonce  %s", bt_hex(nonce, 13));
+    BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
     err = bt_mesh_ccm_encrypt(key, nonce, buf->data, buf->len, ad,
                               ad ? 16 : 0, buf->data, APP_MIC_LEN(aszmic));
@@ -725,12 +396,12 @@ int bt_mesh_app_decrypt(const uint8_t key[16], bool dev_key, uint8_t aszmic,
     uint8_t nonce[13] = {0};
     int err = 0;
 
-    BT_DBG("EncData (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("EncData %u %s", buf->len, bt_hex(buf->data, buf->len));
 
     create_app_nonce(nonce, dev_key, aszmic, src, dst, seq_num, iv_index);
 
     BT_DBG("AppKey %s", bt_hex(key, 16));
-    BT_DBG("Nonce  %s", bt_hex(nonce, 13));
+    BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
     err = bt_mesh_ccm_decrypt(key, nonce, buf->data, buf->len, ad,
                               ad ? 16 : 0, out->data, APP_MIC_LEN(aszmic));

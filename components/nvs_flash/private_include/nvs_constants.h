@@ -1,12 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef NVS_CONSTANTS_H
-#define NVS_CONSTANTS_H
-
-#include "spi_flash_mmap.h" // for SPI_FLASH_SEC_SIZE
+#pragma once
 
 // constants for the NVS to be used in the regular as well as bootloader implementations
 
@@ -18,7 +15,7 @@
 #define NVS_CONST_ESB_WRITTEN 0x1
 #define NVS_CONST_ESB_ERASED 0x2
 
-#define NVS_CONST_PAGE_SIZE SPI_FLASH_SEC_SIZE
+#define NVS_CONST_PAGE_SIZE 4096    // Page size is by design assumed to be 4096 bytes
 
 #define NVS_CONST_ENTRY_SIZE 32
 #define NVS_CONST_ENTRY_COUNT 126
@@ -31,6 +28,8 @@
 #define NVS_CONST_NS_ANY 255
 
 #define NVS_CONST_NVS_VERSION 0xfe // Decrement to upgrade
+
+#define NVS_ENCRYPT_BLOCK_SIZE 16       // Size of the encryption block in bytes
 
 // Page States
 // All bits set, default state after flash erase. Page has not been initialized yet.
@@ -64,5 +63,3 @@
 #define NVS_CONST_PAGE_HEADER_OFFSET 0
 #define NVS_CONST_PAGE_ENTRY_TABLE_OFFSET (NVS_CONST_PAGE_HEADER_OFFSET + 32)
 #define NVS_CONST_PAGE_ENTRY_DATA_OFFSET (NVS_CONST_PAGE_ENTRY_TABLE_OFFSET + 32)
-
-#endif

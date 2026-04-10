@@ -229,6 +229,7 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
     ESP_LOGD(TAG, "%s: PPP connection created: %p", __func__, ppp_obj->ppp);
     if (!ppp_obj->ppp) {
         ESP_LOGE(TAG, "%s: lwIP PPP connection cannot be created", __func__);
+        free(ppp_obj);
         return NULL;
     }
 
@@ -314,15 +315,15 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
     return ESP_OK;
 }
 
-esp_netif_recv_ret_t esp_netif_lwip_ppp_input(void *ppp_ctx, void *buffer, size_t len, void *eb)
+esp_err_t esp_netif_lwip_ppp_input(void *ppp_ctx, void *buffer, size_t len, void *eb)
 {
     struct lwip_peer2peer_ctx * obj = ppp_ctx;
     err_t ret = pppos_input_tcpip_as_ram_pbuf(obj->ppp, buffer, len);
     if (ret != ERR_OK) {
         ESP_LOGE(TAG, "pppos_input_tcpip failed with %d", ret);
-        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
+        return ESP_FAIL;
     }
-    return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_OK);
+    return ESP_OK;
 }
 
 esp_err_t esp_netif_stop_ppp(netif_related_data_t *netif_related)

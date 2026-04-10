@@ -12,7 +12,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_check.h"
@@ -84,7 +84,7 @@ struct twdt_obj {
 
 // ----------------------- Objects -------------------------
 
-static const char *TAG = "task_wdt";
+ESP_LOG_ATTR_TAG(TAG, "task_wdt");
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 static twdt_obj_t *p_twdt_obj = NULL;
 
@@ -488,7 +488,7 @@ static void task_wdt_isr(void *arg)
         return;
     }
 
-    ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
+    ESP_EARLY_LOGE(TAG, "%s", ESP_LOG_ATTR_DRAM_STR("Tasks currently running:"));
     for (int x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetName(xTaskGetCurrentTaskHandleForCore(x)));
     }
@@ -596,9 +596,9 @@ esp_err_t esp_task_wdt_reconfigure(const esp_task_wdt_config_t *config)
         esp_task_wdt_impl_timer_restart(p_twdt_obj->impl_ctx);
     }
 
-    portEXIT_CRITICAL(&spinlock);
 err:
-    return ESP_OK;
+    portEXIT_CRITICAL(&spinlock);
+    return ret;
 }
 
 esp_err_t esp_task_wdt_stop(void)

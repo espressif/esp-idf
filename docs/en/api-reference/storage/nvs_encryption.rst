@@ -148,7 +148,11 @@ The same NVS API functions ``nvs_get_*`` or ``nvs_set_*`` can be used for readin
 
 - To enable encryption for the default NVS partition, no additional step is necessary. When :ref:`CONFIG_NVS_ENCRYPTION` is enabled, the :cpp:func:`nvs_flash_init` API function internally performs some additional steps to enable encryption for the default NVS partition depending on the scheme being used (set by :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME`).
 
-- For the flash encryption-based scheme, the first :ref:`nvs_encr_key_partition` found is used to generate the encryption keys while for the HMAC one, keys are generated using the HMAC key burnt in eFuse at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` (refer to the API documentation for more details).
+- For the flash encryption-based scheme, the first :ref:`nvs_encr_key_partition` found is used to generate the encryption keys.
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    For the HMAC-based scheme, keys are generated using the HMAC key burnt in eFuse at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` (refer to the API documentation for more details).
 
 Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used to enable encryption for the default NVS partition.
 
@@ -219,6 +223,9 @@ The component :component:`nvs_sec_provider` stores all the implementation-specif
 
     This component offers factory functions with which a particular security scheme can be registered without having to worry about the APIs to generate and read the encryption keys (e.g., :cpp:func:`nvs_sec_provider_register_hmac`). Refer to the :example:`security/nvs_encryption_hmac` example for API usage.
 
+.. note::
+
+    To use a custom implementation for NVS encryption key derivation or protection (instead of the ones provided by the :component:`nvs_sec_provider` component), select the :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` configuration option.
 
 API Reference
 -------------

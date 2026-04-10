@@ -25,9 +25,39 @@
 #ifndef ESP_CONFIG_H
 #define ESP_CONFIG_H
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #include "sdkconfig.h"
+#if (defined(MBEDTLS_MAJOR_VERSION) && (MBEDTLS_MAJOR_VERSION < 4))
 #include "mbedtls/mbedtls_config.h"
+#endif // MBEDTLS_MAJOR_VERSION < 4
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "soc/soc_caps.h"
+
+#undef MBEDTLS_PSA_BUILTIN_GET_ENTROPY
+#define MBEDTLS_PSA_DRIVER_GET_ENTROPY
+#define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+#endif // !CONFIG_IDF_TARGET_LINUX
+
+/**
+ * \def MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+ *
+ * Assume all buffers passed to PSA functions are owned exclusively by the
+ * PSA function and are not stored in shared memory.
+ *
+ * This option may be enabled if all buffers passed to any PSA function reside
+ * in memory that is accessible only to the PSA function during its execution.
+ *
+ * This option MUST be disabled whenever buffer arguments are in memory shared
+ * with an untrusted party, for example where arguments to PSA calls are passed
+ * across a trust boundary.
+ *
+ * \note Enabling this option reduces memory usage and code size.
+ *
+ * \note Enabling this option causes overlap of input and output buffers
+ *       not to be supported by PSA functions.
+ */
+#define MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
 
 /**
  * \name SECTION: System support
@@ -35,7 +65,6 @@
  * This section sets system specific settings.
  * \{
  */
-
 /**
  * \def MBEDTLS_HAVE_TIME
  *
@@ -130,6 +159,8 @@
 /** Override calloc(), free() except for case where memory allocation scheme is not set to custom */
 #ifndef CONFIG_MBEDTLS_CUSTOM_MEM_ALLOC
 #include "esp_mem.h"
+#undef MBEDTLS_PLATFORM_STD_CALLOC
+#undef MBEDTLS_PLATFORM_STD_FREE
 #define MBEDTLS_PLATFORM_STD_CALLOC		esp_mbedtls_mem_calloc
 #define MBEDTLS_PLATFORM_STD_FREE		esp_mbedtls_mem_free
 #endif
@@ -144,17 +175,7 @@
  * \{
  */
 
-/* The following units have ESP32 hardware support,
-   uncommenting each _ALT macro will use the
-   hardware-accelerated implementation. */
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
-#define MBEDTLS_AES_ALT
-#else
-#undef MBEDTLS_AES_ALT
-#endif
-
-#ifdef CONFIG_MBEDTLS_HARDWARE_AES
-#define MBEDTLS_GCM_ALT
 #ifdef CONFIG_MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
     /* Prefer hardware and fallback to software */
     #define MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
@@ -167,29 +188,54 @@
    with software fallback.
 */
 #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
-#define MBEDTLS_SHA1_ALT
-#define MBEDTLS_SHA256_ALT
-
-#if SOC_SHA_SUPPORT_SHA512
-#define MBEDTLS_SHA512_ALT
+    #define ESP_SHA_DRIVER_ENABLED
+    #define MBEDTLS_PSA_ACCEL_ALG_HMAC
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
+    #if SOC_SHA_SUPPORT_SHA1
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_1
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_1
+        #undef MBEDTLS_SHA1_C
+    #endif // SOC_SHA_SUPPORT_SHA1
+    #if SOC_SHA_SUPPORT_SHA224
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_224
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_224
+        #undef MBEDTLS_SHA224_C
+    #endif // SOC_SHA_SUPPORT_SHA224
+    #if SOC_SHA_SUPPORT_SHA256
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_256
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_256
+    #endif // SOC_SHA_SUPPORT_SHA256
+    #if SOC_SHA_SUPPORT_SHA512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_384
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_512
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_384
+        #undef MBEDTLS_SHA512_C
+        #undef MBEDTLS_SHA384_C
+        #undef MBEDTLS_PSA_BUILTIN_ALG_HMAC
+    #else
+        #undef MBEDTLS_SHA512_ALT
+    #endif // SOC_SHA_SUPPORT_SHA512
+#define ESP_HMAC_TRANSPARENT_DRIVER_ENABLED
 #else
-#undef MBEDTLS_SHA512_ALT
-#endif
-
-#else
-#undef MBEDTLS_SHA1_ALT
-#undef MBEDTLS_SHA256_ALT
-#undef MBEDTLS_SHA512_ALT
+    #undef MBEDTLS_SHA1_ALT
+    #undef MBEDTLS_SHA256_ALT
+    #undef MBEDTLS_SHA512_ALT
 #endif
 
 /* MBEDTLS_MDx_ALT to enable ROM MD support
    with software fallback.
 */
 #ifdef CONFIG_MBEDTLS_ROM_MD5
-#define MBEDTLS_MD5_ALT
+#define ESP_MD5_DRIVER_ENABLED
+#define MBEDTLS_PSA_ACCEL_ALG_MD5
+#undef MBEDTLS_PSA_BUILTIN_ALG_MD5
 #else
-#undef MBEDTLS_MD5_ALT
+#if !defined(MBEDTLS_PSA_BUILTIN_ALG_HMAC)
+    /* If ROM MD5 is not enabled, use the builtin HMAC algorithm for HMAC(MD5) operations */
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
 #endif
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_HMAC */
 
 /* The following MPI (bignum) functions have hardware support.
  * Uncommenting these macros will use the hardware-accelerated
@@ -199,6 +245,7 @@
 #ifdef CONFIG_MBEDTLS_LARGE_KEY_SOFTWARE_MPI
     /* Prefer hardware and fallback to software */
     #define MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK
+    #define MBEDTLS_MPI_EXP_MOD_ALT
 #else
     /* Hardware only mode */
     #define MBEDTLS_MPI_EXP_MOD_ALT
@@ -208,6 +255,16 @@
 #undef MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK
 #undef MBEDTLS_MPI_EXP_MOD_ALT
 #undef MBEDTLS_MPI_MUL_MPI_ALT
+#endif
+
+#if defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN) || defined(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+#define ESP_ECDSA_DRIVER_ENABLED
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+#define ESP_ECDSA_VERIFY_DRIVER_ENABLED
+#endif
+#if defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN) || defined(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+#define ESP_ECDSA_SIGN_DRIVER_ENABLED
+#endif
 #endif
 
 #ifdef CONFIG_MBEDTLS_ATCA_HW_ECDSA_SIGN
@@ -238,20 +295,9 @@
 #undef MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK
 #endif
 
-#ifndef CONFIG_IDF_TARGET_LINUX
-/**
- * \def MBEDTLS_ENTROPY_HARDWARE_ALT
- *
- * Uncomment this macro to let mbed TLS use your own implementation of a
- * hardware entropy collector.
- *
- * Your function must be called \c mbedtls_hardware_poll(), have the same
- * prototype as declared in entropy_poll.h, and accept NULL as first argument.
- *
- * Uncomment to use your own hardware entropy collector.
- */
-#define MBEDTLS_ENTROPY_HARDWARE_ALT
-#endif // !CONFIG_IDF_TARGET_LINUX
+#ifdef SOC_HMAC_SUPPORTED
+#define ESP_HMAC_OPAQUE_DRIVER_ENABLED
+#endif
 
 /**
  * \def MBEDTLS_AES_ROM_TABLES
@@ -260,58 +306,109 @@
  *
  * Uncomment this macro to store the AES tables in ROM.
  */
+#ifdef CONFIG_MBEDTLS_AES_ROM_TABLES
 #define MBEDTLS_AES_ROM_TABLES
+#else
+#undef MBEDTLS_AES_ROM_TABLES
+#endif
+
+/**
+ * \def MBEDTLS_AES_FEWER_TABLES
+ *
+ * Use fewer tables for AES.
+ *
+ * Uncomment this macro to store fewer tables for AES
+ * in ROM or RAM. The values are computed at runtime.
+ *
+ */
+
+#ifdef CONFIG_MBEDTLS_AES_FEWER_TABLES
+#define MBEDTLS_AES_FEWER_TABLES
+#else
+#undef MBEDTLS_AES_FEWER_TABLES
+#endif
+
+/**
+ * \def MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH
+ *
+ * Enable support for AES with only 128-bit key length. This disables
+ * support for 192-bit and 256-bit key lengths.
+ *
+ * Uncommenting this macro reduces the size of AES code
+ */
+
+#ifdef CONFIG_MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH
+#define MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH
+#else
+#undef MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH
+#endif
+
+/**
+ * \def MBEDTLS_CAMELLIA_SMALL_MEMORY
+ *
+ * Enable small memory usage for Camellia cipher.
+ */
+#ifdef CONFIG_MBEDTLS_CAMELLIA_SMALL_MEMORY
+#define MBEDTLS_CAMELLIA_SMALL_MEMORY
+#else
+#undef MBEDTLS_CAMELLIA_SMALL_MEMORY
+#endif
 
 /**
  * \def MBEDTLS_CIPHER_MODE_CBC
  *
  * Enable Cipher Block Chaining mode (CBC) for symmetric ciphers.
  */
-#define MBEDTLS_CIPHER_MODE_CBC
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_CBC
+#define PSA_WANT_ALG_CBC_NO_PADDING 1
+#define PSA_WANT_ALG_CBC_PKCS7 1
+#else
+#undef PSA_WANT_ALG_CBC_NO_PADDING
+#undef PSA_WANT_ALG_CBC_PKCS7
+#endif
 
 /**
  * \def MBEDTLS_CIPHER_MODE_CFB
  *
  * Enable Cipher Feedback mode (CFB) for symmetric ciphers.
  */
-#define MBEDTLS_CIPHER_MODE_CFB
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_CFB
+#define PSA_WANT_ALG_CFB 1
+#else
+#undef PSA_WANT_ALG_CFB
+#endif
 
 /**
  * \def MBEDTLS_CIPHER_MODE_CTR
  *
  * Enable Counter Block Cipher mode (CTR) for symmetric ciphers.
  */
-#define MBEDTLS_CIPHER_MODE_CTR
-
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_CTR
+#define PSA_WANT_ALG_CTR 1
+#else
+#undef PSA_WANT_ALG_CTR
+#endif
 /**
  * \def MBEDTLS_CIPHER_MODE_OFB
  *
  * Enable Output Feedback mode (OFB) for symmetric ciphers.
  */
-#define MBEDTLS_CIPHER_MODE_OFB
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_OFB
+#define PSA_WANT_ALG_OFB 1
+#else
+#undef PSA_WANT_ALG_OFB
+#endif
 
 /**
  * \def MBEDTLS_CIPHER_MODE_XTS
  *
  * Enable Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES.
  */
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_XTS
 #define MBEDTLS_CIPHER_MODE_XTS
-
-/**
- * \def MBEDTLS_CIPHER_PADDING_PKCS7
- *
- * MBEDTLS_CIPHER_PADDING_XXX: Uncomment or comment macros to add support for
- * specific padding modes in the cipher layer with cipher modes that support
- * padding (e.g. CBC)
- *
- * If you disable all padding modes, only full blocks can be used with CBC.
- *
- * Enable padding modes in the cipher layer.
- */
-#define MBEDTLS_CIPHER_PADDING_PKCS7
-#define MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS
-#define MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN
-#define MBEDTLS_CIPHER_PADDING_ZEROS
+#else
+#undef MBEDTLS_CIPHER_MODE_XTS
+#endif
 
 /**
  * \def MBEDTLS_ECP_RESTARTABLE
@@ -362,6 +459,8 @@
  */
 #ifdef CONFIG_MBEDTLS_ECP_RESTARTABLE
 #define MBEDTLS_ECP_RESTARTABLE
+#else
+#undef MBEDTLS_ECP_RESTARTABLE
 #endif
 
 /**
@@ -407,11 +506,14 @@
  *
  * Module:  library/cmac.c
  *
- * Requires: MBEDTLS_CIPHER_C, MBEDTLS_AES_C or MBEDTLS_DES_C
+ * Requires: MBEDTLS_AES_C or MBEDTLS_DES_C
  *
  */
 #ifdef CONFIG_MBEDTLS_CMAC_C
-#define MBEDTLS_CMAC_C
+#define PSA_WANT_ALG_CMAC 1
+#ifdef CONFIG_MBEDTLS_HARDWARE_AES
+#define ESP_CMAC_DRIVER_ENABLED
+#endif
 #else
 #ifdef CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL
 /* The mbedtls present in ROM is built with the MBEDTLS_CMAC_C symbol being enabled,
@@ -419,7 +521,7 @@
  */
 #error "CONFIG_MBEDTLS_CMAC_C cannot be disabled when CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL is enabled"
 #endif
-#undef MBEDTLS_CMAC_C
+#undef PSA_WANT_ALG_CMAC
 #endif
 
 /**
@@ -431,16 +533,6 @@
  * Comment macros to disable the curve and functions for it
  */
 /* Short Weierstrass curves (supporting ECP, ECDH, ECDSA) */
-#ifdef CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
-#else
-#undef MBEDTLS_ECP_DP_SECP192R1_ENABLED
-#endif
-#ifdef CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
-#else
-#undef MBEDTLS_ECP_DP_SECP224R1_ENABLED
-#endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #else
@@ -450,21 +542,17 @@
 #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #else
 #undef MBEDTLS_ECP_DP_SECP384R1_ENABLED
+#undef PSA_WANT_ECC_SECP_R1_384
+#endif
+#ifdef CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
+#define PSA_WANT_ECC_SECP_R1_192 1
+#else
+#undef PSA_WANT_ECC_SECP_R1_192
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
 #else
 #undef MBEDTLS_ECP_DP_SECP521R1_ENABLED
-#endif
-#ifdef CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED
-#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
-#else
-#undef MBEDTLS_ECP_DP_SECP192K1_ENABLED
-#endif
-#ifdef CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED
-#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
-#else
-#undef MBEDTLS_ECP_DP_SECP224K1_ENABLED
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED
 #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
@@ -537,9 +625,9 @@
  * Comment this macro to disable deterministic ECDSA.
  */
 #ifdef CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
-#define MBEDTLS_ECDSA_DETERMINISTIC
+#define PSA_WANT_ALG_DETERMINISTIC_ECDSA 1
 #else
-#undef MBEDTLS_ECDSA_DETERMINISTIC
+#undef PSA_WANT_ALG_DETERMINISTIC_ECDSA
 #endif
 
 /**
@@ -568,33 +656,6 @@
 #endif
 
 /**
- * \def MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
- *
- * Enable the DHE-PSK based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_DHM_C
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_DHE_PSK_WITH_AES_256_GCM_SHA384
- *      MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA384
- *      MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA
- *      MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384
- *      MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384
- *      MBEDTLS_TLS_DHE_PSK_WITH_AES_128_GCM_SHA256
- *      MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA256
- *      MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256
- *      MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
- *      MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA
- */
-#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK
-#define MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
-#else
-#undef MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
-#endif
-
-/**
  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
  *
  * Enable the ECDHE-PSK based ciphersuite modes in SSL / TLS.
@@ -615,94 +676,6 @@
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 #else
 #undef MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-#endif
-
-/**
- * \def MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
- *
- * Enable the RSA-PSK based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_RSA_C, MBEDTLS_PKCS1_V15,
- *           MBEDTLS_X509_CRT_PARSE_C
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_RSA_PSK_WITH_AES_256_GCM_SHA384
- *      MBEDTLS_TLS_RSA_PSK_WITH_AES_256_CBC_SHA384
- *      MBEDTLS_TLS_RSA_PSK_WITH_AES_256_CBC_SHA
- *      MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384
- *      MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384
- *      MBEDTLS_TLS_RSA_PSK_WITH_AES_128_GCM_SHA256
- *      MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA256
- *      MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256
- *      MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256
- *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
- */
-#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK
-#define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-#else
-#undef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-#endif
-
-/**
- * \def MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
- *
- * Enable the RSA-only based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_RSA_C, MBEDTLS_PKCS1_V15,
- *           MBEDTLS_X509_CRT_PARSE_C
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384
- *      MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256
- *      MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA
- *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384
- *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256
- *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_256_CBC_SHA
- *      MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256
- *      MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256
- *      MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256
- *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256
- *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_CBC_SHA
- *      MBEDTLS_TLS_RSA_WITH_3DES_EDE_CBC_SHA
- */
-#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_RSA
-#define MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
-#else
-#undef MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
-#endif
-
-/**
- * \def MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
- *
- * Enable the DHE-RSA based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_DHM_C, MBEDTLS_RSA_C, MBEDTLS_PKCS1_V15,
- *           MBEDTLS_X509_CRT_PARSE_C
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
- *      MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
- *      MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA
- *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384
- *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256
- *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA
- *      MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
- *      MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
- *      MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256
- *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
- *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA
- *      MBEDTLS_TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA
- */
-#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA
-#define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
-#else
-#undef MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 #endif
 
 /**
@@ -758,60 +731,6 @@
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 #else
 #undef MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
-#endif
-
-/**
- * \def MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
- *
- * Enable the ECDH-ECDSA based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_ECDH_C, MBEDTLS_ECDSA_C, MBEDTLS_X509_CRT_PARSE_C
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
- */
-#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA
-#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-#else
-#undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-#endif
-
-/**
- * \def MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
- *
- * Enable the ECDH-RSA based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_ECDH_C, MBEDTLS_RSA_C, MBEDTLS_X509_CRT_PARSE_C
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
- *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
- *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
- *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
- *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
- *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256
- *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384
- *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
- *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
- */
-#ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_ECDH_RSA
-#define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-#else
-#undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 #endif
 
 /**
@@ -885,16 +804,11 @@
  * Disable if you run into name conflicts and want to really remove the
  * mbedtls_strerror()
  */
+#ifdef CONFIG_MBEDTLS_ERROR_STRERROR_DUMMY
 #define MBEDTLS_ERROR_STRERROR_DUMMY
-
-/**
- * \def MBEDTLS_GENPRIME
- *
- * Enable the prime-number generation code.
- *
- * Requires: MBEDTLS_BIGNUM_C
- */
-#define MBEDTLS_GENPRIME
+#else
+#undef MBEDTLS_ERROR_STRERROR_DUMMY
+#endif
 
 /**
  * \def MBEDTLS_FS_IO
@@ -910,26 +824,46 @@
 #endif
 
 #ifndef CONFIG_IDF_TARGET_LINUX
+
 /**
- * \def MBEDTLS_NO_PLATFORM_ENTROPY
+ * \def MBEDTLS_PSA_ITS_FILE_C
  *
- * Do not use built-in platform entropy functions.
- * This is useful if your platform does not support
- * standards like the /dev/urandom or Windows CryptoAPI.
+ * ESP-IDF: PSA Internal Trusted Storage (ITS) implementation.
  *
- * Uncomment this macro to disable the built-in platform entropy functions.
+ * ESP-IDF does NOT use the file-based implementation (MBEDTLS_PSA_ITS_FILE_C)
+ * when the ESP-IDF NVS-based implementation is available.
+ * Instead, ESP-IDF provides its own NVS (Non-Volatile Storage) based implementation
+ * in port/psa_crypto_storage/esp_psa_its.c
+ *
+ * If ESP_PSA_ITS_AVAILABLE is defined, it means the ESP-IDF NVS-based implementation
+ * is available and we should undefine MBEDTLS_PSA_ITS_FILE_C to use it.
+ * Otherwise, keep MBEDTLS_PSA_ITS_FILE_C defined to use the file-based implementation.
+ *
  */
-#define MBEDTLS_NO_PLATFORM_ENTROPY
+#ifdef ESP_PSA_ITS_AVAILABLE
+#undef MBEDTLS_PSA_ITS_FILE_C
+#endif
 #endif // !CONFIG_IDF_TARGET_LINUX
 
 /**
- * \def MBEDTLS_PK_RSA_ALT_SUPPORT
+ * \def MBEDTLS_ENTROPY_FORCE_SHA256
  *
- * Support external private RSA keys (eg from a HSM) in the PK layer.
+ * Force the entropy accumulator to use a SHA-256 accumulator instead of the
+ * default SHA-512 based one (if both are available).
  *
- * Comment this macro to disable support for external private RSA keys.
+ * Requires: MBEDTLS_SHA256_C
+ *
+ * On 32-bit systems SHA-256 can be much faster than SHA-512. Use this option
+ * if you have performance concerns.
+ *
+ * This option is only useful if both MBEDTLS_SHA256_C and
+ * MBEDTLS_SHA512_C are defined. Otherwise the available hash module is used.
  */
-#define MBEDTLS_PK_RSA_ALT_SUPPORT
+#ifdef CONFIG_MBEDTLS_ENTROPY_FORCE_SHA256
+#define MBEDTLS_ENTROPY_FORCE_SHA256
+#else
+#undef MBEDTLS_ENTROPY_FORCE_SHA256
+#endif
 
 /**
  * \def MBEDTLS_PKCS1_V15
@@ -940,7 +874,13 @@
  *
  * This enables support for PKCS#1 v1.5 operations.
  */
-#define MBEDTLS_PKCS1_V15
+#ifdef CONFIG_MBEDTLS_PKCS1_V15
+#define PSA_WANT_ALG_RSA_PKCS1V15_CRYPT 1
+#define PSA_WANT_ALG_RSA_PKCS1V15_SIGN 1
+#else
+#undef PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
+#undef PSA_WANT_ALG_RSA_PKCS1V15_SIGN
+#endif
 
 /**
  * \def MBEDTLS_PKCS1_V21
@@ -951,14 +891,55 @@
  *
  * This enables support for RSAES-OAEP and RSASSA-PSS operations.
  */
-#define MBEDTLS_PKCS1_V21
+#ifdef CONFIG_MBEDTLS_PKCS1_V21
+#define PSA_WANT_ALG_RSA_OAEP 1
+#else
+#undef PSA_WANT_ALG_RSA_OAEP
+#endif
 
 /**
  * \def MBEDTLS_SELF_TEST
  *
  * Enable the checkup functions (*_self_test).
  */
+#ifdef CONFIG_MBEDTLS_SELF_TEST
 #define MBEDTLS_SELF_TEST
+#else
+#undef MBEDTLS_SELF_TEST
+#endif
+
+/**
+ * \def MBEDTLS_SHA256_SMALLER
+ *
+ * Enable an implementation of SHA-256 that has lower ROM footprint but also
+ * lower performance.
+ *
+ * The default implementation is meant to be a reasonable compromise between
+ * performance and size. This version optimizes more aggressively for size at
+ * the expense of performance. Eg on Cortex-M4 it reduces the size of
+ * mbedtls_sha256_process() from ~2KB to ~0.5KB for a performance hit of about
+ * 30%.
+ *
+ * Uncomment to enable the smaller implementation of SHA256.
+ */
+#ifdef CONFIG_MBEDTLS_SHA256_SMALLER
+#define MBEDTLS_SHA256_SMALLER
+#else
+#undef MBEDTLS_SHA256_SMALLER
+#endif
+
+/**
+ * \def MBEDTLS_SHA512_SMALLER
+ * Enable an implementation of SHA-512 that has lower ROM footprint but also
+ * lower performance.
+ *
+ * Uncomment to enable the smaller implementation of SHA512.
+ */
+#ifdef CONFIG_MBEDTLS_SHA512_SMALLER
+#define MBEDTLS_SHA512_SMALLER
+#else
+#undef MBEDTLS_SHA512_SMALLER
+#endif
 
 /**
  * \def MBEDTLS_SSL_ALL_ALERT_MESSAGES
@@ -972,7 +953,11 @@
  *
  * Enable sending of all alert messages
  */
+#ifdef CONFIG_MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #define MBEDTLS_SSL_ALL_ALERT_MESSAGES
+#else
+#undef MBEDTLS_SSL_ALL_ALERT_MESSAGES
+#endif
 
 /**
  * \def MBEDTLS_SSL_DTLS_CONNECTION_ID
@@ -1144,6 +1129,24 @@
 #endif
 
 /**
+ * \def MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+ *
+ * When this option is enabled, the client and server can extract additional
+ * shared symmetric keys after an SSL handshake using the function
+ * mbedtls_ssl_export_keying_material().
+ *
+ * The process for deriving the keys is specified in RFC 5705 for TLS 1.2 and
+ * in RFC 8446, Section 7.5, for TLS 1.3.
+ *
+ * Comment this macro to disable mbedtls_ssl_export_keying_material().
+ */
+#ifdef CONFIG_MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+#define MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+#else
+#undef MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+#endif
+
+/**
  * \def MBEDTLS_SSL_CBC_RECORD_SPLITTING
  *
  * Enable 1/n-1 record splitting for CBC mode in SSLv3 and TLS 1.0.
@@ -1192,21 +1195,26 @@
  *
  * Comment this macro to disable support for the max_fragment_length extension
  */
+#ifdef CONFIG_MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+#else
+#undef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+#endif
 
 /**
  * \def MBEDTLS_SSL_RECORD_SIZE_LIMIT
  *
  * Enable support for RFC 8449 record_size_limit extension in SSL (TLS 1.3 only).
  *
- * \warning This extension is currently in development and must NOT be used except
- *          for testing purposes.
- *
  * Requires: MBEDTLS_SSL_PROTO_TLS1_3
  *
  * Uncomment this macro to enable support for the record_size_limit extension
  */
-//#define MBEDTLS_SSL_RECORD_SIZE_LIMIT
+#ifdef CONFIG_MBEDTLS_SSL_RECORD_SIZE_LIMIT
+#define MBEDTLS_SSL_RECORD_SIZE_LIMIT
+#else
+#undef MBEDTLS_SSL_RECORD_SIZE_LIMIT
+#endif
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_2
@@ -1375,11 +1383,12 @@
  * Comment this to disable support for early data. If MBEDTLS_SSL_PROTO_TLS1_3
  * is not enabled, this option does not have any effect on the build.
  *
- * This feature is experimental, not completed and thus not ready for
- * production.
- *
  */
-//#define MBEDTLS_SSL_EARLY_DATA
+#ifdef CONFIG_MBEDTLS_SSL_EARLY_DATA
+#define MBEDTLS_SSL_EARLY_DATA
+#else
+#undef MBEDTLS_SSL_EARLY_DATA
+#endif
 
 /**
  * \def MBEDTLS_SSL_MAX_EARLY_DATA_SIZE
@@ -1499,7 +1508,7 @@
  *
  * Uncomment this to enable support for use_srtp extension.
  */
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_DTLS
+#ifdef CONFIG_MBEDTLS_SSL_DTLS_SRTP
 #define MBEDTLS_SSL_DTLS_SRTP
 #else
 #undef MBEDTLS_SSL_DTLS_SRTP
@@ -1562,8 +1571,11 @@
  *
  * Comment this macro to disable support for server name indication in SSL
  */
+#ifdef CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION
 #define MBEDTLS_SSL_SERVER_NAME_INDICATION
-
+#else
+#undef MBEDTLS_SSL_SERVER_NAME_INDICATION
+#endif
 
 /**
  * \def MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
@@ -1591,7 +1603,11 @@
  *
  * Comment this to disable run-time checking and save ROM space
  */
+#ifdef CONFIG_MBEDTLS_VERSION_FEATURES
 #define MBEDTLS_VERSION_FEATURES
+#else
+#undef MBEDTLS_VERSION_FEATURES
+#endif
 
 
 /**
@@ -1602,7 +1618,11 @@
  *
  * Comment this macro to disallow using RSASSA-PSS in certificates.
  */
+#ifdef CONFIG_MBEDTLS_X509_RSASSA_PSS_SUPPORT
 #define MBEDTLS_X509_RSASSA_PSS_SUPPORT
+#else
+#undef MBEDTLS_X509_RSASSA_PSS_SUPPORT
+#endif
 
 
 /* \} name SECTION: mbed TLS feature support */
@@ -1626,7 +1646,33 @@
  *
  * This modules adds support for the AES-NI instructions on x86-64
  */
-#define MBEDTLS_AESNI_C
+#undef MBEDTLS_AESNI_C
+
+/**
+ * \def MBEDTLS_AESCE_C
+ *
+ * Enable AES cryptographic extension support on Armv8.
+ *
+ * Module:  library/aesce.c
+ * Caller:  library/aes.c
+ *
+ * Requires: MBEDTLS_AES_C
+ *
+ * \warning Runtime detection only works on Linux. For non-Linux operating
+ *          system, Armv8-A Cryptographic Extensions must be supported by
+ *          the CPU when this option is enabled.
+ *
+ * \note    Minimum compiler versions for this feature when targeting aarch64
+ *          are Clang 4.0; armclang 6.6; GCC 6.0; or MSVC 2019 version 16.11.2.
+ *          Minimum compiler versions for this feature when targeting 32-bit
+ *          Arm or Thumb are Clang 11.0; armclang 6.20; or GCC 6.0.
+ *
+ * \note \c CFLAGS must be set to a minimum of \c -march=armv8-a+crypto for
+ * armclang <= 6.9
+ *
+ * This module adds support for the AES Armv8-A Cryptographic Extensions on Armv8 systems.
+ */
+#undef MBEDTLS_AESCE_C
 
 /**
  * \def MBEDTLS_AES_C
@@ -1702,9 +1748,40 @@
  * PEM_PARSE uses AES for decrypting encrypted keys.
  */
 #ifdef CONFIG_MBEDTLS_AES_C
-#define MBEDTLS_AES_C
+#define PSA_WANT_KEY_TYPE_AES 1
 #else
+#undef PSA_WANT_KEY_TYPE_AES
+#endif
+
+/* PSA Crypto RSA DS Driver */
+#ifdef CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL
+#define ESP_RSA_DS_DRIVER_ENABLED
+#else
+#undef ESP_RSA_DS_DRIVER_ENABLED
+#endif
+
+/* The following units have ESP32 hardware support,
+   uncommenting each _ALT macro will use the
+   hardware-accelerated implementation. */
+#ifdef CONFIG_MBEDTLS_HARDWARE_AES
+#define ESP_AES_DRIVER_ENABLED
+#define MBEDTLS_PSA_ACCEL_ALG_CBC_NO_PADDING
+#undef MBEDTLS_PSA_BUILTIN_ALG_CBC_NO_PADDING
+#define MBEDTLS_PSA_ACCEL_ALG_CBC_PKCS7
+#undef MBEDTLS_PSA_ACCEL_ALG_CBC_PKCS7
+#define MBEDTLS_PSA_ACCEL_ALG_CCM
+#undef MBEDTLS_PSA_BUILTIN_ALG_CCM
+#define MBEDTLS_PSA_ACCEL_ALG_CCM_STAR_NO_TAG
+#undef MBEDTLS_PSA_ACCEL_ALG_CCM_STAR_NO_TAG
+#define MBEDTLS_PSA_ACCEL_ALG_CMAC
+#undef MBEDTLS_PSA_BUILTIN_ALG_CMAC
+#define MBEDTLS_PSA_ACCEL_ALG_CFB
+#undef MBEDTLS_PSA_BUILTIN_ALG_CFB
 #undef MBEDTLS_AES_C
+#define MBEDTLS_PSA_ACCEL_ALG_CTR
+#undef MBEDTLS_PSA_BUILTIN_ALG_CTR
+#else
+#undef MBEDTLS_AES_ALT
 #endif
 
 /**
@@ -1719,7 +1796,11 @@
  *          library/pkcs5.c
  *          library/pkparse.c
  */
+#ifdef CONFIG_MBEDTLS_ASN1_PARSE_C
 #define MBEDTLS_ASN1_PARSE_C
+#else
+#undef MBEDTLS_ASN1_PARSE_C
+#endif
 
 /**
  * \def MBEDTLS_ASN1_WRITE_C
@@ -1733,7 +1814,11 @@
  *          library/x509write_crt.c
  *          library/mbedtls_x509write_csr.c
  */
+#ifdef CONFIG_MBEDTLS_ASN1_WRITE_C
 #define MBEDTLS_ASN1_WRITE_C
+#else
+#undef MBEDTLS_ASN1_WRITE_C
+#endif
 
 /**
  * \def MBEDTLS_BASE64_C
@@ -1745,7 +1830,11 @@
  *
  * This module is required for PEM support (required by X.509).
  */
+#ifdef CONFIG_MBEDTLS_BASE64_C
 #define MBEDTLS_BASE64_C
+#else
+#undef MBEDTLS_BASE64_C
+#endif
 
 /**
  * \def MBEDTLS_BIGNUM_C
@@ -1765,19 +1854,10 @@
  *
  * This module is required for RSA, DHM and ECC (ECDH, ECDSA) support.
  */
+#ifdef CONFIG_MBEDTLS_BIGNUM_C
 #define MBEDTLS_BIGNUM_C
-
-/**
- * \def MBEDTLS_BLOWFISH_C
- *
- * Enable the Blowfish block cipher.
- *
- * Module:  library/blowfish.c
- */
-#ifdef CONFIG_MBEDTLS_BLOWFISH_C
-#define MBEDTLS_BLOWFISH_C
 #else
-#undef MBEDTLS_BLOWFISH_C
+#undef MBEDTLS_BIGNUM_C
 #endif
 
 /**
@@ -1834,9 +1914,67 @@
  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
  */
 #ifdef CONFIG_MBEDTLS_CAMELLIA_C
-#define MBEDTLS_CAMELLIA_C
+#define PSA_WANT_KEY_TYPE_CAMELLIA 1
 #else
 #undef MBEDTLS_CAMELLIA_C
+#undef PSA_WANT_KEY_TYPE_CAMELLIA
+#endif
+
+/**
+ * \def MBEDTLS_ARIA_C
+ *
+ * Enable the ARIA block cipher.
+ *
+ * Module:  library/aria.c
+ * Caller:  library/cipher.c
+ *
+ * This module enables the following ciphersuites (if other requisites are
+ * enabled as well):
+ *
+ *      MBEDTLS_TLS_RSA_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_RSA_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_RSA_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_RSA_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_PSK_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_PSK_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384
+ *      MBEDTLS_TLS_PSK_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_PSK_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256
+ *      MBEDTLS_TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384
+ *      MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256
+ *      MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384
+ */
+#ifdef CONFIG_MBEDTLS_ARIA_C
+#define PSA_WANT_KEY_TYPE_ARIA 1
+#else
+#undef MBEDTLS_ARIA_C
+#undef PSA_WANT_KEY_TYPE_ARIA
 #endif
 
 /**
@@ -1846,16 +1984,16 @@
  *
  * Module:  library/ccm.c
  *
- * Requires: MBEDTLS_CIPHER_C, MBEDTLS_AES_C or MBEDTLS_CAMELLIA_C or
+ * Requires: MBEDTLS_AES_C or MBEDTLS_CAMELLIA_C or
  *                             MBEDTLS_ARIA_C
  *
  * This module enables the AES-CCM ciphersuites, if other requisites are
  * enabled as well.
  */
 #ifdef CONFIG_MBEDTLS_CCM_C
-#define MBEDTLS_CCM_C
+#define PSA_WANT_ALG_CCM 1
 #else
-#undef MBEDTLS_CCM_C
+#undef PSA_WANT_ALG_CCM
 #endif
 
 /**
@@ -1878,9 +2016,9 @@
  * Module:  library/chacha20.c
  */
 #ifdef CONFIG_MBEDTLS_CHACHA20_C
-#define MBEDTLS_CHACHA20_C
+#define PSA_WANT_KEY_TYPE_CHACHA20 1
 #else
-#undef MBEDTLS_CHACHA20_C
+#undef PSA_WANT_KEY_TYPE_CHACHA20
 #endif
 
 /**
@@ -1890,35 +2028,13 @@
  *
  * Module:  library/chachapoly.c
  *
- * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
+ * This module requires: MBEDTLS_CHACHA20_C
  */
 #ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
-#define MBEDTLS_CHACHAPOLY_C
+#define PSA_WANT_ALG_CHACHA20_POLY1305 1
 #else
-#undef MBEDTLS_CHACHAPOLY_C
+#undef PSA_WANT_ALG_CHACHA20_POLY1305
 #endif
-
-/**
- * \def MBEDTLS_CIPHER_C
- *
- * Enable the generic cipher layer.
- *
- * Module:  library/cipher.c
- * Caller:  library/ccm.c
- *          library/cmac.c
- *          library/gcm.c
- *          library/nist_kw.c
- *          library/pkcs12.c
- *          library/pkcs5.c
- *          library/psa_crypto_aead.c
- *          library/psa_crypto_mac.c
- *          library/ssl_ciphersuites.c
- *          library/ssl_msg.c
- *          library/ssl_ticket.c (unless MBEDTLS_USE_PSA_CRYPTO is enabled)
- *
- * Uncomment to enable generic cipher wrappers.
- */
-#define MBEDTLS_CIPHER_C
 
 /**
  * \def MBEDTLS_CTR_DRBG_C
@@ -1932,7 +2048,11 @@
  *
  * This module provides the CTR_DRBG AES-256 random number generator.
  */
+#ifdef CONFIG_MBEDTLS_CTR_DRBG_C
 #define MBEDTLS_CTR_DRBG_C
+#else
+#undef MBEDTLS_CTR_DRBG_C
+#endif
 
 /**
  * \def MBEDTLS_DEBUG_C
@@ -1981,25 +2101,6 @@
 #define MBEDTLS_DES_C
 #else
 #undef MBEDTLS_DES_C
-#endif
-
-/**
- * \def MBEDTLS_DHM_C
- *
- * Enable the Diffie-Hellman-Merkle module.
- *
- * Module:  library/dhm.c
- * Caller:  library/ssl_tls.c
- *          library/ssl*_client.c
- *          library/ssl*_server.c
- *
- * This module is used by the following key exchanges:
- *      DHE-RSA, DHE-PSK
- */
-#ifdef CONFIG_MBEDTLS_DHM_C
-#define MBEDTLS_DHM_C
-#else
-#undef MBEDTLS_DHM_C
 #endif
 
 /**
@@ -2088,20 +2189,6 @@
 #endif
 
 /**
- * \def MBEDTLS_ENTROPY_C
- *
- * Enable the platform-specific entropy code.
- *
- * Module:  library/entropy.c
- * Caller:
- *
- * Requires: MBEDTLS_SHA512_C or MBEDTLS_SHA256_C
- *
- * This module provides a generic entropy pool
- */
-#define MBEDTLS_ENTROPY_C
-
-/**
  * \def MBEDTLS_ERROR_C
  *
  * Enable error code to error string conversion.
@@ -2139,35 +2226,16 @@
  *
  * Module:  library/gcm.c
  *
- * Requires: MBEDTLS_CIPHER_C, MBEDTLS_AES_C or MBEDTLS_CAMELLIA_C or
+ * Requires: MBEDTLS_AES_C or MBEDTLS_CAMELLIA_C or
  *                             MBEDTLS_ARIA_C
  *
  * This module enables the AES-GCM and CAMELLIA-GCM ciphersuites, if other
  * requisites are enabled as well.
  */
 #ifdef CONFIG_MBEDTLS_GCM_C
-#define MBEDTLS_GCM_C
+#define PSA_WANT_ALG_GCM 1
 #else
-#undef MBEDTLS_GCM_C
-#endif
-
-/**
- * \def MBEDTLS_HKDF_C
- *
- * Enable the HKDF algorithm (RFC 5869).
- *
- * Module:  library/hkdf.c
- * Caller:
- *
- * Requires: MBEDTLS_MD_C
- *
- * This module enables support for the Hashed Message Authentication Code
- * (HMAC)-based key derivation function (HKDF).
- */
-#ifdef CONFIG_MBEDTLS_HKDF_C
-#define MBEDTLS_HKDF_C
-#else
-#undef MBEDTLS_HKDF_C
+#undef PSA_WANT_ALG_GCM
 #endif
 
 /**
@@ -2182,7 +2250,27 @@
  *
  * Uncomment to enable the HMAC_DRBG random number generator.
  */
+#ifdef CONFIG_MBEDTLS_HMAC_DRBG_C
 #define MBEDTLS_HMAC_DRBG_C
+#else
+#undef MBEDTLS_HMAC_DRBG_C
+#endif
+
+/**
+ * \def MBEDTLS_LMS_C
+ *
+ * Enable the LMS stateful-hash asymmetric signature algorithm.
+ *
+ * Module:  library/lms.c
+ * Caller:
+ *
+ * Requires: MBEDTLS_PSA_CRYPTO_C
+ *
+ * Uncomment to enable the LMS verification algorithm and public key operations.
+ *
+ * This is disable by now. When we shift to PSA, we will enable it.
+ */
+#undef MBEDTLS_LMS_C
 
 /**
  * \def MBEDTLS_MD_C
@@ -2215,7 +2303,11 @@
  *
  * Uncomment to enable generic message digest wrappers.
  */
+#ifdef CONFIG_MBEDTLS_MD_C
 #define MBEDTLS_MD_C
+#else
+#undef MBEDTLS_MD_C
+#endif
 
 /**
  * \def MBEDTLS_MD5_C
@@ -2230,7 +2322,12 @@
  * This module is required for SSL/TLS and X.509.
  * PEM_PARSE uses MD5 for decrypting encrypted keys.
  */
-#define MBEDTLS_MD5_C
+#ifdef CONFIG_MBEDTLS_MD5_C
+#define PSA_WANT_ALG_MD5 1
+#else
+#undef MBEDTLS_MD5_C
+#undef PSA_WANT_ALG_MD5
+#endif
 
 /**
  * \def MBEDTLS_NET_C
@@ -2254,29 +2351,6 @@
 #endif
 
 /**
- * \def MBEDTLS_OID_C
- *
- * Enable the OID database.
- *
- * Module:  library/oid.c
- * Caller:  library/asn1write.c
- *          library/pkcs5.c
- *          library/pkparse.c
- *          library/pkwrite.c
- *          library/rsa.c
- *          library/x509.c
- *          library/x509_create.c
- *          library/mbedtls_x509_crl.c
- *          library/mbedtls_x509_crt.c
- *          library/mbedtls_x509_csr.c
- *          library/x509write_crt.c
- *          library/mbedtls_x509write_csr.c
- *
- * This modules translates between OIDs and internal values.
- */
-#define MBEDTLS_OID_C
-
-/**
  * \def MBEDTLS_PADLOCK_C
  *
  * Enable VIA Padlock support on x86.
@@ -2288,7 +2362,7 @@
  *
  * This modules adds support for the VIA PadLock on x86.
  */
-#define MBEDTLS_PADLOCK_C
+#undef MBEDTLS_PADLOCK_C
 
 /**
  * \def MBEDTLS_PEM_PARSE_C
@@ -2350,7 +2424,11 @@
  *
  * Uncomment to enable generic public key wrappers.
  */
+#ifdef CONFIG_MBEDTLS_PK_C
 #define MBEDTLS_PK_C
+#else
+#undef MBEDTLS_PK_C
+#endif
 
 /**
  * \def MBEDTLS_PK_PARSE_C
@@ -2365,7 +2443,11 @@
  *
  * Uncomment to enable generic public key parse functions.
  */
+#ifdef CONFIG_MBEDTLS_PK_PARSE_C
 #define MBEDTLS_PK_PARSE_C
+#else
+#undef MBEDTLS_PK_PARSE_C
+#endif
 
 /**
  * \def MBEDTLS_PK_WRITE_C
@@ -2379,7 +2461,11 @@
  *
  * Uncomment to enable generic public key write functions.
  */
+#ifdef CONFIG_MBEDTLS_PK_WRITE_C
 #define MBEDTLS_PK_WRITE_C
+#else
+#undef MBEDTLS_PK_WRITE_C
+#endif
 
 /**
  * \def MBEDTLS_PKCS5_C
@@ -2388,11 +2474,15 @@
  *
  * Module:  library/pkcs5.c
  *
- * Requires: MBEDTLS_CIPHER_C and MBEDTLS_MD_C
+ * Requires: MBEDTLS_MD_C
  *
  * This module adds support for the PKCS#5 functions.
  */
+#ifdef CONFIG_MBEDTLS_PKCS5_C
 #define MBEDTLS_PKCS5_C
+#else
+#undef MBEDTLS_PKCS5_C
+#endif
 
 /**
  * \def MBEDTLS_PKCS7_C
@@ -2419,21 +2509,6 @@
 #endif
 
 /**
- * \def MBEDTLS_PKCS12_C
- *
- * Enable PKCS#12 PBE functions.
- * Adds algorithms for parsing PKCS#8 encrypted private keys
- *
- * Module:  library/pkcs12.c
- * Caller:  library/pkparse.c
- *
- * Requires: MBEDTLS_ASN1_PARSE_C, MBEDTLS_CIPHER_C, MBEDTLS_MD_C
- *
- * This module enables PKCS#12 functions.
- */
-#define MBEDTLS_PKCS12_C
-
-/**
  * \def MBEDTLS_PLATFORM_C
  *
  * Enable the platform abstraction layer that allows you to re-assign
@@ -2454,20 +2529,6 @@
 #define MBEDTLS_PLATFORM_C
 
 /**
- * \def MBEDTLS_POLY1305_C
- *
- * Enable the Poly1305 MAC algorithm.
- *
- * Module:  library/poly1305.c
- * Caller:  library/chachapoly.c
- */
-#ifdef CONFIG_MBEDTLS_POLY1305_C
-#define MBEDTLS_POLY1305_C
-#else
-#undef MBEDTLS_POLY1305_C
-#endif
-
-/**
  * \def MBEDTLS_RIPEMD160_C
  *
  * Enable the RIPEMD-160 hash algorithm.
@@ -2480,6 +2541,7 @@
 #define MBEDTLS_RIPEMD160_C
 #else
 #undef MBEDTLS_RIPEMD160_C
+#undef PSA_WANT_ALG_RIPEMD160
 #endif
 
 /**
@@ -2500,7 +2562,13 @@
  *
  * Requires: MBEDTLS_BIGNUM_C, MBEDTLS_OID_C
  */
-#define MBEDTLS_RSA_C
+#ifdef CONFIG_MBEDTLS_RSA_C
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR 1
+#define PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY 1
+#else
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+#undef PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+#endif
 
 /**
  * \def MBEDTLS_SHA1_C
@@ -2520,9 +2588,10 @@
  *
  */
 #if CONFIG_MBEDTLS_SHA1_C
-#define MBEDTLS_SHA1_C
+#define PSA_WANT_ALG_SHA_1 1
 #else
-#undef MBEDTLS_SHA1_C
+#undef PSA_WANT_ALG_SHA_1
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_1
 #endif
 /**
  * \def MBEDTLS_SHA224_C
@@ -2538,7 +2607,52 @@
  *
  * This module adds support for SHA-224.
  */
+#ifdef CONFIG_MBEDTLS_SHA224_C
 #define MBEDTLS_SHA224_C
+#else
+#undef MBEDTLS_SHA224_C
+#endif
+
+/**
+ * \def MBEDTLS_SHA512_C
+ *
+ * Enable the SHA-384 and SHA-512 cryptographic hash algorithms.
+ *
+ * Module:  library/sha512.c
+ * Caller:  library/entropy.c
+ *          library/md.c
+ *          library/ssl_tls.c
+ *          library/ssl_cookie.c
+ *
+ * This module adds support for SHA-384 and SHA-512.
+ */
+#ifdef CONFIG_MBEDTLS_SHA512_C
+#define PSA_WANT_ALG_SHA_512 1
+#else
+#undef PSA_WANT_ALG_SHA_512
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_512
+#endif
+
+/**
+ * \def MBEDTLS_SHA384_C
+ *
+ * Enable the SHA-384 cryptographic hash algorithm.
+ *
+ * Module:  library/sha512.c
+ * Caller:  library/md.c
+ *          library/psa_crypto_hash.c
+ *          library/ssl_tls.c
+ *          library/ssl*_client.c
+ *          library/ssl*_server.c
+ *
+ * Comment to disable SHA-384
+ */
+#ifdef CONFIG_MBEDTLS_SHA384_C
+#define PSA_WANT_ALG_SHA_384 1
+#else
+#undef PSA_WANT_ALG_SHA_384
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_384
+#endif
 
 /**
  * \def MBEDTLS_SHA256_C
@@ -2555,27 +2669,39 @@
  * This module adds support for SHA-224 and SHA-256.
  * This module is required for the SSL/TLS 1.2 PRF function.
  */
+#ifdef CONFIG_MBEDTLS_SHA256_C
 #define MBEDTLS_SHA256_C
-
-/**
- * \def MBEDTLS_SHA512_C
- *
- * Enable the SHA-384 and SHA-512 cryptographic hash algorithms.
- *
- * Module:  library/sha512.c
- * Caller:  library/entropy.c
- *          library/md.c
- *          library/ssl_tls.c
- *          library/ssl_cookie.c
- *
- * This module adds support for SHA-384 and SHA-512.
- */
-#ifdef CONFIG_MBEDTLS_SHA512_C
-#define MBEDTLS_SHA384_C
-#define MBEDTLS_SHA512_C
+#define PSA_WANT_ALG_SHA_256 1
+#define PSA_WANT_ALG_SHA_224 1
 #else
-#undef MBEDTLS_SHA384_C
-#undef MBEDTLS_SHA512_C
+#undef PSA_WANT_ALG_SHA_256
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_256
+#undef PSA_WANT_ALG_SHA_224
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_224
+#endif
+
+/* MBEDTLS_MD_CAN_SHA* macros indicate whether a hash algorithm is available
+ * either via legacy implementation (MBEDTLS_SHA*_C) or via PSA (PSA_WANT_ALG_SHA_*).
+ * These are used for TLS 1.3 signature algorithm configuration.
+ */
+#if defined(MBEDTLS_SHA1_C) || defined(PSA_WANT_ALG_SHA_1)
+#define MBEDTLS_MD_CAN_SHA1
+#endif
+
+#if defined(MBEDTLS_SHA224_C) || defined(PSA_WANT_ALG_SHA_224)
+#define MBEDTLS_MD_CAN_SHA224
+#endif
+
+#if defined(MBEDTLS_SHA256_C) || defined(PSA_WANT_ALG_SHA_256)
+#define MBEDTLS_MD_CAN_SHA256
+#endif
+
+#if defined(MBEDTLS_SHA384_C) || defined(PSA_WANT_ALG_SHA_384)
+#define MBEDTLS_MD_CAN_SHA384
+#endif
+
+#if defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512)
+#define MBEDTLS_MD_CAN_SHA512
 #endif
 
 /**
@@ -2588,9 +2714,19 @@
  * This module adds support for SHA3.
  */
 #ifdef CONFIG_MBEDTLS_SHA3_C
-#define MBEDTLS_SHA3_C
+#define PSA_WANT_ALG_SHA3_224 1
+#define PSA_WANT_ALG_SHA3_256 1
+#define PSA_WANT_ALG_SHA3_384 1
+#define PSA_WANT_ALG_SHA3_512 1
+#if !defined(MBEDTLS_PSA_BUILTIN_ALG_HMAC)
+    /* If SHA3 is enabled, use the builtin HMAC algorithm for HMAC(SHA3) operations */
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_HMAC */
 #else
-#undef MBEDTLS_SHA3_C
+#undef PSA_WANT_ALG_SHA3_224
+#undef PSA_WANT_ALG_SHA3_256
+#undef PSA_WANT_ALG_SHA3_384
+#undef PSA_WANT_ALG_SHA3_512
 #endif
 
 /**
@@ -2603,7 +2739,11 @@
  *
  * Requires: MBEDTLS_SSL_CACHE_C
  */
+#ifdef CONFIG_MBEDTLS_SSL_CACHE_C
 #define MBEDTLS_SSL_CACHE_C
+#else
+#undef MBEDTLS_SSL_CACHE_C
+#endif
 
 /**
  * \def MBEDTLS_SSL_COOKIE_C
@@ -2613,7 +2753,11 @@
  * Module:  library/ssl_cookie.c
  * Caller:
  */
+#ifdef CONFIG_MBEDTLS_SSL_COOKIE_C
 #define MBEDTLS_SSL_COOKIE_C
+#else
+#undef MBEDTLS_SSL_COOKIE_C
+#endif
 
 /**
  * \def MBEDTLS_SSL_TICKET_C
@@ -2623,8 +2767,7 @@
  * Module:  library/ssl_ticket.c
  * Caller:
  *
- * Requires: (MBEDTLS_CIPHER_C) &&
- *           (MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C)
+ * Requires: (MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C)
  */
 #ifdef CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS
 #define MBEDTLS_SSL_TICKET_C
@@ -2677,7 +2820,7 @@
  * Caller:  library/ssl*_client.c
  *          library/ssl*_server.c
  *
- * Requires: MBEDTLS_CIPHER_C, MBEDTLS_MD_C
+ * Requires: MBEDTLS_MD_C
  *           and at least one of the MBEDTLS_SSL_PROTO_XXX defines
  *
  * This module is required for SSL/TLS.
@@ -2722,7 +2865,11 @@
  *
  * This module provides run-time version information.
  */
+#ifdef CONFIG_MBEDTLS_VERSION_C
 #define MBEDTLS_VERSION_C
+#else
+#undef MBEDTLS_VERSION_C
+#endif
 
 /**
  * \def MBEDTLS_X509_USE_C
@@ -2739,7 +2886,11 @@
  *
  * This module is required for the X.509 parsing modules.
  */
+#ifdef CONFIG_MBEDTLS_X509_USE_C
 #define MBEDTLS_X509_USE_C
+#else
+#undef MBEDTLS_X509_USE_C
+#endif
 
 /**
  * \def MBEDTLS_X509_CRT_PARSE_C
@@ -2755,7 +2906,11 @@
  *
  * This module is required for X.509 certificate parsing.
  */
+#ifdef CONFIG_MBEDTLS_X509_CRT_PARSE_C
 #define MBEDTLS_X509_CRT_PARSE_C
+#else
+#undef MBEDTLS_X509_CRT_PARSE_C
+#endif
 
 /**
  * \def MBEDTLS_X509_CRL_PARSE_C
@@ -2805,7 +2960,11 @@
  *
  * This module is the basis for creating X.509 certificates and CSRs.
  */
+#ifdef CONFIG_MBEDTLS_X509_CREATE_C
 #define MBEDTLS_X509_CREATE_C
+#else
+#undef MBEDTLS_X509_CREATE_C
+#endif
 
 /**
  * \def MBEDTLS_X509_CRT_WRITE_C
@@ -2818,7 +2977,11 @@
  *
  * This module is required for X.509 certificate creation.
  */
+#ifdef CONFIG_MBEDTLS_X509_CRT_WRITE_C
 #define MBEDTLS_X509_CRT_WRITE_C
+#else
+#undef MBEDTLS_X509_CRT_WRITE_C
+#endif
 
 /**
  * \def MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
@@ -2844,6 +3007,21 @@
 #endif
 
 /**
+ * \def MBEDTLS_X509_REMOVE_INFO
+ *
+ * Disable mbedtls_x509_*_info() and related APIs.
+ *
+ * Uncomment to omit mbedtls_x509_*_info(), as well as mbedtls_debug_print_crt()
+ * and other functions/constants only used by these functions, thus reducing
+ * the code footprint by several KB.
+ */
+#ifdef CONFIG_MBEDTLS_X509_REMOVE_INFO
+#define MBEDTLS_X509_REMOVE_INFO
+#else
+#undef MBEDTLS_X509_REMOVE_INFO
+#endif
+
+/**
  * \def MBEDTLS_X509_CSR_WRITE_C
  *
  * Enable creating X.509 Certificate Signing Requests (CSR).
@@ -2854,20 +3032,10 @@
  *
  * This module is required for X.509 certificate request writing.
  */
+#ifdef CONFIG_MBEDTLS_X509_CSR_WRITE_C
 #define MBEDTLS_X509_CSR_WRITE_C
-
-/**
- * \def MBEDTLS_XTEA_C
- *
- * Enable the XTEA block cipher.
- *
- * Module:  library/xtea.c
- * Caller:
- */
-#ifdef CONFIG_MBEDTLS_XTEA_C
-#define MBEDTLS_XTEA_C
 #else
-#undef MBEDTLS_XTEA_C
+#undef MBEDTLS_X509_CSR_WRITE_C
 #endif
 
 /* \} name SECTION: mbed TLS modules */

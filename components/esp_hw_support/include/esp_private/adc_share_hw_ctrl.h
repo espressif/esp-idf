@@ -21,15 +21,10 @@
 #include "esp_err.h"
 #include "hal/adc_types.h"
 #include "soc/soc_caps.h"
+#include "esp_private/periph_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if SOC_RCC_IS_INDEPENDENT || CONFIG_IDF_TARGET_ESP32
-#define ADC_BUS_CLK_ATOMIC()
-#else
-#define ADC_BUS_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
 #endif
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED

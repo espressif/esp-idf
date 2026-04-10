@@ -14,7 +14,8 @@ This example is located in the examples folder of the ESP-IDF under the [ble_paw
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
-#include "host/ble_hs.h
+#include "host/ble_hs.h"
+#include "host/util/util.h"
 ```
 These includes provide:
 
@@ -25,6 +26,8 @@ These includes provide:
 - NimBLE stack porting and FreeRTOS integration
 
 - BLE host stack functionality
+
+- BLE utility functions for address management (util.h)
 
 ## Main Entry Point
 
@@ -122,7 +125,7 @@ esp_err_t esp_nimble_init(void)
 
 ## PAwR Configuration
 ```c
-#define BLE_PAWR_EVENT_INTERVAL               (520)
+#define BLE_PAWR_EVENT_PERIODIC_INTERVAL_MS   (3000)
 #define BLE_PAWR_NUM_SUBEVTS                  (10)
 #define BLE_PAWR_SUB_INTERVAL                 (52)
 #define BLE_PAWR_RSP_SLOT_DELAY               (5)
@@ -130,33 +133,124 @@ esp_err_t esp_nimble_init(void)
 #define BLE_PAWR_NUM_RSP_SLOTS                (25)
 #define BLE_PAWR_SUB_DATA_LEN                 (20)
 ```
-These parameters configure PAwR interval, subevents, response slot timing, and payload length.
+These parameters control:
 
-## Periodic Advertising Configuration
+- The periodic advertising interval in milliseconds
 
-```c
-memset(&pparams, 0, sizeof(pparams));
-pparams.include_tx_power = 0;
-pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(3000);
-pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(3000);
-pparams.num_subevents = BLE_PAWR_NUM_SUBEVTS;
-pparams.subevent_interval = BLE_PAWR_SUB_INTERVAL;
-pparams.response_slot_delay = BLE_PAWR_RSP_SLOT_DELAY;
-pparams.response_slot_spacing = BLE_PAWR_RSP_SLOT_SPACING;
-pparams.num_response_slots = BLE_PAWR_NUM_RSP_SLOTS;
-```
+- Number of subevents per periodic interval
 
-These values are passed to ble_gap_periodic_adv_configure() to start PAwR.
+- Timing of response slots
+
+- Data length for subevent payloads
+
+## Key PAwR Parameters:
+
+- num_subevents: Number of subevents per periodic interval (10)
+
+- subevent_interval: Time between subevents (52 × 1.25ms = 65ms)
+
+- response_slot_delay: First response slot delay (5 × 1.25ms = 6.25ms)
+
+- response_slot_spacing: Time between slots (10 × 0.125ms = 1.25ms)
+
+- num_response_slots: Number of response slots per subevent (25)
 
 ## PAwR Advertisement
-The start_periodic_adv() function:
-- Configures extended advertising parameters
-- Sets up periodic advertising using subevent and slot parameters
-- Starts extended + periodic advertising
+
+The start_periodic_adv() function configures and starts PAwR. It takes `own_addr_type` as a parameter, which is determined dynamically via `ble_hs_id_infer_auto()` in the `on_sync` callback:
+```c
+static void
+start_periodic_adv(uint8_t own_addr_type)
+{
+    int rc;
+    uint8_t addr[6];
+    struct ble_gap_periodic_adv_params pparams;
+    struct ble_gap_ext_adv_params params;
+    struct ble_hs_adv_fields adv_fields;
+    struct os_mbuf *data;
+    uint8_t instance = 0;
+
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+    struct ble_gap_periodic_adv_start_params eparams;
+    memset(&eparams, 0, sizeof(eparams));
+#endif
+
+    /* Get the local address. */
+    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
+    assert (rc == 0);
+
+    ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],
+             addr[2], addr[1], addr[0]);
+
+    /* For periodic we use instance with non-connectable advertising */
+    memset (&params, 0, sizeof(params));
+    params.own_addr_type = own_addr_type;
+    params.primary_phy = BLE_HCI_LE_PHY_CODED;
+    params.secondary_phy = BLE_HCI_LE_PHY_1M;
+    params.sid = 0;
+    params.itvl_min = BLE_GAP_ADV_ITVL_MS(50);
+    params.itvl_max = BLE_GAP_ADV_ITVL_MS(50);
+
+    rc = ble_gap_ext_adv_configure(instance, &params, NULL, gap_event_cb, NULL);
+    assert (rc == 0);
+
+    memset(&adv_fields, 0, sizeof(adv_fields));
+    adv_fields.name = (const uint8_t *)"Nimble_PAwR_CONN";
+    adv_fields.name_len = strlen((char *)adv_fields.name);
+
+    /* mbuf chain will be increased if needed */
+    data = os_msys_get_pkthdr(BLE_HCI_MAX_ADV_DATA_LEN, 0);
+    assert(data);
+
+    rc = ble_hs_adv_set_fields_mbuf(&adv_fields, data);
+    assert(rc == 0);
+
+    rc = ble_gap_ext_adv_set_data(instance, data);
+    assert(rc == 0);
+
+    /* configure periodic advertising */
+    memset(&pparams, 0, sizeof(pparams));
+    pparams.include_tx_power = 0;
+    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(BLE_PAWR_EVENT_PERIODIC_INTERVAL_MS);
+    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(BLE_PAWR_EVENT_PERIODIC_INTERVAL_MS);
+    /* Configure the parameters of PAwR. */
+    pparams.num_subevents           = BLE_PAWR_NUM_SUBEVTS;
+    pparams.subevent_interval       = BLE_PAWR_SUB_INTERVAL;
+    pparams.response_slot_delay     = BLE_PAWR_RSP_SLOT_DELAY;
+    pparams.response_slot_spacing   = BLE_PAWR_RSP_SLOT_SPACING;
+    pparams.num_response_slots      = BLE_PAWR_NUM_RSP_SLOTS;
+
+    rc = ble_gap_periodic_adv_configure(instance, &pparams);
+    assert(rc == 0);
+
+    /* start periodic advertising */
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
+    eparams.include_adi = 1;
+    rc = ble_gap_periodic_adv_start(instance, &eparams);
+#else
+    rc = ble_gap_periodic_adv_start(instance);
+#endif
+    assert (rc == 0);
+
+    /* start advertising */
+    rc = ble_gap_ext_adv_start(instance, 0, 0);
+    assert (rc == 0);
+
+    ESP_LOGI(TAG, "instance %u started (periodic)\n", instance);
+}
+```
+Key steps:
+
+- Configure extended advertising parameters
+
+- Set up periodic advertising with subevent and response slot parameters
+
+- Start both periodic and extended advertising
 
 ## Need of Extended Advertisement in Periodic Advertisement
 
-Extended advertisements contain synchronization info that lets scanners align with periodic advertising. This enables precise subevent-based communicati
+Extended advertisements contain synchronization info that lets scanners align with periodic advertising. This enables precise subevent-based communication.
 
 ## GAP Event Callback
 
@@ -175,17 +269,17 @@ case BLE_GAP_EVENT_DISCONNECT:
 
 ## Using ble_gap_connect_with_synced()
 
-The API ble_gap_connect_with_synced() is a NimBLE API used by a PAwR Advertiser to initiate a BLE connection with a synced scanner. This allows the advertiser to transition from scheduled subevent-based communication to a higher-throughput, lower-latency connection with a specific scanner.
+The API ble_gap_connect_with_synced() is a NimBLE API used by a PAwR Advertiser to initiate a BLE connection with a synced scanner as central role. This allows the advertiser to transition from scheduled subevent-based communication to a higher-throughput, lower-latency connection with a specific scanner.
 
 This is especially useful in use cases where on-demand, peer-to-peer data exchange is needed.
 ```c
 ble_gap_connect_with_synced(
-    BLE_OWN_ADDR_PUBLIC,
+    own_addr_type,
     adv_handle,
     subevent,
     &peer_addr,
     30000,
-    BLE_GAP_LE_PHY_1M_MASK,
+    phy_mask,
     NULL, NULL, NULL,
     gap_event_cb, NULL);
 ```
@@ -196,7 +290,32 @@ Highlights:
 - Avoids scanning (direct connection)
 - Enables faster, deterministic connection
 
-📌 Tip: Choose connection interval as a multiple of subevent interval for optimal scheduling.
+> Tip: Choose connection interval as a multiple of subevent interval for optimal scheduling.
+
+## Sync Callback
+
+When the BLE host and controller are synced, the `on_sync` callback is invoked. It ensures a valid identity address is set and determines the appropriate address type before starting PAwR:
+
+```c
+static void
+on_sync(void)
+{
+    int rc;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+    /* Begin advertising. */
+    start_periodic_adv(own_addr_type);
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
+- `ble_hs_id_infer_auto(0, &own_addr_type)`: Automatically determines the best address type to use based on what is available on the device.
 
 ## Host Task
 ```c
@@ -207,41 +326,6 @@ void pawr_host_task(void *param)
     nimble_port_freertos_deinit();
 }
 ```
-## Parameter Configuration
-
-The below snippets represent the parameter configuration for extended and periodic advertisement.
-
-### For Extended Advertisement
-
-```c
-    params.own_addr_type = BLE_OWN_ADDR_RANDOM; //Own address type is set to Random
-    params.primary_phy = BLE_HCI_LE_PHY_1M; // Primary advertising PHY is set to 1M
-    params.secondary_phy = BLE_HCI_LE_PHY_2M; // Secondary advertising PHY is set to 2M
-    params.sid = 2; // Advertising set Id is assigned with value 2.
-```
-
-### For Periodic Advertisement
-
-```c
-    memset(&pparams, 0, sizeof(pparams));
-    pparams.include_tx_power = 0; // Indicates that TX power is not included in advertising PDU
-    pparams.itvl_min = BLE_GAP_ADV_ITVL_MS(120); // Minimum advertising interval of 240ms
-    pparams.itvl_max = BLE_GAP_ADV_ITVL_MS(240); //Maximum advertising interval of 480ms
-```
-
-Periodic advertisement is started for a particular advertisement instance by calling the API `ble_gap_periodic_adv_start(instance)`. This function takes instance-id as an input parameter. It defines the hci command by initializing the command parameters which are represented in the following lines.
-
-```c
-    struct ble_hci_le_set_periodic_adv_enable_cp cmd;
-    cmd.enable = 0x01;
-    cmd.adv_handle = instance;
-```
-
-Extended advertising is invoked for a particular instance using the API call `ble_gap_ext_adv_start(instance, 0, 0)`.Instance-id, duration, and max_events are input parameters for this API call respectively.
-
-Duration represents the time for which the adverteiment will take place. Upon expiration, the advertising procedure ends, and the BLE_GAP_EVENT_ADV_COMPLETE event is reported.0 value is used for no expiration.
-
-max_events Number of advertising events that should be sent before advertising ends and a BLE_GAP_EVENT_ADV_COMPLETE event is reported.0 value is used for no limit.
 
 ## Conclusion
 
@@ -252,5 +336,5 @@ This PAwR with connection example demonstrates:
 - Periodic advertising with subevents and response slots
 - Dynamic connection initiation based on scanner responses
 - Use of extended advertisement for synchronization
-- Efficient, scalable, low-power bidirectional communication
+- Efficient, scalable, bidirectional communication
 

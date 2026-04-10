@@ -19,7 +19,7 @@ The subsections below give only absolutely necessary information. For full steps
 - EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
 
-**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected.
+**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected. The [esp-video](https://github.com/espressif/esp-video-components/tree/master/esp_video) component provides support for the ISP control algorithms, and some examples can be found in [esp_video/examples](https://github.com/espressif/esp-video-components/tree/master/esp_video/examples).
 
 **Note:** For EK79007 you will need to connect following pins:
 - 5V - 5V
@@ -152,6 +152,4 @@ This image is also used as a reference, you can check output image after ISP aut
 
 ## Reference
 
-- Link to the ESP-IDF feature's API reference, for example [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/camera_driver.html)
-- [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
-- [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)
+- [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/camera_driver.html)

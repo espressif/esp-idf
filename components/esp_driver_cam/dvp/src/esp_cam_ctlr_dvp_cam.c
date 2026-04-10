@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_clk_tree.h"
-#include "soc/cam_periph.h"
+#include "hal/cam_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_cam_ctlr_dvp_cam.h"
 #include "esp_private/esp_cam_dvp.h"
@@ -37,22 +37,26 @@
 #define DVP_CAM_BK_BUFFER_ALLOC_CAPS        (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define DVP_CAM_CLK_ATOMIC()                PERIPH_RCC_ATOMIC()
+#if CAM_LL_DATA_WIDTH_MAX
+#define CAP_DVP_PERIPH_NUM      CAM_LL_PERIPH_NUM           /*!< DVP port number */
+#define CAM_DVP_DATA_SIG_NUM    CAM_LL_DATA_WIDTH_MAX       /*!< DVP data bus width of CAM */
 #else
-#define DVP_CAM_CLK_ATOMIC()
+#define CAP_DVP_PERIPH_NUM      0                           /*!< Default value */
+#define CAM_DVP_DATA_SIG_NUM    0                           /*!< Default value */
 #endif
 
 #define ALIGN_UP_BY(num, align) ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
 
-#define DVP_CAM_CONFIG_INPUT_PIN(pin, sig, inv)                 \
-{                                                               \
-    ret = esp_cam_ctlr_dvp_config_input_gpio(pin, sig, inv);    \
-    if (ret != ESP_OK) {                                        \
-        ESP_LOGE(TAG, "failed to configure pin=%d sig=%d",      \
-                 pin, sig);                                     \
-        return ret;                                             \
-    }                                                           \
+#define DVP_CAM_CONFIG_INPUT_PIN(pin, sig, inv)                     \
+{                                                                   \
+    if (pin != GPIO_NUM_NC) {                                       \
+        ret = esp_cam_ctlr_dvp_config_input_gpio(pin, sig, inv);    \
+        if (ret != ESP_OK) {                                        \
+            ESP_LOGE(TAG, "failed to configure pin=%d sig=%d",      \
+                    pin, sig);                                      \
+            return ret;                                             \
+        }                                                           \
+    }                                                               \
 }
 
 typedef struct dvp_platform {
@@ -154,7 +158,6 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
 
     if (ctlr->cur_buf) {
         ctlr->cur_buf = NULL;
-        cam_hal_stop_streaming(&ctlr->hal);
         ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_stop(&ctlr->dma), TAG, "failed to stop DMA");
     }
 
@@ -175,10 +178,11 @@ static IRAM_ATTR esp_err_t esp_cam_ctlr_dvp_start_trans(esp_cam_ctlr_dvp_cam_t *
         assert(false && "no new buffer, and no driver internal buffer");
     }
 
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)(trans.buffer), trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "failed to sync(M2C) trans buffer");
+
     ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_reset(&ctlr->dma), TAG, "failed to reset DMA");
     ESP_RETURN_ON_ERROR_ISR(esp_cam_ctlr_dvp_dma_start(&ctlr->dma, trans.buffer, ctlr->fb_size_in_bytes), TAG, "failed to start DMA");
-
-    cam_hal_start_streaming(&ctlr->hal);
 
     ctlr->cur_buf = trans.buffer;
 
@@ -234,6 +238,8 @@ static uint32_t IRAM_ATTR esp_cam_ctlr_dvp_get_recved_size(esp_cam_ctlr_dvp_cam_
     if (esp_ptr_external_ram(rx_buffer)) {
         esp_err_t ret = esp_cache_msync(rx_buffer, recv_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
+
     }
 
     if (ctlr->pic_format_jpeg) {
@@ -260,10 +266,7 @@ static esp_err_t esp_cam_ctlr_dvp_cam_get_frame_size(const esp_cam_ctlr_dvp_conf
     if (config->pic_format_jpeg) {
         *p_size = config->h_res * config->v_res;
     } else {
-        color_space_pixel_format_t pixel_format = {
-            .color_type_id = config->input_data_color_type
-        };
-        uint32_t depth = color_hal_pixel_format_get_bit_depth(pixel_format);
+        uint32_t depth = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
         if (!depth) {
             return ESP_ERR_INVALID_ARG;
         }
@@ -351,7 +354,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
     }
 
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
-    DVP_CAM_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, true);
         cam_ll_select_clk_src(ctlr_id, clk_src);
     };
@@ -360,7 +363,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
 }
 
 /**
- * @brief ESP CAM DVP output hardware clock
+ * @brief ESP CAM DVP output hardware clock, the function "esp_cam_ctlr_dvp_init" should be called first
  *
  * @param ctlr_id   CAM DVP controller ID
  * @param clk_src   CAM DVP clock source
@@ -382,14 +385,53 @@ esp_err_t esp_cam_ctlr_dvp_output_clock(int ctlr_id, cam_clock_source_t clk_src,
     ESP_LOGD(TAG, "DVP clock source frequency %" PRIu32 "Hz", src_clk_hz);
 
     if ((src_clk_hz % xclk_freq) == 0) {
-        DVP_CAM_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
+            // The camera sensors require precision without frequency and duty cycle jitter,
+            // so the fractional divisor can't be used.
             cam_ll_set_group_clock_coeff(ctlr_id, src_clk_hz / xclk_freq, 0, 0);
         };
 
         ret = ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "calculated frequency divider is not integer so clock isn't changed");
     }
 
     return ret;
+}
+
+/**
+ * @brief Initialize ESP CAM DVP clock pin (other DVP GPIO pins excluded the clock pins will not be initialized)
+ *        and hardware clock, then output clock signal with given frequency
+ *
+ * @note The function is implemented based on "esp_cam_ctlr_dvp_init" and "esp_cam_ctlr_dvp_output_clock",
+ *       so calling "esp_cam_ctlr_dvp_init" and "esp_cam_ctlr_dvp_output_clock" is not required
+ *
+ * @param ctlr_id DVP controller ID
+ * @param pin     DVP clock pin
+ * @param clk_src DVP clock source
+ * @param xclk_freq DVP clock frequency
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - Others if failed
+ */
+esp_err_t esp_cam_ctlr_dvp_start_clock(int ctlr_id, gpio_num_t pin, cam_clock_source_t clk_src, uint32_t xclk_freq)
+{
+    esp_cam_ctlr_dvp_pin_config_t pin_config = {0};
+
+    pin_config.data_width = CAM_CTLR_DATA_WIDTH_8;
+    pin_config.vsync_io = GPIO_NUM_NC;
+    pin_config.de_io = GPIO_NUM_NC;
+    pin_config.pclk_io = GPIO_NUM_NC;
+    for (int i = 0; i < CAM_DVP_DATA_SIG_NUM; i++) {
+        pin_config.data_io[i] = GPIO_NUM_NC;
+    }
+    pin_config.xclk_io = pin;
+
+    ESP_RETURN_ON_ERROR(esp_cam_ctlr_dvp_init(ctlr_id, clk_src, &pin_config), TAG, "failed to initialize DVP controller");
+    ESP_RETURN_ON_ERROR(esp_cam_ctlr_dvp_output_clock(ctlr_id, clk_src, xclk_freq), TAG, "failed to output clock");
+
+    return ESP_OK;
 }
 
 /**
@@ -405,7 +447,7 @@ esp_err_t esp_cam_ctlr_dvp_deinit(int ctlr_id)
 {
     ESP_RETURN_ON_FALSE(ctlr_id < CAP_DVP_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ctlr_id >= %d", CAP_DVP_PERIPH_NUM);
 
-    DVP_CAM_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, false);
     };
 
@@ -440,6 +482,7 @@ static esp_err_t esp_cam_ctlr_dvp_cam_enable(esp_cam_ctlr_handle_t handle)
         ctlr->dvp_fsm = ESP_CAM_CTLR_DVP_CAM_FSM_ENABLED;
         ret = ESP_OK;
     }
+    cam_hal_start_streaming(&ctlr->hal);
 #if CONFIG_PM_ENABLE
     if (ctlr->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(ctlr->pm_lock), TAG, "acquire pm_lock failed");
@@ -472,6 +515,8 @@ static esp_err_t esp_cam_ctlr_dvp_cam_disable(esp_cam_ctlr_handle_t handle)
         ctlr->dvp_fsm = ESP_CAM_CTLR_DVP_CAM_FSM_INIT;
         ret = ESP_OK;
     }
+    cam_hal_stop_streaming(&ctlr->hal);
+
 #if CONFIG_PM_ENABLE
     if (ctlr->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(ctlr->pm_lock), TAG, "release pm_lock failed");
@@ -701,6 +746,83 @@ static esp_err_t esp_cam_ctlr_get_dvp_cam_frame_buffer_len(esp_cam_ctlr_handle_t
 }
 
 /**
+ * @brief Allocate aligned camera buffer for ESP CAM DVP controller
+ *
+ * @note This function must be called after esp_cam_new_dvp_ctlr
+ *
+ * @param handle            ESP CAM controller handle
+ * @param size              Buffer size in bytes
+ * @param buf_caps          Buffer allocation capabilities (e.g., MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)
+ *
+ * @return
+ *        - Buffer pointer on success
+ *        - NULL on failure
+ */
+static void *esp_cam_ctlr_dvp_cam_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps)
+{
+    esp_cam_ctlr_dvp_cam_t *ctlr = (esp_cam_ctlr_dvp_cam_t *)handle;
+
+    if (!ctlr) {
+        ESP_LOGE(TAG, "invalid argument: handle is null");
+        return NULL;
+    }
+
+    size_t alignment = 1;
+
+    if (buf_caps & MALLOC_CAP_SPIRAM) {
+        alignment = ctlr->dma.ext_mem_align;
+    } else {
+        alignment = ctlr->dma.int_mem_align;
+    }
+
+    void *buffer = heap_caps_aligned_calloc(alignment, 1, size, buf_caps);
+    if (!buffer) {
+        ESP_LOGE(TAG, "failed to allocate buffer");
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Allocated aligned camera buffer: %p, size: %zu, alignment: %zu", buffer, size, alignment);
+
+    return buffer;
+}
+
+/**
+ * @brief Configure format conversion
+ *
+ * @param cam_handle Camera controller handle
+ * @param src_format Source format
+ * @param dst_format Destination format
+ * @return
+ *        - ESP_OK on success
+ *        - ESP_ERR_INVALID_ARG: Invalid argument
+ */
+esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
+                                             const cam_ctlr_format_conv_config_t *config)
+{
+    if (cam_handle == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_cam_ctlr_dvp_cam_t *ctlr = (esp_cam_ctlr_dvp_cam_t *)cam_handle;
+
+    ESP_LOGD(TAG, "Configure format conversion: %d -> %d", config->src_format, config->dst_format);
+    if (config->src_format == config->dst_format) {
+        return ESP_OK;
+    }
+
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    if (config->src_format == CAM_CTLR_COLOR_YUV420) {
+        ESP_LOGE(TAG, "YUV420 is not allowed for source format");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
+    // Configure color format conversion
+    cam_hal_color_format_convert(&ctlr->hal, config);
+
+    return ESP_OK;
+}
+
+/**
  * @brief New ESP CAM DVP controller
  *
  * @param config      DVP controller configurations
@@ -759,8 +881,16 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
 
     cam_hal_config_t cam_hal_config = {
         .port = config->ctlr_id,
+        .cam_data_width = config->cam_data_width == 0 ? 8 : config->cam_data_width,
+        .bit_swap_en = config->bit_swap_en,
         .byte_swap_en = config->byte_swap_en,
     };
+
+    ESP_RETURN_ON_FALSE(cam_hal_config.cam_data_width == 8 || cam_hal_config.cam_data_width == 16 || cam_hal_config.cam_data_width == 24, ESP_ERR_INVALID_ARG, TAG, "invalid argument: cam_data_width is not 8 or 16 or 24");
+
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    ESP_RETURN_ON_FALSE(cam_hal_config.cam_data_width != 8 || cam_hal_config.byte_swap_en == 0, ESP_ERR_INVALID_ARG, TAG, "invalid argument: byte swap is not supported when cam_data_width is 8");
+#endif
 
     if (!config->pin_dont_init) {
         // Initialzie DVP clock and GPIO internally
@@ -775,6 +905,16 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     }
 
     cam_hal_init(&ctlr->hal, &cam_hal_config);
+
+    cam_ctlr_format_conv_config_t format_conv_config = {
+        .src_format = config->input_data_color_type,
+        .dst_format = config->output_data_color_type,
+        .conv_std = config->conv_std,
+        .data_width = config->cam_data_width == 0 ? 8 : config->cam_data_width,
+        .input_range = config->input_range,
+        .output_range = config->output_range,
+    };
+    ESP_GOTO_ON_ERROR(esp_cam_ctlr_dvp_format_conversion(&(ctlr->base), &format_conv_config), fail5, TAG, "failed to configure format conversion");
 
     ctlr->ctlr_id = config->ctlr_id;
     ctlr->fb_size_in_bytes = fb_size_in_bytes;
@@ -793,6 +933,8 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     ctlr->base.register_event_callbacks = esp_cam_ctlr_dvp_cam_register_event_callbacks;
     ctlr->base.get_internal_buffer = esp_cam_ctlr_dvp_cam_get_internal_buffer;
     ctlr->base.get_buffer_len = esp_cam_ctlr_get_dvp_cam_frame_buffer_len;
+    ctlr->base.alloc_buffer = esp_cam_ctlr_dvp_cam_alloc_buffer;
+    ctlr->base.format_conversion = esp_cam_ctlr_dvp_format_conversion;
 
     *ret_handle = &ctlr->base;
 

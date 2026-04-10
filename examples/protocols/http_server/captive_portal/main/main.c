@@ -65,7 +65,7 @@ static void wifi_init_softap(void)
     }
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
     esp_netif_ip_info_t ip_info;
@@ -127,7 +127,7 @@ static const httpd_uri_t root = {
 esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
 {
     // Set status
-    httpd_resp_set_status(req, "302 Temporary Redirect");
+    httpd_resp_set_status(req, "303 See Other");
     // Redirect to the "/" root directory
     httpd_resp_set_hdr(req, "Location", "/");
     // iOS requires content in the response to detect a captive portal, simply redirecting is not sufficient.

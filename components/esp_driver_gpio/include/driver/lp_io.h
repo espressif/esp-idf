@@ -36,7 +36,7 @@ esp_err_t lp_gpio_connect_in_signal(gpio_num_t gpio_num, uint32_t signal_idx, bo
  * @note There's no limitation on the number of RTC(LP) GPIOs that a signal can connect with
  *
  * @param gpio_num GPIO number
- * @param signal_idx LP peripheral signal index (tagged as input attribute), especially, `SIG_LP_GPIO_OUT_IDX` means disconnect RTC(LP) GPIO and other peripherals. Only the RTC GPIO driver can control the output level
+ * @param signal_idx LP peripheral signal index (tagged as input attribute), especially, `LP_SIG_GPIO_OUT_IDX` means disconnect RTC(LP) GPIO and other peripherals. Only the RTC GPIO driver can control the output level
  * @param out_inv Whether to signal to be inverted or not
  * @param out_en_inv Whether the output enable control is inverted or not
  * @return

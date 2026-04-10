@@ -114,12 +114,16 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(__attribute__((unused
     return REG_READ(ASSIST_DEBUG_CORE_0_SP_PC_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
+FORCE_INLINE_ATTR void assist_debug_ll_enable_pc_recording(uint32_t core_id, bool enable)
+{
+}
+
+FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(__attribute__((unused)) uint32_t core_id, bool enable)
 {
     SYSTEM.cpu_peri_clk_en.reg_clk_en_assist_debug = enable;
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
+FORCE_INLINE_ATTR void assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
 {
     SYSTEM.cpu_peri_rst_en.reg_rst_en_assist_debug = true;
     SYSTEM.cpu_peri_rst_en.reg_rst_en_assist_debug = false;

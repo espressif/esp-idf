@@ -3,6 +3,7 @@ if(NOT "${target}" STREQUAL "linux")
     return()
 endif()
 
+set(srcs)
 set(includes "include")
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND srcs getrandom.c assert_func.c)

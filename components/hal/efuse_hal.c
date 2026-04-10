@@ -58,16 +58,7 @@ IRAM_ATTR bool efuse_hal_flash_encryption_enabled(void)
     return enabled;
 }
 
-#if SOC_EFUSE_ECDSA_KEY
-void efuse_hal_set_ecdsa_key(ecdsa_curve_t curve, int efuse_blk)
-{
-    efuse_ll_set_ecdsa_key_blk(curve, efuse_blk);
 
-    efuse_ll_rs_bypass_update();
-
-    efuse_hal_read();
-}
-#endif
 
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
 uint32_t efuse_hal_get_recovery_bootloader_address(void)

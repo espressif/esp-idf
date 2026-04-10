@@ -330,6 +330,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
     .icg_func = clk_flags                                               \
 }
@@ -337,6 +338,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 1,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
     .icg_func = 0                                                       \
 }
@@ -488,8 +490,8 @@ typedef struct pmu_sleep_machine_constant {
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 287,  \
-        .regdma_s2a_work_time_us        = 568,  \
-        .regdma_m2a_work_time_us        = 248,  \
+        .regdma_s2a_work_time_us        = 720,  \
+        .regdma_m2a_work_time_us        = 430,  \
         .regdma_a2s_work_time_us        = 433,  \
         .regdma_rf_on_work_time_us      = 68,   \
         .regdma_rf_off_work_time_us     = 25,   \

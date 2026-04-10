@@ -12,8 +12,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H21] IDF-11496
-
 #define ETS_DIGEST_LEN 32 /* SHA-256, bytes */
 
 typedef enum {

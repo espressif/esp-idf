@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
-#include "esp_app_trace.h"
+#include "esp_gcov.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
 
@@ -23,6 +23,20 @@ static const char *TAG = "example";
 
 void blink_dummy_func(void);
 void some_dummy_func(void);
+
+#if !CONFIG_APPTRACE_DEST_JTAG
+#include "soc/uart_pins.h"
+#include "esp_app_trace.h"
+/* Override default uart config to use console pins as a uart channel */
+esp_apptrace_config_t esp_apptrace_get_user_params(void)
+{
+    esp_apptrace_config_t config = APPTRACE_UART_CONFIG_DEFAULT();
+    config.dest_cfg.uart.uart_num = 0;
+    config.dest_cfg.uart.tx_pin_num = U0TXD_GPIO_NUM;
+    config.dest_cfg.uart.rx_pin_num = U0RXD_GPIO_NUM;
+    return config;
+}
+#endif
 
 static void blink_task(void *pvParameter)
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,6 +78,7 @@ typedef enum {
 #endif  /* BTC_AV_SINK_INCLUDED */
 #if BTC_AV_SRC_INCLUDED
     BTC_AV_SRC_API_INIT_EVT,
+    BTC_AV_SRC_API_SET_PREF_MCC_EVT,
     BTC_AV_SRC_API_REG_SEP_EVT,
     BTC_AV_SRC_API_DEINIT_EVT,
     BTC_AV_SRC_API_CONNECT_EVT,
@@ -108,6 +109,11 @@ typedef union {
     bt_bdaddr_t src_connect;
     // BTC_AV_SRC_API_DISCONNECT_EVT
     bt_bdaddr_t src_disconn;
+    // BTC_AV_SRC_API_SET_PREF_MCC_EVT
+    struct {
+        esp_a2d_conn_hdl_t conn_hdl;
+        esp_a2d_mcc_t pref_mcc;
+    } set_pref_mcc;
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_CONFIG_EVT
     esp_a2d_mcc_t mcc;

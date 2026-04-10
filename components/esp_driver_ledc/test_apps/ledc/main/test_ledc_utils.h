@@ -6,8 +6,9 @@
 
 #include "soc/soc_caps.h"
 #include "driver/ledc.h"
+#include "soc/gpio_num.h"
 
-#define PULSE_IO      5
+#define PULSE_IO      GPIO_NUM_2
 
 #define TEST_PWM_FREQ       2000
 #define TEST_PWM_LOW_FREQ   200

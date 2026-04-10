@@ -3,22 +3,16 @@
 examples/storage/custom_flash_driver:
   depends_components:
     - spi_flash
-    - driver
 
 examples/storage/emmc:
   depends_components:
     - fatfs
-    - vfs
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdspi
   enable:
     - if: IDF_TARGET in ["esp32s3", "esp32p4"]
       reason: only support on esp32s3 and esp32p4
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
 
 examples/storage/partition_api/partition_find:
   depends_components:
@@ -54,15 +48,12 @@ examples/storage/perf_benchmark:
     - fatfs
     - spi_flash
     - vfs
-    - sdmmc
     - spiffs
     - wear_levelling
-    - esp_partition
-    - esp_driver_sdmmc
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: SOC_GPSPI_SUPPORTED != 1
       temporary: true
-      reason: not supported yet # TODO: [esp32h21] IDF-11609 [ESP32H4] IDF-12388
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true
@@ -70,21 +61,19 @@ examples/storage/perf_benchmark:
 
 examples/storage/sd_card/sdmmc:
   depends_components:
-    - vfs
+    - fatfs
     - sdmmc
-    - esp_driver_sdmmc
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32"]
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
       temporary: true
       reason: lack of runners
 
 examples/storage/sd_card/sdspi:
   depends_components:
-    - vfs
+    - fatfs
     - sdmmc
-    - esp_driver_sdspi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
@@ -118,7 +107,6 @@ examples/storage/spiffsgen:
 
 examples/storage/wear_levelling:
   depends_components:
-    - vfs
     - wear_levelling
     - fatfs
   disable_test:

@@ -305,7 +305,6 @@ OI_STATUS OI_CODEC_SBC_DecodeFrame(OI_CODEC_SBC_DECODER_CONTEXT *context,
         return OI_CODEC_SBC_CHECKSUM_MISMATCH;
     }
 
-#ifdef OI_DEBUG
     /*
      * Make sure the bitpool values are sane.
      */
@@ -317,7 +316,6 @@ OI_STATUS OI_CODEC_SBC_DecodeFrame(OI_CODEC_SBC_DECODER_CONTEXT *context,
         ERROR(("Bitpool too large: %d (must be <= %ld)", context->common.frameInfo.bitpool, OI_SBC_MaxBitpool(&context->common.frameInfo)));
         return OI_STATUS_INVALID_PARAMETERS;
     }
-#endif
 
     /*
      * Now decode the SBC data. Partial decode is not yet implemented for an SBC
@@ -388,7 +386,7 @@ OI_UINT8 OI_CODEC_SBC_FrameCount(OI_BYTE  *frameData,
         }
 
         /* Extract and translate required fields from Header */
-        subbands = mode = blocks = frameData[1];;
+        subbands = mode = blocks = frameData[1];
         mode = (mode & (BIT3 | BIT2)) >> 2;
         blocks = block_values[(blocks & (BIT5 | BIT4)) >> 4];
         subbands = band_values[(subbands & BIT0)];

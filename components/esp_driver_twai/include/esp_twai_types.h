@@ -42,6 +42,7 @@ typedef struct {
     twai_error_state_t state;       /**< Node's error state */
     uint16_t tx_error_count;        /**< Node's TX error count */
     uint16_t rx_error_count;        /**< Node's RX error count */
+    uint32_t tx_queue_remaining;    /**< Node's TX queue remaining frame space (number of frames) */
 } twai_node_status_t;
 
 /**

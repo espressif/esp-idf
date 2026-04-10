@@ -61,7 +61,7 @@ The previously deprecated ROM-related header files located in ``components/esp32
 PSRAM
 ^^^^^
 
-- The target-specific header file ``spiram.h`` and the header file ``esp_spiram.h`` have been removed. A new component ``esp_psram`` is created instead. For PSRAM/SPIRAM-related functions, users now include ``esp_psram.h`` and set the ``esp_psram`` component as a component requirement in their ``CMakeLists.txt`` project files.
+- The target-specific header file ``spiram.h`` has been removed. A new component ``esp_psram`` is created instead. For PSRAM/SPIRAM-related functions, users now include ``esp_psram.h`` and set the ``esp_psram`` component as a component requirement in their ``CMakeLists.txt`` project files.
 - ``esp_spiram_get_chip_size`` and ``esp_spiram_get_size`` have been deleted. You should use ``esp_psram_get_size`` instead.
 
 eFuse

@@ -1,8 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 /* ROM version variables for esp32p4
  *
  * These addresses should be compatible with any ROM version for this chip.

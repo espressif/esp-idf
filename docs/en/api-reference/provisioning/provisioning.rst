@@ -22,7 +22,7 @@ It is understood that each use case may require different security scheme to sec
 
 4. **Compact Data Representation**
 
-The protocol uses `Google Protobufs <https://developers.google.com/protocol-buffers/>`_ as a data representation for session setup and Wi-Fi provisioning. They provide a compact data representation and ability to parse the data in multiple programming languages in native format. Please note that this data representation is not forced on application-specific data and the developers may choose the representation of their choice.
+The protocol uses `Google Protobufs <https://developers.google.com/protocol-buffers/>`_ as a data representation for session setup and network provisioning. They provide a compact data representation and ability to parse the data in multiple programming languages in native format. Please note that this data representation is not forced on application-specific data and the developers may choose the representation of their choice.
 
 Typical Provisioning Process
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -57,12 +57,12 @@ Typical Provisioning Process
         === 3. Configuration ===
         CLIENT --> DEVICE [label="App-specific Set Config (optional)"];
         DEVICE --> CLIENT [label="Set Config Response (optional)"];
-        CLIENT -> DEVICE [label="Wi-Fi SetConfig(SSID, Passphrase...)"];
-        DEVICE -> CLIENT [label="Wi-Fi SetConfig response"];
-        CLIENT -> DEVICE [label="Wi-Fi ApplyConfig cmd"];
-        DEVICE -> CLIENT [label="Wi-Fi ApplyConfig resp"];
-        CLIENT -> DEVICE [label="Wi-Fi GetStatus cmd (repeated)"];
-        DEVICE -> CLIENT [label="Wi-Fi GetStatus resp (repeated)"];
+        CLIENT -> DEVICE [label="Wi-Fi/Thread SetConfig(SSID, Passphrase.../ThreadDataset)"];
+        DEVICE -> CLIENT [label="Wi-Fi/Thread SetConfig response"];
+        CLIENT -> DEVICE [label="Wi-Fi/Thread ApplyConfig cmd"];
+        DEVICE -> CLIENT [label="Wi-Fi/Thread ApplyConfig resp"];
+        CLIENT -> DEVICE [label="Wi-Fi/Thread GetStatus cmd (repeated)"];
+        DEVICE -> CLIENT [label="Wi-Fi/Thread GetStatus resp (repeated)"];
         === 4. Close connection ===
         DEVICE -> CLIENT [label="Close Connection"];
     }
@@ -123,9 +123,9 @@ The below diagram shows the architecture of unified provisioning:
 
     Unified Provisioning Architecture
 
-It relies on the base layer called :doc:`protocomm` (protocomm) which provides a framework for security schemes and transport mechanisms. The Wi-Fi Provisioning layer uses protocomm to provide simple callbacks to the application for setting the configuration and getting the Wi-Fi status. The application has control over implementation of these callbacks. In addition, the application can directly use protocomm to register custom handlers.
+It relies on the base layer called :doc:`protocomm` (protocomm) which provides a framework for security schemes and transport mechanisms. The Network Provisioning layer uses protocomm to provide simple callbacks to the application for setting the configuration and getting the network status. The application has control over implementation of these callbacks. In addition, the application can directly use protocomm to register custom handlers.
 
-The application creates a protocomm instance which is mapped to a specific transport and specific security scheme. Each transport in the protocomm has a concept of an "end-point" which corresponds to the logical channel for communication for specific type of information. For example, security handshake happens on a different endpoint from the Wi-Fi configuration endpoint. Each end-point is identified using a string and depending on the transport internal representation of the end-point changes. In case of the SoftAP+HTTP transport, the end-point corresponds to URI, whereas in case of Bluetooth LE, the end-point corresponds to the GATT characteristic with specific UUID. Developers can create custom end-points and implement handler for the data that is received or sent over the same end-point.
+The application creates a protocomm instance which is mapped to a specific transport and specific security scheme. Each transport in the protocomm has a concept of an "end-point" which corresponds to the logical channel for communication for specific type of information. For example, security handshake happens on a different endpoint from the network configuration endpoint. Each end-point is identified using a string and depending on the transport internal representation of the end-point changes. In case of the SoftAP+HTTP transport, the end-point corresponds to URI, whereas in case of Bluetooth LE, the end-point corresponds to the GATT characteristic with specific UUID. Developers can create custom end-points and implement handler for the data that is received or sent over the same end-point.
 
 .. _provisioning_security_schemes:
 
@@ -302,9 +302,9 @@ The Security 2 scheme uses AES-GCM for encryption and decryption of the data. Th
 Sample Code
 >>>>>>>>>>>
 
-Please refer to :doc:`protocomm` and :doc:`wifi_provisioning` for API guides and code snippets on example usage.
+Please refer to :doc:`protocomm` and `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_ for API guides and code snippets on example usage.
 
-Application implementation can be found as an example under :example:`provisioning`.
+Application implementation can be found as examples under `provisioning examples <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning/examples>`_.
 
 Provisioning Tools
 >>>>>>>>>>>>>>>>>>
@@ -319,6 +319,6 @@ Provisioning applications are available for various platforms, along with source
     * `Bluetooth LE Provisioning app on App Store <https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141>`_.
     * `SoftAP Provisioning app on App Store <https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630>`_.
     * Source code on GitHub: `esp-idf-provisioning-ios <https://github.com/espressif/esp-idf-provisioning-ios>`_.
-* Linux/macOS/Windows: :idf:`tools/esp_prov`, a Python-based command line tool for provisioning.
+* Linux/macOS/Windows: `esp_prov <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning/tool/esp_prov>`_, a Python-based command line tool for provisioning.
 
 The phone applications offer simple UI and are thus more user centric, while the command-line application is useful as a debugging tool for developers.

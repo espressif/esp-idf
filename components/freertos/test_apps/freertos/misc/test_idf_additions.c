@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,7 +103,6 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
         for (int i = 0; i < TEST_NUM_TASKS; i++) {
             // Create a task with caps
             TEST_ASSERT_EQUAL(pdPASS, xTaskCreateWithCaps(task_with_caps_self_delete, "task", 4096, NULL, UNITY_FREERTOS_PRIORITY, &task_handle[i], MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
-            TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
             // Get the task's memory
             TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle[i], &puxStackBuffer, &pxTaskBuffer));
         }
@@ -112,7 +111,11 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
             // Notify the task to delete itself
             xTaskNotifyGive(task_handle[i]);
         }
+        // Let the scheduler run the self-delete tasks.
+        vTaskDelay(1);
     }
+    // Allow the last batch to be freed by the cleanup task in vTaskDeleteWithCaps().
+    vTaskDelay(50);
 }
 
 #endif /* CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM */
@@ -282,7 +285,7 @@ Expected:
 --------------------------------------------------------------------------------------------------------------------- */
 
 #define TEST_DELAY_MS 200
-static uint32_t tick_hook_count[portNUM_PROCESSORS];
+static volatile uint32_t tick_hook_count[portNUM_PROCESSORS];
 
 static void IRAM_ATTR tick_hook(void)
 {
@@ -296,9 +299,20 @@ static void suspend_task(void *arg)
     /* Fetch the current core ID */
     BaseType_t xCoreID = portGET_CORE_ID();
 
+    /* Warm up the cache by running the scheduler suspension/resumption once.
+     * This reduces the execution time variance caused by cache misses during
+     * the actual test on targets like the esp32p4.
+     */
+    vTaskSuspendAll();
+    xTaskResumeAll();
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     /* Register tick hook */
-    memset(tick_hook_count, 0, sizeof(tick_hook_count));
+    tick_hook_count[xCoreID] = 0;
     esp_register_freertos_tick_hook_for_cpu(tick_hook, xCoreID);
+
+    /* Read the tick hook count before suspending */
+    uint32_t initial_count = tick_hook_count[xCoreID];
 
     /* Suspend scheduler */
     vTaskSuspendAll();
@@ -312,30 +326,39 @@ static void suspend_task(void *arg)
     /* Delay for a further TEST_DELAY_MS milliseconds after scheduler resumption */
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_MS));
 
+    /* Read the final tick hook count */
+    uint32_t final_count = tick_hook_count[xCoreID];
+
     /* De-register tick hook */
     esp_deregister_freertos_tick_hook_for_cpu(tick_hook, xCoreID);
 
     /* Verify that the tick hook callback count equals the scheduler suspension time + the delay time.
      * We add a variation of 2 ticks to account for delays encountered during test setup and teardown.
      */
-    printf("Core%d tick_hook_count = %"PRIu32"\n", xCoreID, tick_hook_count[xCoreID]);
-    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, TEST_DELAY_MS * 2, tick_hook_count[xCoreID]);
+    printf("Core%d initial_count = %"PRIu32"\n", xCoreID, initial_count);
+    printf("Core%d final_count = %"PRIu32"\n", xCoreID, final_count);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, TEST_DELAY_MS * 2, final_count - initial_count);
 
     /* Signal main task of test completion */
     xTaskNotifyGive(main_task_hdl);
 
-    /* Cleanup */
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("IDF additions: IDF tick hooks during scheduler suspension", "[freertos]")
 {
     /* Run test for each core */
+    TaskHandle_t suspend_task_handle[portNUM_PROCESSORS];
     for (int x = 0; x < portNUM_PROCESSORS; x++) {
-        xTaskCreatePinnedToCore(&suspend_task, "suspend_task", 8192, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY, NULL, x);
+        xTaskCreatePinnedToCore(&suspend_task, "suspend_task", 8192, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY, &suspend_task_handle[x], x);
 
         /* Wait for test completion */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        /* Cleanup */
+        vTaskSuspend(suspend_task_handle[x]);
+        vTaskDelay(10);
+        vTaskDelete(suspend_task_handle[x]);
     }
 }
 

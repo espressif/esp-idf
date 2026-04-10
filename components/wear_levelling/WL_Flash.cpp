@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include "esp_random.h"
 #include "esp_log.h"
-#include "Partition.h"
 #include "WL_Flash.h"
 #include <stdlib.h>
 #include "crc32.h"
@@ -39,7 +38,7 @@ WL_Flash::~WL_Flash()
     free(this->temp_buff);
 }
 
-esp_err_t WL_Flash::config(wl_config_t *cfg, Partition *partition)
+esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *partition)
 {
     ESP_LOGV(TAG, "%s partition_start_addr=0x%08" PRIx32 ", wl_partition_size=0x%08" PRIx32 ", wl_page_size=0x%08" PRIx32 ", flash_sector_size=0x%08" PRIx32 ", wl_update_rate=0x%08" PRIx32 ", wl_pos_update_record_size=0x%08" PRIx32 ", version=0x%08" PRIx32 ", wl_temp_buff_size=0x%08" PRIx32 , __func__,
              (uint32_t) cfg->wl_partition_start_addr,
@@ -611,7 +610,7 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
     return result;
 }
 
-Partition *WL_Flash::get_part()
+Flash_Access *WL_Flash::get_part()
 {
     return this->partition;
 }

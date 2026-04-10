@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H4 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
 
 # BLE Periodic Advertiser Example
 
@@ -28,18 +28,6 @@ Before project configuration and build, be sure to set the correct chip target u
 idf.py set-target <chip_name>
 ```
 
-### Configure the project
-
-Open the project configuration menu:
-
-```bash
-idf.py menuconfig
-```
-
-In the `Example Configuration` menu:
-
-* Select I/O capabilities of device from `Example Configuration --> I/O Capability`, default is `Just_works`.
-
 ### Build and Flash
 
 Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
@@ -64,7 +52,7 @@ I (373) NimBLE: Device Address:
 I (373) NimBLE: d0:42:3a:95:84:05
 I (373) NimBLE:
 
-I (383) NimBLE: instance 1 started (periodic)
+I (383) NimBLE: instance 0 started (periodic)
 ```
 
 ## Note

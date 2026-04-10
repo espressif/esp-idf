@@ -7,7 +7,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_periph.h"
 #include "hal/temperature_sensor_types.h"
 #include "driver/temperature_sensor.h"
 #include "esp_intr_alloc.h"

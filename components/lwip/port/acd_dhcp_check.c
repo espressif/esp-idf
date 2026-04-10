@@ -77,6 +77,7 @@ acd_arp_reply(struct netif *netif, struct etharp_hdr *hdr)
         LWIP_DEBUGF(ACD_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | LWIP_DBG_LEVEL_WARNING,
                     ("acd_arp_reply(): arp reply matched with offered address, declining\n"));
         dhcp->acd.acd_conflict_callback(netif, ACD_DECLINE);
+        dhcp->acd.acd_conflict_callback(netif, ACD_RESTART_CLIENT);
     }
 }
 

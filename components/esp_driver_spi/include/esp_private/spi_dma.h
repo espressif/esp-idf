@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <stddef.h>
 #include "stdbool.h"
 #include "hal/spi_types.h"
 
@@ -35,6 +36,15 @@ typedef struct {
  * @param desc_burst    enable or disable desc burst
  */
 void spi_dma_enable_burst(spi_dma_chan_handle_t chan_handle, bool data_burst, bool desc_burst);
+
+/**
+ * Get the alignment constraints for DMA
+ *
+ * @param chan_handle   Context of the spi_dma channel.
+ * @param internal_size The alignment size for internal memory.
+ * @param external_size The alignment size for external memory.
+ */
+void spi_dma_get_alignment_constraints(spi_dma_chan_handle_t chan_handle, size_t *internal_size, size_t *external_size);
 
 /**
  * Re-trigger a HW pre-load to pick up appended linked descriptor

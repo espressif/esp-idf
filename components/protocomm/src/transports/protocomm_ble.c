@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <sys/param.h>
+#include <stdbool.h>
 #include <esp_log.h>
 #include <esp_gatt_common_api.h>
 #include <esp_gap_bt_api.h>
@@ -71,6 +72,21 @@ typedef struct _protocomm_ble {
 
 static _protocomm_ble_internal_t *protoble_internal;
 
+static bool protocomm_ble_transport_active(void)
+{
+    return (protoble_internal != NULL) && (protoble_internal->pc_ble != NULL);
+}
+
+static void protocomm_ble_reset_prepare_write(void)
+{
+    if (prepare_write_env.prepare_buf) {
+        free(prepare_write_env.prepare_buf);
+        prepare_write_env.prepare_buf = NULL;
+    }
+    prepare_write_env.prepare_len = 0;
+    prepare_write_env.handle = 0;
+}
+
 // config adv data
 static esp_ble_adv_data_t adv_config = {
     .set_scan_rsp = false,
@@ -121,6 +137,9 @@ static const uint16_t *uuid128_to_16(const uint8_t *uuid128)
 
 static const char *handle_to_handler(uint16_t handle)
 {
+    if (protoble_internal == NULL) {
+        return NULL;
+    }
     const uint8_t *uuid128 = simple_ble_get_uuid128(handle);
     if (!uuid128) {
         return NULL;
@@ -139,6 +158,18 @@ static void transport_simple_ble_read(esp_gatts_cb_event_t event, esp_gatt_if_t 
     static uint16_t read_len = 0;
     static uint16_t max_read_len = 0;
     esp_gatt_status_t status = ESP_OK;
+
+    if (!protocomm_ble_transport_active()) {
+        read_len = 0;
+        max_read_len = 0;
+        read_buf = NULL;
+        esp_err_t err = esp_ble_gatts_send_response(gatts_if, param->read.conn_id,
+                        param->read.trans_id, ESP_GATT_ERROR, NULL);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Send response error in read");
+        }
+        return;
+    }
 
     ESP_LOGD(TAG, "Inside read w/ session - %d on param %d %d",
              param->read.conn_id, param->read.handle, read_len);
@@ -206,7 +237,8 @@ static esp_err_t prepare_write_event_env(esp_gatt_if_t gatts_if,
         memcpy(prepare_write_env.prepare_buf + param->write.offset,
                param->write.value,
                param->write.len);
-        prepare_write_env.prepare_len += param->write.len;
+        int next_len = param->write.offset + param->write.len;
+        prepare_write_env.prepare_len = MAX(prepare_write_env.prepare_len, next_len);
         prepare_write_env.handle = param->write.handle;
     }
 
@@ -254,6 +286,17 @@ static void transport_simple_ble_write(esp_gatts_cb_event_t event, esp_gatt_if_t
     ESP_LOGD(TAG, "Inside write with session - %d on attr handle = %d \nlen = %d, is_prep = %d",
              param->write.conn_id, param->write.handle, param->write.len, param->write.is_prep);
 
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGW(TAG, "Ignoring write on inactive protocomm transport");
+        protocomm_ble_reset_prepare_write();
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                        param->write.trans_id, ESP_GATT_ERROR, NULL);
+        }
+        esp_ble_gatts_close(gatts_if, param->write.conn_id);
+        return;
+    }
+
     if (param->write.is_prep) {
         ret = prepare_write_event_env(gatts_if, param);
         if (ret != ESP_OK) {
@@ -298,6 +341,15 @@ static void transport_simple_ble_exec_write(esp_gatts_cb_event_t event, esp_gatt
     ssize_t outlen = 0;
     ESP_LOGD(TAG, "Inside exec_write w/ session - %d", param->exec_write.conn_id);
 
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGW(TAG, "Ignoring exec write on inactive protocomm transport");
+        protocomm_ble_reset_prepare_write();
+        esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                    param->exec_write.trans_id, ESP_GATT_ERROR, NULL);
+        esp_ble_gatts_close(gatts_if, param->exec_write.conn_id);
+        return;
+    }
+
     if ((param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
             &&
             prepare_write_env.prepare_buf) {
@@ -336,9 +388,17 @@ static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside disconnect w/ session - %d", param->disconnect.conn_id);
 
+    /* Drop any staged prepare-write data when a connection ends */
+    protocomm_ble_reset_prepare_write();
+
     /* Ignore BLE events received after protocomm layer is stopped */
     if (protoble_internal == NULL) {
         ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring disconnect");
         return;
     }
 
@@ -368,9 +428,17 @@ static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", param->connect.conn_id);
 
+    /* Start each connection with a clean prepare-write buffer */
+    protocomm_ble_reset_prepare_write();
+
     /* Ignore BLE events received after protocomm layer is stopped */
     if (protoble_internal == NULL) {
         ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring connect");
         return;
     }
 
@@ -396,6 +464,9 @@ static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if
 
 static void transport_simple_ble_set_mtu(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
+    if (!protocomm_ble_transport_active()) {
+        return;
+    }
     protoble_internal->gatt_mtu = param->mtu.mtu;
     return;
 }
@@ -485,6 +556,7 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
 
 static void protocomm_ble_cleanup(void)
 {
+    protocomm_ble_reset_prepare_write();
     if (protoble_internal) {
         if (protoble_internal->g_nu_lookup) {
             for (unsigned i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
@@ -637,20 +709,29 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
 esp_err_t protocomm_ble_stop(protocomm_t *pc)
 {
-    if ((pc != NULL) &&
-            (protoble_internal != NULL ) &&
-            (pc == protoble_internal->pc_ble)) {
-        esp_err_t ret = ESP_OK;
+    if ((pc == NULL) ||
+            (protoble_internal == NULL ) ||
+            (pc != protoble_internal->pc_ble)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
+    esp_err_t ret = ESP_OK;
+    bool ble_callbacks_active = true;
     uint8_t protocomm_keep_ble_on = get_keep_ble_on();
+
+    protoble_internal->pc_ble = NULL;
+
     if (protocomm_keep_ble_on) {
 #ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
         /* Keep BT stack on, but terminate the connection after provisioning */
-	    ret = simple_ble_disconnect();
+        ret = simple_ble_disconnect();
         if (ret) {
             ESP_LOGE(TAG, "BLE disconnect failed");
-	    }
-	    simple_ble_deinit();
+        }
+        simple_ble_deinit();
+        ble_callbacks_active = false;
+#else
+        ESP_LOGD(TAG, "Keeping BLE stack running after protocomm stop");
 #endif  // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
     }
     else {
@@ -661,10 +742,13 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
             ESP_LOGE(TAG, "BLE stop failed");
         }
         simple_ble_deinit();
+        ble_callbacks_active = false;
     }
 
+    protocomm_ble_reset_prepare_write();
+
+    if (!ble_callbacks_active) {
         protocomm_ble_cleanup();
-        return ret;
     }
-    return ESP_ERR_INVALID_ARG;
+    return ret;
 }

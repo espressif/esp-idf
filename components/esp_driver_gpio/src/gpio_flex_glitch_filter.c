@@ -35,7 +35,7 @@ struct gpio_flex_glitch_filter_t {
 };
 
 static gpio_flex_glitch_filter_group_t s_gpio_glitch_filter_group = {
-    .hw = &GLITCH_FILTER,
+    .hw = GPIO_LL_GLITCH_FILTER_GET_HW(),
     .spinlock = portMUX_INITIALIZER_UNLOCKED,
 };
 

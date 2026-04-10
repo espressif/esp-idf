@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -56,6 +56,9 @@
 #include "portmacro.h"
 #include "port_systick.h"
 #include "esp_memory_utils.h"
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 
 #if SOC_CPU_HAS_HWLOOP
 #include "riscv/csr.h"
@@ -136,7 +139,11 @@ BaseType_t xPortStartScheduler(void)
 #if SOC_CPU_HAS_PIE
     /* Similarly, disable PIE */
     rv_utils_disable_pie();
-#endif /* SOC_CPU_HAS_FPU */
+#endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_DSP
+    rv_utils_disable_dsp();
+#endif /* SOC_CPU_HAS_DSP */
 
 #if SOC_CPU_HAS_HWLOOP
     /* Initialize the Hardware loop feature */
@@ -469,7 +476,7 @@ void vPortAssertIfInISR(void)
     configASSERT(xPortInIsrContext() == 0);
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+BaseType_t xPortInterruptedFromISRContext(void)
 {
     /* Return the interrupt nesting counter for this core */
     return port_uxInterruptNesting[xPortGetCoreID()];
@@ -593,7 +600,7 @@ void vPortExitCriticalCompliance(portMUX_TYPE *mux)
 void vPortEnterCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortEnterCritical(void) is not supported on single-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortEnterCritical(void) is not supported on multi-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
     BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -607,7 +614,7 @@ void vPortEnterCritical(void)
 void vPortExitCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortExitCritical(void) is not supported on single-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortExitCritical(void) is not supported on multi-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
 
@@ -732,16 +739,6 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         vTaskPreDeletionHook( pxTCB );
     #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
 
-    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-        /*
-         * If the user is using the legacy task pre-deletion hook, call it.
-         * Todo: Will be removed in IDF-8097
-         */
-        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
-        extern void vPortCleanUpTCB( void * pxTCB );
-        vPortCleanUpTCB( pxTCB );
-    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
-
     #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
         /* Call TLS pointers deletion callbacks */
         vPortTLSPointersDelCb( pxTCB );
@@ -842,6 +839,7 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
  *
  * @param coreid    Current core
  * @param coproc    Coprocessor to save context of
+ * @param owner     New owner of the coprocessor. Can be NULL to clear the owner.
  *
  * @returns Coprocessor former owner's save area, can be NULL if there was no owner yet, can be -1 if
  *          the former owner is the same as the new owner.
@@ -878,8 +876,90 @@ void vPortCoprocUsedInISR(void* frame)
     xt_unhandled_exception(frame);
 }
 
+#if CONFIG_IDF_TARGET_ESP32S31
+/* On the ESP32-S31, the PIE is only available on core 1, so we need to perform a few checks when core 0 uses a PIE instruction.
+ * the functions here will help us with that. */
+
+/**
+ * @brief Called when a task uses a PIE instruction on core 0.
+ *
+ * @param task Task that used the PIE instruction
+ * @param frame Frame of the PIE instruction
+ *
+ * @returns The context to save with the current FPU context when the current task was the FPU owner,
+ *          NULL if the task is not the owner of the FPU on the current core.
+ */
+void* vPortTaskUsedPIEOnCPU0(StaticTask_t* task, void* frame)
+{
+#if CONFIG_FREERTOS_UNICORE
+    g_panic_abort = true;
+    g_panic_abort_details = (char *) "ERROR: PIE coprocessor is not supported in unicore configuration!\n";
+    xt_unhandled_exception(frame);
+    return NULL;
+#else
+    void* context_to_save = NULL;
+    /* Make sure we are not in an interrupt context nor in a critical section */
+    if (xPortInIsrContext()) {
+        /* We are in an interrupt context, abort */
+        vPortCoprocUsedInISR(frame);
+    }
+    /* Since we count on crosscore interrupt to reschedule the current task, we must not be in a
+     * critical section. In other words, we must be able to yield */
+    if (!xPortCanYield()) {
+        g_panic_abort = true;
+        g_panic_abort_details = (char *) "ERROR: PIE coprocessor must not be used in critical sections!\n";
+        xt_unhandled_exception(frame);
+    }
+
+    /* Check if the current task is the owner of the FPU on the current core. No need to make the following two instructions
+     * atomic since we are in an exception context, we can't be interrupted by an interrupt. */
+    if (port_uxCoprocOwner[0][FPU_COPROC_IDX] == task) {
+        /* Task is the owner of the FPU on the current core, set the new owner to NULL and return the save area to fill */
+        RvCoprocSaveArea* sa = pxPortUpdateCoprocOwner(0, FPU_COPROC_IDX, NULL);
+        /* `sa` is not NULL here for sure */
+        context_to_save = sa->sa_coprocs[FPU_COPROC_IDX];
+    }
+    /* Migrate the task to core 1. NOTE: This will override any existing pinning of the task */
+    vPortTaskPinToCore(task, 1);
+    /* Raised an error if the scheduler is NOT running on core 0 */
+    if (!port_xSchedulerRunning[0]) {
+        /* Scheduler is not running on core 0, raise an error */
+        g_panic_abort = true;
+        g_panic_abort_details = (char *) "ERROR: Scheduler is not running on core 0, task must migrate to core 1!\n";
+        xt_unhandled_exception(frame);
+    }
+    /* Send a cross-core interrupt on the current core, it won't be triggered until we return from the exception handler */
+    esp_crosscore_int_send_yield(0);
+    return context_to_save;
+#endif /* CONFIG_FREERTOS_UNICORE */
+}
+
+#endif /* CONFIG_IDF_TARGET_ESP32S31 */
+
+
 #endif /* SOC_CPU_COPROC_NUM > 0 */
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else
+    return 0;
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
+#if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW
+BaseType_t xPortFPUContextIsDirty(BaseType_t core_id)
+{
+    return (BaseType_t)(port_uxCoprocOwner[core_id][FPU_COPROC_IDX] != NULL);
+}
+#endif /* (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW */

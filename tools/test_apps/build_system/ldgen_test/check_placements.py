@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # Check placements in this test app for main
@@ -8,13 +8,13 @@
 import argparse
 import subprocess
 
-from pyparsing import alphanums
-from pyparsing import hexnums
 from pyparsing import LineEnd
 from pyparsing import LineStart
 from pyparsing import Literal
 from pyparsing import Optional
 from pyparsing import Word
+from pyparsing import alphanums
+from pyparsing import hexnums
 
 argparser = argparse.ArgumentParser()
 
@@ -29,23 +29,26 @@ contents = subprocess.check_output([args.objdump, '-t', args.elf]).decode()
 
 
 def check_location(symbol, expected):
-    pattern = (LineStart() + Word(hexnums).setResultsName('address')
-               + Optional(Word(alphanums, exact=1))
-               + Optional(Word(alphanums,exact=1))
-               + Word(alphanums + '._*').setResultsName('actual')
-               + Word(hexnums)
-               + Literal(symbol)
-               + LineEnd())
+    pattern = (
+        LineStart()
+        + Word(hexnums).set_results_name('address')
+        + Optional(Word(alphanums, exact=1))
+        + Optional(Word(alphanums, exact=1))
+        + Word(alphanums + '._*').set_results_name('actual')
+        + Word(hexnums)
+        + Literal(symbol)
+        + LineEnd()
+    )
 
     try:
-        results = pattern.searchString(contents)[0]
+        results = pattern.search_string(contents)[0]
     except IndexError:
-        raise Exception("check placement fail: '%s' was not found" % (symbol))
+        raise Exception(f"check placement fail: '{symbol}' was not found")
 
     if results.actual != expected:
-        raise Exception("check placement fail: '%s' was placed in '%s', not in '%s'" % (symbol, results.actual, expected))
+        raise Exception(f"check placement fail: '{symbol}' was placed in '{results.actual}', not in '{expected}'")
 
-    print("check placement pass: '%s' was successfully placed in '%s'" % (symbol, results.actual))
+    print(f"check placement pass: '{symbol}' was successfully placed in '{results.actual}'")
     return int(results.address, 16)
 
 
@@ -82,3 +85,5 @@ check_location('func3', '.flash.text')
 check_location('func4', '.iram0.text')
 
 check_location('const_array', '.dram0.data')
+
+check_location('prebuilt_func', '.iram0.text')

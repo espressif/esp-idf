@@ -1,0 +1,9 @@
+#
+# Turn on RCP console, overriding default log level from sdkconfig.defaults
+# We also increase the timeout for watchdog timer to account for large prints.
+#
+CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE=y
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+CONFIG_IEEE802154_DEBUG=y
+CONFIG_IEEE802154_PRINT_PHY_REG=y

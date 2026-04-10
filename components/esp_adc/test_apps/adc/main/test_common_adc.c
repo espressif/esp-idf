@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "test_common_adc.h"
 #include "hal/adc_ll.h"
 

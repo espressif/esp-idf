@@ -79,6 +79,14 @@ As not every transaction requires both writing and reading data, you can choose 
 
     A Host should not start a transaction before its Device is ready for receiving data. It is recommended to use another GPIO pin for a handshake signal to sync the Devices. For more details, see :ref:`transaction_interval`.
 
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    Using PSRAM for DMA transfer
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    SPI Slave driver supports using PSRAM for DMA transfer. Directly passing a PSRAM address as :cpp:member:`spi_slave_transaction_t::tx_buffer` or :cpp:member:`spi_slave_transaction_t::rx_buffer` is supported. For the rx_buffer, it has alignment requirements, using :cpp:func:`heap_caps_malloc` to allocate memory can automatically handle the alignment requirements. For the buffers that you can not control, you can also use the :c:macro:`SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO` flag to enable driver to automatically align the buffer from PSRAM.
+
+    Note that this feature shares the MSPI bus bandwidth (bus frequency * bus width), so the transmission bandwidth of the host to this device should be less than the PSRAM bandwidth, otherwise **data may be lost**, and the ``spi_slave_transmit`` function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 Driver Usage
 ------------
@@ -258,6 +266,10 @@ Restrictions and Known Issues
 
     If DMA is enabled, a Device's launch edge is half of an SPI clock cycle ahead of the normal time, shifting to the Master's actual latch edge. In this case, if the GPIO matrix is bypassed, the hold time for data sampling is 68.75 ns and no longer a half of an SPI clock cycle. If the GPIO matrix is used, the hold time will increase to 93.75 ns. The Host should sample the data immediately at the latch edge or communicate in SPI modes 1 or 3. If your Host cannot meet these timing requirements, initialize your Device without DMA.
 
+    3. ESP32 SPI Slave **still** outputs the level 0/1 on the MISO pin even when the CS line is not asserted, which may cause other devices on the bus to output incorrect data. The solution is:
+
+      1) Use a separate bus for the ESP32 SPI Slave, not sharing it with other devices.
+      2) Add a buffer chip between the ESP32 SPI MISO pin and the bus, such as 74HC125.
 
 Application Examples
 --------------------

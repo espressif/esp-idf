@@ -43,10 +43,7 @@ secure_services:
         type: IDF
         function: spi_flash_hal_erase_block
         args: 2
-      - id: 9
-        type: IDF
-        function: spi_flash_hal_erase_chip
-        args: 1
+      # ID: 9 empty
       - id: 10
         type: IDF
         function: spi_flash_hal_erase_sector
@@ -248,13 +245,21 @@ secure_services:
         type: IDF
         function: esp_sha_set_mode
         args: 1
+      - id: 112
+        type: IDF
+        function: esp_ds_encrypt_params_using_key_type
+        args: 5
   # ID: 134-169 (36) - Reserved for future use
   - family: attestation
     entries:
       - id: 170
-        type: custom
-        function: esp_tee_att_generate_token
-        args: 6
+        type: IDF
+        function: psa_initial_attest_get_token
+        args: 5
+      - id: 171
+        type: IDF
+        function: psa_initial_attest_get_token_size
+        args: 2
   # ID: 175-194 (20) - Secure Storage
   - family: secure_storage
     entries:
@@ -277,11 +282,15 @@ secure_services:
       - id: 179
         type: custom
         function: esp_tee_sec_storage_aead_encrypt
-        args: 4
+        args: 6
       - id: 180
         type: custom
         function: esp_tee_sec_storage_aead_decrypt
-        args: 4
+        args: 6
+      - id: 181
+        type: custom
+        function: esp_tee_sec_storage_ecdsa_sign_pbkdf2
+        args: 5
   # ID: 195-199 (5) - OTA
   - family: ota
     entries:

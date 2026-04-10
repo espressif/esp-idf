@@ -37,5 +37,5 @@ idf_component_register(
     PRIV_INCLUDE_DIRS "${private_include}"
     LDFRAGMENTS linker.lf
     REQUIRES esp_coex
-    PRIV_REQUIRES esp_phy esp_timer soc hal esp_pm
+    PRIV_REQUIRES esp_phy esp_timer soc hal esp_pm esp_hal_ieee802154
 )

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,12 +14,17 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_htp_cent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_HTP_CENT";
 static int ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg);
 
 void ble_store_config_init(void);
 static void ble_htp_cent_scan(void);
+
+#if MYNEWT_VAL(BLE_GATTC)
 /**
  * Application callback.  Called when the attempt to subscribe to notifications
  * for the HTP intermediate temperature characteristic has completed.
@@ -160,6 +165,10 @@ ble_htp_cent_on_read(uint16_t conn_handle,
     uint16_t value;
     int rc;
     const struct peer *peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Lost peer for conn_handle=%d\n", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
 
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
@@ -255,7 +264,7 @@ ble_htp_cent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     ble_htp_cent_read_write_subscribe(peer);
 }
-
+#endif
 /**
  * Initiates the GAP general discovery procedure.
  */
@@ -328,7 +337,7 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 
         /* Conversion */
         for (int i=0; i<6; i++) {
-            test_addr[i] = (uint8_t )peer_addr[i];
+            test_addr[i] = (uint8_t )peer_addr[5 - i];
         }
 
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
@@ -339,10 +348,11 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for the Health thermometer
     * service (0x1809).
     */
-    do {
+    while (offset < disc->length_data) {
+
         ad_struct_len = disc->data[offset];
 
-        if (!ad_struct_len) {
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
             break;
         }
 
@@ -354,8 +364,7 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
 
         offset += ad_struct_len + 1;
-
-    } while ( offset < disc->length_data );
+    }
 
     return 0;
 }
@@ -541,6 +550,14 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+            rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+                return 0;
+            }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_htp_cent_on_disc_complete, NULL);
@@ -548,6 +565,8 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         } else {
             /* Connection attempt failed; resume scanning. */
@@ -584,15 +603,42 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+        rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+            return 0;
+        }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->connect.conn_handle,
+        rc = peer_disc_all(event->enc_change.conn_handle,
                            ble_htp_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
 #endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif
         return 0;
+
+    case BLE_GAP_EVENT_CACHE_ASSOC:
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+          /* Cache association result for this connection */
+          MODLOG_DFLT(INFO, "cache association; conn_handle=%d status=%d cache_state=%s\n",
+                      event->cache_assoc.conn_handle,
+                      event->cache_assoc.status,
+                      (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
+          /* Perform service discovery */
+          rc = peer_disc_all(event->connect.conn_handle,
+                             ble_htp_cent_on_disc_complete, NULL);
+          if(rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                return 0;
+          }
+#endif
+          return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */

@@ -7,3 +7,7 @@ components/esp_driver_sdspi/test_apps/sdspi:
   depends_components:
     - sdmmc
     - esp_driver_sdspi
+    - esp_driver_dma
+    - esp_hal_gpspi
+    - esp_hw_support
+    - soc

@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_hal_systimer/test_apps/systimer_rom_impl:
+  disable:
+    - if: SOC_SYSTIMER_SUPPORTED != 1
+  depends_components:
+    - esp_hal_systimer

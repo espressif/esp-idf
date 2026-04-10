@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "esp_heap_caps.h"
 #include "driver/isp_awb.h"
 #include "esp_private/isp_private.h"
+#include "hal/efuse_hal.h"
 
 typedef struct isp_awb_controller_t {
     _Atomic isp_fsm_t                  fsm;
@@ -35,12 +36,12 @@ static esp_err_t s_isp_claim_awb_controller(isp_proc_handle_t isp_proc, isp_awb_
     assert(isp_proc && awb_ctlr);
 
     esp_err_t ret = ESP_ERR_NOT_FOUND;
-    portENTER_CRITICAL(&isp_proc->spinlock);
+    esp_os_enter_critical(&isp_proc->spinlock);
     if (!isp_proc->awb_ctlr) {
         isp_proc->awb_ctlr = awb_ctlr;
         ret = ESP_OK;
     }
-    portEXIT_CRITICAL(&isp_proc->spinlock);
+    esp_os_exit_critical(&isp_proc->spinlock);
 
     return ret;
 }
@@ -48,9 +49,9 @@ static esp_err_t s_isp_claim_awb_controller(isp_proc_handle_t isp_proc, isp_awb_
 static void s_isp_declaim_awb_controller(isp_awb_ctlr_t awb_ctlr)
 {
     if (awb_ctlr && awb_ctlr->isp_proc) {
-        portENTER_CRITICAL(&awb_ctlr->isp_proc->spinlock);
+        esp_os_enter_critical(&awb_ctlr->isp_proc->spinlock);
         awb_ctlr->isp_proc->awb_ctlr = NULL;
-        portEXIT_CRITICAL(&awb_ctlr->isp_proc->spinlock);
+        esp_os_exit_critical(&awb_ctlr->isp_proc->spinlock);
     }
 }
 
@@ -71,14 +72,61 @@ static esp_err_t s_esp_isp_awb_config_hardware(isp_proc_handle_t isp_proc, const
 {
     isp_ll_awb_set_sample_point(isp_proc->hal.hw, awb_cfg->sample_point);
     ESP_RETURN_ON_FALSE(isp_hal_awb_set_window_range(&isp_proc->hal, &awb_cfg->window),
-                        ESP_ERR_INVALID_ARG, TAG, "invalid window");
+                        ESP_ERR_INVALID_ARG, TAG, "invalid window range");
+
+    bool subwindow_is_zero = awb_cfg->subwindow.top_left.x == 0 &&
+                             awb_cfg->subwindow.top_left.y == 0 &&
+                             awb_cfg->subwindow.btm_right.x == 0 &&
+                             awb_cfg->subwindow.btm_right.y == 0;
+    // Subwindow feature is only supported on REV >= 3.0
+    if (efuse_hal_chip_revision() < 300) {
+        if (!subwindow_is_zero) {
+            ESP_LOGW(TAG, "Subwindow feature is not supported on REV < 3.0, subwindow will not be configured");
+        }
+    } else {
+        if (!subwindow_is_zero) {
+            // Subwindow is just checked and configured on REV >= 3.0
+            isp_window_t subwindow = awb_cfg->subwindow;
+            ESP_RETURN_ON_FALSE(
+                (subwindow.top_left.x >= awb_cfg->window.top_left.x) &&
+                (subwindow.top_left.y >= awb_cfg->window.top_left.y) &&
+                (subwindow.btm_right.x <= awb_cfg->window.btm_right.x) &&
+                (subwindow.btm_right.y <= awb_cfg->window.btm_right.y),
+                ESP_ERR_INVALID_ARG, TAG, "subwindow exceeds window range"
+            );
+
+            if ((subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM < 4 ||
+                    (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM < 4) {
+                ESP_LOGE(TAG, "subwindow block size is too small: width and height must be at least 4 (got %d x %d)",
+                         (subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM,
+                         (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM);
+                return ESP_ERR_INVALID_ARG;
+            }
+
+            int size_x = subwindow.btm_right.x - subwindow.top_left.x + 1;
+            int size_y = subwindow.btm_right.y - subwindow.top_left.y + 1;
+            if ((size_x % ISP_AWB_WINDOW_X_NUM != 0) || (size_y % ISP_AWB_WINDOW_Y_NUM != 0)) {
+                ESP_LOGW(TAG, "subwindow size (%d x %d) is not divisible by AWB subwindow blocks grid (%d x %d). \
+                    Resolution will be floored to the nearest divisible value.",
+                         size_x, size_y, ISP_AWB_WINDOW_X_NUM, ISP_AWB_WINDOW_Y_NUM);
+                // floor to the nearest divisible value
+                subwindow.btm_right.x -= size_x % ISP_AWB_WINDOW_X_NUM;
+                subwindow.btm_right.y -= size_y % ISP_AWB_WINDOW_Y_NUM;
+            }
+            ESP_RETURN_ON_FALSE(isp_hal_awb_set_subwindow_range(&isp_proc->hal, &subwindow),
+                                ESP_ERR_INVALID_ARG, TAG, "invalid subwindow range");
+        }
+    }
+
     isp_u32_range_t lum_range = awb_cfg->white_patch.luminance;
     ESP_RETURN_ON_FALSE(isp_hal_awb_set_luminance_range(&isp_proc->hal, lum_range.min, lum_range.max),
                         ESP_ERR_INVALID_ARG, TAG, "invalid luminance range");
+
     isp_float_range_t rg_range = awb_cfg->white_patch.red_green_ratio;
     ESP_RETURN_ON_FALSE(rg_range.min < rg_range.max && rg_range.min >= 0 &&
                         isp_hal_awb_set_rg_ratio_range(&isp_proc->hal, rg_range.min, rg_range.max),
                         ESP_ERR_INVALID_ARG, TAG, "invalid range of Red Green ratio");
+
     isp_float_range_t bg_range = awb_cfg->white_patch.blue_green_ratio;
     ESP_RETURN_ON_FALSE(bg_range.min < bg_range.max && bg_range.min >= 0 &&
                         isp_hal_awb_set_bg_ratio_range(&isp_proc->hal, bg_range.min, bg_range.max),
@@ -239,6 +287,26 @@ bool IRAM_ATTR esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events)
                 .sum_b = isp_ll_awb_get_accumulated_b_value(proc->hal.hw),
             },
         };
+
+        // Get subwindow statistics
+        for (int x = 0; x < ISP_AWB_WINDOW_X_NUM; x++) {
+            for (int y = 0; y < ISP_AWB_WINDOW_Y_NUM; y++) {
+                int subwindow_id = x * ISP_AWB_WINDOW_Y_NUM + y;
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_WHITE_PATCH_CNT, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.white_patch_num[x][y] = isp_ll_lut_awb_get_subwindow_white_patch_cnt(proc->hal.hw);
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_ACCUMULATED_R, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.sum_r[x][y] = isp_ll_lut_awb_get_subwindow_accumulated_r(proc->hal.hw);
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_ACCUMULATED_G, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.sum_g[x][y] = isp_ll_lut_awb_get_subwindow_accumulated_g(proc->hal.hw);
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_ACCUMULATED_B, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.sum_b[x][y] = isp_ll_lut_awb_get_subwindow_accumulated_b(proc->hal.hw);
+            }
+        }
+
         // Invoke the callback if the callback is registered
         if (awb_ctlr->cbs.on_statistics_done) {
             need_yield |= awb_ctlr->cbs.on_statistics_done(awb_ctlr, &edata, awb_ctlr->user_data);

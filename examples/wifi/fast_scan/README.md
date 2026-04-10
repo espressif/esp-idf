@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 | ESP32-P4 | ESP32-H2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Wi-Fi Fast Scan Example
 
@@ -91,6 +91,10 @@ I (2086) scan: got ip:192.168.68.110
 I (2086) esp_netif_handlers: sta ip: 192.168.68.110, mask: 255.255.255.0, gw: 192.168.68.1
 
 ```
+
+## Running the example on ESP Chips without Wi-Fi
+
+This example can run on ESP Chips without Wi-Fi using ESP-Hosted. See the [Two-Chip Solution](../README.md#wi-fi-examples-with-two-chip-solution) section in the upper level `README.md` for information.
 
 ## Troubleshooting
 

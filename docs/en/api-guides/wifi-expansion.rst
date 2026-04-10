@@ -9,7 +9,7 @@ Wi-Fi Expansion
 
 .. only:: SOC_WIFI_SUPPORTED
 
-  {IDF_TARGET_NAME} does support Wi-Fi functionality natively, please refer to :doc:`wifi` documentation. Even though Wi-Fi is supported on {IDF_TARGET_NAME}, it is possible to expand it and use another instance of Wi-Fi expansion interfaces using `esp_wifi_remote <https://components.espressif.com/components/espressif/esp_wifi_remote>`_ component.
+  {IDF_TARGET_NAME} does support Wi-Fi functionality natively, please refer to :doc:`wifi-driver/index` documentation. Even though Wi-Fi is supported on {IDF_TARGET_NAME}, it is possible to expand it and use another instance of Wi-Fi expansion interfaces using `esp_wifi_remote <https://components.espressif.com/components/espressif/esp_wifi_remote>`_ component.
 
 
 {IDF_TARGET_NAME} esp_wifi_remote
@@ -26,7 +26,9 @@ Please follow the instructions described in the component documentation which is
 
 .. only:: not SOC_WIFI_SUPPORTED
 
-  To explore the Wi-Fi Expansion functionality on {IDF_TARGET_NAME}, you can get started with this example: :idf_file:`examples/protocols/mqtt/tcp/README.md` and choose Wi-Fi connection in the project configuration menu.
+  To explore the Wi‑Fi Expansion functionality on {IDF_TARGET_NAME}, you can:
+
+  - Start with the built‑in MQTT over TLS example ``examples/protocols/mqtt`` (or the MQTT 5.0 variant ``examples/protocols/mqtt5``) and choose Wi‑Fi connection in the project configuration menu;
 
 .. only:: SOC_WIRELESS_HOST_SUPPORTED
 

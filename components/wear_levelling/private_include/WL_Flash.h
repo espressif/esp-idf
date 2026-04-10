@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include "esp_err.h"
 #include "Flash_Access.h"
-#include "Partition.h"
 #include "WL_Config.h"
 #include "WL_State.h"
 
@@ -22,7 +21,7 @@ public :
     WL_Flash();
     ~WL_Flash() override;
 
-    virtual esp_err_t config(wl_config_t *cfg, Partition *partition);
+    virtual esp_err_t config(wl_config_t *cfg, Flash_Access *partition);
     virtual esp_err_t init();
 
     size_t get_flash_size() override;
@@ -36,7 +35,7 @@ public :
 
     esp_err_t flush() override;
 
-    Partition *get_part();
+    Flash_Access *get_part();
     wl_config_t *get_cfg();
 
 protected:
@@ -44,7 +43,7 @@ protected:
     bool initialized = false;
     wl_state_t state;
     wl_config_t cfg;
-    Partition *partition = NULL;
+    Flash_Access *partition = NULL;
 
     size_t addr_cfg;
     size_t addr_state1;

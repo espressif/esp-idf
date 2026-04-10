@@ -1,0 +1,86 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#define IRAM_LOADER_TEXT_INPUTS \
+    *liblog.a:(.literal .text .literal.* .text.*) \
+    *libgcc.a:(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_common_loader.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable) \
+    *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable) \
+    *libbootloader_support.a:bootloader_efuse.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_panic.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_soc.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:secure_boot.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*) \
+    *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*) \
+    *libspi_flash.a:*.*(.literal .text .literal.* .text.*) \
+    *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*) \
+    *libhal.a:cache_hal.*(.literal .text .literal.* .text.*) \
+    *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_wdt.a:wdt_hal_iram.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_security.a:huk_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_security.a:key_mgr_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_security.a:esp_key_mgr.*(.literal .text .literal.* .text.*) \
+    *libesp_security.a:esp_crypto_periph_clk.*(.literal .text .literal.* .text.*) \
+    *libesp_security.a:esp_crypto_lock.*(.literal .text .literal.* .text.*) \
+    *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*) \
+    *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*) \
+    *libesp_hw_support.a:regi2c_ctrl.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_regi2c.a:regi2c_impl.*(.literal .text .literal.* .text.*) \
+    *libefuse.a:*.*(.literal .text .literal.* .text.*) \
+    *libriscv.a:rv_utils.*(.literal .text .literal.* .text.*)
+#else
+#define IRAM_LOADER_TEXT_INPUTS \
+    *liblog.a:(.literal .text .literal.* .text.*) \
+    *libgcc.a:(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_common_loader.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable) \
+    *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable) \
+    *libbootloader_support.a:bootloader_efuse.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_panic.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:bootloader_soc.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:secure_boot.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*) \
+    *libbootloader_support.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*) \
+    *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*) \
+    *libspi_flash.a:*.*(.literal .text .literal.* .text.*) \
+    *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*) \
+    *libhal.a:cache_hal.*(.literal .text .literal.* .text.*) \
+    *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_security.a:huk_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_security.a:key_mgr_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_security.a:esp_crypto_periph_clk.*(.literal .text .literal.* .text.*) \
+    *libesp_hal_wdt.a:wdt_hal_iram.*(.literal .text .literal.* .text.*) \
+    *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*) \
+    *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*) \
+    *libesp_hw_support.a:regi2c_ctrl.*(.literal .text .literal.* .text.*) \
+    *libefuse.a:*.*(.literal .text .literal.* .text.*) \
+    *libriscv.a:rv_utils.*(.literal .text .literal.* .text.*)
+#endif
+
+#include "bootloader.sections.common.ld"

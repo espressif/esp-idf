@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,8 +21,7 @@ static bool ssl_ciphersuite_uses_rsa_key_ex(mbedtls_ssl_context *ssl)
     const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
         ssl->MBEDTLS_PRIVATE(handshake)->ciphersuite_info;
 
-    if (ciphersuite_info->MBEDTLS_PRIVATE(key_exchange) == MBEDTLS_KEY_EXCHANGE_RSA ||
-        ciphersuite_info->MBEDTLS_PRIVATE(key_exchange) == MBEDTLS_KEY_EXCHANGE_RSA_PSK) {
+    if (ciphersuite_info->MBEDTLS_PRIVATE(key_exchange) == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA) {
         return true;
     } else {
         return false;
@@ -30,9 +29,9 @@ static bool ssl_ciphersuite_uses_rsa_key_ex(mbedtls_ssl_context *ssl)
 }
 #endif
 
-static int manage_resource(mbedtls_ssl_context *ssl, bool add)
+static int manage_resource(mbedtls_ssl_context *ssl, bool add, int prev_state)
 {
-    int state = add ? ssl->MBEDTLS_PRIVATE(state) : ssl->MBEDTLS_PRIVATE(state) - 1;
+    int state = add ? ssl->MBEDTLS_PRIVATE(state) : prev_state;
 
     if (mbedtls_ssl_is_handshake_over(ssl) || ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
         return 0;
@@ -101,7 +100,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
             } else {
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-                esp_mbedtls_free_dhm(ssl);
                 /**
                  * Not free keycert->key and keycert until MBEDTLS_SSL_CLIENT_KEY_EXCHANGE for rsa key exchange methods.
                  * For ssl server will use keycert->key to parse client key exchange.
@@ -209,11 +207,12 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 
 int __wrap_mbedtls_ssl_handshake_server_step(mbedtls_ssl_context *ssl)
 {
-    CHECK_OK(manage_resource(ssl, true));
+    int prev_state = ssl->MBEDTLS_PRIVATE(state);
+    CHECK_OK(manage_resource(ssl, true, prev_state));
 
     CHECK_OK(__real_mbedtls_ssl_handshake_server_step(ssl));
 
-    CHECK_OK(manage_resource(ssl, false));
+    CHECK_OK(manage_resource(ssl, false, prev_state));
 
     return 0;
 }

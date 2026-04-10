@@ -75,7 +75,7 @@ esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t 
             for (it = begin(); it != last; ++it) {
 
                 if ((it->state() != Page::PageState::FREEING) &&
-                        (it->eraseItem(item.nsIndex, item.datatype, item.key, item.chunkIndex) == ESP_OK)) {
+                        (it->eraseItem(item.nsIndex, item.datatype, item.key, Page::DEFAULT_PURGE_AFTER_ERASE, item.chunkIndex) == ESP_OK)) {
                     break;
                 }
             }
@@ -85,7 +85,7 @@ esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t 
                 for (it = begin(); it != last; ++it) {
 
                     if ((it->state() != Page::PageState::FREEING) &&
-                            (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, item.chunkIndex) == ESP_OK)) {
+                            (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, Page::DEFAULT_PURGE_AFTER_ERASE, item.chunkIndex) == ESP_OK)) {
                         break;
                     }
                 }
@@ -163,22 +163,25 @@ esp_err_t PageManager::requestNewPage()
         return ESP_ERR_NVS_NOT_ENOUGH_SPACE;
     }
 
-    esp_err_t err = activatePage();
+    Page* erasedPage = maxUnusedItemsPageIt;
+
+#ifndef NDEBUG
+    size_t usedEntries = erasedPage->getUsedEntryCount();
+#endif
+    esp_err_t err = erasedPage->markFreeing();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    // Activating a new page first when markFreeing is done. The data recovery from power loss will be
+    // driven by the existence of the (transitional) FREEING state of a page.
+    err = activatePage();
     if (err != ESP_OK) {
         return err;
     }
 
     Page* newPage = &mPageList.back();
 
-    Page* erasedPage = maxUnusedItemsPageIt;
-
-#ifndef NDEBUG
-    size_t usedEntries = erasedPage->getUsedEntryCount();
-#endif
-    err = erasedPage->markFreeing();
-    if (err != ESP_OK) {
-        return err;
-    }
     err = erasedPage->copyItems(*newPage);
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
         return err;

@@ -113,12 +113,29 @@ typedef struct {
     UINT16      sp_tout;
 } tGAP_BLE_PREF_PARAM;
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+#define GAP_KEY_MATERIAL_SESSION_KEY_SIZE  16  /* 128-bit session key */
+#define GAP_KEY_MATERIAL_IV_SIZE           8   /* 64-bit IV */
+#define GAP_KEY_MATERIAL_SIZE              (GAP_KEY_MATERIAL_SESSION_KEY_SIZE + GAP_KEY_MATERIAL_IV_SIZE)
+
+typedef struct {
+    UINT8       session_key[GAP_KEY_MATERIAL_SESSION_KEY_SIZE];
+    UINT8       iv[GAP_KEY_MATERIAL_IV_SIZE];
+} tGAP_BLE_KEY_MATERIAL;
+#endif // (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+
 typedef union {
     tGAP_BLE_PREF_PARAM     conn_param;
     BD_ADDR                 reconn_bda;
     UINT16                  icon;
     UINT8                   *p_dev_name;
     UINT8                   addr_resolution;
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+    UINT16                  security_level;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    tGAP_BLE_KEY_MATERIAL   key_material;
+#endif // (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
 
 } tGAP_BLE_ATTR_VALUE;
 

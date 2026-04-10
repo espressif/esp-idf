@@ -52,11 +52,11 @@ static const uint16_t spp_service_uuid = 0xABF0;
 
 static const uint8_t spp_adv_data[23] = {
     /* Flags */
-    0x02,0x01,0x06,
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
     /* Complete List of 16-bit Service Class UUIDs */
-    0x03,0x03,0xF0,0xAB,
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xF0, 0xAB,
     /* Complete Local Name in advertising */
-    0x0F,0x09, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
+    0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
 };
 
 static uint16_t spp_mtu_size = SPP_GATT_MTU_SIZE;
@@ -79,8 +79,8 @@ static esp_bd_addr_t spp_remote_bda = {0x0,};
 static uint16_t spp_handle_table[SPP_IDX_NB];
 
 static esp_ble_adv_params_t spp_adv_params = {
-    .adv_int_min        = 0x20,
-    .adv_int_max        = 0x40,
+    .adv_int_min        = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .adv_int_max        = ESP_BLE_GAP_ADV_ITVL_MS(40),
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
     .channel_map        = ADV_CHNL_ALL,
@@ -277,20 +277,25 @@ static bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data)
         ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d", __func__, __LINE__);
         return false;
     }
+
+    temp_spp_recv_data_node_p1->len = p_data->write.len;
+    temp_spp_recv_data_node_p1->next_node = NULL;
+    temp_spp_recv_data_node_p1->node_buff = (uint8_t *)malloc(p_data->write.len);
+    if (temp_spp_recv_data_node_p1->node_buff == NULL) {
+        ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d\n", __func__, __LINE__);
+        // Security fix: Free the node and return false to prevent memory leak
+        free(temp_spp_recv_data_node_p1);
+        temp_spp_recv_data_node_p1 = NULL;
+        return false;
+    }
+    memcpy(temp_spp_recv_data_node_p1->node_buff, p_data->write.value, p_data->write.len);
+
+    // Security fix: Link to list only after successful allocation
     if(temp_spp_recv_data_node_p2 != NULL){
         temp_spp_recv_data_node_p2->next_node = temp_spp_recv_data_node_p1;
     }
-    temp_spp_recv_data_node_p1->len = p_data->write.len;
-    SppRecvDataBuff.buff_size += p_data->write.len;
-    temp_spp_recv_data_node_p1->next_node = NULL;
-    temp_spp_recv_data_node_p1->node_buff = (uint8_t *)malloc(p_data->write.len);
     temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1;
-    if (temp_spp_recv_data_node_p1->node_buff == NULL) {
-        ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d\n", __func__, __LINE__);
-        temp_spp_recv_data_node_p1->len = 0;
-    } else {
-        memcpy(temp_spp_recv_data_node_p1->node_buff,p_data->write.value,p_data->write.len);
-    }
+    SppRecvDataBuff.buff_size += p_data->write.len;
 
     if(SppRecvDataBuff.node_num == 0){
         SppRecvDataBuff.first_node = temp_spp_recv_data_node_p1;
@@ -746,7 +751,8 @@ void app_main(void)
 
     ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth", __func__);
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

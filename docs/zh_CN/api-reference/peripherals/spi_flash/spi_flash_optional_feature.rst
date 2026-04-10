@@ -11,6 +11,8 @@ flash 的可选功能
 
 - :ref:`high-performance-mode`
 
+- :ref:`deep-power-down-mode`
+
 - :ref:`32-bit-flash-doc`
 
 - :ref:`oct-flash-doc`
@@ -137,6 +139,18 @@ QSPI flash 芯片的高性能模式
     3. XM25QH64C (ID: 0x204017)
     4. XM25QH128C (ID: 0x204018)
 
+.. _deep-power-down-mode:
+
+SPI flash 芯片的深度掉电模式
+----------------------------------
+
+目前仅有 ESP32-H21， ESP32-H4 和 ESP32-P4（版本小于v3） 支持此功能。
+
+其他 ESP32 系列芯片暂未支持此功能。若你有相关需求，可向乐鑫（Espressif）官方提出申请。
+
+深度掉电模式是大多数 SPI flash 芯片均支持的一种电源模式，相较于 standby 模式（保持片选信号有效），SPI flash 在此模式下的功耗表现更优，这能使电流降低约 10 uA。
+
+若你计划在 ESP32-H21 或 ESP32-H4 上使用其他型号的闪存芯片，或是在开发其他 ESP32 系列芯片的相关项目，请务必查阅对应的 SPI flash 数据手册，或直接向我们咨询。
 
 .. _32-bit-flash-doc:
 
@@ -164,17 +178,21 @@ QSPI flash 芯片的 32 位地址支持
 
     .. important::
 
-        上述超过 16 MB 内存的 flash 区域只能用于 ``数据保存``，如文件系统。
+        上述超过 16 MB 内存的 flash 区域可用于数据存储，例如使用文件系统。
 
         将数据或指令映射到 32 位物理地址空间（以便由 CPU 访问）需要 MMU 的支持。但 {IDF_TARGET_NAME} 并不支持此功能。目前只有 ESP32-S3 和 ESP32-P4 支持此功能。
 
 .. only:: SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
 
-    默认情况下，上述超过 16 MB 内存的 flash 区域可用于 ``数据保存``，如文件系统。
+    默认情况下，上述超过 16 MB 内存的 flash 区域可用于数据存储，例如使用文件系统。
 
-    此外，要将数据或指令映射到 32 位物理地址空间（以便由 CPU 访问），请启用配置 ``IDF_EXPERIMENTAL_FEATURES`` 和 ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH``。
+    *实验性功能*：如需在超过 16 MB 的四线 flash 区域实现完整支持（包括代码执行和数据访问），请启用以下实验性配置选项：
+    - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
+    - :ref:`CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`
 
-    请注意，此选项为实验性选项，无法在所有 flash 芯片上稳定使用，详情请咨询 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+    请注意，此选项为实验性功能，无法在所有四线 flash 芯片上稳定使用。详情请咨询 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+
+    对于八线 flash 芯片，如果启用了 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`，则该功能默认启用。
 
 .. _oct-flash-doc:
 

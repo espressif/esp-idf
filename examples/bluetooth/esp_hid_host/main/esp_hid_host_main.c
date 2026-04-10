@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -164,7 +164,7 @@ void hid_demo_task(void *pvParameters)
                 printf("] srv 0x%03x, ", r->bt.cod.service);
                 print_uuid(&r->bt.uuid);
                 printf(", ");
-                if (strncmp(r->name, remote_device_name, strlen(remote_device_name)) == 0) {
+                if (r->name && strncmp(r->name, remote_device_name, strlen(remote_device_name)) == 0) {
                     break;
                 }
             }
@@ -175,7 +175,7 @@ void hid_demo_task(void *pvParameters)
         }
 
 #if CONFIG_BT_HID_HOST_ENABLED
-        if (cr && strncmp(cr->name, remote_device_name, strlen(remote_device_name)) == 0) {
+        if (cr && cr->name && strncmp(cr->name, remote_device_name, strlen(remote_device_name)) == 0) {
             esp_hidh_dev_open(cr->bda, cr->transport, cr->ble.addr_type);
         }
 #else
@@ -238,10 +238,7 @@ void app_main(void)
 
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 	/* Starting nimble task after gatts is initialized*/
-    ret = esp_nimble_enable(ble_hid_host_task);
-    if (ret) {
-        ESP_LOGE(TAG, "esp_nimble_enable failed: %d", ret);
-    }
+    nimble_port_freertos_init(ble_hid_host_task);
 
     vTaskDelay(200);
 

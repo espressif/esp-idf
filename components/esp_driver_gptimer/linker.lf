@@ -12,7 +12,7 @@ entries:
         gptimer: gptimer_stop (noflash)
 
 [mapping:gptimer_hal]
-archive: libhal.a
+archive: libesp_hal_timg.a
 entries:
     if GPTIMER_ISR_HANDLER_IN_IRAM = y:
         timer_hal: timer_hal_capture_and_get_counter_value (noflash)

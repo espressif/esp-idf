@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include "sd_protocol_types.h"
+#include "driver/sdspi_host.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,8 @@ void sdmmc_test_spi_skip_if_board_incompatible(int slot, int freq_khz);
  * @brief Helper function to initialize the SDMMC host and slot for the test using the given settings, for SPI mode
  * @see sdmmc_test_sd_begin
  */
-void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card);
+void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card,
+                          sdmmc_host_t *_config, sdspi_device_config_t *_dev_config, spi_bus_config_t *_bus_config);
 
 /**
  * @brief Helper function to deinitialize the SDMMC host and slot after the test, for SPI mode

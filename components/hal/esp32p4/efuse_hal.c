@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sdkconfig.h"
 #include "esp_attr.h"
 #include <sys/param.h>
 #include "soc/soc_caps.h"

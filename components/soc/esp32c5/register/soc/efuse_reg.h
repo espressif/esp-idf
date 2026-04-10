@@ -1,11 +1,10 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -726,7 +725,7 @@ extern "C" {
 #define EFUSE_RD_RESERVE_0_158_M  (EFUSE_RD_RESERVE_0_158_V << EFUSE_RD_RESERVE_0_158_S)
 #define EFUSE_RD_RESERVE_0_158_V  0x00000001U
 #define EFUSE_RD_RESERVE_0_158_S  30
-/** EFUSE_ECDSA_P384_ENABLE : RO; bitpos: [31]; default: 0;
+/** EFUSE_SECURE_BOOT_SHA384_EN : RO; bitpos: [31]; default: 0;
  *  Represents if the chip supports Secure Boot using SHA-384
  */
 #define EFUSE_SECURE_BOOT_SHA384_EN    (BIT(31))
@@ -2430,13 +2429,13 @@ extern "C" {
 #define EFUSE_XTS_DPA_CLK_ENABLE_ERR_M  (EFUSE_XTS_DPA_CLK_ENABLE_ERR_V << EFUSE_XTS_DPA_CLK_ENABLE_ERR_S)
 #define EFUSE_XTS_DPA_CLK_ENABLE_ERR_V  0x00000001U
 #define EFUSE_XTS_DPA_CLK_ENABLE_ERR_S  29
-/** EFUSE_ECDSA_P384_ENABLE_ERR : RO; bitpos: [31]; default: 0;
- *  Represents the programming error of EFUSE_ECDSA_P384_ENABLE
+/** EFUSE_SECURE_BOOT_SHA384_EN_ERR : RO; bitpos: [31]; default: 0;
+ *  Represents the programming error of EFUSE_SECURE_BOOT_SHA384_EN
  */
-#define EFUSE_ECDSA_P384_ENABLE_ERR    (BIT(31))
-#define EFUSE_ECDSA_P384_ENABLE_ERR_M  (EFUSE_ECDSA_P384_ENABLE_ERR_V << EFUSE_ECDSA_P384_ENABLE_ERR_S)
-#define EFUSE_ECDSA_P384_ENABLE_ERR_V  0x00000001U
-#define EFUSE_ECDSA_P384_ENABLE_ERR_S  31
+#define EFUSE_SECURE_BOOT_SHA384_EN_ERR    (BIT(31))
+#define EFUSE_SECURE_BOOT_SHA384_EN_ERR_M  (EFUSE_SECURE_BOOT_SHA384_EN_ERR_V << EFUSE_SECURE_BOOT_SHA384_EN_ERR_S)
+#define EFUSE_SECURE_BOOT_SHA384_EN_ERR_V  0x00000001U
+#define EFUSE_SECURE_BOOT_SHA384_EN_ERR_S  31
 
 /** EFUSE_RD_REPEAT_DATA_ERR4_REG register
  *  Represents rd_repeat_data_err

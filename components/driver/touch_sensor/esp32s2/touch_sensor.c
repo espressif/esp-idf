@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <ctype.h>
 #include "esp_log.h"
 #include "sys/lock.h"
-#include "soc/soc_pins.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc_cntl_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -23,7 +23,7 @@
 #include "esp_check.h"
 
 #include "hal/touch_sensor_legacy_types.h"
-#include "hal/touch_sensor_hal.h"
+#include "hal/touch_sensor_legacy_hal.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -39,8 +39,8 @@
 static __attribute__((unused)) const char *TOUCH_TAG = "TOUCH_SENSOR";
 
 #define TOUCH_CHANNEL_CHECK(channel) do { \
-        ESP_RETURN_ON_FALSE(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error"); \
-        ESP_RETURN_ON_FALSE(channel != SOC_TOUCH_DENOISE_CHANNEL, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "TOUCH0 is internal denoise channel"); \
+        ESP_RETURN_ON_FALSE(channel < TOUCH_LL_GET(CHAN_NUM) && channel >= 0, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error"); \
+        ESP_RETURN_ON_FALSE(channel != TOUCH_LL_GET(DENOISE_CHAN_ID), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "TOUCH0 is internal denoise channel"); \
     } while (0);
 #define TOUCH_CH_MASK_CHECK(mask) ESP_RETURN_ON_FALSE((mask <= TOUCH_PAD_BIT_MASK_ALL), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "touch channel bitmask error");
 #define TOUCH_INTR_MASK_CHECK(mask) ESP_RETURN_ON_FALSE(mask & TOUCH_PAD_INTR_MASK_ALL, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "intr mask error");
@@ -101,7 +101,7 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg, touch_pad_intr_ma
     if (intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         en_msk |= RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M;
     }
-#if SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+#if TOUCH_LL_SUPPORT_PROX_DONE
     if (intr_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
         en_msk |= RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ST_M;
     }
@@ -421,7 +421,7 @@ esp_err_t touch_pad_filter_disable(void)
 esp_err_t touch_pad_denoise_enable(void)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_clear_channel_mask(BIT(SOC_TOUCH_DENOISE_CHANNEL));
+    touch_hal_clear_channel_mask(BIT(TOUCH_LL_GET(DENOISE_CHAN_ID)));
     touch_hal_denoise_enable();
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
@@ -446,7 +446,7 @@ esp_err_t touch_pad_denoise_set_config(const touch_pad_denoise_t *denoise)
         .tie_opt = TOUCH_PAD_TIE_OPT_DEFAULT,
     };
     TOUCH_ENTER_CRITICAL();
-    touch_hal_set_meas_mode(SOC_TOUCH_DENOISE_CHANNEL, &meas);
+    touch_hal_set_meas_mode(TOUCH_LL_GET(DENOISE_CHAN_ID), &meas);
     touch_hal_denoise_set_config(denoise);
     TOUCH_EXIT_CRITICAL();
 
@@ -472,7 +472,7 @@ esp_err_t touch_pad_denoise_read_data(uint32_t *data)
 esp_err_t touch_pad_waterproof_set_config(const touch_pad_waterproof_t *waterproof)
 {
     TOUCH_NULL_POINTER_CHECK(waterproof, "waterproof");
-    ESP_RETURN_ON_FALSE(waterproof->guard_ring_pad < SOC_TOUCH_SENSOR_NUM, ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("pad"));
+    ESP_RETURN_ON_FALSE(waterproof->guard_ring_pad < TOUCH_LL_GET(CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("pad"));
     ESP_RETURN_ON_FALSE(waterproof->shield_driver < TOUCH_PAD_SHIELD_DRV_MAX, ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("shield_driver"));
 
     TOUCH_ENTER_CRITICAL();
@@ -492,7 +492,7 @@ esp_err_t touch_pad_waterproof_get_config(touch_pad_waterproof_t *waterproof)
 
 esp_err_t touch_pad_waterproof_enable(void)
 {
-    touch_pad_io_init(SOC_TOUCH_SHIELD_CHANNEL);
+    touch_pad_io_init(TOUCH_LL_GET(SHIELD_CHAN_ID));
     TOUCH_ENTER_CRITICAL();
     touch_hal_waterproof_enable();
     TOUCH_EXIT_CRITICAL();

@@ -55,10 +55,6 @@ config ESP_ROM_HAS_SPI_FLASH_MMAP
     bool
     default y
 
-config ESP_ROM_WITHOUT_REGI2C
-    bool
-    default y
-
 config ESP_ROM_HAS_NEWLIB
     bool
     default y
@@ -87,10 +83,22 @@ config ESP_ROM_HAS_VERSION
     bool
     default y
 
+config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+    bool
+    default y
+
 config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
     bool
     default y
 
 config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+    bool
+    default y
+
+config ESP_ROM_NO_USB_SERIAL_OUTPUT_API
+    bool
+    default y
+
+config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
     bool
     default y

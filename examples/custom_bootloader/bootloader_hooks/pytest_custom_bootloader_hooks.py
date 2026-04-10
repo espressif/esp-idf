@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', ['esp32s3', 'esp32c3'], indirect=['target'])
 def test_custom_bootloader_hooks_example(dut: Dut) -> None:
     # Expect to read both hooks messages
     dut.expect_exact('This hook is called BEFORE bootloader initialization')

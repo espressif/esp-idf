@@ -9,7 +9,6 @@
 #include "esp_wifi.h"
 
 #include "driver/i2c.h"
-#include "driver/i2c.h"
 #include "driver/spi_master.h"
 #include "driver/spi_common.h"
 #include "driver/usb_serial_jtag.h"
@@ -152,7 +151,7 @@ void app_main(void)
     bootloader_random_enable();
 
     esp_flash_encryption_enabled_IgnoreAndReturn(true);
-    bool flash_encrypted = esp_flash_encryption_enabled();
+    bool flash_encrypted = esp_efuse_is_flash_encryption_enabled();
     (void)flash_encrypted;
 
     esp_partition_main_flash_region_safe_IgnoreAndReturn(true);

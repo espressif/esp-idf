@@ -140,12 +140,15 @@ The example defines several key parameters:
 ```c
 #define TAG                     "NimBLE_BLE_PAwR"
 #define TARGET_NAME             "Nimble_PAwR"
+#define BLE_PAWR_RSP_DATA_IDX   (2)
 #define BLE_PAWR_RSP_DATA_LEN   (16)
 static uint8_t sub_data_pattern[BLE_PAWR_RSP_DATA_LEN] = {0};
 ```
 These parameters control:
 
 - Target advertiser name to sync with
+
+- Response slot index to send response data at
 
 - Response data length
 
@@ -184,14 +187,25 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
 ```c
 static void start_scan(void)
 {
-    struct ble_gap_ext_disc_params disc_params = {
-        .itvl = BLE_GAP_SCAN_ITVL_MS(600),
-        .window = BLE_GAP_SCAN_ITVL_MS(300),
-        .passive = 1
-    };
+    struct ble_gap_ext_disc_params disc_params;
 
-    ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 1, 0, 0, NULL, 
-                    &disc_params, gap_event_cb, NULL);
+    memset(&disc_params, 0, sizeof(disc_params));
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(600);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(300);
+    disc_params.passive = 1;
+
+    uint8_t own_addr_type;
+    int rc_addr = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc_addr != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc_addr);
+        return;
+    }
+
+    int rc = ble_gap_ext_disc(own_addr_type, 0, 0, 1, 0, 0, NULL, &disc_params,
+                             gap_event_cb, NULL);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Error initiating GAP discovery procedure; rc=%d\n", rc);
+    }
 }
 ```
 Key parameters:
@@ -232,7 +246,7 @@ case BLE_GAP_EVENT_PERIODIC_REPORT:
         .request_event = event->periodic_report.event_counter,
         .request_subevent = event->periodic_report.subevent,
         .response_subevent = event->periodic_report.subevent,
-        .response_slot = rsp_slot_idx
+        .response_slot = BLE_PAWR_RSP_DATA_IDX
     };
 
     // Prepare response data
@@ -245,9 +259,12 @@ case BLE_GAP_EVENT_PERIODIC_REPORT:
         event->periodic_report.sync_handle, &param, data);
     break;
 ```
+
+By default the response data will be sent within the same subevent where the periodic advertising report is received.
+
 ## Subevent Configuration
 
-After sync establishment:
+After sync establishment, sync to configurable subevents:
 
 ```c
 // Choose subevents to listen to
@@ -255,6 +272,8 @@ uint8_t subevents[] = {0, 1, 2, 3, 4};
 int result = ble_gap_periodic_adv_sync_subev(
     event->periodic_sync.sync_handle, 0, sizeof(subevents), subevents);
 ```
+
+The subevents sync selection depends on the subevent number of the Periodic Advertising device.
 
 ## Error Handling
 When sync is lost:
@@ -270,4 +289,4 @@ case BLE_GAP_EVENT_PERIODIC_SYNC_LOST:
 
 ## Conclusion
 
-This implementation demonstrates a complete PAwR synchronization solution, showcasing advertiser discovery via extended scanning, periodic sync establishment with configurable subevents (0-4), and efficient bidirectional communication through managed response slots. The robust architecture handles sync loss recovery while maintaining low-power operation, making it ideal for IoT applications requiring scheduled, bidirectional communication with multiple endpoints. The solution leverages BLE 5.0's PAwR features to optimize power efficiency and reliability in dense RF environments.
+This implementation demonstrates a complete PAwR synchronization solution, showcasing advertiser discovery via extended scanning, periodic sync establishment with configurable subevents (0-4), and efficient bidirectional communication through managed response slots. The robust architecture handles sync loss recovery, making it ideal for IoT applications requiring scheduled, bidirectional communication with multiple endpoints.

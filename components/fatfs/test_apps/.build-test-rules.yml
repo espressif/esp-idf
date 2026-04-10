@@ -1,5 +1,15 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/fatfs/test_apps/bdl:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+  depends_components:
+    - esp_blockdev
+    - esp_partition
+    - fatfs
+    - vfs
+
 components/fatfs/test_apps/dyn_buffers:
   disable_test:
     - if: IDF_TARGET != "esp32"
@@ -15,7 +25,6 @@ components/fatfs/test_apps/flash_ro:
 
   depends_components:
     - esp_partition
-    - spi_flash
     - fatfs
     - vfs
 
@@ -25,16 +34,15 @@ components/fatfs/test_apps/flash_wl:
       reason: only one target per arch needed
   depends_components:
     - esp_partition
-    - spi_flash
     - fatfs
     - vfs
     - wear_leveling
 
 components/fatfs/test_apps/sdcard:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: SOC_GPSPI_SUPPORTED != 1
       temporary: true
-      reason: not supported yet # TODO: [esp32h21] IDF-11593 [ESP32H4] IDF-12372
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true

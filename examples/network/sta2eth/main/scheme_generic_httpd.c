@@ -7,11 +7,11 @@
 #include "sdkconfig.h"
 #include <esp_log.h>
 #include <esp_err.h>
-#include <wifi_provisioning/manager.h>
+#include <network_provisioning/manager.h>
 #include <protocomm.h>
 #include <protocomm_httpd.h>
 
-static const char *TAG = "wifi_prov_scheme_httpd";
+static const char *TAG = "network_prov_scheme_httpd";
 
 static esp_err_t prov_start(protocomm_t *pc, void *config)
 {
@@ -56,7 +56,7 @@ static esp_err_t prov_stop(protocomm_t *pc)
  * We don't need to pass any config option at this moment, so we create
  * a dummy configuration since provisioning manager check for non-nullptr.
  * If needed we can extend this scheme to provide some options for httpd
- * or wifi provisioning.
+ * or network provisioning.
  */
 static void *new_config(void)
 {
@@ -80,7 +80,7 @@ static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, ui
 /**
  * @brief Creating a generic HTTPD scheme
  */
-const wifi_prov_scheme_t wifi_prov_scheme_httpd = {
+const network_prov_scheme_t network_prov_scheme_httpd = {
     .prov_start          = prov_start,
     .prov_stop           = prov_stop,
     .new_config          = new_config,

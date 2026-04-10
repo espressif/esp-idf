@@ -1,11 +1,10 @@
 /**
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -2161,13 +2160,13 @@ extern "C" {
 #define PCR_CLK160_OEN_M  (PCR_CLK160_OEN_V << PCR_CLK160_OEN_S)
 #define PCR_CLK160_OEN_V  0x00000001U
 #define PCR_CLK160_OEN_S  5
-/** PCR_CLK_320M_OEN : R/W; bitpos: [6]; default: 1;
- *  Set 1 to enable 320m clock
+/** PCR_CLK_480M_OEN : R/W; bitpos: [6]; default: 1;
+ *  Set 1 to enable 480m clock
  */
-#define PCR_CLK_320M_OEN    (BIT(6))
-#define PCR_CLK_320M_OEN_M  (PCR_CLK_320M_OEN_V << PCR_CLK_320M_OEN_S)
-#define PCR_CLK_320M_OEN_V  0x00000001U
-#define PCR_CLK_320M_OEN_S  6
+#define PCR_CLK_480M_OEN    (BIT(6))
+#define PCR_CLK_480M_OEN_M  (PCR_CLK_480M_OEN_V << PCR_CLK_480M_OEN_S)
+#define PCR_CLK_480M_OEN_V  0x00000001U
+#define PCR_CLK_480M_OEN_S  6
 /** PCR_CLK_ADC_INF_OEN : R/W; bitpos: [7]; default: 1;
  *  Reserved
  */

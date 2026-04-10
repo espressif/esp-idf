@@ -13,9 +13,11 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('test_message', ['test123456789!@#%^&*'])
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
-def test_usj_vfs_select(dut: Dut, test_message: list) -> None:
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+def test_usj_vfs_select(dut: Dut) -> None:
+    test_message = 'test123456789!@#%^&*'
+
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"test select read, write and timeout"')
     dut.expect_exact('select timed out', timeout=2)
@@ -32,9 +34,11 @@ def test_usj_vfs_select(dut: Dut, test_message: list) -> None:
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('test_message', ['!(@*#&(!*@&#((SDasdkjhad\nce'])
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
-def test_usj_vfs_read_return(dut: Dut, test_message: list) -> None:
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+def test_usj_vfs_read_return(dut: Dut) -> None:
+    test_message = '!(@*#&(!*@&#((SDasdkjhad\nce'
+
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"read does not return on new line character"')
     dut.expect_exact('ready to receive', timeout=2)
@@ -50,9 +54,11 @@ def test_usj_vfs_read_return(dut: Dut, test_message: list) -> None:
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('test_message', ['testdata'])
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
-def test_usj_vfs_read_blocking(dut: Dut, test_message: list) -> None:
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+def test_usj_vfs_read_blocking(dut: Dut) -> None:
+    test_message = 'testdata'
+
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"blocking read returns with available data"')
     dut.expect_exact('ready to receive', timeout=2)

@@ -1,0 +1,4 @@
+# TODO: Need to find a way to query the current core ID in
+# U-mode for multicore SoCs. Thus, TEE interrupt tests will
+# run only in unicore mode till then.
+CONFIG_FREERTOS_UNICORE=y

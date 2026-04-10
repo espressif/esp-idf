@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,17 +28,18 @@ typedef enum {
     ESP_BT_L2CAP_NO_SERVER,              /*!< No server */
 } esp_bt_l2cap_status_t;
 
-/**
- * @brief Security Setting Mask. Use these three mask mode:
- *        1. ESP_BT_L2CAP_SEC_NONE
- *        2. ESP_BT_L2CAP_SEC_AUTHENTICATE
- *        3. (ESP_BT_L2CAP_SEC_ENCRYPT|ESP_BT_L2CAP_SEC_AUTHENTICATE)
+/*
+ * Security setting mask for L2CAP.
+ * - Use one of the following mask modes:
+ *     1. `ESP_BT_L2CAP_SEC_NONE`
+ *     2. `ESP_BT_L2CAP_SEC_AUTHENTICATE`
+ *     3. (`ESP_BT_L2CAP_SEC_ENCRYPT` | `ESP_BT_L2CAP_SEC_AUTHENTICATE`)
  */
 #define ESP_BT_L2CAP_SEC_NONE            0x0000    /*!< No security */
 #define ESP_BT_L2CAP_SEC_AUTHORIZE       0x0001    /*!< Authorization required */
 #define ESP_BT_L2CAP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required */
 #define ESP_BT_L2CAP_SEC_ENCRYPT         0x0024    /*!< Encryption required */
-typedef uint32_t esp_bt_l2cap_cntl_flags_t;
+typedef uint32_t esp_bt_l2cap_cntl_flags_t;        /*!< L2CAP control flags type */
 
 /**
  * @brief L2CAP status parameters
@@ -146,8 +147,8 @@ typedef union {
 /**
  * @brief       L2CAP callback function type.
  *
- * @param       event:      Event type
- * @param       param:      Point to callback parameter, currently is union type
+ * @param[in]   event:      Event type
+ * @param[in]   param:      Point to callback parameter, currently is union type
  */
 typedef void (* esp_bt_l2cap_cb_t)(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_cb_param_t *param);
 
@@ -203,11 +204,12 @@ esp_err_t esp_bt_l2cap_deinit(void);
 esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t remote_psm, esp_bd_addr_t peer_bd_addr);
 
 /**
- * @brief       This function create a L2CAP server and starts listening for an
- *              L2CAP connection request from a remote Bluetooth device.
- *              When the server is started successfully, the callback is called with ESP_BT_L2CAP_START_EVT.
- *              When the connection is established, the callback is called with ESP_BT_L2CAP_OPEN_EVT.
- *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+* @brief Create an L2CAP server and start listening for connection requests.
+ *
+ * @note
+ *      - When the server is started successfully, the callback is called with `ESP_BT_L2CAP_START_EVT`.
+ *      - When the connection is established, the callback is called with `ESP_BT_L2CAP_OPEN_EVT`.
+ *      - This function must be called after `esp_bt_l2cap_init()` and before `esp_bt_l2cap_deinit()`.
  *
  * @param[in]   cntl_flag:    Lower 16-bit security settings mask.
  * @param[in]   local_psm:    Dynamic PSM.

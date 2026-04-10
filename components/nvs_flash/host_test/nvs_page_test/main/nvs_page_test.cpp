@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,8 @@ NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
 
 using namespace std;
 using namespace nvs;
+
+#define DEFAULT_PURGE_AFTER_ERASE false
 
 void test_Page_load_reading_header_fails()
 {
@@ -661,7 +663,7 @@ void test_Page_eraseItem__uninitialized()
 {
     Page page;
 
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value", DEFAULT_PURGE_AFTER_ERASE));
 }
 
 void test_Page_eraseItem__key_not_found()
@@ -672,7 +674,7 @@ void test_Page_eraseItem__key_not_found()
 
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "different"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "different", DEFAULT_PURGE_AFTER_ERASE));
 
     TEST_ASSERT_EQUAL(2, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(122, fix.page.getErasedEntryCount());
@@ -692,7 +694,7 @@ void test_Page_eraseItem__write_fail()
     // simulated write failure should fail the eraseItem call
     fix.fail_write_at(1);
 
-    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value", DEFAULT_PURGE_AFTER_ERASE));
 
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
@@ -706,7 +708,7 @@ void test_Page_eraseItem__write_succeed()
     TEST_ASSERT_EQUAL(2, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(122, fix.page.getErasedEntryCount());
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
-    TEST_ASSERT_EQUAL(ESP_OK, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value", DEFAULT_PURGE_AFTER_ERASE));
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());

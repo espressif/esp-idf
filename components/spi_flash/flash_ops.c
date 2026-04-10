@@ -16,6 +16,7 @@
 #include <soc/soc.h>
 #include <soc/soc_memory_layout.h>
 #include "soc/io_mux_reg.h"
+#include "soc/spi_pins.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_cpu.h"
@@ -204,7 +205,7 @@ void IRAM_ATTR spi_flash_set_rom_required_regs(void)
 #endif
 }
 
-#if CONFIG_SPIRAM_MODE_OCT
+#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM_MODE_OCT
 // This function will only be called when Octal PSRAM enabled.
 void IRAM_ATTR spi_flash_set_vendor_required_regs(void)
 {

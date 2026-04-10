@@ -5,7 +5,6 @@
  */
 
 #include <sys/param.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "soc/chip_revision.h"
 #include "hal/assert.h"

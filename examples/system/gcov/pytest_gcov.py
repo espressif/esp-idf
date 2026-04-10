@@ -1,128 +1,68 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-import json
-import logging
 import os.path
-import signal
+import sys
 import time
-from telnetlib import Telnet
-from typing import Any
-from typing import Optional
+import typing
 
-import pexpect
 import pytest
-from pytest_embedded.utils import to_bytes
-from pytest_embedded.utils import to_str
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
 
-MAX_RETRIES = 3
-RETRY_DELAY = 1
-TELNET_PORT = 4444
+if typing.TYPE_CHECKING:
+    from conftest import OpenOCD
+
+try:
+    from gcov_capture import UartGcovCapture
+    from gcov_capture import get_coverage_data
+except ImportError:
+    idf_path = os.getenv('IDF_PATH')
+    if not idf_path:
+        raise RuntimeError('IDF_PATH not found. Please run `source $IDF_PATH/export.sh`')
+    esp_app_trace_dir = os.path.join(idf_path, 'tools', 'esp_app_trace')
+    sys.path.insert(0, esp_app_trace_dir)
+    from gcov_capture import UartGcovCapture
+    from gcov_capture import get_coverage_data
 
 
-class OpenOCD:
-    def __init__(self, dut: 'IdfDut'):
-        self.dut = dut
-        self.telnet: Optional[Telnet] = None
-        self.log_file = os.path.join(self.dut.logdir, 'ocd.txt')
-        self.proc: Optional[pexpect.spawn] = None
-
-    def run(self) -> Optional['OpenOCD']:
-        desc_path = os.path.join(self.dut.app.binary_path, 'project_description.json')
-
-        try:
-            with open(desc_path, 'r') as f:
-                project_desc = json.load(f)
-        except FileNotFoundError:
-            logging.error('Project description file not found at %s', desc_path)
-            return None
-
-        openocd_scripts = os.getenv('OPENOCD_SCRIPTS')
-        if not openocd_scripts:
-            logging.error('OPENOCD_SCRIPTS environment variable is not set.')
-            return None
-
-        debug_args = project_desc.get('debug_arguments_openocd')
-        if not debug_args:
-            logging.error("'debug_arguments_openocd' key is missing in project_description.json")
-            return None
-
-        # For debug purposes, make the value '4'
-        ocd_env = os.environ.copy()
-        ocd_env['LIBUSB_DEBUG'] = '1'
-
-        for _ in range(1, MAX_RETRIES + 1):
-            try:
-                self.proc = pexpect.spawn(
-                    command='openocd',
-                    args=['-s', openocd_scripts] + debug_args.split(),
-                    timeout=5,
-                    encoding='utf-8',
-                    codec_errors='ignore',
-                    env=ocd_env,
-                )
-                if self.proc and self.proc.isalive():
-                    self.proc.expect_exact('Info : Listening on port 3333 for gdb connections', timeout=5)
-                    return self
-            except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT) as e:
-                logging.error('Error running OpenOCD: %s', str(e))
-                if self.proc and self.proc.isalive():
-                    self.proc.terminate()
-            time.sleep(RETRY_DELAY)
-
-        logging.error('Failed to run OpenOCD after %d attempts.', MAX_RETRIES)
-        return None
-
-    def connect_telnet(self) -> None:
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                self.telnet = Telnet('127.0.0.1', TELNET_PORT, 5)
-                break
-            except ConnectionRefusedError as e:
-                logging.error('Error telnet connection: %s in attempt:%d', e, attempt)
-                time.sleep(1)
-        else:
-            raise ConnectionRefusedError
-
-    def write(self, s: str) -> Any:
-        if self.telnet is None:
-            logging.error('Telnet connection is not established.')
-            return ''
-        resp = self.telnet.read_very_eager()
-        self.telnet.write(to_bytes(s, '\n'))
-        resp += self.telnet.read_until(b'>')
-        return to_str(resp)
-
-    def apptrace_wait_stop(self, timeout: int = 30) -> None:
-        stopped = False
-        end_before = time.time() + timeout
-        while not stopped:
-            cmd_out = self.write('esp apptrace status')
-            for line in cmd_out.splitlines():
-                if line.startswith('Tracing is STOPPED.'):
-                    stopped = True
-                    break
-            if not stopped and time.time() > end_before:
-                raise pexpect.TIMEOUT('Failed to wait for apptrace stop!')
-            time.sleep(1)
-
-    def kill(self) -> None:
-        # Check if the process is still running
-        if self.proc and self.proc.isalive():
-            self.proc.terminate()
-            self.proc.kill(signal.SIGKILL)
+def get_expected_gcda_paths(dut: IdfDut) -> list:
+    """Get list of expected .gcda file paths for this example."""
+    return [
+        os.path.join(
+            dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir', 'gcov_example_main.c.gcda'
+        ),
+        os.path.join(
+            dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir', 'gcov_example_func.c.gcda'
+        ),
+        os.path.join(dut.app.binary_path, 'esp-idf', 'sample', 'CMakeFiles', '__idf_sample.dir', 'some_funcs.c.gcda'),
+    ]
 
 
-def _test_gcov(dut: IdfDut) -> None:
-    # create the generated .gcda folder, otherwise would have error: failed to open file.
-    # normally this folder would be created via `idf.py build`. but in CI the non-related files would not be preserved
+def prepare_test(dut: IdfDut) -> list:
+    """Prepare test environment: create directories and clean up old .gcda files.
+
+    Returns list of expected .gcda file paths.
+    """
+    # Create the generated .gcda folders
+    # Normally created via `idf.py build`, but in CI non-related files aren't preserved
     os.makedirs(os.path.join(dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir'), exist_ok=True)
     os.makedirs(os.path.join(dut.app.binary_path, 'esp-idf', 'sample', 'CMakeFiles', '__idf_sample.dir'), exist_ok=True)
 
-    dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
-    openocd = OpenOCD(dut).run()
-    assert openocd
+    # Get expected paths and clean up old files
+    expected_gcda_paths = get_expected_gcda_paths(dut)
+    for gcda_path in expected_gcda_paths:
+        if os.path.isfile(gcda_path):
+            try:
+                os.remove(gcda_path)
+                print(f'Removed old .gcda file: {os.path.basename(gcda_path)}')
+            except OSError as e:
+                print(f'Warning: Could not remove {gcda_path}: {e}')
+
+    return expected_gcda_paths
+
+
+def _test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
+    expected_gcda_paths = prepare_test(dut)
 
     def expect_counter_output(loop: int, timeout: int = 10) -> None:
         dut.expect_exact(
@@ -131,8 +71,8 @@ def _test_gcov(dut: IdfDut) -> None:
             timeout=timeout,
         )
 
-    def dump_coverage(cmd: str) -> None:
-        response = openocd.write(cmd)
+    def dump_coverage(on_the_fly: bool, expected_counts: dict | None = None) -> None:
+        response = openocd.gcov_dump(on_the_fly=on_the_fly)
 
         expect_lines = [
             'Targets connected.',
@@ -153,41 +93,113 @@ def _test_gcov(dut: IdfDut) -> None:
 
         assert len(expect_lines) == 0
 
-    try:
-        openocd.connect_telnet()
-        openocd.write('log_output {}'.format(openocd.log_file))
+        # Verify execution counts if expected and coverage data is available
+        if expected_counts:
+            coverage = get_coverage_data(dut.app.binary_path, expected_gcda_paths)
+            if coverage:  # Only verify if detailed data is available
+                print(f'Coverage data: {coverage}')
+                for func, expected_count in expected_counts.items():
+                    actual_count = coverage.get(func)
+                    assert actual_count == expected_count, f'Expected {func}={expected_count}, got {actual_count}'
+            else:
+                # Backup verification: ensure .gcda files exist
+                print('Coverage data not available (gcov tool not found)')
+                for gcda_path in expected_gcda_paths:
+                    assert os.path.isfile(gcda_path), f'Expected .gcda file not found: {gcda_path}'
+                print('Basic verification passed (all .gcda files exist)')
+
+    time.sleep(1)  # Wait for the USJ port to be ready
+    dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
+    with openocd_dut.run() as openocd:
         openocd.write('reset run')
         dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
 
         expect_counter_output(0)
         dut.expect('Ready to dump GCOV data...', timeout=5)
 
-        # Test two hard-coded dumps
-        dump_coverage('esp gcov dump')
+        # Test two hard-coded dumps with verification
+        dump_coverage(False, {'gcov_example_func.c:blink_dummy_func': 1, 'some_funcs.c:some_dummy_func': 1})
         dut.expect('GCOV data have been dumped.', timeout=5)
         expect_counter_output(1)
         dut.expect('Ready to dump GCOV data...', timeout=5)
-        dump_coverage('esp gcov dump')
+
+        dump_coverage(False, {'gcov_example_func.c:blink_dummy_func': 2, 'some_funcs.c:some_dummy_func': 2})
         dut.expect('GCOV data have been dumped.', timeout=5)
 
         for i in range(2, 6):
             expect_counter_output(i)
 
-        for _ in range(3):
+        # Test instant run-time dumps with verification
+        expected_runtime_counts = [
+            {'gcov_example_func.c:blink_dummy_func': 7, 'some_funcs.c:some_dummy_func': 7},
+            {'gcov_example_func.c:blink_dummy_func': 8, 'some_funcs.c:some_dummy_func': 8},
+            {'gcov_example_func.c:blink_dummy_func': 10, 'some_funcs.c:some_dummy_func': 10},
+        ]
+
+        for expected in expected_runtime_counts:
             time.sleep(1)
-            # Test instant run-time dump
-            dump_coverage('esp gcov')
-    finally:
-        openocd.kill()
+            dump_coverage(True, expected)
 
 
 @pytest.mark.jtag
+@idf_parametrize('config', ['gcov_jtag'], indirect=['config'])
 @idf_parametrize('target', ['esp32', 'esp32c2', 'esp32s2'], indirect=['target'])
-def test_gcov(dut: IdfDut) -> None:
-    _test_gcov(dut)
+def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
+    _test_gcov(openocd_dut, dut)
 
 
 @pytest.mark.usb_serial_jtag
-@idf_parametrize('target', ['esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2'], indirect=['target'])
-def test_gcov_usj(dut: IdfDut) -> None:
-    _test_gcov(dut)
+@idf_parametrize('config', ['gcov_jtag'], indirect=['config'])
+@idf_parametrize(
+    'target',
+    ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
+    indirect=['target'],
+)
+def test_gcov_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
+    _test_gcov(openocd_dut, dut)
+
+
+def _test_gcov_uart(dut: IdfDut) -> None:
+    # Close console port to free up the port for the gcov capture
+    dut.serial.close()
+
+    expected_gcda_paths = prepare_test(dut)
+    log_file = os.path.join(dut.logdir, 'gcov_uart.log')
+    uart_port = dut.serial.port
+    baud = dut.app.sdkconfig.get('APPTRACE_UART_BAUDRATE')
+    with UartGcovCapture(port=uart_port, baudrate=baud, log_file=log_file, log_level=1) as uart_capture:
+        uart_capture.run(background=True)
+        time.sleep(0.5)
+
+        # Expected execution counts
+        expected_counts = [
+            {'gcov_example_func.c:blink_dummy_func': 1, 'some_funcs.c:some_dummy_func': 1},  # First dump
+            {'gcov_example_func.c:blink_dummy_func': 2, 'some_funcs.c:some_dummy_func': 2},  # Second dump
+        ]
+
+        # Verify each dump
+        for dump_num, expected in enumerate(expected_counts, start=1):
+            if uart_capture.wait_for_fstop(timeout=10.0):
+                coverage = get_coverage_data(dut.app.binary_path, expected_gcda_paths)
+
+                if coverage:  # Only verify details if coverage data is available
+                    print(f'Coverage data: {coverage}')
+                    for func, expected_count in expected.items():
+                        actual_count = coverage.get(func)
+                        assert actual_count == expected_count, f'Expected {func}={expected_count}, got {actual_count}'
+                else:
+                    # Backup verification: ensure .gcda files exist
+                    print('Coverage data not available (gcov tool not found)')
+                    for gcda_path in expected_gcda_paths:
+                        assert os.path.isfile(gcda_path), f'Expected .gcda file not found: {gcda_path}'
+                    print('Basic verification passed (all .gcda files exist)')
+            else:
+                assert False, f'esp_gcov_dump {dump_num} timeout'
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['gcov_uart'], indirect=['config'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
+def test_gcov_uart(dut: IdfDut) -> None:
+    _test_gcov_uart(dut)

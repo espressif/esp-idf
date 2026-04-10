@@ -43,7 +43,7 @@ INT16 utl_str2int(const char *p_s)
 {
     INT32   val = 0;
 
-    for (; *p_s == ' ' && *p_s != 0; p_s++);
+    for (; *p_s == ' '; p_s++);
 
     if (*p_s == 0) {
         return -1;

@@ -3353,8 +3353,6 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
  * that FreeRTOS.h must be included first before calling any FreeRTOS API,
  * any existing source code can continue using these relocated APIs without
  * any additional header inclusions via this implicit inclusion.
- *
- * Todo: Deprecate this implicit inclusion by ESP-IDF v6.0 (IDF-8126)
  */
     #include "freertos/idf_additions.h"
 

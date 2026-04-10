@@ -20,6 +20,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "ha/esp_zigbee_ha_standard.h"
+#include "zcl_utility.h"
 #include "esp_zb_switch.h"
 
 #if defined ZB_ED_ROLE

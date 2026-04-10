@@ -32,19 +32,16 @@
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
-#include "spi_flash_override.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 #include "esp_log.h"
 
-static __attribute__((unused)) const char *TAG = "cache";
+ESP_LOG_ATTR_TAG(TAG, "cache");
 
 // Used only on ROM impl. in idf, this param unused, cache status hold by hal
 static uint32_t s_flash_op_cache_state[2];
-
-
 #ifndef CONFIG_FREERTOS_UNICORE
 static SemaphoreHandle_t s_flash_op_mutex;
 static volatile bool s_flash_op_can_start = false;
@@ -52,17 +49,6 @@ static volatile bool s_flash_op_complete = false;
 #ifndef NDEBUG
 static volatile int s_flash_op_cpu = -1;
 #endif
-
-static inline bool esp_task_stack_is_sane_cache_disabled(void)
-{
-    const void *sp = (const void *)esp_cpu_get_sp();
-
-    return esp_ptr_in_dram(sp)
-#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-           || esp_ptr_in_rtc_dram_fast(sp)
-#endif
-           ;
-}
 
 void spi_flash_init_lock(void)
 {
@@ -124,7 +110,9 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
     assert(esp_task_stack_is_sane_cache_disabled());
+#endif
 
     spi_flash_op_lock();
 
@@ -337,6 +325,7 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 #endif
 }
 
+#if !CONFIG_SPI_FLASH_ROM_IMPL
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
@@ -358,6 +347,7 @@ bool IRAM_ATTR spi_flash_cache_enabled(void)
 {
     return cache_hal_is_cache_enabled(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32S2
 IRAM_ATTR void esp_config_instruction_cache_mode(void)
@@ -905,28 +895,3 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     return ESP_OK;
 }
 #endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-
-#if CONFIG_IDF_TARGET_ESP32P4
-//TODO: IDF-5670
-void IRAM_ATTR esp_config_l2_cache_mode(void)
-{
-    cache_size_t cache_size;
-    cache_line_size_t cache_line_size;
-#if CONFIG_CACHE_L2_CACHE_128KB
-    cache_size = CACHE_SIZE_128K;
-#elif CONFIG_CACHE_L2_CACHE_256KB
-    cache_size = CACHE_SIZE_256K;
-#else
-    cache_size = CACHE_SIZE_512K;
-#endif
-
-#if CONFIG_CACHE_L2_CACHE_LINE_64B
-    cache_line_size = CACHE_LINE_SIZE_64B;
-#else
-    cache_line_size = CACHE_LINE_SIZE_128B;
-#endif
-
-    Cache_Set_L2_Cache_Mode(cache_size, 8, cache_line_size);
-    Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
-}
-#endif

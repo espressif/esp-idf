@@ -4,3 +4,4 @@ CONFIG_HEAP_POISONING_COMPREHENSIVE=n
 
 CONFIG_HEAP_TASK_TRACKING=y # to make sure the config doesn't induce unexpected behavior
 CONFIG_HEAP_TRACK_DELETED_TASKS=y # to make sure the config doesn't induce unexpected behavior
+CONFIG_COMPILER_WARN_WRITE_STRINGS=y

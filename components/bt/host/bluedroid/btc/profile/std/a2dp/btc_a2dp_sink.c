@@ -572,6 +572,10 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
         p_msg->offset += (p_msg->len - 1) - sbc_frame_len;
         p_msg->len = sbc_frame_len + 1;
     }
+    if (count != num_sbc_frames || sbc_frame_len) {
+        APPL_TRACE_WARNING("Potential decoding error, cnt:%d, num:%d, len:%d. Please ignore if playback is normal.",
+                             count, num_sbc_frames, sbc_frame_len);
+    }
     osi_free(p_msg);
 
     btc_a2d_data_cb_to_app((uint8_t *)a2dp_sink_local_param.pcmData, (sizeof(a2dp_sink_local_param.pcmData) - availPcmBytes));

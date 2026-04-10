@@ -5,14 +5,13 @@
  */
 
 #include <strings.h>
-#include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-static __attribute__((unused)) const char *TAG = "secure_boot";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot");
 
 esp_err_t esp_secure_boot_enable_secure_features(void)
 {
@@ -49,6 +48,10 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE);
 #endif
 
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_SHA384_EN);
+#endif
+
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
 
 #ifndef CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
@@ -56,7 +59,7 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     /* If flash encryption is not enabled yet then don't read-disable efuses yet, do it later in the boot
        when Flash Encryption is being enabled */
-    rd_dis_now = esp_flash_encryption_enabled();
+    rd_dis_now = esp_efuse_is_flash_encryption_enabled();
 #endif
     if (rd_dis_now) {
         ESP_LOGI(TAG, "Prevent read disabling of additional efuses...");

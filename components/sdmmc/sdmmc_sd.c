@@ -20,6 +20,7 @@
 #include "esp_timer.h"
 #include "esp_cache.h"
 #include "esp_private/sdmmc_common.h"
+#include "freertos/FreeRTOS.h"
 
 #define SDMMC_DELAY_NUMS_MAX 10
 
@@ -642,6 +643,11 @@ esp_err_t sdmmc_init_spi_crc(sdmmc_card_t* card)
      */
     assert(host_is_spi(card));
     esp_err_t err = sdmmc_send_cmd_crc_on_off(card, true);
+    if (err == ESP_ERR_NOT_SUPPORTED) { // Some cards fail to enable CRC on the first try, trying again
+       ESP_LOGD(TAG, "%s: enabling CRC failed with 0x%x, trying again", __func__, err);
+       vTaskDelay(SDMMC_INIT_SPI_CRC_RETRY_DELAY_MS / portTICK_PERIOD_MS);
+       err = sdmmc_send_cmd_crc_on_off(card, true);
+    }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: sdmmc_send_cmd_crc_on_off returned 0x%x", __func__, err);
         return err;

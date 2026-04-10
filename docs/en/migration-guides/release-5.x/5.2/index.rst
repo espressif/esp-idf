@@ -13,4 +13,4 @@ Migration from 5.1 to 5.2
     storage
     system
     :SOC_WIFI_SUPPORTED: wifi
-    bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic

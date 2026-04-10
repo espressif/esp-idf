@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,10 +27,27 @@ uxPriority (4)
 #define PORT_OFFSET_PX_STACK 0x30
 #endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
 
+#if ( configNUMBER_OF_CORES > 1 )
+#define PORT_TCB_CORE_FIELDS_SIZE 8
+#else
+#define PORT_TCB_CORE_FIELDS_SIZE 0
+#endif
+
+#if ( configUSE_TASK_PREEMPTION_DISABLE == 1 )
+#define PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE 4
+#else
+#define PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE 0
+#endif
+
+/* Align the value up to the nearest multiple of 4 */
+#define PORT_ALIGN_UP_TO_4(value) (((value) + 3) & ~3)
+
 #define PORT_OFFSET_PX_END_OF_STACK ( \
     PORT_OFFSET_PX_STACK \
     + 4                                 /* StackType_t * pxStack */ \
-    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_TCB_CORE_FIELDS_SIZE                     /* BaseType_t xDummy23 + UBaseType_t uxDummy24 */ \
+    + PORT_ALIGN_UP_TO_4(configMAX_TASK_NAME_LEN)   /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE           /* BaseType_t xDummy25 */ \
 )
 
 #ifndef __ASSEMBLER__
@@ -173,9 +190,6 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 
@@ -257,11 +271,10 @@ extern void vTaskExitCritical( void );
 // ------------------- Run Time Stats ----------------------
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) esp_timer_get_time())
-#else
-#define portGET_RUN_TIME_COUNTER_VALUE()        0
-#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()        xPortGetRunTimeCounterValue()
+#endif
 
 // --------------------- TCB Cleanup -----------------------
 
@@ -328,7 +341,7 @@ void vPortExitCritical(void);
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+static inline bool xPortCanYield(void)
 {
 #if SOC_INT_CLIC_SUPPORTED
     /* When CLIC is supported:
@@ -405,7 +418,7 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile BaseType_t xPortSwitchFlag;
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
 #else
@@ -423,19 +436,13 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <limits.h>
 #include "esp_attr.h"
 #include "esp_newlib.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 
-/* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
-#include <limits.h>
-
-/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
-#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#include "esp_timer.h"
-#endif
 
 #ifdef __cplusplus
 }

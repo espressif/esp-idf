@@ -362,6 +362,10 @@ static void bta_hf_client_handle_cind_list_item(char *name, UINT32 min, UINT32 m
 
     APPL_TRACE_DEBUG("%s %u.%s <%u:%u>", __FUNCTION__, index, name, min, max);
 
+    if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
+        return;
+    }
+
     /* look for a matching indicator on list of supported ones */
     for (i = 0; i < BTA_HF_CLIENT_AT_SUPPORTED_INDICATOR_COUNT; i++) {
         if (strcmp(name, BTA_HF_CLIENT_INDICATOR_SERVICE) == 0) {
@@ -591,7 +595,7 @@ while (*buf == ' ') buf++;
     buf += sizeof("\r\n") - 1;
 
 /* skip rest of AT string up to <cr> */
-#define AT_SKIP_REST(buf) while(*buf != '\r') buf++;
+#define AT_SKIP_REST(buf) while((*buf != '\r') && (*buf != '\0')) buf++;
 
 static char *bta_hf_client_parse_ok(char *buffer)
 {
@@ -628,10 +632,10 @@ static char *bta_hf_client_parse_uint32(char *buffer, void (*handler_callback)(U
 {
     UINT32 value;
     int res;
-    int offset;
+    int offset = 0;
 
     res = sscanf(buffer, "%u%n", &value, &offset);
-    if (res < 1) {
+    if ((res < 1) || (offset <= 0)) {
         return NULL;
     }
 
@@ -656,10 +660,10 @@ static char *bta_hf_client_parse_cind_values(char *buffer)
     UINT16 index = 0;
     UINT32 value = 0;
 
-    int offset;
+    int offset = 0;
     int res;
 
-    while ((res = sscanf(buffer, "%u%n", &value, &offset)) > 0) {
+    while (((res = sscanf(buffer, "%u%n", &value, &offset)) > 0) && (offset > 0)) {
         /* decides if its valid index and value, if yes stores it */
         bta_hf_client_handle_cind_value(index, value);
 
@@ -672,6 +676,7 @@ static char *bta_hf_client_parse_cind_values(char *buffer)
 
         index++;
         buffer++;
+        offset = 0;
     }
 
     if (res > 0) {
@@ -684,7 +689,7 @@ static char *bta_hf_client_parse_cind_values(char *buffer)
 
 static char *bta_hf_client_parse_cind_list(char *buffer)
 {
-    int offset;
+    int offset = 0;
     char *name = osi_malloc(129);
     UINT32 min, max;
     UINT32 index = 0;
@@ -695,7 +700,7 @@ static char *bta_hf_client_parse_cind_list(char *buffer)
         return NULL;
     }
 
-    while ((res = sscanf(buffer, "(\"%128[^\"]\",(%u%*[-,]%u))%n", name, &min, &max, &offset)) > 2) {
+    while (((res = sscanf(buffer, "(\"%128[^\"]\",(%u%*[-,]%u))%n", name, &min, &max, &offset)) > 2) && (offset > 0)) {
         bta_hf_client_handle_cind_list_item(name, min, max, index);
         buffer += offset;
         index++;
@@ -705,6 +710,7 @@ static char *bta_hf_client_parse_cind_list(char *buffer)
         }
 
         buffer++;
+        offset = 0;
     }
 
     osi_free(name);
@@ -786,12 +792,12 @@ static char *bta_hf_client_parse_ciev(char *buffer)
 {
     UINT32 index, value;
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CIEV:");
 
     res = sscanf(buffer, "%u,%u%n", &index, &value, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -865,13 +871,13 @@ static char *bta_hf_client_parse_clip(char *buffer)
     char number[33];
     UINT32 type = 0;
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CLIP:");
 
     /* there might be something more after %lu but HFP doesn't care */
     res = sscanf(buffer, "\"%32[^\"]\",%u%n", number, &type, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -892,13 +898,13 @@ static char *bta_hf_client_parse_ccwa(char *buffer)
     char number[33];
     UINT32 type = 0;
     int res ;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CCWA:");
 
     /* there might be something more after %lu but HFP doesn't care */
     res = sscanf(buffer, "\"%32[^\"]\",%u%n", number, &type, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -918,13 +924,13 @@ static char *bta_hf_client_parse_cops(char *buffer)
     /* spec forces 16 chars max, plus \0 here */
     char opstr[17];
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+COPS:");
 
     /* TODO: Not sure if operator string actually can contain escaped " char inside */
     res = sscanf(buffer, "%hhi,0,\"%16[^\"]\"%n", &mode, opstr, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -944,12 +950,12 @@ static char *bta_hf_client_parse_binp(char *buffer)
     /* phone number is 32 chars plus one for \0*/
     char numstr[33];
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+BINP:");
 
     res = sscanf(buffer, "\"%32[^\"]\"\r\n%n", numstr, &offset);
-    if (res < 1) {
+    if (res < 1 || offset <= 0) {
         return NULL;
     }
 
@@ -970,18 +976,12 @@ static char *bta_hf_client_parse_clcc(char *buffer)
     char numstr[33];     /* spec forces 32 chars, plus one for \0*/
     UINT16 type;
     int res;
-    int offset;
+    int offset = 0;
     AT_CHECK_EVENT(buffer, "+CLCC:");
 
     res = sscanf(buffer, "%hu,%hu,%hu,%hu,%hu%n",
                  &idx, &dir, &status, &mode, &mpty, &offset);
-    if (res < 5) {
-        return NULL;
-    }
-
-    /* Abort in case offset not set because of format error */
-    if (offset == 0) {
-        APPL_TRACE_ERROR("%s: Format Error %s", __func__, buffer);
+    if ((res < 5) || (offset <= 0)) {
         return NULL;
     }
 
@@ -996,8 +996,9 @@ static char *bta_hf_client_parse_clcc(char *buffer)
         }
 
         if (res2 == 0) {
+            offset = 0;
             res2 = sscanf(buffer, ",\"\",%hu%n", &type, &offset);
-            if (res2 < 0) {
+            if ((res2 < 0) || (offset <= 0)) {
                 return NULL;
             }
 
@@ -1009,16 +1010,15 @@ static char *bta_hf_client_parse_clcc(char *buffer)
         if (res2 >= 2) {
             res += res2;
             /* Abort in case offset not set because of format error */
-            if (offset == 0) {
+            if (offset <= 0) {
                 APPL_TRACE_ERROR("%s: Format Error %s", __func__, buffer);
                 return NULL;
             }
-
             buffer += offset;
         }
     }
 
-    /* Skip any remaing param,as they are not defined by BT HFP spec */
+    /* Skip any remaining param,as they are not defined by BT HFP spec */
     AT_SKIP_REST(buffer);
     AT_CHECK_RN(buffer);
 
@@ -1039,7 +1039,7 @@ static char *bta_hf_client_parse_cnum(char *buffer)
     UINT16 type;
     UINT16 service = 0; /* 0 in case this optional parameter is not being sent */
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CNUM:");
 
@@ -1049,8 +1049,9 @@ static char *bta_hf_client_parse_cnum(char *buffer)
     }
 
     if (res == 0) {
+        offset = 0;
         res = sscanf(buffer, ",\"\",%hu%n,,%hu%n", &type, &offset, &service, &offset);
-        if (res < 0) {
+        if ((res < 0) || (offset <= 0)) {
             return NULL;
         }
 
@@ -1085,12 +1086,12 @@ static char *bta_hf_client_parse_btrh(char *buffer)
 {
     UINT16 code = 0;
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+BTRH:");
 
     res = sscanf(buffer, "%hu%n", &code, &offset);
-    if (res < 1) {
+    if ((res < 1) || (offset <= 0)) {
         return NULL;
     }
 
@@ -1374,6 +1375,11 @@ void bta_hf_client_at_parse(char *buf, unsigned int len)
         osi_free(tmp_buff);
     }
 
+    /* prevent buffer overflow in cases where LEN exceeds available buffer space */
+    if (len > BTA_HF_CLIENT_AT_PARSER_MAX_LEN - bta_hf_client_cb.scb.at_cb.offset) {
+        return;
+    }
+
     memcpy(bta_hf_client_cb.scb.at_cb.buf + bta_hf_client_cb.scb.at_cb.offset, buf, len);
     bta_hf_client_cb.scb.at_cb.offset += len;
 
@@ -1571,7 +1577,7 @@ void bta_hf_client_send_at_xapl(char *information, UINT32 features)
         *vendorID: A string representation of the hex value of the vendor ID from the manufacturer, without the 0x prefix.
         *productID: A string representation of the hex value of the product ID from the manufacturer, without the 0x prefix.
         *version: The revision of the software.
-        *Fatures: A base-10 representation of a bit field. Available features are:
+        *Features: A base-10 representation of a bit field. Available features are:
             *Bit 0 = reserved
             *Bit 1 = The accessory supports battery reporting (reserved only for battery operated accessories).
             *Bit 2 = The accessory is docked or powered (reserved only for battery operated accessories).
@@ -1827,7 +1833,7 @@ void bta_hf_client_send_at_bia(void)
     for (i = 0; i < BTA_HF_CLIENT_AT_INDICATOR_COUNT; i++) {
         int sup = bta_hf_client_cb.scb.at_cb.indicator_lookup[i] == -1 ? 0 : 1;
 
-        at_len += snprintf(buf + at_len, BTA_HF_CLIENT_AT_MAX_LEN - at_len, "%u,", sup);
+        at_len += snprintf(buf + at_len, BTA_HF_CLIENT_AT_MAX_LEN - at_len, "%d,", sup);
     }
 
     buf[at_len - 1] = '\r';

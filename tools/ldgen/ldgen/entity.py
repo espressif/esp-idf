@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import collections
@@ -8,19 +8,19 @@ import os
 from enum import Enum
 from functools import total_ordering
 
-from pyparsing import alphas
 from pyparsing import Group
 from pyparsing import Literal
-from pyparsing import nums
 from pyparsing import OneOrMore
 from pyparsing import ParseException
 from pyparsing import Regex
-from pyparsing import rest_of_line
 from pyparsing import SkipTo
 from pyparsing import Suppress
 from pyparsing import White
 from pyparsing import Word
 from pyparsing import ZeroOrMore
+from pyparsing import alphas
+from pyparsing import nums
+from pyparsing import rest_of_line
 
 
 @total_ordering
@@ -57,17 +57,19 @@ class Entity:
         elif archive_spec and obj_spec and symbol_spec:
             self.specificity = Entity.Specificity.SYMBOL
         else:
-            raise ValueError("Invalid arguments '(%s, %s, %s)'" % (archive, obj, symbol))
+            raise ValueError(f"Invalid arguments '({archive}, {obj}, {symbol})'")
 
         self.archive = archive
         self.obj = obj
         self.symbol = symbol
 
     def __eq__(self, other):
-        return (self.specificity.value == other.specificity.value and
-                self.archive == other.archive and
-                self.obj == other.obj and
-                self.symbol == other.symbol)
+        return (
+            self.specificity.value == other.specificity.value
+            and self.archive == other.archive
+            and self.obj == other.obj
+            and self.symbol == other.symbol
+        )
 
     def __lt__(self, other):
         res = False
@@ -89,7 +91,8 @@ class Entity:
         return hash(self.__repr__())
 
     def __str__(self):
-        return '%s:%s %s' % self.__repr__()
+        archive, obj, symbol = self.__repr__()
+        return f'{archive}:{obj} {symbol}'
 
     def __repr__(self):
         return self.archive, self.obj, self.symbol
@@ -123,15 +126,17 @@ class EntityDB:
     def add_sections_info(self, sections_info_dump):
         first_line = sections_info_dump.readline()
 
-        archive_path = (Literal('In archive').suppress() +
-                        White().suppress() +
-                        # trim the colon and line ending characters from archive_path
-                        rest_of_line.set_results_name('archive_path').set_parse_action(
-                            lambda s, loc, toks: s.rstrip(':\n\r ')))
+        archive_path = (
+            Literal('In archive').suppress()
+            + White().suppress()
+            +
+            # trim the colon and line ending characters from archive_path
+            rest_of_line.set_results_name('archive_path').set_parse_action(lambda s, loc, toks: s.rstrip(':\n\r '))
+        )
         parser = archive_path
 
         try:
-            results = parser.parseString(first_line, parseAll=True)
+            results = parser.parse_string(first_line, parse_all=True)
         except ParseException as p:
             raise ParseException('Parsing sections info for library ' + sections_info_dump.name + ' failed. ' + p.msg)
 
@@ -149,17 +154,20 @@ class EntityDB:
 
         # 00 {section} 0000000 ...
         #              CONTENTS, ALLOC, ....
-        section_entry = (Suppress(Word(nums)) + Regex(r'\.\S+') + Suppress(rest_of_line)
-                         + Suppress(ZeroOrMore(Word(alphas + '_') + Literal(',')) + Word(alphas + '_')))
+        section_entry = (
+            Suppress(Word(nums))
+            + Regex(r'\.\S+')
+            + Suppress(rest_of_line)
+            + Suppress(ZeroOrMore(Word(alphas + '_') + Literal(',')) + Word(alphas + '_'))
+        )
 
-        content = Group(object_line
-                        + section_start
-                        + section_header
-                        + Group(OneOrMore(section_entry)).set_results_name('sections'))
+        content = Group(
+            object_line + section_start + section_header + Group(OneOrMore(section_entry)).set_results_name('sections')
+        )
         parser = Group(ZeroOrMore(content)).set_results_name('contents')
 
         try:
-            results = parser.parseString(info.content, parseAll=True)
+            results = parser.parse_string(info.content, parse_all=True)
         except ParseException as p:
             raise ParseException('Unable to parse section info file ' + info.filename + '. ' + p.msg)
 
@@ -191,13 +199,15 @@ class EntityDB:
 
     def _match_obj(self, archive, obj):
         objs = self.get_objects(archive)
-        match_objs = (fnmatch.filter(objs, obj + '.*.o')
-                      + fnmatch.filter(objs, obj + '.o')
-                      + fnmatch.filter(objs, obj + '.*.obj')
-                      + fnmatch.filter(objs, obj + '.obj'))
+        match_objs = (
+            fnmatch.filter(objs, obj + '.*.o')
+            + fnmatch.filter(objs, obj + '.o')
+            + fnmatch.filter(objs, obj + '.*.obj')
+            + fnmatch.filter(objs, obj + '.obj')
+        )
 
         if len(match_objs) > 1:
-            raise ValueError("Multiple matches for object: '%s: %s': %s" % (archive, obj, str(match_objs)))
+            raise ValueError(f"Multiple matches for object: '{archive}: {obj}': {match_objs}")
 
         try:
             return match_objs[0]

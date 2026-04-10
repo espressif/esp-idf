@@ -70,6 +70,8 @@ if(CONFIG_SECURE_SIGNED_APPS)
                     set(scheme "ecdsa192")
                 elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
                     set(scheme "ecdsa256")
+                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS)
+                    set(scheme "ecdsa384")
                 endif()
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
@@ -120,7 +122,6 @@ idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
 # BOOTLOADER_EXTRA_COMPONENT_DIRS may have been set by the `main` component, do not overwrite it
 idf_build_get_property(bootloader_extra_component_dirs BOOTLOADER_EXTRA_COMPONENT_DIRS)
-list(APPEND bootloader_extra_component_dirs "${CMAKE_CURRENT_LIST_DIR}")
 
 # We cannot pass lists as a parameter to the external project without modifying the ';' separator
 string(REPLACE ";" "|" BOOTLOADER_IGNORE_EXTRA_COMPONENT "${BOOTLOADER_IGNORE_EXTRA_COMPONENT}")
@@ -137,6 +138,7 @@ externalproject_add(bootloader
                 -DEXTRA_COMPONENT_DIRS=${bootloader_extra_component_dirs}
                 -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
                 -DIGNORE_EXTRA_COMPONENT=${BOOTLOADER_IGNORE_EXTRA_COMPONENT}
+                -DIDF_BUILD_V2=${IDF_BUILD_V2}
                 ${sign_key_arg} ${ver_key_arg}
                 ${extra_cmake_args}
     INSTALL_COMMAND ""

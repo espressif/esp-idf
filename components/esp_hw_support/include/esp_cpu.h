@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,10 @@ void esp_cpu_reset(int core_id);
  * This function causes the current CPU core to execute its Wait For Interrupt
  * (WFI or equivalent) instruction. After executing this function, the CPU core
  * will stop execution until an interrupt occurs.
+ *
+ * @note On some RISC-V targets, if a debugger is attached while the hardware
+ *       wait mode is disabled, this function may return immediately instead of
+ *       entering WFI. This keeps debugger memory access working.
  */
 void esp_cpu_wait_for_intr(void);
 
@@ -150,8 +154,10 @@ FORCE_INLINE_ATTR __attribute__((always_inline)) int esp_cpu_get_curr_privilege_
 #else
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     return PRV_M;
-#else
+#elif defined(CSR_PRV_MODE)
     return RV_READ_CSR(CSR_PRV_MODE);
+#else
+    return -1;
 #endif
 #endif
 }
@@ -224,6 +230,37 @@ FORCE_INLINE_ATTR __attribute__((pure)) void *esp_cpu_pc_to_addr(uint32_t pc)
 #endif
 }
 
+/**
+ * @brief Set the current CPU core's thread pointer
+ *
+ * Sets the thread pointer register to the given value.
+ *
+ * @param threadptr Pointer to the thread-local storage area
+ */
+FORCE_INLINE_ATTR void esp_cpu_set_threadptr(void * threadptr)
+{
+#ifdef __XTENSA__
+    xt_utils_set_threadptr(threadptr);
+#else
+    rv_utils_set_threadptr(threadptr);
+#endif
+}
+
+/**
+ * @brief Get the current CPU core's thread pointer
+ *
+ * @return thread pointer register value
+ */
+FORCE_INLINE_ATTR void *esp_cpu_get_threadptr(void)
+{
+#ifdef __XTENSA__
+    return xt_utils_get_threadptr();
+#else
+    return rv_utils_get_threadptr();
+#endif
+}
+
+
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -271,15 +308,33 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
 {
     rv_utils_set_mtvt((uint32_t)mtvt_addr);
 }
+
+/**
+ * @brief Set the base address of the current CPU's Interrupt Vector Table (XTVT), based
+ * on the current privilege level
+ *
+ * @param xtvt_addr Interrupt Vector Table's base address
+ *
+ * @note The XTVT table is only applicable when CLIC is supported
+ */
+FORCE_INLINE_ATTR void esp_cpu_intr_set_xtvt_addr(const void *xtvt_addr)
+{
+    rv_utils_set_xtvt((uint32_t)xtvt_addr);
+}
 #endif  //#if SOC_INT_CLIC_SUPPORTED
 
 #if SOC_CPU_SUPPORT_WFE
 /**
  * @brief Disable the WFE (wait for event) feature for CPU.
  */
-FORCE_INLINE_ATTR void rv_utils_disable_wfe_mode(void)
+FORCE_INLINE_ATTR void esp_cpu_disable_wfe_mode(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_WFE_MODE_ENABLE, false);
+#else
     rv_utils_wfe_mode_enable(false);
+#endif
 }
 #endif
 
@@ -392,12 +447,12 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_handler(int intr_num, esp_cpu_intr_handl
 }
 
 /**
- * @brief Get a handler function's argument of
+ * @brief Get a handler function's argument
  *
  * Get the argument of a previously assigned handler function on the current CPU.
  *
  * @param intr_num Interrupt number (from 0 to 31)
- * @return The the argument passed to the handler function
+ * @return The argument passed to the handler function
  */
 FORCE_INLINE_ATTR void *esp_cpu_intr_get_handler_arg(int intr_num)
 {
@@ -451,7 +506,12 @@ FORCE_INLINE_ATTR uint32_t esp_cpu_intr_get_enabled_mask(void)
 #ifdef __XTENSA__
     return xt_utils_intr_get_enabled_mask();
 #else
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD && SOC_INT_CLIC_SUPPORTED
+    extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
+    return esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_INTR_GET_ENABLED_MASK);
+#else
     return rv_utils_intr_get_enabled_mask();
+#endif
 #endif
 }
 
@@ -500,7 +560,10 @@ void esp_cpu_configure_region_protection(void);
  * @note Overwrites previously set breakpoint with same breakpoint number.
  * @param bp_num Hardware breakpoint number [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  * @param bp_addr Address to set a breakpoint on
- * @return ESP_OK if breakpoint is set. Failure otherwise
+ * @return
+ *      - ESP_OK if the breakpoint is set
+ *      - ESP_ERR_INVALID_ARG if `bp_num` is out of range
+ *      - ESP_ERR_INVALID_RESPONSE if setting the breakpoint via semihosting fails
  */
 esp_err_t esp_cpu_set_breakpoint(int bp_num, const void *bp_addr);
 
@@ -509,7 +572,10 @@ esp_err_t esp_cpu_set_breakpoint(int bp_num, const void *bp_addr);
  *
  * @note Clears a breakpoint regardless of whether it was previously set
  * @param bp_num Hardware breakpoint number [0..SOC_CPU_BREAKPOINTS_NUM - 1]
- * @return ESP_OK if breakpoint is cleared. Failure otherwise
+ * @return
+ *      - ESP_OK if the breakpoint is cleared
+ *      - ESP_ERR_INVALID_ARG if `bp_num` is out of range
+ *      - ESP_ERR_INVALID_RESPONSE if clearing the breakpoint via semihosting fails
  */
 esp_err_t esp_cpu_clear_breakpoint(int bp_num);
 
@@ -533,7 +599,10 @@ esp_err_t esp_cpu_clear_breakpoint(int bp_num);
  * @param wp_addr Watchpoint's base address, must be naturally aligned to the size of the region
  * @param size Size of the region to watch. Must be one of 2^n and in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
  * @param trigger Trigger type
- * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
+ * @return
+ *      - ESP_OK if the watchpoint is set
+ *      - ESP_ERR_INVALID_ARG if `wp_num`, `wp_addr`, or `size` is invalid
+ *      - ESP_ERR_INVALID_RESPONSE if setting the watchpoint via semihosting fails
  */
 esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, esp_cpu_watchpoint_trigger_t trigger);
 
@@ -542,7 +611,10 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
  *
  * @note Clears a watchpoint regardless of whether it was previously set
  * @param wp_num Hardware watchpoint number [0..SOC_CPU_WATCHPOINTS_NUM - 1]
- * @return ESP_OK if watchpoint was cleared. Failure otherwise.
+ * @return
+ *      - ESP_OK if the watchpoint is cleared
+ *      - ESP_ERR_INVALID_ARG if `wp_num` is out of range
+ *      - ESP_ERR_INVALID_RESPONSE if clearing the watchpoint via semihosting fails
  */
 esp_err_t esp_cpu_clear_watchpoint(int wp_num);
 

@@ -8,6 +8,7 @@ idf_component_register(SRCS "src/httpd_main.c"
                             "src/httpd_txrx.c"
                             "src/httpd_uri.c"
                             "src/httpd_ws.c"
+                            ${HTTPD_CRYPTO_SRC}
                             "src/util/ctrl_sock.c"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS ${priv_inc_dir}

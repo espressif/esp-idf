@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern int _tee_vec_end;
 extern int _tee_iram_start;
 extern int _tee_iram_end;
 extern int _tee_dram_start;
+extern int _tee_intr_stack;
 
 typedef void (*func_ptr)(void);
 
@@ -44,6 +45,45 @@ void _ss_esp_tee_test_iram_reg2_write_violation(void)
 {
     uint32_t *test_addr = (uint32_t *)((uint32_t)(&_tee_iram_start) - 0x04);
     *test_addr = RND_VAL;
+}
+
+static void do_stack_smash(bool underflow, int depth, volatile uint8_t *sink)
+{
+    /* Overflow path */
+    if (!underflow) {
+        if (depth == -1) {
+            return; // unreachable
+        }
+
+        uint8_t buffer[1024];
+        buffer[0] = (uint8_t)depth;
+        *sink = buffer[0];
+
+        do_stack_smash(false, depth + 1, sink);
+        return;
+    }
+
+    /* Underflow path */
+    asm volatile(
+        "mv sp, %0\n" :: "r"(&_tee_intr_stack)
+    );
+
+    /* The blocking delay ensures that the stack protection fault interrupt is
+     * captured and handled by the CPU before the current function returns.
+     */
+    esp_rom_delay_us(10);
+}
+
+void _ss_esp_tee_test_stack_overflow(void)
+{
+    volatile uint8_t sink = 0;
+    do_stack_smash(false, 1, &sink);
+}
+
+void _ss_esp_tee_test_stack_underflow(void)
+{
+    volatile uint8_t sink = 0;
+    do_stack_smash(true, 0, &sink);
 }
 
 #pragma GCC pop_options

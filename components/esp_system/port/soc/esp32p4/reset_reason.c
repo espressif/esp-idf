@@ -7,7 +7,6 @@
 #include "esp_system.h"
 #include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
-#include "soc/rtc_periph.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "esp32p4/rom/rtc.h"

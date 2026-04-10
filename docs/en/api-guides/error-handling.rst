@@ -95,7 +95,7 @@ Error message will typically look like this:
 Macros For Recoverable Errors
 -----------------------------
 
-For recoverable errors, ESP-IDF provides a set of macros defined in ``esp_check.h``. The **ESP_RETURN_ON_...**, **ESP_GOTO_ON_...**, and **ESP_RETURN_VOID_ON_...** macros enable concise and consistent error handling, improving code readability and maintainability. Unlike ``ESP_ERROR_CHECK``, these macros do not terminate the program; instead, they print an error message and return or jump as appropriate. For use in interrupt service routines (ISRs), corresponding ``_ISR`` versions (such as :c:macro:`ESP_RETURN_ON_ERROR_ISR`) are available, ensuring safe operation in interrupt contexts.
+For recoverable errors, ESP-IDF provides a set of macros defined in ``esp_check.h``. The **ESP_RETURN_ON_...**, **ESP_GOTO_ON_...**, **ESP_RETURN_VOID_ON_...**, and **ESP_RETURN_ON_ERROR_CLEANUP** macros enable concise and consistent error handling, improving code readability and maintainability. Unlike ``ESP_ERROR_CHECK``, these macros do not terminate the program; instead, they print an error message and return or jump as appropriate. For use in interrupt service routines (ISRs), corresponding ``_ISR`` versions (such as :c:macro:`ESP_RETURN_ON_ERROR_ISR`) are available, ensuring safe operation in interrupt contexts.
 
 The macros are defined as follows:
 
@@ -120,6 +120,8 @@ The macros are defined as follows:
     - :c:macro:`ESP_RETURN_VOID_ON_ERROR_ISR` - For ISR context.
     - :c:macro:`ESP_RETURN_VOID_ON_FALSE_ISR` - For ISR context.
 
+- **ESP_RETURN_ON_ERROR_CLEANUP**: Return from the function after executing cleanup code if an error is detected. This macro is useful when resources need to be released before returning an error code. It evaluates an expression that returns :cpp:type:`esp_err_t`, and if the result is not :c:macro:`ESP_OK`, it executes the cleanup code provided in the variable arguments (such as freeing resources or logging) before returning the error code from the current function.
+
 The default behavior of these macros can be adjusted: if the :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` option is enabled in Kconfig, error messages will not be included in the application binary and will not be printed.
 
 .. _check_macros_examples:
@@ -143,6 +145,19 @@ Some examples
         ESP_GOTO_ON_ERROR(x, err, TAG, "fail reason 2");            // err message printed if `x` is not `ESP_OK`, `ret` is set to `x`, and then jumps to `err`.
         ESP_RETURN_ON_FALSE(a, err_code, TAG, "fail reason 3");     // err message printed if `a` is not `true`, and then function returns with code `err_code`.
         ESP_GOTO_ON_FALSE(a, err_code, err, TAG, "fail reason 4");  // err message printed if `a` is not `true`, `ret` is set to `err_code`, and then jumps to `err`.
+
+        ESP_RETURN_ON_ERROR_CLEANUP(init_resource(), free_mem(), deinit_resource()); // if failure, clean up resources by calling `free_mem()` and `deinit_resource()`, then return the error code.
+
+        ESP_RETURN_ON_ERROR_CLEANUP(                                // if more complex cleanup is needed, use a `do {...} while(0)` block, (required for ESP_LOG usage).
+            sensor_calibrate(),
+            do {
+                if (err_rc_ == ESP_ERR_TIMEOUT) {
+                    ESP_LOGE(TAG, "Sensor calibration timeout");
+                }
+                sensor_deinit();
+                ESP_LOGE(TAG, "Sensor cleanup completed");
+            } while (0)
+        );
 
     err:
         // clean up

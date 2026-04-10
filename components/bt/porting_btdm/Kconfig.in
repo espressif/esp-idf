@@ -1,0 +1,50 @@
+source "$IDF_PATH/components/bt/porting_btdm/controller/btdm_common/Kconfig.in"
+
+choice BT_CTRL_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which bluetooth controller run"
+    depends on !FREERTOS_UNICORE
+    help
+        Specify the cpu core to run bluetooth controller.
+        Can not specify no-affinity.
+
+    config BT_CTRL_PINNED_TO_CORE_CHOICE_0
+        bool "Core 0 (PRO CPU)"
+    config BT_CTRL_PINNED_TO_CORE_CHOICE_1
+        bool "Core 1 (APP CPU)"
+        depends on !FREERTOS_UNICORE
+endchoice
+
+config BT_CTRL_PINNED_TO_CORE
+    int
+    default 0 if BT_CTRL_PINNED_TO_CORE_CHOICE_0
+    default 1 if BT_CTRL_PINNED_TO_CORE_CHOICE_1
+    default 0
+
+config BT_CTRL_TASK_STACK_SIZE
+    int "Controller task stack size"
+    default 5120 if BLE_MESH
+    default 4096
+    help
+        This configures stack size of NimBLE controller task
+
+config BT_CTRL_SLEEP_ENABLE
+    bool "Enable Bluetooth Controller sleep"
+    default n
+    help
+        Enable Bluetooth Controller sleep
+
+config BT_DUAL_MODE_ARCH
+    bool
+    default y
+
+source "$IDF_PATH/components/bt/porting_btdm/transport/Kconfig.in"
+
+menu "BLE Controller Options"
+    depends on SOC_BLE_SUPPORTED
+    source "$IDF_PATH/components/bt/porting_btdm/controller/ble/Kconfig.in"
+endmenu
+
+menu "BREDR Controller Options"
+    depends on SOC_BT_CLASSIC_SUPPORTED
+    source "$IDF_PATH/components/bt/porting_btdm/controller/bredr/Kconfig.in"
+endmenu

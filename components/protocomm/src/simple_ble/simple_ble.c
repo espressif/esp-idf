@@ -33,6 +33,9 @@ static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 
 uint8_t get_keep_ble_on()
 {
+    if (g_ble_cfg_p == NULL) {
+        return 0;
+    }
     return g_ble_cfg_p->keep_ble_on;
 }
 
@@ -256,7 +259,8 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     }
 #endif
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(TAG, "%s init bluetooth failed %d", __func__, ret);
         return ret;

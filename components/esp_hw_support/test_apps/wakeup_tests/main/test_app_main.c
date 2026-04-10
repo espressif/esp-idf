@@ -16,7 +16,7 @@
 #include "argtable3/argtable3.h"
 #include "io_wakeup_cmd.h"
 
-static const char* TAG = "esp_hw_support_test_app";
+ESP_LOG_ATTR_TAG(TAG, "esp_hw_support_test_app");
 #define PROMPT_STR "io_wakeup_test"
 
 #define LEAKS (100)

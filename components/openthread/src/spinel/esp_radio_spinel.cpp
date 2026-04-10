@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "esp_radio_spinel.h"
 #include "esp_radio_spinel_platform.h"
 #include "esp_radio_spinel_adapter.hpp"
+#include "esp_spinel_ncp_vendor_macro.h"
 #include "esp_radio_spinel_uart_interface.hpp"
 #include "spinel_driver.hpp"
 #include "openthread/link.h"
@@ -28,7 +29,7 @@ using esp::radio_spinel::SpinelInterfaceAdapter;
 using esp::radio_spinel::UartSpinelInterface;
 using ot::Spinel::SpinelDriver;
 
-static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface[ot::Spinel::kSpinelHeaderMaxNumIid];
+static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface;
 static RadioSpinel s_radio[ot::Spinel::kSpinelHeaderMaxNumIid];
 static esp_radio_spinel_callbacks_t s_esp_radio_spinel_callbacks[ot::Spinel::kSpinelHeaderMaxNumIid];
 static SpinelDriver s_spinel_driver[ot::Spinel::kSpinelHeaderMaxNumIid];
@@ -185,58 +186,6 @@ void SwitchoverDone(otInstance *aInstance, bool aSuccess)
     s_esp_radio_spinel_callbacks[idx].switchover_done(aSuccess);
 }
 
-#if CONFIG_OPENTHREAD_DIAG
-void DiagReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
-{
-    esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
-    assert(s_esp_radio_spinel_callbacks[idx].diag_receive_done);
-    uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
-    esp_ieee802154_frame_info_t frame_info;
-    if (frame) {
-        frame[0] = aFrame->mLength;
-        memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
-        frame_info.rssi = aFrame->mInfo.mRxInfo.mRssi;
-        frame_info.timestamp = aFrame->mInfo.mRxInfo.mTimestamp;
-        frame_info.pending = aFrame->mInfo.mRxInfo.mAckedWithFramePending;
-        s_esp_radio_spinel_callbacks[idx].diag_receive_done(frame, &frame_info);
-        free(frame);
-    } else {
-        ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to alloc memory for frame");
-    }
-}
-
-void DiagTransmitDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
-{
-    esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
-    assert(s_esp_radio_spinel_callbacks[idx].diag_transmit_done && s_esp_radio_spinel_callbacks[idx].diag_transmit_failed);
-    if (aError == OT_ERROR_NONE) {
-        uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
-        if (frame) {
-            esp_ieee802154_frame_info_t ack_info;
-            frame[0] = aFrame->mLength;
-            memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_done(frame, &ack_info);
-            free(frame);
-        } else {
-            ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to alloc memory for frame");
-        }
-    } else {
-        switch (aError) {
-        case OT_ERROR_CHANNEL_ACCESS_FAILURE:
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_failed(ESP_IEEE802154_TX_ERR_CCA_BUSY);
-            break;
-        case OT_ERROR_NO_ACK:
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_failed(ESP_IEEE802154_TX_ERR_NO_ACK);
-            break;
-        default:
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_failed(ESP_IEEE802154_TX_ERR_CCA_BUSY);
-            break;
-        }
-    }
-}
-#endif // CONFIG_OPENTHREAD_DIAG
-
-
 void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallbacks, esp_radio_spinel_idx_t idx)
 {
     s_esp_radio_spinel_callbacks[idx] = aCallbacks;
@@ -247,10 +196,6 @@ void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallback
     Callbacks.mEnergyScanDone = EnergyScanDone;
     Callbacks.mTxStarted = TxStarted;
     Callbacks.mSwitchoverDone = SwitchoverDone;
-#if CONFIG_OPENTHREAD_DIAG
-    Callbacks.mDiagReceiveDone = DiagReceiveDone;
-    Callbacks.mDiagTransmitDone = DiagTransmitDone;
-#endif // CONFIG_OPENTHREAD_DIAG
 
     s_radio[idx].SetCallbacks(Callbacks);
 }
@@ -260,11 +205,11 @@ esp_err_t esp_radio_spinel_uart_interface_enable(const esp_radio_spinel_uart_con
                                                  esp_radio_spinel_uart_deinit_handler aUartDeinitHandler,
                                                  esp_radio_spinel_idx_t idx)
 {
-    ESP_RETURN_ON_FALSE(aUartInitHandler != nullptr, ESP_FAIL, ESP_SPINEL_LOG_TAG, "UartInitHandler can not be set to NULL");
-    ESP_RETURN_ON_FALSE(aUartDeinitHandler != nullptr, ESP_FAIL, ESP_SPINEL_LOG_TAG, "UartDeinitHandler can not be set to NULL");
-    s_spinel_interface[idx].GetSpinelInterface().RegisterUartInitHandler(aUartInitHandler);
-    s_spinel_interface[idx].GetSpinelInterface().RegisterUartDeinitHandler(aUartDeinitHandler);
-    ESP_RETURN_ON_FALSE(s_spinel_interface[idx].GetSpinelInterface().Enable(*radio_uart_config) == OT_ERROR_NONE, ESP_FAIL, ESP_SPINEL_LOG_TAG, "Spinel UART interface failed to enable");
+    s_spinel_interface.GetSpinelInterface().RegisterUartInitHandler(aUartInitHandler);
+    s_spinel_interface.GetSpinelInterface().RegisterUartDeinitHandler(aUartDeinitHandler);
+    ESP_RETURN_ON_FALSE(radio_uart_config != nullptr, ESP_ERR_INVALID_ARG, ESP_SPINEL_LOG_TAG, "radio_uart_config can not be NULL");
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(*radio_uart_config), ESP_SPINEL_LOG_TAG,
+                        "Spinel UART interface failed to enable");
     ESP_LOGI(ESP_SPINEL_LOG_TAG, "Spinel UART interface has been successfully enabled");
     return ESP_OK;
 }
@@ -277,7 +222,7 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
     // Multipan is not currently supported
     iidList[0] = 0;
     s_spinel_driver[idx].SetCoprocessorResetFailureCallback(radio_spinel_coprocessor_reset_failure_callback, instance);
-    s_spinel_driver[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_spinel_driver[idx].Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
     s_radio[idx].SetCompatibilityErrorCallback(radio_spinel_compatibility_error_callback, instance);
     s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps, false);
     s_radio[idx].SetVendorRestorePropertiesCallback(esp_radio_spinel_restore_vendor_properities, instance);
@@ -379,7 +324,7 @@ esp_err_t esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx
 
 void esp_radio_spinel_radio_update(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
 {
-    s_spinel_interface[idx].GetSpinelInterface().UpdateFdSet(static_cast<void *>(mainloop_context));
+    s_spinel_interface.GetSpinelInterface().UpdateFdSet(static_cast<void *>(mainloop_context));
 }
 
 void esp_radio_spinel_radio_process(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
@@ -409,7 +354,7 @@ esp_err_t esp_radio_spinel_get_tx_power(int8_t *power, esp_radio_spinel_idx_t id
 
 void esp_radio_spinel_register_rcp_failure_handler(esp_radio_spinel_rcp_failure_handler handler, esp_radio_spinel_idx_t idx)
 {
-    s_spinel_interface[idx].GetSpinelInterface().RegisterRcpFailureHandler(handler);
+    s_spinel_interface.GetSpinelInterface().RegisterRcpFailureHandler(handler);
 }
 
 esp_err_t esp_radio_spinel_rcp_deinit(esp_radio_spinel_idx_t idx)
@@ -418,7 +363,8 @@ esp_err_t esp_radio_spinel_rcp_deinit(esp_radio_spinel_idx_t idx)
         ESP_RETURN_ON_FALSE(s_radio[idx].Sleep() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, ESP_SPINEL_LOG_TAG, "Radio fails to sleep");
         ESP_RETURN_ON_FALSE(s_radio[idx].Disable() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, ESP_SPINEL_LOG_TAG, "Fail to disable radio");
     }
-    ESP_RETURN_ON_FALSE(s_spinel_interface[idx].GetSpinelInterface().Disable() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, ESP_SPINEL_LOG_TAG, "Fail to deinitialize UART");
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Disable(), ESP_SPINEL_LOG_TAG,
+                        "Fail to deinitialize UART");
     return ESP_OK;
 }
 

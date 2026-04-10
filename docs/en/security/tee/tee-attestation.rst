@@ -101,8 +101,8 @@ EAT: Claim Table
     * - **Claim**
       - **Description**
       - **Comments**
-    * - Nonce
-      - For protection from Reply Attack. If attestation is initiated by the device, it provides the nonce as part of the attestation request to the Relying Party.
+    * - Authentication Challenge
+      - Challenge data provided by the caller to protect against replay attacks. This is typically a cryptographic nonce (random value) or a hash of data that includes a nonce. When using a data hash, the caller must ensure replay protection by incorporating a nonce into the hashed data.
       -
     * - Client ID
       - Relying Party identification
@@ -176,7 +176,7 @@ Sample EAT in JSON format
       "key_id": "tee_att_key0"
     },
     "eat": {
-      "nonce": -1582119980,
+      "auth_challenge":"dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678"
       "client_id": 262974944,
       "device_ver": 1,
       "device_id": "e8cddb2a7f9a5a7c61735d6dda26e4bd153c6d772a9be6f26bd321dfe25e0ac8",
@@ -253,8 +253,4 @@ The :example:`tee_attestation <security/tee/tee_attestation>` example demonstrat
 API Reference
 -------------
 
-.. note::
-
-    To use the TEE Attestation APIs in your project, ensure that the :component:`tee_attestation <esp_tee/subproject/components/tee_attestation>` component is listed as a local dependency in the component manager manifest file `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_. Refer to the :example:`tee_attestation <security/tee/tee_attestation>` example for guidance.
-
-.. include-build-file:: inc/esp_tee_attestation.inc
+.. include-build-file:: inc/initial_attestation.inc

@@ -52,7 +52,7 @@ typedef enum {
     ESP_HIDH_BUSY,              /*!< vendor-defined: temporarily can not handle this request */
     ESP_HIDH_NO_DATA,           /*!< vendor-defined: no data. */
     ESP_HIDH_NEED_INIT,         /*!< vendor-defined: HIDH module shall initialize first */
-    ESP_HIDH_NEED_DEINIT,       /*!< vendor-defined: HIDH module shall de-deinitialize first */
+    ESP_HIDH_NEED_DEINIT,       /*!< vendor-defined: HIDH module shall deinitialize first */
     ESP_HIDH_NO_CONNECTION,     /*!< vendor-defined: connection may have been closed */
 } esp_hidh_status_t;
 
@@ -309,8 +309,8 @@ typedef union {
 
 /**
  * @brief       HID host callback function type
- * @param       event:      Event type
- * @param       param:      Point to callback parameter, currently is union type
+ * @param[in]   event:      Event type
+ * @param[in]   param:      Point to callback parameter, currently is union type
  */
 typedef void (*esp_hh_cb_t)(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param);
 
@@ -327,7 +327,7 @@ esp_err_t esp_bt_hid_host_register_callback(esp_hh_cb_t callback);
 
 /**
  * @brief       This function initializes HID host. This function should be called after esp_bluedroid_enable() and
- *              esp_bluedroid_init()/esp_bluedroid_init_with_cfg() success, and should be called after
+ *              esp_bluedroid_init_with_cfg() success, and should be called after
  *              esp_bt_hid_host_register_callback(). When the operation is complete the callback function will be called
  *              with ESP_HIDH_INIT_EVT.
  *
@@ -339,7 +339,7 @@ esp_err_t esp_bt_hid_host_init(void);
 
 /**
  * @brief       Closes the interface. This function should be called after esp_bluedroid_enable() and
- *              esp_bluedroid_init()/esp_bluedroid_init_with_cfg() success, and should be called after esp_bt_hid_host_init().
+ *              esp_bluedroid_init_with_cfg() success, and should be called after esp_bt_hid_host_init().
  *              When the operation is complete the callback function will be called with ESP_HIDH_DEINIT_EVT.
  *
  * @return      - ESP_OK: success

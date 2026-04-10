@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded import Dut
@@ -6,7 +6,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='not supported yet')  # TODO: [ESP32C61] IDF-9250 IDF-10985
 @pytest.mark.parametrize(
     'config',
     [
@@ -18,6 +17,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_esp_pm(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

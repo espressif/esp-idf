@@ -200,6 +200,9 @@ blehr_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_DISCONNECT:
         MODLOG_DFLT(INFO, "disconnect; reason=%d\n", event->disconnect.reason);
 
+        notify_state = false;
+        blehr_tx_hrate_stop();
+        conn_handle = BLE_HS_CONN_HANDLE_NONE;
         /* Connection terminated; resume advertising */
         blehr_advertise();
         break;
@@ -293,12 +296,14 @@ void app_main(void)
     /* name, period/time,  auto reload, timer ID, callback */
     blehr_tx_timer = xTimerCreate("blehr_tx_timer", pdMS_TO_TICKS(1000), pdTRUE, (void *)0, blehr_tx_hrate);
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     /* Start the task */
     nimble_port_freertos_init(blehr_host_task);

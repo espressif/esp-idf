@@ -28,7 +28,7 @@
 #include "soc/extmem_reg.h"
 #include "esp_private/cache_err_int.h"
 
-static const char *TAG = "CACHE_ERR";
+ESP_LOG_ATTR_TAG(TAG, "CACHE_ERR");
 
 #define DIM(array) (sizeof(array)/sizeof(*array))
 

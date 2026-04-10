@@ -1,1 +1,0 @@
--DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.sysview" -B build/sysview -DSDKCONFIG=build/sysview/sdkconfig

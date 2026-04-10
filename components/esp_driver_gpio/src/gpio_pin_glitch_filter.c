@@ -12,6 +12,7 @@
 #include "hal/gpio_ll.h"
 #include "esp_clk_tree.h"
 #include "esp_private/io_mux.h"
+#include "hal/gpio_caps.h"
 
 static const char *TAG = "gpio-filter";
 
@@ -93,11 +94,11 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
     // create pm lock according to different clock source
 #if CONFIG_PM_ENABLE
     esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
-#if SOC_GPIO_FILTER_CLK_SUPPORT_APB
+#if GPIO_CAPS_GET(FILTER_CLK_SUPPORT_APB)
     if (config->clk_src == GLITCH_FILTER_CLK_SRC_APB) {
         lock_type = ESP_PM_APB_FREQ_MAX;
     }
-#endif // SOC_GPIO_FILTER_CLK_SUPPORT_APB
+#endif // GPIO_CAPS_GET(FILTER_CLK_SUPPORT_APB)
     sprintf(filter->pm_lock_name, "filter_io_%d", config->gpio_num); // e.g. filter_io_0
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(lock_type, 0, filter->pm_lock_name, &filter->pm_lock),
                       err, TAG, "create pm_lock failed");

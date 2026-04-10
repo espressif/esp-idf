@@ -32,7 +32,7 @@ LCD 通常由两个主要平面组成：
     :SOC_LCD_I80_SUPPORTED: i80_lcd
     :SOC_LCD_RGB_SUPPORTED: rgb_lcd
     :SOC_MIPI_DSI_SUPPORTED: dsi_lcd
-    :SOC_PARLIO_SUPPORT_SPI_LCD: parl_lcd
+    :SOC_PARLIO_LCD_SUPPORTED: parl_lcd
 
 .. note::
 
@@ -53,6 +53,7 @@ LCD 数据面板操作
 * :cpp:func:`esp_lcd_panel_reset` 可以重置 LCD 数据面板。
 * :cpp:func:`esp_lcd_panel_init` 执行基本的数据面板初始化。
 * :cpp:func:`esp_lcd_panel_draw_bitmap` 可以将绘制 buffer 刷新到 LCD 屏幕上，其中目标绘制窗口是可配置的。请注意，使用该函数需要确保绘制 buffer 是一维数组，且每行像素数据之间没有跨距。
+* :cpp:func:`esp_lcd_panel_draw_bitmap_2d` 可以绘制部分位图到 LCD 屏幕上，源窗口和目标绘制窗口都是可配置的。请注意，此时绘制 buffer 可以是二维数组，也可以是每行像素数据之间没有跨距的一维数组。
 
 .. _steps_add_manufacture_init:
 
@@ -80,12 +81,12 @@ LCD 数据面板操作
 .. list::
 
     * :example:`peripherals/lcd/tjpgd` 演示了如何解码 JPEG 图像并在 SPI 接口的 LCD 上显示图像，同时周期性地旋转图像。
-    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` 演示了如何在 ESP-IDF 项目中使用 `esp_lcd` 组件为 LCD 屏幕添加自定义驱动，例如 GC9A01 或 ILI9341，以及如何启用 STMPE610 触摸控制器。
+    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` 演示了如何在相同的 SPI 总线上驱动 LCD 和触摸面板，并使用 LVGL 库显示简单的图形用户界面。
     :SOC_LCD_I80_SUPPORTED: * :example:`peripherals/lcd/i80_controller` 演示了如何将 LVGL 库移植到 `esp_lcd` 驱动层，以创建图形用户界面。
     :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` 展示了如何安装 RGB 面板驱动程序，并基于 LVGL 库在屏幕上显示散点图。
     :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` 演示了如何使用 `esp_lcd` 组件中的 SSD1306 面板驱动来简化移植 LVGL 库，并在 OLED 屏幕上显示滚动文本。
     :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/mipi_dsi` 演示了如何安装 MIPI DSI LCD 驱动程序，并在屏幕上显示一个 LVGL 小部件。
-    :SOC_PARLIO_SUPPORT_SPI_LCD: * :example:`peripherals/lcd/parlio_simulate` 演示了如何使用 Parallel IO 外设驱动 SPI 或 I80 接口的屏幕。
+    :SOC_PARLIO_LCD_SUPPORTED: * :example:`peripherals/lcd/parlio_simulate` 演示了如何使用 Parallel IO 外设驱动 SPI 或 I80 接口的屏幕。
 
 
 API 参考

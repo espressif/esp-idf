@@ -17,6 +17,9 @@
 
 #include "sdkconfig.h"
 
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+
 /*
     Format of certificate bundle:
     First, n uint32 "offset" entries, each describing the start of one certificate's data in terms of
@@ -131,6 +134,10 @@ static int esp_crt_check_signature(const mbedtls_x509_crt* child, const uint8_t*
     int ret = 0;
     mbedtls_pk_context pubkey;
     const mbedtls_md_info_t *md_info;
+    psa_key_id_t key_id = 0;
+    psa_status_t status;
+    psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+    bool key_imported = false;
 
     mbedtls_pk_init(&pubkey);
 
@@ -139,37 +146,125 @@ static int esp_crt_check_signature(const mbedtls_x509_crt* child, const uint8_t*
         goto cleanup;
     }
 
-    // Fast check to avoid expensive computations when not necessary
-    if (unlikely(!mbedtls_pk_can_do(&pubkey, child->MBEDTLS_PRIVATE(sig_pk)))) {
-        ESP_LOGE(TAG, "Unsuitable public key");
-        ret = MBEDTLS_ERR_PK_TYPE_MISMATCH;
-        goto cleanup;
-    }
-
+    // Get the message digest info for the hash algorithm used in the certificate
+    // We need to know this BEFORE importing the key so we can set the correct algorithm
     md_info = mbedtls_md_info_from_type(child->MBEDTLS_PRIVATE(sig_md));
-
     if (unlikely(md_info == NULL)) {
-        ESP_LOGE(TAG, "Unknown message digest");
+        ESP_LOGE(TAG, "Unknown message digest type: %d", child->MBEDTLS_PRIVATE(sig_md));
         ret = MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE;
         goto cleanup;
     }
 
+    // Map mbedTLS MD type to PSA hash algorithm
+    psa_algorithm_t psa_hash_alg;
+    switch (child->MBEDTLS_PRIVATE(sig_md)) {
+        case MBEDTLS_MD_SHA256:
+            psa_hash_alg = PSA_ALG_SHA_256;
+            break;
+        case MBEDTLS_MD_SHA384:
+            psa_hash_alg = PSA_ALG_SHA_384;
+            break;
+        case MBEDTLS_MD_SHA512:
+            psa_hash_alg = PSA_ALG_SHA_512;
+            break;
+        case MBEDTLS_MD_SHA1:
+            psa_hash_alg = PSA_ALG_SHA_1;
+            break;
+        default:
+            ESP_LOGE(TAG, "Unsupported hash algorithm: %d", child->MBEDTLS_PRIVATE(sig_md));
+            ret = MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE;
+            goto cleanup;
+    }
+
+    // Get the appropriate key attributes for signature verification
+    ret = mbedtls_pk_get_psa_attributes(&pubkey, PSA_KEY_USAGE_VERIFY_HASH, &key_attr);
+    if (unlikely(ret != 0)) {
+        ESP_LOGE(TAG, "Failed to get PSA key attributes with error 0x%x", -ret);
+        goto cleanup;
+    }
+
+    // Determine the PSA algorithm based on the key type and hash type
+    // We need to set this BEFORE importing the key
+    psa_algorithm_t psa_alg;
+    psa_key_type_t key_type = psa_get_key_type(&key_attr);
+
+    ESP_LOGD(TAG, "Key type: 0x%x, Hash alg: 0x%x",
+             (unsigned int)key_type, (unsigned int)psa_hash_alg);
+
+    if (PSA_KEY_TYPE_IS_RSA(key_type)) {
+        // For RSA keys, use PKCS#1 v1.5 with the specific hash algorithm
+        psa_alg = PSA_ALG_RSA_PKCS1V15_SIGN(psa_hash_alg);
+        ESP_LOGD(TAG, "Using RSA PKCS1V15 SIGN algorithm with hash");
+    } else if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+        // For ECC keys, use ECDSA_ANY which works with psa_verify_hash
+        // and doesn't constrain the hash length
+        psa_alg = PSA_ALG_ECDSA_ANY;
+        ESP_LOGD(TAG, "Using ECDSA_ANY algorithm (no hash constraint)");
+    } else {
+        ESP_LOGE(TAG, "Unsupported key type: 0x%x", (unsigned int)key_type);
+        ret = MBEDTLS_ERR_PK_TYPE_MISMATCH;
+        goto cleanup;
+    }
+
+    // Override the algorithm in key attributes with the specific hash algorithm
+    // This is required because PSA_ALG_ANY_HASH wildcard doesn't work for verification
+    psa_set_key_algorithm(&key_attr, psa_alg);
+
+    // Import the public key into PSA
+    ret = mbedtls_pk_import_into_psa(&pubkey, &key_attr, &key_id);
+    if (unlikely(ret != 0)) {
+        ESP_LOGE(TAG, "Failed to import key into PSA with error 0x%x", -ret);
+        goto cleanup;
+    }
+    key_imported = true;
+
     unsigned char hash[MBEDTLS_MD_MAX_SIZE];
     const unsigned char md_size = mbedtls_md_get_size(md_info);
 
-    if ((ret = mbedtls_md(md_info, child->tbs.p, child->tbs.len, hash)) != 0) {
-        ESP_LOGE(TAG, "MD failed with error 0x%x", -ret);
+    size_t hash_len = 0;
+    status = psa_hash_compute(psa_hash_alg, child->tbs.p, child->tbs.len, hash, sizeof(hash), &hash_len);
+
+    unsigned char *sig_ptr = child->MBEDTLS_PRIVATE(sig).p;
+    size_t sig_len = child->MBEDTLS_PRIVATE(sig).len;
+    unsigned char raw_sig[MBEDTLS_ECDSA_MAX_LEN];
+
+    if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+        // Convert DER-encoded ECDSA signature to raw (r||s) format for PSA
+        // Get the key size in bits from PSA attributes
+        size_t key_bits = psa_get_key_bits(&key_attr);
+        ret = mbedtls_ecdsa_der_to_raw(key_bits,
+                                       child->MBEDTLS_PRIVATE(sig).p,
+                                       child->MBEDTLS_PRIVATE(sig).len,
+                                       raw_sig, sizeof(raw_sig), &sig_len);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "Failed to convert ECDSA signature to raw format: 0x%x (returned %d)", -ret, ret);
+            ret = MBEDTLS_ERR_X509_INVALID_SIGNATURE;
+            goto cleanup;
+        }
+        sig_ptr = raw_sig;
+        ESP_LOGD(TAG, "Converted DER signature (len=%zu) to raw format (len=%zu) for %zu-bit key",
+                 child->MBEDTLS_PRIVATE(sig).len, sig_len, key_bits);
+    }
+
+    // Verify the signature using PSA with the correct algorithm
+    ESP_LOGD(TAG, "Verifying signature: alg=0x%08x, hash_len=%d, sig_len=%zu",
+             (unsigned int)psa_alg, md_size, sig_len);
+    status = psa_verify_hash(key_id, psa_alg, hash, md_size, sig_ptr, sig_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "PSA signature verification failed with error 0x%x (decimal: %d)",
+                 (unsigned int)status, (int)status);
+        ret = MBEDTLS_ERR_X509_INVALID_SIGNATURE;
         goto cleanup;
     }
 
-    if (unlikely((ret = mbedtls_pk_verify_ext(child->MBEDTLS_PRIVATE(sig_pk), child->MBEDTLS_PRIVATE(sig_opts), &pubkey,
-                                              child->MBEDTLS_PRIVATE(sig_md), hash, md_size,
-                                              child->MBEDTLS_PRIVATE(sig).p, child->MBEDTLS_PRIVATE(sig).len)) != 0)) {
-        ESP_LOGE(TAG, "PK verify failed with error 0x%x", -ret);
-        goto cleanup;
-    }
+    ret = 0;
+    ESP_LOGD(TAG, "Certificate signature verified successfully");
 
 cleanup:
+    if (key_imported) {
+        psa_destroy_key(key_id);
+    }
+    psa_reset_key_attributes(&key_attr);
     mbedtls_pk_free(&pubkey);
     return ret;
 }
@@ -228,7 +323,6 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt* const crt, const int de
     if (flags_filtered != MBEDTLS_X509_BADCERT_NOT_TRUSTED) {
         return 0;
     }
-
 
     if (unlikely(s_crt_bundle == NULL)) {
         ESP_LOGE(TAG, "No certificates in bundle");
@@ -405,7 +499,8 @@ static int esp_crt_ca_cb_callback(void *ctx, mbedtls_x509_crt const *child, mbed
     uint16_t cert_key_len = esp_crt_get_key_len(cert);
     // Set the public key in the new certificate
     mbedtls_pk_init(&new_cert->pk);
-    int ret = mbedtls_pk_parse_subpubkey((unsigned char **)&cert_key, cert_key + cert_key_len, &new_cert->pk);
+    // Use mbedtls_pk_parse_public_key() instead of deprecated mbedtls_pk_parse_subpubkey()
+    int ret = mbedtls_pk_parse_public_key(&new_cert->pk, cert_key, cert_key_len);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to parse public key from certificate: %d", ret);
         mbedtls_x509_crt_free(new_cert);

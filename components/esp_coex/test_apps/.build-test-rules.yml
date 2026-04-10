@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_coex/test_apps/:
+  disable:
+    - if: IDF_TARGET not in ["esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32h2", "esp32c5", "esp32c61"]
+      reason: only supported with s2, s3, c3, c2, c6, h2, c5 and c61

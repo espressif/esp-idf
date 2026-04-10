@@ -76,6 +76,14 @@ esp_err_t esp_openthread_rcp_init(void);
  */
 esp_err_t esp_openthread_rcp_version_set(const char *version_str);
 
+/**
+ * @brief   Sends a console command to RCP.
+ *
+ * @param[in]  input  The pointer to a command string to be run on RCP.
+ *
+ */
+void esp_openthread_rcp_send_command(const char *input);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_CLK  6
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_CMD  11
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D0   7
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D1   8
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D2   9
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D3   10
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D4   16
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D5   17
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D6   5
+#define SDMMC_SLOT0_IOMUX_PIN_NUM_D7   18
+#define SDMMC_SLOT0_FUNC               0
+
+#define SDMMC_SLOT1_IOMUX_PIN_NUM_CLK  14
+#define SDMMC_SLOT1_IOMUX_PIN_NUM_CMD  15
+#define SDMMC_SLOT1_IOMUX_PIN_NUM_D0   2
+#define SDMMC_SLOT1_IOMUX_PIN_NUM_D1   4
+#define SDMMC_SLOT1_IOMUX_PIN_NUM_D2   12
+#define SDMMC_SLOT1_IOMUX_PIN_NUM_D3   13
+#define SDMMC_SLOT1_FUNC               4

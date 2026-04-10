@@ -10,6 +10,7 @@
 #include "freertos/semphr.h"
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
+#include "esp_clk_tree.h"
 
 #include "sdkconfig.h"
 
@@ -66,9 +67,11 @@ static void consumer_task(void *arg)
 TEST_CASE("Test semaphore timeout during tickless idle", "[freertos]")
 {
     // Configure tickless idle
+    uint32_t xtal_hz = 0;
+    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &xtal_hz);
     esp_pm_config_t pm_config = {
-        .max_freq_mhz = esp_clk_cpu_freq() / MHZ,
-        .min_freq_mhz = esp_clk_cpu_freq() / MHZ,
+        .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = xtal_hz / MHZ,
         .light_sleep_enable = true,
     };
     TEST_ESP_OK(esp_pm_configure(&pm_config));

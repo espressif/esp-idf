@@ -56,11 +56,11 @@ In order to run the example on single SoC which supports both Wi-Fi and Thread, 
 Two ways are provided to setup the Thread Border Router in this example:
 
 - Auto Start
-Enable `OPENTHREAD_BR_AUTO_START`, configure the `CONFIG_EXAMPLE_WIFI_SSID` and `CONFIG_EXAMPLE_WIFI_PASSWORD` with your access point's ssid and psk.
+Enable `OPENTHREAD_NETWORK_AUTO_START`, configure the `CONFIG_EXAMPLE_WIFI_SSID` and `CONFIG_EXAMPLE_WIFI_PASSWORD` with your access point's ssid and psk.
 The device will connect to Wi-Fi and form a Thread network automatically after boot up.
 
 - Manual mode
-Disable `OPENTHREAD_BR_AUTO_START` and enable `OPENTHREAD_CLI_ESP_EXTENSION`. `wifi` command will be added for connecting the device to the Wi-Fi network.
+Disable `OPENTHREAD_NETWORK_AUTO_START` and enable `OPENTHREAD_CLI_ESP_EXTENSION`. `wifi` command will be added for connecting the device to the Wi-Fi network.
 
 If the `CONFIG_EXAMPLE_CONNECT_ETHERNET` option is enabled, the device will connect to `Ethernet`, form a Thread network and act as a Ethernet based Thread Border Router.
 
@@ -71,14 +71,14 @@ Build the project and flash it to the board, then run monitor tool to view seria
 ```
 idf.py -p PORT build flash monitor
 ```
-If the `OPENTHREAD_BR_AUTO_START` option is enabled, The device will be connected to the configured Wi-Fi and Thread network automatically then act as the border router.
+If the `OPENTHREAD_NETWORK_AUTO_START` option is enabled, The device will be connected to the configured Wi-Fi and Thread network automatically then act as the border router.
 
 Otherwise, you need to manually configure the networks with CLI commands.
 
 `wifi` command can be used to configure the Wi-Fi network.
 
 ```bash
-> wifi
+esp32s3> ot wifi
 --wifi parameter---
 connect
 -s                   :     wifi ssid
@@ -96,7 +96,7 @@ Done
 To join a Wi-Fi network, please use the `wifi connect` command:
 
 ```bash
-> wifi connect -s threadcertAP -p threadcertAP
+esp32s3> ot wifi connect -s threadcertAP -p threadcertAP
 ssid: threadcertAP
 psk: threadcertAP
 I (11331) wifi:wifi driver task: 3ffd06e4, prio:23, stack:6656, core=0
@@ -117,7 +117,7 @@ Done
 To get the state of the Wi-Fi network:
 
 ```bash
-> wifi state
+esp32s3> ot wifi state
 connected
 Done
 ```
@@ -165,7 +165,7 @@ For mobile devices, the route table rules will be automatically configured after
 Now in the Thread end device, check the IP addresses:
 
 ```
-> ipaddr
+esp32h2> ot ipaddr
 fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
 fdde:ad00:beef:0:0:ff:fe00:c402
 fdde:ad00:beef:0:ad4a:9a9a:3cd6:e423
@@ -192,13 +192,13 @@ The newly introduced service registration protocol([SRP](https://datatracker.iet
 Now we'll publish the service `my-service._test._udp` with hostname `test0` and port 12345
 
 ```
-> srp client host name test0
+esp32h2> ot srp client host name test0
 Done
-> srp client host address fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
+esp32h2> ot srp client host address fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
 Done
-> srp client service add my-service _test._udp 12345
+esp32h2> ot srp client service add my-service _test._udp 12345
 Done
-> srp client autostart enable
+esp32h2> ot srp client autostart enable
 Done
 ```
 
@@ -233,7 +233,7 @@ Then get the border router's OMR prefix global unicast address(or ML-EID), and c
 
 On the border router:
 ```
-> ipaddr
+esp32s3> ot ipaddr
 fdde:ad00:beef:0:0:ff:fe00:fc10
 fd9b:347f:93f7:1:1003:8f00:bcc1:3038
 fdde:ad00:beef:0:0:ff:fe00:fc00
@@ -245,19 +245,19 @@ Done
 
 On the Thread end device:
 ```
-> dns config fd9b:347f:93f7:1:1003:8f00:bcc1:3038
+esp32h2> ot dns config fd9b:347f:93f7:1:1003:8f00:bcc1:3038
 (or
-> dns config fdde:ad00:beef:0:f891:287:866:776)
+esp32h2> ot dns config fdde:ad00:beef:0:f891:287:866:776)
 Done
 ```
 
 Now the service published on the Host can be discovered on the Thread end device.
 ```
-> dns resolve FA001208.default.service.arpa.
+esp32h2> ot dns resolve FA001208.default.service.arpa.
 DNS response for FA001208.default.service.arpa. - fdde:ad00:beef:cafe:b939:26be:7516:b87e TTL:120
 Done
 
-> dns browse _test._udp.default.service.arpa.
+esp32h2> ot dns browse _test._udp.default.service.arpa.
 DNS browse response for _test._udp.default.service.arpa.
 testhost
     Port:5683, Priority:0, Weight:0, TTL:120
@@ -266,7 +266,7 @@ testhost
     TXT:[test=31, dn=616162626262] TTL:120
 Done
 
-> dns service testhost _test._udp.default.service.arpa.
+esp32h2> ot dns service testhost _test._udp.default.service.arpa.
 DNS service resolution response for testhost for service _test._udp.default.service.arpa.
 Port:5683, Priority:0, Weight:0, TTL:120
 Host:FA001208.default.service.arpa.

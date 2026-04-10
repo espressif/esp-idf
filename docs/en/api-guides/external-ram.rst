@@ -24,9 +24,13 @@ Hardware
 
 .. note::
 
-    .. only:: esp32 or esp32s2 or esp32s3
+    .. only:: esp32
 
         Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the MTDI pin to a high signal level on boot-up, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+
+    .. only:: esp32s2 or esp32s3
+
+        Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the GPIO45 strapping pin to a high signal level on boot-up, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SPI level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
 
     .. only:: esp32p4
 
@@ -83,11 +87,13 @@ It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next
 Add External RAM to the Capability Allocator
 --------------------------------------------
 
-Select this option by choosing ``Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`` from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Add RAM to heap_caps allocator (malloc() stays internal by default)`` from :ref:`CONFIG_SPIRAM_USE`.
 
-When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``. Since this memory is also tagged with ``MALLOC_CAP_DEFAULT``, calls such as ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` can still return PSRAM pointers.
 
-To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+To explicitly allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+
+In this mode, standard ``malloc()`` does not allocate from external RAM by default because it uses a separate default allocation policy.
 
 .. _external_ram_config_malloc:
 
@@ -239,6 +245,13 @@ By default, failure to initialize external RAM will cause the ESP-IDF startup to
 
     This feature is enabled whenever flash encryption is enabled. For more information on how to enable and how it works see :doc:`Flash Encryption </security/flash-encryption>`.
 
+    .. only:: SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+
+        On {IDF_TARGET_NAME}, PSRAM encryption can be controlled on a per-MMU-page basis, allowing individual PSRAM pages to be selectively encrypted or left unencrypted. However, in the default configuration, all PSRAM pages are encrypted when flash encryption is enabled.
+
+    .. only:: SOC_PSRAM_ENCRYPTION_SEPARATE_KEY
+
+        On {IDF_TARGET_NAME}, PSRAM encryption can use an independent encryption key. If the PSRAM encryption key is not programmed, the flash encryption key will be used as the PSRAM encryption key.
 
 .. only:: esp32
 

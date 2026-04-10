@@ -97,7 +97,7 @@
       - ESP32 的目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
     * - ``target/esp32-solo-1.cfg``
       - ESP32-SOLO-1 模组的目标配置文件，和 ``esp32.cfg`` 的差别在于它仅配置一个 CPU
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - 适用于 ESP-WROVER-KIT 和 ESP-Prog 的 JTAG 适配器配置文件
 
 ---

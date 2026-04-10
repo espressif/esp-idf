@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -7,26 +7,27 @@ import signal
 import sys
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import click
+
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import RunTool
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import get_default_serial_port
 from idf_py_actions.tools import get_sdkconfig_value
-from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import run_target
-from idf_py_actions.tools import RunTool
+
 PYTHON = sys.executable
 
 
 BAUD_RATE = {
     'names': ['-b', '--baud'],
-    'help': ("Global baud rate for all idf.py subcommands if they don't overwrite it locally."
-             "It can imply monitor baud rate as well if it hasn't been defined locally."),
+    'help': (
+        "Global baud rate for all idf.py subcommands if they don't overwrite it locally."
+        "It can imply monitor baud rate as well if it hasn't been defined locally."
+    ),
     'scope': 'global',
     'envvar': 'ESPBAUD',
     'default': 460800,
@@ -42,32 +43,31 @@ PORT = {
 }
 
 
-def yellow_print(message: str, newline: Optional[str]='\n') -> None:
+def yellow_print(message: str, newline: str | None = '\n') -> None:
     """Print a message to stderr with yellow highlighting"""
-    sys.stderr.write('%s%s%s%s' % ('\033[0;33m', message, '\033[0m', newline))
+    sys.stderr.write(f'\033[0;33m{message}\033[0m{newline}')
     sys.stderr.flush()
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
+def action_extensions(base_actions: dict, project_path: str) -> dict:
     def _get_project_desc(ctx: click.core.Context, args: PropertyDict) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r', encoding='utf-8') as f:
+        with open(desc_path, encoding='utf-8') as f:
             project_desc = json.load(f)
         return project_desc
 
-    def _get_esptool_args(args: PropertyDict) -> List:
-        esptool_path = os.path.join(
-            os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py'
-        )
+    def _get_esptool_args(args: PropertyDict) -> list:
         esptool_wrapper_path = os.environ.get('ESPTOOL_WRAPPER', '')
         if args.port is None:
             args.port = get_default_serial_port()
         result = [PYTHON]
         if os.path.exists(esptool_wrapper_path):
             result += [esptool_wrapper_path]
-        result += [esptool_path]
+        else:
+            result += ['-m']
+        result += ['esptool']
         result += ['-p', args.port]
         result += ['-b', str(args.baud)]
 
@@ -75,14 +75,15 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             flasher_args = json.load(f)
 
         extra_esptool_args = flasher_args['extra_esptool_args']
-        result += ['--before', extra_esptool_args['before']]
-        result += ['--after', extra_esptool_args['after']]
+        # esptool v5 expects hyphenated reset modes
+        result += ['--before', extra_esptool_args['before'].replace('_', '-')]
+        result += ['--after', extra_esptool_args['after'].replace('_', '-')]
         result += ['--chip', extra_esptool_args['chip']]
         if not extra_esptool_args['stub']:
             result += ['--no-stub']
         return result
 
-    def _get_commandline_options(ctx: click.core.Context) -> List:
+    def _get_commandline_options(ctx: click.core.Context) -> list:
         """Return all the command line options up to first action"""
         # This approach ignores argument parsing done Click
         result = []
@@ -127,11 +128,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             args.port = args.port or get_default_serial_port()
             monitor_args += ['-p', args.port]
 
-            baud = (
-                monitor_baud
-                or os.getenv('IDF_MONITOR_BAUD')
-                or os.getenv('MONITORBAUD')
-            )
+            baud = monitor_baud or os.getenv('IDF_MONITOR_BAUD') or os.getenv('MONITORBAUD')
 
             if baud is None:
                 # Baud hasn't been changed locally (by local baud argument nor by environment variables)
@@ -139,27 +136,18 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 # Use the global baud rate if it has been changed by the command line.
                 # Use project_desc['monitor_baud'] as the last option.
 
-                global_baud_defined = (
-                    ctx._parameter_source['baud']
-                    == click.core.ParameterSource.COMMANDLINE
-                )
-                baud = (
-                    args.baud if global_baud_defined else project_desc['monitor_baud']
-                )
+                global_baud_defined = ctx._parameter_source['baud'] == click.core.ParameterSource.COMMANDLINE
+                baud = args.baud if global_baud_defined else project_desc['monitor_baud']
 
             monitor_args += ['-b', baud]
 
         monitor_args += ['--toolchain-prefix', project_desc['monitor_toolprefix']]
 
-        coredump_decode = get_sdkconfig_value(
-            project_desc['config_file'], 'CONFIG_ESP_COREDUMP_DECODE'
-        )
+        coredump_decode = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_ESP_COREDUMP_DECODE')
         if coredump_decode is not None:
             monitor_args += ['--decode-coredumps', coredump_decode]
 
-        target_arch_riscv = get_sdkconfig_value(
-            project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV'
-        )
+        target_arch_riscv = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV')
         monitor_args += ['--target', project_desc['target']]
         revision = project_desc.get('min_rev')
         if revision:
@@ -196,7 +184,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             monitor_args += ['--disable-auto-color']
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
-        monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
+        monitor_args += ['-m', ' '.join(f"'{a}'" for a in idf_py)]
         hints = not args.no_hints
 
         # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
@@ -219,13 +207,18 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         action: str,
         ctx: click.core.Context,
         args: PropertyDict,
+        flash_all: bool,
+        trust_flash_content: bool,
         force: bool,
         extra_args: str,
         trace: bool,
     ) -> None:
         """
-        Run esptool to flash the entire project, from an argfile generated by the build system
+        Run esptool to flash the entire project, from an argfile generated by the build system.
+        By default uses fast reflashing when *_flashed.bin files exist. Use -a/--all for full flash.
         """
+        if flash_all and trust_flash_content:
+            raise FatalError('Error: --trust-flash-content cannot be used with -a/--all.')
         ensure_build_directory(args, ctx.info_name)
         project_desc = _get_project_desc(ctx, args)
         if project_desc['target'] == 'linux':
@@ -234,13 +227,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         args.port = args.port or get_default_serial_port()
 
-        extra_pre = list()
-        if trace:
-            extra_pre.append('--trace')
-
-        extra_post = list()
-        if force:
-            extra_post.append('--force')
+        extra_pre = ['--trace'] if trace else []
+        extra_post = ['--force'] if force else []
         if extra_args:
             extra_post += shlex.split(extra_args)
 
@@ -250,29 +238,27 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             'SERIAL_TOOL_EXTRA_PRE_CMD_ARGS': ';'.join(extra_pre),
             'SERIAL_TOOL_EXTRA_ARGS': ';'.join(extra_post),
         }
-        run_target(action, args, env, force_progression=True)
+        if flash_all:
+            env['IDF_FLASH_FULL'] = '1'
+        if trust_flash_content:
+            env['IDF_TRUST_FLASH_CONTENT'] = '1'
+        run_target(action, args, env, force_progression=True, interactive=True)
 
     def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)
         esptool_args = _get_esptool_args(args)
-        esptool_args += ['erase_flash']
-        RunTool('esptool.py', esptool_args, args.build_dir, hints=not args.no_hints)()
+        esptool_args += ['erase-flash']
+        RunTool('esptool', esptool_args, args.build_dir, hints=not args.no_hints, interactive=True)()
 
-    def global_callback(
-        ctx: click.core.Context, global_args: Dict, tasks: PropertyDict
-    ) -> None:
-        encryption = any(
-            [task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks]
-        )
+    def global_callback(ctx: click.core.Context, global_args: dict, tasks: PropertyDict) -> None:
+        encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
         if encryption:
             for task in tasks:
                 if task.name == 'monitor':
                     task.action_args['encrypted'] = True
                     break
 
-    def ota_targets(
-        target_name: str, ctx: click.core.Context, args: PropertyDict
-    ) -> None:
+    def ota_targets(target_name: str, ctx: click.core.Context, args: PropertyDict) -> None:
         """
         Execute the target build system to build target 'target_name'.
         Additionally set global variables for baud and port.
@@ -281,23 +267,26 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         """
         args.port = args.port or get_default_serial_port()
         ensure_build_directory(args, ctx.info_name)
-        run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port})
+        run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port}, interactive=True)
 
-    def merge_bin(action: str,
-                  ctx: click.core.Context,
-                  args: PropertyDict,
-                  output: str,
-                  format: str,
-                  md5_disable: str,
-                  flash_offset: str,
-                  fill_flash_size: str,
-                  merge_args: tuple[str]) -> None:
+    def merge_bin(
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        output: str,
+        format: str,  # noqa: A002
+        md5_disable: str,
+        flash_offset: str,
+        pad_to_size: str,
+        merge_args: tuple[str],
+        fill_flash_size: str = '',
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
         project_desc = _get_project_desc(ctx, args)
         merge_bin_args = [PYTHON, '-m', 'esptool']
         target = project_desc['target']
         merge_bin_args += ['--chip', target]
-        merge_bin_args += ['merge_bin']  # needs to be after the --chip option
+        merge_bin_args += ['merge-bin']  # needs to be after the --chip option
         if not output:
             if format in ('raw', 'uf2'):
                 output = 'merged-binary.bin'
@@ -316,32 +305,33 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 yellow_print('idf.py merge-bin: --flash-offset is only valid for RAW format. Option will be ignored.')
             else:
                 merge_bin_args += ['-t', flash_offset]
-        if fill_flash_size:
+        if pad_to_size or fill_flash_size:
             if format != 'raw':
-                yellow_print('idf.py merge-bin: --fill-flash-size is only valid for RAW format, option will be ignored.')
+                yellow_print('idf.py merge-bin: --pad-to-size is only valid for RAW format, option will be ignored.')
             else:
-                merge_bin_args += ['--fill-flash-size', fill_flash_size]
+                merge_bin_args += ['--pad-to-size', pad_to_size or fill_flash_size]
         if merge_args:
             merge_bin_args += list(merge_args)
         else:
             merge_bin_args += ['@flash_args']
         print(f'Merged binary {output} will be created in the build directory...')
-        RunTool('merge_bin', merge_bin_args, args.build_dir, build_dir=args.build_dir, hints=not args.no_hints)()
+        RunTool('merge-bin', merge_bin_args, args.build_dir, build_dir=args.build_dir, hints=not args.no_hints)()
 
     def secure_decrypt_flash_data(
-            action: str,
-            ctx: click.core.Context,
-            args: PropertyDict,
-            aes_xts: bool,
-            keyfile: str,
-            output: str,
-            address: str,
-            flash_crypt_conf: str,
-            **extra_args: str) -> None:
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        aes_xts: bool,
+        keyfile: str,
+        output: str,
+        address: str,
+        flash_crypt_conf: str,
+        **extra_args: str,
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        decrypt_flash_data_args = [PYTHON, '-m', 'espsecure', 'decrypt_flash_data']
+        decrypt_flash_data_args = [PYTHON, '-m', 'espsecure', 'decrypt-flash-data']
         if aes_xts:
-            decrypt_flash_data_args += ['--aes_xts']
+            decrypt_flash_data_args += ['--aes-xts']
         if keyfile:
             decrypt_flash_data_args += ['--keyfile', keyfile]
         if output:
@@ -349,21 +339,16 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if address:
             decrypt_flash_data_args += ['--address', address]
         if flash_crypt_conf:
-            decrypt_flash_data_args += ['--flash_crypt_conf', flash_crypt_conf]
+            decrypt_flash_data_args += ['--flash-crypt-conf', flash_crypt_conf]
         if extra_args['encrypted_file']:
             decrypt_flash_data_args += [extra_args['encrypted_file']]
         RunTool('espsecure', decrypt_flash_data_args, args.build_dir)()
 
     def secure_digest_secure_bootloader(
-            action: str,
-            ctx: click.core.Context,
-            args: PropertyDict,
-            keyfile: str,
-            output: str,
-            iv: str,
-            **extra_args: str) -> None:
+        action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, output: str, iv: str, **extra_args: str
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        digest_secure_bootloader_args = [PYTHON, '-m', 'espsecure', 'digest_secure_bootloader']
+        digest_secure_bootloader_args = [PYTHON, '-m', 'espsecure', 'digest-secure-bootloader']
         if keyfile:
             digest_secure_bootloader_args += ['--keyfile', keyfile]
         if output:
@@ -375,19 +360,20 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         RunTool('espsecure', digest_secure_bootloader_args, args.build_dir)()
 
     def secure_encrypt_flash_data(
-            action: str,
-            ctx: click.core.Context,
-            args: PropertyDict,
-            aes_xts: bool,
-            keyfile: str,
-            output: str,
-            address: str,
-            flash_crypt_conf: str,
-            **extra_args: str) -> None:
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        aes_xts: bool,
+        keyfile: str,
+        output: str,
+        address: str,
+        flash_crypt_conf: str,
+        **extra_args: str,
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        encrypt_flash_data_args = [PYTHON, '-m', 'espsecure', 'encrypt_flash_data']
+        encrypt_flash_data_args = [PYTHON, '-m', 'espsecure', 'encrypt-flash-data']
         if aes_xts:
-            encrypt_flash_data_args += ['--aes_xts']
+            encrypt_flash_data_args += ['--aes-xts']
         if keyfile:
             encrypt_flash_data_args += ['--keyfile', keyfile]
         if output:
@@ -395,23 +381,27 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if address:
             encrypt_flash_data_args += ['--address', address]
         if flash_crypt_conf:
-            encrypt_flash_data_args += ['--flash_crypt_conf', flash_crypt_conf]
+            encrypt_flash_data_args += ['--flash-crypt-conf', flash_crypt_conf]
         if extra_args['plaintext_file']:
             encrypt_flash_data_args += [extra_args['plaintext_file']]
         RunTool('espsecure', encrypt_flash_data_args, args.build_dir)()
 
-    def secure_generate_flash_encryption_key(action: str, ctx: click.core.Context, args: PropertyDict, keylen: str, **extra_args: str) -> None:
+    def secure_generate_flash_encryption_key(
+        action: str, ctx: click.core.Context, args: PropertyDict, keylen: str, **extra_args: str
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        generate_flash_encryption_key_args = [PYTHON, '-m', 'espsecure', 'generate_flash_encryption_key']
+        generate_flash_encryption_key_args = [PYTHON, '-m', 'espsecure', 'generate-flash-encryption-key']
         if keylen:
             generate_flash_encryption_key_args += ['--keylen', keylen]
         if extra_args['keyfile']:
             generate_flash_encryption_key_args += [extra_args['keyfile']]
-        RunTool('espsecure',  generate_flash_encryption_key_args, args.project_dir)()
+        RunTool('espsecure', generate_flash_encryption_key_args, args.project_dir)()
 
-    def secure_generate_signing_key(action: str, ctx: click.core.Context, args: PropertyDict, version: str, scheme: str, **extra_args: str) -> None:
+    def secure_generate_signing_key(
+        action: str, ctx: click.core.Context, args: PropertyDict, version: str, scheme: str, **extra_args: str
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        generate_signing_key_args = [PYTHON, '-m', 'espsecure', 'generate_signing_key']
+        generate_signing_key_args = [PYTHON, '-m', 'espsecure', 'generate-signing-key']
         project_desc = _get_project_desc(ctx, args)
         ecdsa_scheme = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME')
         ecdsa_v2_scheme = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME')
@@ -428,33 +418,37 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             generate_signing_key_args += [extra_args['keyfile']]
         RunTool('espsecure', generate_signing_key_args, args.project_dir)()
 
-    def secure_generate_key_digest(action: str, ctx: click.core.Context, args: PropertyDict, keyfile:str, output:str, **extra_args: str) -> None:
+    def secure_generate_key_digest(
+        action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, output: str, **extra_args: str
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        generate_key_digest_args = [PYTHON, '-m', 'espsecure', 'digest_sbv2_public_key']
+        generate_key_digest_args = [PYTHON, '-m', 'espsecure', 'digest-sbv2-public-key']
         if keyfile:
             generate_key_digest_args += ['--keyfile', keyfile]
         if output:
             generate_key_digest_args += ['--output', output]
         RunTool('espsecure', generate_key_digest_args, args.project_dir)()
 
-    def secure_sign_data(action: str,
-                         ctx: click.core.Context,
-                         args: PropertyDict,
-                         version: str,
-                         keyfile: str,
-                         append_signatures: bool,
-                         pub_key: str,
-                         signature: str,
-                         output: str,
-                         **extra_args: str) -> None:
+    def secure_sign_data(
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        version: str,
+        keyfile: str,
+        append_signatures: bool,
+        pub_key: str,
+        signature: str,
+        output: str,
+        **extra_args: str,
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        sign_data_args = [PYTHON, '-m', 'espsecure', 'sign_data']
+        sign_data_args = [PYTHON, '-m', 'espsecure', 'sign-data']
         if version:
             sign_data_args += ['--version', version]
         if keyfile:
             sign_data_args += ['--keyfile', keyfile]
         if append_signatures:
-            sign_data_args += ['--append_signatures']
+            sign_data_args += ['--append-signatures']
         if pub_key:
             sign_data_args += ['--pub-key', pub_key]
         if signature:
@@ -465,14 +459,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             sign_data_args += [extra_args['datafile']]
         RunTool('espsecure', sign_data_args, args.build_dir)()
 
-    def secure_verify_signature(action: str,
-                                ctx: click.core.Context,
-                                args: PropertyDict,
-                                version: str,
-                                keyfile: str,
-                                **extra_args: str) -> None:
+    def secure_verify_signature(
+        action: str, ctx: click.core.Context, args: PropertyDict, version: str, keyfile: str, **extra_args: str
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        verify_signature_args = [PYTHON, '-m', 'espsecure', 'verify_signature']
+        verify_signature_args = [PYTHON, '-m', 'espsecure', 'verify-signature']
         if version:
             verify_signature_args += ['--version', version]
         if keyfile:
@@ -481,13 +472,15 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             verify_signature_args += [extra_args['datafile']]
         RunTool('espsecure', verify_signature_args, args.build_dir)()
 
-    def secure_generate_nvs_partition_key(action: str,
-                                          ctx: click.core.Context,
-                                          args: PropertyDict,
-                                          encryption_scheme: str,
-                                          keyfile: str,
-                                          hmac_keyfile: str,
-                                          **extra_args: str) -> None:
+    def secure_generate_nvs_partition_key(
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        encryption_scheme: str,
+        keyfile: str,
+        hmac_keyfile: str,
+        **extra_args: str,
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
         generate_nvs_partition_key_args = [PYTHON, '-m', 'esp_idf_nvs_partition_gen', 'generate-key']
         if encryption_scheme == 'HMAC':
@@ -498,7 +491,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         RunTool('espsecure', generate_nvs_partition_key_args, args.project_dir)()
 
-    def secure_encrypt_nvs_partition(action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, **extra_args: str) -> None:
+    def secure_encrypt_nvs_partition(
+        action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, **extra_args: str
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
         encrypt_nvs_partition_args = [PYTHON, '-m', 'esp_idf_nvs_partition_gen', 'encrypt']
         encrypt_nvs_partition_args += ['--inputkey', keyfile]
@@ -510,35 +505,37 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             encrypt_nvs_partition_args += [extra_args['partition_size']]
         RunTool('espsecure', encrypt_nvs_partition_args, args.project_dir)()
 
-    def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: Dict) -> List:
+    def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: dict) -> list:
         efuse_args = []
         if args.port:
             efuse_args += ['-p', args.port]
         elif not args.port and not extra_args['virt']:  # if --virt, no port will be found and it would cause error
-            efuse_args += ['-p', get_default_serial_port()]
+            raise FatalError('Error: Port is required for espefuse. Please specify the port with the --port argument.')
         efuse_args += ['--chip', _get_project_desc(ctx, args)['target']]
         if extra_args['virt']:
             efuse_args += ['--virt']
         if extra_args['before']:
-            efuse_args += ['--before', extra_args['before'].replace('-', '_')]
+            efuse_args += ['--before', extra_args['before']]
         if extra_args['debug']:
             efuse_args += ['--debug']
         if extra_args['do_not_confirm']:
             efuse_args += ['--do-not-confirm']
         return efuse_args
 
-    def efuse_burn(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+    def efuse_burn(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
-        burn_efuse_args = [PYTHON, '-m' 'espefuse', 'burn_efuse']
+        burn_efuse_args = [PYTHON, '-m', 'espefuse']
         burn_efuse_args += _parse_efuse_args(ctx, args, extra_args)
+        burn_efuse_args.append('burn-efuse')
         if extra_args['efuse_positional_args']:
             burn_efuse_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', burn_efuse_args, args.build_dir)()
 
     def efuse_burn_key(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: str) -> None:
         ensure_build_directory(args, ctx.info_name)
-        burn_key_args = [PYTHON, '-m' 'espefuse', 'burn_key']
+        burn_key_args = [PYTHON, '-m', 'espefuse']
         burn_key_args += _parse_efuse_args(ctx, args, extra_args)
+        burn_key_args.append('burn-key')
         if extra_args['no_protect_key']:
             burn_key_args += ['--no-protect-key']
         if extra_args['force_write_always']:
@@ -547,44 +544,71 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             burn_key_args += ['--show-sensitive-info']
         if extra_args['efuse_positional_args']:
             burn_key_args += extra_args['efuse_positional_args']
-        RunTool('espefuse.py', burn_key_args, args.project_dir, build_dir=args.build_dir)()
+        RunTool('espefuse', burn_key_args, args.project_dir, build_dir=args.build_dir)()
 
-    def efuse_dump(action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: Dict) -> None:
+    def efuse_dump(
+        action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: dict
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        dump_args = [PYTHON, '-m' 'espefuse', 'dump']
+        dump_args = [PYTHON, '-m', 'espefuse']
         dump_args += _parse_efuse_args(ctx, args, extra_args)
+        dump_args.append('dump')
         if file_name:
-            dump_args += ['--file_name', file_name]
+            dump_args += ['--file-name', file_name]
         RunTool('espefuse', dump_args, args.build_dir)()
 
-    def efuse_read_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+    def efuse_read_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
-        read_protect_args = [PYTHON, '-m' 'espefuse', 'read_protect_efuse']
+        read_protect_args = [PYTHON, '-m', 'espefuse']
         read_protect_args += _parse_efuse_args(ctx, args, extra_args)
+        read_protect_args.append('read-protect-efuse')
         if extra_args['efuse_positional_args']:
             read_protect_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', read_protect_args, args.build_dir)()
 
-    def efuse_summary(action: str, ctx: click.core.Context, args: PropertyDict, format: str, **extra_args: Dict) -> None:
+    def efuse_summary(
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        format: str,  # noqa: A002
+        **extra_args: dict,
+    ) -> None:
         ensure_build_directory(args, ctx.info_name)
-        summary_args = [PYTHON, '-m' 'espefuse', 'summary']
+        summary_args = [PYTHON, '-m', 'espefuse']
         summary_args += _parse_efuse_args(ctx, args, extra_args)
+        summary_args.append('summary')
         if format:
             summary_args += [f'--format={format.replace("-", "_")}']
         if extra_args['efuse_name']:
             summary_args += [str(extra_args['efuse_name'])]
         RunTool('espefuse', summary_args, args.build_dir)()
 
-    def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+    def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
-        write_protect_args = [PYTHON, '-m' 'espefuse', 'write_protect_efuse']
+        write_protect_args = [PYTHON, '-m', 'espefuse']
         write_protect_args += _parse_efuse_args(ctx, args, extra_args)
+        write_protect_args.append('write-protect-efuse')
         if extra_args['efuse_positional_args']:
             write_protect_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', write_protect_args, args.build_dir)()
 
     BAUD_AND_PORT = [BAUD_RATE, PORT]
     flash_options = BAUD_AND_PORT + [
+        {
+            'names': ['-a', '--all', 'flash_all'],
+            'is_flag': True,
+            'help': 'Flash all data (disable fast reflashing of changed sectors only).',
+        },
+        {
+            'names': ['-t', '--trust-flash-content'],
+            'is_flag': True,
+            'help': (
+                'Skip MD5 verification of files which do not need reflashing '
+                "(e.g., if any of the assets didn't change since the last flash) when fast reflashing "
+                'to speed up the process. '
+                'Use only if the device flash content has not changed since the last flash operation.'
+            ),
+        },
         {
             'names': ['--trace'],
             'is_flag': True,
@@ -598,10 +622,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         {
             'names': ['--extra-args'],
             'help': (
-                'Pass extra arguments to esptool separated by space. For more details see `esptool.py write_flash --help`. '
-                'For example to compress and verify data use: `idf.py flash --extra-args="--compress --verify"`. Use with caution!'
-            )
-        }
+                'Pass extra arguments to esptool separated by space. For more details see '
+                '`esptool write-flash --help`. For example to compress and (auto-)verify use: '
+                '`idf.py flash --extra-args="--compress"`. Use with caution!'
+            ),
+        },
     ]
 
     EFUSE_OPTS = [PORT] + [
@@ -635,7 +660,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'callback': flash,
                 'help': 'Flash the project.',
                 'options': global_options + flash_options,
-                'order_dependencies': ['all', 'erase-flash'],
+                'order_dependencies': ['erase-flash'],
+                'dependencies': ['all'],
             },
             'erase-flash': {
                 'callback': erase_flash,
@@ -678,9 +704,25 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--fill-flash-size'],
-                        'help': ('[ONLY RAW] If set, the final binary file will be padded with FF bytes up to this flash size.'),
-                        'type': click.Choice(['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']),
-                    }
+                        'deprecated': {
+                            'since': 'v6.0',
+                            'message': 'Did you want to use "--pad-to-size" instead?',
+                        },
+                        'hidden': True,
+                        'type': click.Choice(
+                            ['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']
+                        ),
+                    },
+                    {
+                        'names': ['--pad-to-size'],
+                        'help': (
+                            '[ONLY RAW] If set, the final binary file will be padded with FF bytes up to this '
+                            'flash size.'
+                        ),
+                        'type': click.Choice(
+                            ['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']
+                        ),
+                    },
                 ],
                 'arguments': [
                     {
@@ -712,7 +754,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--flash-crypt-conf'],
-                        'help': ('Override FLASH_CRYPT_CONF efuse value (default is 0XF).'),
+                        'help': ('Override FLASH_CRYPT_CONF eFuse value (default is 0XF).'),
                     },
                 ],
                 'arguments': [
@@ -724,8 +766,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             },
             'secure-digest-secure-bootloader': {
                 'callback': secure_digest_secure_bootloader,
-                'help': ('Take a bootloader binary image and a secure boot key, and output a combined'
-                         'digest+binary suitable for flashing along with the precalculated secure boot key.'),
+                'help': (
+                    'Take a bootloader binary image and a secure boot key, and output a combined'
+                    'digest+binary suitable for flashing along with the precalculated secure boot key.'
+                ),
                 'options': [
                     {
                         'names': ['--keyfile', '-k'],
@@ -738,7 +782,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--iv'],
                         'help': (
-                            '128 byte IV file. Supply a file for testing purposes only, if not supplied an IV will be randomly generated.'
+                            '128 byte IV file. Supply a file for testing purposes only, if not supplied an IV will be '
+                            'randomly generated.'
                         ),
                     },
                 ],
@@ -748,7 +793,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'nargs': 1,
                     },
                 ],
-
             },
             'secure-encrypt-flash-data': {
                 'callback': secure_encrypt_flash_data,
@@ -757,9 +801,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--aes-xts', '-x'],
                         'is_flag': True,
-                        'help': (
-                            'Encrypt data using AES-XTS if chip supports it.'
-                        ),
+                        'help': ('Encrypt data using AES-XTS if chip supports it.'),
                     },
                     {
                         'names': ['--keyfile', '-k'],
@@ -775,9 +817,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--flash-crypt-conf'],
-                        'help': (
-                            'Override FLASH_CRYPT_CONF eFuse value (default is 0XF).'
-                        ),
+                        'help': ('Override FLASH_CRYPT_CONF eFuse value (default is 0XF).'),
                     },
                 ],
                 'arguments': [
@@ -793,7 +833,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--keylen', '-l'],
                         'help': (
-                            'Length of private key digest file to generate (in bits). 3/4 Coding Scheme requires 192 bit key.'
+                            'Length of private key digest file to generate (in bits). 3/4 Coding Scheme requires '
+                            '192 bit key.'
                         ),
                     },
                 ],
@@ -806,9 +847,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             },
             'secure-generate-signing-key': {
                 'callback': secure_generate_signing_key,
-                'help': ('Generate a private key for signing secure boot images as per the secure boot version. Key file is generated in PEM'
-                         'format, Secure Boot V1 - ECDSA NIST256p private key. Secure Boot V2 - RSA 3072, ECDSA NIST256p, ECDSA NIST192p'
-                         'private key.'),
+                'help': (
+                    'Generate a private key for signing secure boot images as per the secure boot version.'
+                    ' Key file is generated in PEM format, Secure Boot V1 - ECDSA NIST256p private key.'
+                    ' Secure Boot V2 - RSA 3072, ECDSA NIST384p, ECDSA NIST256p, ECDSA NIST192p private key.'
+                ),
                 'options': [
                     {
                         'names': ['--version', '-v'],
@@ -819,7 +862,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--scheme', '-s'],
                         'help': ('Scheme of secure boot signing.'),
-                        'type': click.Choice(['rsa3072', 'ecdsa192', 'ecdsa256']),
+                        'type': click.Choice(['rsa3072', 'ecdsa192', 'ecdsa256', 'ecdsa384']),
                     },
                 ],
                 'arguments': [
@@ -845,8 +888,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             },
             'secure-sign-data': {
                 'callback': secure_sign_data,
-                'help': ('Sign a data file for use with secure boot. Signing algorithm is deterministic ECDSA w/ SHA-512 (V1) or either RSA-'
-                         'PSS or ECDSA w/ SHA-256 (V2).'),
+                'help': (
+                    'Sign a data file for use with secure boot. Signing algorithm is deterministic'
+                    ' ECDSA w/ SHA-512 (V1) or either RSA-PSS or ECDSA w/ SHA-256 (V2) or ECDSA w/ SHA-384 (V2).'
+                ),
                 'options': [
                     {
                         'names': ['--version', '-v'],
@@ -862,26 +907,26 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--append-signatures', '-a'],
                         'is_flag': True,
                         'help': (
-                            'Append signature block(s) to already signed image. Valid only for ESP32-S2.'
+                            'Append signature block(s) to already signed image. Not valid for ESP32 and ESP32-C2.'
                         ),
                     },
                     {
                         'names': ['--pub-key'],
                         'help': (
-                            'Public key files corresponding to the private key used to generate the pre-calculated signatures. Keys should be in PEM format.'
+                            'Public key files corresponding to the private key used to generate the pre-calculated '
+                            'signatures. Keys should be in PEM format.'
                         ),
                     },
                     {
                         'names': ['--signature'],
                         'help': (
-                            'Pre-calculated signatures. Signatures generated using external private keys e.g. keys stored in HSM.'
+                            'Pre-calculated signatures. Signatures generated using external private keys e.g. '
+                            'keys stored in HSM.'
                         ),
                     },
                     {
                         'names': ['--output', '-o'],
-                        'help': (
-                            'Output file for signed digest image. Default is to sign the input file.'
-                        ),
+                        'help': ('Output file for signed digest image. Default is to sign the input file.'),
                     },
                 ],
                 'arguments': [
@@ -893,7 +938,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             },
             'secure-verify-signature': {
                 'callback': secure_verify_signature,
-                'help': ('Verify a previously signed binary image, using the ECDSA (V1) or either RSA or ECDSA (V2) public key.'),
+                'help': (
+                    'Verify a previously signed binary image, using the ECDSA (V1) or either RSA or ECDSA (V2) '
+                    'public key.'
+                ),
                 'options': [
                     {
                         'names': ['--version', '-v'],
@@ -930,8 +978,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--hmac-keyfile', '-l'],
                         'help': 'File to store the generated HMAC key.',
-
-                    }
+                    },
                 ],
             },
             'secure-encrypt-nvs-partition': {
@@ -955,8 +1002,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['partition_size'],
                         'nargs': 1,
-                    }
-                ]
+                    },
+                ],
             },
             'efuse-burn': {
                 'callback': efuse_burn,
@@ -971,8 +1018,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             },
             'efuse-burn-key': {
                 'callback': efuse_burn_key,
-                'help': 'Burn a 256-bit key to EFUSE: BLOCK1, flash_encryption, BLOCK2, secure_boot_v1, secure_boot_v2, BLOCK3.',
-                'options': EFUSE_OPTS + [
+                'help': (
+                    'Burn a 256-bit key to EFUSE: BLOCK1, flash_encryption, BLOCK2, secure_boot_v1, '
+                    'secure_boot_v2, BLOCK3.'
+                ),
+                'options': EFUSE_OPTS
+                + [
                     {
                         'names': ['--no-protect-key'],
                         'is_flag': True,
@@ -985,16 +1036,15 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--force-write-always'],
                         'is_flag': True,
                         'help': (
-                            'Write the eFuse even if it looks like it\'s already been written, or is write protected.'
-                            'Note that this option can\'t disable write protection, or clear any bit which has already been set.'
+                            "Write the eFuse even if it looks like it's already been written, or is write protected."
+                            "Note that this option can't disable write protection, or clear any bit which has already "
+                            'been set.'
                         ),
                     },
                     {
                         'names': ['--show-sensitive-info'],
                         'is_flag': True,
-                        'help': (
-                            'Show data to be burned (may expose sensitive data). Enabled if --debug is used.'
-                        ),
+                        'help': ('Show data to be burned (may expose sensitive data). Enabled if --debug is used.'),
                     },
                 ],
                 'arguments': [
@@ -1007,12 +1057,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             'efuse-dump': {
                 'callback': efuse_dump,
                 'help': 'Dump raw hex values of all eFuses.',
-                'options': EFUSE_OPTS + [
+                'options': EFUSE_OPTS
+                + [
                     {
                         'names': ['--file-name'],
                         'help': (
-                            'Saves dump for each block into separate file. Provide the common path name /path/blk.bin, it will create:'
-                            ' blk0.bin, blk1.bin ... blkN.bin. Use burn_block_data to write it back to another chip.'
+                            'Saves dump for each block into separate file. Provide the common path name /path/blk.bin, '
+                            'it will create: blk0.bin, blk1.bin ... blkN.bin. Use burn-block-data to write it back to '
+                            'another chip.'
                         ),
                     },
                 ],
@@ -1031,7 +1083,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             'efuse-summary': {
                 'callback': efuse_summary,
                 'help': 'Get the summary of the eFuses.',
-                'options': EFUSE_OPTS + [
+                'options': EFUSE_OPTS
+                + [
                     {
                         'names': ['--format'],
                         'help': ('Summary format.'),
@@ -1084,7 +1137,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                             'Baud rate for monitor. '
                             'If this option is not provided IDF_MONITOR_BAUD and MONITORBAUD '
                             'environment variables, global baud rate and project_description.json in build directory '
-                            '(generated by CMake from project\'s sdkconfig) '
+                            "(generated by CMake from project's sdkconfig) "
                             'will be checked for default value.'
                         ),
                     },
@@ -1145,33 +1198,37 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'callback': flash,
                 'help': 'Flash partition table only.',
                 'options': flash_options,
-                'order_dependencies': ['partition-table', 'erase-flash'],
+                'order_dependencies': ['erase-flash'],
+                'dependencies': ['partition-table'],
             },
             'bootloader-flash': {
                 'callback': flash,
                 'help': 'Flash bootloader only.',
                 'options': flash_options,
-                'order_dependencies': ['bootloader', 'erase-flash'],
+                'order_dependencies': ['erase-flash'],
+                'dependencies': ['bootloader'],
             },
             'app-flash': {
                 'callback': flash,
                 'help': 'Flash the app only.',
                 'options': flash_options,
-                'order_dependencies': ['app', 'erase-flash'],
+                'order_dependencies': ['erase-flash'],
+                'dependencies': ['app'],
             },
             'encrypted-app-flash': {
                 'callback': flash,
                 'help': 'Flash the encrypted app only.',
                 'options': flash_options,
-                'order_dependencies': ['app', 'erase-flash'],
+                'order_dependencies': ['erase-flash'],
+                'dependencies': ['app'],
             },
             'encrypted-flash': {
                 'callback': flash,
                 'help': 'Flash the encrypted project.',
                 'options': flash_options,
-                'order_dependencies': ['all', 'erase-flash'],
+                'order_dependencies': ['erase-flash'],
+                'dependencies': ['all'],
             },
-
             'erase-otadata': {
                 'callback': ota_targets,
                 'help': 'Erase otadata partition.',

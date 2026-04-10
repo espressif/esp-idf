@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -407,6 +407,18 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     in_msglen = ssl->MBEDTLS_PRIVATE(in_msglen);
     buffer_len = tx_buffer_len(ssl, in_msglen);
 
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    /* For TLS 1.3 ENCRYPTED_EXTENSIONS state, allocate max size buffer.
+     * This is needed because ChangeCipherSpec (1 byte) arrives first,
+     * followed immediately by EncryptedExtensions (potentially large).
+     * Since mbedtls processes both in the same read loop without returning
+     * to the wrapper, we need to allocate sufficient space upfront. */
+    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_ENCRYPTED_EXTENSIONS) {
+        buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_CONTENT_LEN);
+        ESP_LOGV(TAG, "TLS 1.3 ENCRYPTED_EXTENSIONS: allocating max buffer %d bytes", buffer_len);
+    }
+#endif
+
     ESP_LOGV(TAG, "message length is %d RX buffer length should be %d left is %d",
                 (int)in_msglen, (int)buffer_len, (int)ssl->MBEDTLS_PRIVATE(in_left));
 
@@ -523,15 +535,6 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
 }
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
-{
-#ifdef CONFIG_MBEDTLS_DHM_C
-    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
-#endif /* CONFIG_MBEDTLS_DHM_C */
-}
-
 void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 {
     mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);

@@ -80,7 +80,7 @@ static void start_advertising(void) {
     adv_fields.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
     adv_fields.le_role_is_present = 1;
 
-    /* Set advertiement fields */
+    /* Set advertisement fields */
     rc = ble_gap_adv_set_fields(&adv_fields);
     if (rc != 0) {
         ESP_LOGE(TAG, "failed to set advertising data, error code: %d", rc);
@@ -107,7 +107,7 @@ static void start_advertising(void) {
         return;
     }
 
-    /* Set non-connetable and general discoverable mode to be a beacon */
+    /* Set undirected connectable and general discoverable mode */
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 
@@ -185,6 +185,9 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
         /* A connection was terminated, print connection descriptor */
         ESP_LOGI(TAG, "disconnected from peer; reason=%d",
                  event->disconnect.reason);
+
+        /* Reset heart rate subscription state */
+        gatt_svr_reset_heart_rate_subscription();
 
         /* Restart advertising */
         start_advertising();

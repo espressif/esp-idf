@@ -1,0 +1,17 @@
+[mapping:i2s_driver]
+archive: libesp_driver_i2s.a
+entries:
+    if I2S_ISR_IRAM_SAFE = y:
+        i2s_common: i2s_dma_rx_callback (noflash)
+        i2s_common: i2s_dma_tx_callback (noflash)
+    if I2S_CTRL_FUNC_IN_IRAM = y:
+        if SOC_I2S_SUPPORTS_TX_SYNC_CNT = y:
+            i2s_common: i2s_sync_get_bclk_count (noflash)
+            i2s_common: i2s_sync_get_fifo_count (noflash)
+            i2s_common: i2s_sync_reset_bclk_count (noflash)
+            i2s_common: i2s_sync_reset_fifo_count (noflash)
+        if SOC_I2S_SUPPORTS_TX_FIFO_SYNC = y:
+            i2s_common: i2s_sync_get_fifo_sync_diff_count (noflash)
+            i2s_common: i2s_sync_reset_fifo_sync_diff_count (noflash)
+            i2s_common: i2s_sync_enable_hw_fifo_sync (noflash)
+            i2s_common: i2s_sync_config_hw_fifo_sync (noflash)

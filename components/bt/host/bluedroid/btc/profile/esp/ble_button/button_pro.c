@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,7 +115,7 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
         //uuid = {LEN_UUID_16, {ATT_CHAR_BUTTON_WIT}};
         //start the button service after created
         esp_ble_gatts_start_srvc(p_data->create.service_id);
-        //add the frist button characteristic --> write characteristic
+        //add the first button characteristic --> write characteristic
         esp_ble_gatts_add_char(button_cb_env.clcb.cur_srvc_id, &uuid,
                                (GATT_PERM_WRITE | GATT_PERM_READ),
                                (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE));
@@ -128,15 +128,15 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
             tBTA_GATT_CHAR_PROP prop = (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
             //save the att handle to the env
             button_cb_env.button_inst.but_wirt_hdl = p_data->add_result.attr_id;
-            //add the frist button characteristic --> Notify characteristic
+            //add the first button characteristic --> Notify characteristic
             esp_ble_gatts_add_char(button_cb_env.clcb.cur_srvc_id, &uuid,
                                    GATT_PERM_READ, (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY));
-        } else if (p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_BUTTON_NTF) { // add the gattc config descriptor to the notify charateristic
+        } else if (p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_BUTTON_NTF) { // add the gattc config descriptor to the notify characteristic
             //tBTA_GATT_PERM perm = (GATT_PERM_WRITE|GATT_PERM_WRITE);
             uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
             button_cb_env.button_inst.but_ntf_hdl = p_data->add_result.attr_id;
             esp_ble_gatts_add_char_descr (button_cb_env.clcb.cur_srvc_id,
-                                          (GATT_PERM_WRITE | GATT_PERM_WRITE),
+                                          GATT_PERM_WRITE,
                                           &uuid);
         }
 
@@ -151,7 +151,7 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
         //BTA_GATTS_Listen(button_cb_env.gatt_if, true, NULL);
         break;
     case ESP_GATTS_CONNECT_EVT:
-        BTC_TRACE_ERROR("############BUTTON CONNCET EVT################\n");
+        BTC_TRACE_ERROR("############BUTTON CONNECT EVT################\n");
         //esp_ble_stop_advertising();
         //set the connection flag to true
         button_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
@@ -232,7 +232,7 @@ but_clcb_t *button_env_clcb_alloc (uint16_t conn_id, BD_ADDR remote_bda)
 **
 ** Function         button_env_find_conn_id_by_bd_adddr
 **
-** Description      The function searches all LCB with macthing bd address
+** Description      The function searches all LCB with matching bd address
 **
 ** Returns          total number of clcb found.
 **
@@ -280,7 +280,7 @@ BOOLEAN button_env_clcb_dealloc(uint16_t conn_id)
 **
 ** Function         button_init
 **
-** Description      Initializa the GATT Service for button profiles.
+** Description      Initialize the GATT Service for button profiles.
 **
 *******************************************************************************/
 esp_gatt_status_t button_init (but_prf_cb_t call_back)
@@ -323,7 +323,7 @@ void button_msg_notify(uint16_t len, uint8_t *button_msg)
     //notify rsp==false; indicate rsp==true.
     BOOLEAN rsp = false;
     if (!conn_status && button_cb_env.clcb.congest) {
-        BTC_TRACE_ERROR("the conneciton for button profile has been loss\n");
+        BTC_TRACE_ERROR("the connection for button profile has been loss\n");
         return;
     }
 

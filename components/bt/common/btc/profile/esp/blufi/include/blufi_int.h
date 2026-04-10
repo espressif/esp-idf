@@ -17,7 +17,7 @@ extern "C" {
 #if (BLUFI_INCLUDED == TRUE)
 
 #define BTC_BLUFI_GREAT_VER   0x01  //Version + Subversion
-#define BTC_BLUFI_SUB_VER     0x03  //Version + Subversion
+#define BTC_BLUFI_SUB_VER     0x04  //Version + Subversion
 #define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
 
 typedef UINT8 tGATT_IF;

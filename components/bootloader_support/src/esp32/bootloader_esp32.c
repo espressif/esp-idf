@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,12 +21,13 @@
 #include "esp_cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
-#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
+#include "soc/soc_caps.h"
+
 #include "hal/gpio_hal.h"
+#include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"
 #include "xt_instr_macros.h"
 
@@ -37,7 +38,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_efuse.h"
 
-static const char *TAG = "boot.esp32";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32");
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
 static void bootloader_reset_mmu(void)
@@ -60,6 +61,15 @@ static void bootloader_reset_mmu(void)
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
 #endif
 
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
+
     /* normal ROM boot exits with DROM0 cache unmasked,
         but serial bootloader exits with it masked. */
     DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
@@ -80,6 +90,7 @@ static inline esp_err_t bootloader_check_rated_cpu_clock(void)
     return ESP_OK;
 }
 
+#if SOC_RTC_WDT_SUPPORTED
 static void wdt_reset_cpu0_info_enable(void)
 {
     //We do not reset core1 info here because it didn't work before cpu1 was up. So we put it into call_start_cpu1.
@@ -91,7 +102,7 @@ static void wdt_reset_info_dump(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
-    const char *cpu_name = cpu ? "APP" : "PRO";
+    const char *cpu_name = cpu ? ESP_LOG_ATTR_STR("APP") : ESP_LOG_ATTR_STR("PRO");
 
     if (cpu == 0) {
         stat = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);
@@ -160,6 +171,7 @@ static void bootloader_check_wdt_reset(void)
     }
     wdt_reset_cpu0_info_enable();
 }
+#endif // SOC_RTC_WDT_SUPPORTED
 
 esp_err_t bootloader_init(void)
 {
@@ -232,10 +244,14 @@ esp_err_t bootloader_init(void)
     }
 #endif // #if !CONFIG_APP_BUILD_TYPE_RAM
 
+#if SOC_RTC_WDT_SUPPORTED
     // check whether a WDT reset happened
     bootloader_check_wdt_reset();
+#endif
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
     return ret;

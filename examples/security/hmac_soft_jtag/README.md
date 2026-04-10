@@ -40,7 +40,7 @@ This generates a new 32-byte random HMAC key and store it in given file.
 **Step 3:** Run the following command to burn the eFuse with the generated HMAC key with appropriate purpose. You can use purpose either HMAC_DOWN_ALL or HMAC_DOWN_JTAG. Check efuse summary to identify an available empty key block.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key <KEY_BLOCK_NO> <KEY_FILE>.bin HMAC_DOWN_ALL
+espefuse -p $ESPPORT burn-key <KEY_BLOCK_NO> <KEY_FILE>.bin HMAC_DOWN_ALL
 ```
 
 **Step 4:** Generate token data from the HMAC key. Keep this token data handy before re-enabling JTAG access.
@@ -76,7 +76,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 This re-enables JTAG access until the next reboot or until disabled using this example. For disabling JTAG, refer [Disable JTAG](#Disable-JTAG)
 
-**Note:** Even upon successful return, JTAG will only be enabled with a valid token_data. 
+**Note:** Even upon successful return, JTAG will only be enabled with a valid token_data.
 
 ```bash
 enable_jtag <token_data>
@@ -94,7 +94,7 @@ esp32c6> enable_jtag b2a49b1cce1be922bb7e431277413e3e8e6c3e8e6e17625c50ac66a9a85
 I (10974) jtag_re_enable: Device is ready to re-enable.
 I (10974) jtag_re_enable: Using HMAC key at block 8 with purpose HMAC_DOWN_JTAG
 I (10984) jtag: JTAG re-enablement workflow performed, please check the JTAG connection manually
-esp32c6> 
+esp32c6>
 ```
 
 #### Disable JTAG
@@ -110,5 +110,5 @@ Console logs while disabling JTAG:
 ```bash
 esp32c6> disable_jtag
 I (25104) jtag_re_enable: JTAG disabled temporarily
-esp32c6> 
+esp32c6>
 ```

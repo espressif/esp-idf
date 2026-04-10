@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,7 +8,6 @@
 #include "unity_test_utils.h"
 #include "test_utils.h"
 #include "esp_sleep.h"
-#include "driver/rtc_io.h"
 #include "driver/gpio.h"
 #include "hal/gpio_ll.h"
 #include "esp_console.h"
@@ -16,7 +15,7 @@
 #include "argtable3/argtable3.h"
 #include "esp_log.h"
 
-static const char* TAG = "io_wakeup_test";
+ESP_LOG_ATTR_TAG(TAG, "io_wakeup_test");
 
 typedef enum {
     IO_WAKEUP_LEVEL_LOW = 0,
@@ -142,7 +141,7 @@ static void register_ext1_wakeup(void)
 }
 #endif
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 static struct {
     struct arg_int *pin;
     struct arg_int *level;
@@ -177,19 +176,19 @@ static int process_rtcio_wakeup(int argc, char **argv)
     ESP_LOGI(TAG, "io_wakeup_level = %d\n", io_wakeup_level);
 
     if (rtcio_wakeup_args.disable->count) {
-        ESP_ERROR_CHECK(gpio_deep_sleep_wakeup_disable(io_wakeup_num));
+        ESP_ERROR_CHECK(gpio_wakeup_disable_on_hp_periph_powerdown_sleep(io_wakeup_num));
     } else {
         gpio_config_t config = {
             .pin_bit_mask = BIT64(io_wakeup_num),
             .mode = GPIO_MODE_INPUT,
-            .pull_down_en = false,
-            .pull_up_en = false,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
             .intr_type = GPIO_INTR_DISABLE
         };
         ESP_ERROR_CHECK(gpio_config(&config));
 
         /* Enable wake up from GPIO */
-        ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(BIT64(io_wakeup_num), io_wakeup_level));
+        ESP_ERROR_CHECK(esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(BIT64(io_wakeup_num), io_wakeup_level));
     }
 
     return 0;
@@ -257,8 +256,8 @@ static int process_gpio_wakeup(int argc, char **argv)
         gpio_config_t config = {
             .pin_bit_mask = BIT64(io_wakeup_num),
             .mode = GPIO_MODE_INPUT,
-            .pull_down_en = false,
-            .pull_up_en = false,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
             .intr_type = (io_wakeup_level == 0) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL
         };
         ESP_ERROR_CHECK(gpio_config(&config));
@@ -362,8 +361,13 @@ static int process_get_wakeup_cause(int argc, char **argv)
         return 1;
     }
 
-    switch (esp_sleep_get_wakeup_cause()) {
-    case ESP_SLEEP_WAKEUP_EXT1: {
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+        printf("Wakeup cause err\n");
+        return 0;
+    }
+
+    if (causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
 #if SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
         uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
         if (wakeup_pin_mask != 0) {
@@ -374,14 +378,14 @@ static int process_get_wakeup_cause(int argc, char **argv)
         {
             printf("Wake up from EXT1 triggered, but unknown wake-up IO\n");
         }
-        break;
     }
-    case ESP_SLEEP_WAKEUP_GPIO: {
+
+    if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
         if (esp_reset_reason() == ESP_RST_DEEPSLEEP) {
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-            uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
-            if (wakeup_pin_mask != 0) {
-                int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+            uint64_t wakeup_channel_mask = esp_sleep_get_gpio_wakeup_status();
+            if (wakeup_channel_mask != 0) {
+                int pin = esp_sleep_wakeup_io_bit2num((uint32_t)__builtin_ctzll(wakeup_channel_mask));
                 printf("Wake up from GPIO at IO%d\n", pin);
             } else {
                 printf("Wake up from GPIO triggered, but unknown wake-up IO\n");
@@ -409,11 +413,6 @@ static int process_get_wakeup_cause(int argc, char **argv)
             gpio_ll_clear_intr_status(&GPIO, 0xFFFFFFFF);
             gpio_ll_clear_intr_status_high(&GPIO, 0xFFFFFFFF);
         }
-        break;
-    }
-    default: {
-        printf("Wakeup cause err\n");
-    }
     }
     return 0;
 }
@@ -440,7 +439,7 @@ void register_io_wakeup_cmd(void)
 #endif
     register_gpio_control();
     register_gpio_wakeup();
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
     register_rtcio_wakeup();
 #endif
     register_get_wakeup_cause();

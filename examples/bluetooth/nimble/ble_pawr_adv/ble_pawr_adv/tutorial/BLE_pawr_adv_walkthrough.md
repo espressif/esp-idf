@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This tutorial examines the BLE Periodic Advertisement with Responses (PAwR) example code for ESP32 chipsets with BLE 5.0+ support. The code demonstrates how to implement PAwR functionality using NimBLE APIs, which enables bidirectional communication between advertiser and scanner devices in a power-efficient manner.
+This tutorial examines the BLE Periodic Advertisement with Responses (PAwR) example code for ESP32 chipsets with BLE 5.0+ support. The code demonstrates how to implement PAwR functionality using NimBLE APIs, which enables bidirectional communication between advertiser and scanner devices.
 
 ## Includes
 
@@ -15,6 +15,7 @@ This example is located in the examples folder of the ESP-IDF under the [ble_paw
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/util/util.h"
 ```
 These includes provide:
 
@@ -25,6 +26,8 @@ These includes provide:
 - NimBLE stack porting and FreeRTOS integration
 
 - BLE host stack functionality
+
+- BLE utility functions for address management (util.h)
 
 ## Main Entry Point
 
@@ -123,7 +126,7 @@ esp_err_t esp_nimble_init(void)
 The example defines several PAwR parameters
 
 ```c
-#define BLE_PAWR_EVENT_INTERVAL               (600)
+#define BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS   (3000)
 #define BLE_PAWR_NUM_SUBEVTS                  (10)
 #define BLE_PAWR_SUB_INTERVAL                 (44)  /*!< Interval between subevents (N * 1.25 ms) */
 #define BLE_PAWR_RSP_SLOT_DELAY               (20)  /*!< The first response slot delay (N * 1.25 ms) */
@@ -142,22 +145,6 @@ These parameters control:
 
 - Data length for subevent payloads
 
-
-## Periodic Advertising Configuration
-```c
-memset(&pparams, 0, sizeof(pparams));
-pparams.include_tx_power = 0;
-pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(3000);
-pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(3000);
-pparams.num_subevents = BLE_PAWR_NUM_SUBEVTS;
-pparams.subevent_interval = BLE_PAWR_SUB_INTERVAL;
-pparams.response_slot_delay = BLE_PAWR_RSP_SLOT_DELAY;
-pparams.response_slot_spacing = BLE_PAWR_RSP_SLOT_SPACING;
-pparams.num_response_slots = BLE_PAWR_NUM_RSP_SLOTS;
-
-rc = ble_gap_periodic_adv_configure(instance, &pparams);
-assert(rc == 0);
-```
 ## Key PAwR Parameters:
 
 - num_subevents: Number of subevents per periodic interval (10)
@@ -172,10 +159,10 @@ assert(rc == 0);
 
 ## PAwR Advertisement
 
-The start_periodic_adv() function configures and starts PAwR:
+The start_periodic_adv() function configures and starts PAwR. It takes `own_addr_type` as a parameter, which is determined dynamically via `ble_hs_id_infer_auto()` in the `on_sync` callback:
 ```c
 static void
-start_periodic_adv(void)
+start_periodic_adv(uint8_t own_addr_type)
 {
     int rc;
     uint8_t addr[6];
@@ -186,12 +173,13 @@ start_periodic_adv(void)
     uint8_t instance = 0;
 
 #if MYNEWT_VAL(BLE_PERIODIC_ADV_ENH)
-    struct ble_gap_periodic_adv_enable_params eparams;
+    struct ble_gap_periodic_adv_start_params eparams;
     memset(&eparams, 0, sizeof(eparams));
 #endif
 
-    /* Get the local public address. */
-    rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, addr, NULL);
+    /* Get the local address. */
+    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
     assert (rc == 0);
 
     ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],
@@ -199,7 +187,7 @@ start_periodic_adv(void)
 
     /* For periodic we use instance with non-connectable advertising */
     memset (&params, 0, sizeof(params));
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
@@ -226,8 +214,8 @@ start_periodic_adv(void)
     /* configure periodic advertising */
     memset(&pparams, 0, sizeof(pparams));
     pparams.include_tx_power = 0;
-    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(3000);
-    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(3000);
+    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS);
+    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS);
     /* Configure the parameters of PAwR. */
     pparams.num_subevents           = BLE_PAWR_NUM_SUBEVTS;
     pparams.subevent_interval       = BLE_PAWR_SUB_INTERVAL;
@@ -292,6 +280,32 @@ It processes two main events:
 
 - BLE_GAP_EVENT_PER_SUBEV_RESP: Triggered when responses are received from scanners
 
+## Sync Callback
+
+When the BLE host and controller are synced, the `on_sync` callback is invoked. It ensures a valid identity address is set and determines the appropriate address type before starting PAwR:
+
+```c
+static void
+on_sync(void)
+{
+    int rc;
+    uint8_t own_addr_type;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+    /* Begin advertising. */
+    start_periodic_adv(own_addr_type);
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
+- `ble_hs_id_infer_auto(0, &own_addr_type)`: Automatically determines the best address type to use based on what is available on the device.
+
 ## Host Task
 
 The pawr_host_task runs the NimBLE stack:
@@ -312,9 +326,7 @@ This PAwR example demonstrates:
 
 2. Bidirectional communication between advertiser and scanners
 
-3. Efficient power usage through scheduled communication windows
-
-4. Use of extended advertising to announce PAwR capabilities
+3. Use of extended advertising to announce PAwR capabilities
 
 The implementation shows how to:
 
@@ -326,4 +338,4 @@ The implementation shows how to:
 
 - Manage the advertising lifecycle
 
-PAwR is particularly useful for applications requiring periodic, bidirectional communication with multiple devices while maintaining low power consumption.
+PAwR is particularly useful for applications requiring periodic, bidirectional communication with multiple devices

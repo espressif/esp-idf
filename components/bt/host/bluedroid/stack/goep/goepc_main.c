@@ -80,6 +80,7 @@ static tGOEPC_CCB *find_ccb_by_obex_handle(UINT16 obex_handle)
     for (int i = 0; i < GOEPC_MAX_CONNECTION; ++i) {
         if (goepc_cb.ccb[i].allocated && goepc_cb.ccb[i].obex_handle == obex_handle) {
             p_ccb = &goepc_cb.ccb[i];
+            break;
         }
     }
     return p_ccb;

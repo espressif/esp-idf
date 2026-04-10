@@ -47,7 +47,6 @@
 
 /////////// Warning, It turns out that, the following bitmask is not defined as a standard, some manufacturer may use different bit position
 /////////// Please check the datasheet of your LCD panel before using the following bitmask
-/////////// IDF will remove them in the next major release (esp-idf 6.0)
 #define LCD_CMD_MH_BIT       (1 << 2) // Display data latch order, 0: refresh left to right, 1: refresh right to left
 #define LCD_CMD_BGR_BIT      (1 << 3) // RGB/BGR order, 0: RGB, 1: BGR
 #define LCD_CMD_ML_BIT       (1 << 4) // Line address order, 0: refresh top to bottom, 1: refresh bottom to top

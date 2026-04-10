@@ -1,0 +1,2 @@
+INPUT += \
+    $(PROJECT_PATH)/components/esp_hal_dma/esp32s31/include/hal/bitscrambler_peri_select.h

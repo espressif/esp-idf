@@ -235,23 +235,23 @@ ets_clk_mspi_apb_wait_ready = 0x400006d0;
  ***************************************/
 
 /* Functions */
-gpio_input_get = 0x400006d4;
-gpio_matrix_in = 0x400006d8;
-gpio_matrix_out = 0x400006dc;
-/* gpio_output_disable = 0x400006e0; */
-/* gpio_output_enable = 0x400006e4; */
-gpio_output_set = 0x400006e8;
-gpio_pad_hold = 0x400006ec;
-gpio_pad_input_disable = 0x400006f0;
-gpio_pad_input_enable = 0x400006f4;
-gpio_pad_pulldown = 0x400006f8;
-gpio_pad_pullup = 0x400006fc;
-gpio_pad_select_gpio = 0x40000700;
-gpio_pad_set_drv = 0x40000704;
-gpio_pad_unhold = 0x40000708;
-gpio_pin_wakeup_disable = 0x4000070c;
-gpio_pin_wakeup_enable = 0x40000710;
-gpio_bypass_matrix_in = 0x40000714;
+rom_gpio_input_get = 0x400006d4;
+rom_gpio_matrix_in = 0x400006d8;
+rom_gpio_matrix_out = 0x400006dc;
+rom_gpio_output_disable = 0x400006e0;
+rom_gpio_output_enable = 0x400006e4;
+rom_gpio_output_set = 0x400006e8;
+rom_gpio_pad_hold = 0x400006ec;
+rom_gpio_pad_input_disable = 0x400006f0;
+rom_gpio_pad_input_enable = 0x400006f4;
+rom_gpio_pad_pulldown = 0x400006f8;
+rom_gpio_pad_pullup = 0x400006fc;
+rom_gpio_pad_select_gpio = 0x40000700;
+rom_gpio_pad_set_drv = 0x40000704;
+rom_gpio_pad_unhold = 0x40000708;
+rom_gpio_pin_wakeup_disable = 0x4000070c;
+rom_gpio_pin_wakeup_enable = 0x40000710;
+rom_gpio_bypass_matrix_in = 0x40000714;
 
 
 /***************************************

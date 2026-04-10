@@ -93,6 +93,39 @@ GCC 版本更新说明
        C(const C&&) = default; /* 被隐式删除  */
     };
 
+``sys/dirent.h`` 不再包含一些函数原型
+-------------------------------------------------------
+
+问题
+^^^^^^
+
+使用旧工具链的代码可能会出现编译错误。例如：
+
+.. code-block:: c
+
+    #include <sys/dirent.h>
+    /* .... */
+    DIR* dir = opendir("test_dir");
+    /* .... */
+    /**
+     * Compile error:
+     * test.c: In function 'test_opendir':
+     * test.c:100:16: error: implicit declaration of function 'opendir' [-Werror=implicit-function-declaration]
+     *   100 |     DIR* dir = opendir(path);
+     *       |                ^~~~~~~
+     */
+
+解决方法
+^^^^^^^^^
+
+包含正确的头文件即可解决此问题。请将代码重构如下：
+
+.. code-block:: c
+
+    #include <dirent.h>
+    /* .... */
+    DIR* dir = opendir("test_dir");
+
 Picolibc
 --------
 
@@ -107,3 +140,58 @@ Picolibc 已移除 ``<sys/signal.h>`` 头文件。为确保跨 libc 实现的兼
 
     #include <sys/signal.h> /* 严重错误：sys/signal.h：没有此文件或目录 */
     #include <signal.h>     /* 正确：标准且可移植的写法 */
+
+.. only:: CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+
+    RISC-V 芯片与 LibC 函数中的非对齐内存访问
+    -----------------------------------------
+
+    乐鑫的 RISC-V 芯片在执行非对齐内存访问时，相比对齐访问仅有较小的性能损耗。
+
+    之前，当传入的指针不是按字对齐时，LibC 中涉及内存操作的函数（如拷贝或比较函数）会采用逐字节操作实现。现在，这些函数会尽可能采用字（4 字节）加载/存储操作，从而实现性能大幅提升。这些优化的实现通过 :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 默认启用，但会减少应用大约 800–1000 字节的内存预算 (IRAM)。
+
+    下表展示了在 ESP32-C3 芯片上使用 4096 字节的 buffer 进行基准测试的结果：
+
+    .. list-table:: 基准测试结果
+       :header-rows: 1
+       :widths: 20 20 20 20
+
+       * - 函数
+         - 旧版（CPU 周期）
+         - 优化版（CPU 周期）
+         - 改进 (%)
+       * - memcpy
+         - 32873
+         - 4200
+         - 87.2
+       * - memcmp
+         - 57436
+         - 14722
+         - 74.4
+       * - memmove
+         - 49336
+         - 9237
+         - 81.3
+       * - strcpy
+         - 28678
+         - 16659
+         - 41.9
+       * - strcmp
+         - 36867
+         - 11146
+         - 69.8
+
+    .. note::
+
+        上述结果适用于非对齐内存操作。对齐内存操作的性能保持不变。
+
+    性能得到提升的函数
+    ^^^^^^^^^^^^^^^^^^
+
+    - ``memcpy``
+    - ``memcmp``
+    - ``memmove``
+    - ``strcpy``
+    - ``strncpy``
+    - ``strcmp``
+    - ``strncmp``

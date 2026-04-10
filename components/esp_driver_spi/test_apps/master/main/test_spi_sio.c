@@ -23,9 +23,9 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "soc/spi_periph.h"
+#include "soc/gpio_struct.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
-#include "soc/gpio_periph.h"
 
 #include "hal/spi_ll.h"
 
@@ -75,7 +75,7 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
     spi_slave_interface_config_t slv_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slv_cfg, SPI_DMA_DISABLED));
 
-    same_pin_func_sel(bus_cfg, dev_cfg.spics_io_num, 0, false);
+    same_pin_func_sel(TEST_SPI_HOST, TEST_SLAVE_HOST, bus_cfg, dev_cfg.spics_io_num);
     inner_connect(bus_cfg);
 
     WORD_ALIGNED_ATTR uint8_t master_rx_buffer[320];
@@ -140,7 +140,6 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 }
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 /********************************************************************************
  *                             Test SIO Master
  * SIO Slave is not supported, and one unit test is limited to one feature, so,,,
@@ -271,7 +270,7 @@ void test_sio_slave_emulate(bool sio_master_in)
 
     unity_wait_for_signal("Master ready");
     for (int i = 0; i < TEST_NUM; i++) {
-        spi_slave_transaction_t trans = {};
+        spi_slave_transaction_t trans = { .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, };
         if (sio_master_in) {
             // slave output only section
             trans.length = (i + 1) * 8 * 8;
@@ -324,4 +323,3 @@ void test_slave_run(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=generic_multi_device]", test_master_run, test_slave_run);
-#endif  //p4 slave support

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,13 +40,24 @@ typedef struct {
 } isp_af_result_t;
 
 /**
+ * @brief ISP AWB subwindow result
+ */
+typedef struct {
+    uint32_t white_patch_num[ISP_AWB_WINDOW_X_NUM][ISP_AWB_WINDOW_Y_NUM];   ///< white patch number that counted by AWB in the subwindow
+    uint32_t sum_r[ISP_AWB_WINDOW_X_NUM][ISP_AWB_WINDOW_Y_NUM];             ///< The sum of R channel of these white patches
+    uint32_t sum_g[ISP_AWB_WINDOW_X_NUM][ISP_AWB_WINDOW_Y_NUM];             ///< The sum of G channel of these white patches
+    uint32_t sum_b[ISP_AWB_WINDOW_X_NUM][ISP_AWB_WINDOW_Y_NUM];             ///< The sum of B channel of these white patches
+} isp_awb_subwin_stat_result_t;
+
+/**
  * @brief ISP AWB result
  */
 typedef struct {
-    uint32_t white_patch_num;   ///< white patch number that counted by AWB in the window
-    uint32_t sum_r;             ///< The sum of R channel of these white patches
-    uint32_t sum_g;             ///< The sum of G channel of these white patches
-    uint32_t sum_b;             ///< The sum of B channel of these white patches
+    uint32_t white_patch_num;                      ///< white patch number that counted by AWB in the window
+    uint32_t sum_r;                                ///< The sum of R channel of these white patches
+    uint32_t sum_g;                                ///< The sum of G channel of these white patches
+    uint32_t sum_b;                                ///< The sum of B channel of these white patches
+    isp_awb_subwin_stat_result_t subwin_result;    ///< The AWB subwindow statistics result
 } isp_awb_stat_result_t;
 
 /**

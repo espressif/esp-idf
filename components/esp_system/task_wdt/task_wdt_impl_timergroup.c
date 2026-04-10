@@ -8,9 +8,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "sdkconfig.h"
+#include "hal/mwdt_periph.h"
 #include "hal/wdt_hal.h"
-#include "hal/mwdt_ll.h"
-#include "hal/timer_ll.h"
 #include "soc/system_intr.h"
 #include "esp_check.h"
 #include "esp_err.h"
@@ -53,7 +52,7 @@ typedef struct {
 static twdt_ctx_hard_t init_context;
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
-static const char* TAG = "task_wdt";
+ESP_LOG_ATTR_TAG(TAG, "task_wdt");
 static esp_err_t sleep_task_wdt_retention_init(void *arg)
 {
     uint32_t group_id = *(uint32_t *)arg;
@@ -113,8 +112,8 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
         // enable bus clock for the timer group registers
         PERIPH_RCC_ACQUIRE_ATOMIC(TWDT_PERIPH_MODULE, ref_count) {
             if (ref_count == 0) {
-                timer_ll_enable_bus_clock(TWDT_TIMER_GROUP, true);
-                timer_ll_reset_register(TWDT_TIMER_GROUP);
+                timg_ll_enable_bus_clock(TWDT_TIMER_GROUP, true);
+                timg_ll_reset_register(TWDT_TIMER_GROUP);
             }
         }
         wdt_hal_init(&ctx->hal, TWDT_INSTANCE, TWDT_PRESCALER, true);
@@ -170,7 +169,7 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
         /* Disable the Timer Group module */
         PERIPH_RCC_RELEASE_ATOMIC(TWDT_PERIPH_MODULE, ref_count) {
             if (ref_count == 0) {
-                timer_ll_enable_bus_clock(TWDT_TIMER_GROUP, false);
+                timg_ll_enable_bus_clock(TWDT_TIMER_GROUP, false);
             }
         }
 

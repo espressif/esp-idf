@@ -1,4 +1,4 @@
-menu "BitScrambler Configurations"
+menu "ESP-Driver:BitScrambler Configurations"
     depends on SOC_BITSCRAMBLER_SUPPORTED
     config BITSCRAMBLER_CTRL_FUNC_IN_IRAM
         bool "Place BitScrambler control functions in IRAM"

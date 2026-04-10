@@ -2,6 +2,7 @@ set(requires "unity"
              "test_utils"
              "esp_driver_uart"
              "esp_driver_gpio"
+             "esp_hal_wdt"
              "esp_timer"
              "nvs_flash"
              "esp_psram")
@@ -16,7 +17,8 @@ set(SRC  "test_app_main.c"
          "test_task_wdt.c")
 
 if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED OR CONFIG_SOC_DEEP_SLEEP_SUPPORTED)
-    list(APPEND SRC "test_sleep.c")
+    list(APPEND SRC "test_sleep.c"
+                    "test_sleep_uart.c")
 endif()
 
 if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)

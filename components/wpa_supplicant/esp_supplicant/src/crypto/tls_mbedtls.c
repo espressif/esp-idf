@@ -13,6 +13,8 @@
 #include "crypto/sha256.h"
 #include "crypto/sha384.h"
 
+#include "mbedtls/esp_mbedtls_random.h"
+
 /* TODO: Remove this once the appropriate solution is found
  *
  * ssl_misc.h header uses private elements from
@@ -24,8 +26,6 @@
 // located at mbedtls/library/ssl_misc.h
 #include "ssl_misc.h"
 
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/oid.h"
 #ifdef ESPRESSIF_USE
@@ -57,11 +57,11 @@
 #error "TLS not enabled in mbedtls config"
 #endif
 
-#if !defined(MBEDTLS_SHA256_C)
+#if (!defined(MBEDTLS_SHA256_C) && !defined(PSA_WANT_ALG_SHA_256))
 #error "SHA256 is disabled in mbedtls config"
 #endif
 
-#if !defined(MBEDTLS_AES_C)
+#if (!defined(MBEDTLS_AES_C) && !defined(PSA_WANT_KEY_TYPE_AES))
 #error "AES support is disabled in mbedtls config"
 #endif
 
@@ -75,8 +75,6 @@ struct tls_data {
 
 typedef struct tls_context {
     mbedtls_ssl_context ssl;            /*!< TLS/SSL context */
-    mbedtls_entropy_context entropy;    /*!< mbedTLS entropy context structure */
-    mbedtls_ctr_drbg_context ctr_drbg;  /*!< mbedTLS ctr drbg context structure */
     mbedtls_ssl_config conf;            /*!< TLS/SSL config to be shared structures */
     mbedtls_x509_crt cacert;            /*!< Container for X.509 CA certificate */
     mbedtls_x509_crt *cacert_ptr;       /*!< Pointer to the cacert being used. */
@@ -105,9 +103,7 @@ static void tls_mbedtls_cleanup(tls_context_t *tls)
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
     mbedtls_pk_free(&tls->clientkey);
-    mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
-    mbedtls_ctr_drbg_free(&tls->ctr_drbg);
     mbedtls_ssl_free(&tls->ssl);
 }
 
@@ -181,7 +177,7 @@ static int set_pki_context(tls_context_t *tls, const struct tls_connection_param
 
     ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->private_key_blob, cfg->private_key_blob_len,
                                (const unsigned char *)cfg->private_key_passwd,
-                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0);
     if (ret < 0) {
         wpa_printf(MSG_ERROR, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
         return ret;
@@ -240,32 +236,32 @@ static uint16_t tls_sig_algs_for_suiteb[] = {
 #endif \
     /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA384 */
 
-#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA512)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)) && defined(MBEDTLS_MD_CAN_SHA512)
     MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA512,
-#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA512 */
+#endif /* (MBEDTLS_RSA_C || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR) && MBEDTLS_MD_CAN_SHA512 */
 
-#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA384)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)) && defined(MBEDTLS_MD_CAN_SHA384)
     MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA384,
-#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA384 */
+#endif /* (MBEDTLS_RSA_C || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR) && MBEDTLS_MD_CAN_SHA384 */
 #endif /* CONFIG_TLSV13 */
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512),
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384),
 #endif
-#if defined(MBEDTLS_RSA_C)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA512),
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384),
 #endif
-#endif /* MBEDTLS_SHA512_C */
+#endif /* MBEDTLS_SHA512_C || PSA_WANT_ALG_SHA_512 */
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
 
 const mbedtls_x509_crt_profile suiteb_mbedtls_x509_crt_profile = {
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA384) |
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA512) |
 #endif
@@ -283,6 +279,7 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 }
 #endif
 
+#if 0
 static uint16_t tls_sig_algs_for_eap[] = {
 
 #ifdef CONFIG_TLSV13
@@ -325,61 +322,62 @@ static uint16_t tls_sig_algs_for_eap[] = {
 #endif \
     /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA256 */
 
-#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA512)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)) && defined(MBEDTLS_MD_CAN_SHA512)
     MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA512,
-#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA512 */
+#endif /* (MBEDTLS_RSA_C || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR) && MBEDTLS_MD_CAN_SHA512 */
 
-#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA384)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)) && defined(MBEDTLS_MD_CAN_SHA384)
     MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA384,
-#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA384 */
+#endif /* (MBEDTLS_RSA_C || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR) && MBEDTLS_MD_CAN_SHA384 */
 
-#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA256)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)) && defined(MBEDTLS_MD_CAN_SHA256)
     MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA256,
-#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA256 */
+#endif /* (MBEDTLS_RSA_C || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR) && MBEDTLS_MD_CAN_SHA256 */
 #endif /* CONFIG_TLSV13 */
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512),
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384),
 #endif
-#if defined(MBEDTLS_RSA_C)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA512),
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384),
 #endif
-#endif /* MBEDTLS_SHA512_C */
-#if defined(MBEDTLS_SHA256_C)
+#endif /* MBEDTLS_SHA512_C || PSA_WANT_ALG_SHA_512 */
+#if (defined(MBEDTLS_SHA256_C) || defined(PSA_WANT_ALG_SHA_256))
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA256),
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA224),
 #endif
-#if defined(MBEDTLS_RSA_C)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA256),
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA224),
 #endif
-#endif /* MBEDTLS_SHA256_C */
-#if defined(MBEDTLS_SHA1_C)
+#endif /* MBEDTLS_SHA256_C || PSA_WANT_ALG_SHA_256 */
+#if (defined(MBEDTLS_SHA1_C) || defined(PSA_WANT_ALG_SHA_1))
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA1),
 #endif
-#if defined(MBEDTLS_RSA_C)
+#if (defined(MBEDTLS_RSA_C) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA1),
 #endif
-#endif /* MBEDTLS_SHA1_C */
+#endif /* MBEDTLS_SHA1_C || PSA_WANT_ALG_SHA_1 */
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
+#endif /* 0 */
 
 const mbedtls_x509_crt_profile eap_mbedtls_x509_crt_profile = {
-#if defined(MBEDTLS_SHA1_C)
+#if (defined(MBEDTLS_SHA1_C) || defined(PSA_WANT_ALG_SHA_1))
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA1) |
 #endif
-#if defined(MBEDTLS_SHA256_C)
+#if (defined(MBEDTLS_SHA256_C) || defined(PSA_WANT_ALG_SHA_256))
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA224) |
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA256) |
 #endif
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA384) |
     MBEDTLS_X509_ID_FLAG(MBEDTLS_MD_SHA512) |
 #endif
@@ -393,7 +391,7 @@ static void tls_enable_sha1_config(tls_context_t *tls)
 {
     const mbedtls_x509_crt_profile *crt_profile = &eap_mbedtls_x509_crt_profile;
     mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-    mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
+    //mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
 }
 #ifdef CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK
 static int tls_disable_key_usages(void *data, mbedtls_x509_crt *cert, int depth, uint32_t *flags)
@@ -410,9 +408,8 @@ static const int suiteb_rsa_ciphersuite_preference[] = {
     MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
 #endif
 #endif
     0
@@ -423,7 +420,7 @@ static const int suiteb_ecc_ciphersuite_preference[] = {
     MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 #endif
 #endif
@@ -434,10 +431,10 @@ static const int suiteb_ciphersuite_preference[] = {
     MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
-#if defined(MBEDTLS_SHA512_C)
+#if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+    // MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
 #endif
 #endif
     0
@@ -599,24 +596,13 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
     assert(tls != NULL);
 
     mbedtls_ssl_init(&tls->ssl);
-    mbedtls_ctr_drbg_init(&tls->ctr_drbg);
     mbedtls_ssl_config_init(&tls->conf);
-    mbedtls_entropy_init(&tls->entropy);
 
     ret = set_client_config(params, tls);
     if (ret != 0) {
         wpa_printf(MSG_ERROR, "Failed to set client configurations");
         goto exit;
     }
-
-    ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg, mbedtls_entropy_func,
-                                &tls->entropy, NULL, 0);
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
-        goto exit;
-    }
-
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) && !defined(CONFIG_TLSV13)
     /* Disable TLSv1.3 even when enabled in MbedTLS and not enabled in WiFi config.
@@ -664,13 +650,6 @@ struct tls_connection * tls_connection_init(void *tls_ctx)
         wpa_printf(MSG_ERROR, "TLS: Failed to allocate connection memory");
         return NULL;
     }
-#ifdef CONFIG_TLSV13
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
-        return NULL;
-    }
-#endif /* CONFIG_TLSV13 */
     return conn;
 }
 
@@ -715,15 +694,6 @@ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
 }
 
 #ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
-static void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
-{
-#ifdef CONFIG_MBEDTLS_DHM_C
-    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
-#endif /* CONFIG_MBEDTLS_DHM_C */
-}
-
 static void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 {
     mbedtls_ssl_config *conf = (mbedtls_ssl_config *)mbedtls_ssl_context_get_config(ssl);
@@ -796,7 +766,6 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
             if (cli_state == MBEDTLS_SSL_SERVER_CERTIFICATE) {
                 esp_mbedtls_free_cacert(&tls->ssl);
             } else if (cli_state == MBEDTLS_SSL_CERTIFICATE_VERIFY) {
-                esp_mbedtls_free_dhm(&tls->ssl);
                 esp_mbedtls_free_keycert_key(&tls->ssl);
                 esp_mbedtls_free_keycert(&tls->ssl);
             }

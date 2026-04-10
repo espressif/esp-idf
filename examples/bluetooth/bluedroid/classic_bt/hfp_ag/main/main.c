@@ -22,7 +22,9 @@
 #include "esp_hf_ag_api.h"
 #include "bt_app_hf.h"
 #include "gpio_pcm_config.h"
+#if CONFIG_EXAMPLE_ENABLE_CONSOLE_REPL
 #include "esp_console.h"
+#endif
 #include "app_hf_msg_set.h"
 
 #define BT_HF_AG_TAG    "HF_AG_DEMO_MAIN"
@@ -131,6 +133,7 @@ void app_main(void)
     app_gpio_aec_io_cfg();
 #endif /* ACOUSTIC_ECHO_CANCELLATION_ENABLE */
 
+#if CONFIG_EXAMPLE_ENABLE_CONSOLE_REPL
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -152,4 +155,5 @@ void app_main(void)
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
+#endif
 }

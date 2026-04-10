@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,9 @@
 
 #ifdef ESP_PLATFORM
 #include "esp_log.h"
+#define ESP_HW_LOG_ATTR_TAG(tag, str)      ESP_LOG_ATTR_TAG(tag, str)
+#define ESP_HW_LOG_ATTR_TAG_DRAM(tag, str) ESP_LOG_ATTR_TAG_DRAM(tag, str)
+
 #define ESP_HW_LOGE(tag, fmt, ...) ESP_EARLY_LOGE(tag, fmt, ##__VA_ARGS__)
 #define ESP_HW_LOGW(tag, fmt, ...) ESP_EARLY_LOGW(tag, fmt, ##__VA_ARGS__)
 #define ESP_HW_LOGI(tag, fmt, ...) ESP_EARLY_LOGI(tag, fmt, ##__VA_ARGS__)
@@ -24,6 +27,9 @@
 #define ESP_HW_LOGV(tag, fmt, ...) ESP_EARLY_LOGV(tag, fmt, ##__VA_ARGS__)
 
 #else
+
+#define ESP_HW_LOG_ATTR_TAG(tag, str)      static __attribute__((unused)) const char *tag = str
+#define ESP_HW_LOG_ATTR_TAG_DRAM(tag, str) static __attribute__((unused)) DRAM_ATTR const char tag[] = str
 
 #define ESP_HW_LOGE(tag, fmt, ...) esp_rom_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
 #define ESP_HW_LOGW(tag, fmt, ...) esp_rom_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)

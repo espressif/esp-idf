@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,7 @@ esp_err_t http_header_get(http_header_handle_t header, const char *key, char **v
         *value = item->value;
     } else {
         *value = NULL;
+        return ESP_ERR_NOT_FOUND;
     }
 
     return ESP_OK;
@@ -88,8 +89,12 @@ static esp_err_t http_header_new_item(http_header_handle_t header, const char *k
     STAILQ_INSERT_TAIL(header, item, next);
     return ret;
 _header_new_item_exit:
-    free(item->key);
-    free(item->value);
+    if (item->key) {
+        free(item->key);
+    }
+    if (item->value) {
+        free(item->value);
+    }
     free(item);
     return ret;
 }
@@ -150,7 +155,7 @@ esp_err_t http_header_delete(http_header_handle_t header, const char *key)
 
 int http_header_set_format(http_header_handle_t header, const char *key, const char *format, ...)
 {
-    va_list argptr;
+    va_list argptr = {0};
     int len = 0;
     char *buf = NULL;
     va_start(argptr, format);

@@ -84,8 +84,8 @@ FORCE_INLINE_ATTR heap_t *find_containing_heap(void *ptr )
 
 /*
  Because we don't want to add _another_ known allocation method to the stack of functions to trace wrt memory tracing,
- these are declared private. The newlib malloc()/realloc() implementation also calls these, so they are declared
- separately in newlib/syscalls.c.
+ these are declared private. The libc malloc()/realloc() implementation also calls these, so they are declared
+ separately in esp_libc/src/syscalls.c.
 */
 void *heap_caps_realloc_default(void *p, size_t size);
 void *heap_caps_malloc_default(size_t size);

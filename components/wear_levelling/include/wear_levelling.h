@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 #include "esp_log.h"
 #include "esp_partition.h"
+#include "esp_blockdev.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,6 +121,39 @@ size_t wl_size(wl_handle_t handle);
 */
 size_t wl_sector_size(wl_handle_t handle);
 
+/* -------------------------------------------------------------- */
+/* BDL support                                                    */
+/* -------------------------------------------------------------- */
+
+ /**
+  * @brief  Creates a wear-levelling BDL instance on top of the given bottom block device.
+  *
+  * All I/O is routed exclusively through @p bdl_bottom_device, keeping the BDL stack
+  * fully independent of the legacy wl_handle_t driver.  The underlying device can be
+  * an esp_partition BDL, a memory-backed disk, or any other block device implementation.
+  *
+  * Internally allocates a WL_Flash engine (deriving its configuration from the bottom
+  * device geometry) and a BDL_Access adapter.  Releasing the returned BDL handle
+  * flushes and destroys the wear-levelling instance.
+  *
+  * The output device inherits geometry constraints (read_size, write_size) and device
+  * flags (read_only, encrypted, etc.) from @p bdl_bottom_device.  The disk_size and
+  * erase_size are determined by the WL engine.
+  *
+  * @note The WL configuration stores partition size as uint32_t.  If the bottom device
+  *       reports a disk_size exceeding UINT32_MAX the function fails immediately with
+  *       ESP_ERR_INVALID_SIZE to prevent silent truncation (fail-fast).
+  *
+  * @param[in]  bdl_bottom_device Handle of the bottom block device layer instance (e.g. partition BDL)
+  * @param[out] out_bdl_handle_ptr Handle of the created wear-levelling block device instance
+  *
+  * @return
+  *      - ESP_OK on success
+  *      - ESP_ERR_NO_MEM if memory allocation has failed
+  *      - ESP_ERR_INVALID_ARG if any of the arguments are invalid
+  *      - ESP_ERR_INVALID_SIZE if @p bdl_bottom_device disk_size exceeds UINT32_MAX
+  */
+  esp_err_t wl_get_blockdev(const esp_blockdev_handle_t bdl_bottom_device, esp_blockdev_handle_t *out_bdl_handle_ptr);
 
 #ifdef __cplusplus
 } // extern "C"

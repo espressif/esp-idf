@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <sys/cdefs.h>
 #include <sys/lock.h>
 #include "sdkconfig.h"
@@ -25,9 +24,9 @@
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_pm.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_hal.h"
+#include "hal/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
+#include "hal/mcpwm_hal.h"
 #include "hal/mcpwm_types.h"
 #include "driver/mcpwm_types.h"
 #include "esp_private/sleep_retention.h"
@@ -43,9 +42,9 @@ extern "C" {
 #endif
 
 #if CONFIG_MCPWM_ISR_CACHE_SAFE
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
 #else
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_INTRDISABLED)
 #endif
 
 // Use retention link only when the target supports sleep retention is enabled
@@ -77,7 +76,6 @@ typedef struct mcpwm_cap_channel_t mcpwm_cap_channel_t;
 
 struct mcpwm_group_t {
     int group_id;            // group ID, index from 0
-    int intr_priority;       // MCPWM interrupt priority
     mcpwm_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;   // group level spinlock
     uint32_t prescale;       // group prescale
@@ -87,10 +85,10 @@ struct mcpwm_group_t {
 #endif
     soc_module_clk_t clk_src; // peripheral source clock
     mcpwm_cap_timer_t *cap_timer; // mcpwm capture timers
-    mcpwm_timer_t *timers[SOC_MCPWM_TIMERS_PER_GROUP]; // mcpwm timer array
-    mcpwm_oper_t *operators[SOC_MCPWM_OPERATORS_PER_GROUP]; // mcpwm operator array
-    mcpwm_gpio_fault_t *gpio_faults[SOC_MCPWM_GPIO_FAULTS_PER_GROUP]; // mcpwm fault detectors array
-    mcpwm_gpio_sync_src_t *gpio_sync_srcs[SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP];  // mcpwm gpio sync array
+    mcpwm_timer_t *timers[MCPWM_LL_GET(TIMERS_PER_GROUP)]; // mcpwm timer array
+    mcpwm_oper_t *operators[MCPWM_LL_GET(OPERATORS_PER_GROUP)]; // mcpwm operator array
+    mcpwm_gpio_fault_t *gpio_faults[MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP)]; // mcpwm fault detectors array
+    mcpwm_gpio_sync_src_t *gpio_sync_srcs[MCPWM_LL_GET(GPIO_SYNCHROS_PER_GROUP)];  // mcpwm gpio sync array
 };
 
 typedef enum {
@@ -104,6 +102,7 @@ struct mcpwm_timer_t {
     mcpwm_timer_fsm_t fsm;  // driver FSM
     portMUX_TYPE spinlock;  // spin lock
     intr_handle_t intr;     // interrupt handle
+    int intr_priority;      // interrupt priority used by this timer
     uint32_t resolution_hz; // resolution of the timer
     uint32_t peak_ticks;    // peak ticks that the timer could reach to
     mcpwm_timer_sync_src_t *sync_src;      // timer sync_src
@@ -126,15 +125,16 @@ struct mcpwm_oper_t {
     mcpwm_timer_t *timer;  // which timer is connected to this operator
     portMUX_TYPE spinlock; // spin lock
     intr_handle_t intr;    // interrupt handle
-    mcpwm_gen_t *generators[SOC_MCPWM_GENERATORS_PER_OPERATOR];    // mcpwm generator array
-    mcpwm_oper_cmpr_t *comparators[SOC_MCPWM_COMPARATORS_PER_OPERATOR]; // mcpwm operator comparator array
+    int intr_priority;     // interrupt priority used by this operator
+    mcpwm_gen_t *generators[MCPWM_LL_GET(GENERATORS_PER_OPERATOR)];    // mcpwm generator array
+    mcpwm_oper_cmpr_t *comparators[MCPWM_LL_GET(COMPARATORS_PER_OPERATOR)]; // mcpwm operator comparator array
 #if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
-    mcpwm_evt_cmpr_t *event_comparators[SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR]; // mcpwm event comparator array
+    mcpwm_evt_cmpr_t *event_comparators[MCPWM_LL_GET(EVENT_COMPARATORS_PER_OPERATOR)]; // mcpwm event comparator array
 #endif
-    mcpwm_trigger_source_t triggers[SOC_MCPWM_TRIGGERS_PER_OPERATOR];                 // mcpwm trigger array, can be either a fault or a sync
+    mcpwm_trigger_source_t triggers[MCPWM_LL_GET(TRIGGERS_PER_OPERATOR)];                 // mcpwm trigger array, can be either a fault or a sync
     mcpwm_soft_fault_t *soft_fault;                                // mcpwm software fault
     mcpwm_operator_brake_mode_t brake_mode_on_soft_fault;          // brake mode on software triggered fault
-    mcpwm_operator_brake_mode_t brake_mode_on_gpio_fault[SOC_MCPWM_GPIO_FAULTS_PER_GROUP]; // brake mode on GPIO triggered faults
+    mcpwm_operator_brake_mode_t brake_mode_on_gpio_fault[MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP)]; // brake mode on GPIO triggered faults
     uint32_t deadtime_resolution_hz;     // resolution of deadtime submodule
     mcpwm_gen_t *posedge_delay_owner;    // which generator owns the positive edge delay
     mcpwm_gen_t *negedge_delay_owner;    // which generator owns the negative edge delay
@@ -161,6 +161,7 @@ struct mcpwm_cmpr_t {
 struct mcpwm_oper_cmpr_t {
     mcpwm_cmpr_t base;                 // base class
     intr_handle_t intr;                // interrupt handle
+    int intr_priority;                 // interrupt priority used by this comparator
     mcpwm_compare_event_cb_t on_reach; // ISR callback function  which would be invoked on timer counter reaches compare value
     void *user_data;                   // user data which would be passed to the comparator callbacks
 };
@@ -192,6 +193,7 @@ struct mcpwm_gpio_fault_t {
     int fault_id;        // fault detector ID, index from 0
     int gpio_num;        // GPIO number of fault detector
     intr_handle_t intr;  // interrupt handle
+    int intr_priority;   // interrupt priority used by this fault detector
     mcpwm_fault_event_cb_t on_fault_enter; // ISR callback function that would be invoked when fault signal got triggered
     mcpwm_fault_event_cb_t on_fault_exit;  // ISR callback function that would be invoked when fault signal got clear
     void *user_data;      // user data which would be passed to the isr_cb
@@ -258,7 +260,7 @@ struct mcpwm_cap_timer_t {
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // power management lock
 #endif
-    mcpwm_cap_channel_t *cap_channels[SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER]; // capture channel array
+    mcpwm_cap_channel_t *cap_channels[MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER)]; // capture channel array
 };
 
 struct mcpwm_cap_channel_t {
@@ -268,14 +270,13 @@ struct mcpwm_cap_channel_t {
     int gpio_num;                     // GPIO number used by the channel
     mcpwm_cap_channel_fsm_t fsm;      // driver FSM
     intr_handle_t intr;               // Interrupt handle
+    int intr_priority;                // interrupt priority used by this capture channel
     mcpwm_capture_event_cb_t on_cap;  // Callback function which would be invoked in capture interrupt routine
     void *user_data;                  // user data which would be passed to the capture callback
 };
 
 mcpwm_group_t *mcpwm_acquire_group_handle(int group_id);
 void mcpwm_release_group_handle(mcpwm_group_t *group);
-esp_err_t mcpwm_check_intr_priority(mcpwm_group_t *group, int intr_priority);
-int mcpwm_get_intr_priority_flag(mcpwm_group_t *group);
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src);
 esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale);
 

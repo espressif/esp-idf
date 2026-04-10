@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -26,6 +26,10 @@ static void register_txrx_statistic(void);
 static void register_record(void);
 #endif
 
+#if CONFIG_IEEE802154_PRINT_PHY_REG
+static void register_phyreg(void);
+#endif
+
 void register_ieee802154_debug_cmd(void)
 {
 #if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
@@ -36,6 +40,9 @@ void register_ieee802154_debug_cmd(void)
 #endif
 #if CONFIG_IEEE802154_RECORD
     register_record();
+#endif
+#if CONFIG_IEEE802154_PRINT_PHY_REG
+    register_phyreg();
 #endif
 }
 #endif
@@ -173,4 +180,76 @@ static void register_record(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 #endif // CONFIG_IEEE802154_RECORD
+
+#if CONFIG_IEEE802154_PRINT_PHY_REG
+__attribute__((weak)) void pbus_print(void)
+{
+    ESP_LOGE("", "pbus_print not in phylib");
+}
+
+__attribute__((weak)) void phy_cal_print(void)
+{
+    ESP_LOGE("", "phy_cal_print not in phylib");
+}
+
+__attribute__((weak)) void phy_i2c_check(void)
+{
+    ESP_LOGE("", "phy_i2c_check not in phylib");
+}
+
+__attribute__((weak)) void phy_reg_check(void)
+{
+    ESP_LOGE("", "phy_reg_check not in phylib");
+}
+
+extern void pbus_print(void);
+extern void phy_cal_print(void);
+extern void phy_i2c_check(void);
+extern void phy_reg_check(void);
+
+static void ieee802154_phy_reg_print(void)
+{
+    pbus_print();
+    phy_cal_print();
+    phy_i2c_check();
+    phy_reg_check();
+}
+
+static struct {
+    struct arg_lit *get_phyreg;
+    struct arg_end *end;
+} phyreg_args;
+
+static int process_phyreg(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &phyreg_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, phyreg_args.end, argv[0]);
+        return 1;
+    }
+    if (phyreg_args.get_phyreg->count) {
+        ieee802154_phy_reg_print();
+    } else {
+        ESP_LOGE(TAG, "no valid arguments");
+        return 1;
+    }
+    return 0;
+}
+
+static void register_phyreg(void)
+{
+    phyreg_args.get_phyreg =
+        arg_lit0("g", "get", "get IEEE802154 PHY register debug info");
+    phyreg_args.end = arg_end(1);
+
+    const esp_console_cmd_t cmd = {
+        .command = "phyreg",
+        .help = "get IEEE802154 PHY register debug info",
+        .hint = NULL,
+        .func = &process_phyreg,
+        .argtable = &phyreg_args
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+#endif // CONFIG_IEEE802154_PRINT_PHY_REG
 #endif // CONFIG_IEEE802154_DEBUG

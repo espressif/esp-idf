@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #include "esp_tls.h"
 #include "esp_log.h"
@@ -70,6 +71,8 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
         ssl->ssl_initialized = true;
         ssl->tls = esp_tls_init();
         if (!ssl->tls) {
+            ESP_LOGE(TAG, "Failed to initialize TLS");
+            ssl->ssl_initialized = false;
             return -1;
         }
         ssl->conn_state = TRANS_SSL_CONNECTING;
@@ -81,6 +84,10 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
             if (esp_tls_get_conn_sockfd(ssl->tls, &ssl->sockfd) != ESP_OK) {
                 ESP_LOGE(TAG, "Error in obtaining socket fd for the session");
                 esp_tls_conn_destroy(ssl->tls);
+                ssl->tls = NULL;
+                ssl->conn_state = TRANS_SSL_INIT;
+                ssl->ssl_initialized = false;
+                ssl->sockfd = INVALID_SOCKET;
                 return -1;
             }
         }
@@ -111,6 +118,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     ssl->tls = esp_tls_init();
     if (ssl->tls == NULL) {
         ESP_LOGE(TAG, "Failed to initialize new connection object");
+        ssl->ssl_initialized = false;
         capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_NO_MEM);
         return -1;
     }
@@ -134,6 +142,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
 exit_failure:
         esp_tls_conn_destroy(ssl->tls);
         ssl->tls = NULL;
+        ssl->ssl_initialized = false;
         ssl->sockfd = INVALID_SOCKET;
         return -1;
 }
@@ -420,6 +429,22 @@ void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t,
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.use_ecdsa_peripheral = true;
     ssl->cfg.ecdsa_key_efuse_blk = ecdsa_efuse_blk;
+}
+
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+void esp_transport_ssl_set_client_key_ecdsa_peripheral_extended(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk, uint8_t ecdsa_efuse_blk_high)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.use_ecdsa_peripheral = true;
+    ssl->cfg.ecdsa_key_efuse_blk = ecdsa_efuse_blk;
+    ssl->cfg.ecdsa_key_efuse_blk_high = ecdsa_efuse_blk_high;
+}
+#endif
+
+void esp_transport_ssl_set_ecdsa_curve(esp_transport_handle_t t, esp_tls_ecdsa_curve_t curve)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.ecdsa_curve = curve;
 }
 #endif
 

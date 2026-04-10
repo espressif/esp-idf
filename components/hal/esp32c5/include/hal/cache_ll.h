@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,23 @@ extern "C" {
 
 #define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x1f)
 
+/**
+ * @brief Preload strategy
+ */
+typedef enum {
+    CACHE_LL_PRELOAD_UNTIL_FETCH_DONE = 0,
+    CACHE_LL_PRELOAD_AFTER_FETCH = 1,
+    CACHE_LL_PRELOAD_ARBITRARY = 2,
+} cache_ll_preload_strategy_t;
+
+/**
+ * @brief Initialize the cache clock
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clk_init(void)
+{
+    //for compatibility
+}
 
 /**
  * @brief Check if Cache auto preload is enabled or not.
@@ -186,6 +203,46 @@ static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t ty
 }
 
 /**
+ * @brief Set the preload strategy (L1 unified)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_set_strategy(uint32_t cache_level, cache_type_t type, uint32_t cache_id, cache_ll_preload_strategy_t strategy)
+{
+    (void)cache_id;
+    (void)type;
+    if (cache_level == CACHE_LL_LEVEL_EXT_MEM || cache_level == CACHE_LL_LEVEL_ALL) {
+        CACHE.l1_icache_ctrl.l1_icache_undef_op = strategy;
+    }
+}
+
+/**
+ * @brief Preload cache (L1 unified)
+ *
+ * Starts preload and does not wait. Use cache_ll_preload_wait_done() to wait for completion.
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size, bool ascending)
+{
+    (void)cache_id;
+    (void)type;
+    HAL_ASSERT(cache_level == CACHE_LL_LEVEL_EXT_MEM);
+    Cache_Start_Preload(vaddr, size, ascending ? 0 : 1);
+}
+
+/**
+ * @brief Wait until cache preload is done (L1 only)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    (void)cache_id;
+    (void)type;
+    HAL_ASSERT(cache_level == CACHE_LL_LEVEL_EXT_MEM);
+    while (Cache_Preload_Done() == 0) {
+    }
+}
+
+/**
  * @brief Get Cache line size, in bytes
  *
  * @param cache_level  level of the cache
@@ -217,7 +274,6 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
@@ -234,15 +290,14 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 /**
  * Enable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be enabled
  */
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
@@ -258,13 +313,12 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 /**
  * Disable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be disabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 

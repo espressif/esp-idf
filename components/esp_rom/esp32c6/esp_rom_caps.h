@@ -22,7 +22,6 @@
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
 #define ESP_ROM_HAS_SPI_FLASH_MMAP          (1) // ROM has the implementation of SPI Flash mmap driver
-#define ESP_ROM_HAS_REGI2C_BUG              (1) // ROM has the regi2c bug
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT    (1) // ROM has the newlib normal/full version of formatting functions (as opposed to the nano versions)
 #define ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE (1) // ECO 0 does not have ets_ecdsa_verify symbol, future revision will have it
@@ -36,3 +35,4 @@
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_NO_USB_SERIAL_OUTPUT_API    (1) // ROM does not export the usb-serial-jtag write char function
 #define ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY  (1) // ROM mem/str functions are not optimized well for misaligned memory access.
+#define ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP (1) // ROM supports the secure boot fast wakeup feature

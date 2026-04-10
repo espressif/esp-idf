@@ -8,12 +8,12 @@ PROVIDE ( esp_rom_crc32_be = crc32_be );
 PROVIDE ( esp_rom_crc16_be = crc16_be );
 PROVIDE ( esp_rom_crc8_be  = crc8_be );
 
-PROVIDE ( esp_rom_gpio_pad_select_gpio    = gpio_pad_select_gpio );
-PROVIDE ( esp_rom_gpio_pad_pullup_only    = gpio_pad_pullup );
-PROVIDE ( esp_rom_gpio_pad_set_drv        = gpio_pad_set_drv );
-PROVIDE ( esp_rom_gpio_pad_unhold         = gpio_pad_unhold );
-PROVIDE ( esp_rom_gpio_connect_in_signal  = gpio_matrix_in );
-PROVIDE ( esp_rom_gpio_connect_out_signal = gpio_matrix_out );
+PROVIDE ( esp_rom_gpio_pad_select_gpio    = rom_gpio_pad_select_gpio );
+PROVIDE ( esp_rom_gpio_pad_pullup_only    = rom_gpio_pad_pullup );
+PROVIDE ( esp_rom_gpio_pad_set_drv        = rom_gpio_pad_set_drv );
+PROVIDE ( esp_rom_gpio_pad_unhold         = rom_gpio_pad_unhold );
+PROVIDE ( esp_rom_gpio_connect_in_signal  = rom_gpio_matrix_in );
+PROVIDE ( esp_rom_gpio_connect_out_signal = rom_gpio_matrix_out );
 
 PROVIDE ( esp_rom_efuse_mac_address_crc8       = esp_crc8 );
 PROVIDE ( esp_rom_efuse_get_flash_gpio_info    = ets_efuse_get_spiconfig );
@@ -62,8 +62,3 @@ PROVIDE ( esp_rom_spiflash_fix_dummylen = spi_dummy_len_fix );
 PROVIDE ( esp_rom_spiflash_set_drvs = SetSpiDrvs);
 PROVIDE ( esp_rom_spiflash_select_padsfunc = SelectSpiFunction );
 PROVIDE ( esp_rom_spiflash_common_cmd = SPI_Common_Command );
-
-PROVIDE ( esp_rom_regi2c_read = rom_i2c_readReg );
-PROVIDE ( esp_rom_regi2c_read_mask = rom_i2c_readReg_Mask );
-PROVIDE ( esp_rom_regi2c_write = rom_i2c_writeReg );
-PROVIDE ( esp_rom_regi2c_write_mask = rom_i2c_writeReg_Mask );

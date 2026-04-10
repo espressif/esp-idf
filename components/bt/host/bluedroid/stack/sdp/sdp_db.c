@@ -139,7 +139,11 @@ static BOOLEAN find_uuid_in_seq (UINT8 *p , UINT32 seq_len, UINT8 *p_uuid,
 
     while (p < p_end) {
         type = *p++;
-        p = sdpu_get_len_from_type (p, type, &len);
+        p = sdpu_get_len_from_type (p, p_end, type, &len);
+        if ((p == NULL) || (p + len) > p_end) {
+            SDP_TRACE_WARNING("bad length\n");
+            return (FALSE);
+        }
         type = type >> 3;
         if (type == UUID_DESC_TYPE) {
             if (sdpu_compare_uuid_arrays (p, len, p_uuid, uuid_len)) {
@@ -356,9 +360,7 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
     if (handle == 0 || sdp_cb.server_db.num_records == 0) {
         /* Delete all records in the database */
         sdp_cb.server_db.num_records = 0;
-        for (p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-            list_remove(sdp_cb.server_db.p_record_list, p_node);
-        }
+        list_clear(sdp_cb.server_db.p_record_list);
         /* require new DI record to be created in SDP_SetLocalDiRecord */
         sdp_cb.server_db.di_primary_handle = 0;
 
@@ -411,6 +413,10 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
     tSDP_RECORD     *p_rec = NULL;
     list_node_t     *p_node= NULL;
 
+    if (!p_val) {
+        return FALSE;
+    }
+
 #if (BT_TRACE_VERBOSE == TRUE)
     if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) {
         if ((attr_type == UINT_DESC_TYPE) ||
@@ -444,6 +450,12 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
         if (p_rec->record_handle == handle) {
             tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
 
+            // error out early, no need to look up
+            if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
+                SDP_TRACE_ERROR("the free pad for SDP record with handle %d is full, skip adding the attribute", handle);
+                return (FALSE);
+            }
+
             /* Found the record. Now, see if the attribute already exists */
             for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++) {
                 /* The attribute exists. replace it */
@@ -474,15 +486,13 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
             p_attr->type = attr_type;
             p_attr->len  = attr_len;
 
-            if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN) {
+            if (p_rec->free_pad_ptr + attr_len > SDP_MAX_PAD_LEN) {
                 /* do truncate only for text string type descriptor */
                 if (attr_type == TEXT_STR_DESC_TYPE) {
                     SDP_TRACE_WARNING("SDP_AddAttribute: attr_len:%d too long. truncate to (%d)\n",
                                       attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr );
 
                     attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr] = '\0';
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr + 1] = '\0';
                 } else {
                     attr_len = 0;
                 }

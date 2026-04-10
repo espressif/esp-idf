@@ -1,18 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "esp_log.h"
 #include "test_spi_utils.h"
 #include "driver/spi_slave.h"
-#include "esp_log.h"
+#include "soc/gpio_sig_map.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "hal/gpio_hal.h"
+#include "soc/spi_periph.h"
 #include "hal/spi_ll.h"
-#include "esp_rom_gpio.h"
-
-int test_freq_default[] = TEST_FREQ_DEFAULT();
+#include "hal/gpio_ll.h"
 
 const char MASTER_TAG[] = "test_master";
 const char SLAVE_TAG[] = "test_slave";
@@ -33,15 +32,6 @@ DRAM_ATTR uint8_t spitest_slave_send[] = {
     0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
     0xda,
 };
-
-void spitest_def_param(void* arg)
-{
-    spitest_param_set_t *param_set = (spitest_param_set_t*)arg;
-    param_set->test_size = 8;
-    if (param_set->freq_list == NULL) {
-        param_set->freq_list = test_freq_default;
-    }
-}
 
 /**********************************************************************************
  * functions for slave task
@@ -87,6 +77,7 @@ void spitest_slave_task(void* arg)
     while (1) {
         BaseType_t ret = xQueueReceive(queue, &txdata, portMAX_DELAY);
         assert(ret);
+        (void)ret;
 
         spi_slave_transaction_t t = {};
         t.length = txdata.len;
@@ -233,20 +224,20 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, 0);
 }
 
-void same_pin_func_sel(spi_bus_config_t bus, uint8_t cs_pin, uint8_t cs_dev_id, bool soft_master)
+void same_pin_func_sel(spi_host_device_t master_id, spi_host_device_t slave_id, spi_bus_config_t bus, uint8_t cs_pin)
 {
-    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spid_out);
-    spitest_gpio_input_sel(bus.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spid_in);
+    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spid_out);
+    spitest_gpio_input_sel(bus.mosi_io_num, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spid_in);
 
-    spitest_gpio_output_sel(bus.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spiq_in);
+    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spiq_in);
+    spitest_gpio_output_sel(bus.miso_io_num, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spiq_out);
 
-    gpio_set_level(cs_pin, 1);  //ensure CS is inactive when select to soft_master and before transaction start
-    spitest_gpio_output_sel(cs_pin, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spics_out[cs_dev_id]);
-    spitest_gpio_input_sel(cs_pin, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spics_in);
+    gpio_set_level(cs_pin, 1);  //ensure CS is inactive when select 0 for soft_master and before transaction start
+    spitest_gpio_output_sel(cs_pin, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spics_out[0]);
+    spitest_gpio_input_sel(cs_pin, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spics_in);
 
-    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spiclk_out);
-    spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in);
+    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spiclk_out);
+    spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spiclk_in);
 }
 
 #define GPIO_MAX_FREQ   500*1000    //max of soft spi clock at delay(0)

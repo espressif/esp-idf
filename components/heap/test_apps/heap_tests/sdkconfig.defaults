@@ -1,7 +1,7 @@
 CONFIG_COMPILER_DUMP_RTL_FILES=y
 CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
-CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=n # memory protection needs to be disabled for certain tests
-CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT=n # for c2 and c6 this config must be disabled for certain tests
+CONFIG_ESP_SYSTEM_MEMPROT=n # for c2 and c6 this config must be disabled for certain tests
 
 CONFIG_COMPILER_STACK_CHECK_MODE_ALL=y
 CONFIG_COMPILER_STACK_CHECK=y
+CONFIG_FREERTOS_IN_IRAM=y

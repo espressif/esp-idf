@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_coexist.h"
 #include "private/esp_coexist_internal.h"
+#include "esp_private/startup_internal.h"
 #include "soc/soc_caps.h"
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
@@ -13,12 +14,15 @@
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "hal/gpio_hal.h"
+#include "soc/gpio_reg.h"
 #include "esp_attr.h"
 #include "esp_private/gpio.h"
 #endif
 
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-#include "esp_private/esp_modem_clock.h"
+#include "esp_private/periph_ctrl.h"
+
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
+#include "esp_coex_i154.h"
 #endif
 
 #if SOC_EXTERNAL_COEX_ADVANCE
@@ -185,6 +189,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             {
                 gpio_func_sel(gpio_pin.priority, PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.priority, GPIO_MODE_INPUT);
+                gpio_set_pull_mode(gpio_pin.priority, GPIO_PULLDOWN_ONLY);
                 esp_rom_gpio_connect_in_signal(gpio_pin.priority, EXTERNAL_COEX_SIGNAL_I1_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.priority), GPIO_PIN1_SYNC1_BYPASS, 2);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.priority), GPIO_PIN1_SYNC2_BYPASS, 2);
@@ -202,6 +207,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             {
                 gpio_func_sel(gpio_pin.request, PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.request, GPIO_MODE_INPUT);
+                gpio_set_pull_mode(gpio_pin.request, GPIO_PULLDOWN_ONLY);
                 esp_rom_gpio_connect_in_signal(gpio_pin.request, EXTERNAL_COEX_SIGNAL_I0_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.request), GPIO_PIN1_SYNC1_BYPASS, 2);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.request), GPIO_PIN1_SYNC2_BYPASS, 2);
@@ -220,6 +226,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             {
                 gpio_func_sel(gpio_pin.tx_line, PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.tx_line, GPIO_MODE_INPUT);
+                gpio_set_pull_mode(gpio_pin.tx_line, GPIO_PULLDOWN_ONLY);
                 esp_rom_gpio_connect_in_signal(gpio_pin.tx_line, EXTERNAL_COEX_SIGNAL_I1_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.tx_line), GPIO_PIN1_SYNC1_BYPASS, 2);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.tx_line), GPIO_PIN1_SYNC2_BYPASS, 2);
@@ -237,6 +244,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             {
                 gpio_func_sel(gpio_pin.grant, PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.grant, GPIO_MODE_INPUT);
+                gpio_set_pull_mode(gpio_pin.grant, GPIO_PULLUP_ONLY);
                 esp_rom_gpio_connect_in_signal(gpio_pin.grant, EXTERNAL_COEX_SIGNAL_I0_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.grant), GPIO_PIN1_SYNC1_BYPASS, 2);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.grant), GPIO_PIN1_SYNC2_BYPASS, 2);
@@ -259,16 +267,11 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         return ESP_ERR_INVALID_ARG;
 #endif /* SOC_EXTERNAL_COEX_ADVANCE */
     }
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-    modem_clock_module_enable(PERIPH_COEX_MODULE);
-#endif
+    coex_module_enable();
 #if SOC_EXTERNAL_COEX_ADVANCE
     esp_coex_external_params(g_external_coex_params, 0, 0);
 #endif
     esp_err_t ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-    modem_clock_module_disable(PERIPH_COEX_MODULE);
-#endif
     if (ESP_OK != ret) {
         return ESP_FAIL;
     }
@@ -278,7 +281,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
 esp_err_t esp_disable_extern_coex_gpio_pin(void)
 {
     esp_coex_external_stop();
-
+    coex_module_disable();
     return ESP_OK;
 }
 #endif /* External Coex */
@@ -289,7 +292,21 @@ esp_err_t esp_coex_wifi_i154_enable(void)
     // TODO: Add a scheme for wifi and 154 coex.
     // Remove this function if FCC-50 closes.
     coex_enable();
-    coex_schm_status_bit_set(1, 1);
+    esp_coex_ieee802154_status_enable();
     return ESP_OK;
 }
 #endif
+
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+void esp_coex_init_include_func(void)
+{
+    // Hook to force the linker to include this file
+}
+
+ESP_SYSTEM_INIT_FN(init_coexist, SECONDARY, BIT(0), 204)
+{
+    esp_coex_adapter_register(&g_coex_adapter_funcs);
+    coex_pre_init();
+    return ESP_OK;
+}
+#endif // CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE

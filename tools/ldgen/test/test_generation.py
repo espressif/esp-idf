@@ -12,19 +12,27 @@ import unittest
 from io import StringIO
 
 try:
-    from ldgen.entity import Entity, EntityDB
+    from ldgen.entity import Entity
+    from ldgen.entity import EntityDB
     from ldgen.fragments import parse_fragment_file
-    from ldgen.generation import Generation, GenerationException
+    from ldgen.generation import Generation
+    from ldgen.generation import GenerationException
     from ldgen.linker_script import LinkerScript
-    from ldgen.output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
+    from ldgen.output_commands import AlignAtAddress
+    from ldgen.output_commands import InputSectionDesc
+    from ldgen.output_commands import SymbolAtAddress
     from ldgen.sdkconfig import SDKConfig
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from ldgen.entity import Entity, EntityDB
+    from ldgen.entity import Entity
+    from ldgen.entity import EntityDB
     from ldgen.fragments import parse_fragment_file
-    from ldgen.generation import Generation, GenerationException
+    from ldgen.generation import Generation
+    from ldgen.generation import GenerationException
     from ldgen.linker_script import LinkerScript
-    from ldgen.output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
+    from ldgen.output_commands import AlignAtAddress
+    from ldgen.output_commands import InputSectionDesc
+    from ldgen.output_commands import SymbolAtAddress
     from ldgen.sdkconfig import SDKConfig
 
 ROOT = Entity('*')
@@ -33,12 +41,12 @@ FREERTOS = Entity('libfreertos.a')
 CROUTINE = Entity('libfreertos.a', 'croutine')
 TIMERS = Entity('libfreertos.a', 'timers')
 TEMPERATURE_SENSOR_PERIPH = Entity('libsoc.a', 'temperature_sensor_periph')
+ESP_FLASH_API = Entity('libspi_flash.a', 'esp_flash_api')
 
 FREERTOS2 = Entity('libfreertos2.a')
 
 
 class GenerationTest(unittest.TestCase):
-
     def setUp(self):
         self.generation = Generation()
         self.entities = None
@@ -70,6 +78,9 @@ class GenerationTest(unittest.TestCase):
             self.entities.add_sections_info(objdump)
 
         with open('data/libsoc.a.txt') as objdump:
+            self.entities.add_sections_info(objdump)
+
+        with open('data/libspi_flash.a.txt') as objdump:
             self.entities.add_sections_info(objdump)
 
         with open('data/linker_script.ld') as linker_script:
@@ -121,7 +132,6 @@ class GenerationTest(unittest.TestCase):
 
 
 class DefaultMappingTest(GenerationTest):
-
     def test_rule_generation_default(self):
         # Checks that default rules are generated from
         # the default scheme properly and even if no mappings
@@ -134,7 +144,7 @@ class DefaultMappingTest(GenerationTest):
     def test_default_mapping_lib(self):
         # Mapping a library with default mapping. This should not emit additional rules,
         # other than the default ones.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -146,7 +156,7 @@ entries:
     def test_default_mapping_obj(self):
         # Mapping an object with default mapping. This should not emit additional rules,
         # other than the default ones.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -158,7 +168,7 @@ entries:
     def test_default_mapping_symbol(self):
         # Mapping a symbol with default mapping. This should not emit additional rules,
         # other than the default ones.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -170,7 +180,7 @@ entries:
     def test_default_mapping_all(self):
         # Mapping a library, object, and symbol with default mapping. This should not emit additional rules,
         # other than the default ones.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -187,7 +197,7 @@ entries:
         #
         # This is a check needed to make sure generation does not generate
         # intermediate commands due to presence of symbol mapping.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -203,7 +213,7 @@ entries:
         #
         # This is a check needed to make sure generation does not generate
         # intermediate commands due to presence of symbol mapping.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -212,6 +222,90 @@ entries:
 """
         self.add_fragments(mapping)
         self.test_rule_generation_default()
+
+
+class MutableMappingTest(GenerationTest):
+    # Collection of tests for mutable library mappings
+
+    def dump_rules(self, rules):
+        # A simple helper for displaying the rules. It can be used to manually
+        # compare the actual and expected rules to identify any issues while
+        # preparing tests.
+        print()
+        for target, section_descs in rules.items():
+            print(f'target: {target}')
+            for section_desc in section_descs:
+                print(f'    {section_desc.entity}: {section_desc.sections}')
+                for exclusion in section_desc.exclusions:
+                    print(f'        {exclusion}')
+
+    def add_mutable_libs_to_rules(self, libs, default_rules):
+        # Insert mutable lib rules and exclusions into default test rules.
+        rules = collections.defaultdict(list)
+        for target, section_descs in default_rules.items():
+            for section_desc in section_descs:
+                # Duplicate the current section description.
+                section_desc_copy = InputSectionDesc(section_desc.entity, section_desc.sections)
+                for lib in libs:
+                    # Exclude each mutable library from ROOT entity rule.
+                    section_desc_copy.exclusions.add(Entity(lib))
+                rules[target].append(section_desc_copy)
+
+            # Add a rule for each mutable library and each ROOT entity rule section.
+            # This is done separately because the order is important.
+            for lib in libs:
+                for section_desc in section_descs:
+                    rules[target].append(InputSectionDesc(Entity(lib), section_desc.sections))
+        return rules
+
+    def test_rule_generation_default(self):
+        # Verifies that the default rules are correctly generated from the
+        # default scheme and that mutable libraries are included in the
+        # generated rules.
+        mutable_libs = ['libmutable.a', 'libmutable2.a']
+
+        self.generation.mutable_libs = mutable_libs
+
+        actual = self.generation.generate(self.entities, False)
+        default_rules = self.generate_default_rules()
+        expected = self.add_mutable_libs_to_rules(mutable_libs, default_rules)
+
+        self.compare_rules(expected, actual)
+        self.generation.mutable_libs = []
+
+    def test_default_mapping_obj(self):
+        # Verifies that libfreertos.a:croutine entity is correctly excluded
+        # from the libfreertos.a entity and moved to iram and dram.
+        mapping = """
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash)
+"""
+        mutable_libs = ['libfreertos.a']
+
+        self.generation.mutable_libs = mutable_libs
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate(self.entities, False)
+        default_rules = self.generate_default_rules()
+        expected = self.add_mutable_libs_to_rules(mutable_libs, default_rules)
+
+        flash_text = expected['flash_text']
+        flash_rodata = expected['flash_rodata']
+        iram0_text = expected['iram0_text']
+        dram0_data = expected['dram0_data']
+
+        # Add exclusions for the libfreertos.a:croutine entity into
+        # libfreertos.a entity in test and rodata.
+        flash_text[1].exclusions.add(CROUTINE)
+        flash_rodata[1].exclusions.add(CROUTINE)
+
+        # Add rules for the libfreertos.a:croutine entity in iram and dram.
+        iram0_text.append(InputSectionDesc(CROUTINE, flash_text[1].sections))
+        dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[1].sections))
+
+        self.compare_rules(expected, actual)
 
 
 class BasicTest(GenerationTest):
@@ -230,7 +324,7 @@ class BasicTest(GenerationTest):
         # iram0_text
         #   *(.iram ...)
         #   *libfreertos.a(.literal  ...)                                                                          B
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -260,14 +354,14 @@ entries:
         # There should be exclusions in the default commands for flash_text and flash_rodata:
         #
         # flash_text
-        #   *((EXCLUDE_FILE(libfreertos.a:croutine)) .literal ...)                                                          A
+        #   *((EXCLUDE_FILE(libfreertos.a:croutine)) .literal ...)                                           A
         #
         # Commands placing the entire library in iram, dram should be generated:
         #
         # iram0_text
         #   *(.iram ...)
-        #   *libfreertos.a:croutine(.literal  ...)                                                                          B
-        mapping = u"""
+        #   *libfreertos.a:croutine(.literal  ...)                                                           B
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -295,19 +389,20 @@ entries:
 
     def test_nondefault_mapping_symbol(self):
         # Test mapping entry different from default for symbol.
-        # There should be exclusions in the default commands for flash_text, as well as the implicit intermediate object command
+        # There should be exclusions in the default commands for flash_text, as
+        # well as the implicit intermediate object command
         # with an exclusion from default:
         #
         # flash_text
-        #   *((EXCLUDE_FILE(libfreertos.a:croutine)) .literal ...)                                                          A
-        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                                             B
+        #   *((EXCLUDE_FILE(libfreertos.a:croutine)) .literal ...)                                          A
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                             B
         #
         # Commands placing the entire library in iram should be generated:
         #
         # iram0_text
         #   *(.iram ...)
-        #   *libfreertos.a:croutine(.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)                       C
-        mapping = u"""
+        #   *libfreertos.a:croutine(.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)       C
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -336,7 +431,76 @@ entries:
         flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Input section commands in iram_text for #1                                     C
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
+
+        self.compare_rules(expected, actual)
+
+    def test_nondefault_mapping_symbol_with_suffix(self):
+        # Test a mapping entry that differs from the default for a symbol
+        # generated by the compiler, such as those created during IPA
+        # optimization for constant propagation.
+        #
+        # There should be exclusions in the default commands for flash_text, as
+        # well as the implicit intermediate object command with an exclusion
+        # from default:
+        #
+        # flash_text
+        #   *((EXCLUDE_FILE(*libspi_flash.a:esp_flash_api.*)) .text ...)                                 A
+        #   *libspi_flash.a:esp_flash_api.*(.text.check_chip_pointer_default ...)                        B
+        #
+        # Commands for placing the generated symbol in iram should be created,
+        # and they must also include .text.spiflash_start_core.constprop.0,
+        # even though the placement is specified only for the
+        # spiflash_start_core symbol.
+        #
+        # iram0_text
+        #   *(.iram ...)
+        #   *libspi_flash.a:esp_flash_api.*(.literal.spiflash_start_core .text.spiflash_start_core
+        #                                   .text.spiflash_start_core.constprop.0)                       C
+        mapping = """
+[mapping:test]
+archive: libspi_flash.a
+entries:
+    esp_flash_api:spiflash_start_core (noflash)         #1
+"""
+        self.add_fragments(mapping)
+        actual = self.generation.generate(self.entities, False)
+        expected = self.generate_default_rules()
+
+        flash_text = expected['flash_text']
+        iram0_text = expected['iram0_text']
+
+        # Generate exclusion in flash_text                                                A
+        flash_text[0].exclusions.add(ESP_FLASH_API)
+
+        # Generate intermediate command                                                   B
+        # List all relevant sections except the symbol
+        # being mapped
+        esp_flash_api_sections = self.entities.get_sections('libspi_flash.a', 'esp_flash_api')
+        filtered_sections = fnmatch.filter(esp_flash_api_sections, '.literal.*')
+        filtered_sections.extend(fnmatch.filter(esp_flash_api_sections, '.text.*'))
+
+        filtered_sections = [s for s in filtered_sections if not s.endswith('spiflash_start_core.constprop.0')]
+        filtered_sections.append('.text')
+
+        flash_text.append(InputSectionDesc(ESP_FLASH_API, set(filtered_sections), []))
+
+        # Input section commands in iram_text for #1                                     C
+        iram0_text.append(
+            InputSectionDesc(
+                ESP_FLASH_API,
+                set(
+                    [
+                        '.literal.spiflash_start_core',
+                        '.text.spiflash_start_core',
+                        '.text.spiflash_start_core.constprop.0',
+                    ]
+                ),
+                [],
+            )
+        )
 
         self.compare_rules(expected, actual)
 
@@ -351,14 +515,14 @@ entries:
         # object file, including .debug, .comment and other input section.
         #
         # flash.rodata
-        #   *((EXCLUDE_FILE(*libsoc.a:temperature_sensor_periph.*)) .rodata.* ...)                                          A
-        #   # *libsoc.a:temperature_sensor_periph.*                                                                         X
+        #   *((EXCLUDE_FILE(*libsoc.a:temperature_sensor_periph.*)) .rodata.* ...)                          A
+        #   # *libsoc.a:temperature_sensor_periph.*                                                         X
         #
         # Commands placing the entire library in iram should be generated:
         #
         # dram0_data
-        #   *libsoc.a:temperature_sensor_periph.*(.rodata.temperature_sensor_attribute)                                     B
-        mapping = u"""
+        #   *libsoc.a:temperature_sensor_periph.*(.rodata.temperature_sensor_attribute)                     B
+        mapping = """
 [mapping:test]
 archive: libsoc.a
 entries:
@@ -376,14 +540,15 @@ entries:
         flash_rodata[0].exclusions.add(TEMPERATURE_SENSOR_PERIPH)
 
         # Input section commands in dram0_data for #1                                    B
-        dram0_data.append(InputSectionDesc(TEMPERATURE_SENSOR_PERIPH,
-                                           set(['.rodata.temperature_sensor_attributes']),
-                                           []))
+        dram0_data.append(
+            InputSectionDesc(TEMPERATURE_SENSOR_PERIPH, set(['.rodata.temperature_sensor_attributes']), [])
+        )
 
         self.compare_rules(expected, actual)
 
     def test_default_symbol_nondefault_lib(self):
-        # Test default symbol mapping with different lib mapping. This should create an implicit intermediate object command.
+        # Test default symbol mapping with different lib mapping. This should
+        # create an implicit intermediate object command.
         # The significant targets are flash_text, flash_rodata, iram0_text, dram0_data.
         #
         # flash_text
@@ -403,7 +568,7 @@ entries:
         #  libfreertos.a ( .rodata ...)                                                                     C.2
         #
         # Only default commands are in the other targets.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -440,7 +605,9 @@ entries:
         iram0_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Command for #2                                                                                    B
-        flash_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        flash_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -465,7 +632,7 @@ entries:
         #   *libfreertos.a:croutine(.rodata ....)                                                                    C.2
         #
         # Only default commands are in the other targets
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -499,7 +666,9 @@ entries:
         dram0_data.append(InputSectionDesc(CROUTINE, flash_rodata[0].sections, []))
 
         # Command for #2                                                                                    B
-        flash_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        flash_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -532,7 +701,7 @@ entries:
         #  libfreertos.a (EXCLUDE_FILE(libfreertos:croutine) .rodata ...)                                    C
         #
         # For the other targets only the default commands should be present.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -575,14 +744,16 @@ entries:
         flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Command for #3                                                                                    D
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
     def test_nondefault_but_same_lib_and_obj(self):
         # Extension of DefaultMappingTest. Commands should not be generated for #2, since it does similar mapping
         # to #1. Output is similar to test_different_mapping_lib.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -594,7 +765,7 @@ entries:
     def test_nondefault_but_same_lib_and_sym(self):
         # Extension of DefaultMappingTest. Commands should not be generated for #2, since it does similar mapping
         # to #1. Output is similar to test_different_mapping_lib.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -606,7 +777,7 @@ entries:
     def test_nondefault_but_same_obj_and_sym(self):
         # Commands should not be generated for #2, since it does similar mapping
         # to #1. Output is similar to test_different_mapping_obj.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -627,7 +798,7 @@ entries:
         # iram0_text
         #
         #
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -659,8 +830,12 @@ entries:
         flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Commands for #1 & 2
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), []))
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), [])
+        )
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -671,7 +846,7 @@ entries:
         # iram0_text
         #   * (.custom_section)                                  A
         #   * (.iram .iram.*)
-        mapping = u"""
+        mapping = """
 [sections:custom_section]
 entries:
     .custom_section
@@ -700,7 +875,6 @@ entries:
 
 
 class AdvancedTest(GenerationTest):
-
     # Test valid but quirky cases, corner cases, failure cases, and
     # cases involving interaction between schemes, other mapping
     # fragments.
@@ -727,7 +901,7 @@ class AdvancedTest(GenerationTest):
         #   *(.data ..)
         #   *(.dram ...)
         #   *libfreertos.a:croutine(.rodata .rodata.*)                                                               D
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -768,20 +942,20 @@ entries:
         # This operation should succeed with the following commands:
         #
         # flash_text
-        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .text ...)                                                        A
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .text ...)                                                A
         #
         # flash_rodata
-        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .rodata ...)                                                      B
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine) .rodata ...)                                              B
         #
         # iram0_text
         #   *(.iram ...)
-        #   *libfreertos.a:croutine(.text .text.* ...)                                                               C
+        #   *libfreertos.a:croutine(.text .text.* ...)                                                       C
         #
         # dram0_data
         #   *(.data ..)
         #   *(.dram ...)
-        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                               D
-        mapping = u"""
+        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                       D
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -818,7 +992,7 @@ entries:
         # noflash = text -> iram0_text, rodata -> dram0_data
         #
         # This operation should fail.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -837,7 +1011,7 @@ entries:
         # noflash = .text -> iram0_text, .rodata -> dram0_data
         #
         # This operation should fail.
-        mapping = u"""
+        mapping = """
 [sections:custom_text]
 entries:
     .text+
@@ -861,42 +1035,42 @@ entries:
         # using another. Another object and symbol is mapped the other way around.
         #
         # flash_text
-        #   *(EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:timers) .text ...)                                                        A, B
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:timers) .text ...)                           A, B
         #
         # flash_rodata
-        #   *(EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:timers) .rodata ...)                                                      A, B
+        #   *(EXCLUDE_FILE(libfreertos.a:croutine libfreertos.a:timers) .rodata ...)                         A, B
         #
         # dram0_data
-        #   *(EXCLUDE_FILES(libfreertos.a:timers) .data ..)                                                                               B
+        #   *(EXCLUDE_FILES(libfreertos.a:timers) .data ..)                                                  B
         #   *(.dram ...)
-        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                                                    C
-        #   *libfreertos.a:timers(.rodata.prvProcessReceivedCommands ...)                                                                 E
+        #   *libfreertos.a:croutine(.rodata .rodata.*)                                                       C
+        #   *libfreertos.a:timers(.rodata.prvProcessReceivedCommands ...)                                    E
         #
         # dram0_bss
-        #   *(EXCLUDE_FILE(libfreertos.a:timers) .bss .bss.* ...)                                                                         B
-        #   *(EXCLUDE_FILE(libfreertos.a:timers) COMMON)                                                                                  B
+        #   *(EXCLUDE_FILE(libfreertos.a:timers) .bss .bss.* ...)                                            B
+        #   *(EXCLUDE_FILE(libfreertos.a:timers) COMMON)                                                     B
         #
         # iram0_text
         #   *(.iram ...)
-        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                                                           C
-        #   *libfreertos.a:timers(.literal  .literal.prvProcessReceivedCommands ...)                                                      E
+        #   *libfreertos.a:croutine(.literal  .literal.prvCheckDelayedList ...)                              C
+        #   *libfreertos.a:timers(.literal  .literal.prvProcessReceivedCommands ...)                         E
         #
         # rtc_text
         #   *(rtc.text .rtc.literal)
-        #   libfreertos.a:croutine (.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)                                     F
-        #   libfreertos.a:timers (.text .text.prvCheckForValidListAndQueue ...)                                                           D.2
+        #   libfreertos.a:croutine (.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)        F
+        #   libfreertos.a:timers (.text .text.prvCheckForValidListAndQueue ...)                              D.2
         #
         # rtc_data
         #   *(rtc.data)
         #   *(rtc.rodata)
-        #   libfreertos.a:timers (.data .data.*)                                                                                          D
-        #   libfreertos.a:timers (.rodata ...)                                                                                            D.2
+        #   libfreertos.a:timers (.data .data.*)                                                             D
+        #   libfreertos.a:timers (.rodata ...)                                                               D.2
         #
         # rtc_bss
         #   *(rtc.bss .rtc.bss)
-        #   libfreertos.a:timers (.bss .bss.*)                                                                                            D
-        #   libfreertos.a:timers (COMMON)                                                                                                 D
-        mapping = u"""
+        #   libfreertos.a:timers (.bss .bss.*)                                                               D
+        #   libfreertos.a:timers (COMMON)                                                                    D
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -944,7 +1118,9 @@ entries:
 
         # Commands for #4                                                                   F
         # Processed first due to alphabetical ordering
-        rtc_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        rtc_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         # Commands for #2                                                                   D
         # List all relevant sections excluding #3 for text -> rtc_text and                  D.2
@@ -966,7 +1142,11 @@ entries:
         rtc_bss.append(InputSectionDesc(TIMERS, dram0_bss[1].sections, []))
 
         # Commands for #3                                                                  E
-        iram0_text.append(InputSectionDesc(TIMERS, set(['.text.prvProcessReceivedCommands', '.literal.prvProcessReceivedCommands']), []))
+        iram0_text.append(
+            InputSectionDesc(
+                TIMERS, set(['.text.prvProcessReceivedCommands', '.literal.prvProcessReceivedCommands']), []
+            )
+        )
         dram0_data.append(InputSectionDesc(TIMERS, set(['.rodata.prvProcessReceivedCommands']), []))
 
         self.compare_rules(expected, actual)
@@ -983,7 +1163,7 @@ entries:
         #   * (EXCLUDE_FILE(libfreertos.a libfreertos.a:croutine) .text ...)
         #
         # iram0_text
-        mapping = u"""
+        mapping = """
 [mapping:test_1]
 archive: libfreertos.a
 entries:
@@ -1028,7 +1208,7 @@ entries:
         #
         # Uses the same entries as C_05 but spreads them across
         # two fragments. The output should still be the same.
-        mapping = u"""
+        mapping = """
 [mapping:test_1]
 archive: libfreertos.a
 entries:
@@ -1046,7 +1226,7 @@ entries:
     def test_mapping_same_lib_in_multiple_fragments_conflict(self):
         # Test mapping fragments operating on the same archive
         # with conflicting mappings.
-        mapping = u"""
+        mapping = """
 [mapping:test_1]
 archive: libfreertos.a
 entries:
@@ -1078,7 +1258,7 @@ entries:
         #   libfreertos:croutine(.text.prvCheckPendingReadyList .literal.prvCheckPendingReadyList)              G
         #   libfreertos2:croutine(.text .literal ...)                                                           D
         #   libfreertos2:croutine2(.text .literal ...)                                                          E
-        mapping = u"""
+        mapping = """
 [mapping:freertos2]
 archive: libfreertos2.a
 entries:
@@ -1116,8 +1296,12 @@ entries:
         flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Command for
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), []))
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckDelayedList', '.literal.prvCheckDelayedList']), [])
+        )
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         iram0_text.append(InputSectionDesc(Entity(FREERTOS2.archive, 'croutine'), flash_text[0].sections, []))
         iram0_text.append(InputSectionDesc(Entity(FREERTOS2.archive, 'croutine2'), flash_text[0].sections, []))
@@ -1126,7 +1310,7 @@ entries:
 
     def test_ambigious_obj(self):
         # Command generation for ambiguous entry should fail.
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -1143,7 +1327,7 @@ entries:
         #
         # 'custom_scheme' entries conflict the 'default' scheme
         # entries.
-        mapping = u"""
+        mapping = """
 [scheme:custom_scheme]
 entries:
     flash_text -> iram0_text
@@ -1163,7 +1347,7 @@ entries:
         #
         # custom_scheme has the 'iram -> iram0_text' in common with
         # default scheme
-        mapping = u"""
+        mapping = """
 [sections:custom_section]
 entries:
     .custom_section
@@ -1198,7 +1382,7 @@ class ConfigTest(GenerationTest):
     def _test_conditional_on_scheme(self, perf, alt=None):
         # Test that proper commands are generated if using
         # schemes with conditional entries.
-        scheme = u"""
+        scheme = """
 [sections:cond_text_data]
 entries:
     if PERFORMANCE_LEVEL >= 1:
@@ -1215,7 +1399,7 @@ entries:
         cond_text_data -> dram0_data
 """
 
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: lib.a
 entries:
@@ -1250,7 +1434,7 @@ entries:
     def test_conditional_mapping(self, alt=None):
         # Test that proper commands are generated
         # in conditional mapping entries.
-        mapping = u"""
+        mapping = """
 [mapping:default]
 archive: *
 entries:
@@ -1299,7 +1483,7 @@ entries:
     def test_multiple_fragment_same_lib_conditional(self):
         # Test conditional entries on new mapping fragment grammar.
         # across multiple fragments.
-        mapping = u"""
+        mapping = """
 [mapping:default]
 archive: *
 entries:
@@ -1331,7 +1515,6 @@ entries:
 
 
 class FlagTest(GenerationTest):
-
     # Test correct generation of mapping fragment entries
     # with flags.
 
@@ -1362,7 +1545,7 @@ class FlagTest(GenerationTest):
         #   libfreertos.a:croutine(.text .literal ...)                                  I
         #   . = ALIGN(4)                                                                G.2
         #   _sym1_end                                                                   H.2
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -1422,7 +1605,7 @@ entries:
         # iram0_text
         #   *(.iram .iram.*)
         #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
-        mapping = u"""
+        mapping = """
 [mapping:default]
 archive: *
 entries:
@@ -1466,7 +1649,9 @@ entries:
         flash_text.append(SymbolAtAddress('_sym1_end'))
 
         # Command for #3                                               D
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -1484,7 +1669,7 @@ entries:
         # iram0_text
         #   *(.iram .iram.*)
         #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -1523,7 +1708,9 @@ entries:
         flash_text.append(SymbolAtAddress('_sym1_end'))
 
         # Command for #3                                               C
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -1540,7 +1727,7 @@ entries:
         # iram0_text
         #   *(.iram .iram.*)
         #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  C
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -1575,7 +1762,9 @@ entries:
         flash_text.append(SymbolAtAddress('_sym1_end'))
 
         # Command for #3                                               C
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -1591,7 +1780,7 @@ entries:
         # iram0_text
         #   *(.iram .iram.*)
         #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
-        mapping = u"""
+        mapping = """
 [mapping:default]
 archive: *
 entries:
@@ -1636,7 +1825,9 @@ entries:
         flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Command for #4                                               D
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
@@ -1653,7 +1844,7 @@ entries:
         # iram0_text
         #   *(.iram .iram.*)
         #   libfreertos.a:croutine(.text.prvCheckPendingReadyList ...)                  D
-        mapping = u"""
+        mapping = """
 [mapping:test]
 archive: libfreertos.a
 entries:
@@ -1693,14 +1884,16 @@ entries:
         flash_text.append(InputSectionDesc(CROUTINE, set(filtered_sections), []))
 
         # Command for #3                                               C
-        iram0_text.append(InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), []))
+        iram0_text.append(
+            InputSectionDesc(CROUTINE, set(['.text.prvCheckPendingReadyList', '.literal.prvCheckPendingReadyList']), [])
+        )
 
         self.compare_rules(expected, actual)
 
     def test_flag_additions(self):
         # Test ability to add flags as long as no other mapping fragments
         # does the same thing.
-        mapping = u"""
+        mapping = """
 [mapping:default_add_flag]
 archive: *
 entries:
@@ -1721,7 +1914,7 @@ entries:
     def test_flags_flag_additions_duplicate(self):
         # Test same flags added to same entity - these
         # are ignored.
-        mapping = u"""
+        mapping = """
 [mapping:default_add_flag_1]
 archive: *
 entries:
@@ -1748,7 +1941,7 @@ entries:
     def test_flags_flag_additions_conflict(self):
         # Test condition where multiple fragments specifies flags
         # to same entity - should generate exception.
-        mapping = u"""
+        mapping = """
 [mapping:default_add_flag_1]
 archive: *
 entries:

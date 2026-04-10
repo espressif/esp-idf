@@ -26,7 +26,7 @@ The following C++ features are supported:
 C++ Language Standard
 ---------------------
 
-By default, ESP-IDF compiles C++ code with C++23 language standard with GNU extensions (``-std=gnu++23``).
+By default, ESP-IDF compiles C++ code using C++26 language standard with GNU extensions (``-std=gnu++26``) for chip targets. For Linux targets, ESP-IDF selects the highest C+ standard supported by your host compiler. To use the highest C++ standard, upgrade your Linux toolchain to a version that supports it.
 
 To compile the source code of a certain component using a different language standard, set the desired compiler flag in the component's ``CMakeLists.txt`` file:
 
@@ -182,7 +182,7 @@ Designated Initializers
 
 Many of the ESP-IDF components use :ref:`api_reference_config_structures` as arguments to the initialization functions. ESP-IDF examples written in C routinely use `designated initializers <https://en.cppreference.com/w/c/language/struct_initialization>`_ to fill these structures in a readable and a maintainable way.
 
-C and C++ languages have different rules with regards to the designated initializers. For example, C++23 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
+C and C++ languages have different rules with regards to the designated initializers. For example, C++26 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
 
 
 ``iostream``
@@ -200,7 +200,6 @@ Limitations
 -----------
 
 - Linker script generator does not support function level placements for functions with C++ linkage.
-- Various section attributes (such as ``IRAM_ATTR``) are ignored when used with template functions.
 - Vtables are placed into Flash and are not accessible when the flash cache is disabled. Therefore, virtual function calls should be avoided in :ref:`iram-safe-interrupt-handlers`. Placement of Vtables cannot be adjusted using the linker script generator, yet.
 
 

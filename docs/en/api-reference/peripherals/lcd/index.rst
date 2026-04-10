@@ -32,7 +32,7 @@ This document will discuss how to create the control plane and data plane, as me
     :SOC_LCD_I80_SUPPORTED: i80_lcd
     :SOC_LCD_RGB_SUPPORTED: rgb_lcd
     :SOC_MIPI_DSI_SUPPORTED: dsi_lcd
-    :SOC_PARLIO_SUPPORT_SPI_LCD: parl_lcd
+    :SOC_PARLIO_LCD_SUPPORTED: parl_lcd
 
 .. note::
 
@@ -53,6 +53,7 @@ LCD Data Panel Operations
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD data panel.
 * :cpp:func:`esp_lcd_panel_init` performs a basic initialization of the data panel.
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the function which does the magic to flush the user draw buffer to the LCD screen, where the target draw window is configurable. Please note, this function expects that the draw buffer is a 1-D array and there's no stride in between each lines.
+* :cpp:func:`esp_lcd_panel_draw_bitmap_2d` is the function which does the magic to flush the user draw buffer to the LCD screen, where the source and target draw windows are configurable. Please note, the draw buffer can be a 2-D array or a 1-D array with no stride in between each lines.
 
 .. _steps_add_manufacture_init:
 
@@ -80,12 +81,12 @@ Application Example
 .. list::
 
     * :example:`peripherals/lcd/tjpgd` shows how to decode a JPEG image and display it on an SPI-interfaced LCD, and rotate the image periodically.
-    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` demonstrates how to use the `esp_lcd` component to add custom panel drivers, specifically GC9A01 or ILI9341, in an ESP-IDF project, and how to enable the STMPE610 touch controller.
+    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` demonstrates how to drive the LCD and touch panel on the same SPI bus, and display a simple GUI using the LVGL library.
     :SOC_LCD_I80_SUPPORTED: * :example:`peripherals/lcd/i80_controller` demonstrates how to port the LVGL library onto the `esp_lcd` driver layer to create GUIs.
     :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` demonstrates how to install an RGB panel driver, display a scatter chart on the screen based on the LVGL library.
     :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` demonstrates how to use the SSD1306 panel driver from the `esp_lcd` component to facilitate the porting of LVGL library and display a scrolling text on the OLED screen.
     :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/mipi_dsi` demonstrates the general process of installing a MIPI DSI LCD driver, and displays a LVGL widget on the screen.
-    :SOC_PARLIO_SUPPORT_SPI_LCD: * :example:`peripherals/lcd/parlio_simulate` demonstrates how to use Parallel IO peripheral to drive an SPI or I80 Interfaced LCD.
+    :SOC_PARLIO_LCD_SUPPORTED: * :example:`peripherals/lcd/parlio_simulate` demonstrates how to use Parallel IO peripheral to drive an SPI or I80 Interfaced LCD.
 
 
 API Reference

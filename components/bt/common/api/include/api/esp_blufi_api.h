@@ -76,9 +76,11 @@ typedef enum {
     ESP_BLUFI_READ_PARAM_ERROR,
     ESP_BLUFI_MAKE_PUBLIC_ERROR,
     ESP_BLUFI_DATA_FORMAT_ERROR,
+    // BLUFI_CALC_MD5 entry kept for backward compatibility
     ESP_BLUFI_CALC_MD5_ERROR,
     ESP_BLUFI_WIFI_SCAN_FAIL,
     ESP_BLUFI_MSG_STATE_ERROR,
+    ESP_BLUFI_CALC_SHA_256_ERROR,
 } esp_blufi_error_state_t;
 
 /**

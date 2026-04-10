@@ -1,6 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/tcp_transport/test_apps:
+  disable:
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14927
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: false

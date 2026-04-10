@@ -20,16 +20,10 @@
 extern "C" {
 #endif
 
-static inline void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
-                                    const struct bt_mesh_send_cb *cb,
-                                    void *cb_data)
-{
-    bt_mesh_generic_adv_send(buf, xmit, cb, cb_data, BLE_MESH_ADDR_UNASSIGNED, BLE_MESH_ADDR_UNASSIGNED, false);
-}
-
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
+
 void bt_mesh_adv_deinit(void);
 
 #ifdef __cplusplus

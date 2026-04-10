@@ -77,7 +77,7 @@ ESP 主机主要功能支持状态
     * -
       - GATT Caching
       - |experimental|
-      - |developing202512|
+      - |experimental|
     * -
       - Randomized Advertising Channel Indexing
       - |NA|
@@ -89,7 +89,7 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |experimental|
-      - |developing202512|
+      - |experimental|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
@@ -112,20 +112,44 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |developing202512|
+      - |experimental|
       - |supported|
     * -
       - Encrypted Advertising Data
-      - |developing202512|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - Periodic Advertising with Responses
-      - |developing202512|
       - |experimental|
+      - |experimental|
+    * - .. centered:: |6.0|
+      - Channel Sounding
+      - |experimental|
+      - |unsupported|
+    * -
+      - LL Extended Feature Set
+      - |developing202606|
+      - |developing202606|
+    * -
+      - Decision-Based Advertising Filtering
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Enhancements for ISOAL
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Monitoring Advertisers
+      - |developing202606|
+      - |developing202606|
+    * -
+      - Frame Space Update
+      - |unsupported|
+      - |unsupported|
 
 .. [1]
    如果想了解支持功能的 Bluetooth SIG 认证状态，
@@ -140,6 +164,13 @@ ESP 主机主要功能支持状态
    :class: align-center
 .. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
+   :width: 120px
+.. |developing202603| image:: ../../../_static/ble/feature_status/developing202603.svg
+   :class: align-center
+   :width: 125px
+.. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
+   :class: align-center
+   :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
 .. |experimental| image:: ../../../_static/ble/feature_status/experimental.svg
@@ -157,3 +188,4 @@ ESP 主机主要功能支持状态
 .. |5.2| replace:: `5.2 <https://www.bluetooth.com/specifications/specs/core-specification-5-2/>`__
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
+.. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__

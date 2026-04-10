@@ -41,7 +41,7 @@ extern "C" {
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
 #define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      6
 
-#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     0
+#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     480
 // The current value of this depends on the restoration time overhead of the longest chain in regdma
 #define PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US     390
 
@@ -318,6 +318,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
     .icg_func = clk_flags                                               \
 }
@@ -325,6 +326,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 1,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
     .icg_func = 0                                                       \
 }

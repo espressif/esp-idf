@@ -57,12 +57,16 @@ FORCE_INLINE_ATTR heap_t* find_biggest_heap(void)
     heap_t *heap = NULL;
     heap_t *biggest_heap = NULL;
     SLIST_FOREACH(heap, &registered_heaps, next) {
-        if (biggest_heap == NULL) {
+        /* In the case where we are currently looking for the biggest heap during startup,
+         * before the scheduler stated, all the memory regions marked as startup stacks will
+         * be NULL here. As such, they must be ignored. After boot up, this statement will
+         * never be true. */
+        if (heap->heap == NULL) {
+            /* Continue the loop */
+        } else if (biggest_heap == NULL) {
             biggest_heap = heap;
         } else if ((biggest_heap->end - biggest_heap->start) < (heap->end - heap->start)) {
             biggest_heap = heap;
-        } else {
-            // nothing to do here
         }
     }
     return biggest_heap;
@@ -637,8 +641,8 @@ static void heap_caps_print_task_info(FILE *stream, task_info_t *task_info, bool
 
     heap_stats_t *heap_info = NULL;
     STAILQ_FOREACH(heap_info, &task_info->heaps_stats, next_heap_stat) {
-        char *next_heap_visual = !STAILQ_NEXT(heap_info, next_heap_stat) ? " " : "│";
-        char *next_heap_visual_start = !STAILQ_NEXT(heap_info, next_heap_stat) ? "└" : "├";
+        const char *next_heap_visual = !STAILQ_NEXT(heap_info, next_heap_stat) ? " " : "│";
+        const char *next_heap_visual_start = !STAILQ_NEXT(heap_info, next_heap_stat) ? "└" : "├";
         fprintf(stream, "%s    %s HEAP: %s, CAPS: 0x%08lx, SIZE: %d, USAGE: CURRENT %d (%d%%), PEAK %d (%d%%), ALLOC COUNT: %d\n",
                 task_info_visual,
                 next_heap_visual_start,

@@ -9,9 +9,6 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/bitscrambler_types.h"
-#if SOC_BITSCRAMBLER_SUPPORTED
-#include "soc/bitscrambler_peri_select.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

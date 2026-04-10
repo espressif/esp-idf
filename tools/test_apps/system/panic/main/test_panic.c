@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,9 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "spi_flash_mmap.h"
+#if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
+#endif
 
 #include "esp_private/cache_utils.h"
 #include "esp_memory_utils.h"
@@ -319,7 +321,7 @@ void test_ub(void)
     printf("%d\n", stuff[rand()]);
 }
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 void test_setup_coredump_summary(void)
 {
     if (esp_core_dump_image_erase() != ESP_OK)
@@ -353,10 +355,19 @@ void test_coredump_summary(void)
 
 void test_tcb_corrupted(void)
 {
-    uint32_t volatile *tcb_ptr = (uint32_t *)xTaskGetIdleTaskHandleForCore(0);
-    for (size_t i = 0; i < sizeof(StaticTask_t) / sizeof(uint32_t); i++) {
-        tcb_ptr[i] = 0xDEADBEE0;
-    }
+    StaticTask_t *tcb = (StaticTask_t *)xTaskGetIdleTaskHandleForCore(0);
+
+    // Corrupt critical fields that are read by xTaskGetNext() and vTaskGetSnapshot().
+    tcb->pxDummy1 = (void *)0xDEADBEE0; // pxTopOfStack
+    tcb->xDummy3[0].pvDummy3[0] = (void *)0xDEADBEE1;  // xStateListItem.pxNext
+    tcb->xDummy3[0].pvDummy3[1] = (void *)0xDEADBEE2;  // xStateListItem.pxPrevious
+    tcb->xDummy3[0].pvDummy3[2] = (void *)0xDEADBEE3;  // xStateListItem.pvOwner
+    tcb->pxDummy6 = (void *)0xDEADBEE6; // pxStack
+#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+    tcb->pxDummy8 = (void *)0xDEADBEE8; // pxEndOfStack
+#endif
+
+    // Trigger a context switch.
     vTaskDelay(2);
 }
 
@@ -394,6 +405,8 @@ int g_bss_var;
 char *g_heap_ptr;
 COREDUMP_IRAM_DATA_ATTR uint32_t g_cd_iram = 0x4242;
 COREDUMP_DRAM_ATTR uint32_t g_cd_dram = 0x4343;
+COREDUMP_NOINIT_ATTR uint32_t g_noinit_var;
+COREDUMP_NOINIT_ATTR char g_noinit_buffer[28];
 #if SOC_RTC_MEM_SUPPORTED
 COREDUMP_RTC_FAST_ATTR uint32_t g_rtc_fast_var;
 COREDUMP_RTC_DATA_ATTR uint32_t g_rtc_data_var = 0x55A9;
@@ -411,10 +424,22 @@ void test_capture_dram(void)
     g_rtc_fast_var = 0xAABBCCDD;
     g_rtc_data_var++;
 #endif
+    g_noinit_var = 0xCAFEBABE;
+    strcpy(g_noinit_buffer, "NOINIT_TEST_STRING");
     assert(0);
 }
 #endif
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY && CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+COREDUMP_EXTRAM_ATTR uint32_t g_extram_bss_var;
+COREDUMP_EXTRAM_NOINIT_ATTR uint32_t g_extram_noinit_var;
+void test_panic_extram_attr(void)
+{
+    g_extram_bss_var = 123456;
+    g_extram_noinit_var = 789012;
+    assert(0);
+}
+#endif
 
 #if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
 
@@ -445,3 +470,12 @@ void test_panic_print_backtrace(void)
 }
 
 #endif
+
+#if CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT
+void test_panic_halt(void)
+{
+    printf("Triggering panic. Device should print 'CPU halted.' and stop.\n");
+    fflush(stdout);
+    assert(0);
+}
+#endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */

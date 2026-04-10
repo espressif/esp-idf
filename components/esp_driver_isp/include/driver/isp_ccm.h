@@ -20,12 +20,15 @@ extern "C" {
  *
  */
 typedef struct {
-    float matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION];     /*!< The color correction matrix in float, range (-4.0, 4.0) */
+    float matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION];     /*!< The color correction matrix in float*/
     bool saturation;                                        /*!< Whether to use saturation when the float data in the matrix is out of the range,
                                                              *   For example, if one of the matrix data is 5.0,
                                                              *   When saturation is true, and final value will be limited to 4.0, and won't rise error
                                                              *   When saturation is false, `esp_isp_ccm_configure` will rise ESP_ERR_INVALID_ARG error
                                                              */
+    struct {
+        uint32_t update_once_configured : 1;                ///< If set, apply configuration to hardware immediately; otherwise defer to frame boundary
+    } flags;                                                ///< Driver behaviour flags
 } esp_isp_ccm_config_t;
 
 /**

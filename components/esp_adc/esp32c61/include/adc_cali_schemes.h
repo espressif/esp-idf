@@ -12,5 +12,4 @@
  * @brief Supported calibration schemes
  */
 
-// TODO: [ESP32C61] IDF-9303
-// #define ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED    1
+#define ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED    1

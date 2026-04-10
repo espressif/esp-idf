@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_fault.h"
 #include "driver/mcpwm_oper.h"
 #include "driver/gpio.h"
@@ -17,12 +18,12 @@ TEST_CASE("mcpwm_fault_install_uninstall", "[mcpwm]")
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .gpio_num = TEST_FAULT_GPIO,
     };
-    int total_gpio_faults = SOC_MCPWM_GPIO_FAULTS_PER_GROUP * SOC_MCPWM_GROUPS;
+    int total_gpio_faults = MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP) * MCPWM_LL_GET(GROUP_NUM);
     mcpwm_fault_handle_t gpio_faults[total_gpio_faults];
     int fault_itor = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         gpio_fault_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_GPIO_FAULTS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_faults[fault_itor++]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_faults[0]));

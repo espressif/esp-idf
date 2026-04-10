@@ -108,7 +108,7 @@ esp_err_t esp_tee_ota_write(uint32_t rel_offset, const void *data, size_t size)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (rel_offset + size > ota_handle.tee_next.pos.size) {
+    if (size > ota_handle.tee_next.pos.size || rel_offset > ota_handle.tee_next.pos.size - size) {
         ESP_LOGE(TAG, "Out of region write not allowed!");
         return ESP_FAIL;
     }

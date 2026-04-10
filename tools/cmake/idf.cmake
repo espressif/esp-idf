@@ -52,6 +52,13 @@ if(NOT __idf_env_set)
     include(prefix_map)
     include(openocd)
 
+    # ESP-IDF extra dependencies defined in tools/idf_extra_components.yml
+    if(WIN32)
+        set_default(IDF_TOOLS_PATH "$ENV{USERPROFILE}/.espressif")
+    else()
+        set_default(IDF_TOOLS_PATH "$ENV{HOME}/.espressif")
+    endif()
+
     __build_init("${idf_path}")
 
     # Check if IDF_ENV_FPGA environment is set

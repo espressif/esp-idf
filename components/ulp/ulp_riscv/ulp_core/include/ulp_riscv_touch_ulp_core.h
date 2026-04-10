@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 
 #include "esp_err.h"
 #include "ulp_riscv_register_ops.h"
-#include "hal/touch_sensor_legacy_types.h"
+#include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ extern "C" {
  * @param raw_data      Pointer to accept touch sensor value
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw_data);
+esp_err_t ulp_riscv_touch_pad_read_raw_data(int touch_num, uint32_t *raw_data);
 
 /**
  * @brief Read benchmark of touch sensor on the ULP RISC-V core
@@ -32,7 +32,7 @@ esp_err_t ulp_riscv_touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw
  * @param benchmark     Pointer to accept touch sensor benchmark value
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_read_benchmark(touch_pad_t touch_num, uint32_t *benchmark);
+esp_err_t ulp_riscv_touch_pad_read_benchmark(int touch_num, uint32_t *benchmark);
 
 /**
  * @brief Read the filtered (smoothened) touch sensor data on the ULP RISC-V core
@@ -42,7 +42,7 @@ esp_err_t ulp_riscv_touch_pad_read_benchmark(touch_pad_t touch_num, uint32_t *be
  * @param smooth_data   Pointer to accept smoothened touch sensor value
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t *smooth_data);
+esp_err_t ulp_riscv_touch_pad_filter_read_smooth(int touch_num, uint32_t *smooth_data);
 
 /**
  * @brief Force reset benchmark to raw data of touch sensor.
@@ -51,7 +51,7 @@ esp_err_t ulp_riscv_touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t
  * @param touch_num     Touch pad index (TOUCH_PAD_MAX resets baseline of all channels)
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_reset_benchmark(touch_pad_t touch_num);
+esp_err_t ulp_riscv_touch_pad_reset_benchmark(int touch_num);
 
 /**
  * @brief Read raw data of touch sensor sleep channel on the ULP RISC-V core
@@ -61,7 +61,7 @@ esp_err_t ulp_riscv_touch_pad_reset_benchmark(touch_pad_t touch_num);
  * @param raw_data      Pointer to accept touch sensor value
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(touch_pad_t touch_num, uint32_t *raw_data);
+esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(int touch_num, uint32_t *raw_data);
 
 /**
  * @brief Read benchmark of touch sensor sleep channel on the ULP RISC-V core
@@ -71,7 +71,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(touch_pad_t touch_num, uin
  * @param benchmark     Pointer to accept touch sensor benchmark value
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(touch_pad_t touch_num, uint32_t *benchmark);
+esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(int touch_num, uint32_t *benchmark);
 
 /**
  * @brief Read the filtered (smoothened) touch sensor sleep channel data on the ULP RISC-V core
@@ -81,7 +81,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(touch_pad_t touch_num
  * @param smooth_data   Pointer to accept smoothened touch sensor value
  * @return esp_err_t    ESP_OK when successful
  */
-esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(touch_pad_t touch_num, uint32_t *smooth_data);
+esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(int touch_num, uint32_t *smooth_data);
 
 /**
  * @brief Reset benchmark of touch sensor sleep channel.

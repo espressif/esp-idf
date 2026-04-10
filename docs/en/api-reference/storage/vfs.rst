@@ -17,11 +17,11 @@ For example, one can mount a FAT filesystem driver at the ``/fat`` prefix and ca
 FS Registration
 ---------------
 
-.. note::
-
-    For previous version of the API (using :cpp:type:`esp_vfs_t`), see documentation for previous release.
-
 To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_fs_ops_t` structure and populate it with function pointers to FS APIs:
+
+.. warning::
+
+    The API version without a context pointer is deprecated, and will be removed in the future. See :ref:`context_api` for details.
 
 .. highlight:: c
 
@@ -29,7 +29,7 @@ To register an FS driver, an application needs to define an instance of the :cpp
 
     // Both esp_vfs_fs_ops_t and its subcomponents have to have static storage
     static const esp_vfs_dir_ops_t myfs_dir = {
-        .fstat = &myfs_fstat,
+        .stat = &myfs_stat,
     };
 
     static const esp_vfs_fs_ops_t myfs = {
@@ -55,7 +55,7 @@ The recommended approach for registering filesystem is to use statically allocat
     // Possibly local scope
     {
         esp_vfs_dir_ops_t myfs_dir = {
-            .fstat = &myfs_fstat,
+            .stat = &myfs_stat,
         };
 
         bool some_condition = false;
@@ -69,6 +69,7 @@ The recommended approach for registering filesystem is to use statically allocat
         ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_DEFAULT, NULL));
     }
 
+.. _context_api:
 
 Context Aware Filesystem
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -79,7 +80,7 @@ In some cases, it might be beneficial or even necessary to pass some context to 
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
-    // In definition of esp_vfs_t:
+    // In definition of esp_vfs_fs_ops_t:
         .write_p = &myfs_write,
     // ... other members initialized
 

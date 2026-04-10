@@ -61,6 +61,10 @@ struct osi_event {
 
 static const size_t DEFAULT_WORK_QUEUE_CAPACITY = 100;
 
+#if OSI_THREAD_DEBUG
+static void osi_thread_run_item(osi_thread_t *thread, int wq_idx, struct work_item *item);
+#endif
+
 static struct work_queue *osi_work_queue_create(size_t capacity)
 {
     if (capacity == 0) {
@@ -162,7 +166,11 @@ static void osi_thread_run(void *arg)
         struct work_item item;
         while (!thread->stop && idx < thread->work_queue_num) {
             if (osi_thead_work_queue_get(thread->work_queues[idx], &item) == true) {
+                #if OSI_THREAD_DEBUG
+                osi_thread_run_item(thread, idx, &item);
+                #else
                 item.func(item.context);
+                #endif
                 idx = 0;
                 continue;
             } else {
@@ -451,3 +459,45 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
 
     return ret;
 }
+
+#if OSI_THREAD_DEBUG
+static void osi_thread_run_item(osi_thread_t *thread, int wq_idx, struct work_item *item)
+{
+    uint32_t pre_time;
+    uint32_t pre_msg_cnt;
+    uint32_t cur_time;
+    uint32_t cur_msg_cnt;
+
+    pre_time = esp_log_timestamp();
+    pre_msg_cnt = uxQueueMessagesWaiting(thread->work_queues[wq_idx]->queue);
+    item->func(item->context);
+    cur_time = esp_log_timestamp();
+    cur_msg_cnt = uxQueueMessagesWaiting(thread->work_queues[wq_idx]->queue);
+    if ((cur_time - pre_time) >= OSI_THREAD_BLOCK_TIME ||
+        (cur_msg_cnt > pre_msg_cnt && (cur_msg_cnt - pre_msg_cnt) >= OSI_THREAD_BLOCK_MSG)) {
+        OSI_TRACE_ERROR("%s was blocked while running item: %p exec_time=[%u %u] msg_inc=[%u %u]",
+            pcTaskGetName(thread->thread_handle), item->func, cur_time, pre_time, cur_msg_cnt, pre_msg_cnt);
+        assert(0);
+    }
+}
+
+void osi_thread_workqueue_dump(osi_thread_t *thread)
+{
+    int idx = 0;
+    struct work_item item;
+
+    vTaskSuspendAll();
+
+    while (idx < thread->work_queue_num) {
+        if (osi_thead_work_queue_get(thread->work_queues[idx], &item) == true) {
+            esp_rom_printf("[%u] %p %p\n", idx, item.func, item.context);
+            idx = 0;
+            continue;
+        } else {
+            idx++;
+        }
+    }
+
+    xTaskResumeAll();
+}
+#endif // OSI_THREAD_DEBUG

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,11 @@ public:
     virtual esp_err_t flush()
     {
         return ESP_OK;
+    };
+
+    virtual bool is_readonly()
+    {
+        return false;
     };
 
     virtual ~Flash_Access() {};

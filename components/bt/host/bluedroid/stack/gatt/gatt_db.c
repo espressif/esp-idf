@@ -363,6 +363,7 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
 
             if (p_attr->handle >= s_handle && gatt_uuid_compare(type, attr_uuid)) {
                 if (*p_len <= 2) {
+                    *p_cur_handle = p_attr->handle;
                     status = GATT_NO_RESOURCES;
                     break;
                 }
@@ -375,15 +376,19 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
 
                     need_rsp = TRUE;
                     status = gatts_send_app_read_request(p_tcb, op_code, p_attr->handle, 0, trans_id, need_rsp);
-
+                    if (status != GATT_PENDING) {
+                        *p_cur_handle = p_attr->handle;
+                    }
                     /* one callback at a time */
                     break;
                 } else if (status == GATT_SUCCESS || status == GATT_STACK_RSP) {
                     if (status == GATT_STACK_RSP){
                         need_rsp = FALSE;
                         status = gatts_send_app_read_request(p_tcb, op_code, p_attr->handle, 0, trans_id, need_rsp);
-                        if(status == GATT_BUSY)
+                        if (status != GATT_STACK_RSP) {
+                            *p_cur_handle = p_attr->handle;
                             break;
+                        }
 
                         if (!have_send_request){
                             have_send_request = true;
@@ -400,6 +405,7 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
                         *p_len -= (len + 2);
                     } else {
                         GATT_TRACE_WARNING("format mismatch");
+                        *p_cur_handle = p_attr->handle;
                         status = GATT_NO_RESOURCES;
                         break;
                     }
@@ -546,6 +552,7 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 
         if (attr_val != NULL) {
             if (!copy_extra_byte_in_db(p_db, (void **)&p_char_val->p_value, sizeof(tGATT_ATTR_VAL))) {
+                deallocate_attr_in_db(p_db, p_char_decl);
                 deallocate_attr_in_db(p_db, p_char_val);
                 return 0;
             }
@@ -733,7 +740,7 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
     }
 
     p_cur    =  (tGATT_ATTR16 *) p_db->p_attr_list;
-
+    BOOLEAN found = FALSE;
     while (p_cur != NULL) {
         if (p_cur->handle == attr_handle) {
             /* for characteristic should not be set, return GATT_NOT_FOUND */
@@ -758,13 +765,14 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
             } else{
                 memcpy(p_cur->p_value->attr_val.attr_val, value, length);
                 p_cur->p_value->attr_val.attr_len = length;
+                found = TRUE;
             }
             break;
         }
         p_cur = p_cur->p_next;
     }
 
-    return GATT_SUCCESS;
+    return found ? GATT_SUCCESS : GATT_NOT_FOUND;
 }
 
 /*******************************************************************************
@@ -1039,20 +1047,23 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                     return GATT_APP_RSP;
                 }
 
-                if ((p_attr->p_value != NULL) &&
-                    (p_attr->p_value->attr_val.attr_max_len >= offset + len) &&
-                    p_attr->p_value->attr_val.attr_val != NULL) {
-                    memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
-                    p_attr->p_value->attr_val.attr_len = len + offset;
-                    return GATT_SUCCESS;
-                } else if (p_attr->p_value && p_attr->p_value->attr_val.attr_max_len < offset + len){
-                    GATT_TRACE_DEBUG("Remote device try to write with a length larger then attribute's max length\n");
-                    return GATT_INVALID_ATTR_LEN;
-                } else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){
+                if (p_attr->p_value == NULL || p_attr->p_value->attr_val.attr_val == NULL) {
                     GATT_TRACE_ERROR("Error in %s, line=%d, %s should not be NULL here\n", __func__, __LINE__, \
                                     (p_attr->p_value == NULL) ? "p_value" : "attr_val.attr_val");
                     return GATT_UNKNOWN_ERROR;
                 }
+
+                /* Check for integer overflow: offset + len must not overflow UINT16
+                 * and must not exceed attr_max_len */
+                if (offset > p_attr->p_value->attr_val.attr_max_len ||
+                    len > p_attr->p_value->attr_val.attr_max_len - offset) {
+                    GATT_TRACE_DEBUG("Remote device try to write with a length larger than attribute's max length\n");
+                    return GATT_INVALID_ATTR_LEN;
+                }
+
+                memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
+                p_attr->p_value->attr_val.attr_len = offset + len;
+                return GATT_SUCCESS;
             }
 
             p_attr = (tGATT_ATTR16 *)p_attr->p_next;
@@ -1202,8 +1213,8 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHORIZATION,handle %04x,perm %04x", handle, perm);
                 }
                 /* LE security mode 2 attribute  */
-                else if (perm & GATT_WRITE_SIGNED_PERM && op_code != GATT_SIGN_CMD_WRITE && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)
-                         &&  (perm & GATT_WRITE_ALLOWED) == 0) {
+                else if ((perm & GATT_WRITE_SIGNED_PERM) && op_code != GATT_SIGN_CMD_WRITE && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)
+                        && !(perm & (GATT_PERM_WRITE | GATT_PERM_WRITE_ENCRYPTED | GATT_PERM_WRITE_ENC_MITM))) {
                     status = GATT_INSUF_AUTHENTICATION;
                     GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION: LE security mode 2 required,handle %04x,perm %04x", handle, perm);
                 } else { /* writable: must be char value declaration or char descriptors */

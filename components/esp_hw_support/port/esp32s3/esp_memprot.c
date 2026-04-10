@@ -997,7 +997,7 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         }
     }
 
-    //reenable the protection
+    //re-enable the protection
     if (use_iram0) {
         for (size_t x = 0; x < core_count; x++) {
             ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, memp_config->target_cpu[x]))
@@ -1043,7 +1043,6 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         }
     }
 
-    //sanity check (RTC FAST tbd within IDF-5208)
     if (use_iram0 || use_dram0) {
 
         uint32_t check_val;

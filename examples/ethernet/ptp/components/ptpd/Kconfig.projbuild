@@ -180,6 +180,15 @@ menu "PTP Daemon Configuration"
                     time is reset with settimeofday() instead of changing the rate with
                     adjtime().
 
+            config NETUTILS_PTPD_DRIFT_AVERAGE_S
+                int "PTP client clock drift rate averaging time (s)"
+                default 600
+                range 10 86400
+                help
+                    Clock drift rate is averaged over this time period. Larger value
+                    gives more stable estimate but reacts slower to crystal oscillator speed
+                    changes (such as caused by temperature changes).
+
         # Commented options not used by ESP_PTP
         #config NETUTILS_PTPD_MULTICAST_TIMEOUT_MS
         #    int "PTP client timeout to rejoin multicast group (ms)"
@@ -190,15 +199,6 @@ menu "PTP Daemon Configuration"
         #        multicast group. This can be necessary if network topology changes, or
         #        depending on hardware, after some error recovery events.
         #        Set to 0 to disable.
-
-        #config NETUTILS_PTPD_DRIFT_AVERAGE_S
-        #    int "PTP client clock drift rate averaging time (s)"
-        #    default 600
-        #    range 10 86400
-        #    help
-        #        Clock drift rate is averaged over this time pediod. Larger value
-        #        gives more stable estimate but reacts slower to crystal oscillator speed
-        #        changes (such as caused by temperature changes).
 
             config NETUTILS_PTPD_SEND_DELAYREQ
                 bool "PTP client enable delay requests"

@@ -23,6 +23,8 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "esp_roaming.h"
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -138,7 +140,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 
 #ifdef CONFIG_IEEE80211R
     /* register auth/assoc frames if FT is enabled */
-    if (esp_wifi_is_ft_enabled_internal(ESP_IF_WIFI_STA))
+    if (esp_wifi_is_ft_enabled_internal(WIFI_IF_STA))
         wpa_s->type |= (1 << WLAN_FC_STYPE_AUTH) |
                        (1 << WLAN_FC_STYPE_ASSOC_RESP) |
                        (1 << WLAN_FC_STYPE_REASSOC_RESP);
@@ -151,7 +153,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 static int handle_auth_frame(u8 *frame, size_t len,
                              u8 *sender, int8_t rssi, u8 channel)
 {
-    if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+    if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK || gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_SAE) {
         if (gWpaSm.ft_protocol) {
             if (wpa_ft_process_response(&gWpaSm, frame + 6,
                                         len - 6, 0, sender, NULL, 0) < 0) {
@@ -166,7 +168,10 @@ static int handle_auth_frame(u8 *frame, size_t len,
 static int handle_assoc_frame(u8 *frame, size_t len,
                               u8 *sender, int8_t rssi, u8 channel)
 {
-    if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+    if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK || gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_SAE) {
+        if (len < 6) { /* Cap info + status code */
+            return -1;
+        }
         if (gWpaSm.ft_protocol) {
             if (wpa_ft_validate_reassoc_resp(&gWpaSm, frame + 6, len - 6, sender)) {
                 wpa_sm_set_ft_params(&gWpaSm, NULL, 0);
@@ -321,6 +326,10 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
     u8 *ie;
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
     struct wpa_bss *bss = wpa_bss_get_bssid(wpa_s, bssid);
+#ifdef CONFIG_RRM
+    struct ieee802_11_elems elems;
+#endif
+
     if (!bss) {
         wpa_printf(MSG_INFO, "connected bss entry not present in scan cache");
         return;
@@ -328,7 +337,13 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
     wpa_s->current_bss = bss;
     ie = (u8 *)bss;
     ie += sizeof(struct wpa_bss);
-    ieee802_11_parse_elems(wpa_s, ie, bss->ie_len);
+#ifdef CONFIG_RRM
+    ieee802_11_parse_elems(ie, bss->ie_len, &elems, 0);
+    if (elems.rrm_enabled_len > 0 && elems.rrm_enabled != NULL) {
+        os_memcpy(wpa_s->rrm_ie, elems.rrm_enabled, 5);
+        wpa_s->rrm.rrm_used = true;
+    }
+#endif
     wpa_bss_flush(wpa_s);
     /* Register for mgmt frames */
     register_mgmt_frames(wpa_s);
@@ -380,32 +395,6 @@ bool esp_rrm_is_rrm_supported_connection(void)
 
     return true;
 }
-/*This function has been deprecated in favour of esp_rrm_send_neighbor_report_request*/
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx)
-{
-    struct wpa_supplicant *wpa_s = &g_wpa_supp;
-    struct wpa_ssid_value wpa_ssid = {0};
-    struct wifi_ssid *ssid;
-
-    if (!wpa_s->current_bss) {
-        wpa_printf(MSG_ERROR, "STA not associated, return");
-        return -2;
-    }
-
-    if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
-        wpa_printf(MSG_ERROR,
-                   "RRM: No network support for Neighbor Report.");
-        return -1;
-    }
-
-    ssid = esp_wifi_sta_get_prof_ssid_internal();
-
-    os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
-    wpa_ssid.ssid_len = ssid->len;
-
-    return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
-}
 
 void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_len)
 {
@@ -422,7 +411,6 @@ void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_le
         return;
     }
 
-    os_memcpy(neighbor_report_event->report, report, ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
     os_memcpy(neighbor_report_event->n_report, report, report_len);
     neighbor_report_event->report_len = report_len;
     esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, neighbor_report_event, sizeof(wifi_event_neighbor_report_t) + report_len, 0);
@@ -592,22 +580,53 @@ static size_t get_mbo_oce_assoc_ie(uint8_t *ie, size_t len)
     return mbo_ie_len;
 }
 
-static uint8_t get_operating_class_ie(uint8_t *ie, size_t len)
+static uint8_t get_operating_class_ie(uint8_t *bssid, uint8_t *ie, size_t len)
 {
-    uint8_t op_class_ie[4] = {0};
-    uint8_t op_class_ie_len = 2;
-    uint8_t *pos = op_class_ie;
+    size_t res = 0;
+    struct wpabuf *buf;
+    u8 *ie_len;
+    u8 op;
+    channel_bitmap_t non_pref_channels[1] = { 0 };
+    struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
 
-    *pos++ = WLAN_EID_SUPPORTED_OPERATING_CLASSES;
-    *pos++ = op_class_ie_len;
-#define OPER_CLASS 0x51
-    /* Current Operating Class */
-    *pos++ = OPER_CLASS;
-#undef OPER_CLASS
-    *pos = 0;
-    os_memcpy(ie, op_class_ie, sizeof(op_class_ie));
+    if (!bss) {
+        wpa_printf(MSG_ERROR, "bss not found");
+        return 0;
+    }
 
-    return op_class_ie_len + 2;
+    /*
+     * Need 3 bytes for EID, length, and current operating class, plus
+     * 1 byte for every other supported operating class.
+     */
+    buf = wpabuf_alloc(global_op_class_size + 3);
+    if (!buf) {
+        return 0;
+    }
+    wpabuf_put_u8(buf, WLAN_EID_SUPPORTED_OPERATING_CLASSES);
+    /* Will set the length later, putting a placeholder */
+    ie_len = wpabuf_put(buf, 1);
+    wpabuf_put_u8(buf, get_operating_class(bss->channel, 0));
+    for (op = 0; op < global_op_class_size; op++) {
+        bool supp;
+        u8 op_class = global_op_class[op].op_class;
+        supp = esp_wifi_op_class_supported_internal(op_class, global_op_class[op].min_chan, global_op_class[op].max_chan,
+                                                    global_op_class[op].inc, global_op_class[op].bw, non_pref_channels);
+        if (!supp) {
+            continue;
+        }
+        /* Add a 1-octet operating class to the Operating Class field */
+        wpabuf_put_u8(buf, op_class);
+    }
+    if (non_pref_channels[0].ghz_2_channels != 0 || non_pref_channels[0].ghz_5_channels != 0) {
+        wpa_printf(MSG_WARNING,
+                   "It is recommended to forbid channels by operating class instead of channels for better compatibility.\n"
+                   "Non-preferred channels: 2Ghz=0x%04x, 5Ghz=0x%08x", non_pref_channels[0].ghz_2_channels, non_pref_channels[0].ghz_5_channels);
+    }
+    *ie_len = wpabuf_len(buf) - 2;
+    os_memcpy(ie, wpabuf_head(buf), wpabuf_len(buf));
+    res = wpabuf_len(buf);
+    wpabuf_free(buf);
+    return res;
 }
 #endif /* CONFIG_MBO */
 
@@ -628,6 +647,9 @@ void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
     config->sta.channel = bss->channel;
     /* supplicant connect will only be called in case of bss transition(roaming) */
     esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    esp_wifi_roaming_set_current_bssid(bss->bssid);
+#endif
     esp_wifi_set_config(WIFI_IF_STA, config);
     os_free(config);
     esp_wifi_connect();
@@ -790,12 +812,6 @@ int esp_rrm_send_neighbor_report_request(void)
 {
     return -1;
 }
-
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx)
-{
-    return -1;
-}
 #endif
 
 #if defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE)
@@ -819,7 +835,7 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     len -= ie_len;
 #endif /* defined(CONFIG_RRM) */
 #ifdef CONFIG_MBO
-    ie_len = get_operating_class_ie(pos, len);
+    ie_len = get_operating_class_ie(bssid, pos, len);
     pos += ie_len;
     len -= ie_len;
     ie_len = get_mbo_oce_assoc_ie(pos, len);

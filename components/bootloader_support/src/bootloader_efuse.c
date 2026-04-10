@@ -46,7 +46,6 @@ int bootloader_clock_get_rated_freq_mhz(void)
     return 96;
 
 #elif CONFIG_IDF_TARGET_ESP32H4
-    //TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
     return 96;
 
 #elif CONFIG_IDF_TARGET_ESP32P4
@@ -58,5 +57,7 @@ int bootloader_clock_get_rated_freq_mhz(void)
 #elif CONFIG_IDF_TARGET_ESP32S3
     return 240;
 
+#elif CONFIG_IDF_TARGET_ESP32S31
+    return 300;
 #endif
 }

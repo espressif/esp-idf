@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_prox_cent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_PROX_CENT";
 static uint8_t link_supervision_timeout;
@@ -33,6 +36,7 @@ void ble_store_config_init(void);
 static void ble_prox_cent_scan(void);
 static int ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg);
 
+#if MYNEWT_VAL(BLE_GATTC)
 static int
 ble_prox_cent_on_read(uint16_t conn_handle,
                       const struct ble_gatt_error *error,
@@ -69,7 +73,10 @@ ble_prox_cent_on_write(uint16_t conn_handle,
     const struct peer_chr *chr;
     int rc;
     const struct peer *peer = peer_find(conn_handle);
-
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Error: peer not found for conn_handle=%d", conn_handle);
+        return 0;
+    }
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLE_SVC_TX_POWER_UUID16),
                              BLE_UUID16_DECLARE(BLE_SVC_PROX_CHR_UUID16_TX_PWR_LVL));
@@ -172,6 +179,7 @@ ble_prox_cent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     ble_prox_cent_read_write_subscribe(peer);
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -245,7 +253,7 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 
 	/* Conversion */
         for (int i=0; i<6; i++) {
-            test_addr[i] = (uint8_t )peer_addr[i];
+            test_addr[5 - i] = (uint8_t )peer_addr[i];
         }
 
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
@@ -256,10 +264,10 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for Proximity sensor (link loss)
     * service (0x1803).
     */
-    do {
+    while (offset < disc->length_data) {
         ad_struct_len = disc->data[offset];
 
-        if (!ad_struct_len) {
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
             break;
         }
 
@@ -271,8 +279,7 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
 
         offset += ad_struct_len + 1;
-
-    } while ( offset < disc->length_data );
+    }
 
     return 0;
 }
@@ -473,6 +480,14 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+            rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+                return 0;
+            }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_prox_cent_on_disc_complete, NULL);
@@ -481,12 +496,15 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 #endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
                         event->connect.status);
+
+            ble_prox_cent_scan();
         }
-        ble_prox_cent_scan();
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
@@ -532,15 +550,42 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+        rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+            return 0;
+        }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->connect.conn_handle,
+        rc = peer_disc_all(event->enc_change.conn_handle,
                            ble_prox_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
 #endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif
         return 0;
+
+    case BLE_GAP_EVENT_CACHE_ASSOC:
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+          /* Cache association result for this connection */
+          MODLOG_DFLT(INFO, "cache association; conn_handle=%d status=%d cache_state=%s\n",
+                      event->cache_assoc.conn_handle,
+                      event->cache_assoc.status,
+                      (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
+          /* Perform service discovery */
+          rc = peer_disc_all(event->connect.conn_handle,
+                             ble_prox_cent_on_disc_complete, NULL);
+          if(rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                return 0;
+          }
+#endif
+          return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */
@@ -597,7 +642,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
 void
 ble_prox_cent_path_loss_task(void *pvParameters)
 {
-    int8_t rssi;
+    int8_t rssi = 0;
     int rc;
     int path_loss;
 
@@ -623,6 +668,7 @@ ble_prox_cent_path_loss_task(void *pvParameters)
                         path_loss = 0;
                     }
 
+#if MYNEWT_VAL(BLE_GATTC)
                     rc = ble_gattc_write_no_rsp_flat(i, conn_peer[i].val_handle,
                                                      &path_loss, sizeof(path_loss));
                     if (rc != 0) {
@@ -631,6 +677,7 @@ ble_prox_cent_path_loss_task(void *pvParameters)
                     } else {
                         MODLOG_DFLT(INFO, "Write to alert level characteristis done");
                     }
+#endif
                 }
             }
         }
@@ -644,7 +691,10 @@ ble_prox_cent_link_loss_task(void *pvParameters)
     while (1) {
         for (int i = 0; i <= MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
             if (disconn_peer[i].link_lost && disconn_peer[i].addr != NULL) {
-                MODLOG_DFLT(INFO, "Link lost for device with conn_handle %d", i);
+                MODLOG_DFLT(INFO, "Link lost for peer %02x:%02x:%02x:%02x:%02x:%02x, slot %d",
+                           disconn_peer[i].addr[5], disconn_peer[i].addr[4],
+                           disconn_peer[i].addr[3], disconn_peer[i].addr[2],
+                           disconn_peer[i].addr[1], disconn_peer[i].addr[0], i);
             }
         }
         vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -710,7 +760,6 @@ app_main(void)
 
     /* Initialize a task to keep checking path loss of the link */
     ble_prox_cent_init();
-
     for (int i = 0; i <= MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
         disconn_peer[i].addr = NULL;
         disconn_peer[i].link_lost = true;

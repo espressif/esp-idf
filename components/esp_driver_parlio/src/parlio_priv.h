@@ -27,8 +27,7 @@
 #include "freertos/queue.h"
 #include "freertos/idf_additions.h"
 #include "soc/soc_caps.h"
-#include "soc/gdma_channel.h"
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
 #include "hal/parlio_types.h"
 #include "hal/parlio_hal.h"
 #include "hal/parlio_ll.h"
@@ -87,19 +86,6 @@
 // loop transmission requires ping-pong link to prevent data tearing.
 #define PARLIO_DMA_LINK_NUM         2
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PARLIO_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define PARLIO_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PARLIO_RCC_ATOMIC()
-#endif  // SOC_RCC_IS_INDEPENDENT
-
 ///!< Logging settings
 #define TAG "parlio"
 
@@ -133,8 +119,8 @@ typedef struct parlio_group_t {
     portMUX_TYPE              spinlock;     // to protect per-group register level concurrent access
     parlio_hal_context_t      hal;          // hal layer context
     uint32_t                  dma_align;    // DMA buffer alignment
-    parlio_unit_base_handle_t    tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
-    parlio_unit_base_handle_t    rx_units[SOC_PARLIO_RX_UNITS_PER_GROUP]; // rx unit handles
+    parlio_unit_base_handle_t    tx_units[PARLIO_LL_GET(TX_UNITS_PER_INST)]; // tx unit handles
+    parlio_unit_base_handle_t    rx_units[PARLIO_LL_GET(RX_UNITS_PER_INST)]; // rx unit handles
 } parlio_group_t;
 
 /**

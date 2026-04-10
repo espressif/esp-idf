@@ -10,7 +10,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "unity.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "sdkconfig.h"
 
 /*

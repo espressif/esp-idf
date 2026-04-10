@@ -2,6 +2,7 @@
 
 components/esp_security/test_apps/crypto_drivers:
   enable:
-    - if: ((SOC_HMAC_SUPPORTED == 1) or (SOC_DIG_SIGN_SUPPORTED == 1)) or (SOC_KEY_MANAGER_SUPPORTED == 1)
+    - if: ((SOC_HMAC_SUPPORTED == 1) or (SOC_DIG_SIGN_SUPPORTED == 1)) or (SOC_KEY_MANAGER_SUPPORTED == 1)g
   depends_components:
     - esp_security
+    - esp_hal_security

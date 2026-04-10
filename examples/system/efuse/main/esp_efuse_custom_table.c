@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,29 +17,36 @@
 
 #define MAX_BLK_LEN CONFIG_EFUSE_MAX_BLK_LEN
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2
+#define CUSTOM_EFUSE_BLOCK EFUSE_BLK3
+#else
+// This is for chips that have BLOCK3 occupied
+#define CUSTOM_EFUSE_BLOCK EFUSE_BLK8
+#endif
+
 // The last free bit in the block is counted over the entire file.
 #define LAST_FREE_BIT_BLK3 94
 
 _Static_assert(LAST_FREE_BIT_BLK3 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
 
 static const esp_efuse_desc_t MODULE_VERSION[] = {
-    {EFUSE_BLK3, 56, 8}, 	 // Module version,
+    {CUSTOM_EFUSE_BLOCK, 56, 8}, 	 // Module version,
 };
 
 static const esp_efuse_desc_t DEVICE_ROLE[] = {
-    {EFUSE_BLK3, 64, 3}, 	 // Device role,
+    {CUSTOM_EFUSE_BLOCK, 64, 3}, 	 // Device role,
 };
 
 static const esp_efuse_desc_t SETTING_1[] = {
-    {EFUSE_BLK3, 67, 6}, 	 // Setting 1,
+    {CUSTOM_EFUSE_BLOCK, 67, 6}, 	 // Setting 1,
 };
 
 static const esp_efuse_desc_t SETTING_2[] = {
-    {EFUSE_BLK3, 73, 5}, 	 // Setting 2,
+    {CUSTOM_EFUSE_BLOCK, 73, 5}, 	 // Setting 2,
 };
 
 static const esp_efuse_desc_t CUSTOM_SECURE_VERSION[] = {
-    {EFUSE_BLK3, 78, 16}, 	 // Custom secure version,
+    {CUSTOM_EFUSE_BLOCK, 78, 16}, 	 // Custom secure version,
 };
 
 

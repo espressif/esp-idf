@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "memory_checks.h"
 #include "esp_tls.h"
+#include "esp_tls_custom_stack.h"
 #include "unity.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -59,6 +60,7 @@ const char *test_key_pem =    "-----BEGIN PRIVATE KEY-----\n"\
                               "Aogx44Fozd1t2hYcozPuZD4s\n"\
                               "-----END PRIVATE KEY-----\n";
 
+#if CONFIG_ESP_TLS_USING_MBEDTLS
 TEST_CASE("esp-tls init deinit", "[esp-tls]")
 {
     struct esp_tls *tls = esp_tls_init();
@@ -94,3 +96,65 @@ TEST_CASE("esp_tls_server session create delete", "[esp-tls]")
     esp_tls_server_session_delete(tls);
 
 }
+#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
+
+#if CONFIG_ESP_TLS_CUSTOM_STACK
+/* Stub functions for testing custom stack registration */
+static esp_err_t stub_create_ssl_handle(void *user_ctx, const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void *server_params) { return ESP_OK; }
+static int stub_handshake(void *user_ctx, esp_tls_t *tls, const esp_tls_cfg_t *cfg) { return 1; }
+static ssize_t stub_read(void *user_ctx, esp_tls_t *tls, char *data, size_t datalen) { return 0; }
+static ssize_t stub_write(void *user_ctx, esp_tls_t *tls, const char *data, size_t datalen) { return (ssize_t)datalen; }
+static void stub_conn_delete(void *user_ctx, esp_tls_t *tls) { }
+static void stub_net_init(void *user_ctx, esp_tls_t *tls) { }
+static void *stub_get_ssl_context(void *user_ctx, esp_tls_t *tls) { return NULL; }
+static ssize_t stub_get_bytes_avail(void *user_ctx, esp_tls_t *tls) { return 0; }
+static esp_err_t stub_init_global_ca_store(void *user_ctx) { return ESP_OK; }
+static esp_err_t stub_set_global_ca_store(void *user_ctx, const unsigned char *buf, const unsigned int len) { return ESP_OK; }
+static void *stub_get_global_ca_store(void *user_ctx) { return NULL; }
+static void stub_free_global_ca_store(void *user_ctx) { }
+static const int stub_ciphersuites[] = { 0 };
+static const int *stub_get_ciphersuites_list(void *user_ctx) { return stub_ciphersuites; }
+
+static const esp_tls_stack_ops_t s_stub_ops = {
+    .create_ssl_handle = stub_create_ssl_handle,
+    .handshake = stub_handshake,
+    .read = stub_read,
+    .write = stub_write,
+    .conn_delete = stub_conn_delete,
+    .net_init = stub_net_init,
+    .get_ssl_context = stub_get_ssl_context,
+    .get_bytes_avail = stub_get_bytes_avail,
+    .init_global_ca_store = stub_init_global_ca_store,
+    .set_global_ca_store = stub_set_global_ca_store,
+    .get_global_ca_store = stub_get_global_ca_store,
+    .free_global_ca_store = stub_free_global_ca_store,
+    .get_ciphersuites_list = stub_get_ciphersuites_list,
+};
+
+TEST_CASE("esp_tls custom stack registration", "[esp-tls][custom-stack]")
+{
+    /* Test: registration with NULL should fail */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_tls_register_stack(NULL, NULL));
+
+    /* Test: no stack registered initially */
+    TEST_ASSERT_NULL(esp_tls_get_registered_stack());
+
+    /* Test: unregister when none registered should fail */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_tls_unregister_stack());
+
+    /* Test: registration with valid ops should succeed */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_tls_register_stack(&s_stub_ops, NULL));
+
+    /* Test: get registered stack should return the ops */
+    TEST_ASSERT_EQUAL_PTR(&s_stub_ops, esp_tls_get_registered_stack());
+
+    /* Test: double registration should fail */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_tls_register_stack(&s_stub_ops, NULL));
+
+    /* Test: unregister should succeed */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_tls_unregister_stack());
+
+    /* Test: after unregister, no stack should be registered */
+    TEST_ASSERT_NULL(esp_tls_get_registered_stack());
+}
+#endif /* CONFIG_ESP_TLS_CUSTOM_STACK */

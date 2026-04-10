@@ -582,13 +582,18 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 
 static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
 {
-    uint8_t attr_count = vendor_msg->p_vendor_data[4];
+    uint8_t attr_count = 0;
     int attr_index = 5;
     int attr_length = 0;
     uint32_t attr_id = 0;
 
+    if (!vendor_msg || !vendor_msg->p_vendor_data ||
+        (vendor_msg->vendor_len < AVRC_GET_ELEMENT_ATTR_RSP_SIZE_MIN)) {
+        return;
+    }
+
     //Check if there are any attributes
-    if (attr_count < 1) {
+    if ((attr_count = vendor_msg->p_vendor_data[AVRC_RSP_PARAM_VALUE_OFFSET]) < 1) {
         return;
     }
 
@@ -596,7 +601,15 @@ static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
     memset(&param[0], 0, sizeof(esp_avrc_ct_cb_param_t) * attr_count);
 
     for (int i = 0; i < attr_count; i++) {
+        if (vendor_msg->vendor_len < attr_index + 8) {
+            return;
+        }
+
         attr_length = (int) vendor_msg->p_vendor_data[7 + attr_index] | vendor_msg->p_vendor_data[6 + attr_index] << 8;
+
+        if (vendor_msg->vendor_len < attr_index + attr_length + 8) {
+            return;
+        }
 
         //Received attribute text is not null terminated, so it's useful to know it's length
         param[i].meta_rsp.attr_length = attr_length;
@@ -620,30 +633,52 @@ static void handle_rc_notification_rsp (tAVRC_MSG_VENDOR *vendor_msg)
     esp_avrc_ct_cb_param_t param;
     memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
 
-    param.change_ntf.event_id = vendor_msg->p_vendor_data[4];
+    if (!vendor_msg || !vendor_msg->p_vendor_data ||
+        (vendor_msg->vendor_len < AVRC_REGISTER_NOTIFICATION_RSP_SIZE_MIN)) {
+        return;
+    }
 
-    uint8_t *data = &vendor_msg->p_vendor_data[5];
+    param.change_ntf.event_id = vendor_msg->p_vendor_data[AVRC_RSP_PARAM_VALUE_OFFSET];
+
+    uint8_t *data = &vendor_msg->p_vendor_data[AVRC_RSP_PARAM_VALUE_OFFSET + 1];
     if (!btc_avrc_ct_rn_evt_supported(param.change_ntf.event_id)) {
         BTC_TRACE_WARNING("%s unsupported notification on CT, event id 0x%x", __FUNCTION__,
                           param.change_ntf.event_id);
         return;
     }
 
+
+    bool notif = false;
     switch (param.change_ntf.event_id) {
     case ESP_AVRC_RN_PLAY_STATUS_CHANGE:
-        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.playback, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_PLAY_STATUS_CHANGE_EVT_SIZE) {
+            BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.playback, data);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_TRACK_CHANGE:
-        memcpy(param.change_ntf.event_parameter.elm_id, data, 8);
+        if (vendor_msg->vendor_len >= AVRC_RN_TRACK_CHANGE_EVT_SIZE) {
+            memcpy(param.change_ntf.event_parameter.elm_id, data, 8);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_PLAY_POS_CHANGED:
-        BE_STREAM_TO_UINT32(param.change_ntf.event_parameter.play_pos, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_PLAY_POS_CHANGED_EVT_SIZE) {
+            BE_STREAM_TO_UINT32(param.change_ntf.event_parameter.play_pos, data);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_BATTERY_STATUS_CHANGE:
-        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.batt, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_BATTERY_STATUS_CHANGE_EVT_SIZE) {
+            BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.batt, data);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_VOLUME_CHANGE:
-        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.volume, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_VOLUME_CHANGE_EVT_SIZE) {
+            BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.volume, data);
+            notif = true;
+        }
         break;
     // for non-parameter event response
     case ESP_AVRC_RN_TRACK_REACHED_END:
@@ -661,7 +696,10 @@ static void handle_rc_notification_rsp (tAVRC_MSG_VENDOR *vendor_msg)
                           param.change_ntf.event_id);
         break;
     }
-    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CHANGE_NOTIFY_EVT, &param);
+
+    if (notif) {
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CHANGE_NOTIFY_EVT, &param);
+    }
 }
 
 static void handle_rc_get_caps_rsp (tAVRC_GET_CAPS_RSP *rsp)
@@ -852,7 +890,7 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
     tAVRC_RESPONSE avrc_response = {0};
     tAVRC_STS status;
     tAVRC_MSG_VENDOR *vendor_msg = &p_meta_msg->p_msg->vendor;
-    BTC_TRACE_DEBUG("%s: opcode %d, pdu 0x%x, code %d", __FUNCTION__, p_meta_msg->p_msg->hdr.opcode, vendor_msg->p_vendor_data[0],
+    BTC_TRACE_DEBUG("%s: opcode %d, pdu 0x%x, code %d", __FUNCTION__, p_meta_msg->p_msg->hdr.opcode, vendor_msg->p_vendor_data[AVRC_RSP_OPCODE_OFFSET],
                     p_meta_msg->code);
     if ( p_meta_msg->p_msg->hdr.opcode != AVRC_OP_VENDOR) {
         return;
@@ -868,7 +906,7 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
 
     // handle GET_ELEMENT_ATTR response
     if (p_meta_msg->code == AVRC_RSP_IMPL_STBL &&
-            vendor_msg->p_vendor_data[0] == AVRC_PDU_GET_ELEMENT_ATTR) {
+            vendor_msg->p_vendor_data[AVRC_RSP_OPCODE_OFFSET] == AVRC_PDU_GET_ELEMENT_ATTR) {
         handle_rc_attributes_rsp(vendor_msg);
         return;
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,7 @@
 #include <inttypes.h>
 #include <time.h>
 
-#include "esp_flash_encrypt.h"
+#include "esp_efuse.h"
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "esp_system.h"
@@ -29,7 +29,8 @@
 #include "esp_random.h"
 
 #ifdef CONFIG_NVS_ENCRYPTION
-#include "mbedtls/aes.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/aes.h"
 #endif
 
 #ifdef CONFIG_SOC_HMAC_SUPPORTED
@@ -136,7 +137,8 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
 }
 
 #ifndef CONFIG_NVS_ENCRYPTION
-// NOTE: `nvs_flash_init_partition_ptr` does not support NVS encryption
+#ifndef CONFIG_NVS_BDL_STACK
+// NOTE: `nvs_flash_init_partition_ptr` does not support NVS encryption nor BDL stack
 TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 {
     // First, open and write to partition using normal initialization
@@ -165,6 +167,7 @@ TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 
     nvs_flash_deinit();
 }
+#endif // !CONFIG_NVS_BDL_STACK
 
 #ifdef CONFIG_SOC_HMAC_SUPPORTED
 TEST_CASE("test nvs encryption with HMAC-based scheme without toggling any config options", "[nvs_encr_hmac]")
@@ -453,6 +456,7 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
 }
 
 #ifdef CONFIG_NVS_ENCRYPTION
+#include "nvs_xts_aes.h"
 TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
 {
     uint8_t eky_hex[2 * NVS_KEY_SIZE] = { /* Encryption key below*/
@@ -481,16 +485,16 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
                              0xab,0xf9,0x8e,0x22,0xdf,0x5b,0xdd,0x15,
                              0xaf,0x47,0x1f,0x3d,0xb8,0x94,0x6a,0x85 };
 
-    mbedtls_aes_xts_context ectx[1];
-    mbedtls_aes_xts_context dctx[1];
+    XTS_CONTEXT ectx[1];
+    XTS_CONTEXT dctx[1];
 
-    mbedtls_aes_xts_init(ectx);
-    mbedtls_aes_xts_init(dctx);
+    XTS_FUNC(xts_init)(ectx);
+    XTS_FUNC(xts_init)(dctx);
 
-    TEST_ASSERT_TRUE(!mbedtls_aes_xts_setkey_enc(ectx, eky_hex, 2 * NVS_KEY_SIZE * 8));
-    TEST_ASSERT_TRUE(!mbedtls_aes_xts_setkey_enc(dctx, eky_hex, 2 * NVS_KEY_SIZE * 8));
+    TEST_ASSERT_TRUE(!XTS_FUNC(xts_setkey_enc)(ectx, eky_hex, 2 * NVS_KEY_SIZE * 8));
+    TEST_ASSERT_TRUE(!XTS_FUNC(xts_setkey_enc)(dctx, eky_hex, 2 * NVS_KEY_SIZE * 8));
 
-    TEST_ASSERT_TRUE(!mbedtls_aes_crypt_xts(ectx, MBEDTLS_AES_ENCRYPT, 32, ba_hex, ptxt_hex, ptxt_hex));
+    TEST_ASSERT_TRUE(!XTS_FUNC(crypt_xts)(ectx, XTS_MODE(ENCRYPT), 32, ba_hex, ptxt_hex, ptxt_hex));
 
     TEST_ASSERT_TRUE(!memcmp(ptxt_hex, ctxt_hex, 32));
 }
@@ -499,7 +503,7 @@ TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 {
     nvs_sec_cfg_t cfg, cfg2;
 #if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_key partition related tests");
     }
 
@@ -526,7 +530,7 @@ TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
 {
 #if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
     }
     const esp_partition_t* key_part = esp_partition_find_first(
@@ -650,7 +654,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     extern const char sample_bin_start[] asm("_binary_sample_bin_start");
 
 #if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
     }
 

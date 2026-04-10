@@ -37,7 +37,7 @@ The connection between ESP Board and the LCD is as follows:
 |             |              |                |
 |  DATA[0..7] |<------------>| DATA[0..7]     |
 |             |              |                |
-|        PCLK +------------->| PCLK           |
+|        PCLK +------------->| PCLK (WR)      |
 |             |              |                |
 |          CS +------------->| CS             |
 |             |              |                |
@@ -47,8 +47,14 @@ The connection between ESP Board and the LCD is as follows:
 |             |              |                |
 |    BK_LIGHT +------------->| BCKL           |
 |             |              |                |
+|         3V3 +------------->| RD             |
+|             |              |                |
 +-------------+              +----------------+
 ```
+
+> [!IMPORTANT]
+> The 8080 interface also has an **RD** pin. The RD line must be **held high** when idle. (Connect to 3V3 or use pull-up resistors)
+
 
 Especially, please pay attention to the binary signal level used to turn the LCD backlight on, some LCD modules need a low level to turn it on, while others require a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [i80_controller_example_main.c](main/i80_controller_example_main.c).
 
@@ -97,6 +103,8 @@ This example supports two ways of reading images
 * from the embedded binary (i.e., pre-decode the image into an array and pack it together with the application firmware). By this way, you can get faster image loading speed at the cost of bloating your application binary. What's worse, if you enabled the [XIP from PSRAM](https://github.com/espressif/esp-idf/tree/master/examples/system/xip_from_psram) feature, it will increase the PSRAM usage as well.
 
 ## Troubleshooting
+
+* **Garbled or random display, or different image on each boot:** If your LCD has an RD pin with no internal pull-up, it must be held high. You can directly connect RD to the 3V3 or use a pull-up resistor.
 
 * Can't get a stable UI when `EXAMPLE_LCD_I80_COLOR_IN_PSRAM` is enabled.
 

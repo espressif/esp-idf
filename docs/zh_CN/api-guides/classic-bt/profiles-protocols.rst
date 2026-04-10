@@ -3,101 +3,239 @@
 
 :link_to_translation:`en:[English]`
 
-协议 (Protocol) 定义了完成特定功能的消息格式和过程，例如数据传输、链路控制、安全服务和服务信息交换等。另一方面，蓝牙规范 (Profile) 则定义了蓝牙系统中从 PHY 到 L2CAP 及核心规范外的其他协议所需的功能和特性。
+在蓝牙系统中：
 
-以下是 ESP-Bluedroid 支持的经典蓝牙协议和规范：
+- **协议 (Protocol)**： 定义了完成特定功能所需的底层通信机制，例如数据传输、链路控制、安全服务和服务信息交换等
+- **规范 (Profile)**： 定义了蓝牙系统提供的功能和特性（例如音频传输、遥控、串口通信等），它们依赖于底层协议实现
 
-- 协议：L2CAP、SDP、AVDTP、AVCTP、RFCOMM
-- 规范：GAP、A2DP、AVRCP、SPP、HFP
+下表总结了 ESP-Bluedroid 支持的经典蓝牙规范：
 
-协议模型如图 :ref:`bluetooth-protocol-model` 所示。
+.. list-table::
+    :header-rows: 1
 
-.. _bluetooth-protocol-model:
+    * - 规范 (Profile)
+      - 支持角色
+      - 说明
+    * - GAP
+      - —
+      - 设备发现、连接和安全管理
+    * - A2DP
+      - Source, Sink
+      - 高质量音频传输
+    * - AVRCP
+      - Controller, Target
+      - 音频/视频远程控制
+    * - HFP
+      - AG, HF
+      - 免提语音通话
+    * - SPP
+      - Server, Client
+      - 串口数据传输
 
-.. figure:: ../../../_static/bluetooth-protocol-model.png
-    :align: center
-    :width: 60%
-    :alt: 蓝牙协议模型
 
-    蓝牙协议模型
+以上规范基于以下协议实现：L2CAP、SDP、RFCOMM、AVDTP、AVCTP。协议模型如下图所示：
 
-如图 :ref:`bluetooth-protocol-model` 所示，L2CAP 和 SDP 是经典蓝牙最小主机协议栈的必备组成部分，AVDTP、AV/C 和 AVCTP 并不属于核心规范，仅用于特定规范。
+.. code-block:: text
 
+    ┌───────────────────────────────────────────────────────┐
+    │                     Applications                      │
+    ├───────────────────────────────────────────────────────┤
+    │                       Profiles                        │
+    │ ┌───────┬───────┬───────┬───────┬───────┐             │
+    │ │  GAP  │ A2DP  │ AVRCP │  HFP  │  SPP  │             │
+    │ └───────┴───┬───┴───┬───┴───┬───┴───┬───┘             │
+    ├─────────────┼───────┼───────┼───────┼─────────────────┤
+    │             │       │       │       │    Transport    │
+    │        ┌────┴───┬───┴───┬───┴───────┴────┬───────┐    │
+    │        │ AVDTP  │ AVCTP │    RFCOMM      │  SDP  │    │
+    │        └────┬───┴───┬───┴────────┬───────┴───┬───┘    │
+    ├─────────────┴───────┴────────────┴───────────┴────────┤
+    │                        L2CAP                          │
+    ├───────────────────────────────────────────────────────┤
+    │                         HCI                           │
+    └───────────────────────────────────────────────────────┘
+
+.. centered:: 经典蓝牙协议栈
+
+各层功能如下：
+
+- **L2CAP、SDP**：核心协议，是经典蓝牙主机协议栈的必备组成部分
+- **RFCOMM**：串口模拟协议，为 SPP 和 HFP 提供传输支持
+- **AVDTP、AVCTP**：音频/视频传输和控制协议，为 A2DP 和 AVRCP 提供传输支持
+- **Profiles**：定义具体应用场景的功能实现
+
+
+协议
+---------------
 
 L2CAP
---------
+^^^^^
 
-蓝牙逻辑链路控制和适配协议 (Logical Link Control and Adaptation Protocol, L2CAP) 是 OSI 2 层协议，支持上层的协议复用、分段和重组及服务质量信息的传递。L2CAP 可以让不同的应用程序共享一条 ACL-U 逻辑链路。应用程序和服务协议可通过一个面向信道的接口，与 L2CAP 进行交互，从而与其他设备上的等效实体进行连接。
+蓝牙逻辑链路控制和适配协议 (Logical Link Control and Adaptation Protocol, L2CAP) 是经典蓝牙主机协议栈的核心协议，主要功能包括：
 
-L2CAP 信道共支持 6 种模式，可通过 L2CAP 信道配置过程进行选择，不同模式的应用场合不同，主要差别在于可提供的 QoS 不同。这些模式分别是：
+- 上层协议复用
+- 数据分段和重组
+- 服务质量 (QoS) 信息传递
+
+L2CAP 允许多个应用程序共享同一条 ACL-U 逻辑链路，通过面向信道的接口与其他设备通信。
+
+L2CAP 信道支持以下操作模式：
 
 - 基本 L2CAP 模式
 - 流量控制模式
 - 重传模式
 - 加强重传模式
 - 流模式
-- 基于 LE Credit 的流量控制模式
 
-其中，ACL-U 逻辑链路支持的操作模式包括基本 L2CAP 模式、加强重传模式和流模式。L2CAP 信道为支持的固定信道，也支持帧校验序列 (Frame Check Sequence, FCS)。
+其中，ACL-U 逻辑链路支持基本 L2CAP 模式、加强重传模式和流模式。
 
 
 SDP
---------
+^^^^^
 
-服务发现协议 (Service Discovery Protocol, SDP) 允许应用程序发现其他对等蓝牙设备提供的服务，并确定可用服务的特征。SDP 包含 SDP 服务器和 SDP 客户端之间的通信。服务器维护一个描述服务特性的服务记录表。客户端可通过发出 SDP 请求，从服务器维护的服务记录表中进行信息检索。
+服务发现协议 (Service Discovery Protocol, SDP) 允许应用程序发现其他对等蓝牙设备提供的服务，并获取服务特征信息。SDP 包含 SDP 服务器和 SDP 客户端之间的通信：
 
+- **服务器**：维护描述服务特征的服务记录表
+- **客户端**：通过发出 SDP 请求，检索服务器维护的服务信息
+
+
+RFCOMM
+^^^^^^
+
+串口仿真协议 (RFCOMM) 在 L2CAP 之上提供类似串口的通信接口，用于应用程序进行串口数据传输和模拟，是 SPP 和 HFP 的基础协议。RFCOMM 模拟了 RS-232 串口的控制信号和数据流，支持多个并发连接。
+
+
+AVDTP
+^^^^^
+
+音频/视频分发传输协议 (Audio/Video Distribution Transport Protocol, AVDTP) 用于在 L2CAP 层上传输音视频流，是 A2DP 的基本传输协议。AVDTP 包括两个实体：
+
+- **信令实体**：协商流参数
+- **传输实体**：传输媒体流
+
+
+AVCTP
+^^^^^
+
+音频/视频控制传输协议 (Audio/Video Control Transport Protocol, AVCTP) 用于传输 AV/C 命令和响应，为 AVRCP 提供传输服务。支持两种信道：
+
+- **控制信道**：传输控制命令
+- **浏览信道**：传输浏览命令
+
+
+规范
+--------------
 
 GAP
---------
+^^^^^
 
-通用访问规范 (Generic Access Profile, GAP) 提供有关设备可发现性、可连接性和安全性的模式和过程描述。
+通用访问规范 (Generic Access Profile, GAP) 定义了蓝牙设备发现、连接建立和安全管理的基本过程。GAP 是所有其他规范的基础。
+
+更多信息请参阅 :doc:`GAP API </api-reference/bluetooth/esp_gap_bt>`。
 
 
-A2DP 和 AVRCP
-----------------
+A2DP
+^^^^
 
-高级音频分发规范 (Advanced Audio Distribution Profile, A2DP) 定义了在 ACL 信道上，实现高质量单声道或立体声音频内容传输的协议和过程。A2DP 负责处理音频流，通常与音频／视频远程控制规范 (Audio/Video Remote Control Profile, AVRCP)（包括音频／视频控制功能）一起使用。图 :ref:`profile-dependencies` 描述了这些规范的结构和关系图：
+高级音频分发规范 (Advanced Audio Distribution Profile, A2DP) 定义了基于 ACL 信道实现高质量音频传输的应用层规范和流程。
 
+**角色定义：**
+
+- **Source (SRC)**：音频源端，如手机、电脑
+- **Sink (SNK)**：音频接收端，如蓝牙音箱、耳机
+
+**音频编解码器：**
+
+目前支持 SBC (Sub-Band Coding)，这是 A2DP 规范强制要求的编解码格式。
+
+
+A2DP 基于 GAP 和 通用音频/视频分发规范 (Generic Audio/Video Distribution Profile, GAVDP)，负责建立音频/视频流。图 :ref:`profile-dependencies` 展示了相关规范的依赖关系。
+
+更多信息请参阅 :doc:`A2DP API </api-reference/bluetooth/esp_a2dp>`。
+
+
+AVRCP
+^^^^^
+
+音频/视频远程控制规范 (Audio/Video Remote Control Profile, AVRCP) 定义了音频/视频设备远程控制的标准接口。
+
+**角色定义：**
+
+- **Controller (CT)**：发起控制命令的设备
+- **Target (TG)**：接收并响应控制命令的设备
+
+**支持的控制命令：**
+
+通过 PASS THROUGH 命令支持：播放、暂停、停止、上一曲、下一曲、音量调节等。
+
+**功能分类：**
+
+- 播放机/录像机
+- 监控器/放大器（默认配置）
+- 调音器
+- 菜单
+
+
+A2DP 与 AVRCP 通常一起使用：
+
+- A2DP 负责高质量音频流传输
+- AVRCP 负责音视频设备远程控制
+- 下层通过 AVDTP（用于音频流）和 AVCTP（用于控制命令）在 L2CAP 信道上传输数据和命令
+
+图 :ref:`profile-dependencies` 展示了 A2DP 和 AVRCP 的依赖关系：
 
 .. _profile-dependencies:
 
 .. figure:: ../../../_static/profile-dependencies.png
     :align: center
     :width: 50%
-    :alt: 规范关系图
+    :alt: 规范依赖关系
 
-    规范关系图
+    规范依赖关系
+
+更多信息请参阅 :doc:`AVRCP API </api-reference/bluetooth/esp_avrc>`。
 
 
-如图 :ref:`profile-dependencies` 所示，A2DP 的工作基于 GAP 以及通用音频/ 视频分发规范 (Generic Audio/Video Distribution Profile, GAVDP)，定义了建立音频／视频流的过程。
+HFP
+^^^
 
-A2DP 中共定义了两个角色：Source (SRC) 和 Sink (SNK)。SRC 代表数字音频流的源端，SNK 代表数字音频流的接收端。
+免提规范 (Hands-Free Profile, HFP) 定义了蓝牙免提设备与手机之间的应用层通信规范。
 
-AVRCP 中共定义了两个角色：控制器 (CT) 和目标 (TG)。控制器可通过向目标发送命令帧，发起事务。控制器的常见例子包括个人电脑、PDA 和移动电话等。目标可接收控制器发送的命令帧，并生成相应的响应帧。目标的常见例子包括音频播放器或耳机。
+**角色定义：**
 
-在目前的 A2DP 解决方案中，SBC 是唯一支持的音频编解码器，SBC 在 A2DP 规范中是必须的编解码格式。目前方案中实现的规范、协议版本是 A2DP V1.4 和 AVDTP V1.3。
+- **Audio Gateway (AG)**：音频网关，通常是手机
+- **Hands-Free Unit (HF)**：免提设备，如车载蓝牙、蓝牙耳机
 
-AVDTP 协议定义了蓝牙设备之间在 L2CAP 协议层上建立和传输媒体流的二进制业务。作为 A2DP 的基本传输协议，AVDTP 建立在 L2CAP 层协议之上，由 “一个协商媒体流参数的信令传输实体” 和 “一个传输媒体流的实体” 组成。
+**音频编解码器：**
 
-A2DP 规范规定了 AVDTP 传输功能的基本服务。根据当前服务功能的配置，基本服务功能中提供了媒体传输和媒体编解码器。
+- **CVSD**：窄带语音编解码器
+- **mSBC**：宽带语音编解码器
 
-AVRCP 定义了支持音频／ 视频遥控的应用场景的各项需求。AVRCP 中的命令主要分为三个大组：
+**主要功能：**
 
-- **AV/C 数字接口命令集:** 其特定命令子集被采用，且通过 AVCTP 协议传输。
-- **浏览命令:** 可通过 AVCTP 浏览信道，提供浏览功能。
-- **封面艺术命令:** 用于传输与媒体项目有关的图像，通过基于 OBEX 协议的蓝牙基本图像规范 (BIP) 实现。
+- 接听/挂断/拒接电话
+- 音量控制
+- 语音拨号
+- 来电显示
 
-AVRCP 使用了其中的两套 AV/C 命令：其一包括 AV/C 规范中定义的 PASS THROUGH、UNIT INFO 和 SUBUNIT INFO 命令；其二是 AVRCP 专用 AV/C 命令，作为对 Bluetooth SIG Vendor Dependent 的扩展。
+更多信息请参阅 :doc:`HFP API </api-reference/bluetooth/esp_hf_defs>`。
 
-AV/C 命令通过 AVCTP 控制信道发送。PASS THROUGH 命令可通过控制器上的按钮，向面板子单元传送用户操作，并提供一个简单的通用机制来控制目标。例如，PASS THROUGH 中的操作 ID 包括播放、暂停、停止、调高音量和调低音量等常用指令。
 
-为了保证互操作性，AVRCP 将 A/V 功能分为四类：
+SPP
+^^^
 
-- 播放机/ 录像机
-- 监控器/ 放大器
-- 调音器
-- 菜单
+串口规范 (Serial Port Profile, SPP) 定义了基于 RFCOMM 协议的串口通信应用，用于通过蓝牙模拟 RS-232 串口数据传输。
 
-目前的方案提供了 AVRCP V1.6 和 AVCTP V1.4。AVRCP 支持功能的默认配置属于第二类，即监视器/放大器。此外，方案还提供了用于发送 PASS THROUGH 命令的 API。
+**角色定义：**
 
-A2DP 和 AVRCP 经常一起使用。在目前的解决方案中，下层主机堆栈实现了 AVDTP 和 AVCTP 逻辑，并独立为 A2DP 和 AVRCP 提供接口。然而，在堆栈上层中，两个规范组合匹配成为 “AV” 模块。例如，BTA 层提供一个统一的 “AV” 接口，而在 BTC 层中，状态机将处理两种规范的事务。然而，A2DP 和 AVRCP 的 API 是分别提供的。
+- **Server**：等待连接的设备
+- **Client**：发起连接的设备
+
+**应用场景：**
+
+- 设备配置和调试
+- 传感器数据传输
+- 点对点数据交换
+
+
+更多信息请参阅 :doc:`SPP API </api-reference/bluetooth/esp_spp>`。

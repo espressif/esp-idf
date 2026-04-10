@@ -12,7 +12,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "."
-                       REQUIRES unity nvs_flash nvs_sec_provider bootloader_support
+                       REQUIRES unity nvs_flash nvs_sec_provider efuse
                        EMBED_TXTFILES "${embed_txtfiles}"
                        WHOLE_ARCHIVE
                        )

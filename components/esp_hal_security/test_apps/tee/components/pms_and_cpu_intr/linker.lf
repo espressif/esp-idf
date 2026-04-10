@@ -1,0 +1,5 @@
+[mapping:test_pms_and_cpu_intr]
+archive: libpms_and_cpu_intr.a
+entries:
+    test_intr_utils (noflash)
+    test_panic_handler (noflash)

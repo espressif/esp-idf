@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,12 +14,19 @@
 #include "driver/gpio.h"
 #include "ptpd.h"
 
-#include "esp_eth_time.h"
+#if CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
+#include "esp_eth_clock.h" // for esp_eth_clock_set_target_time and esp_eth_clock_register_target_cb
+#endif //CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
+#include "esp_eth_mac_esp.h"
+
+#define ETH_IF_KEY "ETH_0"
 
 static const char *TAG = "ptp_example";
 
+#if CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 static struct timespec s_next_time;
 static bool s_gpio_level;
+#endif //CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 
 void init_ethernet_and_netif(void)
 {
@@ -28,7 +35,7 @@ void init_ethernet_and_netif(void)
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     ESP_ERROR_CHECK(esp_netif_init());
 
@@ -60,6 +67,7 @@ void init_ethernet_and_netif(void)
     }
 }
 
+#if CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 IRAM_ATTR bool ts_callback(esp_eth_mediator_t *eth, void *user_args)
 {
     gpio_set_level(CONFIG_EXAMPLE_PTP_PULSE_GPIO, s_gpio_level ^= 1);
@@ -72,7 +80,7 @@ IRAM_ATTR bool ts_callback(esp_eth_mediator_t *eth, void *user_args)
     timespecadd(&s_next_time, &interval, &s_next_time);
 
     struct timespec curr_time;
-    esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &curr_time);
+    clock_gettime(CLOCK_PTP_SYSTEM, &curr_time);
     // check the next time is in the future
     if (timespeccmp(&s_next_time, &curr_time, >)) {
         esp_eth_clock_set_target_time(CLOCK_PTP_SYSTEM, &s_next_time);
@@ -80,16 +88,26 @@ IRAM_ATTR bool ts_callback(esp_eth_mediator_t *eth, void *user_args)
 
     return false;
 }
+#endif //CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Starting PTP example");
     init_ethernet_and_netif();
 
-    int pid = ptpd_start("ETH_0");
+    int pid = ptpd_start(ETH_IF_KEY);
 
+#if CONFIG_EXAMPLE_PTP_PULSE_EMAC_PPS
+    (void)pid; // suppress compiler warning about unused variable
+    esp_eth_handle_t eth_handle = esp_netif_get_io_driver(esp_netif_get_handle_from_ifkey(ETH_IF_KEY));
+    esp_eth_mac_t *mac;
+    ESP_ERROR_CHECK(esp_eth_get_mac_instance(eth_handle, &mac));
+    ESP_ERROR_CHECK(esp_eth_mac_set_pps_out_gpio(mac, CONFIG_EXAMPLE_PTP_PULSE_GPIO));
+    ESP_ERROR_CHECK(esp_eth_mac_set_pps_out_freq(mac, CONFIG_EXAMPLE_PTP_PPS_FREQ_HZ));
+#elif CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
     struct timespec cur_time;
     // wait for the clock to be available
-    while (esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &cur_time) == -1) {
+    while (clock_gettime(CLOCK_PTP_SYSTEM, &cur_time) == -1) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
     // register callback function which will toggle output pin
@@ -133,7 +151,7 @@ void app_main(void)
         if ((clock_source_valid == true && clock_source_valid_last == false) || first_pass) {
             first_pass = false;
             // get the most recent (now synced) time
-            esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &cur_time);
+            clock_gettime(CLOCK_PTP_SYSTEM, &cur_time);
             // compute the next target time
             s_next_time.tv_sec = 1;
             timespecadd(&s_next_time, &cur_time, &s_next_time);
@@ -147,4 +165,5 @@ void app_main(void)
         }
         clock_source_valid_last = clock_source_valid;
     }
+#endif //CONFIG_EXAMPLE_PTP_PULSE_EMAC_PPS
 }

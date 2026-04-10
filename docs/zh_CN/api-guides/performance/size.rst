@@ -91,6 +91,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     - 将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``Silent reboot`` 可以减小一小部分二进制文件的大小，但此操作 **仅** 建议在没有任何开发者使用 UART 输出来调试设备时进行。
     :CONFIG_IDF_TARGET_ARCH_RISCV: - 设置 :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` 以库调用替代内联的入口/出口代码，可以减小二进制文件的大小。
     - 如果应用程序的二进制文件只使用 protocomm 组件的某个安全版本，取消对其他版本的支持可以减小部分代码大小。请通过 :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`、:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` 或者 :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` 方式，取消对应版本的支持。
+    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - 启用 :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP`，通过使用压缩的函数序言/尾声来减少二进制文件大小。在启用此选项前，请务必仔细阅读 :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` 的说明。
 
 .. note::
 
@@ -157,11 +158,9 @@ lwIP IPv4
 使用 Picolibc 替代 Newlib
 @@@@@@@@@@@@@@@@@@@@@@@@@
 
-默认情况下，ESP-IDF 使用 Newlib C 库，同时也对 Picolibc C 库提供实验性支持。
+默认情况下，ESP-IDF 使用 Picolibc C 库。也支持 Newlib，可通过 :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>` 选项选择使用。
 
 Picolibc C 库提供了更精简的 ``printf`` 系列函数，并且根据应用程序，可以将二进制文件大小减少最多 30 KB。
-
-如需切换链接到 Picolibc C 库，请启用配置选项 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
 
 .. _newlib-nano-formatting:
 
@@ -182,7 +181,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 
-“Nano”  格式化不支持 64 位整数或 C99 格式化功能。请在 `Newlib README 文件`_ 中搜索 ``--enable-newlib-nano-formatted-io`` 来获取完整的限制列表。
+“Nano”  格式化不支持 64 位整数或 C99 格式化功能。请在 `Newlib 文档`_ 中搜索 ``--enable-newlib-nano-formatted-io`` 来获取完整的限制列表。
 
 
 .. only:: esp32c2
@@ -192,7 +191,12 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
         {IDF_TARGET_NAME} 会默认启用 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT`。
 
 
-.. _Newlib README 文件: https://sourceware.org/newlib/README
+.. _Newlib 文档: https://sourceware.org/newlib/docs.html
+
+libstdc++
+@@@@@@@@@
+
+- 启用 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` 或 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` 观察对应用程序二进制大小的影响。
 
 .. _minimizing_binary_mbedtls:
 
@@ -208,7 +212,6 @@ MbedTLS 功能
     - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
     - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
     - :ref:`CONFIG_MBEDTLS_SHA512_C`
-    - :ref:`CONFIG_MBEDTLS_SHA3_C`
     - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
     - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
     - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
@@ -223,6 +226,7 @@ MbedTLS 功能
     - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
     - 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
     :esp32h2: - 对于 {IDF_TARGET_NAME} v1.2 及以上版本，可以考虑禁用 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` 和 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM`，因为无需再使用 ECDSA 签名的软件防护措施。
+    :SOC_AES_SUPPORT_DMA: - 如果应用程序不涉及或不需要针对小数据长度操作进行性能优化，例如在处理小数据段时进行的 NVS 加密/解密操作、TLS 通信等，可以考虑禁用 :ref:`CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM`。
 
 每个选项的帮助文本中都有更多信息可供参考。
 

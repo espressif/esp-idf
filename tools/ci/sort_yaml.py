@@ -1,19 +1,33 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Sort yaml file
 
 Exit non-zero if any file is modified
 """
+
 import io
 import os
 import sys
 import tempfile
 import unittest
 
-from ruamel.yaml import CommentedMap
 from ruamel.yaml import YAML
+from ruamel.yaml import CommentedMap
+
+COMMON_COMPONENTS_ANCHOR: str = '- *common_components'
+TEMP_ANCHOR: str = '- __temp_common_components__'
+
+
+def replace_common_components(text: str) -> str:
+    """Temporarily replace the common_components anchor so YAML can be processed."""
+    return text.replace(COMMON_COMPONENTS_ANCHOR, TEMP_ANCHOR)
+
+
+def revert_common_components(text: str) -> str:
+    """Restore the original common_components anchor after processing."""
+    return text.replace(TEMP_ANCHOR, COMMON_COMPONENTS_ANCHOR)
 
 
 def sort_yaml(f: str) -> int:
@@ -23,11 +37,10 @@ def sort_yaml(f: str) -> int:
 
     exit_code = 0
     with open(f) as fr:
-        file_s = fr.read()
-        fr.seek(0)
+        file_s = replace_common_components(fr.read())
 
         try:
-            file_d: CommentedMap = yaml.load(fr)
+            file_d: CommentedMap = yaml.load(io.StringIO(file_s))
         except Exception as e:
             print(f'Failed to load yaml file {f}: {e}')
             return 1
@@ -47,7 +60,7 @@ def sort_yaml(f: str) -> int:
         string = s.getvalue()
         if string != file_s:
             with open(f, 'w') as fw:
-                fw.write(string)
+                fw.write(revert_common_components(string))
             print(f'Sorted yaml file {f}. Please take a look. sometimes the format is a bit messy')
             exit_code = 1
 
@@ -59,11 +72,11 @@ class TestSortYaml(unittest.TestCase):
         _, test_yaml = tempfile.mkstemp()
         with open(test_yaml, 'w') as fw:
             fw.write(
-                '''no_runner: []
+                """no_runner: []
 no_env_marker:
   - 1
   - 3 # foo
-  - 2 # bar'''
+  - 2 # bar"""
             )
 
         sort_yaml(fw.name)
@@ -72,11 +85,11 @@ no_env_marker:
             with open(test_yaml) as fr:
                 self.assertEqual(
                     fr.read(),
-                    '''no_env_marker:
+                    """no_env_marker:
     - 1
     - 2 # bard
     - 3 # foo
-    no_runner: []''',
+    no_runner: []""",
                 )
         except AssertionError:
             print(f'Please check the sorted yaml file {test_yaml}')

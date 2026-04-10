@@ -145,9 +145,12 @@ The chips come equipped with two groups of watchdog timers: Main System Watchdog
 Bootloader Size
 ---------------
 
-{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64 KB (0x10000 bytes)", esp32 = "48 KB (0xC000 bytes)"}
-{IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x12000", esp32 = "0xE000"}
-.. Above is calculated as 0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector
+{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "80 KB (0x14000 bytes)", esp32 = "48 KB (0xC000 bytes)", esp32s2, esp32s3, esp32c2, esp32c3, esp32c6, esp32h2, esp32h21, esp32p4 = "64 KB (0x10000 bytes)"}
+{IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x11000", esp32 = "0xE000", esp32c5, esp32h4 = "0x17000", esp32c61 = "0x15000", esp32p4 = "0x13000"}
+.. Above is calculated as:
+    0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector // for esp32
+    0x0 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector // for esp32s2, esp32s3, esp32c2, esp32c3, esp32c6, esp32c61, esp32h2, esp32h21
+    0x2000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector // for Key Manager supported targets: esp32c5, esp32h4, esp32p4
 
 When enabling additional bootloader functions, including :doc:`/security/flash-encryption` or Secure Boot, and especially if setting a high :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` level, then it is important to monitor the bootloader .bin file's size.
 
@@ -199,8 +202,8 @@ If the bootloader grows too large then it can collide with the partition table, 
 
     The recovery bootloader feature enables safe OTA updates of the bootloader itself. When the eFuse field ``ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` is set, it specifies the flash address (in sectors) of the recovery bootloader. If the primary bootloader at {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} fails to load, the ROM bootloader attempts to load the recovery bootloader from this address.
 
-    - The eFuse can be programmed using ``espefuse.py`` or via the user application using :cpp:func:`esp_efuse_set_recovery_bootloader_offset()`.
-    - The address can be set via the ``CONFIG_BOOTLOADER_RECOVERY_OFFSET``, it must be a multiple of the flash sector size (0x1000 bytes). This Kconfig option helps ensure the recovery bootloader does not overlap with existing partitions.
+    - The eFuse can be set using ``espefuse`` or by calling :cpp:func:`esp_efuse_set_recovery_bootloader_offset()` in the user application.
+    - The address can be set using ``CONFIG_BOOTLOADER_RECOVERY_OFFSET``. This value must be a multiple of the flash sector size (0x1000 bytes). The Kconfig option helps ensure that the recovery bootloader does not overlap with existing partitions.
     - Note that the eFuse field stores the offset in sectors. Setting it to the maximum value ``0xFFF`` disables the feature.
     - The recovery bootloader image at the ``CONFIG_BOOTLOADER_RECOVERY_OFFSET`` is not flashed by default. It can be written as part of the OTA update process.
 
@@ -247,7 +250,7 @@ If the bootloader grows too large then it can collide with the partition table, 
 
     - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` (12 bits): Flash sector address for the recovery bootloader. Default value is 0 (disabled), set any other value to enable, 0xFFF to permanently disable.
     - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` (1 bit): Enables anti-rollback check in the ROM bootloader.
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` (4 bits): Secure version for anti-rollback protection. The value increases as bits are set - 0x0, 0x1, 0x3, 0x7, 0xF.
+    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` (4 bits): Secure version for anti-rollback protection. The value increases as bits are set—0x0, 0x1, 0x3, 0x7, 0xF.
     - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` (1 bit): Allows the ROM bootloader to update the secure version in eFuse.
 
     .. note::

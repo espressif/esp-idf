@@ -8,29 +8,9 @@ Introduction
 
 The {IDF_TARGET_NAME} has a built-in sensor used to measure the chip's internal temperature. The temperature sensor module contains an 8-bit Sigma-Delta analog-to-digital converter (ADC) and a digital-to-analog converter (DAC) to compensate for the temperature measurement.
 
-Due to restrictions of hardware, the sensor has predefined measurement ranges with specific measurement errors. See the table below for details.
-
-.. list-table::
-    :header-rows: 1
-    :widths: 50 50
-    :align: center
-
-    * - Predefined Range (°C)
-      - Error (°C)
-    * - 50 ~ 125
-      - < 3
-    * - 20 ~ 100
-      - < 2
-    * - -10 ~ 80
-      - < 1
-    * - -30 ~ 50
-      - < 2
-    * - -40 ~ 20
-      - < 3
-
 .. note::
 
-    The temperature sensor is designed primarily to measure the temperature changes inside the chip. The internal temperature of a chip is usually higher than the ambient temperature, and is affected by factors such as the microcontroller's clock frequency or I/O load, and the external thermal environment.
+    The temperature sensor is designed primarily to measure the temperature **inside** the silicon. The sensor can reflect the temperature changes very well but it can't give a precise measurement value. So it's not recommended to use it for ambient temperature measurement.
 
 Functional Overview
 -------------------

@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -246,7 +246,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:28;
+        uint32_t reserved_0:27;
+        /** aon_io_mux_pull_ldo_en : R/W; bitpos: [27]; default: 0;
+         *  need_des
+         */
+        uint32_t aon_io_mux_pull_ldo_en:1;
         /** aon_io_mux_pull_ldo : R/W; bitpos: [30:28]; default: 0;
          *  need_des
          */
@@ -431,12 +435,21 @@ typedef union {
  */
 typedef union {
     struct {
-        /** aon_date : R/W; bitpos: [30:0]; default: 37781648;
-         *  need_des
+        uint32_t reserved_0:5;
+        /** aon_dreg_ldo_hw : R/W; bitpos: [5]; default: 0;
+         *  control the ldo of dreg by hw or sw
+         *  0: DREG_LDO control by SW;
+         *  1: DREG_LDO control by HW;
          */
-        uint32_t aon_date:31;
+        uint32_t aon_dreg_ldo_hw:1;
+        uint32_t reserved_6:5;
+        /** aon_dreg_ldo_sw : R/W; bitpos: [14:11]; default: 8;
+         *  control the ldo of dreg by sw
+         */
+        uint32_t aon_dreg_ldo_sw:4;
+        uint32_t reserved_7:16;
         /** aon_clk_en : R/W; bitpos: [31]; default: 0;
-         *  need_des
+         *  version register
          */
         uint32_t aon_clk_en:1;
     };

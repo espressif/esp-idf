@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include "diskio_impl.h"
+#include "private_include/diskio_private.h"
 #include "ffconf.h"
 #include "ff.h"
 
@@ -116,4 +117,17 @@ DWORD get_fattime(void)
             | (WORD)(tmr.tm_hour << 11)
             | (WORD)(tmr.tm_min << 5)
             | (WORD)(tmr.tm_sec >> 1);
+}
+
+bool ff_diskio_is_registered(BYTE ldrv)
+{
+    if (ldrv < FF_VOLUMES && s_impls[ldrv]) {
+        return true;
+    }
+    return false;
+}
+
+inline DRESULT ff_diskio_get_sector_size(BYTE ldrv, UINT* out_bytes_per_sector)
+{
+    return ff_disk_ioctl(ldrv, GET_SECTOR_SIZE, (void*) out_bytes_per_sector);
 }

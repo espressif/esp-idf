@@ -62,7 +62,7 @@ void sbc_enc_bit_alloc_mono(SBC_ENC_PARAMS *pstrCodecParams)
     SINT16 *ps16GenTabPtr;
     SINT32  s32NumOfSubBands = pstrCodecParams->s16NumOfSubBands;
 
-    ps16BitNeed = pstrCodecParams->s16ScartchMemForBitAlloc;
+    ps16BitNeed = pstrCodecParams->s16ScratchMemForBitAlloc;
 
     for (s32Ch = 0; s32Ch < pstrCodecParams->s16NumOfChannels; s32Ch++) {
         ps16GenBufPtr = ps16BitNeed + s32Ch * s32NumOfSubBands;

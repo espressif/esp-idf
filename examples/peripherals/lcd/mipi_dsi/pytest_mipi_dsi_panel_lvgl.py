@@ -7,5 +7,5 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-def test_rgb_lcd_lvgl(dut: Dut) -> None:
-    dut.expect_exact('example: Install MIPI DSI LCD control panel')
+def test_mipi_dsi_lcd_lvgl(dut: Dut) -> None:
+    dut.expect_exact('Calling app_main()')

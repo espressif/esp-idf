@@ -1,4 +1,4 @@
-include($ENV{IDF_PATH}/tools/cmake/utilities.cmake)
+include($ENV{IDF_PATH}/tools/cmake/deduplicate_flags.cmake)
 
 set(CMAKE_SYSTEM_NAME Generic)
 
@@ -32,7 +32,7 @@ set(CMAKE_ASM_FLAGS "${UNIQ_CMAKE_ASM_FLAGS}"
     CACHE STRING "Assembler Base Flags"
     FORCE)
 
-remove_duplicated_flags("--ld-path=xtensa-esp32-elf-clang-ld -z noexecstack \
+remove_duplicated_flags("-nostartfiles --ld-path=xtensa-esp32-elf-clang-ld -z noexecstack \
                         ${CMAKE_EXE_LINKER_FLAGS}"
                         UNIQ_CMAKE_EXE_LINKER_FLAGS)
 set(CMAKE_EXE_LINKER_FLAGS "${UNIQ_CMAKE_EXE_LINKER_FLAGS}"

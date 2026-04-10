@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #define DR_REG_SYSTEM_BASE                      0x600c0000
 #define DR_REG_SENSITIVE_BASE                   0x600c1000

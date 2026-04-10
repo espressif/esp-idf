@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
  */
 /**
  * @file
@@ -116,7 +116,7 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * @param len length of buffer
  * @param l2_buff Placeholder for a separate L2 buffer. Unused for ethernet interface
  */
-esp_netif_recv_ret_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
+esp_err_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
 {
     struct netif *netif = h;
     esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
@@ -126,23 +126,23 @@ esp_netif_recv_ret_t ethernetif_input(void *h, void *buffer, size_t len, void *l
         if (buffer) {
             esp_netif_free_rx_buffer(esp_netif, buffer);
         }
-        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
+        return ESP_FAIL;
     }
 
     /* allocate custom pbuf to hold  */
     p = esp_pbuf_allocate(esp_netif, buffer, len, buffer);
     if (p == NULL) {
         esp_netif_free_rx_buffer(esp_netif, buffer);
-        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
         pbuf_free(p);
-        return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
+        return ESP_FAIL;
     }
     /* the pbuf will be free in upper layer, eg: ethernet_input */
-    return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_OK);
+    return ESP_OK;
 }
 
 /**

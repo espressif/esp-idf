@@ -20,12 +20,14 @@
 void example_deep_sleep_register_gpio_wakeup(void)
 {
     const gpio_config_t config = {
-        .pin_bit_mask = BIT(DEFAULT_WAKEUP_PIN),
+        .pin_bit_mask = BIT64(DEFAULT_WAKEUP_PIN),
         .mode = GPIO_MODE_INPUT,
+        .pull_up_en = !DEFAULT_WAKEUP_LEVEL,
+        .pull_down_en = DEFAULT_WAKEUP_LEVEL
     };
 
     ESP_ERROR_CHECK(gpio_config(&config));
-    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(BIT(DEFAULT_WAKEUP_PIN), DEFAULT_WAKEUP_LEVEL));
+    ESP_ERROR_CHECK(esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(BIT(DEFAULT_WAKEUP_PIN), DEFAULT_WAKEUP_LEVEL));
 
     printf("Enabling GPIO wakeup on pins GPIO%d\n", DEFAULT_WAKEUP_PIN);
 }

@@ -55,7 +55,7 @@
 #define SMP_PAIR_KEYPR_NOTIF_SIZE       (1 /* opcode */ + 1 /*Notif Type*/)
 
 /* SMP command sizes per spec */
-static const UINT8 smp_cmd_size_per_spec[] = {
+const UINT8 smp_cmd_size_per_spec[] = {
     0,
     SMP_PAIRING_REQ_SIZE,       /* 0x01: pairing request */
     SMP_PAIRING_REQ_SIZE,       /* 0x02: pairing response */
@@ -351,7 +351,7 @@ BOOLEAN smp_send_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     BOOLEAN sent = FALSE;
     UINT8 failure = SMP_PAIR_INTERNAL_ERR;
     SMP_TRACE_EVENT("smp_send_cmd on l2cap cmd_code=0x%x\n", cmd_code);
-    if ( cmd_code <= (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */) &&
+    if ( cmd_code < SMP_OPCODE_ARRAY_SIZE &&
             smp_cmd_build_act[cmd_code] != NULL) {
         p_buf = (*smp_cmd_build_act[cmd_code])(cmd_code, p_cb);
 
@@ -366,6 +366,7 @@ BOOLEAN smp_send_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     }
 
     if (!sent) {
+        SMP_TRACE_ERROR("%s failed, cmd_code=0x%02x", __func__, cmd_code);
         if (p_cb->smp_over_br) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &failure);
@@ -392,7 +393,7 @@ void smp_rsp_timeout(TIMER_LIST_ENT *p_tle)
     UINT8 failure = SMP_RSP_TIMEOUT;
     UNUSED(p_tle);
 
-    SMP_TRACE_EVENT("%s state:%d br_state:%d", __FUNCTION__, p_cb->state, p_cb->br_state);
+    SMP_TRACE_ERROR("%s state=%d br_state=%d", __func__, p_cb->state, p_cb->br_state);
 
     if (p_cb->smp_over_br) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -748,11 +749,14 @@ static BT_HDR *smp_build_pairing_commitment_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     UINT8 *p;
     UNUSED(cmd_code);
 
-    SMP_TRACE_EVENT("%s\n", __func__);
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_COMMITM_SIZE + L2CAP_MIN_OFFSET))
             != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
-
+        /* The transmitter sends 0x03 universally.
+        The receiver performs automatic conversion according to its capabilities to ensure backward compatibility.
+        The state machine operates using the translated opcode. please refer to smp_data_received() in smp_l2c.c
+        Please note that using SMP OPCODE to CONFIRM is not an error.
+        */
         UINT8_TO_STREAM (p, SMP_OPCODE_CONFIRM);
         ARRAY_TO_STREAM (p, p_cb->commitment, BT_OCTET16_LEN);
 
@@ -857,6 +861,11 @@ void smp_convert_string_to_tk(BT_OCTET16 tk, UINT32 passkey)
 void smp_mask_enc_key(UINT8 loc_enc_size, UINT8 *p_data)
 {
     SMP_TRACE_EVENT("smp_mask_enc_key\n");
+    if (loc_enc_size < SMP_ENCR_KEY_SIZE_MIN) {
+        SMP_TRACE_ERROR("smp_mask_enc_key: loc_enc_size %d below minimum %d\n",
+                        loc_enc_size, SMP_ENCR_KEY_SIZE_MIN);
+        return;
+    }
     if (loc_enc_size < BT_OCTET16_LEN) {
         for (; loc_enc_size < BT_OCTET16_LEN; loc_enc_size ++) {
             * (p_data + loc_enc_size) = 0;
@@ -1056,7 +1065,7 @@ BOOLEAN smp_command_has_invalid_parameters(tSMP_CB *p_cb)
 
     SMP_TRACE_DEBUG("%s for cmd code 0x%02x\n", __func__, cmd_code);
 
-    if ((cmd_code > (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */)) ||
+    if ((cmd_code >= SMP_OPCODE_ARRAY_SIZE) ||
             (cmd_code < SMP_OPCODE_MIN)) {
         SMP_TRACE_WARNING("Somehow received command with the RESERVED code 0x%02x\n", cmd_code);
         return TRUE;
@@ -1461,7 +1470,7 @@ void smp_collect_peer_io_capabilities(UINT8 *iocap, tSMP_CB *p_cb)
 void smp_collect_local_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 {
     tBLE_ADDR_TYPE  addr_type = 0;
-    BD_ADDR         bda;
+    BD_ADDR         bda = {0};
     UINT8           *p = le_addr;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
@@ -1484,7 +1493,7 @@ void smp_collect_local_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 void smp_collect_peer_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 {
     tBLE_ADDR_TYPE  addr_type = 0;
-    BD_ADDR         bda;
+    BD_ADDR         bda = {0};
     UINT8           *p = le_addr;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
@@ -1573,8 +1582,8 @@ void smp_save_secure_connections_long_term_key(tSMP_CB *p_cb)
 *******************************************************************************/
 BOOLEAN smp_calculate_f5_mackey_and_long_term_key(tSMP_CB *p_cb)
 {
-    UINT8 a[7];
-    UINT8 b[7];
+    UINT8 a[7] = {0};
+    UINT8 b[7] = {0};
     UINT8 *p_na;
     UINT8 *p_nb;
 

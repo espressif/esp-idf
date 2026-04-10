@@ -114,7 +114,7 @@ static void stream_callback(const uvc_host_stream_event_data_t *event, void *use
         ESP_LOGW(TAG, "Frame buffer underflow");
         break;
     default:
-        abort();
+        ESP_LOGW(TAG, "Unsupported UVC event: %d (possibly suspend/resume)", event->type);
         break;
     }
 }
@@ -211,7 +211,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Installing USB Host");
     const usb_host_config_t host_config = {
         .skip_phy_setup = false,
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
+        .intr_flags = ESP_INTR_FLAG_LOWMED,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 

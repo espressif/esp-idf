@@ -91,6 +91,7 @@ The following configuration options reduces the final binary size of almost any 
     - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``Silent reboot`` saves a small amount of binary size, however this is **only** recommended if no one will use UART output to debug the device.
     :CONFIG_IDF_TARGET_ARCH_RISCV: - Setting :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` reduces binary size by replacing inlined prologues/epilogues with library calls.
     - If the application binary uses only one of the security versions of the protocomm component, then the support for others can be disabled to save some code size. The support can be disabled through :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` or :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` respectively.
+    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - Enable :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` to reduce binary size by using compressed function prologues/epilogues. Read the :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` notes carefully before enabling this option!
 
 .. note::
 
@@ -157,11 +158,9 @@ lwIP IPv4
 Picolibc instead of Newlib
 @@@@@@@@@@@@@@@@@@@@@@@@@@
 
-By default, ESP-IDF uses the Newlib C library, and it also has experimental support for the Picolibc C library.
+By default, ESP-IDF uses the Picolibc C library. Newlib is also supported and can be selected with :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>`.
 
 Picolibc C library provides smaller ``printf`` family functions and can reduce the binary size by up to 30 KB, depending on your application.
-
-To switch to linking against the Picolibc C library, please enable the configuration options :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` and :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`.
 
 .. _newlib-nano-formatting:
 
@@ -182,7 +181,7 @@ By default, ESP-IDF uses Newlib "full" formatting for I/O functions (``printf()`
 
 Enabling "Nano" formatting reduces the stack usage of each function that calls ``printf()`` or another string formatting function, see :ref:`optimize-stack-sizes`.
 
-"Nano" formatting does not support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib README file`_.
+"Nano" formatting does not support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib documentation`_.
 
 
 .. only:: esp32c2
@@ -192,7 +191,12 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
         :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
 
 
-.. _Newlib README file: https://sourceware.org/newlib/README
+.. _Newlib documentation: https://sourceware.org/newlib/docs.html
+
+libstdc++
+@@@@@@@@@
+
+- Enable :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` or :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` to observe the impact on your application's binary size.
 
 .. _minimizing_binary_mbedtls:
 
@@ -208,7 +212,6 @@ These include:
     - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
     - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
     - :ref:`CONFIG_MBEDTLS_SHA512_C`
-    - :ref:`CONFIG_MBEDTLS_SHA3_C`
     - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
     - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
     - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
@@ -223,6 +226,7 @@ These include:
     - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`).
     - Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is already pulling in mbedTLS error strings through using :cpp:func:`mbedtls_strerror`.
     :esp32h2: - For {IDF_TARGET_NAME} v1.2 and above, consider disabling :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` and :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM` as the software countermeasures for the ECDSA sign operation are not required.
+    :SOC_AES_SUPPORT_DMA: - Consider disabling :ref:CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM if the application does not involve or require performance optimization for operations that involve small data lengths, such as NVS encryption/decryption or TLS communication when performed on small data segments.
 
 The help text for each option has some more information for reference.
 

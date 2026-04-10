@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -327,6 +327,14 @@ void regdma_link_stats(void *link, int entry);
  * @param mask  The mask of value
  */
 void regdma_link_set_write_wait_content(void *link, uint32_t value, uint32_t mask);
+
+/**
+ * @brief Set the flag for the retention chain node to skip the backup or restore
+ * @param link         REGDMA linked list node pointer
+ * @param skip_backup  whether to skip on active to sleep backup
+ * @param skip_restore whether to skip on sleep to active backup
+ */
+void regdma_link_set_skip_flag(void *link, bool skip_backup, bool skip_restore);
 
 /**
  * @brief Dump all node information of the REGDMA linked list indicated by the entry argument

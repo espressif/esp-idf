@@ -9,7 +9,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_monitor.h"
 #include "driver/gpio.h"

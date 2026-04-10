@@ -1,13 +1,13 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import contextlib
 import logging
 import os
 import socket
+from collections.abc import Iterator
 from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing import connection
-from typing import Iterator
 
 import pytest
 from pytest_embedded_idf import IdfDut
@@ -18,7 +18,7 @@ from scapy.all import raw
 ETH_TYPE = 0x3300
 
 
-class EthTestIntf(object):
+class EthTestIntf:
     def __init__(self, eth_type: int, my_if: str = ''):
         self.target_if = ''
         self.eth_type = eth_type
@@ -31,16 +31,18 @@ class EthTestIntf(object):
         netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
-        for netif in netifs:
-            # if no interface defined, try to find it automatically
-            if my_if == '':
-                if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
-                    self.target_if = netif
-                    break
+        if my_if == '':
+            if 'dut_p1' in netifs:
+                self.target_if = 'dut_p1'
             else:
-                if netif.find(my_if) == 0:
-                    self.target_if = my_if
-                    break
+                for netif in netifs:
+                    # if no interface defined, try to find it automatically
+                    if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
+                        self.target_if = netif
+                        break
+        elif my_if in netifs:
+            self.target_if = my_if
+
         if self.target_if == '':
             raise RuntimeError('network interface not found')
         logging.info('Use %s for testing', self.target_if)
@@ -49,7 +51,7 @@ class EthTestIntf(object):
     def configure_eth_if(self, eth_type: int = 0) -> Iterator[socket.socket]:
         if eth_type == 0:
             eth_type = self.eth_type
-        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
+        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))  # type: ignore
         so.bind((self.target_if, 0))
         try:
             yield so
@@ -129,11 +131,11 @@ def ethernet_test(dut: IdfDut) -> None:
 
 
 def ethernet_int_emac_test(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases(group='esp_emac', timeout=120)
+    dut.run_all_single_board_cases(group='esp_emac', timeout=240)
 
 
-def ethernet_l2_test(dut: IdfDut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
+def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
+    target_if = EthTestIntf(ETH_TYPE, test_if)
 
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
@@ -169,11 +171,10 @@ def ethernet_l2_test(dut: IdfDut) -> None:
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
     dut_mac = res.group(1).decode('utf-8')
+    target_if.recv_resp_poke(mac=dut_mac)
     for _ in range(5):
-        # wait for POKE msg to be sure the switch already started forwarding the port's traffic
-        # (there might be slight delay due to the RSTP execution)
-        # or wait for next POKE msg to be sure the DUT reconfigured the filter
-        target_if.recv_resp_poke(mac=dut_mac)
+        # wait to be sure the DUT reconfigured the filter
+        dut.expect_exact('Filter configured')
         target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
         target_if.send_eth_packet('01:00:5e:00:00:00')  # IPv4 multicast frame
         target_if.send_eth_packet('33:33:00:00:00:00')  # IPv6 multicast frame
@@ -204,8 +205,10 @@ def ethernet_l2_test(dut: IdfDut) -> None:
             ),
         )
         tx_proc.start()
-        dut.expect_exact('Ethernet Stopped')
-        pipe_send.send(0)  # just send some dummy data
+        try:
+            dut.expect_exact('Ethernet Stopped')
+        finally:
+            pipe_send.send(0)  # just send some dummy data to stop traffic generation
         tx_proc.join(5)
         if tx_proc.exitcode is None:
             tx_proc.terminate()
@@ -213,17 +216,16 @@ def ethernet_l2_test(dut: IdfDut) -> None:
     dut.expect_unity_test_output(extra_before=res.group(1))
 
 
-def ethernet_heap_alloc_test(dut: IdfDut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
-
+def ethernet_heap_alloc_test(dut: IdfDut, test_if: str = '') -> None:
+    target_if = EthTestIntf(ETH_TYPE, test_if)
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
     dut.expect_exact('Enter test for running.')
     dut.write('"heap utilization"')
-    res = dut.expect(r'DUT PHY: (\w+)')
-    dut_phy = res.group(1).decode('utf-8')
-    # W5500 does not support internal loopback, we need to loopback for it
-    if 'W5500' in dut_phy:
+    res = dut.expect(r'PHY loopback is (enabled|disabled)')
+    phy_loopback = res.group(1).decode('utf-8')
+    # Some chips do not support internal loopback, we need to loopback at test PC side
+    if phy_loopback == 'disabled':
         logging.info('Starting loopback server...')
         res = dut.expect(
             r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
@@ -250,19 +252,19 @@ def ethernet_heap_alloc_test(dut: IdfDut) -> None:
 
 
 # ----------- IP101 -----------
-@pytest.mark.ethernet
-@pytest.mark.parametrize('config', ['default_ip101', 'release_ip101', 'single_core_ip101'], indirect=True)
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize('config', ['default_generic', 'release_generic', 'single_core_generic'], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_ethernet(dut: IdfDut) -> None:
     ethernet_test(dut)
 
 
-@pytest.mark.ethernet
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101',
+        'default_generic',
     ],
     indirect=True,
 )
@@ -277,7 +279,7 @@ def test_esp_emac(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101',
+        'default_generic',
     ],
     indirect=True,
 )
@@ -286,46 +288,56 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
     ethernet_l2_test(dut)
 
 
-# ----------- IP101 ESP32P4 -----------
 @pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101_esp32p4',
+        'rmii_clko_esp32',
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_esp32_emac_clko(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='esp_emac_clk_out')
+
+
+# ----------- IP101 ESP32P4 -----------
+@pytest.mark.parametrize(
+    'config, target',
+    [
+        pytest.param('default_generic_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
+    ],
+    indirect=['target'],
+)
 def test_esp32p4_ethernet(dut: IdfDut) -> None:
     ethernet_test(dut)
     dut.serial.hard_reset()
     ethernet_l2_test(dut)
 
 
-@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        'default_ip101_esp32p4',
+        pytest.param('default_generic_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default_generic_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_esp32p4_emac(dut: IdfDut) -> None:
     ethernet_int_emac_test(dut)
     dut.serial.hard_reset()
     ethernet_heap_alloc_test(dut)
 
 
-@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        'rmii_clko_esp32p4',
+        pytest.param('rmii_clko_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('rmii_clko_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_esp32p4_emac_clko(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='esp_emac_clk_out')
 
@@ -400,7 +412,6 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
     'config',
     [
         'default_w5500',
-        'poll_w5500',
     ],
     indirect=True,
 )
@@ -419,7 +430,6 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
     'config',
     [
         'default_ksz8851snl',
-        'poll_ksz8851snl',
     ],
     indirect=True,
 )
@@ -438,7 +448,6 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
     'config',
     [
         'default_dm9051',
-        'poll_dm9051',
     ],
     indirect=True,
 )
@@ -449,3 +458,17 @@ def test_esp_eth_dm9051(dut: IdfDut) -> None:
     ethernet_l2_test(dut)
     dut.serial.hard_reset()
     ethernet_heap_alloc_test(dut)
+
+
+# ----------- EMAC Sleep Retention -----------
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize(
+    'config',
+    [
+        'emac_sleep_retention',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_emac_sleep_retention(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='sleep_retention', timeout=120)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,6 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     assert(dma2d_chans[0].dir == DMA2D_CHANNEL_DIRECTION_RX);
     dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[0].chan;
 
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = fill_trans_desc->out.fill_cm,
-    };
-
     // Fill 2D-DMA descriptors
     blend_engine->dma_rx_desc->vb_size = fill_trans_desc->fill_block_h;
     blend_engine->dma_rx_desc->hb_length = fill_trans_desc->fill_block_w;
@@ -45,7 +41,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     blend_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
     blend_engine->dma_rx_desc->va_size = fill_trans_desc->out.pic_h;
     blend_engine->dma_rx_desc->ha_length = fill_trans_desc->out.pic_w;
-    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(out_pixel_format);
+    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value((esp_color_fourcc_t)fill_trans_desc->out.fill_cm);
     blend_engine->dma_rx_desc->y = fill_trans_desc->out.block_offset_y;
     blend_engine->dma_rx_desc->x = fill_trans_desc->out.block_offset_x;
     blend_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
@@ -62,6 +58,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
+        .access_ext_mem = true, // in most cases the buffer is located in external memory, will not bother checking the memory region of the buffer
         .data_burst_length = fill_trans_desc->data_burst_length,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
@@ -77,7 +74,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     dma2d_start(dma2d_rx_chan);
 
     // Configure PPA Blending engine
-    ppa_ll_blend_configure_filling_block(platform->hal.dev, &fill_trans_desc->fill_argb_color, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
+    ppa_ll_blend_configure_filling_block(platform->hal.dev, fill_trans_desc->out.fill_cm, (void *)&fill_trans_desc->fill_color_val, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, fill_trans_desc->out.fill_cm);
 
     ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_FILL);
@@ -93,19 +90,33 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
-    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
-    ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = config->out.fill_cm,
-    };
-    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
+    ESP_RETURN_ON_FALSE(ppa_ll_blend_is_color_mode_supported((ppa_blend_color_mode_t)config->out.fill_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    // For YUV420 output: in desc, ha/hb/va/vb/x/y must be even number
+    // For YUV422 output: in desc, ha/hb/x must be even number
+    // if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV420) {
+    //     ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
+    //                         config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
+    //                         ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
+    // } else
+    if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV422_UYVY) {
+        ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
+    }
+    uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->out.fill_cm);
     uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
-    // To reduce complexity, color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
+    ESP_RETURN_ON_FALSE(config->fill_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        config->fill_block_h <= (config->out.pic_h - config->out.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "block does not fit in the out pic");
+
+    if (!ppa_check_buffer_alignment(ppa_client, &config->out, false, config->fill_block_w)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // To reduce complexity, specific color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back and invalidate buffer extended window (alignment not necessary on C2M direction, but alignment strict on M2C direction)
+    uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     uint32_t out_ext_window = (uint32_t)config->out.buffer + config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8;
     uint32_t out_ext_window_aligned = PPA_ALIGN_DOWN(out_ext_window, buf_alignment_size);
     uint32_t out_ext_window_len = config->out.pic_w * config->fill_block_h * out_pixel_depth / 8;

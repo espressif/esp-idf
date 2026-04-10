@@ -3,10 +3,12 @@
     idf.py efuse-dump
 
     Executing action: efuse-dump
-    Running espefuse.py in directory <project-directory>
-    Executing "espefuse.py dump --chip esp32p4"...
-    espefuse.py v4.7.dev1
+    Running espefuse in directory <project-directory>
+    Executing "espefuse dump --chip esp32p4"...
+    espefuse v5.0.2
     Connecting....
+
+    === Run "dump" command ===
     BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
     MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
     BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
@@ -21,5 +23,3 @@
     BLOCK0          (                ) [0 ] err__regs: 00000000 00000000 00000000 00000000 00000000 00000000
     EFUSE_RD_RS_ERR0_REG        0x00000000
     EFUSE_RD_RS_ERR1_REG        0x00000000
-
-    === Run "dump" command ===

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,10 @@
 extern "C" {
 #endif
 
-// store huk info, occupy 96 words
 struct huk_info {
-#define HUK_INFO_LEN 384
+// store huk info, occupy 165 words
+#define HUK_INFO_LEN 660
+
     uint8_t info[HUK_INFO_LEN];
     uint32_t crc;
 } PACKED_ATTR;
@@ -35,8 +36,7 @@ struct huk_key_block {
 #define KEY_HUK_SECTOR_MAGIC 0xDEA5CE5A
     uint32_t magic;
     uint32_t version; // for backward compatibility
-    uint8_t key_type;
-    uint8_t reserved[15];
+    uint8_t reserved[16];
     struct huk_info huk_info;
     struct key_info key_info[2]; // at most 2 key info (XTS-512_1 and XTS-512_2), at least use 1
 } WORD_ALIGNED_ATTR PACKED_ATTR;
@@ -56,10 +56,18 @@ struct huk_key_block {
 #define KM_PERI_XTS   (BIT(1))
 
 struct km_deploy_ops {
-#define KM_KEY_PURPOSE_ECDSA     1
-#define KM_KEY_PURPOSE_XTS_256_1 2
-#define KM_KEY_PURPOSE_XTS_256_2 3
-#define KM_KEY_PURPOSE_XTS_128   4
+#define KM_KEY_PURPOSE_ECDSA_KEY_192   1
+#define KM_KEY_PURPOSE_ECDSA_KEY_256   2
+#define KM_KEY_PURPOSE_FLASH_XTS_256_1 3
+#define KM_KEY_PURPOSE_FLASH_XTS_256_2 4
+#define KM_KEY_PURPOSE_FLASH_XTS_128   5
+#define KM_KEY_PURPOSE_HMAC            6
+#define KM_KEY_PURPOSE_DS              7
+#define KM_KEY_PURPOSE_PSRAM_XTS_256_1 8
+#define KM_KEY_PURPOSE_PSRAM_XTS_256_2 9
+#define KM_KEY_PURPOSE_PSRAM_XTS_128   10
+#define KM_KEY_PURPOSE_ECDSA_KEY_384_L 11
+#define KM_KEY_PURPOSE_ECDSA_KEY_384_H 12
     int km_key_purpose;
 #define KM_DEPLOY_MODE_RANDOM  0
 #define KM_DEPLOY_MODE_AES     1

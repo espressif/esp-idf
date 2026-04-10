@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,10 +72,10 @@ void esp_cpu_wait_for_intr(void)
 #if SOC_CPU_BREAKPOINTS_NUM > 0
 esp_err_t esp_cpu_set_breakpoint(int bp_num, const void *bp_addr)
 {
-    /*
-    Todo:
-    - Check that bp_num is in range
-    */
+    if (bp_num < 0 || bp_num >= SOC_CPU_BREAKPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
 #if __XTENSA__
     xt_utils_set_breakpoint(bp_num, (uint32_t)bp_addr);
 #else
@@ -101,10 +101,10 @@ esp_err_t esp_cpu_set_breakpoint(int bp_num, const void *bp_addr)
 
 esp_err_t esp_cpu_clear_breakpoint(int bp_num)
 {
-    /*
-    Todo:
-    - Check if the bp_num is valid
-    */
+    if (bp_num < 0 || bp_num >= SOC_CPU_BREAKPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
 #if __XTENSA__
     xt_utils_clear_breakpoint(bp_num);
 #else
@@ -126,11 +126,12 @@ esp_err_t esp_cpu_clear_breakpoint(int bp_num)
 #if SOC_CPU_WATCHPOINTS_NUM > 0
 esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, esp_cpu_watchpoint_trigger_t trigger)
 {
-    /*
-    Todo:
-    - Check if the wp_num is already in use
-    */
     if (wp_num < 0 || wp_num >= SOC_CPU_WATCHPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check if size is 2^n, and size is in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
+    if (size < 1 || size > SOC_CPU_WATCHPOINT_MAX_REGION_SIZE || (size & (size - 1)) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -139,10 +140,6 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Check if size is 2^n, and size is in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
-    if (size < 1 || size > SOC_CPU_WATCHPOINT_MAX_REGION_SIZE || (size & (size - 1)) != 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
     bool on_read = (trigger == ESP_CPU_WATCHPOINT_LOAD || trigger == ESP_CPU_WATCHPOINT_ACCESS);
     bool on_write = (trigger == ESP_CPU_WATCHPOINT_STORE || trigger == ESP_CPU_WATCHPOINT_ACCESS);
 #if __XTENSA__
@@ -166,10 +163,10 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
 
 esp_err_t esp_cpu_clear_watchpoint(int wp_num)
 {
-    /*
-    Todo:
-    - Check if the wp_num is valid
-    */
+    if (wp_num < 0 || wp_num >= SOC_CPU_WATCHPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
 #if __XTENSA__
     xt_utils_clear_watchpoint(wp_num);
 #else

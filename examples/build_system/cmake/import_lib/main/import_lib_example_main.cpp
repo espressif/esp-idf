@@ -7,7 +7,6 @@
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "tinyxml2.h"
-#include "sdkconfig.h" // TODO IDF-11323: remove
 
 static const char *TAG = "example";
 
@@ -30,12 +29,11 @@ extern "C" void app_main(void)
     tinyxml2::XMLDocument data;
     data.LoadFile("/spiflash/sample.xml");
 
-#if !CONFIG_LIBC_PICOLIBC // TODO IDF-11323: subproject builds with default toolchain-esp*.cmake. No additional -specs=picolibc.specs applied
     tinyxml2::XMLPrinter printer;
     data.Print(&printer);
 
     ESP_LOGI(TAG, "Read XML data:\n%s", printer.CStr());
-#endif
+
     const char* to_data = data.FirstChildElement("note")->FirstChildElement("to")->GetText();
     const char* from_data = data.FirstChildElement("note")->FirstChildElement("from")->GetText();
     const char* heading_data = data.FirstChildElement("note")->FirstChildElement("heading")->GetText();

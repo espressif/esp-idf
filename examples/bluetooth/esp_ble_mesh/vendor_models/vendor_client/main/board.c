@@ -13,7 +13,7 @@
 
 #define TAG "BOARD"
 
-#define BUTTON_IO_NUM           0
+#define BUTTON_IO_NUM           CONFIG_BUTTON_IO_NUM
 #define BUTTON_ACTIVE_LEVEL     0
 
 extern void example_ble_mesh_send_vendor_message(bool resend);

@@ -6,3 +6,10 @@ components/esp_eth/test_apps:
       reason: ESP32 and ESP32P4 have internal EMAC. SPI Ethernet runners are based on ESP32.
   depends_components:
     - esp_eth
+    - esp_http_client
+    - esp_hw_support
+    - esp_netif
+    - esp_timer
+    - hal
+    - lwip
+    - soc

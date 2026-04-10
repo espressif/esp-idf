@@ -141,8 +141,8 @@
 
     {IDF_TARGET_NAME} 支持 USB 外设，无需外部 USB 至 UART 桥，即可烧录二进制文件。
 
-    {IDF_TARGET_USB_PIN_DM:default="尚未更新！", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26", esp32p4="GPIO24/26", esp32c5="GPIO13"}
-    {IDF_TARGET_USB_PIN_DP:default="尚未更新！", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27", esp32p4="GPIO25/27", esp32c5="GPIO14"}
+    {IDF_TARGET_USB_PIN_DM:default="尚未更新！", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26", esp32p4="GPIO24/26", esp32c5="GPIO13", esp32c61="GPIO28"}
+    {IDF_TARGET_USB_PIN_DP:default="尚未更新！", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27", esp32p4="GPIO25/27", esp32c5="GPIO14", esp32c61="GPIO29"}
 
     {IDF_TARGET_NAME} 上的 USB 使用 **{IDF_TARGET_USB_PIN_DP}** 作为 **D+**， **{IDF_TARGET_USB_PIN_DM}** 作为 **D-**。
 
@@ -264,7 +264,9 @@ macOS::
 
     sudo usermod -a -G uucp $USER
 
-请重新登录，确保串口读写权限生效。
+.. note::
+
+    请重新登录，确保串口读写权限生效。
 
 确认串口连接
 ------------------------
@@ -282,7 +284,7 @@ macOS::
 Windows 和 Linux 操作系统
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在本示例中，我们将使用 `PuTTY SSH Client <https://www.putty.org/>`_，`PuTTY SSH Client <https://www.putty.org/>`_ 既可用于 Windows 也可用于 Linux。也可以使用其他串口程序并设置如下的通信参数。
+在本示例中，我们使用 `PuTTY SSH Client <https://putty.software/>`_，该工具可在 Windows 和 Linux 上使用。你也可以使用其他串口程序，并按照下方所示设置通信参数。
 
 运行终端，配置在上述步骤中确认的串口：波特率 = 115200（如有需要，请更改为使用芯片的默认波特率），数据位 = 8，停止位 = 1，奇偶校验 = N。以下截屏分别展示了如何在 Windows 和 Linux 中配置串口和上述通信参数（如 115200-8-1-N）。注意，这里一定要选择在上述步骤中确认的串口进行配置。
 
@@ -347,7 +349,7 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 输出示例
 ^^^^^^^^^^^
 
-{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9", esp32c6="GPIO9", esp32h2="GPIO9", esp32p4="GPIO35", esp32c5="GPIO28"}
+{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9", esp32c6="GPIO9", esp32h2="GPIO9", esp32p4="GPIO35", esp32c5="GPIO28", esp32c61="GPIO9"}
 
 以下是一个日志示例。如果没看到任何输出，请尝试重置开发板。
 
@@ -379,6 +381,6 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 
    在某些串口接线方式下，在 {IDF_TARGET_NAME} 启动并开始打印串口日志前，需要在终端程序中禁用串口 RTS ＆ DTR 管脚。该问题仅存在于将 RTS ＆ DTR 管脚直接连接到 EN ＆ {IDF_TARGET_STRAP_GPIO} 管脚上的情况，绝大多数开发板（包括乐鑫所有的开发板）都没有这个问题。更多详细信息，请参考 `esptool 文档`_。
 
-如在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`get-started-connect` 跳转到了这里，请从 :ref:`get-started-configure` 继续阅读。
+如在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`Windows <get-started-connect>`、:ref:`Linux 或 macOS 连接设备 <get-started-connect-linux-macos>` 跳转到了这里，请从 :ref:`Windows <get-started-configure>`、:ref:`Linux 或 macOS 配置项目 <get-started-configure-linux-macos>` 继续阅读。
 
 .. _esptool 文档: https://docs.espressif.com/projects/esptool/en/latest/advanced-topics/boot-mode-selection.html#automatic-bootloader

@@ -12,11 +12,6 @@
 #include "hal/temperature_sensor_ll.h"
 #include "driver/temperature_sensor_etm.h"
 #include "esp_heap_caps.h"
-#if CONFIG_ETM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
 #include "esp_log.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -37,9 +32,6 @@ static esp_err_t temperature_sensor_del_etm_task(esp_etm_task_t *task)
 
 esp_err_t temperature_sensor_new_etm_event(temperature_sensor_handle_t tsens, const temperature_sensor_etm_event_config_t *config, esp_etm_event_handle_t *out_event)
 {
-#if CONFIG_ETM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_etm_event_t *event = NULL;
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(tsens && config && out_event, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -67,9 +59,6 @@ err:
 
 esp_err_t temperature_sensor_new_etm_task(temperature_sensor_handle_t tsens, const temperature_sensor_etm_task_config_t *config, esp_etm_task_handle_t *out_task)
 {
-#if CONFIG_ETM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_etm_task_t *task = NULL;
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(tsens && config && out_task, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");

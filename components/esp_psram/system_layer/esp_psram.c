@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,11 +23,13 @@
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_ll.h"
+#include "hal/efuse_hal.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_psram_io.h"
 #include "esp_private/esp_psram_extram.h"
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_private/esp_psram_impl.h"
+#include "esp_private/esp_psram_mspi.h"
 #include "esp_private/startup_internal.h"
 #if SOC_SPIRAM_XIP_SUPPORTED
 #include "esp_private/mmu_psram_flash.h"
@@ -111,21 +113,43 @@ typedef struct {
 static psram_ctx_t s_psram_ctx;
 static const DRAM_ATTR char TAG[] = "esp_psram";
 
-ESP_SYSTEM_INIT_FN(add_psram_to_heap, CORE, BIT(0), 103)
+ESP_SYSTEM_INIT_FN(psram_core_stage_init, CORE, BIT(0), 103)
 {
+    esp_err_t ret = ESP_FAIL;
+
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+
+#if (CONFIG_IDF_TARGET_ESP32C5 && CONFIG_ESP32C5_REV_MIN_FULL <= 100) || (CONFIG_IDF_TARGET_ESP32C61 && CONFIG_ESP32C61_REV_MIN_FULL <= 100)
+    if (efuse_hal_chip_revision() <= 100) {
+        ESP_EARLY_LOGW(TAG, "Due to hardware issue on ESP32-C5/C61 (Rev v1.0), PSRAM contents won't be encrypted (for flash encryption enabled case)");
+        ESP_EARLY_LOGW(TAG, "Please avoid using PSRAM for security sensitive data e.g., TLS stack allocations (CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC)");
+    }
+#endif
     if (esp_psram_is_initialized()) {
-        esp_err_t r = esp_psram_extram_add_to_heap_allocator();
-        if (r != ESP_OK) {
+        ret = esp_psram_extram_add_to_heap_allocator();
+        if (ret != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
-            abort();
+            return ret;
         }
 #if CONFIG_SPIRAM_USE_MALLOC
         heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
     }
 #endif
-    return ESP_OK;
+
+    ret = esp_psram_mspi_register_isr();
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to register PSRAM ISR!");
+        return ret;
+    }
+
+    ret = esp_psram_mspi_mb_init();
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to initialize PSRAM MSPI memory barrier!");
+        return ret;
+    }
+
+    return ret;
 }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -148,6 +172,36 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 #endif
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
+
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#include "hal/psram_ctrlr_ll.h"
+#include "hal/efuse_hal.h"
+static void IRAM_ATTR esp_psram_p4_rev3_workaround(void)
+{
+    spi_mem_s_dev_t backup_reg = {};
+    psram_ctrlr_ll_backup_registers(PSRAM_CTRLR_LL_MSPI_ID_2, &backup_reg);
+
+    __attribute__((unused)) volatile uint32_t val = 0;
+    psram_ctrlr_ll_disable_core_err_resp();
+
+    /**
+     * this workaround is to have two dummy reads, therefore
+     * - map 1 page
+     * - read 2 times
+     * - delay 1us
+     *
+     * The mapping will be overwritten by the real mapping in `s_psram_mapping`
+     */
+    mmu_ll_write_entry(1, 0, 0, MMU_TARGET_PSRAM0);
+    val = *(uint32_t *)(0x88000000);
+    val = *(uint32_t *)(0x88000080);
+    esp_rom_delay_us(1);
+
+    _psram_ctrlr_ll_reset_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2);
+    psram_ctrlr_ll_enable_core_err_resp();
+    psram_ctrlr_ll_restore_registers(PSRAM_CTRLR_LL_MSPI_ID_2, &backup_reg);
+}
+#endif
 
 static esp_err_t s_psram_chip_init(void)
 {
@@ -246,6 +300,7 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
     const void *v_start_8bit_aligned = NULL;
     ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
     assert(ret == ESP_OK);
+    (void)ret;
 
 #if CONFIG_IDF_TARGET_ESP32
     s_mapping((int)v_start_8bit_aligned, size_to_map);
@@ -369,6 +424,14 @@ esp_err_t esp_psram_init(void)
         }
     }
 
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    // This workaround is only needed for P4 rev 300 (3.0.0)
+    unsigned chip_revision = efuse_hal_chip_revision();
+    if (chip_revision == 300) {
+        esp_psram_p4_rev3_workaround();
+    }
+#endif
+
     uint32_t psram_available_size = 0;
     ret = esp_psram_impl_get_available_size(&psram_available_size);
     assert(ret == ESP_OK);
@@ -383,6 +446,12 @@ esp_err_t esp_psram_init(void)
     __attribute__((unused)) uint32_t start_page = 0;
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+#if (CONFIG_IDF_TARGET_ESP32C5 && CONFIG_ESP32C5_REV_MIN_FULL <= 100) || (CONFIG_IDF_TARGET_ESP32C61 && CONFIG_ESP32C61_REV_MIN_FULL <= 100)
+    if (efuse_hal_chip_revision() <= 100) {
+        ESP_EARLY_LOGW(TAG, "Due to hardware issue on ESP32-C5/C61 (Rev v1.0), PSRAM contents won't be encrypted (for flash encryption enabled case)");
+        ESP_EARLY_LOGW(TAG, "Please avoid using PSRAM for execution as the code/rodata shall be copied as plaintext and this could pose a security risk.");
+    }
+#endif
     s_xip_psram_placement(&psram_available_size, &start_page);
 #endif
 
@@ -654,6 +723,7 @@ static size_t esp_psram_get_effective_mapped_size(void)
         uint32_t psram_available_size = 0;
         esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
         assert(ret == ESP_OK);
+        (void)ret;
 
 #if CONFIG_SPIRAM_RODATA
         psram_available_size -= mmu_psram_get_rodata_segment_length();

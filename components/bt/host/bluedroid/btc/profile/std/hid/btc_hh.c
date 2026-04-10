@@ -64,6 +64,8 @@ static bdstr_t bdstr;
 #define is_hidh_init() (btc_hh_cb.status > BTC_HH_DISABLED)
 #define BTC_TIMEOUT_VUP_MS (3 * 1000)
 
+static void btc_hh_cb_arg_deep_free(btc_msg_t *msg);
+
 static inline void btc_hh_cb_to_app(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
 {
     esp_hh_cb_t btc_hh_cb = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
@@ -1097,7 +1099,7 @@ static void btc_hh_set_idle_time(btc_hidh_args_t *arg)
     }
 }
 
-static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
+void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)msg->arg;
 
@@ -1119,6 +1121,8 @@ static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 void btc_hh_call_handler(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)(msg->arg);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_HH_INIT_EVT:
         btc_hh_init();
@@ -1166,7 +1170,7 @@ void btc_hh_call_handler(btc_msg_t *msg)
     btc_hh_call_arg_deep_free(msg);
 }
 
-void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
+static void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
 {
     tBTA_HH *arg = (tBTA_HH *)msg->arg;
 
@@ -1227,6 +1231,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
     btc_hh_device_t *p_dev = NULL;
     int len, i;
     BTC_TRACE_DEBUG("%s: event=%s dereg = %d", __func__, dump_hh_event(msg->act), btc_hh_cb.service_dereg_active);
+
     switch (msg->act) {
     case BTA_HH_ENABLE_EVT:
         if (p_data->status == BTA_HH_OK) {
@@ -1486,7 +1491,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_status.status, p_data->dev_status.handle);
         param.set_idle.handle = p_data->dev_status.handle;
         param.set_idle.status = p_data->dev_status.status;
-        btc_hh_cb_to_app(BTA_HH_SET_IDLE_EVT, &param);
+        btc_hh_cb_to_app(ESP_HIDH_SET_IDLE_EVT, &param);
         break;
     case BTA_HH_ADD_DEV_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_info.status, p_data->dev_info.handle);
@@ -1515,8 +1520,8 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         break;
     case BTA_HH_RMV_DEV_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_info.status, p_data->dev_info.handle);
-        param.rmv_dev.handle = p_data->dev_info.status;
-        param.rmv_dev.status = p_data->dev_info.handle;
+        param.rmv_dev.handle = p_data->dev_info.handle;
+        param.rmv_dev.status = p_data->dev_info.status;
         memcpy(param.rmv_dev.bd_addr, p_data->dev_info.bda, BD_ADDR_LEN);
         btc_hh_cb_to_app(ESP_HIDH_RMV_DEV_EVT, &param);
         break;

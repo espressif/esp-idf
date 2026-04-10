@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import itertools
 
@@ -11,9 +11,9 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'config,target',
     itertools.chain(
-        itertools.product(['gpio'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4']),
-        itertools.product(['tez'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4']),
-        itertools.product(['soft'], ['esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4']),
+        itertools.product(['gpio'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31']),
+        itertools.product(['tez'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31']),
+        itertools.product(['soft'], ['esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31']),
     ),
     indirect=['config', 'target'],
 )

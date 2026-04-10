@@ -1,3 +1,3 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  esp_flash_nor: ">=0.0.3"
+  esp_flash_nor: ">=0.1.0"

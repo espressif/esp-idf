@@ -15,12 +15,15 @@
 #include "services/gap/ble_svc_gap.h"
 #include "ble_cts_cent.h"
 #include "services/cts/ble_svc_cts.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_CTS_CENT";
 static int ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg);
 
-static char *day_of_week[7] = {
-    "Unknown"
+static char *day_of_week[8] = {
+    "Unknown",
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -33,10 +36,14 @@ void ble_store_config_init(void);
 static void ble_cts_cent_scan(void);
 
 void printtime(struct ble_svc_cts_curr_time ctime) {
+    uint8_t dow = ctime.et_256.d_d_t.day_of_week;
+    const char *dow_str = (dow >= 1 && dow <= 7) ? day_of_week[dow] : day_of_week[0];
+    if (dow >= 8) {
+        dow = 0;
+    }
     ESP_LOGI(tag, "Date : %d/%d/%d %s", ctime.et_256.d_d_t.d_t.day,
                                      ctime.et_256.d_d_t.d_t.month,
-                                     ctime.et_256.d_d_t.d_t.year,
-                                     day_of_week[ctime.et_256.d_d_t.day_of_week]);
+                                     ctime.et_256.d_d_t.d_t.year, dow_str);
     ESP_LOGI(tag, "hours : %d minutes : %d ",
                              ctime.et_256.d_d_t.d_t.hours,
                              ctime.et_256.d_d_t.d_t.minutes);
@@ -44,6 +51,7 @@ void printtime(struct ble_svc_cts_curr_time ctime) {
     ESP_LOGI(tag, "fractions : %d\n", ctime.et_256.fractions_256);
 }
 
+#if MYNEWT_VAL(BLE_GATTC)
 /**
  * Application callback.  Called when the read of the cts current time
  * characteristic has completed.
@@ -54,6 +62,7 @@ ble_cts_cent_on_read(uint16_t conn_handle,
                      struct ble_gatt_attr *attr,
                      void *arg)
 {
+    int rc = 0;
     struct ble_svc_cts_curr_time ctime; /* store the read time */
     MODLOG_DFLT(INFO, "Read Current time complete; status=%d conn_handle=%d\n",
                 error->status, conn_handle);
@@ -65,8 +74,12 @@ ble_cts_cent_on_read(uint16_t conn_handle,
         goto err;
     }
     MODLOG_DFLT(INFO, "\n");
-    ble_hs_mbuf_to_flat(attr->om, &ctime, sizeof(ctime), NULL);
-    printtime(ctime);
+    rc = ble_hs_mbuf_to_flat(attr->om, &ctime, sizeof(ctime), NULL);
+    if (rc == 0 && ctime.et_256.d_d_t.day_of_week <= 7) {
+        printtime(ctime);
+    } else {
+        MODLOG_DFLT(WARN, "Invalid CTS time data; rc=%d day_of_week=%d\n", rc, ctime.et_256.d_d_t.day_of_week);
+    }
     return 0;
 err:
     /* Terminate the connection. */
@@ -137,6 +150,7 @@ ble_cts_cent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     ble_cts_cent_read_time(peer);
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -232,7 +246,7 @@ ext_ble_cts_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         /* Search if cts UUID is advertised */
         if (disc->data[offset + 1] == 0x03) {
             int temp = 2;
-            while(temp < disc->data[offset + 1]) {
+            while (temp < ad_struct_len) {
                 if(disc->data[offset + temp] == 0x05 &&
                    disc->data[offset + temp + 1] == 0x18) {
                     return 1;
@@ -427,6 +441,14 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+            rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+                return 0;
+            }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_cts_cent_on_disc_complete, NULL);
@@ -434,6 +456,8 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         } else {
             /* Connection attempt failed; resume scanning. */
@@ -470,15 +494,42 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+        rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+            return 0;
+        }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->connect.conn_handle,
+        rc = peer_disc_all(event->enc_change.conn_handle,
                            ble_cts_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
 #endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif
         return 0;
+
+    case BLE_GAP_EVENT_CACHE_ASSOC:
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+          /* Cache association result for this connection */
+          MODLOG_DFLT(INFO, "cache association; conn_handle=%d status=%d cache_state=%s\n",
+                      event->cache_assoc.conn_handle,
+                      event->cache_assoc.status,
+                      (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
+          /* Perform service discovery */
+          rc = peer_disc_all(event->cache_assoc.conn_handle,
+                             ble_cts_cent_on_disc_complete, NULL);
+          if(rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                return 0;
+          }
+#endif
+          return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */

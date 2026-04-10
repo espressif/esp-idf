@@ -25,7 +25,7 @@
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 static void lcd_parlio_panel_with_st7789_interface(esp_lcd_panel_io_handle_t io_handle)
 {
-    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);
+    uint8_t *img = heap_caps_calloc(1, TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(img);
 
     gpio_config_t bk_gpio_config = {
@@ -148,7 +148,7 @@ static void lcd_parlio_send_colors_to_fixed_region(size_t data_width)
     int x_end = 200;
     int y_end = 200;
     size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
-    void *color_data = malloc(color_size);
+    void *color_data = heap_caps_calloc(1, color_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(color_data);
     uint8_t color_byte = esp_random() & 0xFF;
     memset(color_data, color_byte, color_size);

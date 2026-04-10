@@ -405,6 +405,15 @@ menu "LWIP"
                 Enabling this option allows the device to run the DHCP server
                 (to dynamically assign IPv4 addresses to clients).
 
+        config LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+            bool "DHCPS: Report client hostname in assigned-IP event"
+            default y
+            depends on LWIP_DHCPS
+            help
+                When enabled, the DHCP server parses client hostname (DHCP option 12)
+                and makes it available via IP_EVENT_ASSIGNED_IP_TO_CLIENT. This adds
+                a small amount of RAM usage per lease to store the hostname.
+
         config LWIP_DHCPS_LEASE_UNIT
             int "Multiplier for lease time, in seconds"
             range 1 3600
@@ -425,6 +434,16 @@ menu "LWIP"
                 After this number is exceeded, DHCP server removes of the oldest device
                 from it's address pool, without notification.
 
+        config LWIP_DHCPS_MAX_HOSTNAME_LEN
+            int "Maximum client hostname length stored by DHCPS"
+            range 1 255
+            default 64
+            depends on LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+            help
+                Maximum number of bytes stored per-client for DHCP option 12 (hostname),
+                including the terminating null when used in esp-netif events. Longer hostnames
+                will be truncated.
+
         config LWIP_DHCPS_STATIC_ENTRIES
             bool "Enable ARP static entries"
             default y
@@ -432,20 +451,6 @@ menu "LWIP"
             help
                 Enabling this option allows DHCP server to support temporary static ARP entries
                 for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
-
-        config LWIP_DHCPS_ADD_DNS
-            bool "Always add DNS option in DHCP responses"
-            default y
-            depends on LWIP_DHCPS
-            help
-                This allows the DNS option to be optional in the DHCP offers,
-                depending on the server's runtime configuration.
-                When enabled, the DHCP server will always add the DNS option to DHCP responses.
-                If a DNS server is not explicitly configured, the server's IP address will be used
-                as the fallback for the DNS option.
-                When disabled, the DHCP server will only include the DNS option in responses
-                if a DNS server has been explicitly configured.
-                This option will be removed in IDF v6.x
 
     endmenu # DHCPS
 
@@ -554,6 +559,12 @@ menu "LWIP"
         default n
         help
             Enable callbacks when the network interface is up/down and addresses are changed.
+
+    config LWIP_NETIF_LINK_CALLBACK
+        bool "Enable link callback for network interfaces"
+        default n
+        help
+            Enable callbacks when the physical network link is up/down.
 
     menuconfig LWIP_NETIF_LOOPBACK
         bool "Support per-interface loopback"

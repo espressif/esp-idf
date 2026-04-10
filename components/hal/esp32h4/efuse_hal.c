@@ -5,14 +5,11 @@
  */
 
 #include <sys/param.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
 #include "esp_attr.h"
-
-//TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x08 << (4 * (block))))
 #define ESP_EFUSE_BLOCK_ERROR_NUM_BITS(error_reg, block) ((error_reg) & (0x07 << (4 * (block))))

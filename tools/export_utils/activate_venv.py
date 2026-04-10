@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -21,29 +21,29 @@ from utils import run_cmd
 
 
 def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog='activate',
-                                     description='Activate ESP-IDF environment',
-                                     epilog='On Windows, run `python activate.py` to execute this script in the current terminal window.')
-    parser.add_argument('-s', '--shell',
-                        metavar='SHELL',
-                        default=os.environ.get('ESP_IDF_SHELL', 'detect'),
-                        help='Explicitly specify shell to start. For example bash, zsh, powershell.exe, cmd.exe')
-    parser.add_argument('-l', '--list',
-                        action='store_true',
-                        help=('List supported shells.'))
-    parser.add_argument('-e', '--export',
-                        action='store_true',
-                        help=('Generate commands to run in the terminal.'))
-    parser.add_argument('-n', '--no-color',
-                        action='store_true',
-                        help=('Disable ANSI color escape sequences.'))
-    parser.add_argument('-d', '--debug',
-                        action='store_true',
-                        default=bool(os.environ.get('ESP_IDF_EXPORT_DEBUG')),
-                        help=('Enable debug information.'))
-    parser.add_argument('-q', '--quiet',
-                        action='store_true',
-                        help=('Suppress all output.'))
+    parser = argparse.ArgumentParser(
+        prog='activate',
+        description='Activate ESP-IDF environment',
+        epilog='On Windows, run `python activate.py` to execute this script in the current terminal window.',
+    )
+    parser.add_argument(
+        '-s',
+        '--shell',
+        metavar='SHELL',
+        default=os.environ.get('ESP_IDF_SHELL', 'detect'),
+        help='Explicitly specify shell to start. For example bash, zsh, powershell.exe, cmd.exe',
+    )
+    parser.add_argument('-l', '--list', action='store_true', help=('List supported shells.'))
+    parser.add_argument('-e', '--export', action='store_true', help=('Generate commands to run in the terminal.'))
+    parser.add_argument('-n', '--no-color', action='store_true', help=('Disable ANSI color escape sequences.'))
+    parser.add_argument(
+        '-d',
+        '--debug',
+        action='store_true',
+        default=bool(os.environ.get('ESP_IDF_EXPORT_DEBUG')),
+        help=('Enable debug information.'),
+    )
+    parser.add_argument('-q', '--quiet', action='store_true', help=('Suppress all output.'))
 
     return parser.parse_args()
 
@@ -72,11 +72,13 @@ def get_deactivate_cmd() -> str:
 
 
 @status_message('Establishing a new ESP-IDF environment')
-def get_idf_env() -> Dict[str,str]:
+def get_idf_env() -> Dict[str, str]:
     # Get ESP-IDF system environment variables
-    extra_paths_list = [os.path.join('components', 'espcoredump'),
-                        os.path.join('components', 'partition_table'),
-                        os.path.join('components', 'app_update')]
+    extra_paths_list = [
+        os.path.join('components', 'espcoredump'),
+        os.path.join('components', 'partition_table'),
+        os.path.join('components', 'app_update'),
+    ]
     extra_paths = os.pathsep.join([os.path.join(conf.IDF_PATH, path) for path in extra_paths_list])
     cmd = [sys.executable, conf.IDF_TOOLS_PY, 'export', '--format', 'key-value', '--add_paths_extras', extra_paths]
     stdout = run_cmd(cmd)
@@ -93,11 +95,16 @@ def get_idf_env() -> Dict[str,str]:
             var, val = line.split('=')
             idf_env[var] = val
     except ValueError as e:
-        debug('\n'.join(['Output from `./tools/idf_tools.py export --format key-value`:',
-                         f'{stdout}']))
-        raise ValueError('\n'.join(['Please ensure your ESP-IDF installation is clean, especially file `./tools/idf_tools.py`.',
-                                    'The command `./tools/idf_tools.py export` appears to be returning unexpected values.',
-                                    f'Details: {e}']))
+        debug('\n'.join(['Output from `./tools/idf_tools.py export --format key-value`:', f'{stdout}']))
+        raise ValueError(
+            '\n'.join(
+                [
+                    'Please ensure your ESP-IDF installation is clean, especially file `./tools/idf_tools.py`.',
+                    'The command `./tools/idf_tools.py export` appears to be returning unexpected values.',
+                    f'Details: {e}',
+                ]
+            )
+        )
 
     if 'PATH' in idf_env:
         idf_env['PATH'] = os.pathsep.join([extra_paths, idf_env['PATH']])
@@ -127,7 +134,8 @@ def detect_shell(args: Any) -> str:
             break
         current_pid = parent_pid
 
-    return detected_shell_name
+    # On Windows shell names are case-insensitive, but ESP-IDF defines them in lowercase
+    return detected_shell_name.lower() if sys.platform == 'win32' else detected_shell_name
 
 
 @status_message('Detecting outdated tools in system', rv_on_ok=True)
@@ -135,10 +143,12 @@ def print_uninstall_msg() -> Any:
     stdout = run_cmd([sys.executable, conf.IDF_TOOLS_PY, 'uninstall', '--dry-run'])
     if stdout:
         python_cmd = 'python.exe' if sys.platform == 'win32' else 'python'
-        msg = (f'Found tools that are not used by active ESP-IDF version.\n'
-               f'[bright_cyan]{stdout}\n'
-               f'To free up even more space, remove installation packages of those tools.\n'
-               f'Use option {python_cmd} {conf.IDF_TOOLS_PY} uninstall --remove-archives.')
+        msg = (
+            f'Found tools that are not used by active ESP-IDF version.\n'
+            f'[bright_cyan]{stdout}\n'
+            f'To free up even more space, remove installation packages of those tools.\n'
+            f'Use option {python_cmd} {conf.IDF_TOOLS_PY} uninstall --remove-archives.'
+        )
     else:
         msg = 'OK - no outdated tools found'
 
@@ -186,9 +196,11 @@ def main() -> None:
         shell.export()
         sys.exit()
 
-    eprint(f'[dark_orange]Starting new \'{shell.shell}\' shell with ESP-IDF environment... (use "exit" command to quit)')
+    eprint(
+        f'[dark_orange]Starting new \'{shell.shell}\' shell with ESP-IDF environment... (use "exit" command to quit)'
+    )
     shell.spawn()
-    eprint(f'[dark_orange]ESP-IDF environment exited.')
+    eprint('[dark_orange]ESP-IDF environment exited.')
 
 
 if __name__ == '__main__':

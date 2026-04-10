@@ -13,6 +13,7 @@ choice ESP_DEFAULT_CPU_FREQ_MHZ
         depends on !IDF_ENV_FPGA
     config ESP_DEFAULT_CPU_FREQ_MHZ_64
         bool "64 MHz"
+        depends on !IDF_ENV_FPGA
     config ESP_DEFAULT_CPU_FREQ_MHZ_96
         bool "96 MHz"
         depends on !IDF_ENV_FPGA

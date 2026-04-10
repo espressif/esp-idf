@@ -1,0 +1,15 @@
+# Static registration of clock descriptors at link time
+
+[sections:esp_libc_clock_desc]
+entries:
+    .esp_libc_clock_desc
+
+[scheme:esp_libc_clock_desc_default]
+entries:
+    esp_libc_clock_desc -> flash_rodata
+
+[mapping:esp_libc_clock_desc]
+archive: *
+entries:
+    * (esp_libc_clock_desc_default);
+        esp_libc_clock_desc -> flash_rodata KEEP() SORT(name) SURROUND(esp_libc_clock_array)

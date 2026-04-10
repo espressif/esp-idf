@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -49,10 +49,13 @@
 #define CORE_ID_SIZE        4
 #endif
 
+/* Align the value up to the nearest multiple of 4 */
+#define PORT_ALIGN_UP_TO_4(value) (((value) + 3) & ~3)
+
 #define PORT_OFFSET_PX_END_OF_STACK ( \
     PORT_OFFSET_PX_STACK \
     + 4                                 /* void * pxDummy6 */ \
-    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_ALIGN_UP_TO_4(configMAX_TASK_NAME_LEN) /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ \
     + CORE_ID_SIZE                      /* BaseType_t xDummyCoreID */ \
 )
 
@@ -71,14 +74,7 @@
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 #include "esp_newlib.h"
-
-/* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
-
-/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
-#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#include "esp_timer.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -414,11 +410,11 @@ void vApplicationSleep(TickType_t xExpectedIdleTime);
 /**
  * @brief Get the tick rate per second
  *
- * @note [refactor-todo] make this inline
- * @note [refactor-todo] Check if this function should be renamed (due to uint return type)
+ * @deprecated This function will be removed in IDF 7.0. Use CONFIG_FREERTOS_HZ directly instead.
+ * @note [refactor-todo] Remove this function in IDF 7.0 (IDF-14115)
  * @return uint32_t Tick rate in Hz
  */
-uint32_t xPortGetTickRateHz(void);
+uint32_t xPortGetTickRateHz(void) __attribute__((deprecated("This function will be removed in IDF 7.0. Use CONFIG_FREERTOS_HZ directly instead.")));
 
 /**
  * @brief Set a watchpoint to watch the last 32 bytes of the stack
@@ -450,9 +446,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 
@@ -606,11 +599,10 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 // ------------------- Run Time Stats ----------------------
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) esp_timer_get_time())
-#else
-#define portGET_RUN_TIME_COUNTER_VALUE()        0
-#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()        xPortGetRunTimeCounterValue()
+#endif
 
 // --------------------- TCB Cleanup -----------------------
 
@@ -751,11 +743,26 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag[_cpu_])
 #else
 #define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
+// -------------- FPU softerware retention ------------------
+#if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW
+/**
+ * @brief Whether the FPU context is dirty on the given core.
+ *
+ * Returns non-zero if any task has used the FPU, such context should be
+ *                  saved during sleep retention.
+ *
+ * @param core_id Core id
+ * @return pdTRUE  FPU context is dirty
+ * @return pdFALSE FPU was not used
+ */
+BaseType_t xPortFPUContextIsDirty(BaseType_t core_id);
 #endif
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,15 +200,14 @@ esp_err_t esp_eth_phy_802_3_deinit(phy_802_3_t *phy_802_3);
 esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3);
 
 /**
- * @brief Performs hardware reset with specific reset pin assertion time
+ * @brief Performs hardware reset with internal timing configuration defined during initialization
  *
  * @param phy_802_3 IEEE 802.3 PHY object infostructure
- * @param reset_assert_us Hardware reset pin assertion time
  * @return
  *      - ESP_OK: reset Ethernet PHY successfully
  *      - ESP_ERR_NOT_ALLOWED: reset GPIO not defined
  */
-esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_assert_us);
+esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3);
 
 /**
  * @brief Detect PHY address

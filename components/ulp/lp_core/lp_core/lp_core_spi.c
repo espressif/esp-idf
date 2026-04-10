@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,25 +12,20 @@
 #include <string.h>
 #include "esp_err.h"
 #include "ulp_lp_core_spi.h"
+#include "ulp_lp_core_utils.h"
 #include "soc/lp_spi_struct.h"
 
 /* Use the register structure to access LP_SPI module registers */
 lp_spi_dev_t *lp_spi_dev = &LP_SPI;
 
-static inline esp_err_t lp_core_spi_wait_for_interrupt(int32_t ticks_to_wait)
+static inline esp_err_t lp_core_spi_wait_for_interrupt(int32_t cycles_to_wait)
 {
-    uint32_t to = 0;
+    uint32_t timeout_start = ulp_lp_core_get_cpu_cycles();
     while (!lp_spi_dev->spi_dma_int_raw.reg_trans_done_int_raw) {
-        if (ticks_to_wait > -1) {
-            /* If the ticks_to_wait value is not -1, keep track of ticks and
-             * break from the loop once the timeout is reached.
-             */
-            to++;
-            if (to >= ticks_to_wait) {
-                /* Clear interrupt bits */
-                lp_spi_dev->spi_dma_int_clr.reg_trans_done_int_clr = 1;
-                return ESP_ERR_TIMEOUT;
-            }
+        if (ulp_lp_core_is_timeout_elapsed(timeout_start, cycles_to_wait)) {
+            /* Clear interrupt bits */
+            lp_spi_dev->spi_dma_int_clr.reg_trans_done_int_clr = 1;
+            return ESP_ERR_TIMEOUT;
         }
     }
 
@@ -41,7 +36,7 @@ static inline esp_err_t lp_core_spi_wait_for_interrupt(int32_t ticks_to_wait)
 ////////////////////////////////// Public APIs ///////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-esp_err_t lp_core_lp_spi_master_transfer(lp_spi_transaction_t *trans_desc, int32_t ticks_to_wait)
+esp_err_t lp_core_lp_spi_master_transfer(lp_spi_transaction_t *trans_desc, int32_t cycles_to_wait)
 {
     esp_err_t ret = ESP_OK;
 
@@ -130,7 +125,7 @@ esp_err_t lp_core_lp_spi_master_transfer(lp_spi_transaction_t *trans_desc, int32
             lp_spi_dev->spi_cmd.reg_usr = 1;
 
             /* Wait for the transaction to complete */
-            ret = lp_core_spi_wait_for_interrupt(ticks_to_wait);
+            ret = lp_core_spi_wait_for_interrupt(cycles_to_wait);
             if (ret != ESP_OK) {
                 return ret;
             }
@@ -152,7 +147,7 @@ esp_err_t lp_core_lp_spi_master_transfer(lp_spi_transaction_t *trans_desc, int32
     return ret;
 }
 
-esp_err_t lp_core_lp_spi_slave_transfer(lp_spi_transaction_t *trans_desc, int32_t ticks_to_wait)
+esp_err_t lp_core_lp_spi_slave_transfer(lp_spi_transaction_t *trans_desc, int32_t cycles_to_wait)
 {
     esp_err_t ret = ESP_OK;
 
@@ -203,7 +198,7 @@ esp_err_t lp_core_lp_spi_slave_transfer(lp_spi_transaction_t *trans_desc, int32_
 
     while (rx_idx < length_in_bytes) {
         /* Wait for the transmission to complete */
-        ret = lp_core_spi_wait_for_interrupt(ticks_to_wait);
+        ret = lp_core_spi_wait_for_interrupt(cycles_to_wait);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -247,7 +242,7 @@ esp_err_t lp_core_lp_spi_slave_transfer(lp_spi_transaction_t *trans_desc, int32_
         lp_spi_dev->spi_cmd.reg_usr = 1;
 
         /* Wait for the transaction to complete */
-        ret = lp_core_spi_wait_for_interrupt(ticks_to_wait);
+        ret = lp_core_spi_wait_for_interrupt(cycles_to_wait);
         if (ret != ESP_OK) {
             return ret;
         }

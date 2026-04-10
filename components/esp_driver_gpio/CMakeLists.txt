@@ -32,5 +32,6 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_REQUIRES esp_pm
+                       REQUIRES esp_hal_gpio
                        LDFRAGMENTS "linker.lf"
                       )

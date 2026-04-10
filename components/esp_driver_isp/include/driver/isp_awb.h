@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,18 +20,22 @@ extern "C" {
  */
 typedef struct {
     isp_awb_sample_point_t sample_point;                /*!< AWB sample point of the ISP pipeline.
-                                                         *   ISP_AWB_SAMPLE_POINT_BEFORE_CCM: sample before Color Correction Matrix(CCM).
-                                                         *   ISP_AWB_SAMPLE_POINT_AFTER_CCM: sample after Color Correction Matrix(CCM).
-                                                         *   If your camera support to set the manual gain to the RGB channels,
-                                                         *   then you can choose to sample before CCM, and set the gain to the camera registers.
-                                                         *   If your camera doesn't support the manual gain or don't want to change the camera configuration,
-                                                         *   then you can choose to sample after CCM, and set the calculated gain to the CCM
+                                                         *   ISP_AWB_SAMPLE_POINT_x: see TRM for more details
+                                                         *
+                                                         *   Different sample points collect different color statistics, which can be used
+                                                         *   to match different hardware pipelines and AWB tuning strategies.
                                                          */
-    isp_window_t window;                                /*!< Statistic window of AWB.
+    isp_window_t window;                                /*!< Statistic main window of AWB.
                                                          *   Suggest to set it at the middle of the image and a little smaller than the whole image.
                                                          *   It will be more reliable because the edges of image are easily to be overexposure,
                                                          *   the overexposure pixels are almost at maximum luminance,
                                                          *   which are not good references to calculate the gain for white balance.
+                                                         */
+    isp_window_t subwindow;                              /*!< Statistic subwindow of AWB.
+                                                         *   Need to be set no greater than the main window.
+                                                         *   It will be evenly divided into a grid of ISP_AWB_WINDOW_X_NUM * ISP_AWB_WINDOW_Y_NUM blocks.
+                                                         *   The blocks share the same restrictions in R/G, B/G and luminance range as the main window.
+                                                         *   The statistics result of each block will be returned in the `isp_awb_stat_result_t::subwin_result` field.
                                                          */
     struct {
         isp_u32_range_t luminance;                     /*!< Luminance range of the white patch. Range [0, 255 * 3]

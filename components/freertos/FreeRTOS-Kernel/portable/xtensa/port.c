@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -48,6 +48,10 @@
 #include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
 #include "port_systick.h"
 #include "esp_cpu.h"
+#include <xtensa/hal.h>             /* required for xthal_get_ccount() */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 #include "esp_memory_utils.h"
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
@@ -220,30 +224,36 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
     LOW ADDRESS
             |---------------------------|   Linker Symbols
             | Section                   |   --------------
-            | .flash.rodata             |
-         0x0|---------------------------| <- _flash_rodata_start
-          ^ | Other Data                |
-          | |---------------------------| <- _thread_local_start
-          | | .tbss                     | ^
-          V |                           | |
-      0xNNN | int example;              | | tls_area_size
-            |                           | |
-            | .tdata                    | V
-            |---------------------------| <- _thread_local_end
+            | .flash.tdata              |
+         0x0|---------------------------| <- _thread_local_data_start  ^
+            | .flash.tdata              |                              |
+            | int var_1 = 1;            |                              |
+            |                           | <- _thread_local_data_end    |
+            |                           | <- _thread_local_bss_start   | tls_area_size
+            |                           |                              |
+            | .flash.tbss (NOLOAD)      |                              |
+            | int var_2;                |                              |
+            |---------------------------| <- _thread_local_bss_end     V
             | Other data                |
             | ...                       |
             |---------------------------|
     HIGH ADDRESS
     */
     // Calculate the TLS area's size (rounded up to multiple of 16 bytes).
-    extern int _thread_local_start, _thread_local_end, _flash_rodata_start, _flash_rodata_align;
-    const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
+    extern int _tls_section_alignment;
+    extern char _thread_local_data_start, _thread_local_data_end;
+    extern char _thread_local_bss_start, _thread_local_bss_end;
+    const uint32_t tls_data_size = (uint32_t)&_thread_local_data_end - (uint32_t)&_thread_local_data_start;
+    const uint32_t tls_bss_size = (uint32_t)&_thread_local_bss_end - (uint32_t)&_thread_local_bss_start;
+    const uint32_t tls_area_size = ALIGNUP(16, tls_data_size + tls_bss_size);
     // TODO: check that TLS area fits the stack
 
     // Allocate space for the TLS area on the stack. The area must be allocated at a 16-byte aligned address
     uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
-    // Initialize the TLS area with the initialization values of each TLS variable
-    memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
+    // Initialize the TLS data with the initialization values of each TLS variable
+    memcpy((void *)uxStackPointer, &_thread_local_data_start, tls_data_size);
+    // Initialize the TLS bss with zeroes
+    memset((void *)(uxStackPointer + tls_data_size), 0, tls_bss_size);
 
     /*
     Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
@@ -270,10 +280,10 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
         - "offset = address - tls_section_vma + align_up(TCB_SIZE, tls_section_alignment)"
         - TCB_SIZE is hardcoded to 8
     */
-    const uint32_t tls_section_align = (uint32_t)&_flash_rodata_align;  // ALIGN value of .flash.rodata section
+    const uint32_t tls_section_align = (uint32_t)&_tls_section_alignment;  // ALIGN value of .flash.tdata section
     #define TCB_SIZE 8
     const uint32_t base = ALIGNUP(tls_section_align, TCB_SIZE);
-    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start) - base;
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - base;
 
     return uxStackPointer;
 }
@@ -458,7 +468,7 @@ void vPortAssertIfInISR(void)
     configASSERT(xPortInIsrContext() == 0);
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+BaseType_t xPortInterruptedFromISRContext(void)
 {
     return (port_interruptNesting[xPortGetCoreID()] != 0);
 }
@@ -649,16 +659,6 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         vTaskPreDeletionHook( pxTCB );
     #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
 
-    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-        /*
-         * If the user is using the legacy task pre-deletion hook, call it.
-         * Todo: Will be removed in IDF-8097
-         */
-        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
-        extern void vPortCleanUpTCB( void * pxTCB );
-        vPortCleanUpTCB( pxTCB );
-    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
-
     #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
         /* Call TLS pointers deletion callbacks */
         vPortTLSPointersDelCb( pxTCB );
@@ -669,3 +669,18 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         vPortCleanUpCoprocArea( pxTCB );
     #endif /* XCHAL_CP_NUM > 0 */
 }
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else // Uses CCOUNT
+    return (configRUN_TIME_COUNTER_TYPE) xthal_get_ccount();
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */

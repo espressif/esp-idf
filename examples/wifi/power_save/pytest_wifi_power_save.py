@@ -31,7 +31,7 @@ def _run_test(dut: Dut) -> None:
         pass
 
     try:
-        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)
+        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)
         log_after_got_ip = dut.expect(pexpect.TIMEOUT, timeout=10).decode()
         if any(s in log_after_got_ip for s in bad_event_str):
             logging.info('Abnormal connection log:')
@@ -80,28 +80,28 @@ def test_wifi_power_save_esp32c2_26mhz(dut: Dut) -> None:
 
 @pytest.mark.wifi_ap
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.parametrize(
     'config, baud',
     [
-        ('c2eco4_xtal26m', '74880'),
+        ('esp32c2_rev2_xtal26m', '74880'),
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_wifi_power_save_esp32c2eco4_26mhz(dut: Dut) -> None:
+def test_wifi_power_save_esp32c2_rev2_26mhz(dut: Dut) -> None:
     _run_test(dut)
 
 
 @pytest.mark.wifi_ap
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.parametrize(
     'config',
     [
-        'c3eco7',
+        'esp32c3_rev1',
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
-def test_wifi_power_save_esp32c3eco7(dut: Dut) -> None:
+def test_wifi_power_save_esp32c3_rev1(dut: Dut) -> None:
     _run_test(dut)

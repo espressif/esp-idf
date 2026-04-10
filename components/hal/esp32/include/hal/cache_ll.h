@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,7 +100,6 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
@@ -131,20 +130,18 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 /**
  * Enable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be enabled
  * @param enable      1: enable; 0: disable
  */
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     (void) mask;
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
-
     uint32_t bus_mask = 0;
-    if (cache_id == 0) {
+    if (bus_id == 0) {
         bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS0) ? DPORT_PRO_CACHE_MASK_IRAM0 : 0);
         bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS1) ? DPORT_PRO_CACHE_MASK_IRAM1 : 0);
         bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS2) ? DPORT_PRO_CACHE_MASK_IROM0 : 0);
@@ -200,18 +197,16 @@ static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
 /**
  * Disable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be enabled
  * @param enable      1: enable; 0: disable
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     (void) mask;
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
-
     uint32_t bus_mask = 0;
-    if (cache_id == 0) {
+    if (bus_id == 0) {
         bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS0) ? DPORT_PRO_CACHE_MASK_IRAM0 : 0);
         bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS1) ? DPORT_PRO_CACHE_MASK_IRAM1 : 0);
         bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS2) ? DPORT_PRO_CACHE_MASK_IROM0 : 0);

@@ -4,3 +4,5 @@ components/log/test_apps:
   enable:
     - if: IDF_TARGET == "esp32"
       reason: only test on esp32
+  depends_components:
+    - log

@@ -3,7 +3,7 @@
 #
 # It is recommended to NOT USE this CMake script directly
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(TOOL "dfu-util")
 set(CMD "${TOOL}")

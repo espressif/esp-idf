@@ -3,10 +3,11 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="未更新", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="未更新", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8"}
-{IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="未更新", esp32p4="GPIO54"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="未更新", esp32p4="GPIO53"}
+{IDF_TARGET_ANA_CMPR_UNITS: default="1", esp32p4="2"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="NOT UPDATED", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9", esp32h21="GPIO7"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="NOT UPDATED", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8", esp32h21="GPIO6"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="NOT UPDATED", esp32p4="GPIO54"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="NOT UPDATED", esp32p4="GPIO53"}
 
 简介
 ----
@@ -15,7 +16,7 @@
 
 当用于比较模拟信号时，集成模拟比较器可以低成本替代运算放大器。不同于运算放大器的连续比较，ESP 模拟比较器由时钟源驱动，其采样频率取决于时钟的频率。
 
-{IDF_TARGET_NAME} 上的模拟比较器有 {IDF_TARGET_SOC_ANA_CMPR_NUM} 个单元，单元中的通道如下：
+{IDF_TARGET_NAME} 上的模拟比较器有 {IDF_TARGET_ANA_CMPR_UNITS} 个单元，单元中的通道如下：
 
 **UNIT0**
 

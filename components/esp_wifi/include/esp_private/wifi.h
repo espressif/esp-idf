@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,19 @@ typedef struct {
     QueueHandle_t handle; /**< FreeRTOS queue handler */
     void *storage;        /**< storage for FreeRTOS queue */
 } wifi_static_queue_t;
+
+struct nan_sync_callbacks {
+    void (* service_match)(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6], uint16_t capab,
+                           uint8_t ssi_ver, uint8_t *ssi, uint16_t ssi_len);
+    void (* replied)(uint8_t pub_id, uint8_t sub_id, uint8_t pub_mac[6], uint8_t *ssi, uint16_t ssi_len);
+    void (* receive)(uint8_t svc_id, uint8_t peer_svc_id, uint8_t peer_mac[6], uint8_t *ssi, uint16_t ssi_len);
+    void (* ndp_indication)(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[6], uint8_t peer_ndi[6],
+                            uint8_t *ssi, uint16_t ssi_len);
+    void (* ndp_confirm)(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6], uint8_t peer_ndi[6],
+                         uint8_t own_ndi[6], uint8_t *ssi, uint16_t ssi_len);
+    void (* ndp_terminated)(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[6]);
+    void (* action_txdone)(uint32_t context, bool tx_status);
+};
 
 /**
   * @brief WiFi log level
@@ -486,6 +499,9 @@ esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *pr
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG : invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT : No connection between STA and AP
   */
 esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t aid, uint8_t *primary, uint8_t *second);
 
@@ -497,6 +513,9 @@ esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG : invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT : No connection between STA and AP
   */
 esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
 
@@ -708,13 +727,14 @@ esp_err_t esp_nan_internal_subscribe_service(const wifi_nan_subscribe_cfg_t *sub
   *
   * @attention  This API should be called after WIFI_EVENT_NAN_SVC_MATCH event is received.
   *
-  * @param      fup_params  Configuration parameters for sending a Follow-up to the Peer.
+  * @param[in]  fup_params  Configuration parameters for sending a Follow-up to the Peer.
+  * @param[out] context Context returned for Follow-up frame to be matched in Tx done.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_send_followup(const wifi_nan_followup_params_t *fup_params);
+esp_err_t esp_nan_internal_send_followup(const wifi_nan_followup_params_t *fup_params, uint32_t *context);
 
 /**
   * @brief      Send Datapath Request to the Publisher with matching service
@@ -754,6 +774,19 @@ esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp);
   *    - others: failed
   */
 esp_err_t esp_nan_internal_datapath_end(wifi_nan_datapath_end_req_t *req);
+
+/**
+  * @brief      End NAN Datapath that is active
+  *
+  * @attention  This API should be called after receiving WIFI_EVENT_NDP_CONFIRM event.
+  *
+  * @param      req  NAN Datapath end request parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_register_callbacks(struct nan_sync_callbacks *cb);
 
 /**
   * @brief     Connect WiFi station to the AP.
@@ -807,6 +840,33 @@ esp_err_t esp_wifi_beacon_offset_configure(wifi_beacon_offset_config_t *config);
  * @brief empty init pm_beacon_offset.
  */
 void pm_beacon_offset_funcs_empty_init(void);
+
+/**
+ * @brief This API is not context safe and enable easy fragment just for internal test only.
+ */
+void esp_wifi_enable_easy_fragment(bool enable);
+
+/**
+  * @brief     Function signature for received Vendor-Specific Information Element callback with return value.
+  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
+  * @param     type Information element type, based on frame type received.
+  * @param     sa Source 802.11 address.
+  * @param     vnd_ie Pointer to the vendor specific element data received.
+  * @param     rssi Received signal strength indication.
+  */
+typedef esp_err_t (*esp_vendor_ie_cb_with_ret_t)(void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
+
+/**
+  * @brief     Register Vendor-Specific Information Element monitoring callback.
+  *
+  * @param     cb   Callback function with return value
+  * @param     ctx  Context argument, passed to callback function.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_set_vendor_ie_with_ret_cb(esp_vendor_ie_cb_with_ret_t cb, void *ctx);
 
 #ifdef __cplusplus
 }

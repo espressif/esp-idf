@@ -71,7 +71,16 @@ choice SPIRAM_USE
     config SPIRAM_USE_MEMMAP
         bool "Integrate RAM into memory map"
     config SPIRAM_USE_CAPS_ALLOC
-        bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
+        bool "Add RAM to heap_caps allocator (malloc() stays internal by default)"
+        help
+            Add SPI RAM to the capability allocator.
+
+            Use heap_caps_malloc(..., MALLOC_CAP_SPIRAM) to explicitly allocate
+            from SPI RAM. SPI RAM may also be returned by
+            heap_caps_malloc(..., MALLOC_CAP_DEFAULT), since this heap is also
+            registered with MALLOC_CAP_DEFAULT.
+
+            Standard malloc() does not allocate from SPI RAM by default in this mode.
     config SPIRAM_USE_MALLOC
         bool "Make RAM allocatable using malloc() as well"
         select FREERTOS_SUPPORT_STATIC_ALLOCATION

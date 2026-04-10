@@ -144,18 +144,25 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 *******************************************************************************/
 void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
                         BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type,
+                        BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent,
                         UINT8 phy_mask, tBTA_BLE_CONN_PARAMS *phy_1m_conn_params, tBTA_BLE_CONN_PARAMS *phy_2m_conn_params,
                         tBTA_BLE_CONN_PARAMS *phy_coded_conn_params)
 {
     tBTA_GATTC_API_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_GATTC_API_OPEN));
         p_buf->hdr.event = BTA_GATTC_API_OPEN_EVT;
 
         p_buf->client_if = client_if;
         p_buf->is_direct = is_direct;
         p_buf->transport = transport;
         p_buf->is_aux = is_aux;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        p_buf->is_pawr_synced = is_pawr_synced;
+        p_buf->adv_handle = adv_handle;
+        p_buf->subevent = subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         p_buf->remote_addr_type = remote_addr_type;
         p_buf->own_addr_type = own_addr_type;
         p_buf->phy_mask = phy_mask;
@@ -359,7 +366,7 @@ void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid,
 void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
                           btgatt_db_element_t **db, UINT16 *count)
 {
-    bta_gattc_get_db_with_opration(conn_id,
+    bta_gattc_get_db_with_operation(conn_id,
                                    GATT_OP_GET_ALL_CHAR,
                                    0,
                                    NULL,
@@ -374,7 +381,7 @@ void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle
 void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
                                 btgatt_db_element_t **db, UINT16 *count)
 {
-    bta_gattc_get_db_with_opration(conn_id,
+    bta_gattc_get_db_with_operation(conn_id,
                                    GATT_OP_GET_ALL_DESCRI,
                                    char_handle,
                                    NULL,
@@ -389,7 +396,7 @@ void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
 void BTA_GATTC_GetCharByUUID(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, tBT_UUID char_uuid,
                              btgatt_db_element_t **db, UINT16 *count)
 {
-    bta_gattc_get_db_with_opration(conn_id,
+    bta_gattc_get_db_with_operation(conn_id,
                                    GATT_OP_GET_CHAR_BY_UUID,
                                    0,
                                    NULL,
@@ -405,7 +412,7 @@ void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t en
                               tBT_UUID char_uuid, tBT_UUID descr_uuid,
                               btgatt_db_element_t **db, UINT16 *count)
 {
-    bta_gattc_get_db_with_opration(conn_id,
+    bta_gattc_get_db_with_operation(conn_id,
                                    GATT_OP_GET_DESCRI_BY_UUID,
                                    0,
                                    NULL,
@@ -420,7 +427,7 @@ void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t en
 void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID descr_uuid,
                                     btgatt_db_element_t **db, UINT16 *count)
 {
-    bta_gattc_get_db_with_opration(conn_id,
+    bta_gattc_get_db_with_operation(conn_id,
                                    GATT_OP_GET_DESCRI_BY_HANDLE,
                                    char_handle,
                                    NULL,
@@ -435,7 +442,7 @@ void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID
 void BTA_GATTC_GetIncludeService(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
                                  tBT_UUID *incl_uuid, btgatt_db_element_t **db, UINT16 *count)
 {
-    bta_gattc_get_db_with_opration(conn_id,
+    bta_gattc_get_db_with_operation(conn_id,
                                    GATT_OP_GET_INCLUDE_SVC,
                                    0,
                                    incl_uuid,
@@ -522,9 +529,8 @@ void BTA_GATTC_ReadCharacteristic(UINT16 conn_id, UINT16 handle, tBTA_GATT_AUTH_
 void BTA_GATTC_ReadCharDescr (UINT16 conn_id, UINT16 handle, tBTA_GATT_AUTH_REQ auth_req)
 {
     tBTA_GATTC_API_READ  *p_buf;
-    UINT16  len = (UINT16)(sizeof(tBTA_GATT_ID) + sizeof(tBTA_GATTC_API_READ));
 
-    if ((p_buf = (tBTA_GATTC_API_READ *) osi_malloc(len)) != NULL) {
+    if ((p_buf = (tBTA_GATTC_API_READ *) osi_malloc(sizeof(tBTA_GATTC_API_READ))) != NULL) {
         memset(p_buf, 0, sizeof(tBTA_GATTC_API_READ));
 
         p_buf->hdr.event = BTA_GATTC_API_READ_EVT;
@@ -554,6 +560,7 @@ void BTA_GATTC_ReadCharDescr (UINT16 conn_id, UINT16 handle, tBTA_GATT_AUTH_REQ 
 void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
                             tBTA_GATT_AUTH_REQ auth_req)
 {
+    // p_read_multi should not be NULL
     tBTA_GATTC_API_READ_MULTI  *p_buf;
     //tBTA_GATTC_API_READ_MULTI          *p_value;
     UINT16      len = (UINT16)(sizeof(tBTA_GATTC_API_READ_MULTI));
@@ -915,7 +922,7 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF client_if,
 
     if (!handle)
     {
-        APPL_TRACE_ERROR("deregistration failed, handle is 0");
+        APPL_TRACE_ERROR("registration failed, handle is 0");
         return status;
     }
 
@@ -1111,10 +1118,15 @@ typedef struct {
     } uuid;
 } __attribute__((packed)) tAPP_UUID;
 
-uint8_t BTA_GATTC_Discover(uint8_t gatt_if, uint16_t conn_id, void *uuid, uint8_t disc_type, uint16_t s_handle, uint16_t e_handle)
+int BTA_GATTC_Discover(uint8_t gatt_if, uint16_t conn_id, void *uuid, uint8_t disc_type, uint16_t s_handle, uint16_t e_handle)
 {
     tGATT_STATUS status;
     tGATT_DISC_PARAM param;
+
+    if (uuid == NULL && disc_type == GATT_DISC_SRVC_BY_UUID) {
+        APPL_TRACE_ERROR("%s invalid parameters", __func__);
+        return -1;
+    }
     tAPP_UUID *app_uuid = (tAPP_UUID *)uuid;
 
     conn_id = (UINT16)((((UINT8)conn_id) << 8) | gatt_if);
@@ -1138,6 +1150,7 @@ uint8_t BTA_GATTC_Discover(uint8_t gatt_if, uint16_t conn_id, void *uuid, uint8_
             memcpy(param.service.uu.uuid128, app_uuid->uuid.uuid128, LEN_UUID_128);
         } else {
             APPL_TRACE_ERROR("%s invalid uuid len %u", __func__, app_uuid->len);
+            return -1;
         }
     }
 

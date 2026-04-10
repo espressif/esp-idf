@@ -12,8 +12,8 @@ entries:
         spi_eeprom: spi_eeprom_deinit (default)
         spi_eeprom: spi_eeprom_init (default)
 
-[mapping:ext_newlib]
-archive: libnewlib.a
+[mapping:ext_esp_libc]
+archive: libesp_libc.a
 entries:
     if EXAMPLE_USE_SPI1_PINS = y:
         time:usleep (noflash)

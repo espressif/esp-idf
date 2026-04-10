@@ -12,8 +12,8 @@
 
 typedef struct gptimer_platform_t {
     _lock_t mutex;                             // platform level mutex lock
-    gptimer_group_t *groups[SOC_TIMER_GROUPS]; // timer group pool
-    int group_ref_counts[SOC_TIMER_GROUPS];    // reference count used to protect group install/uninstall
+    gptimer_group_t *groups[TIMG_LL_GET(INST_NUM)]; // timer group pool
+    int group_ref_counts[TIMG_LL_GET(INST_NUM)];    // reference count used to protect group install/uninstall
 } gptimer_platform_t;
 
 // gptimer driver platform, it's always a singleton
@@ -48,10 +48,10 @@ gptimer_group_t *gptimer_acquire_group_handle(int group_id)
         // !!! HARDWARE SHARED RESOURCE !!!
         // the gptimer and watchdog reside in the same the timer group
         // we need to increase/decrease the reference count before enable/disable/reset the peripheral
-        PERIPH_RCC_ACQUIRE_ATOMIC(timer_group_periph_signals.groups[group_id].module, ref_count) {
+        PERIPH_RCC_ACQUIRE_ATOMIC(soc_timg_gptimer_signals[group_id][0].parent_module, ref_count) {
             if (ref_count == 0) {
-                timer_ll_enable_bus_clock(group_id, true);
-                timer_ll_reset_register(group_id);
+                timg_ll_enable_bus_clock(group_id, true);
+                timg_ll_reset_register(group_id);
             }
         }
         ESP_LOGD(TAG, "new group (%d) @%p", group_id, group);
@@ -76,9 +76,9 @@ void gptimer_release_group_handle(gptimer_group_t *group)
 
     if (do_deinitialize) {
         // disable bus clock for the timer group
-        PERIPH_RCC_RELEASE_ATOMIC(timer_group_periph_signals.groups[group_id].module, ref_count) {
+        PERIPH_RCC_RELEASE_ATOMIC(soc_timg_gptimer_signals[group_id][0].parent_module, ref_count) {
             if (ref_count == 0) {
-                timer_ll_enable_bus_clock(group_id, false);
+                timg_ll_enable_bus_clock(group_id, false);
             }
         }
         free(group);
@@ -92,13 +92,13 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     int timer_id = timer->timer_id;
     int group_id = timer->group->group_id;
     // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     if (src_clk == GPTIMER_CLK_SRC_RC_FAST) {
         // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
         // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
         periph_rtc_dig_clk8m_enable();
     }
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     timer->clk_src = src_clk;
 
     // get clock source frequency
@@ -111,19 +111,19 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     // driver will create different pm lock for that purpose, according to different clock source
     esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
 
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     if (src_clk == GPTIMER_CLK_SRC_RC_FAST) {
         // RC_FAST won't be turn off in sleep and won't change its frequency during DFS
         need_pm_lock = false;
     }
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
 
-#if SOC_TIMER_GROUP_SUPPORT_APB
+#if TIMER_LL_FUNC_CLOCK_SUPPORT_APB
     if (src_clk == GPTIMER_CLK_SRC_APB) {
         // APB clock frequency can be changed during DFS
         pm_lock_type = ESP_PM_APB_FREQ_MAX;
     }
-#endif // SOC_TIMER_GROUP_SUPPORT_APB
+#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_APB
 
 #if CONFIG_IDF_TARGET_ESP32C2
     if (src_clk == GPTIMER_CLK_SRC_PLL_F40M) {
@@ -135,7 +135,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
 #endif // CONFIG_IDF_TARGET_ESP32C2
 
     if (need_pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, timer_group_periph_signals.groups[group_id].module_name[timer_id], &timer->pm_lock),
+        ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, soc_timg_gptimer_signals[group_id][timer_id].module_name, &timer->pm_lock),
                             TAG, "create pm lock failed");
     }
 #endif // CONFIG_PM_ENABLE
@@ -143,7 +143,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     // !!! HARDWARE SHARED RESOURCE !!!
     // on some ESP chip, different peripheral's clock source setting are mixed in the same register
     // so we need to make this done in an atomic way
-    GPTIMER_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         timer_ll_set_clock_source(group_id, timer_id, src_clk);
         timer_ll_enable_clock(group_id, timer_id, true);
     }

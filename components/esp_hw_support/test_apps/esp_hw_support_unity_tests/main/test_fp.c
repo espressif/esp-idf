@@ -14,6 +14,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "hw_support_performance.h"
 
 /* Note: these functions are included here for unit test purposes. They are not needed for writing
  * normal code. If writing standard C floating point code, libgcc should correctly include implementations

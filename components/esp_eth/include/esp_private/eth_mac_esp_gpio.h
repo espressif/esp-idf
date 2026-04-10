@@ -23,6 +23,7 @@ esp_err_t emac_esp_iomux_rmii_init_tx_er(int num);
 esp_err_t emac_esp_iomux_rmii_init_rx_er(int num);
 esp_err_t emac_esp_iomux_mii_init_tx_er(int num);
 esp_err_t emac_esp_iomux_mii_init_rx_er(int num);
+esp_err_t emac_esp_gpio_matrix_init_ptp_pps(int num);
 esp_err_t emac_esp_gpio_init_smi(const emac_esp_smi_gpio_config_t *smi_gpio);
 esp_err_t emac_esp_gpio_deinit_all(void);
 

@@ -37,7 +37,6 @@
     sleep_modes
     soc_caps
     system_time
-    :SOC_ASYNC_MEMCPY_SUPPORTED: async_memcpy
     :esp32: himem
     ulp
     wdts

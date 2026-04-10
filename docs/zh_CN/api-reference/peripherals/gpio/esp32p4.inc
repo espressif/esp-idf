@@ -268,32 +268,32 @@
       -
 
     * - GPIO49
-      - ADC1_CH8
+      - ADC2_CH0
       -
       -
 
     * - GPIO50
-      - ADC1_CH9
+      - ADC2_CH1
       -
       -
 
     * - GPIO51
-      - ADC1_CH10，ANA_CMPR_CH0 外部参考电压
+      - ADC2_CH2，ANA_CMPR_CH0 外部参考电压
       -
       -
 
     * - GPIO52
-      - ADC1_CH11，ANA_CMPR_CH0 同相输入
+      - ADC2_CH3，ANA_CMPR_CH0 同相输入
       -
       -
 
     * - GPIO53
-      - ADC1_CH12，ANA_CMPR_CH1 外部参考电压
+      - ADC2_CH4，ANA_CMPR_CH1 外部参考电压
       -
       -
 
     * - GPIO54
-      - ADC1_CH13，ANA_CMPR_CH1 同相输入
+      - ADC2_CH5，ANA_CMPR_CH1 同相输入
       -
       -
 

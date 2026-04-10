@@ -67,10 +67,6 @@ config ESP_ROM_HAS_SPI_FLASH_MMAP
     bool
     default y
 
-config ESP_ROM_WITHOUT_REGI2C
-    bool
-    default y
-
 config ESP_ROM_HAS_NEWLIB
     bool
     default y
@@ -112,5 +108,13 @@ config ESP_ROM_CLIC_INT_THRESH_PATCH
     default y
 
 config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+    bool
+    default y
+
+config ESP_ROM_DELAY_US_PATCH
+    bool
+    default y
+
+config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
     bool
     default y

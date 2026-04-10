@@ -19,12 +19,12 @@ void esp_cpu_intr_get_desc(int core_id, int intr_num, esp_cpu_intr_desc_t *intr_
     // [TODO: IDF-2465]
     const uint32_t base_rsvd_mask = BIT(1) | BIT(3) | BIT(4) | BIT(6) | BIT(7);
 
-    /* On the ESP32-C6, interrupt 14 is reserved for ESP-TEE
+    /* On the ESP32-C6, interrupt 31 is reserved for ESP-TEE
      * for operations related to secure peripherals under its control
      * (e.g. AES, SHA, APM)
      */
 #if CONFIG_SECURE_ENABLE_TEE
-    const uint32_t rsvd_mask = base_rsvd_mask | BIT(14);
+    const uint32_t rsvd_mask = base_rsvd_mask | BIT(31);
 #else
     const uint32_t rsvd_mask = base_rsvd_mask;
 #endif

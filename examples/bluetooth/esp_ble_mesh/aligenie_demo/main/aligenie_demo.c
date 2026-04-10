@@ -1,7 +1,7 @@
 /*
  * AliGenie - Example
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,7 +16,7 @@
 #include "esp_mac.h"
 #include "nvs_flash.h"
 
-#include "mbedtls/sha256.h"
+#include "psa/crypto.h"
 
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -32,6 +32,8 @@
 #include "genie_mesh.h"
 #include "ble_mesh_example_init.h"
 #include "ble_mesh_example_nvs.h"
+#include "psa/crypto_struct.h"
+#include "psa/crypto_values.h"
 
 static const char *TAG  = "genie_demo";
 
@@ -419,11 +421,10 @@ void user_genie_event_handle(genie_event_t event, void *p_arg)
         ESP_LOGI(TAG, "GENIE_EVT_RESET_BY_REPEAT_NOTIFY");
         lightbulb_set_switch(false);
         lightbulb_effect_config_t effect1 = {
-            .red = 0,
-            .green = 255,
-            .blue = 0,
-            .max_brightness = 100,
-            .min_brightness = 0,
+            .hue = 120,
+            .saturation = 100,
+            .max_value_brightness = 100,
+            .min_value_brightness = 0,
             .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
             .effect_type = EFFECT_BLINK,
             .mode = WORK_COLOR,
@@ -435,11 +436,10 @@ void user_genie_event_handle(genie_event_t event, void *p_arg)
         ESP_LOGI(TAG, "GENIE_EVT_HW_RESET_START");
         lightbulb_set_switch(false);
         lightbulb_effect_config_t effect2 = {
-            .red = 0,
-            .green = 255,
-            .blue = 0,
-            .max_brightness = 100,
-            .min_brightness = 0,
+            .hue = 120,
+            .saturation = 100,
+            .max_value_brightness = 100,
+            .min_value_brightness = 0,
             .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
             .effect_type = EFFECT_BLINK,
             .mode = WORK_COLOR,
@@ -1009,7 +1009,7 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 #if GENIE_VENDOR_MODEL_VERSION == 0
 
 #elif GENIE_VENDOR_MODEL_VERSION == 1
-            // local bind AppKEY and Subcribe Group Address
+            // local bind AppKEY and Subscribe Group Address
             local_operation(param->value.state_change.appkey_add.app_idx);
             // genie mesh init
             genie_mesh_init();
@@ -1315,11 +1315,10 @@ static esp_err_t ble_mesh_init(void)
         ESP_LOGW(TAG, "node not provisioned");
         lightbulb_set_switch(false);
         lightbulb_effect_config_t effect3 = {
-            .red = 0,
-            .green = 255,
-            .blue = 0,
-            .max_brightness = 100,
-            .min_brightness = 0,
+            .hue = 120,
+            .saturation = 100,
+            .max_value_brightness = 100,
+            .min_value_brightness = 0,
             .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
             .effect_type = EFFECT_BLINK,
             .mode = WORK_COLOR,
@@ -1338,7 +1337,12 @@ void config_triples(void)
     ESP_LOGI(TAG, "authvalue_string: %s", authvalue_string);
 
     uint8_t sha256_out[32] = {0};
-    mbedtls_sha256((const unsigned char *)authvalue_string, strlen(authvalue_string), sha256_out, 0);
+    size_t hash_length = 0;
+    psa_status_t status = psa_hash_compute(PSA_ALG_SHA_256, (const uint8_t *)authvalue_string, strlen(authvalue_string), sha256_out, sizeof(sha256_out), &hash_length);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to compute hash, status: %ld", status);
+        return;
+    }
     memcpy(static_val, sha256_out, 16);
     provision.static_val = static_val;
 

@@ -264,6 +264,8 @@ static void msc_event_cb(const msc_host_event_t *event, void *arg)
             .data.device_handle = event->device.handle,
         };
         xQueueSend(app_queue, &message, portMAX_DELAY);
+    } else {
+        ESP_LOGW(TAG, "Unsupported MSC event: %d (possibly suspend/resume)", event->event);
     }
 }
 
@@ -286,7 +288,7 @@ static void print_device_info(msc_host_device_info_t *info)
     printf("\t Sector count: %"PRIu32"\n", info->sector_count);
     printf("\t PID: 0x%04X \n", info->idProduct);
     printf("\t VID: 0x%04X \n", info->idVendor);
-#ifndef CONFIG_NEWLIB_NANO_FORMAT
+#ifndef CONFIG_LIBC_NEWLIB_NANO_FORMAT
     wprintf(L"\t iProduct: %S \n", info->iProduct);
     wprintf(L"\t iManufacturer: %S \n", info->iManufacturer);
     wprintf(L"\t iSerialNumber: %S \n", info->iSerialNumber);
@@ -421,7 +423,7 @@ static void speed_test(int slot)
  */
 static void usb_task(void *args)
 {
-    const usb_host_config_t host_config = { .intr_flags = ESP_INTR_FLAG_LEVEL1 };
+    const usb_host_config_t host_config = { .intr_flags = ESP_INTR_FLAG_LOWMED };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 
     const msc_host_driver_config_t msc_config = {
@@ -508,7 +510,7 @@ void app_main(void)
         .intr_type = GPIO_INTR_NEGEDGE,
     };
     ESP_ERROR_CHECK(gpio_config(&input_pin));
-    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1));
+    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_LOWMED));
     ESP_ERROR_CHECK(gpio_isr_handler_add(APP_QUIT_PIN, gpio_cb, NULL));
 
     ESP_LOGI(TAG, "Waiting for USB flash drive to be connected");

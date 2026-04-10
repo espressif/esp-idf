@@ -1,21 +1,26 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "esp_log.h"
+#include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
+#include "soc/reset_reasons.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_rom_sys.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
                                        uint32_t *freq_value)
@@ -32,11 +37,20 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     case SOC_MOD_CLK_XTAL:
         clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
         break;
+    case SOC_MOD_CLK_SYS:
+        clk_src_freq = clk_hal_sys_get_freq_hz();
+        break;
+    case SOC_MOD_CLK_APB:
+        clk_src_freq = clk_hal_apb_get_freq_hz();
+        break;
     case SOC_MOD_CLK_PLL_F20M:
         clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ / clk_ll_pll_f20m_get_divider() * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F80M:
         clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_PLL_F120M:
+        clk_src_freq = CLK_LL_PLL_120M_FREQ_MHZ * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F160M:
         clk_src_freq = CLK_LL_PLL_160M_FREQ_MHZ * MHZ;
@@ -89,8 +103,28 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     return ESP_OK;
 }
 
+#define ENUM2ARRAY(clk_src) (clk_src - SOC_MOD_CLK_PLL_F20M)
+static int16_t s_pll_src_cg_ref_cnt[SOC_MOD_CLK_PLL_F240M - SOC_MOD_CLK_PLL_F20M + 1] = { 0 };
+static bool esp_clk_tree_initialized = false;
+
 void esp_clk_tree_initialize(void)
 {
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    if ((rst_reason == RESET_REASON_CPU_SW) || (rst_reason == RESET_REASON_CPU_MWDT)          \
+            || (rst_reason == RESET_REASON_CPU_RWDT) || (rst_reason == RESET_REASON_CPU_JTAG) \
+            || (rst_reason == RESET_REASON_CPU_LOCKUP)) {
+        esp_clk_tree_initialized = true;
+        return;
+    }
+
+    _clk_gate_ll_ref_20m_clk_en(false);
+    _clk_gate_ll_ref_25m_clk_en(false);
+    _clk_gate_ll_ref_50m_clk_en(false);
+    _clk_gate_ll_ref_80m_clk_en(false);
+    _clk_gate_ll_ref_120m_clk_en(false);
+    _clk_gate_ll_ref_160m_clk_en(false);
+    _clk_gate_ll_ref_240m_clk_en(false);
+    esp_clk_tree_initialized = true;
 }
 
 bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
@@ -99,42 +133,42 @@ bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
     return false;
 }
 
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
     (void)clk_circuit; (void)enable;
-    return ESP_OK; // TODO: PM-354
+    return false; // TODO: PM-653
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
-    if(!enable) {
-        // TODO: remove it after reference counter supported
+    if (!esp_clk_tree_initialized || (clk_src < SOC_MOD_CLK_PLL_F20M) || (clk_src > SOC_MOD_CLK_PLL_F240M)) {
         return ESP_OK;
     }
 
     PERIPH_RCC_ATOMIC() {
-        switch (clk_src) {
-        case SOC_MOD_CLK_PLL_F20M:
-            clk_gate_ll_ref_20m_clk_en(enable);
-            break;
-        case SOC_MOD_CLK_PLL_F25M:
-            clk_gate_ll_ref_25m_clk_en(enable);
-            break;
-        case SOC_MOD_CLK_PLL_F50M:
-            clk_gate_ll_ref_50m_clk_en(enable);
-            break;
-        case SOC_MOD_CLK_PLL_F80M:
-            clk_gate_ll_ref_80m_clk_en(enable);
-            break;
-        case SOC_MOD_CLK_PLL_F160M:
-            clk_gate_ll_ref_160m_clk_en(enable);
-            break;
-        case SOC_MOD_CLK_PLL_F240M:
-            clk_gate_ll_ref_240m_clk_en(enable);
-            break;
-        default:
-            break;
+        if (enable) {
+            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)]++;
+        }
+        if (s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] == 1) {
+            switch (clk_src) {
+                case SOC_MOD_CLK_PLL_F20M:  clk_gate_ll_ref_20m_clk_en(enable);  break;
+                case SOC_MOD_CLK_PLL_F25M:  clk_gate_ll_ref_25m_clk_en(enable);  break;
+                case SOC_MOD_CLK_PLL_F50M:  clk_gate_ll_ref_50m_clk_en(enable);  break;
+                case SOC_MOD_CLK_PLL_F80M:  clk_gate_ll_ref_80m_clk_en(enable);  break;
+                case SOC_MOD_CLK_PLL_F120M: clk_gate_ll_ref_120m_clk_en(enable); break;
+                case SOC_MOD_CLK_PLL_F160M: clk_gate_ll_ref_160m_clk_en(enable); break;
+                case SOC_MOD_CLK_PLL_F240M: clk_gate_ll_ref_240m_clk_en(enable); break;
+                default: break;
+            }
+        }
+        if (!enable) {
+            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)]--;
+        }
+        if (s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] < 0) {
+            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
+            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] = 0;
         }
     }
     return ESP_OK;
 }
+#undef ENUM2ARRAY

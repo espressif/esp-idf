@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@
 #endif
 
 /* apptrace module increases minimum stack usage */
-#if CONFIG_APPTRACE_ENABLE
+#if CONFIG_ESP_TRACE_TRANSPORT_APPTRACE
     #define STACK_OVERHEAD_APPTRACE    1280
 #else
     #define STACK_OVERHEAD_APPTRACE    0
@@ -168,13 +168,11 @@
     #define configUSE_STATS_FORMATTING_FUNCTIONS    1       /* Used by vTaskList() */
 #endif /* CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS */
 
-#if !CONFIG_FREERTOS_SMP
-    #if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
-        #define configRUN_TIME_COUNTER_TYPE    uint32_t
-    #elif CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64
-        #define configRUN_TIME_COUNTER_TYPE    uint64_t
-    #endif /* CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64 */
-#endif /* !CONFIG_FREERTOS_SMP */
+#if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+    #define configRUN_TIME_COUNTER_TYPE    uint32_t
+#elif CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+    #define configRUN_TIME_COUNTER_TYPE    uint64_t
+#endif /* CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64 */
 
 /* -------------------- Co-routines  ----------------------- */
 
@@ -234,10 +232,9 @@
  * Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs
  */
 #ifndef __ASSEMBLER__
-    #if CONFIG_SYSVIEW_ENABLE
-        #include "SEGGER_SYSVIEW_FreeRTOS.h"
-        #undef INLINE /* to avoid redefinition */
-    #endif /* CONFIG_SYSVIEW_ENABLE */
+    #if CONFIG_ESP_TRACE_ENABLE
+        #include "esp_trace_freertos.h"
+    #endif
 
     #if CONFIG_FREERTOS_SMP
 

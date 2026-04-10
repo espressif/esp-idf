@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,7 +121,7 @@ UINT16 OBEX_CreateConn(tOBEX_SVR_INFO *server, tOBEX_MSG_CBACK callback, UINT16 
     tOBEX_CCB *p_ccb = NULL;
 
     do {
-        if (server->tl >= OBEX_NUM_TL) {
+        if (!server || (server->tl >= OBEX_NUM_TL)) {
             ret = OBEX_INVALID_PARAM;
             break;
         }
@@ -144,7 +144,9 @@ UINT16 OBEX_CreateConn(tOBEX_SVR_INFO *server, tOBEX_MSG_CBACK callback, UINT16 
         p_ccb->callback = callback;
         p_ccb->role = OBEX_ROLE_CLIENT;
         p_ccb->state = OBEX_STATE_OPENING;
-        *out_handle = p_ccb->allocated;
+        if (out_handle) {
+            *out_handle = p_ccb->allocated;
+        }
     } while (0);
 
     if (ret != OBEX_SUCCESS && p_ccb != NULL) {
@@ -627,20 +629,35 @@ UINT16 OBEX_ParseRequest(BT_HDR *pkt, tOBEX_PARSE_INFO *info)
     }
 
     UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
+    UINT16 len = pkt->len;
+
+    if (len < 1) {
+        return OBEX_FAILURE;
+    }
+
     info->opcode = *p_data;
     switch (info->opcode)
     {
     case OBEX_OPCODE_CONNECT:
+        if (len < 7) {
+            return OBEX_FAILURE;
+        }
         info->obex_version_number = p_data[3];
         info->flags = p_data[4];
         info->max_packet_length = (p_data[5] << 8) + p_data[6];
         info->next_header_pos = 7;
         break;
     case OBEX_OPCODE_SETPATH:
+        if (len < 5) {
+            return OBEX_FAILURE;
+        }
         info->flags = p_data[3];
         info->next_header_pos = 5;
         break;
     default:
+        if (len < 3) {
+            return OBEX_FAILURE;
+        }
         info->next_header_pos = 3;
         break;
     }

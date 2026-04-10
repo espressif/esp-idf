@@ -1,22 +1,23 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
+import subprocess
 import sys
 import typing as t
-from typing import Literal
 
 from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
-from idf_build_apps import json_to_app
+from idf_build_apps.constants import BuildStatus
+from idf_build_apps.utils import rmdir
+from idf_ci_utils import idf_relpath
 
-from idf_ci_local.uploader import AppUploader
-from idf_ci_local.uploader import get_app_uploader
+if t.TYPE_CHECKING:
+    pass
 
 
 class IdfCMakeApp(CMakeApp):
-    uploader: t.ClassVar[t.Optional['AppUploader']] = get_app_uploader()
-    build_system: Literal['idf_cmake'] = 'idf_cmake'
+    build_system: t.Literal['idf_cmake'] = 'idf_cmake'
 
     def _initialize_hook(self, **kwargs: t.Any) -> None:
         # ensure this env var exists
@@ -27,8 +28,28 @@ class IdfCMakeApp(CMakeApp):
     def _post_build(self) -> None:
         super()._post_build()
 
-        if self.uploader:
-            self.uploader.upload_app(self.build_path)
+        # only upload in CI
+        if os.getenv('CI_JOB_ID'):
+            result = subprocess.run(
+                [
+                    'idf-ci',
+                    'gitlab',
+                    'upload-artifacts',
+                    self.app_dir,
+                    '--build-dir',
+                    self.build_dir,
+                ],
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+            if result.returncode != 0:
+                self.build_status = BuildStatus.FAILED
+                self.build_comment = 'Failed to upload artifacts'
+
+            rmdir(
+                self.build_path,
+                exclude_file_patterns=['build_log.txt', 'size*.json'],
+            )
 
 
 class Metrics:
@@ -38,17 +59,17 @@ class Metrics:
 
     def __init__(
         self,
-        source_value: t.Optional[float] = None,
-        target_value: t.Optional[float] = None,
-        difference: t.Optional[float] = None,
-        difference_percentage: t.Optional[float] = None,
+        source_value: float | None = None,
+        target_value: float | None = None,
+        difference: float | None = None,
+        difference_percentage: float | None = None,
     ) -> None:
         self.source_value = source_value or 0.0
         self.target_value = target_value or 0.0
         self.difference = difference or 0.0
         self.difference_percentage = difference_percentage or 0.0
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
+    def to_dict(self) -> dict[str, t.Any]:
         """
         Converts the Metrics object to a dictionary.
         """
@@ -61,7 +82,7 @@ class Metrics:
 
 
 class AppWithMetricsInfo(IdfCMakeApp):
-    metrics: t.Dict[str, Metrics]
+    metrics: dict[str, Metrics]
     is_new_app: bool
 
     def __init__(self, **kwargs: t.Any) -> None:
@@ -74,34 +95,14 @@ class AppWithMetricsInfo(IdfCMakeApp):
         arbitrary_types_allowed = True
 
 
-def dump_apps_to_txt(apps: t.List[App], output_filepath: str) -> None:
-    with open(output_filepath, 'w') as fw:
-        for app in apps:
-            fw.write(app.model_dump_json() + '\n')
-
-
-def import_apps_from_txt(input_filepath: str) -> t.List[App]:
-    apps: t.List[App] = []
-    with open(input_filepath) as fr:
-        for line in fr:
-            if line := line.strip():
-                try:
-                    apps.append(json_to_app(line, extra_classes=[IdfCMakeApp]))
-                except Exception:  # noqa
-                    print('Failed to deserialize app from line: %s' % line)
-                    sys.exit(1)
-
-    return apps
-
-
 def enrich_apps_with_metrics_info(
-    app_metrics_info_map: t.Dict[str, t.Dict[str, t.Any]], apps: t.List[App]
-) -> t.List[AppWithMetricsInfo]:
-    def _get_full_attributes(obj: App) -> t.Dict[str, t.Any]:
+    app_metrics_info_map: dict[str, dict[str, t.Any]], apps: list[App]
+) -> list[AppWithMetricsInfo]:
+    def _get_full_attributes(obj: App) -> dict[str, t.Any]:
         """
         Retrieves all attributes of an object, including properties and computed fields.
         """
-        attributes: t.Dict[str, t.Any] = obj.__dict__.copy()
+        attributes: dict[str, t.Any] = obj.__dict__.copy()
         for attr in dir(obj):
             if not attr.startswith('_'):  # Skip private/internal attributes
                 try:
@@ -125,6 +126,7 @@ def enrich_apps_with_metrics_info(
 
     apps_with_metrics_info = []
     for app in apps:
+        app.app_dir = idf_relpath(app.app_dir)
         key = f'{app.app_dir}_{app.config_name}_{app.target}'
         app_attributes = _get_full_attributes(app)
 

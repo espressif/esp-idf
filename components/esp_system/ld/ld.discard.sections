@@ -1,0 +1,26 @@
+#include "sdkconfig.h"
+#include "ld.common"
+
+  /DISCARD/ :
+  {
+   /**
+    * Discarding .rela.* sections results in the following mapping:
+    * .rela.text.* -> .text.*
+    * .rela.data.* -> .data.*
+    * And so forth...
+    */
+   *(.rela.*)
+#if CONFIG_LIBC_NEWLIB
+   *(.got .got.plt) /* TODO: GCC-382 */
+#endif // CONFIG_LIBC_NEWLIB
+
+   *(.fini)
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+   *(.eh_frame_hdr)
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+
+#if !EH_FRAME_LINKING_ENABLED
+   *(.eh_frame_hdr)
+   *(.eh_frame)
+#endif // !EH_FRAME_LINKING_ENABLED
+  }

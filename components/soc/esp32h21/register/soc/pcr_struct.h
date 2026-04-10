@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -317,8 +317,7 @@ typedef union {
          */
         uint32_t rmt_sclk_div_num:8;
         /** rmt_sclk_sel : R/W; bitpos: [20]; default: 1;
-         *  set this field to select clock-source. 0: do not select anyone clock, 1(default):
-         *  80MHz, 2: FOSC, 3: XTAL.
+         *  set this field to select clock-source. 0: XTAL, 1(default): RC_FAST.
          */
         uint32_t rmt_sclk_sel:1;
         /** rmt_sclk_en : R/W; bitpos: [21]; default: 1;
@@ -359,8 +358,8 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** ledc_sclk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
-         *  80MHz, 2: FOSC, 3: XTAL.
+         *  set this field to select clock-source. 0(default): XTAL, 1:
+         *  FOSC, 2: 96MHz.
          */
         uint32_t ledc_sclk_sel:2;
         /** ledc_sclk_en : R/W; bitpos: [22]; default: 1;

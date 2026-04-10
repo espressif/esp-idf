@@ -1,6 +1,8 @@
 Standard I/O and Console Output
 ===============================
 
+:link_to_translation:`zh_CN:[中文]`
+
 ESP-IDF provides C standard I/O facilities, such as ``stdin``, ``stdout``, and ``stderr`` streams, as well as C standard library functions such as ``printf()`` which operate on these streams.
 
 As common in POSIX systems, these streams are buffering wrappers around file descriptors:
@@ -37,7 +39,7 @@ Built-in implementations of standard I/O can be selected using several Kconfig o
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG>` — Enables USB Serial/JTAG for standard I/O. See :doc:`usb-serial-jtag-console` for details about hardware connections required.
     - :ref:`CONFIG_ESP_CONSOLE_NONE<CONFIG_ESP_CONSOLE_NONE>` — Disables standard I/O. If this option is selected, ``stdin``, ``stdout``, and ``stderr`` will be mapped to ``/dev/null`` and won't produce any output or generate any input.
 
-Enabling one of these option will cause the corresponding VFS driver to be built into the application and used to open ``stdin``, ``stdout``, and ``stderr`` streams. Data written to ``stdout`` and ``stderr`` will be sent over the selected interface, and input from the selected interface will be available on ``stdin``.
+Enabling one of these options will cause the corresponding VFS driver to be built into the application and used to open ``stdin``, ``stdout``, and ``stderr`` streams. Data written to ``stdout`` and ``stderr`` will be sent over the selected interface, and input from the selected interface will be available on ``stdin``.
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
@@ -58,13 +60,26 @@ Enabling one of these option will cause the corresponding VFS driver to be built
 Standard Streams and FreeRTOS Tasks
 -----------------------------------
 
+ESP-IDF provides two different implementations of standard I/O streams based on the selected LibC implementation defined by :ref:`CONFIG_LIBC`. The behavior of ``stdin``, ``stdout``, and ``stderr`` streams differs between these implementations, particularly regarding how they are shared across FreeRTOS tasks.
+
+Common to both implementations, each stream (``stdin``, ``stdout``, ``stderr``) has a mutex associated with it to protect the stream from concurrent access by multiple tasks. For example, if two tasks are writing to ``stdout`` at the same time, the mutex ensures that the outputs from each task are not mixed together.
+
+Newlib
+^^^^^^
+
 In ESP-IDF, to save RAM, ``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are unique for every task. This means that:
 
 - It is possible to change ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g., by doing ``stdin = fopen("/dev/uart/1", "r")``.
 - To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
 - Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` closes the ``FILE`` stream object, which will affect all other tasks.
 
-Each stream (``stdin``, ``stdout``, ``stderr``) has a mutex associated with it. This mutex is used to protect the stream from concurrent access by multiple tasks. For example, if two tasks are writing to ``stdout`` at the same time, the mutex will ensure that the outputs from each task are not mixed together.
+Picolibc
+^^^^^^^^
+
+According to the POSIX standard, all default ``stdin``, ``stdout``, and ``stderr`` streams are global and shared between all FreeRTOS tasks. This means that:
+
+- Modifying ``stdin``, ``stdout``, or ``stderr`` will affect all other tasks. It is not possible to change standard I/O streams for specific tasks.
+- If a thread-local stream is needed, it should be implemented in the application code by opening a file stream and using it within tasks, e.g., ``fscanf()``, ``fprintf()``, etc.
 
 Blocking and non-blocking I/O
 -----------------------------
@@ -83,7 +98,7 @@ When the interrupt-driven driver is installed, it is also possible to enable/dis
     USB Serial/JTAG
     ^^^^^^^^^^^^^^^
 
-    Similar to UART, the VFS driver for USB Serial/JTAG defaults to a simplified implementation: writes are blocking (busy-wait until all the data has been sent) and reads are non-blocking, returning only the data present in the FIFO. This behavior can be changed to use the interrupt driven, blocking read and write functions of USB Serial/JTAG driver using a call to the :cpp:func:`usb_serial_jtag_vfs_use_nonblocking` function. Note that the USB Serial/JTAG driver has to be initialized using :cpp:func:`usb_serial_jtag_driver_install` beforehand. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`usb_serial_jtag_vfs_use_nonblocking`.
+    Similar to UART, the VFS driver for USB Serial/JTAG defaults to a simplified implementation: writes are blocking (busy-wait until all the data has been sent) and reads are non-blocking, returning only the data present in the FIFO. This behavior can be changed to use the interrupt-driven, blocking read and write functions of the USB Serial/JTAG driver by calling :cpp:func:`usb_serial_jtag_vfs_use_nonblocking`. Note that the USB Serial/JTAG driver has to be initialized using :cpp:func:`usb_serial_jtag_driver_install` beforehand. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`usb_serial_jtag_vfs_use_nonblocking`.
 
     When the interrupt-driven driver is installed, it is also possible to enable/disable non-blocking behavior using ``fcntl`` function with ``O_NONBLOCK`` flag.
 
@@ -101,8 +116,14 @@ VFS drivers provide an optional newline conversion feature for input and output.
 
 Applications can configure this behavior globally using the following Kconfig options:
 
-    - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF<CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF>`, :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CR<CONFIG_LIBC_STDOUT_LINE_ENDING_CR>`, :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_LF<CONFIG_LIBC_STDOUT_LINE_ENDING_LF>` - for output
-    - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CRLF<CONFIG_LIBC_STDIN_LINE_ENDING_CRLF>`, :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CR<CONFIG_LIBC_STDIN_LINE_ENDING_CR>`, :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_LF<CONFIG_LIBC_STDIN_LINE_ENDING_LF>` - for input
+    - For output
+        - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF<CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF>`
+        - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CR<CONFIG_LIBC_STDOUT_LINE_ENDING_CR>`
+        - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_LF<CONFIG_LIBC_STDOUT_LINE_ENDING_LF>`
+    - For input
+        - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CRLF<CONFIG_LIBC_STDIN_LINE_ENDING_CRLF>`
+        - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CR<CONFIG_LIBC_STDIN_LINE_ENDING_CR>`
+        - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_LF<CONFIG_LIBC_STDIN_LINE_ENDING_LF>`
 
 
 It is also possible to configure line ending conversion for the specific VFS driver:

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_timer.h"
 #include "esp_private/mcpwm.h"
 #include "test_mcpwm_utils.h"
@@ -20,14 +20,14 @@ TEST_CASE("mcpwm_timer_start_stop", "[mcpwm]")
         .period_ticks = 400,
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP_DOWN,
     };
-    const int num_timers = SOC_MCPWM_TIMERS_PER_GROUP * SOC_MCPWM_GROUPS;
+    const int num_timers = MCPWM_LL_GET(TIMERS_PER_GROUP) * MCPWM_LL_GET(GROUP_NUM);
 
     printf("create mcpwm timer instances\r\n");
     mcpwm_timer_handle_t timers[num_timers];
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
-        for (int j = 0; j < SOC_MCPWM_TIMERS_PER_GROUP; j++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
+        for (int j = 0; j < MCPWM_LL_GET(TIMERS_PER_GROUP); j++) {
             config.group_id = i;
-            TEST_ESP_OK(mcpwm_new_timer(&config, &timers[i * SOC_MCPWM_TIMERS_PER_GROUP + j]));
+            TEST_ESP_OK(mcpwm_new_timer(&config, &timers[i * MCPWM_LL_GET(TIMERS_PER_GROUP) + j]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_timer(&config, &timers[0]));
     }

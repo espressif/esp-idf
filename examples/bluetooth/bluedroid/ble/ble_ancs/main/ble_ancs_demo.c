@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -31,6 +31,8 @@
 #define ADV_CONFIG_FLAG                           (1 << 0)
 #define SCAN_RSP_CONFIG_FLAG                      (1 << 1)
 #define INVALID_HANDLE                             0
+#define ANCS_CMD_BUFFER_MAX_SIZE                   600
+
 static uint8_t adv_config_done = 0;
 static bool get_service = false;
 static esp_gattc_char_elem_t *char_elem_result   = NULL;
@@ -81,8 +83,8 @@ static uint8_t hidd_service_uuid128[] = {
 static esp_ble_adv_data_t adv_config = {
     .set_scan_rsp = false,
     .include_txpower = false,
-    .min_interval = 0x0006, //slave connection min interval, Time = min_interval * 1.25 msec
-    .max_interval = 0x0010, //slave connection max interval, Time = max_interval * 1.25 msec
+    .min_interval = ESP_BLE_GAP_CONN_ITVL_MS(7.5), //slave connection min interval
+    .max_interval = ESP_BLE_GAP_CONN_ITVL_MS(20), //slave connection max interval
     .appearance = ESP_BLE_APPEARANCE_GENERIC_HID,
     .service_uuid_len = sizeof(hidd_service_uuid128),
     .p_service_uuid = hidd_service_uuid128,
@@ -97,8 +99,8 @@ static esp_ble_adv_data_t scan_rsp_config = {
 };
 
 static esp_ble_adv_params_t adv_params = {
-    .adv_int_min        = 0x100,
-    .adv_int_max        = 0x100,
+    .adv_int_min        = ESP_BLE_GAP_ADV_ITVL_MS(160),
+    .adv_int_max        = ESP_BLE_GAP_ADV_ITVL_MS(160),
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RPA_PUBLIC,
     .channel_map        = ADV_CHNL_ALL,
@@ -168,15 +170,26 @@ esp_noti_attr_list_t p_attr[8] = {
 
 void esp_get_notification_attributes(uint8_t *notificationUID, uint8_t num_attr, esp_noti_attr_list_t *p_attr)
 {
-    uint8_t cmd[600] = {0};
+    uint8_t cmd[ANCS_CMD_BUFFER_MAX_SIZE] = {0};
     uint32_t index = 0;
+
     cmd[0] = CommandIDGetNotificationAttributes;
     index ++;
     memcpy(&cmd[index], notificationUID, ESP_NOTIFICATIONUID_LEN);
     index += ESP_NOTIFICATIONUID_LEN;
     while(num_attr > 0) {
+        // Security fix: Check buffer boundary before writing
+        if (index >= ANCS_CMD_BUFFER_MAX_SIZE) {
+            ESP_LOGE(BLE_ANCS_TAG, "Command buffer overflow in get_notification_attributes");
+            return;
+        }
         cmd[index ++] = p_attr->noti_attribute_id;
         if (p_attr->attribute_len > 0) {
+            // Need 2 more bytes for attribute_len
+            if ((index + 2) > ANCS_CMD_BUFFER_MAX_SIZE) {
+                ESP_LOGE(BLE_ANCS_TAG, "Command buffer overflow in get_notification_attributes");
+                return;
+            }
             cmd[index ++] = p_attr->attribute_len;
             cmd[index ++] = (p_attr->attribute_len << 8);
         }
@@ -195,8 +208,15 @@ void esp_get_notification_attributes(uint8_t *notificationUID, uint8_t num_attr,
 
 void esp_get_app_attributes(uint8_t *appidentifier, uint16_t appidentifier_len, uint8_t num_attr, uint8_t *p_app_attrs)
 {
-    uint8_t buffer[600] = {0};
+    uint8_t buffer[ANCS_CMD_BUFFER_MAX_SIZE] = {0};
     uint32_t index = 0;
+
+    // Security fix: Check buffer boundary before memcpy
+    if ((1 + appidentifier_len + num_attr) > ANCS_CMD_BUFFER_MAX_SIZE) {
+        ESP_LOGE(BLE_ANCS_TAG, "Buffer overflow in get_app_attributes");
+        return;
+    }
+
     buffer[0] = CommandIDGetAppAttributes;
     index ++;
     memcpy(&buffer[index], appidentifier, appidentifier_len);
@@ -215,7 +235,7 @@ void esp_get_app_attributes(uint8_t *appidentifier, uint16_t appidentifier_len, 
 
 void esp_perform_notification_action(uint8_t *notificationUID, uint8_t ActionID)
 {
-    uint8_t buffer[600] = {0};
+    uint8_t buffer[ANCS_CMD_BUFFER_MAX_SIZE] = {0};
     uint32_t index = 0;
     buffer[0] = CommandIDPerformNotificationAction;
     index ++;
@@ -517,6 +537,12 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 esp_get_notification_attributes(notificationUID, sizeof(p_attr)/sizeof(esp_noti_attr_list_t), p_attr);
              }
         } else if (param->notify.handle == gl_profile_tab[PROFILE_A_APP_ID].data_source_handle) {
+            if ((data_buffer.len + param->notify.value_len) > sizeof(data_buffer.buffer)) {
+                ESP_LOGE(BLE_ANCS_TAG, "Data source buffer overflow detected, discarding data");
+                memset(data_buffer.buffer, 0, sizeof(data_buffer.buffer));
+                data_buffer.len = 0;
+                break;
+            }
             memcpy(&data_buffer.buffer[data_buffer.len], param->notify.value, param->notify.value_len);
             data_buffer.len += param->notify.value_len;
             if (param->notify.value_len == (gl_profile_tab[PROFILE_A_APP_ID].MTU_size - 3)) {
@@ -646,7 +672,8 @@ void app_main(void)
 
     ESP_LOGI(BLE_ANCS_TAG, "%s init bluetooth", __func__);
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(BLE_ANCS_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

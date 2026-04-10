@@ -85,12 +85,33 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
 static inline  void lp_aon_ll_inform_wakeup_type(bool dslp)
 {
     if (dslp) {
-        REG_SET_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
+        REG_SET_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
 
     } else {
-        REG_CLR_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
+        REG_CLR_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
     }
 }
+
+/**
+ * @brief Set the maximum number of linked lists supported by REGDMA
+ * @param count: the maximum number of regdma link
+ */
+static inline void lp_aon_ll_set_regdma_link_count(int count)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, aon_branch_link_length_aon, count);
+}
+
+static inline void lp_aon_ll_set_regdma_link_addr(uint32_t addr)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, aon_link_addr_aon, addr);
+}
+
+static inline void lp_aon_ll_set_ldo_sw(uint32_t value)
+{
+    CLEAR_PERI_REG_MASK(LP_AON_DATE_REG, LP_AON_DREG_LDO_HW);
+    REG_SET_FIELD(LP_AON_DATE_REG, LP_AON_DREG_LDO_SW, value);
+}
+
 #ifdef __cplusplus
 }
 #endif

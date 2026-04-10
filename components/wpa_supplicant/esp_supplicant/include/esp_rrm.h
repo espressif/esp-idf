@@ -28,23 +28,6 @@ typedef void (*neighbor_rep_request_cb)(void *ctx, const uint8_t *report, size_t
 
 /**
   * @brief  Send Radio measurement neighbor report request to connected AP
-  *
-  * @deprecated This function is deprecated and will be removed in the future.
-  *             Please use 'esp_rrm_send_neighbor_report_request'
-  * @param  cb: callback function for neighbor report
-  * @param  cb_ctx: callback context
-  *
-  * @return
-  *    - 0: success
-  *    - -1: AP does not support RRM
-  *    - -2: station not connected to AP
-  */
-
-__attribute__((deprecated("Use 'esp_rrm_send_neighbor_report_request' instead")))
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx);
-/**
-  * @brief  Send Radio measurement neighbor report request to connected AP
   * @return
   *    - 0: success
   *    - -1: AP does not support RRM

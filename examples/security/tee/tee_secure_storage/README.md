@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 |
+| ----------------- | -------- | -------- | --------- | -------- |
 
 # TEE: Secure Storage example
 
@@ -29,26 +29,43 @@ Before the project configuration and build, be sure to set the correct chip targ
 
 Open the project configuration menu (`idf.py menuconfig`).
 
-- Configure the secure storage example key ID at `Example Configuration → TEE: Secure Storage Key ID`.
+- Configure unique secure storage key IDs for each workflow:
+  - `Example Configuration → TEE: Secure Storage Key ID for signing`
+  - `Example Configuration → TEE: Secure Storage Key ID for encryption`
 
-TEE Secure Storage follows the NVS partition format and uses an AES-XTS encryption scheme derived via the HMAC peripheral. It supports two key derivation modes, configurable via `CONFIG_SECURE_TEE_SEC_STG_MODE`:
+TEE Secure Storage follows the NVS partition format and uses an XTS-AES encryption scheme derived via the HMAC peripheral or software-based HMAC implementation. It supports two key derivation modes, configurable via `CONFIG_SECURE_TEE_SEC_STG_MODE`:
 
   - **Development** Mode: Encryption keys are embedded in the ESP-TEE firmware (identical across all instances).
-  - **Release** Mode: Encryption keys are derived via the HMAC peripheral using a key stored in eFuse, specified by `CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
+  - **Release** Mode: Encryption keys are derived using a key stored in eFuse, specified by `CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
 
-#### Configure the eFuse key ID storing the HMAC key
+#### Configure the eFuse key ID for storage encryption
 
 - Navigate to `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode` and enable the `Release` mode configuration.
-- Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID`.
+- Set the eFuse key ID storing the HMAC/USER key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID for storage encryption keys`.
 
-**Note:** Before running the example, users must program the HMAC key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
+**Note:** Before running the example, users must program the required key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
+
+**For targets without HMAC peripheral (ESP32-C61):**
+
+```shell
+# Generate a random 32-byte key
+openssl rand -out hmac_key_file.bin 32
+# Program the USER purpose key (256-bit) in eFuse
+# Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
+espefuse -p PORT burn-key --no-read-protect BLOCK_KEYx hmac_key_file.bin USER
+```
+
+> [!IMPORTANT]
+> When programming the key into eFuse for targets without HMAC peripheral, ensure that it is **NOT** marked as read-protected (use the `--no-read-protect` flag). If the key is read-protected, the TEE will be unable to access it. However, this does not weaken security: the APM peripheral already blocks software access to the key, and any illegal read or write attempt from the REE triggers a fault.
+
+**For targets with HMAC peripheral:**
 
 ```shell
 # Generate a random 32-byte HMAC key
 openssl rand -out hmac_key_file.bin 32
-# Programming the HMAC key (256-bit) in eFuse
+# Program the HMAC key (256-bit) in eFuse
 # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
-espefuse.py -p PORT burn_key BLOCK_KEYx hmac_key_file.bin HMAC_UP
+espefuse -p PORT burn-key BLOCK_KEYx hmac_key_file.bin HMAC_UP
 ```
 
 ### Build and Flash
@@ -78,11 +95,13 @@ I (1001) Plaintext: 4c 6f 72 65 6d 20 69 70 73 75 6d 20 64 6f 6c 6f
 I (1001) Plaintext: 72 20 73 69 74 20 61 6d 65 74 2c 20 63 6f 6e 73
 I (1011) Plaintext: 65 63 74 65 74 75 72 20 61 64 69 70 69 73 63 69
 I (1021) Plaintext: 6e 67 20 65 6c 69 74 2e
-I (1111) Encrypted data: 18 85 a2 97 7d 20 be 53 47 b7 3f 6f 52 06 8a 44
-I (1111) Encrypted data: 3b 7e 2e 25 7b 33 5d 4f 2a e5 17 5e bc d7 4e 23
-I (1111) Encrypted data: 2a 8f 89 a1 80 9c 6c 6b 00 e6 c6 39 7b 3f 75 65
-I (1121) Encrypted data: cd d5 f6 f6 3c 9a fb bb
-I (1131) Tag: 6d 7f 1f 8e 1e a9 2c d9 d2 7f 9b db 16 cc 9b 68
+I (1111) Encrypted data: 5e b0 43 e9 38 a6 9c 04 85 00 be b2 d9 c7 40 08
+I (1111) Encrypted data: b1 ae 64 80 2b 91 72 8a 77 d6 3c b1 d5 7f ef 00
+I (1111) Encrypted data: 8d bc e0 c9 a9 9c d1 1f 33 76 34 2a da 02 a9 2f
+I (1121) Encrypted data: d6 75 c1 3a 54 1b 84 ad
+I (1131) IV: e8 f3 82 d8 bf 6d e5 4f 12 e0 51 57
+I (1131) Tag: 30 d4 c5 a1 73 9f 6d d2 3c de 83 cb 93 01 af b9
+
 I (1131) example_tee_sec_stg: Done with encryption/decryption!
 I (1141) main_task: Returned from app_main()
 ```

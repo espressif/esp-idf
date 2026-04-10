@@ -1,7 +1,9 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
 if(${idf_target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
+    idf_component_register()    # Register empty component for first CMake pass for potential *Remote* functionality
+    add_subdirectory(remote)    # wifi-remote on linux host
+    return() # *Local* esp-wifi component is not supported by the POSIX/Linux simulator
 endif()
 
 if( NOT CONFIG_ESP_WIFI_ENABLED
@@ -13,10 +15,27 @@ if( NOT CONFIG_ESP_WIFI_ENABLED
             "src/wifi_netif.c"
             "src/wifi_default_ap.c")
 
+    # In build system v2, idf_component_optional_requires() includes the target
+    # component into the build immediately, so these stub sources are compiled
+    # even on targets where Wi-Fi is not supported. The stubs need esp_event and
+    # esp_netif headers, so those dependencies must be declared here for v2.
+    #
+    # In build system v1, idf_component_optional_requires() only links a
+    # component that is already part of the build. On non-Wi-Fi targets, this
+    # component is never pulled in, so the stubs are never compiled and the
+    # dependencies are not needed. Additionally, the CMAKE_BUILD_EARLY_EXPANSION
+    # guard ensures that the stubs are not compiled for v1.
+    set(priv_reqs "")
+    if(IDF_BUILD_V2)
+        set(priv_reqs "esp_event" "esp_netif")
+    endif()
+
     # This component provides "esp_wifi" "wifi_apps/nan_app" headers if WiFi not enabled
     # (implementation supported optionally in a managed component esp_wifi_remote)
     idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "wifi_apps/nan_app/include")
+                    INCLUDE_DIRS "include" "wifi_apps/nan_app/include"
+                    PRIV_REQUIRES ${priv_reqs})
+    add_subdirectory(remote)    # wifi-remote on esp32p4/h2 (no wifi)
     return()
 endif()
 
@@ -48,7 +67,7 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
             "src/smartconfig_ack.c")
     endif()
 
-    if(CONFIG_ESP_WIFI_NAN_ENABLE)
+    if(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE OR CONFIG_ESP_WIFI_NAN_USD_ENABLE)
         list(APPEND srcs "wifi_apps/nan_app/src/nan_app.c")
     endif()
     if(CONFIG_ESP_WIFI_ENABLE_ROAMING_APP)
@@ -60,10 +79,10 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "include/local" "wifi_apps/include" "wifi_apps/nan_app/include"
 
                     REQUIRES esp_event esp_phy esp_netif
-                    PRIV_REQUIRES esptool_py esp_pm esp_timer nvs_flash
+                    PRIV_REQUIRES esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip esp_coex
                     PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
-                                  wifi_apps/roaming_app/include
+                                  wifi_apps/roaming_app/include wifi_apps/roaming_app/src
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
@@ -88,13 +107,18 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
             endif()
         endif()
 
+        # Since some blob names are very generic, add an "esp_wifi_" prefix when creating target names,
+        # to avoid conflicts with other libraries.
+        set(blob_targets ${blobs})
+        list(TRANSFORM blob_targets PREPEND "esp_wifi_")
         foreach(blob ${blobs})
-            add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
+            set(blob_target "esp_wifi_${blob}")
+            add_prebuilt_library(${blob_target} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                                 REQUIRES ${COMPONENT_NAME})
-            set(blob_reqs ${blobs})
-            list(REMOVE_ITEM blob_reqs ${blob}) # remove itself from requirements
-            set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
-            target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
+            set(blob_reqs ${blob_targets})
+            list(REMOVE_ITEM blob_reqs ${blob_target}) # remove itself from requirements
+            set_property(TARGET ${blob_target} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
+            target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob_target})
         endforeach()
     endif()
     # TODO IDF-13365: remove the following lines
@@ -108,3 +132,5 @@ endif()
 if(CONFIG_SPIRAM)
     idf_component_optional_requires(PRIVATE esp_psram)
 endif()
+
+add_subdirectory(remote)    # wifi-remote as a secondary wifi interface (on wifi targets)

@@ -17,11 +17,11 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 注册 FS 驱动程序
 ---------------------
 
-.. note::
-
-    有关先前版本 API（使用 :cpp:type:`esp_vfs_t`）的内容，可以查阅之前发布的文档。
-
 如需注册 FS 驱动程序，应用程序首先要定义一个 :cpp:type:`esp_vfs_fs_ops_t` 结构体实例，并用指向 FS API 的函数指针填充它。
+
+.. warning::
+
+    不带上下文指针的 API 版本已弃用，未来将被移除，请参见 :ref:`context_api`。
 
 .. highlight:: c
 
@@ -29,7 +29,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 
     // esp_vfs_fs_ops_t 及其子组件的声明必须是静态的
     static const esp_vfs_dir_ops_t myfs_dir = {
-        .fstat = &myfs_fstat,
+        .stat = &myfs_stat,
     };
 
     static const esp_vfs_fs_ops_t myfs = {
@@ -55,7 +55,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
     // 可能是局部作用域
     {
         esp_vfs_dir_ops_t myfs_dir = {
-            .fstat = &myfs_fstat,
+            .stat = &myfs_stat,
         };
 
         bool some_condition = false;
@@ -69,6 +69,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
         ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_DEFAULT, NULL));
     }
 
+.. _context_api:
 
 上下文感知文件系统
 ^^^^^^^^^^^^^^^^^^
@@ -79,7 +80,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
-    // 在 esp_vfs_t 的定义中：
+    // 在 esp_vfs_fs_ops_t 的定义中：
         .write_p = &myfs_write,
     // ... 初始化其他成员
 

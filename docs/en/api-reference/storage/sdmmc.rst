@@ -56,6 +56,19 @@ Using API with SD Memory Cards
 
     - If the card is not used anymore, call the host driver function to disable the host peripheral and free the resources allocated by the driver (``sdmmc_host_deinit`` for SDMMC or ``sdspi_host_deinit`` for SDSPI).
 
+Unaligned Buffer Performance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When buffers passed to :cpp:func:`sdmmc_read_sectors` or :cpp:func:`sdmmc_write_sectors` are not DMA-capable (e.g., allocated in PSRAM), the driver copies data through a temporary DMA-capable buffer. By default, this is done one block at a time using single-block transfer commands.
+
+To improve throughput in this scenario, set the :cpp:member:`sdmmc_host_t::unaligned_multi_block_rw_max_chunk_size` field to a value greater than 1. This enables multi-block transfer commands (CMD18/CMD25), which can significantly reduce transfer overhead. The trade-off is higher heap usage (buffer size = N × block size, where N is the configured value and the block size is typically 512 bytes). When this field is 0 (default), the driver falls back to single-block transfers (equivalent to 1). Values greater than 1 are recommended to be a multiple of the block size (e.g., 2, 4, 8, 16 or 32) for best performance.
+
+.. note::
+
+    Keep this value at 0 or 1 if your card or configuration does not support multi-block read/write commands (CMD18 and CMD25).
+
+Alternatively, a pre-allocated DMA-capable buffer can be provided via the :cpp:member:`sdmmc_host_t::dma_aligned_buffer` field. This avoids per-transfer heap allocations and allows the driver to reuse the same buffer across transfers. The buffer must be at least one sector in size (typically 512 bytes) and should ideally be a multiple of the sector size.
+
 .. only:: not SOC_SDMMC_HOST_SUPPORTED
 
     eMMC Support
@@ -109,9 +122,9 @@ Using API with SD Memory Cards
 
     If you want the application to wait until the SDIO interrupt occurs, use :cpp:func:`sdmmc_io_wait_int`.
 
-    .. only:: esp32
+    .. only:: SOC_SDMMC_HOST_SUPPORTED and SOC_SDIO_SLAVE_SUPPORTED
 
-        There is a component ESSL (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`.
+        There is a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See example :example:`peripherals/sdio/host`.
 
     Combo (Memory + IO) Cards
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -129,5 +142,7 @@ API Reference
 -------------
 
 .. include-build-file:: inc/sdmmc_cmd.inc
+
+.. include-build-file:: inc/sd_protocol_types.inc
 
 .. include-build-file:: inc/sdmmc_types.inc

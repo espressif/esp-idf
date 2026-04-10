@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
-# If `test_env` is define, should not run on generic runner
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -14,11 +14,46 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_GPSPI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
+)
 def test_master_single_dev(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
-            continue
+            continue  # If `test_env` is defined, should not run on generic runner
+        case_tester.run_normal_case(case=case, reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'freertos_flash',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_master_single_dev_esp32c5(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'test_env' in case.attributes:
+            continue  # If `test_env` is defined, should not run on generic runner
+        case_tester.run_normal_case(case=case, reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_rev1
+@pytest.mark.parametrize(
+    'config',
+    [
+        'release',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_master_single_dev_esp32c5_rev1(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'test_env' in case.attributes:
+            continue  # If `test_env` is defined, should not run on generic runner
         case_tester.run_normal_case(case=case, reset=True)
 
 
@@ -39,9 +74,6 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
             case_tester.run_normal_case(case=case, reset=True)
 
 
-# if `test_env` not defined, will run on `generic_multi_device` by default
-# TODO: [ESP32C61] IDF-10949
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='no multi-dev runner')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'count, config',
@@ -53,7 +85,6 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_master_multi_dev(case_tester) -> None:  # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True)

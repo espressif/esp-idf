@@ -24,9 +24,9 @@ def action_extract_features(args: str) -> None:
         # features to be enabled have prefix '+', disabled have prefix '-'
         for arg in args.split():
             if arg.startswith(arg_enable_prefix):
-                features.append('+' + arg[len(arg_enable_prefix):])
+                features.append('+' + arg[len(arg_enable_prefix) :])
             elif arg.startswith(arg_disable_prefix):
-                features.append('-' + arg[len(arg_disable_prefix):])
+                features.append('-' + arg[len(arg_disable_prefix) :])
             elif arg.startswith('-'):
                 raise SystemExit(f'ERROR: Invalid feature specifier: {arg}')
         features = list(set(features))
@@ -72,13 +72,13 @@ def action_print_help(script_extension: str) -> None:
 
 optional arguments:
   targets-to-install  'all', a single target (e.g. 'esp32s2'), or a comma-separated list of targets (e.g. 'esp32,esp32c3,esp32h2')
-  --enable-*          a specific feature to enable (e.g. '--enable-pytest' will enable feature pytest)
+  --enable-*          a specific feature to enable (e.g. '--enable-ci' will enable feature ci)
   --disable-*         a specific feature to disable (e.g. '--disable-pytest' will disable feature pytest)
                       supported features: {', '.join(features)}
   {help_opts}      show this help message and exit
 
 For more information, please see https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html#install-scripts
-  """)  # noqa: E222
+  """)  # noqa: E222, E501
 
 
 def main() -> None:

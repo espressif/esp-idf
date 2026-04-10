@@ -1,8 +1,12 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import json
 import os.path
+import textwrap
 from pathlib import Path
 
+import pytest
+from test_build_system_helpers import EXT_IDF_PATH
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import replace_in_file
 
@@ -40,7 +44,7 @@ def test_trimmed_components_still_passed_to_cmake(idf_py: IdfPyFunc, test_app_co
 
     idf_py('reconfigure')
 
-    with open('dependencies.lock', 'r') as f:
+    with open('dependencies.lock') as f:
         fs = f.read()
 
     assert '  example/cmp:' in fs
@@ -58,7 +62,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -72,7 +76,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' not in fs
 
@@ -90,7 +94,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -110,7 +114,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -132,7 +136,7 @@ class TestOptionalDependencyWithKconfig:
 
         idf_py('reconfigure')
 
-        with open('dependencies.lock', 'r') as f:
+        with open('dependencies.lock') as f:
             fs = f.read()
         assert '  example/cmp:' in fs
 
@@ -156,3 +160,128 @@ class TestOptionalDependencyWithKconfig:
             f'defined in {str(test_app_copy / "main" / "idf_component.yml")}' in res.stderr
         )
         assert 'Missing required kconfig option after retry.' in res.stderr
+
+    def test_kconfig_in_transitive_dependency(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+        idf_py('create-component', 'foo')
+        (test_app_copy / 'foo' / 'idf_component.yml').write_text("""
+        dependencies:
+          example/cmp:
+            version: "*"
+            rules:
+              - if: $CONFIG{WHO_AM_I} == "foo"
+
+          espressif/mdns:
+            version: "*"
+            require: public
+            rules:
+              - if: $CONFIG{WHO_AM_I} == "foo"
+        """)
+        (test_app_copy / 'foo' / 'Kconfig').write_text("""
+        menu "foo component config"
+        config WHO_AM_I
+            string "Who am I"
+            default "foo"
+        endmenu
+        """)
+
+        replace_in_file(
+            (test_app_copy / 'CMakeLists.txt'),
+            '# placeholder_before_include_project_cmake',
+            'set(EXTRA_COMPONENT_DIRS foo)',
+        )
+
+        # Add explicit PRIV_REQUIRES for cmakev2 compatibility
+        replace_in_file(
+            (test_app_copy / 'main' / 'CMakeLists.txt'),
+            '# placeholder_inside_idf_component_register',
+            'PRIV_REQUIRES foo',
+        )
+
+        idf_py('reconfigure')
+
+        data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+        assert ['example__cmp'] == data['build_component_info']['foo']['priv_reqs']
+        assert ['espressif__mdns'] == data['build_component_info']['foo']['reqs']
+
+
+# TODO: IDF-14259 - Add root components support to cmakev2
+@pytest.mark.buildv2_skip('Root components (idf_extra_components.yml) not yet supported in cmakev2')
+@pytest.mark.revert_later(['tools/idf_extra_components.yml'])
+class TestIdfRootDependency:
+    def test_basic_build(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+        with open(os.path.join(EXT_IDF_PATH, 'tools', 'idf_extra_components.yml'), 'w') as fw:
+            fw.write(
+                textwrap.dedent("""
+            dependencies:
+              espressif/mdns: "*"
+            """)
+            )
+
+        replace_in_file(
+            (test_app_copy / 'main' / 'build_test_app.c'),
+            '// placeholder_before_main',
+            '#include "mdns.h"',
+        )
+
+        replace_in_file(
+            (test_app_copy / 'main' / 'CMakeLists.txt'),
+            '# placeholder_inside_idf_component_register',
+            'REQUIRES mdns',
+        )
+
+        idf_py('build')
+
+    def test_build_only_when_required(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+        with open(os.path.join(EXT_IDF_PATH, 'tools', 'idf_extra_components.yml'), 'w') as fw:
+            fw.write(
+                textwrap.dedent("""
+            dependencies:
+              espressif/mdns: "*"
+              example/cmp: "*"
+            """)
+            )
+
+        idf_py('reconfigure')
+
+        data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+        assert 'espressif__mdns' not in data['build_components']
+        assert 'example__cmp' not in data['build_components']
+
+        replace_in_file(
+            (test_app_copy / 'main' / 'CMakeLists.txt'),
+            '# placeholder_inside_idf_component_register',
+            'REQUIRES mdns',
+        )
+
+        idf_py('reconfigure')
+        data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+        assert 'espressif__mdns' in data['build_components']
+        assert 'example__cmp' not in data['build_components']
+
+    def test_cleanup_unused(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+        with open(os.path.join(EXT_IDF_PATH, 'tools', 'idf_extra_components.yml'), 'w') as fw:
+            fw.write(
+                textwrap.dedent("""
+            dependencies:
+              espressif/mdns: "*"
+            """)
+            )
+
+        idf_py('reconfigure')
+        data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+        assert 'espressif__mdns' in data['all_component_info']
+
+        with open(os.path.join(EXT_IDF_PATH, 'tools', 'idf_extra_components.yml'), 'w') as fw:
+            fw.write(
+                textwrap.dedent("""
+            dependencies:
+              espressif/led_strip: "*"
+              example/cmp: "*"
+            """)
+            )
+
+        idf_py('reconfigure')
+        data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
+        assert 'espressif__led_strip' in data['all_component_info']
+        assert 'example__cmp' in data['all_component_info']
+        assert 'espressif__mdns' not in data['all_component_info']

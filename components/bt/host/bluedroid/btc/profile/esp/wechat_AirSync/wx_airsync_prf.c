@@ -1,6 +1,6 @@
 #include "wx_airsync_prf.h"
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,7 +91,7 @@ static void airsync_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
         airsync_cb_env.is_primery =  p_data->create.is_primary;
         //start the airsync service after created
         esp_ble_gatts_start_srvc(p_data->create.service_id);
-        //add the frist airsync characteristic --> write characteristic
+        //add the first airsync characteristic --> write characteristic
         esp_ble_gatts_add_char(airsync_cb_env.clcb.cur_srvc_id, &uuid,
                                (GATT_PERM_WRITE | GATT_PERM_READ),
                                (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE));
@@ -112,7 +112,7 @@ static void airsync_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
             uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
             airsync_cb_env.airsync_inst.airsync_ntf_hdl = p_data->add_result.attr_id;
             esp_ble_gatts_add_char_descr (airsync_cb_env.clcb.cur_srvc_id,
-                                          (GATT_PERM_WRITE | GATT_PERM_WRITE),
+                                          GATT_PERM_WRITE,
                                           &uuid);
 
             uuid.uu.uuid16 = ATT_CHAR_AIRSYNC_READ;
@@ -207,7 +207,7 @@ tAirSync_CLCB *airsync_env_clcb_alloc (UINT16 conn_id, BD_ADDR remote_bda)
 **
 ** Function         airsync_env_find_conn_id_by_bd_adddr
 **
-** Description      The function searches all LCB with macthing bd address
+** Description      The function searches all LCB with matching bd address
 **
 ** Returns          total number of clcb found.
 **
@@ -231,7 +231,7 @@ UINT16 airsync_env_find_conn_id_by_bd_adddr(BD_ADDR remote_bda)
 **
 ** Function         airsync_init
 **
-** Description      Initializa the GATT Service for airsync profiles.
+** Description      Initialize the GATT Service for airsync profiles.
 **
 *******************************************************************************/
 tGATT_STATUS AirSync_Init(tAIRSYNC_CBACK *call_back)

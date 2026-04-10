@@ -32,6 +32,8 @@
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_DM_CONNECTED_SRVCS  bta_dm_conn_srvcs;
 #else
@@ -520,6 +522,10 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
                 }
             }
 
+            if (j > p_bta_dm_pm_cfg[0].app_id) {
+                continue;
+            }
+
             p_pm_cfg = &p_bta_dm_pm_cfg[j];
             p_pm_spec = &p_bta_dm_pm_spec[p_pm_cfg->spec_idx];
             p_act0 = &p_pm_spec->actn_tbl[p_srvcs->state][0];
@@ -753,6 +759,10 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr)
                                        bta_dm_conn_srvcs.conn_srvc[i].id, bta_dm_conn_srvcs.conn_srvc[i].app_id);
                     break;
                 }
+            }
+
+            if (j > p_bta_dm_pm_cfg[0].app_id) {
+                continue;
             }
 
             /* find the ssr index with the smallest max latency. */
@@ -1171,3 +1181,5 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
 }
 
 #endif
+
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)

@@ -26,7 +26,7 @@
 #define ALARM_PERIOD_MS 100
 #define ALARM_TIMES     200 // 200*100ms = 20s
 
-static const char* TAG = "ESP_TIMER with DFS";
+ESP_LOG_ATTR_TAG(TAG, "ESP_TIMER with DFS");
 
 static uint32_t s_current_alarm = 0;
 static uint64_t s_alarm_records[ALARM_TIMES + 1] = {0};
@@ -43,6 +43,8 @@ static uint32_t supported_freq[] = {8, 16, 32, 48, 64, 96};
 static uint32_t supported_freq[] = {8, 16, 24, 32};
 #elif CONFIG_IDF_TARGET_ESP32P4
 static uint32_t supported_freq[] = {10, 20, 40, 90, 180, 360};
+#elif CONFIG_IDF_TARGET_ESP32S31
+static uint32_t supported_freq[] = {10, 20, 40, 90, 180, 320};
 #endif
 
 static SemaphoreHandle_t s_alarm_finished;
@@ -109,7 +111,7 @@ static int64_t test_periodic_timer_accuracy_on_dfs(esp_timer_handle_t timer)
 {
     // Calibrate slow clock.
 #if !CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-    esp_clk_slowclk_cal_set(rtc_clk_cal(RTC_CAL_RTC_MUX, 8192));
+    esp_clk_slowclk_cal_set(rtc_clk_cal(CLK_CAL_RTC_SLOW, 8192));
 #endif
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(timer, ALARM_PERIOD_MS * 1000));

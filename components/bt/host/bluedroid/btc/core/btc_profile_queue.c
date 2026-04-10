@@ -62,6 +62,9 @@ static void queue_int_advance(void)
 void btc_profile_queue_handler(btc_msg_t *msg)
 {
     btc_prf_que_args_t *arg = (btc_prf_que_args_t *)(msg->arg);
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_PRF_QUE_CONNECT:
         queue_int_add(&(arg->connect_node));

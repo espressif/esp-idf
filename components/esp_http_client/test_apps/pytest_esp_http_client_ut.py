@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@idf_parametrize('config', ['default'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_esp_http_client(dut: Dut) -> None:
     dut.run_all_single_board_cases()

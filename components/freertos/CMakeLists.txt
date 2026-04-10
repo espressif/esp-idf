@@ -50,6 +50,10 @@ set(private_include_dirs "")
 set(private_requirements "")
 set(ldfragments "")
 
+# ---------------------------------------------------- Set Private Requirements ----------------------------------------
+
+list(APPEND private_requirements esp_hal_systimer)
+
 # ---------------------------------------------------- Set Sources -----------------------------------------------------
 
 # Add common source files
@@ -96,7 +100,6 @@ endif()
 
 # Add ESP-additions source files
 list(APPEND srcs
-    "esp_additions/freertos_compatibility.c"
     "esp_additions/idf_additions_event_groups.c"
     "esp_additions/idf_additions.c")
 
@@ -194,6 +197,11 @@ if(arch STREQUAL "linux")
         PROPERTIES COMPILE_OPTIONS
         "-Wno-strict-prototypes"
         )
+    if(APPLE)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _app_main")
+    else()
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
+    endif()
 else()
     idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 
@@ -221,13 +229,8 @@ else()
     # linker to not drop this symbol.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
 
-    if(CONFIG_APPTRACE_SV_ENABLE)
-        # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
-        idf_component_optional_requires(PUBLIC app_trace)
-    elseif(CONFIG_APPTRACE_ENABLE)
-        # [refactor-todo]: app_startup.c esp_startup_start_app_other_cores() has a dependency on esp_apptrace_init()
-        # (called on CPU1). This should be resolved when link-time registration of startup functions is added.
-        idf_component_optional_requires(PRIVATE app_trace)
+    if(CONFIG_ESP_TRACE_ENABLE)
+        idf_component_optional_requires(PUBLIC esp_trace)
     endif()
 
     if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)

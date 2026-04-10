@@ -23,9 +23,11 @@ static int ble_spp_client_gap_event(struct ble_gap_event *event, void *arg);
 QueueHandle_t spp_common_uart_queue = NULL;
 void ble_store_config_init(void);
 uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+static SemaphoreHandle_t g_attr_handle_mutex = NULL;
 static void ble_spp_client_scan(void);
 static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 
+#if MYNEWT_VAL(BLE_GATTC)
 static void ble_spp_client_write_subscribe(const struct peer *peer)
 {
   uint8_t value[2];
@@ -72,8 +74,19 @@ ble_spp_client_set_handle(const struct peer *peer)
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
+
+    if (chr == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer lacks SPP characteristic\n");
+        return;
+    }
+    if (g_attr_handle_mutex != NULL) {
+        xSemaphoreTake(g_attr_handle_mutex, portMAX_DELAY);
+    }
     attribute_handle[peer->conn_handle] = chr->chr.val_handle;
     MODLOG_DFLT(INFO, "attribute_handle %x\n", attribute_handle[peer->conn_handle]);
+    if (g_attr_handle_mutex != NULL) {
+        xSemaphoreGive(g_attr_handle_mutex);
+    }
 
     dsc = peer_dsc_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
@@ -89,7 +102,6 @@ ble_spp_client_set_handle(const struct peer *peer)
     ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
                             value, sizeof(value), NULL, NULL);
 }
-
 
 /**
  * Called when service discovery of the specified peer has completed.
@@ -119,6 +131,7 @@ ble_spp_client_on_disc_complete(const struct peer *peer, int status, void *arg)
     ble_spp_client_scan();
 #endif
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -294,8 +307,10 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
             MODLOG_DFLT(INFO, "Connection established ");
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
-            memcpy(&connected_addr[event->connect.conn_handle].val, desc.peer_id_addr.val,
-                   PEER_ADDR_VAL_SIZE);
+            if (event->connect.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+                memcpy(&connected_addr[event->connect.conn_handle].val, desc.peer_id_addr.val,
+                       PEER_ADDR_VAL_SIZE);
+            }
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
@@ -306,6 +321,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery. */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_spp_client_on_disc_complete, NULL);
@@ -313,6 +329,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
@@ -330,7 +347,13 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Forget about peer. */
         memset(&connected_addr[event->disconnect.conn.conn_handle].val, 0, PEER_ADDR_VAL_SIZE);
+        if (g_attr_handle_mutex != NULL) {
+            xSemaphoreTake(g_attr_handle_mutex, portMAX_DELAY);
+        }
         attribute_handle[event->disconnect.conn.conn_handle] = 0;
+        if (g_attr_handle_mutex != NULL) {
+            xSemaphoreGive(g_attr_handle_mutex);
+        }
         peer_delete(event->disconnect.conn.conn_handle);
 
         /* Resume scanning. */
@@ -419,16 +442,38 @@ void ble_client_uart_task(void *pvParameters)
                     }
                     memset(temp, 0x0, event.size);
                     uart_read_bytes(UART_NUM_0, temp, event.size, portMAX_DELAY);
-                    for ( i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+                    /* Collect valid connections while holding mutex to prevent race conditions */
+                    struct {
+                        uint16_t conn_handle;
+                        uint16_t attr_handle;
+                    } valid_conns[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+                    int valid_count = 0;
+
+                    if (g_attr_handle_mutex != NULL) {
+                        xSemaphoreTake(g_attr_handle_mutex, portMAX_DELAY);
+                    }
+                    for (i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
                         if (attribute_handle[i] != 0) {
-                            rc = ble_gattc_write_flat(i, attribute_handle[i], temp, event.size, NULL, NULL);
-                            if (rc == 0) {
-                                ESP_LOGI(tag, "Write in uart task success!");
-                            } else {
-                                ESP_LOGI(tag, "Error in writing characteristic rc=%d", rc);
-                            }
-                            vTaskDelay(10);
+                            valid_conns[valid_count].conn_handle = i;
+                            valid_conns[valid_count].attr_handle = attribute_handle[i];
+                            valid_count++;
                         }
+                    }
+                    if (g_attr_handle_mutex != NULL) {
+                        xSemaphoreGive(g_attr_handle_mutex);
+                    }
+
+                    /* Write to all valid connections (outside mutex to avoid blocking) */
+                    for (i = 0; i < valid_count; i++) {
+#if MYNEWT_VAL(BLE_GATTC)
+                        rc = ble_gattc_write_flat(valid_conns[i].conn_handle, valid_conns[i].attr_handle, temp, event.size, NULL, NULL);
+                        if (rc == 0) {
+                            ESP_LOGI(tag, "Write in uart task success!");
+                        } else {
+                            ESP_LOGI(tag, "Error in writing characteristic rc=%d", rc);
+                        }
+#endif
+                        vTaskDelay(10);
                     }
                     free(temp);
                 }
@@ -476,6 +521,13 @@ app_main(void)
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
+
+    /* Initialize mutex for attribute_handle protection */
+    g_attr_handle_mutex = xSemaphoreCreateMutex();
+    if (g_attr_handle_mutex == NULL) {
+        ESP_LOGE(tag, "Failed to create attribute handle mutex");
         return;
     }
 

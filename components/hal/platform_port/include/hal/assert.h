@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,20 @@
 extern "C" {
 #endif
 
-extern void __assert_func(const char *file, int line, const char *func, const char *expr);
-extern void abort(void);
+#if CONFIG_LIBC_PICOLIBC
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define __noreturn [[noreturn]]
+#elif __has_attribute(__noreturn__)
+#define __noreturn __attribute__((__noreturn__))
+#else
+#define __noreturn
+#endif
+#else
+#define __noreturn
+#endif
+
+__noreturn void __assert_func(const char *file, int line, const char *func, const char *expr);
+__noreturn void abort(void);
 
 #ifndef __ASSERT_FUNC
 #ifdef __ASSERT_FUNCTION

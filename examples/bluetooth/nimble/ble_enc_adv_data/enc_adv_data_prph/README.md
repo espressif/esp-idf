@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H4 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
 
 # BLE Encrypted Advertising Data Peripheral Example
 
@@ -28,7 +28,7 @@ idf.py menuconfig
 ```
 In the `Component config` menu:
 
-* Select encrypted adv data from `Component config -> Bluetooth -> NimBLE Options -> BT_NIMBLE_ENC_ADV_DATA`
+* Select encrypted adv data from `Component config -> Bluetooth -> NimBLE Options -> Extra Features -> Encrypted Advertising Data`
 
 In the `Example Configuration` menu:
 

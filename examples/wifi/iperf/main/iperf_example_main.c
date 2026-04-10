@@ -39,29 +39,29 @@ extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
 #include "esp_extconn.h"
 #endif
 
-void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status)
+void iperf_hook_show_wifi_stats(iperf_id_t instance_id, iperf_state_data_t *data, void *priv)
 {
-    if (status == IPERF_STARTED) {
+    if (data->state == IPERF_STARTED) {
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
-        if (type != IPERF_UDP_SERVER) {
+        if (data->traffic_type != IPERF_UDP_SERVER) {
             wifi_cmd_clr_tx_statistics(0, NULL);
         }
 #endif
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
-        if (type != IPERF_UDP_CLIENT) {
+        if (data->traffic_type != IPERF_UDP_CLIENT) {
             wifi_cmd_clr_rx_statistics(0, NULL);
         }
 #endif
     }
 
-    if (status == IPERF_STOPPED) {
+    if (data->state == IPERF_STOPPED) {
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
-        if (type != IPERF_UDP_SERVER) {
+        if (data->traffic_type != IPERF_UDP_SERVER) {
             wifi_cmd_get_tx_statistics(0, NULL);
         }
 #endif
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
-        if (type != IPERF_UDP_CLIENT) {
+        if (data->traffic_type != IPERF_UDP_CLIENT) {
             wifi_cmd_get_rx_statistics(0, NULL);
         }
 #endif
@@ -132,8 +132,8 @@ void app_main(void)
     /* From wifi-cmd */
     wifi_cmd_register_all();
     /* From iperf-cmd */
-    app_register_iperf_commands();
-    app_register_iperf_hook_func(iperf_hook_show_wifi_stats);
+    iperf_cmd_register_iperf();
+    iperf_cmd_set_iperf_state_handler(iperf_hook_show_wifi_stats, NULL);
     /* From ping-cmd */
     ping_cmd_register_ping();
 

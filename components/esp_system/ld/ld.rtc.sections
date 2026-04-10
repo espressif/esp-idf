@@ -1,0 +1,170 @@
+#include "sdkconfig.h"
+#include "ld.common"
+
+#if CONFIG_SOC_RTC_MEM_SUPPORTED
+  /**
+   * RTC fast memory holds RTC wake stub code,
+   * including from any source file named rtc_wake_stub*.c
+   */
+  .rtc.text :
+  {
+    /**
+     * Align the start of RTC code region as per PMP granularity.
+     * This ensures we do not overwrite the permissions for the previous
+     * region (ULP mem/RTC reserved) regardless of their end alignment.
+     */
+    . = ALIGN(_esp_pmp_align_size);
+
+    _rtc_fast_start = ABSOLUTE(.);
+    _rtc_text_start = ABSOLUTE(.);
+    HIDDEN(_rtc_code_start = .);
+
+    *(.rtc.entry.text)
+
+    SECTION_MAPPINGS(rtc_text)
+
+    *rtc_wake_stub*.*(.text .text.*)
+    *(.rtc_text_end_test)
+
+    /* Align the end of RTC code region as per PMP granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
+    HIDDEN(_rtc_code_end = .);
+
+    /* Padding for possible CPU prefetch + 4B alignment for PMS split lines. */
+    . = ((_rtc_code_end - _rtc_code_start) == 0) ?
+        ALIGN(0) : _esp_memprot_prefetch_pad_size + ALIGN(4);
+    _rtc_text_end = ABSOLUTE(.);
+  } > rtc_text_seg
+
+
+  /**
+   * This section is located in RTC FAST Memory area.
+   * It holds data marked with RTC_FAST_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_fast :
+  {
+    ALIGNED_SYMBOL(4, _rtc_force_fast_start)
+
+    SECTION_MAPPINGS(rtc_force_fast)
+    *(.rtc.force_fast .rtc.force_fast.*)
+
+    ALIGNED_SYMBOL(4, _rtc_force_fast_end)
+  } > rtc_force_fast_seg
+
+  /**
+   * RTC data section holds RTC wake stub data/rodata, including from
+   * any source file named rtc_wake_stub*.c and the data marked with
+   * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
+   */
+  .rtc.data :
+  {
+    _rtc_data_start = ABSOLUTE(.);
+
+    SECTION_MAPPINGS(rtc_data)
+    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .srodata.*)
+
+    _rtc_data_end = ABSOLUTE(.);
+  } > rtc_data_seg
+
+  /* RTC bss, from any source file named rtc_wake_stub*.c */
+  .rtc.bss (NOLOAD) :
+  {
+    _rtc_bss_start = ABSOLUTE(.);
+
+    *rtc_wake_stub*.*(.bss .bss.* .sbss .sbss.*)
+    *rtc_wake_stub*.*(COMMON)
+    SECTION_MAPPINGS(rtc_bss)
+
+    _rtc_bss_end = ABSOLUTE(.);
+  } > rtc_data_seg
+
+  /**
+   * This section holds data that should not be initialized at power up
+   * and will be retained during deep sleep.
+   * User data marked with RTC_NOINIT_ATTR will be placed into this section.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc_noinit (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(4, _rtc_noinit_start)
+
+    SECTION_MAPPINGS(rtc_noinit)
+    *(.rtc_noinit .rtc_noinit.*)
+
+    ALIGNED_SYMBOL(4, _rtc_noinit_end)
+  } > rtc_data_seg
+
+  /**
+   * This section is located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_slow :
+  {
+    ALIGNED_SYMBOL(4, _rtc_force_slow_start)
+
+    *(.rtc.force_slow .rtc.force_slow.*)
+
+    ALIGNED_SYMBOL(4, _rtc_force_slow_end)
+  } > rtc_force_slow_seg
+
+  /**
+   * This section holds RTC data that should have fixed addresses.
+   * The data are not initialized at power-up and are retained during deep sleep.
+   */
+  .rtc_reserved (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(4, _rtc_reserved_start)
+
+    /**
+     * IMPORTANT: Existing data must not be moved.
+     * Data have adhered to the beginning or ending of the segment
+     * (depending on chip) and code relies on it.
+     */
+#if CONFIG_IDF_TARGET_ESP32P4
+    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+    /**
+     * Put new data after this line
+     * vvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     */
+#else // CONFIG_IDF_TARGET_ESP32P4
+    /**
+     * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     * Put new data before this line
+     */
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+#endif // CONFIG_IDF_TARGET_ESP32P4
+
+    _rtc_reserved_end = ABSOLUTE(.);
+  } > rtc_reserved_seg
+
+  _rtc_ulp_memory_start = _rtc_reserved_start + LENGTH(rtc_reserved_seg);
+  _rtc_reserved_length = _rtc_reserved_end - _rtc_reserved_start;
+  ASSERT((_rtc_reserved_length <= LENGTH(rtc_reserved_seg)),
+          "RTC reserved segment data does not fit.")
+
+  /* Get size of rtc slow data based on rtc_data_seg alias */
+  _rtc_slow_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_seg))
+                        ? (_rtc_force_slow_end - _rtc_data_start)
+                        : (_rtc_force_slow_end - _rtc_force_slow_start);
+  _rtc_fast_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_seg))
+                        ? (_rtc_force_fast_end - _rtc_fast_start)
+                        : (_rtc_noinit_end - _rtc_fast_start);
+  ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)),
+          "RTC_SLOW segment data does not fit.")
+  ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)),
+          "RTC_FAST segment data does not fit.")
+
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+  .rtc.p4_rev3_mspi_workaround :
+  {
+    ALIGNED_SYMBOL(4, _rtc_p4_rev3_mspi_workaround_start)
+    KEEP (*(.p4_rev3_mspi_workaround.rtc_text .p4_rev3_mspi_workaround.rtc_text.*))
+    ALIGNED_SYMBOL(4, _rtc_p4_rev3_mspi_workaround_end)
+  } > rev3_mspi_workaround_seg
+#endif // CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+#endif // CONFIG_SOC_RTC_MEM_SUPPORTED

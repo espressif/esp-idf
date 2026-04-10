@@ -45,8 +45,8 @@ extern "C" {
     #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (0)
     #endif
 
-    #define DEGAULT_BT_LE_2M_PHY                         (CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY)
-    #define DEGAULT_BT_LE_CODED_PHY                      (CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY)
+    #define DEFAULT_BT_LE_2M_PHY                         (CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY)
+    #define DEFAULT_BT_LE_CODED_PHY                      (CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY)
     #define DEFAULT_BT_LE_EXT_ADV                        (CONFIG_BT_NIMBLE_EXT_ADV)
     #define DEFAULT_BT_LE_PERIODIC_ADV                   (CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV)
     #define DEFAULT_BT_LE_EXT_SCAN                       (CONFIG_BT_NIMBLE_EXT_SCAN)
@@ -138,15 +138,15 @@ extern "C" {
     #endif
 
     #if defined(CONFIG_BT_LE_LL_CFG_FEAT_LE_2M_PHY)
-        #define DEGAULT_BT_LE_2M_PHY (CONFIG_BT_LE_LL_CFG_FEAT_LE_2M_PHY)
+        #define DEFAULT_BT_LE_2M_PHY (CONFIG_BT_LE_LL_CFG_FEAT_LE_2M_PHY)
     #else
-        #define DEGAULT_BT_LE_2M_PHY (0)
+        #define DEFAULT_BT_LE_2M_PHY (0)
     #endif
 
     #if defined(CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY)
-        #define DEGAULT_BT_LE_CODED_PHY (CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY)
+        #define DEFAULT_BT_LE_CODED_PHY (CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY)
     #else
-        #define DEGAULT_BT_LE_CODED_PHY (0)
+        #define DEFAULT_BT_LE_CODED_PHY (0)
     #endif
 
     #if defined(CONFIG_BT_LE_EXT_ADV)

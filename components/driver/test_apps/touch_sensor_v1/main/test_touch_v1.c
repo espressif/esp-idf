@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -301,6 +301,11 @@ static bool s_pad_activated[TOUCH_PAD_MAX];
 static void test_touch_intr_cb(void *arg)
 {
     uint32_t pad_intr = touch_pad_get_status();
+    uint16_t touch_value;
+    // Should be able to read touch value in ISR
+    touch_pad_read_filtered(touch_list[0], &touch_value);
+    touch_pad_read_raw_data(touch_list[0], &touch_value);
+
     //clear interrupt
     touch_pad_clear_status();
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {

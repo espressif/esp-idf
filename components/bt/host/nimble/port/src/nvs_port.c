@@ -32,9 +32,11 @@ link_storage_fn(void *storage_cb)
     struct cache_fn_mapping cache_fn;
     cache_fn.open = nvs_open_custom;
     cache_fn.close = nvs_close;
+    cache_fn.erase_key_item = nvs_erase_key;
     cache_fn.erase_all = nvs_erase_all;
     cache_fn.write = nvs_set_blob;
     cache_fn.read = nvs_get_blob;
+    cache_fn.commit = nvs_commit;
     return cache_fn;
 }
 #endif

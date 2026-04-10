@@ -12,8 +12,7 @@
 #include "soc/soc_caps.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
-#include "soc/gpio_periph.h"
-#include "soc/emac_periph.h"
+#include "hal/emac_periph.h"
 #include "esp_private/gpio.h"
 #include "esp_private/eth_mac_esp_gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
@@ -260,6 +259,13 @@ esp_err_t emac_esp_iomux_mii_init_rx_er(int num)
 
     ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_mii_iomux_pins.rx_er, emac_io_idx.mii_rx_er_i_idx, true),
                         TAG, "invalid RX_ER GPIO number");
+    return ESP_OK;
+}
+
+esp_err_t emac_esp_gpio_matrix_init_ptp_pps(int num)
+{
+    ESP_RETURN_ON_ERROR(emac_esp_gpio_matrix_init(num, 0, emac_io_idx.ptp_pps_idx, GPIO_MODE_OUTPUT),
+                        TAG, "PTP PPS GPIO matrix config failed");
     return ESP_OK;
 }
 

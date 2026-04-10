@@ -22,7 +22,7 @@ ESP-IDF 支持统一配网，提供可扩展的机制，支持开发者使用不
 
 4. **数据格式紧凑**
 
-该协议使用 `Google Protobufs <https://developers.google.com/protocol-buffers/>`_ 作为会话设置和 Wi-Fi 配网的数据格式。该方案提供紧凑的数据格式，并可以使用不同编程语言进行数据解析。请注意，该配网的应用数据格式并不只局限于 Protobufs，开发者可以自行选择自己想用的数据格式。
+该协议使用 `Google Protobufs <https://developers.google.com/protocol-buffers/>`_ 作为会话设置和网络配网的数据格式。该方案提供紧凑的数据格式，并可以使用不同编程语言进行数据解析。请注意，该配网的应用数据格式并不只局限于 Protobufs，开发者可以自行选择自己想用的数据格式。
 
 配网过程示例
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -57,12 +57,12 @@ ESP-IDF 支持统一配网，提供可扩展的机制，支持开发者使用不
         === 3. 配置 ===
         CLIENT --> DEVICE [label="特定应用程序的配置设置（可选）"];
         DEVICE --> CLIENT [label="配置设置响应（可选）"];
-        CLIENT -> DEVICE [label="Wi-Fi 配置设置（SSID、密码等）"];
-        DEVICE -> CLIENT [label="Wi-Fi 配置设置响应"];
-        CLIENT -> DEVICE [label="Wi-Fi 配置应用命令"];
-        DEVICE -> CLIENT [label="Wi-Fi 配置应用响应"];
-        CLIENT -> DEVICE [label="Wi-Fi 获取状态命令（重复）"];
-        DEVICE -> CLIENT [label="Wi-Fi 获取状态响应（重复）"];
+        CLIENT -> DEVICE [label="Wi-Fi/Thread 配置设置（SSID、密码等）"];
+        DEVICE -> CLIENT [label="Wi-Fi/Thread 配置设置响应"];
+        CLIENT -> DEVICE [label="Wi-Fi/Thread 配置应用命令"];
+        DEVICE -> CLIENT [label="Wi-Fi/Thread 配置应用响应"];
+        CLIENT -> DEVICE [label="Wi-Fi/Thread 获取状态命令（重复）"];
+        DEVICE -> CLIENT [label="Wi-Fi/Thread 获取状态响应（重复）"];
         === 4. 关闭连接 ===
         DEVICE -> CLIENT [label="关闭连接"];
     }
@@ -123,7 +123,7 @@ ESP-IDF 支持统一配网，提供可扩展的机制，支持开发者使用不
 
     统一配网架构
 
-统一配网依赖名为 :doc:`protocomm` (protocomm) 的基础层，该层提供了安全方案和传输机制的框架。Wi-Fi 配网层使用 protocomm 提供简单的回调函数，供应用程序设置配置和获取 Wi-Fi 状态。应用程序可以控制这些回调的实现方式。此外，应用程序还可以直接使用 protocomm 来注册自定义处理程序。
+统一配网依赖名为 :doc:`protocomm` (protocomm) 的基础层，该层提供了安全方案和传输机制的框架。网络配网层使用 protocomm 提供简单的回调函数，供应用程序设置配置和获取网络状态。应用程序可以控制这些回调的实现方式。此外，应用程序还可以直接使用 protocomm 来注册自定义处理程序。
 
 应用程序会创建一个 protocomm 实例，该实例会映射到特定传输方式和安全方案。protocomm 中的每个传输方式都有“端点”概念，对应特定类型信息通信的逻辑通道。例如，进行安全握手的端点与 Wi-Fi 配置端点不同。每个端点都用字符串标识，具体取决于传输内部对端点变化的表示方式。对于 SoftAP + HTTP 传输方式，端点对应 URI；而对于低功耗蓝牙，端点对应具有特定 UUID 的 GATT 特征。开发者可以创建自定义端点，为同一端点接收或发送的数据实现处理程序。
 
@@ -302,9 +302,9 @@ Security 2 方案使用 AES-GCM 对数据进行加密和解密。初始化向量
 示例代码
 >>>>>>>>>>>
 
-关于 API 指南和示例用法的代码片段，请参阅 :doc:`protocomm` 和 :doc:`wifi_provisioning`。
+关于 API 指南和示例用法的代码片段，请参阅 :doc:`protocomm` 和 `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_。
 
-关于应用程序的实现示例，请参阅 :example:`provisioning`。
+关于应用程序的实现示例，请参阅 `provisioning examples <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning/examples>`_。
 
 配网工具
 >>>>>>>>>>>>>>>>>>
@@ -319,6 +319,6 @@ Security 2 方案使用 AES-GCM 对数据进行加密和解密。初始化向量
     * `App Store 上的低功耗蓝牙配网应用程序 <https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141>`_。
     * `App Store 上的 SoftAP 配网应用程序 <https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630>`_。
     * GitHub 上的源代码：`esp-idf-provisioning-ios <https://github.com/espressif/esp-idf-provisioning-ios>`_。
-* Linux/macOS/Windows：基于 Python 的命令行工具 :idf:`tools/esp_prov`，可用于设备配网。
+* Linux/macOS/Windows：基于 Python 的命令行工具 `esp_prov <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning/tool/esp_prov>`_，可用于设备配网。
 
 手机应用程序界面简洁，便于用户使用，而开发者可以使用命令行应用程序，便于调试。

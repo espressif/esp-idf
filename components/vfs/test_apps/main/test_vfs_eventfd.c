@@ -207,6 +207,8 @@ TEST_CASE("eventfd signal from task", "[vfs][eventfd]")
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 
+#if SOC_HAS(GPTIMER)
+
 static bool eventfd_select_test_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     gptimer_stop(timer);
@@ -262,6 +264,8 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
     TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
+
+#endif
 
 static void close_task(void *arg)
 {

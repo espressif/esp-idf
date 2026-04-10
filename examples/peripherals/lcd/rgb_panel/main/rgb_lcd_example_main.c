@@ -256,7 +256,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Allocate LVGL draw buffers");
     // it's recommended to allocate the draw buffer from internal memory, for better performance
     size_t draw_buffer_sz = EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * EXAMPLE_PIXEL_SIZE;
-    buf1 = heap_caps_malloc(draw_buffer_sz, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    buf1 = esp_lcd_rgb_alloc_draw_buffer(panel_handle, draw_buffer_sz, 0);
     assert(buf1);
     // set LVGL draw buffers and partial mode
     lv_display_set_buffers(display, buf1, buf2, draw_buffer_sz, LV_DISPLAY_RENDER_MODE_PARTIAL);

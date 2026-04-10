@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
-from typing import Callable
-from typing import Tuple
+from collections.abc import Callable
 
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # diff of esp32s2/esp32s3 ~45K, others ~50K
 
 DIFF_THRESHOLD = {
@@ -16,7 +16,7 @@ DIFF_THRESHOLD = {
 }
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize('count, config, skip_autoflash', [(2, 'default|enable_softap', 'y')], indirect=True)
 @idf_parametrize(
     'target',
@@ -24,7 +24,7 @@ DIFF_THRESHOLD = {
     indirect=['target'],
 )
 def test_wifi_sdkconfig_disable_softap_save_binary_size(
-    dut: Tuple[Dut, Dut],
+    dut: tuple[Dut, Dut],
     log_performance: Callable[[str, object], None],
 ) -> None:
     # dut logs are not needed

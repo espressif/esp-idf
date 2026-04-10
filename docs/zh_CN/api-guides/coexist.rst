@@ -282,7 +282,7 @@ BLE MESH 共存状态描述
       - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 选择关闭此配置选项，关闭此配置选项将会减少大约 17 KB 的 IRAM 内存。
       - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT` 选择减小 TCP 套接字默认发送缓存区。
       - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT` 选择减小 TCP 套接字默认接收窗口。
-      - :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 可配置减小 TCP 接收邮箱。接受邮箱负责缓冲 TCP 连接中的数据，确保数据流畅传输。
+      - :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 可配置减小 TCP 接收邮箱。接收邮箱负责缓冲 TCP 连接中的数据，确保数据流畅传输。
       - :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 管理传入的连接请求，可配置减小 TCP 接受邮箱。接受邮箱负责管理传入的连接请求，促进建立新的 TCP 连接。
       - :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 选择减小 UDP 接收邮箱。
       - :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE` 选择减小 TCPIP 任务接收邮箱。

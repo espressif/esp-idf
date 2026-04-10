@@ -1,5 +1,10 @@
 menu "Heap memory debugging"
 
+    config HEAP_HAS_EXEC_HEAP
+        bool
+        default n if ESP_SYSTEM_MEMPROT
+        default y if !ESP_SYSTEM_MEMPROT
+
     choice HEAP_CORRUPTION_DETECTION
         prompt "Heap corruption detection"
         default HEAP_POISONING_DISABLED

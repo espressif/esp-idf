@@ -15,7 +15,7 @@
 #include "esp_private/log_print.h"
 #include "esp_private/log_util.h"
 #include "soc/soc.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #if BOOTLOADER_BUILD
 #define APP_TYPE 0x01

@@ -26,6 +26,12 @@ static inline void modem_lpcon_ll_enable_test_clk(modem_lpcon_dev_t *hw, bool en
 }
 
 __attribute__((always_inline))
+static inline bool modem_lpcon_ll_test_clk_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->test_conf.clk_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_coex_lpclk_slow_osc(modem_lpcon_dev_t *hw, bool en)
 {
     hw->coex_lp_clk_conf.clk_coex_lp_sel_osc_slow = en;
@@ -68,9 +74,21 @@ static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool 
 }
 
 __attribute__((always_inline))
+static inline bool modem_lpcon_ll_coex_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf.clk_coex_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_fe_mem_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf.clk_fe_mem_en = en;
+}
+
+__attribute__((always_inline))
+static inline bool modem_lpcon_ll_fe_mem_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf.clk_fe_mem_en;
 }
 
 __attribute__((always_inline))

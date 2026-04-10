@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,10 +42,23 @@ typedef struct {
     soc_periph_lp_i2c_clk_src_t i2c_src_clk;  /*!< LP I2C source clock type */
 } lp_core_i2c_cfg_t;
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#define LP_I2C_SCL_IO   GPIO_NUM_4
+#define LP_I2C_SDA_IO   GPIO_NUM_5
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define LP_I2C_SCL_IO   GPIO_NUM_3
+#define LP_I2C_SDA_IO   GPIO_NUM_2
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define LP_I2C_SCL_IO   GPIO_NUM_7
+#define LP_I2C_SDA_IO   GPIO_NUM_6
+#else
+#error "Default LP core I2C pin not set for this chip"
+#endif
+
 /* Default LP I2C GPIO settings */
 #define LP_I2C_DEFAULT_GPIO_CONFIG()            \
-        .i2c_pin_cfg.sda_io_num = GPIO_NUM_6,   \
-        .i2c_pin_cfg.scl_io_num = GPIO_NUM_7,   \
+        .i2c_pin_cfg.sda_io_num = LP_I2C_SDA_IO,\
+        .i2c_pin_cfg.scl_io_num = LP_I2C_SCL_IO,\
         .i2c_pin_cfg.sda_pullup_en = true,      \
         .i2c_pin_cfg.scl_pullup_en = true,      \
 
@@ -60,7 +73,7 @@ typedef struct {
 #define LP_I2C_DEFAULT_SRC_CLK()                \
         .i2c_src_clk = LP_I2C_SCLK_LP_FAST,     \
 
-/* Default LP I2C GPIO settings and timing parametes */
+/* Default LP I2C GPIO settings and timing parameters */
 #define LP_CORE_I2C_DEFAULT_CONFIG()            \
     {                                           \
         LP_I2C_DEFAULT_GPIO_CONFIG()            \
@@ -77,7 +90,7 @@ typedef struct {
  * @return esp_err_t    ESP_OK when successful
  *
  * @note The internal pull-up resistors for SDA and SCL pins, if enabled, will
- * provide a weak pull-up value of about 30-50 kOhm. Users are adviced to enable
+ * provide a weak pull-up value of about 30-50 kOhm. Users are advised to enable
  * external pull-ups for better performance at higher SCL frequencies.
  */
 esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t *cfg);

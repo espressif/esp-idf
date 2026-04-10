@@ -9,7 +9,7 @@
 #include <sys/param.h>
 
 #include "esp_err.h"
-#include "esp_flash_encrypt.h"
+#include "esp_efuse.h"
 #include "esp_partition.h"
 #include "nvs_sec_provider.h"
 #include "unity.h"
@@ -24,7 +24,7 @@ static esp_err_t configure_nvs_sec_cfg(nvs_sec_cfg_t *cfg, nvs_sec_scheme_t **se
     ESP_ERROR_CHECK(esp_partition_erase_range(nvs_part, 0, nvs_part->size));
 
 #if CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
     }
 

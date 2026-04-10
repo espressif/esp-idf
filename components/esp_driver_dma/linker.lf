@@ -1,0 +1,123 @@
+[mapping:gdma_driver]
+archive: libesp_driver_dma.a
+entries:
+    if GDMA_ISR_HANDLER_IN_IRAM = y:
+        gdma: gdma_default_tx_isr (noflash)
+        gdma: gdma_default_rx_isr (noflash)
+
+    # put GDMA control functions in IRAM
+    if GDMA_CTRL_FUNC_IN_IRAM = y:
+        gdma: gdma_start (noflash)
+        gdma: gdma_stop (noflash)
+        gdma: gdma_append (noflash)
+        gdma: gdma_reset (noflash)
+
+[mapping:gdma_hal]
+archive: libesp_hal_dma.a
+entries:
+    # performance optimization, always put the DMA default interrupt handler in IRAM
+    if SOC_GDMA_SUPPORTED = y:
+        gdma_hal_top: gdma_hal_clear_intr (noflash)
+        gdma_hal_top: gdma_hal_read_intr_status (noflash)
+        gdma_hal_top: gdma_hal_get_eof_desc_addr (noflash)
+
+    # GDMA implementation layer for AHB-DMA version 1
+    if SOC_AHB_GDMA_VERSION = 1:
+        gdma_hal_ahb_v1: gdma_ahb_hal_clear_intr (noflash)
+        gdma_hal_ahb_v1: gdma_ahb_hal_read_intr_status (noflash)
+        gdma_hal_ahb_v1: gdma_ahb_hal_get_eof_desc_addr (noflash)
+
+    # GDMA implementation layer for AHB-DMA version 2
+    if SOC_AHB_GDMA_VERSION = 2:
+        gdma_hal_ahb_v2: gdma_ahb_hal_clear_intr (noflash)
+        gdma_hal_ahb_v2: gdma_ahb_hal_read_intr_status (noflash)
+        gdma_hal_ahb_v2: gdma_ahb_hal_get_eof_desc_addr (noflash)
+
+    # GDMA implementation layer for AXI-DMA
+    if SOC_AXI_GDMA_SUPPORTED = y:
+        gdma_hal_axi: gdma_axi_hal_clear_intr (noflash)
+        gdma_hal_axi: gdma_axi_hal_read_intr_status (noflash)
+        gdma_hal_axi: gdma_axi_hal_get_eof_desc_addr (noflash)
+
+    # put GDMA control HAL functions in IRAM
+    if GDMA_CTRL_FUNC_IN_IRAM = y:
+        gdma_hal_top: gdma_hal_start_with_desc (noflash)
+        gdma_hal_top: gdma_hal_stop (noflash)
+        gdma_hal_top: gdma_hal_append (noflash)
+        gdma_hal_top: gdma_hal_reset (noflash)
+
+        # GDMA implementation layer for AHB-DMA version 1
+        if SOC_AHB_GDMA_VERSION = 1:
+            gdma_hal_ahb_v1: gdma_ahb_hal_start_with_desc (noflash)
+            gdma_hal_ahb_v1: gdma_ahb_hal_stop (noflash)
+            gdma_hal_ahb_v1: gdma_ahb_hal_append (noflash)
+            gdma_hal_ahb_v1: gdma_ahb_hal_reset (noflash)
+
+        # GDMA implementation layer for AHB-DMA version 2
+        if SOC_AHB_GDMA_VERSION = 2:
+            gdma_hal_ahb_v2: gdma_ahb_hal_start_with_desc (noflash)
+            gdma_hal_ahb_v2: gdma_ahb_hal_stop (noflash)
+            gdma_hal_ahb_v2: gdma_ahb_hal_append (noflash)
+            gdma_hal_ahb_v2: gdma_ahb_hal_reset (noflash)
+
+        # GDMA implementation layer for AXI-DMA
+        if SOC_AXI_GDMA_SUPPORTED = y:
+            gdma_hal_axi: gdma_axi_hal_start_with_desc (noflash)
+            gdma_hal_axi: gdma_axi_hal_stop (noflash)
+            gdma_hal_axi: gdma_axi_hal_append (noflash)
+            gdma_hal_axi: gdma_axi_hal_reset (noflash)
+
+[mapping:dw_gdma_driver]
+archive: libesp_driver_dma.a
+entries:
+    # performance optimization, always put the DW_GDMA default interrupt handler in IRAM
+    if SOC_DW_GDMA_SUPPORTED = y:
+        dw_gdma: dw_gdma_channel_default_isr (noflash)
+
+    # put DW_GDMA control functions in IRAM
+    if DW_GDMA_CTRL_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_channel_continue (noflash)
+        dw_gdma: dw_gdma_channel_enable_ctrl (noflash)
+
+    if DW_GDMA_SETTER_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_channel_set_block_markers (noflash)
+        dw_gdma: dw_gdma_lli_set_block_markers (noflash)
+        dw_gdma: dw_gdma_channel_use_link_list (noflash)
+
+    if DW_GDMA_GETTER_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_link_list_get_item (noflash)
+
+[mapping:dma2d_driver]
+archive: libesp_driver_dma.a
+entries:
+    # performance optimization, always put the 2D-DMA default interrupt handler in IRAM
+    if SOC_DMA2D_SUPPORTED = y:
+        dma2d: acquire_free_channels_for_trans (noflash)
+        dma2d: free_up_channels (noflash)
+        dma2d: _dma2d_default_tx_isr (noflash)
+        dma2d: _dma2d_default_rx_isr (noflash)
+        dma2d: dma2d_default_isr (noflash)
+
+    # put 2D-DMA operation functions in IRAM
+    if DMA2D_OPERATION_FUNC_IN_IRAM = y:
+        dma2d: dma2d_connect (noflash)
+        dma2d: dma2d_register_tx_event_callbacks (noflash)
+        dma2d: dma2d_register_rx_event_callbacks (noflash)
+        dma2d: dma2d_set_desc_addr (noflash)
+        dma2d: dma2d_start (noflash)
+        dma2d: dma2d_stop (noflash)
+        dma2d: dma2d_append (noflash)
+        dma2d: dma2d_reset (noflash)
+        dma2d: dma2d_force_end (noflash)
+        dma2d: dma2d_apply_strategy (noflash)
+        dma2d: dma2d_set_transfer_ability (noflash)
+        dma2d: dma2d_configure_color_space_conversion (noflash)
+        dma2d: dma2d_configure_dscr_port_mode (noflash)
+        dma2d: dma2d_enqueue (noflash)
+
+[mapping:dma2d_hal]
+archive: libesp_hal_dma.a
+entries:
+    if DMA2D_ISR_IRAM_SAFE = y || DMA2D_OPERATION_FUNC_IN_IRAM = y:
+        dma2d_hal: dma2d_hal_tx_reset_channel (noflash)
+        dma2d_hal: dma2d_hal_rx_reset_channel (noflash)

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,14 +15,22 @@ extern "C" {
 typedef enum {
     MODEM_CLOCK_DOMAIN_MODEM_APB = 0,
     MODEM_CLOCK_DOMAIN_MODEM_PERIPH,
+#if SOC_WIFI_SUPPORTED
     MODEM_CLOCK_DOMAIN_WIFI,
+#endif
+#if SOC_BT_SUPPORTED
     MODEM_CLOCK_DOMAIN_BT,
+#endif
     MODEM_CLOCK_DOMAIN_MODEM_FE,
+#if SOC_IEEE802154_SUPPORTED
     MODEM_CLOCK_DOMAIN_IEEE802154,
+#endif
     MODEM_CLOCK_DOMAIN_LP_APB,
     MODEM_CLOCK_DOMAIN_I2C_MASTER,
     MODEM_CLOCK_DOMAIN_COEX,
+#if SOC_WIFI_SUPPORTED || SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
     MODEM_CLOCK_DOMAIN_WIFIPWR,
+#endif
     MODEM_CLOCK_DOMAIN_MAX
 } modem_clock_domain_t;
 

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef LWIP_HDR_ESP_LWIPOPTS_H
 #define LWIP_HDR_ESP_LWIPOPTS_H
@@ -726,6 +726,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * LWIP_NETIF_LINK_CALLBACK==1: Support a callback function from an interface
+ * whenever the link changes its up/down status.
+ */
+#ifdef CONFIG_LWIP_NETIF_LINK_CALLBACK
+#define LWIP_NETIF_LINK_CALLBACK       1
+#else
+#define LWIP_NETIF_LINK_CALLBACK       0
+#endif
+
+/**
  * LWIP_NETIF_EXT_STATUS_CALLBACK==1: Support an extended callback function
  * for several netif related event that supports multiple subscribers.
  *
@@ -846,7 +856,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 /**
  * TCPIP_THREAD_NAME: The name assigned to the main tcpip thread.
  */
-#define TCPIP_THREAD_NAME              "tiT"
+#define TCPIP_THREAD_NAME              "tcpip"
 
 /**
  * TCPIP_THREAD_STACKSIZE: The stack size used by the main tcpip thread.
@@ -1659,11 +1669,10 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_MLDV6_REPORT              0
 #endif
 
+#define SYS_DEBUG                       LWIP_DBG_OFF
+
 #define ESP_LWIP                        1
 #define ESP_LWIP_ARP                    1
-#define ESP_PER_SOC_TCP_WND             0
-#define ESP_THREAD_SAFE                 1       /* Not used (to be removed in v6.x) */
-#define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
 #define ESP_DNS                         1
 #define ESP_STATS_TCP                   0

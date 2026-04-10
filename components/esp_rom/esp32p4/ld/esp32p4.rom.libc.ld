@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,5 +54,5 @@ qsort = 0x4fc00348;
 utoa = 0x4fc00358;
 itoa = 0x4fc0035c;
 /* Data (.data, .bss, .rodata) */
-syscall_table_ptr = 0x4ff3ffe4;
-_global_impure_ptr = 0x4ff3ffe0;
+syscall_table_ptr = 0x4ffbffe4;
+_global_impure_ptr = 0x4ffbffe0;

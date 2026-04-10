@@ -65,10 +65,15 @@ void osi_mutex_unlock(osi_mutex_t *mutex)
     xSemaphoreGive(*mutex);
 }
 
-/** Delete a semaphore
- * @param mutex the mutex to delete */
+/** Delete a mutex
+ * @param mutex the mutex to delete
+ * Note: Safe to call with NULL or uninitialized mutex (IDFGH-16853)
+ */
 void osi_mutex_free(osi_mutex_t *mutex)
 {
+    if (mutex == NULL || *mutex == NULL) {
+        return;
+    }
     vSemaphoreDelete(*mutex);
     *mutex = NULL;
 }

@@ -5,4 +5,7 @@ components/esp_driver_tsens/test_apps/temperature_sensor:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
   depends_components:
     - esp_driver_tsens
+    - esp_hal_ana_conv
     - esp_phy
+    - esp_hw_support
+    - soc

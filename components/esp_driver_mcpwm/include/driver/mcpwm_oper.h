@@ -22,7 +22,8 @@ typedef struct {
     int group_id;                              /*!< Specify from which group to allocate the MCPWM operator */
     int intr_priority;                         /*!< MCPWM operator interrupt priority,
                                                     if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-    struct {
+    /// Extra configuration flags for operator
+    struct extra_mcpwm_operator_flags {
         uint32_t update_gen_action_on_tez: 1;  /*!< Whether to update generator action when timer counts to zero */
         uint32_t update_gen_action_on_tep: 1;  /*!< Whether to update generator action when timer counts to peak */
         uint32_t update_gen_action_on_sync: 1; /*!< Whether to update generator action on sync event */

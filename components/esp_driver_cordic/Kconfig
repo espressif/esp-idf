@@ -1,0 +1,10 @@
+menu "ESP-Driver:Cordic Configurations"
+    depends on SOC_CORDIC_SUPPORTED
+
+    config CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM
+        bool "Place cordic oneshot calculation function into IRAM"
+        default n
+        help
+            Place cordic oneshot function into IRAM so that cordic oneshot function
+            can be safely used in ISR even when cache is disabled.
+endmenu

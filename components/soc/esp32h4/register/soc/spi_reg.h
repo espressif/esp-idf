@@ -1,17 +1,16 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DR_REG_SPI_BASE(i)                       (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
+#define DR_REG_SPI_BASE(i)  (((i)>=2) ? (DR_REG_GPSPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
 
 /** SPI_CMD_REG register
  *  Command control register

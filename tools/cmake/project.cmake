@@ -1,5 +1,5 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Get the currently selected sdkconfig file early, so this doesn't
 # have to be done multiple times on different places.
@@ -263,6 +263,7 @@ function(__all_component_info output)
         __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
         __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
         __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+        __component_get_property(component_source ${target} COMPONENT_SOURCE)
 
         if(prefix STREQUAL build_prefix)
             set(name ${name})
@@ -282,6 +283,7 @@ function(__all_component_info output)
             "            \"target\": \"${target}\","
             "            \"prefix\": \"${prefix}\","
             "            \"dir\": \"${dir}\","
+            "            \"source\": \"${component_source}\","
             "            \"lib\": \"${lib}\","
             "            \"reqs\": ${reqs},"
             "            \"priv_reqs\": ${priv_reqs},"
@@ -351,7 +353,6 @@ function(__project_info test_components)
     include(${sdkconfig_cmake})
     idf_build_get_property(COMPONENT_KCONFIGS KCONFIGS)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
-    idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
     __generate_gdbinit()
     idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
@@ -381,6 +382,7 @@ function(__project_info test_components)
     # file with cmake's variables substituted and unprocessed generator expressions. The second
     # step, with file(GENERATE), processes the temporary file and substitute generator expression
     # into the final project_description.json file.
+    set(HINTS_FILE "${build_dir}/hints.yml")
     configure_file("${idf_path}/tools/cmake/project_description.json.in"
         "${build_dir}/project_description.json.templ")
     file(READ "${build_dir}/project_description.json.templ" project_description_json_templ)
@@ -390,6 +392,25 @@ function(__project_info test_components)
 
     # Generate component dependency graph
     depgraph_generate("${build_dir}/component_deps.dot")
+
+    # Assumption: all hints.yml files are bare YAML lists (no "---" document
+    # separators). Plain string concatenation is safe under this assumption.
+    # Note for consumers: yaml.safe_load() only parses the first YAML document,
+    # so document separators in source files would cause data loss.
+    set(_merged_hints "")
+    set(_global_hints_file "${idf_path}/tools/idf_py_actions/hints.yml")
+    if(EXISTS "${_global_hints_file}")
+        file(READ "${_global_hints_file}" _hints_content)
+        string(APPEND _merged_hints "${_hints_content}\n")
+    endif()
+    foreach(_comp_dir ${build_component_paths} ${test_component_paths})
+        set(_hints_file "${_comp_dir}/hints.yml")
+        if(EXISTS "${_hints_file}")
+            file(READ "${_hints_file}" _hints_content)
+            string(APPEND _merged_hints "${_hints_content}\n")
+        endif()
+    endforeach()
+    file(WRITE "${build_dir}/hints.yml" "${_merged_hints}")
 
     # We now have the following component-related variables:
     #
@@ -503,7 +524,19 @@ function(__project_init components_var test_components_var)
         if(DEFINED COMPONENTS)
             message(WARNING "The MINIMAL_BUILD property is disregarded because the COMPONENTS variable is defined.")
             set(minimal_build OFF)
+            idf_build_set_property(MINIMAL_BUILD OFF)
         else()
+            # The minimal build feature is enabled; check whether the 'main'
+            # component target exists, ensuring that the component is
+            # recognized by the build system.
+            idf_build_get_property(prefix __PREFIX)
+            set(main_component_target ___${prefix}_main)
+            if(NOT TARGET ${main_component_target})
+                message(FATAL_ERROR "MINIMAL_BUILD is enabled but component main was not found. "
+                    "Please ensure the main component exists (in '${CMAKE_CURRENT_LIST_DIR}/main' "
+                    "or disable MINIMAL_BUILD, or explicitly set the COMPONENTS variable.")
+            endif()
+
             set(COMPONENTS main ${TEST_COMPONENTS})
             set(minimal_build ON)
         endif()
@@ -607,7 +640,7 @@ macro(project project_name)
         # Set the variables that project() normally sets, documented in the
         # command's docs.
         #
-        # https://cmake.org/cmake/help/v3.16/command/project.html
+        # https://cmake.org/cmake/help/v3.22/command/project.html
         #
         # There is some nuance when it comes to setting version variables in terms of whether
         # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original
@@ -886,13 +919,6 @@ macro(project project_name)
         unset(idf_target)
     endif()
 
-
-    if(CONFIG_LIBC_PICOLIBC)
-        idf_build_set_property(C_COMPILE_OPTIONS "-specs=picolibc.specs" APPEND)
-        idf_build_set_property(CXX_COMPILE_OPTIONS "-specs=picolibcpp.specs" APPEND)
-        idf_build_set_property(LINK_OPTIONS "-specs=picolibc.specs" APPEND)
-    endif()
-
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
         ADDITIONAL_CLEAN_FILES
         "${mapfile}" "${project_elf_src}")
@@ -948,9 +974,10 @@ macro(project project_name)
     # Add uf2 related targets
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
+    idf_build_get_property(target IDF_TARGET)
 
     set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
-    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
+    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${target})
 
     add_custom_target(uf2
         COMMAND ${CMAKE_COMMAND}

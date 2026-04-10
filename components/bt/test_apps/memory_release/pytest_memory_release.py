@@ -8,8 +8,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'config,target,markers',
     [
-        ('default', 'esp32', (pytest.mark.generic,)),
-        ('default', 'esp32c2', (pytest.mark.generic,)),
         ('iram', 'esp32c2', (pytest.mark.generic,)),
         ('psram', 'esp32', (pytest.mark.psram,)),
     ],

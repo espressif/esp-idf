@@ -1,4 +1,4 @@
 ## IDF Component Manager Manifest File
 dependencies:
   idf: ">=4.4"
-  usb_host_msc: "^1.1.1"
+  usb_host_msc: "^1.1.4"

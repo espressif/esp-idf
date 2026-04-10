@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -32,6 +32,10 @@
 #include "blufi_example.h"
 
 #include "esp_blufi.h"
+
+#ifndef CONFIG_SOC_BLUFI_SUPPORTED
+#error "This SOC does not support BLUFI"
+#endif
 
 #define EXAMPLE_WIFI_CONNECTION_MAXIMUM_RETRY CONFIG_EXAMPLE_WIFI_CONNECTION_MAXIMUM_RETRY
 #define EXAMPLE_INVALID_REASON                255
@@ -319,6 +323,14 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         ble_is_connected = true;
         esp_blufi_adv_stop();
         blufi_security_init();
+        #ifdef CONFIG_EXAMPLE_BLUFI_BLE_SMP_ENABLE
+        // Try to initiate BLE security request after connection established.
+        BLUFI_INFO("Try to initiate BLE security request\n");
+        esp_err_t ret = esp_blufi_start_security_request(param->connect.remote_bda);
+        if (ret != ESP_OK) {
+            BLUFI_ERROR("Failed to start security request: %s\n", esp_err_to_name(ret));
+        }
+        #endif // CONFIG_EXAMPLE_BLUFI_BLE_SMP_ENABLE
         break;
     case ESP_BLUFI_EVENT_BLE_DISCONNECT:
         BLUFI_INFO("BLUFI ble disconnect\n");

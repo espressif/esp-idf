@@ -27,14 +27,23 @@ menu "Example Configuration"
         config EXAMPLE_PROTOCOMM_SECURITY_VERSION_0
             bool "Security Version 0"
             select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
+            help
+                No security. Data is exchanged as plain text.
+                This mode is not recommended for production use.
 
         config EXAMPLE_PROTOCOMM_SECURITY_VERSION_1
             bool "Security version 1"
             select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+            help
+                Curve25519 key exchange + AES-CTR encryption.
+                Security version 2 is recommended over this for new designs.
 
         config EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
             bool "Security version 2"
             select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+            help
+                SRP6a-based key exchange + AES-GCM encryption. Preferred security
+                version for new designs.
     endchoice
 
     choice EXAMPLE_PROTOCOMM_SEC2_MODE

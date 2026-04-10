@@ -18,7 +18,7 @@
 #endif
 
 #if SOC_CLK_APLL_SUPPORTED || SOC_CLK_MPLL_SUPPORTED
-static const char *TAG = "clk_ctrl_os";
+ESP_LOG_ATTR_TAG(TAG, "clk_ctrl_os");
 #endif
 
 static portMUX_TYPE __attribute__((unused)) periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -33,6 +33,8 @@ static int s_apll_ref_cnt = 0;
 #if SOC_CLK_MPLL_SUPPORTED
 static uint32_t s_cur_mpll_freq_hz = 0;
 static int s_mpll_ref_cnt = 0;
+#endif
+#if CONFIG_ESP_LDO_RESERVE_PSRAM
 static esp_ldo_channel_handle_t s_ldo_chan = NULL;
 #endif
 
@@ -193,7 +195,7 @@ esp_err_t IRAM_ATTR periph_rtc_mpll_freq_set(uint32_t expt_freq_hz, uint32_t *re
     /* If MPLL is not in use or only one peripheral in use, its frequency can be changed as will
      * But when more than one peripheral refers MPLL, its frequency is not allowed to change once it is set */
     if (s_cur_mpll_freq_hz == 0 || s_mpll_ref_cnt < 2) {
-        uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
+        uint32_t xtal_freq_mhz = clk_hal_xtal_get_freq_mhz();
         rtc_clk_mpll_configure(xtal_freq_mhz, expt_freq_hz / MHZ, false);
         s_cur_mpll_freq_hz = clk_ll_mpll_get_freq_mhz(xtal_freq_mhz) * MHZ;
     } else {

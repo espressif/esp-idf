@@ -223,6 +223,7 @@ void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_u
     UINT16 len = 0;
     if(attr_val != NULL){
         len = attr_val->attr_len;
+        APPL_TRACE_DEBUG("attr_val->attr_len = %x, attr_max_len = %x\n",attr_val->attr_len, attr_val->attr_max_len);
     }
     if ((p_buf = (tBTA_GATTS_API_ADD_CHAR *) osi_malloc(sizeof(tBTA_GATTS_API_ADD_CHAR))) != NULL) {
         memset(p_buf, 0, sizeof(tBTA_GATTS_API_ADD_CHAR));
@@ -234,14 +235,19 @@ void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_u
         if(control !=NULL){
             p_buf->control.auto_rsp = control->auto_rsp;
         }
+
         if(attr_val != NULL){
-            APPL_TRACE_DEBUG("!!!!!!attr_val->attr_len = %x\n",attr_val->attr_len);
-            APPL_TRACE_DEBUG("!!!!!!!attr_val->attr_max_len = %x\n",attr_val->attr_max_len);
             p_buf->attr_val.attr_len = attr_val->attr_len;
             p_buf->attr_val.attr_max_len = attr_val->attr_max_len;
-            p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
-            if(p_buf->attr_val.attr_val != NULL){
-                memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, attr_val->attr_len);
+            if(len != 0){
+                p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
+                if(p_buf->attr_val.attr_val != NULL){
+                    memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, len);
+                } else {
+                    p_buf->attr_val.attr_len = 0;
+                    p_buf->attr_val.attr_max_len = 0;
+                    APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
+                }
             }
         }
 
@@ -302,6 +308,8 @@ void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
                     memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, value_len);
                 }
                 else{
+                    p_buf->attr_val.attr_len = 0;
+                    p_buf->attr_val.attr_max_len = 0;
                     APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
 
                 }
@@ -411,6 +419,14 @@ void BTA_GATTS_StopService(UINT16 service_id)
 void BTA_GATTS_HandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 data_len,
                                       UINT8 *p_data, BOOLEAN need_confirm)
 {
+
+    /* Validate data length against buffer size */
+    if (data_len > BTA_GATT_MAX_ATTR_LEN) {
+        APPL_TRACE_ERROR("GATT indication data too large: %u > %u",
+                    data_len, BTA_GATT_MAX_ATTR_LEN);
+        return;
+    }
+
     tBTA_GATTS_API_INDICATION  *p_buf;
     UINT16  len = sizeof(tBTA_GATTS_API_INDICATION);
 
@@ -489,6 +505,9 @@ void BTA_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value)
         if(value != NULL){
             if((p_buf->value = (UINT8 *)osi_malloc(length)) != NULL){
                 memcpy(p_buf->value, value, length);
+            } else {
+                p_buf->length = 0;
+                APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
             }
         }
 

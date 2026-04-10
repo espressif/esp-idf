@@ -3,6 +3,7 @@ menu "Wireless Coexistence"
 
     config ESP_COEX_ENABLED
         bool
+        default n if IDF_TARGET_ESP32H4 #TODO: enable coexistence for ESP32H4
         default y if (!SOC_WIRELESS_HOST_SUPPORTED)
 
     if(ESP_COEX_ENABLED)

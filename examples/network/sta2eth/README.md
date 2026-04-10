@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
 
 # WiFi station to "Wired" interface L2 forwarder
 
@@ -32,11 +32,11 @@ In the `Example Configuration` menu choose the provisioning method:
 * `EXAMPLE_WIFI_CONFIGURATION_MANUAL` for manual configuration using a webpage
 * `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` for standard provisioning over the virtual USB network 
 
-To provision the device using IDF provisioning tools (if `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` is selected) you can use idf provisioning utility with transport set to `softap`:
+To provision the device using network provisioning tools (if `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` is selected) you can use idf provisioning utility with transport set to `softap`:
 ```bash
-esp-idf/tools/esp_prov$ python esp_prov.py --transport httpd ...
+network_provisioning/tool/esp_prov$ python esp_prov.py --transport httpd ...
 ```
-Please refer to the provisioning documentation and `esp_prov` script [documentation](../../../tools/esp_prov/README.md) for more details.
+Please refer to the provisioning documentation and `esp_prov` script [documentation](https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/tool/esp_prov/README.md) for more details.
 
 ### Build, Flash, and Run
 

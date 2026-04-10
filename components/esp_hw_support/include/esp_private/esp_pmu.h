@@ -47,6 +47,9 @@ typedef enum {
 #define RTC_SLEEP_PD_MODEM              PMU_SLEEP_PD_MODEM      //!< Power down modem(include wifi, ble and 15.4)
 
 //These flags are not power domains, but will affect some sleep parameters
+#define RTC_SLEEP_USE_RTC_WDT           BIT(23)
+#define RTC_SLEEP_FLASH_DPD             BIT(24)
+#define RTC_SLEEP_LP_PERIPH_USE_RC_FAST BIT(25)
 #define RTC_SLEEP_POWER_BY_VBAT         BIT(26)
 #define RTC_SLEEP_DIG_USE_8M            BIT(27)
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(28)
@@ -72,8 +75,8 @@ typedef enum {
 #define RTC_GPIO_TRIG_EN            (PMU_GPIO_WAKEUP_EN)
 #endif
 
-#if SOC_LP_TIMER_SUPPORTED
-#define RTC_TIMER_TRIG_EN           PMU_LP_TIMER_WAKEUP_EN  //!< Timer wakeup
+#if !SOC_RTC_TIMER_V1
+#define RTC_TIMER_TRIG_EN           PMU_RTC_TIMER_WAKEUP_EN  //!< Timer wakeup
 #else
 #define RTC_TIMER_TRIG_EN           0
 #endif
@@ -84,18 +87,25 @@ typedef enum {
 #define RTC_WIFI_TRIG_EN            0
 #endif
 
-#if SOC_UART_SUPPORT_WAKEUP_INT
 #define RTC_UART0_TRIG_EN           PMU_UART0_WAKEUP_EN     //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
+#define RTC_UART2_TRIG_EN           0
+#define RTC_UART3_TRIG_EN           0
+#define RTC_UART4_TRIG_EN           0
+
 #if SOC_UART_HP_NUM > 2
+#undef RTC_UART2_TRIG_EN
 #define RTC_UART2_TRIG_EN           PMU_UART2_WAKEUP_EN     //!< UART2 wakeup (light sleep only)
-#else
-#define RTC_UART2_TRIG_EN           0
 #endif
-#else
-#define RTC_UART0_TRIG_EN           0
-#define RTC_UART1_TRIG_EN           0
-#define RTC_UART2_TRIG_EN           0
+
+#if SOC_UART_HP_NUM > 3
+#undef RTC_UART3_TRIG_EN
+#define RTC_UART3_TRIG_EN           PMU_UART3_WAKEUP_EN     //!< UART3 wakeup (light sleep only)
+#endif
+
+#if SOC_UART_HP_NUM > 4
+#undef RTC_UART4_TRIG_EN
+#define RTC_UART4_TRIG_EN           PMU_UART4_WAKEUP_EN     //!< UART4 wakeup (light sleep only)
 #endif
 
 #if SOC_BT_SUPPORTED
@@ -114,8 +124,10 @@ typedef enum {
 
 #if SOC_LP_CORE_SUPPORTED
 #define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_EN   //!< LP core wakeup
+#define RTC_LP_CORE_TRAP_TRIG_EN    PMU_LP_CORE_TRAP_WAKEUP_EN   //!< LP core trap (exception) wakeup
 #else
 #define RTC_LP_CORE_TRIG_EN         0
+#define RTC_LP_CORE_TRAP_TRIG_EN    0
 #endif //SOC_LP_CORE_SUPPORTED
 
 #if SOC_LP_VAD_SUPPORTED
@@ -144,6 +156,8 @@ typedef enum {
                                RTC_UART0_TRIG_EN        | \
                                RTC_UART1_TRIG_EN        | \
                                RTC_UART2_TRIG_EN        | \
+                               RTC_UART3_TRIG_EN        | \
+                               RTC_UART4_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
                                RTC_LP_CORE_TRIG_EN      | \
                                RTC_TOUCH_TRIG_EN        | \
@@ -182,6 +196,9 @@ typedef enum {
 typedef struct {
     pmu_hal_context_t *hal;
     void *mc;
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+    void *priv;
+#endif
 } pmu_context_t;
 
 pmu_context_t * PMU_instance(void);

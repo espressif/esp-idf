@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,7 +128,8 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
 
        (1000 iterations takes about 9 seconds on ESP32 dual core)
      */
-    for (unsigned iter = 0; iter < 1000; iter++) {
+    unsigned iter = 0;
+    for (iter = 0; iter < 1000; iter++) {
         // Create everything
         SemaphoreHandle_t sem = xSemaphoreCreateMutex();
         for (unsigned i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES + 1; i++) {
@@ -144,14 +145,24 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
         vTaskDelay(5); // Let the tasks juggle the mutex for a bit
 
         for (unsigned i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES + 1; i++) {
+            vTaskSuspend(blocking_tasks[i]);
             vTaskDelete(blocking_tasks[i]);
             params[i].deleted = true;
         }
         vTaskDelay(4); // Yield to the idle task for cleanup
+
+        // As an experiment, until IDFCI-4988 is fixed (CI runner loses connection to the target)
+        // let's occasionally print a message to the console to ensure the test is running
+        // and keep the console active.
+        if (iter && iter % 100 == 0) {
+            // In each iteration, we create CONFIG_FREERTOS_NUMBER_OF_CORES + 1 tasks
+            printf("Deleted %u blocked tasks\n", iter * (CONFIG_FREERTOS_NUMBER_OF_CORES + 1));
+        }
 
         vSemaphoreDelete(sem);
 
         // Check we haven't leaked resources yet
         TEST_ASSERT_GREATER_OR_EQUAL(before - 256, heap_caps_get_free_size(MALLOC_CAP_8BIT));
     }
+    printf("Deleted %u blocked tasks\n", iter * (CONFIG_FREERTOS_NUMBER_OF_CORES + 1));
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +147,72 @@ out:
     return ret;
 }
 
+esp_err_t esp_pm_get_lock_stats_all(esp_pm_lock_stats_t stats[ESP_PM_LOCK_MAX])
+{
+#ifndef CONFIG_PM_ENABLE
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+
+    if (stats == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Initialize stats array
+    for (int i = 0; i < ESP_PM_LOCK_MAX; i++) {
+        stats[i].created = 0;
+        stats[i].acquired = 0;
+    }
+
+    _lock_acquire(&s_list_lock);
+
+    // Iterate through all locks and accumulate stats
+    esp_pm_lock_t* it;
+    SLIST_FOREACH(it, &s_list, next) {
+        if (it->type < ESP_PM_LOCK_MAX) {
+            stats[it->type].created++;
+            // Sum the count of currently held locks
+            stats[it->type].acquired += it->count;
+        }
+    }
+
+    _lock_release(&s_list_lock);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_pm_lock_get_stats(esp_pm_lock_handle_t handle, esp_pm_lock_instance_stats_t *stats)
+{
+#ifndef CONFIG_PM_ENABLE
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+
+    if (handle == NULL || stats == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Initialize stats structure
+    stats->acquired = 0;
+#ifdef WITH_PROFILING
+    stats->times_taken = 0;
+    stats->time_held = 0;
+#endif
+
+    portENTER_CRITICAL(&handle->spinlock);
+    stats->acquired = handle->count;
+#ifdef WITH_PROFILING
+    stats->times_taken = handle->times_taken;
+    stats->time_held = handle->time_held;
+    // If the lock is currently held, add the time since it was last taken
+    if (handle->count > 0) {
+        pm_time_t now = pm_get_time();
+        stats->time_held += now - handle->last_taken;
+    }
+#endif
+    portEXIT_CRITICAL(&handle->spinlock);
+
+    return ESP_OK;
+}
+
 esp_err_t esp_pm_dump_locks(FILE* stream)
 {
 #ifndef CONFIG_PM_ENABLE
@@ -160,7 +226,7 @@ esp_err_t esp_pm_dump_locks(FILE* stream)
 
     _lock_acquire(&s_list_lock);
 #ifdef WITH_PROFILING
-    fprintf(stream, "Time since bootup: %lld us\n", cur_time);
+    fprintf(stream, "Time since boot up: %lld us\n", cur_time);
 #endif
 
     fprintf(stream, "Lock stats:\n");

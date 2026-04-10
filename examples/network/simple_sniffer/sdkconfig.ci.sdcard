@@ -1,0 +1,2 @@
+# Enable SD Card Interface.
+CONFIG_SNIFFER_SD_SPI_MODE=y

@@ -20,7 +20,6 @@ The examples are grouped into subdirectories by category. Each category director
 - `openthread` OpenThread examples.
 - `peripherals` Examples showing driver functionality for the various onboard ESP32 peripherals.
 - `protocols` Examples showing network protocol interactions.
-- `provisioning` Wi-Fi provisioning examples.
 - `security` Examples about security features.
 - `storage` Examples showing data storage methods using SPI flash, external storage like the SD/MMC interface and flash partitioning.
 - `system` Demonstrates some internal chip features, or debugging & development tools.

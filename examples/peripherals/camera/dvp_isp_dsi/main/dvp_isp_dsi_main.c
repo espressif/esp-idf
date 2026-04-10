@@ -89,25 +89,14 @@ void app_main(void)
      * ISP convert to RGB565
      */
     //---------------DSI Init------------------//
-    example_dsi_resource_alloc(&mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, &frame_buffer);
+    example_dsi_resource_alloc(NULL, &mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, &frame_buffer, NULL);
 
     //---------------Necessary variable config------------------//
-    frame_buffer_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    frame_buffer_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL;
 
     ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, EXAMPLE_RGB565_BITS_PER_PIXEL);
     ESP_LOGD(TAG, "frame_buffer_size: %zu", frame_buffer_size);
     ESP_LOGD(TAG, "frame_buffer: %p", frame_buffer);
-
-    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
-    void *cam_buffer = heap_caps_calloc(1, cam_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
-    if (!cam_buffer) {
-        ESP_LOGE(TAG, "no mem for cam_buffer");
-        return;
-    }
-    esp_cam_ctlr_trans_t cam_trans = {
-        .buffer = cam_buffer,
-        .buflen = cam_buffer_size,
-    };
 
     //--------Camera Sensor and SCCB Init-----------//
     s_ledc_generate_dvp_xclk();
@@ -166,6 +155,18 @@ void app_main(void)
         ESP_LOGE(TAG, "isp dvp init fail[%d]", ret);
         return;
     }
+
+    //--------Allocate Camera Buffer----------//
+    size_t cam_buffer_size = CONFIG_EXAMPLE_CAM_HRES * CONFIG_EXAMPLE_CAM_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL;
+    void *cam_buffer = esp_cam_ctlr_alloc_buffer(cam_handle, cam_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
+    if (!cam_buffer) {
+        ESP_LOGE(TAG, "no mem for cam_buffer");
+        return;
+    }
+    esp_cam_ctlr_trans_t cam_trans = {
+        .buffer = cam_buffer,
+        .buflen = cam_buffer_size,
+    };
 
     esp_cam_ctlr_evt_cbs_t cbs = {
         .on_get_new_trans = s_camera_get_new_vb,

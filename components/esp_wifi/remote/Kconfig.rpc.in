@@ -1,0 +1,21 @@
+choice ESP_WIFI_REMOTE_LIBRARY
+    prompt "Choose WiFi-remote implementation"
+    default ESP_WIFI_REMOTE_LIBRARY_HOSTED
+    help
+        Select type of WiFi Remote implementation
+
+        ESP-HOSTED is the default and most versatile option.
+        It's possible to use EPPP, which uses PPPoS link between micros and NAPT,
+        so it's slower, but allows for more customization on the slave side.
+        It's also possible to select CUSTOM and provide wifi_remote implementation
+        in any other component or application (needs to set link dependency from wifi-remote
+        to the custom implementation)
+
+    config ESP_WIFI_REMOTE_LIBRARY_HOSTED
+        bool "ESP-HOSTED"
+    config ESP_WIFI_REMOTE_LIBRARY_EPPP
+        bool "EPPP"
+    config ESP_WIFI_REMOTE_LIBRARY_CUSTOM
+        bool "CUSTOM"
+
+endchoice

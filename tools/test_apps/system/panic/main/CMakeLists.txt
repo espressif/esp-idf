@@ -16,7 +16,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "include"
                         REQUIRES spi_flash esp_psram esp_system esp_partition
-                        PRIV_REQUIRES esp_gdbstub espcoredump)
+                        PRIV_REQUIRES esp_gdbstub espcoredump esp_hal_security)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-unused-variable"
                                                 "-Wno-infinite-recursion"

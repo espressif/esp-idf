@@ -1,22 +1,23 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-import os.path
 import time
-from typing import Tuple
+from pathlib import Path
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+
+CUR_DIR = Path(__file__).parent.resolve()
+
+
 # Case 1: gatt write throughput test(EXAMPLE_CI_ID = 2)
-
-
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
+            f'{str(CUR_DIR / "throughput_server")}|{str(CUR_DIR / "throughput_client")}',
             'write',
             'y',
         ),
@@ -26,7 +27,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3'], indirect=['target']
 )
-def test_gatt_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_gatt_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (
@@ -54,7 +55,7 @@ def test_gatt_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> Non
 
 
 # Case 2: gatt write throughput test for ESP32C2 26mhz xtal(EXAMPLE_CI_ID = 2)
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -63,14 +64,14 @@ def test_gatt_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> Non
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
+            f'{str(CUR_DIR / "throughput_server")}|{str(CUR_DIR / "throughput_client")}',
             'esp32c2_xtal26m_write',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (
@@ -98,13 +99,13 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut
 
 
 # Case 3: gatt notify throughput test(EXAMPLE_CI_ID = 1)
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
+            f'{str(CUR_DIR / "throughput_server")}|{str(CUR_DIR / "throughput_client")}',
             'notify',
             'y',
         ),
@@ -114,7 +115,7 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3'], indirect=['target']
 )
-def test_gatt_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_gatt_notify_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (
@@ -144,7 +145,7 @@ def test_gatt_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> No
 
 
 # Case 4: gatt notify throughput test for ESP32C2 26mhz xtal(EXAMPLE_CI_ID = 1)
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -153,14 +154,14 @@ def test_gatt_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> No
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
+            f'{str(CUR_DIR / "throughput_server")}|{str(CUR_DIR / "throughput_client")}',
             'esp32c2_xtal26m_notify',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_notify_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (

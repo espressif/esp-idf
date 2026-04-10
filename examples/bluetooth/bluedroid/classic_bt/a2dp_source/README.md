@@ -12,7 +12,7 @@ This is the example of using Advanced Audio Distribution Profile (A2DP) APIs to 
 
 ### Hardware Required
 
-This example is able to run on any commonly available ESP32 development board, and is supposed to connect to [A2DP sink example](../a2dp_sink) in ESP-IDF.
+This example is able to run on any commonly available ESP32 development board, and is supposed to connect to [A2DP sink example](../a2dp_sink_stream) in ESP-IDF.
 
 ### Configure the project
 

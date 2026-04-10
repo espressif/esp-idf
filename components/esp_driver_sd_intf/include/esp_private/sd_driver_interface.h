@@ -125,7 +125,7 @@ struct sd_slot_driver_t {
      *        - ESP_ERR_INVALID_ARG:    Invalid argument
      *        - ESP_ERR_TIMEOUT:        Timeout
      */
-    esp_err_t (*wait_io_int)(sd_slot_driver_t *slot_drv, TickType_t timeout_ticks);
+    esp_err_t (*wait_io_int)(sd_slot_driver_t *slot_drv, uint32_t timeout_ticks);
 
     /**
      * @brief Get slot info

@@ -44,6 +44,8 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
     int rc = 0;
     int len = 512;
     uint8_t value[len];
+    int retry = 0;
+    const int max_retry = 10;
 
     for (int i = 0; i < len; i++) {
         value[i] = i;
@@ -53,20 +55,32 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
         sdu_rx_data = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
         if (sdu_rx_data == NULL) {
             vTaskDelay(10 / portTICK_PERIOD_MS);
-            sdu_rx_data = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
+            retry++;
         }
-    } while (sdu_rx_data == NULL);
-
+    } while (sdu_rx_data == NULL && retry < max_retry);
+    if (sdu_rx_data == NULL) {
+        MODLOG_DFLT(ERROR, "Failed to alloc mbuf after %d retries", max_retry);
+        return;
+    }
     os_mbuf_append(sdu_rx_data, value, len);
 
     print_mbuf_data(sdu_rx_data);
 
     rc = ble_l2cap_send(chan, sdu_rx_data);
 
-    while (rc == BLE_HS_ESTALLED) {
+    retry = 0;
+    while (rc == BLE_HS_ESTALLED && retry < max_retry) {
+        MODLOG_DFLT(INFO, "Send stalled, waiting for credits (retry=%d)", retry);
         vTaskDelay(100 / portTICK_PERIOD_MS);
         rc = ble_l2cap_send(chan, sdu_rx_data);
+        retry++;
     }
+
+    if (rc == BLE_HS_ESTALLED) {
+        MODLOG_DFLT(INFO, "Send still stalled after %d retries, returning", retry);
+        return;
+    }
+
     if (rc == 0) {
         MODLOG_DFLT(INFO, "Data sent successfully");
     } else {
@@ -74,6 +88,7 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
         os_mbuf_free_chain(sdu_rx_data);
     }
 }
+
 
 /**
  * After connection is established on GAP layer, service discovery is performed. On
@@ -83,11 +98,25 @@ static void
 blecent_l2cap_coc_on_disc_complete(const struct peer *peer, int status, void *arg)
 {
     uint16_t psm = 0x1002;
-    struct os_mbuf *sdu_rx;
+    struct os_mbuf *sdu_rx = NULL;
+    int rc;
+
+    if (status != 0) {
+        MODLOG_DFLT(WARN, "Service discovery failed (status=%d), skip L2CAP COC", status);
+        return;
+    }
 
     sdu_rx = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
-    ble_l2cap_connect(conn_handle_coc, psm, MTU, sdu_rx, blecent_l2cap_coc_event_cb,
-                      NULL);
+    if (sdu_rx == NULL) {
+        MODLOG_DFLT(ERROR, "Failed to allocate sdu_rx");
+        return;
+    }
+
+   rc = ble_l2cap_connect(conn_handle_coc, psm, MTU, sdu_rx, blecent_l2cap_coc_event_cb, NULL);
+   if (rc != 0) {
+       MODLOG_DFLT(ERROR, "L2CAP COC connect failed, rc=%d", rc);
+       os_mbuf_free_chain(sdu_rx);
+   }
 }
 
 /**
@@ -265,22 +294,31 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     /* The device has to advertise support for L2CAP COC UUID (0x1812).
     */
     do {
+        if (offset + 1 > disc->length_data) {
+            break;
+        }
+
         ad_struct_len = disc->data[offset];
 
         if (!ad_struct_len) {
             break;
         }
 
-        /* Search if ANS UUID is advertised */
-        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x12 ) {
-                return 1;
-            }
+        if (offset + ad_struct_len + 1 > disc->length_data) {
+            break;
+        }
+
+        /* AD Type (1) + UUID16 (2) requires at least 4 bytes total */
+        if (ad_struct_len >= 3 &&
+            disc->data[offset + 1] == 0x03 &&
+            disc->data[offset + 2] == 0x18 &&
+            disc->data[offset + 3] == 0x12) {
+            return 1;
         }
 
         offset += ad_struct_len + 1;
 
-    } while ( offset < disc->length_data );
+    } while (offset < disc->length_data);
     return 0;
 }
 #else

@@ -17,7 +17,7 @@ esp_err_t esp_aes_dma_start(const crypto_dma_desc_t *input, const crypto_dma_des
     crypto_dma_ll_reset();
     crypto_dma_ll_set_mode(CRYPTO_DMA_AES);
 
-    /* Set descriptors, input to AES comes from outlink DMA and viceversa */
+    /* Set descriptors, input to AES comes from outlink DMA and vice-versa */
     crypto_dma_ll_outlink_set((uint32_t)input);
     crypto_dma_ll_inlink_set((uint32_t)output);
 

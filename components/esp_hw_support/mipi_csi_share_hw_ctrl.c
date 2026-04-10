@@ -27,7 +27,7 @@ static csi_brg_share_ctx_t s_ctx = {
     .spinlock = portMUX_INITIALIZER_UNLOCKED,
 };
 
-static const char *TAG = "CSI_SHARE";
+ESP_LOG_ATTR_TAG(TAG, "CSI_SHARE");
 
 esp_err_t mipi_csi_brg_claim(mipi_csi_brg_user_t user, int *out_id)
 {

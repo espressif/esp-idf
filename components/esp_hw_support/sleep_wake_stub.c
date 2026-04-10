@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,20 +18,11 @@
 #include "soc/soc_caps.h"
 #include "hal/uart_ll.h"
 #include "hal/clk_tree_ll.h"
-
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_ll.h"
-#include "hal/lp_timer_hal.h"
-#else
-#include "hal/rtc_cntl_ll.h"
-#endif
-
-#if SOC_PMU_SUPPORTED
-#include "hal/pmu_ll.h"
-#endif
+#include "hal/rtc_hal.h"
+#include "hal/rtc_timer_ll.h"
 
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -71,6 +62,13 @@ void RTC_IRAM_ATTR esp_wake_stub_sleep(esp_deep_sleep_wake_stub_fn_t new_stub)
     pmu_ll_hp_clear_wakeup_intr_status(&PMU);
     pmu_ll_hp_clear_reject_intr_status(&PMU);
     pmu_ll_hp_clear_reject_cause(&PMU);
+#if CONFIG_ULP_COPROC_TYPE_LP_CORE
+    /* Clear the pending LP core SW interrupt before sleeping. Without this,
+     * the LP core wakeup cause bit (PMU_SW_INT_RAW) remains asserted after
+     * ulp_lp_core_wakeup_main_processor(), causing the PMU to immediately
+     * re-trigger a wakeup as soon as sleep is requested. */
+    pmu_ll_hp_clear_sw_intr_status(&PMU);
+#endif
     pmu_ll_hp_set_sleep_enable(&PMU);
 #else
     rtc_cntl_ll_sleep_enable();
@@ -93,20 +91,8 @@ void RTC_IRAM_ATTR esp_wake_stub_uart_tx_wait_idle(uint8_t uart_no)
 void RTC_IRAM_ATTR esp_wake_stub_set_wakeup_time(uint64_t time_in_us)
 {
     uint64_t rtc_count_delta = time_in_us * (1 << RTC_CLK_CAL_FRACT) / clk_ll_rtc_slow_load_cal();
-#if SOC_LP_TIMER_SUPPORTED
-    lp_timer_ll_counter_snapshot(&LP_TIMER);
-    uint32_t lo = lp_timer_ll_get_counter_value_low(&LP_TIMER, 0);
-    uint32_t hi = lp_timer_ll_get_counter_value_high(&LP_TIMER, 0);
-    uint64_t rtc_curr_count = (uint64_t)hi << 32 | lo;
-
-    lp_timer_ll_clear_alarm_intr_status(&LP_TIMER);
-    lp_timer_ll_set_alarm_target(&LP_TIMER, 0, rtc_curr_count + rtc_count_delta);
-    lp_timer_ll_set_target_enable(&LP_TIMER, 0, true);
-#else
-    uint64_t rtc_curr_count = rtc_cntl_ll_get_rtc_time();
-    rtc_cntl_ll_set_wakeup_timer(rtc_curr_count + rtc_count_delta);
-#endif
-
+    uint64_t rtc_curr_count = rtc_timer_ll_get_cycle_count(0);
+    rtc_timer_ll_set_wakeup_time(0, rtc_curr_count + rtc_count_delta);
 }
 
 uint32_t RTC_IRAM_ATTR esp_wake_stub_get_wakeup_cause(void)

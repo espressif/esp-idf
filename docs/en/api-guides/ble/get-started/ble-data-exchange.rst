@@ -296,7 +296,7 @@ If you have not completed the ESP-IDF development environment setup, please refe
 Try It Out
 ^^^^^^^^^^^^^^^^^^
 
-Please refer to :ref:`BLE Introduction Try It Out <nimble_gatt_server_practice>` 。
+Please refer to :ref:`Bluetooth LE Introduction Try It Out <nimble_gatt_server_practice>`.
 
 
 Code Explanation

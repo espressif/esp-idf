@@ -1,11 +1,10 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -3596,10 +3595,87 @@ extern "C" {
 #define TEE_WRITE_REE2_HP_APM_V  0x00000001U
 #define TEE_WRITE_REE2_HP_APM_S  7
 
+/** TEE_HP_MEM_APM_CTRL_REG register
+ *  hp_mem_apm read/write control register
+ */
+#define TEE_HP_MEM_APM_CTRL_REG (DR_REG_TEE_BASE + 0x114)
+/** TEE_READ_TEE_HP_MEM_APM : R/W; bitpos: [0]; default: 1;
+ *  Configures hp_mem_apm registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_HP_MEM_APM    (BIT(0))
+#define TEE_READ_TEE_HP_MEM_APM_M  (TEE_READ_TEE_HP_MEM_APM_V << TEE_READ_TEE_HP_MEM_APM_S)
+#define TEE_READ_TEE_HP_MEM_APM_V  0x00000001U
+#define TEE_READ_TEE_HP_MEM_APM_S  0
+/** TEE_READ_REE0_HP_MEM_APM : HRO; bitpos: [1]; default: 0;
+ *  Configures hp_mem_apm registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_HP_MEM_APM    (BIT(1))
+#define TEE_READ_REE0_HP_MEM_APM_M  (TEE_READ_REE0_HP_MEM_APM_V << TEE_READ_REE0_HP_MEM_APM_S)
+#define TEE_READ_REE0_HP_MEM_APM_V  0x00000001U
+#define TEE_READ_REE0_HP_MEM_APM_S  1
+/** TEE_READ_REE1_HP_MEM_APM : HRO; bitpos: [2]; default: 0;
+ *  Configures hp_mem_apm registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_HP_MEM_APM    (BIT(2))
+#define TEE_READ_REE1_HP_MEM_APM_M  (TEE_READ_REE1_HP_MEM_APM_V << TEE_READ_REE1_HP_MEM_APM_S)
+#define TEE_READ_REE1_HP_MEM_APM_V  0x00000001U
+#define TEE_READ_REE1_HP_MEM_APM_S  2
+/** TEE_READ_REE2_HP_MEM_APM : HRO; bitpos: [3]; default: 0;
+ *  Configures hp_mem_apm registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_HP_MEM_APM    (BIT(3))
+#define TEE_READ_REE2_HP_MEM_APM_M  (TEE_READ_REE2_HP_MEM_APM_V << TEE_READ_REE2_HP_MEM_APM_S)
+#define TEE_READ_REE2_HP_MEM_APM_V  0x00000001U
+#define TEE_READ_REE2_HP_MEM_APM_S  3
+/** TEE_WRITE_TEE_HP_MEM_APM : R/W; bitpos: [4]; default: 1;
+ *  Configures hp_mem_apm registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_HP_MEM_APM    (BIT(4))
+#define TEE_WRITE_TEE_HP_MEM_APM_M  (TEE_WRITE_TEE_HP_MEM_APM_V << TEE_WRITE_TEE_HP_MEM_APM_S)
+#define TEE_WRITE_TEE_HP_MEM_APM_V  0x00000001U
+#define TEE_WRITE_TEE_HP_MEM_APM_S  4
+/** TEE_WRITE_REE0_HP_MEM_APM : HRO; bitpos: [5]; default: 0;
+ *  Configures hp_mem_apm registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_HP_MEM_APM    (BIT(5))
+#define TEE_WRITE_REE0_HP_MEM_APM_M  (TEE_WRITE_REE0_HP_MEM_APM_V << TEE_WRITE_REE0_HP_MEM_APM_S)
+#define TEE_WRITE_REE0_HP_MEM_APM_V  0x00000001U
+#define TEE_WRITE_REE0_HP_MEM_APM_S  5
+/** TEE_WRITE_REE1_HP_MEM_APM : HRO; bitpos: [6]; default: 0;
+ *  Configures hp_mem_apm registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_HP_MEM_APM    (BIT(6))
+#define TEE_WRITE_REE1_HP_MEM_APM_M  (TEE_WRITE_REE1_HP_MEM_APM_V << TEE_WRITE_REE1_HP_MEM_APM_S)
+#define TEE_WRITE_REE1_HP_MEM_APM_V  0x00000001U
+#define TEE_WRITE_REE1_HP_MEM_APM_S  6
+/** TEE_WRITE_REE2_HP_MEM_APM : HRO; bitpos: [7]; default: 0;
+ *  Configures hp_mem_apm registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_HP_MEM_APM    (BIT(7))
+#define TEE_WRITE_REE2_HP_MEM_APM_M  (TEE_WRITE_REE2_HP_MEM_APM_V << TEE_WRITE_REE2_HP_MEM_APM_S)
+#define TEE_WRITE_REE2_HP_MEM_APM_V  0x00000001U
+#define TEE_WRITE_REE2_HP_MEM_APM_S  7
+
 /** TEE_CPU_APM_CTRL_REG register
  *  cpu_apm read/write control register
  */
-#define TEE_CPU_APM_CTRL_REG (DR_REG_TEE_BASE + 0x114)
+#define TEE_CPU_APM_CTRL_REG (DR_REG_TEE_BASE + 0x118)
 /** TEE_READ_TEE_CPU_APM : R/W; bitpos: [0]; default: 1;
  *  Configures cpu_apm registers read permission in tee mode.
  *  0: can not be read
@@ -3676,7 +3752,7 @@ extern "C" {
 /** TEE_TEE_CTRL_REG register
  *  tee read/write control register
  */
-#define TEE_TEE_CTRL_REG (DR_REG_TEE_BASE + 0x118)
+#define TEE_TEE_CTRL_REG (DR_REG_TEE_BASE + 0x11c)
 /** TEE_READ_TEE_TEE : R/W; bitpos: [0]; default: 1;
  *  Configures tee registers read permission in tee mode.
  *  0: can not be read
@@ -3753,7 +3829,7 @@ extern "C" {
 /** TEE_KM_CTRL_REG register
  *  crypt read/write control register
  */
-#define TEE_KM_CTRL_REG (DR_REG_TEE_BASE + 0x11c)
+#define TEE_KM_CTRL_REG (DR_REG_TEE_BASE + 0x120)
 /** TEE_READ_TEE_KM : R/W; bitpos: [0]; default: 1;
  *  Configures km registers read permission in tee mode.
  *  0: can not be read
@@ -3830,7 +3906,7 @@ extern "C" {
 /** TEE_CRYPT_CTRL_REG register
  *  crypt read/write control register
  */
-#define TEE_CRYPT_CTRL_REG (DR_REG_TEE_BASE + 0x120)
+#define TEE_CRYPT_CTRL_REG (DR_REG_TEE_BASE + 0x124)
 /** TEE_READ_TEE_CRYPT : R/W; bitpos: [0]; default: 1;
  *  Configures crypt registers read permission in tee mode.
  *  0: can not be read
@@ -3907,7 +3983,7 @@ extern "C" {
 /** TEE_CORE0_TRACE_CTRL_REG register
  *  core0_trace read/write control register
  */
-#define TEE_CORE0_TRACE_CTRL_REG (DR_REG_TEE_BASE + 0x124)
+#define TEE_CORE0_TRACE_CTRL_REG (DR_REG_TEE_BASE + 0x128)
 /** TEE_READ_TEE_CORE0_TRACE : R/W; bitpos: [0]; default: 1;
  *  Configures core0_trace registers read permission in tee mode.
  *  0: can not be read
@@ -3984,7 +4060,7 @@ extern "C" {
 /** TEE_CORE1_TRACE_CTRL_REG register
  *  core1_trace read/write control register
  */
-#define TEE_CORE1_TRACE_CTRL_REG (DR_REG_TEE_BASE + 0x128)
+#define TEE_CORE1_TRACE_CTRL_REG (DR_REG_TEE_BASE + 0x12c)
 /** TEE_READ_TEE_CORE1_TRACE : R/W; bitpos: [0]; default: 1;
  *  Configures core1_trace registers read permission in tee mode.
  *  0: can not be read
@@ -4061,7 +4137,7 @@ extern "C" {
 /** TEE_CPU_BUS_MONITOR_CTRL_REG register
  *  cpu_bus_monitor read/write control register
  */
-#define TEE_CPU_BUS_MONITOR_CTRL_REG (DR_REG_TEE_BASE + 0x12c)
+#define TEE_CPU_BUS_MONITOR_CTRL_REG (DR_REG_TEE_BASE + 0x130)
 /** TEE_READ_TEE_CPU_BUS_MONITOR : R/W; bitpos: [0]; default: 1;
  *  Configures cpu_bus_monitor registers read permission in tee mode.
  *  0: can not be read
@@ -4138,7 +4214,7 @@ extern "C" {
 /** TEE_INTPRI_REG_CTRL_REG register
  *  intpri_reg read/write control register
  */
-#define TEE_INTPRI_REG_CTRL_REG (DR_REG_TEE_BASE + 0x130)
+#define TEE_INTPRI_REG_CTRL_REG (DR_REG_TEE_BASE + 0x134)
 /** TEE_READ_TEE_INTPRI_REG : R/W; bitpos: [0]; default: 1;
  *  Configures intpri_reg registers read permission in tee mode.
  *  0: can not be read
@@ -4215,7 +4291,7 @@ extern "C" {
 /** TEE_CACHE_CFG_CTRL_REG register
  *  cache_cfg read/write control register
  */
-#define TEE_CACHE_CFG_CTRL_REG (DR_REG_TEE_BASE + 0x134)
+#define TEE_CACHE_CFG_CTRL_REG (DR_REG_TEE_BASE + 0x138)
 /** TEE_READ_TEE_CACHE_CFG : R/W; bitpos: [0]; default: 1;
  *  Configures cache_cfg registers read permission in tee mode.
  *  0: can not be read
@@ -4292,7 +4368,7 @@ extern "C" {
 /** TEE_MODEM_CTRL_REG register
  *  modem read/write control register
  */
-#define TEE_MODEM_CTRL_REG (DR_REG_TEE_BASE + 0x138)
+#define TEE_MODEM_CTRL_REG (DR_REG_TEE_BASE + 0x13c)
 /** TEE_READ_TEE_MODEM : R/W; bitpos: [0]; default: 1;
  *  Configures modem registers read permission in tee mode.
  *  0: can not be read
@@ -4369,7 +4445,7 @@ extern "C" {
 /** TEE_ZERO_DET_CTRL_REG register
  *  zero_det read/write control register
  */
-#define TEE_ZERO_DET_CTRL_REG (DR_REG_TEE_BASE + 0x13c)
+#define TEE_ZERO_DET_CTRL_REG (DR_REG_TEE_BASE + 0x140)
 /** TEE_READ_TEE_ZERO_DET : R/W; bitpos: [0]; default: 1;
  *  Configures zero_det registers read permission in tee mode.
  *  0: can not be read
@@ -4475,7 +4551,7 @@ extern "C" {
  *  Version control register
  */
 #define TEE_DATE_REG (DR_REG_TEE_BASE + 0xffc)
-/** TEE_DATE : R/W; bitpos: [27:0]; default: 37818480;
+/** TEE_DATE : R/W; bitpos: [27:0]; default: 38810240;
  *  Version control register
  */
 #define TEE_DATE    0x0FFFFFFFU

@@ -21,7 +21,6 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_vfs_dev.h"
-#include "esp_vfs_usb_serial_jtag.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"

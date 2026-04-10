@@ -10,6 +10,6 @@ set(srcs
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
     SRCS ${srcs}
-    PRIV_REQUIRES esp_driver_spi spi_flash
+    PRIV_REQUIRES esp_driver_spi spi_flash esp_driver_gpio
     WHOLE_ARCHIVE
 )

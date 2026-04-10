@@ -2,5 +2,6 @@
 # Note that it enables SPI Ethernet, so it uses eth-eth bridge (to support targets that don't have Wi-Fi)
 CONFIG_ESP_NETIF_TCPIP_LWIP=y
 CONFIG_ESP_NETIF_BRIDGE_EN=y
-CONFIG_EXAMPLE_USE_SPI_ETHERNET=y
+CONFIG_ETHERNET_SPI_SUPPORT=y
 CONFIG_LWIP_NUM_NETIF_CLIENT_DATA=1
+# CONFIG_ETHERNET_INTERNAL_SUPPORT is not set

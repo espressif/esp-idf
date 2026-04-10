@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@ static const char* TAG = "phy_comm";
 
 static volatile uint16_t s_phy_modem_flag = 0;
 
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
 extern void phy_param_track_tot(bool en_wifi, bool en_ble_154);
 static esp_timer_handle_t phy_track_pll_timer;
 #if CONFIG_ESP_WIFI_ENABLED
@@ -34,8 +35,9 @@ static volatile int64_t s_wifi_prev_timestamp;
 #if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
 static volatile int64_t s_bt_154_prev_timestamp;
 #endif
-#define PHY_TRACK_PLL_PERIOD_IN_US 1000000
+#define PHY_TRACK_PLL_PERIOD_IN_US (CONFIG_ESP_PHY_PLL_TRACK_PERIOD_MS * 1000)
 static void phy_track_pll_internal(void);
+#endif
 
 static esp_phy_ant_gpio_config_t s_phy_ant_gpio_config = { 0 };
 static esp_phy_ant_config_t s_phy_ant_config = { 0 };
@@ -47,6 +49,7 @@ bool phy_enabled_modem_contains(esp_phy_modem_t modem)
 }
 #endif
 
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
 void phy_track_pll(void)
 {
     // Light sleep scenario: enabling and disabling PHY frequently, the timer will not get triggered.
@@ -121,6 +124,17 @@ void phy_track_pll_deinit(void)
     ESP_ERROR_CHECK(esp_timer_stop(phy_track_pll_timer));
     ESP_ERROR_CHECK(esp_timer_delete(phy_track_pll_timer));
 }
+#endif
+
+static const char *phy_get_modem_str(esp_phy_modem_t modem)
+{
+    switch (modem) {
+        case PHY_MODEM_WIFI: return "Wi-Fi";
+        case PHY_MODEM_BT: return "Bluetooth";
+        case PHY_MODEM_IEEE802154: return "IEEE 802.15.4";
+        default: return "";
+    }
+}
 
 void phy_set_modem_flag(esp_phy_modem_t modem)
 {
@@ -129,6 +143,9 @@ void phy_set_modem_flag(esp_phy_modem_t modem)
 
 void phy_clr_modem_flag(esp_phy_modem_t modem)
 {
+    if ((s_phy_modem_flag & modem) == 0) {
+        ESP_LOGW(TAG, "Clear the flag of %s before it's set", phy_get_modem_str(modem));
+    }
     s_phy_modem_flag &= ~modem;
 }
 
@@ -155,8 +172,8 @@ static void phy_ant_set_gpio_output(uint32_t io_num)
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << io_num);
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
 }
 

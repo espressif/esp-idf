@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -576,4 +576,18 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
 esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 {
     return esp_psram_impl_get_physical_size(out_size_bytes);
+}
+
+/******************************* Halfsleep Mode *******************************/
+// This PSRAM device does not support halfsleep mode
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+{
 }

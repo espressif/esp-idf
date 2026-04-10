@@ -820,6 +820,12 @@ void vPortTLSPointersDelCb( void *pxTCB )
 
 void vPortCleanUpTCB ( void *pxTCB )
 {
+    #if ( CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK )
+        /* Call the user defined task pre-deletion hook */
+        extern void vTaskPreDeletionHook( void * pxTCB );
+        vTaskPreDeletionHook( pxTCB );
+    #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
+
 #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
     /* Call TLS pointers deletion callbacks */
     vPortTLSPointersDelCb( pxTCB );

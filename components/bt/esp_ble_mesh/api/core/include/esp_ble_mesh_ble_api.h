@@ -97,6 +97,9 @@ typedef union {
 #if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BT_NIMBLE_ENABLED
     /**
      * @brief Event parameters of ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT
+     * @note  The execution environment of this event is different
+     *        from other BLE Mesh events, as it runs in the NimBLE Host's
+     *        execution environment.
      */
     struct ble_mesh_nimble_gap_event_evt_param {
         struct ble_gap_event event;             /*!< GAP event parameters for NimBLE Host */

@@ -1,3 +1,4 @@
+include(${CMAKE_CURRENT_LIST_DIR}/toolchain_flags.cmake)
 #
 # Get target from single sdkconfig file
 #
@@ -71,7 +72,7 @@ endfunction()
 # Set the target used for the standard project build.
 #
 macro(__target_init config_file)
-    # Input is IDF_TARGET environement variable
+    # Input is IDF_TARGET environment variable
     set(env_idf_target $ENV{IDF_TARGET})
 
     if(NOT env_idf_target)
@@ -129,30 +130,30 @@ macro(__target_set_toolchain)
     set(env_idf_toolchain $ENV{IDF_TOOLCHAIN})
     if(NOT env_idf_toolchain)
         # IDF_TOOLCHAIN not set in environment, see if it is set in cache
-        if(IDF_TOOLCHAIN)
-            set(env_idf_toolchain ${IDF_TOOLCHAIN})
-        else()
-            set(env_idf_toolchain gcc)
-        endif()
-    elseif(DEFINED CACHE{IDF_TOOLCHAIN})
-        # IDF_TOOLCHAIN set both in environment and in cache, must be the same
-        if(NOT $CACHE{IDF_TOOLCHAIN} STREQUAL ${env_idf_toolchain})
-            message(FATAL_ERROR " IDF_TOOLCHAIN '$CACHE{IDF_TOOLCHAIN}' in CMake cache does not match"
-                    " currently selected IDF_TOOLCHAIN '${env_idf_toolchain}'. To change the toolchain, clear"
-                    " the build directory and sdkconfig file, and build the project again.")
+        set(env_idf_toolchain ${IDF_TOOLCHAIN})
+        if(NOT env_idf_toolchain)
+            set(env_idf_toolchain "gcc")
         endif()
     endif()
 
-    # Finally, set IDF_TOOLCHAIN in cache
-    set(IDF_TOOLCHAIN ${env_idf_toolchain} CACHE STRING "IDF Build Toolchain Type")
+    if(DEFINED CACHE{IDF_TOOLCHAIN} AND NOT "$CACHE{IDF_TOOLCHAIN}" STREQUAL "${env_idf_toolchain}")
+        # IDF_TOOLCHAIN set both in environment and in cache, must be the same
+        message(FATAL_ERROR " IDF_TOOLCHAIN '$CACHE{IDF_TOOLCHAIN}' in CMake cache does not match"
+                " currently selected IDF_TOOLCHAIN '${env_idf_toolchain}'. To change the toolchain, clear"
+                " the build directory and sdkconfig file, and build the project again.")
+    endif()
 
     if(${env_idf_toolchain} STREQUAL "clang")
-        set(toolchain_type "clang-")
+        # TODO IDF-14338: remove the line below since it will be set in toolchain.cmake
+        set(IDF_TOOLCHAIN ${env_idf_toolchain} CACHE STRING "IDF Build Toolchain Type")
+        set(toolchain_filename "toolchain-clang-${IDF_TARGET}.cmake")
+    else()
+        set(toolchain_filename "toolchain-${IDF_TARGET}.cmake")
     endif()
 
     # Check if selected target is consistent with toolchain file in CMake cache
     if(DEFINED CMAKE_TOOLCHAIN_FILE)
-        string(FIND "${CMAKE_TOOLCHAIN_FILE}" "-${toolchain_type}${IDF_TARGET}.cmake" found)
+        string(FIND "${CMAKE_TOOLCHAIN_FILE}" "${toolchain_filename}" found)
         if(${found} EQUAL -1)
             get_filename_component(toolchain "${CMAKE_TOOLCHAIN_FILE}" NAME_WE)
             message(FATAL_ERROR " CMAKE_TOOLCHAIN_FILE '${toolchain}'"
@@ -162,11 +163,9 @@ macro(__target_set_toolchain)
         endif()
     endif()
 
-    # First try to load the toolchain file from the tools/cmake/directory of IDF
-    set(toolchain_file_global ${idf_path}/tools/cmake/toolchain-${toolchain_type}${IDF_TARGET}.cmake)
-    if(EXISTS ${toolchain_file_global})
-        set(CMAKE_TOOLCHAIN_FILE ${toolchain_file_global})
-    else()
-        message(FATAL_ERROR "Toolchain file ${toolchain_file_global} not found")
+    # Check if generated toolchain filepath is correct
+    set(CMAKE_TOOLCHAIN_FILE "${idf_path}/tools/cmake/${toolchain_filename}")
+    if(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
+        message(FATAL_ERROR "Toolchain file ${CMAKE_TOOLCHAIN_FILE} not found")
     endif()
 endmacro()

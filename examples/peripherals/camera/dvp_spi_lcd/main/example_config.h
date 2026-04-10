@@ -14,6 +14,7 @@ extern "C" {
 
 //----------CAM Config------------//
 #define EXAMPLE_RGB565_BITS_PER_PIXEL      16
+#define EXAMPLE_RGB565_BYTES_PER_PIXEL     (EXAMPLE_RGB565_BITS_PER_PIXEL / 8)
 
 #define EXAMPLE_DVP_CAM_SCCB_SCL_IO        (5)
 #define EXAMPLE_DVP_CAM_SCCB_SDA_IO        (4)
@@ -43,7 +44,11 @@ extern "C" {
 #define EXAMPLE_DVP_CAM_BUF_ALLOC_CAPS     (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 #endif
 
+#if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
+#define EXAMPLE_CAM_FORMAT                  "DVP_8bit_20Minput_YUV422_240x240_25fps" // ov2640
+#elif CONFIG_EXAMPLE_CAM_INPUT_FORMAT_RGB565
 #define EXAMPLE_CAM_FORMAT                  "DVP_8bit_20Minput_RGB565_240x240_25fps" // ov2640
+#endif
 
 #ifndef EXAMPLE_CAM_FORMAT
 #error "Unsupported camera format! Please adjust EXAMPLE_CAM_HRES and EXAMPLE_CAM_VRES in menuconfig"

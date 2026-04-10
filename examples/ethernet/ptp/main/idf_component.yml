@@ -1,7 +1,5 @@
 dependencies:
-  ethernet_init:
-    path: ${IDF_PATH}/examples/ethernet/basic/components/ethernet_init
-  esp_eth_time:
-    path: ${IDF_PATH}/examples/ethernet/ptp/components/esp_eth_time
+  espressif/ethernet_init:
+    version: "~1.3.0"
   ptpd:
     path: ${IDF_PATH}/examples/ethernet/ptp/components/ptpd

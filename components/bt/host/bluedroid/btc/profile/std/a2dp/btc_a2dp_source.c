@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -430,16 +430,43 @@ void btc_a2dp_source_setup_codec(void)
 {
     tBTC_AV_MEDIA_FEEDINGS media_feeding;
     tBTC_AV_STATUS status;
+    UINT16 minmtu;
+    tA2D_SBC_CIE sbc_config;
 
     APPL_TRACE_EVENT("## A2DP SETUP CODEC ##\n");
 
     osi_mutex_global_lock();
 
-    /* for now hardcode 44.1 khz 16 bit stereo PCM format */
-    media_feeding.cfg.pcm.sampling_freq = 44100;
+    bta_av_co_audio_get_sbc_config(&sbc_config, &minmtu);
+
+    /* derive PCM feeding from SBC configuration */
+    switch (sbc_config.samp_freq) {
+    case A2D_SBC_IE_SAMP_FREQ_48:
+        media_feeding.cfg.pcm.sampling_freq = 48000;
+        break;
+    case A2D_SBC_IE_SAMP_FREQ_32:
+        media_feeding.cfg.pcm.sampling_freq = 32000;
+        break;
+    case A2D_SBC_IE_SAMP_FREQ_16:
+        media_feeding.cfg.pcm.sampling_freq = 16000;
+        break;
+    case A2D_SBC_IE_SAMP_FREQ_44:
+        media_feeding.cfg.pcm.sampling_freq = 44100;
+        break;
+    default:
+        media_feeding.cfg.pcm.sampling_freq = 44100;
+        APPL_TRACE_WARNING("btc_a2dp_source_setup_codec unsupported SBC sampling frequency: %d", sbc_config.samp_freq);
+        break;
+    }
+
+    media_feeding.cfg.pcm.num_channel = (sbc_config.ch_mode == A2D_SBC_IE_CH_MD_MONO) ? 1 : 2;
     media_feeding.cfg.pcm.bit_per_sample = 16;
-    media_feeding.cfg.pcm.num_channel = 2;
     media_feeding.format = BTC_AV_CODEC_PCM;
+
+    APPL_TRACE_DEBUG("btc_a2dp_source_setup_codec PCM feeding derived from SBC: freq=%d, bits=%d, ch=%d",
+                     media_feeding.cfg.pcm.sampling_freq,
+                     media_feeding.cfg.pcm.bit_per_sample,
+                     media_feeding.cfg.pcm.num_channel);
 
     if (bta_av_co_audio_set_codec(&media_feeding, &status)) {
         tBTC_MEDIA_INIT_AUDIO_FEEDING mfeed;
@@ -970,11 +997,29 @@ static void btc_a2dp_source_pcm2sbc_init(tBTC_MEDIA_INIT_AUDIO_FEEDING *p_feedin
 
     /* Check the PCM feeding sampling_freq */
     switch (p_feeding->feeding.cfg.pcm.sampling_freq) {
+    case 16000:
+        /* For this sampling_freq the AV connection must be 16000 */
+        if (a2dp_source_local_param.btc_aa_src_cb.encoder.s16SamplingFreq != SBC_sf16000) {
+            /* Reconfiguration needed at 16000 */
+            APPL_TRACE_DEBUG("SBC Reconfiguration needed at 16000");
+            a2dp_source_local_param.btc_aa_src_cb.encoder.s16SamplingFreq = SBC_sf16000;
+            reconfig_needed = TRUE;
+        }
+        break;
+
+    case 32000:
+        /* For this sampling_freq the AV connection must be 32000 */
+        if (a2dp_source_local_param.btc_aa_src_cb.encoder.s16SamplingFreq != SBC_sf32000) {
+            /* Reconfiguration needed at 32000 */
+            APPL_TRACE_DEBUG("SBC Reconfiguration needed at 32000");
+            a2dp_source_local_param.btc_aa_src_cb.encoder.s16SamplingFreq = SBC_sf32000;
+            reconfig_needed = TRUE;
+        }
+        break;
+
     case  8000:
     case 12000:
-    case 16000:
     case 24000:
-    case 32000:
     case 48000:
         /* For these sampling_freq the AV connection must be 48000 */
         if (a2dp_source_local_param.btc_aa_src_cb.encoder.s16SamplingFreq != SBC_sf48000) {
@@ -999,13 +1044,6 @@ static void btc_a2dp_source_pcm2sbc_init(tBTC_MEDIA_INIT_AUDIO_FEEDING *p_feedin
     default:
         APPL_TRACE_DEBUG("Feeding PCM sampling_freq unsupported");
         break;
-    }
-
-    /* Some AV Headsets do not support Mono => always ask for Stereo */
-    if (a2dp_source_local_param.btc_aa_src_cb.encoder.s16ChannelMode == SBC_MONO) {
-        APPL_TRACE_DEBUG("SBC Reconfiguration needed in Stereo");
-        a2dp_source_local_param.btc_aa_src_cb.encoder.s16ChannelMode = SBC_JOINT_STEREO;
-        reconfig_needed = TRUE;
     }
 
     if (reconfig_needed != FALSE) {
@@ -1640,6 +1678,20 @@ static void btc_a2dp_source_thread_cleanup(UNUSED_ATTR void *context)
 
     osi_event_delete(a2dp_source_local_param.btc_aa_src_cb.poll_data);
     a2dp_source_local_param.btc_aa_src_cb.poll_data = NULL;
+}
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_set_pref_mcc
+ **
+ ** Description
+ **
+ ** Returns          TRUE if the preferred config is supported, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN btc_a2dp_source_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref_mcc)
+{
+    return bta_av_co_audio_set_pref_mcc(hndl, pref_mcc);
 }
 
 #endif /* (BTC_AV_SRC_INCLUDED == TRUE) && (BTC_AV_EXT_CODEC == FALSE) */

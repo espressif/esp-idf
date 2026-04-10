@@ -26,7 +26,9 @@ extern "C" {
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
+#if CONFIG_HEAP_HAS_EXEC_HEAP
 #define MALLOC_CAP_EXEC             (1<<0)  ///< Memory must be able to run executable code
+#endif
 #define MALLOC_CAP_32BIT            (1<<1)  ///< Memory must allow for aligned 32-bit data accesses
 #define MALLOC_CAP_8BIT             (1<<2)  ///< Memory must allow for 8/16/...-bit data accesses
 #define MALLOC_CAP_DMA              (1<<3)  ///< Memory must be able to accessed by DMA
@@ -42,7 +44,8 @@ extern "C" {
 #define MALLOC_CAP_IRAM_8BIT        (1<<13) ///< Memory must be in IRAM and allow unaligned access
 #define MALLOC_CAP_RETENTION        (1<<14) ///< Memory must be able to accessed by retention DMA
 #define MALLOC_CAP_RTCRAM           (1<<15) ///< Memory must be in RTC fast memory
-#define MALLOC_CAP_TCM              (1<<16) ///< Memory must be in TCM memory
+#define MALLOC_CAP_SPM              (1<<16) ///< Memory must be in SPM memory
+#define MALLOC_CAP_TCM              MALLOC_CAP_SPM _Pragma ("GCC warning \"'MALLOC_CAP_TCM' macro is deprecated, please use `MALLOC_CAP_SPM`\"")
 #define MALLOC_CAP_DMA_DESC_AHB     (1<<17) ///< Memory must be capable of containing AHB DMA descriptors
 #define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
 #define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches

@@ -9,11 +9,11 @@
 //
 
 #include "esp_private/startup_internal.h"
-#include "dbg_stubs.h"
+#include "esp_dbg_stubs.h"
 #include "esp_attr.h"
 
 /*
-    Debug stubs is actually a table of 4-byte entries. Every entry is equal to zero or must contain meaningfull data.
+    Debug stubs is actually a table of 4-byte entries. Every entry is equal to zero or must contain meaningful data.
     The first entry is a service one and has the followinf format:
         - tramp_addr, 4 bytes; Address of buffer for trampoline/code. Max size is ESP_DBG_STUBS_CODE_BUF_SIZE.
         - min_stack_addr, 4 bytes; Start of the buffer for minimal onboard stack or data. Max size is ESP_DBG_STUBS_STACK_MIN_SIZE.

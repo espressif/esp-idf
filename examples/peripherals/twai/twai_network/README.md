@@ -1,189 +1,163 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # TWAI Network Example
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+This example demonstrates TWAI (Two-Wire Automotive Interface) network communication using the ESP-IDF TWAI driver. It consists of two programs that showcase different aspects of TWAI bus communication.
 
-This example demonstrates how to use the TWAI driver to program a target (ESP32, ESP32-S2, ESP32-S3 or ESP32-C3) as a TWAI node, and have the two nodes (Network Master and Network Slave) communicate on a TWAI network. The Listen Only node is optional and acts as a network monitor meaning that it only receives messages and does not influence the bus in any way (i.e. doesn't not acknowledge or send error frames).
+## Overview
 
-Note that concept of master/slave in this example refers to which node initiates
-and stops the transfer of a stream of data messages.
+### Programs
 
-## How to use example
+- **twai_sender**: Sends periodic heartbeat messages and large data packets
+- **twai_listen_only**: Monitors specific message ID using a filter
 
-### Hardware Required
+### Key Features
 
-This example requires at least two targets (e.g., an ESP32 or ESP32-S2) to act as the Network Master and Network Slave. The third target (Listen Only) is optional. Each target must be connected to an external transceiver (e.g., a SN65HVD23X transceiver). The transceivers must then be interconnected to form a TWAI network.
+- Event-driven message handling with callbacks
+- Message filtering using acceptance filters in listen-only mode
+- Single/Burst data transmission and reception
+- Real-time bus error and node status reporting
 
-The following diagram illustrates an example network:
+## Hardware Setup
 
-```text
-    ----------   ----------   --------------
-   |  Master  | |  Slave   | | Listen Only  |
-   |          | |          | |              |
-   | TX    RX | | TX    RX | | TX    RX     |
-    ----------   ----------   --------------
-     |      |     |      |     |      |
-     |      |     |      |     |      |
-    ----------   ----------   ----------
-   | D      R | | D      R | | D      R |
-   |          | |          | |          |
-   |  VP230   | |  VP230   | |  VP230   |
-   |          | |          | |          |
-   | H      L | | H      L | | H      L |
-    ----------   ----------   ----------
-     |      |     |      |     |      |
-     |      |     |      |     |      |
-  |--x------|-----x------|-----x------|--| H
-            |            |            |
-  |---------x------------x------------x--| L
+### Wiring
 
-```
+For multi-device testing:
+1. Connect TWAI transceivers to each ESP32xx
+2. Wire TWAI_H and TWAI_L between all devices using line topology
+3. Add 120Ω termination resistors at both ends of the bus
 
-Note: If you don't have an external transceiver, you can still run the [TWAI Self Test example](../twai_self_test/README.md)
+For single-device testing, enable self_test mode in the sender.
 
-### Configure the project
+### GPIO Configuration
 
-For each node in the TWAI network (i.e., Master, Slave, Listen Only)...
+The GPIO pins can be configured using menuconfig:
 
-* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32` or `esp32s2`).
-* Then run `menuconfig` to configure the example.
-
-```sh
-idf.py set-target {IDF_TARGET}
+```bash
 idf.py menuconfig
 ```
 
-* Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
-  * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
-  * On other chips, `TX GPIO Number` and `RX GPIO Number` default to `0` and `2` respectively
+Navigate to: `Example Configuration` → Configure the following:
+- **TWAI TX GPIO Num**: GPIO pin for TWAI TX  
+- **TWAI RX GPIO Num**: GPIO pin for TWAI RX
 
-### Build and Flash
-
-For each node, build the project and flash it to the board, then run monitor tool to view serial output:
-
-```sh
-idf.py -p PORT flash monitor
+**Default configuration:**
+```c
+#define TWAI_TX_GPIO    GPIO_NUM_4
+#define TWAI_RX_GPIO    GPIO_NUM_5  
+#define TWAI_BITRATE    1000000     // 1 Mbps
 ```
 
-(Replace PORT with the name of the serial port to use.)
+## Message Types
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+| ID | Type | Frequency | Size | Description |
+|----|------|-----------|------|-------------|
+| 0x7FF | Heartbeat | 1 Hz | 8 bytes | Timestamp data |
+| 0x100 | Data | Every 10s | 1000 bytes | Test data (125 frames) |
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+## Building and Running
 
-## Example Output
+### Build each program (sender, listen_only):
 
-Network Master
+**Enter the sub-application directory and run:**
 
-```text
-I (345) TWAI Master: Driver installed
-I (345) TWAI Master: Driver started
-I (345) TWAI Master: Transmitting ping
-I (3105) TWAI Master: Transmitted start command
-I (3105) TWAI Master: Received data value 339
-...
-I (5545) TWAI Master: Received data value 584
-I (5545) TWAI Master: Transmitted stop command
-I (5595) TWAI Master: Driver stopped
-I (6595) TWAI Master: Driver started
-I (6595) TWAI Master: Transmitting ping
-I (7095) TWAI Master: Transmitted start command
-I (7095) TWAI Master: Received data value 738
-...
-I (9535) TWAI Master: Received data value 983
-I (9535) TWAI Master: Transmitted stop command
-I (9585) TWAI Master: Driver stopped
-I (10585) TWAI Master: Driver started
-I (10585) TWAI Master: Transmitting ping
-I (11085) TWAI Master: Transmitted start command
-I (11085) TWAI Master: Received data value 1137
-...
-I (13525) TWAI Master: Received data value 1382
-I (13525) TWAI Master: Transmitted stop command
-I (13575) TWAI Master: Driver stopped
-I (14575) TWAI Master: Driver uninstalled
+```bash
+idf.py set-target esp32 build flash monitor
 ```
 
-Network Slave
+## Expected Output
 
-```text
-Slave starting in 3
-Slave starting in 2
-Slave starting in 1
-I (6322) TWAI Slave: Driver installed
-I (6322) TWAI Slave: Driver started
-I (6462) TWAI Slave: Transmitted ping response
-I (6712) TWAI Slave: Start transmitting data
-I (6712) TWAI Slave: Transmitted data value 339
-...
-I (9162) TWAI Slave: Transmitted data value 584
-I (9212) TWAI Slave: Transmitted stop response
-I (9312) TWAI Slave: Driver stopped
-I (10312) TWAI Slave: Driver started
-I (10452) TWAI Slave: Transmitted ping response
-I (10702) TWAI Slave: Start transmitting data
-I (10702) TWAI Slave: Transmitted data value 738
-...
-I (13152) TWAI Slave: Transmitted data value 983
-I (13202) TWAI Slave: Transmitted stop response
-I (13302) TWAI Slave: Driver stopped
-I (14302) TWAI Slave: Driver started
-I (14442) TWAI Slave: Transmitted ping response
-I (14692) TWAI Slave: Start transmitting data
-I (14692) TWAI Slave: Transmitted data value 1137
-...
-I (17142) TWAI Slave: Transmitted data value 1382
-I (17192) TWAI Slave: Transmitted stop response
-I (17292) TWAI Slave: Driver stopped
-I (18292) TWAI Slave: Driver uninstalled
+### Sender
+```
+===================TWAI Sender Example Starting...===================
+I (xxx) twai_sender: TWAI Sender started successfully
+I (xxx) twai_sender: Sending messages on IDs: 0x100 (data), 0x7FF (heartbeat)
+I (xxx) twai_sender: Sending heartbeat message: 1234567890
+I (xxx) twai_sender: Sending packet of 1000 bytes in 125 frames
 ```
 
-Network Listen Only
-
-```text
-I (326) TWAI Listen Only: Driver installed
-I (326) TWAI Listen Only: Driver started
-I (366) TWAI Listen Only: Received master ping
-...
-I (1866) TWAI Listen Only: Received master ping
-I (1866) TWAI Listen Only: Received slave ping response
-I (2116) TWAI Listen Only: Received master start command
-I (2116) TWAI Listen Only: Received data value 329
-...
-I (4566) TWAI Listen Only: Received data value 574
-I (4566) TWAI Listen Only: Received master stop command
-I (4606) TWAI Listen Only: Received slave stop response
-I (5606) TWAI Listen Only: Received master ping
-I (5856) TWAI Listen Only: Received master ping
-I (5856) TWAI Listen Only: Received slave ping response
-I (6106) TWAI Listen Only: Received master start command
-I (6106) TWAI Listen Only: Received data value 728
-...
-I (8556) TWAI Listen Only: Received data value 973
-I (8556) TWAI Listen Only: Received master stop command
-I (8596) TWAI Listen Only: Received slave stop response
-I (9596) TWAI Listen Only: Received master ping
-I (9846) TWAI Listen Only: Received master ping
-I (9846) TWAI Listen Only: Received slave ping response
-I (10096) TWAI Listen Only: Received master start command
-I (10096) TWAI Listen Only: Received data value 1127
-...
-I (12546) TWAI Listen Only: Received data value 1372
-I (12546) TWAI Listen Only: Received master stop command
-I (12586) TWAI Listen Only: Received slave stop response
-I (12586) TWAI Listen Only: Driver stopped
-I (12586) TWAI Listen Only: Driver uninstalled
-
+### Listen-Only Monitor
+```
+===================TWAI Listen Only Example Starting...===================
+I (xxx) twai_listen: Buffer initialized: 200 slots for burst data
+I (xxx) twai_listen: TWAI node created
+I (xxx) twai_listen: Filter enabled for ID: 0x100 Mask: 0x7F0
+I (xxx) twai_listen: TWAI start listening...
+I (xxx) twai_listen: RX: 100 [8] 0 0 0 0 0 0 0 0
+I (xxx) twai_listen: RX: 100 [8] 1 1 1 1 1 1 1 1
 ```
 
-## Example Breakdown
+## Implementation Details
 
-The communication between the Network Master and Network Slave execute the following steps over multiple iterations:
+### Message Buffering
 
-1. Both master and slave go through install and start their TWAI drivers independently.
-2. The master repeatedly sends **PING** messages until it receives a **PING_RESP** (ping response message) from the slave. The slave will only send a **PING_RESP** message when it receives a **PING** message from the master.
-3. Once the master has received the **PING_RESP** from the slave, it will send a **START_CMD** message to the slave.
-4. Upon receiving the **START_CMD** message, the slave will start transmitting **DATA** messages until the master sends a **STOP_CMD**. The master will send the **STOP_CMD** after receiving N **DATA** messages from the slave (N = 50 by default).
-5. When the slave receives the **STOP_CMD**, it will confirm that it has stopped by sending a **STOP_RESP** message to the master.
+Each program uses a buffer pool to handle incoming messages efficiently:
+
+- **Sender**: Small buffer for transmission completion tracking
+- **Listen-Only**: 100-slot buffer for monitoring filtered traffic
+
+### Operating Modes
+
+- **Normal Mode** (Sender): Participates in bus communication, sends ACK frames
+- **Listen-Only Mode** (Monitor): Receives filtered messages without transmitting anything
+
+### Message Filtering
+
+The listen-only monitor uses hardware acceptance filters to receive only specific message IDs:
+
+```c
+twai_mask_filter_config_t data_filter = {
+    .id = TWAI_DATA_ID,
+    .mask = 0x7F0,      // Match high 7 bits of the ID, ignore low 4 bits
+    .is_ext = false,    // Receive only standard ID
+};
+```
+
+### Error Handling
+
+- Bus error logging and status monitoring
+
+## Configuration
+
+### Customizing Buffer Sizes
+
+Adjust buffer sizes in each program as needed:
+```c
+#define POLL_DEPTH  200  // Listen-only buffer size
+```
+
+### Changing Message IDs
+
+Update the message ID definitions:
+```c
+#define TWAI_DATA_ID       0x100
+#define TWAI_HEARTBEAT_ID  0x7FF
+```
+
+## Use Cases
+
+This example is suitable for:
+
+- Learning TWAI bus communication
+- Testing TWAI network setups
+- Developing custom TWAI protocols
+- Bus monitoring and debugging
+- Prototyping automotive communication systems
+
+## Troubleshooting
+
+### No Communication
+- Check GPIO pin connections
+- Verify bitrate settings match between devices
+- Ensure proper bus termination
+
+### Buffer Overflows
+- Increase buffer size (`POLL_DEPTH`)
+- Reduce bus message transmission rate
+- Optimize message processing code
+
+### Bus Errors
+- Check physical bus wiring
+- Verify termination resistors (120Ω at each end)
+- Monitor error counters with `twai_node_get_info()`

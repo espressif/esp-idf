@@ -14,7 +14,7 @@
 #include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "sdkconfig.h"
 
 typedef struct {

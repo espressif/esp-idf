@@ -52,6 +52,7 @@ extern int (*esp_crt_bundle_attach_fn)(void *conf);
 #ifndef CONFIG_TLS_INTERNAL_CLIENT
 extern char *g_wpa_domain_match;
 #endif
+extern uint32_t g_eap_method_mask;
 
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);

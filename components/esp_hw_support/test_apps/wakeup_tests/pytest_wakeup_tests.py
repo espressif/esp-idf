@@ -1,20 +1,16 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from time import sleep
-from typing import Tuple
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 TEST_CONFIGS = [
     pytest.param('default'),
 ]
 
-# TODO: PM-66
-# ESP32: need to fix GPIO16 and GPIO17 bug
-# ESP32S2: need to fix GPIO43 bug
-# ESP32S3: need to fix GPIO33, GPIO34 and GPIO43 bug
 available_gpio_nums = {
     'esp32': [2, 4, 5, 12, 13, 14, 15, 18, 19, 21, 22, 23, 27],
     'esp32s2': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 33, 34, 35, 36, 37, 38, 39, 40, 42, 45],
@@ -23,44 +19,15 @@ available_gpio_nums = {
     'esp32c3': [0, 1, 2, 3, 4, 5, 6, 7, 10, 18, 19],
     'esp32c6': [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23],
     'esp32h2': [0, 1, 2, 3, 4, 5, 10, 11, 12, 22, 25, 26, 27],
-    'esp32p4': [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        36,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-    ],
+    'esp32p4': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    + [18, 19, 20, 21, 22, 23, 39, 40, 41, 42, 43, 45, 46, 47, 48]
+    + [28, 29, 30, 31, 32, 33, 36, 49, 50, 51, 52, 53, 54],
     'esp32c5': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 23, 24, 25, 26],
+    'esp32c61': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 22, 23, 24, 25, 26, 27, 28, 29],
 }
 
 available_rtcio_nums = {
-    'esp32': [36, 37, 38, 39, 34, 35, 4, 0, 2, 15, 13, 12, 14, 27],
+    'esp32': [36, 37, 38, 39, 34, 35, 25, 26, 33, 32, 4, 0, 2, 15, 13, 12, 14, 27],
     'esp32s2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
     'esp32s3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
     'esp32c2': [0, 1, 2, 3, 4, 5],
@@ -69,6 +36,7 @@ available_rtcio_nums = {
     'esp32h2': [7, 8, 9, 10, 11, 12, 13, 14],
     'esp32p4': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     'esp32c5': [0, 1, 2, 3, 4, 5, 6],
+    'esp32c61': [0, 1, 2, 3, 4, 5, 6],
 }
 
 
@@ -77,10 +45,10 @@ available_rtcio_nums = {
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'],
+    soc_filtered_targets('SOC_PM_SUPPORT_EXT1_WAKEUP == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1'),
     indirect=['target'],
 )
-def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
 
@@ -130,8 +98,8 @@ def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
-@idf_parametrize('target', ['esp32c2', 'esp32c3', 'esp32c6', 'esp32p4', 'esp32c5'], indirect=['target'])
-def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
+@idf_parametrize('target', soc_filtered_targets('SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP == 1'), indirect=['target'])
+def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
 
@@ -175,12 +143,9 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
-@idf_parametrize(
-    'target',
-    ['esp32', 'esp32c2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'],
-    indirect=['target'],
-)
-def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
+def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
 

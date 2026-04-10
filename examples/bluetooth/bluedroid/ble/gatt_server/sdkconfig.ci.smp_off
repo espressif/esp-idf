@@ -1,0 +1,5 @@
+# CI config: BLE SMP (Security Manager Protocol) disabled.
+# Ensures gatt_server builds and runs correctly without security module.
+CONFIG_EXAMPLE_CI_ID=9
+CONFIG_EXAMPLE_CI_PIPELINE_ID=${CI_PIPELINE_ID}
+# CONFIG_BT_BLE_SMP_ENABLE is not set

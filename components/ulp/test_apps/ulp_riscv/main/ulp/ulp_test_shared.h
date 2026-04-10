@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,6 +16,9 @@
 
 typedef enum {
     RISCV_READ_WRITE_TEST = 1,
+    RISCV_DELAY_TEST,
+    RISCV_DELAY_CYCLES_CALIBRATION_TEST,
+    RISCV_DELAY_US_CALIBRATION_TEST,
     RISCV_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST,
     RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST,
     RISCV_LIGHT_SLEEP_WAKEUP_TEST,
@@ -29,3 +32,9 @@ typedef enum {
     RISCV_COMMAND_NOK,
     RISCV_COMMAND_INVALID,
 } riscv_test_command_reply_t;
+
+typedef enum {
+    RISCV_DELAY_SUBCMD_NONE = 0,
+    RISCV_DELAY_SUBCMD_READY,
+    RISCV_DELAY_SUBCMD_RUN,
+} riscv_delay_sub_command_t;

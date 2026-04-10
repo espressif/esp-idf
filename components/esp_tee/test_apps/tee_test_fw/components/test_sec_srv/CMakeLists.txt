@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 

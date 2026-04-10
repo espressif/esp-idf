@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
+import itertools
 import multiprocessing
 import os
 import ssl
 import sys
 from typing import Any
-from typing import Optional
 
 import pexpect
 import pytest
@@ -77,16 +77,19 @@ server_key = (
     '-----END PRIVATE KEY-----\n'
 )
 
+CONFIG_PARTITIONS_OTA = [
+    ('on_update_no_sb_ecdsa', 'esp32'),
+    *itertools.product(
+        ['on_update_no_sb_rsa', 'virt_sb_v2_and_fe', 'virt_sb_v2_and_fe_2'],
+        ['esp32', 'esp32c3', 'esp32s3'],
+    ),
+]
+
 
 @pytest.mark.wifi_high_traffic
-@pytest.mark.parametrize(
-    'config',
-    ['on_update_no_sb_ecdsa', 'on_update_no_sb_rsa', 'virt_sb_v2_and_fe', 'virt_sb_v2_and_fe_2'],
-    indirect=True,
-)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @pytest.mark.timeout(2400)
-@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('config, target', CONFIG_PARTITIONS_OTA, indirect=['config', 'target'])
 def test_examples_partitions_ota(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -94,7 +97,7 @@ def test_examples_partitions_ota(dut: Dut) -> None:
     dut.serial.bootloader_flash()
     print(' - Start app (flash partition_table and app)')
     dut.serial.write_flash_no_enc()
-    update_partitions(dut, 'wifi_high_traffic')
+    update_partitions(dut, 'wifi_high_traffic', False)
 
 
 @pytest.mark.flash_encryption_wifi_high_traffic
@@ -106,24 +109,37 @@ def test_examples_partitions_ota(dut: Dut) -> None:
 def test_examples_partitions_ota_with_flash_encryption_wifi(dut: Dut) -> None:
     dut.serial.erase_flash()
     dut.serial.flash()
-    update_partitions(dut, 'flash_encryption_wifi_high_traffic')
+    update_partitions(dut, 'flash_encryption_wifi_high_traffic', False)
 
 
-def update_partitions(dut: Dut, env_name: Optional[str]) -> None:
+@pytest.mark.flash_encryption_wifi_high_traffic
+@pytest.mark.parametrize('config', ['flash_enc_wifi_2.data_partition_verification'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+def test_examples_partitions_ota_with_flash_enc_wifi_2_data_partition_verification(dut: Dut) -> None:
+    dut.serial.erase_flash()
+    dut.serial.flash()
+    update_partitions(dut, 'flash_encryption_wifi_high_traffic', True)
+
+
+def update_partitions(dut: Dut, env_name: str | None, signed_storage: bool | None) -> None:
     port = 8000
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', port))
     thread1.daemon = True
     thread1.start()
     try:
+        if signed_storage:
+            update(dut, port, 'signed_storage.bin', env_name)
+        else:
+            update(dut, port, 'storage.bin', env_name)
         update(dut, port, 'partitions_ota.bin', env_name)
         update(dut, port, 'bootloader/bootloader.bin', env_name)
         update(dut, port, 'partition_table/partition-table.bin', env_name)
-        update(dut, port, 'storage.bin', env_name)
     finally:
         thread1.terminate()
 
 
-def update(dut: Dut, port: int, path_to_image: str, env_name: Optional[str]) -> None:
+def update(dut: Dut, port: int, path_to_image: str, env_name: str | None) -> None:
     dut.expect('OTA example app_main start', timeout=90)
     host_ip = setting_connection(dut, env_name)
     dut.expect('Starting OTA example task', timeout=30)
@@ -133,14 +149,14 @@ def update(dut: Dut, port: int, path_to_image: str, env_name: Optional[str]) -> 
     dut.expect('OTA Succeed, Rebooting...', timeout=90)
 
 
-def setting_connection(dut: Dut, env_name: Optional[str]) -> Any:
+def setting_connection(dut: Dut, env_name: str | None) -> Any:
     if env_name is not None and dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
         dut.expect('Please input ssid password:')
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
     try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -151,8 +167,8 @@ def start_https_server(
     ota_image_dir: str,
     server_ip: str,
     server_port: int,
-    server_file: Optional[str] = None,
-    key_file: Optional[str] = None,
+    server_file: str | None = None,
+    key_file: str | None = None,
 ) -> None:
     os.chdir(ota_image_dir)
 

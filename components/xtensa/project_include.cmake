@@ -1,3 +1,8 @@
+idf_build_get_property(idf_target_arch IDF_TARGET_ARCH)
+if(NOT "${idf_target_arch}" STREQUAL "xtensa")
+    return()
+endif()
+
 # Check toolchain is configured properly in cmake
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     # without '--target' option 'clang -dumpmachine' prints default target arch and it might be not Xtensa

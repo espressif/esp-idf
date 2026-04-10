@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,8 +51,8 @@ static const char *TAG = "esp-tls";
 
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "esp_tls_mbedtls.h"
-#elif CONFIG_ESP_TLS_USING_WOLFSSL
-#include "esp_tls_wolfssl.h"
+#elif CONFIG_ESP_TLS_CUSTOM_STACK
+#include "esp_tls_custom_stack.h"
 #endif
 
 #ifdef ESP_PLATFORM
@@ -80,25 +80,33 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_server_session_ticket_ctx_free    esp_mbedtls_server_session_ticket_ctx_free
 #define _esp_tls_get_bytes_avail            esp_mbedtls_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_mbedtls_init_global_ca_store
-#define _esp_tls_set_global_ca_store        esp_mbedtls_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
+#define _esp_tls_set_global_ca_store        esp_mbedtls_set_global_ca_store
 #define _esp_tls_get_global_ca_store        esp_mbedtls_get_global_ca_store
-#define _esp_tls_free_global_ca_store       esp_mbedtls_free_global_ca_store                /*!< Callback function for freeing global ca store for TLS/SSL */
+#define _esp_tls_free_global_ca_store       esp_mbedtls_free_global_ca_store
 #define _esp_tls_get_ciphersuites_list      esp_mbedtls_get_ciphersuites_list
-#elif CONFIG_ESP_TLS_USING_WOLFSSL /* CONFIG_ESP_TLS_USING_MBEDTLS */
-#define _esp_create_ssl_handle              esp_create_wolfssl_handle
-#define _esp_tls_handshake                  esp_wolfssl_handshake
-#define _esp_tls_read                       esp_wolfssl_read
-#define _esp_tls_write                      esp_wolfssl_write
-#define _esp_tls_conn_delete                esp_wolfssl_conn_delete
-#define _esp_tls_net_init                   esp_wolfssl_net_init
-#define _esp_tls_server_session_create      esp_wolfssl_server_session_create
-#define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
-#define _esp_tls_get_bytes_avail            esp_wolfssl_get_bytes_avail
-#define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
-#define _esp_tls_set_global_ca_store        esp_wolfssl_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
-#define _esp_tls_free_global_ca_store       esp_wolfssl_free_global_ca_store                /*!< Callback function for freeing global ca store for TLS/SSL */
-#define _esp_tls_get_ssl_context            esp_wolfssl_get_ssl_context
-#else   /* ESP_TLS_USING_WOLFSSL */
+#elif CONFIG_ESP_TLS_CUSTOM_STACK
+#define _esp_create_ssl_handle              esp_tls_custom_stack_create_ssl_handle
+#define _esp_tls_handshake                  esp_tls_custom_stack_handshake
+#define _esp_tls_read                       esp_tls_custom_stack_read
+#define _esp_tls_write                      esp_tls_custom_stack_write
+#define _esp_tls_conn_delete                esp_tls_custom_stack_conn_delete
+#define _esp_tls_net_init                   esp_tls_custom_stack_net_init
+#define _esp_tls_get_client_session         esp_tls_custom_stack_get_client_session
+#define _esp_tls_free_client_session        esp_tls_custom_stack_free_client_session
+#define _esp_tls_get_ssl_context            esp_tls_custom_stack_get_ssl_context
+#define _esp_tls_server_session_create      esp_tls_custom_stack_server_session_create
+#define _esp_tls_server_session_init        esp_tls_custom_stack_server_session_init
+#define _esp_tls_server_session_continue_async     esp_tls_custom_stack_server_session_continue_async
+#define _esp_tls_server_session_delete      esp_tls_custom_stack_server_session_delete
+#define _esp_tls_server_session_ticket_ctx_init    esp_tls_custom_stack_server_session_ticket_ctx_init
+#define _esp_tls_server_session_ticket_ctx_free    esp_tls_custom_stack_server_session_ticket_ctx_free
+#define _esp_tls_get_bytes_avail            esp_tls_custom_stack_get_bytes_avail
+#define _esp_tls_init_global_ca_store       esp_tls_custom_stack_init_global_ca_store
+#define _esp_tls_set_global_ca_store        esp_tls_custom_stack_set_global_ca_store
+#define _esp_tls_get_global_ca_store        esp_tls_custom_stack_get_global_ca_store
+#define _esp_tls_free_global_ca_store       esp_tls_custom_stack_free_global_ca_store
+#define _esp_tls_get_ciphersuites_list      esp_tls_custom_stack_get_ciphersuites_list
+#else
 #error "No TLS stack configured"
 #endif
 
@@ -603,28 +611,6 @@ static int get_port(const char *url, struct http_parser_url *u)
     return 0;
 }
 
-esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
-{
-    if (!url || !cfg) {
-        return NULL;
-    }
-
-    /* Parse URI */
-    struct http_parser_url u;
-    http_parser_url_init(&u);
-    http_parser_parse_url(url, strlen(url), 0, &u);
-    esp_tls_t *tls = esp_tls_init();
-    if (!tls) {
-        return NULL;
-    }
-    /* Connect to host */
-    if (esp_tls_conn_new_sync(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
-                              get_port(url, &u), cfg, tls) == 1) {
-        return tls;
-    }
-    esp_tls_conn_destroy(tls);
-    return NULL;
-}
 
 /**
  * @brief      Create a new TLS/SSL connection with a given "HTTP" url

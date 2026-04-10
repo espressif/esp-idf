@@ -1,7 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
+ */
+/* MQTT 5.0 over TLS Example
  */
 
 #include <stdio.h>
@@ -14,9 +16,17 @@
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
 #include "esp_log.h"
+#include "esp_crt_bundle.h"
 #include "mqtt_client.h"
+#include "sdkconfig.h"
 
 static const char *TAG = "mqtt5_example";
+
+#if CONFIG_EXAMPLE_CERT_VALIDATE_MOSQUITTO_CA
+/* Embedded Mosquitto CA certificate for test.mosquitto.org:8883 */
+extern const uint8_t mosquitto_org_crt_start[] asm("_binary_mosquitto_org_crt_start");
+extern const uint8_t mosquitto_org_crt_end[] asm("_binary_mosquitto_org_crt_end");
+#endif
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -24,6 +34,13 @@ static void log_error_if_nonzero(const char *message, int error_code)
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
+
+#if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN
+static const char cert_override_pem[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n"
+    "-----END CERTIFICATE-----";
+#endif
 
 static esp_mqtt5_user_property_item_t user_property_arr[] = {
         {"board", "esp32"},
@@ -204,44 +221,28 @@ static void mqtt5_app_start(void)
         .correlation_data = "123456",
         .correlation_data_len = 6,
     };
-
-    esp_mqtt_client_config_t mqtt5_cfg = {
-        .broker.address.uri = CONFIG_BROKER_URL,
-        .session.protocol_ver = MQTT_PROTOCOL_V_5,
-        .network.disable_auto_reconnect = true,
-        .credentials.username = "123",
-        .credentials.authentication.password = "456",
-        .session.last_will.topic = "/topic/will",
-        .session.last_will.msg = "i will leave",
-        .session.last_will.msg_len = 12,
-        .session.last_will.qos = 1,
-        .session.last_will.retain = true,
+const esp_mqtt_client_config_t mqtt5_cfg = {
+        .broker = {
+            .address.uri = CONFIG_EXAMPLE_MQTT_BROKER_URI,
+#if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN
+            .verification.certificate = cert_override_pem,
+#elif CONFIG_EXAMPLE_CERT_VALIDATE_MOSQUITTO_CA
+            .verification.certificate = (const char *)mosquitto_org_crt_start,
+#else
+            .verification.crt_bundle_attach = esp_crt_bundle_attach,
+#endif
+        },
+        .session = {
+            .protocol_ver = MQTT_PROTOCOL_V_5,
+            .last_will = {
+                .topic = "/topic/will",
+                .msg = "i will leave",
+                .msg_len = 12,
+                .qos = 1,
+                .retain = true,
+            },
+        },
     };
-
-#if CONFIG_BROKER_URL_FROM_STDIN
-    char line[128];
-
-    if (strcmp(mqtt5_cfg.uri, "FROM_STDIN") == 0) {
-        int count = 0;
-        printf("Please enter url of mqtt broker\n");
-        while (count < 128) {
-            int c = fgetc(stdin);
-            if (c == '\n') {
-                line[count] = '\0';
-                break;
-            } else if (c > 0 && c < 127) {
-                line[count] = c;
-                ++count;
-            }
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-        }
-        mqtt5_cfg.broker.address.uri = line;
-        printf("Broker url: %s\n", line);
-    } else {
-        ESP_LOGE(TAG, "Configuration mismatch: wrong broker url");
-        abort();
-    }
-#endif /* CONFIG_BROKER_URL_FROM_STDIN */
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt5_cfg);
 

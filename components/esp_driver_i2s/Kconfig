@@ -8,6 +8,13 @@ menu "ESP-Driver:I2S Configurations"
             Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
             executable when the cache is disabled (e.g. SPI Flash write).
 
+    config I2S_CTRL_FUNC_IN_IRAM
+        bool "Place I2S control functions into IRAM"
+        default n
+        help
+            Place I2S control functions into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
     config I2S_ENABLE_DEBUG_LOG
         bool "Enable I2S debug log"
         default n

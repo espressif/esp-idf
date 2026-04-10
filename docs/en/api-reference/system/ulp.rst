@@ -17,6 +17,8 @@ The Ultra Low Power (ULP) coprocessor is designed to perform tasks while the mai
     - **ULP RISC-V**: A RISC-V based ULP coprocessor. It offers enhanced computational capabilities and flexibility, making it suitable for more complex applications written in C. This type is supported by ESP32-S2 and ESP32-S3.
     - **ULP LP Core**: A RISC-V based ULP coprocessor that combines the advantages of the **ULP RISC-V** type with additional features, such as extended memory access, broader peripheral access, a debug module, and an interrupt controller. This coprocessor is capable of operating even when the entire system is active. This type is supported by ESP32-C5, ESP32-C6, ESP32-P4, and upcoming chips.
 
+    NOTE: Chips like ESP32-S2 and ESP32-S3 support both **ULP FSM** and **ULP RISC-V**. User can enable both of them in menuconfig at compile time, and choose which one to use at run time.
+
     .. toctree::
         :maxdepth: 1
 

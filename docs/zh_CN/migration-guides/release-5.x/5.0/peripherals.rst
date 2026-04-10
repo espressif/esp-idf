@@ -90,15 +90,17 @@ GPIO
 
 .. only:: SOC_SDM_SUPPORTED
 
-    Sigma-Delta 调制器
-    ---------------------------------
+    .. _deprecate_sdm_legacy_driver:
+
+    旧版 Sigma-Delta 调制器驱动已被弃用
+    --------------------------------------------------
 
     Sigma-Delta 调制器的驱动现已更新为 :doc:`SDM <../../../api-reference/peripherals/sdm>`。
 
     - 新驱动中实现了工厂模式，SDM 通道都位于内部通道池中，因此用户无需手动将 SDM 通道配置到 GPIO 管脚。
     - SDM 通道会被自动分配。
 
-    尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+    尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
     .. code-block:: text
 
@@ -121,43 +123,41 @@ GPIO
     - 更新前，通道配置由通道分配在 :cpp:func:`sdm_new_channel` 完成。在新驱动中，只有 ``density`` 可在运行时由 :cpp:func:`sdm_channel_set_pulse_density` 更新。其他参数如 ``gpio number``、 ``prescale`` 只能在通道分配时进行设置。
     - 在进行下一步通道操作前，用户应通过调用 :cpp:func:`sdm_channel_enable` 提前 **使能** 该通道。该函数有助于管理一些系统级服务，如 **电源管理**。
 
-    .. _deprecate_gptimer_legacy_driver:
-
-.. only:: not SOC_SDM_SUPPORTED
+.. only:: SOC_GPTIMER_SUPPORTED
 
     .. _deprecate_gptimer_legacy_driver:
 
-旧版定时器组驱动被弃用
-----------------------
+    旧版定时器组驱动被弃用
+    ----------------------
 
-为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
+    为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
 
-尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
+    尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
-.. code-block:: text
+    .. code-block:: text
 
-    legacy timer group driver is deprecated, please migrate to driver/gptimer.h
+        legacy timer group driver is deprecated, please migrate to driver/gptimer.h
 
-概念和使用方法上的主要更新如下所示：
+    概念和使用方法上的主要更新如下所示：
 
-主要概念更新
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    主要概念更新
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  用于识别定时器的 ``timer_group_t`` 和 ``timer_idx_t`` 已被删除。在新驱动中，定时器用参数 :cpp:type:`gptimer_handle_t` 表示。
--  更新后，定时器的时钟源由 :cpp:type:`gptimer_clock_source_t` 定义，之前的时钟源参数 ``timer_src_clk_t`` 不再使用。
--  更新后，定时器计数方向由 :cpp:type:`gptimer_count_direction_t` 定义，之前的计数方向参数 ``timer_count_dir_t`` 不再使用。
--  更新后，仅支持电平触发的中断， ``timer_intr_t`` 和 ``timer_intr_mode_t`` 不再使用。
--  更新后，通过设置标志位 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm`， 可以使能自动加载。 ``timer_autoreload_t`` 不再使用。
+    -  用于识别定时器的 ``timer_group_t`` 和 ``timer_idx_t`` 已被删除。在新驱动中，定时器用参数 :cpp:type:`gptimer_handle_t` 表示。
+    -  更新后，定时器的时钟源由 :cpp:type:`gptimer_clock_source_t` 定义，之前的时钟源参数 ``timer_src_clk_t`` 不再使用。
+    -  更新后，定时器计数方向由 :cpp:type:`gptimer_count_direction_t` 定义，之前的计数方向参数 ``timer_count_dir_t`` 不再使用。
+    -  更新后，仅支持电平触发的中断， ``timer_intr_t`` 和 ``timer_intr_mode_t`` 不再使用。
+    -  更新后，通过设置标志位 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm`， 可以使能自动加载。 ``timer_autoreload_t`` 不再使用。
 
-主要使用方法更新
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    主要使用方法更新
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
--  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
--  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
--  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
--  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
--  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
+    -  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
+    -  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
+    -  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
+    -  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
+    -  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
+    -  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
 
 UART
 ------------
@@ -315,12 +315,14 @@ LEDC
 
 .. only:: SOC_RMT_SUPPORTED
 
-    RMT 驱动
-    ----------------------
+    .. _deprecate_rmt_legacy_driver:
+
+    旧版 RMT 驱动已被弃用
+    -----------------------------------
 
     为统一和扩展 RMT 外设的使用，RMT 驱动已更新，详见 :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`。
 
-    尽管我们建议使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/rmt.h``中。但是，引用路径 ``driver/rmt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    尽管我们建议使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/rmt.h``中。但是，引用路径 ``driver/rmt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 
@@ -431,12 +433,12 @@ LCD
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - ``mcpwm_gpio_init`` 和 ``mcpwm_set_pin``：GPIO 管脚配置在子模块配置中完成，例如在 :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` 中设置 PWM GPIO 管脚。
-    - ``mcpwm_init``：为得到预期的 PWM 波形，用户需要至少分配一个 MCPWM 定时器和 MCPWM 运算器，然后通过调用 :cpp:func:`mcpwm_operator_connect_timer` 将二者连接起来。然后，用户需要调用如:cpp:func:`mcpwm_generator_set_actions_on_timer_event`， :cpp:func:`mcpwm_generator_set_actions_on_compare_event` 来设置发生器对不同事件的动作。
+    - ``mcpwm_init``：为得到预期的 PWM 波形，用户需要至少分配一个 MCPWM 定时器和 MCPWM 运算器，然后通过调用 :cpp:func:`mcpwm_operator_connect_timer` 将二者连接起来。然后，用户需要调用如:cpp:func:`mcpwm_generator_set_action_on_timer_event`， :cpp:func:`mcpwm_generator_set_action_on_compare_event` 来设置发生器对不同事件的动作。
     - ``mcpwm_group_set_resolution``：新驱动中，群组分辨率固定为最大值，通常为 80 MHz。
     - ``mcpwm_timer_set_resolution``：MCPWM 定时器的分辨率在 :cpp:member:`mcpwm_timer_config_t::resolution_hz` 中进行设置。
     - ``mcpwm_set_frequency``：PWM 频率由 :cpp:member:`mcpwm_timer_config_t::resolution_hz` ，:cpp:member:`mcpwm_timer_config_t::count_mode` 和:cpp:member:`mcpwm_timer_config_t::period_ticks` 决定。
     - ``mcpwm_set_duty``：为设置 PWM 占空比，用户应调用 :cpp:func:`mcpwm_comparator_set_compare_value` 来改变比较器的阈值。
-    - ``mcpwm_set_duty_type``：新驱动中没有预设的占空比模式，通过设置不同的发生器行为，如 :cpp:func:`mcpwm_generator_set_actions_on_timer_event`，来配置占空比模式。
+    - ``mcpwm_set_duty_type``：新驱动中没有预设的占空比模式，通过设置不同的发生器行为，如 :cpp:func:`mcpwm_generator_set_action_on_timer_event`，来配置占空比模式。
     - ``mcpwm_set_signal_high`` 和 ``mcpwm_set_signal_low`` 更新为 :cpp:func:`mcpwm_generator_set_force_level`。新驱动中，这是通过为发生器设置力作用来实现的，而不是在后台将占空比改为 0% 或 100%。
     - ``mcpwm_start`` 和 ``mcpwm_stop`` 更新为 :cpp:func:`mcpwm_timer_start_stop`。用户可以用更多的模式来启动和停止 MCPWM 定时器，详见 :cpp:type:`mcpwm_timer_start_stop_cmd_t`。
     - ``mcpwm_carrier_init`` 更新为 :cpp:func:`mcpwm_operator_apply_carrier`。
@@ -448,7 +450,7 @@ LCD
     - ``mcpwm_carrier_output_invert`` 更新为 :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` 和 :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate`。
     - ``mcpwm_deadtime_enable`` 与 ``mcpwm_deadtime_disable`` 更新为 :cpp:func:`mcpwm_generator_set_dead_time`。
     - ``mcpwm_fault_init`` 更新为 :cpp:func:`mcpwm_new_gpio_fault`。
-    - ``mcpwm_fault_set_oneshot_mode`` 与 ``mcpwm_fault_set_cyc_mode`` 更新为 :cpp:func:`mcpwm_operator_set_brake_on_fault` 与 :cpp:func:`mcpwm_generator_set_actions_on_brake_event`。
+    - ``mcpwm_fault_set_oneshot_mode`` 与 ``mcpwm_fault_set_cyc_mode`` 更新为 :cpp:func:`mcpwm_operator_set_brake_on_fault` 与 :cpp:func:`mcpwm_generator_set_action_on_brake_event`。
     - 由于 ``mcpwm_capture_enable`` 与 :cpp:func:`mcpwm_capture_enable_channel` 重复，因此在更新后被删除。
     - 由于 ``mcpwm_capture_disable`` 与 :cpp:func:`mcpwm_capture_capture_disable_channel` 重复，因此在更新后被删除。
     - ``mcpwm_capture_enable_channel`` 与 ``mcpwm_capture_disable_channel`` 更新为 :cpp:func:`mcpwm_capture_channel_enable` 与 :cpp:func:`mcpwm_capture_channel_disable`。
@@ -479,12 +481,6 @@ LCD
 
     为保证前向兼容，旧版驱动的 API 仍然在 ``driver/i2s.h`` 可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 ``CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`` 来关闭。
 
-    以下是更新后的 I2S 文件概况。
-
-    .. figure:: ../../../../_static/diagrams/i2s/i2s_file_structure.png
-        :align: center
-        :alt: I2S File Structure
-
     主要概念更新
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -497,7 +493,7 @@ LCD
     - :cpp:type:`i2s_chan_handle_t` 句柄类型用于唯一地识别 I2S 通道。所有的 API 都需要该通道句柄，用户需要对这些通道句柄进行维护。
     - 对于 ESP32-C3 和 ESP32-S3，同一个控制器中的发送通道和接收通道可以配置为不同的时钟或不同的模式。
     - 但是对于 ESP32 和 ESP32-S2， 同一个控制器中的发送通道和接收通道共享某些硬件资源。因此，配置可能会造成一个通道影响同一个控制器中的另一个通道。
-    - 通过将 :cpp:enumerator:`i2s_port_t::I2S_NUM_AUTO` 设置为 I2S 端口 ID，驱动会搜索可用的发送/接收通道，之后通道会被自动注册到可用的 I2S 控制器上。但是，驱动仍然支持将通道注册到一个特定的端口上。
+    - 通过将 ``I2S_NUM_AUTO`` 设置为 I2S 端口 ID，驱动会搜索可用的发送/接收通道，之后通道会被自动注册到可用的 I2S 控制器上。但是，驱动仍然支持将通道注册到一个特定的端口上。
     - 为区分发送/接收通道和声音通道，在更新后的驱动中，“通道 (channel)”一词仅代表发送/接收通道，用“声道 (slot)”来表示声音通道。
 
     I2S 模式分类

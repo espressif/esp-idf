@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,30 +146,6 @@ void esp_log_buffer_hexdump_internal(const char *tag, const void *buffer, uint16
  */
 #define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len) \
     do { if (ESP_LOG_ENABLED(ESP_LOG_INFO)) {ESP_LOG_BUFFER_CHAR_LEVEL(tag, buffer, buff_len, ESP_LOG_INFO);} } while(0)
-
-/** @cond */
-/**
- * @note For back compatible
- * @deprecated This function is deprecated and will be removed in the future.
- *             Please use ESP_LOG_BUFFER_HEX
- */
-__attribute__((deprecated("Use 'ESP_LOG_BUFFER_HEX' instead")))
-static inline void esp_log_buffer_hex(const char *tag, const void *buffer, uint16_t buff_len)
-{
-    ESP_LOG_BUFFER_HEX(tag, buffer, buff_len);
-}
-
-/**
- * @note For back compatible
- * @deprecated This function is deprecated and will be removed in the future.
- *             Please use ESP_LOG_BUFFER_CHAR
- */
-__attribute__((deprecated("Use 'ESP_LOG_BUFFER_CHAR' instead")))
-static inline void esp_log_buffer_char(const char *tag, const void *buffer, uint16_t buff_len)
-{
-    ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len);
-}
-/** @endcond */
 
 #ifdef __cplusplus
 }

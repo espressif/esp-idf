@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded.dut import Dut
@@ -25,6 +25,27 @@ def test_xip_from_psram_example_generic(dut: Dut) -> None:
     res = dut.expect(r'callback\(in IRAM\) response time: (\d{1,3}) us')
     response_time = res.group(1).decode('utf8')
     assert float(response_time) <= 12
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'generic',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_xip_from_psram_example_s31(dut: Dut) -> None:
+    dut.expect_exact('found partition')
+
+    res = dut.expect(r'callback\(in PSRAM\) response time: (\d{1,3}) us')
+    response_time = res.group(1).decode('utf8')
+    assert float(response_time) <= 5
+
+    res = dut.expect(r'callback\(in IRAM\) response time: (\d{1,3}) us')
+    response_time = res.group(1).decode('utf8')
+    assert float(response_time) <= 5
 
 
 @pytest.mark.MSPI_F4R8

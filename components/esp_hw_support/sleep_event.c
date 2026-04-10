@@ -16,7 +16,7 @@
 #include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 
-static __attribute__((unused)) const char *TAG = "sleep_event";
+ESP_LOG_ATTR_TAG(TAG, "sleep_event");
 
 #if CONFIG_ESP_SLEEP_EVENT_CALLBACKS
 esp_sleep_event_cbs_config_t g_sleep_event_cbs_config;

@@ -33,13 +33,13 @@ On the host side, ESP-IDF employs the pytest framework (alongside certain pytest
 Installation
 ============
 
-All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-pytest`` argument:
+All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-ci`` argument:
 
 .. code-block:: bash
 
-    $ install.sh --enable-pytest
+    $ install.sh --enable-ci
 
-Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-pytest-specific`` argument:
+Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-test-specific`` argument:
 
 .. code-block:: bash
 
@@ -91,39 +91,85 @@ Getting Started
 
 .. code-block:: python
 
-    @pytest.mark.esp32
-    @pytest.mark.esp32s2
+    @idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
     @pytest.mark.generic
     def test_hello_world(dut) -> None:
         dut.expect('Hello world!')
 
 This is a simple test script that could run with the ESP-IDF getting-started example :example:`get-started/hello_world`.
 
-First two lines are the target markers:
+``idf_parametrize`` is a wrapper around ``pytest.mark.parametrize`` that simplifies and extends string-based test parameterization. It provides greater flexibility and improves the maintainability of parameterized tests.
 
-* The ``@pytest.mark.esp32`` is a marker that indicates that this test case should be run on the ESP32.
-* The ``@pytest.mark.esp32s2`` is a marker that indicates that this test case should be run on the ESP32-S2.
+In this test script, the ``idf_parametrize`` decorator is used to parameterize the test case. The ``target`` parameter is a special parameter that indicates the target board type. The ``indirect=['target']`` argument indicates that this parameter is pre-calculated before other fixtures.
 
-.. note::
-
-    If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use a special marker ``supported_targets`` to apply all of them in one line.
-
-    We also supports ``preview_targets`` and ``all_targets`` as special target markers (call ``idf.py --list-targets --preview`` for a full targets list including preview targets).
-
-Next, we have the environment marker:
-
-* The ``@pytest.mark.generic`` is a marker that indicates that this test case should be run on the ``generic`` board type.
+In this example, the target is set to ``esp32`` and ``esp32s2``, so the test will be run on both the ESP32 and the ESP32-S2.
 
 .. note::
 
-    For the detailed explanation of the environment markers, please refer to :idf_file:`ENV_MARKERS definition <tools/ci/idf_pytest/constants.py>`
+    If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use the special parameter ``supported_targets`` to apply all of them in one line. We also support ``preview_targets`` and ``all`` as special values (call ``idf.py --list-targets --preview`` for the full list of targets, including preview targets). For example: ``@idf_parametrize('target', ['supported_targets'], indirect=['target'])``.
+
+.. note::
+
+    If the target should be specified by ``soc_caps``, it is possible to filter them using ``soc_filtered_targets``. For example: ``@idf_parametrize('target', soc_filtered_targets('SOC_ULP_SUPPORTED != 1'), indirect=['target'])``.
+
+Next is the environment marker. The ``@pytest.mark.generic`` marker indicates that this test case should run on the generic board type.
+
+.. note::
+
+    For the detailed explanation of the environment markers, please refer to :idf_file:`env_markers definition <pytest.ini>`
 
 Finally, we have the test function. With a ``dut`` fixture. In single-dut test cases, the ``dut`` fixture is an instance of ``IdfDut`` class, for multi-dut test cases, it is a tuple of ``IdfDut`` instances. For more details regarding the ``IdfDut`` class, please refer to `pytest-embedded IdfDut API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__.
+
+Running Tests on Linux
+^^^^^^^^^^^^^^^^^^^^^^
+
+To execute a pytest case on the Linux host, set ``target`` to ``linux``.
+
+.. code-block:: python
+
+    @idf_parametrize('target', ['linux'], indirect=['target'])
+    def test_hello_world_linux(dut) -> None:
+        dut.expect('Hello world!')
+
+This is the simplest way to run the same test flow on the Linux host instead of on physical hardware.
+
+For a simple Linux-only test, setting ``target`` to ``linux`` is enough and the ``idf`` embedded services will be selected automatically. The ``pytest.mark.host_test`` marker is not required.
+
+For a mixed environment matrix, specify ``embedded_services`` manually for each case. See :ref:`Same App With Different Running Environments <pytest-same-app-different-running-environments>` for a more complex example.
+
+.. only:: TARGET_SUPPORT_QEMU
+
+    Running Tests in QEMU
+    ^^^^^^^^^^^^^^^^^^^^^
+
+    To execute a pytest case in QEMU, add the ``@pytest.mark.qemu`` marker to the test function.
+
+    .. code-block:: python
+
+        @pytest.mark.qemu
+        @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+        def test_hello_world_qemu(dut) -> None:
+            dut.expect('Hello world!')
+
+    This is the simplest way to run the same test flow in QEMU instead of on physical hardware.
+
+    For a simple QEMU-only test, adding ``pytest.mark.qemu`` is enough and the ``idf,qemu`` embedded services will be selected automatically.
+
+    For a mixed environment matrix, specify ``embedded_services`` manually for each case. See the later section in this guide for a more complex example.
+
+    For QEMU installation and setup, refer to page :doc:`/api-guides/tools/qemu`.
+
+Deprecation of ``pytest.mark.host_test``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``pytest.mark.host_test`` is no longer needed and should not be added to new test cases.
+
+For Linux target test cases and QEMU test cases, the required behavior is handled dynamically by the test framework. In particular, the embedded services are selected automatically for simple Linux-only and QEMU-only cases.
 
 Same App With Different sdkconfig Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/find_build.html>`__.
+For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/explanations/find.html>`__.
 
 Here's a simple example that demonstrates how to run the same app with different sdkconfig files. Assume we have the following folder structure:
 
@@ -142,9 +188,11 @@ If the test case needs to run all supported targets with these two sdkconfig fil
 
 .. code-block:: python
 
-    @pytest.mark.esp32
-    @pytest.mark.esp32s2
-    @pytest.mark.parametrize('config', [    # <-- parameterize the sdkconfig file
+    @idf_parametrize('target', [
+        'esp32',                      # <-- run with esp32 target
+        'esp32s2'                     # <-- run with esp32s2 target
+    ], indirect=['target'])
+    @pytest.mark.parametrize('config', [    # <-- use this marker to specify the sdkconfig file; if you don't use it, it uses ``default`` (built from ``sdkconfig.ci`` or ``sdkconfig.ci.default``); if you use it, it uses the specified ``sdkconfig.ci.<config>`` (e.g. ``sdkconfig.ci.foo``, ``sdkconfig.ci.bar``)
         'foo',                              # <-- run with sdkconfig.ci.foo
         'bar',                              # <-- run with sdkconfig.ci.bar
     ], indirect=True)                       # <-- `indirect=True` is required, indicates this param is pre-calculated before other fixtures
@@ -180,33 +228,69 @@ The test case ID is used to identify the test case in the JUnit report.
 
     Nearly all the CLI options of pytest-embedded supports parameterization. To see all supported CLI options, you may run ``pytest --help`` and check the ``embedded-...`` sections for vanilla pytest-embedded ones, and the ``idf`` sections for ESP-IDF specific ones.
 
-.. note::
-
-    The target markers, like ``@pytest.mark.esp32`` and ``@pytest.mark.esp32s2``, are actually syntactic sugar for parameterization. In fact they are defined as:
-
-    .. code-block:: python
-
-        @pytest.mark.parametrize('target', [
-            'esp32',
-            'esp32s2',
-        ], indirect=True)
-
 Same App With Different sdkconfig Files, Different Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For some test cases, you may need to run the same app with different sdkconfig files. These sdkconfig files supports different targets. We may use ``pytest.param`` to achieve this. Let's use the same folder structure as above.
+For some test cases, you may need to run the same app with different sdkconfig files. These sdkconfig files supports different targets. We may use ``idf_parametrize`` to achieve this. Let's use the same folder structure as above.
 
 .. code-block:: python
 
-    @pytest.mark.parametrize('config', [
-        pytest.param('foo', marks=[pytest.mark.esp32]),
-        pytest.param('bar', marks=[pytest.mark.esp32s2]),
-    ], indirect=True)
+    @idf_parametrize(
+        'target, config',
+        [
+            ('esp32', 'foo'),
+            ('esp32s2', 'bar')
+        ],
+        indirect=['target', 'config']
+    )
 
 Now this test function would be replicated to 2 test cases (represented as test case IDs):
 
 * ``esp32.foo.test_foo_bar``
 * ``esp32s2.bar.test_foo_bar``
+
+.. _pytest-same-app-different-running-environments:
+
+Same App With Different Running Environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes the same app should be validated in different running environments, for example on the host with the Linux target, on real hardware, or in QEMU. If a single ``@pytest.mark.qemu`` test is not enough, combine ``target``, ``config``, and ``embedded_services`` in a single ``idf_parametrize`` decorator, and attach the required marker for each case.
+
+The following example is adapted from :idf_file:`components/console/test_apps/console/pytest_console.py`:
+
+.. code-block:: python
+
+    @idf_parametrize(
+        'target,config,embedded_services,markers',
+        [
+            ('linux', 'defaults', 'idf', ()),
+            ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+            ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+            ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
+        ],
+        indirect=['target', 'config', 'embedded_services'],
+    )
+    def test_console_repl(dut) -> None:
+        dut.expect_exact('Press ENTER to see the list of tests')
+
+This creates four test cases for the same app:
+
+* Linux host execution with the ``idf`` service
+* ESP32 hardware execution with the ``esp,idf`` services
+* ESP32-C3 hardware execution with the ``esp,idf`` services
+* ESP32 execution in QEMU with the ``idf,qemu`` services
+
+When running locally, you can select only the environment you want:
+
+.. code-block:: shell
+
+    $ pytest --target linux
+    $ pytest -m qemu
+    $ pytest -m qemu --target esp32
+
+``pytest --target linux`` selects Linux target cases only. ``pytest -m qemu`` selects all QEMU-marked cases. ``pytest -m qemu --target esp32`` further limits the selection to QEMU cases for the ESP32 target.
+
+Use this pattern when the test logic is the same but the execution environment changes.
 
 Testing Serial Output (Expecting)
 ---------------------------------
@@ -260,40 +344,6 @@ After setting the param ``count`` to 2, all the fixtures are changed into tuples
 .. note::
 
     For detailed multi-dut parametrization documentation, please refer to `pytest-embedded Multi-DUT documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/key_concepts.html#multi-duts>`__.
-
-.. warning::
-
-    In some test scripts, you may see target markers like ``@pytest.mark.esp32`` and ``@pytest.mark.esp32s2`` used together with multi-DUT test cases. This is deprecated and should be replaced with the ``target`` parametrization.
-
-    For example,
-
-    .. code-block:: python
-
-        @pytest.mark.esp32
-        @pytest.mark.esp32s2
-        @pytest.mark.parametrize('count', [
-            2,
-        ], indirect=True)
-        def test_hello_world(dut) -> None:
-            dut[0].expect('Hello world!')
-            dut[1].expect('Hello world!')
-
-    should be replaced with:
-
-    .. code-block:: python
-
-        @pytest.mark.parametrize('count', [
-            2,
-        ], indirect=True)
-        @pytest.mark.parametrize('target', [
-            'esp32',
-            'esp32s2',
-        ], indirect=True)
-        def test_hello_world(dut) -> None:
-            dut[0].expect('Hello world!')
-            dut[1].expect('Hello world!')
-
-    This could help avoid the ambiguity of the target markers when multi-DUT test cases are using different type of targets.
 
 Multi-Target Tests with Different Apps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -474,12 +524,34 @@ For ``build_test_related_apps``, all the built binaries will be uploaded to our 
 
 For ``build_non_test_related_apps``, all the built binaries will be removed after the build job is finished. Only the build log files will be uploaded to our internal MinIO server. You may also find the download link in the build report posted in the internal MR.
 
+Dependency-driven builds
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To optimize CI build time, we use the dependency-driven build feature from idf-build-apps. It helps us build only the apps that are affected by the changed components.
+
+Dependency-driven build rules are defined in per-folder manifest files (``.build-test-rules.yml``), where each app may define ``depends_components``.
+
+.. code-block:: yaml
+
+    examples/foo/bar:
+      depends_components:
+        - esp_eth
+        - esp_netif
+
+We also have a set of common components (defined as ``common_components`` in :idf_file:`.idf_build_apps.toml`). ``common_components`` is a list of baseline (core) components that are used by many apps. In general, if one of these components changes, you usually want to rebuild and retest the apps that depend on it.
+
+The app maintainer should decide which components are important for their app. If the app should depend on a ``common_components``, add it to ``depends_components``. If not, specify only the important components.
+
+If ``depends_components`` is not specified, we use the calculated components (``project_description.json``) and check whether the app is affected by the changed components.
+
+Deprecated (prefer using ``depends_components`` and ``common_components`` instead): ``deactivate_dependency_driven_build_by_components`` disables the dependency-driven checks if certain components change.
+
 Target Test Jobs
 ----------------
 
 In CI, all generated target test jobs are named according to the pattern "<targets> - <env_markers>". For example, single-dut test job ``esp32 - generic``, or multi-dut test job ``esp32,esp32 - multi_dut_generic``.
 
-The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like jtag test cases, .elf files are also downloaded.
+The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like JTAG test cases, .elf files are also downloaded.
 
 .. _run_the_tests_locally:
 
@@ -494,7 +566,7 @@ First you need to install ESP-IDF with additional Python requirements:
 .. code-block:: shell
 
     $ cd $IDF_PATH
-    $ bash install.sh --enable-ci --enable-pytest
+    $ bash install.sh --enable-ci
     $ . ./export.sh
 
 Build Directories
@@ -544,7 +616,7 @@ If you want to build and test with all sdkconfig files at the same time, you sho
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/system/console/basic
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -v --pytest-apps
+    $ idf-ci build run --target esp32 --only-test-related
     $ pytest --target esp32
 
 The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
@@ -580,8 +652,8 @@ Of course we can build the required binaries manually, but we can also use our C
 .. code-block:: shell
 
     $ cd $IDF_PATH/examples/openthread
-    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target all -v --pytest-apps -k test_thread_connect
-    $ pytest --target esp32c6,esp32h2,esp32s3 -k test_thread_connect
+    $ idf-ci build run --only-test-related -k test_thread_connect
+    $ pytest -k test_thread_connect
 
 .. important::
 
@@ -697,9 +769,9 @@ This marker means that the test case could still be run locally with ``pytest --
 Add New Markers
 ---------------
 
-We are using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test cases should be assigned to runners with these tags in CI.
+We currently use two types of custom markers. The target marker indicates which target chips the test case supports, and the env marker specifies that the test case should be assigned to a CI runner with the corresponding tag.
 
-You can add new markers by adding one line under the :idf_file:`conftest.py`. If it is a target marker, it should be added into ``TARGET_MARKERS``. If it is a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The syntax should be: ``<marker_name>: <marker_description>``.
+You can add new markers by adding one line under the :idf_file:`pytest.ini`. If it is a marker that specifies a type of test environment, it should be added into ``env_markers`` section. Otherwise, it should be added into ``markers`` section. The syntax should be: ``<marker_name>: <marker_description>``.
 
 Skip Auto Flash Binary
 ----------------------
@@ -760,12 +832,12 @@ We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATE
         check_performance('RSA_2048KEY_PUBLIC_OP', 123, 'esp32')
         check_performance('RSA_2048KEY_PUBLIC_OP', 19001, 'esp32')
 
-The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from :idf_file:`components/idf_test/include/idf_performance.h` and the target-specific one :idf_file:`components/idf_test/include/esp32/idf_performance_target.h`, then check if the value reached the minimum limit or exceeded the maximum limit.
+The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from the component-specific performance header files (e.g., :idf_file:`components/esp_adc/test_apps/adc/include/adc_performance.h` for ADC performance tests), then check if the value reached the minimum limit or exceeded the maximum limit.
 
 Let us assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 19000. so the first ``check_performance`` line would pass and the second one would fail with warning: ``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``.
 
 Further Readings
 ================
 
--  `pytest documentation <https://docs.pytest.org/en/latest/contents.html/>`_
+-  `pytest documentation <https://docs.pytest.org/en/stable/>`_
 -  `pytest-embedded documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/>`_

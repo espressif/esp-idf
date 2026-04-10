@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include "esp_assert.h"
 #include "hal/lcd_types.h"
-#include "hal/mipi_dsi_types.h"
+#include "hal/gpio_types.h"
 #include "hal/color_types.h"
 
 #ifdef __cplusplus
@@ -40,18 +40,6 @@ typedef enum {
     LCD_RGB_ELEMENT_ORDER_BGR = COLOR_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
 } lcd_rgb_element_order_t;
 
-/** @cond */
-/// for backward compatible
-typedef lcd_rgb_element_order_t lcd_color_rgb_endian_t;
-#define LCD_RGB_ENDIAN_RGB (lcd_color_rgb_endian_t)LCD_RGB_ELEMENT_ORDER_RGB
-#define LCD_RGB_ENDIAN_BGR (lcd_color_rgb_endian_t)LCD_RGB_ELEMENT_ORDER_BGR
-
-typedef lcd_rgb_element_order_t esp_lcd_color_space_t;
-#define ESP_LCD_COLOR_SPACE_RGB (esp_lcd_color_space_t)LCD_RGB_ELEMENT_ORDER_RGB
-#define ESP_LCD_COLOR_SPACE_BGR (esp_lcd_color_space_t)LCD_RGB_ELEMENT_ORDER_BGR
-#define ESP_LCD_COLOR_SPACE_MONOCHROME (esp_lcd_color_space_t)2
-/** @endcond */
-
 /**
  * @brief Type of LCD panel IO event data
  */
@@ -76,20 +64,13 @@ typedef struct {
 } esp_lcd_panel_io_callbacks_t;
 
 /**
- * @brief Configuration of LCD color conversion
+ * @brief Configuration of LCD color conversion: YUV <-> RGB
  */
 typedef struct {
-    lcd_color_range_t in_color_range;    /*!< Color range of the input color */
-    lcd_color_range_t out_color_range;   /*!< Color range of the output color */
-    union {
-        struct {
-            lcd_yuv_conv_std_t conv_std; /*!< YUV conversion standard: BT601, BT709 */
-            struct {
-                lcd_yuv422_pack_order_t in_pack_order; /*!< YUV422 packing order of the input color */
-            } yuv422; /*!< YUV422 specific */
-        } yuv; /*!< YUV specific */
-    } spec; /*!< Extra configuration for specific color conversion */
-} esp_lcd_color_conv_config_t;
+    lcd_color_range_t in_color_range;  /*!< Color range of the input color */
+    lcd_color_range_t out_color_range; /*!< Color range of the output color */
+    lcd_yuv_conv_std_t conv_std;       /*!< YUV conversion standard: BT601, BT709 */
+} esp_lcd_color_conv_yuv_config_t;
 
 #ifdef __cplusplus
 }

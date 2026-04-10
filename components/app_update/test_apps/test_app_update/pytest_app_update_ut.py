@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import re
 
@@ -19,6 +19,7 @@ TEST_SUBMENU_PATTERN_PYTEST = re.compile(rb'\s+\((\d+)\)\s+"([^"]+)"\r?\n')
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_app_update(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
 
@@ -32,6 +33,7 @@ def test_app_update(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_app_update_xip_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
 
@@ -45,6 +47,7 @@ def test_app_update_xip_psram(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
 

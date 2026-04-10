@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C5 | ESP32-C61 | ESP32-H2 | ESP32-P4 |
-| ----------------- | -------- | --------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-P4 |
+| ----------------- | -------- | --------- | -------- | --------- | -------- |
 
 # Analog Comparator Example
 
@@ -19,7 +19,7 @@ This example is going to show how to use the Analog Comparator. The example togg
 
 * A development board with any supported Espressif SOC chip (see `Supported Targets` table above)
 * A USB cable for power supply and programming
-* A device to generate the source signal. For example, you can use a ESP SoC that support DAC peripheral (like ESP32 or ESP32S2) to generate source signal, or just use a signal generator.
+* A signal generator for generating the source signal
 
 #### Required Additionally for External Reference
 
@@ -27,30 +27,26 @@ This example is going to show how to use the Analog Comparator. The example togg
 
 ### Example Connection
 
-Let's take ESP32-H2 and ESP32 for example, and we use the DAC on ESP32 as the signal generator (you can use a real signal generator instead if you have one).
-
 #### Internal Reference
 
-Download this example into ESP32-H2 and any DAC examples in `examples/peripherals/dac` directory into ESP32.
-
 ```
-     ┌──────────────┐                ┌──────────────┐
-     │   ESP32-H2   │                │     ESP32    │
-     │              │  source signal │              │
-┌────┤GPIO0   GPIO11│◄────┬──────────┤GPIO25        │
-│    │              │     │          │              │
-│    │           GND├─────┼────┬─────┤GND           │
-│    │              │     │    │     │              │
-│    └──────────────┘     │    │     └──────────────┘
-│                         │    │
-│    ┌──────────────┐     │    │
-│    │ Oscilloscope │     │    │
-│    │              │     │    │
-└───►│Probe1  Probe2│◄────┘    │
-     │              │          │
-     │           GND├──────────┘
-     │              │
-     └──────────────┘
+     +--------------+                +--------------+
+     |   ESP Board  |                |  Signal Gen  |
+     |              |  source signal |              |
++----+GPIO    Src In|<----+----------+OUT           |
+|    |              |     |          |              |
+|    |           GND+-----+----+-----+GND           |
+|    |              |     |    |     |              |
+|    +--------------+     |    |     +--------------+
+|                         |    |
+|    +--------------+     |    |
+|    | Oscilloscope |     |    |
+|    |              |     |    |
++--->|Probe1  Probe2|<----+    |
+     |              |          |
+     |           GND+----------+
+     |              |
+     +--------------+
 ```
 
 #### External Reference
@@ -58,55 +54,29 @@ Download this example into ESP32-H2 and any DAC examples in `examples/peripheral
 For the static external reference, we can use resistor divider to get the static voltage.
 
 ```
-     ┌──────────────┐                ┌──────────────┐
-     │   ESP32-H2   │                │     ESP32    │
-     │              │  source signal │              │
-┌────┤GPIO0   GPIO11│◄────┬──────────┤GPIO25        │
-│    │              │  ref│signal    │              │
-│    │        GPIO10│◄────┼──────┐ ┌─┤GND           │
-│    │              │     │      │ │ │              │
-│    │           GND├─────┼─┬────┼─┘ └──────────────┘
-│    │              │     │ │    │         VDD
-│    └──────────────┘     │ │    │         ─┬─
-│                         │ │    │          │
-│                         │ │    │          ├┐
-│    ┌──────────────┐     │ │    │          ││R1
-│    │ Oscilloscope │     │ │    │          ├┘
-│    │              │     │ │    └──────────┤
-└───►│Probe1  Probe2│◄────┘ │               │
-     │              │       │               ├┐
-     │           GND├───────┤               ││R2
-     │              │       │               ├┘
-     └──────────────┘       │               │
-                            └───────────────┤
-                                            │
-                                           ─┴─
-                                           GND
-```
-
-Also, we can generate a different signal on another DAC channel on ESP32, you can customize your DAC wave using `examples/peripherals/dac/dac_continuous/signal_generator` example.
-
-```
-     ┌──────────────┐                ┌──────────────┐
-     │   ESP32-H2   │                │     ESP32    │
-     │              │  source signal │              │
-┌────┤GPIO0   GPIO11│◄────┬──────────┤GPIO25        │
-│    │              │  ref│signal    │              │
-│    │        GPIO10│◄────┼──────────┤GPIO26        │
-│    │              │     │          │              │
-│    │           GND├─────┼───┬──────┤GND           │
-│    │              │     │   │      │              │
-│    └──────────────┘     │   │      └──────────────┘
-│                         │   │
-│                         │   │
-│    ┌──────────────┐     │   │
-│    │ Oscilloscope │     │   │
-│    │              │     │   │
-└───►│Probe1  Probe2│◄────┘   │
-     │              │         │
-     │           GND├─────────┘
-     │              │
-     └──────────────┘
+     +--------------+                +--------------+
+     |   ESP Board  |                |  Signal Gen  |
+     |              |  source signal |              |
++----+GPIO    Src In|<----+----------+OUT           |
+|    |              |  ref|signal    |              |
+|    |        Ref In|<----+------+ +-+GND           |
+|    |              |     |      | | |              |
+|    |           GND+-----+-+----+-+ +--------------+
+|    |              |     | |    |         VDD
+|    +--------------+     | |    |         -+-
+|                         | |    |          |
+|                         | |    |          ++
+|    +--------------+     | |    |          ||R1
+|    | Oscilloscope |     | |    |          ++
+|    |              |     | |    +----------+
++--->|Probe1  Probe2|<----+ |               |
+     |              |       |               ++
+     |           GND+-------+               ||R2
+     |              |       |               ++
+     +--------------+       |               |
+                            +---------------+
+                                            |
+                                           -+-
 ```
 
 ### Configure the Project

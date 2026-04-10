@@ -14,8 +14,6 @@ extern "C" {
 #include <stdlib.h>
 #include "efuse.h"
 
-//TODO: [ESP32H21] IDF-11495
-
 void ets_hmac_enable(void);
 
 void ets_hmac_disable(void);

@@ -1,4 +1,4 @@
 dependencies:
-  lvgl/lvgl: "9.2.2"
+  lvgl/lvgl: "9.4.0"
   esp_lcd_ili9881c: "^1.0.0"
   esp_lcd_ek79007: "^1.0.0"

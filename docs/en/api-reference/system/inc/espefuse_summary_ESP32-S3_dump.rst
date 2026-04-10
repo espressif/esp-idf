@@ -3,9 +3,11 @@
     idf.py efuse-dump
 
     Executing action: efuse-dump
-    Running espefuse.py in directory <project-directory>
-    Executing "espefuse.py dump --chip esp32s3"...
-    espefuse.py v4.6-dev
+    Running espefuse in directory <project-directory>
+    Executing "espefuse dump --chip esp32s3"...
+    espefuse v5.0.2
+
+    === Run "dump" command ===
     Connecting....
     BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
     MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: 3b41f270 0000ecda 00000000 030c0000 2c707800 9800cc58
@@ -22,5 +24,3 @@
     BLOCK0          (                ) [0 ] err__regs: 00000000 00000000 00000000 00000000 00000000 00000000
     EFUSE_RD_RS_ERR0_REG        0x00000000
     EFUSE_RD_RS_ERR1_REG        0x00000000
-
-    === Run "dump" command ===

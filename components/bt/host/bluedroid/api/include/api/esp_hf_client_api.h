@@ -16,9 +16,9 @@
 extern "C" {
 #endif
 
-#define ESP_BT_HF_CLIENT_NUMBER_LEN           (32)
-#define ESP_BT_HF_CLIENT_OPERATOR_NAME_LEN    (16)
-#define ESP_BT_HF_AT_SEND_XAPL_LEN            (14)
+#define ESP_BT_HF_CLIENT_NUMBER_LEN           (32)   /*!< Maximum length of the phone number string in HFP Client */
+#define ESP_BT_HF_CLIENT_OPERATOR_NAME_LEN    (16)   /*!< Maximum length of the operator name string in HFP Client */
+#define ESP_BT_HF_AT_SEND_XAPL_LEN            (14)   /*!< Length of the XAPL string in AT command for HFP Client */
 
 /// Bluetooth HFP RFCOMM connection and service level connection status
 typedef enum {
@@ -26,7 +26,7 @@ typedef enum {
     ESP_HF_CLIENT_CONNECTION_STATE_CONNECTING,           /*!< connecting remote device on the RFCOMM data link*/
     ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED,            /*!< RFCOMM connection established */
     ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED,        /*!< service level connection established */
-    ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTING,        /*!< disconnecting with remote device on the RFCOMM dat link*/
+    ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTING,        /*!< disconnecting with remote device on the RFCOMM data link*/
 } esp_hf_client_connection_state_t;
 
 /// Bluetooth HFP audio connection status
@@ -53,35 +53,35 @@ typedef struct {
 } esp_hf_client_profile_status_t;
 
 /* features masks of AG */
-#define ESP_HF_CLIENT_PEER_FEAT_3WAY       0x01        /* Three-way calling */
-#define ESP_HF_CLIENT_PEER_FEAT_ECNR       0x02        /* Echo cancellation and/or noise reduction */
-#define ESP_HF_CLIENT_PEER_FEAT_VREC       0x04        /* Voice recognition */
-#define ESP_HF_CLIENT_PEER_FEAT_INBAND     0x08        /* In-band ring tone */
-#define ESP_HF_CLIENT_PEER_FEAT_VTAG       0x10        /* Attach a phone number to a voice tag */
-#define ESP_HF_CLIENT_PEER_FEAT_REJECT     0x20        /* Ability to reject incoming call */
-#define ESP_HF_CLIENT_PEER_FEAT_ECS        0x40        /* Enhanced Call Status */
-#define ESP_HF_CLIENT_PEER_FEAT_ECC        0x80        /* Enhanced Call Control */
-#define ESP_HF_CLIENT_PEER_FEAT_EXTERR    0x100        /* Extended error codes */
-#define ESP_HF_CLIENT_PEER_FEAT_CODEC     0x200        /* Codec Negotiation */
+#define ESP_HF_CLIENT_PEER_FEAT_3WAY       0x01        /*!< Three-way calling */
+#define ESP_HF_CLIENT_PEER_FEAT_ECNR       0x02        /*!< Echo cancellation and/or noise reduction */
+#define ESP_HF_CLIENT_PEER_FEAT_VREC       0x04        /*!< Voice recognition */
+#define ESP_HF_CLIENT_PEER_FEAT_INBAND     0x08        /*!< In-band ring tone */
+#define ESP_HF_CLIENT_PEER_FEAT_VTAG       0x10        /*!< Attach a phone number to a voice tag */
+#define ESP_HF_CLIENT_PEER_FEAT_REJECT     0x20        /*!< Ability to reject incoming call */
+#define ESP_HF_CLIENT_PEER_FEAT_ECS        0x40        /*!< Enhanced Call Status */
+#define ESP_HF_CLIENT_PEER_FEAT_ECC        0x80        /*!< Enhanced Call Control */
+#define ESP_HF_CLIENT_PEER_FEAT_EXTERR    0x100        /*!< Extended error codes */
+#define ESP_HF_CLIENT_PEER_FEAT_CODEC     0x200        /*!< Codec Negotiation */
 /* HFP 1.7+ */
-#define ESP_HF_CLIENT_PEER_FEAT_HF_IND    0x400        /* HF Indicators */
-#define ESP_HF_CLIENT_PEER_FEAT_ESCO_S4   0x800        /* eSCO S4 Setting Supported */
+#define ESP_HF_CLIENT_PEER_FEAT_HF_IND    0x400        /*!< HF Indicators */
+#define ESP_HF_CLIENT_PEER_FEAT_ESCO_S4   0x800        /*!< eSCO S4 Setting Supported */
 
 /* CHLD feature masks of AG */
-#define ESP_HF_CLIENT_CHLD_FEAT_REL           0x01       /* 0  Release waiting call or held calls */
-#define ESP_HF_CLIENT_CHLD_FEAT_REL_ACC       0x02       /* 1  Release active calls and accept other waiting or held call */
-#define ESP_HF_CLIENT_CHLD_FEAT_REL_X         0x04       /* 1x Release specified active call only */
-#define ESP_HF_CLIENT_CHLD_FEAT_HOLD_ACC      0x08       /* 2  Active calls on hold and accept other waiting or held call */
-#define ESP_HF_CLIENT_CHLD_FEAT_PRIV_X        0x10       /* 2x Request private mode with specified call(put the rest on hold) */
-#define ESP_HF_CLIENT_CHLD_FEAT_MERGE         0x20       /* 3  Add held call to multiparty */
-#define ESP_HF_CLIENT_CHLD_FEAT_MERGE_DETACH  0x40       /* 4  Connect two calls and leave(disconnect from multiparty) */
+#define ESP_HF_CLIENT_CHLD_FEAT_REL           0x01       /*!< 0  Release waiting call or held calls */
+#define ESP_HF_CLIENT_CHLD_FEAT_REL_ACC       0x02       /*!< 1  Release active calls and accept other waiting or held call */
+#define ESP_HF_CLIENT_CHLD_FEAT_REL_X         0x04       /*!< 1x Release specified active call only */
+#define ESP_HF_CLIENT_CHLD_FEAT_HOLD_ACC      0x08       /*!< 2  Active calls on hold and accept other waiting or held call */
+#define ESP_HF_CLIENT_CHLD_FEAT_PRIV_X        0x10       /*!< 2x Request private mode with specified call(put the rest on hold) */
+#define ESP_HF_CLIENT_CHLD_FEAT_MERGE         0x20       /*!< 3  Add held call to multiparty */
+#define ESP_HF_CLIENT_CHLD_FEAT_MERGE_DETACH  0x40       /*!< 4  Connect two calls and leave(disconnect from multiparty) */
 
 /* XAPL feature masks*/
-#define ESP_HF_CLIENT_XAPL_FEAT_RESERVED            0x01    /* reserved */
-#define ESP_HF_CLIENT_XAPL_FEAT_BATTERY_REPORT      0x02    /* The accessory supports battery reporting (reserved only for battery operated accessories) */
-#define ESP_HF_CLIENT_XAPL_FEAT_DOCKED              0x04    /* The accessory is docked or powered (reserved only for battery operated accessories). */
-#define ESP_HF_CLIENT_XAPL_FEAT_SIRI_STATUS_REPORT  0x08    /* The accessory supports Siri status reporting */
-#define ESP_HF_CLIENT_XAPL_NR_STATUS_REPORT         0x10    /* the accessory supports noise reduction (NR) status reporting */
+#define ESP_HF_CLIENT_XAPL_FEAT_RESERVED            0x01    /*!< reserved */
+#define ESP_HF_CLIENT_XAPL_FEAT_BATTERY_REPORT      0x02    /*!< The accessory supports battery reporting (reserved only for battery operated accessories) */
+#define ESP_HF_CLIENT_XAPL_FEAT_DOCKED              0x04    /*!< The accessory is docked or powered (reserved only for battery operated accessories). */
+#define ESP_HF_CLIENT_XAPL_FEAT_SIRI_STATUS_REPORT  0x08    /*!< The accessory supports Siri status reporting */
+#define ESP_HF_CLIENT_XAPL_NR_STATUS_REPORT         0x10    /*!< The accessory supports noise reduction (NR) status reporting */
 
 /// HF CLIENT callback events
 typedef enum {
@@ -186,7 +186,7 @@ typedef union {
      */
     struct hf_client_call_setup_ind_param {
         esp_hf_call_setup_status_t status;       /*!< call setup status indicator */
-    } call_setup;                                /*!< HF callback param of ESP_HF_CLIENT_BVRA_EVT */
+    } call_setup;                                /*!< HF callback param of `ESP_HF_CLIENT_CIND_CALL_SETUP_EVT` */
 
     /**
      * @brief ESP_HF_CLIENT_CIND_CALL_HELD_EVT
@@ -200,7 +200,7 @@ typedef union {
      */
     struct hf_client_btrh_param {
         esp_hf_btrh_status_t status;             /*!< call hold and response status result code */
-    } btrh;                                      /*!< HF callback param of ESP_HF_CLIENT_BRTH_EVT */
+    } btrh;                                      /*!< HF callback param of ESP_HF_CLIENT_BTRH_EVT */
 
     /**
      * @brief ESP_HF_CLIENT_CLIP_EVT
@@ -214,7 +214,7 @@ typedef union {
      */
     struct hf_client_ccwa_param {
         const char *number;                      /*!< phone number string of waiting call */
-    } ccwa;                                      /*!< HF callback param of ESP_HF_CLIENT_BVRA_EVT */
+    } ccwa;                                      /*!< HF callback param of ESP_HF_CLIENT_CCWA_EVT */
 
     /**
      * @brief ESP_HF_CLIENT_CLCC_EVT
@@ -304,9 +304,9 @@ typedef void (* esp_hf_client_audio_data_cb_t)(esp_hf_sync_conn_hdl_t sync_conn_
 /**
  * @brief           HFP client callback function type
  *
- * @param           event : Event type
+ * @param[in]       event : Event type
  *
- * @param           param : Pointer to callback parameter
+ * @param[in]       param : Pointer to callback parameter
  */
 typedef void (* esp_hf_client_cb_t)(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
 
@@ -599,7 +599,7 @@ esp_err_t esp_hf_client_send_dtmf(char code);
  *
  * @brief           Send command to enable Vendor specific feature to indicate battery level
  *                  and docker status
- *                  This is Apple-specific commands, but used by most device, including Android and Windows
+ *                  This is an Apple-specific command, but used by most devices, including Android and Windows
  *
  * @param[in]       information: XAPL vendorID-productID-version, such as "0505-1995-0610"
  *                               vendorID: A string representation of the hex value of the vendor ID from the manufacturer, without the 0x prefix.

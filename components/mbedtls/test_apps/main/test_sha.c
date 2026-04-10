@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "ccomp_timer.h"
 #include "esp_heap_caps.h"
-#include "idf_performance.h"
+#include "crypto_performance.h"
 #include "esp_private/esp_clk.h"
 #include "spi_flash_mmap.h"
 
@@ -19,12 +19,7 @@
 
 #include "unity.h"
 #include "test_utils.h"
-#include "mbedtls/sha1.h"
-#include "mbedtls/sha256.h"
-
-#if SOC_SHA_SUPPORT_SHA512
-#include "mbedtls/sha512.h"
-#endif
+#include "psa/crypto.h"
 
 #include "sha/sha_parallel_engine.h"
 
@@ -34,7 +29,7 @@ are tested as part of mbedTLS tests. Only esp_sha() is different.
 
 #define TAG "sha_test"
 
-#if SOC_SHA_SUPPORTED
+#if SOC_SHA_SUPPORTED && CONFIG_MBEDTLS_HARDWARE_SHA
 TEST_CASE("Test esp_sha()", "[hw_crypto]")
 {
     const size_t BUFFER_SZ = 32 * 1024 + 6; // NB: not an exact multiple of SHA block size
@@ -117,6 +112,12 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
 #endif
 }
 
+/* NOTE: This test attempts to mmap 1MB of flash starting from address 0x00, which overlaps
+ * the entire TEE protected region, causing the mmap operation to fail and triggering an
+ * exception in the subsequent steps.
+ */
+#if !CONFIG_SECURE_ENABLE_TEE
+
 TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 {
     int r = -1;
@@ -142,21 +143,22 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     TEST_ASSERT_EQUAL_HEX32(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(ptr);
 
-    /* Compare esp_sha() result to the mbedTLS result, should always be the same */
+    /* Compare esp_sha() result to the PSA result, should always be the same */
 #if CONFIG_MBEDTLS_SHA1_C
     esp_sha(SHA1, ptr, LEN, sha1_espsha);
-    r = mbedtls_sha1(ptr, LEN, sha1_mbedtls);
-    TEST_ASSERT_EQUAL(0, r);
+    size_t hash_len;
+    r = psa_hash_compute(PSA_ALG_SHA_1, ptr, LEN, sha1_mbedtls, sizeof(sha1_mbedtls), &hash_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, r);
 #endif
 
     esp_sha(SHA2_256, ptr, LEN, sha256_espsha);
-    r = mbedtls_sha256(ptr, LEN, sha256_mbedtls, 0);
-    TEST_ASSERT_EQUAL(0, r);
+    r = psa_hash_compute(PSA_ALG_SHA_256, ptr, LEN, sha256_mbedtls, sizeof(sha256_mbedtls), &hash_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, r);
 
 #if SOC_SHA_SUPPORT_SHA512 && CONFIG_MBEDTLS_SHA512_C
     esp_sha(SHA2_512, ptr, LEN, sha512_espsha);
-    r = mbedtls_sha512(ptr, LEN, sha512_mbedtls, 0);
-    TEST_ASSERT_EQUAL(0, r);
+    r = psa_hash_compute(PSA_ALG_SHA_512, ptr, LEN, sha512_mbedtls, sizeof(sha512_mbedtls), &hash_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, r);
 #endif
 
     /* munmap() 1MB of flash when the usge of memory-mapped ptr is over */
@@ -173,92 +175,5 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 #endif
 }
 
-
-#if CONFIG_MBEDTLS_HARDWARE_SHA
-
-TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
-{
-    const size_t BUFFER_SZ = 128;
-    int ret;
-    unsigned char output[64] = { 0 };
-    void *buffer = heap_caps_malloc(BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    TEST_ASSERT_NOT_NULL(buffer);
-    memset(buffer, 0xEE, BUFFER_SZ);
-
-    mbedtls_sha1_context sha1_ctx;
-
-    const uint8_t sha1_expected[20] = { 0x41, 0x63, 0x12, 0x5b, 0x9c, 0x68, 0x85, 0xc8,
-                                        0x01, 0x40, 0xf4, 0x03, 0x5d, 0x0d, 0x84, 0x0e,
-                                        0xa4, 0xae, 0x4d, 0xe9 };
-
-    mbedtls_sha1_init(&sha1_ctx);
-    mbedtls_sha1_starts(&sha1_ctx);
-
-    ret = mbedtls_internal_sha1_process(&sha1_ctx, buffer);
-    TEST_ASSERT_EQUAL(0, ret);
-
-    ret = mbedtls_internal_sha1_process(&sha1_ctx, buffer);
-    TEST_ASSERT_EQUAL(0, ret);
-
-#if SOC_SHA_ENDIANNESS_BE
-    for (int i = 0; i < sizeof(sha1_ctx.state)/sizeof(sha1_ctx.state[0]); i++)
-    {
-        *(uint32_t *)(output + i*4) = __builtin_bswap32(sha1_ctx.state[i]);
-    }
-#else
-    memcpy(output, sha1_ctx.state, 20);
 #endif
-
-    // Check if the intermediate states are correct
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(sha1_expected, output, sizeof(sha1_expected));
-
-    ret = mbedtls_sha1_finish(&sha1_ctx, output);
-    TEST_ASSERT_EQUAL(0, ret);
-
-    mbedtls_sha1_free(&sha1_ctx);
-
-#if SOC_SHA_SUPPORT_SHA512
-    mbedtls_sha512_context sha512_ctx;
-
-    const uint8_t sha512_expected[64] = { 0x3c, 0x77, 0x5f, 0xb0, 0x3b, 0x25, 0x8d, 0x3b,
-                                        0xa9, 0x28, 0xa2, 0x29, 0xf2, 0x14, 0x7d, 0xb3,
-                                        0x64, 0x1e, 0x76, 0xd5, 0x0b, 0xbc, 0xdf, 0xb4,
-                                        0x75, 0x1d, 0xe7, 0x7f, 0x62, 0x83, 0xdd, 0x78,
-                                        0x6b, 0x0e, 0xa4, 0xd2, 0xbe, 0x51, 0x56, 0xd4,
-                                        0xfe, 0x3b, 0xa3, 0x3a, 0xd7, 0xf6, 0xd3, 0xb3,
-                                        0xe7, 0x9d, 0xb5, 0xe6, 0x76, 0x35, 0x2a, 0xae,
-                                        0x07, 0x0a, 0x3a, 0x03, 0x44, 0xf0, 0xb8, 0xfe };
-
-    mbedtls_sha512_init(&sha512_ctx);
-    mbedtls_sha512_starts(&sha512_ctx, 0);
-
-    ret = mbedtls_internal_sha512_process(&sha512_ctx, buffer);
-    TEST_ASSERT_EQUAL(0, ret);
-
-    ret = mbedtls_internal_sha512_process(&sha512_ctx, buffer);
-    TEST_ASSERT_EQUAL(0, ret);
-
-#if SOC_SHA_ENDIANNESS_BE
-    for (int i = 0; i < sizeof(sha512_ctx.state)/sizeof(sha512_ctx.state[0]); i++)
-    {
-        *(uint64_t *)(output + i*8) = __builtin_bswap64(sha512_ctx.state[i]);
-    }
-#else
-    memcpy(output, sha512_ctx.state, 64);
-#endif
-
-    // Check if the intermediate states are correct
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(sha512_expected, output, sizeof(sha512_expected));
-
-    ret = mbedtls_sha512_finish(&sha512_ctx, output);
-    TEST_ASSERT_EQUAL(0, ret);
-
-    mbedtls_sha512_free(&sha512_ctx);
-
-#endif
-    free(buffer);
-
-}
-#endif
-
-#endif // SOC_SHA_SUPPORTED
+#endif // SOC_SHA_SUPPORTED && CONFIG_MBEDTLS_HARDWARE_SHA

@@ -148,7 +148,11 @@ NVS API 函数 ``nvs_get_*`` 或 ``nvs_set_*`` 也可用于读取和写入加密
 
 - 要为默认 NVS 分区启用加密，无需额外的步骤。在启用 :ref:`CONFIG_NVS_ENCRYPTION` 时，API 函数 :cpp:func:`nvs_flash_init` 会根据使用的方案（由 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置）在内部执行一些额外步骤，为默认的 NVS 分区启用加密。
 
-- 在基于 flash 加密的方案中，加密密钥由找到的第一个 :ref:`nvs_encr_key_partition` 生成。在 HMAC 方案中，密钥由 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 中烧录的 HMAC 密钥生成（参考 API 文档以了解更多详细信息）。
+- 在基于 flash 加密的方案中，加密密钥由找到的第一个 :ref:`nvs_encr_key_partition` 生成。
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    在 HMAC 方案中，密钥由 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 中烧录的 HMAC 密钥生成（参考 API 文档以了解更多详细信息）。
 
 另外，还可使用 API 函数 :cpp:func:`nvs_flash_secure_init` 为默认 NVS 分区启用加密。
 
@@ -219,6 +223,9 @@ NVS Security Provider
 
     该组件通过工厂函数注册了特殊的安全框架，可以实现出厂即用的安全方案。在该方案中，无需使用 API 来生成、读取加密密钥（如 :cpp:func:`nvs_sec_provider_register_hmac`）。要了解 API 的使用，参考示例 :example:`security/nvs_encryption_hmac`。
 
+.. note::
+
+    如果不希望使用 :component: `nvs_sec_provider` 组件的默认实现，而使用自定义方式生成或者保护 NVS 加密密钥，请选择 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` 配置项。
 
 API 参考
 -------------

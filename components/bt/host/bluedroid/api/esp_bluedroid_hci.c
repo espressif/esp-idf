@@ -19,6 +19,9 @@
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 static esp_bluedroid_hci_driver_operations_t s_hci_driver_ops = { 0 };
 
@@ -67,14 +70,19 @@ void hci_host_send_packet(uint8_t *data, uint16_t len)
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
 #endif
-#if (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
-    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
-#endif // (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+    ble_log_write_hci(BLE_LOG_HCI_DOWNSTREAM, data, len);
+#endif /* CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED */
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     esp_vhci_host_send_packet(data, len);
 #else /* BT_CONTROLLER_INCLUDED == TRUE */
     if (s_hci_driver_ops.send) {
         s_hci_driver_ops.send(data, len);
+    } else {
+        ESP_LOGE(LOG_TAG, "%s send function is not registered", __func__);
     }
 #endif /* BT_CONTROLLER_INCLUDED == TRUE */
 }

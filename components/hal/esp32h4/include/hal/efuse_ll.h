@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +8,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "hal/ecdsa_types.h"
-
-//TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,57 +49,43 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys3.wafer_version_major;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys3.wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys3.disable_wafer_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys3.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
 {
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys3.blk_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys3.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    //ESP32H4 TODO
-    return 0;
-}
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk(void)
-{
-    //ESP32H4 TODO
-    return 0;
+    return EFUSE.rd_mac_sys4.pkg_version;
 }
 
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk(void)
 {
-    //ESP32H4 TODO
-    (void)curve;
-    (void)efuse_blk;
+    return EFUSE.ecdsa.cur_ecdsa_p256_blk;
 }
 
 /******************* eFuse control functions *************************/
@@ -124,47 +108,47 @@ __attribute__((always_inline)) static inline void efuse_ll_set_read_cmd(void)
 __attribute__((always_inline)) static inline void efuse_ll_set_pgm_cmd(uint32_t block)
 {
     HAL_ASSERT(block < ETS_EFUSE_BLOCK_MAX);
-    EFUSE.cmd.val = ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.cmd, val, ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code(void)
 {
-    EFUSE.conf.op_code = EFUSE_READ_OP_CODE;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_READ_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline int efuse_ll_get_ocode(void)
 {
-    return 0;
+    return EFUSE.rd_sys_part1_data4.ocode;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
-    EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_WRITE_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_num(uint8_t val)
 {
-    //EFUSE.dac_conf.dac_num = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.dac_conf, dac_num, val);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint8_t val)
 {
-    //EFUSE.dac_conf.dac_clk_div = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.dac_conf, dac_clk_div, val);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16_t val)
 {
-    //EFUSE.wr_tim_conf1.pwr_on_num = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf1, pwr_on_num, val);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
-    EFUSE.wr_tim_conf2.pwr_off_num = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf2, pwr_off_num, value);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void)
 {
-    // EFUSE.wr_tim_conf0_rs_bypass.update = 1;
+    EFUSE.wr_tim_conf0_rs_bypass.update = 1;
 }
 
 /******************* eFuse control functions *************************/

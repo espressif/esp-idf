@@ -87,7 +87,7 @@ esp_err_t bt_hci_log_deinit(void);
  * @return          ESP_OK - success, other - failed
  *
  */
-esp_err_t bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint8_t data_len);
+esp_err_t bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint16_t data_len);
 
 /**
  *

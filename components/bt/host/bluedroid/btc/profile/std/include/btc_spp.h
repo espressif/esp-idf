@@ -67,6 +67,7 @@ typedef union {
         esp_spp_sec_t sec_mask;
         esp_spp_role_t role;
         UINT8 local_scn;
+        bool create_spp_record;
         UINT8 max_session;
         char name[ESP_SPP_SERVER_NAME_MAX + 1];
     } start_srv;

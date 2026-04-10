@@ -25,7 +25,7 @@
 #define ESP_MAC_ADDRESS_LEN 6
 #endif
 
-static const char *TAG = "system_api";
+ESP_LOG_ATTR_TAG(TAG, "system_api");
 
 typedef enum {
     STATE_INIT      = 0,

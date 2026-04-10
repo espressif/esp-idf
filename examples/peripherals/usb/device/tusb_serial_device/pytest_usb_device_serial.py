@@ -21,7 +21,7 @@ def test_usb_device_serial_example(dut: Dut) -> None:
     for port, _, hwid in ports:
         if '303A:4001' in hwid:
             with Serial(port) as s:
-                s.write('text\r\n'.encode())  # Write dummy text to COM port
+                s.write(b'text\r\n')  # Write dummy text to COM port
                 dut.expect_exact('Data from channel 0:')  # Check ESP log
                 dut.expect_exact('|text..|')
                 res = s.readline()  # Check COM echo

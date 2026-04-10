@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,9 +7,6 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "esp_partition.h"
-#ifdef CONFIG_NVS_ENCRYPTION
-#include "mbedtls/aes.h"
-#endif
 #include "memory_checks.h"
 #include "esp_newlib.h"
 
@@ -60,13 +57,6 @@ int32_t get_heap_free_difference(const bool nvs_active_pool)
 /* setUp runs before every test */
 void setUp(void)
 {
-    // Execute mbedtls_aes_init operation to allocate AES interrupt
-    // allocation memory which is considered as memory leak otherwise
-#if defined(CONFIG_NVS_ENCRYPTION) && defined(SOC_AES_SUPPORTED)
-    mbedtls_aes_context ctx;
-    mbedtls_aes_init(&ctx);
-#endif
-
     // Calling esp_partition_find_first ensures that the partitions have been loaded
     // and subsequent calls to esp_partition_find_first from the tests would not
     // load partitions which otherwise gets considered as a memory leak.

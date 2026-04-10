@@ -296,7 +296,7 @@ GATT 数据操作
 动手试试
 ^^^^^^^^^^^^^^^^^^
 
-请参考 :ref:`BLE 介绍 动手试试 <nimble_gatt_server_practice>` 。
+请参考 :ref:`低功耗蓝牙介绍 动手试试 <nimble_gatt_server_practice>` 。
 
 
 代码详解

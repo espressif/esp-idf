@@ -27,7 +27,7 @@
 #if __has_include("esp_psram.h")
 #include "esp_psram.h"
 #endif
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 #include "apps_private/wifi_apps_private.h"
 #endif
 #ifdef CONFIG_ESP_WIFI_FTM_ENABLE
@@ -40,6 +40,10 @@
 
 #if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
 #include "esp_roaming.h"
+#endif
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
 #endif
 
 static bool s_wifi_inited = false;
@@ -187,7 +191,7 @@ static esp_err_t wifi_deinit_internal(void)
         ESP_LOGW(TAG, "Failed to unregister Rx callbacks");
     }
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     esp_nan_app_deinit();
 #endif
 
@@ -197,10 +201,6 @@ static esp_err_t wifi_deinit_internal(void)
 #endif
 
     esp_supplicant_deinit();
-
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    roam_deinit_app();
-#endif
 
 #if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
     wifi_beacon_offset_config_t offset_config = WIFI_BEACON_OFFSET_CONFIG_DEFAULT(false);
@@ -253,11 +253,18 @@ static esp_err_t wifi_deinit_internal(void)
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     esp_wifi_internal_modem_state_configure(false);
     esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
+#if ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+    esp_unregister_mac_bb_pd_callback(esp_phy_modem_rf_flag_update);
 #endif
+#endif /* CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
 #ifdef CONFIG_ESP_PHY_ENABLED
     esp_phy_modem_deinit();
 #endif
     s_wifi_inited = false;
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_configure_wifi_status(s_wifi_inited);
+#endif
 
     return err;
 }
@@ -341,7 +348,8 @@ static esp_err_t esp_wifi_psram_check(const wifi_init_config_t *config)
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
     if (s_wifi_inited) {
-        return ESP_OK;
+        ESP_LOGE(TAG, "Failed to init, WiFi is initialized by esp_wifi_init");
+        return ESP_ERR_INVALID_STATE;
     }
 
     esp_err_t result = ESP_OK;
@@ -448,6 +456,12 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         if (sleep_modem_wifi_modem_state_enabled()) {
             esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
             esp_wifi_internal_modem_state_configure(true); /* require WiFi to enable automatically receives the beacon */
+#if ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+            if (esp_register_mac_bb_pd_callback(esp_phy_modem_rf_flag_update) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to register modem RF flag update callback");
+                goto _deinit;
+            }
+#endif
         }
 #endif
 #if CONFIG_IDF_TARGET_ESP32
@@ -471,10 +485,6 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             goto _deinit;
         }
 
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-        roam_init_app();
-#endif
-
     } else {
         goto _deinit;
     }
@@ -492,11 +502,15 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 
     esp_wifi_config_info();
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     esp_nan_app_init();
 #endif
 
     s_wifi_inited = true;
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_configure_wifi_status(s_wifi_inited);
+#endif
 
     return result;
 
@@ -657,7 +671,7 @@ void create_new_bss_for_sa_query_failed_sta(uint8_t arg)
 }
 #endif /* CONFIG_ESP_WIFI_SOFTAP_SUPPORT */
 
-#ifndef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifndef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 
 esp_err_t nan_start(void)
 {
@@ -688,7 +702,7 @@ int wifi_create_nan(void)
     return 0;
 }
 
-int wifi_nan_set_config_local(wifi_nan_config_t *p)
+int wifi_nan_set_config_local(wifi_nan_sync_config_t *p)
 {
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
     return 0;
@@ -715,7 +729,25 @@ void nan_ndp_resp_timeout_process(void *p)
 {
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+
+#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_ESP32C5_REV_MIN_FULL <= 100
+void esp32c5_eco3_rom_ptr_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C61
+#if CONFIG_ESP32C61_REV_MIN_FULL <= 100
+void esp32c61_eco4_rom_ptr_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #if CONFIG_ESP32C2_REV_MIN_FULL < 200

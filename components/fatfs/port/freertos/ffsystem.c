@@ -7,9 +7,7 @@
 #include <stdlib.h>
 #include "ff.h"
 #include "sdkconfig.h"
-#ifdef CONFIG_FATFS_ALLOC_PREFER_EXTRAM
 #include "esp_heap_caps.h"
-#endif
 
 /*------------------------------------------------------------------------*/
 /* Allocate/Free a Memory Block                                           */
@@ -19,14 +17,32 @@ void* ff_memalloc (    /* Returns pointer to the allocated memory block (null if
     unsigned msize     /* Number of bytes to allocate */
 )
 {
-#ifdef CONFIG_FATFS_ALLOC_PREFER_EXTRAM
-    return heap_caps_malloc_prefer(msize, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
-                                            MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-#else
-    return malloc(msize);
-#endif
-}
+    void *ptr = NULL;
+    (void) ptr;
 
+#if CONFIG_FATFS_ALLOC_PREFER_EXTRAM && CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+    ptr = heap_caps_calloc_prefer(1, msize, 2, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM, MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM);
+    if (ptr != NULL) {
+        return ptr;
+    }
+#endif
+
+#if CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+    ptr = heap_caps_calloc_prefer(1, msize, 2, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED, MALLOC_CAP_CACHE_ALIGNED);
+    if (ptr != NULL) {
+        return ptr;
+    }
+#endif
+
+#if CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+    ptr = heap_caps_calloc(1, msize, MALLOC_CAP_SPIRAM);
+    if (ptr != NULL) {
+        return ptr;
+    }
+#endif
+
+    return heap_caps_calloc(1, msize, MALLOC_CAP_DEFAULT);
+}
 
 void ff_memfree (
     void* mblock    /* Pointer to the memory block to free (no effect if null) */
@@ -122,7 +138,7 @@ int ff_mutex_create (	/* Returns 1:Function succeeded or 0:Could not create the 
 /  semaphore of the volume created with ff_mutex_create function.
 */
 
-void ff_mutex_delete (	/* Returns 1:Function succeeded or 0:Could not delete due to an error */
+void ff_mutex_delete (
 	int vol				/* Mutex ID: Volume mutex (0 to FF_VOLUMES - 1) or system mutex (FF_VOLUMES) */
 )
 {
@@ -138,7 +154,10 @@ void ff_mutex_delete (	/* Returns 1:Function succeeded or 0:Could not delete due
 	OSMutexDel(Mutex[vol], OS_DEL_ALWAYS, &err);
 
 #elif OS_TYPE == 3	/* FreeRTOS */
-	vSemaphoreDelete(Mutex[vol]);
+	if (Mutex[vol] != NULL) {
+		vSemaphoreDelete(Mutex[vol]);
+		Mutex[vol] = NULL;	/* Prevent use-after-delete in ff_mutex_take/ff_mutex_give */
+	}
 
 #elif OS_TYPE == 4	/* CMSIS-RTOS */
 	osMutexDelete(Mutex[vol]);
@@ -167,10 +186,13 @@ int ff_mutex_take (	/* Returns 1:Succeeded or 0:Timeout */
 #elif OS_TYPE == 2	/* uC/OS-II */
 	OS_ERR err;
 
-	OSMutexPend(Mutex[vol], FF_FS_TIMEOUT, &err));
+	OSMutexPend(Mutex[vol], FF_FS_TIMEOUT, &err);
 	return (int)(err == OS_NO_ERR);
 
 #elif OS_TYPE == 3	/* FreeRTOS */
+	if (vol < 0 || vol > FF_VOLUMES || Mutex[vol] == NULL) {
+		return 0;	/* No volume mounted or mutex not created -> treat as timeout */
+	}
 	return (int)(xSemaphoreTake(Mutex[vol], FF_FS_TIMEOUT) == pdTRUE);
 
 #elif OS_TYPE == 4	/* CMSIS-RTOS */
@@ -201,7 +223,9 @@ void ff_mutex_give (
 	OSMutexPost(Mutex[vol]);
 
 #elif OS_TYPE == 3	/* FreeRTOS */
-	xSemaphoreGive(Mutex[vol]);
+	if (vol >= 0 && vol <= FF_VOLUMES && Mutex[vol] != NULL) {
+		xSemaphoreGive(Mutex[vol]);
+	}
 
 #elif OS_TYPE == 4	/* CMSIS-RTOS */
 	osMutexRelease(Mutex[vol]);

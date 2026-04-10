@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 def deepsleep_test(dut: Dut, case_name: str) -> None:
@@ -20,7 +21,7 @@ def deepsleep_test(dut: Dut, case_name: str) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 == 1'), indirect=['target'])
 def test_rtc_8md256_deepsleep(dut: Dut) -> None:
     deepsleep_test(dut, '"Can use 8MD256 as RTC clock source in deepsleep"')
 
@@ -43,7 +44,7 @@ def lightsleep_test(dut: Dut, case_name: str) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c3'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 == 1'), indirect=['target'])
 def test_rtc_8md256_lightsleep(dut: Dut) -> None:
     lightsleep_test(dut, '"Can use 8MD256 as RTC clock source in lightsleep"')
 

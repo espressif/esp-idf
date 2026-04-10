@@ -22,7 +22,7 @@
 #include "soc/soc_caps.h"
 
 #include "test_utils.h"
-#include "idf_performance.h"
+#include "sdio_performance.h"
 #include "test_dualboard_utils.h"
 #include "../../sdio_common_test.h"
 

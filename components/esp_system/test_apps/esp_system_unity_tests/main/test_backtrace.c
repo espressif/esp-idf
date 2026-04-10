@@ -12,7 +12,7 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 

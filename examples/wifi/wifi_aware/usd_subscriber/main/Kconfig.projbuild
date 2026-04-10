@@ -1,0 +1,28 @@
+menu "Example Configuration"
+
+    config ESP_WIFI_USD_SUB_SVC_NAME
+        string "USD subscribe service name"
+        default "ESP-USD-TEST"
+
+    config ESP_WIFI_USD_SUB_TTL
+        int "Time to live (in seconds)"
+        range 0 1000
+        default 100
+        help
+            Time to live of the Subscribe instance, in seconds. If TTL = 0,
+            the subscriber listens until the first service match is reported.
+
+    config ESP_WIFI_USD_DEFAULT_CHAN
+        int "Default Subscribe channel"
+        range 1 13
+        default 6
+        help
+            Default channel of subscriber
+
+    config ESP_WIFI_USD_SVC_SPECIFIC_INFO
+        string "Service specific info to be transmitted in a followup message"
+        default "Hello"
+        help
+            SSI to be transmitted in a followup frame
+
+endmenu

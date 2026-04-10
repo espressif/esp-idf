@@ -1,0 +1,27 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+# BT config - Enable Bluetooth
+CONFIG_BT_ENABLED=y
+
+# Enable Bluedroid host
+CONFIG_BT_BLUEDROID_ENABLED=y
+
+# Enable BLE 5.0 features (required for Connection Subrating)
+CONFIG_BT_BLE_50_FEATURES_SUPPORTED=y
+
+# Enable BLE Extended Scan (required for BLE 5.0 scanning)
+CONFIG_BT_BLE_50_EXTEND_SCAN_EN=y
+
+# Enable BLE Connection Subrating feature
+CONFIG_BT_BLE_FEAT_CONN_SUBRATING=y
+
+CONFIG_BT_GATTS_ENABLE=n
+
+CONFIG_BT_BLE_SMP_ENABLE=n
+
+CONFIG_BT_BLE_50_EXTEND_ADV_EN=n
+
+CONFIG_BT_BLE_50_DTM_TEST_EN=n
+
+CONFIG_BT_BLE_50_EXTEND_SYNC_EN=n

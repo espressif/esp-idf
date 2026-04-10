@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -551,7 +551,6 @@ typedef struct {
     volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
-extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
 
 #ifndef __cplusplus

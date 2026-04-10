@@ -6,7 +6,6 @@
 #ifndef _WL_Ext_Safe_H_
 #define _WL_Ext_Safe_H_
 
-#include "Partition.h"
 #include "WL_Flash.h"
 #include "WL_Ext_Cfg.h"
 #include "WL_Ext_Perf.h"
@@ -17,7 +16,7 @@ public:
     WL_Ext_Safe();
     ~WL_Ext_Safe() override;
 
-    esp_err_t config(WL_Config_s *cfg, Partition *partition) override;
+    esp_err_t config(WL_Config_s *cfg, Flash_Access *partition) override;
     esp_err_t init() override;
 
     size_t get_flash_size() override;

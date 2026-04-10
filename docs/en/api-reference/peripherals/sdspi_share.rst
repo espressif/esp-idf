@@ -63,7 +63,7 @@ When using an SD card with other SPI devices on the same SPI bus, due to the res
 
    1. Attach devices to the SPI bus by calling :cpp:func:`spi_bus_add_device`. This function will by default initialize the GPIO that is used as CS to the idle level: high.
 
-   2. Initialize GPIO on the CS pin that needs to be tied up before actually adding a new device.
+   2. Before adding a new device, initialize the GPIO for the CS pin that must remain high.
 
    3. Rely on the internal/external pull-up (**not recommended**) to pull up all the CS pins when the GPIOs of ESP are not initialized yet. You need to check carefully the pull-up is strong enough and there are no other pull-downs that will influence the pull-up. For example, internal pull-down should be enabled.
 

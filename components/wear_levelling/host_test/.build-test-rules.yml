@@ -4,3 +4,5 @@ components/wear_levelling/host_test:
   enable:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
+  depends_components:
+    - wear_levelling

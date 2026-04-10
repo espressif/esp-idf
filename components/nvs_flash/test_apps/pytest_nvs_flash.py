@@ -4,16 +4,18 @@ import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS_NVS_ENCR_FLASH_ENC = [
-    pytest.param('nvs_encr_flash_enc_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('nvs_encr_flash_enc_esp32c3', marks=[pytest.mark.esp32c3]),
-]
-
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_nvs_flash(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['blockdev'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+def test_nvs_flash_blockdev(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)
 
 

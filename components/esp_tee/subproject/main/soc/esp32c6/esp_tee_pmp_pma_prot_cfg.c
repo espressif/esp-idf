@@ -66,8 +66,10 @@ static void esp_tee_configure_invalid_regions(void)
     assert(IS_PMA_ENTRY_UNLOCKED(13));
     assert(IS_PMA_ENTRY_UNLOCKED(14));
     assert(IS_PMA_ENTRY_UNLOCKED(15));
+
+    extern int _tee_iram_end;
     PMA_RESET_AND_ENTRY_SET_TOR(13, SOC_S_IRAM_START, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(14, SOC_S_IRAM_END, PMA_TOR | PMA_RX);
+    PMA_RESET_AND_ENTRY_SET_TOR(14, (int)&_tee_iram_end, PMA_TOR | PMA_RX);
     PMA_RESET_AND_ENTRY_SET_TOR(15, SOC_S_DRAM_END, PMA_TOR | PMA_RW);
 }
 

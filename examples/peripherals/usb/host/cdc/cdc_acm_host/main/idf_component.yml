@@ -1,4 +1,0 @@
-## IDF Component Manager Manifest File
-dependencies:
-  usb_host_cdc_acm: "2.*"
-  idf: ">=4.4"

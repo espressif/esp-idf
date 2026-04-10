@@ -7,9 +7,9 @@ The ``idf.py`` command-line tool provides a front-end for easily managing your p
 
 - CMake_, which configures the project to be built.
 - Ninja_, which builds the project.
-- `esptool.py`_, which flashes the target.
+- `esptool`_, which flashes the target.
 
-The :ref:`Step 5. First Steps on ESP-IDF <get-started-configure>` contains a brief introduction on how to set up ``idf.py`` to configure, build, and flash projects.
+:ref:`Configure Your Project for Windows, <get-started-configure>` :ref:`Linux, or macOS <get-started-configure-linux-macos>` contains a brief introduction on how to set up ``idf.py`` to configure, build, and flash projects.
 
 .. important::
 
@@ -109,20 +109,54 @@ Delete the Entire Build Contents: ``fullclean``
 
 This command deletes the entire build directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
 
+.. _flash-with-idf-py:
+
 Flash the Project: ``flash``
 ----------------------------
 
 .. code-block:: bash
 
-  idf.py flash
+    idf.py flash
 
 This command automatically builds the project if necessary, and then flash it to the target. You can use ``-p`` and ``-b`` options to set serial port name and flasher baud rate, respectively.
 
-.. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
+.. note::
 
-``idf.py`` uses the ``write_flash`` command of ``esptool.py`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool.py write_flash --help`` or see the `esptool.py documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
+    The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
+
+``idf.py`` uses the ``write-flash`` command of ``esptool`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool write-flash --help`` or see the `esptool documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
 
 Similarly to the ``build`` command, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader or partition table as applicable.
+
+By default, ``idf.py flash`` attempts fast reflashing (reflashing the changed data sectors only, not the whole binary) when previously flashed binaries are present: if ``*_flashed.bin`` files exist in the build directory, the build system configures ``esptool`` to write only changed flash regions. This speeds up repeated flashing during development. All the flashed files in flash are then verified to ensure they match the expected content. If any of the files in flash do not match the expected content, a full flash will be performed instead.
+
+When no ``*_flashed.bin`` files are present, ``idf.py flash`` configures esptool to check the device flash content first and skip flashing any files that are already present in flash (this does not apply when using ``idf.py flash -a`` or ``--all``).
+
+After each successful flash, the build system saves copies of all flashed files (bootloader, partition table, app, and any other assets) with an ``_flashed`` suffix in the build directory (e.g., ``bootloader_flashed.bin``, ``partition-table_flashed.bin``). These are used automatically on the next ``idf.py flash`` for fast reflashing.
+
+Fast reflashing works with or without the :ref:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` option. Enabling that option can further improve reflash effectiveness by laying out the application binary so that changes are localized. This results in less flash sectors needing to be rewritten. This option may increase the size of the application binary and is not recommended for production builds.
+
+Full Flash
+^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -a
+
+    idf.py flash --all
+
+The ``-a`` or ``--all`` option always performs a full flash (does not reflash the changed sectors only, but the whole binary). Use it after erasing flash, when flashing to a new device with empty flash, or when you do not want to rely on previous binaries.
+
+Trust Flash Content Mode
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -t
+
+    idf.py flash --trust-flash-content
+
+When using fast reflash, ``-t`` or ``--trust-flash-content`` skips MD5 verification of files which do not need reflashing (e.g., if ``bootloader.bin`` didn't change since the last flash) to speed up the flashing process. Only use this when you are sure the device flash content has not been modified since the last ``idf.py flash`` operation.
 
 .. _merging-binaries:
 
@@ -152,7 +186,7 @@ There are also some format specific options, which are listed below:
 - Only for raw format:
 
   - ``--flash-offset``: This option will create a merged binary that should be flashed at the specified offset, instead of at the standard offset of 0x0.
-  - ``--fill-flash-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
+  - ``--pad-to-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
 
 - Only for uf2 format:
 
@@ -161,7 +195,7 @@ There are also some format specific options, which are listed below:
 Hints on How to Resolve Errors
 ==============================
 
-``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml` and the hints will be printed if a match is found for the given error. The menuconfig target is not supported at the moment by automatic hints on resolving errors.
+``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml`. In addition, it loads component-specific hints from ``hints.yml`` file located in the root directory of any ESP-IDF or project component. The hints will be printed if a match is found for the given error. The menuconfig target is not supported at the moment by automatic hints on resolving errors.
 
 The ``--no-hints`` argument of ``idf.py`` can be used to turn the hints off in case they are not desired.
 
@@ -176,7 +210,7 @@ For commands that are not known to ``idf.py``, an attempt to execute them as a b
 
 The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ for bash, zsh and fish shells.
 
-To enable autocompletion for ``idf.py``, use the ``export`` command (:ref:`Step 4. Set up the environment variables <get-started-set-up-env>`). Autocompletion is initiated by pressing the TAB key. Type ``idf.py -`` and press the TAB key to autocomplete options.
+To enable autocompletion for ``idf.py``, use the ``export`` command (:ref:`setting up the environment for Windows <get-started-set-up-env>`, :ref:`Linux or macOS <get-started-set-up-env-linux-macos>`). Autocompletion is initiated by pressing the TAB key. Type ``idf.py -`` and press the TAB key to autocomplete options.
 
 The autocomplete support for PowerShell is planned in the future.
 
@@ -216,7 +250,7 @@ This command prints size information per source file in the project.
 Options
 ^^^^^^^
 
-- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json``, default being ``text``.
+- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json2``, ``tree``, ``raw``, default being ``text``.
 - ``--output-file`` optionally specifies the name of the file to print the command output to instead of the standard output.
 
 Reconfigure the Project: ``reconfigure``
@@ -267,6 +301,164 @@ Read Otadata Partition: ``read-otadata``
 
 This command prints the contents of the ``otadata`` partition which stores the information about the currently selected OTA app slot. Refer to :doc:`/api-reference/system/ota` for more about the ``otadata`` partition.
 
+ESP-IDF MCP Server
+-------------------
+
+The ESP-IDF MCP (Model Context Protocol) server enables AI integration with ESP-IDF projects. The MCP server provides tools and resources that allow AI assistants to interact with your ESP-IDF project through a standardized protocol. Using natural language, you can tell the AI assistant commands like "set target to esp32" or "build this project".
+
+Starting the MCP Server
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use the MCP server with an AI assistant, configure your agent or IDE to start the server. You can do that in two ways:
+
+1. Using ``eim run`` (recommended): Use the ESP-IDF Installation Manager (EIM) to start a new process with an active ESP-IDF environment. This feature is available from EIM 0.8.1 and **ESP-IDF must be installed via the EIM installer**. This is the easiest option and does not require you to activate ESP-IDF in your shell first.
+
+.. code-block:: bash
+
+  eim run "idf.py mcp-server"
+
+2. Using ``idf.py`` directly: Run the MCP server with ``idf.py mcp-server`` from a shell where the ESP-IDF environment is already activated. The command must be executed from a valid ESP-IDF project directory, or use ``idf.py -C <project_dir> mcp-server`` to specify the project.
+
+.. code-block:: bash
+
+  idf.py mcp-server
+
+.. note::
+
+    The MCP server requires the ``mcp`` feature to be installed. Install it using the EIM installer. See `EIM documentation > CLI Configuration - Global features <https://docs.espressif.com/projects/idf-im-ui/en/latest/cli_configuration.html#global-features-all-versions>`_ for how to install specific features.
+
+Available Tools and Resources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The MCP server provides the following commands you can use:
+
+- ``set target``: Set the ESP-IDF target (esp32, esp32s3, esp32c6, etc.)
+- ``build project``: Build the ESP-IDF project with the current target
+- ``flash project``: Flash the built project to a connected device. Specify it by port name.
+- ``clean project``: Clean build artifacts
+
+The MCP server also provides these resources:
+
+- ``project://config``: Get current project configuration
+- ``project://status``: Get current project build status and artifacts
+- ``project://devices``: Get list of connected devices
+
+Adding ESP-IDF MCP Server to IDEs and AI agents
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Cursor IDE
+~~~~~~~~~~
+
+Add the ESP-IDF MCP server configuration to your Cursor ``mcp.json`` file:
+
+.. code-block:: json
+
+  {
+    "mcpServers": {
+      "esp-idf-eim": {
+        "command": "eim",
+        "args": [
+          "run",
+          "idf.py mcp-server"
+        ],
+        "env": {
+          "IDF_MCP_WORKSPACE_FOLDER": "${workspaceFolder}"
+        }
+      }
+    }
+  }
+
+To use the ESP-IDF MCP server with Cursor IDE, open your ESP-IDF project folder and use the AI chat window. The AI assistant will have access to ESP-IDF specific tools and can help you build, flash, and manage your project.
+
+The ``IDF_MCP_WORKSPACE_FOLDER`` environment variable tells the MCP server which directory contains your ESP-IDF project. This ensures the server operates in the correct project context, allowing it to access your project's configuration, build files, and perform operations like building and flashing in the right location.
+
+Claude Desktop
+~~~~~~~~~~~~~~
+
+Use the Claude CLI to add the ESP-IDF MCP server.
+
+With ``eim`` (no need to activate ESP-IDF first):
+
+.. code-block:: bash
+
+  claude mcp add --transport stdio esp-idf-eim -- eim run "idf.py mcp-server"
+
+With ``idf.py`` (must be executed from an activated ESP-IDF environment):
+
+.. code-block:: bash
+
+  claude mcp add --transport stdio esp-idf -- idf.py mcp-server
+
+Navigate to your ESP-IDF project directory and run the ``claude`` command to chat with the AI assistant.
+
+
+Configuration Presets: ``--preset``
+====================================
+
+ESP-IDF supports `CMake presets`_ to simplify managing multiple build configurations. This feature allows you to define reusable configuration profiles that specify build directories, cache variables, and other CMake settings.
+
+.. code-block:: bash
+
+  idf.py --preset <preset-name> build
+
+This command builds the project using the specified configuration preset. The preset defines settings such as the build directory location, CMake cache variables (including ``SDKCONFIG`` paths), and generator preferences.
+
+Preset Definition Files
+-----------------------
+
+Create a ``CMakePresets.json`` or ``CMakeUserPresets.json`` file in your project root directory to define **configuration presets**. For example:
+
+.. code-block:: json
+
+  {
+      "version": 3,
+      "configurePresets": [
+          {
+              "name": "default",
+              "binaryDir": "build/default",
+              "displayName": "Default Configuration",
+              "cacheVariables": {
+                  "SDKCONFIG": "./build/default/sdkconfig"
+              }
+          },
+          {
+              "name": "production",
+              "binaryDir": "build/production",
+              "displayName": "Production Build",
+              "cacheVariables": {
+                  "SDKCONFIG_DEFAULTS": "sdkconfig.defaults.prod_common;sdkconfig.defaults.production",
+                  "SDKCONFIG": "./build/production/sdkconfig"
+              }
+          }
+      ]
+  }
+
+.. note::
+
+    The ``version`` field represents the JSON schema version for CMake Presets. In this example it is set to ``3`` to match the schema supported by ESP-IDF's minimal supported CMake version. If you are using a newer CMake version, you can increase the ``version`` field accordingly—see `CMake Presets`_.
+
+**Current Limitations**
+
+- The ``inherits`` field for preset inheritance is not currently supported by ESP-IDF. Presets with inheritance will show a warning.
+
+Automatic Preset Selection
+---------------------------
+
+If no preset is specified but a ``CMakePresets.json`` file exists, ``idf.py`` will automatically select a preset:
+
+1. If a preset named ``default`` exists, it will be used.
+2. Otherwise, the first preset in the file will be selected.
+
+.. note::
+
+    The environment variable ``IDF_PRESET`` can be used to set the default preset name, e.g., ``export IDF_PRESET=production``. Command-line arguments override environment variables.
+
+**SDKCONFIG File Placement**
+
+By default, the ``sdkconfig`` file is created in the project root directory. However, when using CMake presets, you can specify a custom location for the ``sdkconfig`` file using the ``SDKCONFIG`` cache variable.
+
+For a complete example, see the :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`.
+
 Global Options
 ==============
 
@@ -295,13 +487,120 @@ For example, let's have a file `custom_flash.txt`:
 
   flash --baud 115200
 
-Then the command can be executed as: ``idf.py @custom_flash.txt monitor``
+Then the command can be executed as: ``idf.py "@custom_flash.txt" monitor``
 
-Arguments from a file can be combined with additional command line arguments, and multiple files annotated with ``@`` can be used simultaneously. For instance, if there is a second file ``another_config.txt``, both can be utilized by specifying ``idf.py @custom_flash.txt @another_config.txt monitor``.
+Arguments from a file can be combined with additional command line arguments, and multiple files annotated with ``@`` can be used simultaneously. For instance, if there is a second file ``another_config.txt``, both can be utilized by specifying ``idf.py "@custom_flash.txt" "@another_config.txt" monitor``.
 
-A further example of how this argument file can be used, e.g., creating configuration profile files via @filename, is in the :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`.
+A further example of how this argument file can be used, e.g., creating configuration profile files via @filename, is in the `Create configuration profile files <profile_file_>`_ paragraph in Multiple Build Configurations Example.
+
+Extending ``idf.py``
+====================
+
+``idf.py`` can be extended with additional subcommands, global options, and callbacks provided by extension files in your project and components which participate in the build, as well as by external Python packages exposing entry points.
+
+- **From components participating in the build**: Place a file named ``idf_ext.py`` in the project root or in a component's root directory that is registered in the project's ``CMakeLists.txt``. Component extensions are discovered after the project is configured - run ``idf.py build`` or ``idf.py reconfigure`` to make newly added commands available.
+- **From Python entry points**: Any installed Python package may contribute extensions by defining an entry point in the ``idf_extension`` group. Package installation is sufficient, no project build is required.
+
+.. important::
+
+   Extensions must not define subcommands or options that have the same names as the core ``idf.py`` commands. Custom actions and options are checked for name collisions, overriding defaults is not possible and a warning is printed. For Python entry points, use unique identifiers as duplicate entry point names will be ignored with a warning.
+
+Extension File Example
+----------------------
+
+An extension file defines an ``action_extensions`` function which returns additional actions/options. The same structure is used for component-based extensions (``idf_ext.py``) and for package-based extensions (e.g., ``<package_name>_ext.py``):
+
+.. code-block:: python
+
+  from typing import Any
+  import click
+
+  def action_extensions(base_actions: dict, project_path: str) -> dict:
+      def hello_test(subcommand_name: str, ctx: click.Context, global_args: dict, **action_args: Any) -> None:
+          message = action_args.get('message')
+          print(f"Running action: {subcommand_name}. Message: {message}")
+
+      def global_callback_detail(ctx: click.Context, global_args: dict, tasks: list) -> None:
+          if getattr(global_args, 'detail', False):
+              print(f"About to execute {len(tasks)} task(s): {[t.name for t in tasks]}")
+
+      return {
+          "version": "1",
+          "global_options": [
+              {
+                  "names": ["--detail", "-d"],
+                  "is_flag": True,
+                  "help": "Enable detailed output",
+              }
+          ],
+          "global_action_callbacks": [global_callback_detail],
+          "actions": {
+              "hello": {
+                  "callback": hello_test,
+                  "short_help": "Hello from component",
+                  "help": "Test command from component extension",
+                  "options": [
+                      {
+                          "names": ["--message", "-m"],
+                          "help": "Custom message to display",
+                          "default": "Hi there!",
+                          "type": str,
+                      }
+                  ]
+              },
+          },
+      }
+
+
+Extension API Reference
+-----------------------
+
+The ``action_extensions`` function takes arguments ``base_actions`` (all currently registered commands) and ``project_path`` (absolute project directory) and returns a dictionary with up to four keys:
+
+- ``version``: A string representing the interface version of the extension. Currently, the API version is ``1``. **This key is mandatory** and must be provided.
+- ``global_options``: A list of options available globally for all commands. Each option is a dictionary with fields such as ``names``, ``help``, ``type``, ``is_flag``, ``scope``, etc.
+- ``global_action_callbacks``: A list of functions called once before any task execution. Each global action callback function accepts three arguments:
+
+   - ``ctx`` — The `click context`_
+   - ``global_args`` — All available global arguments
+   - ``tasks`` — The list of tasks to be executed. Task refer to the action / sub-command used with `idf.py`
+
+- ``actions``: A dictionary of new subcommands. Each action has a ``callback`` function and may also include ``options``, ``arguments``, ``dependencies``, etc. Each action callback function accepts three to four arguments:
+
+   - ``subcommand_name`` — the name of the command (useful if multiple commands share the same callback)
+   - ``ctx`` — the `click context`_
+   - ``global_args`` — all available global arguments,
+   - ``**action_args`` — (optional) arguments passed to the action
+
+Basic Usage Examples
+--------------------
+
+1) Provide an extension from a component in your project
+
+  Create ``idf_ext.py`` in the project root or in a registered component (for example ``components/my_component/idf_ext.py``). Use the extension file example above as your ``idf_ext.py`` implementation.
+
+  Run ``idf.py build`` or ``idf.py reconfigure`` to load the new command, then ``idf.py --help`` will show the new extension.
+
+2) Provide an extension via a Python package entry point
+
+  Implement your extension in a module named ``<package_name>_ext.py`` using the extension file example above, and expose the ``action_extensions`` function via the ``idf_extension`` entry-point group. For example, with ``pyproject.toml``:
+
+  .. code-block:: TOML
+
+    [project]
+    name = "my_comp"
+    version = "0.1.0"
+
+    [project.entry-points.idf_extension]
+    my_pkg_ext = "my_component.my_ext:action_extensions"
+
+
+  Install the package into the same Python environment as ``idf.py`` (for example with ``pip install -e .`` in the package directory). It is recommended to use a unique module name (e.g., ``<package_name>_ext.py``) to avoid name conflicts. After successful installation, ``idf.py --help`` will show the new extension.
 
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
+.. _click context: https://click.palletsprojects.com/en/stable/api/#context
+.. _CMake presets: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
+.. _profile_file: https://github.com/espressif/esp-idf/tree/release/v5.5/examples/build_system/cmake/multi_config#create-configuration-profile-files-via-filename

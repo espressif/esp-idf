@@ -33,7 +33,7 @@ from pyparsing import Word
 from pyparsing import alphas
 from pyparsing import hexnums
 from pyparsing import nums
-from pyparsing import restOfLine
+from pyparsing import rest_of_line
 
 pyparsing.usePackrat = True
 
@@ -77,7 +77,7 @@ class KconfigWriter:
 
     def add_entry(self, name, entry_type, value):  # type: (str, str, typing.Any) -> None
         if name in self.entries:
-            logging.info('Duplicate entry: {}'.format(name))
+            logging.info(f'Duplicate entry: {name}')
             return
 
         # Format values for kconfig
@@ -104,7 +104,7 @@ class KconfigWriter:
             self.kconfig_text.write(config_option)
 
         try:
-            with open(self.kconfig_path, 'r', encoding='utf-8') as f:
+            with open(self.kconfig_path, encoding='utf-8') as f:
                 old_content = f.readlines()
         except FileNotFoundError:
             old_content = ['']
@@ -122,7 +122,7 @@ class KconfigWriter:
             file_needs_update = True
 
         if file_needs_update:
-            print('\n' + 'Updating file: {}'.format(self.kconfig_path))
+            print('\n' + f'Updating file: {self.kconfig_path}')
             with open(self.kconfig_path, 'w', encoding='utf-8') as f:
                 f.writelines(new_content)
 
@@ -136,12 +136,12 @@ def parse_include(inc_line):  # type: (str) -> typing.Any[typing.Type[ParserElem
 
     # Comment with condition pattern
     condition_deli = OneOrMore(Group(Literal(' ') | Literal(':')))
-    condition = CaselessLiteral('condition') + Optional(condition_deli) + restOfLine('condition')
+    condition = CaselessLiteral('condition') + Optional(condition_deli) + rest_of_line('condition')
 
     # Parse the include line
     # e.g. #include "../../beta3/include/soc/soc_caps.h"  // recursive, condition: IDF_TARGET_ESP32C5_VERSION_BETA3
     expr = Suppress('#include') + QuotedString('"')('inc_path') + recursive + Optional(condition)
-    res = expr.parseString(inc_line)
+    res = expr.parse_string(inc_line)
     return res
 
 
@@ -169,7 +169,7 @@ def parse_define(define_line):  # type: (str) -> typing.Any[typing.Type[ParserEl
     expr = (
         '#define' + Optional(name)('name') + Optional(value) + Optional(ignore_pragma).set_results_name('ignore_pragma')
     )
-    res = expr.parseString(define_line)
+    res = expr.parse_string(define_line)
 
     return res
 
@@ -206,7 +206,7 @@ def generate_defines(soc_caps_dir, filename, always_write):  # type: (Path, str,
         try:
             res = parse_define(line)
         except pyparsing.ParseException:
-            logging.debug('Failed to parse: {}'.format(line))
+            logging.debug(f'Failed to parse: {line}')
             continue
 
         if res.ignore_pragma:
@@ -233,8 +233,8 @@ def generate_defines(soc_caps_dir, filename, always_write):  # type: (Path, str,
 
 def get_defines(header_path):  # type: (Path) -> list[str]
     defines = []
-    logging.info('Reading macros from {}...'.format(header_path))
-    with open(header_path, 'r', encoding='utf-8') as f:
+    logging.info(f'Reading macros from {header_path}...')
+    with open(header_path, encoding='utf-8') as f:
         output = f.read()
 
     for line in output.split('\n'):
@@ -309,6 +309,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     files_updated = [writer.update_file() for writer in writers if writer is not None]
-    print('Updated {} files'.format(sum(files_updated)))
+    print(f'Updated {sum(files_updated)} files')
 
     sys.exit(all(files_updated))

@@ -1,0 +1,9 @@
+config HAL_ECDSA_GEN_SIG_CM
+    bool "Enable countermeasure for ECDSA signature generation"
+    depends on IDF_TARGET_ESP32H2
+    default n
+    help
+        Enable this option to apply the countermeasure for ECDSA signature operation
+        This countermeasure masks the real ECDSA sign operation
+        under dummy sign operations to add randomness in the generated power signature.
+        This countermeasure is only necessary for ESP32-H2 < v1.2.

@@ -1,0 +1,5 @@
+## IDF Component Manager Manifest File
+dependencies:
+  u8g2:
+    git: "https://github.com/olikraus/u8g2.git"
+    version: "a549a13b13b5fd568111557c1dd7ca3d06fbe21a"

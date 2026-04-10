@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,16 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
 #if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
 static _lock_t s_mutex;
 #endif
+
+void esp_cache_sync_ops_enter_critical_section(void)
+{
+    esp_os_enter_critical_safe(&s_spinlock);
+}
+
+void esp_cache_sync_ops_exit_critical_section(void)
+{
+    esp_os_exit_critical_safe(&s_spinlock);
+}
 
 #if SOC_CACHE_WRITEBACK_SUPPORTED
 static void s_c2m_ops(uint32_t vaddr, size_t size)
@@ -101,7 +111,10 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     uint32_t cache_level = 0;
     uint32_t cache_id = 0;
     valid = cache_hal_vaddr_to_cache_level_id(vaddr, size, &cache_level, &cache_id);
-    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_ARG, TAG, "invalid addr or null pointer");
+    if (!valid) {
+        ESP_EARLY_LOGV(TAG, "vaddr is not in cacheable range, do nothing");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
 
     cache_type_t cache_type = CACHE_TYPE_DATA;
     if (flags & ESP_CACHE_MSYNC_FLAG_TYPE_INST) {

@@ -13,11 +13,11 @@
 static const char *TAG = "touch_wakeup";
 
 #define EXAMPLE_TOUCH_SAMPLE_CFG_NUM         1
-#define EXAMPLE_TOUCH_CHANNEL_NUM            3
+#define EXAMPLE_TOUCH_CHANNEL_NUM            2
 #define EXAMPLE_TOUCH_CHAN_INIT_SCAN_TIMES   3
 
 // If you want to change the wake-up channels, please make sure the channel GPIOs won't conflict to the EXT wakeup GPIOs
-static int s_channel_id[EXAMPLE_TOUCH_CHANNEL_NUM] = {7, 8, 9};
+static int s_channel_id[EXAMPLE_TOUCH_CHANNEL_NUM] = {8, 9};
 
 // Active threshold to benchmark ratio. (i.e., touch will be activated when data >= benchmark * (1 + ratio))
 static float s_thresh2bm_ratio[EXAMPLE_TOUCH_CHANNEL_NUM] = {
@@ -156,7 +156,7 @@ void example_prepare_sleep(void)
         /* Enter the light sleep */
         esp_light_sleep_start();
         /* Keep executing the code after waking up from the light sleep */
-        if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD) {
+        if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD)) {
             ESP_LOGI(TAG, "Wake up by touch\n");
         } else {
             ESP_LOGE(TAG, "Wake up by other source\n");
@@ -180,7 +180,7 @@ void app_main(void)
 {
 #if CONFIG_EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP
     /* Printing the log if the chip is waken up from deepsleep by the touchpad */
-    if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD) {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD)) {
         ESP_LOGI(TAG, "Wake up by touch\n");
     }
 #endif  // CONFIG_EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP

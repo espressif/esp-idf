@@ -16,7 +16,7 @@
 #if !CONFIG_IDF_TARGET_LINUX && !ESP_TEE_BUILD
 #include "esp_private/startup_internal.h"
 
-static const char *TAG = "app_init";
+ESP_LOG_ATTR_TAG(TAG, "app_init");
 #endif
 
 // Application version info
@@ -60,6 +60,9 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
     .min_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL,
     .max_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL,
     .mmu_page_size = 31 - __builtin_clz(CONFIG_MMU_PAGE_SIZE),
+#if !(CONFIG_IDF_TARGET_LINUX || CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+    .spi_flash_mode = CONFIG_ESPTOOLPY_FLASHMODE_VAL,
+#endif
 };
 
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR

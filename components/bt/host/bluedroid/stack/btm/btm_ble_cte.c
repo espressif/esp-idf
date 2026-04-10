@@ -38,8 +38,6 @@ void BTM_CteBleCallbackTrigger(tBTM_BLE_5_GAP_EVENT event, tBTM_BLE_CTE_CB_PARAM
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
 tBTM_STATUS BTM_BleSetCteTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_t cte_type, uint8_t cte_count, uint8_t switching_pattern_len, uint8_t *antenna_ids)
 {
-
-
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_CTE_CB_PARAMS cb_params = {0};

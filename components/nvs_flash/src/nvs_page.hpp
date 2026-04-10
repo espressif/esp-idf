@@ -1,23 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_page_hpp
-#define nvs_page_hpp
+#pragma once
 
 #include "nvs.h"
 #include "nvs_types.hpp"
-#include <cstdint>
-#include <type_traits>
-#include <cstring>
-#include <algorithm>
-#include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"
-#include "nvs_memory_management.hpp"
 #include "partition.hpp"
-#include "nvs_constants.h"
 
 namespace nvs
 {
@@ -26,6 +18,8 @@ namespace nvs
 class Page : public intrusive_list_node<Page>, public ExceptionlessAllocatable
 {
 public:
+    static const bool DEFAULT_PURGE_AFTER_ERASE = true;
+
     static const uint32_t PSB_INIT = NVS_CONST_PSB_INIT;
     static const uint32_t PSB_FULL = NVS_CONST_PSB_FULL;
     static const uint32_t PSB_FREEING = NVS_CONST_PSB_FREEING;
@@ -34,7 +28,7 @@ public:
     static const uint32_t ESB_WRITTEN = NVS_CONST_ESB_WRITTEN;
     static const uint32_t ESB_ERASED = NVS_CONST_ESB_ERASED;
 
-    static const uint32_t SEC_SIZE;
+    static const uint32_t SEC_SIZE = NVS_CONST_PAGE_SIZE;
 
     static const size_t ENTRY_SIZE  = NVS_CONST_ENTRY_SIZE;
     static const size_t ENTRY_COUNT = NVS_CONST_ENTRY_COUNT;
@@ -94,13 +88,15 @@ public:
 
     esp_err_t cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+
+    esp_err_t purgeErasedItems(uint8_t nsIndex);
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t eraseEntryAndSpan(size_t index);
+    esp_err_t eraseEntryAndSpan(size_t index, const bool purgeAfterErase);
 
     template<typename T>
     esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value)
@@ -121,9 +117,9 @@ public:
     }
 
     template<typename T>
-    esp_err_t eraseItem(uint8_t nsIndex, const char* key)
+    esp_err_t eraseItem(uint8_t nsIndex, const char* key, const bool purgeAfterErase)
     {
-        return eraseItem(nsIndex, itemTypeOf<T>(), key);
+        return eraseItem(nsIndex, itemTypeOf<T>(), key, purgeAfterErase);
     }
 
     size_t getUsedEntryCount() const
@@ -186,6 +182,10 @@ protected:
 
     esp_err_t alterPageState(PageState state);
 
+    esp_err_t purgeEntryRange(size_t begin, size_t end);
+
+    esp_err_t purgeEntry(size_t index);
+
     esp_err_t readEntry(size_t index, Item& dst) const;
 
     esp_err_t writeEntry(const Item& item);
@@ -239,6 +239,3 @@ protected:
 }; // class Page
 
 } // namespace nvs
-
-
-#endif /* nvs_page_hpp */

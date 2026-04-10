@@ -15,8 +15,9 @@
 #include "esp_attr.h"
 #include "hal/brownout_hal.h"
 #include "hal/brownout_ll.h"
+#include "hal/uart_ll.h"
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "sdkconfig.h"
 
 #include "esp_tee_intr.h"

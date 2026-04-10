@@ -509,6 +509,11 @@ BOOLEAN btsnd_hcic_read_inq_tx_power (void);
 
 #define HCIC_PARAM_SIZE_R_TX_POWER      0
 
+/* Write Inquiry Tx Power Level */
+BOOLEAN btsnd_hcic_write_inq_tx_power (INT8 tx_power);
+
+#define HCIC_PARAM_SIZE_W_INQ_TX_POWER  1
+
 /* Read Default Erroneous Data Reporting */
 BOOLEAN btsnd_hcic_read_default_erroneous_data_rpt (void);
 
@@ -794,7 +799,9 @@ void btsnd_hcic_vendor_spec_cmd (BT_HDR *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_READ_TRANS_POWER               0
 #define HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION      0
 #define HCIC_PARAM_SIZE_WRITE_RF_PATH_COMPENSATION     4
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 BlE_SYNC *btsnd_hcic_ble_get_sync_info(void);
 void btsnd_hcic_ble_sync_sem_init(void);
 void btsnd_hcic_ble_sync_sem_deinit(void);
@@ -802,7 +809,21 @@ void btsnd_hcic_ble_sync_sem_deinit(void);
 uint8_t btsnd_hcic_ble_get_status(void);
 
 void btsnd_hci_ble_set_status(UINT8 hci_status);
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+#define HCIC_PARAM_SIZE_ADD_MONITOR_ADV_LIST           10
+#define HCIC_PARAM_SIZE_RMV_MONITOR_ADV_LIST           7
+#define HCIC_PARAM_SIZE_CLEAR_MONITOR_ADV_LIST         0
+#define HCIC_PARAM_SIZE_READ_MONITOR_ADV_LIST_SIZE     0
+#define HCIC_PARAM_SIZE_ENABLE_MONITOR_ADV             1
+
+UINT8 btsnd_hcic_ble_add_monitor_adv_list(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout);
+UINT8 btsnd_hcic_ble_rmv_monitor_adv_list(UINT8 addr_type, BD_ADDR addr);
+UINT8 btsnd_hcic_ble_clear_monitor_adv_list(void);
+BOOLEAN btsnd_hcic_ble_read_monitor_adv_list_size(void);
+UINT8 btsnd_hcic_ble_enable_monitor_adv(UINT8 enable);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);
@@ -815,25 +836,24 @@ BOOLEAN btsnd_hcic_ble_set_local_used_feat (UINT8 feat_set[8]);
 
 BOOLEAN btsnd_hcic_ble_set_random_addr (BD_ADDR random_addr);
 
-BOOLEAN btsnd_hcic_ble_write_adv_params (UINT16 adv_int_min, UINT16 adv_int_max,
+UINT8 btsnd_hcic_ble_write_adv_params (UINT16 adv_int_min, UINT16 adv_int_max,
         UINT8 adv_type, UINT8 addr_type_own,
         UINT8 addr_type_dir, BD_ADDR direct_bda,
         UINT8 channel_map, UINT8 adv_filter_policy);
 
 BOOLEAN btsnd_hcic_ble_read_adv_chnl_tx_power (void);
 
-BOOLEAN btsnd_hcic_ble_set_adv_data (UINT8 data_len, UINT8 *p_data);
+UINT8 btsnd_hcic_ble_set_adv_data (UINT8 data_len, UINT8 *p_data);
 
-BOOLEAN btsnd_hcic_ble_set_scan_rsp_data (UINT8 data_len, UINT8 *p_scan_rsp);
+UINT8 btsnd_hcic_ble_set_scan_rsp_data (UINT8 data_len, UINT8 *p_scan_rsp);
 
-BOOLEAN btsnd_hcic_ble_set_adv_enable (UINT8 adv_enable);
+UINT8 btsnd_hcic_ble_set_adv_enable (UINT8 adv_enable);
 
-BOOLEAN btsnd_hcic_ble_set_scan_params (UINT8 scan_type,
+UINT8 btsnd_hcic_ble_set_scan_params (UINT8 scan_type,
                                         UINT16 scan_int, UINT16 scan_win,
                                         UINT8 addr_type, UINT8 scan_filter_policy);
 
-BOOLEAN btsnd_hcic_ble_set_scan_enable (UINT8 scan_enable, UINT8 duplicate);
-
+UINT8 btsnd_hcic_ble_set_scan_enable (UINT8 scan_enable, UINT8 duplicate);
 BOOLEAN btsnd_hcic_ble_create_ll_conn (UINT16 scan_int, UINT16 scan_win,
                                        UINT8 init_filter_policy, UINT8 addr_type_peer, BD_ADDR bda_peer, UINT8 addr_type_own,
                                        UINT16 conn_int_min, UINT16 conn_int_max, UINT16 conn_latency, UINT16 conn_timeout,
@@ -947,6 +967,10 @@ typedef struct {
 } tHCI_ExtConnParams;
 
 typedef struct {
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    UINT8 adv_handle;
+    UINT8 subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     UINT8 filter_policy;
     UINT8 own_addr_type;
     UINT8 peer_addr_type;
@@ -1013,7 +1037,7 @@ UINT8 btsnd_hcic_ble_clear_adv_set(void);
 UINT8 btsnd_hcic_ble_set_periodic_adv_params(UINT8 adv_handle,
                                                                      UINT16 interval_min,
                                                                      UINT16 interval_max,
-                                                                     UINT8 propertics);
+                                                                     UINT16 propertics);
 
 UINT8 btsnd_hcic_ble_set_periodic_adv_data(UINT8 adv_handle,
                                                                   UINT8 operation,
@@ -1032,8 +1056,13 @@ UINT8 btsnd_hcic_ble_ext_scan_enable(UINT8 enable, UINT8 filter_dups,
 
 BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn);
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn);
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
+
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
+                                                                       UINT16 skip,
                                                                        UINT16 sync_timeout, UINT8 sync_cte_type);
 
 UINT8 btsnd_hcic_ble_periodic_adv_create_sync_cancel(void);
@@ -1092,11 +1121,11 @@ UINT8 btsnd_hcic_ble_set_default_periodic_adv_sync_trans_params(UINT8 mode, UINT
 #define HCIC_PARAM_SIZE_ISO_ACCEPT_CIS_REQ_PARAMS         2
 #define HCIC_PARAM_SIZE_ISO_REJECT_CIS_REQ_PARAMS         3
 #define HCIC_PARAM_SIZE_ISO_READ_LINK_QUALITY_PARAMS      2
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #define HCIC_PARAM_SIZE_BIG_CREATE_PARAMS                 31
 #define HCIC_PARAM_SIZE_BIG_CREATE_TEST_PARAMS            36
 #define HCIC_PARAM_SIZE_BIG_TERMINATE_PARAMS              2
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define HCIC_PARAM_SIZE_BIG_SYNC_CREATE_PARAMS            55
 #define HCIC_PARAM_SIZE_BIG_SYNC_TERMINATE_PARAMS         1
@@ -1147,7 +1176,7 @@ UINT8 btsnd_hcic_ble_iso_accept_cis_req(uint16_t cis_handle);
 UINT8 btsnd_hcic_ble_iso_reject_cis_req(uint16_t cis_handle, uint8_t reason);
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 UINT8 btsnd_hcic_ble_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
                                 uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
                                 uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
@@ -1160,7 +1189,7 @@ UINT8 btsnd_hcic_ble_big_create_test(uint8_t big_handle, uint8_t adv_handle, uin
                                     uint8_t pto, uint8_t encryption, uint8_t *broadcast_code);
 
 UINT8 btsnd_hcic_ble_big_terminate(uint8_t big_handle, uint8_t reason);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 UINT8 btsnd_hcic_ble_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
@@ -1242,5 +1271,83 @@ UINT8 btsnd_hcic_ble_subrate_request(UINT16 conn_handle, UINT16 subrate_min, UIN
 #define HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS_V2    3
 UINT8 btsnd_hcic_ble_set_host_feature(uint16_t bit_num, uint8_t bit_val);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+typedef struct {
+	uint8_t subevent;
+	uint8_t response_slot_start;
+	uint8_t response_slot_count;
+    uint8_t subevent_data_len;
+	uint8_t data[251];
+} ble_subevent_params;
+
+#define HCIC_PARAM_SIZE_SET_PA_SUBEVT_DATA_PARAMS_LEN               2
+#define HCIC_PARAM_SIZE_SET_PA_RESPONSE_DATA_PARAMS_LEN             8
+#define HCIC_PARAM_SIZE_SET_PA_SYNC_SUBEVT_PARAMS_LEN               5
+
+#define HCIC_PARAM_SIZE_SET_PERIODIC_ADV_PARAMS_V2                  12
+UINT8 btsnd_hcic_ble_set_periodic_adv_params_v2(UINT8 adv_handle, UINT16 interval_min, UINT16 interval_max,
+                                                UINT16 propertics, UINT8 num_subevents, UINT8 subevent_interval,
+                                                UINT8 rsp_slot_delay, UINT8 rsp_slot_spacing, UINT8 num_rsp_slots);
+UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_subevents_with_data, ble_subevent_params *subevent_params);
+UINT8 btsnd_hcic_ble_set_periodic_adv_rsp_data(UINT16 sync_handle, UINT16 req_evt, UINT8 req_subevt, UINT8 rsp_subevt, UINT8 rsp_slot, UINT8 rsp_data_len, UINT8 *rsp_data);
+UINT8 btsnd_hcic_ble_set_periodic_sync_subevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+UINT8 btsnd_hcic_ble_set_ext_adv_params_v2(UINT8 adv_handle, UINT16 properties, UINT32 interval_min,
+                                          UINT32 interval_max, UINT8 channel_map, UINT8 own_addr_type,
+                                          UINT8 peer_addr_type, BD_ADDR peer_addr,
+                                          UINT8 adv_filter_policy, INT8 adv_tx_power,
+                                          UINT8 primary_adv_phy, UINT8 secondary_adv_max_skip,
+                                          UINT8 secondary_adv_phy,
+                                          UINT8 adv_sid, UINT8 scan_req_ntf_enable,
+                                          UINT8 primary_adv_phy_options, UINT8 secondary_adv_phy_options);
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#define HCIC_PARAM_SIZE_READ_LOCAL_SUPP_CAPS_PARAMS_LEN         0
+#define HCIC_PARAM_SIZE_READ_REMOTE_SUPP_CAPS_PARAMS_LEN        2
+#define HCIC_PARAM_SIZE_WRITE_CACHE_REMOTE_SUPP_CAPS_PARAMS_LEN        30
+#define HCIC_PARAM_SIZE_SECURITY_ENABLE_PARAMS_LEN              2
+#define HCIC_PARAM_SIZE_SET_DEFAULT_SETTINGS_PARAMS_LEN         5
+#define HCIC_PARAM_SIZE_READ_REMOTE_FAE_TAB_PARAMS_LEN          2
+#define HCIC_PARAM_SIZE_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS_LEN  74
+#define HCIC_PARAM_SIZE_CREATE_CONFIG_PARAMS_LEN                28
+#define HCIC_PARAM_SIZE_REMOVE_CONFIG_PARAMS_LEN                3
+#define HCIC_PARAM_SIZE_SET_CHANNEL_CLASS_PARAMS_LEN            10
+#define HCIC_PARAM_SIZE_SET_PROCEDURE_PARAMS_LEN                23
+#define HCIC_PARAM_SIZE_SET_PROCEDURE_ENABLE_PARAMS_LEN         4
+
+UINT8 btsnd_hcic_ble_cs_read_local_supported_caps(void);
+UINT8 btsnd_hcic_ble_cs_read_remote_supported_capabilities(UINT16 conn_handle);
+UINT8 btsnd_hcic_ble_cs_write_cached_remote_supported_capabilities(UINT16 conn_handle, UINT8 num_config_supported, UINT16 max_consecutive_proc_supported,
+                                                                    UINT8 num_ant_supported, UINT8 max_ant_paths_supported, UINT8 roles_supported,
+                                                                    UINT8 modes_supported, UINT8 rtt_capability, UINT8 rtt_aa_only_n,
+                                                                    UINT8 rtt_sounding_n, UINT8 rtt_random_payload_n, UINT16 NADM_sounding_capability,
+                                                                    UINT16 NADM_random_capability, UINT8  cs_sync_phys_supported, UINT16 subfeatures_supported,
+                                                                    UINT16 T_IP1_times_supported, UINT16 T_IP2_times_supported, UINT16 T_FCS_times_supported,
+                                                                    UINT16 T_PM_times_supported, UINT8 T_SW_times_supported, UINT8 TX_SNR_capability);
+
+UINT8 btsnd_hcic_ble_cs_security_enable(UINT16 conn_handle);
+UINT8 btsnd_hcic_ble_cs_set_default_settings(UINT16 conn_handle, UINT8 role_enable, UINT8 cs_sync_ant_selection, INT8 max_tx_power);
+UINT8 btsnd_hcic_ble_cs_read_remote_fae_table(UINT16 conn_handle);
+UINT8 btsnd_hcic_ble_cs_write_cached_remote_fae_table(UINT16 conn_handle, UINT8 *remote_fae_table);
+UINT8 btsnd_hcic_ble_cs_create_config(UINT16 conn_handle, UINT8 config_id, UINT8 create_context,
+                                UINT8 main_mode_type, UINT8 sub_mode_type, UINT8 min_main_mode_steps,
+                                UINT8 max_main_mode_steps, UINT8 main_mode_repetition, UINT8 mode_0_steps,
+                                UINT8 role, UINT8 rtt_type, UINT8 cs_sync_phy, UINT8 *channel_map,
+                                UINT8 channel_map_repetition, UINT8 channel_selection_type, UINT8 ch3c_shape,
+                                UINT8 ch3c_jump,UINT8 reserved);
+UINT8 btsnd_hcic_ble_cs_remove_config(UINT16 conn_handle, UINT8 config_id);
+UINT8 btsnd_hcic_ble_cs_set_channel_classification(UINT8 *channel_class);
+UINT8 btsnd_hcic_ble_cs_set_procedure_params(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+                                UINT16 min_procedure_interval, UINT16 max_procedure_interval,
+                                UINT16 max_procedure_count, UINT32 min_subevent_len,
+                                UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
+                                UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
+                                UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
+UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 #endif

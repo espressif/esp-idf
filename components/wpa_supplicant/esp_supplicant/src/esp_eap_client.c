@@ -60,6 +60,7 @@ static struct eap_sm *gEapSm = NULL;
 
 static int eap_peer_sm_init(void);
 static void eap_peer_sm_deinit(void);
+static void eap_start_eapol(void *ctx, void *data);
 
 static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
 static int wpa2_start_eapol_internal(void);
@@ -529,6 +530,10 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
         return ESP_FAIL;
     }
 
+    if (!sm->eap_process_started) {
+        sm->eap_process_started = true;
+        eloop_cancel_timeout(eap_start_eapol, NULL, NULL);
+    }
     if (len < sizeof(*hdr) + sizeof(*ehdr)) {
         wpa_printf(MSG_DEBUG, "WPA: EAPOL frame too short to be a WPA "
                    "EAPOL-Key (len %lu, expecting at least %lu)",
@@ -612,13 +617,26 @@ _out:
     return ret;
 }
 
-static int wpa2_start_eapol(void)
+static void eap_start_eapol(void *ctx, void *data)
 {
 #ifdef USE_WPA2_TASK
-    return wpa2_post(SIG_WPA2_START, 0);
+    wpa2_post(SIG_WPA2_START, 0);
 #else
-    return wpa2_start_eapol_internal();
+    wpa2_start_eapol_internal();
 #endif
+}
+
+static int eap_start_eapol_timer(void)
+{
+    /*
+     * Do not send EAPOL-Start immediately since in most cases,
+     * Authenticator is going to start authentication immediately
+     * after association and an extra EAPOL-Start is just going to
+     * delay authentication. Use a short timeout to send the first
+     * EAPOL-Start if Authenticator does not start authentication.
+     */
+    eloop_register_timeout(2, 0, eap_start_eapol, NULL, NULL);
+    return 0;
 }
 
 static int wpa2_start_eapol_internal(void)
@@ -739,6 +757,7 @@ static int eap_peer_sm_init(void)
     wpa_printf(MSG_INFO, "wifi_task prio:%d, stack:%d", WPA2_TASK_PRIORITY, WPA2_TASK_STACK_SIZE);
 #endif
     sm->workaround = 1;
+    sm->eap_process_started = false;
     return ESP_OK;
 
 _err:
@@ -806,7 +825,7 @@ static esp_err_t esp_client_enable_fn(void *arg)
     }
 
     wpa2_cb->wpa2_sm_rx_eapol = wpa2_ent_rx_eapol;
-    wpa2_cb->wpa2_start = wpa2_start_eapol;
+    wpa2_cb->wpa2_start = eap_start_eapol_timer;
     wpa2_cb->wpa2_init = eap_peer_sm_init;
     wpa2_cb->wpa2_deinit = eap_peer_sm_deinit;
 
@@ -820,6 +839,8 @@ static esp_err_t esp_client_enable_fn(void *arg)
     }
 #endif
     g_wpa_config_changed = true;
+    /* Enable opportunistic key caching support */
+    esp_wifi_set_okc_support(true);
     return ESP_OK;
 }
 
@@ -839,9 +860,6 @@ esp_err_t esp_wifi_sta_enterprise_enable(void)
     wifi_wpa2_param_t param;
     esp_err_t ret;
     struct wpa_sm *sm = &gWpaSm;
-
-    /* Enable opportunistic key caching support */
-    esp_wifi_set_okc_support(true);
 
     wpa2_api_lock();
 
@@ -868,6 +886,58 @@ esp_err_t esp_wifi_sta_enterprise_enable(void)
     return ret;
 }
 
+static void eap_globals_reset(void)
+{
+    os_free(g_wpa_anonymous_identity);
+    g_wpa_anonymous_identity = NULL;
+    g_wpa_anonymous_identity_len = 0;
+
+    os_free(g_wpa_username);
+    g_wpa_username = NULL;
+    g_wpa_username_len = 0;
+
+    g_wpa_client_cert = NULL;
+    g_wpa_client_cert_len = 0;
+
+    g_wpa_private_key = NULL;
+    g_wpa_private_key_len = 0;
+
+    g_wpa_private_key_passwd = NULL;
+    g_wpa_private_key_passwd_len = 0;
+
+    g_wpa_ca_cert = NULL;
+    g_wpa_ca_cert_len = 0;
+
+    os_free(g_wpa_password);
+    g_wpa_password = NULL;
+    g_wpa_password_len = 0;
+
+    os_free(g_wpa_new_password);
+    g_wpa_new_password = NULL;
+    g_wpa_new_password_len = 0;
+
+    g_wpa_ttls_phase2_type = NULL;
+    os_free(g_wpa_phase1_options);
+    g_wpa_phase1_options = NULL;
+
+    os_free(g_wpa_pac_file);
+    g_wpa_pac_file = NULL;
+    g_wpa_pac_file_len = 0;
+
+    g_wpa_suiteb_certification = false;
+
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    g_wpa_default_cert_bundle = false;
+    esp_crt_bundle_attach_fn = NULL;
+#endif
+
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+    os_free(g_wpa_domain_match);
+    g_wpa_domain_match = NULL;
+#endif
+    g_eap_method_mask = ESP_EAP_TYPE_ALL;
+}
+
 static esp_err_t eap_client_disable_fn(void *param)
 {
     struct wpa_sm *sm = &gWpaSm;
@@ -878,6 +948,7 @@ static esp_err_t eap_client_disable_fn(void *param)
         eap_peer_sm_deinit();
     }
 
+    eap_globals_reset();
 #ifdef EAP_PEER_METHOD
     eap_peer_unregister_methods();
 #endif
@@ -896,6 +967,7 @@ esp_err_t esp_wifi_sta_enterprise_disable(void)
 
     if (wpa2_is_disabled()) {
         wpa_printf(MSG_INFO, "EAP: already disabled");
+        eap_globals_reset();
         wpa2_api_unlock();
         return ESP_OK;
     }
@@ -1274,4 +1346,15 @@ esp_err_t esp_eap_client_set_domain_name(const char *domain_name)
 
     return ESP_OK;
 #endif
+}
+
+esp_err_t esp_eap_client_set_eap_methods(esp_eap_method_t methods)
+{
+
+    if ((methods & ~ESP_EAP_TYPE_ALL) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    g_eap_method_mask = methods;
+    return ESP_OK;
 }

@@ -44,6 +44,7 @@
 - :ref:`ppa-client-registration` - 涵盖如何注册 PPA 客户端来执行一切 PPA 操作。
 - :ref:`ppa-register-callback` - 涵盖如何将用户特定代码挂接到 PPA 驱动程序事件回调函数。
 - :ref:`ppa-perform-operation` - 涵盖如何执行 PPA 操作。
+- :ref:`ppa-buffer-alignment` - 涵盖 PPA 输入和输出缓冲区的内存对齐要求。
 - :ref:`ppa-thread-safety`- 涵盖在线程安全方面使用 PPA 操作 API 的情况。
 - :ref:`ppa-performance-overview` - 涵盖 PPA 操作的性能。
 
@@ -93,6 +94,10 @@ PPA 操作包括：
     - 输出块的宽度/高度完全由输入块的宽度/高度、缩放因子和旋转角度决定，因此无需配置输出块的宽度/高度。但请确保输出块可以适应输出图片中的偏移位置。
     - 如果输入或输出图片的色彩模式为 ``PPA_SRM_COLOR_MODE_YUV420``，那么其 ``pic_w``、``pic_h``、``block_w``、``block_h``、``block_offset_x`` 以及 ``block_offset_y`` 字段必须为偶数。
 
+.. note::
+
+    PPA SRM 内部使用双线性缩放算法进行处理。因此，缩放后的图片边缘可能会出现色差和对比度损失。
+
 叠加
 ~~~~
 
@@ -124,6 +129,28 @@ PPA 操作包括：
 调用 :cpp:func:`ppa_do_fill` 填充图片内部的目标块。
 
 :cpp:type:`ppa_trans_mode_t` 为可配置字段，适用于所有 PPA 操作 API。可以配置该字段，在调用 PPA 操作 API 时等待操作完成后再返回，或者在事务推送到内部队列后立即返回。
+
+.. _ppa-buffer-alignment:
+
+缓存区对齐要求
+^^^^^^^^^^^^^^
+
+PPA 缓存区需要满足以下对齐要求，以确保存储器访问的正确性：
+
+- 缓冲行对齐（仅针对输出缓存区）：
+
+    - ``out.buffer`` 地址和 ``out.buffer_size`` 大小必须与缓冲行大小对齐（请参阅 Kconfig 选项 :ref:`CONFIG_CACHE_L2_CACHE_LINE_SIZE`）。
+
+- 存储加密对齐（当存储加密启用且缓冲区位于外部存储空间时）：
+
+    - 块的字节宽度必须与 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节对齐。
+    - 块每行的起始地址必须与 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节对齐。
+
+    此外，当访问加密外部存储空间时，PPA 的 DMA 数据突发长度必须大于或等于 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节。如果配置的突发长度小于该值，驱动程序将自动增加到满足该要求。
+
+    .. warning::
+
+        SRM 引擎以宏块为单位处理图片，而宏块的对齐无法受到控制，因此如果缓冲区位于外部存储空间，则 SRM 操作在存储加密的情况下无法正常工作。
 
 .. _ppa-thread-safety:
 

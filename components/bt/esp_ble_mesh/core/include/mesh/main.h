@@ -4,7 +4,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -619,9 +619,11 @@ int bt_mesh_resume(void);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
-                      uint8_t flags, uint32_t iv_index, uint16_t addr,
-                      const uint8_t dev_key[16]);
+int bt_mesh_pre_provision(const uint8_t net_key[16], uint16_t net_idx,
+                          uint8_t flags, uint32_t iv_index, uint16_t addr,
+                          const uint8_t dev_key[16]);
+
+void bt_mesh_provision(void);
 
 /** @brief Check if the device is an unprovisioned device
  *         and will act as a node once provisioned.

@@ -84,7 +84,7 @@ extern portMUX_TYPE g_touch_spinlock;
  *
  */
 struct touch_sensor_s {
-    touch_channel_handle_t  ch[SOC_TOUCH_SENSOR_NUM];   /*!< Touch sensor channel handles, will be NULL if the channel is not registered */
+    touch_channel_handle_t  ch[TOUCH_LL_GET(CHAN_NUM)];   /*!< Touch sensor channel handles, will be NULL if the channel is not registered */
     uint32_t                chan_mask;                  /*!< Enabled channel mask, corresponding bit will be set if the channel is registered */
     uint32_t                src_freq_hz;                /*!< Source clock frequency */
     uint32_t                interval_freq_hz;           /*!< Frequency of the interval clock */
@@ -151,8 +151,6 @@ struct touch_channel_s {
     bool                    is_active;                  /*!< Flag to indicate whether the channel is active */
 #endif
 };
-
-extern touch_sensor_handle_t g_touch;  /*!< Global touch sensor controller handle for `esp_driver_touch_sens` use only */
 
 /**
  * @brief Touch sensor module enable interface

@@ -37,7 +37,8 @@ esp_err_t esp_ble_helper_init(void)
         return err;
     }
 
-    err = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    err = esp_bluedroid_init_with_cfg(&cfg);
     if (err) {
         ESP_LOGE(TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(err));
         return err;

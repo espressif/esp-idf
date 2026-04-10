@@ -40,22 +40,26 @@ void btc_ble_mesh_odp_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_ODP_CLIENT_SEND:
+        dst->odp_send.params= NULL;
+        dst->odp_send.msg= NULL;
+
         dst->odp_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        if (dst->odp_send.params) {
-            memcpy(dst->odp_send.params, src->odp_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-        } else {
+        if (!dst->odp_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
             break;
         }
+        memcpy(dst->odp_send.params, src->odp_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
         if (src->odp_send.msg) {
             dst->odp_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_odp_client_msg_t));
-            if (dst->odp_send.msg) {
-                memcpy(dst->odp_send.msg, src->odp_send.msg,
-                       sizeof(esp_ble_mesh_odp_client_msg_t));
-            } else {
+            if (!dst->odp_send.msg) {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->odp_send.params);
+                dst->odp_send.params = NULL;
+                break;
             }
+            memcpy(dst->odp_send.msg, src->odp_send.msg, sizeof(esp_ble_mesh_odp_client_msg_t));
         }
         break;
     default:

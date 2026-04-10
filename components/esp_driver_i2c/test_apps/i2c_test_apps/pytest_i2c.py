@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -15,6 +16,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_i2c(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -23,30 +25,15 @@ def test_i2c(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'count, config',
     [
-        (
-            2,
-            'defaults',
-        ),
-        (
-            2,
-            'release',
-        ),
-        (
-            2,
-            'iram_safe',
-        ),
+        (2, 'defaults'),
+        (2, 'release'),
+        (2, 'iram_safe'),
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target',
-    ['esp32', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'],
-    indirect=['target'],
-)
+@idf_parametrize('target', soc_filtered_targets('SOC_I2C_SUPPORTED == 1'), indirect=['target'])
 def test_i2c_multi_device(case_tester) -> None:  # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True)
 
 
 @pytest.mark.flash_suspend

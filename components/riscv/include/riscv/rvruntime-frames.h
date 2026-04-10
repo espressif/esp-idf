@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -179,6 +179,36 @@ STRUCT_END(RvHWLPSaveArea)
 #endif /* SOC_CPU_HAS_HWLOOP */
 
 
+#if SOC_CPU_HAS_DSP
+
+/* DSP coprocessor is considered coprocessor 1, just like the HWLP, make sure both are not present on the same target */
+#define DSP_COPROC_IDX      1
+
+#ifdef SOC_CPU_HAS_HWLOOP
+#error  "HWLP and DSP share the same coprocessor index!"
+#endif
+
+/**
+ * @brief DSP save area
+ */
+STRUCT_BEGIN
+STRUCT_FIELD (long, 4,  RV_DSP_XACC_L,   xacc_l)
+STRUCT_FIELD (long, 4,  RV_DSP_XACC_H,   xacc_h)
+STRUCT_FIELD (long, 4,  RV_DSP_SAR,      sar)
+STRUCT_FIELD (long, 4,  RV_DSP_STATUS,   status)
+STRUCT_END(RvDSPSaveArea)
+
+/* Redefine the coprocessor area size previously defined to 0 */
+#undef RV_COPROC1_SIZE
+
+#if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
+    #define RV_COPROC1_SIZE RvDSPSaveAreaSize
+#else
+    #define RV_COPROC1_SIZE sizeof(RvDSPSaveArea)
+#endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
+
+#endif /* SOC_CPU_HAS_DSP */
+
 
 #if SOC_CPU_HAS_PIE
 
@@ -203,8 +233,8 @@ STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_L,  qacc_h_l,   4)
 STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_H,  qacc_h_h,   4)
 STRUCT_AFIELD (long, 4,  RV_PIE_UA_STATE,  ua_state,   4)
 STRUCT_FIELD  (long, 4,  RV_PIE_XACC,      xacc)
-/* This register contains SAR, SAR_BYTES and FFT_BIT_WIDTH in this order (from top to low) */
-STRUCT_FIELD  (long,    4,  RV_PIE_MISC,      misc)
+/* misc field contains registers: XACC (upper byte) [7:0], FFT_BIT_WIDTH [11:8], SAR_BYTES [15:12], and SAR [21:16] */
+STRUCT_FIELD  (long, 4,  RV_PIE_MISC,      misc)
 STRUCT_END(RvPIESaveArea)
 
 /* Redefine the coprocessor area size previously defined to 0 */

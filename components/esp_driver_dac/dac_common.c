@@ -8,7 +8,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
-#include "soc/dac_periph.h"
+#include "hal/dac_periph.h"
 #include "hal/dac_types.h"
 #include "hal/dac_ll.h"
 #include "esp_private/gpio.h"

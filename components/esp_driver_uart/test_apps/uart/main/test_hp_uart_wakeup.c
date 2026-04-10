@@ -39,6 +39,12 @@
 #elif CONFIG_IDF_TARGET_ESP32C5
 #define DEFAULT_UART1_TX_IO_NUM     GPIO_NUM_2
 #define DEFAULT_UART1_RX_IO_NUM     GPIO_NUM_3
+#elif CONFIG_IDF_TARGET_ESP32H21
+#define DEFAULT_UART1_TX_IO_NUM     GPIO_NUM_4
+#define DEFAULT_UART1_RX_IO_NUM     GPIO_NUM_5
+#elif CONFIG_IDF_TARGET_ESP32H4
+#define DEFAULT_UART1_TX_IO_NUM     GPIO_NUM_15
+#define DEFAULT_UART1_RX_IO_NUM     GPIO_NUM_16
 #endif
 
 #define MASTER_UART_NUM         (1)
@@ -50,6 +56,7 @@
 #define UART_BAUD_RATE          (115200)
 #define BUF_SIZE                (1024)
 #define TIMER_WAKEUP_TIME_US    (1 * 100 * 1000)
+#define UART_READ_TOUT          (pdMS_TO_TICKS(500))
 
 static void force_stdout(void)
 {
@@ -125,14 +132,15 @@ void send_and_verify_recived_data(const char* message, uint8_t length, bool shou
     uart_flush_input(MASTER_UART_NUM);
     uart_write_bytes(MASTER_UART_NUM, message, length);
     /* Wait for uart write finish */
-    uart_wait_tx_idle_polling(MASTER_UART_NUM);
+    uart_wait_tx_done(MASTER_UART_NUM, portMAX_DELAY);
 
     bool wake_up_detected = false;
     const char *target = "Wakeup OK!";
     int target_len = 11;
     bool match = true;
     char *data = (char *) malloc(BUF_SIZE);
-    int len = uart_read_bytes(MASTER_UART_NUM, data, target_len, 5000 / portTICK_PERIOD_MS);
+    int len = uart_read_bytes(MASTER_UART_NUM, data, target_len, UART_READ_TOUT);
+    *(data + len) = '\0';
 
     if (len > 0) {
         if (len != target_len) {
@@ -199,20 +207,20 @@ static void enter_sleep_and_send_respond(void)
     printf("sleep duration: %lld\n", t_after_us - t_before_us);
 
     /* Determine the reason for uart wakeup */
-    switch (esp_sleep_get_wakeup_cause()) {
-    case ESP_SLEEP_WAKEUP_UART:
+    if (esp_sleep_get_wakeup_causes() & (BIT(ESP_SLEEP_WAKEUP_UART + SLAVE_UART_NUM))) {
         /* Hang-up for a while to switch and execute the uart task
-            * Otherwise the chip may fall sleep again before running uart task */
+         * Otherwise the chip may fall sleep again before running uart task */
         vTaskDelay(1);
         uart_write_bytes(SLAVE_UART_NUM, "Wakeup OK!", 11);
-        break;
-    default:
+    } else {
         uart_write_bytes(SLAVE_UART_NUM, "Wakeup failed!", 15);
-        break;
     }
 
     /* Wait for uart write finish */
-    uart_wait_tx_idle_polling(SLAVE_UART_NUM);
+    uart_wait_tx_done(MASTER_UART_NUM, portMAX_DELAY);
+
+    /* Wait for Master read data, otherwise the UART_INTR_TX_BRK_DONE intr will be triggered*/
+    vTaskDelay(UART_READ_TOUT);
 }
 
 // slave

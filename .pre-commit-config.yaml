@@ -9,27 +9,7 @@ repos:
     hooks:
       - id: ruff-format
       - id: ruff
-        args: [ "--fix" ]
-  - repo: local
-    hooks:
-      - id: pytest-linter
-        name: Pytest Linter Check
-        entry: tools/ci/check_test_files.py
-        language: python
-        files: 'pytest_.*\.py$'
-        require_serial: true
-        additional_dependencies:
-          - pytest-embedded-idf[serial]~=1.16
-          - pytest-embedded-jtag~=1.16
-          - pytest-embedded-qemu~=1.16
-          - pytest-ignore-test-results~=0.3
-          - pytest-rerunfailures
-          - pytest-timeout
-          - idf-build-apps~=2.8
-          - python-gitlab
-          - minio
-          - click
-          - esp-idf-monitor
+        args: [ "--fix", "--show-fixes" ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -51,6 +31,7 @@ repos:
             .*.pb-c.c|
             .*.yuv|
             .*.rgb|
+            .*.gray|
             .*COPYING.*|
             docs/sphinx-known-warnings\.txt
           )$
@@ -59,6 +40,7 @@ repos:
       - id: check-executables-have-shebangs
       - id: mixed-line-ending
         args: ['-f=lf']
+        exclude: *whitespace_excludes
       - id: double-quote-string-fixer
       - id: no-commit-to-branch
         name: Do not use more than one slash in the branch name
@@ -135,7 +117,7 @@ repos:
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
         language: python
-        files: '^tools/.+'
+        files: '^(tools/.+|.gitlab/ci/rules\.yml)'
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
@@ -159,11 +141,11 @@ repos:
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
         language: python
-        files: 'tools/test_apps/.+|examples/.+|components/.+|tools/idf_py_actions/constants.py|tools/ci/check_build_test_rules.py'
+        files: 'tools/.+|examples/.+|components/.+'
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps>=2.8,<3
+          - idf-build-apps~=2.13
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -178,15 +160,6 @@ repos:
         files: 'tools/ci/sort_yaml\.py$'
         additional_dependencies:
           - ruamel.yaml
-      - id: check-build-test-rules-path-exists
-        name: check path in .build-test-rules.yml exists
-        entry: tools/ci/check_build_test_rules.py check-exist
-        language: python
-        additional_dependencies:
-          - PyYAML == 5.3.1
-        always_run: true
-        pass_filenames: false
-        require_serial: true
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
@@ -205,7 +178,12 @@ repos:
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
+        files: "tools/ci/(\
+          executable-list\\.txt\
+          |mypy_ignore_list\\.txt\
+          |check_copyright_ignore\\.txt\
+          |exclude_check_tools_files\\.txt\
+        )"
   - repo: https://github.com/espressif/check-copyright/
     rev: v1.1.1
     hooks:
@@ -250,7 +228,12 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.5.0
+    rev: v3.2.0
     hooks:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
+  - repo: https://github.com/espressif/idf-ci
+    rev: v1.0.2
+    hooks:
+      - id: check-tests-missing-config
+        files: 'pytest_.*\.py$|sdkconfig(\..*)?$|\.idf_build_apps\.toml$|\.idf_ci\.toml$'

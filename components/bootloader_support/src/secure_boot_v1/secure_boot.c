@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,6 @@
 #include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
-#include "esp_flash_encrypt.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
@@ -31,7 +30,7 @@
  */
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
-static const char *TAG = "secure_boot_v1";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");
 /**
  *  @function :     secure_boot_generate
  *  @description:   generate boot digest (aka "abstract") & iv
@@ -77,7 +76,7 @@ static bool secure_boot_generate(uint32_t image_len){
 
     ESP_LOGD(TAG, "write iv+digest to flash");
     err = bootloader_flash_write(FLASH_OFFS_SECURE_BOOT_IV_DIGEST, &digest,
-                           sizeof(digest), esp_flash_encryption_enabled());
+                           sizeof(digest), esp_efuse_is_flash_encryption_enabled());
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "SPI write failed: 0x%x", err);
         return false;
@@ -94,6 +93,12 @@ esp_err_t esp_secure_boot_generate_digest(void)
                       " No need to generate digest. continuing..");
         return ESP_OK;
     }
+#if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+    else {
+        ESP_LOGE(TAG, "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif // CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
 
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK_SECURE_BOOT);
     if (coding_scheme != EFUSE_CODING_SCHEME_NONE && coding_scheme != EFUSE_CODING_SCHEME_3_4) {
@@ -149,6 +154,12 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         ESP_LOGI(TAG, "bootloader secure boot is already enabled, continuing..");
         return ESP_OK;
     }
+#if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+    else {
+        ESP_LOGE(TAG, "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif // CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
 
     bool dis_read  = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_BLK2);
     bool dis_write = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK2);

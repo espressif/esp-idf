@@ -1,0 +1,9 @@
+config HAL_GPIO_USE_ROM_IMPL
+    bool "Use ROM implementation of GPIO HAL driver"
+    default y
+    help
+        Enable this flag to use HAL functions from ROM when applicable instead of ESP-IDF.
+
+        If keeping this as "n" in your project, you will have less free IRAM.
+        When compiling an application for a CPU that cannot access to the ROM memory,
+        this option should be disabled.

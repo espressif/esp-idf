@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
 
 # WiFi NVS Config Example
 
@@ -43,7 +43,7 @@ python nvs_partition_gen.py generate nvs_station_data.csv sample_nvs.bin 0x6000
 ### 3) Flash the NVS Binary File to the ESP Device
 
 - Check the offset of the NVS partition in the `partition_example.csv` file.
-- After flashing the build, flash the `sample_nvs.bin` file to the ESP device at the specified offset using `esptool.py`.
+- After flashing the build, flash the `sample_nvs.bin` file to the ESP device at the specified offset using `esptool`.
 - Refer to the [Esptool Documentation](https://docs.espressif.com/projects/esptool/en/latest/esp32/esptool/index.html) for detailed usage.
 
 ### 4) Build and Flash

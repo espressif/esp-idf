@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -62,11 +62,15 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             if (context->json_buffer == NULL) {
                 context->json_buffer = malloc(evt->data_len + 1);
             } else {
-                context->json_buffer = realloc(context->json_buffer, context->json_size + evt->data_len + 1);
-            }
-            if (context->json_buffer == NULL) {
-                ESP_LOGE("HTTP_CLIENT", "Failed to allocate memory for data json_buffer");
-                return ESP_FAIL;
+                char *new_buffer = realloc(context->json_buffer, context->json_size + evt->data_len + 1);
+                if (new_buffer == NULL) {
+                    free(context->json_buffer);
+                    context->json_buffer = NULL;
+                    context->json_size = 0;
+                    ESP_LOGE("HTTP_CLIENT", "Failed to allocate memory for data json_buffer");
+                    return ESP_FAIL;
+                }
+                context->json_buffer = new_buffer;
             }
             memcpy(context->json_buffer + context->json_size, evt->data, evt->data_len);
             context->json_size += evt->data_len;

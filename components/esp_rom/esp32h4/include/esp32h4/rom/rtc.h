@@ -8,8 +8,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "esp_assert.h"
-
 #include "soc/soc.h"
 #include "soc/lp_aon_reg.h"
 #include "soc/reset_reasons.h"
@@ -17,8 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//TODO: [ESP32H4] IDF-12313 inherit from verification branch, need check
 
 /** \defgroup rtc_apis, rtc registers and memory related apis
   * @brief rtc apis
@@ -44,29 +42,35 @@ extern "C" {
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     LP_AON_STORE0_REG       Reserved
+  *     LP_AON_STORE0_REG       RTC fix us, high 32 bits
   *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
   *     LP_AON_STORE2_REG       Boot time, low word
   *     LP_AON_STORE3_REG       Boot time, high word
-  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE4_REG       Status of whether to disable LOG from ROM at bit[0]
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
-  *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE7_REG       RTC fix us, low 32 bits
   *     LP_AON_STORE8_REG       Store light sleep wake stub addr
   *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
+  *
+  * Since esp32h4 does not support RTC mem, so use LP_AON store regs to record rtc time:
+  *
+  * |------------------------|----------------------------------------|
+  * |   LP_AON_STORE0_REG    |   LP_AON_STORE7_REG                    |
+  * |   rtc_fix_us(MSB)      |   rtc_fix_us(LSB)                      |
+  * |------------------------|----------------------------------------|
   */
 #define RTC_FIX_US_HIGH_REG                 LP_AON_STORE0_REG
 #define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
 #define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
 #define RTC_FIX_US_LOW_REG                  LP_AON_STORE7_REG
-#define LIGHT_SLEEP_WAKE_STUB_ADDR_REG      LP_AON_STORE8_REG
-#define SLEEP_MODE_REG                      LP_AON_STORE9_REG
+#define RTC_SLEEP_WAKE_STUB_ADDR_REG        LP_AON_STORE8_REG
+#define RTC_SLEEP_MODE_REG                  LP_AON_STORE9_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 
@@ -81,7 +85,6 @@ typedef enum {
     POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
     RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core (hp system)*/
     DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core (hp system)*/
-    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core (hp system)*/
     TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core (hp system)*/
     TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core (hp system)*/
     RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core (hp system)*/
@@ -92,10 +95,13 @@ typedef enum {
     RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
     TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
     SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
+    GLITCH_RTC_RESET       = 19,    /**<19, glitch reset*/
     EFUSE_RESET            = 20,    /**<20, efuse reset digital core (hp system)*/
     USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core (hp system)*/
     USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core (hp system)*/
     JTAG_RESET             = 24,    /**<24, jtag reset CPU*/
+    RTC_PWR_GLITCH_RESET   = 25,    /**<25, RTC power glitch reset system*/
+    CPU_LOCKUP_RESET       = 26,    /**<26, cpu lockup reset*/
 } RESET_REASON;
 
 // Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h
@@ -112,10 +118,12 @@ ESP_STATIC_ASSERT((soc_reset_reason_t)RTCWDT_BROWN_OUT_RESET == RESET_REASON_SYS
 ESP_STATIC_ASSERT((soc_reset_reason_t)RTCWDT_RTC_RESET == RESET_REASON_SYS_RTC_WDT, "RTCWDT_RTC_RESET != RESET_REASON_SYS_RTC_WDT");
 ESP_STATIC_ASSERT((soc_reset_reason_t)TG1WDT_CPU_RESET == RESET_REASON_CPU0_MWDT1, "TG1WDT_CPU_RESET != RESET_REASON_CPU0_MWDT1");
 ESP_STATIC_ASSERT((soc_reset_reason_t)SUPER_WDT_RESET == RESET_REASON_SYS_SUPER_WDT, "SUPER_WDT_RESET != RESET_REASON_SYS_SUPER_WDT");
+ESP_STATIC_ASSERT((soc_reset_reason_t)GLITCH_RTC_RESET == RESET_REASON_CORE_PWR_GLITCH, "GLITCH_RTC_RESET != RESET_REASON_CORE_PWR_GLITCH");
 ESP_STATIC_ASSERT((soc_reset_reason_t)EFUSE_RESET == RESET_REASON_CORE_EFUSE_CRC, "EFUSE_RESET != RESET_REASON_CORE_EFUSE_CRC");
 ESP_STATIC_ASSERT((soc_reset_reason_t)USB_UART_CHIP_RESET == RESET_REASON_CORE_USB_UART, "USB_UART_CHIP_RESET != RESET_REASON_CORE_USB_UART");
 ESP_STATIC_ASSERT((soc_reset_reason_t)USB_JTAG_CHIP_RESET == RESET_REASON_CORE_USB_JTAG, "USB_JTAG_CHIP_RESET != RESET_REASON_CORE_USB_JTAG");
 ESP_STATIC_ASSERT((soc_reset_reason_t)JTAG_RESET == RESET_REASON_CPU0_JTAG, "JTAG_RESET != RESET_REASON_CPU0_JTAG");
+ESP_STATIC_ASSERT((soc_reset_reason_t)CPU_LOCKUP_RESET == RESET_REASON_CPU_LOCKUP, "CPU_LOCKUP_RESET != RESET_REASON_CPU_LOCKUP");
 
 typedef enum {
     NO_SLEEP        = 0,
@@ -215,7 +223,7 @@ void esp_rom_set_rtc_wake_addr(esp_rom_wake_func_t entry_addr, size_t length);
 static inline void rtc_suppress_rom_log(void)
 {
     /* To disable logging in the ROM, only the least significant bit of the register is used,
-     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * but this register was also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG) on old targets,
      * you need to write to this register in the same format.
      * Namely, the upper 16 bits and lower should be the same.
      */

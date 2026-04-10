@@ -14,8 +14,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12321 inherit from verification branch, need check
-
 /** \defgroup ets_sys_apis, ets system related apis
   * @brief ets system apis
   */
@@ -93,6 +91,8 @@ extern const char *const exc_cause_table[40];   ///**< exception cause that defi
   * @return None
   */
 void ets_set_user_start(uint32_t start);
+
+void ets_set_appcpu_boot_addr(uint32_t start);
 
 /**
   * @}
@@ -401,8 +401,6 @@ void ets_intr_unlock(void);
   */
 void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
-void ets_set_appcpu_boot_addr(uint32_t start);
-
 /**
   * @}
   */
@@ -413,17 +411,6 @@ void ets_set_appcpu_boot_addr(uint32_t start);
 #endif
 
 #define ETS_MEM_BAR() asm volatile ( "" : : : "memory" )
-
-#ifdef ESP_PLATFORM
-// Remove in IDF v6.0 (IDF-7044)
-typedef enum {
-    OK = 0,
-    FAIL,
-    PENDING,
-    BUSY,
-    CANCEL,
-} STATUS __attribute__((deprecated("Use ETS_STATUS instead")));
-#endif
 
 /**
   * @}

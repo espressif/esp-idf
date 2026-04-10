@@ -1,0 +1,692 @@
+
+config BLE_COMPRESSED_LOG_ENABLE
+    bool "Enable BLE log compression(Preview, Please read help information)"
+    default n
+    help
+        Compress BLE logs during application build to reduce flash usage
+        and improve output speed. When enabled, log data from Bluetooth
+        Low Energy components will be compressed before storage,
+        optimizing both memory footprint and transmission efficiency.
+
+        Note: This library depends on additional Python packages. It will
+        function correctly only after these dependencies are installed;
+        refer to:
+        "components/bt/common/ble_log/log_compression/README.en.md"
+        for installation instructions.
+
+if BLE_COMPRESSED_LOG_ENABLE
+    menuconfig BLE_MESH_COMPRESSED_LOG_ENABLE
+        bool "Enable BLE Mesh log compression(Preview)"
+        depends on BLE_COMPRESSED_LOG_ENABLE
+        depends on BLE_MESH
+        default n
+        help
+            Apply compression to ESP-BLE-MESH protocol stack logs. Requires
+            base BLE compression to be enabled. Specifically optimizes log
+            storage and transmission for ble mesh.
+
+            Note: This library depends on additional Python packages. It will
+            function correctly only after these dependencies are installed;
+            refer to:
+            "components/bt/common/ble_log/log_compression/README.en.md"
+            for installation instructions.
+
+            If the required packages are not installed, the log-compression
+            mechanism will remain disabled even when this Config is enabled.
+
+    config BLE_MESH_COMPRESSED_LOG_BUFFER_LEN
+        int "BLE Mesh log buffer length"
+        depends on BLE_MESH_COMPRESSED_LOG_ENABLE
+        default 400
+        help
+            Maximum output length for a single log
+
+    if BLE_MESH_COMPRESSED_LOG_ENABLE
+        menu "Select the stack log tag to be compressed"
+            config BLE_MESH_STACK_ERR_LOG_COMPRESSION
+                bool "Compress ERROR log of ESP-BLE-MESH"
+                default y
+                help
+                    The error log in the BLE-MESH component will be compressed
+            config BLE_MESH_STACK_ERR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_MESH_STACK_ERR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_MESH_STACK_WARN_LOG_COMPRESSION
+                bool "Compress warn log of ESP-BLE-MESH"
+                default y
+                help
+                    The warn log in the BLE-MESH component will be compressed
+            config BLE_MESH_STACK_WARN_LOG_PRESERVE
+                bool "Keep the original warn log statement"
+                depends on BLE_MESH_STACK_WARN_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_MESH_STACK_ERR_LOG_PRESERVE
+            config BLE_MESH_STACK_INFO_LOG_COMPRESSION
+                bool "Compress info log of ESP-BLE-MESH"
+                default y
+                help
+                    The info log in the BLE-MESH component will be compressed
+            config BLE_MESH_STACK_INFO_LOG_PRESERVE
+                bool "Keep the original info log statement"
+                depends on BLE_MESH_STACK_INFO_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_MESH_STACK_ERR_LOG_PRESERVE
+            config BLE_MESH_STACK_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of ESP-BLE-MESH"
+                default y
+                help
+                    The debug log in the BLE-MESH component will be compressed
+            config BLE_MESH_STACK_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_MESH_STACK_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_MESH_STACK_ERR_LOG_PRESERVE
+        endmenu
+        menu "Select the net buf log tag to be compressed"
+            config BLE_MESH_NET_BUF_ERR_LOG_COMPRESSION
+                bool "Compress ERROR log of ESP-BLE-MESH"
+                default y
+                help
+                    The error log in the BLE-MESH component will be compressed
+            config BLE_MESH_NET_BUF_ERR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_MESH_NET_BUF_ERR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+            config BLE_MESH_NET_BUF_WARN_LOG_COMPRESSION
+                bool "Compress warn log of ESP-BLE-MESH"
+                default y
+                help
+                    The warn log in the BLE-MESH component will be compressed
+            config BLE_MESH_NET_BUF_WARN_LOG_PRESERVE
+                bool "Keep the original warn log statement"
+                depends on BLE_MESH_NET_BUF_WARN_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_MESH_NET_BUF_ERR_LOG_PRESERVE
+            config BLE_MESH_NET_BUF_INFO_LOG_COMPRESSION
+                bool "Compress info log of ESP-BLE-MESH"
+                default y
+                help
+                    The info log in the BLE-MESH component will be compressed
+            config BLE_MESH_NET_BUF_INFO_LOG_PRESERVE
+                bool "Keep the original info log statement"
+                depends on BLE_MESH_NET_BUF_INFO_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_MESH_NET_BUF_ERR_LOG_PRESERVE
+            config BLE_MESH_NET_BUF_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of ESP-BLE-MESH"
+                default y
+                help
+                    The debug log in the BLE-MESH component will be compressed
+            config BLE_MESH_NET_BUF_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_MESH_NET_BUF_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_MESH_NET_BUF_ERR_LOG_PRESERVE
+        endmenu
+    endif
+
+    menuconfig BLE_HOST_COMPRESSED_LOG_ENABLE
+        bool "Enable BLE Host log compression(Preview, only Bluedroid Host for now)"
+        depends on BLE_COMPRESSED_LOG_ENABLE
+        depends on BT_BLUEDROID_ENABLED
+        default n
+        help
+            Apply compression to host logs. Requires
+            base BLE compression to be enabled. Specifically optimizes log
+            storage and transmission.
+
+            Note: This library depends on additional Python packages. It will
+            function correctly only after these dependencies are installed;
+            refer to:
+            "components/bt/common/ble_log/log_compression/README.en.md"
+            for installation instructions.
+
+    config BLE_HOST_COMPRESSED_LOG_BUFFER_LEN
+        int "Host log buffer length"
+        depends on BLE_HOST_COMPRESSED_LOG_ENABLE
+        default 300
+        help
+                Maximum output length for a single log
+
+    if BLE_HOST_COMPRESSED_LOG_ENABLE
+        menu "Select the BTM layer log tag to be compressed"
+            config BLE_BLUEDROID_BTM_ERROR_LOG_COMPRESSION
+                bool "Compress error log of Bluedroid host"
+                default y
+                help
+                    The error log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_BTM_ERROR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_BLUEDROID_BTM_ERROR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_BLUEDROID_BTM_WARNING_LOG_COMPRESSION
+                bool "Compress warning log of Bluedroid host"
+                default y
+                help
+                    The warning log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_BTM_WARNING_LOG_PRESERVE
+                bool "Keep the original warning log statement"
+                depends on BLE_BLUEDROID_BTM_WARNING_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_BLUEDROID_BTM_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_BTM_API_LOG_COMPRESSION
+                bool "Compress api log of Bluedroid host"
+                default y
+                help
+                    The api log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_BTM_API_LOG_PRESERVE
+                bool "Keep the original api log statement"
+                depends on BLE_BLUEDROID_BTM_API_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_BTM_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_BTM_EVENT_LOG_COMPRESSION
+                bool "Compress event log of Bluedroid host"
+                default y
+                help
+                    The event log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_BTM_EVENT_LOG_PRESERVE
+                bool "Keep the original event log statement"
+                depends on BLE_BLUEDROID_BTM_EVENT_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_BTM_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_BTM_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of Bluedroid host"
+                default y
+                help
+                    The debug log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_BTM_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_BLUEDROID_BTM_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_BTM_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_BTM_VERBOSE_LOG_COMPRESSION
+                bool "Compress verbose log of Bluedroid host"
+                default y
+                help
+                    The verbose log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_BTM_VERBOSE_LOG_PRESERVE
+                bool "Keep the original verbose log statement"
+                depends on BLE_BLUEDROID_BTM_VERBOSE_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_BTM_ERROR_LOG_PRESERVE
+
+        endmenu
+        menu "Select the LA2CAP layer log tag to be compressed"
+            config BLE_BLUEDROID_L2CAP_ERROR_LOG_COMPRESSION
+                bool "Compress error log of Bluedroid host"
+                default y
+                help
+                    The error log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_L2CAP_ERROR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_BLUEDROID_L2CAP_ERROR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_BLUEDROID_L2CAP_WARNING_LOG_COMPRESSION
+                bool "Compress warning log of Bluedroid host"
+                default y
+                help
+                    The warning log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_L2CAP_WARNING_LOG_PRESERVE
+                bool "Keep the original warning log statement"
+                depends on BLE_BLUEDROID_L2CAP_WARNING_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_BLUEDROID_L2CAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_L2CAP_API_LOG_COMPRESSION
+                bool "Compress api log of Bluedroid host"
+                default y
+                help
+                    The api log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_L2CAP_API_LOG_PRESERVE
+                bool "Keep the original api log statement"
+                depends on BLE_BLUEDROID_L2CAP_API_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_L2CAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_L2CAP_EVENT_LOG_COMPRESSION
+                bool "Compress event log of Bluedroid host"
+                default y
+                help
+                    The event log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_L2CAP_EVENT_LOG_PRESERVE
+                bool "Keep the original event log statement"
+                depends on BLE_BLUEDROID_L2CAP_EVENT_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_L2CAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_L2CAP_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of Bluedroid host"
+                default y
+                help
+                    The debug log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_L2CAP_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_BLUEDROID_L2CAP_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_L2CAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_L2CAP_VERBOSE_LOG_COMPRESSION
+                bool "Compress verbose log of Bluedroid host"
+                default y
+                help
+                    The verbose log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_L2CAP_VERBOSE_LOG_PRESERVE
+                bool "Keep the original verbose log statement"
+                depends on BLE_BLUEDROID_L2CAP_VERBOSE_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_L2CAP_ERROR_LOG_PRESERVE
+        endmenu
+        menu "Select the GAP layer log tag to be compressed"
+            config BLE_BLUEDROID_GAP_ERROR_LOG_COMPRESSION
+                bool "Compress error log of Bluedroid host"
+                default y
+                help
+                    The error log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GAP_ERROR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_BLUEDROID_GAP_ERROR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_BLUEDROID_GAP_WARNING_LOG_COMPRESSION
+                bool "Compress warning log of Bluedroid host"
+                default y
+                help
+                    The warning log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GAP_WARNING_LOG_PRESERVE
+                bool "Keep the original warning log statement"
+                depends on BLE_BLUEDROID_GAP_WARNING_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GAP_API_LOG_COMPRESSION
+                bool "Compress api log of Bluedroid host"
+                default y
+                help
+                    The api log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GAP_API_LOG_PRESERVE
+                bool "Keep the original api log statement"
+                depends on BLE_BLUEDROID_GAP_API_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GAP_EVENT_LOG_COMPRESSION
+                bool "Compress event log of Bluedroid host"
+                default y
+                help
+                    The event log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GAP_EVENT_LOG_PRESERVE
+                bool "Keep the original event log statement"
+                depends on BLE_BLUEDROID_GAP_EVENT_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GAP_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of Bluedroid host"
+                default y
+                help
+                    The debug log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GAP_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_BLUEDROID_GAP_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GAP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GAP_VERBOSE_LOG_COMPRESSION
+                bool "Compress verbose log of Bluedroid host"
+                default y
+                help
+                    The verbose log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GAP_VERBOSE_LOG_PRESERVE
+                bool "Keep the original verbose log statement"
+                depends on BLE_BLUEDROID_GAP_VERBOSE_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GAP_ERROR_LOG_PRESERVE
+        endmenu
+        menu "Select the GATT layer log tag to be compressed"
+            config BLE_BLUEDROID_GATT_ERROR_LOG_COMPRESSION
+                bool "Compress error log of Bluedroid host"
+                default y
+                help
+                    The error log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GATT_ERROR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_BLUEDROID_GATT_ERROR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_BLUEDROID_GATT_WARNING_LOG_COMPRESSION
+                bool "Compress warning log of Bluedroid host"
+                default y
+                help
+                    The warning log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GATT_WARNING_LOG_PRESERVE
+                bool "Keep the original warning log statement"
+                depends on BLE_BLUEDROID_GATT_WARNING_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GATT_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GATT_API_LOG_COMPRESSION
+                bool "Compress api log of Bluedroid host"
+                default y
+                help
+                    The api log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GATT_API_LOG_PRESERVE
+                bool "Keep the original api log statement"
+                depends on BLE_BLUEDROID_GATT_API_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GATT_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GATT_EVENT_LOG_COMPRESSION
+                bool "Compress event log of Bluedroid host"
+                default y
+                help
+                    The event log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GATT_EVENT_LOG_PRESERVE
+                bool "Keep the original event log statement"
+                depends on BLE_BLUEDROID_GATT_EVENT_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GATT_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GATT_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of Bluedroid host"
+                default y
+                help
+                    The debug log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GATT_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_BLUEDROID_GATT_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GATT_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_GATT_VERBOSE_LOG_COMPRESSION
+                bool "Compress verbose log of Bluedroid host"
+                default y
+                help
+                    The verbose log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_GATT_VERBOSE_LOG_PRESERVE
+                bool "Keep the original verbose log statement"
+                depends on BLE_BLUEDROID_GATT_VERBOSE_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_GATT_ERROR_LOG_PRESERVE
+        endmenu
+        menu "Select the SMP layer log tag to be compressed"
+            config BLE_BLUEDROID_SMP_ERROR_LOG_COMPRESSION
+                bool "Compress error log of Bluedroid host"
+                default y
+                help
+                    The error log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_SMP_ERROR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_BLUEDROID_SMP_ERROR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_BLUEDROID_SMP_WARNING_LOG_COMPRESSION
+                bool "Compress warning log of Bluedroid host"
+                default y
+                help
+                    The warning log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_SMP_WARNING_LOG_PRESERVE
+                bool "Keep the original warning log statement"
+                depends on BLE_BLUEDROID_SMP_WARNING_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_BLUEDROID_SMP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_SMP_API_LOG_COMPRESSION
+                bool "Compress api log of Bluedroid host"
+                default y
+                help
+                    The api log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_SMP_API_LOG_PRESERVE
+                bool "Keep the original api log statement"
+                depends on BLE_BLUEDROID_SMP_API_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_SMP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_SMP_EVENT_LOG_COMPRESSION
+                bool "Compress event log of Bluedroid host"
+                default y
+                help
+                    The event log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_SMP_EVENT_LOG_PRESERVE
+                bool "Keep the original event log statement"
+                depends on BLE_BLUEDROID_SMP_EVENT_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_SMP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_SMP_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of Bluedroid host"
+                default y
+                help
+                    The debug log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_SMP_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_BLUEDROID_SMP_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_SMP_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_SMP_VERBOSE_LOG_COMPRESSION
+                bool "Compress verbose log of Bluedroid host"
+                default y
+                help
+                    The verbose log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_SMP_VERBOSE_LOG_PRESERVE
+                bool "Keep the original verbose log statement"
+                depends on BLE_BLUEDROID_SMP_VERBOSE_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_SMP_ERROR_LOG_PRESERVE
+        endmenu
+        menu "Select the APPL layer log tag to be compressed"
+            config BLE_BLUEDROID_APPL_ERROR_LOG_COMPRESSION
+                bool "Compress error log of Bluedroid host"
+                default y
+                help
+                    The error log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_APPL_ERROR_LOG_PRESERVE
+                bool "Keep the original error log statement"
+                depends on BLE_BLUEDROID_APPL_ERROR_LOG_COMPRESSION
+                default y
+                help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+            config BLE_BLUEDROID_APPL_WARNING_LOG_COMPRESSION
+                bool "Compress warning log of Bluedroid host"
+                default y
+                help
+                    The warning log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_APPL_WARNING_LOG_PRESERVE
+                bool "Keep the original warning log statement"
+                depends on BLE_BLUEDROID_APPL_WARNING_LOG_COMPRESSION
+                default y
+                help
+                    Please refer to the help information in BLE_BLUEDROID_APPL_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_APPL_API_LOG_COMPRESSION
+                bool "Compress api log of Bluedroid host"
+                default y
+                help
+                    The api log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_APPL_API_LOG_PRESERVE
+                bool "Keep the original api log statement"
+                depends on BLE_BLUEDROID_APPL_API_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_APPL_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_APPL_EVENT_LOG_COMPRESSION
+                bool "Compress event log of Bluedroid host"
+                default y
+                help
+                    The event log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_APPL_EVENT_LOG_PRESERVE
+                bool "Keep the original event log statement"
+                depends on BLE_BLUEDROID_APPL_EVENT_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_APPL_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_APPL_DEBUG_LOG_COMPRESSION
+                bool "Compress debug log of Bluedroid host"
+                default y
+                help
+                    The debug log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_APPL_DEBUG_LOG_PRESERVE
+                bool "Keep the original debug log statement"
+                depends on BLE_BLUEDROID_APPL_DEBUG_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_APPL_ERROR_LOG_PRESERVE
+
+            config BLE_BLUEDROID_APPL_VERBOSE_LOG_COMPRESSION
+                bool "Compress verbose log of Bluedroid host"
+                default y
+                help
+                    The verbose log in the  Bluedroid host component will be compressed
+            config BLE_BLUEDROID_APPL_VERBOSE_LOG_PRESERVE
+                bool "Keep the original verbose log statement"
+                depends on BLE_BLUEDROID_APPL_VERBOSE_LOG_COMPRESSION
+                default n
+                help
+                    Please refer to the help information in BLE_BLUEDROID_APPL_ERROR_LOG_PRESERVE
+        endmenu
+    endif
+endif

@@ -1,3 +1,7 @@
+# Include additional cmake files for specific functionalities
+include("${CMAKE_CURRENT_LIST_DIR}/flash_targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/post_build_validation.cmake")
+
 # idf_build_get_property
 #
 # @brief Retrieve the value of the specified property related to ESP-IDF build.
@@ -71,8 +75,8 @@ endfunction()
 # @param[in] new_option the option to replace with (if empty, the old option will be removed)
 #
 # Example usage:
-#   idf_build_replace_options_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")
-#   idf_build_replace_options_from_property(COMPILE_OPTIONS "-Wno-error=extra" "")
+#   idf_build_replace_option_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")
+#   idf_build_replace_option_from_property(COMPILE_OPTIONS "-Wno-error=extra" "")
 #
 function(idf_build_replace_option_from_property property_name option_to_remove new_option)
     idf_build_get_property(current_list_of_options ${property_name})
@@ -90,6 +94,49 @@ function(idf_build_replace_option_from_property property_name option_to_remove n
     idf_build_set_property(${property_name} "${new_list_of_options}")
 endfunction()
 
+# idf_build_add_post_elf_dependency
+#
+# @brief Register a dependency that must run after the ELF is linked (post-ELF) and before
+#        the binary image is generated.
+#
+# @param[in] elf_filename The filename of the ELF file that the dependency must run after.
+# @param[in] dep_target The target that must run after the ELF is linked.
+#
+# @note This function is used by components to register a post-ELF hook.
+#
+# Example usage:
+#   idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" <dep_target>)
+#
+function(idf_build_add_post_elf_dependency elf_filename dep_target)
+    if("${elf_filename}" STREQUAL "")
+        message(FATAL_ERROR "elf filename must be provided (e.g. ${CMAKE_PROJECT_NAME}.elf)")
+    endif()
+    if(NOT TARGET ${dep_target})
+        message(FATAL_ERROR "dependency '${dep_target}' is not a known CMake target")
+    endif()
+
+    # Append dependency to this ELF's dep list
+    idf_build_get_property(deps "__POST_ELF_DEPS_${elf_filename}")
+    list(APPEND deps "${dep_target}")
+    list(REMOVE_DUPLICATES deps)
+    idf_build_set_property("__POST_ELF_DEPS_${elf_filename}" "${deps}")
+endfunction()
+
+# idf_build_get_post_elf_dependencies
+#
+# @brief Retrieve the dependencies for the given ELF filename.
+#
+# @param[in] elf_filename The filename of the ELF file to get the dependencies for.
+# @param[out] out_var The variable to store the dependencies in.
+#
+# Example usage:
+#   idf_build_get_post_elf_dependencies("${CMAKE_PROJECT_NAME}.elf" post_elf_deps)
+#
+function(idf_build_get_post_elf_dependencies elf_filename out_var)
+    idf_build_get_property(deps "__POST_ELF_DEPS_${elf_filename}")
+    set(${out_var} "${deps}" PARENT_SCOPE)
+endfunction()
+
 #
 # Retrieve the IDF_PATH repository's version, either using a version
 # file or Git revision. Sets the IDF_VER build property.
@@ -100,8 +147,10 @@ function(__build_get_idf_git_revision)
     if(EXISTS "${idf_path}/version.txt")
         file(STRINGS "${idf_path}/version.txt" idf_ver_t)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${idf_path}/version.txt")
-    else()
+    elseif(idf_ver_git)
         set(idf_ver_t ${idf_ver_git})
+    else()
+        set(idf_ver_t "v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
     endif()
     # cut IDF_VER to required 32 characters.
     string(SUBSTRING "${idf_ver_t}" 0 31 idf_ver)
@@ -155,8 +204,8 @@ function(__build_set_default_build_specifications)
         # function, which must be called after project().
         # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
         # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
-        list(APPEND c_compile_options   "-std=gnu17")
-        list(APPEND cxx_compile_options "-std=gnu++2b")
+        list(APPEND c_compile_options   "-std=gnu23")
+        list(APPEND cxx_compile_options "-std=gnu++26")
     endif()
 
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
@@ -179,7 +228,7 @@ function(__linux_build_set_lang_version)
 
     # Building for Linux target, fall back to an older version of the standard
     # if the preferred one is not supported by the compiler.
-    set(preferred_c_versions gnu17 gnu11 gnu99)
+    set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
     set(ver_found FALSE)
     foreach(c_version ${preferred_c_versions})
         check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
@@ -194,7 +243,7 @@ function(__linux_build_set_lang_version)
                             "${preferred_c_versions}. Please upgrade the host compiler.")
     endif()
 
-    set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
+    set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
     set(ver_found FALSE)
     foreach(cxx_version ${preferred_cxx_versions})
         check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
@@ -239,6 +288,8 @@ function(__build_init idf_path)
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to.
     # Must be global so as to be accessible from any subdirectory in custom projects.
     add_library(__idf_build_target STATIC IMPORTED GLOBAL)
+    # Set the IMPORTED_LOCATION property to avoid errors on IDE codemodel queries with CMake >=4.2
+    set_property(TARGET __idf_build_target PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dummy.a")
 
     # Set the Python path (which may be passed in via -DPYTHON=) and store in a build property
     set_default(PYTHON "python")
@@ -269,13 +320,14 @@ function(__build_init idf_path)
     endforeach()
 
     if("${target}" STREQUAL "linux")
-        set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux)
+        set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux esp_stdio)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
     else()
         # Set components required by all other components in the build
         #
         # - esp_hw_support is here for backward compatibility
-        set(requires_common cxx newlib freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system)
+        set(requires_common cxx esp_libc freertos esp_hw_support heap log soc hal
+                     esp_rom esp_common esp_system esp_stdio)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
     endif()
 
@@ -470,6 +522,22 @@ macro(__build_process_project_includes)
 endmacro()
 
 #
+# Add placeholder flash targets to the build.
+# This is used by components to declare dependencies on the flash target.
+#
+macro(__build_create_flash_targets)
+    if(NOT TARGET flash)
+        add_custom_target(flash)
+    endif()
+
+    # When flash encryption is enabled, a corresponding 'encrypted-flash' target will be created.
+    idf_build_get_config(encrypted_flash_enabled CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    if(encrypted_flash_enabled AND NOT TARGET encrypted-flash)
+        add_custom_target(encrypted-flash)
+    endif()
+endmacro()
+
+#
 # Utility macro for setting default property value if argument is not specified
 # for idf_build_process().
 #
@@ -657,6 +725,21 @@ macro(idf_build_process target)
         endif()
     endif()
 
+    idf_build_get_property(prefix __PREFIX)
+
+    file(GLOB root_dep_component_dirs
+        ${IDF_TOOLS_PATH}/root_managed_components/idf${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}/*)
+    list(SORT root_dep_component_dirs)
+    foreach(component_dir ${root_dep_component_dirs})
+        # A potential component must be a directory
+        if(IS_DIRECTORY ${component_dir})
+            __component_dir_quick_check(is_component ${component_dir})
+            if(is_component)
+                __component_add(${component_dir} ${prefix} "idf_managed_components")
+            endif()
+        endif()
+    endforeach()
+
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
@@ -713,6 +796,13 @@ macro(idf_build_process target)
         set(ESP_PLATFORM 1)
         idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
 
+        # Create flash targets early so components can attach images to them.
+        # These targets will be appended with actual esptool command later
+        # in the build process when __idf_build_setup_flash_targets() is called.
+        if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD AND NOT "${target}" STREQUAL "linux")
+            __build_create_flash_targets()
+        endif()
+
         # Perform component processing (inclusion of project_include.cmake, adding component
         # subdirectories, creating library targets, linking libraries, etc.)
         __build_process_project_includes()
@@ -752,6 +842,66 @@ function(idf_build_executable elf)
 
     # Add dependency of the build target to the executable
     add_dependencies(${elf} __idf_build_target)
+
+    # This is the main orchestrator for generating binaries and flash targets
+    # It is responsible for -
+    #  - Setting up the binary generation targets
+    #  - Setting up the signed binary generation targets
+    #  - Setting up the main 'flash' target and generating flasher_args.json
+    #  - Setting up the app-flash and flash targets
+    #  - Setting up the app_check_size target
+    #
+    # Note: We need to wrap this code in a if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD) block
+    #       because the bootloader and esp_tee subprojects also call our overridden project()
+    #       macro.
+    #
+    # Note: We need to have this block here instead of in project.cmake because
+    #       idf_build_executable() is called directly when ESP-IDF is compiled
+    #       as a library (idf_as_lib).
+
+    idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+    idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
+    if(NOT bootloader_build AND NOT esp_tee_build)
+        # All of the following logic for generating binaries and flash targets
+        # depends on the esptool_py component. For some builds (such as those
+        # that are built for the linux target), this component may not be included.
+        # We must guard these calls to ensure they only run when esptool_py is part
+        # of the build. We also only do this if CONFIG_APP_BUILD_GENERATE_BINARIES is set.
+        if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+            # Determine the output filename for the binary.
+            idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
+            idf_build_get_property(non_os_build NON_OS_BUILD)
+
+            set(project_bin "${elf_name}.bin")
+            if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT non_os_build)
+                set(project_bin_unsigned "${elf_name}-unsigned.bin")
+            else()
+                set(project_bin_unsigned "${project_bin}")
+            endif()
+
+            idf_build_set_property(PROJECT_BIN "${project_bin}")
+
+            # Create the binary file generation target for the main project
+            set(target_name "gen_${CMAKE_PROJECT_NAME}_binary")
+            __idf_build_binary("${project_bin_unsigned}" "${target_name}")
+
+            # Generate the signed binary file generation target for the main project
+            if(NOT non_os_build AND CONFIG_SECURE_SIGNED_APPS)
+                set(signed_target_name "gen_signed_${CMAKE_PROJECT_NAME}_binary")
+                __idf_build_secure_binary("${project_bin_unsigned}" "${project_bin}" "${signed_target_name}")
+            endif()
+
+            # Setup flash targets and flash configuration
+            __idf_build_setup_flash_targets()
+
+            # Setup utility targets such as monitor, erase-flash, merge-bin
+            __esptool_py_setup_utility_targets()
+
+            # Setup post-build validation checks
+            __idf_build_setup_post_build_validation()
+        endif() # if(TARGET idf::esptool_py AND CONFIG_APP_BUILD_GENERATE_BINARIES)
+    endif() # if(NOT bootloader_build AND NOT esp_tee_build)
 endfunction()
 
 # idf_build_get_config

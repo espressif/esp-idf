@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -2181,6 +2181,64 @@ typedef union {
     uint32_t val;
 } tee_hp_apm_ctrl_reg_t;
 
+/** Type of hp_mem_apm_ctrl register
+ *  hp_mem_apm read/write control register
+ */
+typedef union {
+    struct {
+        /** read_tee_hp_mem_apm : R/W; bitpos: [0]; default: 1;
+         *  Configures hp_mem_apm registers read permission in tee mode.
+         *  0: can not be read
+         *  1: can be read
+         */
+        uint32_t read_tee_hp_mem_apm:1;
+        /** read_ree0_hp_mem_apm : HRO; bitpos: [1]; default: 0;
+         *  Configures hp_mem_apm registers read permission in ree0 mode.
+         *  0: can not be read
+         *  1: can be read
+         */
+        uint32_t read_ree0_hp_mem_apm:1;
+        /** read_ree1_hp_mem_apm : HRO; bitpos: [2]; default: 0;
+         *  Configures hp_mem_apm registers read permission in ree1 mode.
+         *  0: can not be read
+         *  1: can be read
+         */
+        uint32_t read_ree1_hp_mem_apm:1;
+        /** read_ree2_hp_mem_apm : HRO; bitpos: [3]; default: 0;
+         *  Configures hp_mem_apm registers read permission in ree2 mode.
+         *  0: can not be read
+         *  1: can be read
+         */
+        uint32_t read_ree2_hp_mem_apm:1;
+        /** write_tee_hp_mem_apm : R/W; bitpos: [4]; default: 1;
+         *  Configures hp_mem_apm registers write permission in tee mode.
+         *  0: can not be write
+         *  1: can be write
+         */
+        uint32_t write_tee_hp_mem_apm:1;
+        /** write_ree0_hp_mem_apm : HRO; bitpos: [5]; default: 0;
+         *  Configures hp_mem_apm registers write permission in ree0 mode.
+         *  0: can not be write
+         *  1: can be write
+         */
+        uint32_t write_ree0_hp_mem_apm:1;
+        /** write_ree1_hp_mem_apm : HRO; bitpos: [6]; default: 0;
+         *  Configures hp_mem_apm registers write permission in ree1 mode.
+         *  0: can not be write
+         *  1: can be write
+         */
+        uint32_t write_ree1_hp_mem_apm:1;
+        /** write_ree2_hp_mem_apm : HRO; bitpos: [7]; default: 0;
+         *  Configures hp_mem_apm registers write permission in ree2 mode.
+         *  0: can not be write
+         *  1: can be write
+         */
+        uint32_t write_ree2_hp_mem_apm:1;
+        uint32_t reserved_8:24;
+    };
+    uint32_t val;
+} tee_hp_mem_apm_ctrl_reg_t;
+
 /** Type of cpu_apm_ctrl register
  *  cpu_apm read/write control register
  */
@@ -2862,7 +2920,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37818480;
+        /** date : R/W; bitpos: [27:0]; default: 38810240;
          *  Version control register
          */
         uint32_t date:28;
@@ -2911,6 +2969,7 @@ typedef struct {
     volatile tee_pcr_reg_ctrl_reg_t pcr_reg_ctrl;
     volatile tee_mspi_ctrl_reg_t mspi_ctrl;
     volatile tee_hp_apm_ctrl_reg_t hp_apm_ctrl;
+    volatile tee_hp_mem_apm_ctrl_reg_t hp_mem_apm_ctrl;
     volatile tee_cpu_apm_ctrl_reg_t cpu_apm_ctrl;
     volatile tee_tee_ctrl_reg_t tee_ctrl;
     volatile tee_km_ctrl_reg_t km_ctrl;
@@ -2922,7 +2981,7 @@ typedef struct {
     volatile tee_cache_cfg_ctrl_reg_t cache_cfg_ctrl;
     volatile tee_modem_ctrl_reg_t modem_ctrl;
     volatile tee_zero_det_ctrl_reg_t zero_det_ctrl;
-    uint32_t reserved_140[940];
+    uint32_t reserved_144[939];
     volatile tee_bus_err_conf_reg_t bus_err_conf;
     uint32_t reserved_ff4;
     volatile tee_clock_gate_reg_t clock_gate;

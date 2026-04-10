@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -23,7 +23,7 @@ static uint8_t heart_rate_chr_val[2] = {0};
 static uint16_t heart_rate_chr_val_handle;
 static const ble_uuid16_t heart_rate_chr_uuid = BLE_UUID16_INIT(0x2A37);
 
-static uint16_t heart_rate_chr_conn_handle = 0;
+static uint16_t heart_rate_chr_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool heart_rate_chr_conn_handle_inited = false;
 static bool heart_rate_ind_status = false;
 
@@ -72,7 +72,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
 static int heart_rate_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                                  struct ble_gatt_access_ctxt *ctxt, void *arg) {
     /* Local variables */
-    int rc;
+    int rc = 0;
 
     /* Handle access events */
     /* Note: Heart rate characteristic is read only */
@@ -115,7 +115,7 @@ error:
 static int led_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                           struct ble_gatt_access_ctxt *ctxt, void *arg) {
     /* Local variables */
-    int rc;
+    int rc = 0;
 
     /* Handle access events */
     /* Note: LED characteristic is write only */
@@ -240,6 +240,12 @@ void gatt_svr_subscribe_cb(struct ble_gap_event *event) {
     }
 }
 
+void gatt_svr_reset_heart_rate_subscription(void) {
+    heart_rate_chr_conn_handle = BLE_HS_CONN_HANDLE_NONE;
+    heart_rate_chr_conn_handle_inited = false;
+    heart_rate_ind_status = false;
+}
+
 /*
  *  GATT server initialization
  *      1. Initialize GATT service
@@ -248,7 +254,7 @@ void gatt_svr_subscribe_cb(struct ble_gap_event *event) {
  */
 int gatt_svc_init(void) {
     /* Local variables */
-    int rc;
+    int rc = 0;
 
     /* 1. GATT service initialization */
     ble_svc_gatt_init();

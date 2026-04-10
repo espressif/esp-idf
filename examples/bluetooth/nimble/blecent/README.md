@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
 
 # BLE Central Example
 
@@ -61,6 +61,14 @@ idf.py menuconfig
 In the `Example Configuration` menu:
 
 * Change the `Peer Address` option if needed.
+* Optional: enable static passkey support via `Component config -> Bluetooth -> NimBLE -> Enable support for Static Passkey`.
+
+Static passkey mode is useful for demos where you want to avoid interactive passkey entry.
+When enabled, the example calls `ble_sm_configure_static_passkey(456789, true)` and NimBLE
+automatically injects the passkey during pairing. Update the passkey in
+`examples/bluetooth/nimble/blecent/main/main.c` if you want a different value.
+Both devices must use the same 6-digit passkey, and you should only use a fixed
+passkey for development or controlled environments.
 
 ### Build and Flash
 
@@ -69,6 +77,22 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 (To exit the serial monitor, type ``Ctrl-]``.)
 
 See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
+
+### Configuration Option - EATT
+
+There are two key configurations that control the flow of this example regarding EATT:
+
+*   `MYNEWT_VAL(BLE_EATT_CHAN_NUM)`: This value is the number of EATT channels the user wants to create.
+*   `Enable Link Encryption` (`EXAMPLE_ENCRYPTION`): This option, found in `Example Configuration` -> `Enable Link Encryption`, determines whether to enable encryption before performing GATT operations.
+
+These configurations affect when the GATT operations (initiated by `peer_disc_all`) begin:
+
+1.  **Encryption off, EATT off**: GATT operations resume immediately after connection establishment in `BLE_GAP_EVENT_CONNECT`.
+2.  **Encryption on, EATT off**: GATT operations resume after encryption is established in `BLE_GAP_EVENT_ENC_CHANGE`.
+3.  **Encryption off, EATT on**: GATT operations resume after connection. EATT establishment requires encryption, so with encryption off, EATT bearers cannot be created.
+4.  **Encryption on, EATT on**: This is the correct way to use EATT. GATT operations resume in `BLE_GAP_EVENT_EATT`. After connection, the application waits for encryption. Once encrypted, the host automatically attempts to establish EATT bearers. Upon success, the `BLE_GAP_EVENT_EATT` event is triggered, and GATT operations resume.
+
+The example uses `ble_att_set_default_bearer_using_cid` to set the CID for upcoming GATT operations. A similar API, `ble_att_get_default_bearer_cid`, can be used to retrieve the current default bearer CID.
 
 ## Example Output
 
@@ -132,34 +156,66 @@ disconnect; reason=534
 ```
 
 The following configuration flags can be adjusted to significantly reduce RAM usage in your ESP-IDF project while retaining basic BLE functionality.
-----------------------------------------------------------------------------------------------
-| Config Option                                    || Old → New Value || RAM Saved (Bytes)   |
-|--------------------------------------------------||------------------||--------------------|
-| CONFIG_BT_NIMBLE_SM_SC                           || y → n            || 2040               |
-| CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION       || y → n            || 32                 |
-| CONFIG_BT_NIMBLE_GATT_MAX_PROCS                  || 4 → 2            || 112                |
-| CONFIG_BT_NIMBLE_MAX_CONNECTIONS                 || 3 → 1            || 480                |
-| CONFIG_BT_NIMBLE_MAX_BONDS                       || 3 → 1            || 448                |
-| CONFIG_BT_NIMBLE_MAX_CCCDS                       || 8 → 1            || 112                |
-| CONFIG_BT_NIMBLE_ENABLE_CONN_REATTEMPT           || y → n            || 256                |
-| CONFIG_BT_NIMBLE_TRANSPORT_EVT_COUNT             || 30 → 15          || 240                |
-| CONFIG_BT_NIMBLE_SECURITY_ENABLE                 || y → n            || 2072               |
-| CONFIG_SPI_FLASH_ROM_IMPL                        || n → y            || 9804               |
-| CONFIG_SPI_FLASH_SUPPORT_ISSI_CHIP               || y → n            || 0                  |
-| CONFIG_SPI_FLASH_SUPPORT_MXIC_CHIP               || y → n            || 140                |
-| CONFIG_SPI_FLASH_SUPPORT_GD_CHIP                 || y → n            || 648                |
-| CONFIG_SPI_FLASH_SUPPORT_WINBOND_CHIP            || y → n            || 8                  |
-| CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP               || y → n            || 140                |
-| CONFIG_SPI_FLASH_SUPPORT_TH_CHIP                 || y → n            || 136                |
-| CONFIG_SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE     || y → n            || 704                |
-| CONFIG_VFS_SUPPORT_TERMIOS                       || y → n            || 424                |
-| CONFIG_VFS_SUPPORT_IO                            || y → n            || 2008               |
-| CONFIG_COMPILER_OPTIMIZATION_SIZE                || n → y            || 8408               |
-| CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE  || n → y            || 5896               |
-| CONFIG_ESP_COEX_SW_COEXIST_ENABLE                || y → n            || 896                |
-| ESP_TASK_WDT_EN                                  || y → n            || 528                |
-| CONFIG_LOG_DEFAULT_LEVEL_NONE                    || n → y            || 2592               |
-----------------------------------------------------------------------------------------------
+
+| Config Option                                   | Old → New Value | RAM Saved (Bytes) |
+| ----------------------------------------------- | --------------- | ----------------- |
+| CONFIG_BT_NIMBLE_SM_SC                          | y → n           | 2040              |
+| CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION      | y → n           | 32                |
+| CONFIG_BT_NIMBLE_GATT_MAX_PROCS                 | 4 → 2           | 112               |
+| CONFIG_BT_NIMBLE_MAX_CONNECTIONS                | 3 → 1           | 480               |
+| CONFIG_BT_NIMBLE_MAX_BONDS                      | 3 → 1           | 448               |
+| CONFIG_BT_NIMBLE_MAX_CCCDS                      | 8 → 1           | 112               |
+| CONFIG_BT_NIMBLE_ENABLE_CONN_REATTEMPT          | y → n           | 256               |
+| CONFIG_BT_NIMBLE_TRANSPORT_EVT_COUNT            | 30 → 15         | 240               |
+| CONFIG_BT_NIMBLE_SECURITY_ENABLE                | y → n           | 2072              |
+| CONFIG_SPI_FLASH_ROM_IMPL                       | n → y           | 9804              |
+| CONFIG_SPI_FLASH_SUPPORT_ISSI_CHIP              | y → n           | 0                 |
+| CONFIG_SPI_FLASH_SUPPORT_MXIC_CHIP              | y → n           | 140               |
+| CONFIG_SPI_FLASH_SUPPORT_GD_CHIP                | y → n           | 648               |
+| CONFIG_SPI_FLASH_SUPPORT_WINBOND_CHIP           | y → n           | 8                 |
+| CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP              | y → n           | 140               |
+| CONFIG_SPI_FLASH_SUPPORT_TH_CHIP                | y → n           | 136               |
+| CONFIG_SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE    | y → n           | 704               |
+| CONFIG_VFS_SUPPORT_TERMIOS                      | y → n           | 424               |
+| CONFIG_VFS_SUPPORT_IO                           | y → n           | 2008              |
+| CONFIG_COMPILER_OPTIMIZATION_SIZE               | n → y           | 8408              |
+| CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE | n → y           | 5896              |
+| CONFIG_ESP_COEX_SW_COEXIST_ENABLE               | y → n           | 896               |
+| CONFIG_ESP_TASK_WDT_EN                          | y → n           | 528               |
+| CONFIG_LOG_DEFAULT_LEVEL_NONE                   | n → y           | 2592              |
+
+## Enhanced Attribute Protocol (EATT)
+
+The Enhanced Attribute Protocol (EATT) is an updated version of the Attribute Protocol (ATT) introduced in Bluetooth 5.2. It upgrades the transport mechanism for GATT operations.
+
+### How EATT Works in NimBLE
+Unlike legacy ATT, which forces all GATT transactions to be serialized over a single fixed L2CAP channel (CID 4), EATT runs over multiple **L2CAP Enhanced Credit Based Flow Control (ECFC)** channels.
+
+1.  **Multiple Bearers**: The `MYNEWT_VAL(BLE_EATT_CHAN_NUM)` configuration determines how many parallel L2CAP channels the host will attempt to establish with the peer.
+2.  **Concurrency**: In the NimBLE host (`ble_eatt.c`), the `ble_eatt_get_available_chan_cid()` function dynamically selects an idle channel for outgoing GATT requests. This means if Channel A is blocked waiting for a Read Response, the application can still send a Notification immediately on Channel B.
+3.  **L2CAP Independence**: Each EATT channel has its own flow control credits and MTU. A stall or large transfer on one channel does not block operations on others.
+
+### Implementation Flow
+The setup process in this example follows the logic in `ble_eatt.c`:
+1.  **Encryption Trigger**: EATT strictly requires an encrypted link. The host listens for `BLE_GAP_EVENT_ENC_CHANGE`.
+2.  **Handshake**: Once encrypted, the host automatically reads the peer's "Server Supported Features" and writes its own "Client Supported Features" to verify EATT support.
+3.  **Connection**: The host then initiates L2CAP connections for the number of channels defined in `BLE_EATT_CHAN_NUM`.
+4.  **Ready State**: When the channels are established, the application receives `BLE_GAP_EVENT_EATT`, signaling that high-performance, concurrent GATT operations can begin.
+5.  **Channel Selection**: The application can direct GATT operations to specific channels using `ble_att_set_default_bearer_using_cid()` or retrieve the current bearer with `ble_att_get_default_bearer_cid()`. This allows precise control over which L2CAP channel executes a transaction.
+
+### NimBLE Documentation
+For more detailed information, refer to the NimBLE documentation located in `components/bt/host/nimble/nimble/docs`.
+
+To build the documentation with Doxygen:
+```bash
+make clean
+make preview
+```
+
+To host the generated documentation locally:
+```bash
+cd _build/html && python3 -m http.server 8080
+```
 
 ## Troubleshooting
 

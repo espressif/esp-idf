@@ -1,0 +1,14 @@
+menu "FreeRTOS Test App Configuration"
+
+    config FREERTOS_ENABLE_COVERAGE_TESTS
+        bool "Enable code coverage instrumentation for FreeRTOS"
+        depends on ESP_GCOV_ENABLE
+        default n
+        help
+            When enabled, FreeRTOS kernel, port, and ESP additions source files will be compiled with
+            code coverage instrumentation flags (--coverage) to enable GCOV code coverage testing.
+
+            Note: This option will increase binary size and may impact performance. It should only be
+            enabled when running coverage tests.
+
+endmenu

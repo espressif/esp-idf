@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,11 +84,15 @@ void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
 
 static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps)
 {
-    ptr = realloc(ptr, size);
-
-    if (ptr == NULL && size > 0) {
+    void *new_ptr = realloc(ptr, size);
+    if (new_ptr == NULL && size > 0) {
         heap_caps_alloc_failed(size, caps, __func__);
     }
+    // If realloc fails, it returns NULL and the original pointer is left unchanged.
+    // If realloc succeeds, it returns a pointer to the allocated memory, which may be the
+    // same as the original pointer or a new pointer if the memory was moved.
+    // We return the new pointer, which may be the same as the original pointer.
+    ptr = new_ptr;
 
     return ptr;
 }

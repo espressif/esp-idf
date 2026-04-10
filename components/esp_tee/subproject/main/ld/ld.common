@@ -1,0 +1,32 @@
+#include "sdkconfig.h"
+
+#define ALIGN_UP(SIZE, AL)    (((SIZE) + (AL - 1)) & ~(AL - 1))
+#define ALIGN_DOWN(SIZE, AL)  ((SIZE) & ~((AL) - 1))
+
+/* CPU instruction prefetch padding size for flash mmap scenario */
+#define _esp_flash_mmap_prefetch_pad_size 16
+
+/*
+ * PMP region granularity size
+ * Software may determine the PMP granularity by writing zero to pmp0cfg, then writing all ones
+ * to pmpaddr0, then reading back pmpaddr0. If G is the index of the least-significant bit set,
+ * the PMP granularity is 2^G+2 bytes.
+ */
+#ifdef CONFIG_SOC_CPU_PMP_REGION_GRANULARITY
+#define _esp_pmp_align_size CONFIG_SOC_CPU_PMP_REGION_GRANULARITY
+#else
+#define _esp_pmp_align_size 0
+#endif
+
+#if CONFIG_APP_BUILD_TYPE_RAM
+#define _esp_mmu_page_size 0
+#else
+#define _esp_mmu_page_size CONFIG_MMU_PAGE_SIZE
+#endif
+
+#define ALIGNED_SYMBOL(X, SYMBOL)   . = ALIGN(X); SYMBOL = ABSOLUTE(.);
+
+#define QUOTED_STRING(STRING) #STRING
+#define ASSERT_SECTIONS_GAP(PREV_SECTION, NEXT_SECTION)                   \
+ASSERT((ADDR(NEXT_SECTION) == ADDR(PREV_SECTION) + SIZEOF(PREV_SECTION)), \
+        QUOTED_STRING(The gap between PREV_SECTION and NEXT_SECTION must not exist to produce the final bin image.))

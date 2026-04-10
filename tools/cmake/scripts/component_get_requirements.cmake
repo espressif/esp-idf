@@ -131,6 +131,8 @@ foreach(__component_target ${__component_targets})
 
     if("${__component_source}" STREQUAL "idf_components")
         list(APPEND __TARGETS_IDF_COMPONENTS ${__component_target})
+    elseif("${__component_source}" STREQUAL "idf_managed_components")
+        list(APPEND __TARGETS_IDF_MANAGED_COMPONENTS ${__component_target})
     elseif("${__component_source}" STREQUAL "project_managed_components")
         list(APPEND __TARGETS_PROJECT_MANAGED_COMPONENTS ${__component_target})
     elseif("${__component_source}" STREQUAL "project_extra_components")
@@ -147,6 +149,7 @@ set(__sorted_component_targets "")
 foreach(__target IN LISTS __TARGETS_PROJECT_COMPONENTS
                           __TARGETS_PROJECT_EXTRA_COMPONENTS
                           __TARGETS_PROJECT_MANAGED_COMPONENTS
+                          __TARGETS_IDF_MANAGED_COMPONENTS
                           __TARGETS_IDF_COMPONENTS)
     __component_get_property(__component_name ${__target} COMPONENT_NAME)
     list(APPEND __sorted_component_targets ${__target})

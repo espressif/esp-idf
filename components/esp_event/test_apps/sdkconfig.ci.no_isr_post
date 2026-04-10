@@ -1,3 +1,2 @@
 # This configuration checks the event loop if posting from ISR is disabled
-CONFIG_ESP_TASK_WDT_INIT=n
-CONFIG_POST_EVENTS_FROM_ISR=n
+CONFIG_ESP_EVENT_POST_FROM_ISR=n

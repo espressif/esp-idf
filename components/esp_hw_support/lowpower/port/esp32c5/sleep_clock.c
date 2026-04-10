@@ -11,11 +11,11 @@
 #include "soc/rtc.h"
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
-#include "soc/i2c_ana_mst_reg.h"
+#include "modem/i2c_ana_mst_reg.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 
-static const char *TAG = "sleep_clock";
+ESP_LOG_ATTR_TAG(TAG, "sleep_clock");
 
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {

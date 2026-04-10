@@ -1,11 +1,10 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +13,7 @@ extern "C" {
 /** USB_WRAP_OTG_CONF_REG register
  *  USB wrapper configuration registers.
  */
-#define USB_WRAP_OTG_CONF_REG (DR_REG_USB_BASE + 0x0)
+#define USB_WRAP_OTG_CONF_REG (DR_REG_USB_WRAP_BASE + 0x0)
 /** USB_WRAP_SRP_SESSEND_OVERRIDE : R/W; bitpos: [0]; default: 0;
  *  This bit is used to enable the software over-ride of srp session end signal. 1'b0:
  *  the signal is controlled by the chip input, 1'b1: the signal is controlled by the
@@ -154,7 +153,7 @@ extern "C" {
 /** USB_WRAP_DATE_REG register
  *  Date register.
  */
-#define USB_WRAP_DATE_REG (DR_REG_USB_BASE + 0x3fc)
+#define USB_WRAP_DATE_REG (DR_REG_USB_WRAP_BASE + 0x3fc)
 /** USB_WRAP_USB_WRAP_DATE : R/W; bitpos: [31:0]; default: 37761536;
  *  Date register.
  */

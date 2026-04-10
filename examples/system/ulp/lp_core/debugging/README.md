@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 | ESP32-P4 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-P4 |
+| ----------------- | -------- | -------- | -------- |
 
 # LP Core Debugging Example
 
@@ -33,7 +33,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ### LP Core Debugging Specifics
 
-1) Add `-O0` compile option for ULP app in its CMakeLists.txt.
+1) For convenient debugging, `-O0` compile option for ULP app in its CMakeLists.txt can be added. Beware that this change may cause the built binary to be too large to fit in the available memory.
 ```
 target_compile_options(${ULP_APP_NAME} PRIVATE -O0)
 ```
@@ -63,11 +63,11 @@ end
 2) FreeRTOS support in OpenOCD is disabled when debugging LP core, so you won't be able to see tasks running in the system. Instead there will be two threads representing HP ('esp32c6.cpu0') and LP ('esp32c6.cpu1') cores:
 ```
 (gdb) info thread
-  Id   Target Id                                                          Frame
-  1    Thread 1 "esp32c6.cpu0" (Name: esp32c6.cpu0, state: debug-request) 0x40803772 in esp_cpu_wait_for_intr ()
+  Id   Target Id                                                                Frame
+  1    Thread 1 "esp32c6.hp.cpu0" (Name: esp32c6.hp.cpu0, state: debug-request) 0x4080261c in esp_cpu_wait_for_intr ()
     at /home/user/projects/esp/esp-idf/components/esp_hw_support/cpu.c:64
-* 2    Thread 2 "esp32c6.cpu1" (Name: esp32c6.cpu1, state: breakpoint)    do_things (max=1000000000)
-    at /home/user/projects/esp/esp-idf/examples/system/ulp/lp_core/debugging/main/lp_core/main.c:21
+* 2    Thread 2 "esp32c6.lp.cpu" (Name: esp32c6.lp.cpu, state: breakpoint)      do_things (max=1000000000)
+    at /home/user/projects/esp/esp-idf/examples/system/ulp/lp_core/debugging/main/ulp/main.c:22
 ```
 3) When setting HW breakpoint in GDB it is set on both cores, so the number of available HW breakpoints is limited to the number of them supported by LP core (2 for ESP32-C6).
 4) OpenOCD flash support is disabled. It does not matter for LP core application because it is run completely from RAM and GDB can use SW breakpoints for it. But if you want to set a breakpoint on function from flash used by the code running on HP core (e.g. `app_main`) you should request to set HW breakpoint explicitly via `hb`/`thb` GDB commands.

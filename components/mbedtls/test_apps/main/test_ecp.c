@@ -3,7 +3,7 @@
  * Focus on testing functionality where we use ESP32 hardware
  * accelerated crypto features.
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,16 +12,21 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <esp_random.h>
-
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecdh.h>
-#include <mbedtls/ecdsa.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include <mbedtls/private/ecdh.h>
+#include <mbedtls/private/ecdsa.h>
 #include <mbedtls/error.h>
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
 
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "unity.h"
+#include "crypto_performance.h"
+
+#if CONFIG_MBEDTLS_HARDWARE_ECC
+#include "hal/ecc_ll.h"
+#endif
 
 /* Note: negative value here so that assert message prints a grep-able
    error hex value (mbedTLS uses -N for error codes) */
@@ -41,7 +46,7 @@
 #define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_LIBC_NEWLIB_NANO_FORMAT
 #define NEWLIB_NANO_COMPAT_FORMAT             PRIu32
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  (uint32_t)int64_t_var
 #else
@@ -51,24 +56,20 @@
 
 TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
 {
-    mbedtls_ecdh_context ctx;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
+    psa_key_attributes_t key_attributes;
+    psa_key_id_t key_id;
 
-    mbedtls_ecdh_init(&ctx);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY));
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
+    psa_set_key_bits(&key_attributes, 255);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
 
-    mbedtls_entropy_init(&entropy);
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) );
+    psa_status_t status = psa_generate_key(&key_attributes, &key_id);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), MBEDTLS_ECP_DP_CURVE25519) );
-
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q),
-                                                    mbedtls_ctr_drbg_random, &ctr_drbg ) );
-
-    mbedtls_ecdh_free(&ctx);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
+    psa_reset_key_attributes(&key_attributes);
+    psa_destroy_key(key_id);
 }
 
 TEST_CASE("mbedtls ECP self-tests", "[mbedtls]")
@@ -79,29 +80,19 @@ TEST_CASE("mbedtls ECP self-tests", "[mbedtls]")
 TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
 {
     /* Test case code via https://github.com/espressif/esp-idf/issues/1556 */
-    mbedtls_entropy_context ctxEntropy;
-    mbedtls_ctr_drbg_context ctxRandom;
     mbedtls_ecdsa_context ctxECDSA;
-    const char* pers = "myecdsa";
-
-    mbedtls_entropy_init(&ctxEntropy);
-    mbedtls_ctr_drbg_init(&ctxRandom);
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctxRandom, mbedtls_entropy_func, &ctxEntropy,
-                                                  (const unsigned char*) pers, strlen(pers)) );
 
     mbedtls_ecdsa_init(&ctxECDSA);
 
     TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdsa_genkey(&ctxECDSA, MBEDTLS_ECP_DP_SECP256K1,
-                                                 mbedtls_ctr_drbg_random, &ctxRandom) );
+                                                 mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) );
 
 
     TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.MBEDTLS_PRIVATE(grp), &ctxECDSA.MBEDTLS_PRIVATE(Q),
                                            &ctxECDSA.MBEDTLS_PRIVATE(d), &ctxECDSA.MBEDTLS_PRIVATE(grp).G,
-                                           mbedtls_ctr_drbg_random, &ctxRandom) );
+                                           mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) );
 
     mbedtls_ecdsa_free(&ctxECDSA);
-    mbedtls_ctr_drbg_free(&ctxRandom);
-    mbedtls_entropy_free(&ctxEntropy);
 }
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC
@@ -202,6 +193,70 @@ const uint8_t ecc_p256_small_mul_res_y[] = {
     0x17, 0xFD, 0xF6, 0x64, 0x41, 0x9E, 0x50, 0x0C
 };
 
+#if SOC_ECC_SUPPORT_CURVE_P384
+const uint8_t ecc_p384_point_x[] = {
+    0xaa, 0x87, 0xca, 0x22, 0xbe, 0x8b, 0x05, 0x37,
+    0x8e, 0xb1, 0xc7, 0x1e, 0xf3, 0x20, 0xad, 0x74,
+    0x6e, 0x1d, 0x3b, 0x62, 0x8b, 0xa7, 0x9b, 0x98,
+    0x59, 0xf7, 0x41, 0xe0, 0x82, 0x54, 0x2a, 0x38,
+    0x55, 0x02, 0xf2, 0x5d, 0xbf, 0x55, 0x29, 0x6c,
+    0x3a, 0x54, 0x5e, 0x38, 0x72, 0x76, 0x0a, 0xb7
+};
+
+const uint8_t ecc_p384_point_y[] = {
+    0x36, 0x17, 0xde, 0x4a, 0x96, 0x26, 0x2c, 0x6f,
+    0x5d, 0x9e, 0x98, 0xbf, 0x92, 0x92, 0xdc, 0x29,
+    0xf8, 0xf4, 0x1d, 0xbd, 0x28, 0x9a, 0x14, 0x7c,
+    0xe9, 0xda, 0x31, 0x13, 0xb5, 0xf0, 0xb8, 0xc0,
+    0x0a, 0x60, 0xb1, 0xce, 0x1d, 0x7e, 0x81, 0x9d,
+    0x7a, 0x43, 0x1d, 0x7c, 0x90, 0xea, 0x0e, 0x5f
+};
+
+const uint8_t ecc_p384_scalar[] = {
+    0x68, 0xd1, 0x09, 0xa7, 0xc7, 0x7e, 0xeb, 0xbd,
+    0x43, 0x18, 0x7e, 0xdd, 0x69, 0x23, 0x7e, 0x0a,
+    0xef, 0x07, 0xc2, 0x0e, 0xc5, 0x3d, 0xe7, 0xcb,
+    0xd4, 0x36, 0xad, 0x9b, 0xdc, 0xf8, 0x6c, 0x5c,
+    0x0c, 0x3d, 0xce, 0x45, 0xcd, 0x6f, 0x7f, 0x18,
+    0x40, 0xc5, 0x29, 0xf3, 0xcd, 0x12, 0x1d, 0xc2
+};
+
+const uint8_t ecc_p384_mul_res_x[] = {
+    0x74, 0x1d, 0xc3, 0xba, 0xac, 0x60, 0x37, 0xfc,
+    0x57, 0x85, 0x90, 0x95, 0x64, 0xe6, 0xd1, 0xef,
+    0x86, 0xdf, 0x42, 0xe0, 0xaf, 0x11, 0x24, 0x1f,
+    0xe9, 0x97, 0x6e, 0x0c, 0xd9, 0xe5, 0xa0, 0x5d,
+    0xd9, 0x91, 0x96, 0x71, 0xef, 0x96, 0xe9, 0x7e,
+    0x90, 0xba, 0xa8, 0x33, 0xe2, 0x2e, 0xf0, 0x7b
+};
+
+const uint8_t ecc_p384_mul_res_y[] = {
+    0xc3, 0xe0, 0x66, 0x50, 0xd9, 0x1e, 0xa9, 0x42,
+    0xcb, 0x0d, 0xec, 0xb6, 0x29, 0xe2, 0xae, 0x75,
+    0xc6, 0xa2, 0xb9, 0xa6, 0xcf, 0x2c, 0x97, 0x01,
+    0xcc, 0xff, 0x7c, 0x1c, 0xd1, 0x01, 0xde, 0xbc,
+    0x40, 0x56, 0x8c, 0x18, 0x21, 0x9d, 0xbd, 0xc0,
+    0x2d, 0x41, 0x5b, 0x92, 0x52, 0x5a, 0x40, 0x57
+};
+
+const uint8_t ecc_p384_small_mul_res_x[] = {
+    0x35, 0x49, 0x60, 0x41, 0xea, 0x25, 0x3b, 0x0d,
+    0x15, 0x3c, 0x9b, 0xfb, 0xc1, 0x8a, 0x9e, 0x41,
+    0xaf, 0x34, 0x8a, 0xfd, 0x8b, 0x1c, 0x33, 0xa5,
+    0xca, 0x5d, 0x7f, 0xbb, 0xfa, 0x2d, 0x5d, 0x9d,
+    0x43, 0x6e, 0xd1, 0x01, 0x1b, 0x3d, 0x9d, 0x93,
+    0xe4, 0xb4, 0x5d, 0x2a, 0x4b, 0x23, 0x27, 0xf1
+};
+
+const uint8_t ecc_p384_small_mul_res_y[] = {
+    0x73, 0xce, 0x1e, 0xaa, 0x4f, 0xfd, 0xdc, 0x1d,
+    0x69, 0xd9, 0xe0, 0x9d, 0x16, 0x46, 0x19, 0xae,
+    0x8d, 0xd2, 0xce, 0x26, 0x6f, 0x9d, 0xb6, 0xc3,
+    0x30, 0xa5, 0x05, 0x7c, 0x7d, 0x62, 0xde, 0x8f,
+    0x8e, 0xc3, 0xce, 0x9b, 0xa7, 0xc1, 0x71, 0xb9,
+    0xb0, 0x2a, 0xda, 0x1c, 0xb3, 0x42, 0x61, 0x58
+};
+#endif /* SOC_ECC_SUPPORT_CURVE_P384 */
 
 static int rng_wrapper(void *ctx, unsigned char *buf, size_t len)
 {
@@ -213,8 +268,8 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
                         const uint8_t *result_x_coord, const uint8_t *result_y_coord)
 {
     int64_t elapsed_time;
-    uint8_t x[32];
-    uint8_t y[32];
+    uint8_t x[48];
+    uint8_t y[48];
     int size;
     int ret;
 
@@ -255,25 +310,20 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
     TEST_ASSERT_EQUAL(0, memcmp(x, result_x_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(X))));
     TEST_ASSERT_EQUAL(0, memcmp(y, result_y_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(Y))));
 
-    if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
-    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+    if (id == MBEDTLS_ECP_DP_SECP256R1) {
         TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+#if SOC_ECC_SUPPORT_CURVE_P384
+    } else if (id == MBEDTLS_ECP_DP_SECP384R1) {
+        if (ecc_ll_is_p384_curve_operations_supported()) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P384_POINT_MULTIPLY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        }
+#endif
     }
 
     mbedtls_ecp_point_free(&R);
     mbedtls_ecp_point_free(&P);
     mbedtls_mpi_free(&m);
     mbedtls_ecp_group_free(&grp);
-}
-
-TEST_CASE("mbedtls ECP point multiply with SECP192R1", "[mbedtls]")
-{
-    test_ecp_mul(MBEDTLS_ECP_DP_SECP192R1, ecc_p192_point_x, ecc_p192_point_y, ecc_p192_scalar,
-                 ecc_p192_mul_res_x, ecc_p192_mul_res_y);
-
-    test_ecp_mul(MBEDTLS_ECP_DP_SECP192R1, ecc_p192_point_x, ecc_p192_point_y, NULL,
-                 ecc_p192_small_mul_res_x, ecc_p192_small_mul_res_y);
 }
 
 TEST_CASE("mbedtls ECP point multiply with SECP256R1", "[mbedtls]")
@@ -284,6 +334,19 @@ TEST_CASE("mbedtls ECP point multiply with SECP256R1", "[mbedtls]")
     test_ecp_mul(MBEDTLS_ECP_DP_SECP256R1, ecc_p256_point_x, ecc_p256_point_y, NULL,
                  ecc_p256_small_mul_res_x, ecc_p256_small_mul_res_y);
 }
+
+#if SOC_ECC_SUPPORT_CURVE_P384
+TEST_CASE("mbedtls ECP point multiply with SECP384R1", "[mbedtls]")
+{
+    if (ecc_ll_is_p384_curve_operations_supported()) {
+        test_ecp_mul(MBEDTLS_ECP_DP_SECP384R1, ecc_p384_point_x, ecc_p384_point_y, ecc_p384_scalar,
+                     ecc_p384_mul_res_x, ecc_p384_mul_res_y);
+
+        test_ecp_mul(MBEDTLS_ECP_DP_SECP384R1, ecc_p384_point_x, ecc_p384_point_y, NULL,
+                     ecc_p384_small_mul_res_x, ecc_p384_small_mul_res_y);
+    }
+}
+#endif /* SOC_ECC_SUPPORT_CURVE_P384 */
 
 static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, const uint8_t *y_coord)
 {
@@ -311,23 +374,31 @@ static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, con
 
     TEST_ASSERT_EQUAL(0, ret);
 
-    if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
-    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+    if (id == MBEDTLS_ECP_DP_SECP256R1) {
         TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+#if SOC_ECC_SUPPORT_CURVE_P384
+    } else if (id == MBEDTLS_ECP_DP_SECP384R1) {
+        if (ecc_ll_is_p384_curve_operations_supported()) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P384_POINT_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        }
+#endif
     }
 
     mbedtls_ecp_point_free(&P);
     mbedtls_ecp_group_free(&grp);
 }
 
-TEST_CASE("mbedtls ECP point verify with SECP192R1", "[mbedtls]")
-{
-    test_ecp_verify(MBEDTLS_ECP_DP_SECP192R1, ecc_p192_mul_res_x, ecc_p192_mul_res_y);
-}
-
 TEST_CASE("mbedtls ECP point verify with SECP256R1", "[mbedtls]")
 {
     test_ecp_verify(MBEDTLS_ECP_DP_SECP256R1, ecc_p256_mul_res_x, ecc_p256_mul_res_y);
 }
+
+#if SOC_ECC_SUPPORT_CURVE_P384
+TEST_CASE("mbedtls ECP point verify with SECP384R1", "[mbedtls]")
+{
+    if (ecc_ll_is_p384_curve_operations_supported()) {
+        test_ecp_verify(MBEDTLS_ECP_DP_SECP384R1, ecc_p384_mul_res_x, ecc_p384_mul_res_y);
+    }
+}
+#endif /* SOC_ECC_SUPPORT_CURVE_P384 */
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECC */

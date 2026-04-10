@@ -345,10 +345,8 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
         APPL_TRACE_DEBUG("bta_ag_sco_read_cback: status(%d)", status);
     }
 
-#if (BTA_HFP_EXT_CODEC == FALSE)
     /* Callout function must free the data. */
     bta_ag_sco_co_in_data(p_data, status);
-#endif
 }
 #endif
 /*******************************************************************************
@@ -1407,14 +1405,8 @@ BOOLEAN bta_ag_sco_is_open(tBTA_AG_SCB *p_scb)
 *******************************************************************************/
 BOOLEAN bta_ag_sco_is_opening(tBTA_AG_SCB *p_scb)
 {
-#if (BTM_WBS_INCLUDED == TRUE )
-    return (((bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST) ||
-            (bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST)) &&
-            (bta_ag_cb.sco.p_curr_scb == p_scb));
-#else
     return ((bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST) &&
             (bta_ag_cb.sco.p_curr_scb == p_scb));
-#endif
 }
 
 /*******************************************************************************

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@ esp_err_t NVSHandleSimple::set_typed_item(ItemType datatype, const char *key, co
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
     if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
 
-    return mStoragePtr->writeItem(mNsIndex, datatype, key, data, dataSize);
+    return mStoragePtr->writeItem(mNsIndex, datatype, key, data, dataSize, mPurgeAfterErase);
 }
 
 esp_err_t NVSHandleSimple::get_typed_item(ItemType datatype, const char *key, void* data, size_t dataSize)
@@ -33,7 +33,7 @@ esp_err_t NVSHandleSimple::set_string(const char *key, const char* str)
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
     if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
 
-    return mStoragePtr->writeItem(mNsIndex, nvs::ItemType::SZ, key, str, strlen(str) + 1);
+    return mStoragePtr->writeItem(mNsIndex, nvs::ItemType::SZ, key, str, strlen(str) + 1, mPurgeAfterErase);
 }
 
 esp_err_t NVSHandleSimple::set_blob(const char *key, const void* blob, size_t len)
@@ -41,7 +41,7 @@ esp_err_t NVSHandleSimple::set_blob(const char *key, const void* blob, size_t le
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
     if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
 
-    return mStoragePtr->writeItem(mNsIndex, nvs::ItemType::BLOB, key, blob, len);
+    return mStoragePtr->writeItem(mNsIndex, nvs::ItemType::BLOB, key, blob, len, mPurgeAfterErase);
 }
 
 esp_err_t NVSHandleSimple::get_string(const char *key, char* out_str, size_t len)
@@ -87,7 +87,7 @@ esp_err_t NVSHandleSimple::erase_item(const char* key)
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
     if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
 
-    return mStoragePtr->eraseItem(mNsIndex, key);
+    return mStoragePtr->eraseItem(mNsIndex, key, mPurgeAfterErase);
 }
 
 esp_err_t NVSHandleSimple::erase_all()
@@ -95,7 +95,15 @@ esp_err_t NVSHandleSimple::erase_all()
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
     if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
 
-    return mStoragePtr->eraseNamespace(mNsIndex);
+    return mStoragePtr->eraseNamespace(mNsIndex, mPurgeAfterErase);
+}
+
+esp_err_t NVSHandleSimple::purge_all()
+{
+    if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
+    if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
+
+    return mStoragePtr->purgeNamespace(mNsIndex);
 }
 
 esp_err_t NVSHandleSimple::commit()

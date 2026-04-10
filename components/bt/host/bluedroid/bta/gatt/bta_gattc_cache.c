@@ -40,6 +40,7 @@
 #include "stack/l2c_api.h"
 #include "btm_int.h"
 #include "errno.h"
+#include "gatt_int.h"
 
 // #include "osi/include/log.h"
 
@@ -287,6 +288,12 @@ static tBTA_GATT_STATUS bta_gattc_add_srvc_to_cache(tBTA_GATTC_SERV *p_srvc_cb,
 
     if(!p_srvc_cb->p_srvc_cache) {
         APPL_TRACE_WARNING("%s(), no resource.", __func__);
+        if (p_new_srvc->characteristics) {
+            list_free(p_new_srvc->characteristics);
+        }
+        if (p_new_srvc->included_svc) {
+            list_free(p_new_srvc->included_svc);
+        }
         osi_free(p_new_srvc);
         return BTA_GATT_NO_RESOURCES;
     }
@@ -336,7 +343,14 @@ static tBTA_GATT_STATUS bta_gattc_add_char_to_cache(tBTA_GATTC_SERV *p_srvc_cb,
     memcpy(&characteristic->uuid, p_uuid, sizeof(tBT_UUID));
 
     characteristic->service = service;
-    list_append(service->characteristics, characteristic);
+    if (!list_append(service->characteristics, characteristic)) {
+        APPL_TRACE_WARNING("%s(), no resource.", __func__);
+        if (characteristic->descriptors) {
+            list_free(characteristic->descriptors);
+        }
+        osi_free(characteristic);
+        return BTA_GATT_NO_RESOURCES;
+    }
 
     return BTA_GATT_OK;
 }
@@ -556,7 +570,8 @@ void bta_gattc_update_include_service(const list_t *services) {
     for (list_node_t *sn = list_begin(services); sn != list_end(services); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *service = list_node(sn);
         if(!service || !service->included_svc || list_is_empty(service->included_svc)) break;
-        for (list_node_t *sn = list_begin(service->included_svc); sn != list_end(service->included_svc); sn = list_next(sn)) {
+        for (list_node_t *sn = list_begin(service->included_svc); sn != list_end(service->included_svc);) {
+            list_node_t *sn_next = list_next(sn);
             tBTA_GATTC_INCLUDED_SVC *include_service = list_node(sn);
             if(include_service && !include_service->included_service) {
                 //update
@@ -564,9 +579,10 @@ void bta_gattc_update_include_service(const list_t *services) {
                 if(!include_service->included_service) {
                     //not match, free it
                     list_remove(service->included_svc, include_service);
-                    osi_free(include_service);
+                    // osi_free(include_service);
                 }
             }
+            sn = sn_next;
         }
 
     }
@@ -594,7 +610,7 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
         APPL_TRACE_ERROR("unknown connection ID");
         return;
     }
-    /* start expore a service if there is service not been explored */
+    /* start explore a service if there is service not been explored */
     if (p_srvc_cb->cur_srvc_idx < p_srvc_cb->total_srvc) {
         /* add the first service into cache */
         if (bta_gattc_add_srvc_to_cache (p_srvc_cb,
@@ -817,7 +833,7 @@ static tBTA_GATT_STATUS bta_gattc_add_char_to_list(tBTA_GATTC_SERV *p_srvc_cb,
         p_rec->e_handle = (p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx)->e_handle;
         memcpy(&p_rec->uuid, &uuid, sizeof(tBT_UUID));
 
-        /* update the endind handle of pervious characteristic if available */
+        /* update the endind handle of previous characteristic if available */
         if (p_srvc_cb->total_char > 1) {
             p_rec -= 1;
             p_rec->e_handle = decl_handle - 1;
@@ -1319,7 +1335,7 @@ void bta_gattc_fill_gatt_db_el(btgatt_db_element_t *p_attr,
     bta_to_btif_uuid(&p_attr->uuid, &uuid);
 }
 
-void bta_gattc_get_db_with_opration(UINT16 conn_id,
+void bta_gattc_get_db_with_operation(UINT16 conn_id,
                                                       bt_gatt_get_db_op_t op,
                                                       UINT16 char_handle,
                                                       tBT_UUID *incl_uuid,
@@ -1502,10 +1518,9 @@ static size_t bta_gattc_get_db_size_with_type(list_t *services,
     }
 
     size_t db_size = 0;
-    UINT16 svc_length = list_length(services) - 1;
 
     for (list_node_t *sn = list_begin(services);
-         sn != list_end(services); sn = list_next(sn), svc_length--) {
+         sn != list_end(services); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *p_cur_srvc = list_node(sn);
 
         if (p_cur_srvc->e_handle < start_handle) {
@@ -1519,12 +1534,8 @@ static size_t bta_gattc_get_db_size_with_type(list_t *services,
         if (type == BTGATT_DB_PRIMARY_SERVICE || type == BTGATT_DB_SECONDARY_SERVICE) {
             if ((type == BTGATT_DB_PRIMARY_SERVICE && p_cur_srvc->is_primary) ||
                 (type == BTGATT_DB_SECONDARY_SERVICE && !p_cur_srvc->is_primary)) {
-                // if the current service is the last service in the db, need to ensure the current service start handle is not less than the start_handle.
-                if (!svc_length) {
-                    if (p_cur_srvc->s_handle >= start_handle) {
-                        db_size++;
-                    }
-                } else {
+                /* Count only when declaration handle s_handle is within [start_handle, end_handle] (GATT spec). */
+                if (p_cur_srvc->s_handle >= start_handle) {
                     db_size++;
                 }
             }
@@ -1620,9 +1631,8 @@ static size_t bta_gattc_get_db_size(list_t *services,
     }
 
     size_t db_size = 0;
-    UINT16 svc_length = list_length(services) - 1;
     for (list_node_t *sn = list_begin(services);
-         sn != list_end(services); sn = list_next(sn), svc_length--) {
+         sn != list_end(services); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *p_cur_srvc = list_node(sn);
 
         if (p_cur_srvc->e_handle < start_handle) {
@@ -1633,41 +1643,38 @@ static size_t bta_gattc_get_db_size(list_t *services,
             break;
         }
 
-        if (!svc_length) {
-            if (p_cur_srvc->s_handle >= start_handle) {
-                db_size++;
-            }
-        } else {
-            db_size++;
-        }
-
-        if (!p_cur_srvc->characteristics || list_is_empty(p_cur_srvc->characteristics)) {
+        /* Count service only when declaration handle s_handle is within [start_handle, end_handle] (GATT spec).
+         * Skip counting this service and all its contents when s_handle < start_handle (consistent with bta_gattc_get_gatt_db_impl). */
+        if (p_cur_srvc->s_handle < start_handle) {
             continue;
         }
+        db_size++;
 
-        for (list_node_t *cn = list_begin(p_cur_srvc->characteristics);
-             cn != list_end(p_cur_srvc->characteristics); cn = list_next(cn)) {
-            tBTA_GATTC_CHARACTERISTIC *p_char = list_node(cn);
+        if (p_cur_srvc->characteristics && !list_is_empty(p_cur_srvc->characteristics)) {
+            for (list_node_t *cn = list_begin(p_cur_srvc->characteristics);
+                 cn != list_end(p_cur_srvc->characteristics); cn = list_next(cn)) {
+                tBTA_GATTC_CHARACTERISTIC *p_char = list_node(cn);
 
-            if (p_char->handle < start_handle) {
-                continue;
-            }
-            if (p_char->handle > end_handle) {
-                return db_size;
-            }
-            db_size++;
+                if (p_char->handle < start_handle) {
+                    continue;
+                }
+                if (p_char->handle > end_handle) {
+                    return db_size;
+                }
+                db_size++;
 
-            if (p_char->descriptors) {
-                for (list_node_t *dn = list_begin(p_char->descriptors);
-                     dn != list_end(p_char->descriptors); dn = list_next(dn)) {
-                    tBTA_GATTC_DESCRIPTOR *p_desc = list_node(dn);
-                    if (p_desc->handle < start_handle) {
-                        continue;
+                if (p_char->descriptors) {
+                    for (list_node_t *dn = list_begin(p_char->descriptors);
+                         dn != list_end(p_char->descriptors); dn = list_next(dn)) {
+                        tBTA_GATTC_DESCRIPTOR *p_desc = list_node(dn);
+                        if (p_desc->handle < start_handle) {
+                            continue;
+                        }
+                        if (p_desc->handle > end_handle) {
+                            return db_size;
+                        }
+                        db_size++;
                     }
-                    if (p_desc->handle > end_handle) {
-                        return db_size;
-                    }
-                    db_size++;
                 }
             }
         }
@@ -1702,7 +1709,7 @@ void bta_gattc_get_db_size_handle(UINT16 conn_id, UINT16 start_handle, UINT16 en
     }
 
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
-    if (!p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache)) {
+    if ((p_srcb == NULL) || !p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache)) {
         *count = 0;
         return;
     }
@@ -1792,6 +1799,11 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV *p_srvc_cb,
             break;
         }
 
+        /* Output service only when declaration handle s_handle is within [start_handle, end_handle] (consistent with count logic). */
+        if (p_cur_srvc->s_handle < start_handle) {
+            continue;
+        }
+
         bta_gattc_fill_gatt_db_el(curr_db_attr,
                                   p_cur_srvc->is_primary ?
                                   BTGATT_DB_PRIMARY_SERVICE :
@@ -1879,8 +1891,8 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV *p_srvc_cb,
             bta_gattc_fill_gatt_db_el(curr_db_attr,
                                       BTGATT_DB_INCLUDED_SERVICE,
                                       p_isvc->handle,
-                                      0 /* s_handle */,
-                                      0 /* e_handle */,
+                                      p_isvc->incl_srvc_s_handle,
+                                      p_isvc->incl_srvc_e_handle,
                                       p_isvc->handle,
                                       p_isvc->uuid,
                                       0 /* property */);
@@ -1912,17 +1924,26 @@ void bta_gattc_get_gatt_db(UINT16 conn_id, UINT16 start_handle, UINT16 end_handl
 
     if (p_clcb == NULL) {
         APPL_TRACE_ERROR("Unknown conn ID: %d", conn_id);
+        *count = 0;
+        *db = NULL;
         return;
     }
 
     if (p_clcb->state != BTA_GATTC_CONN_ST) {
         APPL_TRACE_ERROR("server cache not available, CLCB state = %d",
                          p_clcb->state);
+        *count = 0;
+        *db = NULL;
         return;
     }
 
-    if (!p_clcb->p_srcb || p_clcb->p_srcb->p_srvc_list || /* no active discovery */
+    /* Reject if no server context, discovery still in progress (p_srvc_list in use), or cache not ready
+    p_srvc_list must set to NULL after osi_free;
+    */
+    if (!p_clcb->p_srcb || p_clcb->p_srcb->p_srvc_list ||
         !p_clcb->p_srcb->p_srvc_cache) {
+        *count = 0;
+        *db = NULL;
         APPL_TRACE_ERROR("No server cache available");
         return;
     }
@@ -2032,10 +2053,11 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
         return;
     }
 
-    int i = 0;
+    /* i: current write index, equals actual count after loops; db_size: allocated slots from cache count */
+    size_t i = 0;
     size_t db_size = bta_gattc_get_db_size(p_srvc_cb->p_srvc_cache, 0x0000, 0xFFFF);
     tBTA_GATTC_NV_ATTR *nv_attr = osi_malloc(db_size * sizeof(tBTA_GATTC_NV_ATTR));
-    // This step is very importent, if not clear the memory, the hasy key base on the attribute case will be not corret.
+    // This step is very important, if not clear the memory, the hasy key base on the attribute case will be not correct.
     if (nv_attr != NULL) {
         memset(nv_attr, 0, db_size * sizeof(tBTA_GATTC_NV_ATTR));
     }
@@ -2048,6 +2070,11 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
          sn != list_end(p_srvc_cb->p_srvc_cache); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *p_cur_srvc = list_node(sn);
 
+        /* Bounds check: avoid buffer overflow if cache is modified and count exceeds db_size */
+        if (i >= db_size) {
+            APPL_TRACE_ERROR("%s(), db_size exceeded (services), skip saving.", __func__);
+            goto save_error;
+        }
         bta_gattc_fill_nv_attr(&nv_attr[i++],
                                 BTA_GATTC_ATTR_TYPE_SRVC,
                                p_cur_srvc->s_handle,
@@ -2063,41 +2090,49 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
          sn != list_end(p_srvc_cb->p_srvc_cache); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *p_cur_srvc = list_node(sn);
 
-        if (!p_cur_srvc->characteristics || list_is_empty(p_cur_srvc->characteristics)) {
-            continue;
-        }
+        if (p_cur_srvc->characteristics && !list_is_empty(p_cur_srvc->characteristics)) {
+            for (list_node_t *cn = list_begin(p_cur_srvc->characteristics);
+                 cn != list_end(p_cur_srvc->characteristics); cn = list_next(cn)) {
+                tBTA_GATTC_CHARACTERISTIC *p_char = list_node(cn);
 
-        for (list_node_t *cn = list_begin(p_cur_srvc->characteristics);
-             cn != list_end(p_cur_srvc->characteristics); cn = list_next(cn)) {
-            tBTA_GATTC_CHARACTERISTIC *p_char = list_node(cn);
-
-            bta_gattc_fill_nv_attr(&nv_attr[i++],
-                                   BTA_GATTC_ATTR_TYPE_CHAR,
-                                   p_char->handle,
-                                   0,
-                                   p_char->uuid,
-                                   p_char->properties,
-                                   0 /* incl_srvc_s_handle */,
-                                   0 /* incl_srvc_e_handle */,
-                                   FALSE);
-
-            if (!p_char->descriptors || list_is_empty(p_char->descriptors)) {
-                continue;
-            }
-
-            for (list_node_t *dn = list_begin(p_char->descriptors);
-                 dn != list_end(p_char->descriptors); dn = list_next(dn)) {
-                tBTA_GATTC_DESCRIPTOR *p_desc = list_node(dn);
-
+                /* Bounds check: avoid buffer overflow if count exceeds db_size */
+                if (i >= db_size) {
+                    APPL_TRACE_ERROR("%s(), db_size exceeded (characteristics), skip saving.", __func__);
+                    goto save_error;
+                }
                 bta_gattc_fill_nv_attr(&nv_attr[i++],
-                                       BTA_GATTC_ATTR_TYPE_CHAR_DESCR,
-                                       p_desc->handle,
+                                       BTA_GATTC_ATTR_TYPE_CHAR,
+                                       p_char->handle,
                                        0,
-                                       p_desc->uuid,
-                                       0 /* properties */,
+                                       p_char->uuid,
+                                       p_char->properties,
                                        0 /* incl_srvc_s_handle */,
                                        0 /* incl_srvc_e_handle */,
                                        FALSE);
+
+                if (!p_char->descriptors || list_is_empty(p_char->descriptors)) {
+                    continue;
+                }
+
+                for (list_node_t *dn = list_begin(p_char->descriptors);
+                     dn != list_end(p_char->descriptors); dn = list_next(dn)) {
+                    tBTA_GATTC_DESCRIPTOR *p_desc = list_node(dn);
+
+                    /* Bounds check: avoid buffer overflow if count exceeds db_size */
+                    if (i >= db_size) {
+                        APPL_TRACE_ERROR("%s(), db_size exceeded (descriptors), skip saving.", __func__);
+                        goto save_error;
+                    }
+                    bta_gattc_fill_nv_attr(&nv_attr[i++],
+                                           BTA_GATTC_ATTR_TYPE_CHAR_DESCR,
+                                           p_desc->handle,
+                                           0,
+                                           p_desc->uuid,
+                                           0 /* properties */,
+                                           0 /* incl_srvc_s_handle */,
+                                           0 /* incl_srvc_e_handle */,
+                                           FALSE);
+                }
             }
         }
 
@@ -2108,21 +2143,32 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
         for (list_node_t *an = list_begin(p_cur_srvc->included_svc);
              an != list_end(p_cur_srvc->included_svc); an = list_next(an)) {
             tBTA_GATTC_INCLUDED_SVC *p_isvc = list_node(an);
+            UINT16 incl_s_handle = p_isvc->included_service ? p_isvc->included_service->s_handle : p_isvc->incl_srvc_s_handle;
+            UINT16 incl_e_handle = p_isvc->included_service ? p_isvc->included_service->e_handle : p_isvc->incl_srvc_e_handle;
 
+            /* Bounds check: avoid buffer overflow if count exceeds db_size */
+            if (i >= db_size) {
+                APPL_TRACE_ERROR("%s(), db_size exceeded (included_svc), skip saving.", __func__);
+                goto save_error;
+            }
             bta_gattc_fill_nv_attr(&nv_attr[i++],
                                    BTA_GATTC_ATTR_TYPE_INCL_SRVC,
                                    p_isvc->handle,
                                    0,
                                    p_isvc->uuid,
                                    0 /* properties */,
-                                   p_isvc->included_service->s_handle,
-                                   p_isvc->included_service->e_handle,
+                                   incl_s_handle,
+                                   incl_e_handle,
                                    FALSE);
         }
     }
 
-    /* TODO: Gattc cache write/read need to be added in IDF 3.1*/
-    bta_gattc_cache_write(p_srvc_cb->server_bda, db_size, nv_attr);
+    bta_gattc_cache_write(p_srvc_cb->server_bda, (UINT16)db_size, nv_attr);
+    osi_free(nv_attr);
+    return;
+
+save_error:
+    APPL_TRACE_ERROR("%s(), cache inconsistency detected, not saving partial cache.", __func__);
     osi_free(nv_attr);
 }
 
@@ -2149,11 +2195,14 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb)
         return false;
     }
 
-    size_t num_attr = bta_gattc_get_cache_attr_length(index) / sizeof(tBTA_GATTC_NV_ATTR);
+    size_t length = bta_gattc_get_cache_attr_length(index);
 
-    if (!num_attr) {
+    if (length == 0 || (length % sizeof(tBTA_GATTC_NV_ATTR)) != 0) {
+        APPL_TRACE_ERROR("%s, Invalid cache length %d", __func__, length);
         return false;
     }
+
+    size_t num_attr = length / sizeof(tBTA_GATTC_NV_ATTR);
     //don't forget to set the total attribute number.
     p_clcb->p_srcb->total_attr = num_attr;
     APPL_TRACE_DEBUG("%s(), index = %x, num_attr = %d", __func__, index, num_attr);
@@ -2163,6 +2212,7 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb)
     }
     if ((status = bta_gattc_co_cache_load(attr, index)) != BTA_GATT_OK) {
         APPL_TRACE_DEBUG("%s(), gattc cache load fail, status = %x", __func__, status);
+        osi_free(attr);
         return false;
     }
     p_clcb->searched_service_source = BTA_GATTC_SERVICE_INFO_FROM_NVS_FLASH;

@@ -52,15 +52,15 @@ menu "LDO Regulator Configurations"
     choice ESP_LDO_VOLTAGE_PSRAM_DOMAIN
         prompt "PSRAM power domain voltage"
         depends on ESP_LDO_RESERVE_PSRAM
-        default ESP_LDO_VOLTAGE_PSRAM_1900_MV
+        default ESP_LDO_VOLTAGE_PSRAM_1800_MV
         help
             Select the voltage used by the PSRAM power domain.
 
-        config ESP_LDO_VOLTAGE_PSRAM_1900_MV
-            bool "1.9V"
+        config ESP_LDO_VOLTAGE_PSRAM_1800_MV
+            bool "1.8V"
     endchoice
 
     config ESP_LDO_VOLTAGE_PSRAM_DOMAIN
         int
-        default 1900 if ESP_LDO_VOLTAGE_PSRAM_1900_MV
+        default 1800 if ESP_LDO_VOLTAGE_PSRAM_1800_MV
 endmenu

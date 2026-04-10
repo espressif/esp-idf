@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include "esp_timer.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
-#include "esp_vfs_usb_serial_jtag.h" // Old headers for the aliasing functions
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -26,6 +25,7 @@
 #include "driver/usb_serial_jtag_select.h"
 #include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
+#include "driver/esp_private/usb_serial_jtag_vfs.h"
 #include "esp_private/startup_internal.h"
 #include "esp_heap_caps.h"
 
@@ -139,7 +139,7 @@ static esp_err_t usb_serial_jtag_end_select(void *end_select_args);
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-static int usb_serial_jtag_open(const char * path, int flags, int mode)
+static int usb_serial_jtag_open(__attribute__((unused)) void *ctx, const char * path, int flags, int mode)
 {
     s_ctx.non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
     return USJ_LOCAL_FD;
@@ -180,8 +180,12 @@ static int usb_serial_jtag_rx_char_no_driver(int fd)
     return c;
 }
 
-static ssize_t usb_serial_jtag_write(int fd, const void * data, size_t size)
+static ssize_t usb_serial_jtag_write(__attribute__((unused)) void *ctx, int fd, const void * data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated lock if two streams (stdout and stderr) point to the
@@ -224,8 +228,12 @@ static void usb_serial_jtag_return_char(int fd, int c)
     s_ctx.peek_char = c;
 }
 
-static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
+static ssize_t usb_serial_jtag_read(__attribute__((unused)) void *ctx, int fd, void* data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     assert(fd == USJ_LOCAL_FD);
     char *data_c = (char *) data;
     size_t received = 0;
@@ -298,19 +306,19 @@ static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
     return -1;
 }
 
-static int usb_serial_jtag_fstat(int fd, struct stat * st)
+static int usb_serial_jtag_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 {
     memset(st, 0, sizeof(*st));
     st->st_mode = S_IFCHR;
     return 0;
 }
 
-static int usb_serial_jtag_close(int fd)
+static int usb_serial_jtag_close(__attribute__((unused)) void *ctx, int fd)
 {
     return 0;
 }
 
-static int usb_serial_jtag_fcntl(int fd, int cmd, int arg)
+static int usb_serial_jtag_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     int result = 0;
     if (cmd == F_GETFL) {
@@ -347,8 +355,12 @@ static int usb_serial_jtag_wait_tx_done_no_driver(int fd)
     return EIO;
 }
 
-static int usb_serial_jtag_fsync(int fd)
+static int usb_serial_jtag_fsync(__attribute__((unused)) void *ctx, int fd)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     _lock_acquire_recursive(&s_ctx.write_lock);
     int r = s_ctx.fsync_func(fd);
     _lock_release_recursive(&s_ctx.write_lock);
@@ -362,7 +374,7 @@ static int usb_serial_jtag_fsync(int fd)
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
-static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, BaseType_t *task_woken)
+static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, int *task_woken)
 {
     portENTER_CRITICAL_ISR(&s_registered_select_lock);
     for (int i = 0; i < s_registered_select_num; ++i) {
@@ -429,19 +441,38 @@ static esp_err_t unregister_select(usb_serial_jtag_select_args_t *args)
         for (int i = 0; i < s_registered_select_num; ++i) {
             if (s_registered_selects[i] == args) {
                 const int new_size = s_registered_select_num - 1;
-                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
-                // last item.
-                s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
-                // Shrinking a buffer with realloc is guaranteed to succeed.
-                s_registered_select_num = new_size;
+                // Move last element to fill gap (only if not removing the last element)
+                if (i < new_size) {
+                    s_registered_selects[i] = s_registered_selects[new_size];
+                }
+                if (new_size == 0) {
+                    // Free the entire array
+                    free(s_registered_selects);
+                    s_registered_selects = NULL;
+                    s_registered_select_num = 0;
+                    ret = ESP_OK;
+                } else {
+                    // Shrink the array
+                    usb_serial_jtag_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
+                    if (new_selects == NULL) {
+                        // Realloc failed - restore moved element
+                        if (i < new_size) {
+                            s_registered_selects[new_size] = s_registered_selects[i];
+                        }
+                        ret = ESP_ERR_NO_MEM;
+                    } else {
+                        // Success - update pointer
+                        s_registered_selects = new_selects;
+                        s_registered_select_num = new_size;
+                        ret = ESP_OK;
+                    }
+                }
 
                 /* when the last select is unregistered, also unregister the callback  */
                 if (s_registered_select_num == 0) {
                     usb_serial_jtag_set_select_notif_callback(NULL);
                 }
 
-                ret = ESP_OK;
                 break;
             }
         }
@@ -519,7 +550,7 @@ static esp_err_t usb_serial_jtag_end_select(void *end_select_args)
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-static int usb_serial_jtag_tcsetattr(int fd, int optional_actions, const struct termios *p)
+static int usb_serial_jtag_tcsetattr(__attribute__((unused)) void *ctx, int fd, int optional_actions, const struct termios *p)
 {
     if (p == NULL) {
         errno = EINVAL;
@@ -531,7 +562,7 @@ static int usb_serial_jtag_tcsetattr(int fd, int optional_actions, const struct 
         // nothing to do
         break;
     case TCSADRAIN:
-        usb_serial_jtag_fsync(fd);
+        usb_serial_jtag_fsync(ctx, fd);
         break;
     case TCSAFLUSH:
         // Not applicable.
@@ -551,7 +582,7 @@ static int usb_serial_jtag_tcsetattr(int fd, int optional_actions, const struct 
     return 0;
 }
 
-static int usb_serial_jtag_tcgetattr(int fd, struct termios *p)
+static int usb_serial_jtag_tcgetattr(__attribute__((unused)) void *ctx, int fd, struct termios *p)
 {
     if (p == NULL) {
         errno = EINVAL;
@@ -576,13 +607,13 @@ static int usb_serial_jtag_tcgetattr(int fd, struct termios *p)
     return 0;
 }
 
-static int usb_serial_jtag_tcdrain(int fd)
+static int usb_serial_jtag_tcdrain(__attribute__((unused)) void *ctx, int fd)
 {
-    usb_serial_jtag_fsync(fd);
+    usb_serial_jtag_fsync(ctx, fd);
     return 0;
 }
 
-static int usb_serial_jtag_tcflush(int fd, int select)
+static int usb_serial_jtag_tcflush(__attribute__((unused)) void *ctx, int fd, int select)
 {
     //Flushing is not supported.
     errno = EINVAL;
@@ -608,21 +639,21 @@ static const esp_vfs_select_ops_t s_vfs_jtag_select = {
 #endif // CONFIG_VFS_SUPPORT_SELECT
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static const esp_vfs_termios_ops_t s_vfs_jtag_termios = {
-    .tcsetattr = &usb_serial_jtag_tcsetattr,
-    .tcgetattr = &usb_serial_jtag_tcgetattr,
-    .tcdrain = &usb_serial_jtag_tcdrain,
-    .tcflush = &usb_serial_jtag_tcflush,
+    .tcsetattr_p = &usb_serial_jtag_tcsetattr,
+    .tcgetattr_p = &usb_serial_jtag_tcgetattr,
+    .tcdrain_p = &usb_serial_jtag_tcdrain,
+    .tcflush_p = &usb_serial_jtag_tcflush,
 };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 static const esp_vfs_fs_ops_t s_vfs_jtag = {
-    .write = &usb_serial_jtag_write,
-    .open = &usb_serial_jtag_open,
-    .fstat = &usb_serial_jtag_fstat,
-    .close = &usb_serial_jtag_close,
-    .read = &usb_serial_jtag_read,
-    .fcntl = &usb_serial_jtag_fcntl,
-    .fsync = &usb_serial_jtag_fsync,
+    .write_p = &usb_serial_jtag_write,
+    .open_p = &usb_serial_jtag_open,
+    .fstat_p = &usb_serial_jtag_fstat,
+    .close_p = &usb_serial_jtag_close,
+    .read_p = &usb_serial_jtag_read,
+    .fcntl_p = &usb_serial_jtag_fcntl,
+    .fsync_p = &usb_serial_jtag_fsync,
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     .select = &s_vfs_jtag_select,
@@ -641,7 +672,7 @@ const esp_vfs_fs_ops_t* esp_vfs_usb_serial_jtag_get_vfs(void)
 esp_err_t usb_serial_jtag_vfs_register(void)
 {
     // "/dev/usb_serial_jtag" unfortunately is too long for vfs
-    return esp_vfs_register_fs("/dev/usbserjtag", &s_vfs_jtag, ESP_VFS_FLAG_STATIC, NULL);
+    return esp_vfs_register_fs("/dev/usbserjtag", &s_vfs_jtag, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
 }
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
@@ -650,13 +681,43 @@ ESP_SYSTEM_INIT_FN(init_vfs_usj, CORE, BIT(0), 111)
     usb_serial_jtag_vfs_register();
     return ESP_OK;
 }
+
+esp_err_t usb_serial_jtag_vfs_dev_port_init(const esp_console_dev_usb_serial_jtag_config_t *config,
+                                            esp_line_endings_t rx_mode,
+                                            esp_line_endings_t tx_mode)
+{
+    (void)config;
+
+    usb_serial_jtag_vfs_set_rx_line_endings(rx_mode);
+    usb_serial_jtag_vfs_set_tx_line_endings(tx_mode);
+
+    /* Install USB-SERIAL-JTAG driver for interrupt-driven reads and writes */
+    usb_serial_jtag_driver_config_t usb_serial_jtag_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+    esp_err_t ret = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    /* Tell vfs to use usb-serial-jtag driver */
+    usb_serial_jtag_vfs_use_driver();
+
+    return ESP_OK;
+}
+
+void usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config)
+{
+    (void)config;
+    usb_serial_jtag_vfs_use_nonblocking();
+    usb_serial_jtag_driver_uninstall();
+}
+
 #endif
 
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 ESP_SYSTEM_INIT_FN(init_vfs_usj_sec, CORE, BIT(0), 112)
 {
     // "/dev/seccondary_usb_serial_jtag" unfortunately is too long for vfs
-    esp_vfs_register_fs("/dev/secondary", &s_vfs_jtag, ESP_VFS_FLAG_STATIC, NULL);
+    esp_vfs_register_fs("/dev/secondary", &s_vfs_jtag, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
     return ESP_OK;
 }
 #endif

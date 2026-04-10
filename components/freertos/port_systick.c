@@ -44,7 +44,7 @@ BaseType_t xPortSysTickHandler(void);
 #include "esp_private/pm_trace.h"
 #endif //CONFIG_PM_TRACE
 
-_Static_assert(SOC_CPU_CORES_NUM <= SOC_SYSTIMER_ALARM_NUM - 1, "the number of cores must match the number of core alarms in SYSTIMER");
+_Static_assert(SOC_CPU_CORES_NUM <= SYSTIMER_LL_ALARM_NUM - 1, "the number of cores must match the number of core alarms in SYSTIMER");
 
 void SysTickIsrHandler(void *arg);
 

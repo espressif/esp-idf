@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,6 +9,7 @@
 #include "unity_fixture.h"
 #include "esp_netif.h"
 #include "esp_netif_sntp.h"
+#include "esp_event.h"
 #include "esp_netif_net_stack.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
@@ -18,6 +19,9 @@
 #include "memory_checks.h"
 #include "lwip/netif.h"
 #include "esp_netif_test.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "sntp/sntp_get_set_time.h"
 
 TEST_GROUP(esp_netif);
 
@@ -64,6 +68,44 @@ TEST(esp_netif, init_and_destroy_sntp)
     // Invalid state is expected since SNTP service didn't start
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_netif_sntp_reachability(0, &reachability));
     esp_netif_sntp_deinit();
+}
+
+static SemaphoreHandle_t s_sntp_evt_sem;
+static void sntp_event_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+    (void)arg; (void)base; (void)id; (void)data;
+    if (s_sntp_evt_sem) {
+        xSemaphoreGive(s_sntp_evt_sem);
+    }
+}
+
+TEST(esp_netif, sntp_posts_time_sync_event)
+{
+    test_case_uses_tcpip();
+    TEST_ESP_OK(esp_event_loop_create_default());
+
+    // Register handler for NETIF_SNTP_EVENT
+    s_sntp_evt_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_sntp_evt_sem);
+    TEST_ESP_OK(esp_event_handler_register(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &sntp_event_handler, NULL));
+
+    // Initialize esp-netif SNTP (no auto-start needed for this test)
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("127.0.0.1");
+    config.start = false;
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
+
+    // Trigger the SNTP time sync callback path artificially
+    sntp_set_system_time(1, 0);
+
+    // Wait for event to be posted
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_sntp_evt_sem, pdMS_TO_TICKS(1000)));
+
+    // Cleanup
+    esp_netif_sntp_deinit();
+    TEST_ESP_OK(esp_event_handler_unregister(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &sntp_event_handler));
+    vSemaphoreDelete(s_sntp_evt_sem);
+    s_sntp_evt_sem = NULL;
+    TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
 TEST(esp_netif, convert_ip_addresses)
@@ -145,6 +187,87 @@ TEST(esp_netif, find_netifs)
         found_netif = esp_netif_find_if(desc_matches_with, (void*)if_keys[i]);
         TEST_ASSERT_EQUAL(found_netif, NULL);
     }
+}
+
+static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
+{
+    return ESP_OK;
+}
+
+static SemaphoreHandle_t s_netif_up_sem;
+static SemaphoreHandle_t s_netif_down_sem;
+static volatile int s_netif_up_count;
+static volatile int s_netif_down_count;
+
+static void netif_status_evt_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+    (void)arg; (void)base; (void)data;
+    if (id == IP_EVENT_NETIF_UP) {
+        s_netif_up_count++;
+        if (s_netif_up_sem) {
+            xSemaphoreGive(s_netif_up_sem);
+        }
+    } else if (id == IP_EVENT_NETIF_DOWN) {
+        s_netif_down_count++;
+        if (s_netif_down_sem) {
+            xSemaphoreGive(s_netif_down_sem);
+        }
+    }
+}
+
+TEST(esp_netif, unified_netif_status_event)
+{
+    test_case_uses_tcpip();
+    TEST_ESP_OK(esp_event_loop_create_default());
+
+    s_netif_up_sem = xSemaphoreCreateBinary();
+    s_netif_down_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_netif_up_sem);
+    TEST_ASSERT_NOT_NULL(s_netif_down_sem);
+    s_netif_up_count = 0;
+    s_netif_down_count = 0;
+
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_UP, &netif_status_evt_handler, NULL));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_DOWN, &netif_status_evt_handler, NULL));
+
+    // Create a simple netif (no real driver needed)
+    esp_netif_driver_ifconfig_t driver_config = { .handle = (void*)1, .transmit = dummy_transmit };
+    esp_netif_inherent_config_t base_netif_config = { .if_key = "if_status", .if_desc = "if_status" };
+    esp_netif_config_t cfg = { .base = &base_netif_config, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA, .driver = &driver_config };
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    TEST_ASSERT_NOT_NULL(netif);
+
+    // Bring interface up (should emit exactly one NETIF_UP)
+    esp_netif_action_start(netif, NULL, 0, NULL);
+    esp_netif_action_connected(netif, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_netif_up_sem, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    TEST_ASSERT_EQUAL(1, s_netif_up_count);
+    TEST_ASSERT_EQUAL(0, s_netif_down_count);
+
+    // Bring interface down (should emit exactly one NETIF_DOWN)
+    esp_netif_action_disconnected(netif, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_netif_down_sem, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    TEST_ASSERT_EQUAL(1, s_netif_down_count);
+    TEST_ASSERT_EQUAL(1, s_netif_up_count);
+
+    // Bring up again (should increment up count to 2)
+    esp_netif_action_connected(netif, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_netif_up_sem, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    TEST_ASSERT_EQUAL(2, s_netif_up_count);
+    TEST_ASSERT_EQUAL(1, s_netif_down_count);
+
+    // Cleanup
+    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_NETIF_UP, &netif_status_evt_handler));
+    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_NETIF_DOWN, &netif_status_evt_handler));
+    vSemaphoreDelete(s_netif_up_sem);
+    vSemaphoreDelete(s_netif_down_sem);
+    s_netif_up_sem = s_netif_down_sem = NULL;
+
+    esp_netif_destroy(netif);
+    TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
@@ -438,11 +561,6 @@ TEST(esp_netif, get_set_hostname)
 }
 #endif // CONFIG_ESP_WIFI_ENABLED
 
-static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
-{
-    return ESP_OK;
-}
-
 /*
  * This test validates the route priority of multiple netifs. It checks that the default route (default netif)
  * is set correctly for the netifs according to their `route_prio` value and `link_up` state.
@@ -580,6 +698,48 @@ TEST(esp_netif, set_get_dnsserver)
     }
 }
 
+TEST(esp_netif, initial_mtu_config_applied)
+{
+    // Ensure TCP/IP stack is initialized
+    test_case_uses_tcpip();
+
+    // Minimal driver config to satisfy start-time sanity checks
+    esp_netif_driver_ifconfig_t driver_config = { .handle = (void*)1, .transmit = dummy_transmit };
+
+    // Case 1: explicit MTU configured
+    uint16_t mtu_out = 0;
+    esp_netif_inherent_config_t base1 = { .if_key = "mtu_if0" };
+    base1.mtu = 1400;
+    esp_netif_config_t cfg1 = {
+        .base = &base1,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+        .driver = &driver_config,
+    };
+    esp_netif_t *n1 = esp_netif_new(&cfg1);
+    TEST_ASSERT_NOT_NULL(n1);
+    esp_netif_action_start(n1, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_mtu(n1, &mtu_out));
+    TEST_ASSERT_EQUAL_UINT16(1400, mtu_out);
+    esp_netif_destroy(n1);
+
+    // Case 2: default MTU (0 means use stack default, e.g., 1500)
+    esp_netif_inherent_config_t base2 = { .if_key = "mtu_if1" };
+    // base2.mtu intentionally left 0
+    esp_netif_config_t cfg2 = {
+        .base = &base2,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+        .driver = &driver_config,
+    };
+    esp_netif_t *n2 = esp_netif_new(&cfg2);
+    TEST_ASSERT_NOT_NULL(n2);
+    esp_netif_action_start(n2, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_mtu(n2, &mtu_out));
+    TEST_ASSERT_EQUAL_UINT16(1500, mtu_out);
+    struct netif *netif = esp_netif_get_netif_impl(n2);
+    TEST_ASSERT_EQUAL_UINT16(1500, netif->mtu);
+    esp_netif_destroy(n2);
+}
+
 TEST_GROUP_RUNNER(esp_netif)
 {
     /**
@@ -588,6 +748,7 @@ TEST_GROUP_RUNNER(esp_netif)
      */
     RUN_TEST_CASE(esp_netif, init_and_destroy)
     RUN_TEST_CASE(esp_netif, init_and_destroy_sntp)
+    RUN_TEST_CASE(esp_netif, sntp_posts_time_sync_event)
     RUN_TEST_CASE(esp_netif, convert_ip_addresses)
     RUN_TEST_CASE(esp_netif, get_from_if_key)
     RUN_TEST_CASE(esp_netif, create_delete_multiple_netifs)
@@ -608,8 +769,10 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_wifi_ap)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
 #endif
+    RUN_TEST_CASE(esp_netif, initial_mtu_config_applied)
     RUN_TEST_CASE(esp_netif, route_priority)
     RUN_TEST_CASE(esp_netif, set_get_dnsserver)
+    RUN_TEST_CASE(esp_netif, unified_netif_status_event)
 }
 
 void app_main(void)

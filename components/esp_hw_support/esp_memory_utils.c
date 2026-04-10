@@ -11,6 +11,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_memory_utils.h"
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
@@ -52,8 +53,8 @@ bool esp_ptr_byte_accessible(const void *p)
     intptr_t ip = (intptr_t) p;
     bool r;
     r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
-#if SOC_MEM_TCM_SUPPORTED
-    r |= esp_ptr_in_tcm(p);
+#if SOC_MEM_SPM_SUPPORTED
+    r |= esp_ptr_in_spm(p);
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* For ESP32 case, RTC fast memory is accessible to PRO cpu only and hence
@@ -93,5 +94,11 @@ bool esp_stack_ptr_in_extram(uint32_t sp)
 {
     //Check if stack ptr is on PSRAM, and 16 byte aligned.
     return (esp_psram_check_ptr_addr((void *)sp) && ((sp & 0xF) == 0));
+}
+
+bool IRAM_ATTR esp_task_stack_is_sane_cache_disabled(void)
+{
+    const void *sp = (const void *)esp_cpu_get_sp();
+    return !esp_stack_ptr_in_extram((uint32_t)sp);
 }
 #endif

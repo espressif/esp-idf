@@ -19,6 +19,8 @@
 #define BOOT_BUTTON_NUM         28
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define BOOT_BUTTON_NUM         35
+#elif CONFIG_IDF_TARGET_ESP32H21
+#define BOOT_BUTTON_NUM         14
 #else
 #define BOOT_BUTTON_NUM         0
 #endif
@@ -44,8 +46,8 @@ esp_err_t example_register_gpio_wakeup(void)
     gpio_config_t config = {
             .pin_bit_mask = BIT64(GPIO_WAKEUP_NUM),
             .mode = GPIO_MODE_INPUT,
-            .pull_down_en = false,
-            .pull_up_en = false,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
             .intr_type = GPIO_INTR_DISABLE
     };
     ESP_RETURN_ON_ERROR(gpio_config(&config), TAG, "Initialize GPIO%d failed", GPIO_WAKEUP_NUM);

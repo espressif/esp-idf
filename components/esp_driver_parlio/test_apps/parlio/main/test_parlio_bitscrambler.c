@@ -59,7 +59,7 @@ static void test_parlio_bitscrambler(void)
         .trans_queue_depth = 8,
         .max_transfer_size = 128,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,
     };
 
     parlio_rx_unit_handle_t rx_unit = NULL;
@@ -95,7 +95,7 @@ static void test_parlio_bitscrambler(void)
         .idle_value = 0x00,
         .bitscrambler_program = bitscrambler_program_test_tx_LSB_to_MSB,
     };
-    uint8_t tx_payload[TEST_PAYLOAD_SIZE] = {0};
+    __attribute__((aligned(TEST_PAYLOAD_SIZE))) uint8_t tx_payload[TEST_PAYLOAD_SIZE] = {0};
     for (int i = 0; i < TEST_PAYLOAD_SIZE; i++) {
         tx_payload[i] = i;
     }
@@ -202,7 +202,7 @@ TEST_CASE("parlio_tx_bitscrambler_test", "[parlio_bitscrambler]")
     test_parlio_bitscrambler();
 }
 
-#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#if PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
 static void test_parlio_bitscrambler_different_input_output_sizes(void)
 {
     parlio_tx_unit_handle_t tx_unit = NULL;
@@ -353,4 +353,4 @@ TEST_CASE("parlio_tx_bitscrambler_different_input_output_sizes_test", "[parlio_b
 {
     test_parlio_bitscrambler_different_input_output_sizes();
 }
-#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#endif // PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)

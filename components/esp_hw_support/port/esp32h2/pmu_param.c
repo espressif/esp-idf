@@ -17,7 +17,7 @@
 #include "esp_hw_log.h"
 #include "soc/clk_tree_defs.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_param";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,6 +82,10 @@
 #include "esp_rom_md5.h"
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 #include "esp_memory_utils.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
+#endif
 #endif
 
 #ifdef CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
@@ -169,13 +173,13 @@ lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
 
   /*
    * Generate the hash using ROM MD5 APIs
-   * This hook is invoked in the context of TCP/IP (tiT) task and
-   * it is unlikely that its stack would be placed in SPIRAM. Hence
-   * even with SPIRAM enabled case and ESP32 revision < 3, using ROM
-   * APIs should not create any issues.
+   * For ESP32 chips prior to ECO3, the stack pointer must not point to external RAM
+   * to use the ROM MD5 functions.
+   * Other chips (ESP32-S2, ESP32-S3, ESP32-C3, etc.) don't have this limitation.
    */
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-  assert(!esp_ptr_external_ram(esp_cpu_get_sp()));
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY && CONFIG_IDF_TARGET_ESP32
+  /* Only assert for ESP32 revision < ECO3 (revision 300) */
+  assert(ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300) || !esp_ptr_external_ram(esp_cpu_get_sp()));
 #endif
 
   md5_context_t ctx;

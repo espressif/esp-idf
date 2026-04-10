@@ -29,7 +29,7 @@ static const char *TAG = "example_foc";
 #define EXAMPLE_FOC_MCPWM_TIMER_RESOLUTION_HZ 10000000 // 10MHz, 1 tick = 0.1us
 #define EXAMPLE_FOC_MCPWM_PERIOD              1000     // 1000 * 0.1us = 100us, 10KHz
 
-#define EXAMPLE_FOC_WAVE_FREQ    10         // 50Hz 3 phase AC wave
+#define EXAMPLE_FOC_WAVE_FREQ    50         // 50Hz 3 phase AC wave
 #define EXAMPLE_FOC_WAVE_AMPL    100        // Wave amplitude, Use up-down timer mode, max value should be (EXAMPLE_FOC_MCPWM_PERIOD/2)
 
 void bsp_bridge_driver_init(void)
@@ -114,7 +114,7 @@ void app_main(void)
         xSemaphoreTake(update_semaphore, portMAX_DELAY);
 
         // Calculate elec_theta_deg increase step of 50Hz output on 10000Hz call
-        elec_theta_deg += (EXAMPLE_FOC_WAVE_AMPL * 360.f) / (EXAMPLE_FOC_MCPWM_TIMER_RESOLUTION_HZ / EXAMPLE_FOC_WAVE_FREQ);
+        elec_theta_deg += (EXAMPLE_FOC_WAVE_FREQ * 360.f) / (EXAMPLE_FOC_MCPWM_TIMER_RESOLUTION_HZ / EXAMPLE_FOC_MCPWM_PERIOD);
         if (elec_theta_deg > 360) {
             elec_theta_deg -= 360;
         }

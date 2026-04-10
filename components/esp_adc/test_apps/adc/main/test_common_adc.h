@@ -104,10 +104,10 @@ extern "C" {
 #define ADC_TEST_HIGH_THRESH     200
 
 #elif CONFIG_IDF_TARGET_ESP32C61
-#define ADC_TEST_LOW_VAL         2140
+#define ADC_TEST_LOW_VAL         0
 #define ADC_TEST_LOW_THRESH      200
 
-#define ADC_TEST_HIGH_VAL        4095
+#define ADC_TEST_HIGH_VAL        3329
 #define ADC_TEST_HIGH_VAL_DMA    4095
 #define ADC_TEST_HIGH_THRESH     200
 

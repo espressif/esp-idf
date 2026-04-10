@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -72,8 +72,8 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_type              = BLE_SCAN_TYPE_ACTIVE,
     .own_addr_type          = BLE_ADDR_TYPE_PUBLIC,
     .scan_filter_policy     = BLE_SCAN_FILTER_ALLOW_ALL,
-    .scan_interval          = 0x50,
-    .scan_window            = 0x30,
+    .scan_interval          = ESP_BLE_GAP_SCAN_ITVL_MS(50),
+    .scan_window            = ESP_BLE_GAP_SCAN_WIN_MS(30),
     .scan_duplicate         = BLE_SCAN_DUPLICATE_DISABLE
 };
 
@@ -487,7 +487,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);;
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -505,7 +506,8 @@ void app_main(void)
         ESP_ERROR_CHECK( esp_bluedroid_deinit() );
         vTaskDelay(10/portTICK_PERIOD_MS);
         ESP_LOGI(GATTC_TAG, "Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
-        ESP_ERROR_CHECK( esp_bluedroid_init() );
+        esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK( esp_bluedroid_init_with_cfg(&cfg) );
         ESP_ERROR_CHECK( esp_bluedroid_enable() );
         vTaskDelay(10/portTICK_PERIOD_MS);
     }
@@ -541,8 +543,8 @@ void app_main(void)
     * This code is intended for debugging and prints all HCI data.
     * To enable it, turn on the "BT_HCI_LOG_DEBUG_EN" configuration option.
     * The output HCI data can be parsed using the script:
-    * esp-idf/tools/bt/bt_hci_to_btsnoop.py.
-    * For detailed instructions, refer to esp-idf/tools/bt/README.md.
+    * esp-idf/tools/bt/bt_hci_to_btsnoop/bt_hci_to_btsnoop.py.
+    * For detailed instructions, refer to esp-idf/tools/bt/bt_hci_to_btsnoop/README.md.
     */
 
     /*

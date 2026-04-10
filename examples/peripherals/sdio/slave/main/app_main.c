@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "sys/queue.h"
 #include "soc/soc.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "sdkconfig.h"
@@ -38,12 +39,12 @@
             - 0 is the register to hold tasks. Bits:
                 - 0: the slave should reset.
                 - 1: the slave should send interrupts.
-                - 2: the slave should write the shared registers acoording to the value in register 1.
+                - 2: the slave should write the shared registers according to the value in register 1.
             - 1 is the register to hold test value.
             - other registers will be written by the slave for testing.
 
         - FIFO:
-            The receving FIFO is size of 256 bytes.
+            The receiving FIFO is size of 256 bytes.
             When the host writes something to slave recv FIFO, the slave should return it as is to the sending FIFO.
 
     The host works as following process:
@@ -99,7 +100,7 @@ static esp_err_t slave_reset(void)
         return ret;
     }
 
-    //Since the buffer will not be sent any more, we return them back to receving driver
+    //Since the buffer will not be sent any more, we return them back to receiving driver
     while (1) {
         sdio_slave_buf_handle_t handle;
         ret = sdio_slave_send_get_finished(&handle, 0);
@@ -145,7 +146,7 @@ static esp_err_t task_write_reg(void)
     return ESP_OK;
 }
 
-//we use the event callback (in ISR) in this example to get higer responding speed
+//we use the event callback (in ISR) in this example to get higher responding speed
 //note you can't do delay in the ISR
 //``sdio_slave_wait_int`` is another way to handle interrupts
 static void event_cb(uint8_t pos)

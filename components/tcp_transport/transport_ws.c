@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,8 @@ typedef struct {
     char *sub_protocol;
     char *user_agent;
     char *headers;
+    ws_header_hook_t header_hook;
+    void * header_user_context;
     char *auth;
     char *buffer;             /*!< Initial HTTP connection buffer, which may include data beyond the handshake headers, such as the next WebSocket packet*/
     size_t buffer_len;        /*!< The buffer length */
@@ -144,31 +146,6 @@ static int esp_transport_read_internal(transport_ws_t *ws, char *buffer, int len
     return to_read;
 }
 
-static char *trimwhitespace(char *str)
-{
-    char *end;
-
-    // Trim leading space
-    while (isspace((unsigned char)*str)) {
-        str++;
-    }
-
-    if (*str == 0) {
-        return str;
-    }
-
-    // Trim trailing space
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) {
-        end--;
-    }
-
-    // Write new null terminator
-    *(end + 1) = '\0';
-
-    return str;
-}
-
 static int get_http_status_code(const char *buffer)
 {
     const char http[] = "HTTP/";
@@ -189,25 +166,13 @@ static int get_http_status_code(const char *buffer)
     return -1;
 }
 
-static char *get_http_header(char *buffer, const char *key)
-{
-    char *found = strcasestr(buffer, key);
-    if (found) {
-        found += strlen(key);
-        char *found_end = strstr(found, "\r\n");
-        if (found_end) {
-            *found_end = '\0'; // terminal string
-
-            return trimwhitespace(found);
-        }
-    }
-    return NULL;
-}
-
 static int ws_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     const char delimiter[] = "\r\n\r\n";
+
+    free(ws->redir_host);
+    ws->redir_host = NULL;
 
     if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connecting to host %s:%d", host, port);
@@ -306,37 +271,98 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
     } while (NULL == strstr(ws->buffer, delimiter) && header_len < WS_BUFFER_SIZE - 1);
 
-    if (header_len >= WS_BUFFER_SIZE - 1) {
+    if (header_len > WS_BUFFER_SIZE - 1) {
         ESP_LOGE(TAG, "Header size exceeded buffer size (need=%d, max=%d)", header_len + 1, WS_BUFFER_SIZE);
         return -1;
     }
 
     if(ws->response_header) {
-        if(ws->response_header_len < header_len) {
+        int copy_len = header_len;
+        if(ws->response_header_len - 1 < header_len) {
             ESP_LOGW(TAG, "Received header length exceedes the allocated buffer size (need=%d, allocated=%d), truncating to allocated size", header_len, ws->response_header_len);
-            header_len = ws->response_header_len;
+            copy_len = ws->response_header_len - 1;
         }
         // Copy response header to the static array
-        strncpy(ws->response_header, ws->buffer, header_len);
-        ws->response_header[header_len] = '\0';
+        strncpy(ws->response_header, ws->buffer, copy_len);
+        ws->response_header[copy_len] = '\0';
     }
 
     char* delim_ptr = strstr(ws->buffer, delimiter);
+    if (!delim_ptr) {
+        ESP_LOGE(TAG, "Header size exceeded buffer size or delimiter not found");
+        return -1;
+    }
 
     ws->http_status_code = get_http_status_code(ws->buffer);
     if (ws->http_status_code == -1)  {
         ESP_LOGE(TAG, "HTTP upgrade failed");
         return -1;
-    } else if (WS_HTTP_TEMPORARY_REDIRECT(ws->http_status_code) || WS_HTTP_PERMANENT_REDIRECT(ws->http_status_code)) {
-        ws->redir_host = get_http_header(ws->buffer, "Location:");
-        if (ws->redir_host == NULL) {
+    }
+
+    const char *location = NULL;
+    int location_len = 0;
+
+    const char *server_key = NULL;
+    int server_key_len = 0;
+    const char * header_cursor = strnstr(ws->buffer, "\r\n", header_len);
+    if (!header_cursor){
+        ESP_LOGE(TAG, "HTTP Header locate failed");
+        return -1;
+    }
+    header_cursor += strlen("\r\n");
+
+    while(header_cursor < delim_ptr){
+        const char * end_of_line = strnstr(header_cursor, "\r\n", header_len - (header_cursor - ws->buffer));
+        if(!end_of_line){
+            ESP_LOGE(TAG, "HTTP Header walk failed");
+            return -1;
+        }
+        else if(end_of_line == header_cursor){
+            ESP_LOGD(TAG, "HTTP Header walk found end");
+            break;
+        }
+        int line_len = end_of_line - header_cursor;
+        ESP_LOGD(TAG, "HTTP Header walk line:%.*s", line_len, header_cursor);
+
+        // Check for Sec-WebSocket-Accept header
+        const char * header_sec_websocket_accept = "Sec-WebSocket-Accept: ";
+        size_t header_sec_websocket_accept_len = strlen(header_sec_websocket_accept);
+        if (line_len >= header_sec_websocket_accept_len && !strncasecmp(header_cursor, header_sec_websocket_accept, header_sec_websocket_accept_len)) {
+            ESP_LOGD(TAG, "found server-key");
+            if(server_key || server_key_len){
+                // RFC6455: The |Sec-WebSocket-Accept| header MUST NOT appear more than once in an HTTP response.
+                ESP_LOGE(TAG, "Multiple Sec-WebSocket-Accept headers");
+                return -1;
+            }
+            server_key = header_cursor + header_sec_websocket_accept_len;
+            server_key_len = line_len - header_sec_websocket_accept_len;
+        }
+        else if (ws->header_hook) {
+            ws->header_hook(ws->header_user_context, header_cursor, line_len);
+        }
+
+        // Check for Location: header
+        const char * header_location = "Location: ";
+        size_t header_location_len = strlen(header_location);
+        if (line_len >= header_location_len && !strncasecmp(header_cursor, header_location, header_location_len)) {
+            location = header_cursor + header_location_len;
+            location_len = line_len - header_location_len;
+        }
+
+        // Adjust cursor to the start of the next line
+        header_cursor += line_len;
+        header_cursor += strlen("\r\n");
+    }
+
+    if (WS_HTTP_TEMPORARY_REDIRECT(ws->http_status_code) || WS_HTTP_PERMANENT_REDIRECT(ws->http_status_code)) {
+        if (location == NULL || location_len <= 0) {
             ESP_LOGE(TAG, "Location header not found");
             return -1;
         }
+        ws->redir_host = strndup(location, location_len);
         return ws->http_status_code;
     }
 
-    char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
     if (server_key == NULL) {
         ESP_LOGE(TAG, "Sec-WebSocket-Accept not found");
         return -1;
@@ -357,7 +383,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     esp_crypto_base64_encode(expected_server_key, sizeof(expected_server_key),  &outlen, expected_server_sha1, sizeof(expected_server_sha1));
     expected_server_key[ (outlen < sizeof(expected_server_key)) ? outlen : (sizeof(expected_server_key) - 1) ] = 0;
     ESP_LOGD(TAG, "server key=%s, send_key=%s, expected_server_key=%s", (char *)server_key, (char *)client_key, expected_server_key);
-    if (strcmp((char *)expected_server_key, (char *)server_key) != 0) {
+    if (strncmp((char *)expected_server_key, (char *)server_key, server_key_len) != 0) {
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
@@ -371,7 +397,6 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         } else {
 #ifdef CONFIG_WS_DYNAMIC_BUFFER
             free(ws->buffer);
-            ws->redir_host = NULL;
             ws->buffer = NULL;
 #endif
             ws->buffer_len = 0;
@@ -490,7 +515,9 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
 
     // Receive and process payload
     if (bytes_to_read != 0 && (rlen = esp_transport_read_internal(ws, buffer, bytes_to_read, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data(%d)", rlen);
+        if (rlen < 0) {
+            ESP_LOGE(TAG, "Error read data(%d)", rlen);
+        }
         return rlen;
     }
     ws->frame_state.bytes_remaining -= rlen;
@@ -539,10 +566,12 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
     char *data_ptr = ws_header, mask;
     int rlen;
-    int poll_read;
     ws->frame_state.header_received = false;
-    if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
-        return poll_read;
+    if (ws->buffer_len == 0) {
+        int poll_read = esp_transport_poll_read(ws->parent, timeout_ms);
+        if (poll_read <= 0) {
+            return poll_read;
+        }
     }
 
     // Receive and process header first (based on header size)
@@ -555,11 +584,33 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     ws->frame_state.header_received = true;
     ws->frame_state.fin = (*data_ptr & 0x80) != 0;
     ws->frame_state.opcode = (*data_ptr & 0x0F);
+    uint8_t rsv = (*data_ptr & 0x70);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d", ws->frame_state.opcode, mask, payload_len);
+    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d, rsv: 0x%02X", ws->frame_state.opcode, mask, payload_len, rsv);
+
+    // RFC 6455 Section 5.2: RSV bits MUST be 0 unless an extension is negotiated
+    if (rsv != 0) {
+        ESP_LOGE(TAG, "Non-zero RSV bits detected (rsv=0x%02X) - protocol violation, no extensions negotiated", rsv);
+        return -1;
+    }
+
+    // RFC 6455 Section 5.2: Validate opcode (only 0x0-0x2 for data, 0x8-0xA for control are defined)
+    if ((ws->frame_state.opcode >= 0x3 && ws->frame_state.opcode <= 0x7) ||
+        (ws->frame_state.opcode >= 0xB && ws->frame_state.opcode <= 0xF)) {
+        ESP_LOGE(TAG, "Reserved opcode detected (opcode=0x%02X) - protocol violation", ws->frame_state.opcode);
+        return -1;
+    }
+
+    // RFC 6455 Section 5.5: Control frames MUST NOT be fragmented
+    if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && !ws->frame_state.fin) {
+        ESP_LOGE(TAG, "Fragmented control frame detected (opcode=0x%02X, fin=%d) - protocol violation",
+                ws->frame_state.opcode, ws->frame_state.fin);
+        return -1;
+    }
+
     if (payload_len == 126) {
         // headerLen += 2;
         if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
@@ -582,7 +633,12 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
             payload_len = (uint8_t)data_ptr[4] << 24 | (uint8_t)data_ptr[5] << 16 | (uint8_t)data_ptr[6] << 8 | data_ptr[7];
         }
     }
-
+    // RFC 6455 Section 5.5: Control frames MUST have payload length of 125 bytes or less
+    if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && payload_len > 125) {
+        ESP_LOGE(TAG, "Control frame with excessive payload detected (opcode=0x%02X, payload_len=%d) - protocol violation",
+                 ws->frame_state.opcode, payload_len);
+        return -1;
+    }
     if (mask) {
         // Read and store mask
         if (payload_len != 0 && (rlen = esp_transport_read_exact_size(ws, buffer, mask_len, timeout_ms)) <= 0) {
@@ -681,8 +737,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 
     if (ws->frame_state.payload_len) {
         if ( (rlen = ws_read_payload(t, buffer, len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error reading payload data(%d)", rlen);
-            ws->frame_state.bytes_remaining = 0;
+            if (rlen < 0) {
+                ESP_LOGE(TAG, "Error reading payload data(%d)", rlen);
+                ws->frame_state.bytes_remaining = 0;
+            }
             return rlen;
         }
     }
@@ -694,6 +752,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->buffer_len > 0) {
+        ESP_LOGD(TAG, "ws_poll_read: buffered data available (%zu bytes)", ws->buffer_len);
+        return 1;
+    }
     return esp_transport_poll_read(ws->parent, timeout_ms);
 }
 
@@ -713,6 +775,7 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     free(ws->buffer);
+    free(ws->redir_host);
     free(ws->path);
     free(ws->sub_protocol);
     free(ws->user_agent);
@@ -862,6 +925,23 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook_t hook, void * user_context)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (hook == NULL) {
+        ESP_LOGE(TAG, "Header hook is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGV(TAG, "User has context: %s", user_context != NULL ? "true" : "false");
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    ws->header_hook = hook;
+    ws->header_user_context = user_context;
+    return ESP_OK;
+}
+
 esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
 {
     if (t == NULL) {
@@ -925,6 +1005,10 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
     }
     if (config->headers) {
         err = esp_transport_ws_set_headers(t, config->headers);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->header_hook || config->header_user_context) {
+        err = esp_transport_ws_set_header_hook(t, config->header_hook, config->header_user_context);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
     if (config->auth) {

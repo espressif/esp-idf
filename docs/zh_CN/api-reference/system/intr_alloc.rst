@@ -32,7 +32,7 @@
 
 由于中断源数量多于中断，有时多个驱动程序可以共用一个中断。:cpp:func:`esp_intr_alloc` 抽象隐藏了这些实现细节。
 
-驱动程序可以通过调用 :cpp:func:`esp_intr_alloc`、:cpp:func:`esp_intr_alloc_bind`、 :cpp:func:`esp_intr_alloc_intrstatus` 或 :cpp:func:`esp_intr_alloc_intrstatus_bind` 为某个外设分配中断。通过向此函数传递 flag，可以指定中断类型、优先级和触发方式。然后，中断分配代码会找到适用的中断，使用中断矩阵将其连接到外设，并为其安装给定的中断处理程序和 ISR。
+驱动程序可以通过调用 :cpp:func:`esp_intr_alloc`、 :cpp:func:`esp_intr_alloc_bind`、 :cpp:func:`esp_intr_alloc_intrstatus`、 :cpp:func:`esp_intr_alloc_intrstatus_bind` 或 :cpp:func:`esp_intr_alloc_info` 为某个外设分配中断。通过向此函数传递 flag，可以指定中断类型、优先级和触发方式。然后，中断分配代码会找到适用的中断，使用中断矩阵将其连接到外设，并为其安装给定的中断处理程序和 ISR。
 
 中断分配器提供两种不同的中断类型：共享中断和非共享中断，这两种中断需要不同处理方式。非共享中断在每次调用 :cpp:func:`esp_intr_alloc` 时，都会分配一个单独的中断，该中断仅用于与其相连的外设，只调用一个 ISR。共享中断则可以由多个外设触发，当其中一个外设发出中断信号时，会调用多个 ISR。因此，针对共享中断的 ISR 应检查对应外设的中断状态，以确定是否需要采取任何操作。
 
@@ -140,6 +140,12 @@ IRAM 安全中断处理程序
 
 默认情况下，指定 ``ESP_INTR_FLAG_SHARED`` flag 时，中断分配器仅分配优先级为 1 的中断。可以使用 ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` 允许分配优先级为 2 和 3 的共享中断。
 
+**私有共享中断** (``ESP_INTR_FLAG_SHARED_PRIVATE``) 在行为上与 ``ESP_INTR_FLAG_SHARED`` 类似，允许多个中断源共享同一条 CPU 中断线。但与常规共享中断不同的是，中断分配器永远不会自动选择这些中断线。
+
+换言之，即使使用 ``ESP_INTR_FLAG_SHARED``，任何分配函数也不会选择由 ``ESP_INTR_FLAG_SHARED_PRIVATE`` 创建的中断线。这些中断线实际上是保留专用的，只能通过显式绑定新的中断源来使用（例如通过 ``esp_intr_alloc_bind()`` 或相关 API）。
+
+因此，可以预先定义一组固定的中断源来共享同一条 CPU 中断线（例如多个 GPIO 中断源），同时避免该中断线被分配器复用于无关中断的情况。
+
 尽管支持此功能，使用时也必须 **非常小心**。通常存在两种办法可以阻止中断触发： **禁用源** 或 **屏蔽外设中断状态**。ESP-IDF 仅处理源本身的启用和禁用，中断源的状态位和屏蔽位须由用户操作。
 
 **状态位须在负责该位的处理程序禁用前屏蔽，也可以在另一个启用的中断中屏蔽和处理该状态位。**
@@ -149,6 +155,13 @@ IRAM 安全中断处理程序
     如果不屏蔽状态位而让其处于未处理状态，同时禁用这些状态位的处理程序，就会导致无限次触发中断，引起系统崩溃。
 
 调用 :cpp:func:`esp_intr_alloc` 或 :cpp:func:`esp_intr_alloc_intrstatus` 时，中断分配器会选择第一个满足电平要求的中断为指定的源映射中断，而不会考虑已经映射到共享中断线上的其他源。然而，通过使用 :cpp:func:`esp_intr_alloc_bind` 或 :cpp:func:`esp_intr_alloc_intrstatus_bind` 函数，可以显式地指定中断处理程序与给定的中断源共享。
+
+对于私有共享中断，首次分配使用 ``ESP_INTR_FLAG_SHARED_PRIVATE`` （通过 :cpp:func:`esp_intr_alloc` 或 :cpp:func:`esp_intr_alloc_intrstatus`），后续的源通过相同的函数进行附加，仍然使用 ``ESP_INTR_FLAG_SHARED_PRIVATE`` 标志和返回的句柄。
+
+命名分组
+^^^^^^^^
+
+无论是公共还是私有，共享中断组均可通过名称定义。具体通过 :cpp:type:`esp_intr_alloc_info_t` 结构体的 ``bind_by.name`` 字段实现。若已存在指定名称的共享中断组（由先前使用相同名称的调用创建），则新中断源会附加到该组；否则，会分配一个新的共享中断组并打上该名称标记。 ``bind_by.handle`` 与 ``bind_by.name`` 只能设置其一。常规的 flags 规则（例如中断优先级、SHARED 与 SHARED_PRIVATE）仍然适用。这不会影响公共共享中断的行为：中断分配函数仍可在不指定名称或句柄的情况下，将新中断源附加到现有的公共共享中断线上。
 
 
 排除中断分配故障

@@ -1,30 +1,28 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-import os.path
-from typing import Tuple
+from pathlib import Path
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
-# Case 1: ble50 security client and ble50 security server test
+
+CUR_DIR = Path(__file__).parent.resolve()
+
+
+# Case 1: ble50 security client and ble50 security server test (config: name, min_bin, log_off)
 # EXAMPLE_CI_ID=6
+BLE50_SECURITY_APP_PATH = f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DIR / "ble50_security_client")}'
+BLE50_SECURITY_CI_CONFIGS = ['name']
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
-    [
-        (
-            2,
-            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-            'name',
-            'y',
-        ),
-    ],
+    [(2, BLE50_SECURITY_APP_PATH, c, 'y') for c in BLE50_SECURITY_CI_CONFIGS],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])
-def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ble50_security_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (
@@ -52,7 +50,7 @@ def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: ble50 security client and ble50 security server test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=6
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -61,14 +59,14 @@ def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DIR / "ble50_security_client")}',
             'esp32c2_xtal26m',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (
@@ -96,13 +94,13 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, Idf
 
 # Case 3: period_adv and period_sync test
 # EXAMPLE_CI_ID=8
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
+            f'{str(CUR_DIR / "periodic_adv")}|{str(CUR_DIR / "periodic_sync")}',
             'name',
             'y',
         ),
@@ -110,7 +108,7 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, Idf
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])
-def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     adv_dut = dut[0]
     sync_dut = dut[1]
 
@@ -123,14 +121,14 @@ def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None
     adv_dut.expect_exact('Periodic advertising start, status 0', timeout=30)
     sync_dut.expect_exact('Extended scanning params set, status 0', timeout=30)
     sync_dut.expect_exact('Extended scanning start, status 0', timeout=30)
-    sync_dut.expect_exact(f'Create sync with the peer device BE', timeout=30)
+    sync_dut.expect_exact('Create sync with the peer device BE', timeout=30)
     sync_dut.expect_exact('Periodic advertising sync establish, status 0', timeout=30)
     sync_dut.expect_exact('Periodic adv report, sync handle ', timeout=30)
 
 
 # Case 4: period_adv and period_sync test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=8
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -139,14 +137,14 @@ def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
+            f'{str(CUR_DIR / "periodic_adv")}|{str(CUR_DIR / "periodic_sync")}',
             'esp32c2_xtal26m',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     adv_dut = dut[0]
     sync_dut = dut[1]
 
@@ -159,20 +157,20 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, Id
     adv_dut.expect_exact('Periodic advertising start, status 0', timeout=30)
     sync_dut.expect_exact('Extended scanning params set, status 0', timeout=30)
     sync_dut.expect_exact('Extended scanning start, status 0', timeout=30)
-    sync_dut.expect_exact(f'Create sync with the peer device BE', timeout=30)
+    sync_dut.expect_exact('Create sync with the peer device BE', timeout=30)
     sync_dut.expect_exact('Periodic advertising sync establish, status 0', timeout=30)
     sync_dut.expect_exact('Periodic adv report, sync handle ', timeout=30)
 
 
 # Case 5: ble50 security client and ble50 security server config test
 # EXAMPLE_CI_ID=7
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DIR / "ble50_security_client")}',
             'cfg_test',
             'y',
         ),
@@ -180,7 +178,7 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, Id
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61'], indirect=['target'])
-def test_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ble50_security_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (
@@ -210,7 +208,7 @@ def test_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -
 
 # Case 6: ble50 security client and ble50 security server config test for ESP32C2 26mhz xtal
 # EXAMPLE_CI_ID=7
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_nvs',
@@ -219,14 +217,14 @@ def test_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -
             2,
             'esp32c2|esp32c2',
             '74880',
-            f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
+            f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DIR / "ble50_security_client")}',
             'esp32c2_cfg_test',
             'y',
         ),
     ],
     indirect=True,
 )
-def test_c2_26mhz_xtal_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_c2_26mhz_xtal_ble50_security_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
     client_addr = (

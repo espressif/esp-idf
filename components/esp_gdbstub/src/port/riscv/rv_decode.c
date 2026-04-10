@@ -5,6 +5,7 @@
  */
 
 #include "rv_decode.h"
+#include "riscv/csr.h"
 #include "riscv/csr_hwlp.h"
 #include "soc/soc_caps.h"
 

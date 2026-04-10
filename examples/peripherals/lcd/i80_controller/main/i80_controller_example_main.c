@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
+#include "esp_lcd_nt35510.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_spiffs.h"
 #include "driver/gpio.h"

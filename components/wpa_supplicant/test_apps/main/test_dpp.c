@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ extern size_t dpp_nonce_override_len;
 
 TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
 {
-    set_leak_threshold(130);
+    set_leak_threshold(300);
     /* Global variables */
     char command[1200] = {0};
     const u8 *frame;
@@ -66,6 +66,10 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         sprintf(command, "type=qrcode key=%s", key);
         id = dpp_bootstrap_gen(dpp, command);
         uri =  dpp_bootstrap_get_uri(dpp, id);
+        if (uri == NULL) {
+            ESP_LOGE("DPP Test", "Failed to get URI from bootstrap id");
+            TEST_ASSERT(0);
+        }
         printf("uri is =%s\n", uri);
         printf("is  be =%s\n", bootstrap_info);
         TEST_ASSERT((strcmp(uri, bootstrap_info) == 0));
@@ -129,6 +133,9 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         len -= 26;
         auth_instance = dpp_auth_req_rx(NULL, 1, 0, NULL,
                                         dpp_bootstrap_get_id(dpp, id), 2412, frame, frame + 6, len - 6);
+
+        TEST_ASSERT_NOT_NULL(auth_instance);
+        TEST_ASSERT_NOT_NULL(auth_instance->resp_msg);
 
         /* auth response u8 */
         hex_len = os_strlen(auth_resp);

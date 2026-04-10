@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,11 @@ static const char *TAG = "NIMBLE_HIDD";
 typedef struct esp_ble_hidd_dev_s esp_ble_hidd_dev_t;
 // there can be only one BLE HID device
 static esp_ble_hidd_dev_t *s_dev = NULL;
+/** service index is used to identify the hid service instance
+    of the registered characteristic.
+    Assuming the first instance of the hid service is registered first.
+    Increment service index as the hid services get registered */
+static int service_index = -1;
 
 typedef hidd_report_item_t hidd_le_report_item_t;
 
@@ -183,6 +188,15 @@ static int nimble_hid_stop_gatts(esp_ble_hidd_dev_t *dev)
 
     /* stop gatt database */
     ble_gatts_stop();
+
+    ble_svc_hid_deinit();
+    ble_svc_hid_reset();
+    ble_svc_dis_deinit();
+    ble_svc_bas_deinit();
+    ble_svc_sps_deinit();
+    ble_svc_gatt_deinit();
+    ble_svc_gap_deinit();
+
     return rc;
 }
 
@@ -283,6 +297,7 @@ static int nimble_hidd_dev_deinit(void *devp)
         return ESP_FAIL;
     }
     s_dev = NULL;
+    service_index = -1; // resetting the value
 
     nimble_hid_stop_gatts(dev);
     esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_STOP_EVENT, NULL, 0, portMAX_DELAY);
@@ -521,11 +536,6 @@ static int nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
     return 0;
 }
 
-/** service index is used to identify the hid service instance
-    of the registered characteristic.
-    Assuming the first instance of the hid service is registered first.
-    Increment service index as the hid services get registered */
-static int service_index = -1;
 static void nimble_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
     char buf[BLE_UUID_STR_LEN];

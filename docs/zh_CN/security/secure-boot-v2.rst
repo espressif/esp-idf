@@ -1,25 +1,31 @@
 :orphan:
 
-安全启动 (secure boot) v2
+安全启动 (Secure Boot) v2
 =========================
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS 或 ECDSA", esp32h2="RSA-PSS 或 ECDSA", esp32p4="RSA-PSS 或 ECDSA", esp32c5="RSA-PSS 或 ECDSA", esp32c61="ECDSA", esp32h21="RSA-PSS 或 ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS 或 ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 或 ECDSA-192", esp32c6="RSA-3072、ECDSA-256 或 ECDSA-192", esp32h2="RSA-3072、ECDSA-256 或 ECDSA-192", esp32p4="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c61="ECDSA-256 或 ECDSA-192", esp32h21="RSA-3072、ECDSA-256 或 ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256 或 ECDSA-192", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-384、ECDSA-256 或 ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
+
+{IDF_TARGET_SBV2_SCHEME_RECOMMENDATION:default="如果需要快速启动，推荐使用 RSA；如果需要较短的密钥长度，建议使用 ECDSA。", esp32c5="如果需要快速启动且需要较短的密钥长度，建议使用 ECDSA。"}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="（v3.0 及以上版本）", esp32c3="（v0.3 及以上版本）"}
 
-{IDF_TARGET_RSA_TIME:default="", esp32c6="约 2.7 ms", esp32h2="约 4.5 ms", esp32p4="约 2.4 ms"}
+{IDF_TARGET_RSA_TIME:default="", esp32c5="约 12.1 ms", esp32c6="约 10.2 ms", esp32h2="约 18.3 ms", esp32p4="约 14.8 ms"}
 
-{IDF_TARGET_ECDSA_TIME:default="", esp32c6="约 21.5 ms", esp32h2="约 36 ms", esp32p4="约 10.3 ms"}
+{IDF_TARGET_ECDSA_P256_TIME:default="", esp32c5="约 5.6 ms", esp32c6="约 83.9 ms", esp32h2="约 76.2 ms", esp32p4="约 61.1 ms"}
 
-{IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
+{IDF_TARGET_ECDSA_P384_TIME:default="", esp32c5="20.6 ms"}
 
-{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (v2)", esp32c5="ECDSA (v2)", esp32c61="ECDSA (v2)"}
+{IDF_TARGET_ROM_CPU_FREQ:default="", esp32c5="48 MHz", esp32c6="40 MHz", esp32h2="32 MHz", esp32p4="40 MHz"}
+
+{IDF_TARGET_CPU_FREQ:default="", esp32c5="240 MHz", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
+
+{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2, esp32c61, esp32c5="ECDSA (v2)"}
 
 {IDF_TARGET_EFUSE_WR_DIS_RD_DIS:default="ESP_EFUSE_WR_DIS_RD_DIS", esp32="ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE"}
 
@@ -44,7 +50,7 @@
 
 .. note::
 
-    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
 背景
 ----
@@ -131,9 +137,62 @@
 
 5. 引导加载程序验证应用程序镜像的签名块，请参阅 :ref:`verify_signature-block`。如果验证失败，启动过程将中止。
 
-6. 引导加载程序使用原始镜像数据、相应的签名块以及 eFuse 验证引导加载程序镜像，请参阅 :ref:`verify_image`。如果验证失败，启动过程将中止。如果验证失败，但发现了其他应用程序镜像，引导加载程序将使用步骤 5 到 7 验证另一个镜像。该过程将重复，直至找到有效镜像，或所有镜像验证完毕。
+6. 引导加载程序使用原始镜像数据、相应的签名块以及 eFuse 验证应用程序镜像，请参阅 :ref:`verify_image`。如果验证失败，启动过程将中止。如果验证失败，但发现了其他应用程序镜像，引导加载程序将使用步骤 5 到 7 验证另一个镜像。该过程将重复，直至找到有效镜像，或所有镜像验证完毕。
 
 7. 引导加载程序执行经验证的应用程序镜像。
+
+
+.. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
+
+   .. _secure-boot-v2-scheme-selection:
+
+   安全启动 v2 签名方案选择
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   {IDF_TARGET_NAME} 支持在 RSA 签名方案与 ECDSA 签名方案之间进行选择。每个设备只能使用一种签名方案。
+
+   与 RSA 相比，ECDSA 在提供类似安全强度的同时，密钥长度更短。目前估算表明，使用 P-256 曲线的 ECDSA 在安全强度上大致等同于使用 3072 位密钥的 RSA。然而，ECDSA 的签名验证所需时间明显多于 RSA。
+
+   {IDF_TARGET_SBV2_SCHEME_RECOMMENDATION}
+
+   .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+      {IDF_TARGET_NAME} 还支持使用 P-384 曲线的 ECDSA 签名方案进行 Secure Boot v2。这种方案比 ECDSA-P256 和 RSA-3072 具备更强的安全性，但签名验证时间也相应更长。因此，对于对安全强度有更高要求的场景，建议使用 ECDSA P-384 签名方案启用 Secure Boot v2。
+
+      .. list-table:: 签名验证时间对比
+          :widths: 10 10 20
+          :header-rows: 1
+
+          * - **验证方案**
+            - **耗时**
+            - **CPU 频率**
+          * - RSA-3072
+            - {IDF_TARGET_RSA_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+          * - ECDSA-P256
+            - {IDF_TARGET_ECDSA_P256_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+          * - ECDSA-P384
+            - {IDF_TARGET_ECDSA_P384_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+
+   .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+      .. list-table:: 签名验证时间对比
+          :widths: 10 10 20
+          :header-rows: 1
+
+          * - **验证方案**
+            - **耗时**
+            - **CPU 频率**
+          * - RSA-3072
+            - {IDF_TARGET_RSA_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+          * - ECDSA-P256
+            - {IDF_TARGET_ECDSA_P256_TIME}
+            - {IDF_TARGET_ROM_CPU_FREQ}
+
+   以上表格比较的是第一阶段 (ROM) 引导加载程序在特定签名方案下仅用于验证引导加载程序镜像签名所耗费的时间。该数据不代表整体启动时间。另外请注意，表中的 CPU 频率较低，因为这是第一阶段 (ROM) 引导加载程序运行时的 CPU 频率。
 
 
 .. _signature-block-format:
@@ -141,35 +200,7 @@
 签名块格式
 ----------
 
-签名块以 4 KB 的整数倍为起始位置，拥有独立 flash 扇区。签名计算覆盖了镜像中的所有字节，包括填充字节，请参阅 :ref:`secure_padding`。
-
-.. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
-
-    .. note::
-
-        {IDF_TARGET_NAME} 可以选择 RSA 或 ECDSA 方案，每个设备只能选择一种方案。
-
-        与 RSA 相比，ECDSA 拥有类似的安全性，但密钥长度更短。据估计，使用 P-256 曲线的 ECDSA 签名安全性大致相当于具有 3072 位密钥的 RSA。然而，ECDSA 签名验证耗时明显长于 RSA 签名验证。
-
-        如果需要快速启动，建议使用 RSA；如果需要较短的密钥，建议使用 ECDSA。
-
-        .. only:: not esp32p4 or not esp32c5
-
-            .. list-table:: 签名验证耗时比较
-                :widths: 10 10 20
-                :header-rows: 1
-
-                * - **验证方案**
-                  - **耗时**
-                  - **CPU 频率**
-                * - RSA-3072
-                  - {IDF_TARGET_RSA_TIME}
-                  - {IDF_TARGET_CPU_FREQ}
-                * - ECDSA-P256
-                  - {IDF_TARGET_ECDSA_TIME}
-                  - {IDF_TARGET_CPU_FREQ}
-
-            上表比较了特定方案中验证签名所需的时间，不代表启动时间。
+签名块以一个 4 KB 的对齐边界为起始位置，占用一个独立的 flash 扇区。签名计算覆盖了镜像中的所有字节，包括填充字节，详情参见 :ref:`secure_padding`。
 
 各签名块内容如下表所示：
 
@@ -184,7 +215,7 @@
           - **描述**
         * - 0
           - 1
-          - 魔法字节。
+          - 魔术字节。
         * - 1
           - 1
           - 版本号字节，当前为 0x02，安全启动 v1 的版本号字节为 0x01。
@@ -214,7 +245,7 @@
           - CRC32 的前 1196 字节。
         * - 1200
           - 16
-          - 长度填充为 1216 字节的零填充。
+          - 补零填充，保证总长度为 1216 字节。
 
 
     .. note::
@@ -223,7 +254,7 @@
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
-    .. list-table:: ECDSA 签名块的内容
+    .. list-table:: ECDSA-256 / ECDSA-192 签名块的内容
         :widths: 10 10 40
         :header-rows: 1
 
@@ -232,7 +263,7 @@
           - **描述**
         * - 0
           - 1
-          - 魔法字节。
+          - 魔术字节。
         * - 1
           - 1
           - 版本号字节，当前为 0x03。
@@ -250,16 +281,60 @@
           - ECDSA 公钥：32 字节的 X 坐标，后跟 32 字节的 Y 坐标。
         * - 101
           - 64
-          - 对镜像内容的 ECDSA 签名结果（RFC6090 中的 5.3.2 节）：32 字节的 R 组件，后跟 32 字节的 S 组件。
+          - 对镜像内容的 ECDSA 签名结果（RFC6090 第 5.3.2 节）：32 字节的 R 分量，其后连接 32 字节的 S 分量。
         * - 165
           - 1031
-          - 保留。
+          - 保留字段。
         * - 1196
           - 4
           - 前面 1196 字节的 CRC32。
         * - 1200
           - 16
-          - 长度填充为 1216 字节的零填充。
+          - 补零填充，保证总长度为 1216 字节。
+
+
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        .. list-table:: ECDSA-384 签名块的内容
+            :widths: 10 10 40
+            :header-rows: 1
+
+            * - **偏移量**
+              - **大小（字节）**
+              - **描述**
+            * - 0
+              - 1
+              - 魔术字节。
+            * - 1
+              - 1
+              - 版本号字节，当前为 0x03。
+            * - 2
+              - 1
+              - 生成签名时用于摘要计算的 SHA 版本（1 表示使用 SHA-384）。
+            * - 3
+              - 1
+              - 填充字节。保留，应设置为 0。
+            * - 4
+              - 48
+              - 仅针对镜像内容的 SHA-384 哈希值，不包括签名块。
+            * - 52
+              - 1
+              - 曲线 ID。3 代表 NIST384p 曲线。
+            * - 53
+              - 96
+              - ECDSA 公钥：48 字节的 X 坐标，后跟 48 字节的 Y 坐标。
+            * - 149
+              - 96
+              - 对镜像内容的 ECDSA 签名结果（RFC6090 第 5.3.2 节）：48 字节的 R 分量，其后连接 48 字节的 S 分量。
+            * - 245
+              - 951
+              - 保留字段。
+            * - 1196
+              - 4
+              - 前面 1196 字节的 CRC32。
+            * - 1200
+              - 16
+              - 补零填充，保证总长度为 1216 字节。
 
 签名扇区的其余部分是已擦除的 flash (0xFF)，支持在前一个签名块之后写入其他签名块。
 
@@ -275,7 +350,7 @@
 
     - 默认 flash MMU 页面大小为 64 KB
     :SOC_MMU_PAGE_SIZE_CONFIGURABLE: - {IDF_TARGET_NAME} 支持配置 flash MMU 页面大小，``CONFIG_MMU_PAGE_SIZE`` 根据 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` 设置
-    - 在进行由 ``esptool.py`` 执行的 ``elf2image`` 转换时，可以通过使用选项 ``--secure-pad-v2`` 应用安全填充
+    - 在进行由 ``esptool`` 执行的 ``elf2image`` 转换时，可以通过使用选项 ``--secure-pad-v2`` 应用安全填充
 
 带有安全填充和签名块的安全启动 v2 签名镜像的内容如下表所示：
 
@@ -333,6 +408,16 @@
     3. 使用公钥，采用 RSA-PSS（RFC8017 的第 8.1.2 节）算法或 ECDSA（RFC6090 的第 5.3.3 节）算法，验证引导加载程序镜像的签名，并与步骤 (2) 中计算的镜像摘要比较。
 
 
+验证数据分区
+------------
+
+Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像。启用 :ref:`CONFIG_SECURE_SIGNED_DATA_PARTITION` 以验证子类型为 ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` 的数据分区。
+
+数据分区镜像必须使用相同的签名密钥，通过 ``idf.py secure-sign-data`` 进行签名，并采用与应用镜像相同的格式。验证使用存储在 eFuse 中的一个或多个公钥摘要，并遵循 :ref:`verify_image` 中所述的流程。
+
+关于包括 OTA 流程和分区配置在内的详细信息，请参见 :ref:`secure-signed-data-partition`。
+
+
 引导加载程序的大小
 ------------------
 
@@ -358,11 +443,15 @@
 
     - SECURE_BOOT_EN - 在启动时启用安全启动保护。
 
+.. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
+
+    - SECURE_BOOT_SHA384_EN - 启用 SHA-384 摘要计算，用于 Secure Boot 签名验证。
+
 .. only:: SOC_EFUSE_KEY_PURPOSE_FIELD
 
     - KEY_PURPOSE_X - 将 SECURE_BOOT_DIGESTX (X = 0, 1, 2) 烧录到 KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5)，设置密钥块功能。例如：若设置 KEY_PURPOSE_2 为 SECURE_BOOT_DIGEST1，则 BLOCK_KEY2 将具有安全启动 v2 公钥摘要。注意，必须设置写保护位，该字段无读保护位。
 
-    - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。公钥模数、指数、预先计算的 R 和 M' 值的 SHA-256 哈希摘要都将写入 eFuse 密钥块。这个摘要大小为 776 字节，偏移量从 36 到 812，如 :ref:`signature-block-format` 所示。注意，必须设置写保护位，但切勿设置读保护位。
+    - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。这个摘要大小为 32 字节。该摘要是根据签名块中的 776 字节数据（偏移量 36 到 812，包括公钥模数、指数、预先计算的 R 和 M' 值）计算得到的，具体内容见 :ref:`signature-block-format`。注意，必须设置写保护位，但切勿设置读保护位。
 
     - KEY_REVOKEX - 与 3 个密钥块中的每一个相对应的撤销标记。例如，设置 KEY_REVOKE2 将撤销密钥功能为 SECURE_BOOT_DIGEST2 的密钥块。
 
@@ -408,7 +497,7 @@
 
     在生产环境下，建议使用 OpenSSL 或其他行业标准的加密程序生成密钥对，详情请参阅 :ref:`secure-boot-v2-generate-key`。
 
-7. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中会包含一个烧录命令的提示，使用 ``esptool.py write_flash`` 烧录。
+7. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中会包含一个烧录命令的提示，使用 ``esptool write-flash`` 烧录。
 
 8. 烧录引导加载程序前，请运行指定命令并等待烧录完成。注意，此处的指定命令需要手动输入，构建系统不会执行此过程。
 
@@ -430,6 +519,7 @@
 
 11. 在后续启动过程中，安全启动硬件会验证二级引导加载程序是否更改，二级引导加载程序会使用其附加的签名块中经验证的公钥部分，验证已签名的应用程序镜像。
 
+关于同时启用安全启动 v2 及其他安全功能（如 flash 加密和 NVS 加密）的完整示例，请参阅 :example:`security/security_features_app`。
 
 启用安全启动后的限制
 --------------------
@@ -442,7 +532,7 @@
 
 .. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
 
-    启用安全启动后，ECDSA 曲线模式将锁定为写保护状态。因此，如果启用前未将曲线模式设置为使用 ECDSA-P192 密钥，那么之后将无法再配置或使用 ECDSA 外设中的 ECDSA-P192 曲线。
+    启用安全启动后，ECDSA 曲线模式将锁定为写保护状态。因此，如果启用前未将曲线模式设置为使用 ECDSA-P192 密钥，那么之后将无法再配置或使用 ECDSA_DS 外设中的 ECDSA-P192 曲线。
 
 烧录读保护密钥
 ~~~~~~~~~~~~~~
@@ -489,6 +579,12 @@
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
+  .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    传递 ``--version 2 --scheme ecdsa384``、 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
+
+  .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
     传递 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
 
 签名密钥的强度取决于 (a) 系统的随机数源和 (b) 所用算法的正确性。对于生产设备，建议从具有高质量熵源的系统生成签名密钥，并使用最佳的可用 {IDF_TARGET_SBV2_SCHEME} 密钥生成工具。
@@ -517,6 +613,14 @@
 
         openssl ecparam -name prime256v1 -genkey -noout -out my_secure_boot_signing_key.pem
 
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        生成 ECC NIST384p 曲线密钥
+
+        .. code-block::
+
+            openssl ecparam -name secp384r1 -genkey -noout -out my_secure_boot_signing_key.pem
+
 注意，安全启动系统的强度取决于能否保持签名密钥的私密性。
 
 
@@ -528,7 +632,7 @@
 使用 ``idf.py`` 进行签名
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-对于生产构建，将签名密钥存储在远程签名服务器上，而不是本地构建机器上，是一种比较好的方案，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure.py`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
+对于生产构建，将签名密钥存储在远程签名服务器上，而不是本地构建机器上，是一种比较好的方案，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
 
 使用远程签名时，请禁用选项 :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`，并构建固件。此时，私钥无需存在于构建系统中。
 
@@ -570,7 +674,7 @@
 
     .. note::
 
-        在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。选项 ``--append_signatures`` 支持将多个签名（最多 3 个）附加到镜像中。
+        在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。选项 ``--append-signatures`` 支持将多个签名（最多 3 个）附加到镜像中。
 
 .. only:: not SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -596,7 +700,7 @@
     * 应独立计算并分别存储 1 到 3 个 {IDF_TARGET_SBV2_KEY} 公钥对（密钥 #0, #1, #2）。
     * 完成烧录后，应设置 KEY_DIGEST eFuse 为写保护位。
     * 未使用的 KEY_DIGEST 槽必须烧录其相应的 KEY_REVOKE eFuse，以永久禁用。请在设备离开工厂前完成此操作。
-    * 烧录 eFuse 可以由二级引导加载程序在首次从 menuconfig 启用 ``Secure Boot v2`` 后进行，也可以使用 ``espefuse.py``，后者与 ROM 中的串行引导加载程序通信。
+    * 烧录 eFuse 可以由二级引导加载程序在首次从 menuconfig 启用 ``Secure Boot v2`` 后进行，也可以使用 ``espefuse``，后者与 ROM 中的串行引导加载程序通信。
     * KEY_DIGEST 应从密钥摘要 #0 开始，按顺序编号。如果使用了密钥摘要 #1，则必须使用密钥摘要 #0。如果使用了密钥摘要 #2，则必须使用密钥摘要 #0 和 #1。
     * 二级引导加载程序不支持 OTA 升级，它将至少由一个私钥签名，也可能使用全部三个私钥，并在工厂内烧录。
     * 应用程序应仅由单个私钥签名，其他私钥应妥善保管。但如果需要注销某些私钥，也可以使用多个签名私钥，请参阅下文的 :ref:`secure-boot-v2-key-revocation`。
@@ -611,14 +715,20 @@
 
     .. code-block::
 
-        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
+        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append-signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
 
     * 使用多个私钥签名时，建议独立签名这些私钥，可以的话请在不同服务器上进行签名，并将它们分开存储。
     * 可以使用以下命令查看附加到二进制文件的签名：
 
     .. code-block::
 
-        espsecure.py signature_info_v2 datafile.bin
+        espsecure signature-info-v2 datafile.bin
+
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+      .. note::
+
+        如果 Secure Boot v2 配置为使用 ECDSA P-384 签名方案，则所有用于签名的密钥必须为 ECDSA-P384 密钥。不支持与 P-384 同时使用其他椭圆曲线（例如 P-192 或 P-256）密钥，否则在启动过程中会导致签名验证失败。
 
     .. _secure-boot-v2-key-revocation:
 
@@ -710,6 +820,14 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 签名公钥/私钥的 PEM 文件。
     .. code-block:: bash
 
         openssl dgst -sha256 -binary BINARY_FILE  > DIGEST_BINARY_FILE
+
+    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+        在使用 ECDSA-P384 签名方案的情况下，必须使用 SHA-384 来计算镜像的摘要。
+
+        .. code-block:: bash
+
+            openssl dgst -sha384 -binary BINARY_FILE  > DIGEST_BINARY_FILE
 
 2. 使用上述摘要，生成镜像签名。
 

@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2016 Wind River Systems, Inc.
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,8 @@ struct k_work;
  * @return N/A
  */
 typedef void (*k_work_handler_t)(struct k_work *work);
+
+typedef int32_t k_timeout_t;
 
 struct k_work {
     k_work_handler_t handler;
@@ -142,6 +144,65 @@ struct k_work {
 #define K_FOREVER       (-1)
 
 /**
+ * @brief Define for delayable work type.
+ *
+ * This macro maps the Zephyr delayable work type `k_work_delayable`
+ * to the ESP-IDF type `k_delayed_work`.
+ */
+#define k_work_delayable               k_delayed_work
+
+/**
+ * @brief Reschedule a delayable work item.
+ *
+ * This macro maps to `k_delayed_work_submit`, which cancels
+ * any existing pending submission of the work item and reschedules
+ * it with the new timeout delay.
+ *
+ * @param work Pointer to delayable work item.
+ * @param delay Timeout delay value.
+ * @return See implementation of `k_delayed_work_submit`.
+ */
+#define k_work_reschedule              k_delayed_work_submit
+
+/**
+ * @brief Schedule a delayable work item.
+ *
+ * This macro maps to `k_delayed_work_submit`,
+ * which schedules a work item to be processed
+ * after the specified timeout delay. If the work
+ * is already pending, the new delay is applied.
+ *
+ * @param work Pointer to delayable work item.
+ * @param delay Timeout delay value.
+ * @return See implementation of `k_delayed_work_submit`.
+ */
+#define k_work_schedule                k_delayed_work_submit
+
+/**
+ * @brief Cancel a delayable work item.
+ *
+ * This macro maps to `k_delayed_work_cancel`,
+ * which cancels a pending work submission
+ * associated with a delayable work item.
+ *
+ * @param work Pointer to delayable work item.
+ * @return See implementation of `k_delayed_work_cancel`.
+ */
+#define k_work_cancel_delayable        k_delayed_work_cancel
+
+/**
+ * @brief Initialize a delayable work item.
+ *
+ * This macro maps to `k_delayed_work_init`,
+ * which initializes a delayable work item with
+ * the provided handler function.
+ *
+ * @param work Pointer to delayable work item.
+ * @param handler Work item handler function.
+ */
+#define k_work_init_delayable          k_delayed_work_init
+
+/**
  * @brief Get system uptime (32-bit version).
  *
  * This routine returns the lower 32-bits of the elapsed time since the system
@@ -159,6 +220,27 @@ uint32_t k_uptime_get_32(void);
 struct k_delayed_work {
     struct k_work work;
 };
+
+#define _K_DELAYABLE_WORK_INITIALIZER(work_handler) { \
+        .work = { \
+        .handler = work_handler, \
+        }, \
+}
+
+/**
+ * @brief Convert a work item to its containing delayable work structure.
+ *
+ * This function uses container_of to derive the address of the containing
+ * k_work_delayable structure from the address of the embedded k_work structure.
+ *
+ * @param work Pointer to the embedded k_work structure within a k_work_delayable.
+ * @return Pointer to the containing k_work_delayable structure.
+ */
+static inline struct k_work_delayable *
+k_work_delayable_from_work(struct k_work *work)
+{
+    return CONTAINER_OF(work, struct k_work_delayable, work);
+}
 
 /**
  * @brief Submit a delayed work item to the system workqueue.
@@ -208,6 +290,21 @@ int k_delayed_work_submit_periodic(struct k_delayed_work *work, int32_t period);
  * @return Remaining time (in milliseconds).
  */
 int32_t k_delayed_work_remaining_get(struct k_delayed_work *work);
+
+/**
+ * @brief Check if a delayable work item is pending execution.
+ *
+ * This function checks whether a delayable work item has been scheduled
+ * and is waiting to be processed. It returns true if the work item is in
+ * pending state (waiting for timeout expiration or being in work queue).
+ *
+ * @param dwork Pointer to delayable work item.
+ * @return true if work is pending, false otherwise.
+ */
+static inline bool k_work_delayable_is_pending(struct k_work_delayable *dwork)
+{
+    return k_delayed_work_remaining_get(dwork);
+}
 
 /**
  * @brief Submit a work item to the system workqueue.
@@ -267,9 +364,44 @@ int k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler);
  * @return Current uptime.
  */
 int64_t k_uptime_get(void);
+int64_t k_uptime_delta(int64_t *reftime);
 
 void bt_mesh_timer_init(void);
 void bt_mesh_timer_deinit(void);
+
+/**
+ * @brief Initialize a statically-defined work item.
+ *
+ * This macro can be used to initialize a statically-defined workqueue work
+ * item, prior to its first use. For example,
+ *
+ * @code static K_WORK_DEFINE(<work>, <work_handler>); @endcode
+ *
+ * @param work Symbol name for work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_WORK_DEFINE(work, work_handler) \
+        struct k_work work = _K_WORK_INITIALIZER(work_handler)
+
+/**
+ * @brief Initialize a statically-defined delayable work item.
+ *
+ * This macro can be used to initialize a statically-defined delayable
+ * work item, prior to its first use. For example,
+ *
+ * @code static K_WORK_DELAYABLE_DEFINE(<dwork>, <work_handler>); @endcode
+ *
+ * Note that if the runtime dependencies support initialization with
+ * k_work_init_delayable() using that will eliminate the initialized
+ * object in ROM that is produced by this macro and copied in at
+ * system startup.
+ *
+ * @param work Symbol name for delayable work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_WORK_DELAYABLE_DEFINE(work, work_handler) \
+        struct k_delayed_work work \
+         = _K_DELAYABLE_WORK_INITIALIZER(work_handler)
 
 #ifdef __cplusplus
 }

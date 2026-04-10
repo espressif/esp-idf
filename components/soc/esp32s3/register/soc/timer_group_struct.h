@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -328,7 +328,7 @@ typedef union {
          */
         uint32_t rtc_cali_start_cycling: 1;
         /** rtc_cali_clk_sel : R/W; bitpos: [14:13]; default: 1;
-         *  0:rtc slow clock. 1:clk_80m.  2:xtal_32k.
+         *  0:rc_slow_clk. 1:rc_fast_div_clk.  2:xtal_32k.
          */
         uint32_t rtc_cali_clk_sel: 2;
         /** rtc_cali_rdy : RO; bitpos: [15]; default: 0;

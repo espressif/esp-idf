@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,9 +49,24 @@
 #include "esp_private/sleep_modem.h"
 #endif
 #include "hal/efuse_hal.h"
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
+#include "soc/periph_defs.h"
+#endif
+#include "phy_init_deps.h"
+
+#ifndef PHY_INIT_MODEM_CLOCK_REQUIRED_BITS
+#warning "PHY_INIT_MODEM_CLOCK_REQUIRED_BITS not defined; using default value 0"
+#define PHY_INIT_MODEM_CLOCK_REQUIRED_BITS 0
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
+#endif
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+extern void pm_mac_modem_clear_rf_power_state(void);
+extern bool pm_mac_modem_rf_already_enabled(void);
 #endif
 
 static const char* TAG = "phy_init";
@@ -88,6 +103,11 @@ static uint32_t* s_phy_digital_regs_mem = NULL;
 static uint8_t s_phy_modem_init_ref = 0;
 #endif
 
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
+#endif
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
@@ -285,6 +305,18 @@ static inline void phy_digital_regs_load(void)
 }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+void IRAM_ATTR esp_phy_modem_rf_flag_update(void)
+{
+    if (pm_mac_modem_rf_already_enabled()) {
+#if CONFIG_ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG
+        assert(0);
+#endif
+        pm_mac_modem_clear_rf_power_state();
+    }
+}
+#endif
+
 void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
@@ -296,12 +328,13 @@ void esp_phy_enable(esp_phy_modem_t modem)
         phy_update_wifi_mac_time(false, s_phy_rf_en_ts);
 #endif
         esp_phy_common_clock_enable();
+        phy_module_enable();
+        assert(phy_module_has_clock_bits(PHY_INIT_MODEM_CLOCK_REQUIRED_BITS));
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
             s_is_phy_calibrated = true;
         } else {
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-            extern bool pm_mac_modem_rf_already_enabled(void);
             if (!pm_mac_modem_rf_already_enabled()) {
                 if (sleep_modem_wifi_modem_state_enabled() && sleep_modem_wifi_modem_link_done()) {
                     sleep_modem_wifi_do_phy_retention(true);
@@ -329,7 +362,7 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
 
 // ESP32 will track pll in the wifi/BT modem interrupt handler.
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_init();
 #endif
 
@@ -337,10 +370,10 @@ void esp_phy_enable(esp_phy_modem_t modem)
             phy_ant_update();
             phy_ant_clr_update_flag();
         }
-
+        phy_module_disable();
     }
     phy_set_modem_flag(modem);
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
     // Immediately track pll when phy enabled.
     phy_track_pll();
 #endif
@@ -357,17 +390,17 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #if CONFIG_ESP_PHY_RECORD_USED_TIME
     phy_record_time(false, modem);
 #endif
+    esp_phy_modem_t saved_modem = phy_get_modem_flag();
     phy_clr_modem_flag(modem);
-    if (phy_get_modem_flag() == 0) {
+    if (saved_modem == modem) {
 // ESP32 will track pll in the wifi/BT modem interrupt handler.
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_deinit();
 #endif
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         phy_digital_regs_store();
 #endif
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-        extern void pm_mac_modem_clear_rf_power_state(void);
         pm_mac_modem_clear_rf_power_state();
         if (sleep_modem_wifi_modem_state_enabled()) {
             sleep_modem_wifi_do_phy_retention(false);
@@ -397,7 +430,9 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
 #if SOC_PM_MODEM_PD_BY_SW // TODO: [ESP32C5] IDF-8667
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        RTC_CNTL_ATOMIC() {
+            CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        }
         esp_rom_delay_us(10);
         wifi_bt_common_module_enable();
 #if CONFIG_IDF_TARGET_ESP32
@@ -408,7 +443,9 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
         SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
         CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
 #endif
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        RTC_CNTL_ATOMIC() {
+            CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        }
         wifi_bt_common_module_disable();
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
@@ -422,8 +459,10 @@ void esp_wifi_bt_power_domain_off(void)
 #if SOC_PM_MODEM_PD_BY_SW // TODO: [ESP32C5] IDF-8667
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (--s_wifi_bt_pd_controller.count == 0) {
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        RTC_CNTL_ATOMIC() {
+            SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+            SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        }
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
 #endif // SOC_PM_MODEM_PD_BY_SW

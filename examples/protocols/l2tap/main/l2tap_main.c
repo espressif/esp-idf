@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -41,7 +41,6 @@ typedef struct {
 
 static const char *TAG = "l2tap_example";
 
-
 /** Opens and configures L2 TAP file descriptor */
 static int init_l2tap_fd(int flags, uint16_t eth_type_filter)
 {
@@ -80,6 +79,16 @@ static int init_l2tap_fd(int flags, uint16_t eth_type_filter)
     }
     ESP_LOGI(TAG, "L2 TAP fd %d Ethernet type filter configured to 0x%x", fd, eth_type_filter);
 
+    esp_eth_handle_t eth_hndl;
+    if (ioctl(fd, L2TAP_G_DEVICE_DRV_HNDL, &eth_hndl) < 0) {
+        ESP_LOGE(TAG, "failed to get socket eth_handle %d\n", errno);
+        goto error;
+    }
+    uint8_t mac_addr[ETH_ADDR_LEN];
+    esp_eth_ioctl(eth_hndl, ETH_CMD_G_MAC_ADDR, mac_addr);
+    ESP_LOGI(TAG, "fd %d Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x", fd,
+             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+
     return fd;
 error:
     if (fd != INVALID_FD) {
@@ -89,13 +98,10 @@ error:
 }
 
 /** Creates "echo" message from received frame */
-static void create_echo_frame(test_vfs_eth_tap_msg_t *in_frame, test_vfs_eth_tap_msg_t *out_frame, int len)
+static void create_echo_frame(uint8_t *our_mac_addr, test_vfs_eth_tap_msg_t *in_frame, test_vfs_eth_tap_msg_t *out_frame, int len)
 {
     // Set source address equal to our MAC address
-    esp_eth_handle_t eth_hndl = get_example_eth_handle();
-    uint8_t mac_addr[ETH_ADDR_LEN];
-    esp_eth_ioctl(eth_hndl, ETH_CMD_G_MAC_ADDR, mac_addr);
-    memcpy(out_frame->header.src.addr, mac_addr, ETH_ADDR_LEN);
+    memcpy(out_frame->header.src.addr, our_mac_addr, ETH_ADDR_LEN);
     // Set destination address equal to source address from where the frame was received
     memcpy(out_frame->header.dest.addr, in_frame->header.src.addr, ETH_ADDR_LEN);
     // Set Ethernet type
@@ -115,16 +121,24 @@ static void echo_l2tap_task(void *pvParameters)
         goto error;
     }
 
+    esp_eth_handle_t eth_hndl;
+    if (ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &eth_hndl) < 0) {
+        ESP_LOGE(TAG, "failed to get socket eth_handle %d\n", errno);
+        goto error;
+    }
+    uint8_t local_mac_addr[ETH_ADDR_LEN];
+    esp_eth_ioctl(eth_hndl, ETH_CMD_G_MAC_ADDR, local_mac_addr);
+
     while (1) {
         ssize_t len = read(eth_tap_fd, rx_buffer, sizeof(rx_buffer));
         if (len > 0) {
             test_vfs_eth_tap_msg_t *recv_msg = (test_vfs_eth_tap_msg_t *)rx_buffer;
             ESP_LOGI(TAG, "fd %d received %d bytes from %.2x:%.2x:%.2x:%.2x:%.2x:%.2x", eth_tap_fd,
-                        len, recv_msg->header.src.addr[0], recv_msg->header.src.addr[1], recv_msg->header.src.addr[2],
-                        recv_msg->header.src.addr[3], recv_msg->header.src.addr[4], recv_msg->header.src.addr[5]);
+                     len, recv_msg->header.src.addr[0], recv_msg->header.src.addr[1], recv_msg->header.src.addr[2],
+                     recv_msg->header.src.addr[3], recv_msg->header.src.addr[4], recv_msg->header.src.addr[5]);
             // Construct echo frame
             test_vfs_eth_tap_msg_t echo_msg;
-            create_echo_frame(recv_msg, &echo_msg, len);
+            create_echo_frame(local_mac_addr, recv_msg, &echo_msg, len);
 
             // Send the echo message
             ssize_t ret = write(eth_tap_fd, &echo_msg, len);
@@ -153,6 +167,14 @@ static void nonblock_l2tap_echo_task(void *pvParameters)
         goto error;
     }
 
+    esp_eth_handle_t eth_hndl;
+    if (ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &eth_hndl) < 0) {
+        ESP_LOGE(TAG, "failed to get socket eth_handle %d\n", errno);
+        goto error;
+    }
+    uint8_t local_mac_addr[ETH_ADDR_LEN];
+    esp_eth_ioctl(eth_hndl, ETH_CMD_G_MAC_ADDR, local_mac_addr);
+
     while (1) {
         struct timeval tv;
         tv.tv_sec = 5;
@@ -168,11 +190,11 @@ static void nonblock_l2tap_echo_task(void *pvParameters)
             if (len > 0) {
                 test_vfs_eth_tap_msg_t *recv_msg = (test_vfs_eth_tap_msg_t *)rx_buffer;
                 ESP_LOGI(TAG, "fd %d received %d bytes from %.2x:%.2x:%.2x:%.2x:%.2x:%.2x", eth_tap_fd,
-                            len, recv_msg->header.src.addr[0], recv_msg->header.src.addr[1], recv_msg->header.src.addr[2],
-                            recv_msg->header.src.addr[3], recv_msg->header.src.addr[4], recv_msg->header.src.addr[5]);
+                         len, recv_msg->header.src.addr[0], recv_msg->header.src.addr[1], recv_msg->header.src.addr[2],
+                         recv_msg->header.src.addr[3], recv_msg->header.src.addr[4], recv_msg->header.src.addr[5]);
                 // Construct echo frame
                 test_vfs_eth_tap_msg_t echo_msg;
-                create_echo_frame(recv_msg, &echo_msg, len);
+                create_echo_frame(local_mac_addr, recv_msg, &echo_msg, len);
 
                 // Send the echo message
                 ssize_t ret = write(eth_tap_fd, &echo_msg, len);
@@ -216,7 +238,12 @@ static void hello_tx_l2tap_task(void *pvParameters)
         },
         .payload = "ESP32 hello to everybody!"
     };
-    esp_eth_handle_t eth_hndl = get_example_eth_handle();
+
+    esp_eth_handle_t eth_hndl;
+    if (ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &eth_hndl) < 0) {
+        ESP_LOGE(TAG, "failed to get socket eth_handle %d\n", errno);
+        goto error;
+    }
     esp_eth_ioctl(eth_hndl, ETH_CMD_G_MAC_ADDR, hello_msg.header.src.addr);
 
     while (1) {
@@ -249,12 +276,6 @@ void app_main(void)
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
-
-    esp_eth_handle_t eth_hndl = get_example_eth_handle();
-    uint8_t mac_addr[ETH_ADDR_LEN];
-    esp_eth_ioctl(eth_hndl, ETH_CMD_G_MAC_ADDR, mac_addr);
-    ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
-            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 
     // Echo received message back to sender (blocks indefinitely)
     xTaskCreate(echo_l2tap_task, "echo", 4096, NULL, 6, NULL);

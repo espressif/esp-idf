@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,14 +39,7 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG + period_index * sizeof(uint32_t),
                   SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
 #elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
-    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
-    if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        cal_clk = RTC_CAL_32K_XTAL;
-    } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
-        cal_clk  = RTC_CAL_8MD256;
-    }
-    uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);
+    uint32_t slow_clk_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, 100);
     uint64_t period_cycles = rtc_time_us_to_slowclk(period_us_64, slow_clk_period);
 
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_1_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, ((uint32_t)period_cycles));

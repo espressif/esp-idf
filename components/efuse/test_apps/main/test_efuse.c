@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@
 
 #define TASK_PRIORITY (5)
 
-__attribute__((unused)) static const char* TAG = "efuse_test";
+ESP_LOG_ATTR_TAG(TAG, "efuse_test");
 
 
 static void test_read_blob(void)
@@ -739,7 +739,7 @@ static void efuse_burn_task(void* arg)
     ESP_LOGI(TAG, "Start burn task");
     size_t test3_len_6 = 2;
     while (!cmd_stop_reset_task1) {
-        esp_efuse_utility_update_virt_blocks();
+        esp_efuse_utility_erase_virt_blocks();
         esp_efuse_utility_reset();
         TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
     }
@@ -868,4 +868,18 @@ TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
 {
     esp_efuse_utility_update_virt_blocks();
     TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), efuse_ll_get_chip_ver_pkg());
+}
+
+TEST_CASE("Test deferred WR_DIS programming", "[efuse]")
+{
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_update_virt_blocks();
+
+    esp_efuse_batch_write_begin();
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK_KEY0));
+    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK_KEY0));
+    esp_efuse_batch_write_commit();
+
+    TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(EFUSE_BLK_KEY0));
+    TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(EFUSE_BLK_KEY0));
 }

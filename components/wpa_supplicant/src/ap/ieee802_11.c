@@ -730,6 +730,8 @@ queued:
     /* posting event to the task to handle commit */
     if (wpa3_hostap_post_evt(SIG_WPA3_RX_COMMIT, 0) != 0) {
         wpa_printf(MSG_ERROR, "failed to queue commit build event");
+        dl_list_del(&q->list);
+        os_free(q);
         return -1;
     }
     return 0;

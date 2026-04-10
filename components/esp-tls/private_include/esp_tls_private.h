@@ -1,14 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
-
-/**
- * @brief      ESP-TLS Connection Handle
- */
 
 #include <stdbool.h>
 #include <sys/socket.h>
@@ -20,29 +16,21 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
-#endif
+#endif /* CONFIG_ESP_TLS_SERVER_SESSION_TICKETS */
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 #include "psa/crypto.h"
-#endif
-#elif CONFIG_ESP_TLS_USING_WOLFSSL
-#include "wolfssl/wolfcrypt/settings.h"
-#include "wolfssl/ssl.h"
-#endif
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
+#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
+/**
+ * @brief      ESP-TLS Connection Handle
+ */
 struct esp_tls {
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
     mbedtls_ssl_context ssl;                                                    /*!< TLS/SSL context */
-
-    mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
-
-    mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
-                                                                                     CTR_DRBG is deterministic random
-                                                                                     bit generation based on AES-256 */
 
     mbedtls_ssl_config conf;                                                    /*!< TLS/SSL configuration to be shared
                                                                                      between mbedtls_ssl_context
@@ -67,14 +55,15 @@ struct esp_tls {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool use_ecdsa_peripheral;                                                  /*!< Use the ECDSA peripheral for the private key operations. */
     uint8_t ecdsa_efuse_blk;                                                    /*!< The efuse block number where the ECDSA key is stored. */
+    esp_tls_ecdsa_curve_t ecdsa_curve;                                          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 #endif
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     unsigned char *client_session;                                              /*!< Pointer for the serialized client session ticket context. */
     size_t client_session_len;                                                  /*!< Length of the serialized client session ticket context. */
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
-#elif CONFIG_ESP_TLS_USING_WOLFSSL
-    void *priv_ctx;
-    void *priv_ssl;
+#elif CONFIG_ESP_TLS_CUSTOM_STACK
+    void *priv_ctx;                                                             /*!< Private context for custom TLS stack (e.g., SSL_CTX*) */
+    void *priv_ssl;                                                             /*!< Private SSL handle for custom TLS stack (e.g., SSL*) */
 #endif
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
 

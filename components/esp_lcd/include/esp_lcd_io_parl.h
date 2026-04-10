@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,10 +22,10 @@ extern "C" {
  * @brief Parallel Panel IO configuration structure, for intel 8080 interface(8 data-lines) or SPI interface(1 data-lines)
  */
 typedef struct {
-    int dc_gpio_num; /*!< GPIO used for D/C line */
-    int clk_gpio_num; /*!< GPIO used for CLK line */
-    int cs_gpio_num;         /*!< GPIO used for CS line */
-    int data_gpio_nums[ESP_PARLIO_LCD_WIDTH_MAX]; /*!< GPIOs used for data lines */
+    gpio_num_t dc_gpio_num;  /*!< GPIO used for D/C line */
+    gpio_num_t clk_gpio_num; /*!< GPIO used for CLK line */
+    gpio_num_t cs_gpio_num;  /*!< GPIO used for CS line */
+    gpio_num_t data_gpio_nums[ESP_PARLIO_LCD_WIDTH_MAX]; /*!< GPIOs used for data lines */
     size_t data_width;          /*!< Number of data lines, 1(SPI) or 8(I80) */
     uint32_t pclk_hz;        /*!< Frequency of pixel clock */
     parlio_clock_source_t clk_src; /*!< Clock source for the Parlio peripheral */

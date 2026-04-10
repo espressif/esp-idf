@@ -1,18 +1,8 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_hw_support/test_apps/dma:
-  disable:
-    - if: IDF_TARGET in ["esp32"]
-      temporary: false
-      reason: No general DMA controller on ESP32
-  depends_filepatterns:
-    - components/esp_hw_support/dma/**/*
 
-components/esp_hw_support/test_apps/dma2d:
-  disable:
-    - if: SOC_DMA2D_SUPPORTED != 1
-  depends_filepatterns:
-    - components/esp_hw_support/dma/**/*
+components/esp_hw_support/test_apps/cpu:
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
@@ -20,7 +10,9 @@ components/esp_hw_support/test_apps/host_test_linux:
 
 components/esp_hw_support/test_apps/mspi:
   disable:
-    - if: IDF_TARGET not in ["esp32s3", "esp32p4"]
+    - if: IDF_TARGET not in ["esp32s3", "esp32p4", "esp32c61", "esp32c5", "esp32s31"]
+    - if: CONFIG_NAME in ["generic_timing_tuning_log_safe", "generic_timing_tuning_xip"] and IDF_TARGET in ["esp32s31"]
+    - if: CONFIG_NAME == "120sdr_120sdr" and IDF_TARGET in ["esp32s3", "esp32p4", "esp32s31"]
 
 components/esp_hw_support/test_apps/mspi_psram_with_dfs:
   disable:
@@ -45,6 +37,19 @@ components/esp_hw_support/test_apps/sleep_retention:
     - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and CONFIG_NAME != "xip_psram"
     - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and (SOC_SPIRAM_XIP_SUPPORTED == 1 and CONFIG_NAME == "xip_psram")
 
+components/esp_hw_support/test_apps/usb_phy:
+  enable:
+    - if: SOC_USB_OTG_SUPPORTED == 1
+  depends_filepatterns:
+    - components/hal/usb*.c
+    - components/hal/include/hal/usb*.h
+    - components/hal/esp32*/include/hal/usb*.h
+    - components/soc/esp32*/usb*.c
+    - components/soc/include/soc/usb*.h
+    - components/soc/esp32*/include/soc/usb_dwc_*.h
+    - components/soc/esp32*/include/soc/usb_wrap_*.h
+    - components/esp_hw_support/**/usb_phy.*
+
 components/esp_hw_support/test_apps/vad_wakeup:
   disable:
     - if: SOC_LP_VAD_SUPPORTED != 1
@@ -53,6 +58,6 @@ components/esp_hw_support/test_apps/wakeup_tests:
   enable:
     - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: lack of runners

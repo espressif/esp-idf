@@ -14,7 +14,7 @@
 #include "esp_flash.h"
 #include "esp_timer.h"
 
-#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32S31
 #define EXAMPLE_TIMER_ALERT_TIME    (1 * 3 * 1000)
 #else
 #define EXAMPLE_TIMER_ALERT_TIME    (1 * 10 * 1000)
@@ -64,7 +64,7 @@ void app_main(void)
 
 static IRAM_ATTR void NOINLINE_ATTR oneshot_timer_callback(void* arg)
 {
-    bool in_psram = (bool*) arg;
+    bool in_psram = *(bool*) arg;
     time_cb_start = esp_timer_get_time();
     if (in_psram == true) {
         cb_in_psram();

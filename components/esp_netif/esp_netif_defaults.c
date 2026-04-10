@@ -28,7 +28,7 @@ const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip = {
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
 #endif
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 const esp_netif_inherent_config_t _g_esp_netif_inherent_nan_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_NAN();
 #endif
 

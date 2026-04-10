@@ -140,6 +140,9 @@ TEST_CASE("Task on specific core works", "[freertos][psram]")
         TEST_ASSERT_EQUAL((size_t) corenum, corenum_info.recorded_core_num);
 
         vTaskDelete(task_handle);
+
+        // Add a short delay to allow the idle task to free any remaining task memory
+        vTaskDelay(10);
     }
 }
 #endif // !CONFIG_FREERTOS_UNICORE

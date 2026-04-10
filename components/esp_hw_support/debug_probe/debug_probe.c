@@ -22,7 +22,7 @@
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_rom_gpio.h"
 
-static const char *TAG = "dbg_probe";
+ESP_LOG_ATTR_TAG(TAG, "dbg_probe");
 
 typedef struct debug_probe_unit_t debug_probe_unit_t;
 typedef struct debug_probe_channel_t debug_probe_channel_t;

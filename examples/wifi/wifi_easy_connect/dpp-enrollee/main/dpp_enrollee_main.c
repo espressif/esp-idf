@@ -85,7 +85,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             wifi_event_dpp_config_received_t *config = event_data;
             memcpy(&s_dpp_wifi_config, &config->wifi_cfg, sizeof(s_dpp_wifi_config));
             s_retry_num = 0;
-            esp_wifi_set_config(ESP_IF_WIFI_STA, &s_dpp_wifi_config);
+            esp_wifi_set_config(WIFI_IF_STA, &s_dpp_wifi_config);
             esp_wifi_connect();
             break;
         case WIFI_EVENT_DPP_FAILED:
@@ -161,7 +161,7 @@ void dpp_enrollee_init(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_supp_dpp_init(NULL));
+    ESP_ERROR_CHECK(esp_supp_dpp_init());
     ESP_ERROR_CHECK(dpp_enrollee_bootstrap());
     ESP_ERROR_CHECK(esp_wifi_start());
 

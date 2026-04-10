@@ -9,7 +9,7 @@
 
 #include "multi_heap.h"
 
-void NOINLINE_ATTR _ss_dummy_secure_service(int a, int b, int c, int d, int e, int f, int g, int h, int *i)
+void NOINLINE_ATTR _ss_esp_tee_test_dummy_sec_srv(int a, int b, int c, int d, int e, int f, int g, int h, int *i)
 {
     esp_rom_printf("Dummy secure service\n");
     *i = a + b + c + d + e + f + g + h;

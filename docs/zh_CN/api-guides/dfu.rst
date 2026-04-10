@@ -17,6 +17,8 @@
 
     然而，你可以通过烧录 ``USB_PHY_SEL`` eFuse，将内部 USB PHY 永久切换为支持 USB OTG 外设的模式，不再用于 USB_SERIAL_JTAG。有关 USB_SERIAL_JTAG 和 USB OTG 的更多信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
 
+    如需了解 USB OTG 的实际应用示例，请参考专为 USB OTG 应用设计的 `ESP32-S3-USB-OTG <https://documentation.espressif.com/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-usb-otg/index.html>`_ 开发板。
+
 设备固件升级 (DFU) 是一种通过通用串行总线 (USB) 升级设备固件的机制。但是，启用安全启动 (Secure Boot) 或 flash 加密会禁用 ROM 中的 USB-OTG USB 堆栈，则无法通过该端口上的模拟串口或 DFU 进行更新。
 
 - 入门指南中的 :ref:`get-started-get-prerequisites` 介绍了 DFU 的软件要求。

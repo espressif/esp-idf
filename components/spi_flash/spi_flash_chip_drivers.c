@@ -5,19 +5,20 @@
  */
 
 #include <stdlib.h>
-#include "spi_flash_chip_driver.h"
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_chip_issi.h"
-#include "spi_flash_chip_mxic.h"
-#include "spi_flash_chip_gd.h"
-#include "spi_flash_chip_winbond.h"
-#include "spi_flash_chip_boya.h"
-#include "spi_flash_chip_th.h"
-#include "spi_flash_defs.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
 
-__attribute__((unused)) static const char *TAG = "spi_flash";
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_flash_chips/spi_flash_chip_issi.h"
+#include "esp_flash_chips/spi_flash_chip_mxic.h"
+#include "esp_flash_chips/spi_flash_chip_gd.h"
+#include "esp_flash_chips/spi_flash_chip_winbond.h"
+#include "esp_flash_chips/spi_flash_chip_boya.h"
+#include "esp_flash_chips/spi_flash_chip_th.h"
+
+ESP_LOG_ATTR_TAG(TAG, "spi_flash");
 
 #define FORMAT_STR "Detected %s flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_%s_CHIP` in menuconfig"
 
@@ -67,39 +68,39 @@ void spi_flash_chip_list_check(esp_flash_t *chip, uint32_t device_id) {
     {
     case SPI_FLASH_GD:
         if (&esp_flash_chip_gd == NULL) {
-            ESP_EARLY_LOGW(TAG, FORMAT_STR, "GigaDevice", "GD");
+            ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("GigaDevice"), ESP_LOG_ATTR_STR("GD"));
         }
         break;
     case SPI_FLASH_ISSI:
         if (&esp_flash_chip_issi == NULL) {
-            ESP_EARLY_LOGW(TAG, FORMAT_STR, "ISSI", "ISSI");
+            ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("ISSI"), ESP_LOG_ATTR_STR("ISSI"));
         }
         break;
     case SPI_FLASH_TH:
         if (&esp_flash_chip_th == NULL) {
-            ESP_EARLY_LOGW(TAG, FORMAT_STR, "TH", "TH");
+            ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("TH"), ESP_LOG_ATTR_STR("TH"));
         }
         break;
     case SPI_FLASH_WINBOND:
         if (&esp_flash_chip_winbond == NULL) {
-            ESP_EARLY_LOGW(TAG, FORMAT_STR, "winbond", "WINBOND");
+            ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("winbond"), ESP_LOG_ATTR_STR("WINBOND"));
         }
         break;
     case SPI_FLASH_MXIC:
         // Need to tell the difference between octal and quad flash.
         if (chip->read_mode < SPI_FLASH_OPI_FLAG) {
             if (&esp_flash_chip_mxic == NULL) {
-                ESP_EARLY_LOGW(TAG, FORMAT_STR, "MXIC", "MXIC");
+                ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("MXIC"), ESP_LOG_ATTR_STR("MXIC"));
             }
         } else {
             if (&esp_flash_chip_mxic_opi == NULL) {
-                ESP_EARLY_LOGW(TAG, FORMAT_STR, "MXIC", "MXIC_OPI");
+                ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("MXIC"), ESP_LOG_ATTR_STR("MXIC_OPI"));
             }
         }
         break;
     case SPI_FLASH_BY:
         if (&esp_flash_chip_boya == NULL) {
-            ESP_EARLY_LOGW(TAG, FORMAT_STR, "boya", "BOYA");
+            ESP_EARLY_LOGW(TAG, FORMAT_STR, ESP_LOG_ATTR_STR("boya"), ESP_LOG_ATTR_STR("BOYA"));
         }
         break;
     default:

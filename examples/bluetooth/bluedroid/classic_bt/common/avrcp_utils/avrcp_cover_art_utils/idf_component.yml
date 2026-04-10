@@ -1,0 +1,5 @@
+dependencies:
+  idf: ">=4.4"
+  esp_jpeg: ">=1.0.2"
+  avrcp_common_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/avrcp_utils/avrcp_common_utils

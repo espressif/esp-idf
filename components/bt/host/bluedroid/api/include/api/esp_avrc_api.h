@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,9 @@ extern "C" {
 
 #define ESP_AVRC_TRANS_LABEL_MAX        15       /*!< max transaction label */
 
-#define ESP_AVRC_CA_IMAGE_HANDLE_LEN    7        /* The image handle length is fixed to 7, specified by Basic Image Profile */
-#define ESP_AVRC_CA_MTU_MIN             255      /* Minimal MTU can be used in Cover Art OBEX connection */
-#define ESP_AVRC_CA_MTU_MAX             1691     /* Maximum MTU can be used in Cover Art OBEX connection */
+#define ESP_AVRC_CA_IMAGE_HANDLE_LEN    7        /*!< The image handle length is fixed to 7, specified by Basic Image Profile */
+#define ESP_AVRC_CA_MTU_MIN             255      /*!< Minimal MTU can be used in Cover Art OBEX connection */
+#define ESP_AVRC_CA_MTU_MAX             1691     /*!< Maximum MTU can be used in Cover Art OBEX connection */
 
 /// AVRC feature bit mask
 typedef enum {
@@ -113,7 +113,7 @@ typedef enum {
 typedef enum {
     ESP_AVRC_PSTH_FILTER_ALLOWED_CMD = 0,       /*!< all of the PASSTHROUGH commands that can possibly be used, immutable */
     ESP_AVRC_PSTH_FILTER_SUPPORTED_CMD = 1,     /*!< PASSTHROUGH commands selectively supported according to the current configuration */
-    ESP_AVRC_PSTH_FILTER_SUPPORT_MAX,
+    ESP_AVRC_PSTH_FILTER_SUPPORT_MAX,           /*!< Maximum value for PASSTHROUGH command filter */
 } esp_avrc_psth_filter_t;
 
 /// AVRC passthrough command bit mask
@@ -121,6 +121,7 @@ typedef struct {
     uint16_t bits[8];                           /*!< bit mask representation of PASSTHROUGH commands */
 } esp_avrc_psth_bit_mask_t;
 
+/// AVRC operation code bit mask
 typedef enum {
     ESP_AVRC_BIT_MASK_OP_TEST = 0,      /*!< operation code to test a specific bit */
     ESP_AVRC_BIT_MASK_OP_SET = 1,       /*!< operation code to set a specific bit  */
@@ -186,14 +187,14 @@ typedef enum {
     ESP_AVRC_RN_ADDRESSED_PLAYER_CHANGE = 0x0b,   /*!< the addressed player changed */
     ESP_AVRC_RN_UIDS_CHANGE = 0x0c,               /*!< UIDs changed */
     ESP_AVRC_RN_VOLUME_CHANGE = 0x0d,             /*!< volume changed locally on TG */
-    ESP_AVRC_RN_MAX_EVT
+    ESP_AVRC_RN_MAX_EVT                           /*!< maximum value for notification event */
 } esp_avrc_rn_event_ids_t;
 
 /// AVRC target notification event notification capability
 typedef enum {
     ESP_AVRC_RN_CAP_ALLOWED_EVT = 0,              /*!< all of the notification events that can possibly be supported, immutable */
     ESP_AVRC_RN_CAP_SUPPORTED_EVT = 1,            /*!< notification events selectively supported according to the current configuration */
-    ESP_AVRC_RN_CAP_MAX,
+    ESP_AVRC_RN_CAP_MAX,                          /*!< maximum value for the notification event capability */
 } esp_avrc_rn_evt_cap_t;
 
 /// AVRC target notification event capability bit mask
@@ -213,7 +214,7 @@ typedef enum {
     ESP_AVRC_PS_REPEAT_MODE = 0x02,               /*!< repeat mode */
     ESP_AVRC_PS_SHUFFLE_MODE = 0x03,              /*!< shuffle mode */
     ESP_AVRC_PS_SCAN_MODE = 0x04,                 /*!< scan mode on or off */
-    ESP_AVRC_PS_MAX_ATTR
+    ESP_AVRC_PS_MAX_ATTR                          /*!< Maximum value for player setting attribute ids*/
 } esp_avrc_ps_attr_ids_t;
 
 /// AVRC equalizer modes
@@ -232,9 +233,9 @@ typedef enum {
 
 /// AVRC shuffle modes
 typedef enum {
-    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,                /*<! shuffle off */
-    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*<! shuffle all tracks */
-    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3               /*<! group shuffle */
+    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,                /*!< shuffle off */
+    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*!< shuffle all tracks */
+    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3               /*!< group shuffle */
 } esp_avrc_ps_shf_value_ids_t;
 
 /// AVRC scan modes
@@ -511,7 +512,7 @@ esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback);
  * @brief           Initialize the bluetooth AVRCP controller module, This function should be called
  *                  after esp_bluedroid_enable() completes successfully. Note: AVRC cannot work independently,
  *                  AVRC should be used along with A2DP and AVRC should be initialized before A2DP.
- *                  ESP_AVRC_CT_PROF_STATE_EVT with ESP_AVRC_INIT_SUCCESS will reported to the APP layer.
+ *                  `ESP_AVRC_CT_PROF_STATE_EVT` with `ESP_AVRC_INIT_SUCCESS` will be reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -524,9 +525,9 @@ esp_err_t esp_avrc_ct_init(void);
 /**
  *
  * @brief           De-initialize AVRCP controller module. This function should be called after
- *                  after esp_bluedroid_enable() completes successfully. Note: AVRC cannot work independently,
+ *                  `esp_bluedroid_enable()` completes successfully. Note: AVRC cannot work independently,
  *                  AVRC should be used along with A2DP and AVRC should be deinitialized before A2DP.
- *                  ESP_AVRC_CT_PROF_STATE_EVT with ESP_AVRC_DEINIT_SUCCESS will reported to the APP layer.
+ *                  `ESP_AVRC_CT_PROF_STATE_EVT` with `ESP_AVRC_DEINIT_SUCCESS` will be reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -702,6 +703,10 @@ esp_err_t esp_avrc_tg_deinit(void);
  *                  passthrough commands selected to be supported according to current configuration. The
  *                  configuration can be changed using esp_avrc_tg_set_psth_cmd_filter().
  *
+ * @param[in]       filter : The type of filter to retrieve.
+ * @param[out]      cmd_set : A pointer to a bit mask that will be populated with the passthrough commands according to the filter type.
+ *                            Each bit in the mask corresponds to a specific passthrough command. This parameter should not be NULL.
+ *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC TG is not initialized
@@ -724,6 +729,9 @@ esp_err_t esp_avrc_tg_get_psth_cmd_filter(esp_avrc_psth_filter_t filter, esp_avr
  *                  with filter type "ESP_AVRC_PSTH_FILTER_ALLOWED_CMD".
  *
  *                  Filter type "ESP_AVRC_PSTH_FILTER_ALLOWED_CMD" does not apply to this function.
+ *
+ * @param[in]       filter : The type of filter to set.
+ * @param[in]       cmd_set : A pointer to the bit mask of passthrough commands to support.
  *
  * @return
  *                  - ESP_OK: success
@@ -765,6 +773,10 @@ bool esp_avrc_psth_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_psth_b
  *                  events selected to be supported under current configuration, The configuration can be
  *                  changed using esp_avrc_tg_set_rn_evt_cap().
  *
+ * @param[in]       cap : The type of capability to retrieve
+ * @param[out]      evt_set : A pointer to a bit mask that will store the event notification capabilities.
+ *                            Each bit in the mask corresponds to a specific event. This parameter should not be NULL.
+ *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC TG is not initialized
@@ -778,6 +790,9 @@ esp_err_t esp_avrc_tg_get_rn_evt_cap(esp_avrc_rn_evt_cap_t cap, esp_avrc_rn_evt_
  * @brief           Set the event notification capabilities on local AVRCP target. The capability is given in a
  *                  bit mask representation in evt_set and must be a subset of allowed event IDs with current
  *                  implementation. This function should be called after esp_avrc_tg_init().
+ *
+ * @param[in]       evt_set : A pointer to a bit mask representing the event notification capabilities to be set.
+ *                            Each bit in the mask corresponds to a specific event. This parameter cannot be NULL.
  *
  * @return
  *                  - ESP_OK: success

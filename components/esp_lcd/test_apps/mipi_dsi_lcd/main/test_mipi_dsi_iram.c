@@ -18,7 +18,7 @@
 #include "test_mipi_dsi_board.h"
 #include "esp_lcd_ek79007.h"
 
-IRAM_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
+IRAM_ATTR static bool test_dpi_panel_count_in_callback(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
 {
     uint32_t *count = (uint32_t *)user_ctx;
     *count = *count + 1;
@@ -46,7 +46,6 @@ TEST_CASE("MIPI DSI draw bitmap (EK79007) IRAM Safe", "[mipi_dsi]")
     esp_lcd_dsi_bus_config_t bus_config = {
         .bus_id = 0,
         .num_data_lanes = 2,
-        .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
         .lane_bit_rate_mbps = 1000, // 1000 Mbps
     };
     TEST_ESP_OK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
@@ -92,7 +91,7 @@ TEST_CASE("MIPI DSI draw bitmap (EK79007) IRAM Safe", "[mipi_dsi]")
 
     uint32_t callback_calls = 0;
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
-        .on_refresh_done = test_rgb_panel_count_in_callback,
+        .on_refresh_done = test_dpi_panel_count_in_callback,
     };
     TEST_ESP_OK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, &callback_calls));
 

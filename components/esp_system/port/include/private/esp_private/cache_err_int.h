@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,12 @@ void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info);
  * @return false
  */
 bool esp_cache_err_has_active_err(void);
+
+/**
+ * @brief Clear any cache errors interrupt
+ *
+ */
+void esp_cache_err_clear_active_err(void);
 
 #if SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
 /**

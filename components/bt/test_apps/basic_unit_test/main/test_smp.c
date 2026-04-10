@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,41 +18,13 @@
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include "esp_gap_ble_api.h"
+#include "sdkconfig.h"
+
+#if defined(CONFIG_BT_SMP_CRYPTO_STACK_NATIVE) && CONFIG_BT_SMP_CRYPTO_STACK_NATIVE
+/* Native Bluedroid crypto implementation tests */
+#include "p_256_ecc_pp.h"
 
 #define KEY_LENGTH_DWORDS_P256 8
-
-typedef unsigned long  DWORD;
-typedef uint32_t UINT32;
-
-typedef struct {
-    DWORD x[KEY_LENGTH_DWORDS_P256];
-    DWORD y[KEY_LENGTH_DWORDS_P256];
-    DWORD z[KEY_LENGTH_DWORDS_P256];
-} Point;
-
-typedef struct {
-    // curve's coefficients
-    DWORD a[KEY_LENGTH_DWORDS_P256];
-    DWORD b[KEY_LENGTH_DWORDS_P256];
-
-    //whether a is -3
-    int a_minus3;
-
-    // prime modulus
-    DWORD p[KEY_LENGTH_DWORDS_P256];
-
-    // Omega, p = 2^m -omega
-    DWORD omega[KEY_LENGTH_DWORDS_P256];
-
-    // base point, a point on E of order r
-    Point G;
-
-} elliptic_curve_t;
-
-extern void ECC_PointMult_Bin_NAF(Point *q, Point *p, DWORD *n, uint32_t keyLength);
-extern bool ECC_CheckPointIsInElliCur_P256(Point *p);
-extern void p_256_init_curve(UINT32 keyLength);
-extern elliptic_curve_t curve_p256;
 
 static void bt_rand(void *buf, size_t len)
 {
@@ -70,7 +42,17 @@ static void bt_rand(void *buf, size_t len)
     return;
 }
 
-TEST_CASE("ble_smp_public_key_check", "[ble_smp]")
+/**
+ * @brief Test ECC public key validation for native Bluedroid crypto implementation
+ *
+ * This test is only compiled when SMP_CRYPTO_STACK_NATIVE is enabled.
+ * It tests the native Bluedroid ECC implementation including:
+ * - Public key generation from private key
+ * - Public key validation on elliptic curve
+ * - Attack simulation (invalid public key detection)
+ * - Random key generation and validation
+ */
+TEST_CASE("ble_smp_public_key_check", "[ble_smp][native_crypto]")
 {
     /* We wait init finish 200ms here */
     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -96,7 +78,14 @@ TEST_CASE("ble_smp_public_key_check", "[ble_smp]")
         TEST_ASSERT(ECC_CheckPointIsInElliCur_P256(&public_key));
     }
 }
+#endif /* CONFIG_BT_SMP_CRYPTO_STACK_NATIVE */
 
+/**
+ * @brief Test static passkey set/clear functionality
+ *
+ * This test is applicable to all crypto stack implementations (Native, TinyCrypt, mbedTLS).
+ * It tests the SMP security parameter API for setting and clearing static passkeys.
+ */
 TEST_CASE("ble_smp_set_clear_static_passkey", "[ble_smp]")
 {
     /* We wait init finish 200ms here */

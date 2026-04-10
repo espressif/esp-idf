@@ -18,20 +18,11 @@
 #include "hci_log/bt_hci_log.h"
 #include "bt_common.h"
 
-static bool bd_already_enable = false;
-static bool bd_already_init = false;
+static esp_bluedroid_status_t s_bt_host_state = ESP_BLUEDROID_STATUS_UNINITIALIZED;
 
 esp_bluedroid_status_t esp_bluedroid_get_status(void)
 {
-    if (bd_already_init) {
-        if (bd_already_enable) {
-            return ESP_BLUEDROID_STATUS_ENABLED;
-        } else {
-            return ESP_BLUEDROID_STATUS_INITIALIZED;
-        }
-    } else {
-        return ESP_BLUEDROID_STATUS_UNINITIALIZED;
-    }
+    return s_bt_host_state;
 }
 
 esp_err_t esp_bluedroid_enable(void)
@@ -39,12 +30,12 @@ esp_err_t esp_bluedroid_enable(void)
     btc_msg_t msg;
     future_t **future_p;
 
-    if (!bd_already_init) {
+    if (s_bt_host_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
         LOG_ERROR("Bludroid not initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (bd_already_enable) {
+    if (s_bt_host_state == ESP_BLUEDROID_STATUS_ENABLED) {
         LOG_ERROR("Bluedroid already enabled\n");
         return ESP_ERR_INVALID_STATE;
     }
@@ -61,6 +52,7 @@ esp_err_t esp_bluedroid_enable(void)
     msg.act = BTC_MAIN_ACT_ENABLE;
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
+        future_free(*future_p);
         LOG_ERROR("Bluedroid enable failed\n");
         return ESP_FAIL;
     }
@@ -70,8 +62,7 @@ esp_err_t esp_bluedroid_enable(void)
         return ESP_FAIL;
     }
 
-    bd_already_enable = true;
-
+    s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
     return ESP_OK;
 }
 
@@ -80,15 +71,18 @@ esp_err_t esp_bluedroid_disable(void)
     btc_msg_t msg;
     future_t **future_p;
 
-    if (!bd_already_enable) {
+    if (s_bt_host_state != ESP_BLUEDROID_STATUS_ENABLED) {
         LOG_ERROR("Bluedroid already disabled\n");
         return ESP_ERR_INVALID_STATE;
     }
+
+    s_bt_host_state = ESP_BLUEDROID_STATUS_DISABLING;
 
     future_p = btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
         LOG_ERROR("Bluedroid disable failed\n");
+        s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_ERR_NO_MEM;
     }
 
@@ -98,16 +92,18 @@ esp_err_t esp_bluedroid_disable(void)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid disable failed\n");
+        future_free(*future_p);
+        s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
         LOG_ERROR("Bluedroid disable failed\n");
+        s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_FAIL;
     }
 
-    bd_already_enable = false;
-
+    s_bt_host_state = ESP_BLUEDROID_STATUS_INITIALIZED;
     return ESP_OK;
 }
 
@@ -150,7 +146,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     }
 #endif
 
-    if (bd_already_init) {
+    if (s_bt_host_state != ESP_BLUEDROID_STATUS_UNINITIALIZED) {
         LOG_ERROR("Bluedroid already initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
@@ -159,9 +155,19 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     osi_mem_dbg_init();
 #endif
 
+#if HEAP_MEMORY_STATS
+    if (osi_mem_init() != 0) {
+        LOG_ERROR("Bluedroid Initialize Fail");
+        return ESP_FAIL;
+    }
+#endif
+
     ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
         return ESP_FAIL;
     }
 
@@ -171,6 +177,11 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     ret = btc_init();
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
+
         return ESP_FAIL;
     }
 
@@ -178,6 +189,12 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     *future_p = future_new();
     if (*future_p == NULL) {
         LOG_ERROR("Bluedroid Initialize Fail!");
+        btc_deinit();
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
+
         return ESP_ERR_NO_MEM;
     }
 
@@ -187,36 +204,47 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        future_free(*future_p);
+        btc_deinit();
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        btc_deinit();
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
         return ESP_FAIL;
     }
-
-    bd_already_init = true;
 
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_init();
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 
+    s_bt_host_state = ESP_BLUEDROID_STATUS_INITIALIZED;
+
     return ESP_OK;
 }
-
 
 esp_err_t esp_bluedroid_deinit(void)
 {
     btc_msg_t msg;
     future_t **future_p;
 
-    if (!bd_already_init) {
+    if (s_bt_host_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
         LOG_ERROR("Bluedroid already de-initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (bd_already_enable) {
-        LOG_ERROR("Bludroid already enabled, do disable first\n");
+    if (s_bt_host_state == ESP_BLUEDROID_STATUS_ENABLED ||
+        s_bt_host_state == ESP_BLUEDROID_STATUS_DISABLING) {
+        LOG_ERROR("Bludroid still enabled or stopping, disable first\n");
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -233,6 +261,7 @@ esp_err_t esp_bluedroid_deinit(void)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid de-initialise failed\n");
+        future_free(*future_p);
         return ESP_FAIL;
     }
 
@@ -249,8 +278,11 @@ esp_err_t esp_bluedroid_deinit(void)
     bt_hci_log_deinit();
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 
-    bd_already_init = false;
+#if HEAP_MEMORY_STATS
+    osi_mem_deinit();
+#endif
 
+    s_bt_host_state = ESP_BLUEDROID_STATUS_UNINITIALIZED;
     return ESP_OK;
 }
 

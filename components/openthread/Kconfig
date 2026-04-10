@@ -6,6 +6,28 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
+    menu "Thread Task Parameters"
+        depends on OPENTHREAD_ENABLED
+
+        config OPENTHREAD_TASK_NAME
+            string "OpenThread task name"
+            default "ot_main"
+            help
+                The OpenThread task name.
+
+        config OPENTHREAD_TASK_SIZE
+            int "Size of OpenThread task"
+            default 8192
+            help
+                The size in bytes of OpenThread task.
+
+        config OPENTHREAD_TASK_PRIORITY
+            int "Priority of OpenThread task"
+            default 5
+            help
+                The priority of OpenThread task.
+    endmenu
+
     menu "Thread Version Message"
         depends on OPENTHREAD_ENABLED
 
@@ -24,9 +46,17 @@ menu "OpenThread"
 
     menu "Thread Console"
         depends on OPENTHREAD_ENABLED
+        config OPENTHREAD_CONSOLE_ENABLE
+            bool "Enable OpenThread console"
+            default y
+            help
+                Enable the OpenThread-specific console provided by the SDK. This only controls whether
+                the SDK sets up a dedicated console for OpenThread. Even if disabled, the default
+                ESP-IDF console (if initialized elsewhere) can still be used independently.
 
         choice OPENTHREAD_CONSOLE_TYPE
             prompt "OpenThread console type"
+            depends on OPENTHREAD_CONSOLE_ENABLE
             default OPENTHREAD_CONSOLE_TYPE_UART
             help
                 Select OpenThread console type
@@ -209,6 +239,12 @@ menu "OpenThread"
                 default y
                 help
                     Select this to enable OpenThread NCP vendor commands.
+
+            config OPENTHREAD_RCP_SPINEL_CONSOLE
+                bool "Enable RCP console via Spinel"
+                default n
+                help
+                    Select this to enable sending console commands to OpenThread RCP via Spinel.
         endmenu
 
         config OPENTHREAD_BORDER_ROUTER
@@ -277,10 +313,17 @@ menu "OpenThread"
                     Set the DNS server IPv4 address.
         endmenu
 
+        config OPENTHREAD_TIMING_OPTIMIZATION
+            bool "Enable timing optimization"
+            default n
+            help
+                Select this option to enable timing optimization for link metrics / CSL features.
+
         config OPENTHREAD_LINK_METRICS
             bool "Enable link metrics feature"
             default n
             select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
+            select OPENTHREAD_TIMING_OPTIMIZATION
             help
                 Select this option to enable link metrics feature
 
@@ -301,6 +344,7 @@ menu "OpenThread"
             bool "Enable CSL feature"
             default n
             select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
+            select OPENTHREAD_TIMING_OPTIMIZATION
             help
                 Select this option to enable CSL feature
         menu "CSL Configurations"
@@ -313,7 +357,7 @@ menu "OpenThread"
 
             config OPENTHREAD_CSL_UNCERTAIN
                 int "The CSL Uncertainty in units of 10 us."
-                default 0
+                default 50
                 help
                     The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
@@ -392,7 +436,8 @@ menu "OpenThread"
 
             config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
                 bool 'Allocate message pool buffer from PSRAM'
-                default n
+                depends on OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                default y
                 help
                     If enabled, the message pool is managed by platform defined logic.
         endmenu
@@ -426,7 +471,8 @@ menu "OpenThread"
 
             config OPENTHREAD_NUM_MESSAGE_BUFFERS
                 int "The number of openthread message buffers"
-                default 65
+                default 65 if !OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+                default 1024 if OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
 
             config OPENTHREAD_XTAL_ACCURACY
                 int "The accuracy of the XTAL"
@@ -558,6 +604,53 @@ menu "OpenThread"
             help
                 The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
                 failure.
+
+        config OPENTHREAD_SPINEL_UART_DRIVER_BUFFER_SIZE
+            int "UART driver buffer size for radio spinel interface"
+            depends on OPENTHREAD_SPINEL_ONLY || OPENTHREAD_RADIO_SPINEL_UART
+            default 1024
+            help
+                RX buffer size passed to uart_driver_install() for the radio spinel UART interface.
     endmenu
+
+    menuconfig OPENTHREAD_DEBUG
+        bool "Enable ESP OpenThread Debug"
+        default n
+        help
+            Enable additional debugging support for ESP OpenThread integration.
+            This includes various diagnostic tools and logs to help track down
+            issues in OpenThread networking or system integration
+
+    config OPENTHREAD_DUMP_MAC_ON_ASSERT
+        bool "Dump 802.15.4 MAC debug info on OpenThread assert"
+        depends on OPENTHREAD_DEBUG && OPENTHREAD_RADIO_NATIVE && IEEE802154_DEBUG
+        default n
+        help
+            When enabled, this option triggers the printing of 802.15.4 MAC layer debug
+            information whenever an OpenThread assert occurs. This can help developers
+            analyze unexpected failures by providing additional MAC layer context.
+
+    config OPENTHREAD_TASK_BLOCK_MONITOR
+        depends on OPENTHREAD_DEBUG
+        bool "Enable OpenThread Task Block Monitor"
+        default n
+        help
+            Enable monitoring of OpenThread tasks to detect if a task is blocked
+            and unable to continue its normal execution loop. Useful for debugging
+            issues where tasks stop progressing due to deadlocks or resource waits.
+            On RISC-V targets, in order to get meaningful backtraces when a task is
+            detected as blocked, ESP_SYSTEM_USE_FRAME_POINTER must be enabled in
+            ESP System Settings -> Backtracing method.
+
+    config OPENTHREAD_TASK_BLOCK_MONITOR_TIMEOUT
+        depends on OPENTHREAD_TASK_BLOCK_MONITOR
+        int "Task Block Monitor Timeout (seconds)"
+        range 1 60
+        default 20
+        help
+            Set the timeout (in seconds) for detecting a blocked task.
+            The timer is started at the beginning of each task main loop
+            and stopped at the end. If the timer expires, the task is considered blocked.
+
 
 endmenu

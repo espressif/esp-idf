@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -126,14 +126,24 @@ void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
     switch (Command_id)
     {
         case CommandIDGetNotificationAttributes: {
+            // Security fix: Check minimum message length before accessing message[1..4]
+            if (message_len < 5) {
+                ESP_LOGE(BLE_ANCS_TAG, "Message too short for NotificationAttributes");
+                break;
+            }
             uint32_t NotificationUID = (message[1]) | (message[2]<< 8) | (message[3]<< 16) | (message[4] << 24);
             uint32_t remian_attr_len = message_len - 5;
             uint8_t *attrs = &message[5];
             ESP_LOGI(BLE_ANCS_TAG, "recevice Notification Attributes response Command_id %d NotificationUID %" PRIu32, Command_id, NotificationUID);
             while(remian_attr_len > 0) {
+                // Security fix: Need at least 3 bytes for AttributeID(1) + len(2)
+                if (remian_attr_len < 3) {
+                    ESP_LOGE(BLE_ANCS_TAG, "Incomplete attribute header");
+                    break;
+                }
                 uint8_t AttributeID = attrs[0];
                 uint16_t len = attrs[1] | (attrs[2] << 8);
-                if(len > (remian_attr_len -3)) {
+                if(len > (remian_attr_len - 3)) {
                     ESP_LOGE(BLE_ANCS_TAG, "data error");
                     break;
                 }

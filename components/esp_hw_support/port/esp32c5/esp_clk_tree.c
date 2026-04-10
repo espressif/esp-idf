@@ -16,7 +16,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_rom_sys.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
 uint32_t *freq_value)
@@ -71,7 +71,7 @@ uint32_t *freq_value)
 }
 
 #define ENUM2ARRAY(clk_src) (clk_src - SOC_MOD_CLK_PLL_F12M)
-static __NOINIT_ATTR int16_t s_pll_src_cg_ref_cnt[9] = { 0 };
+static int16_t s_pll_src_cg_ref_cnt[9] = { 0 };
 static bool esp_clk_tree_initialized = false;
 
 void esp_clk_tree_initialize(void)
@@ -82,8 +82,6 @@ void esp_clk_tree_initialize(void)
             || (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU0_LOCKUP)) {
         esp_clk_tree_initialized = true;
         return;
-    } else {
-        bzero(s_pll_src_cg_ref_cnt, sizeof(s_pll_src_cg_ref_cnt));
     }
 
     soc_cpu_clk_src_t current_cpu_clk_src = clk_ll_cpu_get_src();
@@ -113,10 +111,10 @@ bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
     return false;
 }
 
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
     (void)clk_circuit; (void)enable;
-    return ESP_OK; // TODO: PM-354
+    return false; // TODO: PM-653
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
@@ -146,7 +144,10 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
         if (!enable) {
             s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)]--;
         }
-        assert(s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] >= 0);
+        if (s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] < 0) {
+            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
+            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] = 0;
+        }
     }
     return ESP_OK;
 }

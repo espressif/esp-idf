@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import re
@@ -24,27 +24,28 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
     speed = dut.expect(re.compile(rb'Speed: (\S+)'), timeout=20).group(1).decode()
     size = dut.expect(re.compile(rb'Size: (\S+)'), timeout=20).group(1).decode()
 
-    logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
+    logging.info(f'Card {name} {_type} {speed}MHz {size} found')
 
     message_list1 = (
         'Opening file /sdcard/hello.txt',
         'File written',
         'Renaming file /sdcard/hello.txt to /sdcard/foo.txt',
         'Reading file /sdcard/foo.txt',
-        "Read from file: 'Hello {}!'".format(name),
+        f"Read from file: 'Hello {name}!'",
     )
-    sd_card_format = re.compile(str.encode('Formatting card, allocation unit size=\\S+'))
+    sd_card_format = re.compile(str.encode('formatting drive, allocation unit size=\\S+'))
+    after_card_format = "file doesn't exist, formatting done"
     message_list2 = (
-        "file doesn't exist, formatting done",
         'Opening file /sdcard/nihao.txt',
         'File written',
         'Reading file /sdcard/nihao.txt',
-        "Read from file: 'Nihao {}!'".format(name),
+        f"Read from file: 'Nihao {name}!'",
         'Card unmounted',
     )
 
     for msg in message_list1:
         dut.expect_exact(msg, timeout=30)
-    dut.expect(sd_card_format, timeout=180)  # Provide enough time for SD card FATFS format operation
+    dut.expect(sd_card_format, timeout=10)
+    dut.expect_exact(after_card_format, timeout=180)  # Provide enough time for SD card FATFS format operation
     for msg in message_list2:
-        dut.expect_exact(msg, timeout=180)
+        dut.expect_exact(msg, timeout=30)

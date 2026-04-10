@@ -8,6 +8,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/startup_internal.h"
 #include "soc/soc_caps.h"
+#include "soc/system_intr.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 
@@ -21,9 +22,11 @@ ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES
     PERIPH_RCC_ATOMIC()
 #endif
     {
-        assist_debug_ll_enable_bus_clock(true);
-        assist_debug_ll_reset_register();
+        assist_debug_ll_enable_bus_clock(core_id, true);
+        assist_debug_ll_reset_register(core_id);
     }
+
+    assist_debug_ll_enable_pc_recording(core_id, true);
 
     /* set interrupt to matrix */
     esp_rom_route_intr_matrix(core_id, ETS_ASSIST_DEBUG_INTR_SOURCE, ETS_ASSIST_DEBUG_INUM);
@@ -38,7 +41,7 @@ ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES
      * - trigger event happened
      * - you get an interrupt right after enabling interrupts
      * So, use monitor to disable hw_guard to avoid false-positives.
-     * And keep interrupt always enabled for better performace (don't spend cpu time for enable/disable)
+     * And keep interrupt always enabled for better performance (don't spend cpu time for enable/disable)
      */
     assist_debug_hal_sp_int_enable(core_id);
 

@@ -133,7 +133,7 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
     args.send_report.data = data;
 
     bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t),
-                                                btc_hd_arg_deep_copy, btc_hd_cb_arg_deep_free);
+                                                btc_hd_arg_deep_copy, btc_hd_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 

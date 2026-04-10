@@ -11,6 +11,8 @@ EXPECT_TIMEOUT = 20
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_i2ctools_example(dut: IdfDut) -> None:
     dut.expect_exact('i2c-tools>', timeout=EXPECT_TIMEOUT)
+    # Configure the I2C bus
+    dut.write('i2cconfig --scl 19 --sda 18')
     # Get i2c address
     dut.write('i2cdetect')
     dut.expect_exact('5b', timeout=EXPECT_TIMEOUT)

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- |
 
 # USB Host Library Example
 
@@ -64,7 +64,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 I (305) main_task: Started on CPU0
 I (315) main_task: Calling app_main()
 I (315) USB host lib: USB host library example
-I (315) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2 
+I (315) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2
 I (325) USB host lib: Installing USB Host Library
 I (365) CLASS: Registering Client
 I (745) CLASS: Opening device at address 1

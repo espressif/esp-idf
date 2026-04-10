@@ -44,6 +44,7 @@ The following sections detail the design of the PPA driver:
 - :ref:`ppa-client-registration` - Covers how to register a PPA client to perform any PPA operations.
 - :ref:`ppa-register-callback` - Covers how to hook user specific code to PPA driver event callback function.
 - :ref:`ppa-perform-operation` - Covers how to perform a PPA operation.
+- :ref:`ppa-buffer-alignment` - Covers the buffer alignment requirements for PPA input and output buffers.
 - :ref:`ppa-thread-safety` - Covers the usage of the PPA operation APIs in thread safety aspect.
 - :ref:`ppa-performance-overview` - Covers the performance of PPA operations.
 
@@ -93,6 +94,10 @@ Some notes to avoid confusion in configuring :cpp:type:`ppa_srm_oper_config_t`:
     - Output block's width/height is totally determined by the input block's width/height, scaling factor, and rotation angle, so output block's width/height does not need to be configured. However, please make sure the output block can fit at the offset location in the output picture.
     - If the color mode of the input or output picture is ``PPA_SRM_COLOR_MODE_YUV420``, then its ``pic_w``, ``pic_h``, ``block_w``, ``block_h``, ``block_offset_x``, ``block_offset_y`` fields must be even.
 
+.. note::
+
+    The PPA SRM internally uses bilinear scaling algorithm to process. Therefore, it may cause chromatic aberration and loss of contrast at the edges in a scaled picture.
+
 Blend
 ~~~~~
 
@@ -124,6 +129,28 @@ Fill
 Call :cpp:func:`ppa_do_fill` to fill a target block inside a picture.
 
 :cpp:type:`ppa_trans_mode_t` is a field configurable to all the PPA operation APIs. It decides whether you want the call to the PPA operation API to block until the transaction finishes or to return immediately after the transaction is pushed to the internal queue.
+
+.. _ppa-buffer-alignment:
+
+Buffer Alignment
+^^^^^^^^^^^^^^^^
+
+The PPA requires certain buffer alignment rules to ensure memory access correctness:
+
+- Cache line alignment (output buffer only):
+
+    - The ``out.buffer`` address and ``out.buffer_size`` must be aligned to the cache line size (see Kconfig option :ref:`CONFIG_CACHE_L2_CACHE_LINE_SIZE`).
+
+- Flash encryption alignment (when flash encryption is enabled and the buffers are located in external memory):
+
+    - The byte width of the block must be aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes.
+    - The starting address of each row of the block must be aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes.
+
+    Additionally, when accessing encrypted external memory, the PPA's DMA data burst length must be greater than or equal to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. If a smaller burst length is configured, the driver will automatically increase it to meet this requirement.
+
+    .. warning::
+
+        SRM engine processes the picture by macro blocks, where the alignment of the macro blocks is uncontrollable, thus if the buffer is in external memory, SRM operation is unable to work with flash encrypted.
 
 .. _ppa-thread-safety:
 

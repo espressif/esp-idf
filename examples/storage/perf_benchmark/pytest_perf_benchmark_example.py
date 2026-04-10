@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -9,6 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['spiflash'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
     # SPI flash
     dut.expect('example: Mountig WL layer...', timeout=10)

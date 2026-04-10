@@ -17,7 +17,7 @@
 #include "soc/regi2c_dig_reg.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/pmu_ll.h"
@@ -26,7 +26,7 @@
 #include "soc/pmu_reg.h"
 #include "pmu_param.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 /**
  * Initialize the ICG map of some modem clock domains in the PMU_ACTIVE state
@@ -78,6 +78,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     uint32_t hp_cali_dbias = get_act_hp_dbias();
     uint32_t lp_cali_dbias = get_act_lp_dbias();
+
+    SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // Hand over control of dbias to pmu
 
     SET_PERI_REG_BITS(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, hp_cali_dbias, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_S);
     SET_PERI_REG_BITS(PMU_HP_MODEM_HP_REGULATOR0_REG, PMU_HP_MODEM_HP_REGULATOR_DBIAS, hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);

@@ -19,7 +19,7 @@ typedef enum {
     USJ_SELECT_ERROR_NOTIF,
 } usj_select_notif_t;
 
-typedef void (*usj_select_notif_callback_t)(usj_select_notif_t usb_serial_jtag_select_notif, BaseType_t *task_woken);
+typedef void (*usj_select_notif_callback_t)(usj_select_notif_t usb_serial_jtag_select_notif, int *task_woken);
 
 /**
  * @brief Set notification callback function for select() events

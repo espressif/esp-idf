@@ -6,17 +6,13 @@
 
 #include "sdkconfig.h"
 #include <unistd.h>
-#include <sys/cdefs.h> // __containerof
 #include <sys/param.h>
 #include <sys/fcntl.h>
-#include "esp_console.h"
 #include "console_private.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
 #include "esp_vfs_eventfd.h"
-
-#if CONFIG_VFS_SUPPORT_SELECT
 
 static const char *TAG = "console.repl.internal";
 
@@ -38,7 +34,7 @@ static ssize_t read_bytes(int fd, void *buf, size_t max_bytes)
         return -1;
     }
 
-    if (FD_ISSET(s_interrupt_reading_fd, &read_fds)) {
+    if (s_interrupt_reading_fd != -1 && FD_ISSET(s_interrupt_reading_fd, &read_fds)) {
         /* read termination request happened, return */
         int buf[sizeof(s_interrupt_reading_signal)];
         nread = read(s_interrupt_reading_fd, buf, sizeof(s_interrupt_reading_signal));
@@ -121,8 +117,7 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
     // wait for the task to notify that
     // esp_console_repl_task returned
     assert(repl_com->state_mux != NULL);
-    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    assert(ret_val == pdTRUE);
+    xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
 
     // delete the semaphore for the repl state
     vSemaphoreDelete(repl_com->state_mux);
@@ -148,7 +143,6 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
 
     return ESP_OK;
 }
-#endif // CONFIG_VFS_SUPPORT_SELECT
 
 /* DO NOT move this function out of this file. All other definitions in this
  * file are strong definition of weak functions.
