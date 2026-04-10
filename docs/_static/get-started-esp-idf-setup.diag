@@ -1,0 +1,28 @@
+blockdiag {
+  orientation = portrait;
+  edge_layout = flowchart;
+  shadow_style = none;
+  node_width = 170;
+  node_height = 80;
+  span_width = 50;
+  span_height = 50;
+  default_fontsize = 22;
+
+  start [label = "", shape = beginpoint, width = 40, height = 40];
+  ide_first [label = "Start from\nIDE?", shape = diamond, width = 260, height = 140];
+  install_ide [label = "Install IDE\nand plugins", width = 180, height = 90, shape =  roundedbox];
+  skip_ide [label = "Move to\nnext step", width = 180, height = 90, shape =  roundedbox];
+  prereq [label = "Install\nprerequisites", width = 180, height = 90, shape =  roundedbox];
+  eim [label = "Install EIM", width = 180, height = 70, shape =  roundedbox];
+  install_espidf [label = "Install ESP-IDF\nvia EIM", width = 200, height = 90, shape =  roundedbox];
+  build_method [label = "Build with\nIDE or CLI?", shape = diamond, width = 260, height = 140, style = dashed];
+
+  start -> ide_first;
+  ide_first -> install_ide [label = "Yes"];
+  install_ide -> prereq;
+  ide_first -> skip_ide [label = "No"];
+  skip_ide -> prereq;
+  prereq -> eim;
+  eim -> install_espidf;
+  install_espidf -> build_method;
+}

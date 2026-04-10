@@ -224,6 +224,24 @@ To start using ESP-IDF on **{IDF_TARGET_NAME}**, you need the following software
     :alt: Development of applications for {IDF_TARGET_NAME}
     :figclass: align-center
 
+
+Workflow Overview
+=================
+
+Getting started with ESP-IDF involves two main phases:
+
+1. **Setup** — installing prerequisites and ESP-IDF (see `Installation`_)
+2. **Develop** — creating, configuring, building, flashing, and monitoring your project (see `Build Your First Project`_)
+
+If you are unsure where to start, see :doc:`workflow-overview` for a visual overview of the full workflow.
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+
+    workflow-overview
+
+
 .. _get-started-step-by-step:
 .. _get-started-how-to-get-esp-idf:
 .. _get-started-set-up-tools:
@@ -289,43 +307,10 @@ Uninstall ESP-IDF
 
 To uninstall ESP-IDF and related tools installed via EIM, you can use either the graphical user interface (GUI) or the command line interface (CLI).
 
-Uninstall Using EIM GUI
-~~~~~~~~~~~~~~~~~~~~~~~
+.. toctree::
+    :maxdepth: 1
 
-Launch the ESP-IDF Installation Manager. Under ``Manage Installations``, click ``Open Dashboard``.
-
-.. figure:: ../../_static/get-started-eim-gui.png
-    :align: center
-    :alt: Open Dashboard in EIM GUI
-    :figclass: align-center
-
-    Open Dashboard in EIM GUI
-
-To remove a specific ESP-IDF version, click the ``Remove`` button under the version you want to remove.
-
-To remove all ESP-IDF versions, click ``Purge All`` button at the bottom of the page.
-
-.. figure:: ../../_static/get-started-eim-gui-uninstall.png
-    :align: center
-    :alt: Uninstall ESP-IDF in EIM GUI
-    :figclass: align-center
-
-    Uninstall ESP-IDF in EIM GUI
-
-Uninstall Using EIM CLI
-~~~~~~~~~~~~~~~~~~~~~~~
-
-To remove a specific ESP-IDF version, for example v5.4.2, run the following command in your terminal:
-
-.. code-block:: bash
-
-    eim remove v5.4.2
-
-To remove all ESP-IDF versions, run the following command in your terminal:
-
-.. code-block:: bash
-
-    eim purge
+    uninstall
 
 
 Related Documents

@@ -1,0 +1,30 @@
+blockdiag {
+  orientation = portrait;
+  edge_layout = flowchart;
+  shadow_style = none;
+  node_width = 170;
+  node_height = 80;
+  span_width = 50;
+  span_height = 50;
+  default_fontsize = 22;
+
+  build_method [label = "Build with\nIDE or CLI?", shape = diamond, width = 260, height = 140];
+  open_ide [label = "Open IDE", width = 160, height = 70, shape =  roundedbox];
+  activate_cli [label = "Activate CLI\nenvironment", width = 180, height = 90, shape =  roundedbox];
+  start_project [label = "Start a project", width = 200, height = 70, shape =  roundedbox];
+  connect [label = "Connect\ndevice", width = 170, height = 80, shape =  roundedbox];
+  configure [label = "Configure\nproject", width = 170, height = 80, shape =  roundedbox];
+  build [label = "Build", width = 170, height = 70, shape =  roundedbox];
+  flash [label = "Flash", width = 170, height = 70, shape =  roundedbox];
+  monitor [label = "Monitor\noutput", width = 170, height = 80, shape =  roundedbox];
+
+  build_method -> open_ide [label = "IDE"];
+  build_method -> activate_cli [label = "CLI"];
+  activate_cli -> start_project;
+  open_ide -> start_project;
+  start_project -> connect;
+  connect -> configure;
+  configure -> build;
+  build -> flash;
+  flash -> monitor;
+}
