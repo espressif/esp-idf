@@ -116,11 +116,8 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool cle
     i2c_hal_get_timing_config(hal, &timing_config);
     i2c_ll_master_get_filter(hal->dev, &filter_cfg);
 
-    //to reset the I2C hw module, we need re-enable the hw
-    if (clear_bus) {
-        ret = s_i2c_master_clear_bus(i2c_master->base);
-    }
-    I2C_RCC_ATOMIC() {
+    // Run bus clear after reset and interrupt masking; reconnecting pins must not wake a stuck FSM.
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_reset_register(i2c_master->base->port_num);
     }
 
@@ -134,6 +131,10 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool cle
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_hal_set_timing_config(hal, &timing_config);
     i2c_ll_master_set_filter(hal->dev, filter_cfg);
+
+    if (clear_bus) {
+        ret = s_i2c_master_clear_bus(i2c_master->base);
+    }
 #else
     i2c_ll_master_fsm_rst(hal->dev);
     if (clear_bus) {
