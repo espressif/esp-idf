@@ -1655,15 +1655,9 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
         esp_http_client_close(client);
         return err;
     }
-    client->state = HTTP_STATE_CONNECTING;
-
     if (client->state < HTTP_STATE_CONNECTED) {
-#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
-        // If the custom transport is enabled and defined, we skip the selection of appropriate transport from the list
-        // based on the scheme, since we already have the transport
-        if (!client->transport)
-#endif
-        {
+        /* Select transport only if not already set (e.g., async retry or custom transport) */
+        if (!client->transport) {
             ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
             client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
         }
@@ -1688,6 +1682,7 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
                 return ESP_ERR_HTTP_CONNECT;
             }
         } else {
+            client->state = HTTP_STATE_CONNECTING;
             int ret = esp_transport_connect_async(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms);
             if (ret == ASYNC_TRANS_CONNECT_FAIL) {
                 ESP_LOGE(TAG, "Connection failed");
