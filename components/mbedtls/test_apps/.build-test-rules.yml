@@ -8,8 +8,11 @@ components/mbedtls/test_apps:
     - if: CONFIG_NAME == "psram_all_ext_flash_enc" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "psram_all_ext_flash_enc_f4r8" and IDF_TARGET != "esp32s3"
     - if: CONFIG_NAME == "ecdsa_sign" and SOC_ECDSA_SUPPORTED != 1
+    - if: CONFIG_NAME == "hmac_opaque" and SOC_HMAC_SUPPORTED != 1
   disable_test:
     - if: CONFIG_NAME == "psram_all_ext_flash_enc" and IDF_TARGET not in ["esp32", "esp32p4", "esp32c5"]
+      reason: lack of runners
+    - if: CONFIG_NAME == "hmac_opaque" and IDF_TARGET not in ["esp32c3"]
       reason: lack of runners
   depends_components:
     - *common_components

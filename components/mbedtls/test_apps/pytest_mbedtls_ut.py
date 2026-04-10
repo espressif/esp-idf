@@ -104,6 +104,19 @@ def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_key')
 
 
+@pytest.mark.nvs_encr_hmac
+@pytest.mark.parametrize(
+    'config',
+    [
+        'hmac_opaque',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_mbedtls_hmac_opaque(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='efuse_hmac_key')
+
+
 # TODO: IDF-15012
 # @pytest.mark.generic
 # @pytest.mark.parametrize(

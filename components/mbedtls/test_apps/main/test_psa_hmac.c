@@ -10,6 +10,10 @@
 #include "unity.h"
 #include "esp_log.h"
 
+#ifdef ESP_HMAC_OPAQUE_DRIVER_ENABLED
+#include "psa_crypto_driver_esp_hmac_opaque.h"
+#endif /* ESP_HMAC_OPAQUE_DRIVER_ENABLED */
+
 static const uint8_t key_256[] = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
     0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
@@ -208,3 +212,49 @@ TEST_CASE("PSA HMAC SHA-256 truncated test", "[psa_hmac]")
     psa_destroy_key(key_id);
     psa_reset_key_attributes(&attributes);
 }
+
+#if defined(ESP_HMAC_OPAQUE_DRIVER_ENABLED) && defined(CONFIG_MBEDTLS_TEST_HMAC_OPAQUE_EFUSE_KEY)
+/*
+ * Opaque HMAC driver tests — require an HMAC key burned in eFuse.
+ *
+ * The runner has key_256 burned in eFuse with purpose HMAC_UP.
+ * efuse_key_id is configured via Kconfig (offset from EFUSE_BLK_KEY0).
+ */
+#define HMAC_EFUSE_KEY_ID   CONFIG_MBEDTLS_TEST_HMAC_OPAQUE_EFUSE_KEY_ID
+
+TEST_CASE("PSA HMAC opaque driver compute and verify", "[psa_hmac][efuse_hmac_key]")
+{
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_algorithm_t alg = PSA_ALG_HMAC(PSA_ALG_SHA_256);
+
+    esp_hmac_opaque_key_t opaque_key = {
+        .efuse_key_id = HMAC_EFUSE_KEY_ID,
+    };
+
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+    psa_set_key_bits(&attributes, 256);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_HMAC_VOLATILE);
+
+    status = psa_import_key(&attributes, (uint8_t *)&opaque_key, sizeof(opaque_key), &key_id);
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+
+    uint8_t mac[32] = {0};
+    size_t mac_length = 0;
+    status = psa_mac_compute(key_id, alg, test_data, sizeof(test_data),
+                             mac, sizeof(mac), &mac_length);
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(sizeof(expected_hmac_sha256), mac_length);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_hmac_sha256, mac, mac_length);
+
+    status = psa_mac_verify(key_id, alg, test_data, sizeof(test_data),
+                            expected_hmac_sha256, sizeof(expected_hmac_sha256));
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+
+    psa_destroy_key(key_id);
+    psa_reset_key_attributes(&attributes);
+}
+#endif /* ESP_HMAC_OPAQUE_DRIVER_ENABLED && CONFIG_MBEDTLS_TEST_HMAC_OPAQUE_EFUSE_KEY */
