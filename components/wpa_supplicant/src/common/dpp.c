@@ -52,6 +52,45 @@ static const struct dpp_curve_params dpp_curves[] = {
 	{ NULL, 0, 0, 0, 0, NULL, 0, NULL }
 };
 
+#ifdef CONFIG_TESTING_OPTIONS
+u64 dpp_last_auth_req_parse_us;
+u64 dpp_last_auth_resp_form_us;
+u64 dpp_last_auth_req_total_us;
+
+static u64 dpp_time_us(void)
+{
+	struct os_reltime now;
+
+	if (os_get_reltime(&now) < 0)
+		return 0;
+
+	return ((u64) now.sec * 1000000) + now.usec;
+}
+
+static void dpp_auth_req_set_timing(struct dpp_authentication *auth,
+				    u64 start_us, u64 parse_done_us)
+{
+	u64 end_us;
+
+	if (!auth || !start_us || !parse_done_us || parse_done_us < start_us)
+		return;
+
+	end_us = dpp_time_us();
+	if (!end_us || end_us < parse_done_us)
+		return;
+
+	auth->auth_req_parse_us = parse_done_us - start_us;
+	auth->auth_resp_form_us = end_us - parse_done_us;
+	auth->auth_req_total_us = end_us - start_us;
+	dpp_last_auth_req_parse_us = auth->auth_req_parse_us;
+	dpp_last_auth_resp_form_us = auth->auth_resp_form_us;
+	dpp_last_auth_req_total_us = auth->auth_req_total_us;
+}
+#endif
+
+#define TRANSACTION_ID_ATTR_SET_LEN 5
+#define CONNECTOR_ATTR_SET_LEN 4
+
 static struct wpabuf *
 gas_build_req(u8 action, u8 dialog_token, size_t size)
 {
@@ -2413,6 +2452,13 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	u16 i_capab_len;
 	u16 i_bootstrap_len;
 	struct dpp_authentication *auth = NULL;
+#ifdef CONFIG_TESTING_OPTIONS
+	u64 start_us = dpp_time_us();
+	u64 parse_done_us = 0;
+	dpp_last_auth_req_parse_us = 0;
+	dpp_last_auth_resp_form_us = 0;
+	dpp_last_auth_req_total_us = 0;
+#endif
 
 #ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_STOP_AT_AUTH_REQ) {
@@ -2598,9 +2644,15 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 
 		wpa_printf(MSG_DEBUG,
 			   "DPP: Mutual authentication required with QR Codes, but peer info is not yet available - request more time");
+#ifdef CONFIG_TESTING_OPTIONS
+		parse_done_us = dpp_time_us();
+#endif
 		if (dpp_auth_build_resp_status(auth,
 					       DPP_STATUS_RESPONSE_PENDING) < 0)
 			goto fail;
+#ifdef CONFIG_TESTING_OPTIONS
+		dpp_auth_req_set_timing(auth, start_us, parse_done_us);
+#endif
 		i_bootstrap = dpp_get_attr(attr_start, attr_len,
 					   DPP_ATTR_I_BOOTSTRAP_KEY_HASH,
 					   &i_bootstrap_len);
@@ -2618,8 +2670,14 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 			"%s", hex);
 		return auth;
 	}
+#ifdef CONFIG_TESTING_OPTIONS
+	parse_done_us = dpp_time_us();
+#endif
 	if (dpp_auth_build_resp_ok(auth) < 0)
 		goto fail;
+#ifdef CONFIG_TESTING_OPTIONS
+	dpp_auth_req_set_timing(auth, start_us, parse_done_us);
+#endif
 
 	return auth;
 
@@ -2632,8 +2690,14 @@ not_compatible:
 		auth->configurator = 0;
 	auth->peer_protocol_key = pi;
 	pi = NULL;
+#ifdef CONFIG_TESTING_OPTIONS
+	parse_done_us = dpp_time_us();
+#endif
 	if (dpp_auth_build_resp_status(auth, DPP_STATUS_NOT_COMPATIBLE) < 0)
 		goto fail;
+#ifdef CONFIG_TESTING_OPTIONS
+	dpp_auth_req_set_timing(auth, start_us, parse_done_us);
+#endif
 
 	auth->remove_on_tx_status = 1;
 	return auth;
@@ -4903,7 +4967,8 @@ skip_groups:
 		goto fail;
 	dpp_debug_print_key("DPP: Received netAccessKey", key);
 
-	if (crypto_key_compare(key, auth->own_protocol_key) != 1) {
+	if (crypto_ec_key_compare((struct crypto_ec_key *) key,
+				 (struct crypto_ec_key *) auth->own_protocol_key) != 1) {
 		wpa_printf(MSG_DEBUG,
 			   "DPP: netAccessKey in connector does not match own protocol key");
 #ifdef CONFIG_TESTING_OPTIONS
@@ -4997,7 +5062,6 @@ dpp_process_signed_connector(struct dpp_signed_connector_info *info,
 	struct wpabuf *kid = NULL;
 	unsigned char *prot_hdr = NULL, *signature = NULL;
 	size_t prot_hdr_len = 0, signature_len = 0;
-	struct crypto_bignum *r = NULL, *s = NULL;
 	const struct dpp_curve_params *curve;
 	const struct crypto_ec_group *group;
 	int id;
@@ -5085,13 +5149,12 @@ dpp_process_signed_connector(struct dpp_signed_connector_info *info,
 		goto fail;
 	}
 
-	/* JWS Signature encodes the signature (r,s) as two octet strings. Need
-	 * to convert that to DER encoded ECDSA_SIG for OpenSSL EVP routines. */
-	r = crypto_bignum_init_set(signature, signature_len / 2);
-	s = crypto_bignum_init_set(signature + signature_len / 2, signature_len / 2);
-
-	if (!crypto_edcsa_sign_verify((unsigned char *)signed_start, r, s,
-				csign_pub, signed_end - signed_start + 1)) {
+	if (crypto_ec_key_verify_signature_r_s(
+		    (struct crypto_ec_key *) csign_pub,
+		    (const unsigned char *) signed_start,
+		    signed_end - signed_start + 1,
+		    signature, signature_len / 2,
+		    signature + signature_len / 2, signature_len / 2) != 0) {
 		goto fail;
 	}
 
@@ -5100,8 +5163,6 @@ fail:
 	os_free(prot_hdr);
 	wpabuf_free(kid);
 	os_free(signature);
-	crypto_bignum_deinit(r, 0);
-	crypto_bignum_deinit(s, 0);
 	return ret;
 }
 

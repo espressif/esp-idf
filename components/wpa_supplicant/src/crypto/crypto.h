@@ -1010,9 +1010,6 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
  * @hlen: length of hash
  * Return: 0 if success else negative value
  */
-int crypto_edcsa_sign_verify(const unsigned char *hash, const struct crypto_bignum *r,
-			const struct crypto_bignum *s, struct crypto_key *csign, int hlen);
-
 /**
  * crypto_ec_parse_subpub_key: get EC key context from sub public key
  * @p: data
@@ -1100,8 +1097,6 @@ struct crypto_ec_group *crypto_ec_get_group_byname(const char *name);
  * crypto_key_compare: check whether two keys belong to same
  * Return : 1 if yes else 0
  */
-int crypto_key_compare(struct crypto_key *key1, struct crypto_key *key2);
-
 /*
  * crypto_write_pubkey_der: get public key in der format
  * @csign: key
@@ -1173,5 +1168,12 @@ void crypto_ec_key_deinit(struct crypto_ec_key *key);
  */
 int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
                                    size_t len, const u8 *sig, size_t sig_len);
+
+int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *key,
+                                       const unsigned char *hash, int hlen,
+                                       const u8 *r, size_t r_len,
+                                       const u8 *s, size_t s_len);
+
+int crypto_ec_key_compare(struct crypto_ec_key *key1, struct crypto_ec_key *key2);
 
 #endif /* CRYPTO_H */

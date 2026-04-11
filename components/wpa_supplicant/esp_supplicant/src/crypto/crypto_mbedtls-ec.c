@@ -1720,22 +1720,31 @@ int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
 {
     /* (mbedtls_ecdsa_context *) */
     mbedtls_ecp_keypair *ecp_kp = mbedtls_pk_ec(*(mbedtls_pk_context *)csign);
+    int ret;
+    mbedtls_ecp_group *ecp_kp_grp;
+    mbedtls_ecp_point *ecp_kp_q;
+    struct crypto_bignum *rb = NULL, *sb = NULL;
+
     if (!ecp_kp) {
         return -1;
     }
 
-    struct crypto_bignum *rb = NULL, *sb = NULL;
     rb = crypto_bignum_init_set(r, r_len);
     sb = crypto_bignum_init_set(s, s_len);
-
-    mbedtls_ecp_group *ecp_kp_grp = &ecp_kp->MBEDTLS_PRIVATE(grp);
-    mbedtls_ecp_point *ecp_kp_q = &ecp_kp->MBEDTLS_PRIVATE(Q);
-    int ret = mbedtls_ecdsa_verify(ecp_kp_grp, hash, hlen,
-                                   ecp_kp_q, (mbedtls_mpi *)rb, (mbedtls_mpi *)sb);
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, "ecdsa verification failed");
+    if (!rb || !sb) {
         crypto_bignum_deinit(rb, 0);
         crypto_bignum_deinit(sb, 0);
+        return -1;
+    }
+
+    ecp_kp_grp = &ecp_kp->MBEDTLS_PRIVATE(grp);
+    ecp_kp_q = &ecp_kp->MBEDTLS_PRIVATE(Q);
+    ret = mbedtls_ecdsa_verify(ecp_kp_grp, hash, hlen,
+                               ecp_kp_q, (mbedtls_mpi *)rb, (mbedtls_mpi *)sb);
+    crypto_bignum_deinit(rb, 0);
+    crypto_bignum_deinit(sb, 0);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "ecdsa verification failed");
         return ret;
     }
 
@@ -1748,13 +1757,15 @@ void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title)
 #if defined(DEBUG_PRINT)
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
     mbedtls_ecp_keypair *ecp = mbedtls_pk_ec(*pkey);
+    struct crypto_ec *group =
+        (struct crypto_ec *) crypto_ec_get_group_from_key((struct crypto_key *) key);
     u8 x[32], y[32], d[32];
     wpa_printf(MSG_EXCESSIVE, "curve: %s",
                mbedtls_ecp_curve_info_from_grp_id(ecp->MBEDTLS_PRIVATE(grp).id)->name);
-    int len = mbedtls_mpi_size((mbedtls_mpi *)crypto_ec_get_prime((struct crypto_ec *)crypto_ec_get_group_from_key(key)));
+    int len = mbedtls_mpi_size((mbedtls_mpi *) crypto_ec_get_prime(group));
 
     wpa_printf(MSG_EXCESSIVE, "prime len is %d", len);
-    crypto_ec_point_to_bin((struct crypto_ec *)crypto_ec_get_group_from_key(key), crypto_ec_key_get_public_key(key), x, y);
+    crypto_ec_point_to_bin(group, crypto_ec_key_get_public_key(key), x, y);
     crypto_bignum_to_bin(crypto_ec_key_get_private_key(key),
                          d, len, len);
     wpa_hexdump(MSG_EXCESSIVE, "Q_x:", x, 32);
