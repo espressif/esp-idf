@@ -18,6 +18,12 @@ enum wps_reg_sig_type {
     SIG_WPS_REG_MAX,                //4
 };
 
+enum wps_owner {
+    WPS_OWNER_NONE = 0,
+    WPS_OWNER_ENROLLEE,
+    WPS_OWNER_REGISTRAR,
+};
+
 typedef struct {
     void *arg;
     int ret; /* return value */
@@ -112,7 +118,8 @@ static inline int wps_set_status(uint32_t status)
     return esp_wifi_set_wps_status_internal(status);
 }
 
-bool is_wps_enabled(void);
+enum wps_owner wps_get_owner(void);
+void wps_set_owner(enum wps_owner owner);
 int wps_init_cfg_pin(struct wps_config *cfg);
 void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx);
 int wifi_ap_wps_disable_internal(void);
