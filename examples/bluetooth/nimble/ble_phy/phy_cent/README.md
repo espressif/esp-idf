@@ -61,139 +61,46 @@ This is the console output on successful connection:
 
 
 ```
-I (456) NimBLE_BLE_PHY_CENT: BLE Host Task Started
-I (456) NimBLE: Default LE PHY set successfully; tx_phy = 7, rx_phy = 7
-I (456) NimBLE: GAP procedure initiated: extended discovery;
+I (...) NimBLE_BLE_PHY_CENT: BLE Host Task Started
+I (...) NimBLE: Default LE PHY set successfully; tx_phy = 7, rx_phy = 7
+I (...) NimBLE: GAP procedure initiated: extended discovery;
+I (...) main_task: Returned from app_main()
 
-I (466) main_task: Returned from app_main()
-I (6316) NimBLE: Attempting to connect to : 60 55 f9 f7 3e 23 with type 0
+I (...) NimBLE: Attempting to connect to : xx xx xx xx xx xx with type 0
+I (...) NimBLE: GAP procedure initiated: extended connect;
+I (...) NimBLE: Connection established on 1M Phy
+I (...) NimBLE:
 
-I (6316) NimBLE: GAP procedure initiated: extended connect;
+I (...) NimBLE: GATT procedure initiated: discover all services
+I (...) NimBLE: GATT procedure initiated: discover all characteristics;
+I (...) NimBLE: start_handle=1 end_handle=5
+I (...) NimBLE: GATT procedure initiated: discover all characteristics;
+I (...) NimBLE: start_handle=6 end_handle=13
+I (...) NimBLE: GATT procedure initiated: discover all characteristics;
+I (...) NimBLE: start_handle=14 end_handle=65535
+I (...) NimBLE: GATT procedure initiated: discover all descriptors;
+I (...) NimBLE: chr_val_handle=8 end_handle=9
+I (...) NimBLE: GATT procedure initiated: discover all descriptors;
+I (...) NimBLE: chr_val_handle=16 end_handle=65535
+I (...) NimBLE: Service discovery complete; status=0 conn_handle=0
+I (...) NimBLE: GATT procedure initiated: read;
+I (...) NimBLE: att_handle=16
+I (...) NimBLE: Read complete; status=261 conn_handle=0
+I (...) NimBLE: GATT procedure initiated: write long;
+I (...) NimBLE: att_handle=16 len=1000
+I (...) NimBLE: Write complete; status=261 conn_handle=0
+I (...) NimBLE: GAP procedure initiated: terminate connection; conn_handle=0 hci_reason=19
+I (...) NimBLE: disconnect; reason=534
 
-I (6386) NimBLE: Connection established 1M PhY
-I (6386) NimBLE:
+I (...) NimBLE:  Attempting to initiate connection on 2M PHY
+I (...) NimBLE: GAP procedure initiated: extended connect;
+I (...) NimBLE: Connection established on 2M Phy
+I (...) NimBLE: ... (same discovery, read, write long, and disconnect flow)
 
-I (6386) NimBLE: GATT procedure initiated: discover all services
-
-I (6446) NimBLE: GATT procedure initiated: discover all characteristics;
-I (6446) NimBLE: start_handle=1 end_handle=5
-
-I (6636) NimBLE: GATT procedure initiated: discover all characteristics;
-I (6636) NimBLE: start_handle=6 end_handle=9
-
-I (6836) NimBLE: GATT procedure initiated: discover all characteristics;
-I (6836) NimBLE: start_handle=10 end_handle=65535
-
-I (7036) NimBLE: GATT procedure initiated: discover all descriptors;
-I (7036) NimBLE: chr_val_handle=8 end_handle=9
-
-I (7136) NimBLE: GATT procedure initiated: discover all descriptors;
-I (7136) NimBLE: chr_val_handle=12 end_handle=65535
-
-I (7236) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (7236) NimBLE: GATT procedure initiated: read;
-I (7236) NimBLE: att_handle=12
-
-I (7336) NimBLE: Read complete; status=261 conn_handle=1
-I (7336) NimBLE:
-
-I (7336) NimBLE: GATT procedure initiated: write long;
-I (7346) NimBLE: att_handle=12 len=1000
-
-I (7436) NimBLE: Write complete; status=261 conn_handle=1
-I (7436) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (7446) NimBLE:
-
-I (7486) NimBLE: disconnect; reason=534
-I (7486) NimBLE:
-
-I (7486) NimBLE:  Attempting to initiate connection on 2M PHY
-
-I (7496) NimBLE: GAP procedure initiated: extended connect;
-
-I (7596) NimBLE: Connection established on 2M Phy
-I (7596) NimBLE:
-
-I (7596) NimBLE: GATT procedure initiated: discover all services
-
-I (7696) NimBLE: GATT procedure initiated: discover all characteristics;
-I (7706) NimBLE: start_handle=1 end_handle=5
-
-I (7896) NimBLE: GATT procedure initiated: discover all characteristics;
-I (7896) NimBLE: start_handle=6 end_handle=9
-
-I (8096) NimBLE: GATT procedure initiated: discover all characteristics;
-I (8096) NimBLE: start_handle=10 end_handle=65535
-
-I (8296) NimBLE: GATT procedure initiated: discover all descriptors;
-I (8296) NimBLE: chr_val_handle=8 end_handle=9
-
-I (8396) NimBLE: GATT procedure initiated: discover all descriptors;
-I (8396) NimBLE: chr_val_handle=12 end_handle=65535
-
-I (8496) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (8496) NimBLE: GATT procedure initiated: read;
-I (8506) NimBLE: att_handle=12
-
-I (8596) NimBLE: Read complete; status=261 conn_handle=1
-I (8596) NimBLE:
-
-I (8606) NimBLE: GATT procedure initiated: write long;
-I (8606) NimBLE: att_handle=12 len=1000
-
-I (8696) NimBLE: Write complete; status=261 conn_handle=1
-I (8696) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (8706) NimBLE:
-
-I (8746) NimBLE: disconnect; reason=534
-I (8746) NimBLE:
-
-I (8756) NimBLE:  Attempting to initiate connection on Coded PHY
-
-I (8756) NimBLE: GAP procedure initiated: extended connect;
-
-I (8876) NimBLE: Connection established on Coded Phy
-I (8876) NimBLE:
-
-I (8876) NimBLE: GATT procedure initiated: discover all services
-
-I (8976) NimBLE: GATT procedure initiated: discover all characteristics;
-I (8976) NimBLE: start_handle=1 end_handle=5
-
-I (9176) NimBLE: GATT procedure initiated: discover all characteristics;
-I (9176) NimBLE: start_handle=6 end_handle=9
-
-I (9426) NimBLE: GATT procedure initiated: discover all characteristics;
-I (9426) NimBLE: start_handle=10 end_handle=65535
-
-I (9626) NimBLE: GATT procedure initiated: discover all descriptors;
-I (9626) NimBLE: chr_val_handle=8 end_handle=9
-
-I (9776) NimBLE: GATT procedure initiated: discover all descriptors;
-I (9776) NimBLE: chr_val_handle=12 end_handle=65535
-
-I (9876) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (9876) NimBLE: GATT procedure initiated: read;
-I (9876) NimBLE: att_handle=12
-
-I (9976) NimBLE: Read complete; status=261 conn_handle=1
-I (9976) NimBLE:
-
-I (9976) NimBLE: GATT procedure initiated: write long;
-I (9976) NimBLE: att_handle=12 len=1000
-
-I (10076) NimBLE: Write complete; status=261 conn_handle=1
-I (10076) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (10076) NimBLE:
-
-I (10126) NimBLE: disconnect; reason=534
-I (10126) NimBLE:
+I (...) NimBLE:  Attempting to initiate connection on Coded PHY
+I (...) NimBLE: GAP procedure initiated: extended connect;
+I (...) NimBLE: Connection established on Coded Phy
+I (...) NimBLE: ... (same discovery, read, write long, and disconnect flow)
 
 ```
 

@@ -43,38 +43,57 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This console output can be observed when blehr is connected to client and client enables notifications:
 
 ```
-I (356) BLE_INIT: BT controller compile version [921f253]
-I (356) phy_init: phy_version 950,f732b06,Feb 15 2023,18:57:12
-I (396) BLE_INIT: Bluetooth MAC: 70:04:1d:13:66:fe
+I (751) NimBLE_HTP_PRPH: BLE Host Task Started
+I (751) main_task: Returned from app_main()
+I (791) NimBLE: Device Address:
+I (791) NimBLE: b0:b2:1c:b4:6b:4e
+I (791) NimBLE:
 
-I (396) NimBLE_BLE_Health_Therm: BLE Host Task Started
-I (396) NimBLE: GAP procedure initiated: stop advertising.
+I (801) NimBLE: GAP procedure initiated: advertise;
+I (801) NimBLE: disc_mode=2
+I (801) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
+I (811) NimBLE:
 
-I (406) NimBLE: Failed to restore IRKs from store; status=8
+I (4441) NimBLE: connection established; status=0
 
-I (406) NimBLE: Device Address: 
-I (416) NimBLE: 70:04:1d:13:66:fe
-I (416) NimBLE: 
+I (7641) NimBLE: subscribe event; cur_notify=0
+ value handle; val_handle=16
 
-I (416) NimBLE: GAP procedure initiated: advertise; 
-I (426) NimBLE: disc_mode=2
-I (426) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
-I (436) NimBLE: 
+I (7641) BLE_GAP_SUBSCRIBE_EVENT: conn_handle from subscribe=0
+I (7741) NimBLE: subscribe event; cur_notify=1
+ value handle; val_handle=21
 
-I (446) main_task: Returned from app_main()
-I (6116) NimBLE: connection established; status=0
+I (7741) BLE_GAP_SUBSCRIBE_EVENT: conn_handle from subscribe=0
+I (8741) NimBLE: GATT procedure initiated: notify;
+I (8741) NimBLE: att_handle=21
 
-I (7946) NimBLE: subscribe event; cur_notify=0
- value handle; val_handle=12
+I (8741) NimBLE: GATT procedure initiated: notify;
+I (8741) NimBLE: att_handle=21
 
-I (7956) BLE_GAP_SUBSCRIBE_EVENT: conn_handle from subscribe=1
+I (8741) NimBLE: Notification sent successfully
+I (9741) NimBLE: GATT procedure initiated: notify;
+I (9741) NimBLE: att_handle=21
 
-I (8046) NimBLE: subscribe event; cur_notify=1
- value handle; val_handle=17
+I (9741) NimBLE: GATT procedure initiated: notify;
+I (9741) NimBLE: att_handle=21
 
-I (8056) BLE_GAP_SUBSCRIBE_EVENT: conn_handle from subscribe=1
-I (9056) NimBLE: GATT procedure initiated: notify; 
-I (9056) NimBLE: att_handle=17
+I (9741) NimBLE: Notification sent successfully
+I (10741) NimBLE: GATT procedure initiated: notify;
+I (10741) NimBLE: att_handle=21
+
+I (10741) NimBLE: GATT procedure initiated: notify;
+I (10741) NimBLE: att_handle=21
+
+I (10741) NimBLE: Notification sent successfully
+I (11741) NimBLE: GATT procedure initiated: notify;
+I (11741) NimBLE: att_handle=21
+
+I (11741) NimBLE: GATT procedure initiated: notify;
+I (11741) NimBLE: att_handle=21
+
+I (11741) NimBLE: Notification sent successfully
+I (12741) NimBLE: GATT procedure initiated: notify;
+I (12741) NimBLE: att_handle=21
 
 
 ```
