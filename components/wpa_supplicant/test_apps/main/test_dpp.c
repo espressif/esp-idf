@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,16 @@
 #include "common/dpp.h"
 #include "sdkconfig.h"
 #include "test_wpa_supplicant_common.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #ifdef CONFIG_ESP_WIFI_TESTING_OPTIONS
+static unsigned int dpp_test_task_stack_high_watermark_bytes(void)
+{
+    return (unsigned int)(uxTaskGetStackHighWaterMark(NULL) *
+                          sizeof(StackType_t));
+}
+
 struct dpp_global {
     void *msg_ctx;
     struct dl_list bootstrap; /* struct dpp_bootstrap_info */
@@ -32,9 +40,46 @@ extern u8 dpp_nonce_override[DPP_MAX_NONCE_LEN];
 extern size_t dpp_nonce_override_len;
 #define MAX_FRAME_SIZE 1200
 
+static void dpp_test_clear_overrides(void)
+{
+    dpp_protocol_key_override_len = 0;
+    dpp_nonce_override_len = 0;
+    os_memset(dpp_protocol_key_override, 0, sizeof(dpp_protocol_key_override));
+    os_memset(dpp_nonce_override, 0, sizeof(dpp_nonce_override));
+}
+
+static u32 dpp_test_prod_limit_us(void)
+{
+#if CONFIG_MBEDTLS_HARDWARE_ECC
+    return 100000;
+#else
+    return 325000;
+#endif
+}
+
+static int dpp_test_leak_threshold(void)
+{
+    return 800;
+}
+
+static void dpp_test_log_auth_timing(const char *label,
+                                     const struct dpp_authentication *auth)
+{
+    TEST_ASSERT_NOT_NULL(auth);
+
+    ESP_LOGI("DPP Test",
+             "%s timing(us): parse=%llu response_form=%llu total=%llu",
+             label,
+             (unsigned long long) auth->auth_req_parse_us,
+             (unsigned long long) auth->auth_resp_form_us,
+             (unsigned long long) auth->auth_req_total_us);
+    ESP_LOGI("DPP Test", "%s task stack high watermark(bytes): %u",
+             label, dpp_test_task_stack_high_watermark_bytes());
+}
+
 TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
 {
-    set_leak_threshold(120);
+    set_leak_threshold(dpp_test_leak_threshold());
     /* Global variables */
     char command[1200] = {0};
     const u8 *frame;
@@ -66,6 +111,10 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         sprintf(command, "type=qrcode key=%s", key);
         id = dpp_bootstrap_gen(dpp, command);
         uri =  dpp_bootstrap_get_uri(dpp, id);
+        if (uri == NULL) {
+            ESP_LOGE("DPP Test", "Failed to get URI from bootstrap id");
+            TEST_ASSERT(0);
+        }
         printf("uri is =%s\n", uri);
         printf("is  be =%s\n", bootstrap_info);
         TEST_ASSERT((strcmp(uri, bootstrap_info) == 0));
@@ -129,6 +178,9 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         len -= 26;
         auth_instance = dpp_auth_req_rx(NULL, 1, 0, NULL,
                                         dpp_bootstrap_get_id(dpp, id), 2412, frame, frame + 6, len - 6);
+        TEST_ASSERT_NOT_NULL(auth_instance);
+        TEST_ASSERT_NOT_NULL(auth_instance->resp_msg);
+        dpp_test_log_auth_timing("Vector responder", auth_instance);
 
         /* auth response u8 */
         hex_len = os_strlen(auth_resp);
@@ -172,7 +224,118 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
     {
         dpp_auth_deinit(auth_instance);
         dpp_global_deinit(dpp);
+        dpp_test_clear_overrides();
     }
     ESP_LOGI("DPP Test", "Test case passed");
+}
+
+TEST_CASE("Test DPP responder p256 production timing", "[wpa_dpp][performance]")
+{
+    struct dpp_global_config dpp_conf;
+    struct dpp_global *dpp = NULL;
+    struct dpp_bootstrap_info *responder_bi = NULL;
+    struct dpp_bootstrap_info *initiator_bi = NULL;
+    struct dpp_authentication *initiator_auth = NULL;
+    struct dpp_authentication *responder_auth = NULL;
+    struct wpabuf *conf = NULL;
+    const u8 *frame;
+    size_t len;
+    int responder_id;
+    int initiator_id;
+    u32 limit_us = dpp_test_prod_limit_us();
+    u64 total_us = 0;
+    const char *failure = NULL;
+
+    set_leak_threshold(dpp_test_leak_threshold());
+    os_memset(&dpp_conf, 0, sizeof(dpp_conf));
+    dpp = dpp_global_init(&dpp_conf);
+    if (!dpp) {
+        TEST_FAIL_MESSAGE("Failed to initialize DPP global context");
+    }
+
+    responder_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
+    if (responder_id <= 0) {
+        failure = "Failed to generate responder bootstrap";
+        goto cleanup;
+    }
+    initiator_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
+    if (initiator_id <= 0) {
+        failure = "Failed to generate initiator bootstrap";
+        goto cleanup;
+    }
+
+    responder_bi = dpp_bootstrap_get_id(dpp, responder_id);
+    initiator_bi = dpp_bootstrap_get_id(dpp, initiator_id);
+    if (!responder_bi || !initiator_bi) {
+        failure = "Failed to resolve bootstrap info";
+        goto cleanup;
+    }
+
+    dpp_test_clear_overrides();
+    initiator_auth = dpp_auth_init(NULL, responder_bi, initiator_bi,
+                                   DPP_CAPAB_CONFIGURATOR, 2412, NULL, 0);
+    if (!initiator_auth || !initiator_auth->req_msg) {
+        failure = "Failed to initialize DPP initiator authentication";
+        goto cleanup;
+    }
+
+    frame = wpabuf_head_u8(initiator_auth->req_msg) + 2;
+    len = wpabuf_len(initiator_auth->req_msg) - 2;
+    responder_auth = dpp_auth_req_rx(NULL, DPP_CAPAB_ENROLLEE, 0,
+                                     NULL, responder_bi, 2412,
+                                     frame, frame + DPP_HDR_LEN,
+                                     len - DPP_HDR_LEN);
+    if (!responder_auth || !responder_auth->resp_msg) {
+        failure = "Failed to process DPP authentication request";
+        goto cleanup;
+    }
+    dpp_test_log_auth_timing("Production responder", responder_auth);
+    total_us = responder_auth->auth_req_total_us;
+    if (limit_us) {
+        ESP_LOGI("DPP Test",
+                 "Production responder timing gate(us): total=%llu limit=%lu",
+                 (unsigned long long) total_us,
+                 (unsigned long) limit_us);
+    }
+
+    frame = wpabuf_head_u8(responder_auth->resp_msg) + 2;
+    len = wpabuf_len(responder_auth->resp_msg) - 2;
+    conf = dpp_auth_resp_rx(initiator_auth, frame, frame + DPP_HDR_LEN,
+                            len - DPP_HDR_LEN);
+    if (!conf) {
+        failure = "Failed to process DPP authentication response";
+        goto cleanup;
+    }
+    if (initiator_auth->auth_success != 1) {
+        failure = "Initiator authentication did not complete successfully";
+        goto cleanup;
+    }
+
+    frame = wpabuf_head_u8(conf) + 2;
+    len = wpabuf_len(conf) - 2;
+    if (dpp_auth_conf_rx(responder_auth, frame, frame + DPP_HDR_LEN,
+                         len - DPP_HDR_LEN) != 0) {
+        failure = "Failed to process DPP authentication confirmation";
+        goto cleanup;
+    }
+    if (responder_auth->auth_success != 1) {
+        failure = "Responder authentication did not complete successfully";
+        goto cleanup;
+    }
+
+cleanup:
+    wpabuf_free(conf);
+    dpp_auth_deinit(responder_auth);
+    dpp_auth_deinit(initiator_auth);
+    dpp_global_deinit(dpp);
+    dpp_test_clear_overrides();
+
+    if (failure) {
+        TEST_FAIL_MESSAGE(failure);
+    }
+    if (limit_us) {
+        TEST_ASSERT_MESSAGE(total_us <= limit_us,
+                            "DPP responder production timing regression");
+    }
 }
 #endif

@@ -594,6 +594,18 @@ menu "Wi-Fi"
         help
             Select this option to enable WiFi Easy Connect Support.
 
+    config ESP_WIFI_P256_ACCEL
+        bool "Enable P-256 crypto acceleration"
+        depends on ESP_WIFI_MBEDTLS_CRYPTO
+        default n
+        help
+            Enable Espressif-specific P-256 acceleration in the WPA supplicant
+            crypto layer. This reduces SAE and DPP latency on supported targets
+            at the cost of additional code size.
+
+            If disabled, the supplicant falls back to the generic Mbed TLS
+            implementation.
+
     config ESP_WIFI_11R_SUPPORT
         bool "Enable 802.11R (Fast Transition) Support"
         default n
