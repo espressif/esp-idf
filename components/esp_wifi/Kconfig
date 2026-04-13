@@ -597,7 +597,7 @@ menu "Wi-Fi"
     config ESP_WIFI_P256_ACCEL
         bool "Enable P-256 crypto acceleration"
         depends on ESP_WIFI_MBEDTLS_CRYPTO
-        default y
+        default n
         help
             Enable Espressif-specific P-256 acceleration in the WPA supplicant
             crypto layer. This reduces SAE and DPP latency on supported targets
