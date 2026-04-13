@@ -62,6 +62,7 @@ static inline void ulp_lp_core_gpio_init(lp_io_num_t lp_io_num)
     _rtcio_ll_enable_io_clock(true);
 #endif
     rtcio_ll_function_select(lp_io_num, RTCIO_LL_FUNC_RTC);
+    rtcio_ll_iomux_func_sel(lp_io_num, RTCIO_LL_PIN_FUNC);
 }
 
 /**

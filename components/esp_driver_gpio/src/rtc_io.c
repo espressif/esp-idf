@@ -54,7 +54,13 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
     io_mux_enable_lp_io_clock(gpio_num, true);
 #endif
-    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_RTC);
+    int rtcio_num = rtc_io_number_get(gpio_num);
+    // Select the pad as RTC GPIO
+    rtcio_hal_function_select(rtcio_num, RTCIO_LL_FUNC_RTC);
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    // Select LP GPIO function
+    rtcio_hal_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
+#endif
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -64,9 +70,9 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
     RTCIO_ENTER_CRITICAL();
+    // Select the pad as Digital GPIO (this is usually in AON domain, not relying on lp io clock)
+    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_DIGITAL);
     if (io_mux_is_lp_io_in_use(gpio_num)) {
-        // Select GPIO as Digital GPIO
-        rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_DIGITAL);
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         // Disable any configuration of the RTC IO that may affect the GPIO behavior
         rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
