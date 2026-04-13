@@ -52,100 +52,32 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This is the console output on successful connection:
 
 ```
-I (459) NimBLE_BLE_PHY_PRPH: BLE Host Task Started
-I (459) NimBLE: Device Address:
-I (459) NimBLE: 60:55:f9:f7:3e:23
-I (469) NimBLE:
+I (...) NimBLE_BLE_PHY_PRPH: BLE Host Task Started
+I (...) NimBLE: Device Address:
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:
+I (...) NimBLE: Default LE PHY set successfully
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
+I (...) uart: queue free spaces: 8
+I (...) main_task: Returned from app_main()
 
-I (469) NimBLE: Default LE PHY set successfully
-I (479) NimBLE: GAP procedure initiated: extended advertise; instance=0
+I (...) NimBLE: advertise complete; reason=0
+I (...) NimBLE: connection established; status=0
+I (...) NimBLE: handle=0 ... conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE:
 
-I (479) uart: queue free spaces: 8
-I (489) main_task: Returned from app_main()
-I (599) NimBLE: connection established; status=0
-I (599) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (599) NimBLE: 60:55:f9:f7:3e:23
-I (599) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (609) NimBLE: 60:55:f9:f7:3e:23
-I (609) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (619) NimBLE: 60:55:f9:f7:3e:25
-I (619) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (619) NimBLE: 60:55:f9:f7:3e:25
-I (629) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE: disconnect; reason=531
+I (...) NimBLE: handle=0 ... conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE:
 
-I (639) NimBLE:
-
-I (639) NimBLE: advertise complete; reason=0
-I (1749) NimBLE: disconnect; reason=531
-I (1749) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (1749) NimBLE: 60:55:f9:f7:3e:23
-I (1749) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (1759) NimBLE: 60:55:f9:f7:3e:23
-I (1759) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (1759) NimBLE: 60:55:f9:f7:3e:25
-I (1769) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (1769) NimBLE: 60:55:f9:f7:3e:25
-I (1779) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
-
-I (1789) NimBLE:
-
-I (1789) NimBLE: GAP procedure initiated: extended advertise; instance=0
-
-I (1809) NimBLE: connection established; status=0
-I (1809) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (1809) NimBLE: 60:55:f9:f7:3e:23
-I (1819) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (1819) NimBLE: 60:55:f9:f7:3e:23
-I (1819) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (1829) NimBLE: 60:55:f9:f7:3e:25
-I (1829) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (1839) NimBLE: 60:55:f9:f7:3e:25
-I (1839) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
-
-I (1849) NimBLE:
-
-I (1859) NimBLE: advertise complete; reason=0
-I (3009) NimBLE: disconnect; reason=531
-I (3009) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (3009) NimBLE: 60:55:f9:f7:3e:23
-I (3009) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (3019) NimBLE: 60:55:f9:f7:3e:23
-I (3019) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (3029) NimBLE: 60:55:f9:f7:3e:25
-I (3029) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (3039) NimBLE: 60:55:f9:f7:3e:25
-I (3039) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
-
-I (3049) NimBLE:
-
-I (3059) NimBLE: GAP procedure initiated: extended advertise; instance=0
-
-I (3079) NimBLE: connection established; status=0
-I (3079) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (3079) NimBLE: 60:55:f9:f7:3e:23
-I (3079) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (3089) NimBLE: 60:55:f9:f7:3e:23
-I (3089) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (3099) NimBLE: 60:55:f9:f7:3e:25
-I (3099) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (3109) NimBLE: 60:55:f9:f7:3e:25
-I (3109) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
-
-I (3119) NimBLE:
-
-I (3129) NimBLE: advertise complete; reason=0
-I (4379) NimBLE: disconnect; reason=531
-I (4379) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (4379) NimBLE: 60:55:f9:f7:3e:23
-I (4379) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (4389) NimBLE: 60:55:f9:f7:3e:23
-I (4389) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (4399) NimBLE: 60:55:f9:f7:3e:25
-I (4399) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (4409) NimBLE: 60:55:f9:f7:3e:25
-I (4409) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
-
-I (7872) NimBLE:
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
+I (...) NimBLE: advertise complete; reason=0
+I (...) NimBLE: connection established; status=0
+I (...) NimBLE: ...
+I (...) NimBLE: disconnect; reason=531
+I (...) NimBLE: ...
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
+I (...) NimBLE: ...
 
 ```
 

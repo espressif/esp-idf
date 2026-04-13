@@ -48,22 +48,35 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This is the console output on successful periodic sync:
 
 ```
-I (311) BTDM_INIT: BT controller compile version [3a49744]
-I (311) phy_init: phy_version 912,d001756,Jun  2 2022,16:28:07
-I (351) system_api: Base MAC address is not set
-I (351) system_api: read default base MAC address from EFUSE
-I (351) BTDM_INIT: Bluetooth MAC: 84:f7:03:08:14:8e
+I (...) NimBLE_BLE_PERIODIC_SYNC: BLE Host Task Started
+I (...) NimBLE: GAP procedure initiated: extended discovery;
 
-I (361) NimBLE_BLE_PERIODIC_SYNC: BLE Host Task Started
-I (941) NimBLE: Periodic sync event :
+I (...) main_task: Returned from app_main()
+I (...) NimBLE: Periodic sync event :
 
-I (941) NimBLE: Periodic adv report event:
+I (...) NimBLE: status : 0
+periodic_sync_handle : 0
+sid : 2
 
-I (4241) NimBLE: Periodic adv report event:
+I (...) NimBLE: adv addr :
+I (...) NimBLE: xx xx xx xx xx xx
+I (...) NimBLE: adv_phy : 2m
 
-I (7541) NimBLE: Periodic adv report event:
+I (...) NimBLE: per_adv_ival : 192
+I (...) NimBLE: adv_clk_accuracy : 4
 
-I (10841) NimBLE: Periodic adv report event:
+I (...) NimBLE: Periodic adv report event:
+I (...) NimBLE: sync_handle : 0
+I (...) NimBLE: tx_power : 127
+I (...) NimBLE: rssi : -..
+I (...) NimBLE: data_status : 0
+I (...) NimBLE: data_length : 16
+I (...) NimBLE: data :
+I (...) NimBLE: 45 53 50 5f 50 45 52 49 4f 44 49 43 5f 41 44 56
+I (...) NimBLE:
+
+I (...) NimBLE: Periodic adv report event:
+I (...) NimBLE: ...
 ```
 
 
