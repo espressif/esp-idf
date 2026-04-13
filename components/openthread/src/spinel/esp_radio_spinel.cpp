@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@ using esp::radio_spinel::SpinelInterfaceAdapter;
 using esp::radio_spinel::UartSpinelInterface;
 using ot::Spinel::SpinelDriver;
 
-static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface[ot::Spinel::kSpinelHeaderMaxNumIid];
+static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface;
 static RadioSpinel s_radio[ot::Spinel::kSpinelHeaderMaxNumIid];
 static esp_radio_spinel_callbacks_t s_esp_radio_spinel_callbacks[ot::Spinel::kSpinelHeaderMaxNumIid];
 static SpinelDriver s_spinel_driver[ot::Spinel::kSpinelHeaderMaxNumIid];
@@ -205,11 +205,11 @@ esp_err_t esp_radio_spinel_uart_interface_enable(const esp_radio_spinel_uart_con
                                                  esp_radio_spinel_uart_deinit_handler aUartDeinitHandler,
                                                  esp_radio_spinel_idx_t idx)
 {
-    ESP_RETURN_ON_FALSE(aUartInitHandler != nullptr, ESP_FAIL, ESP_SPINEL_LOG_TAG, "UartInitHandler can not be set to NULL");
-    ESP_RETURN_ON_FALSE(aUartDeinitHandler != nullptr, ESP_FAIL, ESP_SPINEL_LOG_TAG, "UartDeinitHandler can not be set to NULL");
-    s_spinel_interface[idx].GetSpinelInterface().RegisterUartInitHandler(aUartInitHandler);
-    s_spinel_interface[idx].GetSpinelInterface().RegisterUartDeinitHandler(aUartDeinitHandler);
-    ESP_RETURN_ON_FALSE(s_spinel_interface[idx].GetSpinelInterface().Enable(*radio_uart_config) == OT_ERROR_NONE, ESP_FAIL, ESP_SPINEL_LOG_TAG, "Spinel UART interface failed to enable");
+    s_spinel_interface.GetSpinelInterface().RegisterUartInitHandler(aUartInitHandler);
+    s_spinel_interface.GetSpinelInterface().RegisterUartDeinitHandler(aUartDeinitHandler);
+    ESP_RETURN_ON_FALSE(radio_uart_config != nullptr, ESP_ERR_INVALID_ARG, ESP_SPINEL_LOG_TAG, "radio_uart_config can not be NULL");
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(*radio_uart_config), ESP_SPINEL_LOG_TAG,
+                        "Spinel UART interface failed to enable");
     ESP_LOGI(ESP_SPINEL_LOG_TAG, "Spinel UART interface has been successfully enabled");
     return ESP_OK;
 }
@@ -222,7 +222,7 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
     // Multipan is not currently supported
     iidList[0] = 0;
     s_spinel_driver[idx].SetCoprocessorResetFailureCallback(radio_spinel_coprocessor_reset_failure_callback, instance);
-    s_spinel_driver[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_spinel_driver[idx].Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
     s_radio[idx].SetCompatibilityErrorCallback(radio_spinel_compatibility_error_callback, instance);
     s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps, false);
     s_radio[idx].SetVendorRestorePropertiesCallback(esp_radio_spinel_restore_vendor_properities, instance);
@@ -324,7 +324,7 @@ esp_err_t esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx
 
 void esp_radio_spinel_radio_update(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
 {
-    s_spinel_interface[idx].GetSpinelInterface().UpdateFdSet(static_cast<void *>(mainloop_context));
+    s_spinel_interface.GetSpinelInterface().UpdateFdSet(static_cast<void *>(mainloop_context));
 }
 
 void esp_radio_spinel_radio_process(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
@@ -354,7 +354,7 @@ esp_err_t esp_radio_spinel_get_tx_power(int8_t *power, esp_radio_spinel_idx_t id
 
 void esp_radio_spinel_register_rcp_failure_handler(esp_radio_spinel_rcp_failure_handler handler, esp_radio_spinel_idx_t idx)
 {
-    s_spinel_interface[idx].GetSpinelInterface().RegisterRcpFailureHandler(handler);
+    s_spinel_interface.GetSpinelInterface().RegisterRcpFailureHandler(handler);
 }
 
 esp_err_t esp_radio_spinel_rcp_deinit(esp_radio_spinel_idx_t idx)
@@ -363,7 +363,8 @@ esp_err_t esp_radio_spinel_rcp_deinit(esp_radio_spinel_idx_t idx)
         ESP_RETURN_ON_FALSE(s_radio[idx].Sleep() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, ESP_SPINEL_LOG_TAG, "Radio fails to sleep");
         ESP_RETURN_ON_FALSE(s_radio[idx].Disable() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, ESP_SPINEL_LOG_TAG, "Fail to disable radio");
     }
-    ESP_RETURN_ON_FALSE(s_spinel_interface[idx].GetSpinelInterface().Disable() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, ESP_SPINEL_LOG_TAG, "Fail to deinitialize UART");
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Disable(), ESP_SPINEL_LOG_TAG,
+                        "Fail to deinitialize UART");
     return ESP_OK;
 }
 
