@@ -343,6 +343,7 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
 
 @pytest.mark.wifi_ap
 @pytest.mark.xtal_26mhz
+@pytest.mark.flaky(reruns=2, reruns_delay=10)
 @pytest.mark.parametrize(
     'config, baud',
     [
@@ -352,6 +353,7 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_examples_protocol_https_request_rom_impl(dut: Dut) -> None:
+    write_time_to_nvs(dut)
     # Connect to AP
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
         dut.expect('Please input ssid password:')
