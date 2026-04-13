@@ -185,8 +185,6 @@
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
 
-// GPIO0~7 on ESP32S31 can support chip deep sleep wakeup
-#define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1)
 #define SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD        (1)
 #define SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE     (1)
 
@@ -198,8 +196,6 @@
 
 #define SOC_GPIO_IN_RANGE_MAX           61
 #define SOC_GPIO_OUT_RANGE_MAX          61
-
-#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK      (0ULL | 0xFF)
 
 // digital I/O pad powered by VDD3V3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_61, excluding GPIO29/41 which are not bonded)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK (SOC_GPIO_VALID_GPIO_MASK & ~((1ULL << SOC_RTCIO_PIN_COUNT) - 1))
