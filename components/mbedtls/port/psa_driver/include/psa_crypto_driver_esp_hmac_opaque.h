@@ -64,7 +64,9 @@ psa_status_t esp_hmac_import_key_opaque(const psa_key_attributes_t *attributes,
                                         size_t *key_buffer_length,
                                         size_t *bits);
 
-size_t esp_hmac_opaque_size_function(psa_key_type_t key_type, size_t key_bits);
+size_t esp_hmac_opaque_size_function(const psa_key_attributes_t *attributes,
+                                     psa_key_type_t key_type,
+                                     const uint8_t *data, size_t data_length);
 
 psa_status_t esp_hmac_compute_opaque(const psa_key_attributes_t *attributes,
                                     const uint8_t *key_buffer,

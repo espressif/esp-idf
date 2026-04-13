@@ -14,6 +14,7 @@
 #include "soc/soc_caps.h"
 #include "esp_log.h"
 
+#include "esp_assert.h"
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"
 
@@ -40,6 +41,7 @@
 #endif /* SOC_MPI_SUPPORTED && SOC_ECDSA_USES_MPI */
 
 #include "psa_crypto_driver_esp_ecdsa.h"
+#include "psa_crypto_driver_esp_opaque_common.h"
 #include "psa_crypto_driver_wrappers_no_static.h"
 #include "sdkconfig.h"
 
@@ -48,6 +50,160 @@ static const char *TAG = "psa_crypto_driver_esp_ecdsa";
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 #include "esp_tee_sec_storage.h"
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+
+/*
+ * Per-source storage structs — internal to the driver.
+ * These are what actually get persisted to NVS, not the user-facing esp_ecdsa_opaque_key_t.
+ *
+ * All storage structs share a common prefix: [version][key_source][curve]
+ * so that the driver can identify the key source at operation time.
+ */
+typedef enum {
+    ESP_ECDSA_KEY_STORAGE_VERSION_INVALID = 0,
+    ESP_ECDSA_KEY_STORAGE_VERSION_V1 = 1,
+    ESP_ECDSA_KEY_STORAGE_VERSION_MAX = 2,
+} esp_ecdsa_key_storage_version_t;
+
+/* TEE secure storage key IDs are NVS key names, max 16 bytes including null terminator */
+#define ESP_ECDSA_TEE_KEY_ID_MAX_LEN    16
+ESP_STATIC_ASSERT(ESP_ECDSA_TEE_KEY_ID_MAX_LEN < UINT8_MAX, "ESP_ECDSA_TEE_KEY_ID_MAX_LEN must be less than 255 as we use uint8_t for tee_key_id_len");
+
+typedef enum {
+    ESP_ECDSA_KEY_SOURCE_EFUSE = 0,
+    ESP_ECDSA_KEY_SOURCE_TEE = 1,
+    ESP_ECDSA_KEY_SOURCE_KEY_MGR = 2,
+} esp_ecdsa_key_source_t;
+
+/* Storage structs use uint8_t for curve instead of esp_ecdsa_curve_t (enum)
+ * to ensure stable serialized size across compilers. */
+
+typedef struct __attribute__((packed)) {
+    uint8_t version;
+    uint8_t key_source;             /* esp_ecdsa_key_source_t */
+    uint8_t curve;                  /* esp_ecdsa_curve_t */
+} esp_ecdsa_common_key_storage_metadata_t;
+
+ESP_STATIC_ASSERT(sizeof(esp_ecdsa_common_key_storage_metadata_t) == 3 * sizeof(uint8_t), "esp_ecdsa_common_key_storage_metadata_t structure must be exactly 3 bytes");
+
+typedef struct __attribute__((packed)) {
+    esp_ecdsa_common_key_storage_metadata_t metadata;
+    uint8_t efuse_block;
+} esp_ecdsa_efuse_key_storage_t;
+
+typedef struct __attribute__((packed)) {
+    esp_ecdsa_common_key_storage_metadata_t metadata;
+    uint8_t tee_key_id_len;
+    /* followed by: char tee_key_id[tee_key_id_len] */
+} esp_ecdsa_tee_key_storage_t;
+
+#if SOC_KEY_MANAGER_SUPPORTED
+typedef struct {
+    esp_ecdsa_common_key_storage_metadata_t metadata;
+    uint8_t reserved;               /* explicit padding for alignment */
+    esp_key_mgr_key_recovery_info_t key_recovery_info;
+} esp_ecdsa_km_key_storage_t;
+
+ESP_STATIC_ASSERT(offsetof(esp_ecdsa_km_key_storage_t, key_recovery_info) % 4 == 0,
+                  "key_recovery_info must be 4-byte aligned in esp_ecdsa_km_key_storage_t");
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+
+/**
+ * Pointer-based storage for volatile keys.
+ * Embeds the user-facing opaque key struct (which contains pointers).
+ * The caller must keep all referenced data valid until psa_destroy_key().
+ */
+typedef struct {
+    esp_ecdsa_common_key_storage_metadata_t metadata;
+    esp_ecdsa_opaque_key_t opaque_key;
+} esp_ecdsa_volatile_key_storage_t;
+
+/**
+ * @brief Read the key_source tag from any storage struct.
+ *
+ * All storage structs share the layout: [version(1)][key_source(1)][...]
+ */
+static inline esp_ecdsa_key_source_t storage_get_key_source(const uint8_t *key_buffer)
+{
+    return (esp_ecdsa_key_source_t)key_buffer[1];
+}
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+/**
+ * @brief Calculate the storage buffer size required for a given user-facing opaque key.
+ *
+ * Inspects the user struct to determine the key source and returns the
+ * corresponding storage struct size. Used by both the PSA size function
+ * and for key_buffer_size validation at operation time.
+ */
+static size_t esp_ecdsa_get_storage_size(const esp_ecdsa_opaque_key_t *key, bool persistent)
+{
+    if (!persistent) {
+        (void)key;
+        return sizeof(esp_ecdsa_volatile_key_storage_t);
+    }
+
+    /* persistent: per-source inline storage */
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+    if (key->tee_key_id) {
+        size_t len = strnlen(key->tee_key_id, ESP_ECDSA_TEE_KEY_ID_MAX_LEN);
+        return sizeof(esp_ecdsa_tee_key_storage_t) + len + 1;
+    }
+#endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+
+#if SOC_KEY_MANAGER_SUPPORTED
+    if (key->key_recovery_info) {
+        return sizeof(esp_ecdsa_km_key_storage_t);
+    }
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+
+    (void)key;
+    return sizeof(esp_ecdsa_efuse_key_storage_t);
+}
+
+/**
+ * @brief Calculate the expected storage size from an already-serialized storage buffer.
+ *
+ * Reads the key_source tag to determine the storage struct type and returns
+ * the expected minimum buffer size. Used for key_buffer_size validation at
+ * operation time (sign, export).
+ */
+static psa_status_t esp_ecdsa_get_expected_storage_size(const uint8_t *key_buffer, bool persistent, size_t *expected_storage_size)
+{
+    if (key_buffer[0] <= ESP_ECDSA_KEY_STORAGE_VERSION_INVALID || key_buffer[0] >= ESP_ECDSA_KEY_STORAGE_VERSION_MAX) {
+        return PSA_ERROR_DATA_INVALID;
+    }
+
+    *expected_storage_size = 0;
+
+    if (!persistent) {
+        *expected_storage_size = sizeof(esp_ecdsa_volatile_key_storage_t);
+        return PSA_SUCCESS;
+    }
+
+    /* persistent: dispatch by key_source */
+    esp_ecdsa_key_source_t key_source = storage_get_key_source(key_buffer);
+
+    switch (key_source) {
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+        case ESP_ECDSA_KEY_SOURCE_TEE:
+            const esp_ecdsa_tee_key_storage_t *tee_st =
+                (const esp_ecdsa_tee_key_storage_t *)key_buffer;
+            *expected_storage_size = sizeof(esp_ecdsa_tee_key_storage_t) + tee_st->tee_key_id_len;
+            return PSA_SUCCESS;
+#endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+#if SOC_KEY_MANAGER_SUPPORTED
+        case ESP_ECDSA_KEY_SOURCE_KEY_MGR:
+            *expected_storage_size = sizeof(esp_ecdsa_km_key_storage_t);
+            return PSA_SUCCESS;
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+        case ESP_ECDSA_KEY_SOURCE_EFUSE:
+            *expected_storage_size = sizeof(esp_ecdsa_efuse_key_storage_t);
+            return PSA_SUCCESS;
+        default:
+            return PSA_ERROR_DATA_INVALID;
+    }
+}
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
 
 /* Key lengths for different ECDSA curves */
 #define ECDSA_KEY_LEN_P192          24
@@ -96,6 +252,23 @@ static esp_ecdsa_curve_t psa_bits_to_ecdsa_curve(size_t key_len)
             return ESP_ECDSA_CURVE_MAX;
     }
 }
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY)
+/**
+ * @brief Map the driver's esp_ecdsa_curve_t enum to the HAL's ecdsa_curve_t enum.
+ */
+static ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
+{
+    switch (curve) {
+        case ESP_ECDSA_CURVE_SECP192R1: return ECDSA_CURVE_SECP192R1;
+        case ESP_ECDSA_CURVE_SECP256R1: return ECDSA_CURVE_SECP256R1;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        case ESP_ECDSA_CURVE_SECP384R1: return ECDSA_CURVE_SECP384R1;
+#endif
+        default: return (ecdsa_curve_t)-1;
+    }
+}
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY) */
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 static esp_tee_sec_storage_type_t esp_ecdsa_curve_to_tee_sec_storage_type(esp_ecdsa_curve_t curve)
@@ -434,7 +607,7 @@ static psa_status_t esp_ecdsa_validate_efuse_block(esp_ecdsa_curve_t curve, int 
 #endif  /* !SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
 
     if (expected_key_purpose_low != esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk)) {
-        ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose, expected: %d, got: %d, low_blk: %d", expected_key_purpose_low, esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk), low_blk);
+        ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose");
         return PSA_ERROR_NOT_PERMITTED;
     }
 
@@ -454,6 +627,10 @@ static psa_status_t esp_ecdsa_validate_efuse_block(esp_ecdsa_curve_t curve, int 
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+
+/**
+ * @brief Validate the user-facing opaque key struct at import time.
+ */
 static psa_status_t validate_ecdsa_opaque_key_attributes(const psa_key_attributes_t *attributes, const esp_ecdsa_opaque_key_t *opaque_key)
 {
     esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
@@ -480,6 +657,33 @@ static psa_status_t validate_ecdsa_opaque_key_attributes(const psa_key_attribute
     return PSA_SUCCESS;
 }
 
+/**
+ * @brief Validate the stored curve against PSA key attributes at operation time.
+ *
+ * This is called when reading from a per-source storage struct (after import/NVS load)
+ * to detect NVS corruption or wrong-blob scenarios.
+ */
+static psa_status_t validate_storage_curve(const psa_key_attributes_t *attributes, esp_ecdsa_curve_t stored_curve)
+{
+    esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+    if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != stored_curve) {
+        ESP_LOGE(TAG, "Invalid curve expected");
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    return PSA_SUCCESS;
+}
+
+/**
+ * @brief Extract curve from a storage struct in key_buffer.
+ *
+ * All storage structs share the layout: [version(1)] [key_source(1)] [curve(1)].
+ * This helper reads the curve from the common prefix.
+ */
+static esp_ecdsa_curve_t storage_get_curve(const uint8_t *key_buffer)
+{
+    return (esp_ecdsa_curve_t)key_buffer[2];
+}
+
 psa_status_t esp_ecdsa_opaque_import_key(
     const psa_key_attributes_t *attributes,
     const uint8_t *data,
@@ -489,12 +693,8 @@ psa_status_t esp_ecdsa_opaque_import_key(
     size_t *key_buffer_length,
     size_t *bits)
 {
-    if (!attributes || !data || data_length < 1 || !key_buffer || !key_buffer_length || !bits) {
+    if (!attributes || !data || data_length < sizeof(esp_ecdsa_opaque_key_t) || !key_buffer || !key_buffer_length || !bits) {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (key_buffer_size < sizeof(esp_ecdsa_opaque_key_t) || data_length < sizeof(esp_ecdsa_opaque_key_t)) {
-        return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
     const esp_ecdsa_opaque_key_t *opaque_key = (const esp_ecdsa_opaque_key_t *) data;
@@ -503,8 +703,89 @@ psa_status_t esp_ecdsa_opaque_import_key(
         return status;
     }
 
-    memcpy(key_buffer, opaque_key, sizeof(esp_ecdsa_opaque_key_t));
-    *key_buffer_length = sizeof(esp_ecdsa_opaque_key_t);
+    bool is_persistent = esp_opaque_key_is_persistent(attributes);
+
+    /* Determine key source from user struct */
+    esp_ecdsa_key_source_t key_source = ESP_ECDSA_KEY_SOURCE_EFUSE;
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+    if (opaque_key->tee_key_id) {
+        key_source = ESP_ECDSA_KEY_SOURCE_TEE;
+    } else
+#endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+#if SOC_KEY_MANAGER_SUPPORTED
+    if (opaque_key->key_recovery_info) {
+        key_source = ESP_ECDSA_KEY_SOURCE_KEY_MGR;
+    } else
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+    {
+        key_source = ESP_ECDSA_KEY_SOURCE_EFUSE;
+    }
+
+    if (!is_persistent) {
+        /* Volatile: store pointers -- caller keeps data alive */
+        if (key_buffer_size < sizeof(esp_ecdsa_volatile_key_storage_t)) {
+            return PSA_ERROR_BUFFER_TOO_SMALL;
+        }
+        esp_ecdsa_volatile_key_storage_t *storage = (esp_ecdsa_volatile_key_storage_t *)key_buffer;
+        storage->metadata.version = ESP_ECDSA_KEY_STORAGE_VERSION_V1;
+        storage->metadata.key_source = key_source;
+        storage->metadata.curve = (uint8_t)opaque_key->curve;
+        memcpy(&storage->opaque_key, opaque_key, sizeof(esp_ecdsa_opaque_key_t));
+        *key_buffer_length = sizeof(esp_ecdsa_volatile_key_storage_t);
+    } else {
+        /* Persistent: per-source inline storage */
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+        if (key_source == ESP_ECDSA_KEY_SOURCE_TEE) {
+            size_t str_len = strnlen(opaque_key->tee_key_id, ESP_ECDSA_TEE_KEY_ID_MAX_LEN);
+            if (str_len == 0 || str_len >= ESP_ECDSA_TEE_KEY_ID_MAX_LEN) {
+                return PSA_ERROR_INVALID_ARGUMENT;
+            }
+            uint8_t id_len = (uint8_t)(str_len + 1); /* include null terminator */
+            size_t required_len = sizeof(esp_ecdsa_tee_key_storage_t) + id_len;
+            if (key_buffer_size < required_len) {
+                return PSA_ERROR_BUFFER_TOO_SMALL;
+            }
+
+            esp_ecdsa_tee_key_storage_t *storage = (esp_ecdsa_tee_key_storage_t *)key_buffer;
+            storage->metadata.version = ESP_ECDSA_KEY_STORAGE_VERSION_V1;
+            storage->metadata.key_source = ESP_ECDSA_KEY_SOURCE_TEE;
+            storage->metadata.curve = (uint8_t)opaque_key->curve;
+            storage->tee_key_id_len = id_len;
+            memcpy((uint8_t *)storage + sizeof(esp_ecdsa_tee_key_storage_t), opaque_key->tee_key_id, str_len);
+            /* Explicitly null-terminate */
+            *((uint8_t *)storage + sizeof(esp_ecdsa_tee_key_storage_t) + str_len) = '\0';
+            *key_buffer_length = required_len;
+        } else
+#endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+#if SOC_KEY_MANAGER_SUPPORTED
+        if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
+            if (key_buffer_size < sizeof(esp_ecdsa_km_key_storage_t)) {
+                return PSA_ERROR_BUFFER_TOO_SMALL;
+            }
+            esp_ecdsa_km_key_storage_t *storage = (esp_ecdsa_km_key_storage_t *)key_buffer;
+            storage->metadata.version = ESP_ECDSA_KEY_STORAGE_VERSION_V1;
+            storage->metadata.key_source = ESP_ECDSA_KEY_SOURCE_KEY_MGR;
+            storage->metadata.curve = (uint8_t)opaque_key->curve;
+            storage->reserved = 0;
+            memcpy(&storage->key_recovery_info, opaque_key->key_recovery_info,
+                   sizeof(esp_key_mgr_key_recovery_info_t));
+            *key_buffer_length = sizeof(esp_ecdsa_km_key_storage_t);
+        } else
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+        {
+            if (key_buffer_size < sizeof(esp_ecdsa_efuse_key_storage_t)) {
+                return PSA_ERROR_BUFFER_TOO_SMALL;
+            }
+
+            esp_ecdsa_efuse_key_storage_t *storage = (esp_ecdsa_efuse_key_storage_t *)key_buffer;
+            storage->metadata.version = ESP_ECDSA_KEY_STORAGE_VERSION_V1;
+            storage->metadata.key_source = ESP_ECDSA_KEY_SOURCE_EFUSE;
+            storage->metadata.curve = (uint8_t)opaque_key->curve;
+            storage->efuse_block = opaque_key->efuse_block;
+            *key_buffer_length = sizeof(esp_ecdsa_efuse_key_storage_t);
+        }
+    }
+
     *bits = psa_get_key_bits(attributes);
     return PSA_SUCCESS;
 }
@@ -522,22 +803,35 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (key_buffer_size < sizeof(esp_ecdsa_opaque_key_t)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
     // Check if ECDSA algorithm
     if (!PSA_ALG_IS_ECDSA(alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    const esp_ecdsa_opaque_key_t *opaque_key = (const esp_ecdsa_opaque_key_t *) key_buffer;
-    psa_status_t status = validate_ecdsa_opaque_key_attributes(attributes, opaque_key);
+    bool is_persistent = esp_opaque_key_is_persistent(attributes);
+
+    if (key_buffer_size < sizeof(esp_ecdsa_efuse_key_storage_t)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t expected_storage_size = 0;
+    psa_status_t status = esp_ecdsa_get_expected_storage_size(key_buffer, is_persistent, &expected_storage_size);
     if (status != PSA_SUCCESS) {
         return status;
     }
 
-    status = validate_ecdsa_sha_alg(alg, opaque_key->curve);
+    if (key_buffer_size < expected_storage_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Read curve from the storage struct and validate against attributes */
+    esp_ecdsa_curve_t curve = storage_get_curve(key_buffer);
+    status = validate_storage_curve(attributes, curve);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = validate_ecdsa_sha_alg(alg, curve);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -545,28 +839,31 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
     size_t component_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
 
     // Validate hash length
-    if ((opaque_key->curve == ESP_ECDSA_CURVE_SECP192R1 && hash_length != ECDSA_SHA_LEN
+    if ((curve == ESP_ECDSA_CURVE_SECP192R1 && hash_length != ECDSA_SHA_LEN
 #if SOC_ECDSA_SUPPORTED
             && esp_efuse_is_ecdsa_p192_curve_supported()
 #endif
-        ) || (opaque_key->curve == ESP_ECDSA_CURVE_SECP256R1 && hash_length != ECDSA_SHA_LEN
+        ) || (curve == ESP_ECDSA_CURVE_SECP256R1 && hash_length != ECDSA_SHA_LEN
 #if SOC_ECDSA_SUPPORTED
             && esp_efuse_is_ecdsa_p256_curve_supported()
 #endif
         )
 #if SOC_ECDSA_SUPPORT_CURVE_P384
-        || (opaque_key->curve == ESP_ECDSA_CURVE_SECP384R1 && hash_length != ECDSA_SHA_LEN_P384)
+        || (curve == ESP_ECDSA_CURVE_SECP384R1 && hash_length != ECDSA_SHA_LEN_P384)
 #endif
     ) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     memset(operation, 0, sizeof(esp_ecdsa_opaque_sign_hash_operation_t));
+    operation->is_persistent = is_persistent;
 
     operation->key_len = component_len;
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
-    if (opaque_key->tee_key_id) {
+    /* Determine hash endianness based on key source */
+    esp_ecdsa_key_source_t key_source = storage_get_key_source(key_buffer);
+    if (key_source == ESP_ECDSA_KEY_SOURCE_TEE) {
         // The ESP-TEE API expects the hash in big endian order
         memcpy(operation->sha, hash, component_len);
     } else
@@ -575,7 +872,7 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
         change_endianess(hash, operation->sha, component_len);
     }
 
-    operation->opaque_key = opaque_key;
+    operation->key_buffer = key_buffer;
     operation->alg = alg;
     operation->sha_len = hash_length;
 
@@ -597,16 +894,34 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    esp_ecdsa_key_source_t key_source __attribute__((unused)) = storage_get_key_source(operation->key_buffer);
+
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
-    const esp_ecdsa_opaque_key_t *opaque_key = operation->opaque_key;
-    if (opaque_key->tee_key_id) {
-        esp_tee_sec_storage_type_t tee_sec_storage_type = esp_ecdsa_curve_to_tee_sec_storage_type(opaque_key->curve);
+    if (key_source == ESP_ECDSA_KEY_SOURCE_TEE) {
+        /* TEE key path */
+        const char *tee_key_id = NULL;
+        uint8_t stored_curve;
+
+        if (!operation->is_persistent) {
+            const esp_ecdsa_volatile_key_storage_t *ptr_st =
+                (const esp_ecdsa_volatile_key_storage_t *)operation->key_buffer;
+            tee_key_id = ptr_st->opaque_key.tee_key_id;
+            stored_curve = ptr_st->metadata.curve;
+        } else {
+            const esp_ecdsa_tee_key_storage_t *tee_st =
+                (const esp_ecdsa_tee_key_storage_t *)operation->key_buffer;
+            tee_key_id =
+                (const char *)((const uint8_t *)tee_st + sizeof(esp_ecdsa_tee_key_storage_t));
+            stored_curve = tee_st->metadata.curve;
+        }
+
+        esp_tee_sec_storage_type_t tee_sec_storage_type = esp_ecdsa_curve_to_tee_sec_storage_type(stored_curve);
         if (tee_sec_storage_type == (esp_tee_sec_storage_type_t) -1) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
 
         esp_tee_sec_storage_key_cfg_t cfg = {
-            .id = opaque_key->tee_key_id,
+            .id = tee_key_id,
             .type = tee_sec_storage_type
         };
 
@@ -618,7 +933,6 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
         }
 
         memcpy(signature, sign.signature, 2 * component_len);
-        *signature_length = 2 * component_len;
 
     } else
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
@@ -629,6 +943,8 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
             ESP_LOGE(TAG, "ECDSA peripheral not supported on this chip revision");
             return PSA_ERROR_NOT_SUPPORTED;
         }
+
+        esp_ecdsa_curve_t curve = storage_get_curve(operation->key_buffer);
 
         ecdsa_sign_type_t k_type = ECDSA_K_TYPE_TRNG;
 
@@ -645,9 +961,18 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
         uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
 
 #if SOC_KEY_MANAGER_SUPPORTED
-        esp_key_mgr_key_recovery_info_t *key_recovery_info = operation->opaque_key->key_recovery_info;
-        if (key_recovery_info) {
-            esp_err_t err = esp_key_mgr_activate_key(key_recovery_info);
+        const esp_key_mgr_key_recovery_info_t *key_recovery_info = NULL;
+        if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
+            if (!operation->is_persistent) {
+                const esp_ecdsa_volatile_key_storage_t *ptr_st =
+                    (const esp_ecdsa_volatile_key_storage_t *)operation->key_buffer;
+                key_recovery_info = ptr_st->opaque_key.key_recovery_info;
+            } else {
+                const esp_ecdsa_km_key_storage_t *km_st =
+                    (const esp_ecdsa_km_key_storage_t *)operation->key_buffer;
+                key_recovery_info = &km_st->key_recovery_info;
+            }
+            esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
                 return PSA_ERROR_INVALID_HANDLE;
@@ -664,10 +989,16 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
         uint16_t deterministic_loop_number __attribute__((unused)) = 1;
 #endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
+        ecdsa_curve_t hal_curve = esp_ecdsa_curve_to_hal_curve(curve);
+        if (hal_curve == (ecdsa_curve_t)-1) {
+            esp_ecdsa_release_hardware();
+            return PSA_ERROR_INVALID_ARGUMENT;
+        }
+
         do {
             ecdsa_hal_config_t conf = {
                 .mode = ECDSA_MODE_SIGN_GEN,
-                .curve = operation->opaque_key->curve,
+                .curve = hal_curve,
                 .sha_mode = ECDSA_Z_USER_PROVIDED,
                 .sign_type = k_type,
             };
@@ -679,13 +1010,20 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
 #endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
 #if SOC_KEY_MANAGER_SUPPORTED
-            // Set key source (consistent with esp_ecdsa_pk_conf_t)
-            if (key_recovery_info) {
+            if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
                 conf.use_km_key = 1;
             } else
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
             {
-                conf.efuse_key_blk = operation->opaque_key->efuse_block;
+                if (!operation->is_persistent) {
+                    const esp_ecdsa_volatile_key_storage_t *ptr_st =
+                        (const esp_ecdsa_volatile_key_storage_t *)operation->key_buffer;
+                    conf.efuse_key_blk = ptr_st->opaque_key.efuse_block;
+                } else {
+                    const esp_ecdsa_efuse_key_storage_t *efuse_st =
+                        (const esp_ecdsa_efuse_key_storage_t *)operation->key_buffer;
+                    conf.efuse_key_blk = efuse_st->efuse_block;
+                }
             }
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
@@ -791,15 +1129,30 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (key_buffer_size < sizeof(esp_ecdsa_opaque_key_t)) {
+    bool is_persistent = esp_opaque_key_is_persistent(attributes);
+
+    if (key_buffer_size < sizeof(esp_ecdsa_efuse_key_storage_t)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    const esp_ecdsa_opaque_key_t *opaque_key = (const esp_ecdsa_opaque_key_t *) key_buffer;
-    status = validate_ecdsa_opaque_key_attributes(attributes, opaque_key);
+    size_t expected_storage_size = 0;
+    status = esp_ecdsa_get_expected_storage_size(key_buffer, is_persistent, &expected_storage_size);
     if (status != PSA_SUCCESS) {
         return status;
     }
+
+    if (key_buffer_size < expected_storage_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Validate stored curve against attributes */
+    esp_ecdsa_curve_t curve = storage_get_curve(key_buffer);
+    status = validate_storage_curve(attributes, curve);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    esp_ecdsa_key_source_t key_source __attribute__((unused)) = storage_get_key_source(key_buffer);
 
     // Get curve parameters from attributes
     size_t key_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
@@ -813,14 +1166,28 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
     }
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
-    if (opaque_key->tee_key_id) {
-        esp_tee_sec_storage_type_t tee_sec_storage_type = esp_ecdsa_curve_to_tee_sec_storage_type(opaque_key->curve);
+    if (key_source == ESP_ECDSA_KEY_SOURCE_TEE) {
+        /* TEE key path */
+        const char *tee_key_id = NULL;
+
+        if (!is_persistent) {
+            const esp_ecdsa_volatile_key_storage_t *ptr_st =
+                (const esp_ecdsa_volatile_key_storage_t *)key_buffer;
+            tee_key_id = ptr_st->opaque_key.tee_key_id;
+        } else {
+            const esp_ecdsa_tee_key_storage_t *tee_st =
+                (const esp_ecdsa_tee_key_storage_t *)key_buffer;
+            tee_key_id =
+                (const char *)((const uint8_t *)tee_st + sizeof(esp_ecdsa_tee_key_storage_t));
+        }
+
+        esp_tee_sec_storage_type_t tee_sec_storage_type = esp_ecdsa_curve_to_tee_sec_storage_type(curve);
         if (tee_sec_storage_type == (esp_tee_sec_storage_type_t) -1) {
             return PSA_ERROR_INVALID_ARGUMENT;
         }
 
         esp_tee_sec_storage_key_cfg_t cfg = {
-            .id = opaque_key->tee_key_id,
+            .id = tee_key_id,
             .type = tee_sec_storage_type,
         };
 
@@ -848,15 +1215,29 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         uint8_t qx[MAX_ECDSA_COMPONENT_LEN];
         uint8_t qy[MAX_ECDSA_COMPONENT_LEN];
 
+        ecdsa_curve_t hal_curve = esp_ecdsa_curve_to_hal_curve(curve);
+        if (hal_curve == (ecdsa_curve_t)-1) {
+            return PSA_ERROR_INVALID_ARGUMENT;
+        }
+
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_EXPORT_PUBKEY,
-            .curve = opaque_key->curve,
+            .curve = hal_curve,
         };
 
 #if SOC_KEY_MANAGER_SUPPORTED
-        esp_key_mgr_key_recovery_info_t *key_recovery_info = opaque_key->key_recovery_info;
-        if (key_recovery_info) {
-            esp_err_t err = esp_key_mgr_activate_key(key_recovery_info);
+        const esp_key_mgr_key_recovery_info_t *key_recovery_info = NULL;
+        if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
+            if (!is_persistent) {
+                const esp_ecdsa_volatile_key_storage_t *ptr_st =
+                    (const esp_ecdsa_volatile_key_storage_t *)key_buffer;
+                key_recovery_info = ptr_st->opaque_key.key_recovery_info;
+            } else {
+                const esp_ecdsa_km_key_storage_t *km_st =
+                    (const esp_ecdsa_km_key_storage_t *)key_buffer;
+                key_recovery_info = &km_st->key_recovery_info;
+            }
+            esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
                 return PSA_ERROR_INVALID_HANDLE;
@@ -865,7 +1246,15 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         } else
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
         {
-            conf.efuse_key_blk = opaque_key->efuse_block;
+            if (!is_persistent) {
+                const esp_ecdsa_volatile_key_storage_t *ptr_st =
+                    (const esp_ecdsa_volatile_key_storage_t *)key_buffer;
+                conf.efuse_key_blk = ptr_st->opaque_key.efuse_block;
+            } else {
+                const esp_ecdsa_efuse_key_storage_t *efuse_st =
+                    (const esp_ecdsa_efuse_key_storage_t *)key_buffer;
+                conf.efuse_key_blk = efuse_st->efuse_block;
+            }
         }
 
         esp_ecdsa_acquire_hardware();
@@ -909,13 +1298,22 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
 }
 
 size_t esp_ecdsa_opaque_size_function(
+    const psa_key_attributes_t *attributes,
     psa_key_type_t key_type,
-    size_t key_bits)
+    const uint8_t *data,
+    size_t data_length)
 {
     (void)key_type;
-    (void)key_bits;
+    bool is_persistent = esp_opaque_key_is_persistent(attributes);
 
-    // Opaque keys always use the same size structure
-    return sizeof(esp_ecdsa_opaque_key_t);
+    if (!data || data_length < sizeof(esp_ecdsa_opaque_key_t)) {
+        /* Return minimum storage size so PSA core allocates a buffer.
+         * The import function will validate data_length and return
+         * PSA_ERROR_INVALID_ARGUMENT if the input is too short. */
+        return is_persistent ? sizeof(esp_ecdsa_efuse_key_storage_t)
+                             : sizeof(esp_ecdsa_volatile_key_storage_t);
+    }
+
+    return esp_ecdsa_get_storage_size((const esp_ecdsa_opaque_key_t *)data, is_persistent);
 }
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */

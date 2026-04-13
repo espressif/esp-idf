@@ -735,7 +735,7 @@ void test_ecdsa_sign_verify_import_export_error_codes(esp_ecdsa_curve_t curve, c
 
     // incorrect opaque key buffer length
     status = psa_import_key(&priv_attr, (uint8_t*) &opaque_key, sizeof(opaque_key) - 1, &priv_key_id);
-    TEST_ASSERT_EQUAL_HEX32(PSA_ERROR_BUFFER_TOO_SMALL, status);
+    TEST_ASSERT_EQUAL_HEX32(PSA_ERROR_INVALID_ARGUMENT, status);
 
     // incorrect curve
     opaque_key.curve = curve + 1;
