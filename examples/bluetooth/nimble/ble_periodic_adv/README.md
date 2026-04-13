@@ -41,18 +41,15 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 There is this console output when periodic_adv is started:
 
 ```
-I (313) BTDM_INIT: BT controller compile version [2ee0168]
-I (313) phy_init: phy_version 912,d001756,Jun  2 2022,16:28:07
-I (353) system_api: Base MAC address is not set
-I (353) system_api: read default base MAC address from EFUSE
-I (353) BTDM_INIT: Bluetooth MAC: 84:f7:03:08:14:8e
+I (...) NimBLE_BLE_PERIODIC_ADV: BLE Host Task Started
+I (...) NimBLE: Device Address:
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:
 
-I (363) NimBLE_BLE_PERIODIC_ADV: BLE Host Task Started
-I (373) NimBLE: Device Address:
-I (373) NimBLE: d0:42:3a:95:84:05
-I (373) NimBLE:
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
+I (...) NimBLE: instance 0 started (periodic)
 
-I (383) NimBLE: instance 0 started (periodic)
+I (...) main_task: Returned from app_main()
 ```
 
 ## Note

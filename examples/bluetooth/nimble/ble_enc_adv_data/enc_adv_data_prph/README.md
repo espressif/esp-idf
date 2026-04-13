@@ -48,59 +48,49 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 There is this console output when bleprph is connected and characteristic is read:
 
 ```
-I (445) NimBLE: BLE Host Task Started
-I (445) NimBLE: Device Address:
-I (445) NimBLE: 60:55:f9:f7:4f:42
-I (445) NimBLE:
+I (...) NimBLE: BLE Host Task Started
+I (...) main_task: Returned from app_main()
+I (...) NimBLE: Device Address:
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:
 
-I (455) NimBLE: Encryption of adv data done successfully
-I (465) main_task: Returned from app_main()
-I (575) NimBLE: connection established; status=0
-I (575) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (575) NimBLE: 60:55:f9:f7:4f:42
-I (585) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (585) NimBLE: 60:55:f9:f7:4f:42
-I (595) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (595) NimBLE: 60:55:f9:f7:51:0a
-I (605) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (605) NimBLE: 60:55:f9:f7:51:0a
-I (615) NimBLE:  conn_itvl=24 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE: Data before encryption:
+I (...) NimBLE: <plain_adv_bytes...>
+I (...) NimBLE: Encryption of adv data done successfully
+I (...) NimBLE: Data after encryption:
+I (...) NimBLE: <encrypted_adv_bytes...>
 
-I (625) NimBLE:
+I (...) NimBLE: GAP procedure initiated: advertise;
+I (...) NimBLE: disc_mode=2
+I (...) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=48 adv_itvl_max=48
+I (...) NimBLE:
 
-I (625) NimBLE: advertise complete; reason=0
-I (635) NimBLE: Encryption of adv data done successfully
+I (...) NimBLE: connection established; status=0
+I (...) NimBLE: handle=0 ... conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE:
 
-I (1635) NimBLE: disconnect; reason=531
-I (1635) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (1635) NimBLE: 60:55:f9:f7:4f:42
-I (1635) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (1635) NimBLE: 60:55:f9:f7:4f:42
-I (1645) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (1645) NimBLE: 60:55:f9:f7:51:0a
-I (1655) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (1655) NimBLE: 60:55:f9:f7:51:0a
-I (1665) NimBLE:  conn_itvl=24 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE: mtu update event; conn_handle=0 cid=4 mtu=256
+I (...) ENC_ADV_DATA_PRPH: PASSKEY_ACTION_EVENT started
+I (...) ENC_ADV_DATA_PRPH: Enter passkey 123456 on the peer side
+I (...) ENC_ADV_DATA_PRPH: ble_sm_inject_io result: 0
+I (...) NimBLE: encryption change event; status=0
+I (...) NimBLE: handle=0 ... encrypted=1 authenticated=1 bonded=0
 
-I (1675) NimBLE:
+I (...) NimBLE: authorization event; conn_handle=0 attr_handle=7 is_read=1
+I (...) NimBLE: disconnect; reason=...
 
-I (1675) NimBLE: connection established; status=0
-I (1685) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (1685) NimBLE: 60:55:f9:f7:4f:42
-I (1695) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (1695) NimBLE: 60:55:f9:f7:4f:42
-I (1705) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (1705) NimBLE: 60:55:f9:f7:51:0a
-I (1715) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (1715) NimBLE: 60:55:f9:f7:51:0a
-I (1725) NimBLE:  conn_itvl=24 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE: Data before encryption:
+I (...) NimBLE: <plain_adv_bytes...>
+I (...) NimBLE: Encryption of adv data done successfully
+I (...) NimBLE: Data after encryption:
+I (...) NimBLE: <encrypted_adv_bytes...>
 
-I (1735) NimBLE:
-
-I (1735) NimBLE: advertise complete; reason=0
-I (1745) NimBLE: Encryption of adv data done successfully
-I (1755) NimBLE: mtu update event; conn_handle=1 cid=4 mtu=256
-
+I (...) NimBLE: GAP procedure initiated: advertise;
+I (...) NimBLE: connection established; status=0
+I (...) NimBLE: mtu update event; conn_handle=0 cid=4 mtu=256
+I (...) ENC_ADV_DATA_PRPH: PASSKEY_ACTION_EVENT started
+I (...) ENC_ADV_DATA_PRPH: ble_sm_inject_io result: 0
+I (...) NimBLE: encryption change event; status=0
 ```
 
 ## Troubleshooting

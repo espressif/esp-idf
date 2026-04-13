@@ -103,24 +103,49 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 This is the console output on successful connection:
 
 ```
-I (487) NimBLE_SPP_BLE_CENT: BLE Host Task Started
-GAP procedure initiated: stop advertising.
-GAP procedure initiated: discovery; own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1 duration=forever
-GAP procedure initiated: connect; peer_addr_type=0 peer_addr=7c:df:a1:40:3e:fa scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
-Connection established
-GATT procedure initiated: discover all services
-GATT procedure initiated: discover all characteristics; start_handle=1 end_handle=5
-GATT procedure initiated: discover all characteristics; start_handle=6 end_handle=9
-GATT procedure initiated: discover all characteristics; start_handle=10 end_handle=14
-GATT procedure initiated: discover all characteristics; start_handle=15 end_handle=65535
-GATT procedure initiated: discover all descriptors; chr_val_handle=8 end_handle=9
-GATT procedure initiated: discover all descriptors; chr_val_handle=17 end_handle=18
-GATT procedure initiated: discover all descriptors; chr_val_handle=20 end_handle=65535
-Service discovery complete; status=0 conn_handle=1
-I (9277) NimBLE_SPP_BLE_CENT: Data sent from client uart task =
-1b5b41
-GATT procedure initiated: write; att_handle=17 len=3
-I (9277) NimBLE_SPP_BLE_CENT: Write in uart task success!
-received notification; conn_handle=1 attr_handle=20 attr_len=1
+I (...) NimBLE_SPP_BLE_CENT: BLE client UART task started
+I (...) NimBLE_SPP_BLE_CENT: BLE Host Task Started
+I (...) NimBLE: GAP procedure initiated: stop advertising.
 
+I (...) NimBLE: GAP procedure initiated: discovery;
+I (...) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
+I (...) NimBLE: duration=forever
+I (...) NimBLE:
+I (...) main_task: Returned from app_main()
+
+I (...) NimBLE: GAP procedure initiated: connect;
+I (...) NimBLE: peer_addr_type=0 peer_addr=
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
+I (...) NimBLE:
+
+I (...) NimBLE: Connection established
+I (...) NimBLE:
+I (...) NimBLE: GATT procedure initiated: discover all services
+I (...) NimBLE: GATT procedure initiated: discover all characteristics;
+I (...) NimBLE: start_handle=...
+I (...) NimBLE: GATT procedure initiated: discover all descriptors;
+I (...) NimBLE: chr_val_handle=...
+I (...) NimBLE: Service discovery complete; status=0 conn_handle=0
+
+I (...) NimBLE: attribute_handle <notify_or_status_handle>
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=17 len=2
+
+I (...) NimBLE: GAP procedure initiated: discovery;
+I (...) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
+I (...) NimBLE: duration=forever
+I (...) NimBLE:
+
+I (...) NimBLE: received notification; conn_handle=0 attr_handle=16 attr_len=1
+I (...) NimBLE: received notification; conn_handle=0 attr_handle=16 attr_len=1
+I (...) NimBLE: received notification; conn_handle=0 attr_handle=16 attr_len=1
+
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=16 len=1
+I (...) NimBLE_SPP_BLE_CENT: Write in uart task success!
+
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=16 len=1
+I (...) NimBLE_SPP_BLE_CENT: Write in uart task success!
 ```
