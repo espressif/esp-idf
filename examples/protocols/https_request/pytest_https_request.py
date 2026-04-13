@@ -343,7 +343,6 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
 
 @pytest.mark.wifi_ap
 @pytest.mark.xtal_26mhz
-@pytest.mark.flaky(reruns=2, reruns_delay=10)
 @pytest.mark.parametrize(
     'config, baud',
     [
