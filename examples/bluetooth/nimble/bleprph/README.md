@@ -60,42 +60,36 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 
-There is this console output when bleprph is connected and characteristic is read:
+There is this console output when `bleprph` starts advertising, connects, and a peer subscribes / writes / reads a characteristic:
 
 ```
-I (118) BTDM_INIT: BT controller compile version [fe7ced0]
-I (118) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
-W (128) phy_init: failed to load RF calibration data (0xffffffff), falling back to full calibration
-I (268) phy: phy_version: 4100, 6fa5e27, Jan 25 2019, 17:02:06, 0, 2
-I (508) NimBLE_BLE_PRPH: BLE Host Task Started
-I (508) uart: queue free spaces: 8
-GAP procedure initiated: stop advertising.
-Device Address: xx:xx:xx:xx:xx:xx
-GAP procedure initiated: advertise; disc_mode=2 adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
-connection established; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=39 conn_latency=0 supervision_timeout=500 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE_BLE_PRPH: BLE Host Task Started
+I (...) NimBLE: Device Address:
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:
 
-connection updated; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=6 conn_latency=0 supervision_timeout=500 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE: GAP procedure initiated: advertise;
+I (...) NimBLE: disc_mode=2
+I (...) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
+I (...) NimBLE:
 
-I (50888) NimBLE_BLE_PRPH: PASSKEY_ACTION_EVENT started
+I (...) NimBLE: connection established; status=0
+I (...) NimBLE: handle=0 ... conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE:
 
-I (50888) NimBLE_BLE_PRPH: Passkey on device's display: xxxxxx
-I (50888) NimBLE_BLE_PRPH: Accept or reject the passkey through console in this format -> key Y or key N
-key Y
-I (50898) NimBLE_BLE_PRPH: ble_sm_inject_io result: 0
-
-encryption change event; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1
-peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=6 conn_latency=0 supervision_timeout=500 encrypted=1 authenticated=1 bonded=1
-
-connection updated; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx
-peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=39 conn_latency=0 supervision_timeout=500 encrypted=1 authenticated=1 bonded=1
-
-subscribe event; conn_handle=1 attr_handle=19 reason=1 prevn=0 curn=1 previ=0 curi=0
-Subscribe to attribute (19) successful
-subscribe event; conn_handle=1 attr_handle=25 reason=1 prevn=0 curn=1 previ=0 curi=0
-Subscribe to attribute (25) successful
-GATT procedure initiated: notify; att_handle=25
-Notification sent successfully
+I (...) NimBLE: subscribe event; conn_handle=0 attr_handle=<notify_attr> reason=1 prevn=0 curn=1 previ=0 curi=0
+I (...) NimBLE: subscribe event; conn_handle=0 attr_handle=<rw_attr> reason=1 prevn=0 curn=1 previ=0 curi=0
+I (...) NimBLE: Characteristic write; conn_handle=0 attr_handle=<rw_attr>
+I (...) NimBLE: Notification/Indication scheduled for all subscribed peers.
+I (...) NimBLE: GATT procedure initiated: notify;
+I (...) NimBLE: att_handle=<rw_attr>
+I (...) NimBLE: Characteristic read by NimBLE stack; attr_handle=<rw_attr>
+I (...) NimBLE: notify_tx event; conn_handle=0 attr_handle=<rw_attr> status=0 is_indication=0
+I (...) NimBLE: Characteristic read; conn_handle=0 attr_handle=<rw_attr>
 ```
+
+If pairing / passkey options are enabled in menuconfig, additional security-related logs
+(`PASSKEY_ACTION_EVENT`, encryption updates, and bonding/authentication fields) are also expected.
 
 ## Note
 * NVS support is not yet integrated to bonding. So, for now, bonding is not persistent across reboot.

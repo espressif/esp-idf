@@ -59,96 +59,71 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This is the console output on successful connection:
 
 ```
-I (358) BLE_INIT: BT controller compile version [59725b5]
-I (358) BLE_INIT: Bluetooth MAC: 60:55:f9:68:c4:fa
-I (368) phy_init: phy_version 1110,9c20f0a,Jul 27 2023,10:42:54
-I (408) NimBLE_CTS_CENT: BLE Host Task Started
-I (408) NimBLE: GAP procedure initiated: stop advertising.
+I (822) NimBLE_CTS_CENT: BLE Host Task Started
+I (822) main_task: Returned from app_main()
+I (872) NimBLE: GAP procedure initiated: discovery;
+I (872) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
+I (872) NimBLE: duration=forever
+I (872) NimBLE:
 
-I (408) NimBLE: GAP procedure initiated: discovery;
-I (408) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
-I (418) NimBLE: duration=forever
-I (428) NimBLE:
+I (26022) NimBLE: GAP procedure initiated: connect;
+I (26022) NimBLE: peer_addr_type=0 peer_addr=
+I (26022) NimBLE: b0:b2:1c:b4:74:0e
+I (26022) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
+I (26032) NimBLE:
 
-I (428) main_task: Returned from app_main()
-I (628) NimBLE: GAP procedure initiated: connect;
-I (628) NimBLE: peer_addr_type=1 peer_addr=
-I (628) NimBLE: 6b:93:b5:30:71:cf
-I (638) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
-I (648) NimBLE:
+I (26282) NimBLE: Connection established
+I (26282) NimBLE:
 
-I (908) NimBLE: Connection established
-I (908) NimBLE:
+I (26292) NimBLE: Connection secured
 
-I (918) NimBLE: Connection secured
+I (27832) NimBLE: encryption change event; status=0
+I (27832) NimBLE: GATT procedure initiated: discover all services
 
-I (1208) NimBLE: received indication; conn_handle=1 attr_handle=3 attr_len=4
+I (27932) NimBLE: GATT procedure initiated: discover all characteristics;
+I (27932) NimBLE: start_handle=1 end_handle=5
 
-I (1208) NimBLE: GAP procedure initiated:
-I (1208) NimBLE: connection parameter update; conn_handle=1 itvl_min=6 itvl_max=6 latency=0 supervision_timeout=500 min_ce_len=0 max_ce_len=0
-I (1228) NimBLE:
+I (28032) NimBLE: GATT procedure initiated: discover all characteristics;
+I (28032) NimBLE: start_handle=6 end_handle=13
 
-I (3568) NimBLE: encryption change event; status=0
-I (3568) NimBLE: GATT procedure initiated: discover all services
+I (28132) NimBLE: GATT procedure initiated: discover all characteristics;
+I (28132) NimBLE: start_handle=14 end_handle=65535
 
-I (3608) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3608) NimBLE: start_handle=1 end_handle=9
+I (28332) NimBLE: GATT procedure initiated: discover all descriptors;
+I (28332) NimBLE: chr_val_handle=8 end_handle=9
 
-I (3658) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3658) NimBLE: start_handle=20 end_handle=26
+I (28432) NimBLE: GATT procedure initiated: discover all descriptors;
+I (28432) NimBLE: chr_val_handle=16 end_handle=17
 
-I (3688) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3688) NimBLE: start_handle=134 end_handle=141
+I (28532) NimBLE: GATT procedure initiated: discover all descriptors;
+I (28532) NimBLE: chr_val_handle=21 end_handle=65535
 
-I (3718) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3718) NimBLE: start_handle=142 end_handle=151
+I (28632) NimBLE: Service discovery complete; status=0 conn_handle=0
 
-I (3758) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3758) NimBLE: start_handle=152 end_handle=158
+I (28632) NimBLE: GATT procedure initiated: read;
+I (28632) NimBLE: att_handle=16
 
-I (3788) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3788) NimBLE: start_handle=159 end_handle=65535
+I (28732) NimBLE: Read Current time complete; status=0 conn_handle=0
 
-I (3818) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3818) NimBLE: chr_val_handle=136 end_handle=137
+I (28732) NimBLE:  attr_handle=16 value=
 
-I (3838) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3838) NimBLE: chr_val_handle=144 end_handle=148
+I (28732) NimBLE: 0xb2
+I (28732) NimBLE: :0x07
+I (28732) NimBLE: :0x01
+I (28732) NimBLE: :0x01
+I (28732) NimBLE: :0x00
+I (28742) NimBLE: :0x00
+I (28742) NimBLE: :0x03
+I (28742) NimBLE: :0x05
+I (28742) NimBLE: :0x4b
+I (28752) NimBLE: :0x00
+I (28752) NimBLE:
 
-I (3898) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3898) NimBLE: chr_val_handle=150 end_handle=151
+I (28752) NimBLE_CTS_CENT: Date : 1/1/1970 Friday
+I (28752) NimBLE_CTS_CENT: hours : 0 minutes : 0
+I (28762) NimBLE_CTS_CENT: seconds : 3
 
-I (3908) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3908) NimBLE: chr_val_handle=161 end_handle=162
-
-I (3928) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3928) NimBLE: chr_val_handle=164 end_handle=65535
-
-I (3938) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (3938) NimBLE: GATT procedure initiated: read;
-I (3938) NimBLE: att_handle=161
-
-I (3958) NimBLE: Read Current time complete; status=0 conn_handle=1
-I (3958) NimBLE:  attr_handle=161 value=
-I (3958) NimBLE: 0xe7
-I (3958) NimBLE: :0x07
-I (3958) NimBLE: :0x08
-I (3968) NimBLE: :0x1e
-I (3968) NimBLE: :0x14
-I (3968) NimBLE: :0x25
-I (3978) NimBLE: :0x02
-I (3978) NimBLE: :0x03
-I (3978) NimBLE: :0xf6
-I (3978) NimBLE: :0x00
-I (3988) NimBLE:
-
-I (3988) NimBLE_CTS_CENT: Date : 30/8/2023
-I (3998) NimBLE_CTS_CENT: hours : 20 minutes : 37
-I (3998) NimBLE_CTS_CENT: seconds : 2
-
-I (4008) NimBLE_CTS_CENT: fractions : 0
-
+I (28762) NimBLE_CTS_CENT: fractions : 75
 ```
 
 ## Troubleshooting

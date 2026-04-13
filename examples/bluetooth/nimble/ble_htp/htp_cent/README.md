@@ -67,84 +67,91 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This is the console output on successful connection:
 
 ```
-I (356) BLE_INIT: BT controller compile version [921f253]
-I (356) phy_init: phy_version 950,f732b06,Feb 15 2023,18:57:12
-I (396) BLE_INIT: Bluetooth MAC: 84:f7:03:05:a5:f6
+I (852) NimBLE_HTP_CENT: BLE Host Task Started
+I (862) main_task: Returned from app_main()
+I (902) NimBLE: GAP procedure initiated: discovery;
+I (902) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
+I (902) NimBLE: duration=forever
+I (912) NimBLE:
 
-I (396) NimBLE_HTP_CENT: BLE Host Task Started
-I (406) NimBLE: GAP procedure initiated: stop advertising.
+I (972) NimBLE: GAP procedure initiated: connect;
+I (972) NimBLE: peer_addr_type=0 peer_addr=
+I (972) NimBLE: b0:b2:1c:b4:6b:4e
+I (972) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
+I (982) NimBLE:
 
-I (406) NimBLE: GAP procedure initiated: discovery; 
-I (406) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1 
-I (416) NimBLE: duration=forever
-I (426) NimBLE: 
+I (1162) NimBLE: Connection established
+I (1162) NimBLE:
 
-I (426) main_task: Returned from app_main()
+I (1172) NimBLE: Connection secured
 
-I (616) NimBLE: GAP procedure initiated: connect; 
-I (616) NimBLE: peer_addr_type=0 peer_addr=
-I (616) NimBLE: 70:04:1d:13:66:fe
-I (616) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
-I (636) NimBLE: 
+I (2762) NimBLE: encryption change event; status=0
+I (2762) NimBLE: GATT procedure initiated: discover all services
 
-I (676) NimBLE: Connection established 
-I (676) NimBLE: 
+I (2962) NimBLE: GATT procedure initiated: discover all characteristics;
+I (2962) NimBLE: start_handle=1 end_handle=5
 
-I (676) NimBLE: GATT procedure initiated: discover all services
+I (3062) NimBLE: GATT procedure initiated: discover all characteristics;
+I (3062) NimBLE: start_handle=6 end_handle=13
 
-I (856) NimBLE: GATT procedure initiated: discover all characteristics; 
-I (856) NimBLE: start_handle=1 end_handle=5
+I (3162) NimBLE: GATT procedure initiated: discover all characteristics;
+I (3162) NimBLE: start_handle=14 end_handle=26
 
-I (1056) NimBLE: GATT procedure initiated: discover all characteristics; 
-I (1056) NimBLE: start_handle=6 end_handle=9
+I (3362) NimBLE: GATT procedure initiated: discover all characteristics;
+I (3362) NimBLE: start_handle=27 end_handle=65535
 
-I (1256) NimBLE: GATT procedure initiated: discover all characteristics; 
-I (1256) NimBLE: start_handle=10 end_handle=22
+I (3562) NimBLE: GATT procedure initiated: discover all descriptors;
+I (3562) NimBLE: chr_val_handle=8 end_handle=9
 
-I (1556) NimBLE: GATT procedure initiated: discover all characteristics; 
-I (1556) NimBLE: start_handle=23 end_handle=65535
+I (3662) NimBLE: GATT procedure initiated: discover all descriptors;
+I (3662) NimBLE: chr_val_handle=16 end_handle=17
 
-I (1756) NimBLE: GATT procedure initiated: discover all descriptors; 
-I (1756) NimBLE: chr_val_handle=8 end_handle=9
+I (3762) NimBLE: GATT procedure initiated: discover all descriptors;
+I (3762) NimBLE: chr_val_handle=21 end_handle=22
 
-I (1856) NimBLE: GATT procedure initiated: discover all descriptors; 
-I (1856) NimBLE: chr_val_handle=12 end_handle=13
+I (3862) NimBLE: GATT procedure initiated: discover all descriptors;
+I (3862) NimBLE: chr_val_handle=24 end_handle=26
 
-I (1956) NimBLE: GATT procedure initiated: discover all descriptors; 
-I (1956) NimBLE: chr_val_handle=17 end_handle=18
+I (3962) NimBLE: GATT procedure initiated: discover all descriptors;
+I (3962) NimBLE: chr_val_handle=33 end_handle=65535
 
-I (2056) NimBLE: GATT procedure initiated: discover all descriptors; 
-I (2056) NimBLE: chr_val_handle=20 end_handle=22
+I (4062) NimBLE: Service discovery complete; status=0 conn_handle=0
 
-I (2156) NimBLE: GATT procedure initiated: discover all descriptors; 
-I (2156) NimBLE: chr_val_handle=29 end_handle=65535
+I (4062) NimBLE: GATT procedure initiated: read;
+I (4062) NimBLE: att_handle=19
 
-I (2256) NimBLE: Service discovery complete; status=0 conn_handle=1
+I (4162) NimBLE: Read temperature type char completed; status=0 conn_handle=0
+I (4162) NimBLE:  attr_handle=19 value=
+I (4162) NimBLE: 0x02
+I (4162) NimBLE: :0x00
+I (4162) NimBLE:
 
-I (2256) NimBLE: GATT procedure initiated: read; 
-I (2256) NimBLE: att_handle=15
+I (4172) NimBLE: GATT procedure initiated: write;
+I (4172) NimBLE: att_handle=24 len=2
 
-I (283056) NimBLE: Read temperature type char completed; status=0 conn_handle=1
-I (283056) NimBLE:  attr_handle=167 value=
-I (283056) NimBLE: 0x02
-I (283066) NimBLE: 
+I (4262) NimBLE: Write to measurement interval char completed; status=0 conn_handle=0 attr_handle=24
 
-I (283066) NimBLE: GATT procedure initiated: write; 
-I (283066) NimBLE: att_handle=172 len=2
+I (4262) NimBLE: GATT procedure initiated: write;
+I (4262) NimBLE: att_handle=17 len=2
 
-I (283156) NimBLE: Write to measurement interval char completed; status=0 conn_handle=1 attr_handle=172
+I (4362) NimBLE: Subscribe to temperature measurement char completed; status=261 conn_handle=0 attr_handle=17
 
-I (283156) NimBLE: GATT procedure initiated: write; 
-I (283166) NimBLE: att_handle=163 len=2
+I (4362) NimBLE: GATT procedure initiated: write;
+I (4362) NimBLE: att_handle=22 len=2
 
-I (283256) NimBLE: Subscribe to temperature measurement char completed; status=0 conn_handle=1 attr_handle=163
+I (4462) NimBLE: Subscribe to intermediate temperature char completed; status=261 conn_handle=0 attr_handle=22
 
-I (283256) NimBLE: GATT procedure initiated: write; 
-I (283266) NimBLE: att_handle=170 len=2
+I (5462) NimBLE: received notification; conn_handle=0 attr_handle=21 attr_len=5
 
-I (283356) NimBLE: Subscribe to intermediate temperature char completed; status=0 conn_handle=1 attr_handle=170
+I (6462) NimBLE: received notification; conn_handle=0 attr_handle=21 attr_len=5
 
+I (7462) NimBLE: received notification; conn_handle=0 attr_handle=21 attr_len=5
 
+I (8462) NimBLE: received notification; conn_handle=0 attr_handle=21 attr_len=5
+
+I (9462) NimBLE: received notification; conn_handle=0 attr_handle=21 attr_len=5
+
+I (10462) NimBLE: received notification; conn_handle=0 attr_handle=21 attr_len=5
 ```
 
 ## Troubleshooting
