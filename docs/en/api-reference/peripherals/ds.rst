@@ -113,6 +113,15 @@ To use the RSA_DS peripheral for signing or decryption in application code (outs
 
     psa_destroy_key(key_id);
 
+Persistent vs. Volatile RSA_DS PSA Keys
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The driver supports two PSA key lifetimes for RSA_DS keys:
+
+- ``PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE`` (used in the example above) stores only pointers to the caller-supplied ``esp_ds_data_ctx_t`` and any Key Manager recovery info in the PSA key slot. The referenced buffers must remain valid until :cpp:func:`psa_destroy_key` is called. This avoids deep-copying large blobs such as :cpp:type:`esp_ds_data_t` (≈1200-1600 bytes, chip-dependent) when they already live in mmap'd flash via ``esp_secure_cert_mgr``.
+
+- ``PSA_KEY_LIFETIME_ESP_RSA_DS`` (persistent) deep-copies the encrypted key material into the PSA key slot at :cpp:func:`psa_import_key` time and PSA persists it to NVS together with the rest of the key attributes. The caller is free to release the import-time buffers once :cpp:func:`psa_import_key` returns; subsequent :cpp:func:`psa_sign_hash` / :cpp:func:`psa_asymmetric_decrypt` calls retrieve the bytes back from NVS automatically. Use this lifetime when the application wants the key to survive reboots without having to reload the ``esp_ds_data_ctx_t`` from external storage on every boot.
+
 Example for SSL Mutual Authentication Using RSA_DS
 ---------------------------------------------------
 
