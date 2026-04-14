@@ -131,7 +131,7 @@ test_cli_installer:
     #                                                                      cmake@version that is supported
     - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.16.3
     - cd ${IDF_PATH}/tools/test_idf_tools
-    - python3 -m pip install jsonschema
+    - python3 -m pip install jsonschema --break-system-packages
     # Testing with system python3, so don't use any third-party packages
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
