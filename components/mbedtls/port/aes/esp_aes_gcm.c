@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The AES block cipher was designed by Vincent Rijmen and Joan Daemen.
@@ -19,6 +19,7 @@
 #include "aes/esp_aes_gcm.h"
 #include "esp_aes_internal.h"
 #include "hal/aes_hal.h"
+#include "mbedtls/platform_util.h"
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -321,7 +322,7 @@ void esp_aes_gcm_init( esp_gcm_context *ctx)
         return;
     }
 
-    bzero(ctx, sizeof(esp_gcm_context));
+    memset(ctx, 0, sizeof(esp_gcm_context));
 
 #if SOC_AES_SUPPORT_DMA && CONFIG_MBEDTLS_AES_USE_INTERRUPT
     esp_aes_intr_alloc();
@@ -336,7 +337,7 @@ void esp_aes_gcm_free( esp_gcm_context *ctx)
     if (ctx == NULL) {
         return;
     }
-    bzero(ctx, sizeof(esp_gcm_context));
+    mbedtls_platform_zeroize(ctx, sizeof(esp_gcm_context));
 }
 
 /* Setup AES-GCM */
@@ -719,7 +720,7 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
     }
 
     if ( diff != 0 ) {
-        bzero( output, length );
+        mbedtls_platform_zeroize( output, length );
         return ( PSA_ERROR_INVALID_SIGNATURE );
     }
 
