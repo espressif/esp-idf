@@ -392,8 +392,12 @@ esp_err_t _ss_esp_ds_sign(const void *message,
                           void *signature)
 {
     bool valid_addr = esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t));
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     size_t n = get_ds_msg_sign_len(data->rsa_length);
-    valid_addr = (n > 0) && esp_tee_buf_in_ree(message, n) && esp_tee_buf_in_ree(signature, n);
+    valid_addr &= (n > 0) && esp_tee_buf_in_ree(message, n) && esp_tee_buf_in_ree(signature, n);
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
@@ -415,8 +419,12 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
 {
     bool valid_addr = (esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t *)) &&
                        esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)));
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     size_t n = get_ds_msg_sign_len(data->rsa_length);
-    valid_addr = (n > 0) && esp_tee_buf_in_ree(message, n);
+    valid_addr &= (n > 0) && esp_tee_buf_in_ree(message, n);
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
