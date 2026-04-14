@@ -40,38 +40,18 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This console output can be observed when client is connected to server :
 
 ```
-I (357) BLE_INIT: BT controller compile version [59725b5]
-I (357) BLE_INIT: Bluetooth MAC: 60:55:f9:68:c4:fa
-I (367) phy_init: phy_version 1110,9c20f0a,Jul 27 2023,10:42:54
-I (407) NimBLE_cts_PRPH: BLE Host Task Started
-I (407) NimBLE: GAP procedure initiated: stop advertising.
+I (833) NimBLE_CTS_PRPH: BLE Host Task Started
+I (833) main_task: Returned from app_main()
+I (883) NimBLE: Device Address:
+I (883) NimBLE: b0:b2:1c:b4:74:0e
+I (883) NimBLE:
 
-I (407) NimBLE: Failed to restore IRKs from store; status=8
+I (883) NimBLE: GAP procedure initiated: advertise;
+I (883) NimBLE: disc_mode=2
+I (883) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
+I (893) NimBLE:
 
-I (407) NimBLE: Device Address:
-I (417) NimBLE: 60:55:f9:68:c4:fa
-I (417) NimBLE:
-
-I (417) NimBLE: GAP procedure initiated: advertise;
-I (427) NimBLE: disc_mode=2
-I (427) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
-I (437) NimBLE:
-
-I (447) main_task: Returned from app_main()
-
-I (27317) NimBLE: GAP procedure initiated: advertise;
-I (27317) NimBLE: disc_mode=2
-I (27327) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
-I (27337) NimBLE:
-
-I (31987) NimBLE: connection established; status=0
-
-I (53297) NimBLE: subscribe event; cur_notify=1
- value handle; val_handle=12
-
- I (68317) NimBLE: subscribe event; cur_notify=0
-  value handle; val_handle=12
-
+I (1123) NimBLE: connection established; status=0
 ```
 
 ## Troubleshooting

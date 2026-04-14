@@ -99,38 +99,60 @@ The example uses `ble_att_set_default_bearer_using_cid` to set the CID for upcom
 This is the console output on successful connection:
 
 ```
-I (202) BTDM_INIT: BT controller compile version [0b60040]
-I (202) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
-W (212) phy_init: failed to load RF calibration data (0xffffffff), falling back to full calibration
-I (422) phy: phy_version: 4007, 9c6b43b, Jan 11 2019, 16:45:07, 0, 2
-I (722) NimBLE_BLE_CENT: BLE Host Task Started
-GAP procedure initiated: stop advertising.
-GAP procedure initiated: discovery; own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1 duration=forever
-GAP procedure initiated: connect; peer_addr_type=1 peer_addr=xx:xx:xx:xx:xx:xx scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=16 max_ce_len=768 own_addr_type=0
-Connection established
-Connection secured
-encryption change event; status=0
-GATT procedure initiated: discover all services
-GATT procedure initiated: discover all characteristics; start_handle=1 end_handle=3
-GATT procedure initiated: discover all characteristics; start_handle=20 end_handle=26
-GATT procedure initiated: discover all characteristics; start_handle=40 end_handle=65535
-GATT procedure initiated: discover all descriptors; chr_val_handle=42 end_handle=43
-GATT procedure initiated: discover all descriptors; chr_val_handle=49 end_handle=65535
-Service discovery complete; status=0 conn_handle=0
-GATT procedure initiated: read; att_handle=45
-GATT procedure initiated: write; att_handle=47 len=2
-GATT procedure initiated: write; att_handle=43 len=2
-Read complete; status=0 conn_handle=0 attr_handle=45 value=0x02
-Write complete; status=0 conn_handle=0 attr_handle=47
-Subscribe complete; status=0 conn_handle=0 attr_handle=43
-GATT procedure initiated: write; att_handle=26 len=2
-GATT procedure initiated: write; att_handle=25 len=1
-GATT procedure initiated: read; att_handle=25
-Subscribe to the custom subscribable characteristic complete; status=0 conn_handle=1 attr_handle=26 value=
-Write to the custom subscribable characteristic complete; status=0 conn_handle=1 attr_handle=25
-received notification; conn_handle=1 attr_handle=25 attr_len=4
-Read complete for the subscribable characteristic; status=0 conn_handle=1 attr_handle=25 value=0x19
+I (...) NimBLE_BLE_CENT: BLE Host Task Started
+I (...) NimBLE: GAP procedure initiated: discovery;
+I (...) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
+I (...) NimBLE: duration=forever
+I (...) NimBLE:
+
+I (...) NimBLE: GAP procedure initiated: connect;
+I (...) NimBLE: peer_addr_type=0 peer_addr=
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
+I (...) NimBLE:
+
+I (...) NimBLE: Connection established
+I (...) NimBLE:
+I (...) NimBLE: GATT procedure initiated: discover all services
+I (...) NimBLE: GATT procedure initiated: discover all characteristics;
+I (...) NimBLE: start_handle=...
+I (...) NimBLE: GATT procedure initiated: discover all descriptors;
+I (...) NimBLE: chr_val_handle=...
+I (...) NimBLE: Service discovery complete; status=0 conn_handle=0
+
+I (...) NimBLE: GATT procedure initiated: read;
+I (...) NimBLE: att_handle=<ans_supported_new_alert_cat_handle>
+I (...) NimBLE: Read complete; status=0 conn_handle=0
+I (...) NimBLE:  attr_handle=<ans_supported_new_alert_cat_handle> value=
+I (...) NimBLE: 0x00
+I (...) NimBLE:
+
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=<ans_alert_ctrl_pt_handle> len=2
+I (...) NimBLE: Write complete; status=270 conn_handle=0 attr_handle=<ans_alert_ctrl_pt_handle>
+
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=<ans_unread_alert_cccd_handle> len=2
+I (...) NimBLE: Subscribe complete; status=0 conn_handle=0 attr_handle=<ans_unread_alert_cccd_handle>
+
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=<custom_cccd_handle> len=2
+I (...) NimBLE: Subscribe to the custom subscribable characteristic complete; status=0 conn_handle=0
+
+I (...) NimBLE: GATT procedure initiated: write;
+I (...) NimBLE: att_handle=<custom_value_handle> len=1
+I (...) NimBLE: Write to the custom subscribable characteristic complete; status=0 conn_handle=0 attr_handle=<custom_value_handle>
+I (...) NimBLE: GATT procedure initiated: read;
+I (...) NimBLE: att_handle=<custom_value_handle>
+I (...) NimBLE: received notification; conn_handle=0 attr_handle=<custom_value_handle> attr_len=1
+I (...) NimBLE: Read complete for the subscribable characteristic; status=0 conn_handle=0
+I (...) NimBLE:  attr_handle=<custom_value_handle> value=
+I (...) NimBLE: 0x19
+I (...) NimBLE:
 ```
+
+`Write complete` status for the ANS Alert Notification Control Point may vary by peer implementation.
+For example, `status=270` can occur while the example still proceeds with subsequent subscribe/read flows.
 
 This is the console output on failure (or peripheral does not support New Alert Service category):
 
