@@ -60,6 +60,7 @@ typedef int sdspi_dev_handle_t;
     .get_real_freq = &sdspi_host_get_real_freq, \
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
     .set_input_delay = NULL, \
+    .unaligned_multi_block_rw_max_chunk_size = 16, \
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
     .get_dma_info = NULL, \
