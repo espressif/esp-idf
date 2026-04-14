@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "psa/crypto.h"
+#include "mbedtls/constant_time.h"
 #include "psa_crypto_driver_esp_hmac_transparent.h"
 #include "psa_crypto_driver_esp_sha.h"
 #include "psa_crypto_driver_esp_md5.h"
@@ -364,7 +365,7 @@ psa_status_t esp_hmac_verify_finish_transparent(
 
     status = esp_hmac_finish_transparent(esp_hmac_ctx, actual_mac, sizeof(actual_mac), &actual_mac_length);
     if (status == PSA_SUCCESS) {
-        if (memcmp(actual_mac, mac, mac_length) != 0) {
+        if (mbedtls_ct_memcmp(actual_mac, mac, mac_length) != 0) {
             status = PSA_ERROR_INVALID_SIGNATURE;
         }
     }

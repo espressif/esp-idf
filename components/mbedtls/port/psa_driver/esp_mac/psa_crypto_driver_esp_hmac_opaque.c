@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "psa/crypto.h"
+#include "mbedtls/constant_time.h"
 #include "psa_crypto_driver_esp_hmac_opaque.h"
 #include "psa_crypto_driver_esp_opaque_common.h"
 #include "esp_efuse.h"
@@ -404,15 +405,14 @@ psa_status_t esp_hmac_verify_finish_opaque(
     size_t actual_mac_length = 0;
 
     status = esp_hmac_finish_opaque(esp_hmac_ctx, actual_mac, sizeof(actual_mac), &actual_mac_length);
-    if (status != PSA_SUCCESS) {
-        return status;
+    if (status == PSA_SUCCESS) {
+        if (mbedtls_ct_memcmp(mac, actual_mac, mac_length) != 0) {
+            status = PSA_ERROR_INVALID_SIGNATURE;
+        }
     }
 
-    if (memcmp(mac, actual_mac, mac_length) != 0) {
-        return PSA_ERROR_INVALID_SIGNATURE;
-    }
-
-    return PSA_SUCCESS;
+    mbedtls_platform_zeroize(actual_mac, sizeof(actual_mac));
+    return status;
 }
 
 size_t esp_hmac_opaque_size_function(
