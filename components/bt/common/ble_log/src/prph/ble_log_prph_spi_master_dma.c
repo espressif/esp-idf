@@ -97,12 +97,11 @@ void ble_log_prph_deinit(void)
 {
     prph_inited = false;
     if (dev_handle) {
-        /* Drain all queued transactions */
         if (spi_device_acquire_bus(dev_handle, portMAX_DELAY) == ESP_OK) {
             spi_device_release_bus(dev_handle);
-            spi_bus_remove_device(dev_handle);
-            dev_handle = NULL;
         }
+        spi_bus_remove_device(dev_handle);
+        dev_handle = NULL;
     }
 
     /* Note: We don't care if the bus has been inited or not */

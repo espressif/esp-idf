@@ -515,6 +515,14 @@ bool ble_log_enable(bool enable)
 
 void ble_log_flush(void)
 {
+    /* Prevent concurrent flush — two concurrent callers would deadlock on
+     * the ref_count spin-wait (both hold a ref, both wait for ref_count <= 1).
+     * Second caller returns immediately instead of deadlocking. */
+    static volatile bool flush_in_progress = false;
+    if (__atomic_test_and_set(&flush_in_progress, __ATOMIC_ACQUIRE)) {
+        return;
+    }
+
     BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
     if (!lbm_inited) {
         goto deref;
@@ -535,7 +543,7 @@ void ble_log_flush(void)
     bool lbm_enabled_copy = lbm_enabled;
     lbm_enabled = false;
     uint32_t time_waited = 0;
-    while (lbm_ref_count > 1) {
+    while (__atomic_load_n(&lbm_ref_count, __ATOMIC_ACQUIRE) > 1) {
         vTaskDelay(pdMS_TO_TICKS(1));
         BLE_LOG_ASSERT(time_waited++ < 1000);
     }
@@ -593,6 +601,7 @@ void ble_log_flush(void)
 
 deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
+    __atomic_clear(&flush_in_progress, __ATOMIC_RELEASE);
 }
 
 BLE_LOG_IRAM_ATTR
