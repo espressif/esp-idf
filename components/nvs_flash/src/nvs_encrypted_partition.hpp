@@ -23,7 +23,7 @@ public:
     NVSEncryptedPartition(const esp_partition_t *partition);
 #endif
 
-    virtual ~NVSEncryptedPartition() { }
+    virtual ~NVSEncryptedPartition();
 
     /**
      * Initializes the AES encryption components with the provided configuration.
