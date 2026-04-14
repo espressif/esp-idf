@@ -195,11 +195,11 @@ void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost)
     uint32_t bytes_cnt = len + BLE_LOG_FRAME_OVERHEAD;
     if (lost) {
         BLE_LOG_GET_FRAME_SN(&(stat_mgr->frame_sn));  /* consume SN for loss detection */
-        stat_mgr->lost_frame_cnt++;
-        stat_mgr->lost_bytes_cnt += bytes_cnt;
+        __atomic_fetch_add(&stat_mgr->lost_frame_cnt, 1, __ATOMIC_RELAXED);
+        __atomic_fetch_add(&stat_mgr->lost_bytes_cnt, bytes_cnt, __ATOMIC_RELAXED);
     } else {
-        stat_mgr->written_frame_cnt++;
-        stat_mgr->written_bytes_cnt += bytes_cnt;
+        __atomic_fetch_add(&stat_mgr->written_frame_cnt, 1, __ATOMIC_RELAXED);
+        __atomic_fetch_add(&stat_mgr->written_bytes_cnt, bytes_cnt, __ATOMIC_RELAXED);
     }
 }
 
@@ -290,7 +290,7 @@ void ble_log_lbm_deinit(void)
 
     /* Disable module and wait for all references to be released */
     uint32_t time_waited = 0;
-    while (lbm_ref_count > 0) {
+    while (__atomic_load_n(&lbm_ref_count, __ATOMIC_ACQUIRE) > 0) {
         vTaskDelay(pdMS_TO_TICKS(1));
         BLE_LOG_ASSERT(time_waited++ < 1000);
     }
