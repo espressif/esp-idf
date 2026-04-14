@@ -45,23 +45,24 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 ```
-I (535) NimBLE: GAP procedure initiated: extended discovery;
- 
-I (545) main_task: Returned from app_main()
-I (6595) NimBLE_BLE_PAwR: [Disc advertiser] addr 40:4c:ca:46:1f:e2, props: 0x0, rssi:-45
-I (6595) NimBLE_BLE_PAwR: Create sync
-I (6975) NimBLE_BLE_PAwR: [Periodic Sync Established] sync handle:0, num_subevents:0xa
-I (6975) NimBLE_BLE_PAwR: subevent_interval:0x34, slot_delay:0x5,slot_spacing:0xa
-I (6985) NimBLE_BLE_PAwR: [Subevent Sync OK] sync handle:0, sync_subevents:10
-I (7885) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(2), subevent(4)
-W (7885) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(4), rsp_slot(2), rc(0x0)
-W (7955) NimBLE_BLE_PAwR: [Connection established], conn_handle = 0x00, sync handle = 0x0, status = 0x0
- 
-I (7955) NimBLE_BLE_PAwR: handle=0 our_ota_addr_type=0 our_ota_addr=60:55:f9:f6:02:5e 
-I (7965) NimBLE_BLE_PAwR: our_id_addr_type=0 our_id_addr=60:55:f9:f6:02:5e 
-I (7965) NimBLE_BLE_PAwR: peer_ota_addr_type=0 peer_ota_addr=40:4c:ca:46:1f:e2 
-I (7975) NimBLE_BLE_PAwR: peer_id_addr_type=0 peer_id_addr=40:4c:ca:46:1f:e2 
-I (7985) NimBLE_BLE_PAwR: conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE_BLE_PAwR_CONN: BLE Host Task Started
+I (...) NimBLE: GAP procedure initiated: extended discovery;
+I (...) main_task: Returned from app_main()
+
+I (...) NimBLE_BLE_PAwR_CONN: [Disc advertiser] addr xx:xx:xx:xx:xx:xx, props: 0x0, rssi:...
+I (...) NimBLE_BLE_PAwR_CONN: Create sync
+I (...) NimBLE_BLE_PAwR_CONN: [Periodic Sync Established] sync handle:0, num_subevents:0xa
+I (...) NimBLE_BLE_PAwR_CONN: subevent_interval:0x34, slot_delay:0x5,slot_spacing:0xa
+I (...) NimBLE_BLE_PAwR_CONN: [Subevent Sync OK] sync handle:0, sync_subevents:10
+
+I (...) NimBLE_BLE_PAwR_CONN: [Periodic Adv Report] handle:0, event_counter(...), subevent(0)
+I (...) NimBLE_BLE_PAwR_CONN: [Periodic Adv Report] handle:0, event_counter(...), subevent(0)
+W (...) NimBLE_BLE_PAwR_CONN: [RSP Data Set] sync handle: 0, subev(0), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR_CONN: [Periodic Adv Report] handle:0, event_counter(...), subevent(1)
+W (...) NimBLE_BLE_PAwR_CONN: [RSP Data Set] sync handle: 0, subev(1), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR_CONN: [Periodic Adv Report] handle:0, event_counter(...), subevent(2)
+W (...) NimBLE_BLE_PAwR_CONN: [RSP Data Set] sync handle: 0, subev(2), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR_CONN: ...
 
 ```
 

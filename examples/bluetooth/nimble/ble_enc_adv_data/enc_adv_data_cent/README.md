@@ -71,99 +71,63 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This is the console output on successful connection:
 
 ```
-I (436) NimBLE: BLE Host Task Started
-I (446) main_task: Returned from app_main()
-I (506) NimBLE: Adding peer addr : 60:55:f9:f7:4f:42
-I (546) NimBLE: Connection established
-I (546) NimBLE:
-I (546) NimBLE: GATT procedure initiated: exchange mtu
+I (...) NimBLE: BLE Host Task Started
+I (...) main_task: Returned from app_main()
+I (...) NimBLE: GAP procedure initiated: discovery;
+I (...) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1
+I (...) NimBLE: duration=forever
+I (...) NimBLE:
 
-I (546) NimBLE: GATT procedure initiated: discover all services
+I (...) NimBLE: Adding peer addr : xx:xx:xx:xx:xx:xx
+I (...) NimBLE: GAP procedure initiated: connect;
+I (...) NimBLE: peer_addr_type=0 peer_addr=
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:  scan_itvl=16 scan_window=16 itvl_min=24 itvl_max=40 latency=0 supervision_timeout=256 min_ce_len=0 max_ce_len=0 own_addr_type=0
+I (...) NimBLE:
 
-I (636) NimBLE: mtu update event; conn_handle=1 cid=4 mtu=256
+I (...) NimBLE: Connection established
+I (...) NimBLE:
+I (...) NimBLE: GATT procedure initiated: exchange mtu
+I (...) NimBLE: Connection secured
+I (...) NimBLE: mtu update event; conn_handle=0 cid=4 mtu=256
 
-I (696) NimBLE: GATT procedure initiated: discover all characteristics;
-I (696) NimBLE: start_handle=1 end_handle=7
+I (...) ENC_ADV_DATA_CENT: PASSKEY_ACTION_EVENT started 2
+I (...) ENC_ADV_DATA_CENT: Entering passkey 123456
+I (...) ENC_ADV_DATA_CENT: ble_sm_inject_io result: 0
+I (...) NimBLE: encryption change event; status=0
 
-I (846) NimBLE: GATT procedure initiated: discover all characteristics;
-I (846) NimBLE: start_handle=8 end_handle=11
+I (...) NimBLE: GATT procedure initiated: discover all services
+I (...) NimBLE: GATT procedure initiated: discover all characteristics;
+I (...) NimBLE: start_handle=...
+I (...) NimBLE: GATT procedure initiated: discover all descriptors;
+I (...) NimBLE: chr_val_handle=...
+I (...) NimBLE: Service discovery complete; status=0 conn_handle=0
 
-I (966) NimBLE: GATT procedure initiated: discover all characteristics;
-I (966) NimBLE: start_handle=12 end_handle=65535
+I (...) NimBLE: GATT procedure initiated: read;
+I (...) NimBLE: att_handle=<key_material_attr>
+I (...) NimBLE: Read complete; status=0 conn_handle=0
+I (...) NimBLE:  attr_handle=<key_material_attr> value=
+I (...) NimBLE: <session_key_and_iv_bytes...>
+I (...) NimBLE: Writing of session key, iv, and peer addr to NVS success
 
-I (1116) NimBLE: GATT procedure initiated: discover all descriptors;
-I (1116) NimBLE: chr_val_handle=10 end_handle=11
+I (...) NimBLE: GAP procedure initiated: terminate connection; conn_handle=0 hci_reason=19
+I (...) NimBLE: disconnect; reason=...
+I (...) NimBLE: GAP procedure initiated: discovery;
 
-I (1176) NimBLE: GATT procedure initiated: discover all descriptors;
-I (1176) NimBLE: chr_val_handle=14 end_handle=65535
+I (...) NimBLE: Peer was already added with addr : xx:xx:xx:xx:xx:xx
+I (...) NimBLE: Read session key and iv from NVS successfully
+I (...) NimBLE: Decryption of adv data done successfully
+I (...) NimBLE: Data after decryption:
+I (...) NimBLE: <decrypted_adv_bytes...>
 
-I (1386) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (1386) NimBLE: GATT procedure initiated: read;
-I (1386) NimBLE: att_handle=7
-
-I (1476) NimBLE: Read complete; status=0 conn_handle=1
-I (1476) NimBLE:  attr_handle=7 value=
-I (1476) NimBLE: 0xc0
-I (1486) NimBLE: :0xc1
-I (1486) NimBLE: :0xc2
-I (1486) NimBLE: :0xc3
-I (1486) NimBLE: :0xc4
-I (1496) NimBLE: :0xc5
-I (1496) NimBLE: :0xc6
-I (1496) NimBLE: :0xc7
-I (1506) NimBLE: :0xc8
-I (1506) NimBLE: :0xc9
-I (1506) NimBLE: :0xca
-I (1516) NimBLE: :0xcb
-I (1516) NimBLE: :0xcc
-I (1516) NimBLE: :0xcd
-I (1526) NimBLE: :0xce
-I (1526) NimBLE: :0xcf
-I (1526) NimBLE: :0xfb
-I (1526) NimBLE: :0x56
-I (1536) NimBLE: :0xe1
-I (1536) NimBLE: :0xda
-I (1536) NimBLE: :0xdc
-I (1546) NimBLE: :0x7e
-I (1546) NimBLE: :0xad
-I (1546) NimBLE: :0xf5
-I (1556) NimBLE: Writing of session key, iv, and peer addr to NVS success
-I (1556) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (1596) NimBLE: disconnect; reason=534
-I (1596) NimBLE:
-I (1626) NimBLE: Peer was already added with addr : 60:55:f9:f7:4f:42
-I (1626) NimBLE: Read session key and iv from NVS successfully
-I (1636) NimBLE: Decryption of adv data done successfully
-I (1726) NimBLE: Connection established
-I (1726) NimBLE:
-I (1726) NimBLE: GATT procedure initiated: exchange mtu
-
-I (1736) NimBLE: GATT procedure initiated: discover all services
-
-I (1826) NimBLE: mtu update event; conn_handle=1 cid=4 mtu=256
-
-I (1886) NimBLE: GATT procedure initiated: discover all characteristics;
-I (1886) NimBLE: start_handle=1 end_handle=7
-
-I (2006) NimBLE: GATT procedure initiated: discover all characteristics;
-I (2006) NimBLE: start_handle=8 end_handle=11
-
-I (2156) NimBLE: GATT procedure initiated: discover all characteristics;
-I (2156) NimBLE: start_handle=12 end_handle=65535
-
-I (2276) NimBLE: GATT procedure initiated: discover all descriptors;
-I (2276) NimBLE: chr_val_handle=10 end_handle=11
-
-I (2366) NimBLE: GATT procedure initiated: discover all descriptors;
-I (2366) NimBLE: chr_val_handle=14 end_handle=65535
-
-I (2546) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-
-Done
-
+I (...) NimBLE: GAP procedure initiated: connect;
+I (...) NimBLE: Connection established
+I (...) NimBLE: GATT procedure initiated: exchange mtu
+I (...) NimBLE: Connection secured
+I (...) NimBLE: encryption change event; status=0
+I (...) NimBLE: GATT procedure initiated: discover all services
+I (...) NimBLE: ...
+I (...) NimBLE: Service discovery complete; status=0 conn_handle=0
 ```
 
 ## Troubleshooting
