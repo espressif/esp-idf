@@ -53,6 +53,18 @@ entries:
             sar_periph_ctrl (noflash)
         else:
             sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
+    if SOC_PM_MODEM_RETENTION_BY_REGDMA = y && ESP_PHY_MAC_BB_PD = y:
+        sleep_retention:sleep_retention_find_link_by_id (noflash)
+        regdma_link:regdma_find_link_by_id (noflash)
+        regdma_link:regdma_link_get_next (noflash)
+        regdma_link:regdma_link_get_next_continuous_wrapper (noflash)
+        regdma_link:regdma_link_get_next_addr_map_wrapper (noflash)
+        regdma_link:regdma_link_get_next_write_wait_wrapper (noflash)
+        regdma_link:regdma_link_get_next_branch_continuous_wrapper (noflash)
+        regdma_link:regdma_link_get_next_branch_addr_map_wrapper (noflash)
+        regdma_link:regdma_link_get_next_branch_write_wait_wrapper (noflash)
+        regdma_link:regdma_link_set_write_wait_content (noflash)
+        regdma_link:regdma_link_get_instance (noflash)
 
 [mapping:soc_pm]
 archive: libsoc.a
