@@ -15,7 +15,8 @@ if BLE_LOG_ENABLED
 
     config BLE_LOG_LBM_TRANS_BUF_SIZE
         int "Total buffer memory per common LBM (bytes)"
-        default 2048
+        default 2048 if BT_BLUEDROID_ENABLED
+        default 4096 if BT_NIMBLE_ENABLED
         help
             Total buffer memory allocated for each common pool log buffer
             manager (LBM). This memory is divided equally among internal
