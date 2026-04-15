@@ -19,6 +19,10 @@ variables:
 
   # Common parameters for the 'make' during CI tests
   MAKEFLAGS: "-j5 --no-keep-going"
+  # By default, CI build jobs request and limit 4 CPU cores and 4 GB of memory
+  # https://github.com/ninja-build/ninja/blob/def9560a0b6d755936e615ce443a0aec45c39bdb/src/ninja.cc#L262
+  # cpu_cores + 2
+  IDF_PY_BUILD_JOBS: "6"
 
 # GitLab-CI environment
   # Thanks to pack-objects cache, clone strategy should behave faster than fetch
