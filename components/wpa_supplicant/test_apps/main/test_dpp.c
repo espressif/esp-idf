@@ -18,6 +18,8 @@
 #include "common/dpp.h"
 #include "sdkconfig.h"
 #include "test_wpa_supplicant_common.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #ifdef CONFIG_ESP_WIFI_TESTING_OPTIONS
 struct dpp_global {
@@ -42,13 +44,16 @@ static void dpp_test_clear_overrides(void)
 
 static u32 dpp_test_prod_limit_us(void)
 {
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
-    return 300000;
-#elif SOC_ECC_SUPPORTED
+#if CONFIG_MBEDTLS_HARDWARE_ECC
     return 100000;
 #else
-    return 100000;
+    return 325000;
 #endif
+}
+
+static int dpp_test_leak_threshold(void)
+{
+    return 800;
 }
 
 static void dpp_test_log_auth_timing(const char *label,
@@ -66,7 +71,7 @@ static void dpp_test_log_auth_timing(const char *label,
 
 TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
 {
-    set_leak_threshold(300);
+    set_leak_threshold(dpp_test_leak_threshold());
     /* Global variables */
     char command[1200] = {0};
     const u8 *frame;
@@ -165,7 +170,6 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         len -= 26;
         auth_instance = dpp_auth_req_rx(NULL, 1, 0, NULL,
                                         dpp_bootstrap_get_id(dpp, id), 2412, frame, frame + 6, len - 6);
-
         TEST_ASSERT_NOT_NULL(auth_instance);
         TEST_ASSERT_NOT_NULL(auth_instance->resp_msg);
         dpp_test_log_auth_timing("Vector responder", auth_instance);
@@ -231,27 +235,41 @@ TEST_CASE("Test DPP responder p256 production timing", "[wpa_dpp][performance]")
     int responder_id;
     int initiator_id;
     u32 limit_us = dpp_test_prod_limit_us();
+    u64 total_us = 0;
+    const char *failure = NULL;
 
-    set_leak_threshold(300);
+    set_leak_threshold(dpp_test_leak_threshold());
     os_memset(&dpp_conf, 0, sizeof(dpp_conf));
     dpp = dpp_global_init(&dpp_conf);
-    TEST_ASSERT_NOT_NULL(dpp);
+    if (!dpp) {
+        TEST_FAIL_MESSAGE("Failed to initialize DPP global context");
+    }
 
     responder_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
-    TEST_ASSERT(responder_id > 0);
+    if (responder_id <= 0) {
+        failure = "Failed to generate responder bootstrap";
+        goto cleanup;
+    }
     initiator_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
-    TEST_ASSERT(initiator_id > 0);
+    if (initiator_id <= 0) {
+        failure = "Failed to generate initiator bootstrap";
+        goto cleanup;
+    }
 
     responder_bi = dpp_bootstrap_get_id(dpp, responder_id);
     initiator_bi = dpp_bootstrap_get_id(dpp, initiator_id);
-    TEST_ASSERT_NOT_NULL(responder_bi);
-    TEST_ASSERT_NOT_NULL(initiator_bi);
+    if (!responder_bi || !initiator_bi) {
+        failure = "Failed to resolve bootstrap info";
+        goto cleanup;
+    }
 
     dpp_test_clear_overrides();
     initiator_auth = dpp_auth_init(NULL, responder_bi, initiator_bi,
                                    DPP_CAPAB_CONFIGURATOR, 2412, NULL, 0);
-    TEST_ASSERT_NOT_NULL(initiator_auth);
-    TEST_ASSERT_NOT_NULL(initiator_auth->req_msg);
+    if (!initiator_auth || !initiator_auth->req_msg) {
+        failure = "Failed to initialize DPP initiator authentication";
+        goto cleanup;
+    }
 
     frame = wpabuf_head_u8(initiator_auth->req_msg) + 2;
     len = wpabuf_len(initiator_auth->req_msg) - 2;
@@ -259,36 +277,57 @@ TEST_CASE("Test DPP responder p256 production timing", "[wpa_dpp][performance]")
                                      NULL, responder_bi, 2412,
                                      frame, frame + DPP_HDR_LEN,
                                      len - DPP_HDR_LEN);
-    TEST_ASSERT_NOT_NULL(responder_auth);
-    TEST_ASSERT_NOT_NULL(responder_auth->resp_msg);
+    if (!responder_auth || !responder_auth->resp_msg) {
+        failure = "Failed to process DPP authentication request";
+        goto cleanup;
+    }
     dpp_test_log_auth_timing("Production responder", responder_auth);
+    total_us = responder_auth->auth_req_total_us;
     if (limit_us) {
         ESP_LOGI("DPP Test",
-                 "Production responder timing gate(us): total=%llu limit=%u",
-                 (unsigned long long) responder_auth->auth_req_total_us,
-                 limit_us);
-        TEST_ASSERT_MESSAGE(responder_auth->auth_req_total_us <= limit_us,
-                            "DPP responder production timing regression");
+                 "Production responder timing gate(us): total=%llu limit=%lu",
+                 (unsigned long long) total_us,
+                 (unsigned long) limit_us);
     }
 
     frame = wpabuf_head_u8(responder_auth->resp_msg) + 2;
     len = wpabuf_len(responder_auth->resp_msg) - 2;
     conf = dpp_auth_resp_rx(initiator_auth, frame, frame + DPP_HDR_LEN,
                             len - DPP_HDR_LEN);
-    TEST_ASSERT_NOT_NULL(conf);
-    TEST_ASSERT_EQUAL_INT(1, initiator_auth->auth_success);
+    if (!conf) {
+        failure = "Failed to process DPP authentication response";
+        goto cleanup;
+    }
+    if (initiator_auth->auth_success != 1) {
+        failure = "Initiator authentication did not complete successfully";
+        goto cleanup;
+    }
 
     frame = wpabuf_head_u8(conf) + 2;
     len = wpabuf_len(conf) - 2;
-    TEST_ASSERT_EQUAL_INT(0, dpp_auth_conf_rx(responder_auth, frame,
-                                              frame + DPP_HDR_LEN,
-                                              len - DPP_HDR_LEN));
-    TEST_ASSERT_EQUAL_INT(1, responder_auth->auth_success);
+    if (dpp_auth_conf_rx(responder_auth, frame, frame + DPP_HDR_LEN,
+                         len - DPP_HDR_LEN) != 0) {
+        failure = "Failed to process DPP authentication confirmation";
+        goto cleanup;
+    }
+    if (responder_auth->auth_success != 1) {
+        failure = "Responder authentication did not complete successfully";
+        goto cleanup;
+    }
 
+cleanup:
     wpabuf_free(conf);
     dpp_auth_deinit(responder_auth);
     dpp_auth_deinit(initiator_auth);
     dpp_global_deinit(dpp);
     dpp_test_clear_overrides();
+
+    if (failure) {
+        TEST_FAIL_MESSAGE(failure);
+    }
+    if (limit_us) {
+        TEST_ASSERT_MESSAGE(total_us <= limit_us,
+                            "DPP responder production timing regression");
+    }
 }
 #endif

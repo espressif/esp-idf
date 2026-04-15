@@ -1610,6 +1610,23 @@ static psa_ecc_family_t group_id_to_psa(mbedtls_ecp_group_id grp_id, size_t *bit
     }
 }
 
+static size_t crypto_ecdh_output_size(const crypto_ec_key_wrapper_t *wrapper)
+{
+    size_t key_bits = 0;
+    psa_ecc_family_t ecc_family;
+
+    if (!wrapper) {
+        return 0;
+    }
+
+    ecc_family = group_id_to_psa(wrapper->curve_id, &key_bits);
+    if (ecc_family == 0 || key_bits == 0) {
+        return 0;
+    }
+
+    return PSA_BITS_TO_BYTES(key_bits);
+}
+
 struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group,
                                              const u8 *buf, size_t len)
 {
@@ -1958,46 +1975,6 @@ struct crypto_bignum *crypto_ec_key_get_private_key(struct crypto_ec_key *key)
     // Return cached private key if already computed
     if (wrapper->cached_private_key) {
         return (struct crypto_bignum *)wrapper->cached_private_key;
-    }
-
-    {
-        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-        psa_status_t status;
-        size_t raw_len = 0;
-        size_t raw_size;
-        u8 *raw_key = NULL;
-        mbedtls_mpi *d = NULL;
-
-        status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
-        if (status == PSA_SUCCESS) {
-            raw_size = PSA_EXPORT_KEY_OUTPUT_SIZE(psa_get_key_type(&key_attributes),
-                                                  psa_get_key_bits(&key_attributes));
-            psa_reset_key_attributes(&key_attributes);
-
-            raw_key = os_malloc(raw_size);
-            d = os_calloc(1, sizeof(*d));
-            if (raw_key && d) {
-                status = psa_export_key(wrapper->key_id, raw_key, raw_size, &raw_len);
-                if (status == PSA_SUCCESS) {
-                    mbedtls_mpi_init(d);
-                    if (mbedtls_mpi_read_binary(d, raw_key, raw_len) == 0) {
-                        wrapper->cached_private_key = d;
-                        forced_memzero(raw_key, raw_size);
-                        os_free(raw_key);
-                        return (struct crypto_bignum *) wrapper->cached_private_key;
-                    }
-                    mbedtls_mpi_free(d);
-                }
-            }
-
-            if (d) {
-                os_free(d);
-            }
-            if (raw_key) {
-                forced_memzero(raw_key, raw_size);
-            }
-            os_free(raw_key);
-        }
     }
 
     mbedtls_pk_context *pkey_ctx = os_calloc(1, sizeof(mbedtls_pk_context));
@@ -2385,7 +2362,14 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
 {
     crypto_ec_key_wrapper_t *peer_wrapper = (crypto_ec_key_wrapper_t *)key_peer;
     crypto_ec_key_wrapper_t *own_wrapper = (crypto_ec_key_wrapper_t *)key_own;
+    size_t secret_buf_size;
+
     if (!peer_wrapper || !own_wrapper) {
+        return -1;
+    }
+
+    secret_buf_size = crypto_ecdh_output_size(own_wrapper);
+    if (secret_buf_size == 0) {
         return -1;
     }
 
@@ -2405,7 +2389,8 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
                                                 own_wrapper->key_id,
                                                 peer_wrapper->cached_public_key_buf,
                                                 peer_wrapper->cached_public_key_len,
-                                                secret, 66, &secret_length);
+                                                secret, secret_buf_size,
+                                                &secret_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", status);
         return -1;
@@ -2434,7 +2419,8 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
     *secret_len = 0;
     size_t secret_length = 0;
     status = psa_raw_key_agreement(PSA_ALG_ECDH, own_wrapper->key_id,
-                                   peer_key_buf, peer_key_len, secret, 66,
+                                   peer_key_buf, peer_key_len, secret,
+                                   secret_buf_size,
                                    &secret_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", status);
@@ -3233,6 +3219,10 @@ void crypto_ec_key_deinit(struct crypto_ec_key *key)
     }
 #if CONFIG_MBEDTLS_HARDWARE_MPI && !CONFIG_MBEDTLS_HARDWARE_ECC
     if (wrapper->cached_public_key_buf) {
+        if (wrapper->cached_public_key_len) {
+            forced_memzero(wrapper->cached_public_key_buf,
+                           wrapper->cached_public_key_len);
+        }
         os_free(wrapper->cached_public_key_buf);
     }
 #endif
