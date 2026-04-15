@@ -337,6 +337,14 @@ void regdma_link_set_write_wait_content(void *link, uint32_t value, uint32_t mas
 void regdma_link_set_skip_flag(void *link, bool skip_backup, bool skip_restore);
 
 /**
+ * @brief Dump all node information of the REGDMA linked list from link to tail indicated by the entry argument
+ * @param link  The REGDMA linkded list head pointer
+ * @param tail  Dump end linked list node pointer
+ * @param entry For nodes that support branching, use the branch specified by entry argument recursively
+ */
+void regdma_link_dump_sublink(FILE *out, void *link, void *tail, int entry);
+
+/**
  * @brief Dump all node information of the REGDMA linked list indicated by the entry argument
  * @param link  The REGDMA linkded list head pointer
  * @param entry For nodes that support branching, use the branch specified by entry argument recursively
