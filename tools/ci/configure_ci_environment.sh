@@ -36,9 +36,13 @@ fi
 # https://ccache.dev/manual/latest.html#_configuring_ccache
 # Set ccache base directory to the project checkout path, to cancel out differences between runners
 export CCACHE_BASEDIR="${IDF_PATH}"
+export CCACHE_COMPILERCHECK="${CCACHE_COMPILERCHECK:-content}"
 
 # host mapping volume to share ccache fbetween runner concurrent jobs
-export CCACHE_SLOPPINESS="time_macros"
+export CCACHE_SLOPPINESS="time_macros,file_macro,include_file_mtime,include_file_ctime"
+
+# Keep per-job statistics in the checkout directory while sharing the cache itself.
+export CCACHE_STATSLOG="${CCACHE_STATSLOG:-${IDF_PATH}/.ccache-stats.log}"
 
 # CCACHE_RECACHE Used when invalidating the current cache.
 # could be enabled by MR label "ccache:recache"
