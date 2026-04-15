@@ -8,6 +8,7 @@
 #include "esp_memory_utils.h"
 #include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_timer.h"
+#include "esp_sleep.h"
 #include "esp_private/mcpwm.h"
 
 static void mcpwm_timer_default_isr(void *args);
@@ -83,6 +84,9 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
 
 #if !SOC_MCPWM_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15644
+#endif
 #endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
 
     timer = heap_caps_calloc(1, sizeof(mcpwm_timer_t), MCPWM_MEM_ALLOC_CAPS);

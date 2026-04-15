@@ -145,6 +145,9 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
 
 #if !SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(tsens_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15648
+#endif
 #endif // SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
 
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && !SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN

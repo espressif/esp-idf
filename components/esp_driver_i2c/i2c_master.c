@@ -28,6 +28,7 @@
 #include "hal/i2c_ll.h"
 #include "hal/i2c_periph.h"
 #include "driver/i2c_master.h"
+#include "esp_sleep.h"
 #include "i2c_private.h"
 
 static const char *TAG = "i2c.master";
@@ -1045,6 +1046,9 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 
 #if !SOC_I2C_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(bus_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15642
+#endif
 #endif // SOC_I2C_SUPPORT_SLEEP_RETENTION
 
     i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);

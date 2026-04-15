@@ -125,7 +125,7 @@ static void test_pcnt_sleep_retention(void)
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         TEST_ASSERT_EQUAL(20, count_value);
         // check the register value
-        reg_value = pcnt_ll_get_count(&PCNT, i);
+        reg_value = pcnt_ll_get_count(PCNT_LL_GET_HW(unit_config.group_id), i);
         TEST_ASSERT_EQUAL(20, reg_value);
     }
 

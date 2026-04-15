@@ -9,6 +9,7 @@
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"
 #include "parlio_priv.h"
+#include "esp_sleep.h"
 
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
 static bool parlio_tx_gdma_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
@@ -273,6 +274,9 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 
 #if !SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15645
+#endif
 #endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
     // allocate unit from internal memory because it contains atomic member
