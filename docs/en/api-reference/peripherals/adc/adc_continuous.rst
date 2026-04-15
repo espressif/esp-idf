@@ -388,7 +388,7 @@ Hardware Limitations
 .. list::
 
     - A specific ADC unit can only work under one operating mode at any one time, either continuous mode or one-shot mode. :cpp:func:`adc_continuous_start` has provided the protection.
-    - Random Number Generator (RNG) uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
+    :not esp32s31: - Random Number Generator (RNG) uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
     :esp32 or esp32s2: - ADC2 is also used by Wi-Fi. :cpp:func:`adc_continuous_start` has provided the protection between Wi-Fi driver and ADC continuous mode driver.
     :esp32: - ADC continuous mode driver uses I2S0 peripheral as hardware DMA FIFO. Therefore, if I2S0 is in use already, the :cpp:func:`adc_continuous_new_handle` will return :c:macro:`ESP_ERR_NOT_FOUND`.
     :esp32: - ESP32 DevKitC: GPIO 0 cannot be used due to external auto program circuits.
