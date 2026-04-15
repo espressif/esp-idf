@@ -453,6 +453,89 @@ function(__init_common_components)
 endfunction()
 
 #[[api
+.. cmakev2:function:: idf_component_mock
+
+    .. code-block:: cmake
+
+        idf_component_mock([INCLUDE_DIRS <dir>...]
+                           [MOCK_HEADER_FILES <file>...]
+                           [REQUIRES <component>...]
+                           [MOCK_SUBDIR <subdir>])
+
+    *INCLUDE_DIRS[in,opt]*
+
+        Include directories for the header files provided in MOCK_HEADER_FILES.
+
+    *MOCK_HEADER_FILES[in,opt]*
+
+        Header files from which CMock generates mock implementations.
+
+    *REQUIRES[in,opt]*
+
+        Additional components required by the mock component.
+
+    *MOCK_SUBDIR[in,opt]*
+
+        Subdirectory under the mocks output where generated files are placed.
+
+    Create a mock component using CMock and register it with the build system.
+    This is a compatibility shim matching the v1 ``idf_component_mock``
+    function in ``tools/cmake/component.cmake``.  It generates Mock*.c and
+    Mock*.h files from the given headers using Ruby + CMock, then delegates to
+    ``idf_component_register`` so the mock participates in normal dependency
+    resolution.
+#]]
+function(idf_component_mock)
+    set(options)
+    set(single_value MOCK_SUBDIR)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
+    cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
+
+    list(APPEND __REQUIRES "cmock")
+
+    set(MOCK_GENERATED_HEADERS "")
+    set(MOCK_GENERATED_SRCS "")
+    set(IDF_PATH $ENV{IDF_PATH})
+    set(CMOCK_DIR "${IDF_PATH}/components/cmock/CMock")
+    set(MOCK_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    list(APPEND __INCLUDE_DIRS "${MOCK_GEN_DIR}/mocks")
+
+    foreach(header_file ${__MOCK_HEADER_FILES})
+        get_filename_component(file_without_dir ${header_file} NAME_WE)
+        if("${__MOCK_SUBDIR}" STREQUAL "")
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+        else()
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.c")
+        endif()
+    endforeach()
+
+    file(MAKE_DIRECTORY "${MOCK_GEN_DIR}/mocks")
+
+    idf_component_register(SRCS "${MOCK_GENERATED_SRCS}"
+                        INCLUDE_DIRS ${__INCLUDE_DIRS}
+                        REQUIRES ${__REQUIRES})
+
+    set(COMPONENT_LIB ${COMPONENT_LIB} PARENT_SCOPE)
+    add_custom_command(
+        OUTPUT ruby_found SYMBOLIC
+        COMMAND "ruby" "-v"
+        COMMENT "Try to find ruby. If this fails, you need to install ruby"
+    )
+
+    add_custom_command(
+        OUTPUT ${MOCK_GENERATED_SRCS} ${MOCK_GENERATED_HEADERS}
+        DEPENDS ruby_found
+        COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+            ruby
+            ${CMOCK_DIR}/lib/cmock.rb
+            -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml
+            ${__MOCK_HEADER_FILES}
+    )
+endfunction()
+
+#[[api
 .. cmakev2:function:: idf_component_register
 
     .. code-block:: cmake
