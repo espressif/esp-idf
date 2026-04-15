@@ -149,7 +149,7 @@ config SOC_ECC_EXTENDED_MODES_SUPPORTED
 
 config SOC_FLASH_ENC_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_SECURE_BOOT_SUPPORTED
     bool
@@ -1007,11 +1007,19 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_256
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 

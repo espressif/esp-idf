@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,11 @@
 #include <string.h>
 #include "soc/hp_system_reg.h"
 #include "soc/xts_aes_reg.h"
+#include "soc/spi_mem_reg.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
-
-//TODO: [ESP32H4] IDF-12261 inherited from verification branch, need check
+#include "hal/spi_flash_encrypt_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,6 +147,39 @@ static inline bool spi_flash_encrypt_ll_check(uint32_t address, uint32_t length)
 {
     return ((address % length) == 0) ? true : false;
 }
+
+#if SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+/**
+ * @brief Enable the pseudo-round function during XTS-AES operations
+ *
+ * @param mode set the mode for pseudo rounds, zero to disable, with increasing security upto three.
+ * @param base basic number of pseudo rounds, zero if disable
+ * @param increment increment number of pseudo rounds, zero if disable
+ * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
+ */
+static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(esp_xts_aes_psuedo_rounds_state_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_MODE_PSEUDO, mode);
+
+    if (mode != ESP_XTS_AES_PSEUDO_ROUNDS_DISABLE) {
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_BASE, base);
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_INC, increment);
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_RNG_CNT, key_rng_cnt);
+    } else {
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_BASE, 0);
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_INC, 0);
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_RNG_CNT, 0);
+    }
+}
+
+/**
+ * @brief Check if the pseudo round function is supported
+ */
+static inline bool spi_flash_encrypt_ll_is_pseudo_rounds_function_supported(void)
+{
+    return true;
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12506 inherit from verify code, need check
-
 #define XTS_AES_PLAIN_MEM(i)          (REG_SPI_MEM_BASE(i) + 0x300)
 /* XTS_AES_PLAIN : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: This field is only used to generate include file in c case. This field is useles
