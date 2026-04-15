@@ -63,6 +63,10 @@ MIPI DSI Interfaced LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_video_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` sets whether to use the 2D DMA peripheral to copy the user data to the frame buffer, asynchronously.
 
+    .. note::
+
+        Due to hardware limitation, if external memory encryption is enabled, DMA2D can only access address and length that are aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. You need to ensure that your draw buffer's address and length are aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. :example:`peripherals/lcd/mipi_dsi` shows how to use LVGL to constrain the redrawn area to ensure alignment.
+
     .. code-block:: c
 
         esp_lcd_panel_handle_t mipi_dpi_panel = NULL;

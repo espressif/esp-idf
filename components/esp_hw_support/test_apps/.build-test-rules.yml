@@ -5,6 +5,7 @@ components/esp_hw_support/test_apps/dma:
     - if: IDF_TARGET in ["esp32"]
       temporary: false
       reason: No general DMA controller on ESP32
+    - if: CONFIG_NAME == "flash_enc" and SOC_FLASH_ENC_SUPPORTED != 1
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
 

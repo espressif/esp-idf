@@ -63,6 +63,10 @@ MIPI DSI 接口的 LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` 设置 LCD 面板的特定时序参数。包括 LCD 分辨率和消隐间隔在内的必要参数列表见 :cpp:type:`esp_lcd_video_timing_t`，请依据 LCD 技术规格书填写参数。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` 设置是否用 2D DMA 将用户数据异步复制到帧 buffer 中。
 
+    .. note::
+
+        由于硬件限制，如果启用了外部存储加密，则 DMA2D 只能访问地址和长度都对齐到 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节的地址空间。你需要确保你的绘制 buffer 的地址和长度都对齐到 {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} 字节。 :example:`peripherals/lcd/mipi_dsi` 演示了如何使用 LVGL 控制重新绘制区域来确保对齐。
+
     .. code-block:: c
 
         esp_lcd_panel_handle_t mipi_dpi_panel = NULL;
