@@ -387,6 +387,10 @@ config SOC_APB_BACKUP_DMA
     bool
     default n
 
+config SOC_ANA_CMPR_SUPPORT_AUTO_SCAN
+    bool
+    default y
+
 config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y

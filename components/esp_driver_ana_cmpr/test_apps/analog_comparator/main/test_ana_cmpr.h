@@ -17,6 +17,7 @@
 #include "driver/ana_cmpr.h"
 #include "driver/ana_cmpr_etm.h"
 #include "driver/gpio.h"
+#include "hal/ana_cmpr_periph.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
 // The pin of unit 0 is not exposed on some ESP32-P4 runner, so test unit 1 by default
@@ -44,13 +45,14 @@ bool test_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr, const ana_cmpr_cros
 /**
  * @brief Initialize Analog Comparator source channel GPIO
  *
- * @param unit_id   Analog Comparator unit ID
+ * @param cmpr         Analog Comparator handle
+ * @param src_chan_id  The source channel index
  * @param init_level  Initial level of the GPIO
  *
  * @return
- *      - int   Source channel GPIO number
+ *      - gpio_num_t   Source channel GPIO number
  */
-int test_init_src_chan_gpio(int unit_id, int init_level);
+gpio_num_t test_init_src_chan_gpio(ana_cmpr_handle_t cmpr, int src_chan_id, int init_level);
 
 #ifdef __cplusplus
 }

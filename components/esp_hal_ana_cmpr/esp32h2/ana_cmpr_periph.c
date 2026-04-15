@@ -9,8 +9,8 @@
 
 const ana_cmpr_periph_t ana_cmpr_periph[1] = {
     [0] = {
-        .src_gpio = ANA_CMPR0_SRC_GPIO,
-        .ext_ref_gpio = ANA_CMPR0_EXT_REF_GPIO,
+        .src_gpio = 11,
+        .ext_ref_gpio = 10,
         .intr_src = ETS_GPIO_INTR_SOURCE,
         .module_name = "ANA_CMPR_U0",
     },

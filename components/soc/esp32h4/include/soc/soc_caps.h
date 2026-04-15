@@ -32,7 +32,7 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
-// #define SOC_ANA_CMPR_SUPPORTED          1    // TODO: [ESP32H4] IDF-12395 big change!!
+// #define SOC_ANA_CMPR_SUPPORTED          1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_UHCI_SUPPORTED              1
@@ -151,6 +151,10 @@
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (0)
+
+/*------------------------- Analog Comparator CAPS ---------------------------*/
+// #define SOC_ANA_CMPR_SUPPORT_ETM               (1)
+// #define SOC_ANA_CMPR_SUPPORT_ETM_SCAN          (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 // #define SOC_BROWNOUT_RESET_SUPPORTED 1

@@ -137,6 +137,7 @@ static inline void analog_cmpr_ll_set_cross_debounce_cycle(analog_cmpr_dev_t *hw
  * @param mask Interrupt mask
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_enable_intr(analog_cmpr_dev_t *hw, uint32_t mask, bool enable)
 {
     uint32_t val = hw->int_ena->val;

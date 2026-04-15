@@ -1,17 +1,17 @@
 | Supported Targets | ESP32-C5 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-P4 |
 | ----------------- | -------- | --------- | -------- | --------- | -------- |
 
-# Analog Comparator Example
+# Analog Comparator Auto Scan Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example is going to show how to use the Analog Comparator. The example toggles a GPIO to monitor the positive and negative crosses on the analog comparator unit.
+This example shows how to use the Analog Comparator auto scan mode. After enabling the comparator unit, hardware keeps scanning source channels automatically and updates comparator outputs continuously. The example toggles a GPIO to monitor positive and negative crossing results in real time.
 
 ## Realization
 
-- If the target supports generating the analog comparator events (like ESP32-P4), the example can toggle the monitoring GPIO via Event Task Matrix (ETM). ETM can bind the analog comparator cross events (positive and negative events) with the GPIO tasks (to set or clear a GPIO), so that every event happens, hardware will execute the corresponding task without CPU involved.
+- If the target supports generating analog comparator events (like ESP32-P4), the example toggles the monitoring GPIO via Event Task Matrix (ETM). ETM binds comparator cross events (positive and negative) to GPIO tasks (set/clear), so each auto-scan crossing result can drive hardware actions without CPU involvement.
 
-- If the target does not support to generate the analog comparator events (like ESP32-H2). The example will register an event callback on the analog comparator, and toggle the GPIO in the callback. It requires the CPU to process every event ISR, thus it is not effective as ETM and can't achieve a high resolution.
+- If the target does not support generating analog comparator events (like ESP32-H2), the example registers an interrupt callback and toggles the GPIO in the callback. This still relies on auto scan for continuous output updates, but every crossing ISR must be handled by CPU, so it is less efficient than ETM.
 
 ## How to Use Example
 

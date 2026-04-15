@@ -217,6 +217,7 @@
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_SUPPORT_ETM               (1)
+#define SOC_ANA_CMPR_SUPPORT_AUTO_SCAN         (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #define SOC_I2C_NUM                             (1U)

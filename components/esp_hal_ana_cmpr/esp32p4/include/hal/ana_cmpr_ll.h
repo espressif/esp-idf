@@ -33,7 +33,7 @@ extern "C" {
 #define ANALOG_CMPR_LL_SRC_CHANNEL_NUM 1
 
 // Can detect positive/negative/any cross type
-#define ANALOG_CMPR_LL_SUPPORT_EDGE_TYPE  1
+#define ANALOG_CMPR_LL_SUPPORT_EDGE_SPECIFIC_INTR_MASK  1
 
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_GET_UNIT(hw)     ((hw) == (&ANALOG_CMPR[0]) ? 0 : 1)
@@ -141,6 +141,7 @@ static inline void analog_cmpr_ll_set_cross_debounce_cycle(analog_cmpr_dev_t *hw
  * @param mask Interrupt mask
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_enable_intr(analog_cmpr_dev_t *hw, uint32_t mask, bool enable)
 {
     uint32_t val = hw->int_ena->val;

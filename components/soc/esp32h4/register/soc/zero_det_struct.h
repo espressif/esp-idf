@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -341,83 +341,18 @@ typedef union {
     uint32_t val;
 } zero_det_int_st_reg_t;
 
-/** Type of det_channel_1_timer0 register
+/** Type of det_channel_timer register
  *  record timer reg
  */
 typedef union {
     struct {
-        /** det_channel_1_timer0 : RO; bitpos: [31:0]; default: 0;
+        /** det_channel_timer : RO; bitpos: [31:0]; default: 0;
          *  record the time while detect the first zero det int  in channel 1
          */
-        uint32_t det_channel_1_timer0:32;
+        uint32_t det_channel_timer:32;
     };
     uint32_t val;
-} zero_det_channel_1_timer0_reg_t;
-
-/** Type of det_channel_1_timer1 register
- *  record timer reg
- */
-typedef union {
-    struct {
-        /** det_channel_1_timer1 : RO; bitpos: [31:0]; default: 0;
-         *  record the time while detect the second zero det int  in channel 1
-         */
-        uint32_t det_channel_1_timer1:32;
-    };
-    uint32_t val;
-} zero_det_channel_1_timer1_reg_t;
-
-/** Type of det_channel_2_timer0 register
- *  record timer reg
- */
-typedef union {
-    struct {
-        /** det_channel_2_timer0 : RO; bitpos: [31:0]; default: 0;
-         *  record the time while detect the first zero det int  in channel 2
-         */
-        uint32_t det_channel_2_timer0:32;
-    };
-    uint32_t val;
-} zero_det_channel_2_timer0_reg_t;
-
-/** Type of det_channel_2_timer1 register
- *  record timer reg
- */
-typedef union {
-    struct {
-        /** det_channel_2_timer1 : RO; bitpos: [31:0]; default: 0;
-         *  record the time while detect the second zero det int  in channel 2
-         */
-        uint32_t det_channel_2_timer1:32;
-    };
-    uint32_t val;
-} zero_det_channel_2_timer1_reg_t;
-
-/** Type of det_channel_3_timer0 register
- *  record timer reg
- */
-typedef union {
-    struct {
-        /** det_channel_3_timer0 : RO; bitpos: [31:0]; default: 0;
-         *  record the time while detect the first zero det int  in channel 3
-         */
-        uint32_t det_channel_3_timer0:32;
-    };
-    uint32_t val;
-} zero_det_channel_3_timer0_reg_t;
-
-/** Type of det_channel_3_timer1 register
- *  record timer reg
- */
-typedef union {
-    struct {
-        /** det_channel_3_timer1 : RO; bitpos: [31:0]; default: 0;
-         *  record the time while detect the second zero det int  in channel 3
-         */
-        uint32_t det_channel_3_timer1:32;
-    };
-    uint32_t val;
-} zero_det_channel_3_timer1_reg_t;
+} zero_det_channel_timer_reg_t;
 
 /** Type of det_channel_status register
  *  pad comp status reg
@@ -504,21 +439,16 @@ typedef struct {
     volatile zero_det_int_raw_reg_t det_int_raw;
     volatile zero_det_int_clr_reg_t det_int_clr;
     volatile zero_det_int_st_reg_t det_int_st;
-    volatile zero_det_channel_1_timer0_reg_t det_channel_1_timer0;
-    volatile zero_det_channel_1_timer1_reg_t det_channel_1_timer1;
-    volatile zero_det_channel_2_timer0_reg_t det_channel_2_timer0;
-    volatile zero_det_channel_2_timer1_reg_t det_channel_2_timer1;
-    volatile zero_det_channel_3_timer0_reg_t det_channel_3_timer0;
-    volatile zero_det_channel_3_timer1_reg_t det_channel_3_timer1;
+    volatile zero_det_channel_timer_reg_t det_channel_timers[3][2];  // [channel], [timer_id (0: current, 1: previous)]
     volatile zero_det_channel_status_reg_t det_channel_status;
     volatile zero_det_pad_comp_cfg_reg_t det_pad_comp_cfg;
     volatile zero_det_date_reg_t det_date;
-} zero_dev_t;
+} zero_det_dev_t;
 
-extern zero_dev_t ZERO_DET;
+extern zero_det_dev_t ZERO_DET;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(zero_dev_t) == 0x44, "Invalid size of zero_dev_t structure");
+_Static_assert(sizeof(zero_det_dev_t) == 0x44, "Invalid size of zero_det_dev_t structure");
 #endif
 
 #ifdef __cplusplus
