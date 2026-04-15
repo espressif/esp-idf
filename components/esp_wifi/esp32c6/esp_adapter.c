@@ -563,12 +563,12 @@ static void esp_phy_disable_wrapper(void)
 }
 
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-static void regdma_link_set_write_wait_content_wrapper(void *addr, uint32_t value, uint32_t mask)
+static void IRAM_ATTR regdma_link_set_write_wait_content_wrapper(void *addr, uint32_t value, uint32_t mask)
 {
     regdma_link_set_write_wait_content(addr, value, mask);
 }
 
-static void *sleep_retention_find_link_by_id_wrapper(int id)
+static void *IRAM_ATTR sleep_retention_find_link_by_id_wrapper(int id)
 {
     return sleep_retention_find_link_by_id(id);
 }
