@@ -657,9 +657,9 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 #ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (is_wpa2_enterprise_connection()) {
         wpa2_ent_eap_state_t state = eap_client_get_eap_state();
-        if (state == WPA2_ENT_EAP_STATE_IN_PROGRESS) {
-            wpa_printf(MSG_INFO, "EAP Success has not been processed yet."
-               " Drop EAPOL message.");
+        if (state != WPA2_ENT_EAP_STATE_SUCCESS) {
+            wpa_printf(MSG_INFO, "EAP not completed (state=%d)."
+               " Drop EAPOL message.", state);
             return;
         }
     }
@@ -712,7 +712,15 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     /* Calculate PTK which will be stored as a temporary PTK until it has
      * been verified when processing message 3/4. */
     ptk = &sm->tptk;
-    wpa_derive_ptk(sm, src_addr, key, ptk);
+    os_memset(ptk, 0, sizeof(*ptk));
+    if (wpa_derive_ptk(sm, src_addr, key, ptk) < 0) {
+        wpa_printf(MSG_WARNING,
+               "WPA: Failed to derive PTK - drop message 1/4");
+        sm->tptk_set = 0;
+        sm->ptk_set = 0;
+        sm->key_install = false;
+        goto failed;
+    }
     /* Supplicant: swap tx/rx Mic keys */
     sm->tptk_set = 1;
     sm->ptk_set = 0;
@@ -2143,7 +2151,7 @@ void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm)
         sm->pmk_len = sm->cur_pmksa->pmk_len;
         os_memcpy(sm->pmk, sm->cur_pmksa->pmk, sm->pmk_len);
     } else {
-        sm->pmk_len = PMK_LEN_MAX;
+        sm->pmk_len = 0;
         os_memset(sm->pmk, 0, PMK_LEN_MAX);
     }
 }
@@ -2781,6 +2789,7 @@ void wpa_sm_drop_sa(struct wpa_sm *sm)
     sm->ptk_set = 0;
     sm->tptk_set = 0;
     sm->pmk_len = 0;
+    os_memset(sm->pmk, 0, sizeof(sm->pmk));
     os_memset(&sm->ptk, 0, sizeof(sm->ptk));
     os_memset(&sm->tptk, 0, sizeof(sm->tptk));
     os_memset(&sm->gtk, 0, sizeof(sm->gtk));
