@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -318,43 +318,43 @@ void * regdma_link_init(const regdma_link_config_t *config, bool branch, int mod
     return link;
 }
 
-static void * regdma_link_get_next_continuous_wrapper(void *link)
+__attribute__((used, noinline)) static void * regdma_link_get_next_continuous_wrapper(void *link)
 {
     regdma_link_continuous_t *continuous = __containerof(link, regdma_link_continuous_t, head);
     return (void *)(continuous->body.next);
 }
 
-static void * regdma_link_get_next_addr_map_wrapper(void *link)
+__attribute__((used, noinline)) static void * regdma_link_get_next_addr_map_wrapper(void *link)
 {
     regdma_link_addr_map_t *addr_map = __containerof(link, regdma_link_addr_map_t, head);
     return (void *)(addr_map->body.next);
 }
 
-static void * regdma_link_get_next_write_wait_wrapper(void *link)
+__attribute__((used, noinline)) static void * regdma_link_get_next_write_wait_wrapper(void *link)
 {
     regdma_link_write_wait_t *write_wait = __containerof(link, regdma_link_write_wait_t, head);
     return (void *)(write_wait->body.next);
 }
 
-static regdma_entry_buf_t * regdma_link_get_next_branch_continuous_wrapper(void *link)
+__attribute__((used, noinline)) static regdma_entry_buf_t * regdma_link_get_next_branch_continuous_wrapper(void *link)
 {
     regdma_link_branch_continuous_t *branch_continuous = __containerof(link, regdma_link_branch_continuous_t, head);
     return &branch_continuous->body.next;
 }
 
-static regdma_entry_buf_t * regdma_link_get_next_branch_addr_map_wrapper(void *link)
+__attribute__((used, noinline)) static regdma_entry_buf_t * regdma_link_get_next_branch_addr_map_wrapper(void *link)
 {
     regdma_link_branch_addr_map_t *branch_addr_map = __containerof(link, regdma_link_branch_addr_map_t, head);
     return &branch_addr_map->body.next;
 }
 
-static regdma_entry_buf_t * regdma_link_get_next_branch_write_wait_wrapper(void *link)
+__attribute__((used, noinline)) static regdma_entry_buf_t * regdma_link_get_next_branch_write_wait_wrapper(void *link)
 {
     regdma_link_branch_write_wait_t *branch_write_wait = __containerof(link, regdma_link_branch_write_wait_t, head);
     return &branch_write_wait->body.next;
 }
 
-static void * regdma_link_get_next(void *link, int entry)
+__attribute__((used, noinline)) static void * regdma_link_get_next(void *link, int entry)
 {
     if (link) {
         regdma_link_head_t head = REGDMA_LINK_HEAD(link);
@@ -407,7 +407,7 @@ void * regdma_link_recursive(void *link, int entry, void (*hook)(void *, int, in
     return regdma_link_recursive_impl(link, entry, 0, hook);
 }
 
-static void * regdma_link_get_instance(void *link)
+__attribute__((used, noinline)) static void * regdma_link_get_instance(void *link)
 {
     void * container_memaddr[] = {
         (void *)__containerof(link, regdma_link_continuous_t, head),
