@@ -65,6 +65,19 @@ def test_wifi_power_save_pd_top(dut: Dut) -> None:
 
 
 @pytest.mark.wifi_ap
+@pytest.mark.parametrize(
+    'config',
+    [
+        'pd_modem',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
+def test_wifi_power_save_pd_modem(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.wifi_ap
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
