@@ -1,4 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  cmd_system:
+    path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
   espressif/usb:
-    version: "^1.0.0"
+    version: "^1.3.0"

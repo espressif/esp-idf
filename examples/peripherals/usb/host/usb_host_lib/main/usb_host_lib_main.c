@@ -1,226 +1,98 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <assert.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
+#include "esp_console.h"
+#include "esp_vfs_fat.h"
+#include "wear_levelling.h"
+#include "soc/soc_caps.h"
+#include "cmd_system.h"
 #include "usb/usb_host.h"
-#include "driver/gpio.h"
-
-#define HOST_LIB_TASK_PRIORITY    2
-#define CLASS_TASK_PRIORITY     3
-#define APP_QUIT_PIN                CONFIG_APP_QUIT_PIN
-
-#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
-#define ENABLE_ENUM_FILTER_CALLBACK
-#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
-
-extern void class_driver_task(void *arg);
-extern void class_driver_client_deregister(void);
+#include "usb_host_lib_example.h"
 
 static const char *TAG = "USB host lib";
+#define PROMPT_STR CONFIG_IDF_TARGET
 
-QueueHandle_t app_event_queue = NULL;
-
-/**
- * @brief APP event group
- *
- * APP_EVENT            - General event, which is APP_QUIT_PIN press event in this example.
+/* Console command history can be stored to and loaded from a file.
+ * The easiest way to do this is to use FATFS filesystem on top of
+ * wear_levelling library.
  */
-typedef enum {
-    APP_EVENT = 0,
-} app_event_group_t;
+#if CONFIG_CONSOLE_STORE_HISTORY
 
-/**
- * @brief APP event queue
- *
- * This event is used for delivering events from callback to a task.
- */
-typedef struct {
-    app_event_group_t event_group;
-} app_event_queue_t;
+#define MOUNT_PATH "/data"
+#define HISTORY_PATH MOUNT_PATH "/history.txt"
 
-/**
- * @brief BOOT button pressed callback
- *
- * Signal application to exit the Host lib task
- *
- * @param[in] arg Unused
- */
-static void gpio_cb(void *arg)
+static void initialize_filesystem(void)
 {
-    const app_event_queue_t evt_queue = {
-        .event_group = APP_EVENT,
+    static wl_handle_t wl_handle;
+    const esp_vfs_fat_mount_config_t mount_config = {
+        .max_files = 4,
+        .format_if_mount_failed = true
     };
-
-    BaseType_t xTaskWoken = pdFALSE;
-
-    if (app_event_queue) {
-        xQueueSendFromISR(app_event_queue, &evt_queue, &xTaskWoken);
-    }
-
-    if (xTaskWoken == pdTRUE) {
-        portYIELD_FROM_ISR();
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(MOUNT_PATH, "storage", &mount_config, &wl_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
+        return;
     }
 }
-
-/**
- * @brief Set configuration callback
- *
- * Set the USB device configuration during the enumeration process, must be enabled in the menuconfig
-
- * @note bConfigurationValue starts at index 1
- *
- * @param[in] dev_desc device descriptor of the USB device currently being enumerated
- * @param[out] bConfigurationValue configuration descriptor index, that will be user for enumeration
- *
- * @return bool
- * - true:  USB device will be enumerated
- * - false: USB device will not be enumerated
- */
-#ifdef ENABLE_ENUM_FILTER_CALLBACK
-static bool set_config_cb(const usb_device_desc_t *dev_desc, uint8_t *bConfigurationValue)
-{
-    // If the USB device has more than one configuration, set the second configuration
-    if (dev_desc->bNumConfigurations > 1) {
-        *bConfigurationValue = 2;
-    } else {
-        *bConfigurationValue = 1;
-    }
-
-    // Return true to enumerate the USB device
-    return true;
-}
-#endif // ENABLE_ENUM_FILTER_CALLBACK
-
-/**
- * @brief Start USB Host install and handle common USB host library events while app pin not low
- *
- * @param[in] arg  Not used
- */
-static void usb_host_lib_task(void *arg)
-{
-    ESP_LOGI(TAG, "Installing USB Host Library");
-    usb_host_config_t host_config = {
-        .skip_phy_setup = false,
-        .intr_flags = ESP_INTR_FLAG_LOWMED,
-# ifdef ENABLE_ENUM_FILTER_CALLBACK
-        .enum_filter_cb = set_config_cb,
-# endif // ENABLE_ENUM_FILTER_CALLBACK
-        .peripheral_map = BIT0,
-    };
-    ESP_ERROR_CHECK(usb_host_install(&host_config));
-    ESP_LOGI(TAG, "USB Host installed with peripheral map 0x%x", host_config.peripheral_map);
-
-    //Signalize the app_main, the USB host library has been installed
-    xTaskNotifyGive(arg);
-
-    bool has_clients = true;
-    bool has_devices = false;
-    while (has_clients) {
-        uint32_t event_flags;
-        ESP_ERROR_CHECK(usb_host_lib_handle_events(portMAX_DELAY, &event_flags));
-        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
-            ESP_LOGI(TAG, "Get FLAGS_NO_CLIENTS");
-            if (ESP_OK == usb_host_device_free_all()) {
-                ESP_LOGI(TAG, "All devices marked as free, no need to wait FLAGS_ALL_FREE event");
-                has_clients = false;
-            } else {
-                ESP_LOGI(TAG, "Wait for the FLAGS_ALL_FREE");
-                has_devices = true;
-            }
-        }
-        if (has_devices && event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
-            ESP_LOGI(TAG, "Get FLAGS_ALL_FREE");
-            has_clients = false;
-        }
-    }
-    ESP_LOGI(TAG, "No more clients and devices, uninstall USB Host library");
-
-    //Uninstall the USB Host Library
-    ESP_ERROR_CHECK(usb_host_uninstall());
-    vTaskSuspend(NULL);
-}
+#endif // CONFIG_CONSOLE_STORE_HISTORY
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "USB host library example");
 
-    // Init BOOT button: Pressing the button simulates app request to exit
-    // It will uninstall the class driver and USB Host Lib
-    const gpio_config_t input_pin = {
-        .pin_bit_mask = BIT64(APP_QUIT_PIN),
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .intr_type = GPIO_INTR_NEGEDGE,
-    };
-    ESP_ERROR_CHECK(gpio_config(&input_pin));
-    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_LOWMED));
-    ESP_ERROR_CHECK(gpio_isr_handler_add(APP_QUIT_PIN, gpio_cb, NULL));
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && !CONFIG_ESP_CONSOLE_SECONDARY_NONE
+    ESP_LOGW(TAG, "A secondary serial console is output-only; consider CONFIG_ESP_CONSOLE_SECONDARY_NONE for interactive use");
+#endif
 
-    app_event_queue = xQueueCreate(10, sizeof(app_event_queue_t));
-    app_event_queue_t evt_queue;
+    esp_console_repl_t *repl = NULL;
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    repl_config.prompt = PROMPT_STR ">";
+    repl_config.max_cmdline_length = CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH;
 
-    TaskHandle_t host_lib_task_hdl, class_driver_task_hdl;
+#if CONFIG_CONSOLE_STORE_HISTORY
+    initialize_filesystem();
+    repl_config.history_save_path = HISTORY_PATH;
+    ESP_LOGI(TAG, "Command history enabled");
+#else
+    ESP_LOGI(TAG, "Command history disabled");
+#endif
 
-    // Create usb host lib task
-    BaseType_t task_created;
-    task_created = xTaskCreatePinnedToCore(usb_host_lib_task,
-                                           "usb_host",
-                                           4096,
-                                           xTaskGetCurrentTaskHandle(),
-                                           HOST_LIB_TASK_PRIORITY,
-                                           &host_lib_task_hdl,
-                                           0);
-    assert(task_created == pdTRUE);
+    esp_console_register_help_command();
+    register_system_common();
+    register_usb();
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    register_system_light_sleep();
+#endif
+#if SOC_DEEP_SLEEP_SUPPORTED
+    register_system_deep_sleep();
+#endif
 
-    // Wait until the USB host library is installed
-    ulTaskNotifyTake(false, 1000);
+    ESP_ERROR_CHECK(usb_example_install(BIT0));
 
-    // Create class driver task
-    task_created = xTaskCreatePinnedToCore(class_driver_task,
-                                           "class",
-                                           5 * 1024,
-                                           NULL,
-                                           CLASS_TASK_PRIORITY,
-                                           &class_driver_task_hdl,
-                                           0);
-    assert(task_created == pdTRUE);
-    // Add a short delay to let the tasks run
-    vTaskDelay(10);
+#if defined(CONFIG_ESP_CONSOLE_UART_DEFAULT) || defined(CONFIG_ESP_CONSOLE_UART_CUSTOM)
+    esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
 
-    while (1) {
-        if (xQueueReceive(app_event_queue, &evt_queue, portMAX_DELAY)) {
-            if (APP_EVENT == evt_queue.event_group) {
-                // User pressed button
-                usb_host_lib_info_t lib_info;
-                ESP_ERROR_CHECK(usb_host_lib_info(&lib_info));
-                if (lib_info.num_devices != 0) {
-                    ESP_LOGW(TAG, "Shutdown with attached devices.");
-                }
-                // End while cycle
-                break;
-            }
-        }
-    }
+#elif defined(CONFIG_ESP_CONSOLE_USB_CDC)
+    esp_console_dev_usb_cdc_config_t hw_config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_usb_cdc(&hw_config, &repl_config, &repl));
 
-    // Deregister client
-    class_driver_client_deregister();
-    vTaskDelay(10);
+#elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
+    esp_console_dev_usb_serial_jtag_config_t hw_config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl));
 
-    // Delete the tasks
-    vTaskDelete(class_driver_task_hdl);
-    vTaskDelete(host_lib_task_hdl);
+#else
+#error Unsupported console type
+#endif
 
-    // Delete interrupt and queue
-    gpio_isr_handler_remove(APP_QUIT_PIN);
-    xQueueReset(app_event_queue);
-    vQueueDelete(app_event_queue);
-    ESP_LOGI(TAG, "End of the example");
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
