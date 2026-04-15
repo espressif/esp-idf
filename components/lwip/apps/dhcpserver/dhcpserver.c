@@ -1173,7 +1173,7 @@ static void handle_dhcp(void *arg,
 {
     struct dhcps_t *dhcps = arg;
     struct dhcps_msg *pmsg_dhcps = NULL;
-    s16_t tlen, malloc_len;
+    u16_t tlen, malloc_len;
     u16_t i;
     u16_t dhcps_msg_cnt = 0;
     u8_t *p_dhcps_msg = NULL;
@@ -1185,6 +1185,11 @@ static void handle_dhcp(void *arg,
 #endif
 
     if (p == NULL) {
+        return;
+    }
+
+    if (p->tot_len > 1500) {
+        pbuf_free(p);
         return;
     }
 
