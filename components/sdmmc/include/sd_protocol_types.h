@@ -247,7 +247,7 @@ typedef struct {
      */
     void* dma_aligned_buffer;
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
-    bool (*check_buffer_alignment)(int slot, const void *buf, size_t size); /*!< Check if buffer meets alignment requirements */
+    bool (*check_buffer_alignment)(int slot, const void *buf, size_t size); /*!< Check if the host can use the buffer directly for a transfer (accounts for alignment and any hardware-specific DMA reachability constraints) */
     esp_err_t (*is_slot_set_to_uhs1)(int slot, bool *is_uhs1); /*!< host slot is set to uhs1 or not*/
 } sdmmc_host_t;
 
