@@ -393,6 +393,7 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
         struct wpabuf *owe_ie = esp_owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
         if (owe_ie_len <= 0 || !owe_ie) {
             wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
+            wpabuf_free(owe_ie);
             return WLAN_STATUS_UNSPECIFIED_FAILURE;
         }
         esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_ie), owe_ie_len, 0);
@@ -497,11 +498,13 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
 
 #ifdef CONFIG_OWE_SOFTAP
             uint8_t owe_enabled = esp_wifi_ap_get_owe_config_internal();
-            if (hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE &&
+            if (status == WLAN_STATUS_SUCCESS &&
+                    hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE &&
                     sta->wpa_sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE &&
                     owe_dh && owe_enabled) {
                 status = owe_process_assoc_req(hapd, sta, owe_dh, owe_ie_len);
                 if (status != WLAN_STATUS_SUCCESS) {
+                    *reason = wpa_status_to_reason_code(status);
                     wpa_printf(MSG_ERROR, "OWE : Failed to process assoc req status %d", status);
                     return false;
                 }

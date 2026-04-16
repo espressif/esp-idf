@@ -23,6 +23,7 @@
 #ifdef CONFIG_OWE_SOFTAP
 #include "crypto/crypto.h"
 #include "ap/wpa_auth_i.h"
+#include "esp_owe_i.h"
 #define OWE_DH_GRP19 19
 #endif
 
@@ -817,8 +818,8 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
         return WLAN_STATUS_SUCCESS;
     }
 
-    if (!owe_dh) {
-        wpa_printf(MSG_ERROR, "OWE: Invalid DH data received");
+    if (!owe_dh || owe_dh_len < OWE_DHIE_LEN - 2) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid DH data received (len=%u)", owe_dh_len);
         return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
 
@@ -930,7 +931,13 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
     sta->owe_pmk_len = SHA256_MAC_LEN;
 
     // Add the PMK to the PMKSA cache
-    wpa_auth_pmksa_add2(hapd->wpa_auth, sta->addr, sta->owe_pmk, sta->owe_pmk_len, pmkid, 0, WPA_KEY_MGMT_OWE, NULL);
+    if (wpa_auth_pmksa_add2(hapd->wpa_auth, sta->addr, sta->owe_pmk, sta->owe_pmk_len,
+                            pmkid, 0, WPA_KEY_MGMT_OWE, NULL) < 0) {
+        os_free(sta->owe_pmk);
+        sta->owe_pmk = NULL;
+        wpa_printf(MSG_ERROR, "OWE: Failed to add PMKSA cache entry");
+        return WLAN_STATUS_UNSPECIFIED_FAILURE;
+    }
 
     // Update the PMKID in the STA's WPA state machine
     os_memcpy(sta->wpa_sm->pmkid, pmkid, PMKID_LEN);
