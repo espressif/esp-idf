@@ -17,23 +17,6 @@
 #include "riscv/rv_utils.h"
 #endif
 #include "esp_rom_spiflash.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#include "esp32s3/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/spi_flash.h"
-#include "esp32p4/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/spi_flash.h"
-#include "esp32c5/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C61
-#include "esp32c61/rom/spi_flash.h"
-#include "esp32c61/rom/opi_flash.h"
-#endif
 
 #define SPI_IDX   1
 
@@ -774,7 +757,7 @@ void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
         REG_SET_BIT(SPI_MEM_C_CTRL_REG, SPI_MEM_C_Q_POL);
     }
 }
-#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
 void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {

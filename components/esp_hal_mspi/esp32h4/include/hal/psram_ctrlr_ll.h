@@ -20,7 +20,7 @@
 #include "soc/spi_mem_struct.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/clk_tree_defs.h"
-#include "rom/spi_flash.h"
+#include "rom/opi_flash.h"
 #include "hal/psram_types.h"
 
 #ifdef __cplusplus
