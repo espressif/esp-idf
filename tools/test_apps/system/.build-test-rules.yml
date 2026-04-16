@@ -101,9 +101,11 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+    - if: INCLUDE_DEFAULT == 1
   disable:
-    - if: IDF_TARGET == "esp32p4" # TODO: IDF-14348
+    - if: IDF_TARGET in ["esp32p4"] and CONFIG_NAME == "gdbstub"
+      temporary: true
+      reason: not supported yet
 
 tools/test_apps/system/ram_loadable_app:
   disable:
