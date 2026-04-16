@@ -142,7 +142,7 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
 {
     sleep_retention_module_init_param_t init_param = {
         .cbs       = { .create = { .handle = sleep_clock_system_retention_init, .arg = NULL } },
-        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM, &init_param);
 
@@ -150,7 +150,7 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
     init_param = (sleep_retention_module_init_param_t) {
         .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
         .depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_SYSTEM >> 5] = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM % 32),
-        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_MODEM, &init_param);
 #endif
