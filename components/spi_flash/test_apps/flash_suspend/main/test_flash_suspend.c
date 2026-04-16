@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,14 +75,12 @@ static bool IRAM_ATTR gptimer_alarm_suspend_cb(gptimer_handle_t timer, const gpt
     /*clear content in cache*/
 #if CONFIG_IDF_TARGET_ESP32S3
     Cache_Invalidate_DCache_All();
-#endif
-#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Invalidate_ICache_All();
+#elif CONFIG_IDF_TARGET_ESP32P4
     Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
-#elif CONFIG_IDF_TARGET_ESP32H4
-    cache_ll_invalidate_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL);
 #elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     Cache_Invalidate_All();
-#elif CONFIG_IDF_TARGET_ESP32S31
+#elif CONFIG_IDF_TARGET_ESP32S31 || CONFIG_IDF_TARGET_ESP32H4
     Cache_Invalidate_All(CACHE_MAP_MASK);
 #else
     Cache_Invalidate_ICache_All();

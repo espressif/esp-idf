@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +12,15 @@
 #include <stdbool.h>
 #include "esp_rom_spiflash_defs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/* These common types must be visible before the per-target ROM headers below,
+ * because those headers reference them and (re)include this header. With
+ * `#pragma once` the recursive include is a no-op, so the types have to be
+ * defined here first.
+ *
+ * Typedefs have no language linkage, so leaving them outside the `extern "C"`
+ * block is fine: it lets the target headers also be included outside any
+ * enclosing `extern "C"` (the convention for #include statements).
+ */
 typedef enum {
     ESP_ROM_SPIFLASH_QIO_MODE = 0,
     ESP_ROM_SPIFLASH_QOUT_MODE,
@@ -46,6 +51,36 @@ typedef enum {
     ESP_ROM_SPIFLASH_RESULT_ERR,
     ESP_ROM_SPIFLASH_RESULT_TIMEOUT
 } esp_rom_spiflash_result_t;
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
+#include "esp32s3/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/spi_flash.h"
+#include "esp32p4/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/spi_flash.h"
+#include "esp32c5/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/spi_flash.h"
+#include "esp32c61/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/spi_flash.h"
+#include "esp32h4/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S31
+#include "esp32s31/rom/spi_flash.h"
+#include "esp32s31/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rom/spi_flash.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   * @brief SPI Flash init, clock divisor is 4, use 1 line Slow read mode.

@@ -35,7 +35,7 @@ extern "C" {
                                      }\
                                      dev_id; \
                                     })
-// Since ESP32-P4, WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
+// WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
 #define SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS  (8)
 
 typedef union  {
