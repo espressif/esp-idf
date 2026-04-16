@@ -36,9 +36,11 @@
 
 #define WPA_HEX_ERR(err) ((err) < 0 ? "-" : ""), (unsigned int) ((err) < 0 ? -(err) : (err))
 
+#ifdef CONFIG_FAST_PSK
+#include "fastpsk.h"
+#endif
 #ifdef CONFIG_FAST_PBKDF2
 #include "fastpbkdf2.h"
-#include "fastpsk.h"
 #endif
 
 struct crypto_hash {
@@ -1057,26 +1059,60 @@ cleanup:
     return ret;
 }
 
+#ifdef CONFIG_TLS_INTERNAL_CLIENT
+static int pbkdf2_sha1_psa(const char *passphrase, const u8 *ssid, size_t ssid_len,
+                           int iterations, u8 *buf, size_t buflen)
+{
+    psa_key_derivation_operation_t op = PSA_KEY_DERIVATION_OPERATION_INIT;
+    psa_status_t status;
+
+    status = psa_key_derivation_setup(&op, PSA_ALG_PBKDF2_HMAC(PSA_ALG_SHA_1));
+    if (status != PSA_SUCCESS) {
+        goto cleanup;
+    }
+
+    status = psa_key_derivation_input_integer(&op, PSA_KEY_DERIVATION_INPUT_COST, iterations);
+    if (status != PSA_SUCCESS) {
+        goto cleanup;
+    }
+
+    status = psa_key_derivation_input_bytes(&op, PSA_KEY_DERIVATION_INPUT_SALT, ssid, ssid_len);
+    if (status != PSA_SUCCESS) {
+        goto cleanup;
+    }
+
+    status = psa_key_derivation_input_bytes(&op, PSA_KEY_DERIVATION_INPUT_PASSWORD,
+                                            (const u8 *) passphrase, os_strlen(passphrase));
+    if (status != PSA_SUCCESS) {
+        goto cleanup;
+    }
+
+    status = psa_key_derivation_output_bytes(&op, buf, buflen);
+
+cleanup:
+    psa_key_derivation_abort(&op);
+    return status == PSA_SUCCESS ? 0 : -1;
+}
+#endif
+
 #if defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA)
 int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
                 int iterations, u8 *buf, size_t buflen)
 {
-#ifdef CONFIG_FAST_PBKDF2
-    /* For ESP32: Using pbkdf2_hmac_sha1() because esp_fast_psk() utilizes hardware,
-     * but for ESP32, the SHA1 hardware implementation is slower than the software implementation.
-     */
-#if defined(CONFIG_IDF_TARGET_ESP32) || !defined(CONFIG_SOC_SHA_SUPPORTED)
-    fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
-                         ssid, ssid_len, iterations, buf, buflen);
-    return 0;
-#else
-    return esp_fast_psk(passphrase, os_strlen(passphrase), ssid, ssid_len, iterations, buf, buflen);
+    if (ssid_len <= 32 && os_strlen(passphrase) <= 63 &&
+            iterations == 4096 && buflen == 32) {
+#if defined(CONFIG_FAST_PSK)
+        return esp_fast_psk(passphrase, os_strlen(passphrase), ssid, ssid_len, iterations, buf, buflen);
+#elif defined(CONFIG_FAST_PBKDF2)
+        fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
+                             ssid, ssid_len, iterations, buf, buflen);
+        return 0;
 #endif
+    }
+#ifdef CONFIG_TLS_INTERNAL_CLIENT
+    return pbkdf2_sha1_psa(passphrase, ssid, ssid_len, iterations, buf, buflen);
 #else
-    int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
-                                            os_strlen(passphrase), ssid,
-                                            ssid_len, iterations, buflen, buf);
-    return ret == 0 ? 0 : -1;
+    return -1;
 #endif
 }
 #endif /* defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA) */
