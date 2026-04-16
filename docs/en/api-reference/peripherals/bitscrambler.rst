@@ -72,7 +72,7 @@ In summary, BitScrambler contains a 32-bit output register, where each bit can t
 Sub-instructions
 """"""""""""""""
 
-``set [output] [source_bits]``: Routes one or more source bits to output bits. Note that it's possible to route multiple bits using the ``..`` operator: for instance ``set 0..3 O4..O6`` will have the same effect as ``set 0 O4, set 1 O5, set 2 O6, set 3 O7``. The first argument is the output bit or output bit range; output bits are numbered from 0 to 31. The second argument is one or a range of `source bits`_. Note that any output bits that do not have a corresponding ``set`` sub-instruction in an instruction bundle will be set to a low logic level.
+``set [output] [source_bits]``: Routes one or more source bits to output bits. Note that it's possible to route multiple bits using the ``..`` operator: for instance ``set 0..3 O4..O7`` will have the same effect as ``set 0 O4, set 1 O5, set 2 O6, set 3 O7``. The first argument is the output bit or output bit range; output bits are numbered from 0 to 31. The second argument is one or a range of `source bits`_. Note that any output bits that do not have a corresponding ``set`` sub-instruction in an instruction bundle will be set to a low logic level.
 
 ``write [n]``: After routing all output bits, take the least significant ``n`` output register bits and push them into the output DMA pipeline. ``n`` can be one of 0, 8, 16 or 32. If an instruction bundle does not have a ``write`` sub-instruction, it will be equivalent to a ``write 0``.
 
