@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,4 +106,31 @@ TEST_CASE("sdspi read/write performance - wait_for_miso == -1, slot 1", "[sdspi]
     //TODO: IDF-8749
     //here freq should be changed to SDMMC_FREQ_HIGHSPEED after fixing IDF-8749
     do_one_sdspi_perf_test_dont_wait_for_miso(SLOT_1, SDMMC_FREQ_DEFAULT);
+}
+
+/* ========== Read/write PSRAM DMA test, SPI ========== */
+
+static void do_one_sdspi_psram_dma_test(int slot, int freq_khz)
+{
+    sdmmc_card_t card;
+#if !CONFIG_SPIRAM
+    TEST_IGNORE_MESSAGE("PSRAM is not enabled");
+#endif
+    sdmmc_test_spi_skip_if_board_incompatible(slot, freq_khz);
+    sdmmc_test_spi_begin(slot, freq_khz, &card, NULL, NULL, NULL);
+    sdmmc_card_print_info(stdout, &card);
+    sdmmc_test_rw_psram_buffer(&card);
+    sdmmc_test_spi_end(slot, &card);
+}
+
+TEST_CASE("sdspi read/write psram dma, slot 0", "[sdspi]")
+{
+    do_one_sdspi_psram_dma_test(SLOT_0, SDMMC_FREQ_HIGHSPEED);
+}
+
+TEST_CASE("sdspi read/write psram dma, slot 1", "[sdspi]")
+{
+    //TODO: IDF-8749
+    //here freq should be changed to SDMMC_FREQ_HIGHSPEED after fixing IDF-8749
+    do_one_sdspi_psram_dma_test(SLOT_1, SDMMC_FREQ_DEFAULT);
 }
