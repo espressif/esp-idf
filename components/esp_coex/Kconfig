@@ -24,14 +24,11 @@ menu "Wireless Coexistence"
         config ESP_COEX_EXTERNAL_COEXIST_ENABLE
             bool "External Coexistence"
             default n
-            depends on (!(BT_ENABLED||NIMBLE_ENABLED)&&(!IDF_TARGET_ESP32))
+            depends on (!BT_CONTROLLER_ENABLED && !IDF_TARGET_ESP32) || SOC_EXTERNAL_COEX_ADVANCE
             help
                 If enabled, HW External coexistence arbitration is managed by GPIO pins.
                 It can support three types of wired combinations so far which are 1-wired/2-wired/3-wired.
                 User can select GPIO pins in application code with configure interfaces.
-
-                This function depends on BT-off
-                because currently we do not support external coex and internal coex simultaneously.
 
         config ESP_COEX_POWER_MANAGEMENT
             bool "Support power management under coexistence"
