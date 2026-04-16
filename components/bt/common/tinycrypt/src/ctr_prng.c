@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,6 +115,9 @@ static void tc_ctr_prng_update(TCCtrPrng_t * const ctx, uint8_t const * const pr
 
 		/* 10.2.1.2 step 6 */
 		memcpy(ctx->V, &(temp[TC_AES_KEY_SIZE]), TC_AES_BLOCK_SIZE);
+
+		/* Clear transient key material from stack */
+		_set(temp, 0, sizeof(temp));
 	}
 }
 
@@ -162,6 +165,11 @@ int tc_ctr_prng_init(TCCtrPrng_t * const ctx,
 
 		result = TC_CRYPTO_SUCCESS;
 	}
+
+	_set(personalization_buf, 0, sizeof(personalization_buf));
+	_set(seed_material, 0, sizeof(seed_material));
+	_set(zeroArr, 0, sizeof(zeroArr));
+
 	return result;
 }
 
@@ -203,6 +211,10 @@ int tc_ctr_prng_reseed(TCCtrPrng_t * const ctx,
 
 		result = TC_CRYPTO_SUCCESS;
 	}
+
+	_set(additional_input_buf, 0, sizeof(additional_input_buf));
+	_set(seed_material, 0, sizeof(seed_material));
+
 	return result;
 }
 
@@ -220,7 +232,19 @@ int tc_ctr_prng_generate(TCCtrPrng_t * const ctx,
 
 	unsigned int result = TC_CRYPTO_FAIL;
 
-	if ((0 != ctx) && (0 != out) && (outlen < MAX_BYTES_PER_REQ)) {
+	if (0 == ctx) {
+		return TC_CRYPTO_FAIL;
+	}
+
+	if (0U == outlen) {
+		return TC_CRYPTO_SUCCESS;
+	}
+
+	if ((0 == out) || (outlen >= MAX_BYTES_PER_REQ)) {
+		return TC_CRYPTO_FAIL;
+	}
+
+	{
 		/* 10.2.1.5.1 step 1 */
 		if (ctx->reseedCount > MAX_REQS_BEFORE_RESEED) {
 			result = TC_CTR_PRNG_RESEED_REQ;

@@ -44,6 +44,7 @@ typedef struct {
     /* Control reference */
     esp_blufi_callbacks_t   *cbs;
     BOOLEAN                 enabled;
+    BOOLEAN                 notify_enabled;
     uint8_t                 send_seq;
     uint8_t                 recv_seq;
     uint8_t                 sec_mode;
