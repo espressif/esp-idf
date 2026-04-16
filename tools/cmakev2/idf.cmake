@@ -317,6 +317,13 @@ function(__init_toolchain)
         idf_die("Toolchain file ${toolchain_file} not found")
     endif()
 
+    # IDF_TOOLCHAIN applies to Espressif targets only; on linux (host build)
+    # it must stay empty so Kconfig leaves both CONFIG_IDF_TOOLCHAIN_GCC and
+    # CONFIG_IDF_TOOLCHAIN_CLANG unset.
+    if(NOT "${idf_target}" STREQUAL "linux")
+        set(IDF_TOOLCHAIN "${toolchain}" CACHE STRING "IDF Build Toolchain Type" FORCE)
+    endif()
+
     set(CMAKE_TOOLCHAIN_FILE "${toolchain_file}" PARENT_SCOPE)
     idf_build_set_property(IDF_TOOLCHAIN_FILE "${toolchain_file}")
 endfunction()
