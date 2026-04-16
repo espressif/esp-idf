@@ -87,6 +87,7 @@ variables:
 
   IDF_CI_BUILD: 1
 
+  PYTHONWARNINGS: "ignore"
   # ccache settings
   # some settings need to set in .gitlab-ci.yml as it takes effect while start-up the job
   # https://ccache.dev/manual/latest.html#_configuring_ccache
