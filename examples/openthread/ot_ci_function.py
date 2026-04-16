@@ -91,7 +91,7 @@ class wifi_parameter:
         self.retry_times = retry_times
 
 
-def joinThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
+def SetThreadNetworkPara(dut: IdfDut, thread: thread_parameter) -> None:
     if thread.dataset:
         command = 'dataset set active ' + thread.dataset
         execute_command(dut, command)
@@ -129,6 +129,9 @@ def joinThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
         dut.expect('Done', timeout=5)
     execute_command(dut, 'dataset commit active')
     dut.expect('Done', timeout=5)
+
+
+def StartThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
     if thread.bbr:
         execute_command(dut, 'bbr enable')
         dut.expect('Done', timeout=5)
@@ -159,7 +162,7 @@ def joinWiFiNetwork(dut: IdfDut, wifi: wifi_parameter) -> Tuple[str, int]:
     ip_address = ''
     for order in range(1, wifi.retry_times):
         command = 'wifi connect -s ' + str(wifi.ssid) + ' -p ' + str(wifi.psk)
-        tmp = get_ouput_string(dut, command, 10)
+        tmp = get_output_string(dut, command, 10)
         if 'sta ip' in str(tmp):
             ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
         wait(dut, 2)
@@ -364,11 +367,19 @@ def check_if_host_receive_ra(br: IdfDut) -> bool:
     interface_name = get_host_interface_name()
     clean_buffer(br)
     omrprefix = get_omrprefix(br)
-    command = 'ip -6 route | grep ' + str(interface_name)
+    onlinkprefix = get_onlinkprefix(br)
+    command = f'ip -6 route show dev {interface_name}'
     out_str = subprocess.getoutput(command)
-    logging.info(f'br omrprefix: {omrprefix}')
-    logging.info(f'host route table:\n {out_str}')
-    return str(omrprefix) in str(out_str)
+    has_omr_route = str(omrprefix) in str(out_str)
+    has_onlink_gua = host_global_address_has_onlink_prefix(interface_name, onlinkprefix)
+    logging.info(
+        'RA check: omrprefix=%s onlinkprefix=%s has_omr_route=%s has_onlink_gua=%s',
+        omrprefix,
+        onlinkprefix,
+        has_omr_route,
+        has_onlink_gua,
+    )
+    return has_omr_route and has_onlink_gua
 
 
 def host_connect_wifi() -> None:
@@ -393,14 +404,16 @@ def wait_for_host_ra_route(
     for attempt in range(1, retries + 1):
         if is_joined_wifi_network(br):
             log_ipv6_addr_route_by_interface(interface_name, title='RA Ready!')
+            logging.info(f'Host RA is ready on attempt {attempt}/{retries}.')
             return
 
-        logging.info(f'Host route not ready yet, retry {attempt}/{retries}...')
+        logging.info(f'Host RA not ready yet, retry {attempt}/{retries}...')
         log_ipv6_addr_route_by_interface(interface_name, title=f'Wait RA ({attempt}/{retries})')
+        if attempt < retries:
+            time.sleep(interval_s)
 
-        time.sleep(interval_s)
-
-    raise AssertionError('Host did not receive RA / OMR route in time')
+    log_ipv6_addr_route_by_interface(interface_name, title='RA check failed')
+    raise AssertionError('Host did not receive valid RA in time (OMR route and onlink GUA both required)')
 
 
 def host_global_address_has_onlink_prefix(interface_name: str, onlinkprefix: str) -> bool:
@@ -439,17 +452,17 @@ def wait_for_host_onlink_global_address(
     interface_name = get_host_interface_name()
     onlinkprefix = get_onlinkprefix(br)
     logging.info(f'Wait for host GUA in BR onlink prefix {onlinkprefix!r} on {interface_name}')
-    log_ipv6_addr_route_by_interface(interface_name, title='Wait onlink GUA (initial)')
 
     for attempt in range(1, retries + 1):
         if host_global_address_has_onlink_prefix(interface_name, onlinkprefix):
-            log_ipv6_addr_route_by_interface(interface_name, title='Onlink GUA ready!')
+            logging.info(f'Host onlink GUA is ready on attempt {attempt}/{retries}.')
             return onlinkprefix
 
         logging.info(f'Host onlink GUA not ready yet, retry {attempt}/{retries}...')
-        log_ipv6_addr_route_by_interface(interface_name, title=f'Wait onlink GUA ({attempt}/{retries})')
-        time.sleep(interval_s)
+        if attempt < retries:
+            time.sleep(interval_s)
 
+    log_ipv6_addr_route_by_interface(interface_name, title='Onlink GUA check failed')
     raise AssertionError(f'Host did not get a global IPv6 address in onlink prefix {onlinkprefix!r} in time')
 
 
@@ -457,7 +470,7 @@ thread_ipv6_group = 'ff04:0:0:0:0:0:0:125'
 
 
 def check_ipmaddr(dut: IdfDut) -> bool:
-    info = get_ouput_string(dut, 'ipmaddr', 2)
+    info = get_output_string(dut, 'ipmaddr', 2)
     if thread_ipv6_group in str(info):
         return True
     return False
@@ -775,7 +788,7 @@ def execute_command(dut: IdfDut, command: str, prefix: str = 'ot ') -> None:
     dut.write(prefix + command)
 
 
-def get_ouput_string(dut: IdfDut, command: str, wait_time: int) -> str:
+def get_output_string(dut: IdfDut, command: str, wait_time: int) -> str:
     execute_command(dut, command)
     tmp = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
     clean_buffer(dut)
