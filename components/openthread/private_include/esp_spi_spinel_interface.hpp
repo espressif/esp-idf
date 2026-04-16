@@ -168,6 +168,7 @@ private:
 
     esp_openthread_spi_host_config_t m_spi_config;
     uint8_t m_tx_buffer[kSPIFrameSize];
+    uint8_t *m_rx_dma_buf; ///< DMA-aligned RX buffer; avoids cache-coherency issues with unaligned frame buffer
     int m_event_fd;
     volatile uint16_t m_pending_data_len;
 
