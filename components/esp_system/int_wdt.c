@@ -73,6 +73,7 @@ static esp_err_t esp_int_wdt_retention_enable(uint32_t group_id)
 {
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = sleep_int_wdt_retention_init, .arg = &group_id } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     esp_err_t err = sleep_retention_module_init((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT, &init_param);
@@ -80,6 +81,11 @@ static esp_err_t esp_int_wdt_retention_enable(uint32_t group_id)
         err = sleep_retention_module_allocate((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
         if (err != ESP_OK) {
             ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for interrupt watchdog timer retention");
+        } else {
+            err = sleep_retention_module_attach((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
+            if (err != ESP_OK) {
+                ESP_LOGW(TAG, "Failed to attach sleep retention linked list for interrupt watchdog timer retention");
+            }
         }
     }
     return err;
