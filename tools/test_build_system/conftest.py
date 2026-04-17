@@ -231,30 +231,27 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
 
 
 @pytest.fixture
-def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
-    # sanitize test name in case pytest.mark.parametrize was used
+def minimal_git_app(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
     test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
-    copy_to = test_name_sanitized + '_app'
-    path_to = func_work_dir / copy_to
+    path_to = func_work_dir / (test_name_sanitized + '_app')
 
-    logging.debug(f'cloning git-template app to {path_to}')
+    logging.debug(f'creating minimal git app at {path_to}')
     path_to.mkdir()
-    # No need to clone full repository, just a single master branch
-    subprocess.run(
-        [
-            'git',
-            'clone',
-            '--single-branch',
-            '-b',
-            'master',
-            '--depth',
-            '1',
-            'https://github.com/espressif/esp-idf-template.git',
-            '.',
-        ],
-        cwd=path_to,
-        capture_output=True,
+    (path_to / 'CMakeLists.txt').write_text(
+        'cmake_minimum_required(VERSION 3.22)\n'
+        'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
+        'project(app-template)\n'
     )
+    (path_to / 'main').mkdir()
+    (path_to / 'main' / 'CMakeLists.txt').write_text('idf_component_register(SRCS "main.c")\n')
+    (path_to / 'main' / 'main.c').write_text('void app_main(void) {}\n')
+    for cmd in [
+        ['git', 'init'],
+        ['git', 'add', '.'],
+        ['git', '-c', 'user.email=test@test.com', '-c', 'user.name=Test', 'commit', '-m', 'init'],
+        ['git', 'tag', 'v1.0'],
+    ]:
+        subprocess.run(cmd, cwd=path_to, capture_output=True, check=True)
 
     old_cwd = Path.cwd()
     os.chdir(path_to)

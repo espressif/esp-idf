@@ -4,6 +4,30 @@
   tags: [fast_run, shiny]
   dependencies: # set dependencies to null to avoid missing artifacts issue
 
+####################
+# fast_build_check #
+####################
+
+# Build one config per target at earliest stage to catch obvious failures before the full build
+fast_build_check:
+  extends:
+    - .build_template
+    - .rules:build
+  stage: pre_check
+  tags: [fast_run, shiny]
+  artifacts:
+    paths:
+      - "**/build*/build_log.txt"
+      - "**/build*/size*.json"
+    expire_in: 1 week
+    when: always
+  script:
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - idf-build-apps build
+        -p tools/test_apps/system/build_tests/full_build
+        --config-rules "sdkconfig.ci.Og="
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4 esp32s31
+
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
   # esp_idf_version.h in a branch before tagging the next version.
