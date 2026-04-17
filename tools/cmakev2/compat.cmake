@@ -642,6 +642,47 @@ function(idf_component_register)
         target_link_libraries("${COMPONENT_TARGET}" PRIVATE "${req_interface}")
     endforeach()
 
+    # Special treatment for 'main' component is only applied when the project
+    # was entered through the Build system v1 compatibility shim. Native
+    # Build system v2 projects with no REQUIRES on main should remain the
+    # author-declared dependency set rooted at main; forcing every discovered
+    # component into main's link graph in that case contradicts the Build
+    # system v2 contract that the dependency graph is what the author writes.
+    idf_build_get_property(v1_compat_shim __V1_COMPAT_SHIM)
+    if(v1_compat_shim AND COMPONENT_NAME STREQUAL "main"
+       AND NOT ARG_REQUIRES AND NOT ARG_PRIV_REQUIRES)
+        idf_component_get_property(component_source "${COMPONENT_NAME}" COMPONENT_SOURCE)
+        if(component_source STREQUAL "project_components")
+            idf_build_get_property(shim_components __SHIM_COMPONENTS)
+            if(shim_components)
+                # The project explicitly restricted COMPONENTS=<list>. Honor
+                # the restriction literally — do not pull every discovered
+                # component into main's link graph, even when the user's list
+                # collapses to just "main". Apps that need additional
+                # components must enumerate them in COMPONENTS or main's
+                # REQUIRES.
+                set(all_components ${shim_components})
+            else()
+                idf_build_get_property(all_components COMPONENTS_DISCOVERED)
+            endif()
+            list(REMOVE_ITEM all_components "main")
+            # Common components are already linked via link_libraries()
+            idf_build_get_property(common_components __COMPONENT_REQUIRES_COMMON)
+            if(common_components)
+                list(REMOVE_ITEM all_components ${common_components})
+            endif()
+            foreach(req IN LISTS all_components)
+                idf_component_include("${req}")
+                idf_component_get_property(req_interface "${req}" COMPONENT_INTERFACE)
+                if(${component_type} STREQUAL LIBRARY)
+                    target_link_libraries("${COMPONENT_TARGET}" PUBLIC "${req_interface}")
+                else()
+                    target_link_libraries("${COMPONENT_TARGET}" INTERFACE "${req_interface}")
+                endif()
+            endforeach()
+        endif()
+    endif()
+
     # Signal to idf_component_include that this component was included via the
     # backward compatible idf_component_register function.
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_FORMAT CMAKEV1)
