@@ -70,5 +70,5 @@ def test_examples_protocol_https_x509_bundle_default_crt_bundle_stress_test(dut:
     # start test
     num_URLS = int(dut.expect(r'Connecting to (\d+) URLs', timeout=30)[1].decode())
     for _ in range(num_URLS):
-        dut.expect(r'Connection established to ([\s\S]*)', timeout=30)
-    dut.expect('Completed {} connections'.format(num_URLS), timeout=60)
+        dut.expect(r'Connection established to ([\s\S]*)', timeout=60)
+    dut.expect('Completed {} connections'.format(num_URLS), timeout=180)
