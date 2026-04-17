@@ -44,9 +44,13 @@ static uint8_t get_lp_hp_gap(void)
             pvt_offset = offset_value;
         }
         pvt_offset = pvt_offset - 2;
-        assert((pvt_offset >= -15) && (pvt_offset <= 13));
-        if (pvt_offset < 0 ) {
-            pvt_offset = 16 - pvt_offset;
+        if (pvt_offset < 0) {
+            if (pvt_offset >= -15) {
+                pvt_offset = 16 - pvt_offset;
+            } else {
+                // pvt offset value only has 4 bit
+                pvt_offset = 31;
+            }
         }
     }
     return pvt_offset;
