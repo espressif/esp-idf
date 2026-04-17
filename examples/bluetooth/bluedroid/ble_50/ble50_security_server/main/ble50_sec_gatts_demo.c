@@ -489,6 +489,8 @@ void app_main(void)
     adv_name_len = MIN(adv_name_len, strlen(adv_name));
     memcpy(&ext_adv_raw_data[EXT_ADV_NAME_OFFSET], adv_name, adv_name_len);
     ext_adv_raw_data[EXT_ADV_NAME_LEN_OFFSET] = (adv_name_len + 1);
+    ESP_LOG_BUFFER_CHAR("Adv name", adv_name, adv_name_len);
+    ESP_LOGE(GATTS_TABLE_TAG,"EXAMPLE_CI_ID %d PIPELINE_ID %d CHIP_ID %d\n", CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
     #endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
