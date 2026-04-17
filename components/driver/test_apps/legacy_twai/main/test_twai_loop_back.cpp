@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/twai.h"
+#include "hal/twai_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "esp_private/sleep_cpu.h"
@@ -54,6 +55,44 @@ TEST_CASE("twai_bit_timing", "[twai-loop-back]")
 
     t_config.quanta_resolution_hz = 2000000;
     TEST_ESP_OK(twai_driver_install(&g_config, &t_config, &f_config));
+    TEST_ESP_OK(twai_driver_uninstall());
+}
+
+TEST_CASE("twai_bit_timing_uses_prop_seg", "[twai-loop-back]")
+{
+    twai_timing_config_t t_config = {
+        .clk_src = TWAI_CLK_SRC_DEFAULT,
+        .quanta_resolution_hz = 0,
+        .brp = 16,
+        .prop_seg = 8,
+        .tseg_1 = 7,
+        .tseg_2 = 4,
+        .sjw = 3,
+        .ssp_offset = 0,
+        .triple_sampling = false,
+    };
+    twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_0, TWAI_MODE_NO_ACK);
+
+    TEST_ESP_OK(twai_driver_install(&g_config, &t_config, &f_config));
+
+    const twai_dev_t *twai_dev = TWAI_LL_GET_HW(g_config.controller_id);
+    TEST_ASSERT_NOT_NULL(twai_dev);
+
+    // twai_dev_t uses different register struct names across chip families:
+    // - older (esp32/s2/s3/c3): bus_timing_1_reg.{tseg1, tseg2, sam}
+    // - newer (esp32p4/c6/h2/h21): bus_timing_1.{time_segment1, time_segment2, time_sampling}
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || \
+    defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
+    TEST_ASSERT_EQUAL_UINT32(t_config.tseg_1 + t_config.prop_seg - 1, twai_dev->bus_timing_1_reg.tseg1);
+    TEST_ASSERT_EQUAL_UINT32(t_config.tseg_2 - 1, twai_dev->bus_timing_1_reg.tseg2);
+    TEST_ASSERT_EQUAL((int)t_config.triple_sampling, (int)twai_dev->bus_timing_1_reg.sam);
+#else
+    TEST_ASSERT_EQUAL_UINT32(t_config.tseg_1 + t_config.prop_seg - 1, twai_dev->bus_timing_1.time_segment1);
+    TEST_ASSERT_EQUAL_UINT32(t_config.tseg_2 - 1, twai_dev->bus_timing_1.time_segment2);
+    TEST_ASSERT_EQUAL((int)t_config.triple_sampling, (int)twai_dev->bus_timing_1.time_sampling);
+#endif
+
     TEST_ESP_OK(twai_driver_uninstall());
 }
 
