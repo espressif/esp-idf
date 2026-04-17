@@ -665,7 +665,6 @@ void apply_z(uECC_word_t * X1, uECC_word_t * Y1, const uECC_word_t * const Z,
 }
 
 #if !SOC_ECC_SUPPORTED || SOC_ESP_NIMBLE_CONTROLLER
-/* Keep ESP32-C6 on the software micro-ecc path for BLE SC compatibility. */
 /* P = (x1, y1) => 2P, (x2, y2) => P' */
 static void XYcZ_initial_double(uECC_word_t * X1, uECC_word_t * Y1,
 				uECC_word_t * X2, uECC_word_t * Y2,
@@ -936,7 +935,7 @@ int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve)
 		return -2;
 	}
 
-#if SOC_ECC_SUPPORTED
+#if SOC_ECC_SUPPORTED && !SOC_ESP_NIMBLE_CONTROLLER
     /* Only p256r1 is supported currently. */
     if (curve != uECC_secp256r1()) {
         return -5;

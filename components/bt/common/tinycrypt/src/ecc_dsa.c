@@ -101,7 +101,7 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
 
 	uECC_word_t tmp[NUM_ECC_WORDS];
 	uECC_word_t s[NUM_ECC_WORDS];
-#if !SOC_ECC_SUPPORTED
+#if !SOC_ECC_SUPPORTED || SOC_ESP_NIMBLE_CONTROLLER
 	uECC_word_t *k2[2] = {tmp, s};
 	uECC_word_t carry;
 #endif
@@ -116,7 +116,7 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
 		return 0;
 	}
 
-#if SOC_ECC_SUPPORTED
+#if SOC_ECC_SUPPORTED && !SOC_ESP_NIMBLE_CONTROLLER
 	EccPoint_mult(p, curve->G, k, 0, num_n_bits, curve);
 #else
 	carry = regularize_k(k, tmp, s, curve);
