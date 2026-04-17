@@ -116,7 +116,9 @@ ext_bleprph_advertise(void)
     memset (&params, 0, sizeof(params));
 
     /* enable connectable advertising */
+#if NIMBLE_BLE_CONNECT
     params.connectable = 1;
+#endif // NIMBLE_BLE_CONNECT
 
     /* advertise using random addr */
     params.own_addr_type = own_addr_type;
@@ -195,11 +197,13 @@ bleprph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
 
     fields.uuids16 = (ble_uuid16_t[]) {
         BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
@@ -422,9 +426,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_PASSKEY_ACTION:
         ESP_LOGI(tag, "PASSKEY_ACTION_EVENT started ");
+#if NIMBLE_BLE_CONNECT && NIMBLE_BLE_SM
         struct ble_sm_io pkey = {0};
         int key = 0;
-
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
             /* WARNING: Hardcoded passkey for demonstration only.
@@ -465,6 +469,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
             ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         }
+#endif // NIMBLE_BLE_CONNECT && NIMBLE_BLE_SM
         return 0;
 
 #if CONFIG_EXAMPLE_SLEEP_WAKEUP

@@ -92,10 +92,8 @@ if(CONFIG_BT_ENABLED)
         elseif(CONFIG_IDF_TARGET_ESP32S3)
             list(APPEND ldscripts "linker_rw_bt_controller.lf")
         elseif(CONFIG_IDF_TARGET_ESP32C2)
-            list(APPEND srcs "controller/esp32c2/ble.c")
-            if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
-                list(APPEND srcs "controller/esp32c2/dummy.c")
-            endif()
+            list(APPEND srcs "controller/${target_name}/ble.c")
+            list(APPEND srcs "controller/esp32c2/dummy.c")
             set(ldscripts "linker_esp32c2.lf")
         else()
             list(APPEND srcs "controller/${target_name}/ble.c")
@@ -680,6 +678,7 @@ if(CONFIG_BT_ENABLED)
         list(APPEND srcs
                 "porting/npl/freertos/src/npl_os_freertos.c"
                 "porting/mem/os_msys_init.c"
+                "porting/mem/os_mempool.c"
                 "porting/transport/src/hci_transport.c"
         )
 
@@ -891,7 +890,7 @@ if(CONFIG_BT_ENABLED)
         if(NOT CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
             list(APPEND srcs
                     "host/nimble/nimble/porting/nimble/src/endian.c"
-                    "host/nimble/nimble/porting/nimble/src/os_mempool.c"
+                    "porting/mem/os_mempool.c"
                     "host/nimble/nimble/porting/nimble/src/mem.c"
                     "host/nimble/nimble/porting/nimble/src/os_mbuf.c"
                     "host/nimble/nimble/porting/nimble/src/os_msys_init.c"
