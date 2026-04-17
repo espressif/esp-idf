@@ -1,7 +1,7 @@
 /* HTTPS GET Example using plain mbedTLS sockets
  *
- * Contacts the howsmyssl.com API via TLS v1.2 and reads a JSON
- * response.
+ * Connects to multiple HTTPS servers and validates their certificates
+ * using the certificate bundle.
  *
  * Adapted from the ssl_client1 example in mbedtls.
  *
@@ -44,16 +44,15 @@
 #include "esp_crt_bundle.h"
 
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL
-#define MAX_URLS    9
+#define MAX_URLS    8
 #else
 #define MAX_URLS    2
 #endif
 
 static const char *web_urls[MAX_URLS] = {
-    "https://www.howsmyssl.com/a/check",
+    "https://letsencrypt.org",
     "https://espressif.com",
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL
-    "https://letsencrypt.org",
     "https://www.identrust.com",
     "https://www.globalsign.com",
     "https://www.sectigo.com",
