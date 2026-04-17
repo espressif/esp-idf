@@ -147,7 +147,7 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	uECC_word_t _private[NUM_ECC_WORDS];
 
 	uECC_word_t tmp[NUM_ECC_WORDS];
-#if !SOC_ECC_SUPPORTED
+#if !SOC_ECC_SUPPORTED || SOC_ESP_NIMBLE_CONTROLLER
 	uECC_word_t *p2[2] = {_private, tmp};
 	uECC_word_t *initial_Z = 0;
 	uECC_word_t carry;
@@ -167,7 +167,7 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 			       public_key + num_bytes,
 			       num_bytes);
 
-#if SOC_ECC_SUPPORTED
+#if SOC_ECC_SUPPORTED && !SOC_ESP_NIMBLE_CONTROLLER
 	EccPoint_mult(_public, _public, _private, 0, curve->num_n_bits, curve);
 #else
 	/* Regularize the bitcount for the private key so that attackers cannot use a
@@ -194,7 +194,7 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 
 clear_and_out:
 	/* erasing temporary buffer used to store secret: */
-#if !SOC_ECC_SUPPORTED
+#if !SOC_ECC_SUPPORTED || SOC_ESP_NIMBLE_CONTROLLER
 	memset(p2, 0, sizeof(p2));
 	__asm__ __volatile__("" :: "g"(p2) : "memory");
 #endif
