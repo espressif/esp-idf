@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
 
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -232,8 +232,13 @@ static void btc_gattc_open(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_close(btc_ble_gattc_args_t *arg)
 {
-    // TODO; Review this call of BTA_API, check the usage of BTA_GATTC_CancelOpen
     BTA_GATTC_Close(arg->close.conn_id);
+}
+
+static void btc_gattc_cancel_open(btc_ble_gattc_args_t *arg)
+{
+    /* ESP API path: always cancel as direct connection */
+    BTA_GATTC_CancelOpen(arg->cancel_open.gattc_if, arg->cancel_open.remote_bda, TRUE);
 }
 
 static void btc_gattc_cfg_mtu(btc_ble_gattc_args_t *arg)
@@ -743,6 +748,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     case BTC_GATTC_ACT_CLOSE:
         btc_gattc_close(arg);
         break;
+    case BTC_GATTC_ACT_CANCEL_OPEN:
+        btc_gattc_cancel_open(arg);
+        break;
     case BTC_GATTC_ACT_CFG_MTU:
         btc_gattc_cfg_mtu(arg);
         break;
@@ -1006,7 +1014,12 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_GATTC_CANCEL_OPEN_EVT: {
-        /* Currently, this event will never happen */
+        tBTA_GATTC_CANCEL_OPEN *cancel = &arg->cancel_open;
+
+        gattc_if = cancel->client_if;
+        param.cancel_open.status = cancel->status;
+        memcpy(param.cancel_open.remote_bda, cancel->remote_bda, sizeof(esp_bd_addr_t));
+        btc_gattc_cb_to_app(ESP_GATTC_CANCEL_OPEN_EVT, gattc_if, &param);
         break;
     }
     case BTA_GATTC_CONGEST_EVT: {

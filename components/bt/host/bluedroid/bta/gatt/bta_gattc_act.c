@@ -392,8 +392,14 @@ void bta_gattc_process_api_open_cancel (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_
             p_clreg = bta_gattc_cl_get_regcb(p_msg->api_cancel_conn.client_if);
 
             if (p_clreg && p_clreg->p_cback) {
-                cb_data.status = BTA_GATT_ERROR;
+                memset(&cb_data, 0, sizeof(cb_data));
+                cb_data.cancel_open.status = BTA_GATT_ERROR;
+                cb_data.cancel_open.client_if = p_msg->api_cancel_conn.client_if;
+                bdcpy(cb_data.cancel_open.remote_bda, p_msg->api_cancel_conn.remote_bda);
                 (*p_clreg->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
+            } else {
+                APPL_TRACE_ERROR("Cannot report cancel open result: client_if=%d not registered or no callback",
+                                 p_msg->api_cancel_conn.client_if);
             }
         }
     } else {
@@ -443,7 +449,12 @@ void bta_gattc_cancel_open_error(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_dat
     tBTA_GATTC cb_data;
     UNUSED(p_data);
 
-    cb_data.status = BTA_GATT_ERROR;
+    memset(&cb_data, 0, sizeof(cb_data));
+    cb_data.cancel_open.status = BTA_GATT_ERROR;
+    if (p_clcb && p_clcb->p_rcb) {
+        cb_data.cancel_open.client_if = p_clcb->p_rcb->client_if;
+        bdcpy(cb_data.cancel_open.remote_bda, p_clcb->bda);
+    }
 
     if ( p_clcb && p_clcb->p_rcb && p_clcb->p_rcb->p_cback ) {
         (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
@@ -641,12 +652,16 @@ void bta_gattc_cancel_bk_conn(tBTA_GATTC_API_CANCEL_OPEN *p_data)
 {
     tBTA_GATTC_RCB      *p_clreg;
     tBTA_GATTC          cb_data;
-    cb_data.status = BTA_GATT_ERROR;
+
+    memset(&cb_data, 0, sizeof(cb_data));
+    cb_data.cancel_open.status = BTA_GATT_ERROR;
+    cb_data.cancel_open.client_if = p_data->client_if;
+    bdcpy(cb_data.cancel_open.remote_bda, p_data->remote_bda);
 
     /* remove the device from the bg connection mask */
     if (bta_gattc_mark_bg_conn(p_data->client_if, p_data->remote_bda, FALSE, FALSE)) {
         if (GATT_CancelConnect(p_data->client_if, p_data->remote_bda, FALSE)) {
-            cb_data.status = BTA_GATT_OK;
+            cb_data.cancel_open.status = BTA_GATT_OK;
         } else {
             APPL_TRACE_ERROR("bta_gattc_cancel_bk_conn failed");
         }
@@ -673,7 +688,10 @@ void bta_gattc_cancel_open_ok(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     UNUSED(p_data);
 
     if ( p_clcb->p_rcb->p_cback ) {
-        cb_data.status = BTA_GATT_OK;
+        memset(&cb_data, 0, sizeof(cb_data));
+        cb_data.cancel_open.status = BTA_GATT_OK;
+        cb_data.cancel_open.client_if = p_clcb->p_rcb->client_if;
+        bdcpy(cb_data.cancel_open.remote_bda, p_clcb->bda);
         (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
     }
 
@@ -696,7 +714,10 @@ void bta_gattc_cancel_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_CANCEL_OPEN_OK_EVT, p_data);
     } else {
         if ( p_clcb->p_rcb->p_cback ) {
-            cb_data.status = BTA_GATT_ERROR;
+            memset(&cb_data, 0, sizeof(cb_data));
+            cb_data.cancel_open.status = BTA_GATT_ERROR;
+            cb_data.cancel_open.client_if = p_clcb->p_rcb->client_if;
+            bdcpy(cb_data.cancel_open.remote_bda, p_clcb->bda);
             (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CANCEL_OPEN_EVT, &cb_data);
         }
     }
