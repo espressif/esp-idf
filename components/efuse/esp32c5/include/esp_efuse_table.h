@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table a89a21bde56c3936f31af16ba1de1fe3
+// md5_digest_table e18555ab3140262c47fb3f6a03944676
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -118,6 +118,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
@@ -260,6 +261,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PVT_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
