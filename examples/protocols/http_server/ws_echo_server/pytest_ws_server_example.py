@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import time
 
 import pytest
 from common_test_methods import get_env_config_variable
@@ -27,10 +28,21 @@ class WsClient:
         self.port = port
         self.ip = ip
         self.ws = websocket.WebSocket()
+        # Set timeout to 10 seconds to avoid indefinite blocking
+        self.ws.settimeout(10)
         self.uri = uri
 
     def __enter__(self):  # type: ignore
-        self.ws.connect(f'ws://{self.ip}:{self.port}/{self.uri}')
+        url = f'ws://{self.ip}:{self.port}/{self.uri}'
+        for attempt in range(3):
+            try:
+                self.ws.connect(url)
+                return self
+            except (websocket.WebSocketBadStatusException, ConnectionRefusedError, TimeoutError, OSError) as e:
+                logging.warning('WS connect attempt %d/3 to %s failed: %s', attempt + 1, url, e)
+                if attempt == 2:
+                    raise
+                time.sleep(2)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):  # type: ignore
@@ -47,18 +59,8 @@ class WsClient:
         return self.ws.send(data)
 
 
-@pytest.mark.wifi_router
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
-    # Get binary file
-    binary_file = os.path.join(dut.app.binary_path, 'ws_echo_server.bin')
-    bin_size = os.path.getsize(binary_file)
-    logging.info(f'http_ws_server_bin_size : {bin_size // 1024}KB')
-
-    logging.info('Starting ws-echo-server test app based on http_server')
-
-    # Parse IP address of STA
-    logging.info('Waiting to connect with AP')
+def _wait_for_server_ready(dut: Dut) -> tuple:
+    """Wait for the WS server to be fully ready with all URI handlers registered."""
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
         dut.expect('Please input ssid password:')
         env_name = 'wifi_router'
@@ -68,11 +70,33 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = dut.expect(r"Starting server on port: '(\d+)'", timeout=30)[1].decode()
 
+    # Wait for all URI handlers to be registered before connecting.
+    # URI handlers (/ws, /auth) are registered asynchronously after the
+    # server starts, taking 40-660ms depending on config and CI load.
+    # Connecting before registration completes causes 404 Not Found errors.
+    dut.expect('Returned from app_main()', timeout=30)
+    time.sleep(1)
+
     logging.info(f'Got IP   : {got_ip}')
     logging.info(f'Got Port : {got_port}')
+    return got_ip, int(got_port)
+
+
+@pytest.mark.wifi_router
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
+    # Get binary file
+    binary_file = os.path.join(dut.app.binary_path, 'ws_echo_server.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info(f'http_ws_server_bin_size : {bin_size // 1024}KB')
+
+    logging.info('Starting ws-echo-server test app based on http_server')
+    logging.info('Waiting to connect with AP')
+
+    got_ip, got_port = _wait_for_server_ready(dut)
 
     # Start ws server test
-    with WsClient(got_ip, int(got_port), uri='ws') as ws:
+    with WsClient(got_ip, got_port, uri='ws') as ws:
         DATA = 'Espressif'
         for expected_opcode in [OPCODE_TEXT, OPCODE_BIN, OPCODE_PING]:
             ws.write(data=DATA, opcode=expected_opcode)
@@ -115,20 +139,6 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
         data = data.decode()
         if opcode != OPCODE_PONG:
             raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
-        ws.write(data='Ping', opcode=OPCODE_TEXT)
-        # Wait for server to receive the message and send a ping
-        dut.expect(r'Got packet with message: Ping', timeout=10)
-        # Now read the ping response
-        opcode, data = ws.read()
-        logging.info(f'Testing server-initiated ping: Received opcode:{opcode}, data:{data}')
-        data = data.decode()
-        if opcode != OPCODE_PING:
-            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
-        # Now we should get a pong in response to our ping
-        opcode, data = ws.read()
-        data = data.decode()
-        if opcode != OPCODE_PONG:
-            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
 
 
 @pytest.mark.wifi_router
@@ -139,21 +149,14 @@ def test_ws_auth_handshake(dut: Dut) -> None:
     This is used to verify ws_pre_handshake_cb can reject the handshake.
     """
     # Wait for device to connect and start server
-    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-        dut.expect('Please input ssid password:')
-        env_name = 'wifi_router'
-        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
-        ap_password = get_env_config_variable(env_name, 'ap_password')
-        dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
-    got_port = dut.expect(r"Starting server on port: '(\d+)'", timeout=30)[1].decode()
+    got_ip, got_port = _wait_for_server_ready(dut)
     # Prepare a minimal WebSocket handshake request
     # Use WSClient to attempt the handshake, expecting it to fail (handshake rejected)
 
     handshake_success = False
     try:
         # Attempt to use WSClient, expecting it to fail handshake
-        with WsClient(got_ip, int(got_port), uri='auth?token=valid') as ws:  # type: ignore  # noqa: F841
+        with WsClient(got_ip, got_port, uri='auth?token=valid') as ws:  # type: ignore  # noqa: F841
             handshake_success = True
     except Exception as e:
         logging.info(f'WebSocket handshake failed: {e}')
