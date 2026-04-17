@@ -13,7 +13,7 @@
 #if __XTENSA__
 #include "xtensa/xtruntime.h"
 #include "xt_utils.h"
-#else
+#elif __riscv
 #include "riscv/rv_utils.h"
 #endif
 
