@@ -86,7 +86,7 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
     }
 
     //Configure bus timing, acceptance filter, CLKOUT, and interrupts
-    twai_ll_set_bus_timing(hal_ctx->dev, brp, t_config->sjw, t_config->tseg_1, t_config->tseg_2, t_config->triple_sampling);
+    twai_ll_set_bus_timing(hal_ctx->dev, brp, t_config->sjw, t_config->tseg_1 + t_config->prop_seg, t_config->tseg_2, t_config->triple_sampling);
     twai_ll_set_acc_filter(hal_ctx->dev, f_config->acceptance_code, f_config->acceptance_mask, f_config->single_filter);
     twai_ll_set_clkout(hal_ctx->dev, clkout_divider);
 }
