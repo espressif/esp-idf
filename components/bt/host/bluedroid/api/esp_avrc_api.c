@@ -624,6 +624,10 @@ esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    if (param == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_AVRC_TG;

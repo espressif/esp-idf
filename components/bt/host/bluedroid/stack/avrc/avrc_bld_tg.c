@@ -47,6 +47,7 @@ static tAVRC_STS avrc_bld_get_capability_rsp (tAVRC_GET_CAPS_RSP *p_rsp, BT_HDR 
     UINT8   xx;
     UINT32  *p_company_id;
     UINT8   *p_event_id;
+    UINT8   count;
     tAVRC_STS status = AVRC_STS_NO_ERROR;
 
     if (!(AVRC_IS_VALID_CAP_ID(p_rsp->capability_id))) {
@@ -64,25 +65,31 @@ static tAVRC_STS avrc_bld_get_capability_rsp (tAVRC_GET_CAPS_RSP *p_rsp, BT_HDR 
     UINT8_TO_BE_STREAM(p_data, p_rsp->capability_id);
     p_count = p_data;
 
+    if (p_rsp->capability_id == AVRC_CAP_COMPANY_ID) {
+        count = (p_rsp->count > AVRC_CAP_MAX_NUM_COMP_ID) ? AVRC_CAP_MAX_NUM_COMP_ID : p_rsp->count;
+    } else {
+        count = (p_rsp->count > AVRC_CAP_MAX_NUM_EVT_ID) ? AVRC_CAP_MAX_NUM_EVT_ID : p_rsp->count;
+    }
+
     if (len == 0) {
-        *p_count = p_rsp->count;
+        *p_count = count;
         p_data++;
         len = 2; /* move past the capability_id and count */
     } else {
         p_data = p_start + p_pkt->len;
-        *p_count += p_rsp->count;
+        *p_count += count;
     }
 
     if (p_rsp->capability_id == AVRC_CAP_COMPANY_ID) {
         p_company_id = p_rsp->param.company_id;
-        for (xx = 0; xx < p_rsp->count; xx++) {
+        for (xx = 0; xx < count; xx++) {
             UINT24_TO_BE_STREAM(p_data, p_company_id[xx]);
         }
-        len += p_rsp->count * 3;
+        len += count * 3;
     } else {
         p_event_id = p_rsp->param.event_id;
         *p_count = 0;
-        for (xx = 0; xx < p_rsp->count; xx++) {
+        for (xx = 0; xx < count; xx++) {
             if (AVRC_IS_VALID_EVENT_ID(p_event_id[xx])) {
                 (*p_count)++;
                 UINT8_TO_BE_STREAM(p_data, p_event_id[xx]);
@@ -113,6 +120,12 @@ static tAVRC_STS avrc_bld_list_app_settings_attr_rsp (tAVRC_LIST_APP_ATTR_RSP *p
     UINT8   *p_data, *p_start, *p_len, *p_num;
     UINT16  len = 0;
     UINT8   xx;
+    UINT8   num_attr;
+
+    num_attr = p_rsp->num_attr;
+    if (num_attr > AVRC_MAX_APP_ATTR_SIZE) {
+        num_attr = AVRC_MAX_APP_ATTR_SIZE;
+    }
 
     AVRC_TRACE_API("avrc_bld_list_app_settings_attr_rsp");
     /* get the existing length, if any, and also the num attributes */
@@ -129,7 +142,7 @@ static tAVRC_STS avrc_bld_list_app_settings_attr_rsp (tAVRC_LIST_APP_ATTR_RSP *p
         p_data = p_start + p_pkt->len;
     }
 
-    for (xx = 0; xx < p_rsp->num_attr; xx++) {
+    for (xx = 0; xx < num_attr; xx++) {
         if (AVRC_IsValidPlayerAttr(p_rsp->attrs[xx])) {
             (*p_num)++;
             UINT8_TO_BE_STREAM(p_data, p_rsp->attrs[xx]);
@@ -160,6 +173,12 @@ static tAVRC_STS avrc_bld_list_app_settings_values_rsp (tAVRC_LIST_APP_VALUES_RS
     UINT8   *p_data, *p_start, *p_len, *p_num;
     UINT8   xx;
     UINT16  len;
+    UINT8   num_val;
+
+    num_val = p_rsp->num_val;
+    if (num_val > AVRC_MAX_APP_ATTR_SIZE) {
+        num_val = AVRC_MAX_APP_ATTR_SIZE;
+    }
 
     AVRC_TRACE_API("avrc_bld_list_app_settings_values_rsp");
 
@@ -171,15 +190,15 @@ static tAVRC_STS avrc_bld_list_app_settings_values_rsp (tAVRC_LIST_APP_VALUES_RS
     p_num = p_data;
     /* first time initialize the attribute count */
     if (len == 0) {
-        *p_num = p_rsp->num_val;
+        *p_num = num_val;
         p_data++;
     } else {
         p_data = p_start + p_pkt->len;
-        *p_num += p_rsp->num_val;
+        *p_num += num_val;
     }
 
 
-    for (xx = 0; xx < p_rsp->num_val; xx++) {
+    for (xx = 0; xx < num_val; xx++) {
         UINT8_TO_BE_STREAM(p_data, p_rsp->vals[xx]);
     }
 
@@ -206,6 +225,7 @@ static tAVRC_STS avrc_bld_get_cur_app_setting_value_rsp (tAVRC_GET_CUR_APP_VALUE
     UINT8   *p_data, *p_start, *p_len, *p_count;
     UINT16  len;
     UINT8   xx;
+    UINT8   num_val;
 
     if (!p_rsp->p_vals) {
         AVRC_TRACE_ERROR("avrc_bld_get_cur_app_setting_value_rsp NULL parameter");
@@ -227,7 +247,12 @@ static tAVRC_STS avrc_bld_get_cur_app_setting_value_rsp (tAVRC_GET_CUR_APP_VALUE
         p_data = p_start + p_pkt->len;
     }
 
-    for (xx = 0; xx < p_rsp->num_val; xx++) {
+    num_val = p_rsp->num_val;
+    if (num_val > AVRC_MAX_APP_ATTR_SIZE) {
+        num_val = AVRC_MAX_APP_ATTR_SIZE;
+    }
+
+    for (xx = 0; xx < num_val; xx++) {
         if (avrc_is_valid_player_attrib_value(p_rsp->p_vals[xx].attr_id, p_rsp->p_vals[xx].attr_val)) {
             (*p_count)++;
             UINT8_TO_BE_STREAM(p_data, p_rsp->p_vals[xx].attr_id);
@@ -424,12 +449,21 @@ static tAVRC_STS avrc_bld_get_elem_attrs_rsp (tAVRC_GET_ELEM_ATTRS_RSP *p_rsp, B
 {
     UINT8   *p_data, *p_start, *p_len, *p_count;
     UINT16  len;
+    UINT16  len_left;
     UINT8   xx;
+    UINT8   num_attr;
+    UINT16  str_len;
+    tAVRC_STS sts = AVRC_STS_NO_ERROR;
 
     AVRC_TRACE_API("avrc_bld_get_elem_attrs_rsp");
     if (!p_rsp->p_attrs) {
         AVRC_TRACE_ERROR("avrc_bld_get_elem_attrs_rsp NULL parameter");
         return AVRC_STS_BAD_PARAM;
+    }
+
+    num_attr = p_rsp->num_attr;
+    if (num_attr > AVRC_MAX_ELEM_ATTR_SIZE) {
+        num_attr = AVRC_MAX_ELEM_ATTR_SIZE;
     }
 
     /* get the existing length, if any, and also the num attributes */
@@ -446,24 +480,37 @@ static tAVRC_STS avrc_bld_get_elem_attrs_rsp (tAVRC_GET_ELEM_ATTRS_RSP *p_rsp, B
         p_data = p_start + p_pkt->len;
     }
 
-    for (xx = 0; xx < p_rsp->num_attr; xx++) {
+    for (xx = 0; xx < num_attr; xx++) {
         if (!AVRC_IS_VALID_MEDIA_ATTRIBUTE(p_rsp->p_attrs[xx].attr_id)) {
             AVRC_TRACE_ERROR("avrc_bld_get_elem_attrs_rsp invalid attr id[%d]: %d", xx, p_rsp->p_attrs[xx].attr_id);
             continue;
         }
-        if ( !p_rsp->p_attrs[xx].name.p_str ) {
-            p_rsp->p_attrs[xx].name.str_len = 0;
+        str_len = p_rsp->p_attrs[xx].name.str_len;
+        if (str_len > 0 && p_rsp->p_attrs[xx].name.p_str == NULL) {
+            sts = AVRC_STS_BAD_PARAM;
+            break;
+        }
+        len_left = (UINT16)(((UINT8 *)p_pkt + BT_DEFAULT_BUFFER_SIZE) - p_data);
+        if (len_left < 8 || (UINT32)str_len > (UINT32)len_left - 8) {
+            sts = AVRC_STS_INTERNAL_ERR;
+            break;
         }
         UINT32_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].attr_id);
         UINT16_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.charset_id);
-        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.str_len);
-        ARRAY_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.p_str, p_rsp->p_attrs[xx].name.str_len);
+        UINT16_TO_BE_STREAM(p_data, str_len);
+        if (str_len > 0) {
+            ARRAY_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.p_str, str_len);
+        }
         (*p_count)++;
     }
-    len = p_data - p_count;
-    UINT16_TO_BE_STREAM(p_len, len);
-    p_pkt->len = (p_data - p_start);
-    return AVRC_STS_NO_ERROR;
+
+    if (sts == AVRC_STS_NO_ERROR) {
+        len = p_data - p_count;
+        UINT16_TO_BE_STREAM(p_len, len);
+        p_pkt->len = (p_data - p_start);
+    }
+
+    return sts;
 }
 
 /*******************************************************************************
@@ -485,7 +532,7 @@ static tAVRC_STS avrc_bld_get_play_status_rsp (tAVRC_GET_PLAY_STATUS_RSP *p_rsp,
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_start + 2;
 
-    /* add fixed lenth - song len(4) + song position(4) + status(1) */
+    /* add fixed length - song len(4) + song position(4) + status(1) */
     UINT16_TO_BE_STREAM(p_data, 9);
     UINT32_TO_BE_STREAM(p_data, p_rsp->song_len);
     UINT32_TO_BE_STREAM(p_data, p_rsp->song_pos);
@@ -582,7 +629,6 @@ static tAVRC_STS avrc_bld_notify_rsp (tAVRC_REG_NOTIF_RSP *p_rsp, BT_HDR *p_pkt)
                     UINT8_TO_BE_STREAM(p_data, p_rsp->param.player_setting.attr_id[xx]);
                     UINT8_TO_BE_STREAM(p_data, p_rsp->param.player_setting.attr_value[xx]);
                 } else {
-                    AVRC_TRACE_ERROR("bad player app seeting attribute or value");
                     status = AVRC_STS_BAD_PARAM;
                     break;
                 }
@@ -740,6 +786,9 @@ static BT_HDR *avrc_bld_init_rsp_buffer(tAVRC_RESPONSE *p_rsp)
     case AVRC_OP_VENDOR:
         offset  = AVRC_MSG_VENDOR_OFFSET;
         break;
+
+    default:
+        return NULL;
     }
 
     /* allocate and initialize the buffer */
@@ -763,7 +812,7 @@ static BT_HDR *avrc_bld_init_rsp_buffer(tAVRC_RESPONSE *p_rsp)
             /* reserved 0, packet_type 0 */
             UINT8_TO_BE_STREAM(p_data, 0);
             /* continue to the next "case to add length */
-            /* add fixed lenth - 0 */
+            /* add fixed length - 0 */
             UINT16_TO_BE_STREAM(p_data, 0);
             break;
         }
