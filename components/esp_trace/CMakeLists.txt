@@ -4,8 +4,9 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
+set(srcs)
 if(CONFIG_ESP_TRACE_ENABLE)
-    set(srcs
+    list(APPEND srcs
         "src/core/esp_trace_core.c"
         "src/core/esp_trace_registry.c"
         "src/ports/port_utils.c"

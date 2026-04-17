@@ -19,6 +19,7 @@ elseif(esp_tee_build)
     # TEE build currently only uses the shared headers.
     idf_component_register(INCLUDE_DIRS include)
 else()
+    set(srcs)
     if(CONFIG_SECURE_ENABLE_TEE)
         if(NOT CMAKE_BUILD_EARLY_EXPANSION)
             # Add custom flash target for TEE binary
