@@ -2,6 +2,7 @@
 # Default Variables #
 #####################
 stages:
+  - manual_gate
   - upload_cache
   - pre_check
   - build

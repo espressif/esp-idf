@@ -243,7 +243,9 @@ build_docker:
     - .before_script:minimal
     - .rules:build:docker
   stage: host_test
-  needs: []
+  needs:
+    - job: manual_gate
+      optional: true
   image: espressif/docker-builder:1
   tags: [shiny, dind]
   variables:

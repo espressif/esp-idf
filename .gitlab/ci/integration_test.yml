@@ -39,6 +39,8 @@ gen_integration_pipeline:
     SUBMODULES_TO_FETCH: "none"
     GIT_LFS_SKIP_SMUDGE: 1
   needs:
+    - job: manual_gate
+      optional: true
     - job: fast_template_app
       artifacts: false
       optional: true
