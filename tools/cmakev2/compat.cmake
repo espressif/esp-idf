@@ -702,8 +702,30 @@ function(idf_component_register)
     # Embedded files are managed in the idf_component_include function.
     idf_component_set_property("${COMPONENT_NAME}" EMBED_FILES "${ARG_EMBED_FILES}")
     idf_component_set_property("${COMPONENT_NAME}" EMBED_TXTFILES "${ARG_EMBED_TXTFILES}")
-    idf_component_set_property("${COMPONENT_NAME}" REQUIRES "${ARG_REQUIRES}")
-    idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${ARG_PRIV_REQUIRES}")
+    # The component manager's dependency injection runs before this component's
+    # CMakeLists.txt is evaluated (see idf_component_include() in
+    # component.cmake), and writes the manifest-derived names into both the
+    # MANAGED_* properties and the regular REQUIRES / PRIV_REQUIRES properties.
+    # The latter must not be overwritten by the component's own register call,
+    # else the manifest-derived transitive deps disappear from the build. Union
+    # the two so the persisted property is what the component author wrote
+    # PLUS what the manifest contributed.
+    idf_component_get_property(__existing_requires "${COMPONENT_NAME}" REQUIRES)
+    idf_component_get_property(__existing_priv_requires "${COMPONENT_NAME}" PRIV_REQUIRES)
+    set(__merged_requires "${ARG_REQUIRES}")
+    set(__merged_priv_requires "${ARG_PRIV_REQUIRES}")
+    foreach(__r IN LISTS __existing_requires)
+        if(__r AND NOT __r IN_LIST __merged_requires)
+            list(APPEND __merged_requires "${__r}")
+        endif()
+    endforeach()
+    foreach(__r IN LISTS __existing_priv_requires)
+        if(__r AND NOT __r IN_LIST __merged_priv_requires)
+            list(APPEND __merged_priv_requires "${__r}")
+        endif()
+    endforeach()
+    idf_component_set_property("${COMPONENT_NAME}" REQUIRES "${__merged_requires}")
+    idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${__merged_priv_requires}")
     idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
 endfunction()
