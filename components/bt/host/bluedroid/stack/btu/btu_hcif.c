@@ -171,6 +171,9 @@ static void btu_ble_phy_update_complete_evt(UINT8 *p);
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len);
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+static void btu_ble_monitor_adv_report_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt);
 static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt);
@@ -551,6 +554,11 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_channel_select_alg_evt(p);
             break;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+        case HCI_BLE_MONITOR_ADV_REPORT_EVT:
+            btu_ble_monitor_adv_report_evt(p);
+            break;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
         case HCI_BLE_PERIOD_ADV_SYNC_TRANS_RECV_EVT:
             btu_ble_periodic_adv_sync_trans_recv(p);
@@ -1464,6 +1472,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_cs_read_local_supp_caps_cmpl_evt(p);
         break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    case HCI_BLE_READ_MONITOR_ADV_LIST_SIZE:
+        btm_ble_read_monitor_adv_list_size_complete(p);
+        break;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -2632,6 +2645,23 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 
 }
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+static void btu_ble_monitor_adv_report_evt(UINT8 *p)
+{
+    tBTM_BLE_MONITOR_ADV_REPORT report = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+    /* HCI LE Monitor Adv Report: Addr_Type(1) + Address(6) + Condition(1) */
+    STREAM_TO_UINT8(report.addr_type, p);
+    STREAM_TO_BDADDR(report.address, p);
+    STREAM_TO_UINT8(report.condition, p);
+    btm_ble_monitor_adv_report_evt(&report);
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)

@@ -1126,6 +1126,41 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             msg.act = ESP_GAP_BLE_SCAN_TIMEOUT_EVT;
             break;
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+        case BTA_DM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT: {
+            msg.act = ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT;
+            param.monitor_adv_report.addr_type = params->monitor_adv_report.addr_type;
+            memcpy(param.monitor_adv_report.addr, params->monitor_adv_report.address, BD_ADDR_LEN);
+            param.monitor_adv_report.condition = params->monitor_adv_report.condition;
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_ADD_MONITOR_ADV_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT;
+            param.add_monitor_adv.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_REMOVE_MONITOR_ADV_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT;
+            param.remove_monitor_adv.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_CLEAR_MONITOR_ADV_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT;
+            param.clear_monitor_adv.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT;
+            param.read_monitor_adv_list_size.status = btc_btm_status_to_esp_status(params->monitor_adv_list_size.status);
+            param.read_monitor_adv_list_size.list_size = params->monitor_adv_list_size.list_size;
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT;
+            param.enable_monitor_adv.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT: {
             param.adv_terminate.status = params->adv_term.status;
@@ -3148,6 +3183,25 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapSetHostFeature(arg_5->set_host_feature_params.bit_num, arg_5->set_host_feature_params.bit_val);
         break;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    case BTC_GAP_BLE_ADD_MONITOR_ADV_LIST:
+        BTA_DmBleGapAddMonitorAdvList(arg_5->add_monitor_adv_list.addr_type, arg_5->add_monitor_adv_list.addr,
+                                      arg_5->add_monitor_adv_list.rssi_low, arg_5->add_monitor_adv_list.rssi_high,
+                                      arg_5->add_monitor_adv_list.timeout);
+        break;
+    case BTC_GAP_BLE_RMV_MONITOR_ADV_LIST:
+        BTA_DmBleGapRemoveMonitorAdvList(arg_5->rmv_monitor_adv_list.addr_type, arg_5->rmv_monitor_adv_list.addr);
+        break;
+    case BTC_GAP_BLE_CLEAR_MONITOR_ADV_LIST:
+        BTA_DmBleGapClearMonitorAdvList();
+        break;
+    case BTC_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE:
+        BTA_DmBleGapReadMonitorAdvListSize();
+        break;
+    case BTC_GAP_BLE_ENABLE_MONITOR_ADV:
+        BTA_DmBleGapEnableMonitorAdv(arg_5->enable_monitor_adv.enable);
+        break;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case BTC_GAP_BLE_SET_PA_SUBEVT_DATA:
         BTA_DmBleGapSetPASubevtData(arg_5->per_adv_subevent_data_params.adv_handle, arg_5->per_adv_subevent_data_params.num_subevents_with_data, (uint8_t *)(arg_5->per_adv_subevent_data_params.subevent_params));
