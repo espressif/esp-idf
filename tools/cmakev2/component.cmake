@@ -925,6 +925,29 @@ function(idf_component_include name)
     endif()
 
     list(APPEND __DEPENDENCY_CHAIN "${component_interface}")
+
+    # Inject managed dependencies BEFORE add_subdirectory() evaluates the
+    # component's CMakeLists.txt — otherwise any component that queries a
+    # managed dependency at register time via
+    # idf_component_get_property(... COMPONENT_LIB) finds nothing because the
+    # target hasn't been created yet.
+    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+    if(idf_component_manager EQUAL 1)
+        idf_component_get_property(_comp_dir "${component_name}" COMPONENT_DIR)
+        if(EXISTS "${_comp_dir}/idf_component.yml")
+            __inject_requirements_for_component_from_manager("${component_name}")
+
+            idf_component_get_property(_managed_req "${component_name}" MANAGED_REQUIRES)
+            idf_component_get_property(_managed_priv_req "${component_name}" MANAGED_PRIV_REQUIRES)
+
+            foreach(_dep IN LISTS _managed_req _managed_priv_req)
+                if(_dep)
+                    idf_component_include("${_dep}")
+                endif()
+            endforeach()
+        endif()
+    endif()
+
     # Evaluate the CMakeLists.txt file of the component.
     idf_component_get_property(component_build_dir "${component_name}" COMPONENT_BUILD_DIR)
     add_subdirectory("${component_directory}" "${component_build_dir}")
@@ -1011,24 +1034,15 @@ function(idf_component_include name)
         target_add_binary_data(${COMPONENT_TARGET} "${file}" "TEXT")
     endforeach()
 
-    # Inject managed dependencies if component manager is enabled
+    # Link managed dependencies for cmakev1 components (backward compat).
+    # The injection and inclusion already happened before add_subdirectory().
     idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
     idf_component_get_property(component_format "${component_name}" COMPONENT_FORMAT)
     if(idf_component_manager EQUAL 1)
         idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
-        # Check if component has manifest for managed dependency injection
         if(EXISTS "${component_dir}/idf_component.yml")
-            __inject_requirements_for_component_from_manager("${component_name}")
-
-            # Include any managed dependencies
             idf_component_get_property(managed_requires "${component_name}" MANAGED_REQUIRES)
             idf_component_get_property(managed_priv_requires "${component_name}" MANAGED_PRIV_REQUIRES)
-
-            foreach(dep IN LISTS managed_requires managed_priv_requires)
-                if(dep)
-                    idf_component_include("${dep}")
-                endif()
-            endforeach()
 
             # For cmakev1 components, automatically link managed dependencies to maintain
             # backward compatibility.
