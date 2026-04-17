@@ -190,7 +190,7 @@ function(__init_project_configuration)
     # Subprojects that handle their own compiler optimization flags can set the
     # SET_COMPILER_OPTIMIZATION build property to NO before idf_project_init().
     idf_build_get_property(set_compiler_optimization SET_COMPILER_OPTIMIZATION)
-    if(NOT set_compiler_optimization)
+    if(NOT DEFINED set_compiler_optimization OR set_compiler_optimization STREQUAL "")
         set(set_compiler_optimization YES)
     endif()
     if(set_compiler_optimization)
