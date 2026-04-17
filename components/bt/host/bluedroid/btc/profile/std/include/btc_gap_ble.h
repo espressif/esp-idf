@@ -294,12 +294,12 @@ typedef union {
         esp_bd_addr_t bd_addr;
         bool accept;
         uint32_t passkey;
-    } enc_passkey_replay;
+    } enc_passkey_reply;
     //BTC_GAP_BLE_CONFIRM_REPLY_EVT
     struct enc_comfirm_reply_args {
         esp_bd_addr_t bd_addr;
         bool accept;
-    } enc_comfirm_replay;
+    } enc_confirm_reply;
     //BTC_GAP_BLE_OOB_DATA_REPLY_EVT
     struct oob_req_reply_args {
         esp_bd_addr_t bd_addr;
@@ -520,12 +520,12 @@ typedef union {
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
     // BTC_GAP_BLE_ENH_READ_TRANS_POWER_LEVEL
     struct enh_read_trans_pwr_level_args {
-        uint8_t conn_handle;
+        uint16_t conn_handle;
         uint8_t phy;
     } enh_read_trans_pwr_level;
     // BTC_GAP_BLE_READ_REM_TRANS_POWER_LEVEL
     struct read_rem_trans_pwr_level_args {
-        uint8_t conn_handle;
+        uint16_t conn_handle;
         uint8_t phy;
     } read_rem_trans_pwr_level;
     // BTC_GAP_BLE_SET_PATH_LOSS_REPORT_PARAMS

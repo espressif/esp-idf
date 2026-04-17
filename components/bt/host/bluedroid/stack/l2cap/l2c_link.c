@@ -43,7 +43,7 @@
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-extern tBTM_STATUS BTM_BleStartExtAdvRestart(uint8_t handle);
+extern tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t handle);
 #endif// #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern bool btm_ble_inter_get(void);
 
@@ -379,6 +379,9 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
     } else {
 #if (BLE_INCLUDED == TRUE)
         tL2C_LINK_STATE     link_state_temp = p_lcb->link_state;
+#if ((BLE_42_ADV_EN == TRUE) || (GATTC_CONNECT_RETRY_EN == TRUE) || (BLE_50_EXTEND_ADV_EN == TRUE))
+        UINT8               link_role_temp  = p_lcb->link_role;
+#endif
 #endif // (BLE_INCLUDED == TRUE)
         /* There can be a case when we rejected PIN code authentication */
         /* otherwise save a new reason */
@@ -469,6 +472,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 }
 #endif
             }
+            /* l2cu_create_conn must not release the LCB on failure */
             if (l2cu_create_conn(p_lcb, transport)) {
                 lcb_is_free = FALSE;    /* still using this lcb */
             }
@@ -476,13 +480,15 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 
         p_lcb->p_pending_ccb = NULL;
 #if (BLE_INCLUDED == TRUE)
-        if(p_lcb->transport == BT_TRANSPORT_LE) {
+        /* Use p_lcb->transport so BLE reconnection (slave adv restart / master retry) runs even when
+         * there was no pending CCB; 'transport' is only set when (p_first_ccb || p_pending_ccb). */
+        if (p_lcb->transport == BT_TRANSPORT_LE) {
             // for legacy adv, adv restart in gatt_le_connect_cback->gatt_cleanup_upon_disc->BTM_Recovery_Pre_State
             if (reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) {
 
                 #if (BLE_42_FEATURE_SUPPORT == TRUE)
                 #if (BLE_42_ADV_EN == TRUE)
-                if(!btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
+                if(!btm_ble_inter_get() && link_role_temp == HCI_ROLE_SLAVE) {
                     L2CAP_TRACE_DEBUG("slave resatrt adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
                     tBTM_STATUS start_adv_status = btm_ble_start_adv();
                     if (start_adv_status != BTM_SUCCESS) {
@@ -496,7 +502,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             if ((reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) || (link_state_temp == LST_CONNECTING)) {
 
                 #if (GATTC_CONNECT_RETRY_EN == TRUE)
-                if(p_lcb->link_role == HCI_ROLE_MASTER && p_lcb->retry_create_con < GATTC_CONNECT_RETRY_COUNT) {
+                if(link_role_temp == HCI_ROLE_MASTER && p_lcb->retry_create_con < GATTC_CONNECT_RETRY_COUNT) {
                     L2CAP_TRACE_DEBUG("master retry connect, retry count %d reason 0x%x\n",  p_lcb->retry_create_con, reason);
                     p_lcb->retry_create_con ++;
                     // create connection retry
@@ -513,7 +519,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             if ((reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) || (link_state_temp == LST_DISCONNECTED)) {
                 #if (BLE_50_FEATURE_SUPPORT == TRUE)
                     #if (BLE_50_EXTEND_ADV_EN == TRUE)
-                    if(btm_ble_inter_get() && p_lcb->link_role == HCI_ROLE_SLAVE) {
+                    if(btm_ble_inter_get() && link_role_temp == HCI_ROLE_SLAVE) {
                         L2CAP_TRACE_DEBUG("slave restart extend adv, retry count %d reason 0x%x\n", p_lcb->retry_create_con, reason);
                         tBTM_STATUS start_adv_status = BTM_BleStartExtAdvRestart(handle);
                         if (start_adv_status != BTM_SUCCESS) {
@@ -626,6 +632,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
 #endif
         /* Release the LCB */
         l2cu_release_lcb (p_lcb);
+        return;
     }
 
     /* If link is connected, check for inactivity timeout */
@@ -1314,6 +1321,13 @@ static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf)
             acl_data_size = controller->get_acl_data_size_classic();
             xmit_window = l2cb.controller_xmit_window;
         }
+
+        if (p_buf->len <= HCI_DATA_PREAMBLE_SIZE) {
+            L2CAP_TRACE_ERROR ("l2c_link_send_to_lower - bad buffer len: %u", p_buf->len);
+            osi_free(p_buf);
+            return FALSE;
+        }
+
         num_segs = (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) / acl_data_size;
 
 
@@ -1395,14 +1409,25 @@ static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf)
 ** Returns          void
 **
 *******************************************************************************/
-void l2c_link_process_num_completed_pkts (UINT8 *p)
+void l2c_link_process_num_completed_pkts (UINT8 *p, UINT8 evt_len)
 {
     UINT8       num_handles, xx;
     UINT16      handle;
     UINT16      num_sent;
     tL2C_LCB    *p_lcb;
 
+    if (evt_len < 1) {
+        L2CAP_TRACE_ERROR ("l2c_link_process_num_completed_pkts: evt too short (len=%u)", evt_len);
+        return;
+    }
+
     STREAM_TO_UINT8 (num_handles, p);
+
+    if (num_handles > (evt_len - 1) / 4) {
+        L2CAP_TRACE_ERROR ("l2c_link_process_num_completed_pkts: num_handles %u exceeds evt_len %u, truncating",
+                           num_handles, evt_len);
+        num_handles = (evt_len - 1) / 4;
+    }
 
     for (xx = 0; xx < num_handles; xx++) {
         STREAM_TO_UINT16 (handle, p);

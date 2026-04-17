@@ -250,6 +250,8 @@ static BT_HDR *make_command_no_params(uint16_t opcode)
 static BT_HDR *make_command(uint16_t opcode, size_t parameter_size, uint8_t **stream_out)
 {
     BT_HDR *packet = HCI_GET_CMD_BUF(parameter_size);
+    assert(packet != NULL);
+
     hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(packet);
     metadata->opcode = opcode;
 

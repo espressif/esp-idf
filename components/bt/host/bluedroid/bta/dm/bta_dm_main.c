@@ -158,7 +158,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_set_key_material,            /* BTA_DM_API_KEY_MATERIAL_EVT */
 #endif
 #if (BLE_42_ADV_EN == TRUE)
-    bta_dm_ble_set_adv_params_all,          /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
+    bta_dm_ble_start_adv_with_params,          /* BTA_DM_API_BLE_ADV_START_WITH_PARAMS_EVT */
     bta_dm_ble_set_adv_config,              /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
     /* New function to allow set raw adv
        data to HCI */
@@ -254,11 +254,11 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_read_ble_channel_map,        /* BTA_DM_API_BLE_READ_CH_MAP_EVT */
 #endif
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     bta_dm_ble_big_create,             /* BTA_DM_API_ISO_BIG_CREATE_EVT */
     bta_dm_ble_big_create_test,        /* BTA_DM_API_ISO_BIG_CREATE_TEST_EVT */
     bta_dm_ble_big_terminate,          /* BTA_DM_API_ISO_BIG_TERMINATE_EVT */
-#endif// #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif// #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     bta_dm_ble_big_sync_create,        /* BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT */
     bta_dm_ble_big_sync_terminate,     /* BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT */

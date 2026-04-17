@@ -45,7 +45,8 @@
 
 #define BTA_DM_MSG_LEN 50
 
-#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       (1 << (id))
+/* Use 1ULL to avoid UB: 1 << 32 is undefined when int is 32-bit (C11 §6.5.7) */
+#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       ((UINT32)(1ULL << (id)))
 
 /* DM events */
 enum {
@@ -151,7 +152,7 @@ enum {
     /*******This event added by Yulong at 2016/10/20 to
     support setting the ble advertising param by the APP******/
 #if (BLE_42_ADV_EN == TRUE)
-    BTA_DM_API_BLE_ADV_PARAM_All_EVT,
+    BTA_DM_API_BLE_ADV_START_WITH_PARAMS_EVT,
     BTA_DM_API_BLE_SET_ADV_CONFIG_EVT,
     /* Add for set raw advertising data */
     BTA_DM_API_BLE_SET_ADV_CONFIG_RAW_EVT,
@@ -247,11 +248,11 @@ enum {
     BTA_DM_API_BLE_READ_CH_MAP_EVT,
 #endif
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     BTA_DM_API_ISO_BIG_CREATE_EVT,
     BTA_DM_API_ISO_BIG_CREATE_TEST_EVT,
     BTA_DM_API_ISO_BIG_TERMINATE_EVT,
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT,
     BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT,
@@ -442,7 +443,6 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     AFH_CHANNELS        channels;
-    tBTA_CMPL_CB        *set_channels_cb;
 }tBTA_DM_API_BLE_SET_CHANNELS;
 
 typedef struct {
@@ -450,7 +450,6 @@ typedef struct {
     BOOLEAN   add_remove;
     BD_ADDR   remote_addr;
     tBLE_ADDR_TYPE addr_type;
-    tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
 
 #if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
@@ -459,7 +458,6 @@ typedef struct {
     UINT8     subcode;
     UINT32    type;
     BD_ADDR   device_info;
-    tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *exceptional_list_cb;
 }tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST;
 #endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
@@ -510,7 +508,6 @@ typedef struct {
 typedef struct {
     BT_HDR            hdr;
     BD_ADDR          remote_addr;
-    tBTA_CMPL_CB    *read_ch_map_cb;
 } tBTA_DM_API_READ_CH_MAP;
 
 /* data type for BTA_DM_API_SET_VISIBILITY_EVT */
@@ -833,7 +830,6 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 privacy_enable;
-    tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback;
 } tBTA_DM_API_LOCAL_PRIVACY;
 
 typedef struct {
@@ -849,16 +845,6 @@ typedef struct {
 } tBTA_DM_API_KEY_MATERIAL;
 #endif
 
-/* set scan parameter for BLE connections */
-typedef struct {
-    BT_HDR hdr;
-    tBTA_GATTC_IF client_if;
-    UINT32 scan_int;
-    UINT32 scan_window;
-    tBLE_SCAN_MODE scan_mode;
-    tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
-} tBTA_DM_API_BLE_SCAN_PARAMS;
-
 typedef struct {
     BT_HDR hdr;
     tBTA_GATTC_IF client_if;
@@ -868,19 +854,12 @@ typedef struct {
     UINT8 addr_type_own;
     UINT8 scan_duplicate_filter;
     UINT8 scan_filter_policy;
-    tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 } tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;
 
 /* Data type for start/stop observe */
 typedef struct {
     BT_HDR                  hdr;
-    BOOLEAN                 start;
-    UINT32                  duration;
-    tBTA_DM_SEARCH_CBACK    *p_cback;
-    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
-    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
-    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
-} tBTA_DM_API_BLE_OBSERVE;
+} tBTA_DM_API_BLE_ADVACTION;
 
 /* Data type for start/stop scan */
 typedef struct {
@@ -888,16 +867,12 @@ typedef struct {
     BOOLEAN                 start;
     UINT32                  duration;
     tBTA_DM_SEARCH_CBACK    *p_cback;
-    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
-    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
-    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
 } tBTA_DM_API_BLE_SCAN;
 
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     remote_bda;
     UINT16      tx_data_length;
-    tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 } tBTA_DM_API_BLE_SET_DATA_LENGTH;
 
 /* set the address for BLE device
@@ -906,7 +881,6 @@ typedef struct {
     BT_HDR      hdr;
     tBLE_ADDR_TYPE addr_type;
     BD_ADDR address;
-    tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback;
 } tBTA_DM_APT_SET_DEV_ADDR;
 
 typedef struct {
@@ -916,7 +890,6 @@ typedef struct {
 typedef struct {
     BT_HDR      hdr;
     UINT16      rpa_timeout;
-    tBTA_SET_RPA_TIMEOUT_CMPL_CBACK  *p_set_rpa_timeout_cback;
 } tBTA_DM_API_SET_RPA_TIMEOUT;
 
 typedef struct {
@@ -924,7 +897,6 @@ typedef struct {
     esp_bd_addr_t addr;                                 // Bluetooth device address
     UINT8       addr_type;                              // Type of the address
     UINT8       irk[PEER_IRK_LEN];                     // Identity Resolving Key (IRK)
-    tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_callback; // Callback function pointer
 } tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST;
 
 /* set adv parameter for BLE advertising */
@@ -937,7 +909,6 @@ typedef struct {
     tBTM_BLE_ADV_CHNL_MAP   channel_map;
     tBTM_BLE_AFP            adv_filter_policy;
     tBLE_BD_ADDR            *p_dir_bda;
-    tBTA_START_ADV_CMPL_CBACK  *p_start_adv_cback;
 } tBTA_DM_API_BLE_ADV_PARAMS_ALL;
 
 
@@ -951,7 +922,6 @@ typedef struct {
     BT_HDR                  hdr;
     UINT32                  data_mask;
     tBTA_BLE_ADV_DATA       *p_adv_cfg;
-    tBTA_SET_ADV_DATA_CMPL_CBACK    *p_adv_data_cback;
 } tBTA_DM_API_SET_ADV_CONFIG;
 
 /* raw scan response and raw advertising data use
@@ -960,7 +930,6 @@ typedef struct {
     BT_HDR                  hdr;
     UINT8                   *p_raw_adv;
     UINT32                  raw_adv_len;
-    tBTA_SET_ADV_DATA_CMPL_CBACK    *p_adv_data_cback;
 } tBTA_DM_API_SET_ADV_CONFIG_RAW;
 
 typedef struct {
@@ -991,7 +960,6 @@ typedef struct {
 
 typedef struct {
     BT_HDR                  hdr;
-    tBTA_CLEAR_ADV_CMPL_CBACK       *p_clear_adv_cback;
 } tBTA_DM_API_CLEAR_ADV;
 
 typedef struct {
@@ -999,19 +967,16 @@ typedef struct {
     tBLE_ADDR_TYPE                      addr_type;
     BD_ADDR                             addr;
     UINT8                               privacy_mode;
-    tBTA_SET_PRIVACY_MODE_CMPL_CBACK    *p_cback;
 } tBTA_DM_API_SET_PRIVACY_MODE;
 
 typedef struct {
     BT_HDR                              hdr;
     UINT8                               csa_select;
-    tBTA_SET_CSA_SUPPORT_CMPL_CBACK     *p_cback;
 } tBTA_DM_API_BLE_SET_CSA_SUPPORT;
 
 typedef struct {
     BT_HDR                              hdr;
     UINT32                              evt_mask;
-    tBTA_SET_VENDOR_EVT_MASK_CBACK      *p_cback;
 } tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK;
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
@@ -1469,7 +1434,7 @@ typedef struct {
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 typedef struct {
     BT_HDR                          hdr;
     tBTA_DM_BLE_BIG_CREATE_PARAMS big_creat_param;
@@ -1482,7 +1447,7 @@ typedef struct {
     BT_HDR                          hdr;
     tBTA_DM_BLE_BIG_TERMINATE_PARAMS big_terminate_param;
 } tBTA_DM_API_BIG_TERMINATE;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 typedef struct {
     BT_HDR                          hdr;
@@ -1779,7 +1744,7 @@ typedef union {
     tBTA_DM_API_BLE_SET_BG_CONN_TYPE    ble_set_bd_conn_type;
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS  ble_set_scan_fil_params;
-    tBTA_DM_API_BLE_OBSERVE             ble_observe;
+    tBTA_DM_API_BLE_ADVACTION           ble_adv_action;
     tBTA_DM_API_BLE_SCAN                ble_scan;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
@@ -1859,11 +1824,11 @@ typedef union {
     tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK ble_set_vendor_evt_mask;
 #endif
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     tBTA_DM_API_BIG_CREATE              big_creat;
     tBTA_DM_API_BIG_CREATE_TEST         big_creat_test;
     tBTA_DM_API_BIG_TERMINATE           big_terminate;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     tBTA_DM_API_BIG_SYNC_CREATE         big_sync;
     tBTA_DM_API_BIG_SYNC_TERMINATE      big_sync_terminate;
@@ -2360,7 +2325,7 @@ extern void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data);
 #if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
 extern void bta_dm_ble_set_key_material (tBTA_DM_MSG *p_data);
 #endif
-extern void bta_dm_ble_set_adv_params_all(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_start_adv_with_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data);
@@ -2528,11 +2493,11 @@ extern void bta_dm_ble_gap_enable_monitor_adv(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 extern void bta_dm_ble_big_create(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_big_create_test(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_big_terminate(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 extern void bta_dm_ble_big_sync_create(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_big_sync_terminate(tBTA_DM_MSG *p_data);

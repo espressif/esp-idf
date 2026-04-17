@@ -1029,6 +1029,12 @@ tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM 
             p_clcb->s_handle = 0;
             /* copy multiple handles in CB */
             p_read_multi = (tGATT_READ_MULTI *)osi_malloc(sizeof(tGATT_READ_MULTI));
+            if (p_read_multi == NULL) {
+                GATT_TRACE_ERROR("GATTC_Read no resources for multiple read");
+                status = GATT_NO_RESOURCES;
+                gatt_clcb_dealloc(p_clcb);
+                return status;
+            }
             p_clcb->p_attr_buf = (UINT8 *)p_read_multi;
             memcpy (p_read_multi, &p_read->read_multiple, sizeof(tGATT_READ_MULTI));
         case GATT_READ_BY_HANDLE:
@@ -1382,7 +1388,8 @@ void GATT_Deregister (tGATT_IF gatt_if)
                         (p_clcb->p_tcb->tcb_idx == p_tcb->tcb_idx)) {
                     btu_stop_timer(&p_clcb->rsp_timer_ent);
                     gatt_clcb_dealloc (p_clcb);
-                    break;
+                    // Removed break to ensure all CLCBs are cleaned up
+                    // break;
                 }
             }
         }
@@ -1394,6 +1401,10 @@ void GATT_Deregister (tGATT_IF gatt_if)
     memset (p_reg, 0, sizeof(tGATT_REG));
 }
 
+void gatt_start_if_conn_cb(UINT8 tcb_idx, tBT_TRANSPORT transport, BD_ADDR bda)
+{
+
+}
 
 /*******************************************************************************
 **
@@ -1412,21 +1423,19 @@ void GATT_StartIf (tGATT_IF gatt_if)
 {
     tGATT_REG   *p_reg;
     tGATT_TCB   *p_tcb;
-    BD_ADDR     bda;
-    UINT8       start_idx, found_idx;
     UINT16      conn_id;
-    tGATT_TRANSPORT transport ;
+    list_node_t *p_node = NULL;
 
     GATT_TRACE_API ("GATT_StartIf gatt_if=%d", gatt_if);
     if ((p_reg = gatt_get_regcb(gatt_if)) != NULL) {
-        start_idx = 0;
-        while (gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
-            p_tcb = gatt_find_tcb_by_addr(bda, transport);
-            if (p_reg->app_cb.p_conn_cb && p_tcb) {
-                conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, gatt_if);
-                (*p_reg->app_cb.p_conn_cb)(gatt_if, bda, conn_id, TRUE, 0, transport);
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
+                if (p_reg->app_cb.p_conn_cb && p_tcb) {
+                    conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, gatt_if);
+                    (*p_reg->app_cb.p_conn_cb)(gatt_if, p_tcb->peer_bda, conn_id, TRUE, 0, p_tcb->transport);
+                }
             }
-            start_idx = ++found_idx;
         }
     }
 }
@@ -1593,11 +1602,10 @@ tGATT_STATUS GATT_Disconnect (UINT16 conn_id)
 *******************************************************************************/
 tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
 {
-    UINT8               start_idx, found_idx;
     BOOLEAN             srv_chg_ind_pending = FALSE;
     tGATT_TCB           *p_tcb;
-    tBT_TRANSPORT      transport;
     tGATT_STATUS status = GATT_NOT_FOUND;
+    list_node_t     *p_node = NULL;
 
     if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
         status = GATT_WRONG_STATE;
@@ -1608,19 +1616,17 @@ tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
     if(bd_addr) {
          status = gatt_send_srv_chg_ind(bd_addr);
     } else {
-        start_idx = 0;
-        BD_ADDR addr;
-        while (gatt_find_the_connected_bda(start_idx, addr, &found_idx, &transport)) {
-            p_tcb = gatt_get_tcb_by_idx(found_idx);
-            srv_chg_ind_pending = gatt_is_srv_chg_ind_pending(p_tcb);
-
-            if (!srv_chg_ind_pending) {
-                status = gatt_send_srv_chg_ind(addr);
-            } else {
-                status = GATT_BUSY;
-                GATT_TRACE_DEBUG("discard srv chg - already has one in the queue");
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
+                srv_chg_ind_pending = gatt_is_srv_chg_ind_pending(p_tcb);
+                if (!srv_chg_ind_pending) {
+                    status = gatt_send_srv_chg_ind(p_tcb->peer_bda);
+                } else {
+                    status = GATT_BUSY;
+                    GATT_TRACE_DEBUG("discard srv chg - already has one in the queue");
+                }
             }
-            start_idx = ++found_idx;
         }
     }
 

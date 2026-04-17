@@ -2516,7 +2516,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT
      */
     struct ble_cs_read_local_supp_caps_evt {
-        uint8_t status;                          /*!< Indicate channel sounding read local supported capabilities command successfully completed */
+        esp_bt_status_t status;                  /*!< Indicate channel sounding read local supported capabilities command successfully completed */
         uint16_t conn_handle;                    /*!< Connection Handle */
         uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
         uint16_t max_consecutive_proc_supported; /*!< 0x0000: Support for both a fixed number of consecutive CS procedures and for an indefinite number of CS procedures until termination
@@ -2583,7 +2583,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT
      */
     struct ble_cs_read_remote_supp_caps {
-        uint8_t status;                          /*!< 0x00: Channel sounding read remote supported capabilities command successfully completed
+        esp_bt_status_t status;                  /*!< 0x00: Channel sounding read remote supported capabilities command successfully completed
                                                       other: Channel sounding read remote supported capabilities command failed */
         uint16_t conn_handle;                    /*!< Connection Handle */
         uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
@@ -2646,7 +2646,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT
      */
     struct ble_cs_write_cached_remote_supp_caps {
-        uint8_t status;         /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
+        esp_bt_status_t status; /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
                                      0x01: Channel sounding write cached remote FAE table command failed */
         uint16_t conn_handle;   /*!< Connection Handle */
     } cs_write_cached_remote_supp_caps; /*!< Event parameter of ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT */
@@ -2654,7 +2654,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT
      */
     struct ble_cs_security_enable {
-        uint8_t status;         /*!< 0x00: Channel sounding security parameters successfully exchanged
+        esp_bt_status_t status; /*!< 0x00: Channel sounding security parameters successfully exchanged
                                                other: Channel sounding CS security parameter exchange failed */
         uint16_t conn_handle;   /*!< Connection Handle */
     } cs_security_enable; /*!< Event parameter of ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT */
@@ -2662,7 +2662,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT
      */
     struct ble_cs_set_default_settings {
-        uint8_t status;                 /*!< 0x00: Channel sounding set default settings command successfully completed
+        esp_bt_status_t status;         /*!< 0x00: Channel sounding set default settings command successfully completed
                                                other: Channel sounding set default settings command failed*/
         uint16_t conn_handle;           /*!< Connection Handle */
     } cs_set_default_settings; /*!< Event parameter of ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT */
@@ -2670,7 +2670,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT
      */
     struct ble_cs_read_remote_fae_tab {
-        uint8_t status;                   /*!< 0x00: Channel sounding read remote FAE Table command successfully completed
+        esp_bt_status_t status;           /*!< 0x00: Channel sounding read remote FAE Table command successfully completed
                                                other: Channel sounding read remote FAE Table command failed*/
         uint16_t conn_handle;             /*!< Connection Handle */
         uint8_t remote_fae_table[72];     /*!< Per-channel mode-0 Frequency Actuation Error table of the remote Controller */
@@ -2679,7 +2679,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT
      */
     struct ble_cs_write_cached_remote_fae_tab {
-        uint8_t status;                  /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
+        esp_bt_status_t status;          /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
                                               other: Channel sounding write cached remote FAE table command failed */
         uint16_t conn_handle;            /*!< Connection Handle */
     } cs_write_cached_remote_fae_tab; /*!< Event parameter of ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT */
@@ -2687,7 +2687,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_CONFIG_CMPL_EVT
      */
     struct ble_cs_config_udpate {
-        uint8_t status;               /*!< 0x00: Channel Sounding Configuration procedure succeeded
+        esp_bt_status_t status;       /*!< 0x00: Channel Sounding Configuration procedure succeeded
                                          other: Channel Sounding Configuration procedure failed */
         uint16_t conn_handle;         /*!< Connection Handle */
         uint8_t config_id;            /*!< CS configuration identifier */
@@ -2748,7 +2748,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT
      */
     struct ble_cs_set_proc_params {
-        uint8_t status;         /*!< 0x00: Channel sounding set procedure_Parameters command successful
+        esp_bt_status_t status; /*!< 0x00: Channel sounding set procedure_Parameters command successful
                                      other: Channel sounding set procedure_Parameters command failed */
         uint16_t conn_handle;   /*!< Connection Handle */
     } cs_set_proc_params; /*!< Event parameter of ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT */
@@ -2756,14 +2756,14 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT
      */
     struct ble_cs_set_channel_class {
-        uint8_t status;        /*!< 0x00: Channel sounding set channel classification command successful
+        esp_bt_status_t status; /*!< 0x00: Channel sounding set channel classification command successful
                                     other: Channel sounding set channel classification command failed */
     } cs_set_channel_class; /*!< Event parameter of ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT */
     /**
      * @brief ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT
      */
     struct ble_cs_proc_enable {
-        uint8_t status;                 /*!< 0x00: Channel sounding procedure enable command successful
+        esp_bt_status_t status;         /*!< 0x00: Channel sounding procedure enable command successful
                                             other: Channel sounding procedure enable command failed */
         uint16_t conn_handle;           /*!< Connection Handle */
         uint8_t config_id;              /*!< CS configuration identifier */

@@ -629,10 +629,10 @@ void smp_concatenate_peer( tSMP_CB *p_cb, UINT8 **p_data, UINT8 op_code)
 ** Description      Generate Confirm/Compare Step1:
 **                  p1 = press || preq || rat' || iat'
 **
-** Returns          void
+** Returns          BOOLEAN
 **
 *******************************************************************************/
-void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
+BOOLEAN smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
 {
     UINT8 *p = (UINT8 *)p1;
     tBLE_ADDR_TYPE    addr_type = 0;
@@ -642,7 +642,7 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
 
     if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda, &addr_type)) {
         SMP_TRACE_ERROR("can not generate confirm for unknown device\n");
-        return;
+        return FALSE;
     }
 
     BTM_ReadConnectionAddr( p_cb->pairing_bda, p_cb->local_bda, &p_cb->addr_type);
@@ -670,6 +670,7 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
     SMP_TRACE_DEBUG("p1 = press || preq || rat' || iat'\n");
     smp_debug_print_nbyte_little_endian ((UINT8 *)p1, (const UINT8 *)"P1", 16);
 #endif
+    return TRUE;
 }
 
 /*******************************************************************************
@@ -679,10 +680,10 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
 ** Description      Generate Confirm/Compare Step2:
 **                  p2 = padding || ia || ra
 **
-** Returns          void
+** Returns          FALSE if remote address unavailable, TRUE otherwise
 **
 *******************************************************************************/
-void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
+BOOLEAN smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
 {
     UINT8       *p = (UINT8 *)p2;
     BD_ADDR     remote_bda;
@@ -690,7 +691,7 @@ void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
     SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm\n");
     if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda, &addr_type)) {
         SMP_TRACE_ERROR("can not generate confirm p2 for unknown device\n");
-        return;
+        return FALSE;
     }
 
     SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm\n");
@@ -712,6 +713,7 @@ void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
     SMP_TRACE_DEBUG("p2 = padding || ia || ra");
     smp_debug_print_nbyte_little_endian(p2, (const UINT8 *)"p2", 16);
 #endif
+    return TRUE;
 }
 
 /*******************************************************************************
@@ -733,7 +735,11 @@ void smp_calculate_comfirm (tSMP_CB *p_cb, BT_OCTET16 rand, BD_ADDR bda)
 
     SMP_TRACE_DEBUG ("smp_calculate_comfirm \n");
     /* generate p1 = press || preq || rat' || iat' */
-    smp_gen_p1_4_confirm(p_cb, p1);
+    if (!smp_gen_p1_4_confirm(p_cb, p1)) {
+
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
+        return ;
+    }
 
     /* p1 = rand XOR p1 */
     smp_xor_128(p1, rand);
@@ -771,7 +777,10 @@ static void smp_calculate_comfirm_cont(tSMP_CB *p_cb, tSMP_ENC *p)
     smp_debug_print_nbyte_little_endian (p->param_buf, (const UINT8 *)"C1", 16);
 #endif
 
-    smp_gen_p2_4_confirm(p_cb, p2);
+    if (!smp_gen_p2_4_confirm(p_cb, p2)) {
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
+        return;
+    }
 
     /* calculate p2 = (p1' XOR p2) */
     smp_xor_128(p2, p->param_buf);
@@ -1146,6 +1155,12 @@ void smp_continue_private_key_creation (tSMP_CB *p_cb, tBTM_RAND_ENC *p)
     UINT8   state = p_cb->rand_enc_proc_state & ~0x80;
     SMP_TRACE_DEBUG ("%s state=0x%x\n", __func__, state);
 
+    /* Validate param_len to prevent buffer overflow/underflow */
+    if (p == NULL || p->param_len != BT_OCTET8_LEN) {
+        SMP_TRACE_ERROR("invalid param_len: %d, expected %d\n", p ? p->param_len : 0, BT_OCTET8_LEN);
+        return;
+    }
+
     switch (state) {
     case SMP_GENERATE_PRIVATE_KEY_0_7:
         memcpy((void *)p_cb->private_key, p->param_buf, p->param_len);
@@ -1258,6 +1273,7 @@ void smp_process_private_key(tSMP_CB *p_cb)
             p_cb->loc_publ_key.x[i] = pub_be[1 + BT_OCTET32_LEN - 1 - i];
             p_cb->loc_publ_key.y[i] = pub_be[33 + BT_OCTET32_LEN - 1 - i];
         }
+        psa_ok = TRUE;
 
 mbedtls_pubkey_cleanup:
         /* Clear sensitive data - mbedtls_ecp_keypair_free will zero the private key */
@@ -1323,10 +1339,10 @@ mbedtls_pubkey_cleanup:
 **                    key and peer public key;
 **                  - saves the new public key x-coordinate as DHKey.
 **
-** Returns          void
+** Returns          TRUE if DHKey was computed successfully, FALSE otherwise.
 **
 *******************************************************************************/
-void smp_compute_dhkey (tSMP_CB *p_cb)
+BOOLEAN smp_compute_dhkey (tSMP_CB *p_cb)
 {
     SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
 
@@ -1398,6 +1414,7 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     for (int i = 0; i < BT_OCTET32_LEN; i++) {
         p_cb->dhkey[i] = shared_secret[BT_OCTET32_LEN - 1 - i];
     }
+    psa_ok = TRUE;
 
 mbedtls_dhkey_cleanup:
     /* Clear sensitive data - mbedtls_mpi_free will zero the memory */
@@ -1428,11 +1445,11 @@ mbedtls_dhkey_cleanup:
 
         /* Validate peer public key */
         /* uECC_valid_public_key returns 0 if valid, negative value if invalid */
-        if (uECC_valid_public_key(peer_pub_be, uECC_secp256r1()) < 0) {
+        if (uECC_valid_public_key(peer_pub_be, uECC_secp256r1()) != 0) {
             SMP_TRACE_ERROR("%s Invalid peer public key\n", __FUNCTION__);
             memset(priv_be, 0, sizeof(priv_be));
             memset(peer_pub_be, 0, sizeof(peer_pub_be));
-            return;
+            return FALSE;
         }
 
         /* Compute ECDH shared secret */
@@ -1442,7 +1459,7 @@ mbedtls_dhkey_cleanup:
             memset(priv_be, 0, sizeof(priv_be));
             memset(peer_pub_be, 0, sizeof(peer_pub_be));
             memset(shared_secret, 0, sizeof(shared_secret));
-            return;
+            return FALSE;
         }
 
         /* Convert shared secret from big-endian to little-endian for DHKey */
@@ -1463,9 +1480,16 @@ mbedtls_dhkey_cleanup:
     memcpy(peer_publ_key.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
     memcpy(peer_publ_key.y, p_cb->peer_publ_key.y, BT_OCTET32_LEN);
 
+    if (!ECC_CheckPointIsInElliCur_P256(&peer_publ_key)) {
+        SMP_TRACE_ERROR("%s Invalid peer public key\n", __FUNCTION__);
+        memset(private_key, 0, sizeof(private_key));
+        return FALSE;
+    }
+
     ECC_PointMult(&new_publ_key, &peer_publ_key, (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
 
     memcpy(p_cb->dhkey, new_publ_key.x, BT_OCTET32_LEN);
+    memset(private_key, 0, sizeof(private_key));
 #endif /* SMP_CRYPTO_MBEDTLS */
 
     smp_debug_print_nbyte_little_endian (p_cb->dhkey, (const UINT8 *)"DHKey",
@@ -1477,6 +1501,7 @@ mbedtls_dhkey_cleanup:
                                          BT_OCTET32_LEN);
     smp_debug_print_nbyte_little_endian (p_cb->peer_publ_key.y, (const UINT8 *)"rem public(y)",
                                          BT_OCTET32_LEN);
+    return TRUE;
 }
 
 /*******************************************************************************
@@ -1587,6 +1612,9 @@ void smp_calculate_peer_commitment(tSMP_CB *p_cb, BT_OCTET16 output_buf)
 **
 ** Note             The LSB is the first octet, the MSB is the last octet of
 **                  the AES-CMAC input/output stream.
+**                  In little-endian implementation, the message is constructed
+**                  as Z||V||U (reversed parameter order) to compensate for
+**                  byte order differences with the big-endian specification.
 **
 *******************************************************************************/
 void smp_calculate_f4(UINT8 *u, UINT8 *v, UINT8 *x, UINT8 z, UINT8 *c)
@@ -2085,11 +2113,16 @@ BOOLEAN smp_calculate_f5_key(UINT8 *w, UINT8 *t)
 *******************************************************************************/
 void smp_calculate_local_dhkey_check(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    UINT8   iocap[3], a[7], b[7];
+    UINT8   iocap[3], a[7] = {0}, b[7] = {0};
 
     SMP_TRACE_DEBUG ("%s", __FUNCTION__);
 
-    smp_calculate_f5_mackey_and_long_term_key(p_cb);
+    if (!smp_calculate_f5_mackey_and_long_term_key(p_cb)) {
+        UINT8 reason = SMP_PAIR_FAIL_UNKNOWN;
+        p_cb->failure = reason;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
+    }
 
     smp_collect_local_io_capabilities(iocap, p_cb);
 
@@ -2112,7 +2145,7 @@ void smp_calculate_local_dhkey_check(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_calculate_peer_dhkey_check(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    UINT8       iocap[3], a[7], b[7];
+    UINT8       iocap[3], a[7] = {0}, b[7] = {0};
     BT_OCTET16  param_buf;
     BOOLEAN     ret;
     tSMP_KEY    key;
@@ -2526,37 +2559,62 @@ static void smp_rand_back(tBTM_RAND_ENC *p)
     UINT8   *pp = NULL;
     UINT8   failure = SMP_PAIR_FAIL_UNKNOWN;
     UINT8   state = p_cb->rand_enc_proc_state & ~0x80;
+    BOOLEAN check_failed = FALSE;
 
     SMP_TRACE_DEBUG ("%s state=0x%x", __FUNCTION__, state);
     if (p && p->status == HCI_SUCCESS) {
         switch (state) {
         case SMP_GEN_SRAND_MRAND:
+            if (p->param_len != BT_OCTET8_LEN) {
+                check_failed = TRUE;
+                break;
+            }
             memcpy((void *)p_cb->rand, p->param_buf, p->param_len);
             smp_generate_rand_cont(p_cb, NULL);
             break;
 
         case SMP_GEN_SRAND_MRAND_CONT:
+            if (p->param_len != BT_OCTET8_LEN) {
+                check_failed = TRUE;
+                break;
+            }
             memcpy((void *)&p_cb->rand[8], p->param_buf, p->param_len);
             smp_generate_confirm(p_cb, NULL);
             break;
 
         case SMP_GEN_DIV_LTK:
+            if (p->param_len < 2) {
+                check_failed = TRUE;
+                break;
+            }
             pp = p->param_buf;
             STREAM_TO_UINT16(p_cb->div, pp);
             smp_generate_ltk_cont(p_cb, NULL);
             break;
 
         case SMP_GEN_DIV_CSRK:
+            if (p->param_len < 2) {
+                check_failed = TRUE;
+                break;
+            }
             pp = p->param_buf;
             STREAM_TO_UINT16(p_cb->div, pp);
             smp_compute_csrk(p_cb, NULL);
             break;
 
         case SMP_GEN_TK:
+            if (p->param_len < 4) {
+                check_failed = TRUE;
+                break;
+            }
             smp_proc_passkey(p_cb, p);
             break;
 
         case SMP_GEN_RAND_V:
+            if (p->param_len != BT_OCTET8_LEN) {
+                check_failed = TRUE;
+                break;
+            }
             memcpy(p_cb->enc_rand, p->param_buf, BT_OCTET8_LEN);
             smp_generate_y(p_cb, NULL);
             break;
@@ -2565,21 +2623,34 @@ static void smp_rand_back(tBTM_RAND_ENC *p)
         case SMP_GENERATE_PRIVATE_KEY_8_15:
         case SMP_GENERATE_PRIVATE_KEY_16_23:
         case SMP_GENERATE_PRIVATE_KEY_24_31:
+            if (p->param_len != BT_OCTET8_LEN) {
+                check_failed = TRUE;
+                break;
+            }
             smp_continue_private_key_creation(p_cb, p);
             break;
 
         case SMP_GEN_NONCE_0_7:
+            if (p->param_len != BT_OCTET8_LEN) {
+                check_failed = TRUE;
+                break;
+            }
             memcpy((void *)p_cb->rand, p->param_buf, p->param_len);
             smp_finish_nonce_generation(p_cb);
             break;
 
         case SMP_GEN_NONCE_8_15:
+            if (p->param_len != BT_OCTET8_LEN) {
+                check_failed = TRUE;
+                break;
+            }
             memcpy((void *)&p_cb->rand[8], p->param_buf, p->param_len);
             smp_process_new_nonce(p_cb);
             break;
         }
-
-        return;
+        if (!check_failed) {
+            return;
+        }
     }
 
     SMP_TRACE_ERROR("%s key generation failed: (%d)", __FUNCTION__, p_cb->rand_enc_proc_state);

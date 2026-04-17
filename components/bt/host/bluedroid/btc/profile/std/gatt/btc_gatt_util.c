@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,16 +27,16 @@ int uuidType(unsigned char *p_uuid)
     int all_zero = 1;
 
     for (i = 0; i != 16; ++i) {
+        /* Check if bytes 12-13 are non-zero for all_zero detection */
+        if (p_uuid[i] != 0) {
+            all_zero = 0;
+        }
         if (i == 12 || i == 13) {
             continue;
         }
 
         if (p_uuid[i] == BASE_UUID[i]) {
             ++match;
-        }
-
-        if (p_uuid[i] != 0) {
-            all_zero = 0;
         }
     }
     if (all_zero) {
@@ -114,9 +114,11 @@ void btc_to_bta_response(tBTA_GATTS_RSP *p_dest, esp_gatt_rsp_t *p_src)
 {
     p_dest->attr_value.auth_req = p_src->attr_value.auth_req;
     p_dest->attr_value.handle   = p_src->attr_value.handle;
-    p_dest->attr_value.len      = p_src->attr_value.len;
     p_dest->attr_value.offset   = p_src->attr_value.offset;
-    memcpy(p_dest->attr_value.value, p_src->attr_value.value, ESP_GATT_MAX_ATTR_LEN);
+    uint16_t copy_len = (p_src->attr_value.len <= ESP_GATT_MAX_ATTR_LEN)
+                    ? p_src->attr_value.len : ESP_GATT_MAX_ATTR_LEN;
+    p_dest->attr_value.len      = copy_len;  /* match actual bytes copied (defensive if src len > buffer) */
+    memcpy(p_dest->attr_value.value, p_src->attr_value.value, copy_len);
 }
 
 uint16_t get_uuid16(tBT_UUID *p_uuid)
@@ -146,13 +148,18 @@ uint16_t set_read_value(uint8_t *gattc_if, esp_ble_gattc_cb_param_t *p_dest, tBT
     if (( p_src->status == BTA_GATT_OK ) && (p_src->p_value != NULL))
     {
         BTC_TRACE_DEBUG("%s len = %d ", __func__, p_src->p_value->len);
-        p_dest->read.value_len = p_src->p_value->len;
         if ( p_src->p_value->len > 0  && p_src->p_value->p_value != NULL ) {
+            p_dest->read.value_len = p_src->p_value->len;
             p_dest->read.value = p_src->p_value->p_value;
+            len += p_src->p_value->len;
+        } else {
+            /* len>0 but p_value==NULL would leave value uninitialized; avoid that */
+            p_dest->read.value_len = 0;
+            p_dest->read.value = NULL;
         }
-        len += p_src->p_value->len;
     } else {
         p_dest->read.value_len = 0;
+        p_dest->read.value = NULL;
     }
 
     return len;

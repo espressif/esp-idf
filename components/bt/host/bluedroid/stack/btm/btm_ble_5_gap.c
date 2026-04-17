@@ -16,12 +16,14 @@ tBTM_BLE_EXTENDED_CB extend_adv_cb;
 
 tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
-#define INVALID_VALUE   0XFF
+#define INVALID_VALUE_8BIT    0XFF
+#define INVALID_VALUE_16BIT   0XFFFF
+#define INVALID_VALUE_32BIT   0XFFFFFFFF
 
 extern BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda);
 extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
 extern void BTM_BleSetStaticAddr(BD_ADDR rand_addr);
-extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb);
+extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type);
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *params);
 static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data);
@@ -53,158 +55,6 @@ static tBTM_BLE_SYNC_RETRY_CB sync_retry_cb = {0};
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 extern void btm_ble_inter_set(bool extble_inter);
-
-#if !UC_BT_STACK_NO_LOG
-static const char *btm_ble_hci_status_to_str(tHCI_STATUS status)
-{
-    switch(status) {
-    case HCI_SUCCESS:
-        return "HCI_SUCCESS";
-    case HCI_ERR_ILLEGAL_COMMAND:
-        return "HCI_ERR_ILLEGAL_COMMAND";
-    case HCI_ERR_NO_CONNECTION:
-        return "HCI_ERR_NO_CONNECTION";
-    case HCI_ERR_HW_FAILURE:
-        return "HCI_ERR_HW_FAILURE";
-    case HCI_ERR_PAGE_TIMEOUT:
-        return "HCI_ERR_PAGE_TIMEOUT";
-    case HCI_ERR_AUTH_FAILURE:
-        return "HCI_ERR_AUTH_FAILURE";
-    case HCI_ERR_KEY_MISSING:
-        return "HCI_ERR_KEY_MISSING";
-    case HCI_ERR_MEMORY_FULL:
-        return "HCI_ERR_MEMORY_FULL";
-    case HCI_ERR_CONNECTION_TOUT:
-        return "HCI_ERR_CONNECTION_TOUT";
-    case HCI_ERR_MAX_NUM_OF_CONNECTIONS:
-        return "HCI_ERR_MAX_NUM_OF_CONNECTIONS";
-    case HCI_ERR_MAX_NUM_OF_SCOS:
-        return "HCI_ERR_MAX_NUM_OF_SCOS";
-    case HCI_ERR_CONNECTION_EXISTS:
-        return "HCI_ERR_CONNECTION_EXISTS";
-    case HCI_ERR_COMMAND_DISALLOWED:
-        return "HCI_ERR_COMMAND_DISALLOWED";
-    case HCI_ERR_HOST_REJECT_RESOURCES:
-        return "HCI_ERR_HOST_REJECT_RESOURCES";
-    case HCI_ERR_HOST_REJECT_SECURITY:
-        return "HCI_ERR_HOST_REJECT_SECURITY";
-    case HCI_ERR_HOST_REJECT_DEVICE:
-        return "HCI_ERR_HOST_REJECT_DEVICE";
-    case HCI_ERR_HOST_TIMEOUT:
-        return "HCI_ERR_HOST_TIMEOUT";
-    case HCI_ERR_UNSUPPORTED_VALUE:
-        return "HCI_ERR_UNSUPPORTED_VALUE";
-    case HCI_ERR_ILLEGAL_PARAMETER_FMT:
-        return "HCI_ERR_ILLEGAL_PARAMETER_FMT";
-    case HCI_ERR_PEER_USER:
-        return "HCI_ERR_PEER_USER";
-    case HCI_ERR_PEER_LOW_RESOURCES:
-        return "HCI_ERR_PEER_LOW_RESOURCES";
-    case HCI_ERR_PEER_POWER_OFF:
-        return "HCI_ERR_PEER_POWER_OFF";
-    case HCI_ERR_CONN_CAUSE_LOCAL_HOST:
-        return "HCI_ERR_CONN_CAUSE_LOCAL_HOST";
-    case HCI_ERR_REPEATED_ATTEMPTS:
-        return "HCI_ERR_REPEATED_ATTEMPTS";
-    case HCI_ERR_PAIRING_NOT_ALLOWED:
-        return "HCI_ERR_PAIRING_NOT_ALLOWED";
-    case HCI_ERR_UNKNOWN_LMP_PDU:
-        return "HCI_ERR_UNKNOWN_LMP_PDU";
-    case HCI_ERR_UNSUPPORTED_REM_FEATURE:
-        return "HCI_ERR_UNSUPPORTED_REM_FEATURE";
-    case HCI_ERR_SCO_OFFSET_REJECTED:
-        return "HCI_ERR_SCO_OFFSET_REJECTED";
-    case HCI_ERR_SCO_INTERVAL_REJECTED:
-        return "HCI_ERR_SCO_INTERVAL_REJECTED";
-    case HCI_ERR_SCO_AIR_MODE:
-        return "HCI_ERR_SCO_AIR_MODE";
-    case HCI_ERR_INVALID_LMP_PARAM:
-        return "HCI_ERR_INVALID_LMP_PARAM";
-    case HCI_ERR_UNSPECIFIED:
-        return "HCI_ERR_UNSPECIFIED";
-    case HCI_ERR_UNSUPPORTED_LMP_PARAMETERS:
-        return "HCI_ERR_UNSUPPORTED_LMP_PARAMETERS";
-    case HCI_ERR_ROLE_CHANGE_NOT_ALLOWED:
-        return "HCI_ERR_ROLE_CHANGE_NOT_ALLOWED";
-    case HCI_ERR_LMP_RESPONSE_TIMEOUT:
-        return "HCI_ERR_LMP_RESPONSE_TIMEOUT";
-    case HCI_ERR_LMP_ERR_TRANS_COLLISION:
-        return "HCI_ERR_LMP_ERR_TRANS_COLLISION";
-    case HCI_ERR_LMP_PDU_NOT_ALLOWED:
-        return "HCI_ERR_LMP_PDU_NOT_ALLOWED";
-    case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
-        return "HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE";
-    case HCI_ERR_UNIT_KEY_USED:
-        return "HCI_ERR_UNIT_KEY_USED";
-    case HCI_ERR_QOS_NOT_SUPPORTED:
-        return "HCI_ERR_QOS_NOT_SUPPORTED";
-    case HCI_ERR_INSTANT_PASSED:
-        return "HCI_ERR_INSTANT_PASSED";
-    case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
-        return "HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED";
-    case HCI_ERR_DIFF_TRANSACTION_COLLISION:
-        return "HCI_ERR_DIFF_TRANSACTION_COLLISION";
-    case HCI_ERR_UNDEFINED_0x2B:
-        return "HCI_ERR_UNDEFINED_0x2B";
-    case HCI_ERR_QOS_UNACCEPTABLE_PARAM:
-        return "HCI_ERR_QOS_UNACCEPTABLE_PARAM";
-    case HCI_ERR_QOS_REJECTED:
-        return "HCI_ERR_QOS_REJECTED";
-    case HCI_ERR_CHAN_CLASSIF_NOT_SUPPORTED:
-        return "HCI_ERR_CHAN_CLASSIF_NOT_SUPPORTED";
-    case HCI_ERR_INSUFFCIENT_SECURITY:
-        return "HCI_ERR_INSUFFCIENT_SECURITY";
-    case HCI_ERR_PARAM_OUT_OF_RANGE:
-        return "HCI_ERR_PARAM_OUT_OF_RANGE";
-    case HCI_ERR_UNDEFINED_0x31:
-        return "HCI_ERR_UNDEFINED_0x31";
-    case HCI_ERR_ROLE_SWITCH_PENDING:
-        return "HCI_ERR_ROLE_SWITCH_PENDING";
-    case HCI_ERR_UNDEFINED_0x33:
-        return "HCI_ERR_UNDEFINED_0x33";
-    case HCI_ERR_RESERVED_SLOT_VIOLATION:
-        return "HCI_ERR_RESERVED_SLOT_VIOLATION";
-    case HCI_ERR_ROLE_SWITCH_FAILED:
-        return "HCI_ERR_ROLE_SWITCH_FAILED";
-    case HCI_ERR_INQ_RSP_DATA_TOO_LARGE:
-        return "HCI_ERR_INQ_RSP_DATA_TOO_LARGE";
-    case HCI_ERR_SIMPLE_PAIRING_NOT_SUPPORTED:
-        return "HCI_ERR_SIMPLE_PAIRING_NOT_SUPPORTED";
-    case HCI_ERR_HOST_BUSY_PAIRING:
-        return "HCI_ERR_HOST_BUSY_PAIRING";
-    case HCI_ERR_REJ_NO_SUITABLE_CHANNEL:
-        return "HCI_ERR_REJ_NO_SUITABLE_CHANNEL";
-    case HCI_ERR_CONTROLLER_BUSY:
-        return "HCI_ERR_CONTROLLER_BUSY";
-    case HCI_ERR_UNACCEPT_CONN_INTERVAL:
-        return "HCI_ERR_UNACCEPT_CONN_INTERVAL";
-    case HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT:
-        return "HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT";
-    case HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE:
-        return "HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE";
-    case HCI_ERR_CONN_FAILED_ESTABLISHMENT:
-        return "HCI_ERR_CONN_FAILED_ESTABLISHMENT";
-    case HCI_ERR_MAC_CONNECTION_FAILED:
-        return "HCI_ERR_MAC_CONNECTION_FAILED";
-    case HCI_ERR_LT_ADDR_ALREADY_IN_USE:
-        return "HCI_ERR_LT_ADDR_ALREADY_IN_USE";
-    case HCI_ERR_LT_ADDR_NOT_ALLOCATED:
-        return "HCI_ERR_LT_ADDR_NOT_ALLOCATED";
-    case HCI_ERR_CLB_NOT_ENABLED:
-        return "HCI_ERR_CLB_NOT_ENABLED";
-    case HCI_ERR_MAX_ERR:
-        return "HCI_ERR_MAX_ERR";
-    case HCI_ERR_ESP_VENDOR_FAIL:
-        return "HCI_ERR_ESP_VENDOR_FAIL";
-    case HCI_HINT_TO_RECREATE_AMP_PHYS_LINK:
-        return "HCI_HINT_TO_RECREATE_AMP_PHYS_LINK";
-    default:
-        return "Invalid HCI status code.";
-    }
-
-    return NULL;
-}
-#endif /* !UC_BT_STACK_NO_LOG */
 
 void btm_ble_extendadvcb_init(void)
 {
@@ -245,9 +95,7 @@ tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
         cb_params.read_phy.status = BTM_ILLEGAL_VALUE;
         memcpy(cb_params.read_phy.addr, bd_addr, BD_ADDR_LEN);
 
-        if (ble_5_hci_cb) {
-            ble_5_hci_cb(BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT, &cb_params);
-        }
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT, &cb_params);
         BTM_TRACE_ERROR("%s, invalid parameters", __func__);
         return BTM_ILLEGAL_VALUE;
     }
@@ -265,8 +113,8 @@ tBTM_STATUS BTM_BleSetPreferDefaultPhy(UINT8 tx_phy_mask, UINT8 rx_phy_mask)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_prefered_default_phy(all_phys, tx_phy_mask, rx_phy_mask)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                        __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = 0x%x",
+                        __func__, err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -286,9 +134,7 @@ tBTM_STATUS BTM_BleSetPreferPhy(BD_ADDR bd_addr, UINT8 all_phys, UINT8 tx_phy_ma
 
     if (!p_lcb) {
         cb_params.status = BTM_ILLEGAL_VALUE;
-        if (ble_5_hci_cb) {
-            ble_5_hci_cb(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
-        }
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
         BTM_TRACE_ERROR("%s, invalid parameters", __func__);
         return BTM_ILLEGAL_VALUE;
     }
@@ -347,8 +193,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
 
     // set random address
     if((err = btsnd_hcic_ble_set_extend_rand_address(instance, rand_addr)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = %s(0x%x)",
-                        __func__, btm_ble_hci_status_to_str(err), err);
+        BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = 0x%x",
+                        __func__, err);
         status = BTM_HCI_ERROR | err;
     } else {
         // set random address success, update address info
@@ -382,6 +228,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 
     if ((status = btm_ble_ext_adv_params_validate(params)) != BTM_SUCCESS) {
         BTM_TRACE_ERROR("%s, invalid extend adv params.", __func__);
+        goto end;
     }
 
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE) {
@@ -529,13 +376,21 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
     UINT8 *max_events = NULL;
 
     // when enable = true, ext_adv = NULL or num = 0, goto end
-    if ((!ext_adv || num == 0) && enable) {
+    if (num > MAX_BLE_ADV_INSTANCE || (num > 0 && !ext_adv) || (enable && num == 0)) {
         status = BTM_ILLEGAL_VALUE;
         BTM_TRACE_ERROR("%s invalid parameters", __func__);
         goto end;
     }
 
     if (num != 0 && ext_adv != NULL) {
+        for (int i = 0; i < num; i++) {
+            if (ext_adv[i].instance >= MAX_BLE_ADV_INSTANCE) {
+                status = BTM_ILLEGAL_VALUE;
+                BTM_TRACE_ERROR("%s instance ID %d out of range", __func__, ext_adv[i].instance);
+                goto end;
+            }
+        }
+
         instance = osi_malloc(num);
         duration = osi_malloc(num*sizeof(UINT16));
         max_events = osi_malloc(num*sizeof(UINT8));
@@ -557,10 +412,6 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
             BTM_TRACE_ERROR("LE EA En=%d: cmd err=0x%x", enable, err);
             status = BTM_HCI_ERROR | err;
         }
-
-        osi_free(instance);
-        osi_free(duration);
-        osi_free(max_events);
     } else {
         // enable = false, num == 0 or ext_adv = NULL
 
@@ -574,6 +425,15 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
 
 
 end:
+    if (instance) {
+        osi_free(instance);
+    }
+    if (duration) {
+        osi_free(duration);
+    }
+    if (max_events) {
+        osi_free(max_events);
+    }
 
     if (!enable && status == BTM_SUCCESS) {
         // disable all ext adv
@@ -583,20 +443,23 @@ end:
             {
                 adv_record[i].invalid = false;
                 adv_record[i].enabled = false;
-                adv_record[i].instance = INVALID_VALUE;
-                adv_record[i].duration = INVALID_VALUE;
-                adv_record[i].max_events = INVALID_VALUE;
+                adv_record[i].instance = INVALID_VALUE_8BIT;
+                adv_record[i].duration = INVALID_VALUE_32BIT;
+                adv_record[i].max_events = INVALID_VALUE_32BIT;
                 adv_record[i].retry_count = 0;
             }
         } else {
             for (uint8_t i = 0; i < num; i++)
             {
                 uint8_t index = ext_adv[i].instance;
+                if (index >= MAX_BLE_ADV_INSTANCE) {
+                    continue;
+                }
                 adv_record[index].invalid = false;
                 adv_record[index].enabled = false;
-                adv_record[index].instance = INVALID_VALUE;
-                adv_record[index].duration = INVALID_VALUE;
-                adv_record[index].max_events = INVALID_VALUE;
+                adv_record[index].instance = INVALID_VALUE_8BIT;
+                adv_record[index].duration = INVALID_VALUE_32BIT;
+                adv_record[index].max_events = INVALID_VALUE_32BIT;
                 adv_record[index].retry_count = 0;
             }
         }
@@ -606,6 +469,9 @@ end:
         for (uint8_t i = 0; i < num; i++)
         {
             uint8_t index = ext_adv[i].instance;
+            if (index >= MAX_BLE_ADV_INSTANCE) {
+                continue;
+            }
             adv_record[index].invalid = true;
             adv_record[index].enabled = true;
             adv_record[index].instance = ext_adv[i].instance;
@@ -616,9 +482,12 @@ end:
     }
 
     cb_params.adv_start.status = status;
+    num = (num > MAX_BLE_ADV_INSTANCE) ? MAX_BLE_ADV_INSTANCE : num;
     cb_params.adv_start.instance_num = num;
-    for (uint8_t i = 0; i < num; i++) {
-        cb_params.adv_start.instance[i] = ext_adv[i].instance;
+    if (ext_adv) {
+        for (uint8_t i = 0; i < num; i++) {
+            cb_params.adv_start.instance[i] = ext_adv[i].instance;
+        }
     }
 
     BTM_ExtBleCallbackTrigger(enable ? BTM_BLE_5_GAP_EXT_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT, &cb_params);
@@ -626,10 +495,10 @@ end:
     return status;
 }
 
-tBTM_STATUS BTM_BleStartExtAdvRestart(uint8_t con_handle)
+tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t con_handle)
 {
    tBTM_BLE_EXT_ADV ext_adv;
-   uint8_t index = INVALID_VALUE;
+   uint8_t index = INVALID_VALUE_8BIT;
    for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++)
    {
        if(adv_record[i].ter_con_handle == con_handle) {
@@ -798,7 +667,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
 	    }
         }
 
-        if ((err = btsnd_hcic_ble_set_periodic_adv_data(instance, operation, send_data_len, &data[data_offset])) != HCI_SUCCESS) {
+        if ((err = btsnd_hcic_ble_set_periodic_adv_data(instance, operation, send_data_len, (data == NULL)? NULL : &data[data_offset])) != HCI_SUCCESS) {
             BTM_TRACE_ERROR("LE PA SetData: cmd err=0x%x", err);
             status = BTM_HCI_ERROR | err;
             break;
@@ -900,7 +769,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
     sync_retry_cb.in_use = true;
 #endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     if (!btsnd_hcic_ble_periodic_adv_create_sync(option, params->sid, params->addr_type,
-                                            params->addr, params->sync_timeout, params->sync_cte_type)) {
+                                            params->addr,  params->skip, params->sync_timeout, params->sync_cte_type)) {
         BTM_TRACE_ERROR("LE PA CreateSync cmd failed");
         status = BTM_ILLEGAL_VALUE;
 #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
@@ -1097,7 +966,7 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
         phy_count++;
     }
 
-    if (BTM_BleUpdateOwnType(&params->own_addr_type, NULL) != 0 ) {
+    if (BTM_BleUpdateOwnType(&params->own_addr_type) != 0 ) {
         status = BTM_ILLEGAL_VALUE;
         BTM_TRACE_ERROR("LE UpdateOwnType err");
         goto end;
@@ -1310,7 +1179,7 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
     if(params->status == 0x00) {
         adv_record[params->adv_handle].ter_con_handle = params->conn_handle;
     } else {
-        adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE;
+        adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE_16BIT;
         adv_record[params->adv_handle].invalid = false;
     }
     adv_record[params->adv_handle].enabled = false;
@@ -1573,6 +1442,7 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
                                                     sync_retry_cb.params.sid,
                                                     sync_retry_cb.params.addr_type,
                                                     sync_retry_cb.params.addr,
+                                                    sync_retry_cb.params.skip,
                                                     sync_retry_cb.params.sync_timeout,
                                                     sync_retry_cb.params.sync_cte_type)) {
             /* Retry command sent successfully, wait for next event */
@@ -2110,6 +1980,7 @@ void btm_ble_cs_security_enable_cmd_status(UINT8 status)
     tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT cs_security_enable = {0};
     if (status != HCI_SUCCESS) {
         cs_security_enable.status = (status | BTM_HCI_ERROR);
+        cs_security_enable.conn_handle = 0xFFFF; // Invalid handle
         BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SECURITY_ENABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)&cs_security_enable);
     }
 }

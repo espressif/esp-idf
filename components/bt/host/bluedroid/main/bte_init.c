@@ -471,9 +471,6 @@ bt_status_t BTE_InitStack(void)
     }
     memset((void *)bta_jv_cb_ptr, 0, sizeof(tBTA_JV_CB));
 #endif //JV
-#if BTA_HS_INCLUDED == TRUE
-    memset((void *)bta_hs_cb_ptr, 0, sizeof(tBTA_HS_CB));
-#endif
 #if BTA_SDP_INCLUDED == TRUE
     if ((bta_sdp_cb_ptr = (tBTA_SDP_CB *)osi_malloc(sizeof(tBTA_SDP_CB))) == NULL) {
         goto error_exit;
@@ -514,9 +511,6 @@ bt_status_t BTE_InitStack(void)
         goto error_exit;
     }
     memset((void *)bta_hd_cb_ptr, 0, sizeof(tBTA_HD_CB));
-#endif
-#if BTA_HL_INCLUDED==TRUE
-    memset((void *)bta_hl_cb_ptr, 0, sizeof(tBTA_HL_CB));
 #endif
 #if GATTC_INCLUDED==TRUE
     if ((bta_gattc_cb_ptr = (tBTA_GATTC_CB *)osi_malloc(sizeof(tBTA_GATTC_CB))) == NULL) {
