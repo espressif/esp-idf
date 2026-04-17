@@ -741,8 +741,18 @@ endfunction()
 function(__project_default)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(executable PROJECT_NAME)
+
+    # When the Build system v1 compatibility shim forwarded a COMPONENTS
+    # list, use it instead of default main.
+    idf_build_get_property(shim_components __SHIM_COMPONENTS)
+    if(shim_components)
+        set(root_components ${shim_components})
+    else()
+        set(root_components main)
+    endif()
+
     idf_build_executable("${executable}"
-                         COMPONENTS main
+                         COMPONENTS ${root_components}
                          MAPFILE_TARGET "${executable}_mapfile")
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES AND TARGET idf::esptool_py)
