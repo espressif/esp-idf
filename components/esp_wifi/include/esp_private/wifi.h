@@ -854,6 +854,26 @@ void esp_wifi_power_domain_off(void);
 void * esp_wifi_internal_mac_retention_context_get(int *config_size);
 #endif
 
+#if CONFIG_MAC_BB_PD && SOC_PM_MODEM_RETENTION_BY_REGDMA
+/**
+ * @brief Attach Wi-Fi MAC sleep retention (REGDMA) linked list after allocation.
+ *
+ * @return
+ *    - ESP_OK on success
+ *    - error code from sleep retention otherwise
+ */
+esp_err_t esp_wifi_internal_mac_sleep_retention_attach(void);
+
+/**
+ * @brief Detach Wi-Fi MAC sleep retention (REGDMA) linked list before free.
+ *
+ * @return
+ *    - ESP_OK on success
+ *    - error code from sleep retention otherwise
+ */
+esp_err_t esp_wifi_internal_mac_sleep_retention_detach(void);
+#endif
+
 #if CONFIG_MAC_BB_PD
 /**
   * @brief     Enable or disable powering down MAC and baseband when Wi-Fi is sleeping.

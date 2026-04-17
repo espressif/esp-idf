@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -312,6 +312,24 @@ static esp_err_t sleep_retention_wifi_bb_init(void *arg)
     return ESP_OK;
 }
 
+esp_err_t esp_phy_wifi_bb_sleep_retention_attach(void)
+{
+    esp_err_t err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_WIFI_BB);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to attach sleep retention linked list for wifi bb retention");
+    }
+    return err;
+}
+
+esp_err_t esp_phy_wifi_bb_sleep_retention_detach(void)
+{
+    esp_err_t err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_WIFI_BB);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to detach sleep retention linked list for wifi bb retention");
+    }
+    return err;
+}
+
 void esp_phy_sleep_data_init(void)
 {
     sleep_retention_module_init_param_t init_param = {
@@ -327,22 +345,12 @@ void esp_phy_sleep_data_init(void)
     err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_WIFI_BB);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to allocate sleep retention linked list for wifi bb retention");
-        return;
-    }
-    err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_WIFI_BB);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to attach sleep retention linked list for wifi bb retention");
     }
 }
 
 void esp_phy_sleep_data_deinit(void)
 {
-    esp_err_t err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_WIFI_BB);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to detach sleep retention linked list for wifi bb retention");
-        return;
-    }
-    err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_WIFI_BB);
+    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_WIFI_BB);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to free sleep retention linked list for wifi bb retention");
         return;

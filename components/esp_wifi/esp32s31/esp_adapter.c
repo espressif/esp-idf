@@ -35,6 +35,9 @@
 #include "esp_phy_init.h"
 #include "phy_init_data.h"
 #endif
+#if CONFIG_MAC_BB_PD && SOC_PM_MODEM_RETENTION_BY_REGDMA
+#include "esp_private/phy.h"
+#endif
 #include "soc/rtc_cntl_periph.h"
 #include "soc/rtc.h"
 #include "esp_private/periph_ctrl.h"
@@ -655,6 +658,44 @@ static bool esp_wifi_disable_ac_ax_wrapper(void)
     return false; // disable 11ac and 11ax is not supported on esp32s31.
 }
 
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+static int32_t esp_phy_wifi_bb_sleep_retention_attach_wrapper(void)
+{
+#if CONFIG_MAC_BB_PD
+    return (int32_t)esp_phy_wifi_bb_sleep_retention_attach();
+#else
+    return 1;
+#endif
+}
+
+static int32_t esp_phy_wifi_bb_sleep_retention_detach_wrapper(void)
+{
+#if CONFIG_MAC_BB_PD
+    return (int32_t)esp_phy_wifi_bb_sleep_retention_detach();
+#else
+    return 1;
+#endif
+}
+
+static int32_t esp_wifi_mac_sleep_retention_attach_wrapper(void)
+{
+#if CONFIG_MAC_BB_PD
+    return (int32_t)esp_wifi_internal_mac_sleep_retention_attach();
+#else
+    return 1;
+#endif
+}
+
+static int32_t esp_wifi_mac_sleep_retention_detach_wrapper(void)
+{
+#if CONFIG_MAC_BB_PD
+    return (int32_t)esp_wifi_internal_mac_sleep_retention_detach();
+#else
+    return 1;
+#endif
+}
+#endif
+
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._env_is_chip = esp_coex_common_env_is_chip_wrapper,
@@ -780,5 +821,11 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_get_phase_by_idx = coex_schm_get_phase_by_idx_wrapper,
     ._coex_configure_preemption_end_cb = coex_configure_preemption_end_cb_wrapper,
     ._wifi_disable_ac_ax = esp_wifi_disable_ac_ax_wrapper,
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+    ._wifi_bb_sleep_retention_attach = esp_phy_wifi_bb_sleep_retention_attach_wrapper,
+    ._wifi_bb_sleep_retention_detach = esp_phy_wifi_bb_sleep_retention_detach_wrapper,
+    ._wifi_mac_sleep_retention_attach = esp_wifi_mac_sleep_retention_attach_wrapper,
+    ._wifi_mac_sleep_retention_detach = esp_wifi_mac_sleep_retention_detach_wrapper,
+#endif
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
