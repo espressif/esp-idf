@@ -41,7 +41,7 @@ repos:
         name: Do not use uppercase letters in the branch name
         args: ['--pattern', '^[^A-Z]*[A-Z]']
   - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
+    rev: 6.1.0
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
