@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import subprocess
 from os import path
 
 import pytest
 import yaml
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def validate_sbom(dut: Dut) -> None:
@@ -16,12 +16,9 @@ def validate_sbom(dut: Dut) -> None:
     gcc = 'riscv32-esp-elf-gcc'
     if dut.target in dut.XTENSA_TARGETS:
         gcc = f'xtensa-{dut.target}-elf-gcc'
-    gcc_process = subprocess.run(f'{gcc} -E {gcc_input_file}',
-                                 shell=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 text=True,
-                                 check=True)
+    gcc_process = subprocess.run(
+        f'{gcc} -E {gcc_input_file}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True
+    )
     output_lines = gcc_process.stdout.splitlines()
     assert output_lines, 'Can not get newlib version'
     toolchain_newlib_version = output_lines[-1].replace(' ', '.')
@@ -32,17 +29,17 @@ def validate_sbom(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
+@idf_parametrize(
+    'config,target',
     [
-        pytest.param('default', marks=[pytest.mark.supported_targets]),
-        pytest.param('options', marks=[pytest.mark.supported_targets]),
-        pytest.param('single_core_esp32', marks=[pytest.mark.esp32]),
-        pytest.param('psram_esp32', marks=[pytest.mark.esp32]),
-        pytest.param('release_esp32', marks=[pytest.mark.esp32]),
-        pytest.param('release_esp32c2', marks=[pytest.mark.esp32c2]),
+        ('default', 'supported_targets'),
+        ('options', 'supported_targets'),
+        ('single_core_esp32', 'esp32'),
+        ('psram_esp32', 'esp32'),
+        ('release_esp32', 'esp32'),
+        ('release_esp32c2', 'esp32c2'),
     ],
-    indirect=True
+    indirect=['config', 'target'],
 )
 def test_newlib(dut: Dut) -> None:
     validate_sbom(dut)

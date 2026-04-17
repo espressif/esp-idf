@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32s3
 @pytest.mark.octal_psram
 @pytest.mark.parametrize(
     'config',
@@ -16,6 +15,7 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_rgb_lcd_lvgl(dut: Dut) -> None:
     dut.expect_exact('example: Turn off LCD backlight')
     dut.expect_exact('example: Install RGB LCD panel driver')

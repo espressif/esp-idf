@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -11,6 +11,7 @@ import pexpect
 import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 from RangeHTTPServer import RangeRequestHandler
 
 server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'server_certs/ca_cert.pem')
@@ -18,10 +19,11 @@ key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'server_cert
 enc_bin_name = 'pre_encrypted_ota_secure.bin'
 
 
-def https_request_handler() -> Callable[...,http.server.BaseHTTPRequestHandler]:
+def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]:
     """
     Returns a request handler class that handles broken pipe exception
     """
+
     class RequestHandler(RangeRequestHandler):
         def finish(self) -> None:
             try:
@@ -53,8 +55,8 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
     httpd.serve_forever()
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet_ota
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_pre_encrypted_ota_example(dut: Dut) -> None:
     server_port = 8001
     # Start server
@@ -82,9 +84,15 @@ def test_examples_protocol_pre_encrypted_ota_example(dut: Dut) -> None:
         thread1.terminate()
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet_ota
-@pytest.mark.parametrize('config', ['partial_download',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'partial_download',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_pre_encrypted_ota_example_partial_request(dut: Dut) -> None:
     server_port = 8001
     # Size of partial HTTP request

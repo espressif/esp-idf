@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import typing
@@ -6,6 +6,7 @@ import typing
 import pexpect.fdpexpect
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -51,25 +52,20 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
     with open(gdb_logfile, encoding='utf-8') as fr:  # pylint: disable=protected-access
         gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
         gdb_pexpect_proc.expect_exact(
-            'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10)  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329
+            'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10
+        )  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329
         gdb_pexpect_proc.expect_exact('Thread 2 "main" hit Temporary breakpoint 2, heap_trace_stop ()', timeout=10)
 
 
 @pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
 @pytest.mark.jtag
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c2
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32c2'], indirect=['target'])
 def test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
     _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)
 
 
 @pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
 @pytest.mark.usb_serial_jtag
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target'])
 def test_examples_sysview_tracing_heap_log_usj(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
     _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)

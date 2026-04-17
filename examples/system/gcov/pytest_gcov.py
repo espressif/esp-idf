@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import time
@@ -6,6 +6,7 @@ import typing
 
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -72,18 +73,12 @@ def _test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 
 @pytest.mark.jtag
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32s2
+@idf_parametrize('target', ['esp32', 'esp32c2', 'esp32s2'], indirect=['target'])
 def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_gcov(openocd_dut, dut)
 
 
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.usb_serial_jtag
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target'])
 def test_gcov_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_gcov(openocd_dut, dut)

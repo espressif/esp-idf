@@ -5,9 +5,9 @@ from typing import Tuple
 
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.sdio_master_slave
 @pytest.mark.parametrize(
     'count, app_path',
@@ -16,6 +16,7 @@ from pytest_embedded_idf import IdfDut
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_example_sdio_communication(dut: Tuple[IdfDut, IdfDut]) -> None:
     """
     Configurations

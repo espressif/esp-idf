@@ -1,14 +1,14 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import os.path
 from threading import Thread
 from typing import Tuple
 
 import pytest
 from pytest_embedded import Dut
-
+from pytest_embedded_idf.utils import idf_parametrize
 # Define tuple of strings to expect for each DUT.
+
 master_expect = ('TWAI Master: Driver installed', 'TWAI Master: Driver uninstalled')
 slave_expect = ('TWAI Slave: Driver installed', 'TWAI Slave: Driver uninstalled')
 listen_only_expect = (
@@ -21,9 +21,7 @@ def dut_thread_callback(**kwargs) -> None:  # type: ignore
     # Parse keyword arguments
     dut = kwargs['dut']  # Get DUT from kwargs
     expected = kwargs['expected']
-    result = kwargs[
-        'result'
-    ]  # Get result[out] from kwargs. MUST be of mutable type e.g. list
+    result = kwargs['result']  # Get result[out] from kwargs. MUST be of mutable type e.g. list
 
     # Must reset again as flashing during start_app will reset multiple times, causing unexpected results
     dut.reset()
@@ -35,7 +33,6 @@ def dut_thread_callback(**kwargs) -> None:  # type: ignore
     result[0] = True
 
 
-@pytest.mark.esp32
 @pytest.mark.skip(reason="there's not a good approach to sync multiple DUTs")
 @pytest.mark.twai_network
 @pytest.mark.parametrize(
@@ -50,6 +47,7 @@ def dut_thread_callback(**kwargs) -> None:  # type: ignore
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_twai_network_example(dut: Tuple[Dut, Dut, Dut]) -> None:
     dut_master = dut[0]
     dut_slave = dut[1]
@@ -66,15 +64,9 @@ def test_twai_network_example(dut: Tuple[Dut, Dut, Dut]) -> None:
     }
 
     # Create thread for each dut
-    dut_master_thread = Thread(
-        target=dut_thread_callback, name='Master Thread', kwargs=master_kwargs
-    )
-    dut_slave_thread = Thread(
-        target=dut_thread_callback, name='Slave Thread', kwargs=slave_kwargs
-    )
-    dut_listen_only_thread = Thread(
-        target=dut_thread_callback, name='Listen Only Thread', kwargs=listen_only_kwargs
-    )
+    dut_master_thread = Thread(target=dut_thread_callback, name='Master Thread', kwargs=master_kwargs)
+    dut_slave_thread = Thread(target=dut_thread_callback, name='Slave Thread', kwargs=slave_kwargs)
+    dut_listen_only_thread = Thread(target=dut_thread_callback, name='Listen Only Thread', kwargs=listen_only_kwargs)
 
     # Start each thread
     dut_listen_only_thread.start()

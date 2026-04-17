@@ -8,15 +8,9 @@ import pytest
 from can import Bus
 from can import Message
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -24,6 +18,9 @@ from pytest_embedded import Dut
         'release',
     ],
     indirect=True,
+)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
 def test_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
@@ -36,18 +33,11 @@ def fixture_create_socket_can() -> Bus:
     stop_command = 'sudo ip link set can0 down'
     subprocess.run(start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     bus = Bus(interface='socketcan', channel='can0', bitrate=250000)
-    yield bus   # test invoked here
+    yield bus  # test invoked here
     bus.shutdown()
     subprocess.run(stop_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.twai_std
 @pytest.mark.parametrize(
     'config',
@@ -55,6 +45,9 @@ def fixture_create_socket_can() -> Bus:
         'iram_safe',
     ],
     indirect=True,
+)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
 def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -74,13 +67,6 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.expect_unity_test_output()
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.twai_std
 @pytest.mark.parametrize(
     'config',
@@ -88,6 +74,9 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
         'release',
     ],
     indirect=True,
+)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
 def test_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')

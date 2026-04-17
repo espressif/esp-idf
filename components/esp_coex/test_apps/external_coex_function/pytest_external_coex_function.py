@@ -6,9 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize(
-    'target', ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6'], indirect=['target']
-)
+@idf_parametrize('target', ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6'], indirect=['target'])
 def test_external_coex_unit_test(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

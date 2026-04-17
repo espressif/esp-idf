@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 from typing import Tuple
@@ -6,16 +6,20 @@ from typing import Tuple
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
-
-
 # Case 1: SPP
-@pytest.mark.esp32
+
+
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
-    'count, app_path, target, erase_all, config', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "bt_spp_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_initiator")}',
-         'esp32|esp32', 'y', 'test'),
+    'count, app_path, target, erase_all, config',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "bt_spp_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_initiator")}',
+            'esp32|esp32',
+            'y',
+            'test',
+        ),
     ],
     indirect=True,
 )
@@ -39,13 +43,16 @@ def test_bt_spp_only(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: SPP_VFS
-@pytest.mark.esp32
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
-    'count, app_path, target, config', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_initiator")}',
-         'esp32|esp32', 'test'),
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_initiator")}',
+            'esp32|esp32',
+            'test',
+        ),
     ],
     indirect=True,
 )
@@ -64,13 +71,16 @@ def test_bt_spp_vfs(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 3: HFP
-@pytest.mark.esp32
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
-    'count, app_path, target, config', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "hfp_ag")}|{os.path.join(os.path.dirname(__file__), "hfp_hf")}',
-         'esp32|esp32', 'all'),
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "hfp_ag")}|{os.path.join(os.path.dirname(__file__), "hfp_hf")}',
+            'esp32|esp32',
+            'all',
+        ),
     ],
     indirect=True,
 )
@@ -86,14 +96,17 @@ def test_bt_hfp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # # Case 4: HID
-@pytest.mark.esp32
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
-    'count, app_path, target, config', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}|'
-         f'{os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
-         'esp32|esp32', 'test'),
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}|'
+            f'{os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
+            'esp32|esp32',
+            'test',
+        ),
     ],
     indirect=True,
 )
@@ -112,13 +125,16 @@ def test_bt_hid(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 5: L2CAP
-@pytest.mark.esp32
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
-    'count, app_path, target, config', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_server")}|{os.path.join(os.path.dirname(__file__), "bt_l2cap_client")}',
-         'esp32|esp32', 'test'),
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_server")}|{os.path.join(os.path.dirname(__file__), "bt_l2cap_client")}',
+            'esp32|esp32',
+            'test',
+        ),
     ],
     indirect=True,
 )
@@ -139,7 +155,6 @@ def test_bt_l2cap(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # case 6: A2DP Stream
-@pytest.mark.esp32
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
@@ -165,7 +180,6 @@ def test_bt_a2dp_stream(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # case 7: AVRCP absolute volume
-@pytest.mark.esp32
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',

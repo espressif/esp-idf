@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # # SPDX-License-Identifier: CC0-1.0
 import logging
 import os
@@ -8,6 +8,7 @@ import signal
 import pexpect
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def run_gdb_test(dut: IdfDut) -> str:
@@ -28,10 +29,9 @@ def run_gdb_test(dut: IdfDut) -> str:
             p.kill(signal.SIGKILL)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.jtag_re_enable
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_jtag_re_enable(dut: IdfDut) -> None:
-
     dut.expect_exact('esp32c6>', timeout=30)
 
     logging.info('Initially:')

@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_timer_group_example(dut: Dut) -> None:
     dut.expect(r'Init timer with auto-reload', timeout=5)
     res = dut.expect(r'Timer auto reloaded, count value in ISR: (\d+)', timeout=5)

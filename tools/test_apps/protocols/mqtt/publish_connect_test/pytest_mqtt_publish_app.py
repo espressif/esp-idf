@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import contextlib
 import difflib
 import logging
@@ -9,23 +8,32 @@ import random
 import re
 import ssl
 import string
-from itertools import count, product
-from threading import Event, Lock
-from typing import Any, Dict, List, Tuple, no_type_check
+from itertools import count
+from itertools import product
+from threading import Event
+from threading import Lock
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import no_type_check
+from typing import Tuple
 
 import paho.mqtt.client as mqtt
 import pexpect
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 DEFAULT_MSG_SIZE = 16
 
 
 # Publisher class creating a python client to send/receive published data from esp-mqtt client
 class MqttPublisher(mqtt.Client):
-
     def __init__(self, repeat, published, publish_cfg, log_details=False):  # type: (MqttPublisher, int, int, dict, bool) -> None
-        self.sample_string = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(DEFAULT_MSG_SIZE))
+        self.sample_string = ''.join(
+            random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits)
+            for _ in range(DEFAULT_MSG_SIZE)
+        )
         self.log_details = log_details
         self.repeat = repeat
         self.publish_cfg = publish_cfg
@@ -42,7 +50,7 @@ class MqttPublisher(mqtt.Client):
         if self.log_details:
             logging.info(text)
 
-    def on_connect(self, mqttc: Any, obj: Any, flags: Any, rc:int) -> None:
+    def on_connect(self, mqttc: Any, obj: Any, flags: Any, rc: int) -> None:
         self.event_client_connected.set()
 
     def on_connect_fail(self, mqttc: Any, obj: Any) -> None:
@@ -58,12 +66,14 @@ class MqttPublisher(mqtt.Client):
                 self.event_client_got_all.set()
         else:
             differences = len(list(filter(lambda data: data[0] != data[1], zip(payload, self.expected_data))))
-            logging.error(f'Payload differ in {differences} positions from expected data. received size: {len(payload)} expected size:'
-                          f'{len(self.expected_data)}')
+            logging.error(
+                f'Payload differ in {differences} positions from expected data. received size: {len(payload)} expected size:'
+                f'{len(self.expected_data)}'
+            )
             logging.info(f'Repetitions: {payload.count(self.sample_string)}')
             logging.info(f'Pattern: {self.sample_string}')
-            logging.info(f'First  : {payload[:DEFAULT_MSG_SIZE]}')
-            logging.info(f'Last   : {payload[-DEFAULT_MSG_SIZE:]}')
+            logging.info(f'First  : {payload[:DEFAULT_MSG_SIZE]}')  # noqa: E203
+            logging.info(f'Last   : {payload[-DEFAULT_MSG_SIZE:]}')  # noqa: E203
             matcher = difflib.SequenceMatcher(a=payload, b=self.expected_data)
             for match in matcher.get_matching_blocks():
                 logging.info(f'Match: {match}')
@@ -97,9 +107,10 @@ class MqttPublisher(mqtt.Client):
         self.loop_stop()
 
 
-def get_configurations(dut: Dut) -> Dict[str,Any]:
+def get_configurations(dut: Dut) -> Dict[str, Any]:
     publish_cfg = {}
     try:
+
         @no_type_check
         def get_broker_from_dut(dut, config_option):
             # logging.info('Option:', config_option, dut.app.sdkconfig.get(config_option))
@@ -107,13 +118,20 @@ def get_configurations(dut: Dut) -> Dict[str,Any]:
             if value is None:
                 return None, None
             return value.group(1), int(value.group(2))
+
         # Get publish test configuration
-        publish_cfg['publish_topic'] = dut.app.sdkconfig.get('EXAMPLE_SUBSCRIBE_TOPIC').replace('"','')
-        publish_cfg['subscribe_topic'] = dut.app.sdkconfig.get('EXAMPLE_PUBLISH_TOPIC').replace('"','')
-        publish_cfg['broker_host_ssl'], publish_cfg['broker_port_ssl'] = get_broker_from_dut(dut, 'EXAMPLE_BROKER_SSL_URI')
-        publish_cfg['broker_host_tcp'], publish_cfg['broker_port_tcp'] = get_broker_from_dut(dut, 'EXAMPLE_BROKER_TCP_URI')
+        publish_cfg['publish_topic'] = dut.app.sdkconfig.get('EXAMPLE_SUBSCRIBE_TOPIC').replace('"', '')
+        publish_cfg['subscribe_topic'] = dut.app.sdkconfig.get('EXAMPLE_PUBLISH_TOPIC').replace('"', '')
+        publish_cfg['broker_host_ssl'], publish_cfg['broker_port_ssl'] = get_broker_from_dut(
+            dut, 'EXAMPLE_BROKER_SSL_URI'
+        )
+        publish_cfg['broker_host_tcp'], publish_cfg['broker_port_tcp'] = get_broker_from_dut(
+            dut, 'EXAMPLE_BROKER_TCP_URI'
+        )
         publish_cfg['broker_host_ws'], publish_cfg['broker_port_ws'] = get_broker_from_dut(dut, 'EXAMPLE_BROKER_WS_URI')
-        publish_cfg['broker_host_wss'], publish_cfg['broker_port_wss'] = get_broker_from_dut(dut, 'EXAMPLE_BROKER_WSS_URI')
+        publish_cfg['broker_host_wss'], publish_cfg['broker_port_wss'] = get_broker_from_dut(
+            dut, 'EXAMPLE_BROKER_WSS_URI'
+        )
 
     except Exception:
         logging.info('ENV_TEST_FAILURE: Some mandatory PUBLISH test case not found in sdkconfig')
@@ -123,7 +141,7 @@ def get_configurations(dut: Dut) -> Dict[str,Any]:
 
 
 @contextlib.contextmanager
-def connected_and_subscribed(dut:Dut, transport:str, pattern:str, pattern_repetitions:int) -> Any:
+def connected_and_subscribed(dut: Dut, transport: str, pattern: str, pattern_repetitions: int) -> Any:
     dut.write(f'publish_setup {transport} {pattern} {pattern_repetitions}')
     dut.write(f'start')
     dut.expect(re.compile(rb'MQTT_EVENT_SUBSCRIBED'), timeout=60)
@@ -136,16 +154,17 @@ def get_scenarios() -> List[Dict[str, int]]:
     # Initialize message sizes and repeat counts (if defined in the environment)
     for i in count(0):
         # Check env variable: MQTT_PUBLISH_MSG_{len|repeat}_{x}
-        env_dict = {var:'MQTT_PUBLISH_MSG_' + var + '_' + str(i) for var in ['len', 'repeat']}
+        env_dict = {var: 'MQTT_PUBLISH_MSG_' + var + '_' + str(i) for var in ['len', 'repeat']}
         if os.getenv(env_dict['len']) and os.getenv(env_dict['repeat']):
             scenarios.append({var: int(os.getenv(env_dict[var])) for var in ['len', 'repeat']})  # type: ignore
             continue
         break
-    if not scenarios:    # No message sizes present in the env - set defaults
-        scenarios = [{'len':0,   'repeat':5},    # zero-sized messages
-                     {'len':2,   'repeat':5},   # short messages
-                     {'len':200, 'repeat':3},    # long messages
-                     ]
+    if not scenarios:  # No message sizes present in the env - set defaults
+        scenarios = [
+            {'len': 0, 'repeat': 5},  # zero-sized messages
+            {'len': 2, 'repeat': 5},  # short messages
+            {'len': 200, 'repeat': 3},  # long messages
+        ]
     return scenarios
 
 
@@ -166,14 +185,20 @@ def run_publish_test_case(dut: Dut, test_case: Any, publish_cfg: Any) -> None:
     publish_cfg['queue'] = enqueue
     publish_cfg['transport'] = transport
     test_timeout = get_timeout(test_case)
-    logging.info(f'Starting Publish test: transport:{transport}, qos:{qos}, nr_of_msgs:{published},'
-                 f' msg_size:{repeat*DEFAULT_MSG_SIZE}, enqueue:{enqueue}')
-    with MqttPublisher(repeat, published, publish_cfg) as publisher, connected_and_subscribed(dut, transport, publisher.sample_string, scenario['len']):
+    logging.info(
+        f'Starting Publish test: transport:{transport}, qos:{qos}, nr_of_msgs:{published},'
+        f' msg_size:{repeat * DEFAULT_MSG_SIZE}, enqueue:{enqueue}'
+    )
+    with MqttPublisher(repeat, published, publish_cfg) as publisher, connected_and_subscribed(
+        dut, transport, publisher.sample_string, scenario['len']
+    ):
         msgs_published: List[mqtt.MQTTMessageInfo] = []
         dut.write(f'publish {publisher.published} {qos} {enqueue}')
-        assert publisher.event_client_got_all.wait(timeout=test_timeout), (f'Not all data received from ESP32: {transport} '
-                                                                           f'qos={qos} received: {publisher.received} '
-                                                                           f'expected: {publisher.published}')
+        assert publisher.event_client_got_all.wait(timeout=test_timeout), (
+            f'Not all data received from ESP32: {transport} '
+            f'qos={qos} received: {publisher.received} '
+            f'expected: {publisher.published}'
+        )
         logging.info(' - all data received from ESP32')
         payload = publisher.sample_string * publisher.repeat
         for _ in range(publisher.published):
@@ -194,7 +219,7 @@ def run_publish_test_case(dut: Dut, test_case: Any, publish_cfg: Any) -> None:
         logging.info('ESP32 received all data from runner')
 
 
-stress_scenarios = [{'len':20,  'repeat':50}]    # many medium sized
+stress_scenarios = [{'len': 20, 'repeat': 50}]  # many medium sized
 transport_cases = ['tcp', 'ws', 'wss', 'ssl']
 qos_cases = [0, 1, 2]
 enqueue_cases = [0, 1]
@@ -208,10 +233,10 @@ test_cases = make_cases(get_scenarios())
 stress_test_cases = make_cases(stress_scenarios)
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('test_case', test_cases)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
     publish_cfg = get_configurations(dut)
     dut.expect(re.compile(rb'mqtt>'), timeout=30)
@@ -219,10 +244,10 @@ def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
     run_publish_test_case(dut, test_case, publish_cfg)
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('test_case', stress_test_cases)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_mqtt_publish_stress(dut: Dut, test_case: Any) -> None:
     publish_cfg = get_configurations(dut)
     dut.expect(re.compile(rb'mqtt>'), timeout=30)

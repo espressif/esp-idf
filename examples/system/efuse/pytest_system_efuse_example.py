@@ -1,50 +1,56 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_qemu.dut import QemuDut
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
+@idf_parametrize('target', ['esp32', 'esp32c2', 'esp32c3'], indirect=['target'])
 def test_examples_efuse(dut: Dut) -> None:
     dut.expect(r'example: Coding Scheme (3/4)|(NONE)|(REPEAT)|(RS \(Reed-Solomon coding\))', timeout=20)
-    dut.expect(['example: read efuse fields',
-                r'example: 1. read MAC address: {}'.format(r':'.join((r'[0-9a-f]{2}',) * 6)),
-                'example: 2. read secure_version: 0',
-                'example: 3. read custom fields',
-                'example: module_version = 0',
-                'example: device_role = None',
-                'example: setting_1 = 0',
-                'example: setting_2 = 0',
-                'example: custom_secure_version = 0',
-                'example: This example does not burn any efuse in reality only virtually',
-                'example: Write operations in efuse fields are performed virtually',
-                'example: write custom efuse fields',
-                'efuse: Virtual efuses enabled: Not really burning eFuses',
-                'example: module_version = 1',
-                'example: device_role = Slave',
-                'example: setting_1 = 3',
-                'example: setting_2 = 4',
-                'example: custom_secure_version = 5',
-                'example: Done'], expect_all=True)
+    dut.expect(
+        [
+            'example: read efuse fields',
+            r'example: 1. read MAC address: {}'.format(r':'.join((r'[0-9a-f]{2}',) * 6)),
+            'example: 2. read secure_version: 0',
+            'example: 3. read custom fields',
+            'example: module_version = 0',
+            'example: device_role = None',
+            'example: setting_1 = 0',
+            'example: setting_2 = 0',
+            'example: custom_secure_version = 0',
+            'example: This example does not burn any efuse in reality only virtually',
+            'example: Write operations in efuse fields are performed virtually',
+            'example: write custom efuse fields',
+            'efuse: Virtual efuses enabled: Not really burning eFuses',
+            'example: module_version = 1',
+            'example: device_role = Slave',
+            'example: setting_1 = 3',
+            'example: setting_2 = 4',
+            'example: custom_secure_version = 5',
+            'example: Done',
+        ],
+        expect_all=True,
+    )
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.parametrize('config', ['virt_flash_enc',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_flash_enc',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target']
+)
 def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -94,9 +100,15 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32s2
-@pytest.mark.parametrize('config', ['virt_flash_enc_aes_256',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_flash_enc_aes_256',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     # Only ESP32-S2 has support AES-256 FLASH_ENCRYPTION key
     # check and log bin size
@@ -135,17 +147,18 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.parametrize('config', ['virt_flash_enc',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_flash_enc',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target']
+)
 def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
-
     print(' - Erase flash')
     dut.serial.erase_flash()
 
@@ -202,15 +215,17 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.parametrize('config', ['virt_flash_enc_release',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_flash_enc_release',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target']
+)
 def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -257,9 +272,15 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.parametrize('config', ['virt_secure_boot_v1',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_secure_boot_v1',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
     # only for ESP32
     # check and log bin size
@@ -305,9 +326,15 @@ def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.parametrize('config', ['virt_secure_boot_v1',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_secure_boot_v1',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -357,10 +384,16 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32
 @pytest.mark.esp32eco3
-@pytest.mark.parametrize('config', [('virt_secure_boot_v2'),], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        ('virt_secure_boot_v2'),
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     # only for ESP32 ECO3
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -471,12 +504,17 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32
 @pytest.mark.esp32eco3
-@pytest.mark.parametrize('config', [('virt_secure_boot_v2'),], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        ('virt_secure_boot_v2'),
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
-
     print(' - Erase flash')
     dut.serial.erase_flash()
     print(' - Flash bootloader and app')
@@ -534,16 +572,12 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['virt_secure_boot_v2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize(
+    'target', ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'], indirect=['target']
+)
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -607,16 +641,12 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['virt_secure_boot_v2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize(
+    'target', ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'], indirect=['target']
+)
 def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -635,7 +665,12 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
     # Resets eFuse, which enables Secure boot feature
     # Resets eFuses, which control digest slots
     if dut.app.sdkconfig.get('SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS'):
-        dut.serial.erase_field_on_emul_efuse_by_name(['SECURE_BOOT_EN', 'SECURE_BOOT_KEY_REVOKE0', 'SECURE_BOOT_KEY_REVOKE1', 'SECURE_BOOT_KEY_REVOKE2'])
+        dut.serial.erase_field_on_emul_efuse_by_name([
+            'SECURE_BOOT_EN',
+            'SECURE_BOOT_KEY_REVOKE0',
+            'SECURE_BOOT_KEY_REVOKE1',
+            'SECURE_BOOT_KEY_REVOKE2',
+        ])
     else:
         dut.serial.erase_field_on_emul_efuse_by_name(['SECURE_BOOT_EN'])
 
@@ -681,9 +716,15 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.parametrize('config', ['virt_sb_v1_and_fe',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_sb_v1_and_fe',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -745,10 +786,16 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32
 @pytest.mark.esp32eco3
-@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_sb_v2_and_fe',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -827,10 +874,15 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32
 @pytest.mark.host_test
 @pytest.mark.qemu
-@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32.qemu',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'virt_sb_v2_and_fe.esp32.qemu',
+    ],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [
@@ -840,6 +892,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_efuse_with_virt_sb_v2_and_fe_qemu(dut: QemuDut) -> None:
     try:
         dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
@@ -910,15 +963,10 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_qemu(dut: QemuDut) -> None:
             efuse_file.write(bytearray.fromhex(esp32eco3_efuses))
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe'], indirect=True)
+@idf_parametrize('target', ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
