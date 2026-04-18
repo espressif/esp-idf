@@ -14,6 +14,7 @@
 #include "host/util/util.h"
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
 #include "ble_prox_prph.h"
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
@@ -299,6 +300,9 @@ void app_main(void)
 
     ble_hs_cfg.sm_sc = 1;
     ble_hs_cfg.sm_mitm = 1;
+
+    ble_svc_gap_init();
+    ble_svc_gatt_init();
 
     int rc;
     /* Set the default device name */

@@ -145,8 +145,13 @@ ext_bleprph_advertise(void)
         break;
     }
 
-    params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
-    params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    if (s_current_phy == BLE_HCI_LE_PHY_CODED_PREF_MASK) {
+        params.itvl_min = BLE_GAP_ADV_ITVL_MS(20);
+        params.itvl_max = BLE_GAP_ADV_ITVL_MS(20);
+    }else{
+        params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+        params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    }
 
     /* configure instance 0 */
     rc = ble_gap_ext_adv_configure(instance, &params, NULL,
