@@ -210,6 +210,9 @@ esp_err_t httpd_unregister_uri_handler(httpd_handle_t handle,
             ESP_LOGD(TAG, LOG_FMT("[%d] removing %s"), i, hd->hd_calls[i]->uri);
 
             free((char*)hd->hd_calls[i]->uri);
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            free((char*)hd->hd_calls[i]->supported_subprotocol);
+#endif // CONFIG_HTTPD_WS_SUPPORT
             free(hd->hd_calls[i]);
             hd->hd_calls[i] = NULL;
 
@@ -248,6 +251,9 @@ esp_err_t httpd_unregister_uri(httpd_handle_t handle, const char *uri)
             ESP_LOGD(TAG, LOG_FMT("[%d] removing %s"), i, uri);
 
             free((char*)hd->hd_calls[i]->uri);
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            free((char*)hd->hd_calls[i]->supported_subprotocol);
+#endif // CONFIG_HTTPD_WS_SUPPORT
             free(hd->hd_calls[i]);
             hd->hd_calls[i] = NULL;
             found = true;
@@ -279,6 +285,9 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd)
         ESP_LOGD(TAG, LOG_FMT("[%d] removing %s"), i, hd->hd_calls[i]->uri);
 
         free((char*)hd->hd_calls[i]->uri);
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        free((char*)hd->hd_calls[i]->supported_subprotocol);
+#endif // CONFIG_HTTPD_WS_SUPPORT
         free(hd->hd_calls[i]);
         hd->hd_calls[i] = NULL;
     }
