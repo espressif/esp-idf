@@ -107,13 +107,6 @@ extern "C" {
 #define ISP_LL_BF_DEFAULT_TEMPLATE_VAL        15
 
 /*---------------------------------------------------------------
-                      DVP
----------------------------------------------------------------*/
-#define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
-#define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
-#define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
-
-/*---------------------------------------------------------------
                       Color
 ---------------------------------------------------------------*/
 #define ISP_LL_COLOR_CONTRAST_MAX       0xff
@@ -121,12 +114,6 @@ extern "C" {
 #define ISP_LL_COLOR_HUE_MAX            360
 #define ISP_LL_COLOR_BRIGNTNESS_MIN     -128
 #define ISP_LL_COLOR_BRIGNTNESS_MAX     127
-
-/*---------------------------------------------------------------
-                      LSC
----------------------------------------------------------------*/
-#define ISP_LL_LSC_GRID_HEIGHT        32
-#define ISP_LL_LSC_GRID_WIDTH         32
 
 /*---------------------------------------------------------------
                       CCM
@@ -139,6 +126,26 @@ extern "C" {
 #define ISP_LL_CCM_MATRIX_FRAC_BITS     (10)
 #endif
 #define ISP_LL_CCM_MATRIX_TOT_BITS      (ISP_LL_CCM_MATRIX_INT_BITS + ISP_LL_CCM_MATRIX_FRAC_BITS + 1)  // including one sign bit
+
+/*---------------------------------------------------------------
+                      DVP
+---------------------------------------------------------------*/
+#define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
+#define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
+#define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
+
+/*---------------------------------------------------------------
+                      LSC
+---------------------------------------------------------------*/
+#define ISP_LL_LSC_GRID_HEIGHT        32
+#define ISP_LL_LSC_GRID_WIDTH         32
+
+/*---------------------------------------------------------------
+                      LUT
+---------------------------------------------------------------*/
+#define ISP_LL_LUT_LSC_SIZE_MAX       560
+#define ISP_LL_LUT_DPC_SIZE_MAX       512
+#define ISP_LL_LUT_AWB_SIZE_MAX       104
 
 typedef union {
     struct {
