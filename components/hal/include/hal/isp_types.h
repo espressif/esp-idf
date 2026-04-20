@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,8 +108,10 @@ typedef enum {
  *
  */
 typedef enum {
-    ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,          ///< AE input data after demosaic
-    ISP_AE_SAMPLE_POINT_AFTER_GAMMA,             ///< AE input data after gamma
+    ISP_AE_SAMPLE_POINT_0,                       ///< AE sample point 0, see TRM for more details
+    ISP_AE_SAMPLE_POINT_1,                       ///< AE sample point 1, see TRM for more details
+    ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC __attribute__((deprecated("Use ISP_AE_SAMPLE_POINT_0 instead"))) = ISP_AE_SAMPLE_POINT_0,    ///< Deprecated alias of `ISP_AE_SAMPLE_POINT_0`
+    ISP_AE_SAMPLE_POINT_AFTER_GAMMA __attribute__((deprecated("Use ISP_AE_SAMPLE_POINT_1 instead"))) = ISP_AE_SAMPLE_POINT_1,       ///< Deprecated alias of `ISP_AE_SAMPLE_POINT_1`
 } isp_ae_sample_point_t;
 
 /*---------------------------------------------------------------
@@ -137,8 +139,10 @@ typedef enum {
  * @brief ISP AWB sample point in the ISP pipeline
  */
 typedef enum {
-    ISP_AWB_SAMPLE_POINT_BEFORE_CCM,       ///< Sample AWB data before CCM (Color Correction Matrix)
-    ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
+    ISP_AWB_SAMPLE_POINT_0,        ///< AWB sample point 0, see TRM for more details
+    ISP_AWB_SAMPLE_POINT_1,        ///< AWB sample point 1, see TRM for more details
+    ISP_AWB_SAMPLE_POINT_BEFORE_CCM __attribute__((deprecated("Use ISP_AWB_SAMPLE_POINT_0 instead"))) = ISP_AWB_SAMPLE_POINT_0,    ///< Deprecated alias of `ISP_AWB_SAMPLE_POINT_0`
+    ISP_AWB_SAMPLE_POINT_AFTER_CCM __attribute__((deprecated("Use ISP_AWB_SAMPLE_POINT_1 instead"))) = ISP_AWB_SAMPLE_POINT_1,     ///< Deprecated alias of `ISP_AWB_SAMPLE_POINT_1`
 } isp_awb_sample_point_t;
 
 /**
