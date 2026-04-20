@@ -13,6 +13,7 @@
 #include "hal/hal_utils.h"
 #include "hal/gdma_types.h"
 #include "hal/gdma_ll.h"
+#include "hal/config.h"
 #include "soc/axi_dma_struct.h"
 #include "soc/axi_dma_reg.h"
 
@@ -24,6 +25,13 @@ extern "C" {
 
 // any "dummy" peripheral ID can be used for M2M mode
 #define AXI_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFC0)
+#define AXI_DMA_LL_RX_EVENT_MASK (0x1F)
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT 1
+#define AXI_DMA_LL_TX_EVENT_MASK (0x40F)
+#else
+#define AXI_DMA_LL_TX_EVENT_MASK (0x0F)
+#endif
 
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
@@ -474,6 +482,42 @@ __attribute__((always_inline))
 static inline void axi_dma_ll_tx_restart(axi_dma_dev_t *dev, uint32_t channel)
 {
     dev->out[channel].conf.out_link1.outlink_restart_chn = 1;
+}
+
+#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+/**
+ * @brief Request link switch done indication for TX channel
+ */
+static inline void axi_dma_ll_tx_request_link_switch_event(axi_dma_dev_t *dev, uint32_t channel)
+{
+    switch (channel) {
+    case 0:
+        dev->link_switch_state.link_switch_state_ch0 = 1;
+        break;
+    case 1:
+        dev->link_switch_state.link_switch_state_ch1 = 1;
+        break;
+    case 2:
+        dev->link_switch_state.link_switch_state_ch2 = 1;
+        break;
+    default:
+        break;
+    }
+}
+#endif
+
+/**
+ * @brief Check if TX link switch done indication is supported
+ */
+__attribute__((always_inline))
+static inline bool axi_dma_ll_tx_is_link_switch_event_supported(axi_dma_dev_t *dev)
+{
+    (void)dev;
+#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+    return true;
+#else
+    return false;
+#endif
 }
 
 /**

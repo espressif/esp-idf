@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 
 static gdma_hal_priv_data_t gdma_ahb_hal_priv_data = {
     .m2m_free_periph_mask = GDMA_LL_M2M_FREE_PERIPH_ID_MASK,
+    .tx_event_mask = GDMA_LL_TX_EVENT_MASK,
+    .rx_event_mask = GDMA_LL_RX_EVENT_MASK,
 };
 
 void gdma_ahb_hal_start_with_desc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, intptr_t desc_base_addr)
@@ -182,6 +184,12 @@ void gdma_ahb_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_cha
 }
 #endif // SOC_GDMA_SUPPORT_ETM
 
+bool gdma_ahb_hal_is_tx_link_switch_event_supported(gdma_hal_context_t *hal)
+{
+    (void)hal;
+    return false;
+}
+
 void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 {
     hal->dev = GDMA_LL_GET_HW(config->group_id - GDMA_LL_AHB_GROUP_START_ID);
@@ -206,5 +214,6 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 #if GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
     hal->set_burst_size = gdma_ahb_hal_set_burst_size;
 #endif // GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
+    hal->is_tx_link_switch_event_supported = gdma_ahb_hal_is_tx_link_switch_event_supported;
     hal->priv_data = &gdma_ahb_hal_priv_data;
 }

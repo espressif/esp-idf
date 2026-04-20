@@ -334,7 +334,7 @@ void app_main(void)
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
         .on_color_trans_done = example_notify_lvgl_flush_ready,
 #if CONFIG_EXAMPLE_MONITOR_REFRESH_BY_GPIO
-        .on_refresh_done = example_monitor_refresh_rate,
+        .on_vsync = example_monitor_refresh_rate,
 #endif
     };
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, display));
