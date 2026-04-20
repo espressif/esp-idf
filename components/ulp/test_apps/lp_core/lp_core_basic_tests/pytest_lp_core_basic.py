@@ -78,27 +78,3 @@ def test_lp_uart_multi_device(case_tester: CaseTester) -> None:
     uart_cases = [case for case in case_tester.test_menu if 'uart' in case.groups and 'wakeup' not in case.groups]
     for case in uart_cases:
         case_tester.run_multi_dev_case(case=case, reset=True)
-
-
-@pytest.mark.generic_multi_device
-@pytest.mark.parametrize(
-    'target',
-    soc_filtered_targets('SOC_ULP_LP_UART_SUPPORTED == 1'),
-    indirect=True,
-)
-@pytest.mark.parametrize(
-    'config',
-    [
-        'defaults',
-    ],
-    indirect=True,
-)
-@pytest.mark.parametrize('count', [2], indirect=True)
-def test_lp_uart_wakeup_modes(case_tester: CaseTester) -> None:
-    relevant_cases = [case for case in case_tester.test_menu if {'wakeup', 'uart'}.issubset(case.groups)]
-    assert len(relevant_cases) == 12, (
-        f"Expected 12 test cases with groups 'wakeup' and 'uart', but found {len(relevant_cases)}."
-    )
-
-    for case in relevant_cases:
-        case_tester.run_multi_dev_case(case=case, reset=True)

@@ -20,6 +20,7 @@
 #include "driver/uart.h"
 #include "driver/rtc_io.h"
 #include "soc/soc_caps.h"
+#include "hal/uart_hal.h"
 #if SOC_LIGHT_SLEEP_SUPPORTED
 #include "esp_sleep.h"
 #endif /* SOC_LIGHT_SLEEP_SUPPORTED */
@@ -28,6 +29,13 @@ extern const uint8_t lp_core_main_uart_bin_start[] asm("_binary_lp_core_test_app
 extern const uint8_t lp_core_main_uart_bin_end[]   asm("_binary_lp_core_test_app_uart_bin_end");
 
 static const char *TAG = "lp_core_uart_test";
+
+static void lp_core_uart_clear_buf(void)
+{
+    uart_dev_t *dev = (uart_dev_t *)UART_LL_GET_HW(LP_UART_NUM_0);
+    uart_ll_rxfifo_rst(dev);
+    uart_ll_txfifo_rst(dev);
+}
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t *cfg,
                                             const uint8_t *firmware_start,
@@ -287,6 +295,9 @@ static void hp_uart_setup_cfg(const lp_core_uart_cfg_t *cfg)
                                  cfg->uart_pin_cfg.rx_io_num,
                                  cfg->uart_pin_cfg.tx_io_num,
                                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    /* Discard any stale bytes that arrived while the pin mux was settling */
+    uart_flush_input(UART_NUM_1);
 }
 
 /*
@@ -300,12 +311,18 @@ static void hp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
     hp_uart_setup_cfg(cfg);
     unity_send_signal("HP UART init done");
 
+    /* Wait for the LP side to finish loading firmware and preparing data,
+     * then flush the HP UART RX FIFO before signalling readiness. */
+    unity_wait_for_signal("LP UART tx ready");
+    uart_flush_input(UART_NUM_1);
+    unity_send_signal("HP UART rx ready");
+
     uint8_t rx_data[UART_BUF_SIZE] = {0};
     int bytes_remaining = TEST_DATA_LEN;
     int recv_idx = 0;
     while (bytes_remaining > 0) {
         int n = uart_read_bytes(UART_NUM_1, rx_data + recv_idx,
-                                bytes_remaining, 10 / portTICK_PERIOD_MS);
+                                bytes_remaining, 100 / portTICK_PERIOD_MS);
         if (n < 0) {
             TEST_FAIL_MESSAGE("HP UART read error");
         } else if (n > 0) {
@@ -357,6 +374,9 @@ static void test_lp_uart_write_cfg(const lp_core_uart_cfg_t *cfg)
 
     ulp_lp_core_cfg_t lp_cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+#if ESP_ROM_HAS_LP_ROM
+        .skip_lp_rom_boot = true,
+#endif
     };
     load_and_start_lp_core_firmware(&lp_cfg,
                                     lp_core_main_uart_bin_start,
@@ -376,6 +396,11 @@ static void test_lp_uart_write_cfg(const lp_core_uart_cfg_t *cfg)
      * (already LP_CORE_COMMAND_OK) and the test still passes. */
     esp_sleep_enable_timer_wakeup(3 * 1000 * 1000ULL);
 #endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
+    /* Tell the HP side we are ready to transmit so it can flush its RX FIFO
+     * just before we begin, then wait for its acknowledgement. */
+    unity_send_signal("LP UART tx ready");
+    unity_wait_for_signal("HP UART rx ready");
 
     ESP_LOGI(TAG, "Write test start");
     ulp_test_cmd = LP_CORE_LP_UART_WRITE_TEST;
@@ -401,6 +426,9 @@ static void test_lp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
 
     ulp_lp_core_cfg_t lp_cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+#if ESP_ROM_HAS_LP_ROM
+        .skip_lp_rom_boot = true,
+#endif
     };
     load_and_start_lp_core_firmware(&lp_cfg,
                                     lp_core_main_uart_bin_start,
@@ -409,6 +437,10 @@ static void test_lp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
     uint8_t expected[TEST_DATA_LEN];
     setup_test_data_nbits(expected, cfg->uart_proto_cfg.data_bits);
     ulp_rx_len = TEST_DATA_LEN;
+
+    /* Flush any garbage that accumulated in the LP UART RX FIFO during the
+       HP-side pin muxing / UART driver installation. */
+    lp_core_uart_clear_buf();
 
     ESP_LOGI(TAG, "Read test start");
     ulp_test_cmd = LP_CORE_LP_UART_MULTI_BYTE_READ_TEST;
@@ -421,7 +453,8 @@ static void test_lp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
     }
 
     ESP_LOGI(TAG, "Verify Rx data");
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, (uint8_t *)&ulp_rx_data, TEST_DATA_LEN);
+    const volatile uint8_t *rx_ptr = (const volatile uint8_t *)&ulp_rx_data;
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, (const void *)rx_ptr, TEST_DATA_LEN);
     unity_send_signal("LP UART recv data done");
 }
 
@@ -490,6 +523,9 @@ static void test_lp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg)
 
     ulp_lp_core_cfg_t lp_core_cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+#if ESP_ROM_HAS_LP_ROM
+        .skip_lp_rom_boot = true,
+#endif
     };
     load_and_start_lp_core_firmware(&lp_core_cfg,
                                     lp_core_main_uart_bin_start,
@@ -498,6 +534,8 @@ static void test_lp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg)
     uint8_t expected[TEST_DATA_LEN];
     setup_test_data_nbits(expected, lp_cfg->uart_proto_cfg.data_bits);
     ulp_rx_len = TEST_DATA_LEN;
+
+    lp_core_uart_clear_buf();
 
     ESP_LOGI(TAG, "Mismatch read test start (expect FRAM_ERR, driver must recover)");
     ulp_test_cmd = LP_CORE_LP_UART_MULTI_BYTE_READ_TEST;
@@ -520,7 +558,14 @@ static void test_lp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg)
      * A single differing byte is enough to confirm the error was detected.
      */
     ESP_LOGI(TAG, "Verify Rx buffer is corrupt (FRAM_ERR aborted read early)");
-    bool data_matches = (memcmp((uint8_t *)&ulp_rx_data, expected, TEST_DATA_LEN) == 0);
+    const volatile uint8_t *rx_ptr = (const volatile uint8_t *)&ulp_rx_data;
+    bool data_matches = true;
+    for (int _i = 0; _i < TEST_DATA_LEN; _i++) {
+        if (rx_ptr[_i] != expected[_i]) {
+            data_matches = false;
+            break;
+        }
+    }
     TEST_ASSERT_FALSE_MESSAGE(data_matches,
                               "LP UART received correct data despite word-length mismatch");
 
@@ -540,13 +585,18 @@ static void hp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg,
     hp_uart_setup_cfg(hp_cfg);     /* HP deliberately uses the wrong word length */
     unity_send_signal("HP UART init done");
 
+    /* Wait for LP side to be ready, then flush before receiving */
+    unity_wait_for_signal("LP UART tx ready");
+    uart_flush_input(UART_NUM_1);
+    unity_send_signal("HP UART rx ready");
+
     /* Collect whatever the HP receives within a bounded window */
     uint8_t rx_data[UART_BUF_SIZE] = {0};
     int recv_idx  = 0;
     int idle_count = 0;
     while (recv_idx < TEST_DATA_LEN && idle_count < 20) {
         int n = uart_read_bytes(UART_NUM_1, rx_data + recv_idx,
-                                TEST_DATA_LEN - recv_idx, 10 / portTICK_PERIOD_MS);
+                                TEST_DATA_LEN - recv_idx, 100 / portTICK_PERIOD_MS);
         if (n > 0) {
             recv_idx  += n;
             idle_count = 0;
@@ -603,6 +653,7 @@ static void hp_uart_read_print(void)
                                  lp_uart_cfg.uart_pin_cfg.tx_io_num,
                                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
+    uart_flush_input(UART_NUM_1);
     unity_send_signal("HP UART init done");
 
     setup_test_print_data();
@@ -612,7 +663,7 @@ static void hp_uart_read_print(void)
     int idle_count = 0;
     while (1) {
         int n = uart_read_bytes(UART_NUM_1, rx_data + recv_idx,
-                                UART_BUF_SIZE, 10 / portTICK_PERIOD_MS);
+                                UART_BUF_SIZE, 100 / portTICK_PERIOD_MS);
         if (n < 0) {
             TEST_FAIL_MESSAGE("HP UART read error");
         } else if (n > 0) {
@@ -907,3 +958,121 @@ TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART read test - LP GPIO Matrix routing",
 TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART print test",
                            "[lp_core][uart][test_env=generic_multi_device][timeout=150]",
                            test_lp_uart_print, hp_uart_read_print);
+
+/* HP peer: send one UART burst sized for LP read_bytes return-value / bounds tests. */
+
+static void hp_uart_send_lp_read_test_burst(void)
+{
+    unity_wait_for_signal("LP UART init done");
+
+    uart_config_t hp_uart_cfg = {
+        .baud_rate = lp_uart_cfg.uart_proto_cfg.baud_rate,
+        .data_bits = lp_uart_cfg.uart_proto_cfg.data_bits,
+        .parity    = lp_uart_cfg.uart_proto_cfg.parity,
+        .stop_bits = lp_uart_cfg.uart_proto_cfg.stop_bits,
+        .flow_ctrl = lp_uart_cfg.uart_proto_cfg.flow_ctrl,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+    int intr_alloc_flags = 0;
+#if CONFIG_UART_ISR_IN_IRAM
+    intr_alloc_flags = ESP_INTR_FLAG_IRAM;
+#endif
+    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_1, UART_BUF_SIZE, 0, 0, NULL, intr_alloc_flags));
+    ESP_ERROR_CHECK(uart_param_config(UART_NUM_1, &hp_uart_cfg));
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, lp_uart_cfg.uart_pin_cfg.rx_io_num,
+                                 lp_uart_cfg.uart_pin_cfg.tx_io_num,
+                                 UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    unity_send_signal("HP UART init done");
+    unity_wait_for_signal("LP UART recv ready");
+
+    ESP_ERROR_CHECK(uart_flush_input(UART_NUM_1));
+
+    uint8_t tx_buf[LP_UART_READ_RETURN_VALUE_BURST_LEN];
+    for (int i = 0; i < LP_UART_READ_RETURN_VALUE_BURST_LEN; i++) {
+        tx_buf[i] = (uint8_t)(0x30 + i);
+    }
+    uart_write_bytes(UART_NUM_1, (const char *)tx_buf, LP_UART_READ_RETURN_VALUE_BURST_LEN);
+    ESP_ERROR_CHECK(uart_wait_tx_done(UART_NUM_1, pdMS_TO_TICKS(500)));
+
+    unity_wait_for_signal("LP UART recv data done");
+
+    uart_driver_delete(UART_NUM_1);
+    vTaskDelay(1);
+}
+
+/* LP requests lp_core_uart_read_bytes(..., len = LP_UART_READ_RETURN_VALUE_BURST_LEN, ...).
+ * Asserts the return value matches len after the HP sends the same byte count. */
+static void test_lp_uart_read_bytes_return_value(void)
+{
+    TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
+    unity_send_signal("LP UART init done");
+    unity_wait_for_signal("HP UART init done");
+
+    ulp_lp_core_cfg_t lp_cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+    load_and_start_lp_core_firmware(&lp_cfg, lp_core_main_uart_bin_start, lp_core_main_uart_bin_end);
+
+    ulp_test_cmd = LP_CORE_LP_UART_READ_BYTES_RETURN_VALUE_TEST;
+    vTaskDelay(10);
+
+    unity_send_signal("LP UART recv ready");
+
+    while (ulp_test_cmd_reply != LP_CORE_COMMAND_OK) {
+        vTaskDelay(10);
+    }
+
+    int32_t ret_val = (int32_t)ulp_read_return_value;
+    ESP_LOGI(TAG, "read_bytes returned %ld, expected %d", (long)ret_val, LP_UART_READ_RETURN_VALUE_BURST_LEN);
+    TEST_ASSERT_EQUAL(LP_UART_READ_RETURN_VALUE_BURST_LEN, ret_val);
+
+    unity_send_signal("LP UART recv data done");
+}
+
+/* LP reads into a short user buffer while the HP sends LP_UART_READ_RETURN_VALUE_BURST_LEN
+ * bytes. Asserts return length is within the user buffer and guard memory is intact. */
+static void test_lp_uart_read_bytes_buffer_bounds(void)
+{
+    TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
+    unity_send_signal("LP UART init done");
+    unity_wait_for_signal("HP UART init done");
+
+    ulp_lp_core_cfg_t lp_cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+    load_and_start_lp_core_firmware(&lp_cfg, lp_core_main_uart_bin_start, lp_core_main_uart_bin_end);
+
+    ulp_test_cmd = LP_CORE_LP_UART_READ_BYTES_BOUNDS_TEST;
+    vTaskDelay(10);
+
+    unity_send_signal("LP UART recv ready");
+
+    while (ulp_test_cmd_reply != LP_CORE_COMMAND_OK) {
+        vTaskDelay(10);
+    }
+
+    int32_t ret_val = (int32_t)ulp_read_return_value;
+    ESP_LOGI(TAG, "read_bytes returned %ld, max allowed %d", (long)ret_val, LP_UART_READ_BOUNDS_USER_BUF_LEN);
+    TEST_ASSERT_LESS_OR_EQUAL(LP_UART_READ_BOUNDS_USER_BUF_LEN, ret_val);
+    TEST_ASSERT_GREATER_THAN(0, ret_val);
+
+    lp_uart_read_bounds_guard_t *region = (lp_uart_read_bounds_guard_t *)&ulp_read_bounds_guard_region;
+    for (int i = 0; i < LP_UART_READ_BOUNDS_GUARD_LEN; i++) {
+        TEST_ASSERT_EQUAL_HEX8_MESSAGE(LP_UART_READ_BOUNDS_GUARD_PATTERN, region->pre_guard[i],
+                                       "pre-guard memory corrupted");
+    }
+    for (int i = 0; i < LP_UART_READ_BOUNDS_GUARD_LEN; i++) {
+        TEST_ASSERT_EQUAL_HEX8_MESSAGE(LP_UART_READ_BOUNDS_GUARD_PATTERN, region->post_guard[i],
+                                       "post-guard memory corrupted");
+    }
+
+    unity_send_signal("LP UART recv data done");
+}
+/* read_bytes: return value and buffer bounds (LP UART driver) */
+TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART read_bytes return value test",
+                           "[lp_core][uart][test_env=generic_multi_device][timeout=150]",
+                           test_lp_uart_read_bytes_return_value, hp_uart_send_lp_read_test_burst);
+TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART read_bytes buffer bounds test",
+                           "[lp_core][uart][test_env=generic_multi_device][timeout=150]",
+                           test_lp_uart_read_bytes_buffer_bounds, hp_uart_send_lp_read_test_burst);
