@@ -104,7 +104,9 @@ static void avrc_sdp_cback(UINT16 status)
     avrc_cb.service_uuid = 0;
 
     /* return info from sdp record in app callback function */
-    (*avrc_cb.p_cback) (status);
+    if (avrc_cb.p_cback != NULL) {
+        (*avrc_cb.p_cback) (status);
+    }
 
     return;
 }
@@ -383,8 +385,8 @@ bt_status_t AVRC_Init(void)
 **
 ** Function         AVRC_Deinit
 **
-** Description      This function is called at stack shotdown to free the
-**                  control block (if using dynamic memory), and deinitializes the
+** Description      This function is called at stack shutdown to free the
+**                  control block (if using dynamic memory), and deinitialize the
 **                  control block and tracing level.
 **
 ** Returns          void
