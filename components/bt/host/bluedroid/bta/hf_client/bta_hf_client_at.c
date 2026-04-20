@@ -632,10 +632,10 @@ static char *bta_hf_client_parse_uint32(char *buffer, void (*handler_callback)(U
 {
     UINT32 value;
     int res;
-    int offset;
+    int offset = 0;
 
     res = sscanf(buffer, "%u%n", &value, &offset);
-    if (res < 1) {
+    if ((res < 1) || (offset <= 0)) {
         return NULL;
     }
 
@@ -660,10 +660,10 @@ static char *bta_hf_client_parse_cind_values(char *buffer)
     UINT16 index = 0;
     UINT32 value = 0;
 
-    int offset;
+    int offset = 0;
     int res;
 
-    while ((res = sscanf(buffer, "%u%n", &value, &offset)) > 0) {
+    while (((res = sscanf(buffer, "%u%n", &value, &offset)) > 0) && (offset > 0)) {
         /* decides if its valid index and value, if yes stores it */
         bta_hf_client_handle_cind_value(index, value);
 
@@ -676,6 +676,7 @@ static char *bta_hf_client_parse_cind_values(char *buffer)
 
         index++;
         buffer++;
+        offset = 0;
     }
 
     if (res > 0) {
@@ -688,7 +689,7 @@ static char *bta_hf_client_parse_cind_values(char *buffer)
 
 static char *bta_hf_client_parse_cind_list(char *buffer)
 {
-    int offset;
+    int offset = 0;
     char *name = osi_malloc(129);
     UINT32 min, max;
     UINT32 index = 0;
@@ -699,7 +700,7 @@ static char *bta_hf_client_parse_cind_list(char *buffer)
         return NULL;
     }
 
-    while ((res = sscanf(buffer, "(\"%128[^\"]\",(%u%*[-,]%u))%n", name, &min, &max, &offset)) > 2) {
+    while (((res = sscanf(buffer, "(\"%128[^\"]\",(%u%*[-,]%u))%n", name, &min, &max, &offset)) > 2) && (offset > 0)) {
         bta_hf_client_handle_cind_list_item(name, min, max, index);
         buffer += offset;
         index++;
@@ -709,6 +710,7 @@ static char *bta_hf_client_parse_cind_list(char *buffer)
         }
 
         buffer++;
+        offset = 0;
     }
 
     osi_free(name);
@@ -790,12 +792,12 @@ static char *bta_hf_client_parse_ciev(char *buffer)
 {
     UINT32 index, value;
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CIEV:");
 
     res = sscanf(buffer, "%u,%u%n", &index, &value, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -869,13 +871,13 @@ static char *bta_hf_client_parse_clip(char *buffer)
     char number[33];
     UINT32 type = 0;
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CLIP:");
 
     /* there might be something more after %lu but HFP doesn't care */
     res = sscanf(buffer, "\"%32[^\"]\",%u%n", number, &type, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -896,13 +898,13 @@ static char *bta_hf_client_parse_ccwa(char *buffer)
     char number[33];
     UINT32 type = 0;
     int res ;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CCWA:");
 
     /* there might be something more after %lu but HFP doesn't care */
     res = sscanf(buffer, "\"%32[^\"]\",%u%n", number, &type, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -922,13 +924,13 @@ static char *bta_hf_client_parse_cops(char *buffer)
     /* spec forces 16 chars max, plus \0 here */
     char opstr[17];
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+COPS:");
 
     /* TODO: Not sure if operator string actually can contain escaped " char inside */
     res = sscanf(buffer, "%hhi,0,\"%16[^\"]\"%n", &mode, opstr, &offset);
-    if (res < 2) {
+    if ((res < 2) || (offset <= 0)) {
         return NULL;
     }
 
@@ -948,12 +950,12 @@ static char *bta_hf_client_parse_binp(char *buffer)
     /* phone number is 32 chars plus one for \0*/
     char numstr[33];
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+BINP:");
 
     res = sscanf(buffer, "\"%32[^\"]\"\r\n%n", numstr, &offset);
-    if (res < 1) {
+    if (res < 1 || offset <= 0) {
         return NULL;
     }
 
@@ -974,18 +976,12 @@ static char *bta_hf_client_parse_clcc(char *buffer)
     char numstr[33];     /* spec forces 32 chars, plus one for \0*/
     UINT16 type;
     int res;
-    int offset;
+    int offset = 0;
     AT_CHECK_EVENT(buffer, "+CLCC:");
 
     res = sscanf(buffer, "%hu,%hu,%hu,%hu,%hu%n",
                  &idx, &dir, &status, &mode, &mpty, &offset);
-    if (res < 5) {
-        return NULL;
-    }
-
-    /* Abort in case offset not set because of format error */
-    if (offset == 0) {
-        APPL_TRACE_ERROR("%s: Format Error %s", __func__, buffer);
+    if ((res < 5) || (offset <= 0)) {
         return NULL;
     }
 
@@ -1000,8 +996,9 @@ static char *bta_hf_client_parse_clcc(char *buffer)
         }
 
         if (res2 == 0) {
+            offset = 0;
             res2 = sscanf(buffer, ",\"\",%hu%n", &type, &offset);
-            if (res2 < 0) {
+            if ((res2 < 0) || (offset <= 0)) {
                 return NULL;
             }
 
@@ -1013,11 +1010,10 @@ static char *bta_hf_client_parse_clcc(char *buffer)
         if (res2 >= 2) {
             res += res2;
             /* Abort in case offset not set because of format error */
-            if (offset == 0) {
+            if (offset <= 0) {
                 APPL_TRACE_ERROR("%s: Format Error %s", __func__, buffer);
                 return NULL;
             }
-
             buffer += offset;
         }
     }
@@ -1043,7 +1039,7 @@ static char *bta_hf_client_parse_cnum(char *buffer)
     UINT16 type;
     UINT16 service = 0; /* 0 in case this optional parameter is not being sent */
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CNUM:");
 
@@ -1053,8 +1049,9 @@ static char *bta_hf_client_parse_cnum(char *buffer)
     }
 
     if (res == 0) {
+        offset = 0;
         res = sscanf(buffer, ",\"\",%hu%n,,%hu%n", &type, &offset, &service, &offset);
-        if (res < 0) {
+        if ((res < 0) || (offset <= 0)) {
             return NULL;
         }
 
@@ -1089,12 +1086,12 @@ static char *bta_hf_client_parse_btrh(char *buffer)
 {
     UINT16 code = 0;
     int res;
-    int offset;
+    int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+BTRH:");
 
     res = sscanf(buffer, "%hu%n", &code, &offset);
-    if (res < 1) {
+    if ((res < 1) || (offset <= 0)) {
         return NULL;
     }
 
