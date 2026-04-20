@@ -57,7 +57,7 @@
 
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define IDF_TARGET_MAX_SPI_CLK_FREQ                 26666*1000
-#define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          35  //TODO: IDF-9551, check perform
+#define IDF_TARGET_MAX_TRANS_TIME_INTR_DMA          37  //TODO: IDF-9551, check perform
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          19
 #define IDF_TARGET_MAX_TRANS_TIME_INTR_CPU          32
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_CPU          15

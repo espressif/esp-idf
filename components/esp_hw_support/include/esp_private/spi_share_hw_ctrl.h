@@ -23,7 +23,7 @@ extern "C" {
 #if BUS_LOCK_DEBUG
 #define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)  assert(x)
 #else
-#define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)
+#define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)  (void)(x)
 #endif
 
 #define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
