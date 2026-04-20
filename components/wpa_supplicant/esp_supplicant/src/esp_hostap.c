@@ -388,16 +388,18 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
 
     esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, buf, send_len, 0);
 #ifdef CONFIG_OWE_SOFTAP
-    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && esp_wifi_ap_get_owe_config_internal()) {
-        int owe_ie_len = 0;
-        struct wpabuf *owe_ie = esp_owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
-        if (owe_ie_len <= 0 || !owe_ie) {
-            wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
+    if (status_code == WLAN_STATUS_SUCCESS) {
+        if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && esp_wifi_ap_get_owe_config_internal()) {
+            int owe_ie_len = 0;
+            struct wpabuf *owe_ie = esp_owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
+            if (owe_ie_len <= 0 || !owe_ie) {
+                wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
+                wpabuf_free(owe_ie);
+                return WLAN_STATUS_UNSPECIFIED_FAILURE;
+            }
+            esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_ie), owe_ie_len, 0);
             wpabuf_free(owe_ie);
-            return WLAN_STATUS_UNSPECIFIED_FAILURE;
         }
-        esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_ie), owe_ie_len, 0);
-        wpabuf_free(owe_ie);
     }
 #endif /* CONFIG_OWE_SOFTAP */
 
@@ -503,7 +505,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
                     sta->wpa_sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE &&
                     owe_dh && owe_enabled) {
                 status = owe_process_assoc_req(hapd, sta, owe_dh, owe_ie_len);
-                if (status != WLAN_STATUS_SUCCESS) {
+                if (status == WLAN_STATUS_UNSPECIFIED_FAILURE) {
                     *reason = wpa_status_to_reason_code(status);
                     wpa_printf(MSG_ERROR, "OWE : Failed to process assoc req status %d", status);
                     return false;

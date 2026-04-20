@@ -818,15 +818,20 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
         return WLAN_STATUS_SUCCESS;
     }
 
-    if (!owe_dh || owe_dh_len < OWE_DHIE_LEN - 2) {
+    if (!owe_dh || owe_dh_len < 5) {
         wpa_printf(MSG_ERROR, "OWE: Invalid DH data received (len=%u)", owe_dh_len);
         return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
 
-    // Set the group ID from DH param
+    /* Set the group ID from DH param (extension IE: group at offset 3) */
     sta->owe_group = WPA_GET_LE16(owe_dh + 3);
     if (sta->owe_group != OWE_DH_GRP19)
         return WLAN_STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED;
+
+    if (owe_dh_len < OWE_DHIE_LEN - 2) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid DH data received (len=%u)", owe_dh_len);
+        return WLAN_STATUS_UNSPECIFIED_FAILURE;
+    }
 
     if (sta->owe_ecdh) {
         /* This is a workaround for mac80211 behavior of retransmitting
