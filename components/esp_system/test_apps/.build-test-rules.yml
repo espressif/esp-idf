@@ -5,6 +5,10 @@ components/esp_system/test_apps/cache_panic:
     - *common_components
     - spi_flash  # esp_system is included by default
 
+components/esp_system/test_apps/esp_sys_event:
+  depends_components:
+    - esp_system
+
 components/esp_system/test_apps/esp_system_unity_tests:
   disable:
     - if: (CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1)

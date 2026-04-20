@@ -5,6 +5,7 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 if(${target} STREQUAL "linux")
     idf_component_register(SRCS "esp_system.c"
                         "esp_err.c"
+                        "esp_sys_event.c"
                         "port/soc/linux/reset_reason.c"
                         "port/soc/linux/system_internal.c"
                         "port/esp_system_linux.c"
@@ -46,6 +47,7 @@ else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"
             "esp_err.c"
+            "esp_sys_event.c"
             "freertos_hooks.c"
             "panic.c"
             "esp_system.c"

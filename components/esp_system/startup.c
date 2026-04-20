@@ -21,6 +21,7 @@
 #include "esp_cpu.h"
 
 #include "esp_private/startup_internal.h"
+#include "esp_private/esp_sys_event_internal.h"
 
 // Ensure that system configuration matches the underlying number of cores.
 // This should enable us to avoid checking for both every time.
@@ -106,34 +107,16 @@ static void __do_global_ctors_1(void)
 }
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS && !CONFIG_IDF_TARGET_LINUX
 
-/* declare the start and stop symbols surrounding the array of init functions
- * registered by calling the system init function macros */
-_SECTION_ATTR_SYMBOL_DECL_GENERIC(esp_system_init_fn_t, esp_sys_init_fn)
-
-/**
- * @brief Call component init functions defined using the system init function macros.
- * The esp_system_init_fn_t structures describing these functions are collected into
- * an array [_esp_sys_init_fn_start, _esp_sys_init_fn_end) by the
- * linker. The functions are sorted by their priority value.
- * The sequence of the init function calls (sorted by priority) is documented in
- * system_init_fn.txt file.
- * @param stage_num Stage number of the init function call (0, 1).
- */
-__attribute__((no_sanitize_undefined)) /* TODO: IDF-8133 */
-static void do_system_init_fn(uint32_t stage_num)
+static void do_system_init_event(esp_sys_event_id_t id)
 {
-    const esp_system_init_fn_t *p;
-
     int core_id = esp_cpu_get_core_id();
-    for (p = _SECTION_START(esp_sys_init_fn); p < _SECTION_END(esp_sys_init_fn); ++p) {
-        if (p->stage == stage_num && (p->cores & BIT(core_id)) != 0) {
-            // During core init, stdout is not initialized yet, so use early logging.
-            ESP_EARLY_LOGD(TAG, "calling init function: %p on core: %d", p->fn, core_id);
-            esp_err_t err = (*(p->fn))();
-            if (err != ESP_OK) {
-                ESP_EARLY_LOGE(TAG, "init function %p has failed (0x%x), aborting", p->fn, err);
-                abort();
-            }
+    ESP_SYS_EVENT_FOREACH(h, id) {
+        // During core init, stdout is not initialized yet, so use early logging.
+        ESP_EARLY_LOGD(TAG, "calling init function: %p on core: %d", (void *)h->handler, core_id);
+        esp_err_t err = h->handler(NULL, NULL);
+        if (err != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "init function %p has failed (0x%x), aborting", (void *)h->handler, err);
+            abort();
         }
     }
 
@@ -155,7 +138,9 @@ static void  esp_startup_start_app_other_cores_default(void)
  */
 static void ESP_SYSTEM_IRAM_ATTR start_cpu_other_cores_default(void)
 {
-    do_system_init_fn(ESP_SYSTEM_INIT_STAGE_SECONDARY);
+    // Run secondary init handlers for this core. Core-scoped handlers skip
+    // themselves inside their registration wrappers.
+    do_system_init_event(ESP_SYS_EVENT_SYSTEM_INIT_SECONDARY);
 
     while (!s_system_full_inited) {
         esp_rom_delay_us(100);
@@ -167,7 +152,10 @@ static void ESP_SYSTEM_IRAM_ATTR start_cpu_other_cores_default(void)
 
 static void do_core_init(void)
 {
-    do_system_init_fn(ESP_SYSTEM_INIT_STAGE_CORE);
+    // Run core init handlers (core 0 only, before cache/MMU is configured).
+    // Secondary cores are not started yet at this point, so there is no
+    // per-CPU CORE-stage event.
+    do_system_init_event(ESP_SYS_EVENT_SYSTEM_INIT_CORE);
 }
 
 static void do_secondary_init(void)
@@ -178,10 +166,10 @@ static void do_secondary_init(void)
     startup_resume_other_cores();
 #endif
 
-    // Execute initialization functions esp_system_init_fn_t assigned to the main core. While
-    // this is happening, all other cores are executing the initialization functions
-    // assigned to them since they have been resumed already.
-    do_system_init_fn(ESP_SYSTEM_INIT_STAGE_SECONDARY);
+    // Run secondary init handlers for core 0. While this is happening, all
+    // other cores are executing the same priority-ordered secondary list and
+    // skipping handlers whose core mask does not include them.
+    do_system_init_event(ESP_SYS_EVENT_SYSTEM_INIT_SECONDARY);
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // Wait for all cores to finish secondary init.
