@@ -8,7 +8,7 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "sdkconfig.h"
 
-    .section    .tcm.text,"ax"
+    .section    .spm.text,"ax"
     .global     rv_core_fpu_save
     .type       rv_core_fpu_save,@function
     .align      4

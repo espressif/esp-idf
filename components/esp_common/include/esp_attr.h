@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,11 +25,16 @@ extern "C" {
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
 
-// Forces code into TCM instead of flash
-#define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".tcm.text", __COUNTER__)
+// Places code into SPM instead of flash
+#define SPM_IRAM_ATTR _SECTION_ATTR_IMPL(".spm.text", __COUNTER__)
 
-// Forces data into TCM instead of L2MEM
-#define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
+// Forces data into SPM instead of L2MEM
+#define SPM_DRAM_ATTR _SECTION_ATTR_IMPL(".spm.data", __COUNTER__)
+
+// Deprecated macros for TCM (SPM)
+#define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".spm.text", __COUNTER__) _Pragma ("GCC warning \"'TCM_IRAM_ATTR' macro is deprecated, please use `SPM_IRAM_ATTR`\"")
+#define FORCE_TCM_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".spm.text", __COUNTER__) _Pragma ("GCC warning \"'FORCE_TCM_IRAM_ATTR' macro is deprecated, please use `FORCE_SPM_IRAM_ATTR`\"")
+#define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".spm.data", __COUNTER__) _Pragma ("GCC warning \"'TCM_DRAM_ATTR' macro is deprecated, please use `SPM_DRAM_ATTR`\"")
 
 // IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
 #define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)

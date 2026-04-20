@@ -371,10 +371,10 @@ FORCE_INLINE_ATTR void pmu_sleep_cache_sync_items(uint32_t gid, uint32_t type, u
         ;
 }
 
-static TCM_DRAM_ATTR uint32_t s_mpll_freq_mhz_before_sleep = 0;
+static SPM_DRAM_ATTR uint32_t s_mpll_freq_mhz_before_sleep = 0;
 
 __attribute__((optimize("-O2")))
-TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
+SPM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     lp_aon_hal_inform_wakeup_type(dslp);
 
@@ -452,7 +452,7 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     return pmu_sleep_finish(dslp);
 }
 
-TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
+SPM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 {
     if (dslp) {
         pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
