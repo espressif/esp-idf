@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,8 +115,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .rx_dma_chan = actual_rx_dma_chan,
         .append_mode = append_mode,
         .mode = config->mode,
-        .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
-        .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
+        .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
+        .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
     };
 
     if (host->dma_enabled) {

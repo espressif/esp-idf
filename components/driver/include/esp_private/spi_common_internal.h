@@ -43,7 +43,7 @@ extern "C"
 #if BUS_LOCK_DEBUG
 #define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)  assert(x)
 #else
-#define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)
+#define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)  (void)(x)
 #endif
 
 #if !defined(SOC_GDMA_TRIG_PERIPH_SPI2_BUS)
