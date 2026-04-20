@@ -68,6 +68,7 @@ void esp_btbb_enable(void)
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
         sleep_retention_module_init_param_t init_param = {
             .cbs     = { .create = { .handle = btbb_sleep_retention_init, .arg = NULL } },
+            .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
             .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
         };
         esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);

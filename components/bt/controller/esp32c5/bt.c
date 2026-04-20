@@ -737,20 +737,45 @@ static esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
     int retention_args = extra;
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = sleep_modem_ble_mac_retention_init, .arg = &retention_args } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(BT_BB)
     };
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BLE_MAC, &init_param);
-    if (err == ESP_OK) {
-        err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention init error");
+        return err;
+    }
+
+    err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention allocate error");
+        return err;
+    }
+
+    err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention attach error");
     }
     return err;
 }
 
 static void sleep_modem_ble_mac_modem_state_deinit(void)
 {
-    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_BLE_MAC);
-    if (err == ESP_OK) {
-        err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_BLE_MAC);
+    esp_err_t err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention detach error");
+        assert(err == ESP_OK);
+    }
+
+    err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention free error");
+        assert(err == ESP_OK);
+    }
+
+    err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention deinit error");
         assert(err == ESP_OK);
     }
 }
