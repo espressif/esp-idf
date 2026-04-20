@@ -113,3 +113,13 @@ void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel
     hal->enable_etm_task(hal, chan_id, dir, en_or_dis);
 }
 #endif // SOC_GDMA_SUPPORT_ETM
+
+void gdma_hal_request_link_switch_event(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    hal->request_link_switch_event(hal, chan_id, dir);
+}
+
+bool gdma_hal_is_tx_link_switch_event_supported(gdma_hal_context_t *hal)
+{
+    return hal->is_tx_link_switch_event_supported(hal);
+}

@@ -93,7 +93,7 @@ typedef bool (*esp_lcd_rgb_panel_general_cb_t)(esp_lcd_panel_handle_t panel, con
 typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_draw_buf_complete_cb_t;
 
 /**
- * @brief Declare the prototype of the function that will be invoked when a whole frame buffer is sent to the LCD DMA.
+ * @brief Declare the prototype of the function that will be invoked when a whole frame buffer can be reused safely.
  *        The LCD hardware may still need some blank time to finish the refresh.
  */
 typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_frame_buf_complete_cb_t;
@@ -135,7 +135,7 @@ typedef struct {
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty;        /*!< Bounce buffer empty callback. */
     union {
         esp_lcd_rgb_panel_frame_buf_complete_cb_t on_bounce_frame_finish __attribute__((deprecated)); /*!< Bounce buffer finish callback. */
-        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< A whole frame buffer was just sent to the LCD DMA */
+        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< Invoked when the frame buffer can be reused safely */
     };
 } esp_lcd_rgb_panel_event_callbacks_t;
 
