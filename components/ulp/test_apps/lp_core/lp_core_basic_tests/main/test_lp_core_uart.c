@@ -20,6 +20,7 @@
 #include "driver/uart.h"
 #include "driver/rtc_io.h"
 #include "soc/soc_caps.h"
+#include "ulp_lp_core_lp_uart_shared.h"
 #if SOC_LIGHT_SLEEP_SUPPORTED
 #include "esp_sleep.h"
 #endif /* SOC_LIGHT_SLEEP_SUPPORTED */
@@ -287,6 +288,9 @@ static void hp_uart_setup_cfg(const lp_core_uart_cfg_t *cfg)
                                  cfg->uart_pin_cfg.rx_io_num,
                                  cfg->uart_pin_cfg.tx_io_num,
                                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    /* Discard any stale bytes that arrived while the pin mux was settling */
+    uart_flush_input(UART_NUM_1);
 }
 
 /*
@@ -300,12 +304,18 @@ static void hp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
     hp_uart_setup_cfg(cfg);
     unity_send_signal("HP UART init done");
 
+    /* Wait for the LP side to finish loading firmware and preparing data,
+     * then flush the HP UART RX FIFO before signalling readiness. */
+    unity_wait_for_signal("LP UART tx ready");
+    uart_flush_input(UART_NUM_1);
+    unity_send_signal("HP UART rx ready");
+
     uint8_t rx_data[UART_BUF_SIZE] = {0};
     int bytes_remaining = TEST_DATA_LEN;
     int recv_idx = 0;
     while (bytes_remaining > 0) {
         int n = uart_read_bytes(UART_NUM_1, rx_data + recv_idx,
-                                bytes_remaining, 10 / portTICK_PERIOD_MS);
+                                bytes_remaining, 100 / portTICK_PERIOD_MS);
         if (n < 0) {
             TEST_FAIL_MESSAGE("HP UART read error");
         } else if (n > 0) {
@@ -357,6 +367,9 @@ static void test_lp_uart_write_cfg(const lp_core_uart_cfg_t *cfg)
 
     ulp_lp_core_cfg_t lp_cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+#if ESP_ROM_HAS_LP_ROM
+        .skip_lp_rom_boot = true,
+#endif
     };
     load_and_start_lp_core_firmware(&lp_cfg,
                                     lp_core_main_uart_bin_start,
@@ -376,6 +389,11 @@ static void test_lp_uart_write_cfg(const lp_core_uart_cfg_t *cfg)
      * (already LP_CORE_COMMAND_OK) and the test still passes. */
     esp_sleep_enable_timer_wakeup(3 * 1000 * 1000ULL);
 #endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
+    /* Tell the HP side we are ready to transmit so it can flush its RX FIFO
+     * just before we begin, then wait for its acknowledgement. */
+    unity_send_signal("LP UART tx ready");
+    unity_wait_for_signal("HP UART rx ready");
 
     ESP_LOGI(TAG, "Write test start");
     ulp_test_cmd = LP_CORE_LP_UART_WRITE_TEST;
@@ -401,6 +419,9 @@ static void test_lp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
 
     ulp_lp_core_cfg_t lp_cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+#if ESP_ROM_HAS_LP_ROM
+        .skip_lp_rom_boot = true,
+#endif
     };
     load_and_start_lp_core_firmware(&lp_cfg,
                                     lp_core_main_uart_bin_start,
@@ -409,6 +430,10 @@ static void test_lp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
     uint8_t expected[TEST_DATA_LEN];
     setup_test_data_nbits(expected, cfg->uart_proto_cfg.data_bits);
     ulp_rx_len = TEST_DATA_LEN;
+
+    /* Flush any garbage that accumulated in the LP UART RX FIFO during the
+       HP-side pin muxing / UART driver installation. */
+    lp_core_uart_clear_buf();
 
     ESP_LOGI(TAG, "Read test start");
     ulp_test_cmd = LP_CORE_LP_UART_MULTI_BYTE_READ_TEST;
@@ -421,7 +446,8 @@ static void test_lp_uart_read_cfg(const lp_core_uart_cfg_t *cfg)
     }
 
     ESP_LOGI(TAG, "Verify Rx data");
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, (uint8_t *)&ulp_rx_data, TEST_DATA_LEN);
+    const volatile uint8_t *rx_ptr = (const volatile uint8_t *)&ulp_rx_data;
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, (const void *)rx_ptr, TEST_DATA_LEN);
     unity_send_signal("LP UART recv data done");
 }
 
@@ -490,6 +516,9 @@ static void test_lp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg)
 
     ulp_lp_core_cfg_t lp_core_cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+#if ESP_ROM_HAS_LP_ROM
+        .skip_lp_rom_boot = true,
+#endif
     };
     load_and_start_lp_core_firmware(&lp_core_cfg,
                                     lp_core_main_uart_bin_start,
@@ -498,6 +527,8 @@ static void test_lp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg)
     uint8_t expected[TEST_DATA_LEN];
     setup_test_data_nbits(expected, lp_cfg->uart_proto_cfg.data_bits);
     ulp_rx_len = TEST_DATA_LEN;
+
+    lp_core_uart_clear_buf();
 
     ESP_LOGI(TAG, "Mismatch read test start (expect FRAM_ERR, driver must recover)");
     ulp_test_cmd = LP_CORE_LP_UART_MULTI_BYTE_READ_TEST;
@@ -520,7 +551,8 @@ static void test_lp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg)
      * A single differing byte is enough to confirm the error was detected.
      */
     ESP_LOGI(TAG, "Verify Rx buffer is corrupt (FRAM_ERR aborted read early)");
-    bool data_matches = (memcmp((uint8_t *)&ulp_rx_data, expected, TEST_DATA_LEN) == 0);
+    const volatile uint8_t *rx_ptr = (const volatile uint8_t *)&ulp_rx_data;
+    bool data_matches = (memcmp((const void *)rx_ptr, expected, TEST_DATA_LEN) == 0);
     TEST_ASSERT_FALSE_MESSAGE(data_matches,
                               "LP UART received correct data despite word-length mismatch");
 
@@ -540,13 +572,18 @@ static void hp_uart_read_mismatch_cfg(const lp_core_uart_cfg_t *lp_cfg,
     hp_uart_setup_cfg(hp_cfg);     /* HP deliberately uses the wrong word length */
     unity_send_signal("HP UART init done");
 
+    /* Wait for LP side to be ready, then flush before receiving */
+    unity_wait_for_signal("LP UART tx ready");
+    uart_flush_input(UART_NUM_1);
+    unity_send_signal("HP UART rx ready");
+
     /* Collect whatever the HP receives within a bounded window */
     uint8_t rx_data[UART_BUF_SIZE] = {0};
     int recv_idx  = 0;
     int idle_count = 0;
     while (recv_idx < TEST_DATA_LEN && idle_count < 20) {
         int n = uart_read_bytes(UART_NUM_1, rx_data + recv_idx,
-                                TEST_DATA_LEN - recv_idx, 10 / portTICK_PERIOD_MS);
+                                TEST_DATA_LEN - recv_idx, 100 / portTICK_PERIOD_MS);
         if (n > 0) {
             recv_idx  += n;
             idle_count = 0;
@@ -603,6 +640,7 @@ static void hp_uart_read_print(void)
                                  lp_uart_cfg.uart_pin_cfg.tx_io_num,
                                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
+    uart_flush_input(UART_NUM_1);
     unity_send_signal("HP UART init done");
 
     setup_test_print_data();
@@ -612,7 +650,7 @@ static void hp_uart_read_print(void)
     int idle_count = 0;
     while (1) {
         int n = uart_read_bytes(UART_NUM_1, rx_data + recv_idx,
-                                UART_BUF_SIZE, 10 / portTICK_PERIOD_MS);
+                                UART_BUF_SIZE, 100 / portTICK_PERIOD_MS);
         if (n < 0) {
             TEST_FAIL_MESSAGE("HP UART read error");
         } else if (n > 0) {
