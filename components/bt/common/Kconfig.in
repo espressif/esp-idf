@@ -8,18 +8,10 @@ config BT_ALARM_MAX_NUM
 
 choice BT_SMP_CRYPTO_STACK
     prompt "SMP cryptographic stack"
-    depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE || BT_NIMBLE_SECURITY_ENABLE)
-    default BT_SMP_CRYPTO_STACK_NATIVE
+    depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE || BT_NIMBLE_SECURITY_ENABLE || BT_LE_SECURITY_ENABLE)
+    default BT_SMP_CRYPTO_STACK_TINYCRYPT
     help
         Select the cryptographic library to use for SMP operations (AES, AES-CMAC, ECDH P-256).
-
-    config BT_SMP_CRYPTO_STACK_NATIVE
-        bool "Native Bluedroid implementation"
-        depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE)
-        help
-            Use the built-in Bluedroid cryptographic implementation.
-            This provides compatibility with all features.
-            This option is only available for Bluedroid host.
 
     config BT_SMP_CRYPTO_STACK_TINYCRYPT
         bool "TinyCrypt"
