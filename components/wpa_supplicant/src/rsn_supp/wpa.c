@@ -2646,7 +2646,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
 {
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
-    bool use_pmk_cache = !esp_wifi_skip_supp_pmkcaching();
+    bool use_pmk_cache = esp_wifi_use_supp_pmk_cache();
     uint8_t assoc_ie[128] = {0};
     uint16_t assoc_ie_len = sizeof(assoc_ie);
     bool reassoc_same_ess = false;
