@@ -248,6 +248,8 @@ typedef struct {
     sleep_retention_module_bitmap_t created_modules;
     sleep_retention_module_bitmap_t retention_modules;
 
+    void *final_default;
+
     struct sleep_retention_module_object instance[SLEEP_RETENTION_MODULE_MAX + 1];
 
 #define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
@@ -257,7 +259,8 @@ static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
     .highpri = (uint8_t)-1,
     .inited_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
     .created_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
-    .retention_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } }
+    .retention_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
+    .final_default = NULL
 };
 
 #define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
@@ -320,6 +323,9 @@ static esp_err_t check_and_create_final_default(void)
     _lock_acquire_recursive(&s_retention.lock);
     if (s_retention.retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries_bitmap == 0) {
         err = entries_create(&final_dummy, 1, SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY, SLEEP_RETENTION_MODULE_INVALID);
+        if (err == ESP_OK) {
+            s_retention.final_default = s_retention.retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries[0];
+        }
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
@@ -655,6 +661,7 @@ static void sleep_retention_entries_destroy(sleep_retention_module_t module)
 #endif
         memset((void *)s_retention.context, 0, sizeof(struct module_sleep_retention_context) * 2);
         s_retention.highpri = (uint8_t)-1;
+        s_retention.final_default = NULL;
     }
     _lock_release_recursive(&s_retention.lock);
 }
@@ -748,7 +755,18 @@ static void retention_entries_join(void)
         }
         entries_tail = s_retention.retention.lists[priority].entries_tail;
     }
-    pau_regdma_set_entry_link_addr(&(s_retention.retention.lists[s_retention.highpri].entries));
+
+    bool final_default = s_retention.final_default == s_retention.retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries[0];
+    bool ready = (s_retention.highpri != SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) || !final_default;
+    if (ready) {
+        pau_regdma_set_entry_link_addr(&(s_retention.retention.lists[s_retention.highpri].entries));
+#if SOC_LIGHT_SLEEP_SUPPORTED
+        pmu_sleep_enable_regdma_backup();
+#endif
+#if SOC_LIGHT_SLEEP_SUPPORTED && SOC_DEEP_SLEEP_SUPPORTED
+        ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&pmu_sleep_disable_regdma_backup));
+#endif
+    }
     _lock_release_recursive(&s_retention.lock);
 }
 
@@ -782,17 +800,9 @@ esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t 
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t err = check_and_create_final_default();
-    if (err)  goto error;
-    err = entries_create_wrapper(retent, num, priority, module);
-    if (err)  goto error;
-#if SOC_LIGHT_SLEEP_SUPPORTED
-    pmu_sleep_enable_regdma_backup();
-#endif
-#if SOC_LIGHT_SLEEP_SUPPORTED && SOC_DEEP_SLEEP_SUPPORTED
-    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&pmu_sleep_disable_regdma_backup));
-#endif
-
-error:
+    if (err == ESP_OK) {
+        err = entries_create_wrapper(retent, num, priority, module);
+    }
     return err;
 }
 
