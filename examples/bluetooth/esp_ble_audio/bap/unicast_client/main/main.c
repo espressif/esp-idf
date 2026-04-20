@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <string.h>
 
 #include "nvs_flash.h"
 #include "esp_system.h"
@@ -168,6 +169,11 @@ static void reset_stream_state(void)
     reset_stream_pair_state();
 
     for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
+        esp_ble_audio_bap_stream_ops_t *ops = sinks[i].stream.ops;
+
+        memset(&sinks[i].stream, 0, sizeof(sinks[i].stream));
+        sinks[i].stream.ops = ops;
+
         sinks[i].configured = ASCS_RSP_NONE;
         sinks[i].qos_set = ASCS_RSP_NONE;
         sinks[i].enabled = ASCS_RSP_NONE;
@@ -176,6 +182,11 @@ static void reset_stream_state(void)
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
+        esp_ble_audio_bap_stream_ops_t *ops = sources[i].stream.ops;
+
+        memset(&sources[i].stream, 0, sizeof(sources[i].stream));
+        sources[i].stream.ops = ops;
+
         sources[i].configured = ASCS_RSP_NONE;
         sources[i].qos_set = ASCS_RSP_NONE;
         sources[i].enabled = ASCS_RSP_NONE;
@@ -199,17 +210,42 @@ static bool stream_is_sink(const esp_ble_audio_bap_stream_t *stream)
     return false;
 }
 
+static const char *dir_str(esp_ble_audio_dir_t dir)
+{
+    return dir == ESP_BLE_AUDIO_DIR_SINK ? "SNK" : "SRC";
+}
+
+static const char *stream_dir_str(const esp_ble_audio_bap_stream_t *stream)
+{
+    return stream_is_sink(stream) ? "SNK" : "SRC";
+}
+
+static int stream_index(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
+        if (&sinks[i].stream == stream) {
+            return (int)i;
+        }
+    }
+    for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
+        if (&sources[i].stream == stream) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 static int discover_sinks(void)
 {
     int err;
 
     err = esp_ble_audio_bap_unicast_client_discover(default_conn_handle, ESP_BLE_AUDIO_DIR_SINK);
     if (err) {
-        ESP_LOGE(TAG, "Failed to discover sinks, err %d", err);
+        ESP_LOGE(TAG, "[SNK] Discover failed, err %d", err);
         return err;
     }
 
-    ESP_LOGI(TAG, "Discovering sinks");
+    ESP_LOGI(TAG, "[SNK] Discovering...");
 
     return 0;
 }
@@ -220,9 +256,11 @@ static int discover_sources(void)
 
     err = esp_ble_audio_bap_unicast_client_discover(default_conn_handle, ESP_BLE_AUDIO_DIR_SOURCE);
     if (err) {
-        ESP_LOGE(TAG, "Failed to discover sources, err %d", err);
+        ESP_LOGE(TAG, "[SRC] Discover failed, err %d", err);
         return err;
     }
+
+    ESP_LOGI(TAG, "[SRC] Discovering...");
 
     return 0;
 }
@@ -240,7 +278,7 @@ static bool configure_stream(void)
                                               &sinks[i].stream, sinks[i].ep,
                                               &unicast_preset.codec_cfg);
         if (err) {
-            ESP_LOGE(TAG, "Failed to configure sink stream[%u], err %d", i, err);
+            ESP_LOGE(TAG, "[SNK #%zu] Config request failed, err %d", i, err);
 
             sinks[i].configured = ASCS_RSP_FAILURE;
             /* Try to configure the next sink stream */
@@ -259,7 +297,7 @@ static bool configure_stream(void)
                                               &sources[i].stream, sources[i].ep,
                                               &unicast_preset.codec_cfg);
         if (err) {
-            ESP_LOGE(TAG, "Failed to configure source stream[%u], err %d", i, err);
+            ESP_LOGE(TAG, "[SRC #%zu] Config request failed, err %d", i, err);
 
             sources[i].configured = ASCS_RSP_FAILURE;
             /* Try to configure the next source stream */
@@ -278,11 +316,11 @@ static void stream_configured(esp_ble_audio_bap_stream_t *stream, bool success)
         if (sinks[i].configured == ASCS_RSP_NONE &&
                 &sinks[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Sink stream[%u] configure succeeded", i);
+                ESP_LOGI(TAG, "[SNK #%zu] Configured", i);
                 sinks[i].configured = ASCS_RSP_SUCCESS;
                 configured_sink_stream_count++;
             } else {
-                ESP_LOGE(TAG, "Sink stream[%u] configure failed", i);
+                ESP_LOGE(TAG, "[SNK #%zu] Configure failed", i);
                 sinks[i].configured = ASCS_RSP_FAILURE;
             }
             return;
@@ -293,18 +331,18 @@ static void stream_configured(esp_ble_audio_bap_stream_t *stream, bool success)
         if (sources[i].configured == ASCS_RSP_NONE &&
                 &sources[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Source stream[%u] configure succeeded", i);
+                ESP_LOGI(TAG, "[SRC #%zu] Configured", i);
                 sources[i].configured = ASCS_RSP_SUCCESS;
                 configured_source_stream_count++;
             } else {
-                ESP_LOGE(TAG, "Source stream[%u] configure failed", i);
+                ESP_LOGE(TAG, "[SRC #%zu] Configure failed", i);
                 sources[i].configured = ASCS_RSP_FAILURE;
             }
             return;
         }
     }
 
-    ESP_LOGW(TAG, "No matching stream found for configured stream %p", stream);
+    ESP_LOGW(TAG, "No matching stream for configured callback");
 }
 
 static int create_group(void)
@@ -335,8 +373,9 @@ static int create_group(void)
             pair_params[i].rx_param = NULL;
         }
 
-        ESP_LOGI(TAG, "Stream pair[%u]: sink %p source %p", i,
-                 stream_pairs[i].sink_stream, stream_pairs[i].source_stream);
+        ESP_LOGI(TAG, "Pair[%zu]: SNK=%s SRC=%s", i,
+                 stream_pairs[i].sink_stream ? "yes" : "-",
+                 stream_pairs[i].source_stream ? "yes" : "-");
     }
 
     group_param.params = pair_params;
@@ -349,7 +388,7 @@ static int create_group(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Created unicast group");
+    ESP_LOGI(TAG, "Unicast group created (%zu pair(s))", params_count);
 
     return 0;
 }
@@ -374,10 +413,10 @@ static void stream_qos_set(esp_ble_audio_bap_stream_t *stream, bool success)
                 sinks[i].qos_set == ASCS_RSP_NONE &&
                 &sinks[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Sink stream[%u] QoS set", i);
+                ESP_LOGI(TAG, "[SNK #%zu] QoS set", i);
                 sinks[i].qos_set = ASCS_RSP_SUCCESS;
             } else {
-                ESP_LOGE(TAG, "Sink stream[%u] QoS set failed", i);
+                ESP_LOGE(TAG, "[SNK #%zu] QoS set failed", i);
                 sinks[i].qos_set = ASCS_RSP_FAILURE;
             }
             return;
@@ -389,17 +428,17 @@ static void stream_qos_set(esp_ble_audio_bap_stream_t *stream, bool success)
                 sources[i].qos_set == ASCS_RSP_NONE &&
                 &sources[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Source stream[%u] QoS set", i);
+                ESP_LOGI(TAG, "[SRC #%zu] QoS set", i);
                 sources[i].qos_set = ASCS_RSP_SUCCESS;
             } else {
-                ESP_LOGE(TAG, "Source stream[%u] QoS set failed", i);
+                ESP_LOGE(TAG, "[SRC #%zu] QoS set failed", i);
                 sources[i].qos_set = ASCS_RSP_FAILURE;
             }
             return;
         }
     }
 
-    ESP_LOGW(TAG, "No matching stream found for QoS set stream %p", stream);
+    ESP_LOGW(TAG, "No matching stream for QoS callback");
 }
 
 static bool is_all_stream_qos_set(void)
@@ -433,7 +472,7 @@ static bool enable_stream(void)
                                                   unicast_preset.codec_cfg.meta,
                                                   unicast_preset.codec_cfg.meta_len);
             if (err) {
-                ESP_LOGE(TAG, "Failed to enable sink stream[%u], err %d", i, err);
+                ESP_LOGE(TAG, "[SNK #%zu] Enable request failed, err %d", i, err);
 
                 sinks[i].enabled = ASCS_RSP_FAILURE;
                 /* Try to enable the next sink stream */
@@ -452,7 +491,7 @@ static bool enable_stream(void)
                                                   unicast_preset.codec_cfg.meta,
                                                   unicast_preset.codec_cfg.meta_len);
             if (err) {
-                ESP_LOGE(TAG, "Failed to enable source stream[%u], err %d", i, err);
+                ESP_LOGE(TAG, "[SRC #%zu] Enable request failed, err %d", i, err);
 
                 sources[i].enabled = ASCS_RSP_FAILURE;
                 /* Try to enable the next source stream */
@@ -474,10 +513,10 @@ static void stream_enabled(esp_ble_audio_bap_stream_t *stream, bool success)
                 sinks[i].enabled == ASCS_RSP_NONE &&
                 &sinks[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Sink stream[%u] enabled", i);
+                ESP_LOGI(TAG, "[SNK #%zu] Enabled", i);
                 sinks[i].enabled = ASCS_RSP_SUCCESS;
             } else {
-                ESP_LOGE(TAG, "Sink stream[%u] enabled failed", i);
+                ESP_LOGE(TAG, "[SNK #%zu] Enable failed", i);
                 sinks[i].enabled = ASCS_RSP_FAILURE;
             }
             return;
@@ -490,17 +529,17 @@ static void stream_enabled(esp_ble_audio_bap_stream_t *stream, bool success)
                 sources[i].enabled == ASCS_RSP_NONE &&
                 &sources[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Source stream[%u] enabled", i);
+                ESP_LOGI(TAG, "[SRC #%zu] Enabled", i);
                 sources[i].enabled = ASCS_RSP_SUCCESS;
             } else {
-                ESP_LOGE(TAG, "Source stream[%u] enabled failed", i);
+                ESP_LOGE(TAG, "[SRC #%zu] Enable failed", i);
                 sources[i].enabled = ASCS_RSP_FAILURE;
             }
             return;
         }
     }
 
-    ESP_LOGW(TAG, "No matching stream found for enabled stream %p", stream);
+    ESP_LOGW(TAG, "No matching stream for enable callback");
 }
 
 static int connect_stream(void)
@@ -546,7 +585,7 @@ static int connect_stream(void)
 
         err = esp_ble_audio_bap_stream_connect(stream);
         if (err) {
-            ESP_LOGE(TAG, "Failed to connect stream pair[%u], err %d", i, err);
+            ESP_LOGE(TAG, "Pair[%zu] connect failed, err %d", i, err);
 
             if (sink_ready) {
                 sinks[sink_index].connected = ASCS_RSP_FAILURE;
@@ -564,7 +603,8 @@ static int connect_stream(void)
             sources[source_index].connected = ASCS_RSP_CONNECT;
         }
 
-        ESP_LOGI(TAG, "Connecting stream pair[%u], sink %p source %p", i, sink_stream, source_stream);
+        ESP_LOGI(TAG, "Pair[%zu] connecting (%s)", i,
+                 sink_ready ? "SNK first" : "SRC first");
         return false;
     }
 
@@ -603,12 +643,11 @@ static void stream_connected(esp_ble_audio_bap_stream_t *stream, bool success)
                 sinks[i].connected == ASCS_RSP_CONNECT &&
                 &sinks[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Sink stream[%u] connect succeeded", i);
-                sinks[i].connected = state;
+                ESP_LOGI(TAG, "[SNK #%zu] Connected", i);
             } else {
-                ESP_LOGE(TAG, "Sink stream[%u] connect failed", i);
-                sinks[i].connected = state;
+                ESP_LOGE(TAG, "[SNK #%zu] Connect failed", i);
             }
+            sinks[i].connected = state;
             return;
         }
     }
@@ -620,17 +659,16 @@ static void stream_connected(esp_ble_audio_bap_stream_t *stream, bool success)
                 sources[i].connected == ASCS_RSP_CONNECT &&
                 &sources[i].stream == stream) {
             if (success) {
-                ESP_LOGI(TAG, "Source stream[%u] connect succeeded", i);
-                sources[i].connected = state;
+                ESP_LOGI(TAG, "[SRC #%zu] Connected", i);
             } else {
-                ESP_LOGE(TAG, "Source stream[%u] connect failed", i);
-                sources[i].connected = state;
+                ESP_LOGE(TAG, "[SRC #%zu] Connect failed", i);
             }
+            sources[i].connected = state;
             return;
         }
     }
 
-    ESP_LOGW(TAG, "No matching stream found for connected stream %p", stream);
+    ESP_LOGW(TAG, "No matching stream for connected callback");
 }
 
 static int start_stream(void)
@@ -639,7 +677,7 @@ static int start_stream(void)
 
     /* Note: sink streams are started by the unicast server */
 
-    ESP_LOGI(TAG, "Starting source streams");
+    ESP_LOGI(TAG, "[SRC] Starting all source streams");
 
     for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
         if (sources[i].configured == ASCS_RSP_SUCCESS &&
@@ -648,7 +686,7 @@ static int start_stream(void)
                 sources[i].connected == ASCS_RSP_SUCCESS) {
             err = esp_ble_audio_bap_stream_start(&sources[i].stream);
             if (err) {
-                ESP_LOGE(TAG, "Failed to start stream[%u], err %d", i, err);
+                ESP_LOGE(TAG, "[SRC #%zu] Start failed, err %d", i, err);
             }
         }
     }
@@ -659,19 +697,21 @@ static int start_stream(void)
 static void stream_configured_cb(esp_ble_audio_bap_stream_t *stream,
                                  const esp_ble_audio_bap_qos_cfg_pref_t *pref)
 {
-    ESP_LOGI(TAG, "Stream %p configured", stream);
-
-    example_print_qos_pref(pref);
+    ESP_LOGI(TAG, "[%s #%d] Stream configured, QoS preference:",
+             stream_dir_str(stream), stream_index(stream));
+    example_print_qos_pref(TAG, pref);
 }
 
 static void stream_qos_set_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p QoS set", stream);
+    /* QoS set is also reported by qos_cb; skip the duplicate log here. */
+    (void)stream;
 }
 
 static void stream_enabled_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p enabled", stream);
+    /* Enabled is also reported by enable_cb; skip the duplicate log here. */
+    (void)stream;
 }
 
 static void stream_connected_cb(esp_ble_audio_bap_stream_t *stream)
@@ -680,23 +720,17 @@ static void stream_connected_cb(esp_ble_audio_bap_stream_t *stream)
     int pair_index;
     bool ret;
 
-    ESP_LOGI(TAG, "Stream %p connected", stream);
-
     pair_index = get_stream_pair_index(stream);
     paired_stream = get_paired_stream(stream);
-    if (pair_index >= 0) {
-        ESP_LOGI(TAG, "Stream %p in pair[%d], paired stream %p, same_pair %u",
-                 stream, pair_index, paired_stream,
-                 streams_are_same_pair(stream, paired_stream));
-    } else {
-        ESP_LOGW(TAG, "Failed to find stream pair for stream %p", stream);
-    }
+
+    ESP_LOGI(TAG, "[%s #%d] ISO connected (pair[%d])",
+             stream_dir_str(stream), stream_index(stream), pair_index);
 
     stream_connected(stream, true);
 
     if (streams_are_same_pair(stream, paired_stream) &&
             stream_is_connecting(paired_stream)) {
-        ESP_LOGI(TAG, "Waiting paired stream %p connected before next pair", paired_stream);
+        /* Wait for the paired stream before moving on */
         return;
     }
 
@@ -710,7 +744,8 @@ static void stream_connected_cb(esp_ble_audio_bap_stream_t *stream)
 
 static void stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    ESP_LOGI(TAG, "Stream %p disconnected, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[%s #%d] ISO disconnected, reason 0x%02x",
+             stream_dir_str(stream), stream_index(stream), reason);
 
     /* Reset the connected state to allow reconnection */
     for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
@@ -728,36 +763,41 @@ static void stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_t r
         }
     }
 
-    ESP_LOGW(TAG, "No matching stream found for disconnected stream %p", stream);
+    ESP_LOGW(TAG, "No matching stream for disconnected callback");
 }
 
 static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     int err;
 
-    ESP_LOGI(TAG, "Stream %p started", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream started",
+             stream_dir_str(stream), stream_index(stream));
 
     if (stream_is_sink(stream)) {
         err = stream_tx_register(stream);
         if (err) {
-            ESP_LOGE(TAG, "Failed to register stream %p for TX, err %d", stream, err);
+            ESP_LOGE(TAG, "[SNK #%d] Failed to register TX, err %d",
+                     stream_index(stream), err);
         }
     }
 }
 
 static void stream_metadata_updated_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p metadata updated", stream);
+    ESP_LOGI(TAG, "[%s #%d] Metadata updated",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void stream_disabled_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p disabled", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream disabled",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    ESP_LOGI(TAG, "Stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[%s #%d] Stream stopped, reason 0x%02x",
+             stream_dir_str(stream), stream_index(stream), reason);
 
     if (stream_is_sink(stream)) {
         (void)stream_tx_unregister(stream);
@@ -766,7 +806,8 @@ static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason
 
 static void stream_released_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p released", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream released",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
@@ -792,14 +833,28 @@ static void location_cb(esp_ble_conn_t *conn,
                         esp_ble_audio_dir_t dir,
                         esp_ble_audio_location_t loc)
 {
-    ESP_LOGI(TAG, "Location, dir %u loc 0x%08lx", dir, loc);
+    ESP_LOGI(TAG, "[%s] Location: 0x%08lx", dir_str(dir), loc);
 }
 
 static void available_contexts_cb(esp_ble_conn_t *conn,
                                   esp_ble_audio_context_t snk_ctx,
                                   esp_ble_audio_context_t src_ctx)
 {
-    ESP_LOGI(TAG, "Available contexts, sink 0x%04x source 0x%04x", snk_ctx, src_ctx);
+    ESP_LOGI(TAG, "Available contexts: SNK=0x%04x SRC=0x%04x", snk_ctx, src_ctx);
+}
+
+static void log_rsp(const char *op, esp_ble_audio_bap_stream_t *stream,
+                    esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
+                    esp_ble_audio_bap_ascs_reason_t reason)
+{
+    if (rsp_code == ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS) {
+        ESP_LOGI(TAG, "[%s #%d] %s ACK'd",
+                 stream_dir_str(stream), stream_index(stream), op);
+    } else {
+        ESP_LOGW(TAG, "[%s #%d] %s rejected (rsp 0x%02x reason 0x%02x)",
+                 stream_dir_str(stream), stream_index(stream), op,
+                 rsp_code, reason);
+    }
 }
 
 static void config_cb(esp_ble_audio_bap_stream_t *stream,
@@ -810,7 +865,7 @@ static void config_cb(esp_ble_audio_bap_stream_t *stream,
     bool ret;
     int err;
 
-    ESP_LOGI(TAG, "Config, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Config", stream, rsp_code, reason);
 
     stream_configured(stream, rsp_code == ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS);
 
@@ -853,7 +908,7 @@ static void qos_cb(esp_ble_audio_bap_stream_t *stream,
                    esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                    esp_ble_audio_bap_ascs_reason_t reason)
 {
-    ESP_LOGI(TAG, "Qos, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("QoS", stream, rsp_code, reason);
 
     stream_qos_set(stream, rsp_code == ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS);
 
@@ -868,7 +923,7 @@ static void enable_cb(esp_ble_audio_bap_stream_t *stream,
 {
     bool ret;
 
-    ESP_LOGI(TAG, "Enable, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Enable", stream, rsp_code, reason);
 
     stream_enabled(stream, rsp_code == ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS);
 
@@ -884,35 +939,35 @@ static void start_cb(esp_ble_audio_bap_stream_t *stream,
                      esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                      esp_ble_audio_bap_ascs_reason_t reason)
 {
-    ESP_LOGI(TAG, "Start, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Start", stream, rsp_code, reason);
 }
 
 static void stop_cb(esp_ble_audio_bap_stream_t *stream,
                     esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                     esp_ble_audio_bap_ascs_reason_t reason)
 {
-    ESP_LOGI(TAG, "Stop, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Stop", stream, rsp_code, reason);
 }
 
 static void disable_cb(esp_ble_audio_bap_stream_t *stream,
                        esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                        esp_ble_audio_bap_ascs_reason_t reason)
 {
-    ESP_LOGI(TAG, "Disable, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Disable", stream, rsp_code, reason);
 }
 
 static void metadata_cb(esp_ble_audio_bap_stream_t *stream,
                         esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                         esp_ble_audio_bap_ascs_reason_t reason)
 {
-    ESP_LOGI(TAG, "Metadata, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Metadata", stream, rsp_code, reason);
 }
 
 static void release_cb(esp_ble_audio_bap_stream_t *stream,
                        esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                        esp_ble_audio_bap_ascs_reason_t reason)
 {
-    ESP_LOGI(TAG, "Release, stream %p rsp_code 0x%02x reason 0x%02x", stream, rsp_code, reason);
+    log_rsp("Release", stream, rsp_code, reason);
 }
 
 static void pac_record_cb(esp_ble_conn_t *conn,
@@ -923,7 +978,7 @@ static void pac_record_cb(esp_ble_conn_t *conn,
         return;
     }
 
-    example_print_codec_cap(codec_cap);
+    example_print_codec_cap(TAG, codec_cap);
 }
 
 static void endpoint_cb(esp_ble_conn_t *conn,
@@ -933,23 +988,23 @@ static void endpoint_cb(esp_ble_conn_t *conn,
     if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
         for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
             if (sources[i].ep == NULL) {
-                ESP_LOGI(TAG, "Source #%u: ep %p", i, ep);
+                ESP_LOGI(TAG, "[SRC #%zu] Endpoint discovered", i);
                 sources[i].ep = ep;
                 return;
             }
         }
 
-        ESP_LOGW(TAG, "Could not add source ep");
+        ESP_LOGW(TAG, "[SRC] Endpoint dropped (no free slot)");
     } else if (dir == ESP_BLE_AUDIO_DIR_SINK) {
         for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
             if (sinks[i].ep == NULL) {
-                ESP_LOGI(TAG, "Sink #%u: ep %p", i, ep);
+                ESP_LOGI(TAG, "[SNK #%zu] Endpoint discovered", i);
                 sinks[i].ep = ep;
                 return;
             }
         }
 
-        ESP_LOGW(TAG, "Could not add sink ep");
+        ESP_LOGW(TAG, "[SNK] Endpoint dropped (no free slot)");
     }
 }
 
@@ -961,17 +1016,17 @@ static void discover_cb(esp_ble_conn_t *conn, int err, esp_ble_audio_dir_t dir)
 
     if (dir == ESP_BLE_AUDIO_DIR_SINK) {
         if (err) {
-            ESP_LOGE(TAG, "Discovery sinks failed, err %d", err);
+            ESP_LOGE(TAG, "[SNK] Discovery failed, err %d", err);
         } else {
-            ESP_LOGI(TAG, "Discover sinks complete");
+            ESP_LOGI(TAG, "[SNK] Discovery complete");
 
             discover_sources();
         }
     } else if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
         if (err) {
-            ESP_LOGE(TAG, "Discovery sources failed, err %d", err);
+            ESP_LOGE(TAG, "[SRC] Discovery failed, err %d", err);
         } else {
-            ESP_LOGI(TAG, "Discover sources complete");
+            ESP_LOGI(TAG, "[SRC] Discovery complete");
 
             configure_stream();
         }
@@ -1120,8 +1175,8 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
-    ESP_LOGI(TAG, "Unicast server found, type %u, contexts 0x%08x, meta_len %u",
-             adv.announcement_type, adv.audio_contexts, adv.meta_len);
+    ESP_LOGI(TAG, "Unicast server found: type %u contexts 0x%08x",
+             adv.announcement_type, adv.audio_contexts);
 
     dst.type = event->ext_scan_recv.addr.type;
     memcpy(dst.val, event->ext_scan_recv.addr.val, sizeof(dst.val));
@@ -1142,30 +1197,28 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
     int err;
 
     if (event->acl_connect.status) {
-        ESP_LOGE(TAG, "connection failed, status %d", event->acl_connect.status);
+        ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
         return;
     }
 
-    ESP_LOGI(TAG, "Conn established:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->acl_connect.conn_handle, event->acl_connect.status,
-             event->acl_connect.role, event->acl_connect.dst.val[5],
-             event->acl_connect.dst.val[4], event->acl_connect.dst.val[3],
-             event->acl_connect.dst.val[2], event->acl_connect.dst.val[1],
-             event->acl_connect.dst.val[0]);
+    ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
+             event->acl_connect.conn_handle, event->acl_connect.role,
+             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
+             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
+             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
+
+    default_conn_handle = event->acl_connect.conn_handle;
 
     err = pairing_start(event->acl_connect.conn_handle);
     if (err) {
         ESP_LOGE(TAG, "Failed to initiate security, err %d", err);
         return;
     }
-
-    default_conn_handle = event->acl_connect.conn_handle;
 }
 
 static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Conn terminated: conn_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "Disconnected: handle %u reason 0x%02x",
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     default_conn_handle = CONN_HANDLE_INIT;
@@ -1173,12 +1226,16 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
     disc_cancelled = false;
     mtu_exchanged = false;
 
-    reset_stream_state();
-
+    /* Delete the group before reset_stream_state() memsets the streams:
+     * the library walks stream->iso / stream->group to return ISO slots
+     * to the pool, and zeroing them first leaks the slot.
+     */
     if (unicast_group != NULL) {
         esp_ble_audio_bap_unicast_group_delete(unicast_group);
         unicast_group = NULL;
     }
+
+    reset_stream_state();
 
     ext_scan_start();
 }
@@ -1188,19 +1245,14 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
     int err;
 
     if (event->security_change.status) {
-        ESP_LOGE(TAG, "security change failed, status %d", event->security_change.status);
+        ESP_LOGE(TAG, "Security change failed, status %d", event->security_change.status);
         return;
     }
 
-    ESP_LOGI(TAG, "Security change:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u sec_level %u bonded %u "
-             "peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->security_change.conn_handle, event->security_change.status,
-             event->security_change.role, event->security_change.sec_level,
-             event->security_change.bonded, event->security_change.dst.val[5],
-             event->security_change.dst.val[4], event->security_change.dst.val[3],
-             event->security_change.dst.val[2], event->security_change.dst.val[1],
-             event->security_change.dst.val[0]);
+    ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
+             event->security_change.conn_handle,
+             event->security_change.sec_level,
+             event->security_change.bonded);
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -1233,22 +1285,23 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
 {
     int err;
 
-    ESP_LOGI(TAG, "gatt mtu change, conn_handle %u, mtu %u",
+    ESP_LOGI(TAG, "MTU updated: handle %u mtu %u",
              event->gatt_mtu_change.conn_handle, event->gatt_mtu_change.mtu);
 
     if (event->gatt_mtu_change.mtu < ESP_BLE_AUDIO_ATT_MTU_MIN) {
-        ESP_LOGW(TAG, "Invalid new mtu %u, shall be at least %u",
+        ESP_LOGW(TAG, "MTU %u below minimum %u",
                  event->gatt_mtu_change.mtu, ESP_BLE_AUDIO_ATT_MTU_MIN);
         return;
     }
 
     err = esp_ble_audio_gattc_disc_start(event->gatt_mtu_change.conn_handle);
     if (err) {
-        ESP_LOGE(TAG, "Failed to start svc disc, err %d", err);
+        ESP_LOGE(TAG, "Failed to start service discovery, err %d", err);
         return;
     }
 
-    ESP_LOGI(TAG, "Start discovering gatt services");
+    ESP_LOGI(TAG, "Service discovery started: handle %u",
+             event->gatt_mtu_change.conn_handle);
 
     /* Note:
      * MTU exchanged event may arrived after discover completed event.
@@ -1262,13 +1315,14 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
 
 static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
 {
-    ESP_LOGI(TAG, "gattc disc cmpl, status %u, conn_handle %u",
-             event->gattc_disc_cmpl.status, event->gattc_disc_cmpl.conn_handle);
-
     if (event->gattc_disc_cmpl.status) {
-        ESP_LOGE(TAG, "gattc disc failed, status %u", event->gattc_disc_cmpl.status);
+        ESP_LOGE(TAG, "Service discovery failed, status %u",
+                 event->gattc_disc_cmpl.status);
         return;
     }
+
+    ESP_LOGI(TAG, "Service discovery complete: handle %u",
+             event->gattc_disc_cmpl.conn_handle);
 
     /* Note:
      * Discover completed event may arrived before MTU exchanged event.
@@ -1317,7 +1371,7 @@ static int ext_scan_start(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for unicast server...");
     return 0;
 }
 

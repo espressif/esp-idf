@@ -257,6 +257,8 @@ extern "C" {
 /**
  * Check if an Object ID is valid for MCS.
  * This differs from BT_OTS_VALID_OBJ_ID as MCS does not use the directory list object.
+ *
+ * @param   id              Object ID to validate.
  */
 #define ESP_BLE_AUDIO_MCS_VALID_OBJ_ID(id) \
     (IN_RANGE((id), BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX))

@@ -170,7 +170,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260412)
+#define LEA_VERSION     (0x20260430)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -2048,10 +2048,6 @@ int bt_le_audio_init(void)
         LOG_ERR("LibFuncsSetFail");
         return err;
     }
-
-#if 0
-    lib_dymem_size_init();
-#endif
 
     printf(BT_ISO_LOG_COLOR_I "BLE Audio lib commit: [%s]" \
            BT_ISO_LOG_RESET_COLOR "\n", lib_ext_commit_get());

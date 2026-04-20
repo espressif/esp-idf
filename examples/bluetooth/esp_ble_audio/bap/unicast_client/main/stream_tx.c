@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -46,13 +47,13 @@ static void stream_tx_send(struct tx_stream *tx_stream)
     }
 
     if (tx_stream->stream->qos == NULL || tx_stream->stream->qos->sdu == 0) {
-        ESP_LOGE(TAG, "Invalid stream qos");
+        ESP_LOGE(TAG, "[SNK TX] Invalid QoS");
         return;
     }
 
     if (tx_stream->data == NULL) {
-        ESP_LOGE(TAG, "TX buffer unavailable, SDU %u (stream %p)",
-                 tx_stream->stream->qos->sdu, tx_stream->stream);
+        ESP_LOGE(TAG, "[SNK TX] Buffer unavailable (SDU %u)",
+                 tx_stream->stream->qos->sdu);
         return;
     }
 
@@ -64,8 +65,7 @@ static void stream_tx_send(struct tx_stream *tx_stream)
                                         tx_stream->stream->qos->sdu,
                                         tx_stream->seq_num);
     if (err) {
-        ESP_LOGD(TAG, "Failed to transmit data on stream %p, err %d",
-                 tx_stream->stream, err);
+        ESP_LOGD(TAG, "[SNK TX] send failed, err %d", err);
         return;
     }
 
@@ -76,8 +76,11 @@ void stream_tx_sent(esp_ble_audio_bap_stream_t *stream, void *user_data)
 {
     for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
         if (tx_streams[i].stream == stream) {
+            char name[24];
+
+            snprintf(name, sizeof(name), "SNK #%zu", i);
             example_audio_tx_scheduler_on_sent(&tx_streams[i].scheduler, user_data,
-                                               TAG, "stream", stream);
+                                               TAG, name);
             break;
         }
     }
@@ -100,18 +103,16 @@ int stream_tx_register(esp_ble_audio_bap_stream_t *stream)
 
     for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
         if (tx_streams[i].stream == NULL) {
-            ESP_LOGI(TAG, "Registered stream %p for TX", stream);
-
             if (stream->qos == NULL || stream->qos->sdu == 0) {
-                ESP_LOGE(TAG, "Invalid stream qos");
+                ESP_LOGE(TAG, "[SNK #%zu] Invalid QoS", i);
                 return -EINVAL;
             }
 
             if (tx_streams[i].data == NULL) {
                 tx_streams[i].data = calloc(1, stream->qos->sdu);
                 if (tx_streams[i].data == NULL) {
-                    ESP_LOGE(TAG, "Failed to alloc TX buffer, SDU %u (stream %p)",
-                             stream->qos->sdu, stream);
+                    ESP_LOGE(TAG, "[SNK #%zu] Failed to alloc buffer (SDU %u)",
+                             i, stream->qos->sdu);
                     return -ENOMEM;
                 }
             }
@@ -123,17 +124,20 @@ int stream_tx_register(esp_ble_audio_bap_stream_t *stream)
             err = example_audio_tx_scheduler_start(&tx_streams[i].scheduler,
                                                    stream->qos->interval);
             if (err) {
-                ESP_LOGE(TAG, "Failed to start tx scheduler, err %d", err);
+                ESP_LOGE(TAG, "[SNK #%zu] Scheduler start failed, err %d", i, err);
                 tx_streams[i].stream = NULL;
                 return err;
             }
+
+            ESP_LOGI(TAG, "[SNK #%zu] Started (SDU %u, interval %u us)",
+                     i, stream->qos->sdu, stream->qos->interval);
 
             stream_tx_send(&tx_streams[i]);
             return 0;
         }
     }
 
-    ESP_LOGE(TAG, "No free TX stream slot");
+    ESP_LOGE(TAG, "[SNK] No free TX slot");
 
     return -ENOMEM;
 }
@@ -148,11 +152,9 @@ int stream_tx_unregister(esp_ble_audio_bap_stream_t *stream)
 
     for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
         if (tx_streams[i].stream == stream) {
-            ESP_LOGI(TAG, "Unregistered stream %p for TX", stream);
-
             err = example_audio_tx_scheduler_stop(&tx_streams[i].scheduler);
             if (err) {
-                ESP_LOGE(TAG, "Failed to stop tx scheduler, err %d", err);
+                ESP_LOGE(TAG, "[SNK #%zu] Scheduler stop failed, err %d", i, err);
                 return err;
             }
 
@@ -162,6 +164,7 @@ int stream_tx_unregister(esp_ble_audio_bap_stream_t *stream)
                 tx_streams[i].data = NULL;
             }
 
+            ESP_LOGI(TAG, "[SNK #%zu] Stopped", i);
             return 0;
         }
     }
@@ -178,7 +181,7 @@ void stream_tx_init(void)
                                               tx_scheduler_cb,
                                               &tx_streams[i]);
         if (err) {
-            ESP_LOGE(TAG, "Failed to init tx scheduler[%u], err %d", i, err);
+            ESP_LOGE(TAG, "[SNK #%zu] Scheduler init failed, err %d", i, err);
             return;
         }
     }

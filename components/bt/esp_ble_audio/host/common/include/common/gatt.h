@@ -14,7 +14,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#include "nimble/gatt/gatt.h"
+#include "nimble/gatt.h"
 
 #ifdef __cplusplus
 extern "C" {

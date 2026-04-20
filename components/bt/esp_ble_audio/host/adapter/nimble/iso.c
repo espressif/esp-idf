@@ -19,6 +19,8 @@
 
 #include "common/host.h"
 
+#include "nimble/hs_error.h"
+
 extern int ble_hs_iso_evt_rx_cb_set(void *cb);
 #if CONFIG_BT_ISO_RX
 extern int ble_hs_iso_pkt_rx_cb_set(ble_hs_iso_pkt_rx_fn cb);
@@ -705,54 +707,72 @@ int bt_le_nimble_iso_cmd_send_sync(uint16_t opcode,
                                    struct net_buf *buf,
                                    struct net_buf **rsp)
 {
+    int rc;
+
     switch (opcode) {
     case BT_HCI_OP_LE_READ_ISO_TX_SYNC:
-        return hci_cmd_read_iso_tx_sync(buf, rsp);
+        rc = hci_cmd_read_iso_tx_sync(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_SET_CIG_PARAMS:
-        return hci_cmd_set_cig_params(buf, rsp);
+        rc = hci_cmd_set_cig_params(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_SET_CIG_PARAMS_TEST:
-        return hci_cmd_set_cig_params_test(buf, rsp);
+        rc = hci_cmd_set_cig_params_test(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_CREATE_CIS:
-        return hci_cmd_create_cis(buf, rsp);
+        rc = hci_cmd_create_cis(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_REMOVE_CIG:
-        return hci_cmd_remove_cig(buf, rsp);
+        rc = hci_cmd_remove_cig(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_ACCEPT_CIS:
-        return hci_cmd_accept_cis_req(buf, rsp);
+        rc = hci_cmd_accept_cis_req(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_REJECT_CIS:
-        return hci_cmd_reject_cis_req(buf, rsp);
+        rc = hci_cmd_reject_cis_req(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_CREATE_BIG:
-        return hci_cmd_create_big(buf, rsp);
+        rc = hci_cmd_create_big(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_CREATE_BIG_TEST:
-        return hci_cmd_create_big_test(buf, rsp);
+        rc = hci_cmd_create_big_test(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_TERMINATE_BIG:
-        return hci_cmd_terminate_big(buf, rsp);
+        rc = hci_cmd_terminate_big(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_BIG_CREATE_SYNC:
-        return hci_cmd_big_create_sync(buf, rsp);
+        rc = hci_cmd_big_create_sync(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_BIG_TERMINATE_SYNC:
-        return hci_cmd_big_terminate_sync(buf, rsp);
+        rc = hci_cmd_big_terminate_sync(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_SETUP_ISO_PATH:
-        return hci_cmd_setup_iso_data_path(buf, rsp);
+        rc = hci_cmd_setup_iso_data_path(buf, rsp);
+        break;
 
     case BT_HCI_OP_LE_REMOVE_ISO_PATH:
-        return hci_cmd_remove_iso_data_path(buf, rsp);
+        rc = hci_cmd_remove_iso_data_path(buf, rsp);
+        break;
 
     default:
         LOG_ERR("[N]IsoCmdNotSupp[%04x]", opcode);
         net_buf_unref(buf);
         return -ENOTSUP;
     }
+
+    return nimble_err_to_errno(rc);
 }
 
 static void iso_evt_rx(uint8_t event, const void *data,

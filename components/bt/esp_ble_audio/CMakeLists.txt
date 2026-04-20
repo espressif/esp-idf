@@ -67,8 +67,8 @@ if(CONFIG_BT_ISO)
 
     list(APPEND ble_audio_include_dirs
         "${CMAKE_CURRENT_LIST_DIR}/api/iso/include"
-        "${CMAKE_CURRENT_LIST_DIR}/host"
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter"
+        "${CMAKE_CURRENT_LIST_DIR}/host/common/include"
+        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/include"
         "${CMAKE_CURRENT_LIST_DIR}/include/subsys/bluetooth"
         "${CMAKE_CURRENT_LIST_DIR}/include/subsys/bluetooth/host"
         "${CMAKE_CURRENT_LIST_DIR}/include"

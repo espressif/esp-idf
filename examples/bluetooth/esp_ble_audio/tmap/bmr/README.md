@@ -5,58 +5,102 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example implements the **Telephone and Media Audio Profile (TMAP) Broadcast Media Receiver (BMR)** role. The BMR scans for broadcast sources that advertise both the Broadcast Audio service (broadcast ID) and the TMAP role TMAS with **BMS (Broadcast Media Sender)**. When such a source is found, it establishes periodic advertising sync, creates a BAP Broadcast Sink, and synchronizes to the BIG to receive broadcast audio. It also registers as a **VCP Volume Renderer** (Volume Control Profile) for local volume and mute. The BMR can work with a TMAP BMS or any BAP Broadcast Source that includes the TMAP BMS role in advertising (e.g. a device running the [broadcast_source](../../bap/broadcast_source) or [CAP initiator](../../cap/initiator) in broadcast mode, if configured as BMS).
+## Overview
 
-The implementation uses the NimBLE host stack with ISO and LE Audio support, ESP-BLE-AUDIO (TMAP BMR role, VCP volume renderer, PACS sink, BAP broadcast sink, BAP scan delegator). PACS advertises LC3 sink capability (e.g. 48 kHz, 10 ms, mono, media context). After startup the device starts scanning; on matching scan results it creates PA sync, then creates the broadcast sink and syncs to the BIS streams; received audio is counted in the stream recv callback.
+This example implements the **Telephony and Media Audio Profile (TMAP) Broadcast Media Receiver (BMR)** role. The device scans for non-connectable extended advertisers that carry both the Broadcast Audio Announcement service (with a 24-bit broadcast ID) and the TMAS service with the **BMS** role bit set, then synchronizes to periodic advertising and the BIG to receive broadcast audio.
+
+The implementation runs on the **NimBLE** host stack and uses ESP-BLE-AUDIO for TMAP role registration, the BAP broadcast sink, the BAP scan delegator, the PACS sink (LC3 capability: 48 kHz, 10 ms, 1 channel, 100 octets/frame, media context — sized for the 48_2_1 preset that the paired BMS sends), and a VCP **Volume Renderer** (initial volume 10, unmuted, step 1). Up to `CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT` streams are pre-allocated and reused for every BIG sync; received SDUs are accounted for via `example_audio_rx_metrics_*`.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4)
-* A broadcast source that advertises as TMAP BMS (Broadcast Media Sender) and sends broadcast audio (e.g. another board running a broadcast source example with TMAP BMS role)
+* A board with BLE 5.2, ISO, and LE Audio support (e.g. ESP32-H4, ESP32-S31)
+* Peer device running the paired example
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
+```bash
+idf.py menuconfig
+```
+
+No build-time options — runtime defaults are baked into source.
+
+### Security & Pairing
+
+NimBLE host security is inherited from `../../common_components/example_init/ble_audio_example_init.c`: LE Secure Connections with bonding enabled, no MITM, **Just-Works** pairing (`BLE_SM_IO_CAP_NO_IO`). The BMR receives broadcast (unencrypted) audio, so these settings only apply if a peer (e.g. a Broadcast Assistant) opens an ATT connection to the scan delegator / VCP renderer.
+
+## Build & Flash
 
 ```bash
 idf.py set-target esp32h4
-```
-
-### Build and Flash
-
-Run the following to build, flash and monitor:
-
-```bash
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack, and LE Audio common layer (`esp_ble_audio_common_init`) with GAP callback. Register TMAP role BMR (`esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_BMR)`). Register VCP Volume Renderer (volume step, mute, volume, state/flags callbacks). Initialize BAP broadcast sink: register PACS (sink only), register broadcast sink callbacks (base_recv, syncable), register PACS sink capability (LC3), register scan delegator callbacks, set stream ops (started, stopped, recv). Start the audio stack.
-2. **Scanning**: Start extended scanning. On scan result, parse for Broadcast Audio UUID (broadcast ID) and TMAS with BMS role; if both found and not already syncing, create periodic advertising sync with the source.
-3. **PA sync**: When PA sync is established, stop scanning, create the BAP broadcast sink for the sync handle and broadcast ID. When BASE is received (base_recv), extract BIS indexes; when syncable callback is invoked, sync to the BIG with the chosen BIS and stream pointers.
-4. **Streaming**: When streams start, reset packet counters. Received ISO SDUs are delivered in the stream recv callback; the example counts valid, error, lost, and zero-length SDU and logs periodically.
-5. **VCP**: The Volume Renderer exposes volume and mute state; VCS state/flags callbacks log volume and mute changes when queried.
+1. Initialize NVS, the Bluetooth controller/host, and the LE Audio common layer with a GAP app callback that handles `EXT_SCAN_RECV`, `PA_SYNC`, and `PA_SYNC_LOST`.
+2. Register the TMAP role as `ESP_BLE_AUDIO_TMAP_ROLE_BMR`, then initialize the VCP Volume Renderer (`vcp_vol_renderer_init`) and the BAP broadcast sink (`bap_broadcast_sink_init`: PACS sink + sink location, broadcast sink callbacks, LC3 sink capability, scan delegator, stream ops on each pre-allocated stream).
+3. Start the audio stack and begin passive extended scanning at 100 ms / 100 ms with `BLE_HS_FOREVER` duration.
+4. On each scan result, parse service-data: capture broadcast ID from Broadcast Audio Announcement, set `tmap_bms_found` when TMAS carries the BMS role; if both are present and no PA sync is in progress, create the periodic-advertising sync.
+5. On `PA_SYNC` success, cancel scanning, log the sync handle, and create the broadcast sink for the sync handle and broadcast ID.
+6. The `base_recv` callback extracts the BIS index bitfield masked by the available stream count; the `syncable` callback then calls `esp_ble_audio_bap_broadcast_sink_sync` with the stream pointer array.
+7. Per-stream `started` callback resets RX metrics; `recv` callback feeds each SDU into `example_audio_rx_metrics_on_recv` (tracking valid/error/lost/zero-length counts); `stopped` logs the reason.
+8. On `PA_SYNC_LOST` matching the active sync handle, delete the broadcast sink and re-enter scanning.
 
-## Example Output
+## Expected Log
 
+TAG is `TMAP_BMR`.
+
+Init:
 ```
-I (xxx) TMAP_BMR: Found TMAP BMS
-I (xxx) TMAP_BMR: PA synced, handle 0x... status 0x00
-I (xxx) TMAP_BMR: PA sync ... synced with broadcast ID 0x...
+I (xxx) TMAP_BMR: VCP volume renderer initialized
+I (xxx) TMAP_BMR: BAP broadcast sink initialized
+I (xxx) TMAP_BMR: Scanning for broadcaster...
+```
+
+Scan and PA sync:
+```
+I (xxx) TMAP_BMR: Found TMAP BMS, starting PA sync (broadcast ID 0x......)
+I (xxx) TMAP_BMR: PA synced: handle .. sid .. phy .. peer xx:xx:xx:xx:xx:xx
+I (xxx) TMAP_BMR: PA sync .. synced with broadcast ID 0x......
 I (xxx) TMAP_BMR: Broadcast source PA synced, waiting for BASE
 I (xxx) TMAP_BMR: BASE received, creating broadcast sink
-I (xxx) TMAP_BMR: Stream 0x... started
-I (xxx) TMAP_BMR: Received 1000(...) ISO data packets (stream 0x...)
-...
 ```
 
-If PA sync is lost:
+Streaming:
+```
+I (xxx) TMAP_BMR: [SNK #0] Stream started
+```
+(Subsequent per-packet metrics are emitted by `example_audio_rx_metrics_on_recv` under the `SNK #N` label.)
 
+Stop / sync loss:
 ```
-I (xxx) TMAP_BMR: PA sync lost, handle 0x... reason ...
+I (xxx) TMAP_BMR: [SNK #0] Stream stopped, reason 0x..
+I (xxx) TMAP_BMR: PA sync lost: sync_handle .. reason 0x..
+I (xxx) TMAP_BMR: PA sync .. lost with reason ..
 ```
+
+VCP (when remote queries volume/flags):
+```
+I (xxx) TMAP_BMR: VCS volume .., mute ..
+I (xxx) TMAP_BMR: VCS flags 0x..
+```
+
+Warnings (malformed adv):
+```
+W (xxx) TMAP_BMR: Invalid ad size .. (uuid)
+W (xxx) TMAP_BMR: Invalid ad size .. (Broadcast ID)
+W (xxx) TMAP_BMR: Invalid ad size .. (tmap role)
+```
+
+## Peer Pairing
+
+Run [bms](../bms/) on a second board.
+
+1. Flash and boot this BMR; it initializes VCP and PACS, then enters extended scanning.
+2. Boot the BMS peer; it advertises with TMAS BMS role and broadcast ID `0x123456` plus periodic advertising carrying the BASE.
+3. This BMR matches both service-data entries on a single scan result and creates the PA sync; on success it cancels scanning and creates the broadcast sink.
+4. `base_recv` derives the BIS index bitfield, then `syncable` triggers `esp_ble_audio_bap_broadcast_sink_sync` with the pre-allocated stream pointers.
+5. Stream `started` fires, RX metrics reset, and `recv` accumulates valid/error/lost/zero-length SDU counters as the BMS sends.
+6. If the BMS stops or moves out of range, PA sync loss tears down the sink and the BMR resumes scanning automatically.

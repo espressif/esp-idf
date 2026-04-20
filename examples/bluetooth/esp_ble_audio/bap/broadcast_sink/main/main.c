@@ -113,7 +113,7 @@ static void ext_scan_start(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for broadcast source...");
 }
 
 static int pa_sync_create(const bt_addr_le_t *addr, uint8_t adv_sid)
@@ -213,7 +213,7 @@ static void broadcast_code_cb(esp_ble_conn_t *conn,
                               const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state,
                               const uint8_t broadcast_code[ESP_BLE_ISO_BROADCAST_CODE_SIZE])
 {
-    ESP_LOGI(TAG, "Broadcast code received for %p", recv_state);
+    ESP_LOGI(TAG, "Broadcast code received");
 
     req_recv_state = recv_state;
 
@@ -253,10 +253,10 @@ static int bis_sync_req_cb(esp_ble_conn_t *conn,
         }
     }
 
-    ESP_LOGI(TAG, "BIS sync req for %p: BIS indexes 0x%08x (subgroup indexes 0x%08x), "
-             "broadcast id: 0x%06x, (%s)", recv_state, requested_bis_sync,
-             requested_subgroup_sync, recv_state->broadcast_id,
-             stream_started ? "Stream started" : "Stream not started");
+    ESP_LOGI(TAG, "BIS sync req: broadcast_id 0x%06x BIS mask 0x%08x subgroup mask 0x%08x (%s)",
+             recv_state->broadcast_id, requested_bis_sync,
+             requested_subgroup_sync,
+             stream_started ? "streaming" : "not streaming");
 
     if (stream_started && requested_bis_sync == 0) {
         /* The stream stopped callback will be called as part of this, and
@@ -307,8 +307,7 @@ static void base_recv_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
         return;
     }
 
-    ESP_LOGI(TAG, "Received BASE with %d subgroups from broadcast sink %p",
-             base_subgroup_count, sink);
+    ESP_LOGI(TAG, "BASE received (%d subgroup(s))", base_subgroup_count);
 
     err = esp_ble_audio_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
     if (err) {
@@ -334,8 +333,8 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     uint32_t sync_bitfield;
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Broadcast sink (%p) is syncable, BIG %s",
-             sink, biginfo->encryption ? "encrypted" : "not encrypted");
+    ESP_LOGI(TAG, "Broadcast sink syncable, BIG %s",
+             biginfo->encryption ? "encrypted" : "not encrypted");
 
     sync_bitfield = (bis_index_bitfield & requested_bis_sync);
     if (sync_bitfield == 0) {
@@ -353,9 +352,8 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
         }
     }
 
-    ESP_LOGI(TAG, "Syncing to broadcast with bitfield:");
-    ESP_LOGI(TAG, "0x%08x = 0x%08x (bis_index) & 0x%08x (req_bis_sync), stream_count %u",
-             sync_bitfield, bis_index_bitfield, requested_bis_sync, stream_count);
+    ESP_LOGI(TAG, "Syncing to broadcast: BIS mask 0x%08x (%u stream(s))",
+             sync_bitfield, stream_count);
 
     if (biginfo->encryption) {
         memset(sink_broadcast_code, 0, ESP_BLE_ISO_BROADCAST_CODE_SIZE);
@@ -376,13 +374,24 @@ static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
     .syncable  = syncable_cb,
 };
 
+static int stream_index(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+        if (&streams[i].stream == stream) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     struct broadcast_sink_stream *sink_stream = CONTAINER_OF(stream,
                                                              struct broadcast_sink_stream,
                                                              stream);
 
-    ESP_LOGI(TAG, "Stream %p started (%u/%u)", stream, stream_count_started, stream_count);
+    ESP_LOGI(TAG, "[SNK #%d] Stream started (%u/%u)",
+             stream_index(stream), stream_count_started, stream_count);
 
     example_audio_rx_metrics_reset(&sink_stream->rx_metrics);
 
@@ -395,8 +404,8 @@ static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Stream %p stopped with reason 0x%02x (%u/%u)",
-             stream, reason, stream_count_stopped, stream_count);
+    ESP_LOGI(TAG, "[SNK #%d] Stream stopped, reason 0x%02x (%u/%u)",
+             stream_index(stream), reason, stream_count_stopped, stream_count);
 
     if (++stream_count_stopped == stream_count) {
         stream_started = false;
@@ -418,10 +427,11 @@ static void stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
     struct broadcast_sink_stream *sink_stream = CONTAINER_OF(stream,
                                                              struct broadcast_sink_stream,
                                                              stream);
+    char name[24];
 
+    snprintf(name, sizeof(name), "SNK #%d", stream_index(stream));
     sink_stream->rx_metrics.last_sdu_len = len;
-    example_audio_rx_metrics_on_recv(info, &sink_stream->rx_metrics,
-                                     TAG, "stream", stream);
+    example_audio_rx_metrics_on_recv(info, &sink_stream->rx_metrics, TAG, name);
 }
 
 static esp_ble_audio_bap_stream_ops_t stream_ops = {
@@ -506,6 +516,7 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
 static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 {
     esp_err_t err;
+    int rc;
 
     pa_syncing = false;
 
@@ -518,6 +529,15 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
     ESP_LOGI(TAG, "Broadcast source PA synced, creating Broadcast Sink");
 
+    /* PA sync is established; the BASE / BIGInfo reports will arrive
+     * via the PA sync channel, so the extended scanner is no longer
+     * needed. Stop it now — pa_sync_lost() will restart it on loss.
+     */
+    rc = ble_gap_disc_cancel();
+    if (rc) {
+        ESP_LOGW(TAG, "Failed to stop scanning, err %d", rc);
+    }
+
     err = esp_ble_audio_bap_broadcast_sink_create(event->pa_sync.sync_handle,
                                                   broadcaster_broadcast_id,
                                                   &broadcast_sink);
@@ -529,7 +549,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
 static void pa_sync_lost(esp_ble_audio_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "PA sync lost: sync_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "PA sync lost: sync_handle %u reason 0x%02x",
              event->pa_sync_lost.sync_handle, event->pa_sync_lost.reason);
 
     if (sync_handle == event->pa_sync_lost.sync_handle) {
@@ -540,6 +560,12 @@ static void pa_sync_lost(esp_ble_audio_gap_app_event_t *event)
         stream_count = 0;
         stream_count_started = 0;
         stream_count_stopped = 0;
+        /* Clear the stale scan-delegator state pointer captured by
+         * recv_state_updated_cb() while we were synced. Without this,
+         * ext_scan_recv() would keep rejecting new source ads because
+         * its gate is `pa_syncing == false && req_recv_state == NULL`.
+         */
+        req_recv_state = NULL;
 
         if (broadcast_sink != NULL) {
             esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);

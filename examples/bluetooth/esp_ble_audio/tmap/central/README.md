@@ -5,60 +5,122 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example implements the **Telephone and Media Audio Profile (TMAP) Central** roles: **Call Gateway (CG)** and **Unicast Media Sender (UMS)**. The central scans for devices that advertise the TMAS (Telephone and Media Audio Service) with the **UMR (Unicast Media Receiver)** role, connects to the first such device, performs pairing, MTU exchange, and GATT service discovery, then runs TMAP discovery and VCP discovery. After TMAP discovery completes, it sets up unicast audio streams (CAP initiator): discovers ASEs, configures codec (e.g. LC3 48_2_1), sets QoS, enables and connects streams, then starts them and sends audio to the peer’s sink. It also acts as **VCP Volume Controller** (volume/mute on the peer), **MCP server** (Media Control Profile / media proxy), and **CCP server** (Call Control Profile with TBS – Telephone Bearer Service) for call originate/terminate. Run it with a device that advertises TMAP UMR (e.g. a TMAP peripheral or CAP acceptor with unicast).
+## Overview
 
-The implementation uses the NimBLE host stack with ISO and LE Audio support, ESP-BLE-AUDIO (TMAP CG+UMS, CAP initiator unicast client, VCP volume controller, TBS, CSIP set coordinator, MCP/MCS/MCC, media proxy). Optional Kconfig: device name.
+This example takes the **TMAP Call Gateway (CG)** and **Unicast Media Sender (UMS)** roles, registered together via `esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_CG | ESP_BLE_AUDIO_TMAP_ROLE_UMS)`. It scans for connectable extended advertising that carries TMAS service data with the **UMR** role bit set, connects to the first match, pairs, exchanges MTU, and then drives TMAP and VCP discovery before bringing up unicast audio.
+
+The host stack is NimBLE. The example uses the ESP-BLE-AUDIO library pieces for: CAP initiator with the BAP Unicast Client (LC3 preset 48_2_1, sink direction, FRONT_LEFT, MEDIA context), VCP Volume Controller, MCP server backed by the media proxy player, and CCP server registering a single GTBS bearer (`Generic TBS`, UCI `un000`, `tel,wechat` URI schemes, 5G technology). A periodic TX scheduler in the ISO task feeds dummy ISO SDUs filled with the sequence number. Device name is set to `TMAP Central`.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4)
-* A device advertising TMAP UMR (Unicast Media Receiver), e.g. a CAP Acceptor or TMAP peripheral with unicast
+* A board with BLE 5.2, ISO, and LE Audio support (e.g. ESP32-H4, ESP32-S31)
+* Peer device running the paired example
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
+```bash
+idf.py menuconfig
+```
+
+No build-time options — runtime defaults are baked into source.
+
+### Security & Pairing
+
+Just-Works pairing (LE Secure Connections, no MITM, no I/O capability) with bonding enabled, inherited from `../../common_components/example_init/ble_audio_example_init.c`.
+
+## Build & Flash
 
 ```bash
 idf.py set-target esp32h4
-```
-
-### Build and Flash
-
-Run the following to build, flash and monitor:
-
-```bash
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack, and LE Audio common layer (`esp_ble_audio_common_init`) with GAP and GATT callbacks. Register TMAP roles CG and UMS (`esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_CG | ESP_BLE_AUDIO_TMAP_ROLE_UMS)`). Initialize CAP initiator (unicast client, stream callbacks, TX timer). Initialize VCP volume controller. Initialize MCP server (media proxy). Initialize CCP server (TBS bearer, originate/terminate callbacks). Start the audio stack and set the device name.
-2. **Scanning**: Start extended scanning. On scan result with connectable advertising, parse for TMAS with UMR role; when found, stop scan and connect to the peer.
-3. **Connection**: On ACL connect, store connection handle and initiate pairing. On MTU change, start GATT service discovery. On discovery complete (and when MTU has been exchanged), start TMAP discovery and VCP discovery.
-4. **TMAP discovery complete**: Call `cap_initiator_setup()` to create the unicast group, discover ASEs, configure codec, set QoS, enable and connect streams, then start streams.
-5. **Unicast streaming**: When a sink-direction stream (TX from central to peer) is started, a periodic TX scheduler based on `k_work_delayable` runs in the ISO task context and sends ISO SDUs at the stream QoS interval; the sent callback logs packet counts. Source streams (RX) can be used to receive audio from the peer. Note that the scheduler timer resolution is in milliseconds, which may not match the exact SDU interval for all configurations.
-6. **VCP**: After VCP discovery, the example can send mute/volume commands; state and flags callbacks log volume and mute.
+1. `app_main` initializes NVS, Bluetooth, the audio common layer, and registers TMAP CG+UMS.
+2. Sub-modules initialize in order: CAP initiator (with TX scheduler), VCP volume controller, MCP server (media proxy), CCP server (GTBS bearer).
+3. The audio stack starts, the device name is set, and extended scanning begins.
+4. Each connectable scan result is parsed for TMAS service data; if the peer's TMAP role contains UMR, scan is cancelled and a connection is created.
+5. On ACL connect, security is initiated; on security change, an MTU exchange is requested.
+6. After the MTU exchange and GATT discovery both complete, TMAP and VCP discovery start.
+7. TMAP discovery completion triggers `cap_initiator_setup` → CAS discover → sink and source ASE discovery → unicast group create → unicast audio start.
+8. When a sink stream reaches "started", the TX scheduler is started at the QoS interval and `unicast_audio_tx` sends ISO SDUs filled with the sequence number.
+9. After VCP discovery, the volume state is read to sync the change counter, then a mute command is issued from the state callback.
+10. On disconnect, the unicast group is deleted and scanning restarts.
 
-## Example Output
+## Expected Log
 
-```
-I (xxx) TMAP_CEN: Found TMAS in peer adv data!
-I (xxx) TMAP_CEN: connection established, status 0
-I (xxx) TMAP_CEN: gatt mtu change, conn_handle 1, mtu ...
-I (xxx) TMAP_CEN: gattc disc cmpl, status 0, conn_handle 1
-I (xxx) TMAP_CEN: TMAP discovery done
-I (xxx) TMAP_CEN: Configured stream 0x...
-I (xxx) TMAP_CEN: Unicast stream 0x... started
-I (xxx) TMAP_CEN: Transmitted 1000 ISO data packets (stream 0x...)
-...
-```
-
-If the connection is lost:
+Initialization phase:
 
 ```
-I (xxx) TMAP_CEN: connection disconnected, reason 0x...
+TMAP_CEN: CAP initiator initialized
+TMAP_CEN: VCP volume controller initialized
+TMAP_CEN: MCP server initialized
+TMAP_CEN: Registered gtbs bearer <n>
+TMAP_CEN: Scanning for peripheral...
 ```
+
+Scan and connect:
+
+```
+TMAP_CEN: Found TMAS in peer adv data!
+TMAP_CEN: Connected: handle <h> role <r> peer <addr>
+TMAP_CEN: Security: handle <h> level <l> bonded <b>
+TMAP_CEN: MTU updated: handle <h> mtu <m>
+TMAP_CEN: Service discovery started: handle <h>
+TMAP_CEN: Service discovery complete: handle <h> status 0
+```
+
+TMAP / VCP / CAP setup:
+
+```
+TMAP_CEN: TMAP discovery done
+TMAP_CEN: CAP initiator setup
+TMAP_CEN: Found CAS
+TMAP_CEN: [SNK #0] Endpoint discovered
+TMAP_CEN: Sink discover complete
+TMAP_CEN: Source discover complete
+TMAP_CEN: Created unicast group
+TMAP_CEN: Started unicast audio
+TMAP_CEN: VCP volume controller discovering
+TMAP_CEN: VCP discovery done
+TMAP_CEN: VCP state cb done, volume <v> mute <m>
+```
+
+Unicast streaming phase:
+
+```
+TMAP_CEN: [SNK #0] Stream configured, QoS preference:
+TMAP_CEN: [SNK #0] QoS set
+TMAP_CEN: [SNK #0] Stream enabled
+TMAP_CEN: [SNK #0] Stream connected
+TMAP_CEN: [SNK #0] Stream started
+TMAP_CEN: Streaming, interval <i>, length <l>
+TMAP_CEN: Unicast start completed
+```
+
+Call control / disconnect:
+
+```
+TMAP_CEN: CCP: Placing call to remote with id <i> to <caller>
+TMAP_CEN: CCP: Call terminated for id <i> with reason <r>
+TMAP_CEN: [SNK #0] Stream stopped, reason 0x<rr>
+TMAP_CEN: [SNK #0] ISO disconnected, reason 0x<rr>
+TMAP_CEN: Disconnected: handle <h> reason 0x<rr>
+TMAP_CEN: Deleted unicast group
+```
+
+Tag is `TMAP_CEN`.
+
+## Peer Pairing
+
+Run [tmap_peripheral](../peripheral/) on a second board.
+
+1. Flash the peripheral and let it start extended advertising.
+2. Flash and start this central; it scans for TMAS+UMR.
+3. The central connects, pairs, and exchanges MTU with the peripheral.
+4. TMAP discovery completes on both sides; the central runs CAP unicast setup against the peripheral's ASCS.
+5. The central starts the sink stream and feeds ISO SDUs to the peripheral at the QoS interval.
+6. The central can drive the peripheral's volume via VCP and accept TBS originate/terminate from the peripheral.

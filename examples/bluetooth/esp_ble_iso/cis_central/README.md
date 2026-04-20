@@ -5,51 +5,83 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example demonstrates how to use a **Connected Isochronous Stream (CIS)** as a central. It scans for a peripheral, establishes an ACL connection, creates a Connected Isochronous Group (CIG) and a CIS to the peer, and then sends isochronous data over the CIS every 10 ms. Run it together with the [cis_peripheral](../cis_peripheral) example on another device as the peer.
+## Overview
 
-The implementation uses the NimBLE host stack with ISO support and the ESP-BLE-ISO APIs (CIG create, CIS connect, data path, channel send). It is intended for chips that support BLE 5.2 ISO (e.g. ESP32-H4). The target peripheral name is hardcoded as `CIS Peripheral` and the connection security level is hardcoded as `ESP_BLE_ISO_SECURITY_MITM` (Level 3: encryption and authentication); the central initiates pairing after the ACL connection.
+This is a raw BLE Connected Isochronous Stream (CIS) example operating directly at the ISO transport layer. It is **not** a BAP/CAP (BLE Audio profile) example — it does not implement Unicast Server/Client, ASCS, PACS, or any LC3 codec; it only exercises the underlying CIG/CIS plumbing.
+
+The central scans for a peer advertising the name `CIS Peripheral`, opens an ACL link, optionally pairs (security level `ESP_BLE_ISO_SECURITY_NO_MITM`), creates a single-CIS CIG (10 ms SDU interval, 2M PHY, RTN 2, 120-byte SDU, sequential/unframed), connects the CIS, configures the input data path to the HCI in transparent format, and then drives a software TX scheduler that submits one SDU every 10 ms.
+
+The transmitted payload is a dummy buffer filled with the current sequence number byte — there is no real audio data, the example just demonstrates the ISO transport mechanics on top of the NimBLE host with ISO support and the `esp_ble_iso_*` APIs.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2 and ISO support (e.g. ESP32-H4)
-* Another device running the [cis_peripheral](../cis_peripheral) example, which advertises and accepts the ACL and CIS
+* A board with BLE 5.2 and ISO support (e.g. ESP32-H4, ESP32-S31)
+* Peer device running the paired example
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
+```bash
+idf.py menuconfig
+```
+
+No build-time options — runtime defaults are baked into source.
+
+### Security & Pairing
+
+Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, inherited from the shared host init in `../common_components/example_init/ble_iso_example_init.c`. ISO examples do not register any GATT services (`gatts_register_cb = NULL`).
+
+## Build & Flash
 
 ```bash
 idf.py set-target esp32h4
-```
-
-### Build and Flash
-
-Run the following to build, flash and monitor:
-
-```bash
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack (NimBLE), and ISO common layer (`esp_ble_iso_common_init`) with GAP callback for scan, ACL, and security events.
-2. **Extended scan**: Start passive extended scanning. On scan report, parse the complete local name; when it matches the hardcoded target name `CIS Peripheral`, initiate an ACL connection to that device.
-3. **ACL connection**: On connection established, initiate pairing (security level is hardcoded as `ESP_BLE_ISO_SECURITY_MITM`); the CIG and CIS are created after security is established.
-4. **Security**: On security change (after pairing), create the CIG and CIS.
-5. **CIG and CIS**: Create a CIG with one CIS (10 ms latency each direction, 10 ms SDU interval, sequential packing, unframed), then connect the CIS over the ACL handle.
-6. **Send ISO data**: When the CIS is connected and the input data path is set up, a periodic TX scheduler based on `k_work_delayable` sends an SDU on the CIS every 10 ms in the ISO task context; sequence numbers and drift handling are applied. Note that the scheduler timer resolution is in milliseconds, which may not match the exact SDU interval for all configurations.
+1. Initialize NVS, NimBLE host, and the ISO common layer with a GAP callback.
+2. Start passive extended scanning for a device whose Complete Local Name is `CIS Peripheral`.
+3. Cancel scan and create an ACL connection (interval 80 ms, supervision 5 s) once the target is matched.
+4. On ACL connect, initiate pairing because the configured security level is `ESP_BLE_ISO_SECURITY_NO_MITM`.
+5. After the security change, call `esp_ble_iso_cig_create` (one CIS, 10 ms latencies and SDU interval, sequential/unframed, SCA unknown) and `esp_ble_iso_chan_connect` over the ACL handle.
+6. On CIS connect, set up the input data path (HCI / transparent) and start the periodic TX scheduler.
+7. The scheduler invokes `esp_ble_iso_chan_send` every 10 ms with an incrementing sequence number on a 120-byte dummy SDU.
 
-## Example Output
+## Expected Log
+
+TAG: `CIS_CEN`
+
+Scan and connection phase:
 
 ```
-I (xxx) CIS_CEN: connection established, handle 0 status 0x00
-I (xxx) CIS_CEN: ISO channel 0x... connected
-I (xxx) CIS_CEN: Transmitted 1000 ISO data packets (chan 0x...)
-...
+I CIS_CEN: Scanning for peripheral...
+I CIS_CEN: Connected: handle <h> role <r> peer XX:XX:XX:XX:XX:XX
+I CIS_CEN: Security: handle <h> level <l> bonded <b>
 ```
 
-If connection or security fails, relevant status or error messages are logged.
+CIS setup and streaming phase (TX log emitted every `LOG_INTERVAL_PACKETS` SDUs by the shared utility):
+
+```
+I CIS_CEN: [CIS #0] Connected
+I CIS_CEN: [CIS #0] TX: <count> packets
+```
+
+Disconnect path:
+
+```
+I CIS_CEN: [CIS #0] Disconnected, reason 0x<rr>
+I CIS_CEN: Disconnected: handle <h> reason 0x<rr>
+```
+
+## Peer Pairing
+
+Run [cis_peripheral](../cis_peripheral/) on a second board.
+
+1. Flash and run `cis_peripheral` first; it begins extended advertising as `CIS Peripheral`.
+2. Flash and run `cis_central` on the second board; it scans and matches that name.
+3. The central creates the ACL connection and initiates pairing.
+4. After the security change, the central creates the CIG and connects the CIS.
+5. Both sides set up their data paths (input on central, output on peripheral).
+6. The central streams 120-byte SDUs every 10 ms; the peripheral reports `RX: <count> packets` periodically.

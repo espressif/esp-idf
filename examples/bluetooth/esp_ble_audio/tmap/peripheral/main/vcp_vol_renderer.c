@@ -190,10 +190,10 @@ int vcp_vol_renderer_init(void)
     ESP_LOGI(TAG, "vcp vol renderer, vocs_cnt %u aics_cnt %u",
              vcp_included.vocs_cnt, vcp_included.aics_cnt);
     for (size_t i = 0; i < vcp_included.vocs_cnt; i++) {
-        ESP_LOGI(TAG, "vcp vol renderer, vocs_%u %p", i, vcp_included.vocs[i]);
+        ESP_LOGI(TAG, "vcp vol renderer, vocs_%zu %p", i, vcp_included.vocs[i]);
     }
     for (size_t i = 0; i < vcp_included.aics_cnt; i++) {
-        ESP_LOGI(TAG, "vcp vol renderer, aics_%u %p", i, vcp_included.aics[i]);
+        ESP_LOGI(TAG, "vcp vol renderer, aics_%zu %p", i, vcp_included.aics[i]);
     }
 
     ESP_LOGI(TAG, "VCP volume renderer initialized");

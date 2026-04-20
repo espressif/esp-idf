@@ -40,7 +40,7 @@
 #define CONN_MIN_CE_LEN         0xFFFF
 #define CONN_DURATION           10000   /* 10s */
 
-#define SECURITY_LEVEL          ESP_BLE_ISO_SECURITY_MITM
+#define SECURITY_LEVEL          ESP_BLE_ISO_SECURITY_NO_MITM
 
 #define CIG_LATENCY_MS          10      /* 10ms */
 #define CIG_SDU_INTERVAL_US     10000   /* 10ms */
@@ -70,11 +70,11 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
     };
     esp_err_t err;
 
-    ESP_LOGI(TAG, "ISO channel %p connected", chan);
+    ESP_LOGI(TAG, "[CIS #0] Connected");
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_INPUT, &data_path);
     if (err) {
-        ESP_LOGE(TAG, "Failed to setup ISO data path, err %d", err);
+        ESP_LOGE(TAG, "[CIS #0] Failed to setup data path, err %d", err);
         return;
     }
 
@@ -84,7 +84,7 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
     /* Note: esp timer is not accurate enough */
     err = example_iso_tx_scheduler_start(&tx_scheduler, CIG_SDU_INTERVAL_US);
     if (err) {
-        ESP_LOGE(TAG, "Failed to start tx scheduler, err %d", err);
+        ESP_LOGE(TAG, "[CIS #0] Scheduler start failed, err %d", err);
         return;
     }
 
@@ -95,17 +95,28 @@ static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "ISO channel %p disconnected, reason 0x%02x", chan, reason);
+    ESP_LOGI(TAG, "[CIS #0] Disconnected, reason 0x%02x", reason);
 
     err = example_iso_tx_scheduler_stop(&tx_scheduler);
     if (err) {
-        ESP_LOGE(TAG, "Failed to stop tx scheduler, err %d", err);
+        ESP_LOGE(TAG, "[CIS #0] Scheduler stop failed, err %d", err);
+    }
+
+    /* Per BT Core 6.0 §7.7.5: a CIS on the Central retains its handle and
+     * data path across HCI_Disconnection_Complete (only the Peripheral side
+     * and other connection types get auto-deleted by the controller). So on
+     * the Central we must remove explicitly, otherwise the next setup on
+     * reconnect returns Command Disallowed.
+     */
+    err = esp_ble_iso_remove_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_INPUT);
+    if (err) {
+        ESP_LOGE(TAG, "[CIS #0] Failed to remove data path, err %d", err);
     }
 }
 
 static void iso_sent_cb(esp_ble_iso_chan_t *chan, void *user_data)
 {
-    example_iso_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, "chan", chan);
+    example_iso_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, "CIS #0");
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -181,7 +192,7 @@ static void iso_chan_send(void)
                                 sizeof(iso_data),
                                 iso_seq_num);
     if (err) {
-        ESP_LOGD(TAG, "Failed to transmit data on channel %p", &iso_chan);
+        ESP_LOGD(TAG, "[CIS #0] Send failed, err %d", err);
         return;
     }
 
@@ -217,7 +228,7 @@ static void ext_scan_start(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for peripheral...");
 }
 
 static int conn_create(uint8_t addr_type, uint8_t addr[6])
@@ -305,18 +316,16 @@ static void acl_connect(esp_ble_iso_gap_app_event_t *event)
     int err;
 
     if (event->acl_connect.status) {
-        ESP_LOGE(TAG, "connection failed, status %d", event->acl_connect.status);
+        ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
         acl_connected = false;
         return;
     }
 
-    ESP_LOGI(TAG, "Conn established:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->acl_connect.conn_handle, event->acl_connect.status,
-             event->acl_connect.role, event->acl_connect.dst.val[5],
-             event->acl_connect.dst.val[4], event->acl_connect.dst.val[3],
-             event->acl_connect.dst.val[2], event->acl_connect.dst.val[1],
-             event->acl_connect.dst.val[0]);
+    ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
+             event->acl_connect.conn_handle, event->acl_connect.role,
+             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
+             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
+             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
 
     if (iso_chan.required_sec_level == ESP_BLE_ISO_SECURITY_NO_MITM ||
             iso_chan.required_sec_level == ESP_BLE_ISO_SECURITY_MITM) {
@@ -332,7 +341,7 @@ static void acl_connect(esp_ble_iso_gap_app_event_t *event)
 
 static void acl_disconnect(esp_ble_iso_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Conn terminated: conn_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "Disconnected: handle %u reason 0x%02x",
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     acl_connected = false;
@@ -343,19 +352,14 @@ static void acl_disconnect(esp_ble_iso_gap_app_event_t *event)
 static void security_change(esp_ble_iso_gap_app_event_t *event)
 {
     if (event->security_change.status) {
-        ESP_LOGE(TAG, "security change failed, status %d", event->security_change.status);
+        ESP_LOGE(TAG, "Security change failed, status %d", event->security_change.status);
         return;
     }
 
-    ESP_LOGI(TAG, "Security change:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u sec_level %u bonded %u "
-             "peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->security_change.conn_handle, event->security_change.status,
-             event->security_change.role, event->security_change.sec_level,
-             event->security_change.bonded, event->security_change.dst.val[5],
-             event->security_change.dst.val[4], event->security_change.dst.val[3],
-             event->security_change.dst.val[2], event->security_change.dst.val[1],
-             event->security_change.dst.val[0]);
+    ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
+             event->security_change.conn_handle,
+             event->security_change.sec_level,
+             event->security_change.bonded);
 
     create_cig_and_cis(event->security_change.conn_handle);
 }

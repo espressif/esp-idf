@@ -93,15 +93,13 @@ int example_iso_tx_scheduler_stop(example_iso_tx_scheduler_t *scheduler);
 void example_iso_tx_scheduler_on_sent(example_iso_tx_scheduler_t *scheduler,
                                       const esp_ble_iso_tx_cb_info_t *info,
                                       const char *tag,
-                                      const char *obj_name,
-                                      const void *obj);
+                                      const char *obj_name);
 
 void example_iso_rx_metrics_reset(example_iso_rx_metrics_t *metrics);
 
 void example_iso_rx_metrics_on_recv(const esp_ble_iso_recv_info_t *info,
                                     example_iso_rx_metrics_t *metrics,
                                     const char *tag,
-                                    const char *obj_name,
-                                    const void *obj);
+                                    const char *obj_name);
 
 #endif /* BLE_ISO_EXAMPLE_UTILS_H_ */

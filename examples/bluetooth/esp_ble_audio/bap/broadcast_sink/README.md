@@ -5,68 +5,91 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example demonstrates the **Basic Audio Profile (BAP) Broadcast Sink** functionality. It scans for BAP Broadcast Sources (advertising with the Broadcast Audio service data), establishes periodic advertising synchronization with the first matching source, creates a BAP Broadcast Sink, and synchronizes to the BIG to receive broadcast audio streams. It listens until the source stops or sync is lost. The scan filters by the hardcoded source name (`BAP Broadcast Source`). Optionally, you can run in a mode where a Broadcast Assistant (e.g. a phone app) controls when to sync via the Scan Delegator.
+## Overview
 
-The implementation uses the NimBLE host stack with ISO and BAP support, ESP-BLE-ISO, and ESP-BLE-AUDIO APIs (PACS, BAP broadcast sink, scan delegator). It is intended for chips that support BLE 5.2 ISO and LE Audio (e.g. ESP32-H4). Sink capabilities are registered with LC3 (16 kHz and 24 kHz, 10 ms frame duration, 1 channel). For encrypted broadcasts, the broadcast code is hardcoded as `1234` in the source, or can be provided by a Broadcast Assistant.
+This example acts as a **BAP Broadcast Sink**. It scans for extended advertisements that carry the Broadcast Audio Announcement Service UUID and whose complete-name AD matches the hard-coded `"BAP Broadcast Source"` string; on a hit, it creates a periodic-advertising sync, builds a BAP broadcast sink for that PA handle and broadcast ID, decodes the BASE / BIGInfo from the PA channel, and then synchronizes to the BIG to receive BIS streams.
+
+The build runs on top of the NimBLE host stack and the ESP BLE Audio component set. Sink-side APIs used: `esp_ble_audio_common_init` / `_start`, `esp_ble_audio_pacs_register` + `esp_ble_audio_pacs_cap_register` (sink PAC and sink location enabled), `esp_ble_audio_bap_scan_delegator_register` (so a Broadcast Assistant can drive PA-sync, broadcast-code, and BIS-sync requests via BASS), `esp_ble_audio_bap_broadcast_sink_register_cb`, `esp_ble_audio_bap_broadcast_sink_create` / `_sync` / `_stop` / `_delete`, and `esp_ble_audio_bap_base_get_subgroup_count` / `_get_bis_indexes`. PAC capabilities are LC3 with sample rates 16 kHz + 24 kHz, frame duration 10 ms, 1 channel, 40–60 octets/frame, 1 frame/SDU. The fallback broadcast code is `"1234"`; if a Broadcast Assistant has supplied one through BASS it is used instead.
+
+After PA sync is established, `ble_gap_disc_cancel()` stops the extended scanner — BASE/BIGInfo arrive over the PA channel — and `pa_sync_lost()` re-arms the scanner.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4)
-* A BAP Broadcast Source (e.g. another device or sample running as broadcast source) that is advertising and sending broadcast audio
+* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4, ESP32-S31)
+* A peer running the [broadcast_source](../broadcast_source) example (or another BAP Broadcast Source advertising the matching name)
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
-
-```bash
-idf.py set-target esp32h4
-```
-
-### Configure the Project
-
-Open the project configuration menu:
+Open menuconfig:
 
 ```bash
 idf.py menuconfig
 ```
 
-In the **Example: Broadcast Sink** menu:
+No build-time options — runtime defaults are baked into source. The example always runs both: it scans for `"BAP Broadcast Source"` directly and registers a BASS scan delegator so a Broadcast Assistant could also drive sync (PAST is rejected — see `pa_sync_req_cb`).
 
-* **Whether to wait for a Broadcast Assistant**: If enabled, the device advertises connectable and waits for a Broadcast Assistant to connect and send PA sync, broadcast code, and BIS sync requests via the Scan Delegator; the sink then syncs according to those requests.
+### Security & Pairing
 
-### Build and Flash
+The example inherits a Just-Works pairing model (LE Secure Connections, no MITM, no I/O capability) with bonding enabled from the shared init at `../common_components/example_init/ble_audio_example_init.c`; change pairing/IO-cap there if needed.
 
-Run the following to build, flash and monitor:
+## Build & Flash
 
 ```bash
+idf.py set-target esp32h4   # or esp32s31
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack, and LE Audio common layer (`esp_ble_audio_common_init`). Register PACS with sink capabilities (LC3), register BAP scan delegator callbacks and broadcast sink callbacks, then start the audio stack. Set device name if needed.
-2. **Scanning**: Start extended scanning. On scan report, look for Broadcast Audio service data (UUID + broadcast ID). Filter by the hardcoded target device name (`BAP Broadcast Source`). When a matching advertiser with periodic advertising is found and not already syncing, create periodic advertising synchronization.
-3. **PA sync**: When periodic sync is established, create a BAP Broadcast Sink (`esp_ble_audio_bap_broadcast_sink_create`) for that sync handle and broadcast ID.
-4. **BASE and syncable**: When the BASE is received, the sink gets subgroup count and BIS index bitfield. When BIGInfo indicates the sink is syncable, call `esp_ble_audio_bap_broadcast_sink_sync` with the chosen BIS bitfield and broadcast code (from menuconfig or from the scan delegator). Streams are bound to the registered stream array.
-5. **Streams**: As each BIS stream starts, the stream started callback runs; when all requested streams have started, the sink is considered running. Incoming audio data is delivered in the stream receive callback; the example counts valid, error, and lost packets per stream and logs periodically. When streams stop or PA sync is lost, the sink is cleaned up.
+1. `app_main` initializes NVS, calls `bluetooth_init()`, and calls `esp_ble_audio_common_init(&info)` with `info.gap_cb = iso_gap_app_cb`.
+2. PACS is registered (`snk_pac` + `snk_loc`), each stream's `ops` field is wired to `stream_ops`, and the LC3 sink capability is registered via `esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SINK, ...)`.
+3. The scan delegator (`scan_delegator_cbs`: `recv_state_updated`, `pa_sync_req`, `pa_sync_term_req`, `broadcast_code`, `bis_sync_req`) and broadcast-sink callbacks (`base_recv`, `syncable`) are registered, then `esp_ble_audio_common_start(NULL)` runs.
+4. `ext_scan_start()` runs passive extended discovery (`itvl=window=160`). For each `ESP_BLE_AUDIO_GAP_EVENT_EXT_SCAN_RECV`, `data_cb` matches the complete/short/broadcast name AD type against `"BAP Broadcast Source"` and records the Broadcast ID from the Broadcast Audio Service Data.
+5. On match (and only when not already PA-syncing and no scan-delegator state is pinned), `pa_sync_create()` calls `ble_gap_periodic_adv_sync_create` with `skip=0`, `sync_timeout=10s`.
+6. `ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC` clears `pa_syncing`, cancels discovery, stores `sync_handle`, and calls `esp_ble_audio_bap_broadcast_sink_create()`.
+7. `base_recv_cb` extracts the subgroup count and BIS index bitfield (masked by `bis_index_mask`); when no Broadcast Assistant is connected, `requested_bis_sync` defaults to `ESP_BLE_AUDIO_BAP_BIS_SYNC_NO_PREF`.
+8. `syncable_cb` AND-masks the BASE bitfield with the requested mask, copies `TARGET_BROADCAST_CODE` if the BIG is encrypted (unless BASS already supplied one), and calls `esp_ble_audio_bap_broadcast_sink_sync()` with the chosen mask and `streams_p`.
+9. `stream_started_cb` resets per-stream RX metrics and increments `stream_count_started`; `stream_recv_cb` updates metrics via `example_audio_rx_metrics_on_recv()`. When all streams have stopped, `stream_stopped_cb` deletes the broadcast sink. `pa_sync_lost()` clears the cached `req_recv_state`, deletes any sink, and restarts the scanner.
 
-## Example Output
+## Expected Log
 
 ```
+I (xxx) BAP_BSNK: Scanning for broadcast source...
 I (xxx) BAP_BSNK: Broadcast source PA synced, creating Broadcast Sink
-I (xxx) BAP_BSNK: Received BASE with 1 subgroups from broadcast sink 0x...
-I (xxx) BAP_BSNK: Broadcast sink (0x...) is syncable, BIG not encrypted
-I (xxx) BAP_BSNK: Stream 0x... started (1/1)
-I (xxx) BAP_BSNK: Received 1000(1000/0/0) ISO data packets (stream 0x...)
-...
+I (xxx) BAP_BSNK: BASE received (... subgroup(s))
+I (xxx) BAP_BSNK: bis_index_bitfield = 0x...
+I (xxx) BAP_BSNK: Broadcast sink syncable, BIG encrypted
+I (xxx) BAP_BSNK: Syncing to broadcast: BIS mask 0x... (... stream(s))
+I (xxx) BAP_BSNK: [SNK #0] Stream started (.../...)
 ```
 
-If PA sync is lost:
+Per-stream RX metrics are then emitted under the `BAP_BSNK` tag, name `SNK #<idx>`. If a Broadcast Assistant connects via BASS, additional log lines appear:
 
 ```
-I (xxx) BAP_BSNK: PA sync lost, reason ...
+I (xxx) BAP_BSNK: Receive state updated, pa_sync 0x... encrypt 0x...
+I (xxx) BAP_BSNK: Received request to sync to PA (PAST {not }available): ...
+I (xxx) BAP_BSNK: Broadcast code received
+I (xxx) BAP_BSNK: BIS sync req: broadcast_id 0x... BIS mask 0x... subgroup mask 0x... (...)
+I (xxx) BAP_BSNK: Received request to terminate PA sync
 ```
+
+On teardown / sync loss:
+
+```
+I (xxx) BAP_BSNK: [SNK #0] Stream stopped, reason 0x... (.../...)
+I (xxx) BAP_BSNK: PA sync lost: sync_handle ... reason 0x...
+I (xxx) BAP_BSNK: PA sync terminated
+```
+
+## Peer Pairing
+
+Run [broadcast_source](../broadcast_source/) on a second board. Expected interaction sequence:
+
+1. Source advertises extended PDU containing the Broadcast Audio Announcement Service UUID, Broadcast ID `0x123456`, and complete name `"BAP Broadcast Source"`; sink scans and matches by name + UUID.
+2. Source's periodic advertising carries the encoded BASE; sink establishes PA sync and parses the BASE to recover subgroup count and BIS index bitfield.
+3. Source's BIGInfo advertises the BIG as encrypted (broadcast code `"1234"`); sink reports `BIG encrypted`.
+4. Source starts the BIG and the two BIS streams (`FRONT_LEFT`, `FRONT_RIGHT`); sink calls `esp_ble_audio_bap_broadcast_sink_sync()` with the chosen BIS bitfield and the matching broadcast code.
+5. Source's TX scheduler keeps pushing SDUs at `preset_active.qos.interval`; sink stream `recv` callbacks deliver the data and update RX metrics.
+6. Stopping the source (or losing PA sync) triggers `stream_stopped_cb` on the sink, which deletes the broadcast sink and resumes scanning.

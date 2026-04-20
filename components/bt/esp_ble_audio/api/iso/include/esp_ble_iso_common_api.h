@@ -37,6 +37,8 @@ extern "C" {
  * BIT(0) that represents index 0x01. To synchronize to e.g. BIS
  * indexes 0x01 and 0x02, the bitfield value should be BIT(0) | BIT(1).
  * As a general notation, to sync to BIS index N use BIT(N - 1).
+ *
+ * @param   x               BIS index (1-based).
  */
 #define ESP_BLE_ISO_BIS_INDEX_BIT(x)        BT_ISO_BIS_INDEX_BIT(x)
 

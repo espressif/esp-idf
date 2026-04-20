@@ -35,7 +35,7 @@
 #define ADV_SECONDARY_PHY       BLE_HCI_LE_PHY_2M
 #define ADV_INTERVAL            BLE_GAP_ADV_ITVL_MS(200)
 
-#define SECURITY_LEVEL          ESP_BLE_ISO_SECURITY_MITM
+#define SECURITY_LEVEL          ESP_BLE_ISO_SECURITY_NO_MITM
 
 #define CIS_SDU_SIZE            120
 
@@ -51,11 +51,11 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
     };
     esp_err_t err;
 
-    ESP_LOGI(TAG, "ISO channel %p connected", chan);
+    ESP_LOGI(TAG, "[CIS #0] Connected");
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_OUTPUT, &data_path);
     if (err) {
-        ESP_LOGE(TAG, "Failed to setup ISO data path, err %d", err);
+        ESP_LOGE(TAG, "[CIS #0] Failed to setup data path, err %d", err);
         return;
     }
 
@@ -64,16 +64,15 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 {
-    ESP_LOGI(TAG, "ISO channel %p disconnected, reason 0x%02x", chan, reason);
+    ESP_LOGI(TAG, "[CIS #0] Disconnected, reason 0x%02x", reason);
 }
 
 static void iso_recv_cb(esp_ble_iso_chan_t *chan,
                         const esp_ble_iso_recv_info_t *info,
                         const uint8_t *data, uint16_t len)
 {
-
     rx_metrics.last_sdu_len = len;
-    example_iso_rx_metrics_on_recv(info, &rx_metrics, TAG, "chan", chan);
+    example_iso_rx_metrics_on_recv(info, &rx_metrics, TAG, "CIS #0");
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -99,7 +98,7 @@ static esp_ble_iso_chan_t iso_chan = {
 static int iso_accept(const esp_ble_iso_accept_info_t *info,
                       esp_ble_iso_chan_t **chan)
 {
-    ESP_LOGI(TAG, "Incoming request from 0x%04x", info->acl->handle);
+    ESP_LOGI(TAG, "Incoming CIS request from handle %u", info->acl->handle);
 
     if (iso_chan.iso) {
         ESP_LOGE(TAG, "No channels available");
@@ -177,23 +176,26 @@ static void ext_adv_start(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Extended adv instance %u started", ADV_HANDLE);
+    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
 }
 
 static void acl_connect(esp_ble_iso_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Conn established:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->acl_connect.conn_handle, event->acl_connect.status,
-             event->acl_connect.role, event->acl_connect.dst.val[5],
-             event->acl_connect.dst.val[4], event->acl_connect.dst.val[3],
-             event->acl_connect.dst.val[2], event->acl_connect.dst.val[1],
-             event->acl_connect.dst.val[0]);
+    if (event->acl_connect.status) {
+        ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
+        return;
+    }
+
+    ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
+             event->acl_connect.conn_handle, event->acl_connect.role,
+             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
+             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
+             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
 }
 
 static void acl_disconnect(esp_ble_iso_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Conn terminated: conn_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "Disconnected: handle %u reason 0x%02x",
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     ext_adv_start();
@@ -201,15 +203,15 @@ static void acl_disconnect(esp_ble_iso_gap_app_event_t *event)
 
 static void security_change(esp_ble_iso_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Security change:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u sec_level %u bonded %u "
-             "peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->security_change.conn_handle, event->security_change.status,
-             event->security_change.role, event->security_change.sec_level,
-             event->security_change.bonded, event->security_change.dst.val[5],
-             event->security_change.dst.val[4], event->security_change.dst.val[3],
-             event->security_change.dst.val[2], event->security_change.dst.val[1],
-             event->security_change.dst.val[0]);
+    if (event->security_change.status) {
+        ESP_LOGE(TAG, "Security change failed, status %d", event->security_change.status);
+        return;
+    }
+
+    ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
+             event->security_change.conn_handle,
+             event->security_change.sec_level,
+             event->security_change.bonded);
 }
 
 static void iso_gap_app_cb(esp_ble_iso_gap_app_event_t *event)

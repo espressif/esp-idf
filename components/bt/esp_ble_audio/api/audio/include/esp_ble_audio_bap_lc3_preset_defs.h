@@ -57,6 +57,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 8_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -71,6 +72,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 8_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -85,6 +87,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 16_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -99,6 +102,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 16_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -113,6 +117,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 24_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -129,6 +134,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  *
  * Mandatory to support as unicast server.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -143,6 +149,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 32_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -157,6 +164,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 32_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -171,6 +179,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 441_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -185,6 +194,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 441_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -199,6 +209,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -213,6 +224,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -227,6 +239,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_3_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -241,6 +254,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_4_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -255,6 +269,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_5_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -269,6 +284,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_6_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -283,6 +299,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 8_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -297,6 +314,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 8_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -311,6 +329,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 16_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -325,6 +344,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 16_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -339,6 +359,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 24_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -353,6 +374,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 24_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -367,6 +389,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 32_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -381,6 +404,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 32_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -395,6 +419,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 441_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -409,6 +434,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 441_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -423,6 +449,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -437,6 +464,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -451,6 +479,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_3_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -465,6 +494,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_4_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -479,6 +509,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_5_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -493,6 +524,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Unicast 48_6_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -507,6 +539,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 8_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -521,6 +554,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 8_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -535,6 +569,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 16_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -551,6 +586,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  *
  * Mandatory to support as both broadcast source and sink.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -565,6 +601,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 24_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -581,6 +618,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  *
  * Mandatory to support as broadcast sink.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -595,6 +633,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 32_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -609,6 +648,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 32_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -623,6 +663,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 441_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -637,6 +678,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 441_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -651,6 +693,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_1_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -665,6 +708,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_2_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -679,6 +723,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_3_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -693,6 +738,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_4_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -707,6 +753,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_5_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -721,6 +768,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_6_1 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -735,6 +783,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 8_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -749,6 +798,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 8_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -763,6 +813,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 16_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -779,6 +830,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  *
  * Mandatory to support as both broadcast source and sink.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -793,6 +845,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 24_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -809,6 +862,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  *
  * Mandatory to support as broadcast sink.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -823,6 +877,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 32_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -837,6 +892,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 32_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -851,6 +907,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 441_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -865,6 +922,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 441_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -879,6 +937,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_1_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -893,6 +952,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_2_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -907,6 +967,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_3_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -921,6 +982,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_4_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -935,6 +997,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_5_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */
@@ -949,6 +1012,7 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
 /**
  * @brief   Helper to declare LC3 Broadcast 48_6_2 codec configuration.
  *
+ * @param   _name           Preset configuration name.
  * @param   _loc            Audio channel location bitfield.
  * @param   _stream_context Stream context.
  */

@@ -53,13 +53,15 @@
 
 int example_audio_gap_event_cb(struct ble_gap_event *event, void *arg);
 
-void example_print_codec_cfg(const esp_ble_audio_codec_cfg_t *codec_cfg);
+void example_print_codec_cfg(const char *tag, const esp_ble_audio_codec_cfg_t *codec_cfg);
 
-void example_print_codec_cap(const esp_ble_audio_codec_cap_t *codec_cap);
+void example_print_codec_cap(const char *tag, const esp_ble_audio_codec_cap_t *codec_cap);
 
-void example_print_qos(const esp_ble_audio_bap_qos_cfg_t *qos);
+void example_print_meta(const char *tag, const uint8_t *meta, size_t meta_len);
 
-void example_print_qos_pref(const esp_ble_audio_bap_qos_cfg_pref_t *pref);
+void example_print_qos(const char *tag, const esp_ble_audio_bap_qos_cfg_t *qos);
+
+void example_print_qos_pref(const char *tag, const esp_ble_audio_bap_qos_cfg_pref_t *pref);
 
 bool example_is_substring(const char *substr, const char *str);
 
@@ -104,15 +106,13 @@ int example_audio_tx_scheduler_stop(example_audio_tx_scheduler_t *scheduler);
 void example_audio_tx_scheduler_on_sent(example_audio_tx_scheduler_t *scheduler,
                                         const esp_ble_iso_tx_cb_info_t *info,
                                         const char *tag,
-                                        const char *obj_name,
-                                        const void *obj);
+                                        const char *obj_name);
 
 void example_audio_rx_metrics_reset(example_audio_rx_metrics_t *metrics);
 
 void example_audio_rx_metrics_on_recv(const esp_ble_iso_recv_info_t *info,
                                       example_audio_rx_metrics_t *metrics,
                                       const char *tag,
-                                      const char *obj_name,
-                                      const void *obj);
+                                      const char *obj_name);
 
 #endif /* BLE_AUDIO_EXAMPLE_UTILS_H_ */

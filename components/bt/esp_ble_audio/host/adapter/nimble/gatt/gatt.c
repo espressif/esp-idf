@@ -23,6 +23,8 @@
 #include "host/ble_hs_mbuf.h"
 
 #include "common/host.h"
+
+#include "nimble/hs_error.h"
 #include "common/app/gatt.h"
 
 void bt_le_nimble_gatt_post_event(void *param)
@@ -418,7 +420,7 @@ int bt_le_nimble_gatts_notify(struct bt_conn *conn, struct bt_gatt_notify_params
 {
     LOG_DBG("[N]GattsNtf[%u]", conn ? conn->handle : UINT16_MAX);
 
-    return gatts_notify(conn, params);
+    return nimble_err_to_errno(gatts_notify(conn, params));
 }
 
 int bt_le_nimble_gatts_indicate(struct bt_conn *conn, struct bt_gatt_indicate_params *params)
@@ -514,7 +516,7 @@ int bt_le_nimble_gattc_write_without_rsp(struct bt_conn *conn, uint16_t handle,
 {
     LOG_DBG("[N]GattcWrCmd[%u][%u][%u]", conn->handle, handle, length);
 
-    return ble_gattc_write_no_rsp_flat(conn->handle, handle, data, length);
+    return nimble_err_to_errno(ble_gattc_write_no_rsp_flat(conn->handle, handle, data, length));
 }
 
 int bt_le_nimble_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)

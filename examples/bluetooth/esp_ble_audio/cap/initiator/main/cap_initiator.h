@@ -30,6 +30,7 @@ struct tx_stream {
     uint16_t seq_num;
     uint8_t *data;
     example_audio_tx_scheduler_t scheduler;
+    bool is_broadcast;
 };
 
 void cap_initiator_unicast_gap_cb(esp_ble_audio_gap_app_event_t *event);
@@ -46,7 +47,7 @@ int cap_initiator_broadcast_init(void);
 
 void cap_initiator_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data);
 
-int cap_initiator_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream);
+int cap_initiator_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, bool is_broadcast);
 
 int cap_initiator_tx_unregister_stream(esp_ble_audio_cap_stream_t *cap_stream);
 

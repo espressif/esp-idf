@@ -5,72 +5,156 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example demonstrates the **Common Audio Profile (CAP) Acceptor** functionality. It advertises so that a CAP Initiator can connect and set up available audio streams. The acceptor operates in one of two mutually exclusive modes selected at build time: as a **BAP Unicast Server** (unicast mode, for use with a CAP Initiator) or as a **BAP Broadcast Sink** (broadcast mode). In broadcast mode, it can be configured to scan for broadcast sources by itself, or to wait for a Broadcast Assistant to connect and direct the sync. Run it together with the [initiator](../initiator) example on another device as the CAP Initiator.
+## Overview
 
-The implementation uses the NimBLE host stack with ISO and LE Audio support, ESP-BLE-AUDIO (PACS, CAP acceptor, BAP unicast server, BAP broadcast sink, BAP scan delegator). Advertising includes the CAS (Common Audio Service) UUID and service data; when unicast is enabled it also advertises ASCS with targeted announcement and sink/source contexts; when broadcast is enabled it can include BASS (Broadcast Assistant) service data. PACS advertises LC3 sink and source capabilities (e.g. 7.5 ms / 10 ms frame, stereo, multiple contexts). The example supports optional Kconfig: unicast, broadcast, self-scan for broadcast sources, device name, and (when self-scan) target broadcast device name and broadcast code.
+This example implements the **Common Audio Profile (CAP) Acceptor** role on top of the NimBLE host stack with ISO and LE Audio support. It is built in one of two mutually exclusive sub-modes selected at build time: a **CAP Acceptor / BAP Unicast Server**, or a **CAP Acceptor / BAP Broadcast Sink** (with the BAP Scan Delegator role enabled). PACS is registered in both modes with LC3 sink and source capabilities (any sampling frequency, 7.5 ms or 10 ms frame, up to 2 channels, 30..155 octets per frame, up to 2 frames per SDU). Sink and source PAC location are set to `FRONT_LEFT | FRONT_RIGHT` (note in `main.c`: with `MONO_AUDIO`, Samsung S24 declines unicast).
+
+In **unicast** mode (`cap_acceptor_unicast.c`) the acceptor registers BAP unicast-server callbacks (config / reconfig / qos / enable / start / metadata / disable / stop / release) and CAP stream ops, and on enable of a sink ASE automatically issues `bap_stream_start` (Receiver Start Ready). When the source ASE starts, an internal TX scheduler begins sending dummy SDUs. In **broadcast** mode (`cap_acceptor_broadcast.c`) the acceptor registers BAP scan-delegator and broadcast-sink callbacks, drives PA sync (without PAST) on request, receives BASE and BIGInfo, then calls `esp_ble_audio_bap_broadcast_sink_sync` on the first BIS index. Optional **self-scan** lets the acceptor scan for a broadcast source named `CAP Broadcast Source` and use a hardcoded broadcast code `1234` instead of waiting for a Broadcast Assistant.
+
+The acceptor advertises connectable extended advertising on handle 0 with flags, the ASCS+CAS UUID list, CAS service data with targeted-announcement byte, ASCS targeted-announcement and contexts (unicast build), BASS service data (broadcast build), and the complete device name `cap_acceptor`. The GAP/GATT device name is set to `CAP Acceptor`.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4)
-* Optionally, another device running the [initiator](../initiator) example as CAP Initiator (for unicast and/or as Broadcast Assistant)
+* A board with BLE 5.2, ISO, and LE Audio support (e.g. ESP32-H4, ESP32-S31)
+* Peer device running the paired example
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
-
-```bash
-idf.py set-target esp32h4
-```
-
-### Configure the Project
-
-Open the configuration menu to select the mode:
+Open menuconfig:
 
 ```bash
 idf.py menuconfig
 ```
 
-Under **Example: CAP Acceptor**, select one of:
+Under **Example: CAP Acceptor** -> **CAP Acceptor mode**:
 
-* **Unicast** — act as a BAP Unicast Server; start connectable advertising for a CAP Initiator
-* **Broadcast** — act as a BAP Broadcast Sink; receive broadcast audio. When this mode is selected, you can additionally enable:
-  * **Scan for Broadcast Sources without Broadcast Assistant** — start scanning for broadcast sources independently, without waiting for a Broadcast Assistant to connect
+* **Unicast** (`EXAMPLE_UNICAST`, default) — act as BAP Unicast Server; advertise CAS + ASCS for a CAP Initiator. Mutually exclusive with Broadcast.
+* **Broadcast** (`EXAMPLE_BROADCAST`) — act as BAP Broadcast Sink with Scan Delegator; advertise CAS + BASS. Mutually exclusive with Unicast.
 
-### Build and Flash
+When **Broadcast** is selected, an additional option appears:
 
-Run the following to build, flash and monitor:
+* **Scan for Broadcast Sources without Broadcast Assistant** (`EXAMPLE_SCAN_SELF`) — start scanning at boot for a source advertising the name `CAP Broadcast Source`; on match, create the PA sync directly. The hardcoded broadcast code `1234` is used if the BIG is encrypted. Without this option, a separate Broadcast Assistant must drive PA / BIS sync over BASS.
+
+### Security & Pairing
+
+Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, inherited from `../../common_components/example_init/ble_audio_example_init.c`. Change pairing or IO-cap there.
+
+## Build & Flash
 
 ```bash
+idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack, and LE Audio common layer (`esp_ble_audio_common_init`) with GAP and GATT callbacks. Register PACS (sink and source PAC and location), register sink and source capabilities (LC3), set PACS location and supported/available contexts (`init_cap_acceptor`). In unicast mode, initialize the CAP acceptor unicast part (BAP unicast server, stream alloc/release). In broadcast mode, initialize the CAP acceptor broadcast part (BAP broadcast sink, scan delegator). Start the audio stack and set the device name.
-2. **Scan (optional)**: In broadcast mode with self-scan enabled, start scanning for broadcast sources before or in addition to advertising.
-3. **Advertising**: Start connectable extended advertising with flags, CAS service data, and additionally ASCS service data in unicast mode or BASS service data in broadcast mode, plus device name (`cap_acceptor`).
-4. **Initiator connection (unicast mode)**: When a CAP Initiator connects, the peer connection handle is stored. On MTU exchange the acceptor may start GATT service discovery. The initiator discovers ASEs and sets up unicast streams; the acceptor allocates streams and reports stream released when appropriate.
-5. **Broadcast (broadcast mode)**: On PA sync events the acceptor syncs to the broadcast stream; on PA sync lost it handles disconnection. With self-scan, scan results are processed to sync to the chosen broadcast source.
+1. `app_main` initializes NVS, the Bluetooth controller (`bluetooth_init`) and the LE Audio common layer (`esp_ble_audio_common_init`) with GAP and GATT callbacks.
+2. `init_cap_acceptor` registers PACS, registers sink+source PAC capabilities, sets PAC location (`FRONT_LEFT | FRONT_RIGHT`) and supported/available contexts.
+3. The selected sub-mode initializes itself: `cap_acceptor_unicast_init` registers BAP unicast-server callbacks, CAP stream ops on the sink and source streams, and a TX scheduler; or `cap_acceptor_broadcast_init` registers BAP scan-delegator and broadcast-sink callbacks plus broadcast stream ops.
+4. `esp_ble_audio_common_start` starts the audio stack and the device name is set to `CAP Acceptor`.
+5. If `EXAMPLE_SCAN_SELF` is set, `check_start_scan` starts extended scanning for the broadcast source.
+6. `ext_adv_start` configures and starts connectable extended advertising on handle 0 with the CAS / ASCS / BASS service data appropriate to the build.
+7. **Unicast**: on ACL connect the connection handle is stored. On MTU change the acceptor starts service discovery (acting as GATT client). The unicast server then handles config -> reconfig -> qos -> enable -> start (auto Receiver Start Ready for sink ASEs) -> metadata -> disable -> stop -> release per ASE; when the source ASE starts, the TX scheduler begins sending dummy SDUs.
+8. **Broadcast**: on `pa_sync_req` from a Broadcast Assistant (or on a scan match in self-scan mode) the acceptor creates a PA sync without PAST. On PA sync, it creates a broadcast sink for the broadcast ID, receives BASE and BIGInfo, then syncs to the first BIS. Stream `started` enters the synced state; `stopped` and `pa_sync_lost` clear flags and (in self-scan mode) restart scanning.
+9. On ACL disconnect the connection handle is reset and `ext_adv_start` re-arms advertising.
 
-## Example Output
+## Expected Log
+
+TAG: `CAP_ACC`.
+
+### Unicast mode
 
 ```
-I (xxx) CAP_ACC: Extended adv instance 0 started
-I (xxx) CAP_ACC: connection established, status 0
-I (xxx) CAP_ACC: gatt mtu change, conn_handle 1, mtu  ...
-...
-I (xxx) CAP_ACC: PA synced, handle 0x... status 0x00
-...
+I (xxx) CAP_ACC: Advertising started (handle 0)
+I (xxx) CAP_ACC: Connected: handle ... role ... peer ...
+I (xxx) CAP_ACC: MTU updated: handle ... mtu ...
+I (xxx) CAP_ACC: Service discovery started: handle ...
+I (xxx) CAP_ACC: Service discovery complete: handle ...
+I (xxx) CAP_ACC: [SNK] Config request, codec cfg:
+I (xxx) CAP_ACC: [SNK #0] Stream configured, QoS preference:
+I (xxx) CAP_ACC: [SRC] Config request, codec cfg:
+I (xxx) CAP_ACC: [SRC #0] Stream configured, QoS preference:
+I (xxx) CAP_ACC: [SNK #0] QoS request:
+I (xxx) CAP_ACC: [SNK #0] QoS set
+I (xxx) CAP_ACC: [SRC #0] QoS request:
+I (xxx) CAP_ACC: [SRC #0] QoS set
+I (xxx) CAP_ACC: [SNK #0] Enable request (meta_len ...)
+I (xxx) CAP_ACC: [SNK #0] Stream enabled
+I (xxx) CAP_ACC: [SRC #0] Enable request (meta_len ...)
+I (xxx) CAP_ACC: [SRC #0] Stream enabled
+I (xxx) CAP_ACC: [SNK #0] Stream started
+I (xxx) CAP_ACC: [SRC #0] Start request
+I (xxx) CAP_ACC: [SRC #0] Stream started
+```
+
+On teardown / disconnect:
+
+```
+I (xxx) CAP_ACC: [SNK #0] Stop request
+I (xxx) CAP_ACC: [SNK #0] Stream stopped, reason 0x...
+I (xxx) CAP_ACC: [SNK #0] Release request
+I (xxx) CAP_ACC: [SNK #0] Stream released
 I (xxx) CAP_ACC: Sink stream released
+I (xxx) CAP_ACC: Disconnected: handle ... reason 0x...
+I (xxx) CAP_ACC: Advertising started (handle 0)
 ```
 
-If the connection is lost:
+### Broadcast mode (Broadcast Assistant)
 
 ```
-I (xxx) CAP_ACC: connection disconnected, reason 0x...
-I (xxx) CAP_ACC: PA sync lost, handle 0x... reason ...
+I (xxx) CAP_ACC: Advertising started (handle 0)
+I (xxx) CAP_ACC: Connected: handle ... role ... peer ...
+I (xxx) CAP_ACC: Receive state updated, pa_sync 0x... encrypt 0x...
+I (xxx) CAP_ACC: Received request to sync to PA (PAST not available): ...
+I (xxx) CAP_ACC: Syncing without PAST
+I (xxx) CAP_ACC: PA sync ... synced for broadcast sink
+I (xxx) CAP_ACC: Creating broadcast sink for broadcast ID 0x......
+I (xxx) CAP_ACC: BASE received
+I (xxx) CAP_ACC: BIGInfo received
+I (xxx) CAP_ACC: BIS sync request received (src_id ...): 0x........
+I (xxx) CAP_ACC: Syncing to broadcast with bitfield 0x........
+I (xxx) CAP_ACC: [SNK #0] Stream started
 ```
+
+### Broadcast mode (self-scan)
+
+```
+I (xxx) CAP_ACC: Advertising started (handle 0)
+I (xxx) CAP_ACC: Scanning for broadcast source...
+I (xxx) CAP_ACC: Syncing without PAST from scan
+I (xxx) CAP_ACC: PA sync ... synced for broadcast sink
+I (xxx) CAP_ACC: Creating broadcast sink for broadcast ID 0x......
+I (xxx) CAP_ACC: BASE received
+I (xxx) CAP_ACC: BIGInfo received
+I (xxx) CAP_ACC: Syncing to broadcast with bitfield 0x........
+I (xxx) CAP_ACC: [SNK #0] Stream started
+```
+
+On PA sync loss:
+
+```
+I (xxx) CAP_ACC: [SNK #0] Stream stopped, reason 0x...
+I (xxx) CAP_ACC: PA sync lost: sync_handle ... reason 0x...
+I (xxx) CAP_ACC: Scanning for broadcast source...
+```
+
+## Peer Pairing
+
+Run the [initiator](../initiator/) on a second board. The initiator and acceptor must be configured for the **same sub-mode** — both `EXAMPLE_UNICAST`, or both `EXAMPLE_BROADCAST` — otherwise they will not pair.
+
+### Unicast
+
+1. Flash this acceptor with `EXAMPLE_UNICAST`; it advertises connectable with CAS + ASCS service data and PACS contexts.
+2. Flash the initiator with `EXAMPLE_UNICAST`; it scans, finds CAS, connects and pairs.
+3. The acceptor exchanges MTU, runs service discovery, then handles ASCS config / qos / enable for both sink and source ASEs.
+4. The sink ASE auto-starts on enable (Receiver Start Ready); the source ASE starts on the initiator's `start` and the acceptor's TX scheduler begins.
+5. Bidirectional audio runs until either side disconnects.
+
+### Broadcast
+
+1. Flash the initiator with `EXAMPLE_BROADCAST`; it advertises as `CAP Broadcast Source` (broadcast ID `0x123456`) and starts the BIG.
+2. Flash this acceptor with `EXAMPLE_BROADCAST`. Either enable `EXAMPLE_SCAN_SELF` to self-scan for the source by name (broadcast code `1234`), or leave it disabled and use a separate Broadcast Assistant that connects via BASS to drive PA / BIS sync.
+3. The acceptor PA-syncs, receives BASE and BIGInfo, syncs the first BIS, and `[SNK #0] Stream started`.
+4. On PA sync loss the acceptor cleans up; in self-scan mode it restarts scanning.

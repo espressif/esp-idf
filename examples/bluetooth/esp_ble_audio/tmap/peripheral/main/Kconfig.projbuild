@@ -1,15 +1,8 @@
 # SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
-# SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Example: TMAP Peripheral (CT & UMR)"
-
-    config EXAMPLE_TMAP_PER_SET_RANK
-        int "Device rank in set"
-        depends on EXAMPLE_TMAP_PER_DUO
-        range 1 2
-        help
-            Rank of this device in set.
 
     choice EXAMPLE_TMAP_PER_TYPE_CHOICE
 
@@ -26,6 +19,14 @@ menu "Example: TMAP Peripheral (CT & UMR)"
             select BT_CAP_ACCEPTOR_SET_MEMBER
 
     endchoice
+
+    if EXAMPLE_TMAP_PER_DUO
+        config EXAMPLE_TMAP_PER_SET_RANK
+            int "Device rank in set"
+            range 1 2
+            help
+                Rank of this device in set.
+    endif
 
     choice EXAMPLE_TMAP_PER_LOCATION
 

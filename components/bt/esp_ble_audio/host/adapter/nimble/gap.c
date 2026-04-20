@@ -17,16 +17,66 @@
 #include <../host/iso_internal.h>
 
 #include "host/ble_gap.h"
+#include "host/ble_store.h"
 #include "services/gap/ble_svc_gap.h"
 
 #include "common/host.h"
 #include "common/app/gap.h"
 
+#include "nimble/hs_error.h"
+
+/* Map a NimBLE connection's security state to Zephyr bt_security_t.
+ *
+ * To reach L3/L4 the app must configure NimBLE for authenticated pairing:
+ *   ble_hs_cfg.sm_mitm   = 1;
+ *   ble_hs_cfg.sm_io_cap = <non-NO_IO cap matching the peer>;
+ *                          (e.g. DISP_ONLY + KEYBOARD_ONLY -> Passkey Entry,
+ *                                DISP_YES_NO on both sides -> Numeric Compare)
+ * L4 additionally requires ble_hs_cfg.sm_sc = 1 (LE Secure Connections).
+ *
+ * ble_gap_sec_state does not expose an SC flag; without it we cannot tell
+ * legacy authenticated pairing apart from SC. Look up the peer's LTK record
+ * to read the persisted sc bit. If the lookup fails (not bonded, store
+ * unavailable) downgrade to L3 conservatively.
+ */
+static uint8_t nimble_desc_to_sec_level(const struct ble_gap_conn_desc *desc)
+{
+    const struct ble_gap_sec_state *sec_state = &desc->sec_state;
+    struct ble_store_value_sec value = {0};
+    struct ble_store_key_sec key = {0};
+    int rc;
+
+    /* L1: !encrypted */
+    if (!sec_state->encrypted) {
+        return BT_SECURITY_L1;
+    }
+
+    /* L2: encrypted, unauthenticated (Just Works) */
+    if (!sec_state->authenticated) {
+        return BT_SECURITY_L2;
+    }
+
+    /* L3: encrypted, authenticated, key_size < 16 */
+    if (sec_state->key_size < 16) {
+        return BT_SECURITY_L3;
+    }
+
+    key.peer_addr = desc->peer_id_addr;
+    rc = ble_store_read_peer_sec(&key, &value);
+    if (rc != 0 || !value.sc) {
+        /* Cannot confirm SC -> conservatively L3 */
+        return BT_SECURITY_L3;
+    }
+
+    /* L4: encrypted, authenticated, 128-bit key, LE Secure Connections */
+    return BT_SECURITY_L4;
+}
+
 void bt_le_nimble_gap_post_event(void *param)
 {
-    struct bt_le_gap_app_param *qev;
-    struct ble_gap_conn_desc desc;
-    struct ble_gap_event *ev;
+    struct bt_le_gap_app_param *qev = NULL;
+    struct ble_gap_conn_desc desc = {0};
+    struct ble_gap_event *ev = NULL;
     int err;
 
     qev = calloc(1, sizeof(*qev));
@@ -139,7 +189,8 @@ void bt_le_nimble_gap_post_event(void *param)
 
             qev->security_change.conn_handle = ev->enc_change.conn_handle;
             qev->security_change.role = desc.role;
-            qev->security_change.sec_level = BT_SECURITY_L3;
+            qev->security_change.sec_level = nimble_desc_to_sec_level(&desc);
+            qev->security_change.bonded = desc.sec_state.bonded;
             qev->security_change.dst.type = desc.peer_id_addr.type;
             memcpy(qev->security_change.dst.val, desc.peer_id_addr.val, BT_ADDR_SIZE);
         }
@@ -191,15 +242,16 @@ int bt_le_nimble_scan_start(const struct bt_le_scan_param *param, ble_gap_event_
     scan_param.passive = !param->type;
     scan_param.filter_duplicates = 0;
 
-    return ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER, &scan_param, cb, NULL);
+    return nimble_err_to_errno(ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER,
+                                        &scan_param, cb, NULL));
 }
 
 int bt_le_nimble_scan_stop(void)
 {
-    return ble_gap_disc_cancel();
+    return nimble_err_to_errno(ble_gap_disc_cancel());
 }
 
 int bt_le_nimble_iso_disconnect(uint16_t conn_handle, uint8_t reason)
 {
-    return ble_gap_iso_disconnect(conn_handle, reason);
+    return nimble_err_to_errno(ble_gap_iso_disconnect(conn_handle, reason));
 }
