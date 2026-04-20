@@ -145,7 +145,7 @@ void app_main(void)
         .output_clk_freq_hz = EXAMPLE_LED_MATRIX_PIXEL_CLOCK_HZ,
         .trans_queue_depth = 32,
         .max_transfer_size = EXAMPLE_LED_MATRIX_H_RES * sizeof(lv_color_t) * 2, // 2 lines as the maximum transfer size
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,
     };
     ESP_ERROR_CHECK(parlio_new_tx_unit(&config, &tx_unit));
     ESP_ERROR_CHECK(parlio_tx_unit_enable(tx_unit));

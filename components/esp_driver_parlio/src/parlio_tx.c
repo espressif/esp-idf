@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -349,8 +349,8 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     if (data_width < 8) {
         parlio_ll_tx_set_bit_pack_order(hal->regs, config->bit_pack_order);
     }
-    // set sample clock edge
-    parlio_ll_tx_set_sample_clock_edge(hal->regs, config->sample_edge);
+
+    parlio_ll_tx_set_shift_clock_edge(hal->regs, config->shift_edge);
 
 #if SOC_PARLIO_TX_SIZE_BY_DMA
     // Always use DATA LEN EOF as the Parlio TX EOF
