@@ -22,8 +22,12 @@ extern "C" {
 
 // any "dummy" peripheral ID can be used for M2M mode
 #define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0x8200)
-#define LP_AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFFC)
+#define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)
+#define AHB_DMA_LL_TX_EVENT_MASK    (0x3F)
 
+#define LP_AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFFC)
+#define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)
+#define AHB_DMA_LL_TX_EVENT_MASK    (0x3F)
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**

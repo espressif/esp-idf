@@ -12,6 +12,8 @@
 
 static gdma_hal_priv_data_t gdma_axi_hal_priv_data = {
     .m2m_free_periph_mask = AXI_DMA_LL_M2M_FREE_PERIPH_ID_MASK,
+    .tx_event_mask = AXI_DMA_LL_TX_EVENT_MASK,
+    .rx_event_mask = AXI_DMA_LL_RX_EVENT_MASK,
 };
 
 void gdma_axi_hal_start_with_desc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, intptr_t desc_base_addr)
@@ -170,6 +172,15 @@ uint32_t gdma_axi_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gd
     }
 }
 
+#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+void gdma_axi_hal_request_link_switch_event(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_TX) {
+        axi_dma_ll_tx_request_link_switch_event(hal->axi_dma_dev, chan_id);
+    }
+}
+#endif // AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+
 #if SOC_GDMA_SUPPORT_CRC
 void gdma_axi_hal_clear_crc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
 {
@@ -237,6 +248,11 @@ void gdma_axi_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_cha
 }
 #endif // SOC_GDMA_SUPPORT_ETM
 
+bool gdma_axi_hal_is_tx_link_switch_event_supported(gdma_hal_context_t *hal)
+{
+    return axi_dma_ll_tx_is_link_switch_event_supported(hal->axi_dma_dev);
+}
+
 void gdma_axi_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 {
     hal->axi_dma_dev = AXI_DMA_LL_GET_HW(config->group_id - GDMA_LL_AXI_GROUP_START_ID);
@@ -265,5 +281,10 @@ void gdma_axi_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 #if SOC_GDMA_SUPPORT_ETM
     hal->enable_etm_task = gdma_axi_hal_enable_etm_task;
 #endif // SOC_GDMA_SUPPORT_ETM
+
+    hal->is_tx_link_switch_event_supported = gdma_axi_hal_is_tx_link_switch_event_supported;
+#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+    hal->request_link_switch_event = gdma_axi_hal_request_link_switch_event;
+#endif // AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
     axi_dma_ll_set_default_memory_range(hal->axi_dma_dev);
 }

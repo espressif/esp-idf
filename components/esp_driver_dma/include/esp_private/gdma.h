@@ -63,6 +63,7 @@ typedef bool (*gdma_event_callback_t)(gdma_channel_handle_t dma_chan, gdma_event
 typedef struct {
     gdma_event_callback_t on_trans_eof; /*!< Invoked when TX engine meets EOF descriptor */
     gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
+    gdma_event_callback_t on_link_switch; /*!< Invoked when TX link list switches to a new descriptor chain */
 } gdma_tx_event_callbacks_t;
 
 /**
@@ -304,6 +305,26 @@ esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_i
  *      - ESP_FAIL: Set event callbacks failed because of other error
  */
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data);
+
+/**
+ * @brief Request an interrupt when the TX channel switches to a new descriptor chain
+ *
+ * @note This API is only available on targets that support TX link switch interrupt.
+ * @note Register the `on_link_switch` callback by `gdma_register_tx_event_callbacks()` before calling this API.
+ * @note The TX EOF event indicates that GDMA has reached an EOF descriptor. By contrast, the TX link switch
+ *       event indicates that GDMA has started using the next descriptor chain after a link update.
+ *       GDMA can prefetch descriptors from the updated link before the EOF event, so EOF doesn't always mean
+ *       the previous descriptor chain is no longer referenced by GDMA. The link switch event is needed when
+ *       the caller must know that the previous descriptor chain can be reused safely.
+ *
+ * @param[in] dma_tx_chan GDMA TX channel handle
+ * @return
+ *      - ESP_OK: Request link switch event successfully
+ *      - ESP_ERR_INVALID_ARG: Invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: Link switch event is not supported
+ *      - ESP_ERR_INVALID_STATE: Link switch callback is not registered
+ */
+esp_err_t gdma_request_link_switch_event(gdma_channel_handle_t dma_tx_chan);
 
 /**
  * @brief Set GDMA event callbacks for RX channel
