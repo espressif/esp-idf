@@ -24,6 +24,10 @@
 #include "hal/wdt_hal.h"
 #endif
 
+#include "esp_private/esp_sys_event_panic.h"
+#include "esp_private/panic_internal.h"
+#include "esp_private/crosscore_int.h"
+
 #if GDBSTUB_QXFER_FEATURES_ENABLED
 #define GDBSTUB_QXFER_SUPPORTED_STR ";qXfer:features:read+"
 #else
@@ -54,6 +58,7 @@ static void send_reason(void);
 
 esp_gdbstub_scratch_t s_scratch;
 esp_gdbstub_gdb_regfile_t *gdb_local_regfile = &s_scratch.regfile;
+
 
 /**
  * @brief panic handler
@@ -104,6 +109,21 @@ void esp_gdbstub_panic_handler(void *in_frame)
         }
     }
 }
+
+#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
+// Panic event handler - enters GDB stub (never returns)
+// Priority 999 ensures this runs last, after trace and coredump handlers
+ESP_PANIC_HANDLER_REGISTER(esp_gdbstub_panic_event, 999)
+{
+    (void)user_arg;
+    esp_panic_ctx_t *panic_ctx = (esp_panic_ctx_t *)ctx;
+    panic_print_str("Entering gdb stub now.\r\n");
+    panic_disable_all_wdts();
+    esp_gdbstub_panic_handler((void *)panic_ctx->info->frame);
+    // Never returns
+    return ESP_OK;
+}
+#endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */
 
 /**
  * Set interrupt reason to GDB
@@ -610,6 +630,14 @@ void update_breakpoints(void)
         esp_cpu_clear_breakpoint(i);
     }
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+}
+
+// Strong override of the weak hook in esp_system's crosscore_int.c. Called from
+// the crosscore ISR on the target core to apply breakpoint/watchpoint changes
+// requested from the other core. Placed in IRAM as it runs in interrupt context.
+IRAM_ATTR void esp_crosscore_int_gdb_call_hook(void)
+{
+    update_breakpoints();
 }
 
 /** Write breakpoint */

@@ -30,6 +30,7 @@ set(priv_requires
     "esp_hal_usb"
     "esp_driver_usb_serial_jtag"
     "esp_timer"
+    "esp_system"
 )
 set(priv_includes "")
 set(requires "app_trace")

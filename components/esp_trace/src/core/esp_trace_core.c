@@ -23,6 +23,8 @@
 #include "esp_trace.h"
 #include "esp_trace_port_transport.h"
 #include "esp_private/startup_internal.h"
+#include "esp_private/esp_sys_event_system_init.h"
+#include "esp_private/esp_sys_event_panic.h"
 
 static const char *TAG = "esp_trace_core";
 
@@ -229,6 +231,26 @@ void esp_trace_panic_handler(const void *info)
     if (h->transport.vt && h->transport.vt->panic_handler) {
         h->transport.vt->panic_handler(&h->transport, info);
     }
+}
+
+static esp_err_t esp_trace_panic_event_handler(void *user_arg, void *ctx)
+{
+    (void)user_arg;
+    esp_panic_ctx_t *panic_ctx = (esp_panic_ctx_t *)ctx;
+    esp_trace_panic_handler(panic_ctx->info);
+    return ESP_OK;
+}
+
+// Panic event handler - flushes trace buffers on panic
+ESP_PANIC_HANDLER_REGISTER(esp_trace_panic, 100)
+{
+    return esp_trace_panic_event_handler(user_arg, ctx);
+}
+
+// Early breakpoint event handler - flushes trace before returning to debugger
+ESP_PANIC_EARLY_BREAK_HANDLER_REGISTER(esp_trace_panic_early_break, 100)
+{
+    return esp_trace_panic_event_handler(user_arg, ctx);
 }
 
 esp_trace_open_params_t __attribute__((weak)) esp_trace_get_user_params(void)
