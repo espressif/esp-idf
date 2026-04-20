@@ -1,6 +1,6 @@
 # BLE Log Module
 
-A high-performance, modular Bluetooth logging system that provides real-time log capture and transmission capabilities for the ESP-IDF Bluetooth stack.
+A high-performance, modular Bluetooth logging system that provides real-time log capture and asynchronous transmission capabilities for the ESP-IDF Bluetooth stack.
 
 ## Table of Contents
 
@@ -32,18 +32,21 @@ The BLE Log module is an efficient logging system specifically designed for the 
 
 ### Core Functionality
 
-- **Multi-source Log Collection**: Supports multiple log sources including Link Layer, Host, HCI, etc.
+- **Multi-source Log Collection**: Supports multiple log sources including Link Layer, Host, HCI, UART redirection, etc.
 - **High Concurrency Processing**: Uses atomic and spin lock mechanisms for multi-task concurrent writing
 - **Real-time Transmission**: Asynchronous transmission mechanism based on FreeRTOS tasks
-- **Data Integrity**: Configurable checksum mechanism ensures data integrity
-- **Memory Optimization**: Ping-pong buffer design minimizes memory usage
+- **Data Integrity**: Checksum mechanism ensures data integrity (always enabled)
+- **Multi-buffer Transport**: Each LBM manages multiple transport buffers (default 4) for improved throughput over the legacy ping-pong design
+- **Cross-pool Buffer Fallback**: LBM acquire attempts all atomic LBMs before falling back to spinlock LBMs, improving buffer availability under contention
 
 ### Advanced Features
 
+- **UART Redirection**: When using UART DMA on PORT 0, UART output (including `esp_rom_printf`) is transparently redirected through the async log pipeline
 - **Timestamp Synchronization**: Supports timestamp synchronization with external devices (optional)
-- **Enhanced Statistics**: Detailed logging statistics including loss rate analysis (optional)
+- **Enhanced Statistics**: Detailed logging statistics including written/lost frame and byte counts (always enabled)
+- **Buffer Utilization Reporting**: Per-LBM buffer utilization and inflight peak tracking for diagnostics
 - **Link Layer Integration**: Deep integration with ESP-IDF Bluetooth Link Layer
-- **Multiple Transmission Methods**: Supports SPI DMA, UART DMA, and Dummy transmission
+- **Multiple Transmission Methods**: Supports SPI Master DMA, UART DMA, and Dummy transmission
 
 ### Performance Features
 
@@ -58,7 +61,7 @@ The BLE Log module is an efficient logging system specifically designed for the 
 Enable the BLE Log module in `menuconfig`:
 
 ```
-Component config → Bluetooth → Enable BLE Log Module (Experimental)
+Component config → Bluetooth → Enable BT Log Async Output (Dev Only)
 ```
 
 ### 2. Basic Configuration
@@ -102,8 +105,8 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
 
 | Configuration | Default | Description |
 |---------------|---------|-------------|
-| `CONFIG_BLE_LOG_ENABLED` | n | Enable BLE Log module |
-| `CONFIG_BLE_LOG_LBM_TRANS_SIZE` | 512 | Size of each transport buffer |
+| `CONFIG_BLE_LOG_ENABLED` | n | Enable BT Log Async Output |
+| `CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE` | 2048 | Total buffer memory per common LBM (bytes). Divided equally among `BLE_LOG_TRANS_BUF_CNT` (4) internal transport buffers. |
 | `CONFIG_BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT` | 2 | Number of atomic lock LBMs for task context |
 | `CONFIG_BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT` | 1 | Number of atomic lock LBMs for ISR context |
 
@@ -112,23 +115,31 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
 | Configuration | Default | Description |
 |---------------|---------|-------------|
 | `CONFIG_BLE_LOG_LL_ENABLED` | y | Enable Link Layer logging |
-| `CONFIG_BLE_LOG_LBM_LL_TRANS_SIZE` | 1024 | Link Layer transport buffer size |
+| `CONFIG_BLE_LOG_LBM_LL_TRANS_BUF_SIZE` | 2048 | Total buffer memory per Link Layer LBM (bytes). Divided equally among `BLE_LOG_TRANS_BUF_CNT` (4) internal transport buffers. |
 
-### Advanced Features
+### Other Features
 
 | Configuration | Default | Description |
 |---------------|---------|-------------|
-| `CONFIG_BLE_LOG_PAYLOAD_CHECKSUM_ENABLED` | y | Enable payload checksum |
-| `CONFIG_BLE_LOG_ENH_STAT_ENABLED` | n | Enable enhanced statistics |
 | `CONFIG_BLE_LOG_TS_ENABLED` | n | Enable timestamp synchronization |
+| `CONFIG_BLE_LOG_HOST_HCI_LOG_ENABLED` | n | Enable BLE Host side HCI logging |
+
+> **Note**: Payload checksum and enhanced statistics are now always enabled and no longer have separate Kconfig options.
 
 ### Transport Method Configuration
 
 | Transport | Configuration | Description |
 |-----------|---------------|-------------|
-| Dummy | `CONFIG_BLE_LOG_PRPH_DUMMY` | Debug dummy transport |
+| Dummy | `CONFIG_BLE_LOG_PRPH_DUMMY` | Debug dummy transport (default unless `SOC_UHCI_SUPPORTED`) |
 | SPI Master DMA | `CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA` | SPI DMA transport |
-| UART DMA | `CONFIG_BLE_LOG_PRPH_UART_DMA` | UART DMA transport |
+| UART DMA | `CONFIG_BLE_LOG_PRPH_UART_DMA` | UART DMA transport (default when `SOC_UHCI_SUPPORTED`). Default baud rate: 3000000. |
+
+### Deprecated / Removed
+
+| Module | Status | Notes |
+|--------|--------|-------|
+| Legacy SPI Log Output | Deprecated | Moved to `deprecated/` directory. Use BT Log Async Output instead. A separate Kconfig menu "Legacy SPI Log Output" is available for backward compatibility. |
+| UHCI Out | Removed | The standalone UHCI Out module (`ble_log_uhci_out.c`) has been removed. UART DMA transport under the main BLE Log peripheral interface replaces it. |
 
 ## API Reference
 
@@ -187,9 +198,18 @@ typedef enum {
     BLE_LOG_SRC_HOST,            // Host layer logs
     BLE_LOG_SRC_HCI,             // HCI layer logs
     BLE_LOG_SRC_ENCODE,          // Encoding layer logs
+    BLE_LOG_SRC_REDIR,           // UART redirection (PORT 0 only)
     BLE_LOG_SRC_MAX,
 } ble_log_src_t;
 ```
+
+### HCI Log Macro
+
+```c
+#define ble_log_write_hci(direction, data, len)
+```
+
+Writes an HCI packet with direction encoding. `direction` is `BLE_LOG_HCI_DOWNSTREAM` (0) or `BLE_LOG_HCI_UPSTREAM` (1). Direction is encoded in the MSB of the first byte (HCI type).
 
 ### Link Layer API (Conditional Compilation)
 
@@ -213,6 +233,7 @@ enum {
     BLE_LOG_LL_FLAG_ISR,
     BLE_LOG_LL_FLAG_HCI,
     BLE_LOG_LL_FLAG_RAW,
+    BLE_LOG_LL_FLAG_OMDATA,
     BLE_LOG_LL_FLAG_HCI_UPSTREAM,
 };
 ```
@@ -326,31 +347,37 @@ void example_performance_test() {
 
 ### Memory Usage Estimation
 
+Each LBM's total buffer memory is configured directly via Kconfig. The configured value is divided equally among `BLE_LOG_TRANS_BUF_CNT` (currently 4) internal transport buffers.
+
 Memory usage under default configuration:
 
 ```
-Total Buffers = (Atomic Task LBMs + Atomic ISR LBMs + Spin LBMs) × 2 × Transport Buffer Size
-Default Config = (2 + 1 + 2) × 2 × 512 = 5120 bytes
+Common Pool:
+  LBM count = Atomic Task (2) + Atomic ISR (1) + Spinlock (2) = 5
+  Total     = 5 × BLE_LOG_LBM_TRANS_BUF_SIZE = 5 × 2048 = 10240 bytes
 
-Additional when Link Layer enabled:
-LL Buffers = 2 × 2 × 1024 = 4096 bytes
+Link Layer Pool (when CONFIG_BLE_LOG_LL_ENABLED):
+  LBM count = 2 (LL task + LL HCI)
+  Total     = 2 × BLE_LOG_LBM_LL_TRANS_BUF_SIZE = 2 × 2048 = 4096 bytes
 
-Additional when Enhanced Statistics enabled:
-Statistics Data = Log Source Count × sizeof(ble_log_stat_mgr_t) = 8 × 40 = 320 bytes
+Statistics (always enabled):
+  Total     = BLE_LOG_SRC_MAX × sizeof(ble_log_stat_mgr_t) = 9 × 20 = 180 bytes
+
+UART Redirect (when UART DMA on PORT 0):
+  Additional BLE_LOG_TRANS_BUF_CNT (4) transport buffers
 ```
 
 ### Performance Optimization Recommendations
 
 1. **Adjust LBM Count**: Adjust atomic lock LBM count based on concurrency requirements
-2. **Buffer Size**: Adjust transport buffer size based on log volume
-3. **Transport Method**: Choose optimal transport method based on hardware (SPI DMA typically has best performance)
-4. **Checksum**: Consider disabling payload checksum when performance requirements are extremely high
+2. **Buffer Size**: Adjust total buffer memory per LBM based on log volume; must be a multiple of `BLE_LOG_TRANS_BUF_CNT` (4)
+3. **Transport Method**: Choose optimal transport method based on hardware (UART DMA is default on supported SoCs)
 
 ### Real-time Considerations
 
 - Critical code paths are marked with `BLE_LOG_IRAM_ATTR` and run in IRAM
 - Atomic operations avoid lock contention
-- Ping-pong buffers ensure continuous writing
+- Multi-buffer transport ensures continuous writing even when some buffers are in-flight
 
 ## Troubleshooting
 
@@ -388,13 +415,11 @@ if (!initialized) {
 
 **Solutions**:
 ```c
-// Enable enhanced statistics to check loss rate
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
-// Statistics will be automatically included in logs
-#endif
+// Enhanced statistics are always enabled — check written/lost frame
+// and byte counts in the log stream output
 
-// Adjust buffer size
-// CONFIG_BLE_LOG_LBM_TRANS_SIZE=1024
+// Increase total buffer memory per LBM
+// CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE=4096
 
 // Increase atomic lock LBM count
 // CONFIG_BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT=4
@@ -405,17 +430,16 @@ if (!initialized) {
 **Symptoms**: System response becomes slow
 
 **Possible Causes**:
-- Checksum calculation overhead
 - Transmission bottleneck
 - Lock contention
 
 **Solutions**:
 ```c
-// Disable payload checksum
-// CONFIG_BLE_LOG_PAYLOAD_CHECKSUM_ENABLED=n
-
 // Use faster transmission method
-// CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA=y
+// CONFIG_BLE_LOG_PRPH_UART_DMA=y (default on SOC_UHCI_SUPPORTED targets)
+
+// Increase baud rate (default is now 3000000)
+// CONFIG_BLE_LOG_PRPH_UART_DMA_BAUD_RATE=3000000
 
 // Adjust task priority
 #define BLE_LOG_TASK_PRIO configMAX_PRIORITIES-3
@@ -431,12 +455,11 @@ if (!initialized) {
 ble_log_dump_to_console();
 ```
 
-#### 2. Enable Enhanced Statistics
+#### 2. Check Enhanced Statistics
 
 ```c
-// Enable in menuconfig
-// CONFIG_BLE_LOG_ENH_STAT_ENABLED=y
-// Statistics will be automatically output to logs
+// Enhanced statistics are always enabled
+// Written/lost frame and byte counts are automatically output to logs
 ```
 
 #### 3. Monitor Memory Usage
@@ -448,3 +471,16 @@ void monitor_memory() {
     printf("Free heap after init: %d\n", esp_get_free_heap_size());
 }
 ```
+
+## Important Notes
+
+### Buffer Size Constraints
+
+- `CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE` and `CONFIG_BLE_LOG_LBM_LL_TRANS_BUF_SIZE` must be multiples of `BLE_LOG_TRANS_BUF_CNT` (currently 4)
+- The per-buffer size (total ÷ 4) must be at least large enough to hold one frame overhead (`BLE_LOG_FRAME_OVERHEAD`)
+- `BLE_LOG_TRANS_BUF_CNT` must be a power of 2
+
+### Migration from Legacy Modules
+
+- **UHCI Out**: The standalone `ble_log_uhci_out` module has been removed. Use the UART DMA peripheral transport (`CONFIG_BLE_LOG_PRPH_UART_DMA`) instead.
+- **SPI Out**: The legacy SPI log output has been moved to `deprecated/`. A separate Kconfig menu "Legacy SPI Log Output (Deprecated)" is available for backward compatibility, but new projects should use BT Log Async Output with the SPI Master DMA peripheral transport.

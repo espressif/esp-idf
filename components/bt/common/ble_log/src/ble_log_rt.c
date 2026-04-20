@@ -69,9 +69,8 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         ble_log_rt_ts_trigger(NULL);
 #endif /* CONFIG_BLE_LOG_TS_TRIGGER_TASK_EVENT */
 
-#if CONFIG_BLE_LOG_ENH_STAT_ENABLED
         ble_log_write_enh_stat();
-#endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
+        ble_log_write_buf_util();
     }
 }
 
@@ -102,7 +101,7 @@ bool ble_log_rt_init(void)
 
     /* CRITICAL:
      * Queue must be initialized before creating task */
-    rt_queue_handle = xQueueCreate(BLE_LOG_LBM_CNT, sizeof(ble_log_prph_trans_t *));
+    rt_queue_handle = xQueueCreate(BLE_LOG_TRANS_TOTAL_CNT, sizeof(ble_log_prph_trans_t *));
     if (!rt_queue_handle) {
         goto exit;
     }
@@ -172,9 +171,22 @@ void ble_log_rt_deinit(void)
 
 BLE_LOG_IRAM_ATTR void ble_log_rt_queue_trans(ble_log_prph_trans_t **trans)
 {
-    (*trans)->prph_owned = true;
+    __atomic_store_n(&(*trans)->prph_owned, true, __ATOMIC_RELAXED);
+
+    ble_log_lbm_t *lbm = (ble_log_lbm_t *)(*trans)->owner;
+    uint32_t inflight = __atomic_add_fetch(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+    uint32_t peak = __atomic_load_n(&lbm->trans_inflight_peak, __ATOMIC_RELAXED);
+    while (inflight > peak) {
+        if (__atomic_compare_exchange_n(&lbm->trans_inflight_peak, &peak, inflight,
+                                        true, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+            break;
+        }
+    }
+
     if (BLE_LOG_IN_ISR()) {
-        xQueueSendFromISR(rt_queue_handle, trans, NULL);
+        BaseType_t woken = pdFALSE;
+        xQueueSendFromISR(rt_queue_handle, trans, &woken);
+        portYIELD_FROM_ISR(woken);
     } else {
         xQueueSend(rt_queue_handle, trans, portMAX_DELAY);
     }

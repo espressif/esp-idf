@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,10 @@
 
 /* INCLUDE */
 #include "ble_log_prph_uart_dma.h"
+#include "ble_log.h"
+#include "ble_log_lbm.h"
 
 #if BLE_LOG_PRPH_UART_DMA_REDIR
-#include "ble_log.h"
-#include "ble_log_rt.h"
-#include "ble_log_lbm.h"
 
 #include "esp_timer.h"
 #include "driver/uart.h"
@@ -27,7 +26,7 @@
 #define BLE_LOG_UART_DMA_BURST_SIZE         (32)
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 #define BLE_LOG_UART_REDIR_BUF_SIZE         (512)
-#define BLE_LOG_UART_REDIR_FLUSH_TIMEOUT    (100)
+#define BLE_LOG_UART_REDIR_FLUSH_PERIOD_US  (1000 * 1000)
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
 /* VARIABLE */
@@ -36,7 +35,6 @@ BLE_LOG_STATIC uhci_controller_handle_t dev_handle = NULL;
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 BLE_LOG_STATIC bool uart_driver_inited = false;
 BLE_LOG_STATIC ble_log_lbm_t *redir_lbm = NULL;
-BLE_LOG_STATIC uint32_t redir_last_write_ts = 0;
 BLE_LOG_STATIC esp_timer_handle_t redir_flush_timer = NULL;
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
@@ -58,24 +56,26 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool uart_dma_tx_done_cb(
     );
     ble_log_prph_trans_t *trans = uart_trans_ctx->trans;
     trans->pos = 0;
-    trans->prph_owned = false;
+    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
     return true;
 }
 
 #if BLE_LOG_PRPH_UART_DMA_REDIR
-BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void esp_timer_cb_flush_log(void)
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void esp_timer_cb_flush_log(void *arg)
 {
-    uint32_t os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
-    if ((os_ts - redir_last_write_ts) > BLE_LOG_UART_REDIR_FLUSH_TIMEOUT) {
-        xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
-        int trans_idx = redir_lbm->trans_idx;
-        for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
-            ble_log_prph_trans_t **trans = &(redir_lbm->trans[trans_idx]);
-            if (!(*trans)->prph_owned && (*trans)->pos) {
-                ble_log_rt_queue_trans(trans);
-            }
-            trans_idx = !trans_idx;
-        }
+    (void)arg;
+
+    if (!prph_inited) {
+        return;
+    }
+
+    /* Non-blocking trylock: skip if mutex is held by a writer.
+     * The periodic timer will retry on the next tick.
+     * stream_flush is a no-op when buffer is empty. */
+    if (xSemaphoreTake(redir_lbm->mutex, 0) == pdTRUE) {
+        ble_log_lbm_stream_flush(redir_lbm, BLE_LOG_SRC_REDIR);
         xSemaphoreGive(redir_lbm->mutex);
     }
 }
@@ -127,16 +127,18 @@ bool ble_log_prph_init(size_t trans_cnt)
         goto exit;
     }
     BLE_LOG_MEMSET(redir_lbm, 0, sizeof(ble_log_lbm_t));
+    redir_lbm->lock_type = BLE_LOG_LBM_LOCK_MUTEX;
 
     /* Transport initialization */
-    for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+    for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
         if (!ble_log_prph_trans_init(&(redir_lbm->trans[i]),
                                      BLE_LOG_UART_REDIR_BUF_SIZE)) {
             goto exit;
         }
+        redir_lbm->trans[i]->owner = (void *)redir_lbm;
     }
 
-    /* Mutex initilaization */
+    /* Mutex initialization */
     redir_lbm->mutex = xSemaphoreCreateMutex();
     if (!redir_lbm->mutex) {
         goto exit;
@@ -151,7 +153,7 @@ bool ble_log_prph_init(size_t trans_cnt)
 
     /* Initialize periodic flush timer */
     esp_timer_create_args_t timer_args = {
-        .callback = (esp_timer_cb_t)esp_timer_cb_flush_log,
+        .callback = esp_timer_cb_flush_log,
         .dispatch_method = ESP_TIMER_TASK,
     };
     if (esp_timer_create(&timer_args, &redir_flush_timer) != ESP_OK) {
@@ -161,7 +163,7 @@ bool ble_log_prph_init(size_t trans_cnt)
 
     prph_inited = true;
 #if BLE_LOG_PRPH_UART_DMA_REDIR
-    esp_timer_start_periodic(redir_flush_timer, BLE_LOG_UART_REDIR_FLUSH_TIMEOUT);
+    esp_timer_start_periodic(redir_flush_timer, BLE_LOG_UART_REDIR_FLUSH_PERIOD_US);
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
     return true;
@@ -190,15 +192,15 @@ void ble_log_prph_deinit(void)
 
     /* Release redirection LBM */
     if (redir_lbm) {
-        /* Release mutex */
         if (redir_lbm->mutex) {
             xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
+            ble_log_lbm_stream_flush(redir_lbm, BLE_LOG_SRC_REDIR);
             xSemaphoreGive(redir_lbm->mutex);
             vSemaphoreDelete(redir_lbm->mutex);
         }
 
         /* Release transport */
-        for (int i = 0; i < BLE_LOG_TRANS_PING_PONG_BUF_CNT; i++) {
+        for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
             ble_log_prph_trans_deinit(&(redir_lbm->trans[i]));
         }
 
@@ -272,7 +274,9 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     if (uhci_transmit(dev_handle, trans->buf, trans->pos) != ESP_OK) {
-        trans->prph_owned = false;
+        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
     }
 }
 
@@ -282,17 +286,8 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_redir_uart_tx_chars(const char *src, size_t len)
 {
     xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
-    ble_log_prph_trans_t **trans = ble_log_lbm_get_trans(redir_lbm, len);
-    if (trans) {
-        uint8_t *buf = (*trans)->buf + (*trans)->pos;
-        BLE_LOG_MEMCPY(buf, src, len);
-        (*trans)->pos += len;
-        redir_last_write_ts = pdTICKS_TO_MS(xTaskGetTickCount());
-
-        if (BLE_LOG_TRANS_FREE_SPACE((*trans)) <= BLE_LOG_FRAME_OVERHEAD) {
-            ble_log_rt_queue_trans(trans);
-        }
-    }
+    ble_log_lbm_stream_write(redir_lbm, BLE_LOG_SRC_REDIR,
+                              (const uint8_t *)src, len);
     xSemaphoreGive(redir_lbm->mutex);
 }
 
@@ -326,4 +321,19 @@ int __wrap_uart_write_bytes_with_break(uart_port_t uart_num, const void *src, si
         return __wrap_uart_write_bytes(uart_num, src, size);
     }
 }
+
+ble_log_lbm_t *ble_log_prph_get_redir_lbm(void)
+{
+    return redir_lbm;
+}
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
+
+void ble_log_prph_reset_util_counters(void)
+{
+#if BLE_LOG_PRPH_UART_DMA_REDIR
+    if (redir_lbm) {
+        __atomic_store_n(&redir_lbm->trans_inflight, 0, __ATOMIC_RELAXED);
+        __atomic_store_n(&redir_lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED);
+    }
+#endif
+}

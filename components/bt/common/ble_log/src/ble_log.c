@@ -46,7 +46,7 @@ bool ble_log_init(void)
     }
 
     /* Initialize BLE Log peripheral interface */
-    if (!ble_log_prph_init(BLE_LOG_LBM_CNT)) {
+    if (!ble_log_prph_init(BLE_LOG_TRANS_TOTAL_CNT)) {
         goto exit;
     }
 

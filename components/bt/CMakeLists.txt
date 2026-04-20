@@ -25,6 +25,7 @@ set(common_include_dirs
     common/btc/profile/esp/include
     common/hci_log/include
     common/ble_log/include
+    common/ble_log/deprecated/include
 )
 
 set(ble_mesh_include_dirs
@@ -133,8 +134,7 @@ if(CONFIG_BT_ENABLED)
          "common/osi/osi.c"
          "common/osi/semaphore.c"
          "porting/mem/bt_osi_mem.c"
-         "common/ble_log/ble_log_spi_out.c"
-         "common/ble_log/ble_log_uhci_out.c"
+         "common/ble_log/deprecated/ble_log_spi_out.c"
          )
 
     # BLE Log Module
@@ -1004,6 +1004,16 @@ idf_component_register(SRCS "${srcs}"
                        PRIV_REQUIRES "${bt_priv_requires}"
                        LDFRAGMENTS "${ldscripts}")
 
+# UART redir wrap flags — needed whenever BLE Log uses UART DMA on port 0,
+# regardless of whether BLE controller is enabled.
+if(DEFINED CONFIG_BLE_LOG_PRPH_UART_DMA_PORT)
+    if(CONFIG_BLE_LOG_PRPH_UART_DMA_PORT EQUAL 0)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_tx_chars")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
+    endif()
+endif()
+
 if(CONFIG_BLE_COMPRESSED_LOG_ENABLE)
     if(LOG_COMPRESSION_TARGET)
         add_dependencies(${COMPONENT_LIB} ${LOG_COMPRESSION_TARGET})
@@ -1036,18 +1046,6 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_BT_CONTROLLER_ENABLED)
         if(CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE)
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=esp_panic_handler")
-        endif()
-        if(DEFINED CONFIG_BLE_LOG_PRPH_UART_DMA_PORT)
-            if(CONFIG_BLE_LOG_PRPH_UART_DMA_PORT EQUAL 0)
-                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_tx_chars")
-                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
-                target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
-            endif()
-        endif()
-        if(CONFIG_BT_BLE_LOG_UHCI_OUT_ENABLED)
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_tx_chars")
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
         endif()
         if(CONFIG_IDF_TARGET_ESP32C6)
             add_prebuilt_library(libble_app
