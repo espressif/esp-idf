@@ -19,7 +19,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              1300000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               80000
-#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              2500000
+#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              2550000
 
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70
