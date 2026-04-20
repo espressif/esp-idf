@@ -9,6 +9,7 @@
 #include <sys/param.h>
 
 #include "esp_attr.h"
+#include "esp_macros.h"
 #include "esp_log.h"
 
 #include "esp_rom_sys.h"
@@ -1162,7 +1163,7 @@ void bootloader_reset(void)
     bootloader_atexit();
     esp_rom_delay_us(1000); /* Allow last byte to leave FIFO */
     esp_rom_software_reset_system();
-    while (1) { }       /* This line will never be reached, used to keep gcc happy */
+    ESP_INFINITE_LOOP();    /* This line will never be reached, used to keep gcc happy */
 #else
     abort();            /* This function should really not be called from application code */
 #endif

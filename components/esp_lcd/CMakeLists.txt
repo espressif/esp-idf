@@ -53,3 +53,14 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES ${priv_requires}
                        REQUIRES ${public_requires}
                        LDFRAGMENTS linker.lf)
+
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    # GCC -fanalyzer false positives on early-return cleanup paths (see build logs with -Werror=analyzer-malloc-leak).
+    set_source_files_properties("src/esp_lcd_panel_ssd1306.c"
+                                "src/esp_lcd_panel_st7789.c"
+                                PROPERTIES COMPILE_FLAGS "-Wno-analyzer-malloc-leak")
+    if(CONFIG_SOC_I2C_SUPPORTED)
+        set_source_files_properties("i2c/esp_lcd_panel_io_i2c.c"
+                                    PROPERTIES COMPILE_FLAGS "-Wno-analyzer-malloc-leak")
+    endif()
+endif()

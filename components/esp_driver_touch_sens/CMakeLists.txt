@@ -25,3 +25,9 @@ idf_component_register(SRCS ${srcs}
                     REQUIRES esp_hal_touch_sens  # public require because hal/touch_sens_type.h needs to be public
                     INCLUDE_DIRS ${public_inc}
                     )
+
+# GCC -fanalyzer false positives on version-specific register writes (-Werror=analyzer-out-of-bounds).
+if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED AND CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
+    set_source_files_properties("${version_folder}/touch_version_specific.c"
+                                PROPERTIES COMPILE_FLAGS "-Wno-analyzer-out-of-bounds")
+endif()

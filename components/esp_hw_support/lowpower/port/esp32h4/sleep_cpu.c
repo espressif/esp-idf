@@ -489,9 +489,9 @@ static IRAM_ATTR void smp_core_do_retention(void)
     }
 
     // Wait another core start to do retention
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     bool smp_skip_retention = false;
     smp_retention_state_t another_core_state;
-    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (1) {
         another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
         if (another_core_state == SMP_SKIP_RETENTION) {

@@ -140,6 +140,7 @@ static void pthread_delete(esp_pthread_t *pthread)
 }
 
 /* Call this function to configure pthread stacks in Pthreads */
+ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // ignore leak of 'p'
 esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 {
     if (cfg == NULL) {
@@ -167,7 +168,6 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 
     /* If a value is already set, update that value */
     esp_pthread_cfg_t *p = pthread_getspecific(s_pthread_cfg_key);
-    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // ignore leak of 'p'
     if (!p) {
         p = malloc(sizeof(esp_pthread_cfg_t));
         if (!p) {
@@ -179,8 +179,8 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
     pthread_setspecific(s_pthread_cfg_key, p);
 
     return ESP_OK;
-    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
+ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
 {
