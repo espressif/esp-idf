@@ -71,6 +71,18 @@ extern "C" {
 #define ISP_LL_EVENT_WBG_FRAME                (1<<30)
 #define ISP_LL_EVENT_CROP_ERR                 (1<<31)
 
+/*---------------------------------------------------------------
+                    Error Events
+---------------------------------------------------------------*/
+#define ISP_LL_EVENT_DATA_TYPE_ERR            (1<<0)
+#define ISP_LL_EVENT_ASYNC_FIFO_OVF           (1<<1)
+#define ISP_LL_EVENT_BUF_FULL                 (1<<2)
+#define ISP_LL_EVENT_HVNUM_SETTING_ERR        (1<<3)
+#define ISP_LL_EVENT_DATA_TYPE_SETTING_ERR    (1<<4)
+#define ISP_LL_EVENT_MIPI_HNUM_UNMATCH        (1<<5)
+#define ISP_LL_EVENT_GAMMA_XCOORD_ERR         (1<<7)
+#define ISP_LL_EVENT_CROP_ERR                 (1<<31)
+
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 #define ISP_LL_EVENT_ALL_MASK                 (0xFFFFFFFF)
 #else
@@ -82,6 +94,7 @@ extern "C" {
 #define ISP_LL_EVENT_SHARP_MASK               (ISP_LL_EVENT_SHARP_FRAME)
 #define ISP_LL_EVENT_HIST_MASK                (ISP_LL_EVENT_HIST_FDONE)
 #define ISP_LL_EVENT_COLOR_MASK               (ISP_LL_EVENT_COLOR_FRAME)
+#define ISP_LL_EVENT_ERROR_MASK               (ISP_LL_EVENT_DATA_TYPE_ERR | ISP_LL_EVENT_ASYNC_FIFO_OVF | ISP_LL_EVENT_BUF_FULL | ISP_LL_EVENT_HVNUM_SETTING_ERR | ISP_LL_EVENT_DATA_TYPE_SETTING_ERR | ISP_LL_EVENT_MIPI_HNUM_UNMATCH | ISP_LL_EVENT_GAMMA_XCOORD_ERR | ISP_LL_EVENT_CROP_ERR)
 
 /*---------------------------------------------------------------
                       AF

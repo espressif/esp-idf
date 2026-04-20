@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,12 +80,15 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
 
     isp_processor_t *proc = heap_caps_calloc(1, sizeof(isp_processor_t), ISP_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_NO_MEM, TAG, "no mem");
+    proc->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
     //claim a processor, then do assignment
     ESP_GOTO_ON_ERROR(s_isp_claim_processor(proc), err, TAG, "no available isp processor");
 #if SOC_ISP_SHARE_CSI_BRG
     ESP_GOTO_ON_ERROR(mipi_csi_brg_claim(MIPI_CSI_BRG_USER_SHARE, &proc->csi_brg_id), err, TAG, "csi bridge is in use already");
 #endif
+
+    ESP_GOTO_ON_ERROR(esp_isp_register_isr(proc, ISP_SUBMODULE_GENERAL), err, TAG, "fail to register ISR");
 
     isp_clk_src_t clk_src = !proc_config->clk_src ? ISP_CLK_SRC_DEFAULT : proc_config->clk_src;
     uint32_t clk_src_freq_hz = 0;
@@ -125,7 +128,6 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     atomic_init(&proc->lsc_fsm, ISP_FSM_INIT);
     atomic_init(&proc->sharpen_fsm, ISP_FSM_INIT);
     atomic_init(&proc->wbg_fsm, ISP_FSM_INIT);
-    proc->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
     //Input color format
     bool valid_format = false;
@@ -144,6 +146,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     ESP_GOTO_ON_FALSE(valid_format, ESP_ERR_INVALID_ARG, err, TAG, "invalid output color space config");
 
     isp_ll_clk_enable(proc->hal.hw, true);
+    isp_ll_enable_intr(proc->hal.hw, ISP_LL_EVENT_ERROR_MASK, true);
     isp_ll_set_input_data_source(proc->hal.hw, proc_config->input_data_source);
     isp_ll_enable_line_start_packet_exist(proc->hal.hw, proc_config->has_line_start_packet);
     isp_ll_enable_line_end_packet_exist(proc->hal.hw, proc_config->has_line_end_packet);
@@ -172,6 +175,9 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     return ESP_OK;
 
 err:
+    if (proc->intr_hdl) {
+        esp_isp_deregister_isr(proc, ISP_SUBMODULE_GENERAL);
+    }
     free(proc);
 
     return ret;
@@ -187,6 +193,9 @@ esp_err_t esp_isp_del_processor(isp_proc_handle_t proc)
 #if SOC_ISP_SHARE_CSI_BRG
     ESP_RETURN_ON_ERROR(mipi_csi_brg_declaim(proc->csi_brg_id), TAG, "declaim csi bridge fail");
 #endif
+    if (proc->intr_hdl) {
+        esp_isp_deregister_isr(proc, ISP_SUBMODULE_GENERAL);
+    }
     free(proc);
 
     return ESP_OK;
@@ -253,6 +262,7 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
     uint32_t ae_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AE_MASK);
     uint32_t sharp_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_SHARP_MASK);
     uint32_t hist_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_HIST_MASK);
+    uint32_t error_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_ERROR_MASK);
 
     bool do_dispatch = false;
     //Deal with hw events
@@ -306,6 +316,23 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
         }
         do_dispatch = false;
     }
+
+    if ((error_events & ISP_LL_EVENT_DATA_TYPE_ERR) || (error_events & ISP_LL_EVENT_DATA_TYPE_SETTING_ERR)) {
+        ESP_EARLY_LOGE(TAG, "data type error");
+    }
+    if ((error_events & ISP_LL_EVENT_ASYNC_FIFO_OVF) || (error_events & ISP_LL_EVENT_BUF_FULL)) {
+        ESP_EARLY_LOGE(TAG, "fifo overflow");
+    }
+    if ((error_events & ISP_LL_EVENT_HVNUM_SETTING_ERR) || (error_events & ISP_LL_EVENT_MIPI_HNUM_UNMATCH)) {
+        ESP_EARLY_LOGE(TAG, "hnum / vnum setting error");
+    }
+    if (error_events & ISP_LL_EVENT_GAMMA_XCOORD_ERR) {
+        ESP_EARLY_LOGE(TAG, "gamma xcoord error");
+    }
+    if (error_events & ISP_LL_EVENT_CROP_ERR) {
+        ESP_EARLY_LOGE(TAG, "crop error");
+    }
+
     if (need_yield) {
         portYIELD_FROM_ISR();
     }
@@ -341,16 +368,13 @@ esp_err_t esp_isp_register_isr(isp_proc_handle_t proc, isp_submodule_t submodule
         proc->isr_users.hist_isr_added = true;
         break;
     default:
-        assert(false);
+        break;
     }
     portEXIT_CRITICAL(&proc->spinlock);
 
     if (do_alloc) {
-
-        uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(proc->hal.hw);
-        uint32_t intr_st_mask = ISP_LL_EVENT_AF_MASK | ISP_LL_EVENT_AE_MASK | ISP_LL_EVENT_AWB_MASK | ISP_LL_EVENT_HIST_MASK;
-        ret = esp_intr_alloc_intrstatus(isp_hw_info.instances[proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | proc->intr_priority, intr_st_reg_addr, intr_st_mask,
-                                        s_isp_isr_dispatcher, (void *)proc, &proc->intr_hdl);
+        ret = esp_intr_alloc(isp_hw_info.instances[proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | proc->intr_priority,
+                             s_isp_isr_dispatcher, (void *)proc, &proc->intr_hdl);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "no intr source");
             return ret;
@@ -392,7 +416,7 @@ esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodu
         proc->isr_users.hist_isr_added = false;
         break;
     default:
-        assert(false);
+        break;
     }
     portEXIT_CRITICAL(&proc->spinlock);
 
