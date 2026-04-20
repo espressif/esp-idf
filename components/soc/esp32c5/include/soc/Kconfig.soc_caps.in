@@ -1243,10 +1243,6 @@ config SOC_SPI_MEM_SUPPORT_WRAP
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
-    bool
-    default y
-
 config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
     bool
     default y

@@ -37,6 +37,7 @@ extern "C" {
                                      }\
                                      dev_id; \
                                     })
+#define SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL   (1)
 // Since ESP32-C5, WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
 #define SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS  (8)
 
