@@ -38,6 +38,12 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     const u8 *rsnxe;
     u8 rsnxe_capa = 0;
 
+    if (wpa_sta_cur_pmksa_matches_akm()) {
+        wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
+        *sae_msg_len = 0;
+        return ESP_FAIL;
+    }
+
     if (wpa_key_mgmt_sae_ext_key(gWpaSm.key_mgmt)) {
         use_pt = 1;
     }
@@ -88,12 +94,6 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
 
     if (use_pt && !g_sae_pt) {
         g_sae_pt = sae_derive_pt(g_allowed_groups, ssid->ssid, ssid->len, pw, strlen((const char *)pw), valid_pwd_id ? sae_pwd_id : NULL);
-    }
-
-    if (wpa_sta_cur_pmksa_matches_akm()) {
-        wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
-        *sae_msg_len = 0;
-        return ESP_FAIL;
     }
 
     if (g_sae_commit) {
