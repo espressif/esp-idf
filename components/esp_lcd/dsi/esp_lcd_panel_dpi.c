@@ -52,7 +52,8 @@ struct esp_lcd_dpi_panel_t {
     esp_pm_lock_handle_t pm_lock;          // Power management lock
 #endif
     esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; // Callback invoked when color data transfer has finished
-    esp_lcd_dpi_panel_refresh_done_cb_t on_refresh_done; // Callback invoked when one refresh operation finished (kinda like a vsync end)
+    esp_lcd_dpi_panel_frame_buf_complete_cb_t on_frame_buf_complete; // Callback invoked when the frame buffer can be reused safely
+    esp_lcd_dpi_panel_vsync_cb_t on_vsync; // VSYNC event callback
     void *user_ctx; // User context for the callback
 };
 
@@ -102,10 +103,16 @@ bool mipi_dsi_dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_tra
     dw_gdma_channel_use_link_list(chan, link_list);
     dw_gdma_channel_enable_ctrl(chan, true);
 
+    if (dpi_panel->on_frame_buf_complete) {
+        if (dpi_panel->on_frame_buf_complete(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+            yield_needed = true;
+        }
+    }
+
 #if !MIPI_DSI_BRG_LL_EVENT_VSYNC
     // the DMA descriptor is large enough to carry a whole frame buffer, so this event can also be treated as a fake "vsync end"
-    if (dpi_panel->on_refresh_done) {
-        if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+    if (dpi_panel->on_vsync) {
+        if (dpi_panel->on_vsync(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
             yield_needed = true;
         }
     }
@@ -128,8 +135,8 @@ void mipi_dsi_bridge_isr_handler(void *args)
         ESP_DRAM_LOGE(TAG, "can't fetch data from external memory fast enough, underrun happens");
     }
     if (intr_status & MIPI_DSI_BRG_LL_EVENT_VSYNC) {
-        if (dpi_panel->on_refresh_done) {
-            if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+        if (dpi_panel->on_vsync) {
+            if (dpi_panel->on_vsync(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
                 portYIELD_FROM_ISR();
             }
         }
@@ -733,19 +740,23 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     if (cbs->on_color_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_color_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_color_trans_done callback not in IRAM");
     }
-    if (cbs->on_refresh_done) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_refresh_done), ESP_ERR_INVALID_ARG, TAG, "on_refresh_done callback not in IRAM");
+    if (cbs->on_vsync) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_vsync), ESP_ERR_INVALID_ARG, TAG, "on_vsync callback not in IRAM");
+    }
+    if (cbs->on_frame_buf_complete) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_frame_buf_complete), ESP_ERR_INVALID_ARG, TAG, "on_frame_buf_complete callback not in IRAM");
     }
     if (user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_LCD_DSI_ISR_CACHE_SAFE
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
-    dpi_panel->on_refresh_done = cbs->on_refresh_done;
+    dpi_panel->on_vsync = cbs->on_vsync;
+    dpi_panel->on_frame_buf_complete = cbs->on_frame_buf_complete;
     dpi_panel->user_ctx = user_ctx;
 
     // enable the vsync interrupt if the callback is provided
-    mipi_dsi_brg_ll_enable_interrupt(dpi_panel->bus->hal.bridge, MIPI_DSI_BRG_LL_EVENT_VSYNC, cbs->on_refresh_done != NULL);
+    mipi_dsi_brg_ll_enable_interrupt(dpi_panel->bus->hal.bridge, MIPI_DSI_BRG_LL_EVENT_VSYNC, cbs->on_vsync != NULL);
 
     return ESP_OK;
 }

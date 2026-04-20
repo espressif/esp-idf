@@ -91,7 +91,7 @@ TEST_CASE("MIPI DSI draw bitmap (EK79007) IRAM Safe", "[mipi_dsi]")
 
     uint32_t callback_calls = 0;
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
-        .on_refresh_done = test_dpi_panel_count_in_callback,
+        .on_frame_buf_complete = test_dpi_panel_count_in_callback,
     };
     TEST_ESP_OK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, &callback_calls));
 

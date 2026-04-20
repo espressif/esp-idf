@@ -3,6 +3,12 @@
 
 :link_to_translation:`en:[English]`
 
+LCD
+---
+
+- :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_refresh_done` 回调已废弃。请使用 :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_frame_buf_complete` 判断帧缓冲区何时可以被安全复用。
+- MIPI DSI DPI 面板的 VSYNC 时序事件现在通过 :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_vsync` 回调上报。
+
 UART
 ------
 
