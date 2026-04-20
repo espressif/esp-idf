@@ -51,22 +51,32 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 ```
-I (504) NimBLE_BLE_PAwR: Device Address 40:4c:ca:46:1f:e2
-I (504) NimBLE: GAP procedure initiated: extended advertise; instance=0
- 
-I (514) NimBLE_BLE_PAwR: instance 0 started (periodic)
- 
-I (514) NimBLE_BLE_PAwR: [Request] data: 0, subevt start:0, subevt count:5
-I (534) main_task: Returned from app_main()
-I (664) NimBLE_BLE_PAwR: [Request] data: 5, subevt start:5, subevt count:2
-I (814) NimBLE_BLE_PAwR: [Request] data: 7, subevt start:7, subevt count:2
-I (964) NimBLE_BLE_PAwR: [Request] data: 9, subevt start:9, subevt count:2
-I (1114) NimBLE_BLE_PAwR: [Request] data: b, subevt start:1, subevt count:2
+I (...) NimBLE_BLE_PAwR: BLE Host Task Started
+I (...) NimBLE_BLE_PAwR: Device Address xx:xx:xx:xx:xx:xx
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
 
-I (1163054) NimBLE_BLE_PAwR: [Response] subevent:0, response_slot:114, data_length:1
-I (1163054) NimBLE_BLE_PAwR: data: 0x8c, 0x0
-I (1163164) NimBLE_BLE_PAwR: [Request] data: 91, subevt start:5, subevt count:2
+I (...) NimBLE_BLE_PAwR: instance 0 started (periodic)
+I (...) main_task: Returned from app_main()
 
+I (...) NimBLE_BLE_PAwR: [Request] data: 0, subevt start:0, subevt count:5
+I (...) NimBLE_BLE_PAwR: [Request] data: 5, subevt start:5, subevt count:2
+I (...) NimBLE_BLE_PAwR: [Request] data: 7, subevt start:7, subevt count:2
+I (...) NimBLE_BLE_PAwR: [Request] data: 9, subevt start:9, subevt count:2
+I (...) NimBLE_BLE_PAwR: [Request] data: b, subevt start:1, subevt count:2
+I (...) NimBLE_BLE_PAwR: ...
+
+I (...) NimBLE_BLE_PAwR: [Response] subevent:0, response_slot:2, data_length:16
+I (...) NimBLE_BLE_PAwR: data: 0x0, 0x0
+I (...) NimBLE_BLE_PAwR: [Response] subevent:1, response_slot:2, data_length:16
+I (...) NimBLE_BLE_PAwR: data: 0x1, 0x1
+I (...) NimBLE_BLE_PAwR: [Response] subevent:2, response_slot:2, data_length:16
+I (...) NimBLE_BLE_PAwR: data: 0x2, 0x2
+I (...) NimBLE_BLE_PAwR: [Response] subevent:3, response_slot:2, data_length:16
+I (...) NimBLE_BLE_PAwR: data: 0x3, 0x3
+I (...) NimBLE_BLE_PAwR: [Response] subevent:4, response_slot:2, data_length:16
+I (...) NimBLE_BLE_PAwR: data: 0x4, 0x4
+
+I (...) NimBLE_BLE_PAwR: [Request] data: ..., subevt start:..., subevt count:2
 ```
 
 ## Troubleshooting

@@ -50,40 +50,14 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 There is this console output when periodic_adv is started:
 
 ```
-I (364) main_task: Started on CPU0
-I (364) main_task: Calling app_main()
-I (374) BLE_INIT: Using main XTAL as clock source
-I (374) BLE_INIT: ble controller commit:[c223b2b]
-I (384) BLE_INIT: Bluetooth MAC: 74:4d:bd:60:1b:bb
-I (394) phy: phy_version: 322,2, 823e7f8, Mar  3 2025, 16:09:11
-I (414) phy: libbtbb version: e9c8b26, Mar  3 2025, 16:09:24
-I (414) CTE_ADV_EXAMPLE: 
-███████╗███████╗██████╗     ██████╗ ██╗     ███████╗                                                                      
-██╔════╝██╔════╝██╔══██╗    ██╔══██╗██║     ██╔════╝                                                                      
-█████╗  ███████╗██████╔╝    ██████╔╝██║     █████╗                                                                        
-██╔══╝  ╚════██║██╔═══╝     ██╔══██╗██║     ██╔══╝                                                                        
-███████╗███████║██║         ██████╔╝███████╗███████╗                                                                      
-╚══════╝╚══════╝╚═╝         ╚═════╝ ╚══════╝╚══════╝                                                                      
-                                                                                                                          
-██████╗ ██╗██████╗ ███████╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗    ███████╗██╗███╗   ██╗██████╗ ██╗███╗   ██╗ ██████╗  
-██╔══██╗██║██╔══██╗██╔════╝██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║    ██╔════╝██║████╗  ██║██╔══██╗██║████╗  ██║██╔════╝  
-██║  ██║██║██████╔╝█████╗  ██║        ██║   ██║██║   ██║██╔██╗ ██║    █████╗  ██║██╔██╗ ██║██║  ██║██║██╔██╗ ██║██║  ███╗ 
-██║  ██║██║██╔══██╗██╔══╝  ██║        ██║   ██║██║   ██║██║╚██╗██║    ██╔══╝  ██║██║╚██╗██║██║  ██║██║██║╚██╗██║██║   ██║ 
-██████╔╝██║██║  ██║███████╗╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║    ██║     ██║██║ ╚████║██████╔╝██║██║ ╚████║╚██████╔╝ 
-╚═════╝ ╚═╝╚═╝  ╚═╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝  
-                                                                                                                          
+I (...) CTE_ADV_EXAMPLE: DIRECTION_FINDING Example Periodic Adv AOA Mode
+I (...) CTE_ADV_EXAMPLE: BLE Host Task Started
+I (...) CTE_ADV_EXAMPLE: Device Address:
+I (...) CTE_ADV_EXAMPLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
 
-I (704) CTE_ADV_EXAMPLE: DIRECTION_FINDING Example Periodic Adv AOA Mode
-I (714) CTE_ADV_EXAMPLE: BLE Host Task Started
-I (714) NimBLE: Failed to restore IRKs from store; status=8
-
-I (724) CTE_ADV_EXAMPLE: Device Address: 
-I (724) CTE_ADV_EXAMPLE: 10:21:34:8d:5a:c4
-I (734) NimBLE: GAP procedure initiated: extended advertise; instance=1
-
-I (734) CTE_ADV_EXAMPLE: Instance 1 started (periodic)
-I (744) main_task: Returned from app_main()
-
+I (...) CTE_ADV_EXAMPLE: Instance 0 started (periodic)
+I (...) main_task: Returned from app_main()
 ```
 
 ## Troubleshooting

@@ -54,19 +54,27 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 ```
-I (608) NimBLE: GAP procedure initiated: extended discovery;
- 
-I (618) main_task: Returned from app_main()
-I (678) NimBLE_BLE_PAwR: [Disc advertiser] addr 40:4c:ca:46:1f:e2, props: 0x0, rssi:-43
-I (688) NimBLE_BLE_PAwR: Create sync
-I (1308) NimBLE_BLE_PAwR: [Periodic Sync Established] sync handle:0, num_subevents:0xa
-I (1308) NimBLE_BLE_PAwR: subevent_interval:0x3c, slot_delay:0x6,slot_spacing:0x2
-I (1308) NimBLE_BLE_PAwR: [Subevent Sync OK] sync handle:0, sync_subevents:4
-I (1318) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(1521), subevent(0)
-I (2058) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(1522), subevent(0)
-I (2058) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(0), rsp_slot(2), rc(0x0)
-I (2208) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(1522), subevent(2)
+I (...) NimBLE_BLE_PAwR: BLE Host Task Started
+I (...) NimBLE: GAP procedure initiated: extended discovery;
+I (...) main_task: Returned from app_main()
 
+I (...) NimBLE_BLE_PAwR: [Disc advertiser] addr xx:xx:xx:xx:xx:xx, props: 0x0, rssi:...
+I (...) NimBLE_BLE_PAwR: Create sync
+
+I (...) NimBLE_BLE_PAwR: [Periodic Sync Established] sync handle:0, num_subevents:0xa
+I (...) NimBLE_BLE_PAwR: subevent_interval:0x2c, slot_delay:0x14,slot_spacing:0x20
+I (...) NimBLE_BLE_PAwR: [Subevent Sync OK] sync handle:0, sync_subevents:5
+
+I (...) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(...), subevent(0)
+I (...) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(0), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(...), subevent(1)
+I (...) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(1), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(...), subevent(2)
+I (...) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(2), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(...), subevent(3)
+I (...) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(3), rsp_slot(2), rc(0x0)
+I (...) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(...), subevent(4)
+I (...) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(4), rsp_slot(2), rc(0x0)
 ```
 
 ## Troubleshooting

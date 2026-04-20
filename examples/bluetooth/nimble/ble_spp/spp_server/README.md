@@ -98,14 +98,39 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 This is the console output on successful connection:
 
 ```
-I (464) NimBLE_SPP_BLE_PRPH: BLE Host Task Started
-GAP procedure initiated: stop advertising.
-Device Address: 7c:df:a1:40:3e:fa
-GAP procedure initiated: advertise; disc_mode=2 adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
-connection established; status=0 handle=1 our_ota_addr_type=0 our_ota_addr=7c:df:a1:40:3e:fa our_id_addr_type=0 our_id_addr=7c:df:a1:40:3e:fa peer_ota_addr_type=0 peer_ota_addr=7c:df:a1:c2:19:92 peer_id_addr_type=0 peer_id_addr=7c:df:a1:c2:19:92 conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE: BLE server UART_task started
+I (...) NimBLE: BLE Host Task Started
+I (...) NimBLE: GAP procedure initiated: stop advertising.
+I (...) NimBLE: Device Address:
+I (...) NimBLE: xx:xx:xx:xx:xx:xx
+I (...) NimBLE:
 
-I (6924) NimBLE_SPP_BLE_PRPH: Data received in write event,conn_handle = 1,attr_handle = 11
-1b5b41I
-(10824) NimBLE_SPP_BLE_PRPH: Notification sent successfully
+I (...) NimBLE: GAP procedure initiated: advertise;
+I (...) NimBLE: disc_mode=2
+I (...) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
+I (...) NimBLE:
+I (...) main_task: Returned from app_main()
 
+I (...) NimBLE: connection established; status=0
+I (...) NimBLE: handle=0 ... conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (...) NimBLE:
+
+I (...) NimBLE: GAP procedure initiated: advertise;
+I (...) NimBLE: disc_mode=2
+I (...) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=0 adv_itvl_max=0
+I (...) NimBLE:
+
+I (...) NimBLE: subscribe event; conn_handle=0 attr_handle=16 reason=1 prevn=0 curn=1 previ=0 curi=0
+
+I (...) NimBLE: GATT procedure initiated: notify;
+I (...) NimBLE: att_handle=16
+I (...) NimBLE: Notification sent successfully
+
+I (...) NimBLE: GATT procedure initiated: notify;
+I (...) NimBLE: att_handle=16
+I (...) NimBLE: Notification sent successfully
+
+I (...) NimBLE: Data received in write event,conn_handle = 0,attr_handle = 10
+I (...) NimBLE: Data received in write event,conn_handle = 0,attr_handle = 10
+I (...) NimBLE: Data received in write event,conn_handle = 0,attr_handle = 10
 ```

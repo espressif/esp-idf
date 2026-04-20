@@ -45,24 +45,20 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 ```
-I (562) NimBLE_BLE_PAwR: instance 0 started (periodic)
+I (...) NimBLE_BLE_PAwR_CONN: BLE Host Task Started
+I (...) NimBLE_BLE_PAwR_CONN: Device Address xx:xx:xx:xx:xx:xx
+I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
 
-I (572) NimBLE_BLE_PAwR: [Request] data: 0, subevt start:0, subevt count:5
-I (1842) NimBLE_BLE_PAwR: [Request] data: 17, subevt start:3, subevt count:2
-I (1872) NimBLE_BLE_PAwR: [Response] subevent:0, response_slot:2, data_length:10
-I (1872) NimBLE_BLE_PAwR: data: 0x00, 0x02, 0x5e, 0x02, 0xf6, 0xf9, 0x55, 0x60, 0x00, 0x00
-I (1882) NimBLE: GAP procedure initiated: extended connect;
+I (...) NimBLE_BLE_PAwR_CONN: instance 0 started (periodic)
+I (...) NimBLE_BLE_PAwR_CONN: [Request] data: 0, subevt start:0, subevt count:5
+I (...) main_task: Returned from app_main()
 
-I (1892) NimBLE_BLE_PAwR: Connection create sent, adv handle = 0, subevent = 5
-W (2192) NimBLE_BLE_PAwR: [Connection established], conn_handle = 0x00, Adv handle = 0x0, status = 0x0
-
-I (2192) NimBLE_BLE_PAwR: handle=0 our_ota_addr_type=0 our_ota_addr=40:4c:ca:46:1f:e2 
-I (2202) NimBLE_BLE_PAwR: our_id_addr_type=0 our_id_addr=40:4c:ca:46:1f:e2 
-I (2212) NimBLE_BLE_PAwR: peer_ota_addr_type=0 peer_ota_addr=60:55:f9:f6:02:5e 
-I (2212) NimBLE_BLE_PAwR: peer_id_addr_type=0 peer_id_addr=60:55:f9:f6:02:5e 
-I (2222) NimBLE_BLE_PAwR: conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
- 
-I (2232) NimBLE_BLE_PAwR: [Request] data: 1d, subevt start:9, subevt count:2
+I (...) NimBLE_BLE_PAwR_CONN: [Request] data: 5, subevt start:5, subevt count:2
+I (...) NimBLE_BLE_PAwR_CONN: [Request] data: 7, subevt start:7, subevt count:2
+I (...) NimBLE_BLE_PAwR_CONN: [Request] data: 9, subevt start:9, subevt count:2
+I (...) NimBLE_BLE_PAwR_CONN: [Request] data: b, subevt start:1, subevt count:2
+I (...) NimBLE_BLE_PAwR_CONN: [Request] data: d, subevt start:3, subevt count:2
+I (...) NimBLE_BLE_PAwR_CONN: ...
 
 ```
 
