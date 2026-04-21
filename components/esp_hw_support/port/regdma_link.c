@@ -824,6 +824,8 @@ static void print_info_branch_write_wait_wrapper(FILE *out, void *link)
 
 static void print_link_info(FILE *out, void *args, int entry, int depth)
 {
+    assert(args && "Invalid argument: args is NULL");
+
     typedef void (*prinf_fn_t)(FILE *, void *);
 
     const static prinf_fn_t prinf_fn[] = {
