@@ -77,9 +77,7 @@ else()
     list(APPEND srcs
          "src/picolibc/picolibc_init.c"
          "src/picolibc/rand.c"
-         "src/picolibc/errno.c"
-         "src/picolibc/bufio_setvbuf.c") # TODO IDF-15494: remove this and the following lines
-         list(APPEND EXTRA_LINK_FLAGS "-Wl,--wrap=__bufio_setvbuf")
+         "src/picolibc/errno.c")
     if(CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
         list(APPEND srcs "src/picolibc/getreent.c")
         list(APPEND srcs "src/picolibc/fopencookie.c")
