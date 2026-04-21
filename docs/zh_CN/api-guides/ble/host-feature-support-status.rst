@@ -72,8 +72,8 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |experimental|
     * -
       - GATT Caching
       - |experimental|
@@ -96,8 +96,8 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - LE Power Control
-      - |unsupported|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
@@ -105,18 +105,33 @@ ESP 主机主要功能支持状态
     * -
       - LE Enhanced Connection Update (Connection Subrating)
       - |unsupported|
-      - |supported|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |supported|
     * -
       - LE Channel Classification
       - |supported|
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |experimental|
-      - |supported|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |supported|
     * -
       - Encrypted Advertising Data
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
@@ -124,12 +139,22 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - Periodic Advertising with Responses
-      - |experimental|
-      - |experimental|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
     * - .. centered:: |6.0|
       - Channel Sounding
       - |experimental|
-      - |unsupported|
+      - |experimental|
     * -
       - LL Extended Feature Set
       - |unsupported|
@@ -140,12 +165,12 @@ ESP 主机主要功能支持状态
       - |unsupported|
     * -
       - Enhancements for ISOAL
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |experimental|
     * -
       - Monitoring Advertisers
       - |unsupported|
-      - |unsupported|
+      - |experimental|
     * -
       - Frame Space Update
       - |unsupported|

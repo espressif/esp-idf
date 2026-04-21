@@ -219,7 +219,12 @@
         .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
 
             |experimental|
-      - |unsupported|
+      - .. only:: esp32 or esp32c2
+
+            |unsupported|
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+
+            |experimental|
       - .. only:: esp32 or esp32c2
 
             |unsupported|
@@ -251,21 +256,30 @@
       - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
             |experimental|
+        .. only:: esp32c2
+
+            |unsupported|
       - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
             |experimental|
+        .. only:: esp32c2
+
+            |unsupported|
       - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
             |experimental|
+        .. only:: esp32c2
+
+            |unsupported|
     * -
       - LE Channel Classification
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
@@ -291,49 +305,58 @@
       - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
             |experimental|
+        .. only:: esp32c2
+
+            |unsupported|
       - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
             |experimental|
+        .. only:: esp32c2
+
+            |unsupported|
       - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
             |experimental|
+        .. only:: esp32c2
+
+            |unsupported|
     * -
       - Encrypted Advertising Data
       - |NA|
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |NA|
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - Periodic Advertising with Responses
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c6 or esp32h2
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c6 or esp32h2
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3
+      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2
+        .. only:: esp32c6 or esp32h2
 
             |experimental|
     * - .. centered:: |6.0|
