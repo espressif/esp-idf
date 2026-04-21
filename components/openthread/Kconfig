@@ -623,5 +623,27 @@ menu "OpenThread"
             information whenever an OpenThread assert occurs. This can help developers
             analyze unexpected failures by providing additional MAC layer context.
 
+    config OPENTHREAD_TASK_BLOCK_MONITOR
+        depends on OPENTHREAD_DEBUG
+        bool "Enable OpenThread Task Block Monitor"
+        default n
+        help
+            Enable monitoring of OpenThread tasks to detect if a task is blocked
+            and unable to continue its normal execution loop. Useful for debugging
+            issues where tasks stop progressing due to deadlocks or resource waits.
+            On RISC-V targets, in order to get meaningful backtraces when a task is
+            detected as blocked, ESP_SYSTEM_USE_EH_FRAME must be enabled in
+            ESP System Settings.
+
+    config OPENTHREAD_TASK_BLOCK_MONITOR_TIMEOUT
+        depends on OPENTHREAD_TASK_BLOCK_MONITOR
+        int "Task Block Monitor Timeout (seconds)"
+        range 1 60
+        default 20
+        help
+            Set the timeout (in seconds) for detecting a blocked task.
+            The timer is started at the beginning of each task main loop
+            and stopped at the end. If the timer expires, the task is considered blocked.
+
 
 endmenu
