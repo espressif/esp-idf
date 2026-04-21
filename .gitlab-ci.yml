@@ -6,6 +6,7 @@ include:
       - "templates/stable/default-workflow.yml"
       - "templates/idf/deploy-github.yml"
       - "templates/idf/deploy-docs.yml"
+      - "templates/idf/integration-test.yml"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"
     inputs:
@@ -27,7 +28,6 @@ include:
   - ".gitlab/ci/pre_commit.yml"
   - ".gitlab/ci/pre_check.yml"
   - ".gitlab/ci/build.yml"
-  - ".gitlab/ci/integration_test.yml"
   - ".gitlab/ci/host-test.yml"
   - ".gitlab/ci/deploy.yml"
   - ".gitlab/ci/post_deploy.yml"
