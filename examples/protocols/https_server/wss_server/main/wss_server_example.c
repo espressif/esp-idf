@@ -9,14 +9,18 @@
 
 #include <esp_event.h>
 #include <esp_log.h>
-#include <esp_system.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
 #include "esp_netif.h"
+#include "protocol_examples_common.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include <esp_system.h>
 #include "esp_eth.h"
 #include "esp_wifi.h"
-#include "protocol_examples_common.h"
 #include "lwip/sockets.h"
+#else
+#include <unistd.h>
+#endif  // !CONFIG_IDF_TARGET_LINUX
 #include <esp_https_server.h>
 #include "keep_alive.h"
 #include "sdkconfig.h"
@@ -191,6 +195,10 @@ static httpd_handle_t start_wss_echo_server(void)
     ESP_LOGI(TAG, "Starting server");
 
     httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
+#if CONFIG_IDF_TARGET_LINUX
+    /* Use non-privileged port on Linux since port 443 requires root */
+    conf.port_secure = 8443;
+#endif
     conf.httpd.max_open_sockets = max_clients;
     conf.httpd.global_user_ctx = keep_alive;
     conf.httpd.open_fn = wss_open_fd;
@@ -220,6 +228,7 @@ static httpd_handle_t start_wss_echo_server(void)
     return server;
 }
 
+#if !CONFIG_IDF_TARGET_LINUX
 static esp_err_t stop_wss_echo_server(httpd_handle_t server)
 {
     // Stop keep alive thread
@@ -249,6 +258,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
         *server = start_wss_echo_server();
     }
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 // Get all clients and send async message
 static void wss_server_send_messages(httpd_handle_t* server)
@@ -299,6 +309,7 @@ void app_main(void)
      * and stop server when disconnection happens.
      */
 
+#if !CONFIG_IDF_TARGET_LINUX
 #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
@@ -307,12 +318,18 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+#endif // !CONFIG_IDF_TARGET_LINUX
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+
+#if CONFIG_IDF_TARGET_LINUX
+    /* On Linux, start the server directly since there are no WiFi/Ethernet events */
+    server = start_wss_echo_server();
+#endif // CONFIG_IDF_TARGET_LINUX
 
     /* This function demonstrates periodic sending Websocket messages
      * to all connected clients to this server

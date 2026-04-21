@@ -481,8 +481,11 @@ endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
-# Ensure PSA crypto initialization is included in the build
-if(NOT ${IDF_TARGET} STREQUAL "linux")
+# Ensure PSA crypto initialization is included in the build.
+# On macOS (Mach-O), C symbols have a leading underscore prefix.
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND ${IDF_TARGET} STREQUAL "linux")
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u _mbedtls_psa_crypto_init_include_impl")
+else()
     target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_psa_crypto_init_include_impl")
 endif()
 
