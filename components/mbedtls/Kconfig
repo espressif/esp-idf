@@ -613,9 +613,6 @@ menu "mbedTLS"
             config MBEDTLS_TLS_CLIENT_ONLY
                 bool "Client"
                 select MBEDTLS_TLS_CLIENT
-
-            config MBEDTLS_TLS_DISABLED
-                bool "None"
         endchoice
 
         config MBEDTLS_SSL_CID_PADDING_GRANULARITY
