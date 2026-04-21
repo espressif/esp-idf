@@ -108,16 +108,16 @@ In this mode, a private key is negotiated using Elliptic Curve Diffie-Hellman (E
 - The deployment process can occur over an untrusted channel.
 - Intended for high-security provisioning environments.
 
-For detailed information various deployment modes, see **{IDF_TARGET_NAME} Technical Reference Manual** > **Chapter Key Manager** [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] > **Section Key Manager**.
+ECDH1 Deploy Mode
+^^^^^^^^^^^^^^^^^
 
-.. ECDH1 Deploy Mode
-.. ~~~~~~~~~~~~~~~~~
-..
-.. This mode is similar to ECDH0 Deploy Mode, with additional flexibility for manufacturing workflows.
-..
-.. - Supports negotiated key deployment using auxiliary recovery data
-.. - Allows updating deployed keys by replacing auxiliary information
-.. - Intended for large-scale manufacturing with controlled trust assumptions
+This mode is similar to ECDH0 Deploy Mode, with additional flexibility for manufacturing workflows.
+
+- Supports negotiated key deployment using auxiliary recovery data
+- Allows updating deployed keys by replacing auxiliary information
+- Intended for large-scale manufacturing with controlled trust assumptions
+
+For detailed information various deployment modes, see **{IDF_TARGET_NAME} Technical Reference Manual** > **Chapter Key Manager** [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] > **Section Key Manager**.
 
 Typical Workflows
 -----------------

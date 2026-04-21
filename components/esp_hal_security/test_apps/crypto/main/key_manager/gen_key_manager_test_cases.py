@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import hashlib
 import hmac
@@ -146,6 +146,39 @@ def generate_k1_G(k1_bytes: bytes) -> tuple:
     return k1_G, k1_G
 
 
+def compute_ecdh1_x(k1_be: bytes, k2_le: bytes) -> int:
+    """Compute x(k1*k2*G) on NIST P-256 as an integer.
+
+    k1 is interpreted big-endian (matches the user's k1*G computation in
+    generate_k1_G); k2 is interpreted little-endian (the KM's convention
+    for k2 recovered from k2_info). The deployed-key byte string is the
+    big-endian encoding of the returned integer.
+    """
+    k1_int = int.from_bytes(k1_be, byteorder='big')
+    k2_int = int.from_bytes(k2_le, byteorder='little')
+    generator = NIST256p.generator.to_affine()
+    point = (k1_int * k2_int) * generator
+    return int(point.x())
+
+
+def generate_ecdsa_pub_from_scalar(scalar_int: int, curve_size_bits: int) -> tuple:
+    """Compute (scalar * G).x, .y for the given P-N curve and return them
+    as little-endian bytes (the ECDSA peripheral's exported-pubkey order)."""
+    if curve_size_bits == 192:
+        curve = ec.SECP192R1()
+    elif curve_size_bits == 256:
+        curve = ec.SECP256R1()
+    elif curve_size_bits == 384:
+        curve = ec.SECP384R1()
+    else:
+        raise ValueError(f'Unsupported curve size: {curve_size_bits}')
+    private_key = ec.derive_private_key(scalar_int, curve)
+    pub_numbers = private_key.public_key().public_numbers()
+    pubx = pub_numbers.x.to_bytes(curve_size_bits // 8, byteorder='little')
+    puby = pub_numbers.y.to_bytes(curve_size_bits // 8, byteorder='little')
+    return pubx, puby
+
+
 def generate_hmac_test_data(key: bytes) -> tuple:
     hmac_message = (
         b'Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. '
@@ -265,6 +298,10 @@ def write_to_c_header(
     ds_encrypted_input_params_3072: bytes,
     ds_result_3072: bytes,
     ds_iv: bytes,
+    ecdh1_xts_test_data: list,
+    ecdh1_hmac_result: bytes,
+    ecdh1_p256_pubx: bytes,
+    ecdh1_p256_puby: bytes,
 ) -> None:
     with open('key_manager_test_cases.h', 'w', encoding='utf-8') as file:
         header_content = f"""#include <stdint.h>
@@ -326,6 +363,21 @@ typedef struct test_data_ecdh0 {{
     uint8_t k1[2][32];
     uint8_t k1_G[2][64];
 }} test_data_ecdh0_mode_t;
+
+// ECDH1 takes the AES-mode-style (init_key, k2_info) inputs plus the ECDH
+// k1*G public point (sourced from test_data_ecdh0.k1_G to share the same
+// k1 across ECDH0 and ECDH1 tests). k1_encrypted is unused, so it isn't in
+// this struct.
+typedef struct test_data_ecdh1 {{
+    uint8_t init_key[32];
+    uint8_t k2_info[64];
+    uint8_t plaintext_data[128];
+    union {{
+        test_xts_data_t xts_test_data[TEST_COUNT];
+        test_ecdsa_data_t ecdsa_test_data;
+        test_hmac_data_t hmac_test_data;
+    }};
+}} test_data_ecdh1_mode_t;
 
 // For 32-byte k1 key
 test_data_aes_mode_t test_data_xts_aes_128 = {{
@@ -433,6 +485,44 @@ test_data_aes_mode_t test_data_ds = {{
 }};
 """
 
+        # Per-key-type ECDH1 instances. Expected per-peripheral outputs
+        # (XTS ciphertext, HMAC result, ECDSA pubkey) are computed off-device
+        # using the deployed key x(k1*k2*G).
+        header_content += f"""
+test_data_ecdh1_mode_t test_data_ecdh1_xts_aes_128 = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .plaintext_data = {{ {key_to_c_format(bytes(range(1, 129)))} }},
+    .xts_test_data = {{
+"""
+        for data_size, flash_address, ciphertext in ecdh1_xts_test_data:
+            header_content += (
+                f'\t\t{{.data_size = {data_size}, '
+                f'.data_offset = 0x{flash_address:x}, '
+                f'.ciphertext = {{{key_to_c_format(ciphertext)}}}}},\n'
+            )
+        header_content += '\t}\n};\n'
+
+        header_content += f"""
+test_data_ecdh1_mode_t test_data_ecdh1_hmac = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .hmac_test_data = {{
+        .message = {{ {key_to_c_format(hmac_message)} }},
+        .hmac_result = {{ {key_to_c_format(ecdh1_hmac_result)} }}
+    }}
+}};
+
+test_data_ecdh1_mode_t test_data_ecdh1_ecdsa = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .ecdsa_test_data = {{
+        .ecdsa_p256_pubx = {{ {key_to_c_format(ecdh1_p256_pubx)} }},
+        .ecdsa_p256_puby = {{ {key_to_c_format(ecdh1_p256_puby)} }},
+    }}
+}};
+"""
+
         file.write(header_content)
 
 
@@ -490,6 +580,18 @@ def generate_tests_cases() -> None:
 
     hmac_message, hmac_result = generate_hmac_test_data(k1_32)
 
+    # ECDH1: deployed key bytes = big-endian x(k1*k2*G). Per-peripheral
+    # effective key:
+    #   - XTS-AES-128: key = x_be (32 BE bytes)
+    #   - HMAC:        key = x_le (= x_be[::-1], the slot is read LE)
+    #   - ECDSA-P256:  scalar = x_int mod n_p256
+    ecdh1_x_int = compute_ecdh1_x(k1_32, k2)
+    ecdh1_x_be = ecdh1_x_int.to_bytes(32, byteorder='big')
+    ecdh1_x_le = ecdh1_x_be[::-1]
+    ecdh1_xts_test_data = generate_xts_test_data(ecdh1_x_be)
+    ecdh1_hmac_result = hmac.HMAC(ecdh1_x_le, hmac_message, hashlib.sha256).digest()
+    ecdh1_p256_pubx, ecdh1_p256_puby = generate_ecdsa_pub_from_scalar(ecdh1_x_int % NIST256p.order, 256)
+
     ds_iv = os.urandom(16)
 
     ds_message_4096, ds_encrypted_input_params_4096, ds_result_4096 = generate_ds_encrypted_input_params(
@@ -531,6 +633,10 @@ def generate_tests_cases() -> None:
         ds_encrypted_input_params_3072,
         ds_result_3072,
         ds_iv,
+        ecdh1_xts_test_data,
+        ecdh1_hmac_result,
+        ecdh1_p256_pubx,
+        ecdh1_p256_puby,
     )
 
 

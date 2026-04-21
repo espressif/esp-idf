@@ -226,6 +226,36 @@ TEST_CASE("Key Manager Random mode: XTS-AES-128 key deployment", "[hw_crypto] [k
     free(key_config);
     free(key_recovery_info);
 }
+
+TEST_CASE("Key Manager ECDH1 mode: XTS-AES-128 key deployment", "[hw_crypto] [key_mgr]")
+{
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
+    esp_key_mgr_ecdh1_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh1_key_config_t));
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_G[0], (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+    key_config->key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
+
+    esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
+    TEST_ASSERT_NOT_NULL(key_recovery_info);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(key_config, key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
+    /* verify=false: same convention as the ECDH0 case above. The expected
+     * ciphertext IS derivable (k2 = AES_DEC(k2_info, init_key); deployed key
+     * = x(k1*k2*G)) but this app doesn't carry the off-device ECC code.
+     * Bitwise verification lives in the HAL crypto test app. */
+    TEST_ASSERT_EQUAL(ESP_OK, test_xts_aes_key(false));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
+
+    free(key_config);
+    free(key_recovery_info);
+}
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
@@ -333,6 +363,31 @@ TEST_CASE("Key Manager random mode: HMAC key deployment", "[hw_crypto] [key_mgr]
     free(key_config);
     free(key_recovery_info);
 }
+
+TEST_CASE("Key Manager ECDH1 mode: HMAC key deployment", "[hw_crypto] [key_mgr]")
+{
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
+    esp_key_mgr_ecdh1_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh1_key_config_t));
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_G[0], (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_HMAC_KEY;
+
+    esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
+    TEST_ASSERT_NOT_NULL(key_recovery_info);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(key_config, key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, test_hmac_key(false));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
+
+    free(key_config);
+    free(key_recovery_info);
+}
 #endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
@@ -429,6 +484,34 @@ TEST_CASE("Key Manager random mode: DS key deployment", "[hw_crypto] [key_mgr]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_random_mode(key_config, key_recovery_info));
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
     // No way to generate encrypted input params when DS key deployed in random mode
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
+
+    free(key_config);
+    free(key_recovery_info);
+}
+
+TEST_CASE("Key Manager ECDH1 mode: DS key deployment", "[hw_crypto] [key_mgr]")
+{
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
+    esp_key_mgr_ecdh1_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh1_key_config_t));
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_G[0], (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_DS_KEY;
+
+    esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
+    TEST_ASSERT_NOT_NULL(key_recovery_info);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(key_config, key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
+    // Deploy/activate path coverage only. The deployed AES-CBC key for DS
+    // is x(k1*k2*G); pre-generating the encrypted DS input params would
+    // require running that key derivation plus the DS-blob AES-CBC step
+    // off-device, neither of which this app carries.
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
 
     free(key_config);

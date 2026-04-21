@@ -59,6 +59,24 @@ typedef struct {
 } esp_key_mgr_ecdh0_key_config_t;
 
 /**
+ * @brief Configuration for deploying a key in ECDH1 mode
+ *
+ * ECDH1 requires the same init_key/k2_info inputs as AES mode plus the
+ * ECDH k1*G public point(s). Unlike ECDH0, k2*G is computed by the user
+ * locally and is not read back from the Key Manager.
+ */
+typedef struct {
+    esp_key_mgr_key_type_t key_type;                                    /*!< Type of key to deploy */
+    esp_key_mgr_key_len_t key_len;                                      /*!< Length of the key */
+    bool use_pre_generated_huk_info;                                    /*!< Use pre-generated HUK info if true */
+    bool use_pre_generated_sw_init_key;                                 /*!< Use pre-generated software init key if true */
+    WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;                  /*!< HUK recovery info */
+    WORD_ALIGNED_ATTR uint8_t sw_init_key[KEY_MGR_SW_INIT_KEY_SIZE];    /*!< Software init key */
+    WORD_ALIGNED_ATTR uint8_t k2_info[KEY_MGR_K2_INFO_SIZE];            /*!< K2 info for ECDH1 deployment */
+    WORD_ALIGNED_ATTR uint8_t k1_G[2][KEY_MGR_ECDH0_INFO_SIZE];         /*!< K1*G points for ECDH1 deployment */
+} esp_key_mgr_ecdh1_key_config_t;
+
+/**
  * @brief Configuration for deploying a key in Random mode
  */
 typedef struct {
@@ -109,6 +127,18 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
  *      - ESP_FAIL or relevant error code on failure
  */
 esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_info, esp_key_mgr_ecdh0_info_t *ecdh0_key_info);
+
+/**
+ * @brief Deploy key in ECDH1 deployment mode
+ *
+ * @param[in]  key_config  ECDH1 key configuration
+ * @param[out] key_info    A writable struct of esp_key_mgr_key_recovery_info_t type.
+ *                         The recovery key info for the deployed key shall be stored here.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL or relevant error code on failure
+ */
+esp_err_t esp_key_mgr_deploy_key_in_ecdh1_mode(const esp_key_mgr_ecdh1_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_info);
 
 /**
  * @brief Deploy key in Random deployment mode
