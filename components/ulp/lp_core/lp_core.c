@@ -18,6 +18,8 @@
 #include "ulp_lp_core_memory_shared.h"
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "hal/lp_core_ll.h"
+#include "soc/pmu_reg.h"
+#include "hal/pmu_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
