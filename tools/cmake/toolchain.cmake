@@ -15,6 +15,16 @@ file(TO_CMAKE_PATH "${_current_toolchain_dir}" _current_toolchain_dir)
 
 set(CMAKE_SYSTEM_NAME Generic)
 
+# Windows CreateProcess enforces a short command line (~32k). IDF compile lines can be
+# huge (includes, reproducible-build prefix maps, etc.). Tell the Ninja generator to
+# pass compiler arguments via response files (CMake 3.15+). This is orthogonal to the
+# early-stage @cflags/@cxxflags response files below, which only cover CMAKE_*_FLAGS.
+if(CMAKE_HOST_WIN32 AND CMAKE_GENERATOR MATCHES "Ninja"
+    AND NOT DEFINED CACHE{CMAKE_NINJA_FORCE_RESPONSE_FILE})
+    set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE BOOL
+        "Use Ninja response files on Windows hosts (avoid CreateProcess command-line limit).")
+endif()
+
 # Set compiler tools according to the toolchain type
 string(FIND "${_toolchain_filename}" "clang" found_clang)
 if(NOT found_clang EQUAL -1)

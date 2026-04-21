@@ -68,7 +68,6 @@ def test_spaces_bundle3(idf_copy: Path) -> None:
     )
 
 
-@pytest.mark.xfail(sys.platform == 'win32', reason='Bug with reproducible build')
 # Use this bundle for tests which can be done with the default build_test_app
 @pytest.mark.parametrize(
     'dummy_',

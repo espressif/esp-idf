@@ -187,7 +187,7 @@ function(__ldgen_create_target exe_target)
         "${build_dir}/ldgen_libraries.in"
         "${build_dir}/ldgen_libraries")
 
-    idf_build_get_property(ldgen_fragment_files __LDGEN_FRAGMENT_FILES GENERATOR_EXPRESSION)
+    idf_build_get_property(ldgen_fragment_files __LDGEN_FRAGMENT_FILES)
 
     # Create command to invoke the linker script generator tool.
     idf_build_get_property(sdkconfig SDKCONFIG)
@@ -214,11 +214,21 @@ function(__ldgen_create_target exe_target)
         set(mutable_libs_option "--mutable-libraries-file" "${mutable_libs_path}")
     endif()
 
+    # Write fragment paths to a file (one per line) and pass the file to ldgen,
+    # mirroring the --libraries-file pattern. Avoids cmd/CRT argv-quoting of a
+    # long semicolon-separated list with paths containing spaces and backslashes
+    # on Windows (test_spaces_bundle4).
+    set(ldgen_fragments_file "${build_dir}/ldgen_fragments")
+    list(JOIN ldgen_fragment_files "\n" ldgen_fragments_str)
+    file(WRITE "${ldgen_fragments_file}" "${ldgen_fragments_str}")
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+        "${ldgen_fragments_file}")
     add_custom_command(
         OUTPUT ${output}
         COMMAND ${python} "${idf_path}/tools/ldgen/ldgen.py"
         --config    "${sdkconfig}"
-        --fragments-list "${ldgen_fragment_files}"
+        --fragments-list-file "${ldgen_fragments_file}"
         --input     "${template}"
         --output    "${output}"
         --kconfig   "${root_kconfig}"
