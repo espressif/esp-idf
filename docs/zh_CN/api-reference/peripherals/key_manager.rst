@@ -108,16 +108,16 @@ ECDH0 部署模式
 - 部署过程可以通过不受信任的信道进行。
 - 适用于高安全性的配置环境。
 
-有关各种部署模式的详细信息，请参阅 **《{IDF_TARGET_NAME} 技术参考手册》** > **密钥管理器章节** [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] > **密钥管理器小节**。
+ECDH1 部署模式
+^^^^^^^^^^^^^^
 
-.. ECDH1 Deploy Mode
-.. ~~~~~~~~~~~~~~~~~
-..
-.. This mode is similar to ECDH0 Deploy Mode, with additional flexibility for manufacturing workflows.
-..
-.. - Supports negotiated key deployment using auxiliary recovery data
-.. - Allows updating deployed keys by replacing auxiliary information
-.. - Intended for large-scale manufacturing with controlled trust assumptions
+此模式类似于 ECDH0 部署模式，但为生产配置流程提供了额外的灵活性。
+
+- 支持使用辅助恢复数据进行协商的密钥部署。
+- 允许通过替换辅助信息来更新已部署的密钥。
+- 适用于具有受控信任假设的大规模生产场景。
+
+有关各种部署模式的详细信息，请参阅 **《{IDF_TARGET_NAME} 技术参考手册》** > **密钥管理器章节** [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] > **密钥管理器小节**。
 
 典型工作流程
 ------------
