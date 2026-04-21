@@ -190,6 +190,17 @@ typedef struct {
 #else
 	BYTE	win[FF_MAX_SS];	/* Disk access window for Directory, FAT (and file data at tiny cfg) */
 #endif
+							/* Note: when CONFIG_FATFS_WINDOW_SECTORS > 1, win[] is populated from
+							   ra_buf (readahead cache) rather than directly from disk_read(). */
+#if CONFIG_FATFS_WINDOW_SECTORS > 1
+	LBA_t	ra_base;		/* First sector in readahead buffer ((LBA_t)-1 = invalid) */
+	UINT	ra_count;		/* Number of valid sectors in readahead buffer */
+#if FF_USE_DYN_BUFFER
+	BYTE*	ra_buf;			/* Readahead sector buffer (dynamically allocated) */
+#else
+	BYTE	ra_buf[FF_MIN_SS * CONFIG_FATFS_WINDOW_SECTORS];	/* Readahead sector buffer */
+#endif
+#endif
 } FATFS;
 
 

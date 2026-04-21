@@ -354,4 +354,18 @@ menu "FAT Filesystem support"
                 If 1, the file system will not trust the last allocated cluster number in the FSINFO (in FATFS struct).
                 This may result in more accurate output from `f_getfree()` function but increased overhead.
     endmenu
+
+    config FATFS_WINDOW_SECTORS
+        int "move_window sector buffer size"
+        default 1
+        range 1 16
+        help
+            Number of consecutive sectors buffered by move_window().
+            When a cache miss occurs, this many sectors are read in
+            a single disk operation (CMD18), amortizing per-transaction
+            SPI overhead. Default 1 preserves original single-sector
+            behavior. 8 is recommended for SD cards over SPI (~43%
+            faster directory listing at the cost of FF_MIN_SS * (N-1)
+            bytes of additional RAM in the FATFS struct).
+
 endmenu
