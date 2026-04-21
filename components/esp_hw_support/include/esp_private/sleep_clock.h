@@ -51,7 +51,7 @@ bool clock_domain_pd_allowed(void);
  */
 esp_err_t sleep_clock_system_retention_init(void *arg);
 
-#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_BT_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_CONF_RETENTION
 /**
  * @brief Modem system clock retention initialize.
  *

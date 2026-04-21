@@ -2,10 +2,12 @@ menu "Example Configuration"
 
     choice EXAMPLE_MAX_CPU_FREQ
         prompt "Maximum CPU frequency"
-        default EXAMPLE_MAX_CPU_FREQ_160 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C5
+        default EXAMPLE_MAX_CPU_FREQ_160 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && \
+            !IDF_TARGET_ESP32C5 && !IDF_TARGET_ESP32S31
         default EXAMPLE_MAX_CPU_FREQ_96 if IDF_TARGET_ESP32H2
         default EXAMPLE_MAX_CPU_FREQ_120 if IDF_TARGET_ESP32C2
         default EXAMPLE_MAX_CPU_FREQ_240 if IDF_TARGET_ESP32C5
+        default EXAMPLE_MAX_CPU_FREQ_320 if IDF_TARGET_ESP32S31
         depends on PM_ENABLE
         help
             Maximum CPU frequency to use for dynamic frequency scaling.
@@ -23,6 +25,9 @@ menu "Example Configuration"
         config EXAMPLE_MAX_CPU_FREQ_240
             bool "240 MHz"
             depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C5
+        config EXAMPLE_MAX_CPU_FREQ_320
+            bool "320 MHz"
+            depends on IDF_TARGET_ESP32S31
     endchoice
 
     config EXAMPLE_MAX_CPU_FREQ_MHZ
@@ -32,6 +37,7 @@ menu "Example Configuration"
         default 120 if EXAMPLE_MAX_CPU_FREQ_120
         default 160 if EXAMPLE_MAX_CPU_FREQ_160
         default 240 if EXAMPLE_MAX_CPU_FREQ_240
+        default 320 if EXAMPLE_MAX_CPU_FREQ_320
 
     choice EXAMPLE_MIN_CPU_FREQ
         prompt "Minimum CPU frequency"

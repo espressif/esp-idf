@@ -318,9 +318,6 @@ enc_adv_data_cent_ext_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-    uint32_t *addr_offset;
-#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
     uint8_t test_addr[6];
     uint32_t peer_addr[6];
 
@@ -331,25 +328,17 @@ enc_adv_data_cent_ext_should_connect(const struct ble_gap_ext_disc_desc *disc)
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
-#if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-#endif
 
         /* Conversion */
 	for(int i=0; i<6; i++) {
 	   test_addr[i] = (uint8_t )peer_addr[i];
         }
 
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-	addr_offset = (uint32_t *)&test_addr[1];
-        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
-        test_addr[5] = 0xC3;
-        test_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
-#endif
 	if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
 	    return 0;
         }
