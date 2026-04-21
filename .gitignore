@@ -6,7 +6,7 @@
 GTAGS
 GRTAGS
 GPATH
-
+.altex
 # emacs
 .dir-locals.el
 
