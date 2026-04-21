@@ -1004,6 +1004,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
         rtc_hal_ulp_wakeup_enable();
 #elif CONFIG_ULP_COPROC_TYPE_LP_CORE
         pmu_ll_hp_clear_sw_intr_status(&PMU);
+        pmu_ll_hp_clear_lp_cpu_exc_intr_status(&PMU);
 #else
         rtc_hal_ulp_int_clear();
 #endif
