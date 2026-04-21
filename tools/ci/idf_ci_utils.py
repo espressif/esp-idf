@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # internal use only for CI
 # some CI related util functions
