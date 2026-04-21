@@ -155,7 +155,7 @@ int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32
         } else {
             arg_type = va_arg(args, size_t);
             if (i == args_cnt - 1) {
-                BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, arg_type));
+                BLE_CP_TRY_PUSH(ble_log_cp_push_u8(mgmt, arg_type << 4));
             } else {
                 size_info = arg_type << 4;
             }
