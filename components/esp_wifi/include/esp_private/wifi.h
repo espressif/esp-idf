@@ -499,6 +499,9 @@ esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *pr
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG : invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT : No connection between STA and AP
   */
 esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t aid, uint8_t *primary, uint8_t *second);
 
@@ -510,6 +513,9 @@ esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG : invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT : No connection between STA and AP
   */
 esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
 

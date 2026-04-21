@@ -1607,6 +1607,8 @@ esp_err_t esp_wifi_sta_get_aid(uint16_t *aid);
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT: No connection between STA and AP
   */
 esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
 
