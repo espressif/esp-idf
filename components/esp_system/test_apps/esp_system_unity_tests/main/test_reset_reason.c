@@ -323,15 +323,31 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
                           check_reset_reason_brownout);
 
 #ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
-#ifndef CONFIG_FREERTOS_UNICORE
+#if (defined(CONFIG_IDF_TARGET_ARCH_XTENSA) && !defined(CONFIG_FREERTOS_UNICORE)) || defined(CONFIG_IDF_TARGET_ARCH_RISCV)
+#include "esp_memory_utils.h"
+#include "freertos/task.h"
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xt_instr_macros.h"
 #include "xtensa/config/xt_specreg.h"
+#endif
 
+/* IDF's xTaskCreateStatic[PinnedToCore]() takes the stack size in BYTES
+ * (not in words like upstream FreeRTOS). */
 static int size_stack = 1024 * 4;
 static StackType_t *start_addr_stack;
 
-static int fibonacci(int n, void* func(void))
+static void func_do_exception(void)
+{
+    *((volatile int *) 0x01) = 0;
+}
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+/* On Xtensa (windowed ABI), recursing forces the register window to wrap,
+ * which triggers overflow/underflow exceptions that spill/fill registers
+ * to/from the (SPIRAM-backed) task stack. This makes sure SP is genuinely
+ * pointing into SPIRAM and that spilled frames live there too when func()
+ * is finally called from deep inside the recursion. */
+static int fibonacci(int n, void *func(void))
 {
     int tmp1 = n, tmp2 = n;
     uint32_t base, start;
@@ -349,6 +365,7 @@ static int fibonacci(int n, void* func(void))
     printf("fib = %d\n", (tmp1 - tmp2) + fib);
     return fib;
 }
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
 
 static void test_task(void *func)
 {
@@ -358,30 +375,13 @@ static void test_task(void *func)
     } else {
         printf("restart_task: uses internal stack, addr_stack = %p\n", start_addr_stack);
     }
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
     fibonacci(35, func);
-}
-
-static void func_do_exception(void)
-{
-    *((int *) 0) = 0;
-}
-
-static void init_restart_task(void)
-{
-    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
-    static StaticTask_t task_buf;
-    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, esp_restart, 5, stack_for_task, &task_buf, 1);
-    while (1) { };
-}
-
-static void init_task_do_exception(void)
-{
-    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
-    static StaticTask_t task_buf;
-    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, func_do_exception, 5, stack_for_task, &task_buf, 1);
-    while (1) { };
+#else
+    /* RISC-V has no register windows, so no need to recurse. Just invoke
+     * the test function directly from this task (whose stack is in SPIRAM). */
+    ((void (*)(void))func)();
+#endif
 }
 
 static void test1_finish(void)
@@ -396,6 +396,38 @@ static void test2_finish(void)
     printf("test - OK\n");
 }
 
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+#ifndef CONFIG_FREERTOS_UNICORE
+#define CREATE_TEST_TASK(stack, buf, entry) \
+    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, (entry), 5, (stack), (buf), 1)
+#endif // !CONFIG_FREERTOS_UNICORE
+#else // RISCV
+#define CREATE_TEST_TASK(stack, buf, entry) \
+    xTaskCreateStatic(test_task, "test_task", size_stack, (entry), 5, (stack), (buf))
+#endif
+
+#if defined(CREATE_TEST_TASK)
+
+static void init_restart_task(void)
+{
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(stack_for_task);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    CREATE_TEST_TASK(stack_for_task, &task_buf, esp_restart);
+    while (1) { }
+}
+
+static void init_task_do_exception(void)
+{
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(stack_for_task);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    CREATE_TEST_TASK(stack_for_task, &task_buf, func_do_exception);
+    while (1) { }
+}
+
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack]",
                           init_restart_task,
                           test1_finish);
@@ -404,8 +436,8 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a ta
                           init_task_do_exception,
                           test2_finish);
 
-#endif //CONFIG_IDF_TARGET_ARCH_XTENSA
-#endif // CONFIG_FREERTOS_UNICORE
+#endif // CREATE_TEST_TASK
+#endif // (XTENSA && !UNICORE) || RISCV
 #endif // CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 /* Not tested here: ESP_RST_SDIO */
