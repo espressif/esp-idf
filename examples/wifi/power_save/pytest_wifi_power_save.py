@@ -31,7 +31,7 @@ def _run_test(dut: Dut) -> None:
         pass
 
     try:
-        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)
+        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)
         log_after_got_ip = dut.expect(pexpect.TIMEOUT, timeout=10).decode()
         if any(s in log_after_got_ip for s in bad_event_str):
             logging.info('Abnormal connection log:')

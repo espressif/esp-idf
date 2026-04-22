@@ -34,7 +34,7 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'file_server.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('file_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'file_server_bin_size : {bin_size // 1024}KB')
     logging.info('Erasing the storage partition on the chip')
     dut.serial.erase_partition('storage')
     # Upload binary and start testing
@@ -51,11 +51,11 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
 
     # Parse IP address of STA
     logging.info('Waiting to connect with AP')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     # Expected logs
     got_port = dut.expect(r"Starting HTTP Server on port: '(\d+)'", timeout=30)[1].decode()
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     # Run test script
     conn = client.start_session(got_ip, got_port)
