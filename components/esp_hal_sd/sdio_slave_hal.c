@@ -7,6 +7,7 @@
 // The HAL layer for SDIO slave (common part)
 
 #include <string.h>
+#include <stddef.h>
 #include <inttypes.h>
 #include "soc/sdio_slc_struct.h"
 #include "soc/sdio_hinf_struct.h"
