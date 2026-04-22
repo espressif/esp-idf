@@ -31,8 +31,8 @@ void setUp(void)
 
 void tearDown(void)
 {
-    // Add a short delay of 10ms to allow the idle task to free an remaining memory
-    vTaskDelay(pdMS_TO_TICKS(10));
+    // Add a short delay of 10 ticks to allow the idle task to free remaining memory.
+    vTaskDelay(10);
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");
