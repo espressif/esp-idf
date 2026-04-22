@@ -342,6 +342,7 @@ static inline void _psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en
     (void)mspi_id;
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_psram_sys_clk_en = en;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_pll_clk_en = en;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_core_clk_en = en;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
