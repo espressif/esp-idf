@@ -31,6 +31,7 @@
 #include "stack/avdtc_api.h"
 #include "avdt_int.h"
 #include "stack/btu.h"
+#include "osi/allocator.h"
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
@@ -302,6 +303,10 @@ void avdt_ccb_event(tAVDT_CCB *p_ccb, UINT8 event, tAVDT_CCB_EVT *p_data)
     UINT8               action;
     int                 i;
 
+    if (p_ccb == NULL || p_ccb->state > AVDT_CCB_CLOSING_ST || event > AVDT_CCB_LL_CONG_EVT) {
+        return;
+    }
+
 #if AVDT_DEBUG == TRUE
     AVDT_TRACE_EVENT("CCB ccb=%d event=%s state=%s\n", avdt_ccb_to_idx(p_ccb), avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state]);
 #endif
@@ -396,7 +401,7 @@ tAVDT_CCB *avdt_ccb_alloc(BD_ADDR bd_addr)
 **
 ** Function         avdt_ccb_dealloc
 **
-** Description      Deallocate a stream control block.
+** Description      Deallocate a channel control block.
 **
 **
 ** Returns          void.
@@ -406,10 +411,28 @@ void avdt_ccb_dealloc(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
 {
     UNUSED(p_data);
 
+    if (p_ccb == NULL) {
+        return;
+    }
+
     AVDT_TRACE_DEBUG("avdt_ccb_dealloc %d\n", avdt_ccb_to_idx(p_ccb));
+
     btu_free_timer(&p_ccb->timer_entry);
-    fixed_queue_free(p_ccb->cmd_q, NULL);
-    fixed_queue_free(p_ccb->rsp_q, NULL);
+    fixed_queue_free(p_ccb->cmd_q, osi_free_func);
+    fixed_queue_free(p_ccb->rsp_q, osi_free_func);
+
+    if (p_ccb->p_curr_cmd != NULL) {
+        osi_free(p_ccb->p_curr_cmd);
+        p_ccb->p_curr_cmd = NULL;
+    }
+    if (p_ccb->p_curr_msg != NULL) {
+        osi_free(p_ccb->p_curr_msg);
+        p_ccb->p_curr_msg = NULL;
+    }
+    if (p_ccb->p_rx_msg != NULL) {
+        osi_free(p_ccb->p_rx_msg);
+        p_ccb->p_rx_msg = NULL;
+    }
     memset(p_ccb, 0, sizeof(tAVDT_CCB));
 }
 
@@ -425,6 +448,9 @@ void avdt_ccb_dealloc(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
 *******************************************************************************/
 UINT8 avdt_ccb_to_idx(tAVDT_CCB *p_ccb)
 {
+    if (p_ccb == NULL) {
+        return AVDT_NUM_LINKS;
+    }
     /* use array arithmetic to determine index */
     return (UINT8) (p_ccb - avdt_cb.ccb);
 }
@@ -446,6 +472,9 @@ tAVDT_CCB *avdt_ccb_by_idx(UINT8 idx)
     /* verify index */
     if (idx < AVDT_NUM_LINKS) {
         p_ccb = &avdt_cb.ccb[idx];
+        if (!p_ccb->allocated) {
+            p_ccb = NULL;
+        }
     } else {
         p_ccb = NULL;
         AVDT_TRACE_WARNING("No ccb for idx %d\n", idx);

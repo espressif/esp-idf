@@ -522,6 +522,11 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
         }
 
         /* look up application event */
+        /* bounds check to avoid out-of-bounds read */
+        if (event >= sizeof(bta_av_stream_evt_ok) / sizeof(bta_av_stream_evt_ok[0])) {
+            osi_free(p_msg);
+            return;
+        }
         if ((p_data == NULL) || (p_data->hdr.err_code == 0)) {
             p_msg->hdr.event = bta_av_stream_evt_ok[event];
             if (p_msg->hdr.event == BTA_AV_STR_START_OK_EVT) {
@@ -582,7 +587,7 @@ void bta_av_stream_data_cback(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UI
     /* Get  SCB  and correct sep type*/
     for (index = 0; index < BTA_AV_NUM_STRS; index ++ ) {
         p_scb = bta_av_cb.p_scb[index];
-        if ((p_scb->avdt_handle == handle) && (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)) {
+        if (p_scb && (p_scb->avdt_handle == handle) && (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)) {
             break;
         }
     }
@@ -731,6 +736,7 @@ static void bta_av_a2d_sdp_cback(BOOLEAN found, tA2D_Service *p_service)
             bta_sys_sendmsg(p_msg);
         } else {
             APPL_TRACE_ERROR ("bta_av_a2d_sdp_cback, no scb found for handle(0x%x)", bta_av_cb.handle);
+            osi_free(p_msg);
         }
     }
 }
@@ -1643,7 +1649,7 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                            p_data->str_msg.msg.discover_cfm.p_sep_info[i].tsep
                            );
     }
-    for (i = 0; i < p_scb->num_seps; i++) {
+    for (i = 0; i < num_seps; i++) {
         /* steam not in use, is a sink, and is audio */
         if ((p_scb->sep_info[i].in_use == FALSE) &&
                 (p_scb->sep_info[i].media_type == p_scb->media_type)) {
@@ -1883,6 +1889,11 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UINT16 uuid_int; /* UUID for which connection was initiated */
     tBTA_AV_SNK_PSC_CFG psc_cfg = {0};
 
+    if (p_scb->p_cap == NULL) {
+        APPL_TRACE_ERROR("bta_av_getcap_results: p_cap is NULL");
+        bta_av_ssm_execute(p_scb, BTA_AV_STR_GETCAP_FAIL_EVT, p_data);
+        return;
+    }
     memcpy(&cfg, &p_scb->cfg, sizeof(tAVDT_CFG));
     cfg.num_codec = 1;
     cfg.num_protect = p_scb->p_cap->num_protect;
@@ -2178,9 +2189,9 @@ void bta_av_reconfig (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     bta_sys_stop_timer(&p_scb->timer);
 
     memcpy(p_cfg, &p_scb->cfg, sizeof(tAVDT_CFG));
-    p_cfg->num_protect = p_rcfg->num_protect;
+    p_cfg->num_protect = (p_rcfg->num_protect <= AVDT_PROTECT_SIZE) ? p_rcfg->num_protect : AVDT_PROTECT_SIZE;
     memcpy(p_cfg->codec_info, p_rcfg->codec_info, AVDT_CODEC_SIZE);
-    memcpy(p_cfg->protect_info, p_rcfg->p_protect_info, p_rcfg->num_protect);
+    memcpy(p_cfg->protect_info, p_rcfg->p_protect_info, p_cfg->num_protect);
     p_scb->rcfg_idx = p_rcfg->sep_info_idx;
     p_scb->p_cap->psc_mask = p_scb->cur_psc_mask;
 
@@ -2393,7 +2404,12 @@ void bta_av_start_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
          * If the code were to be re-arranged for some reasons, this number may need to be changed
          */
         p_scb->co_started = bta_av_cb.audio_open_cnt;
-        flush_to = p_bta_av_cfg->p_audio_flush_to[p_scb->co_started - 1];
+        if (p_scb->co_started > 0) {
+            flush_to = p_bta_av_cfg->p_audio_flush_to[p_scb->co_started - 1];
+        } else {
+            APPL_TRACE_ERROR("bta_av_start_ok: co_started is 0");
+            flush_to = p_bta_av_cfg->p_audio_flush_to[0];
+        }
     } else {
         flush_to = p_bta_av_cfg->video_flush_to;
     }
@@ -2785,7 +2801,11 @@ void bta_av_suspend_cont (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         if (AVDT_ERR_CONNECT == err_code) {
             /* report failure */
             evt.status = BTA_AV_FAIL;
-            (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV *)&evt);
+            evt.chnl   = p_scb->chnl;
+            evt.hndl   = p_scb->hndl;
+            if (bta_av_cb.p_cback) {
+                (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV *)&evt);
+            }
             bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
         } else {
             APPL_TRACE_ERROR("suspend rejected, try close");
@@ -2801,9 +2821,18 @@ void bta_av_suspend_cont (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     } else {
         APPL_TRACE_DEBUG("bta_av_suspend_cont calling AVDT_ReconfigReq");
         /* reconfig the stream */
-
-        AVDT_ReconfigReq(p_scb->avdt_handle, p_scb->p_cap);
-        p_scb->p_cap->psc_mask = p_scb->cur_psc_mask;
+        if (p_scb->p_cap == NULL) {
+            evt.status = BTA_AV_FAIL;
+            evt.chnl   = p_scb->chnl;
+            evt.hndl   = p_scb->hndl;
+            if (bta_av_cb.p_cback) {
+                (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV *)&evt);
+            }
+            bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
+        } else {
+            AVDT_ReconfigReq(p_scb->avdt_handle, p_scb->p_cap);
+            p_scb->p_cap->psc_mask = p_scb->cur_psc_mask;
+        }
     }
 }
 
