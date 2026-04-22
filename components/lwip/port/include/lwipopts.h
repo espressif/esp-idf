@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2026 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef LWIP_HDR_ESP_LWIPOPTS_H
 #define LWIP_HDR_ESP_LWIPOPTS_H
@@ -1707,6 +1707,14 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_DHCPS_TIMER                 0
 #endif /* CONFIG_LWIP_DHCPS */
 
+/**
+ * LWIP_DHCPS_TEST_PARSE_OPTIONS==1: Expose dhcps_test_parse_options() in dhcpserver.c for
+ * unit tests. Default 0. Test projects may set -DLWIP_DHCPS_TEST_PARSE_OPTIONS=1
+ * (e.g. from CMake via idf_build_set_property) — do not use Kconfig for this.
+ */
+#ifndef LWIP_DHCPS_TEST_PARSE_OPTIONS
+#define LWIP_DHCPS_TEST_PARSE_OPTIONS 0
+#endif
 
 #if LWIP_NETCONN_SEM_PER_THREAD
 #define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
