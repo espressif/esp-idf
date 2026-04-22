@@ -15,6 +15,7 @@ BLE50_SECURITY_APP_PATH = f'{str(CUR_DIR / "ble50_security_server")}|{str(CUR_DI
 BLE50_SECURITY_CI_CONFIGS = ['name']
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -97,6 +98,7 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: tuple[IdfDut, Idf
 
 # Case 3: period_adv and period_sync test
 # EXAMPLE_CI_ID=8
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -170,6 +172,7 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, Id
 
 # Case 5: ble50 security client and ble50 security server config test
 # EXAMPLE_CI_ID=7
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',

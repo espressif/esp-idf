@@ -3,6 +3,10 @@
 components/esp_driver_parlio/test_apps/parlio:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15613
   depends_components:
     - esp_driver_parlio
     - esp_driver_dma

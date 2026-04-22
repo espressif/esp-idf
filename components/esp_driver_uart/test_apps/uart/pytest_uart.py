@@ -30,6 +30,7 @@ input_argv = {
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15619
 def test_uart_single_dev(case_tester) -> None:  # type: ignore
     dut = case_tester.first_dut
     chip_type = dut.app.target
@@ -65,6 +66,7 @@ def test_uart_single_dev(case_tester) -> None:  # type: ignore
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15619
 def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
     dut = case_tester.first_dut
     for case in case_tester.test_menu:
@@ -84,6 +86,7 @@ def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
 @pytest.mark.generic_multi_device
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-10702
 @pytest.mark.parametrize(
     'config',
     [

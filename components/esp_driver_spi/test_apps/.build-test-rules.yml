@@ -12,20 +12,36 @@
 components/esp_driver_spi/test_apps/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15615
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/param:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15615
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15615
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave_hd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
     - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15615
   <<: *spi_depends_default

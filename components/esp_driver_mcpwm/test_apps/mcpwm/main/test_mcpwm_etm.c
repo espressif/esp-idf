@@ -14,6 +14,7 @@
 #include "driver/gptimer.h"
 #include "driver/gpio.h"
 #include "driver/mcpwm_prelude.h"
+#include "test_mcpwm_utils.h"
 
 TEST_CASE("mcpwm_comparator_etm_event", "[mcpwm][etm]")
 {
@@ -54,7 +55,7 @@ TEST_CASE("mcpwm_comparator_etm_event", "[mcpwm][etm]")
     TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator_b, cmpb));
 
     // install generator
-    const uint32_t gen_gpio = 10;
+    const uint32_t gen_gpio = TEST_PWMA_GPIO;
     mcpwm_gen_handle_t generator = NULL;
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = gen_gpio,

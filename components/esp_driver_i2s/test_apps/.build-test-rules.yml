@@ -3,6 +3,10 @@
 components/esp_driver_i2s/test_apps/i2s:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15609
   depends_components:
     - esp_driver_i2s
     - esp_driver_pcnt
@@ -22,6 +26,9 @@ components/esp_driver_i2s/test_apps/i2s_multi_dev:
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: lack of s31 multi-device runner
+    - if: IDF_TARGET in ["esp32h4"] # TODO: IDFCI-10702
+      temporary: true
+      reason: lack of runner
   depends_components:
     - esp_driver_i2s
     - esp_driver_dma

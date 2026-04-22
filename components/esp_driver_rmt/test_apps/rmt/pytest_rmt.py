@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -16,7 +17,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4'],
+    soc_filtered_targets('SOC_RMT_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5", "esp32s3"]'),
     indirect=['target'],
 )
 def test_rmt(dut: Dut) -> None:
@@ -33,7 +34,7 @@ def test_rmt(dut: Dut) -> None:
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32h4'],
+    soc_filtered_targets('SOC_RMT_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1 and IDF_TARGET not in ["esp32s3"]'),
     indirect=['target'],
 )
 def test_rmt_with_virt_flash_enc(dut: Dut) -> None:

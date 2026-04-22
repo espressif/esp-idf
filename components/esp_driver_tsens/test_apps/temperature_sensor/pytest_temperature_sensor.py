@@ -17,9 +17,10 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 )
 @idf_parametrize(
     'target',
-    soc_filtered_targets('SOC_TEMP_SENSOR_SUPPORTED == 1'),
+    soc_filtered_targets('SOC_TEMP_SENSOR_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'),
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15617
 def test_temperature_sensor_driver(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

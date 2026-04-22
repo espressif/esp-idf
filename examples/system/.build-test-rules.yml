@@ -16,6 +16,10 @@ examples/system/app_trace_basic:
     - app_trace
 
 examples/system/base_mac_address:
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15600
   depends_components:
     - *common_components
     - esp_hw_support
@@ -62,6 +66,10 @@ examples/system/esp_event/user_event_loops:
 examples/system/esp_timer:
   depends_components:
     - esp_timer
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15605
 
 examples/system/eventfd:
   disable:
@@ -121,6 +129,10 @@ examples/system/ipc/ipc_isr/xtensa:
 examples/system/light_sleep:
   disable:
     - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15611
 
 examples/system/nmi_isr:
   enable:

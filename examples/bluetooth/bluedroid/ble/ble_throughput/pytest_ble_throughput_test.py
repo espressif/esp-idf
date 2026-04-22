@@ -11,6 +11,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 
 
 # Case 1: gatt write throughput test(EXAMPLE_CI_ID = 2)
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -102,6 +103,7 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut
 
 
 # Case 3: gatt notify throughput test(EXAMPLE_CI_ID = 1)
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',

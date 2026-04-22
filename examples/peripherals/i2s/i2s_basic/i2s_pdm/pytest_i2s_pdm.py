@@ -13,7 +13,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     soc_filtered_targets('SOC_I2S_SUPPORTS_PDM == 1'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21', 'esp32h4'], reason='lack of runners')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_i2s_pdm_tx_example(dut: Dut) -> None:
     dut.expect(r'I2S PDM TX example start', timeout=5)
     dut.expect(r'---------------------------', timeout=5)

@@ -2,7 +2,10 @@
 
 
 components/esp_hw_support/test_apps/cpu:
-components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15602
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:

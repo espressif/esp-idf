@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pexpect
 import pytest
@@ -31,6 +31,7 @@ def test_esp_system_stdio_no_output_uart(dut: Dut) -> None:
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_esp_system_stdio_only_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
@@ -46,6 +47,7 @@ def test_esp_system_stdio_only_serial_jtag(dut: Dut) -> None:
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_esp_system_stdio_only_serial_jtag_no_vfs(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
@@ -57,6 +59,7 @@ def test_esp_system_stdio_only_serial_jtag_no_vfs(dut: Dut) -> None:
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_esp_system_stdio_secondary_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')

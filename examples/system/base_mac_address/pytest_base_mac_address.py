@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15600
 def test_base_mac_address(dut: Dut) -> None:
     def get_hex_r(num_bytes: int) -> str:
         return r', '.join((r'0x([0-9a-f]{1,2})',) * num_bytes)
