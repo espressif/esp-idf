@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from click.core import Context
+from rich_click import Context
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import PropertyDict

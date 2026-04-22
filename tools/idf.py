@@ -156,9 +156,12 @@ def _safe_relpath(path: str, start: str | None = None) -> str:
 
 
 def init_cli(verbose_output: list | None = None) -> Any:
-    # Click is imported here to run it after check_environment()
-    import click
+    # rich-click is imported here to run it after check_environment()
+    import rich_click as click
     from click.shell_completion import CompletionItem
+    from rich_click import Context
+    from rich_click import RichHelpConfiguration
+    from rich_click.rich_click import MAX_WIDTH
 
     class Deprecation:
         """Construct deprecation notice for help messages"""
@@ -210,7 +213,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             text = text or ''
             return ('Deprecated! ' + text) if self.deprecated else text
 
-    def check_deprecation(ctx: click.core.Context) -> None:
+    def check_deprecation(ctx: Context) -> None:
         """Prints deprecation warnings for arguments in given context"""
         for option in ctx.command.params:
             default = () if option.multiple else option.default
@@ -240,15 +243,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.action_args = action_args
             self.aliases = aliases
 
-        def __call__(
-            self, context: click.core.Context, global_args: PropertyDict, action_args: dict | None = None
-        ) -> None:
+        def __call__(self, context: Context, global_args: PropertyDict, action_args: dict | None = None) -> None:
             if action_args is None:
                 action_args = self.action_args
 
             self.callback(self.name, context, global_args, **action_args)
 
-    class Action(click.Command):
+    class Action(click.RichCommand):
         callback: Callable
 
         def __init__(
@@ -309,7 +310,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
                 self.callback: Callable = wrapped_callback
 
-        def invoke(self, ctx: click.core.Context) -> click.core.Context:
+        def invoke(self, ctx: Context) -> Context:
             if self.deprecated:
                 deprecation = Deprecation(self.deprecated)
                 message = deprecation.full_message(f'Command "{self.name}"')
@@ -325,7 +326,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             check_deprecation(ctx)
             return super().invoke(ctx)
 
-    class Argument(click.Argument):
+    class Argument(click.RichArgument):
         """
         Positional argument
 
@@ -368,7 +369,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
         def __str__(self) -> str:
             return self._scope
 
-    class Option(click.Option):
+    class Option(click.RichOption):
         """Option that knows whether it should be global"""
 
         def __init__(
@@ -406,14 +407,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
             if self.scope.is_global:
                 self.help += ' This option can be used at most once either globally, or for one subcommand.'
 
-        def get_help_record(self, ctx: click.core.Context) -> Any:
+        def get_help_record(self, ctx: Context) -> Any:
             # Backport "hidden" parameter to click 5.0
             if self.hidden:
                 return None
 
             return super().get_help_record(ctx)
 
-    class CLI(click.Group):
+    class CLI(click.RichGroup):
         """Action list contains all actions with options available for CLI"""
 
         def __init__(
@@ -427,7 +428,10 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 invoke_without_command=True,
                 result_callback=self.execute_tasks,
                 no_args_is_help=True,
-                context_settings={'max_content_width': 140},
+                context_settings={
+                    'help_option_names': ['-h', '--help'],
+                    'rich_help_config': RichHelpConfiguration(max_width=MAX_WIDTH),
+                },
                 help=cli_help,
             )
             self._actions = {}
@@ -467,6 +471,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     options = []
 
                 self._actions[name] = Action(name=name, **action)
+                self.commands[name] = self._actions[name]
                 for alias in [name] + action.get('aliases', []):
                     self.commands_with_aliases[alias] = name
 
@@ -492,10 +497,10 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
                     self._actions[name].params.append(option)
 
-        def list_commands(self, ctx: click.core.Context) -> list:
+        def list_commands(self, ctx: Context) -> list:
             return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
 
-        def get_command(self, ctx: click.core.Context, name: str) -> Action | None:
+        def get_command(self, ctx: Context, name: str) -> Action | None:
             if name in self.commands_with_aliases:
                 return self._actions.get(self.commands_with_aliases.get(name))
 
@@ -506,7 +511,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     return Action(name=name, callback=callback.unwrapped_callback)
                 return None
 
-        def shell_complete(self, ctx: click.core.Context, incomplete: str) -> list[CompletionItem]:
+        def shell_complete(self, ctx: Context, incomplete: str) -> list[CompletionItem]:
             # Enable @-argument completion in bash only if @ is not present in
             # COMP_WORDBREAKS. When @ is included, the @-argument is not considered
             # part of the completion word, causing @-argument completion to function

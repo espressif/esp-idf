@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 import re
@@ -6,9 +6,8 @@ import stat
 import sys
 from shutil import copyfile
 from shutil import copytree
-from typing import Dict
 
-import click
+from rich_click import Context
 
 from idf_py_actions.tools import PropertyDict
 
@@ -100,8 +99,8 @@ def create_component(target_path: str, name: str) -> None:
     replace_in_file(os.path.join(target_path, 'CMakeLists.txt'), 'main', name)
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
-    def create_new(action: str, ctx: click.core.Context, global_args: PropertyDict, **action_args: str) -> Dict:
+def action_extensions(base_actions: dict, project_path: str) -> dict:
+    def create_new(action: str, ctx: Context, global_args: PropertyDict, **action_args: str) -> dict:
         target_path = action_args.get('path') or os.path.join(project_path, action_args['name'])
 
         is_empty_and_create(target_path, action)

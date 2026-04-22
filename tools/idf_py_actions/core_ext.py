@@ -15,8 +15,8 @@ from urllib.request import Request
 from urllib.request import urlopen
 from webbrowser import open_new_tab
 
-import click
-from click.core import Context
+import rich_click as click
+from rich_click import Context
 
 from idf_py_actions.constants import GENERATORS
 from idf_py_actions.constants import PREVIEW_TARGETS

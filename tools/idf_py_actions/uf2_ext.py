@@ -1,12 +1,14 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from typing import Dict, List
 
-from click.core import Context
-from idf_py_actions.tools import PropertyDict, ensure_build_directory, run_target
+from rich_click import Context
+
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import run_target
 
 
-def action_extensions(base_actions: Dict, project_path: List) -> Dict:
+def action_extensions(base_actions: dict, project_path: list) -> dict:
     def uf2_target(target_name: str, ctx: Context, args: PropertyDict, md5_disable: bool) -> None:
         ensure_build_directory(args, ctx.info_name)
         extra = list()
