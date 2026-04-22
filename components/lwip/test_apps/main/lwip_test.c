@@ -492,7 +492,7 @@ TEST(lwip, sntp_client_time_2048)
  * truncated, and malformed inputs.
  */
 
-#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+#if LWIP_DHCPS_TEST_PARSE_OPTIONS
 
 extern u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len);
 
@@ -610,7 +610,7 @@ TEST(lwip, dhcps_parse_options_req_ipaddr_truncated)
     TEST_ASSERT(state != 0);
 }
 
-#endif /* CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS */
+#endif /* LWIP_DHCPS_TEST_PARSE_OPTIONS */
 
 TEST_GROUP_RUNNER(lwip)
 {
@@ -621,7 +621,7 @@ TEST_GROUP_RUNNER(lwip)
     RUN_TEST_CASE(lwip, sntp_client_time_2015)
     RUN_TEST_CASE(lwip, sntp_client_time_2048)
     RUN_TEST_CASE(lwip, dhcp_arp_probe_self_mac_is_ok)
-#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+#if LWIP_DHCPS_TEST_PARSE_OPTIONS
     RUN_TEST_CASE(lwip, dhcps_parse_options_well_formed_discover)
     RUN_TEST_CASE(lwip, dhcps_parse_options_well_formed_request_ack)
     RUN_TEST_CASE(lwip, dhcps_parse_options_pad_bytes_skipped)

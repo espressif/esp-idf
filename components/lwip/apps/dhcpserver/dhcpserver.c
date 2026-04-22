@@ -1731,7 +1731,7 @@ bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_
     return false;
 }
 #endif
-#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+#if LWIP_DHCPS_TEST_PARSE_OPTIONS == 1
 u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len)
 {
     dhcps_t *dhcps = dhcps_new();
@@ -1743,6 +1743,6 @@ u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len)
     mem_free(dhcps);
     return result;
 }
-#endif
+#endif /* LWIP_DHCPS_TEST_PARSE_OPTIONS == 1 */
 
 #endif // ESP_DHCPS
