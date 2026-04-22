@@ -885,7 +885,7 @@ esp_err_t esp_wifi_nan_stop(void)
 
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, bool ndp_resp_needed)
 {
-    uint8_t pub_id;
+    uint8_t pub_id = 0;
 
     NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
@@ -933,7 +933,7 @@ fail:
 
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
-    uint8_t sub_id;
+    uint8_t sub_id = 0;
 
     NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
