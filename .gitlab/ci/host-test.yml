@@ -309,12 +309,14 @@ build_docker:
   variables:
     DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
   script:
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 --build-arg IDF_GITHUB_ASSETS=${INTERNAL_GITHUB_ASSETS}"
-    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # use different image tag for different concurrent job
+    - export DOCKER_TMP_IMAGE="${DOCKER_TMP_IMAGE_NAME}:${CI_CONCURRENT_ID:-latest}"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 ${EXTRA_DOCKER_BUILD_ARGS:-} "
+    - time docker build --tag ${DOCKER_TMP_IMAGE} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
     # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
     # Therefore, build a copy of the example located inside the container.
-    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE} idf.py build
 
 ############################
 # Host test with test apps #
