@@ -23,6 +23,10 @@
 #include "hal/uart_ll.h"
 #include "hal/wdt_hal.h"
 #include "esp_private/cache_err_int.h"
+#include "esp_memory_utils.h"
+
+#define ALIGN_DOWN(val, align)  ((val) & ~((align) - 1))
+extern int _bss_end;
 
 #if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_syscon_ll.h"
@@ -99,6 +103,23 @@ void esp_system_reset_modules_on_exit(void)
     uart_ll_sclk_enable(&UART0);
 }
 
+static void IRAM_ATTR __attribute__((noinline, noreturn)) esp_restart_noos_inner(void)
+{
+    // Disable cache
+    Cache_Disable_Cache();
+
+    esp_system_reset_modules_on_exit();
+
+    // Set CPU back to XTAL source, same as hard reset, but keep BBPLL on so that USB Serial JTAG can log at 1st stage bootloader.
+#if !CONFIG_IDF_ENV_FPGA
+    rtc_clk_cpu_set_to_default_config();
+#endif
+
+    // Reset PRO CPU
+    esp_rom_software_reset_cpu(0);
+    ESP_INFINITE_LOOP();
+}
+
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
@@ -131,25 +152,15 @@ void esp_restart_noos(void)
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
 
-    // Disable cache
-    Cache_Disable_Cache();
-
-    //TODO: [ESP32C61] IDF-9553, inherit from verify code
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    // Moved to module internal
-    // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-    //                   SYSTEM_SDIO_RST |                              // SDIO_HINF_HINF_SDIO_RST?
-    //                   SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |          // TODO: IDF-5325 (ethernet)
-    // REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
-
-    esp_system_reset_modules_on_exit();
-
-    // Set CPU back to XTAL source, same as hard reset, but keep BBPLL on so that USB Serial JTAG can log at 1st stage bootloader.
-#if !CONFIG_IDF_ENV_FPGA
-    rtc_clk_cpu_set_to_default_config();
+#ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+    if (esp_ptr_external_ram(esp_cpu_get_sp())) {
+        // If stack is in external RAM (CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM), switch SP to
+        // internal RAM before disabling the cache to avoid a "Cache disabled but cached memory
+        // region accessed" crash.
+        uint32_t new_sp = ALIGN_DOWN((uint32_t)&_bss_end, 16);
+        rv_utils_set_sp((void *)new_sp);
+    }
 #endif
 
-    // Reset PRO CPU
-    esp_rom_software_reset_cpu(0);
-    ESP_INFINITE_LOOP();
+    esp_restart_noos_inner();
 }
