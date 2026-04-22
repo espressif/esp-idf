@@ -38,7 +38,8 @@ typedef struct {
         unsigned int octal_mode: 1;      /*!< transmit with octal mode (8 data lines), this mode is used to simulate Intel 8080 timing */
         unsigned int quad_mode: 1;       /*!< transmit with quad mode (4 data lines), this mode is useful when transmitting LCD parameters (Only use one line for command) */
         unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
-        unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
+        unsigned int psram_dma_direct: 1;/*!< If color buffer is in PSRAM, use PSRAM for DMA buffer directly, has speed limit, but no temp buffer and save memory */
+        unsigned int lsb_first: 1;       /*!< Transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */
     } flags; /*!< Extra flags to fine-tune the SPI device */
 } esp_lcd_panel_io_spi_config_t;
