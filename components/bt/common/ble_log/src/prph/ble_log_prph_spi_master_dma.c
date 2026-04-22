@@ -17,6 +17,8 @@
 #define BLE_LOG_SPI_BUS                     SPI2_HOST
 #define BLE_LOG_SPI_MAX_TRANSFER_SIZE       (10240)
 #define BLE_LOG_SPI_TRANS_ITVL_MIN_US       (30)
+#define BLE_LOG_SPI_DMA_ALIGN_BYTES         (4U)
+#define BLE_LOG_SPI_ALIGN_LOG_PERIOD        (256U)
 
 /* VARIABLE */
 BLE_LOG_STATIC bool prph_inited = false;
@@ -174,11 +176,26 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     spi_transaction_t *spi_trans = (spi_transaction_t *)trans->ctx;
+    uint16_t tx_len = trans->pos;
+
+    /*
+     * SPI slave DMA requires transaction length to be 4-byte aligned.
+     * Pad trailing bytes with zero to reduce transport loss on slave side.
+     */
+    uint16_t aligned_len = (uint16_t)((tx_len + (BLE_LOG_SPI_DMA_ALIGN_BYTES - 1U)) &
+                                      ~(BLE_LOG_SPI_DMA_ALIGN_BYTES - 1U));
+    if (aligned_len != tx_len) {
+        uint16_t pad_len = (uint16_t)(aligned_len - tx_len);
+        if (aligned_len <= trans->size) {
+            BLE_LOG_MEMSET(trans->buf + tx_len, 0, pad_len);
+            tx_len = aligned_len;
+        }
+    }
 
     /* CRITICAL:
      * Bytes to bits length conversion is required for tx, and rxlength must be
      * cleared regardless of whether it is used for rx as per SPI master driver */
-    spi_trans->length = (trans->pos << 3);
+    spi_trans->length = (tx_len << 3);
     spi_trans->rxlength = 0;
     if (spi_device_queue_trans(dev_handle, spi_trans, 0) != ESP_OK) {
         ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;

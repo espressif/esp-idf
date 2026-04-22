@@ -327,10 +327,23 @@ class LogCompressor:
         if not fmt_node:
             return None
 
+        nimble_nodes = False
         if fmt_node.type == 'concatenated_string':
             log_fmt = self._process_concatenated_string(fmt_node)
         elif fmt_node.type == 'string_literal':
             log_fmt = fmt_node.text.decode('utf-8')[1:-1]  # Remove quotes
+        elif fmt_node.type == 'identifier':
+            # NimBLE style: BLE_HS_LOG(level, "fmt", ...)
+            nimble_nodes = True
+            fmt_node = valid_arg_childrn[1] if len(valid_arg_childrn) > 1 else None
+            if not fmt_node:
+                return None
+            if fmt_node.type == 'concatenated_string':
+                log_fmt = self._process_concatenated_string(fmt_node)
+            elif fmt_node.type == 'string_literal':
+                log_fmt = fmt_node.text.decode('utf-8')[1:-1]
+            else:
+                return None
         else:
             return None
 
@@ -353,7 +366,11 @@ class LogCompressor:
                     log_info['hexify'] = False
                     return log_info
 
-        arguments: list[Node] = valid_arg_childrn[1:]
+        arguments: list[Node] = []
+        if nimble_nodes:
+            arguments = valid_arg_childrn[2:]
+        else:
+            arguments = valid_arg_childrn[1:]
 
         if len(arguments) != need_args:
             raise SyntaxError(f'LogSyntaxError:{node.text.decode("utf-8")}')
@@ -563,6 +580,30 @@ class LogCompressor:
         try:
             with open(file_path, 'rb') as f:
                 content = f.read()
+
+            # NimBLE host macros are emitted to nimble_log_index.h (module BLE_HOST when NimBLE is enabled).
+            # Ensure each compressed NimBLE source includes that header.
+            if (
+                module == 'BLE_HOST'
+                and self.module_info[module].get('log_index_file') == 'nimble_log_index.h'
+                and b'#include "nimble_log_index.h"' not in content
+            ):
+                lines = content.splitlines(keepends=True)
+                first_include = None
+                last_include = None
+                for idx, line in enumerate(lines):
+                    if line.lstrip().startswith(b'#include'):
+                        if first_include is None:
+                            first_include = idx
+                        last_include = idx
+                    elif first_include is not None and line.strip() and not line.lstrip().startswith(b'//'):
+                        break
+
+                if last_include is not None:
+                    lines.insert(last_include + 1, b'#include "nimble_log_index.h"\n')
+                    content = b''.join(lines)
+                else:
+                    content = b'#include "nimble_log_index.h"\n' + content
 
             new_content = bytearray(content)
             logs = self.extract_log_calls(content, self.module_info[module]['tags'])
@@ -788,6 +829,10 @@ class LogCompressor:
         for module in module_names:
             if module in modules:
                 self.module_info[module] = modules[module]
+                if module == 'BLE_HOST' and modules[module].get('log_index_file') == 'nimble_log_index.h':
+                    # Force a one-time DB/config refresh for NimBLE compression
+                    # when generator behavior changes (e.g. header injection).
+                    self.module_info[module]['generator_rev'] = 'nimble_include_fix_v1'
                 module_script_path = self.module_info[module]['script']
                 spec = self.module_mod[module] = importlib.util.spec_from_file_location(module, module_script_path)
                 if spec and spec.loader:
