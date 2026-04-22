@@ -16,7 +16,7 @@ from typing import Any
 from typing import TextIO
 from typing import cast
 
-import click
+import rich_click as click
 import yaml
 from esp_idf_monitor import get_ansi_converter
 
