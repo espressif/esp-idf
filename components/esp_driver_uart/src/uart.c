@@ -252,6 +252,7 @@ static bool uart_module_enable(uart_port_t uart_num)
                             .arg = &uart_context[uart_num],
                         },
                     },
+                    .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                     .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
                 };
                 if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -1140,12 +1141,17 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
                 if (sleep_retention_module_allocate(module) != ESP_OK) {
                     // Even though the sleep retention module create failed, UART driver should still work, so just warning here
                     ESP_LOGW(UART_TAG, "create retention module failed, power domain can't turn off");
+                } else {
+                    if (sleep_retention_module_attach(module) != ESP_OK) {
+                        ESP_LOGW(UART_TAG, "attach retention module failed, power domain can't turn off");
+                    }
                 }
             } else {
                 ESP_LOGW(UART_TAG, "retention module not initialized first, unable to create retention module");
             }
         } else if (!allow_pd && sleep_retention_is_module_created(module)) {
             assert(sleep_retention_is_module_inited(module));
+            sleep_retention_module_detach(module);
             sleep_retention_module_free(module);
         }
         _lock_release(&(uart_context[uart_num].mutex));
@@ -2146,6 +2152,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
         _lock_acquire(&(uart_context[uart_num].mutex));
         if (sleep_retention_is_module_created(module)) {
             assert(sleep_retention_is_module_inited(module));
+            sleep_retention_module_detach(module);
             sleep_retention_module_free(module);
         }
         _lock_release(&(uart_context[uart_num].mutex));

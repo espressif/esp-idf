@@ -32,6 +32,10 @@ static void gptimer_create_retention_module(gptimer_t *timer)
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed on TimerGroup%d Timer%d, power domain won't be turned off during sleep", group_id, timer_id);
+            return;
+        }
+        if (sleep_retention_module_attach(module) != ESP_OK) {
+            ESP_LOGW(TAG, "attach retention link failed on TimerGroup%d Timer%d, power domain won't be turned off during sleep", group_id, timer_id);
         }
     }
 }
@@ -73,6 +77,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
                 .arg = (void *)timer
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -94,6 +99,9 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
 
 #if GPTIMER_USE_RETENTION_LINK
     sleep_retention_module_t module = gptimer_retention_infos[group->group_id][timer_id].module;
+    if (sleep_retention_is_module_attached(module)) {
+        sleep_retention_module_detach(module);
+    }
     if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
     }

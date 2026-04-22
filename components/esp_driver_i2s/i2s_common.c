@@ -110,6 +110,9 @@ static void s_i2s_create_retention_module(i2s_controller_t *i2s_obj)
             ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
         } else {
             i2s_obj->retention_link_created = true;
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention module failed, power domain can't turn off");
+            }
         }
     }
     _lock_release(&i2s_obj->mutex);
@@ -209,6 +212,7 @@ static esp_err_t i2s_destroy_controller_obj(i2s_controller_t **i2s_obj)
 #if I2S_USE_RETENTION_LINK
     if ((*i2s_obj)->slp_retention_mod) {
         if ((*i2s_obj)->retention_link_created) {
+            sleep_retention_module_detach((*i2s_obj)->slp_retention_mod);
             sleep_retention_module_free((*i2s_obj)->slp_retention_mod);
         }
         sleep_retention_module_deinit((*i2s_obj)->slp_retention_mod);
@@ -268,6 +272,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
                     .arg = i2s_obj,
                 },
             },
+            .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
             .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
         };
         if (sleep_retention_module_init(module, &init_param) == ESP_OK) {

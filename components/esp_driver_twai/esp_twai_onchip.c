@@ -293,6 +293,7 @@ static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
 #endif
 #if SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     const sleep_retention_module_t retention_id = twai_reg_retention_info[twai_ctx->ctrlr_id].module_id;
+    sleep_retention_module_detach(retention_id);
     if (sleep_retention_is_module_created(retention_id)) {
         assert(sleep_retention_is_module_inited(retention_id));
         sleep_retention_module_free(retention_id);
@@ -707,11 +708,18 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
                 .arg = node,
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(retention_id, &init_param) == ESP_OK) {
-        if ((node_config->flags.sleep_allow_pd) && (sleep_retention_module_allocate(retention_id) != ESP_OK)) {
-            ESP_LOGW(TAG, "sleep retention prepare failed, power will hold on");
+        if (node_config->flags.sleep_allow_pd) {
+            if (sleep_retention_module_allocate(retention_id) != ESP_OK) {
+                ESP_LOGW(TAG, "sleep retention allocate failed, power will hold on");
+            } else {
+                if (sleep_retention_module_attach(retention_id) != ESP_OK) {
+                    ESP_LOGW(TAG, "sleep retention attach failed, power will hold on");
+                }
+            }
         }
     } else {
         ESP_LOGW(TAG, "sleep retention init failed, twai may offline after sleep");

@@ -946,14 +946,21 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
                 .arg = ctx,
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
 
     _lock_acquire(&ctx->mutex);
     if (sleep_retention_module_init(spi_reg_retention_info[host_id - 1].module_id, &init_param) == ESP_OK) {
-        if ((bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK)) {
-            // even though the sleep retention create failed, SPI driver should still work, so just warning here
-            ESP_LOGW(SPI_TAG, "alloc sleep recover failed, peripherals may hold power on");
+        if ((bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD)) {
+            if (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK) {
+                // even though the sleep retention create failed, SPI driver should still work, so just warning here
+                ESP_LOGW(SPI_TAG, "alloc sleep recover failed, peripherals may hold power on");
+            } else {
+                if (sleep_retention_module_attach(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK) {
+                    ESP_LOGW(SPI_TAG, "attach sleep recover failed, peripherals may hold power on");
+                }
+            }
         }
     } else {
         // even the sleep retention init failed, SPI driver should still work, so just warning here
@@ -1055,6 +1062,7 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
 #if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     const periph_retention_module_t retention_id = spi_reg_retention_info[host_id - 1].module_id;
     _lock_acquire(&ctx->mutex);
+    sleep_retention_module_detach(retention_id);
     if (sleep_retention_is_module_created(retention_id)) {
         assert(sleep_retention_is_module_inited(retention_id));
         sleep_retention_module_free(retention_id);

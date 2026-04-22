@@ -88,6 +88,10 @@ static void etm_create_retention_module(etm_group_t *group)
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, ETM driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed on ETM Group%d, power domain won't be turned off during sleep", group_id);
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention link failed on ETM Group%d, power domain won't be turned off during sleep", group_id);
+            }
         }
     }
     _lock_release(&s_platform.mutex);
@@ -125,6 +129,7 @@ static etm_group_t *etm_acquire_group_handle(int group_id)
                         .arg = group,
                     },
                 },
+                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                 .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             // retention module init must be called BEFORE the hal init
@@ -172,6 +177,9 @@ static void etm_release_group_handle(etm_group_t *group)
 
 #if ETM_USE_RETENTION_LINK
         sleep_retention_module_t module = soc_etm_retention_info[group_id].module;
+        if (sleep_retention_is_module_attached(module)) {
+            sleep_retention_module_detach(module);
+        }
         if (sleep_retention_is_module_created(module)) {
             sleep_retention_module_free(module);
         }

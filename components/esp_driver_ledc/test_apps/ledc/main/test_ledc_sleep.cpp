@@ -87,6 +87,7 @@ TEST_CASE("ledc can output after light sleep (LEDC power domain pd)", "[ledc]")
 
     // ledc driver does not have channel release, we will do retention release here to avoid memory leak
     sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+    sleep_retention_module_detach(module);
     sleep_retention_module_free(module);
     sleep_retention_module_deinit(module);
 }
