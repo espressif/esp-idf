@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from click.core import Context
+from rich_click import Context
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import PropertyDict

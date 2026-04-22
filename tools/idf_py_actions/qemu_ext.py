@@ -14,7 +14,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from click.core import Context
+from rich_click import Context
 
 try:
     from idf_py_actions.tools import PropertyDict
