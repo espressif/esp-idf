@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include <stdint.h>
+
 uint64_t esp_time_impl_get_time(void);
 
 uint64_t esp_time_impl_get_time_since_boot(void);
