@@ -1868,14 +1868,17 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     ESP_LOGI(BT_LOG_TAG,"Put all controller code in flash");
 #endif
 
-    if ((err = btdm_low_power_mode_init(cfg)) != ESP_OK) {
-        ESP_LOGE(BT_LOG_TAG, "Low power module initialization failed");
-        goto error;
-    }
 
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
+
+    /* Must call periph_module_enable(BT) before any step that may goto error,
+     * otherwise bt_controller_deinit_internal() will call periph_module_disable(BT)
+     * when ref is still 0, causing ref underflow (0-1=255) and subsequent
+     * init/enable failures (EM BASE MISMATCH, BLE assert, etc.) */
+     periph_module_enable(PERIPH_BT_MODULE);
+     periph_module_reset(PERIPH_BT_MODULE);
 
 #if CONFIG_BLE_LOG_ENABLED
     if (!ble_log_init()) {
@@ -1893,8 +1896,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #endif /* CONFIG_BLE_LOG_ENABLED */
 
-    periph_module_enable(PERIPH_BT_MODULE);
-    periph_module_reset(PERIPH_BT_MODULE);
+if ((err = btdm_low_power_mode_init(cfg)) != ESP_OK) {
+    ESP_LOGE(BT_LOG_TAG, "Low power module initialization failed");
+    goto error;
+}
+
 
 #if CONFIG_BT_CTRL_LE_LOG_EN
     err = esp_bt_controller_log_init(log_output_mode);

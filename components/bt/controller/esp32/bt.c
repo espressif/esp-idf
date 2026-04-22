@@ -1692,31 +1692,30 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
-    s_wakeup_req_sem = semphr_create_wrapper(1, 0);
-    if (s_wakeup_req_sem == NULL) {
-        err = ESP_ERR_NO_MEM;
-        goto error;
-    }
-
     esp_phy_modem_init();
 
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
 
+    /* Must call periph_module_enable(BT) before any step that may goto error,
+     * otherwise bt_controller_deinit_internal() will call periph_module_disable(BT)
+     * when ref is still 0, causing ref underflow (0-1=255) and subsequent
+     * init/enable failures (EM BASE MISMATCH, BLE assert, etc.) */
     periph_module_enable(PERIPH_BT_MODULE);
     periph_module_reset(PERIPH_BT_MODULE);
+
+    s_wakeup_req_sem = semphr_create_wrapper(1, 0);
+    if (s_wakeup_req_sem == NULL) {
+        err = ESP_ERR_NO_MEM;
+        goto error;
+    }
 
 #if CONFIG_BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
     sdk_config_set_uart_flow_ctrl_enable(true);
 #else
     sdk_config_set_uart_flow_ctrl_enable(false);
 #endif
-
-    if ((err = btdm_low_power_mode_init()) != ESP_OK) {
-        ESP_LOGE(BTDM_LOG_TAG, "Low power module initialization failed");
-        goto error;
-    }
 
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
@@ -1737,6 +1736,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #endif /* CONFIG_BLE_LOG_ENABLED */
+
+    if ((err = btdm_low_power_mode_init()) != ESP_OK) {
+        ESP_LOGE(BTDM_LOG_TAG, "Low power module initialization failed");
+        goto error;
+    }
 
     btdm_cfg_mask = btdm_config_mask_load();
 
