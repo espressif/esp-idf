@@ -125,6 +125,12 @@ static void esp_key_mgr_acquire_hardware(bool deployment_mode)
         esp_crypto_ecc_lock_acquire();
         esp_crypto_sha_aes_lock_acquire();
         esp_crypto_key_manager_lock_acquire();
+        // The KM peripheral uses the external ECC block for the ECDH0/ECDH1
+        // scalar multiplications; its bus clock must be on, otherwise the KM
+        // deploys an incorrect key.
+#if SOC_ECC_SUPPORTED
+        esp_crypto_ecc_enable_periph_clk(true);
+#endif
     }
     // Reset the Key Manager Clock
     esp_crypto_key_mgr_enable_periph_clk(true);
@@ -133,6 +139,9 @@ static void esp_key_mgr_acquire_hardware(bool deployment_mode)
 static void esp_key_mgr_release_hardware(bool deployment_mode)
 {
     if (deployment_mode) {
+#if SOC_ECC_SUPPORTED
+        esp_crypto_ecc_enable_periph_clk(false);
+#endif
         esp_crypto_key_manager_lock_release();
         esp_crypto_sha_aes_lock_release();
         esp_crypto_ecc_lock_release();
