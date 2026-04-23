@@ -348,7 +348,7 @@ menu "Wi-Fi"
 
         config ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP
             bool "Enable OWE-ONLY SOFTAP"
-            default n
+            default y
             select ESP_WIFI_MBEDTLS_CRYPTO
             depends on ESP_WIFI_SOFTAP_SUPPORT
             help

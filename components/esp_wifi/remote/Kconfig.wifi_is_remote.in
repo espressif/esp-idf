@@ -142,6 +142,13 @@ if WIFI_RMT_WPA3_COMPATIBLE_SUPPORT
         default WIFI_RMT_WPA3_COMPATIBLE_SUPPORT
 endif
 
+if WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP
+    config ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP # ignore: multiple-definition
+        bool
+        depends on WIFI_RMT_SOFTAP_SUPPORT
+        default WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP
+endif
+
 if WIFI_RMT_SLP_IRAM_OPT
     config ESP_WIFI_SLP_IRAM_OPT # ignore: multiple-definition
         bool

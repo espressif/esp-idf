@@ -1805,8 +1805,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         }
 
         if (!wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) ||
-            wpa_key_mgmt_sae(sm->wpa_key_mgmt) ||
-	    sm->wpa_key_mgmt != WPA_KEY_MGMT_OWE) {
+            wpa_key_mgmt_sae(sm->wpa_key_mgmt)) {
             wpa_printf( MSG_DEBUG, "wpa_key_mgmt=%x", sm->wpa_key_mgmt);
             break;
         }

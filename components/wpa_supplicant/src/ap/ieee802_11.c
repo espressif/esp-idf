@@ -7,6 +7,7 @@
  */
 
 #include "utils/includes.h"
+#include "utils/common.h"
 #include "common/sae.h"
 #include "common/ieee802_11_defs.h"
 #include "esp_wifi_driver.h"
@@ -907,25 +908,32 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
     wpabuf_clear_free(secret);
 
     if (res < 0) {
+        os_memset(prk, 0, SHA256_MAC_LEN);
         wpa_printf(MSG_ERROR, "OWE: HMAC-SHA256 failed");
         return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
     wpa_hexdump_key(MSG_DEBUG, "OWE: prk", prk, SHA256_MAC_LEN);
 
     /* PMK = HKDF-expand(prk, "OWE Key Generation", n) */
-    os_free(sta->owe_pmk);
-    sta->owe_pmk = os_malloc(SHA256_MAC_LEN);
-    if (!sta->owe_pmk) {
-        os_memset(prk, 0, SHA256_MAC_LEN);
-	return WLAN_STATUS_UNSPECIFIED_FAILURE;
+    if (!sta->owe_pmk || sta->owe_pmk_len != SHA256_MAC_LEN) {
+        bin_clear_free(sta->owe_pmk,
+                       sta->owe_pmk_len ? sta->owe_pmk_len : SHA256_MAC_LEN);
+        sta->owe_pmk = os_malloc(SHA256_MAC_LEN);
+        if (!sta->owe_pmk) {
+            os_memset(prk, 0, SHA256_MAC_LEN);
+            return WLAN_STATUS_UNSPECIFIED_FAILURE;
+        }
+    } else {
+        os_memset(sta->owe_pmk, 0, SHA256_MAC_LEN);
     }
 
     res = hmac_sha256_kdf(prk, SHA256_MAC_LEN, NULL, (const u8 *)info,
                  os_strlen(info), sta->owe_pmk, SHA256_MAC_LEN);
     os_memset(prk, 0, SHA256_MAC_LEN);
     if (res < 0) {
-        os_free(sta->owe_pmk);
+        bin_clear_free(sta->owe_pmk, SHA256_MAC_LEN);
         sta->owe_pmk = NULL;
+        sta->owe_pmk_len = 0;
         wpa_printf(MSG_ERROR, "OWE: HMAC-SHA256 KDF failed");
         return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
@@ -938,8 +946,9 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
     // Add the PMK to the PMKSA cache
     if (wpa_auth_pmksa_add2(hapd->wpa_auth, sta->addr, sta->owe_pmk, sta->owe_pmk_len,
                             pmkid, 0, WPA_KEY_MGMT_OWE, NULL) < 0) {
-        os_free(sta->owe_pmk);
+        bin_clear_free(sta->owe_pmk, sta->owe_pmk_len);
         sta->owe_pmk = NULL;
+        sta->owe_pmk_len = 0;
         wpa_printf(MSG_ERROR, "OWE: Failed to add PMKSA cache entry");
         return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }

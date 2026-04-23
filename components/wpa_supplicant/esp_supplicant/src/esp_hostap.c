@@ -201,7 +201,7 @@ void *hostap_init(void)
     esp_wifi_ap_set_group_mgmt_cipher_internal(cipher_type_map_supp_to_public(auth_conf->group_mgmt_cipher));
 
 #ifdef CONFIG_OWE_SOFTAP
-    if (authmode == WIFI_AUTH_OWE && esp_wifi_ap_get_owe_config_internal()) {
+    if (authmode == WIFI_AUTH_OWE) {
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_OWE;
     }
 #endif /* CONFIG_OWE_SOFTAP */
@@ -379,27 +379,33 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
     u8 buf[ASSOC_RESP_LENGTH];
     wifi_mgmt_frm_req_t *reply = NULL;
     int send_len = 0;
-
+#ifdef CONFIG_OWE_SOFTAP
+    const bool owe_resp = (status_code == WLAN_STATUS_SUCCESS) &&
+                          (hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) &&
+                          esp_wifi_ap_get_owe_config_internal();
+#else
+    const bool owe_resp = false;
+#endif
     int res = WLAN_STATUS_SUCCESS;
 
-    if (!omit_rsnxe) {
+    if (!omit_rsnxe && !owe_resp) {
         send_len = esp_wifi_build_rsnxe(hapd, buf, ASSOC_RESP_LENGTH);
     }
 
-    esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, buf, send_len, 0);
+    if (!owe_resp) {
+        esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, buf, send_len, 0);
+    }
 #ifdef CONFIG_OWE_SOFTAP
-    if (status_code == WLAN_STATUS_SUCCESS) {
-        if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && esp_wifi_ap_get_owe_config_internal()) {
-            int owe_ie_len = 0;
-            struct wpabuf *owe_ie = esp_owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
-            if (owe_ie_len <= 0 || !owe_ie) {
-                wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
-                wpabuf_free(owe_ie);
-                return WLAN_STATUS_UNSPECIFIED_FAILURE;
-            }
-            esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_ie), owe_ie_len, 0);
+    if (owe_resp) {
+        int owe_ie_len = 0;
+        struct wpabuf *owe_ie = esp_owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
+        if (owe_ie_len <= 0 || !owe_ie) {
+            wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
             wpabuf_free(owe_ie);
+            return WLAN_STATUS_UNSPECIFIED_FAILURE;
         }
+        esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_ie), owe_ie_len, 0);
+        wpabuf_free(owe_ie);
     }
 #endif /* CONFIG_OWE_SOFTAP */
 
@@ -445,10 +451,9 @@ uint8_t wpa_status_to_reason_code(int status)
     }
 }
 
-bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
-                          u8 wpa_ie_len, u8 *rsnxe, uint16_t rsnxe_len,
-                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher,
-                          uint8_t *reason, uint8_t *rsn_selection_ie, uint8_t *owe_dh, uint8_t owe_ie_len)
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid,
+                          const struct hostap_assoc_sta_req *assoc_req,
+                          bool *pmf_enable, u8 *pairwise_cipher, u8 *reason)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     enum wpa_validate_result res = WPA_IE_OK;
@@ -460,7 +465,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
     uint8_t *rsn_selection_variant_ie = NULL;
 #endif
 
-    if (!sta || !bssid || !wpa_ie) {
+    if (!sta || !bssid || !assoc_req || !assoc_req->wpa_ie) {
         return false;
     }
     if (hapd) {
@@ -479,15 +484,16 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
 
 #ifdef CONFIG_WPA3_COMPAT
 #define RSN_SELECTION_IE_OUI_LEN 4
-            if (rsn_selection_ie) {
-                rsn_selection_variant_len = rsn_selection_ie[1] - RSN_SELECTION_IE_OUI_LEN;
-                rsn_selection_variant_ie = &rsn_selection_ie[RSN_SELECTION_IE_OUI_LEN + 2];
+            if (assoc_req->rsn_selection_ie) {
+                rsn_selection_variant_len = assoc_req->rsn_selection_ie[1] - RSN_SELECTION_IE_OUI_LEN;
+                rsn_selection_variant_ie = &assoc_req->rsn_selection_ie[RSN_SELECTION_IE_OUI_LEN + 2];
             }
 
             wpa_auth_set_rsn_selection(sta->wpa_sm, rsn_selection_variant_ie, rsn_selection_variant_len);
 #endif
 
-            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
+            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, assoc_req->wpa_ie,
+                                      assoc_req->wpa_ie_len, assoc_req->rsnxe, assoc_req->rsnxe_len);
 #ifdef CONFIG_SAE
             if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
                     sta->sae->state == SAE_ACCEPTED) {
@@ -503,8 +509,8 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
             if (status == WLAN_STATUS_SUCCESS &&
                     hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE &&
                     sta->wpa_sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE &&
-                    owe_dh && owe_enabled) {
-                status = owe_process_assoc_req(hapd, sta, owe_dh, owe_ie_len);
+                    assoc_req->owe_dh && owe_enabled) {
+                status = owe_process_assoc_req(hapd, sta, assoc_req->owe_dh, assoc_req->owe_ie_len);
                 if (status == WLAN_STATUS_UNSPECIFIED_FAILURE) {
                     *reason = wpa_status_to_reason_code(status);
                     wpa_printf(MSG_ERROR, "OWE : Failed to process assoc req status %d", status);
@@ -514,7 +520,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
 #endif /* CONFIG_OWE_SOFTAP */
 
 send_resp:
-            if (!rsnxe) {
+            if (!assoc_req->rsnxe) {
                 omit_rsnxe = true;
             }
 
@@ -524,7 +530,7 @@ send_resp:
             }
 #endif
 
-            if (esp_send_assoc_resp(hapd, bssid, status, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
+            if (esp_send_assoc_resp(hapd, bssid, status, omit_rsnxe, assoc_req->subtype) != WLAN_STATUS_SUCCESS) {
                 status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
             }
 

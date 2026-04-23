@@ -325,6 +325,14 @@ config WIFI_RMT_WPA3_COMPATIBLE_SUPPORT
     help
         Select this option to support wpa3_compatible mode for station and AP
 
+config WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP
+    bool "Enable OWE-ONLY SOFTAP"
+    default y
+    select WIFI_RMT_MBEDTLS_CRYPTO
+    depends on WIFI_RMT_SOFTAP_SUPPORT
+    help
+        Select this option to allow the device to enable OWE Only mode for softap.
+
 config WIFI_RMT_SLP_IRAM_OPT
     bool "WiFi SLP IRAM speed optimization"
     select PM_SLP_DEFAULT_PARAMS_OPT

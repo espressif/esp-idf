@@ -291,7 +291,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #endif
 
 #if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP
-#define WIFI_ENABLE_OWE_SOFTAP (1<<9)
+#define WIFI_ENABLE_OWE_SOFTAP (1<<10)
 #else
 #define WIFI_ENABLE_OWE_SOFTAP 0
 #endif
@@ -306,7 +306,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_WIFI_ENT_BIT (1<<7)
 #define CONFIG_FEATURE_BSS_MAX_IDLE_BIT (1<<8)
 #define CONFIG_FEATURE_WIFI_PASSIVE_HIDDEN_AP_BIT (1<<9)
-#define CONFIG_FEATURE_OWE_SOFTAP_BIT (1<<9)
+#define CONFIG_FEATURE_OWE_SOFTAP_BIT (1<<10)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
