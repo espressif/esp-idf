@@ -60,6 +60,29 @@ static void ot_cli_set_read_characteristics(void)
     linenoiseSetReadFunction(ot_cli_read_bytes);
 }
 
+static bool append_escaped_ot_arg(char *buffer, size_t buffer_size, const char *arg)
+{
+    size_t len      = strlen(buffer);
+    size_t rem_size = (len < buffer_size) ? (buffer_size - len) : 0;
+
+    ESP_RETURN_ON_FALSE(rem_size > 0, false, OT_PLAT_LOG_TAG, "CLI command buffer is full");
+
+    while (*arg) {
+        if ((*arg == ' ') || (*arg == '\t') || (*arg == '\r') || (*arg == '\n') || (*arg == '\\')) {
+            ESP_RETURN_ON_FALSE(rem_size > 1, false, OT_PLAT_LOG_TAG, "CLI command is too long");
+            buffer[len++] = '\\';
+            rem_size--;
+        }
+
+        ESP_RETURN_ON_FALSE(rem_size > 1, false, OT_PLAT_LOG_TAG, "CLI command is too long");
+        buffer[len++] = *arg++;
+        rem_size--;
+    }
+
+    buffer[len] = '\0';
+    return true;
+}
+
 static int cli_output_callback(void *context, const char *format, va_list args)
 {
     char prompt_check[3];
@@ -100,10 +123,14 @@ static int ot_cli_console_callback(int argc, char **argv)
 {
     ESP_RETURN_ON_FALSE(argv[1] != NULL && strlen(argv[1]) > 0, ESP_FAIL, OT_PLAT_LOG_TAG, "Invalid OpenThread command");
     char cli_cmd[OT_CLI_MAX_LINE_LENGTH] = {0};
-    strncpy(cli_cmd, argv[1], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+    ESP_RETURN_ON_FALSE(append_escaped_ot_arg(cli_cmd, sizeof(cli_cmd), argv[1]), ESP_FAIL, OT_PLAT_LOG_TAG,
+                        "Failed to compose OpenThread command");
     for (int i = 2; i < argc; i++) {
+        ESP_RETURN_ON_FALSE(strlen(cli_cmd) < sizeof(cli_cmd) - 1, ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "CLI command is too long");
         strncat(cli_cmd, " ", sizeof(cli_cmd) - strlen(cli_cmd) - 1);
-        strncat(cli_cmd, argv[i], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+        ESP_RETURN_ON_FALSE(append_escaped_ot_arg(cli_cmd, sizeof(cli_cmd), argv[i]), ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "Failed to compose OpenThread command");
     }
     s_cli_task = xTaskGetCurrentTaskHandle();
     if (esp_openthread_cli_input(cli_cmd) == ESP_OK) {
