@@ -270,7 +270,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 
     //reset ADC digital part to reset ADC sampling EOF counter
     ADC_BUS_CLK_ATOMIC() {
-        adc_ll_reset_register();
+        sar_periph_ctrl_adc_reset();
     }
 
     if (handle->pm_lock) {
