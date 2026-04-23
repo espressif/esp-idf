@@ -671,7 +671,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
 #if (BTA_AV_EXT_CODEC == FALSE)
             while (index < BTA_AV_MAX_SEPS &&
-                    (p_scb->p_cos->init)(&codec_type, cs.cfg.codec_info,
+                    (p_scb->p_cos->init)(index, &codec_type, cs.cfg.codec_info,
                                          &cs.cfg.num_protect, cs.cfg.protect_info, p_data->api_reg.tsep) == TRUE) {
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
@@ -807,7 +807,7 @@ static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data)
 
             codec_type = p_data->api_reg_sep.codec_type;
             memcpy(cs.cfg.codec_info, p_data->api_reg_sep.codec_info, AVDT_CODEC_SIZE);
-            if ((p_scb->p_cos->init)(&codec_type, cs.cfg.codec_info,
+            if ((p_scb->p_cos->init)(index, &codec_type, cs.cfg.codec_info,
                                      &cs.cfg.num_protect, cs.cfg.protect_info, p_data->api_reg_sep.tsep) == TRUE) {
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)

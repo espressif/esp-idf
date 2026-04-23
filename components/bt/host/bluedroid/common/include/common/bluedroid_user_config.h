@@ -45,6 +45,18 @@
 #define UC_BT_A2DP_USE_EXTERNAL_CODEC       FALSE
 #endif
 
+#ifdef CONFIG_BT_A2DP_CODEC_AAC_ENABLED
+#define UC_BT_A2DP_CODEC_AAC_ENABLED        CONFIG_BT_A2DP_CODEC_AAC_ENABLED
+#else
+#define UC_BT_A2DP_CODEC_AAC_ENABLED        FALSE
+#endif
+
+#ifdef CONFIG_BT_A2DP_SEP_NUM_MAX
+#define UC_BT_A2DP_SEP_NUM_MAX              CONFIG_BT_A2DP_SEP_NUM_MAX
+#else
+#define UC_BT_A2DP_SEP_NUM_MAX              1
+#endif
+
 //AVRCP
 #ifdef CONFIG_BT_AVRCP_ENABLED
 #define UC_BT_AVRCP_ENABLED                 TRUE

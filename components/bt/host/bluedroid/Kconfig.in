@@ -98,6 +98,24 @@ config BT_A2DP_USE_EXTERNAL_CODEC
         audio data in application layer. The internal codec in A2DP will be remove in
         the future, it is recommend to use external codec for new design.
 
+config BT_A2DP_CODEC_AAC_ENABLED
+    bool "A2DP AAC codec"
+    depends on BT_A2DP_USE_EXTERNAL_CODEC
+    default n
+    help
+        Enable support for A2DP AAC codec when using an external codec.
+        Currently, only the A2DP sink supports AAC codec.
+
+config BT_A2DP_SEP_NUM_MAX
+    int "Maximum number of Stream End Points that can be registered for A2DP"
+    depends on BT_A2DP_USE_EXTERNAL_CODEC
+    default 2 if BT_A2DP_CODEC_AAC_ENABLED
+    default 1
+    range 1 3
+    help
+        The maximum number of Stream End Points (SEPs) that can be registered for A2DP.
+        The default value is 2. If you need to register more SEPs, you can increase this value.
+
 config BT_AVRCP_ENABLED
     bool
     depends on BT_A2DP_ENABLE

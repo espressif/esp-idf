@@ -17,6 +17,7 @@
 #include "bta/bta_av_api.h"
 #include "bta/bta_av_ci.h"
 #include "btc_av_co.h"
+#include "btc_a2dp_latm_raw.h"
 #include "btc_a2dp.h"
 #include "btc_a2dp_control.h"
 #include "btc_a2dp_sink.h"
@@ -28,6 +29,10 @@
 #include <assert.h>
 
 #if (BTC_AV_SINK_INCLUDED == TRUE) && (BTC_AV_EXT_CODEC == TRUE)
+
+#ifndef BTC_A2DP_LATM_RAW_SCRATCH_BYTES
+#define BTC_A2DP_LATM_RAW_SCRATCH_BYTES     2048
+#endif
 
 #define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (25)
 #define BTC_A2DP_SNK_DATA_QUEUE_IDX            (1)
@@ -231,18 +236,12 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
 
 static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
 {
-    UINT8 *sbc_start_frame;
-    int num_sbc_frames;
-    UINT32 sbc_frame_len;
-    UINT32 timestamp;
-
-    if (p_msg->len < 1) {
-        osi_free(p_msg);
-        return;
-    }
-    sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
-    num_sbc_frames = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
-    sbc_frame_len = (UINT32)p_msg->len - 1U;
+    UINT8  *payload    = (UINT8 *)(p_msg + 1) + p_msg->offset;
+    UINT8  *frame_ptr  = payload;
+    UINT32  frame_len  = p_msg->len;
+    UINT16  num_frames = 0;
+    UINT32  timestamp;
+    UINT8   codec_id   = bta_av_co_get_cur_codec_type();
 
     if (a2dp_sink_local_param.btc_aa_snk_cb.rx_flush) {
         osi_free(p_msg);
@@ -267,11 +266,49 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
     a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num  = p_msg->layer_specific + 1;
     a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount = false;
 
-    APPL_TRACE_DEBUG("Number of sbc frames %d, frame_len %d\n", num_sbc_frames, sbc_frame_len);
+    switch (codec_id) {
+    case BTC_AV_CODEC_SBC:
+        if (p_msg->len < 1) {
+            APPL_TRACE_WARNING("%s: SBC packet too short (%d)", __func__, p_msg->len);
+            osi_free(p_msg);
+            return;
+        }
+        num_frames = payload[0] & 0x0F;
+        frame_ptr  = payload + 1;
+        frame_len  = p_msg->len - 1;
+        break;
+
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+    case BTC_AV_CODEC_M24: {
+        uint8_t scratch[BTC_A2DP_LATM_RAW_SCRATCH_BYTES];
+        size_t raw_len = 0;
+
+        num_frames = 1;
+        frame_ptr = payload;
+        frame_len = p_msg->len;
+        if (p_msg->len > 0 &&
+            btc_a2dp_latm_extract_raw_data_block(payload, (size_t)p_msg->len, scratch,
+                                                 sizeof(scratch), &raw_len) == 0 &&
+            raw_len > 0 && raw_len <= (size_t)p_msg->len && raw_len <= 0xffffU) {
+            memmove(payload, scratch, raw_len);
+            frame_ptr = payload;
+            frame_len = (UINT32)raw_len;
+        }
+        break;
+    }
+#endif
+
+    default:
+        APPL_TRACE_WARNING("%s: unsupported codec type 0x%02x, drop", __func__, codec_id);
+        osi_free(p_msg);
+        return;
+    }
+
+    APPL_TRACE_DEBUG("codec 0x%02x, frames %d, frame_len %d", codec_id, num_frames, (int)frame_len);
 
     memcpy(&timestamp, (UINT8 *)(p_msg + 1), sizeof(UINT32));
     UINT16 conn_hdl = btc_a2d_conn_handle_get();
-    btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, sbc_start_frame, sbc_frame_len, num_sbc_frames, timestamp);
+    btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, frame_ptr, frame_len, num_frames, timestamp);
     /* dont free p_msg here */
 }
 

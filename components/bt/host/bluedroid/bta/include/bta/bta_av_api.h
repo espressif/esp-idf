@@ -30,6 +30,7 @@
 #include "stack/avdt_api.h"
 #include "stack/a2d_api.h"
 #include "bta/bta_api.h"
+#include "common/bt_target.h"
 
 #if (BTA_AV_INCLUDED == TRUE)
 
@@ -96,7 +97,7 @@ typedef UINT8 tBTA_AV_HNDL;
 #endif
 
 #ifndef BTA_AV_MAX_SEPS
-#define BTA_AV_MAX_SEPS         1
+#define BTA_AV_MAX_SEPS         AVDT_NUM_SEPS
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU
@@ -277,7 +278,7 @@ typedef UINT8 tBTA_AV_GET_TYPE;
 
 
 /* function types for call-out functions */
-typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 *p_codec_type, UINT8 *p_codec_info,
+typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 seid, UINT8 *p_codec_type, UINT8 *p_codec_info,
                                     UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 tsep);
 typedef void (*tBTA_AV_CO_DISC_RES) (tBTA_AV_HNDL hndl, UINT8 num_seps,
                                      UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);

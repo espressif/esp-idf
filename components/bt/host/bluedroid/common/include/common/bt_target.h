@@ -98,6 +98,11 @@
 #define SBC_DEC_INCLUDED            TRUE
 #define SBC_ENC_INCLUDED            TRUE
 #endif
+#if (UC_BT_A2DP_CODEC_AAC_ENABLED == TRUE)
+#define BTC_AV_CODEC_AAC_INCLUDED   TRUE
+#define BTA_AV_CODEC_AAC_INCLUDED   TRUE
+#define A2D_AV_CODEC_AAC_INCLUDED   TRUE
+#endif
 #if UC_BT_AVRCP_CT_COVER_ART_ENABLED
 #define BTA_AV_CA_INCLUDED          TRUE
 #define BTC_AV_CA_INCLUDED          TRUE
@@ -2306,7 +2311,7 @@
 
 /* Number of simultaneous stream endpoints. */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               3
+#define AVDT_NUM_SEPS               UC_BT_A2DP_SEP_NUM_MAX
 #endif
 
 /* Number of transport channels setup per media stream(audio or video) */

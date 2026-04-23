@@ -10,12 +10,20 @@
 #include "esp_err.h"
 #include "esp_bt_defs.h"
 #include "esp_a2dp_legacy_api.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ESP_A2D_MAX_SEPS        1               /*!< Maximum number of Stream Endpoint that supported */
+/**
+ * @brief Maximum number of Stream Endpoint that supported
+ */
+#ifdef CONFIG_BT_A2DP_SEP_NUM_MAX
+#define ESP_A2D_MAX_SEPS        CONFIG_BT_A2DP_SEP_NUM_MAX
+#else
+#define ESP_A2D_MAX_SEPS        1
+#endif
 
 typedef uint16_t esp_a2d_conn_hdl_t;            /*!< Connection handle, associate with specific device that connected */
 
@@ -88,7 +96,7 @@ typedef struct {
 } __attribute__((packed)) esp_a2d_cie_m12_t;
 
 /**
- * @brief A2DP MPEG-2, 4 media codec capabilities information struct (Not supported yet)
+ * @brief A2DP MPEG-2, 4 media codec capabilities information struct
  */
 typedef struct {
     uint8_t     drc             : 1;        /*!< Support of MPEG-D DRC */
@@ -135,6 +143,14 @@ typedef struct {
         esp_a2d_cie_atrac_t atrac_info;        /*!< ATRAC family codec capabilities */
     } cie;                                     /*!< A2DP codec information element */
 } __attribute__((packed)) esp_a2d_mcc_t;
+
+/**
+ * @brief A2DP SEP media codec capabilities
+ */
+typedef struct {
+    uint8_t       seid;         /*!< stream endpoint id */
+    esp_a2d_mcc_t mcc;          /*!< media codec capabilities */
+} esp_a2d_sep_mcc_t;
 
 /**
  * @brief Bluetooth A2DP connection states
@@ -230,8 +246,9 @@ typedef enum {
     ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
-    ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report sink codec capabilities, only used for A2DP SRC */
+    ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report currently selected sink codec capabilities, only used for A2DP SRC */
     ESP_A2D_SRC_SET_PREF_MCC_EVT,              /*!< indicate a2dp source set preferred media codec configuration status, only used for A2DP SRC */
+    ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT,     /*!< report all supported sink codec capabilities, only used for A2DP SRC */
 } esp_a2d_cb_event_t;
 
 /**
@@ -336,7 +353,7 @@ typedef union {
     struct a2d_report_snk_codec_caps_param {
         esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
         esp_a2d_mcc_t mcc;                     /*!< A2DP sink media codec capability information */
-    } a2d_report_snk_codec_caps_stat;         /*!< A2DP source received sink codec capabilities */
+    } a2d_report_snk_codec_caps_stat;          /*!< A2DP source received sink codec capabilities */
 
     /**
      * @brief ESP_A2D_SRC_SET_PREF_MCC_EVT
@@ -347,6 +364,16 @@ typedef union {
                                                               ESP_BT_STATUS_NOT_READY, ESP_BT_STATUS_BUSY, ESP_BT_STATUS_UNSUPPORTED. */
         esp_a2d_conn_hdl_t conn_hdl;               /*!< connection handle */
     } a2d_set_pref_mcc_stat;                       /*!< A2DP source set preferred media codec configuration */
+
+    /**
+     * @brief ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT
+     */
+    struct a2d_report_snk_all_codec_caps_param {
+        esp_a2d_conn_hdl_t conn_hdl;            /*!< connection handle */
+        esp_a2d_sep_mcc_t *sep_mcc;             /*!< A2DP sink SEP information
+                                                     @note The memory will be released after the callback function ends */
+        uint8_t sep_num;                        /*!< number of A2DP sink SEP information */
+    } a2d_report_snk_all_codec_caps_stat;       /*!< A2DP source received all sink codec capabilities */
 
 } esp_a2d_cb_param_t;
 
@@ -406,7 +433,7 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 /**
  * @brief           Register A2DP sink audio data output function, the output format is undecoded audio data
  *                  frame in esp_a2d_audio_buff_t, user shall call esp_a2d_audio_buff_free to free the buff
- *                  when the data is consumed.
+ *                  when the data is consumed. It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
  *
  * @param[in]       callback: A2DP sink audio data callback function
  *
@@ -438,10 +465,14 @@ esp_err_t esp_a2d_sink_init(void);
  * @brief           Register a a2dp sink Stream Endpoint (SEP) with specific codec capability, shall register
  *                  SEP after a2dp sink initializing and before a2dp connection establishing. Register the same
  *                  SEP index repeatedly will overwrite the old one.
+ *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
+ *
+ * @note            The SEID determines the priority of negotiating the configuration with the peer for initiator.
+ *                  The lower the SEID, the higher the priority of the codec capability.
  *
  * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
  *
- * @param[in]       mcc: codec capability, currently only supports SBC
+ * @param[in]       mcc: codec capability, currently supports SBC and AAC
  *
  * @return
  *                  - ESP_OK: success
@@ -590,10 +621,14 @@ esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d
  * @brief           Register a a2dp source Stream Endpoint (SEP) with specific codec capability, shall register
  *                  SEP after a2dp source initializing and before a2dp connection establishing. Register the same
  *                  SEP index repeatedly will overwrite the old one.
+ *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
+ *
+ * @note            The SEID determines the priority of negotiating the configuration with the peer for initiator.
+ *                  The lower the SEID, the higher the priority of the codec capability.
  *
  * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
  *
- * @param[in]       mcc: codec capability, currently, only SBC supported
+ * @param[in]       mcc: codec capability, currently, SBC/AAC supported
  *
  * @return
  *                  - ESP_OK: success
