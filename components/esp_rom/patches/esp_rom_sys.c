@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,8 +29,18 @@ void esp_rom_output_putc(char c)
 #endif // !ESP_ROM_HAS_OUTPUT_PUTC_FUNC
 
 #if !ESP_ROM_HAS_OUTPUT_TO_CHANNELS_FUNC
+static void esp_rom_output_noop(char c)
+{
+    (void)c;
+}
+
 void (* _putc1)(char c) = esp_rom_output_putc;
-void (* _putc2)(char c) = NULL;
+/* Initialize _putc2 to a noop function (not NULL) so it is safe to call even before
+ * bootloader BSS is cleared, e.g. from bootloader hooks (bootloader_before_init).
+ * In log_v2, ESP_LOG routes output through esp_rom_output_to_channels() which calls
+ * _putc2 directly. If _putc2 were NULL or uninitialised at that point, it would crash.
+ * Channel 2 output is disabled later (set to NULL) once startup determines it is unused. */
+void (* _putc2)(char c) = esp_rom_output_noop;
 
 void esp_rom_output_to_channels(char c)
 {
