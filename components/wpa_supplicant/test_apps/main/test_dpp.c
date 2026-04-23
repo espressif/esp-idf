@@ -44,10 +44,14 @@ static void dpp_test_clear_overrides(void)
 
 static u32 dpp_test_prod_limit_us(void)
 {
-#if CONFIG_MBEDTLS_HARDWARE_ECC
+#if !defined(CONFIG_MBEDTLS_HARDWARE_ECC) && !defined(CONFIG_MBEDTLS_HARDWARE_MPI)
+    return 0;
+#elif CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    return 300000;
+#elif SOC_ECC_SUPPORTED
     return 100000;
 #else
-    return 325000;
+    return 100000;
 #endif
 }
 
