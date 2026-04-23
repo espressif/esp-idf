@@ -539,3 +539,4 @@
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_OTG_PERIPH_NUM          (1U)
+#define SOC_USB_FSLS_PHY_NUM            (1U)

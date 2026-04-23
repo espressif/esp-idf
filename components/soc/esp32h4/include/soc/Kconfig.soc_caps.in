@@ -1006,3 +1006,7 @@ config SOC_RCC_IS_INDEPENDENT
 config SOC_USB_OTG_PERIPH_NUM
     int
     default 1
+
+config SOC_USB_FSLS_PHY_NUM
+    int
+    default 1
