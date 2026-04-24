@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,13 @@ TEST_CASE("Create volume, open file, write and read back data", "[fatfs]")
     FRESULT fr_result;
     BYTE pdrv;
     FATFS fs;
+#if FF_USE_DYN_BUFFER
+    fs.win = NULL;
+#endif
     FIL file;
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    file.buf = NULL;
+#endif
     UINT bw;
 
     esp_err_t esp_result;
@@ -153,12 +159,18 @@ TEST_CASE("Test mounting 2 volumes, writing data and formatting the 2nd one, rea
     const esp_partition_t *partition0 = NULL;
     BYTE pdrv0 = UINT8_MAX;
     FATFS fs0;
+#if FF_USE_DYN_BUFFER
+    fs0.win = NULL;
+#endif
     wl_handle_t wl_handle0 = WL_INVALID_HANDLE;
 
     const char* partition_label1 = "storage2";
     const esp_partition_t *partition1 = NULL;
     BYTE pdrv1 = UINT8_MAX;
     FATFS fs1;
+#if FF_USE_DYN_BUFFER
+    fs1.win = NULL;
+#endif
     wl_handle_t wl_handle1 = WL_INVALID_HANDLE;
 
     size_t data_size = 10;
@@ -175,6 +187,9 @@ TEST_CASE("Test mounting 2 volumes, writing data and formatting the 2nd one, rea
 
     // Open file and write data
     FIL file0;
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    file0.buf = NULL;
+#endif
     UINT bw0;
     fr_result = f_open(&file0, "0:/test0.txt", FA_OPEN_ALWAYS | FA_WRITE);
     REQUIRE(fr_result == FR_OK);
@@ -204,6 +219,9 @@ TEST_CASE("Test mounting 2 volumes, writing data and formatting the 2nd one, rea
 
     // Open file and write data
     FIL file1;
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    file1.buf = NULL;
+#endif
     UINT bw1;
     fr_result = f_open(&file1, "1:/test1.txt", FA_OPEN_ALWAYS | FA_WRITE);
     REQUIRE(fr_result == FR_OK);
