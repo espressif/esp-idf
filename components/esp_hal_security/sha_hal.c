@@ -44,6 +44,9 @@ inline static size_t state_length(esp_sha_type type)
         return SHA1_STATE_LEN_WORDS;
     case SHA2_224:
     case SHA2_256:
+#if SOC_SHA_SUPPORT_SM3
+    case SM3:
+#endif
         return SHA256_STATE_LEN_WORDS;
 #if SOC_SHA_SUPPORT_SHA384
     case SHA2_384:

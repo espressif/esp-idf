@@ -23,6 +23,7 @@ typedef enum {
     SHA2_512224,
     SHA2_512256,
     SHA2_512T,
+    SM3 = 14,
     SHA_TYPE_MAX
 } SHA_TYPE;
 

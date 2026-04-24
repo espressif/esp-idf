@@ -401,6 +401,7 @@
 #define SOC_SHA_SUPPORT_SHA512_224      (1)
 #define SOC_SHA_SUPPORT_SHA512_256      (1)
 #define SOC_SHA_SUPPORT_SHA512_T        (1)
+#define SOC_SHA_SUPPORT_SM3             (1)
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM          (4)
