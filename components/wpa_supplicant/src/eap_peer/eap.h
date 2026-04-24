@@ -39,7 +39,7 @@ extern int g_wpa_password_len;
 extern u8 *g_wpa_new_password;
 extern int g_wpa_new_password_len;
 
-extern char *g_wpa_ttls_phase2_type;
+extern const char *g_wpa_ttls_phase2_type;
 extern char *g_wpa_phase1_options;
 
 extern u8 *g_wpa_pac_file;

@@ -133,8 +133,8 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
       memset(k + nkey, 0, _blocksz - nkey);                                   \
                                                                               \
     /* Start inner hash computation */                                        \
-    uint8_t blk_inner[_blocksz];                                              \
-    uint8_t blk_outer[_blocksz];                                              \
+    uint8_t blk_inner[_blocksz] = {0};                                        \
+    uint8_t blk_outer[_blocksz] = {0};                                        \
                                                                               \
     for (size_t i = 0; i < _blocksz; i++)                                     \
     {                                                                         \
@@ -172,11 +172,11 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
                                      uint32_t iterations,                     \
                                      uint8_t *out)                            \
   {                                                                           \
-    uint8_t countbuf[4];                                                      \
+    uint8_t countbuf[4] = {0};                                                \
     write32_be(counter, countbuf);                                            \
                                                                               \
     /* Prepare loop-invariant padding block. */                               \
-    uint8_t Ublock[_blocksz];                                                 \
+    uint8_t Ublock[_blocksz] = {0};                                           \
     md_pad(Ublock, _blocksz, _hashsz, _blocksz + _hashsz);                    \
                                                                               \
     /* First iteration:                                                       \

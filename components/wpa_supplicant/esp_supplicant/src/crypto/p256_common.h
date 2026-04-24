@@ -248,7 +248,7 @@ static inline void p256_mont_mul(u32 z[P256_WORDS],
                                  const u32 y[P256_WORDS])
 {
     u32 a[P256_WORDS + 1] = {0};
-    u32 reduced[P256_WORDS];
+    u32 reduced[P256_WORDS] = {0};
     size_t i;
 
     for (i = 0; i < P256_WORDS; i++) {

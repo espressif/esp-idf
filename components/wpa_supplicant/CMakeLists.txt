@@ -260,11 +260,6 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                     LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)
-if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10090
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
-endif()
-
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
     ESP_SUPPLICANT
@@ -368,5 +363,3 @@ if(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_NAN_USD)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

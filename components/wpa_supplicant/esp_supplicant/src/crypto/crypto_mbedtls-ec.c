@@ -293,7 +293,7 @@ static int crypto_ec_key_ensure_public_key_cached(crypto_ec_key_wrapper_t *wrapp
     status = psa_export_public_key(wrapper->key_id, pub_key_buf,
                                    sizeof(pub_key_buf), &pub_key_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "psa_export_public_key failed with %d", status);
+        wpa_printf(MSG_ERROR, "psa_export_public_key failed with %d", (int) status);
         return -1;
     }
 
@@ -564,7 +564,7 @@ static u32 p256_fast_words_add_carry(u32 *z, const u32 *x, const u32 *y)
 
 static void p256_fast_words_add_mod(u32 *z, const u32 *x, const u32 *y)
 {
-    u32 reduced[P256_WORDS];
+    u32 reduced[P256_WORDS] = {0};
     u32 carry = p256_fast_words_add_carry(z, x, y);
     u32 borrow = p256_words_sub_borrow(reduced, z, p256_p_le);
     u32 use_sub = carry | (1U - borrow);
@@ -574,7 +574,7 @@ static void p256_fast_words_add_mod(u32 *z, const u32 *x, const u32 *y)
 
 static void p256_fast_words_sub_mod(u32 *z, const u32 *x, const u32 *y)
 {
-    u32 tmp[P256_WORDS];
+    u32 tmp[P256_WORDS] = {0};
 
     if (p256_words_sub_borrow(z, x, y) != 0) {
         (void) p256_fast_words_add_carry(tmp, z, p256_p_le);
@@ -597,7 +597,7 @@ static void p256_words_rshift1_with_carry(u32 *z, u32 carry)
 static void p256_fast_half_mod(u32 *z)
 {
     if (z[0] & 1U) {
-        u32 tmp[P256_WORDS];
+        u32 tmp[P256_WORDS] = {0};
         u32 carry = p256_fast_words_add_carry(tmp, z, p256_p_le);
 
         p256_words_rshift1_with_carry(tmp, carry);
@@ -610,7 +610,7 @@ static void p256_fast_half_mod(u32 *z)
 
 static int p256_fast_inv_std(u32 out[P256_WORDS], const u32 in[P256_WORDS])
 {
-    u32 u[P256_WORDS], v[P256_WORDS], r[P256_WORDS], s[P256_WORDS];
+    u32 u[P256_WORDS] = {0}, v[P256_WORDS] = {0}, r[P256_WORDS] = {0}, s[P256_WORDS] = {0};
 
     if (p256_words_is_zero(in)) {
         return -1;
@@ -717,7 +717,7 @@ static void p256_fast_dbl(u32 out[P256_WORDS], const u32 in[P256_WORDS])
 
 static void p256_fast_triple(u32 out[P256_WORDS], const u32 in[P256_WORDS])
 {
-    u32 tmp[P256_WORDS];
+    u32 tmp[P256_WORDS] = {0};
 
     p256_fast_dbl(tmp, in);
     p256_fast_words_add_mod(out, tmp, in);
@@ -725,7 +725,7 @@ static void p256_fast_triple(u32 out[P256_WORDS], const u32 in[P256_WORDS])
 
 static void p256_fast_eight(u32 out[P256_WORDS], const u32 in[P256_WORDS])
 {
-    u32 tmp[P256_WORDS];
+    u32 tmp[P256_WORDS] = {0};
 
     p256_fast_dbl(tmp, in);
     p256_fast_dbl(tmp, tmp);
@@ -767,10 +767,10 @@ static void p256_fast_point_from_affine(p256_fast_jac_point *p,
 
 static void p256_fast_point_double(p256_fast_jac_point *r)
 {
-    u32 z2[P256_WORDS], y2[P256_WORDS], y4[P256_WORDS];
-    u32 s[P256_WORDS], m[P256_WORDS], x3[P256_WORDS];
-    u32 y3[P256_WORDS], z3[P256_WORDS], tmp1[P256_WORDS];
-    u32 tmp2[P256_WORDS];
+    u32 z2[P256_WORDS] = {0}, y2[P256_WORDS] = {0}, y4[P256_WORDS] = {0};
+    u32 s[P256_WORDS] = {0}, m[P256_WORDS] = {0}, x3[P256_WORDS] = {0};
+    u32 y3[P256_WORDS] = {0}, z3[P256_WORDS] = {0}, tmp1[P256_WORDS] = {0};
+    u32 tmp2[P256_WORDS] = {0};
 
     if (p256_words_is_zero(r->Z) || p256_words_is_zero(r->Y)) {
         p256_fast_point_set_zero(r);
@@ -812,11 +812,11 @@ static void p256_fast_point_add_mixed(p256_fast_jac_point *r,
                                       const u32 qy[P256_WORDS],
                                       const u32 one_mont[P256_WORDS])
 {
-    u32 z1z1[P256_WORDS], z1z1z1[P256_WORDS];
-    u32 u2[P256_WORDS], s2[P256_WORDS], h[P256_WORDS];
-    u32 rr[P256_WORDS], hh[P256_WORDS], hhh[P256_WORDS];
-    u32 v[P256_WORDS], x3[P256_WORDS], y3[P256_WORDS];
-    u32 z3[P256_WORDS], tmp[P256_WORDS], y1[P256_WORDS];
+    u32 z1z1[P256_WORDS] = {0}, z1z1z1[P256_WORDS] = {0};
+    u32 u2[P256_WORDS] = {0}, s2[P256_WORDS] = {0}, h[P256_WORDS] = {0};
+    u32 rr[P256_WORDS] = {0}, hh[P256_WORDS] = {0}, hhh[P256_WORDS] = {0};
+    u32 v[P256_WORDS] = {0}, x3[P256_WORDS] = {0}, y3[P256_WORDS] = {0};
+    u32 z3[P256_WORDS] = {0}, tmp[P256_WORDS] = {0}, y1[P256_WORDS] = {0};
 
     if (p256_words_is_zero(r->Z)) {
         p256_fast_point_from_affine(r, qx, qy, one_mont);
@@ -866,8 +866,8 @@ static int p256_fast_point_normalize(const mbedtls_ecp_group *grp,
                                      const p256_fast_jac_point *p,
                                      mbedtls_ecp_point *res)
 {
-    u32 z_std[P256_WORDS], inv_std[P256_WORDS], inv_mont[P256_WORDS];
-    u32 x_std[P256_WORDS], y_std[P256_WORDS], tmp[P256_WORDS];
+    u32 z_std[P256_WORDS] = {0}, inv_std[P256_WORDS] = {0}, inv_mont[P256_WORDS] = {0};
+    u32 x_std[P256_WORDS] = {0}, y_std[P256_WORDS] = {0}, tmp[P256_WORDS] = {0};
     int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
     if (p256_words_is_zero(p->Z)) {
@@ -900,10 +900,10 @@ static int p256_fast_points_batch_to_affine_mont(
     const p256_fast_jac_point *points, size_t num,
     u32(*xs)[P256_WORDS], u32(*ys)[P256_WORDS])
 {
-    u32 prefix[P256_WINDOW_BATCH_COUNT][P256_WORDS];
-    u32 prod_std[P256_WORDS], inv_std[P256_WORDS];
-    u32 running_inv[P256_WORDS], inv_z[P256_WORDS];
-    u32 tmp[P256_WORDS];
+    u32 prefix[P256_WINDOW_BATCH_COUNT][P256_WORDS] = {{0}};
+    u32 prod_std[P256_WORDS] = {0}, inv_std[P256_WORDS] = {0};
+    u32 running_inv[P256_WORDS] = {0}, inv_z[P256_WORDS] = {0};
+    u32 tmp[P256_WORDS] = {0};
     size_t i;
 
     if (!points || !xs || !ys) {
@@ -962,8 +962,8 @@ static int crypto_ec_point_mul_p256_window4_core(const mbedtls_ecp_group *grp,
                                                  bool validate_inputs)
 {
     struct p256_window4_scratch *scratch = NULL;
-    u32 scalar[P256_WORDS], x_std[P256_WORDS], y_std[P256_WORDS];
-    u32 x_mont[P256_WORDS], y_mont[P256_WORDS], one_mont[P256_WORDS];
+    u32 scalar[P256_WORDS] = {0}, x_std[P256_WORDS] = {0}, y_std[P256_WORDS] = {0};
+    u32 x_mont[P256_WORDS] = {0}, y_mont[P256_WORDS] = {0}, one_mont[P256_WORDS] = {0};
     static const u32 one_std[P256_WORDS] = {1};
     int window;
     int ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
@@ -1085,8 +1085,8 @@ static int crypto_ec_point_mul_p256_generator_comb_fast(const mbedtls_ecp_group 
                                                         bool validate_inputs)
 {
     p256_fast_jac_point r;
-    u32 scalar[P256_WORDS];
-    u32 one_mont[P256_WORDS];
+    u32 scalar[P256_WORDS] = {0};
+    u32 one_mont[P256_WORDS] = {0};
     static const u32 one_std[P256_WORDS] = {1};
     int col;
     int ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
@@ -1427,12 +1427,12 @@ int crypto_ec_key_compare(struct crypto_ec_key *key1, struct crypto_ec_key *key2
 
     psa_status_t status = psa_export_public_key(wrapper1->key_id, pub1, sizeof(pub1), &key1_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_compare: psa_export_public_key failed with %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_compare: psa_export_public_key failed with %d", (int)status);
         return 0;
     }
     status = psa_export_public_key(wrapper2->key_id, pub2, sizeof(pub2), &key2_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_compare: psa_export_public_key failed with %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_compare: psa_export_public_key failed with %d", (int)status);
         return 0;
     }
 
@@ -1687,7 +1687,7 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
 
     psa_status_t status = psa_import_key(&key_attributes, key_buf, key_len, &wrapper->key_id);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to import key, %d", status);
+        wpa_printf(MSG_ERROR, "Failed to import key, %d", (int)status);
         os_free(key_buf);
         os_free(wrapper);
         return NULL;
@@ -1742,7 +1742,7 @@ struct crypto_ec_point *crypto_ec_key_get_public_key(struct crypto_ec_key *key)
     status = psa_export_public_key(wrapper->key_id, pub_key_buf, sizeof(pub_key_buf),
                                    &pub_key_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to export public key: %d", status);
+        wpa_printf(MSG_ERROR, "Failed to export public key: %d", (int)status);
         return NULL;
     }
     if (pub_key_len < 3 || pub_key_buf[0] != 0x04) {
@@ -1910,7 +1910,7 @@ int crypto_ec_key_group(struct crypto_ec_key *key)
 
     psa_status_t status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_group: psa_get_key_attributes failed: %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_group: psa_get_key_attributes failed: %d", (int)status);
         psa_reset_key_attributes(&key_attributes);
         return -1;
     }
@@ -1992,13 +1992,13 @@ int crypto_ec_get_publickey_buf(struct crypto_ec_key *key, u8 *key_buf, int len)
 
         status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
         if (status != PSA_SUCCESS) {
-            printf("psa_get_key_attributes failed with %d\n", status);
+            wpa_printf(MSG_ERROR, "psa_get_key_attributes failed with %d", (int) status);
             return -1;
         }
 
         size_t key_bits = psa_get_key_bits(&key_attributes);
         if (key_bits == 0) {
-            printf("psa_get_key_bits failed with %d\n", -1);
+            wpa_printf(MSG_ERROR, "psa_get_key_bits failed with %d", -1);
             return -1;
         }
 
@@ -2033,7 +2033,7 @@ int crypto_ec_get_publickey_buf(struct crypto_ec_key *key, u8 *key_buf, int len)
     size_t key_len = 0;
     status = psa_export_public_key(wrapper->key_id, key_buf, len, &key_len);
     if (status != PSA_SUCCESS) {
-        printf("psa_export_public_key failed with %d\n", status);
+        wpa_printf(MSG_ERROR, "psa_export_public_key failed with %d", (int) status);
         return -1;
     }
 
@@ -2314,7 +2314,7 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
                                                 secret, secret_buf_size,
                                                 &secret_length);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", status);
+        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", (int)status);
         return -1;
     }
 
@@ -2333,7 +2333,7 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
                                                 PSA_EXPORT_PUBLIC_KEY_MAX_SIZE,
                                                 &peer_key_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "psa_export_public_key failed with %d", status);
+        wpa_printf(MSG_ERROR, "psa_export_public_key failed with %d", (int)status);
         ret = -1;
         goto fail;
     }
@@ -2345,7 +2345,7 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
                                    secret_buf_size,
                                    &secret_length);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", status);
+        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", (int)status);
         ret = -1;
         goto fail;
     }
@@ -2372,7 +2372,7 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
 
     psa_status_t status = psa_sign_hash(wrapper->key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), hash, hash_len, signature, sizeof(signature), &signature_length);
     if (status != PSA_SUCCESS) {
-        printf("psa_sign_hash failed with %d\n", status);
+        wpa_printf(MSG_ERROR, "psa_sign_hash failed with %d", (int) status);
         return -1;
     }
 
@@ -2413,7 +2413,7 @@ int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
 
     psa_status_t status = psa_verify_hash(wrapper->key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), hash, hlen, sig, r_len + s_len);
     if (status != PSA_SUCCESS) {
-        printf("psa_verify_hash failed with %d\n", status);
+        wpa_printf(MSG_ERROR, "psa_verify_hash failed with %d", (int) status);
         os_free(sig);
         return -1;
     }
@@ -2435,7 +2435,7 @@ void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title)
     size_t pub_len = 0;
     psa_status_t status = psa_export_public_key(wrapper->key_id, pub, sizeof(pub), &pub_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_debug_print: psa_export_public_key failed with %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_debug_print: psa_export_public_key failed with %d", (int)status);
         return;
     }
 
@@ -2445,7 +2445,7 @@ void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title)
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_debug_print: psa_get_key_attributes failed with %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_debug_print: psa_get_key_attributes failed with %d", (int)status);
         return;
     }
 
@@ -2557,7 +2557,7 @@ int crypto_is_ec_key(struct crypto_ec_key *key)
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_status_t status = psa_get_key_attributes(wrapper->key_id, &attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_DEBUG, "Failed to get key attributes: %d", status);
+        wpa_printf(MSG_DEBUG, "Failed to get key attributes: %d", (int)status);
         return 0;
     }
 
@@ -2680,7 +2680,7 @@ int crypto_pk_write_formatted_pubkey_der(psa_key_id_t key_id, unsigned char *buf
     psa_status_t status = psa_export_public_key(key_id, point_buf, PSA_EXPORT_PUBLIC_KEY_MAX_SIZE, &point_len);
     if (status != PSA_SUCCESS) {
         os_free(point_buf);
-        wpa_printf(MSG_ERROR, "psa_export_public_key failed: %d", status);
+        wpa_printf(MSG_ERROR, "psa_export_public_key failed: %d", (int)status);
         return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
     }
 
@@ -3024,7 +3024,7 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
     os_free(peer_key_buf);
 
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with PSA error 0x%x", status);
+        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with PSA error 0x%x", (int)status);
         os_free(secret);
         return NULL;
     }
@@ -3153,7 +3153,7 @@ int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_status_t status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: psa_get_key_attributes failed: %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: psa_get_key_attributes failed: %d", (int)status);
         psa_reset_key_attributes(&key_attributes);
         return -1;
     }
@@ -3206,7 +3206,7 @@ int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
     status = psa_verify_hash(wrapper->key_id, verify_alg,
                              data, len, sig_to_verify, sig_len_to_verify);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: psa_verify_hash failed: %d", status);
+        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: psa_verify_hash failed: %d", (int)status);
         return -1;
     }
 
