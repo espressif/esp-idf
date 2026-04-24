@@ -28,6 +28,8 @@ typedef struct cam_hal_context {
  */
 typedef struct cam_hal_config {
     int port;                               /*!< CAM port */
+    uint32_t cam_data_width;                /*!< CAM data width, 8 or 16 or 24 bit, default to 8 */
+    bool bit_swap_en;                       /*!< CAM enable bit swap */
     bool byte_swap_en;                      /*!< CAM enable byte swap */
 } cam_hal_config_t;
 

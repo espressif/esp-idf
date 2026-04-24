@@ -96,6 +96,9 @@ void app_main(void)
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,
         .xclk_freq = EXAMPLE_DVP_CAM_XCLK_FREQ_HZ,
+        .cam_data_width = EXAMPLE_DVP_CAM_DATA_WIDTH,
+        .bit_swap_en = false,
+        .byte_swap_en = false,
     };
 
     ret = esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle);
