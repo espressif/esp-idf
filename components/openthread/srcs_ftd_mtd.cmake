@@ -105,6 +105,12 @@ if(NOT CONFIG_OPENTHREAD_DNS64_CLIENT)
         "src/esp_openthread_dns64.c")
 endif()
 
+if(NOT CONFIG_OPENTHREAD_PLATFORM_NETIF)
+    list(APPEND exclude_srcs
+        "src/esp_openthread_lwip_netif.c"
+        "src/esp_openthread_netif_glue.c")
+endif()
+
 if(NOT CONFIG_FREERTOS_USE_TICKLESS_IDLE)
     list(APPEND exclude_srcs
         "src/port/esp_openthread_sleep.c")
