@@ -92,6 +92,10 @@ static void bta_ag_sdp_cback(UINT16 status, UINT8 idx)
             p_buf->hdr.layer_specific = idx;
             p_buf->status = status;
             bta_sys_sendmsg(p_buf);
+        } else {
+            APPL_TRACE_ERROR("bta_ag_sdp_cback: ENOMEM");
+            bta_ag_free_db(p_scb, NULL);
+            bta_ag_sm_execute(p_scb, BTA_AG_DISC_FAIL_EVT, NULL);
         }
     }
 }
@@ -243,15 +247,12 @@ void bta_ag_del_records(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     UNUSED(p_data);
 
     /* get services of all other registered servers */
-    for (i = 0; i < BTA_AG_NUM_IDX; i++) {
+    for (i = 0; i < BTA_AG_NUM_SCB; i++, p++) {
         if (p_scb == p) {
             continue;
         }
         if (p->in_use && p->dealloc == FALSE) {
             others |= p->reg_services;
-        }
-        if (i < BTA_AG_NUM_SCB) {
-            p++;
         }
     }
     others >>= BTA_HSP_SERVICE_ID;
@@ -414,7 +415,9 @@ void bta_ag_do_disc(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK service)
     if(p_scb->p_disc_db) {
         /* set up service discovery database; attr happens to be attr_list len */
         uuid_list[0].len = LEN_UUID_16;
-        uuid_list[1].len = LEN_UUID_16;
+        if (num_uuid >= 2) {
+            uuid_list[1].len = LEN_UUID_16;
+        }
         db_inited = SDP_InitDiscoveryDb(p_scb->p_disc_db, BTA_AG_DISC_BUF_SIZE, num_uuid,
                             uuid_list, num_attr, attr_list);
     }

@@ -37,10 +37,14 @@ void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA *p_data)
     case BTA_HF_CLIENT_AT_CMD_CHUP:
         bta_hf_client_send_at_chup();
         break;
-    case BTA_HF_CLIENT_AT_CMD_CHLD:
-        /* expects ascii code for command */
-        bta_hf_client_send_at_chld('0' + p_val->uint32_val1, p_val->uint32_val2);
+    case BTA_HF_CLIENT_AT_CMD_CHLD: {
+        UINT32 chld_n = p_val->uint32_val1;
+        if (chld_n > 9) {
+            break;
+        }
+        bta_hf_client_send_at_chld((char)('0' + chld_n), p_val->uint32_val2);
         break;
+    }
     case BTA_HF_CLIENT_AT_CMD_BCC:
         bta_hf_client_send_at_bcc();
         break;
@@ -81,7 +85,7 @@ void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA *p_data)
         bta_hf_client_send_at_xapl(p_val->str, p_val->uint32_val1);
         break;
     case BTA_HF_CLIENT_AT_CMD_IPHONEACCEV:
-        bta_hf_client_send_at_iphoneaccev(p_val->uint32_val1, p_val->uint32_val1 == 0 ? FALSE : TRUE);
+        bta_hf_client_send_at_iphoneaccev(p_val->uint32_val1, p_val->uint32_val2 == 0 ? FALSE : TRUE);
         break;
     default:
         APPL_TRACE_ERROR("Default case, %s", __FUNCTION__);

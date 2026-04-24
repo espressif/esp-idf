@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,10 +47,11 @@ static void close_goepc_and_report(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_E
     conn.handle = p_ccb->allocated;
     conn.error = reason;
     bdcpy(conn.bd_addr, p_ccb->bd_addr);
-    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
 
     /* free ccb */
     free_ccb(p_ccb);
+
+    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
 }
 
 static void build_and_send_empty_get_req(tBTA_PBA_CLIENT_CCB *p_ccb)
@@ -280,8 +281,10 @@ void bta_pba_client_api_req(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_
             ret |= GOEPC_RequestAddHeader(p_ccb->goep_handle, OBEX_HEADER_ID_NAME, NULL, 0);
         }
         else {
-            UINT8 *utf16_name = osi_malloc(2 * name_len);
-            assert(utf16_name != NULL);
+            UINT8 *utf16_name = (UINT8 *)osi_malloc(2 * name_len);
+            if (utf16_name == NULL) {
+                goto error;
+            }
             ascii_to_utf16((UINT8 *)p_data->api_req.name, name_len, utf16_name);
             ret |= GOEPC_RequestAddHeader(p_ccb->goep_handle, OBEX_HEADER_ID_NAME, utf16_name, 2 * name_len);
             osi_free(utf16_name);
@@ -308,6 +311,7 @@ void bta_pba_client_api_req(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_
     if (p_data->api_req.app_param) {
         ret |= GOEPC_RequestAddHeader(p_ccb->goep_handle, OBEX_HEADER_ID_APP_PARAM, p_data->api_req.app_param, p_data->api_req.app_param_len);
         osi_free(p_data->api_req.app_param);
+        p_data->api_req.app_param = NULL;
     }
 
     ret |= GOEPC_SendRequest(p_ccb->goep_handle);
@@ -320,9 +324,11 @@ void bta_pba_client_api_req(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_
 error:
     if (p_data->api_req.name) {
         osi_free(p_data->api_req.name);
+        p_data->api_req.name = NULL;
     }
     if (p_data->api_req.app_param) {
         osi_free(p_data->api_req.app_param);
+        p_data->api_req.app_param = NULL;
     }
     close_goepc_and_report(p_ccb, BTA_PBA_CLIENT_GOEP_ERROR);
 }
@@ -335,32 +341,35 @@ static void goep_event_callback(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
     {
     case GOEPC_OPENED_EVT:
         p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_DATA));
-        assert(p_data != NULL);
-        p_data->goep_connect.hdr.event = BTA_PBA_CLIENT_GOEP_CONNECT_EVT;
-        p_data->goep_connect.hdr.layer_specific = handle;
-        p_data->goep_connect.our_mtu = p_msg->opened.our_mtu;
-        p_data->goep_connect.peer_mtu = p_msg->opened.peer_mtu;
+        if (p_data) {
+            p_data->goep_connect.hdr.event = BTA_PBA_CLIENT_GOEP_CONNECT_EVT;
+            p_data->goep_connect.hdr.layer_specific = handle;
+            p_data->goep_connect.our_mtu = p_msg->opened.our_mtu;
+            p_data->goep_connect.peer_mtu = p_msg->opened.peer_mtu;
+        }
         break;
     case GOEPC_CLOSED_EVT:
         p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_DATA));
-        assert(p_data != NULL);
-        p_data->goep_disconnect.hdr.event = BTA_PBA_CLIENT_GOEP_DISCONNECT_EVT;
-        p_data->goep_disconnect.hdr.layer_specific = handle;
-        p_data->goep_disconnect.reason = p_msg->closed.reason;
+        if (p_data) {
+            p_data->goep_disconnect.hdr.event = BTA_PBA_CLIENT_GOEP_DISCONNECT_EVT;
+            p_data->goep_disconnect.hdr.layer_specific = handle;
+            p_data->goep_disconnect.reason = p_msg->closed.reason;
+        }
         break;
     case GOEPC_RESPONSE_EVT:
         p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_DATA));
-        assert(p_data != NULL);
-        p_data->goep_response.hdr.layer_specific = handle;
-        p_data->goep_response.pkt = p_msg->response.pkt;
-        p_data->goep_response.opcode = p_msg->response.opcode;
-        p_data->goep_response.srm_en = p_msg->response.srm_en;
-        p_data->goep_response.srm_wait = p_msg->response.srm_wait;
-        if (p_msg->response.final) {
-            p_data->goep_response.hdr.event = BTA_PBA_CLIENT_RESPONSE_FINAL_EVT;
-        }
-        else {
-            p_data->hdr.event = BTA_PBA_CLIENT_RESPONSE_EVT;
+        if (p_data) {
+            p_data->goep_response.hdr.layer_specific = handle;
+            p_data->goep_response.pkt = p_msg->response.pkt;
+            p_data->goep_response.opcode = p_msg->response.opcode;
+            p_data->goep_response.srm_en = p_msg->response.srm_en;
+            p_data->goep_response.srm_wait = p_msg->response.srm_wait;
+            if (p_msg->response.final) {
+                p_data->goep_response.hdr.event = BTA_PBA_CLIENT_RESPONSE_FINAL_EVT;
+            }
+            else {
+                p_data->goep_response.hdr.event = BTA_PBA_CLIENT_RESPONSE_EVT;
+            }
         }
         break;
     case GOEPC_MTU_CHANGED_EVT:
@@ -419,10 +428,10 @@ void bta_pba_client_do_connect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA 
     conn.handle = 0;
     conn.error = reason;
     bdcpy(conn.bd_addr, p_ccb->bd_addr);
-    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
-
     /* free ccb */
     free_ccb(p_ccb);
+
+    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
 }
 
 void bta_pba_client_authenticate(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data)
@@ -467,22 +476,36 @@ void bta_pba_client_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p
             {
             case OBEX_HEADER_ID_BODY:
             case OBEX_HEADER_ID_END_OF_BODY:
+            {
+                UINT16 hi_len = OBEX_GetHeaderLength(header);
+                if (hi_len < 3) {
+                    reason = BTA_PBA_CLIENT_BAD_REQUEST;
+                    goto error;
+                }
                 if (body_data == NULL) {
                     /* first body header */
                     body_data = header + 3;     /* skip opcode, length */
-                    body_data_len = OBEX_GetHeaderLength(header) - 3;
+                    body_data_len = hi_len - 3;
                 }
                 else {
                     /* another body header found */
                     report_data_event(p_ccb, body_data, body_data_len, NULL, 0, FALSE, NULL);
                     body_data = header + 3;     /* skip opcode, length */
-                    body_data_len = OBEX_GetHeaderLength(header) - 3;
+                    body_data_len = hi_len - 3;
                 }
                 break;
+            }
             case OBEX_HEADER_ID_APP_PARAM:
+            {
+                UINT16 hi_len = OBEX_GetHeaderLength(header);
+                if (hi_len < 3) {
+                    reason = BTA_PBA_CLIENT_BAD_REQUEST;
+                    goto error;
+                }
                 app_param = header + 3;
-                app_param_len = OBEX_GetHeaderLength(header) - 3;
+                app_param_len = hi_len - 3;
                 break;
+            }
             default:
                 break;
             }
@@ -544,7 +567,10 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
             }
 
             BT_HDR *p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR));
-            assert(p_buf != NULL);
+            if (p_buf == NULL) {
+                APPL_TRACE_ERROR("pba_client_response_final: ENOMEM");
+                goto error;
+            }
             p_buf->event = BTA_PBA_CLIENT_CONNECT_EVT;
             p_buf->layer_specific = p_ccb->allocated;
             bta_sys_sendmsg(p_buf);
@@ -580,22 +606,36 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
                 /* actually, BODY should not in this final response */
                 case OBEX_HEADER_ID_BODY:
                 case OBEX_HEADER_ID_END_OF_BODY:
+                {
+                    UINT16 hi_len = OBEX_GetHeaderLength(header);
+                    if (hi_len < 3) {
+                        reason = BTA_PBA_CLIENT_BAD_REQUEST;
+                        goto error;
+                    }
                     if (body_data == NULL) {
                         /* first body header */
                         body_data = header + 3;     /* skip opcode, length */
-                        body_data_len = OBEX_GetHeaderLength(header) - 3;
+                        body_data_len = hi_len - 3;
                     }
                     else {
                         /* another body header found */
                         report_data_event(p_ccb, body_data, body_data_len, NULL, 0, FALSE, NULL);
                         body_data = header + 3;     /* skip opcode, length */
-                        body_data_len = OBEX_GetHeaderLength(header) - 3;
+                        body_data_len = hi_len - 3;
                     }
                     break;
+                }
                 case OBEX_HEADER_ID_APP_PARAM:
+                {
+                    UINT16 hi_len = OBEX_GetHeaderLength(header);
+                    if (hi_len < 3) {
+                        reason = BTA_PBA_CLIENT_BAD_REQUEST;
+                        goto error;
+                    }
                     app_param = header + 3;
-                    app_param_len = OBEX_GetHeaderLength(header) - 3;
+                    app_param_len = hi_len - 3;
                     break;
+                }
                 default:
                     break;
                 }
@@ -606,6 +646,8 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
                 /* done, return */
                 return;
             }
+            report_data_event(p_ccb, NULL, 0, NULL, 0, TRUE, p_data->goep_response.pkt);
+            return;
         }
         /* unexpected response code or body data not found */
         reason = calculate_response_error(info.response_code);
@@ -687,8 +729,8 @@ void bta_pba_client_goep_disconnect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_
     conn.handle = p_ccb->allocated;
     bdcpy(conn.bd_addr, p_ccb->bd_addr);
     conn.error = BTA_PBA_CLIENT_GOEP_ERROR;
-    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
     free_ccb(p_ccb);
+    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
 }
 
 void bta_pba_client_free_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,6 +176,7 @@ static tBTA_PBA_CLIENT_CCB *find_ccb_by_handle(UINT16 handle)
     for (int i = 0; i < PBA_CLIENT_MAX_CONNECTION; ++i) {
         if (bta_pba_client_cb.ccb[i].allocated != 0 && bta_pba_client_cb.ccb[i].allocated == handle) {
             p_ccb = &bta_pba_client_cb.ccb[i];
+            break;
         }
     }
     return p_ccb;
@@ -187,6 +188,7 @@ static tBTA_PBA_CLIENT_CCB *find_ccb_by_goep_handle(UINT16 goep_handle)
     for (int i = 0; i < PBA_CLIENT_MAX_CONNECTION; ++i) {
         if (bta_pba_client_cb.ccb[i].allocated != 0 && bta_pba_client_cb.ccb[i].goep_handle == goep_handle) {
             p_ccb = &bta_pba_client_cb.ccb[i];
+            break;
         }
     }
     return p_ccb;
@@ -198,6 +200,7 @@ static tBTA_PBA_CLIENT_CCB *find_ccb_by_bd_addr(BD_ADDR bd_addr)
     for (int i = 0; i < PBA_CLIENT_MAX_CONNECTION; ++i) {
         if (bta_pba_client_cb.ccb[i].allocated != 0 && bdcmp(bta_pba_client_cb.ccb[i].bd_addr, bd_addr) == 0) {
             p_ccb = &bta_pba_client_cb.ccb[i];
+            break;
         }
     }
     return p_ccb;

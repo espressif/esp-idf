@@ -376,7 +376,7 @@ static void bta_ag_send_result(tBTA_AG_SCB *p_scb, UINT8 code, char *p_arg, INT1
     char    *p = buf;
     UINT16  len;
 #if (BTIF_TRACE_DEBUG == TRUE)
-    memset(buf, NULL, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
 #endif
     /* init with \r\n */
     *p++ = '\r';
@@ -444,7 +444,7 @@ static void bta_ag_send_multi_result(tBTA_AG_SCB *p_scb, tBTA_AG_MULTI_RESULT_CB
     }
 
 #if defined(BTA_AG_RESULT_DEBUG) && (BTA_AG_RESULT_DEBUG == TRUE)
-    memset(buf, NULL, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
 #endif
 
     while(res_idx < m_res_cb->num_result) {
@@ -604,13 +604,14 @@ static BOOLEAN bta_ag_parse_cmer(char *p_s, BOOLEAN *p_enabled)
     for (i = 0; i < 4; i++) {
         /* skip to comma delimiter */
         for (p = p_s; *p != ',' && *p != 0; p++);
+        if (*p == 0) {
+            n[i] = utl_str2int(p_s);
+            break;
+        }
         /* get integer value */
         *p = 0;
         n[i] = utl_str2int(p_s);
         p_s = p + 1;
-        if (p_s == 0) {
-            break;
-        }
     }
     /* process values */
     if (n[0] < 0 || n[3] < 0) {
@@ -721,9 +722,9 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
 *******************************************************************************/
 static void bta_ag_process_unat_res(char *unat_result)
 {
-    UINT8   str_leng;
-    UINT8   i = 0;
-    UINT8   j = 0;
+    size_t  str_leng;
+    size_t  i = 0;
+    size_t  j = 0;
     UINT8   pairs_of_nl_cr;
     char    trim_data[BTA_AG_AT_MAX_LEN];
 
@@ -737,16 +738,18 @@ static void bta_ag_process_unat_res(char *unat_result)
     while(unat_result[0] =='\r' && unat_result[1] =='\n'
         && unat_result[str_leng-2] =='\r' && unat_result[str_leng-1] =='\n') {
         pairs_of_nl_cr = 1;
-        for (i=0;i<(str_leng-4*pairs_of_nl_cr);i++) {
-            trim_data[j++] = unat_result[i+pairs_of_nl_cr*2];
+        for (i = 0; i < (str_leng - 4 * pairs_of_nl_cr); i++) {
+            trim_data[j++] = unat_result[i + pairs_of_nl_cr * 2];
         }
         /* Add EOF */
-        trim_data[j] = '\0';
+        if (j < BTA_AG_AT_MAX_LEN) {
+            trim_data[j] = '\0';
+        }
         str_leng = str_leng - 4;
         BCM_STRNCPY_S(unat_result, trim_data, BTA_AG_AT_MAX_LEN);
-        i=0;
-        j=0;
-        if(str_leng <4) {
+        i = 0;
+        j = 0;
+        if (str_leng < 4) {
             return;
         }
     }
@@ -827,7 +830,9 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     BCM_STRNCPY_S(val.str, p_arg, BTA_AG_AT_MAX_LEN);
     val.str[BTA_AG_AT_MAX_LEN] = '\0';
     /* call callback with event */
-    (*bta_ag_cb.p_cback)(bta_ag_hsp_cb_evt[cmd], (tBTA_AG *) &val);
+    if (bta_ag_cb.p_cback) {
+        (*bta_ag_cb.p_cback)(bta_ag_hsp_cb_evt[cmd], (tBTA_AG *) &val);
+    }
 }
 
 /*******************************************************************************
@@ -1233,7 +1238,9 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     }
     /* call callback */
     if (event != 0) {
-        (*bta_ag_cb.p_cback)(event, (tBTA_AG *) &val);
+        if (bta_ag_cb.p_cback) {
+            (*bta_ag_cb.p_cback)(event, (tBTA_AG *) &val);
+        }
     }
 }
 
@@ -1264,7 +1271,9 @@ void bta_ag_at_err_cback(tBTA_AG_SCB *p_scb, BOOLEAN unknown, char *p_arg)
         val.num = 0;
         BCM_STRNCPY_S(val.str, p_arg, BTA_AG_AT_MAX_LEN);
         val.str[BTA_AG_AT_MAX_LEN] = '\0';
-        (*bta_ag_cb.p_cback)(BTA_AG_AT_UNAT_EVT, (tBTA_AG *) &val);
+        if (bta_ag_cb.p_cback) {
+            (*bta_ag_cb.p_cback)(BTA_AG_AT_UNAT_EVT, (tBTA_AG *) &val);
+        }
     } else {
         bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
     }
