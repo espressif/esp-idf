@@ -212,6 +212,14 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         // Get light sleep analog default
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
 
+#if !CONFIG_SPIRAM
+        if (PMU_instance()->flash_ldo_volt_1v8)
+#endif
+        {
+            analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+        }
+
         if (!(sleep_flags & PMU_SLEEP_PD_XTAL))
         {
             // Analog parameters in HP_SLEEP

@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <esp_types.h>
 #include "sdkconfig.h"
@@ -13,6 +14,9 @@
 #include "soc/soc.h"
 #include "soc/pmu_struct.h"
 #include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
+#include "hal/gpio_ll.h"
+#include "hal/gpio_types.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
@@ -38,9 +42,17 @@ pmu_context_t * __attribute__((weak)) IRAM_ATTR PMU_instance(void)
 {
     /* It should be explicitly defined in the internal RAM, because this
      * instance will be used in pmu_sleep.c */
-    static DRAM_ATTR pmu_hal_context_t pmu_hal = { .dev = &PMU };
+    static DRAM_ATTR pmu_hal_context_t pmu_hal = { .dev = NULL };
     static DRAM_ATTR pmu_sleep_machine_constant_t pmu_mc = PMU_SLEEP_MC_DEFAULT();
     static DRAM_ATTR pmu_context_t pmu_context = { .hal = &pmu_hal, .mc = (void *)&pmu_mc };
+
+    if (pmu_hal.dev == NULL) {
+        pmu_hal.dev = &PMU;
+        const uint32_t sel = efuse_ll_get_flash_power_sel();
+        const uint32_t en = efuse_ll_get_flash_power_sel_en();
+        const int g36 = gpio_ll_get_level(GPIO_LL_GET_HW(0), (uint32_t)GPIO_NUM_36);
+        pmu_context.flash_ldo_volt_1v8 = (sel == 0 && g36 == 0) || (sel == 1 && en == 0);
+    }
     return &pmu_context;
 }
 

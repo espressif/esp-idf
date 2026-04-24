@@ -199,6 +199,9 @@ typedef struct {
 #if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
     void *priv;
 #endif
+#if SOC_SPI_FLASH_HAS_DEDICATED_LDO
+    bool flash_ldo_volt_1v8;
+#endif
 } pmu_context_t;
 
 pmu_context_t * PMU_instance(void);

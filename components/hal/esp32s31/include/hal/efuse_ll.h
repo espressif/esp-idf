@@ -142,6 +142,22 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_st
     return EFUSE.status.state;
 }
 
+/**
+ * @brief Flash power select eFuse bit (see VDD_SPI voltage table; not the final rail by itself)
+ */
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_power_sel(void)
+{
+    return EFUSE.rd_repeat_data6.pmu_flash_power_sel;
+}
+
+/**
+ * @brief Flash power select valid eFuse bit (1: `flash_power_sel` is valid, 0: not)
+ */
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_power_sel_en(void)
+{
+    return EFUSE.rd_repeat_data6.pmu_flash_power_sel_en;
+}
+
 /******************* eFuse control functions *************************/
 
 #ifdef __cplusplus

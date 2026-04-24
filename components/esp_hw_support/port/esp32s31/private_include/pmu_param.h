@@ -360,7 +360,7 @@ typedef struct {
     .hp_sys = {                                                   \
         .analog = {                                               \
             .drv_b           = PMU_HP_DRVB_LIGHTSLEEP,            \
-            .pd_cur          = PMU_PD_CUR_SLEEP_ON,               \
+            .pd_cur          = PMU_PD_CUR_SLEEP_DEFAULT,          \
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,         \
             .xpd             = PMU_HP_XPD_LIGHTSLEEP,             \
             .dbg_atten       = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT,  \
@@ -370,7 +370,7 @@ typedef struct {
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                \
         .analog = {                                               \
             .drv_b           = PMU_LP_DRVB_LIGHTSLEEP,            \
-            .pd_cur          = PMU_PD_CUR_SLEEP_ON,               \
+            .pd_cur          = PMU_PD_CUR_SLEEP_DEFAULT,          \
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,         \
             .slp_xpd         = PMU_LP_SLP_XPD_SLEEP_DEFAULT,      \
             .slp_dbias       = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,    \
