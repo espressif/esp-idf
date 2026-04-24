@@ -109,12 +109,24 @@ def test_ecdsa_key(
         raise
 
 
-@pytest.mark.generic
-@pytest.mark.parametrize('config', ['long_aes_operations'], indirect=True)
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_crypto_long_aes_operations(dut: Dut) -> None:
     # if the env variable IDF_FPGA_ENV is set, we would need a longer timeout
     # as tests for efuses burning security peripherals would be run
     timeout = 600 if os.environ.get('IDF_ENV_FPGA') else 60
 
     dut.expect('Tests finished', timeout=timeout)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['long_aes_operations'], indirect=True)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_crypto_long_aes_operations_generic(dut: Dut) -> None:
+    test_crypto_long_aes_operations(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32p4_rev1
+@pytest.mark.parametrize('config', ['long_aes_operations_esp32p4_rev1'], indirect=True)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_crypto_long_aes_operations_esp32p4_rev1(dut: Dut) -> None:
+    test_crypto_long_aes_operations(dut)
