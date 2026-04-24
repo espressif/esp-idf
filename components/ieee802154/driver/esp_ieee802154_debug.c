@@ -77,6 +77,16 @@ static char *ieee802154_state_string[] = {
     "ED",
     "CCA",
 };
+
+static char *ieee802154_state_to_string(ieee802154_state_t state)
+{
+    char *state_string = "INVALID";
+    if (state < sizeof(ieee802154_state_string) / sizeof(ieee802154_state_string[0])) {
+        state_string = ieee802154_state_string[state];
+    }
+    return state_string;
+}
+
 #endif // CONFIG_IEEE802154_RECORD_STATE
 
 #if CONFIG_IEEE802154_RECORD_CMD
@@ -126,7 +136,7 @@ static char *ieee802154_get_cmd_string(ieee802154_ll_cmd_t cmd)
 #endif // CONFIG_IEEE802154_RECORD_CMD
 
 #if CONFIG_IEEE802154_RECORD_EVENT || CONFIG_IEEE802154_RECORD_ABORT
-static char *ieee80154_rx_abort_reason_string[] = {
+static char *ieee802154_rx_abort_reason_string[] = {
     "RSVD",                                         //   = 0,
     "RX_STOP",                                      //   = 1,
     "SFD_TIMEOUT",                                  //   = 2,
@@ -148,7 +158,7 @@ static char *ieee80154_rx_abort_reason_string[] = {
     "ED_COEX_REJECT",                               //   = 26,
 };
 
-static char *ieee80154_tx_abort_reason_string[] = {
+static char *ieee802154_tx_abort_reason_string[] = {
     "RSVD",                                         //   = 0,
     "RX_ACK_STOP",                                  //   = 1,
     "RX_ACK_SFD_TIMEOUT",                           //   = 2,
@@ -169,17 +179,47 @@ static char *ieee80154_tx_abort_reason_string[] = {
     "CCA_BUSY",                                     //   = 25,
 };
 
+static char *ieee802154_abort_reason_to_string(ieee802154_ll_rx_abort_reason_t reason, bool is_tx_abort)
+{
+    char *abort_reason_string = "UNKNOWN";
+    if (is_tx_abort) {
+        if (reason < sizeof(ieee802154_tx_abort_reason_string) / sizeof(ieee802154_tx_abort_reason_string[0])) {
+            abort_reason_string = ieee802154_tx_abort_reason_string[reason];
+        }
+    } else {
+        if (reason < sizeof(ieee802154_rx_abort_reason_string) / sizeof(ieee802154_rx_abort_reason_string[0])) {
+            abort_reason_string = ieee802154_rx_abort_reason_string[reason];
+        }
+    }
+    return abort_reason_string;
+}
+
 #endif // CONFIG_IEEE802154_RECORD_EVENT
 
 #if CONFIG_IEEE802154_RECORD
 #if CONFIG_IEEE802154_RECORD_TXRX_FRAME
 static void ieee802154_dump_frame_print(const uint8_t *frame)
 {
+    if (frame == NULL) {
+        ESP_EARLY_LOGW(IEEE802154_TAG, "Invalid frame, frame is NULL");
+        return;
+    }
+    if (frame[0] < IEEE802154_FRAME_MIN_LEN) {
+        ESP_EARLY_LOGW(IEEE802154_TAG, "Invalid frame, frame length is %d", frame[0]);
+        return;
+    }
     for (uint8_t i = 1; i < frame[0]; i+=8) {
+        uint8_t end = (i + 7 < frame[0]) ? i + 7 : frame[0] - 1;
         ESP_EARLY_LOGW(IEEE802154_TAG, "frag(%03d:%03d~%03d): %02x %02x %02x %02x %02x %02x %02x %02x",
-                                    frame[0], i, i+7,
-                                    frame[i], frame[i+1], frame[i+2], frame[i+3],
-                                    frame[i+4], frame[i+5], frame[i+6], frame[i+7]);
+                                frame[0], i, end,
+                                frame[i],
+                                (i+1 < frame[0]) ? frame[i+1] : 0,
+                                (i+2 < frame[0]) ? frame[i+2] : 0,
+                                (i+3 < frame[0]) ? frame[i+3] : 0,
+                                (i+4 < frame[0]) ? frame[i+4] : 0,
+                                (i+5 < frame[0]) ? frame[i+5] : 0,
+                                (i+6 < frame[0]) ? frame[i+6] : 0,
+                                (i+7 < frame[0]) ? frame[i+7] : 0);
     }
 }
 #endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
@@ -193,14 +233,14 @@ void ieee802154_record_print(void)
         char abort_log[100] = { 0 };
         snprintf(event_log, 200,"index %2d: event: 0x%4x, %15s, state:%10s, timestamp: %lld", i, g_ieee802154_probe.event[i].event,
             ieee802154_get_event_string(g_ieee802154_probe.event[i].event),
-            ieee802154_state_string[g_ieee802154_probe.event[i].state],
+            ieee802154_state_to_string(g_ieee802154_probe.event[i].state),
             g_ieee802154_probe.event[i].timestamp);
         if (g_ieee802154_probe.event[i].event == IEEE802154_EVENT_RX_ABORT) {
             snprintf(abort_log, 100, "rx abort reason: %4x, %20s", g_ieee802154_probe.event[i].abort_reason.rx,
-                ieee80154_rx_abort_reason_string[g_ieee802154_probe.event[i].abort_reason.rx]);
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.event[i].abort_reason.rx, false));
         } else if (g_ieee802154_probe.event[i].event == IEEE802154_EVENT_TX_ABORT) {
             snprintf(abort_log, 100, "tx abort reason: %4x, %20s", g_ieee802154_probe.event[i].abort_reason.tx,
-                ieee80154_tx_abort_reason_string[g_ieee802154_probe.event[i].abort_reason.tx]);
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.event[i].abort_reason.tx, true));
         }
         ESP_EARLY_LOGW(IEEE802154_TAG, "%s %s", event_log, abort_log);
     }
@@ -212,7 +252,7 @@ void ieee802154_record_print(void)
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_STATE_SIZE; i++) {
         ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5lu, state:%10s, timestamp: %lld",
             i, g_ieee802154_probe.state[i].line,
-            ieee802154_state_string[g_ieee802154_probe.state[i].state],
+            ieee802154_state_to_string(g_ieee802154_probe.state[i].state),
             g_ieee802154_probe.state[i].timestamp);
     }
     ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record state done.");
@@ -235,12 +275,12 @@ void ieee802154_record_print(void)
         if (g_ieee802154_probe.abort[i].is_tx_abort) {
             ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: tx abort: %4x, %15s, timestamp: %lld",
                 i, g_ieee802154_probe.abort[i].abort_reason.tx,
-                ieee80154_tx_abort_reason_string[g_ieee802154_probe.abort[i].abort_reason.tx],
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.abort[i].abort_reason.tx, true),
                 g_ieee802154_probe.abort[i].timestamp);
         } else {
             ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: rx abort: %4x, %15s, timestamp: %lld",
                 i, g_ieee802154_probe.abort[i].abort_reason.rx,
-                ieee80154_rx_abort_reason_string[g_ieee802154_probe.abort[i].abort_reason.rx],
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.abort[i].abort_reason.rx, false),
                 g_ieee802154_probe.abort[i].timestamp);
         }
     }
@@ -418,14 +458,19 @@ static uint64_t s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEV
 void ieee802154_rx_buffer_statistic_is_free(bool is_free)
 {
     if (is_free) {
-        s_rx_buffer_used_nums--;
+        if (s_rx_buffer_used_nums > 0) {
+            s_rx_buffer_used_nums--;
+        }
     } else {
         s_rx_buffer_used_nums++;
         // (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1) means buffer full.
         if (s_rx_buffer_used_nums > (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1)) {
             s_rx_buffer_used_nums = CONFIG_IEEE802154_RX_BUFFER_SIZE + 1;
         }
-        s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_GET_USED_LEVEL(s_rx_buffer_used_nums)]++;
+        uint8_t level = IEEE802154_RX_BUFFER_GET_USED_LEVEL(s_rx_buffer_used_nums);
+        if (level <= IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL) {
+            s_rx_buffer_used_water_level[level]++;
+        }
     }
 }
 
@@ -437,6 +482,7 @@ void ieee802154_rx_buffer_statistic_clear(void)
 void ieee802154_rx_buffer_statistic_print(void)
 {
     uint64_t total_times = 0;
+    float percentage = 0.0f;
     for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1); i++) {
         total_times += s_rx_buffer_used_water_level[i];
     }
@@ -445,9 +491,15 @@ void ieee802154_rx_buffer_statistic_print(void)
     ESP_LOGW(IEEE802154_TAG, "|%25s|%-25llu|", "buffer alloc times:", total_times);
     ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
     for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL); i++) {
-        ESP_LOGW(IEEE802154_TAG, "|%4d%%%5s%4d%%%10s|%-15llu%9.2f%%|", ((i) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), "~", ((i + 1) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), " used:", s_rx_buffer_used_water_level[i], ((float)s_rx_buffer_used_water_level[i] / (float)total_times)*100);
+        percentage = (total_times > 0) ? ((float)s_rx_buffer_used_water_level[i] / (float)total_times) * 100 : 0.0f;
+        ESP_LOGW(IEEE802154_TAG, "|%4d%%%5s%4d%%%10s|%-15llu%9.2f%%|",
+            ((i) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), "~",
+            ((i + 1) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), " used:",
+            s_rx_buffer_used_water_level[i], percentage);
     }
-    ESP_LOGW(IEEE802154_TAG, "|%25s|%-15llu%9.2f%%|", "full used:", s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL], ((float)s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL] / (float)total_times)*100);
+    percentage = (total_times > 0) ? ((float)s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL] / (float)total_times) * 100 : 0.0f;
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-15llu%9.2f%%|", "full used:",
+        s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL], percentage);
     ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
 }
 

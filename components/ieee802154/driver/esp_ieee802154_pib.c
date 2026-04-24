@@ -49,7 +49,7 @@ static inline void clr_pending(void)
     is_pending = false;
 }
 
-bool inline ieee802154_pib_is_pending(void)
+inline bool ieee802154_pib_is_pending(void)
 {
     return is_pending;
 }
@@ -66,7 +66,9 @@ void ieee802154_pib_init(void)
     s_ieee802154_pib.channel = 11;
     s_ieee802154_pib.cca_threshold = CONFIG_IEEE802154_CCA_THRESHOLD;
     s_ieee802154_pib.cca_mode = CONFIG_IEEE802154_CCA_MODE;
-    memset(&s_ieee802154_pib.power_table, IEEE802154_TXPOWER_VALUE_MAX(), sizeof(s_ieee802154_pib.power_table));
+    for (int i = 0; i < 16; i++) {
+        s_ieee802154_pib.power_table.channel[i] = IEEE802154_TXPOWER_VALUE_MAX();
+    }
 
     set_pending();
 }
@@ -133,7 +135,7 @@ uint8_t ieee802154_pib_get_channel(void)
 
 void ieee802154_pib_set_channel(uint8_t channel)
 {
-    ESP_RETURN_ON_FALSE(ieee802154_is_valid_channel(channel), , IEEE802154_TAG, "Failed to set channel, reason: Invalid channel: %d", channel);
+    ESP_RETURN_VOID_ON_FALSE(ieee802154_is_valid_channel(channel), IEEE802154_TAG, "Failed to set channel, reason: Invalid channel: %d", channel);
     if (s_ieee802154_pib.channel != channel) {
         s_ieee802154_pib.channel = channel;
         set_pending();
