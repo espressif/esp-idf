@@ -301,13 +301,13 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
 
     size_t node_count = uhci_ctrl->rx_dir.rx_num_dma_nodes;
 
-    // Initialize the mount configurations for each DMA node, making sure every no
+    // Initialize the mount configurations for each DMA node, making sure every node is properly aligned.
     size_t usable_size = (max_alignment_needed == 0) ? buffer_size : (buffer_size / max_alignment_needed) * max_alignment_needed;
     size_t base_size = (max_alignment_needed == 0) ? usable_size / node_count : (usable_size / node_count / max_alignment_needed) * max_alignment_needed;
     size_t remaining_size = usable_size - (base_size * node_count);
 
     gdma_buffer_mount_config_t mount_configs[node_count];
-    memset(mount_configs, 0, node_count);
+    memset(mount_configs, 0, node_count * sizeof(gdma_buffer_mount_config_t));
 
     for (size_t i = 0; i < node_count; i++) {
         uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] = base_size;
