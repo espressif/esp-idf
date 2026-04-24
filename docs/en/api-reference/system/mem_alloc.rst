@@ -37,8 +37,11 @@ All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MAL
 
 .. only:: esp32
 
-    If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
+    If users run out of ``MALLOC_CAP_8BIT``, they can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY``.
 
+    .. note::
+
+        This option is available only on single-core ESP32 configuration (``CONFIG_FREERTOS_UNICORE=y``). The ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`` option has a significant disadvantage compared to regular memory: every byte, half-word, and arbitrary unaligned access to ``MALLOC_CAP_IRAM_8BIT`` memory triggers a ``LoadStore`` or ``Alignment`` exception. Although these exceptions are handled in software to ensure correct values are read or written, each access incurs approximately 167 CPU cycles of overhead and can cause significant performance degradation if accessed frequently. Therefore, it should be avoided in performance-critical sections of code such as ISRs or tight loops. Consider to refactor the code to use 32-bit aligned (``uint32_t``) accesses.
 
 When calling ``malloc()``, the ESP-IDF ``malloc()`` internally calls ``heap_caps_malloc_default(size)``. This will allocate memory with the capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
