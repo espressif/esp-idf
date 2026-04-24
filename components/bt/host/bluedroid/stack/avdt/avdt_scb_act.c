@@ -273,6 +273,9 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     /* skip over any csrc's in packet */
     offset += o_cc * 4;
     p += o_cc * 4;
+    if (len < offset) {
+        goto length_error;
+    }
 
     /* check for and skip over extension header */
     if (o_x) {
@@ -283,6 +286,9 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
         }
         p += 2;
         BE_STREAM_TO_UINT16(ex_len, p);
+        if ((UINT32)ex_len * 4 > (UINT32)(len - offset)) {
+            goto length_error;
+        }
         p += ex_len * 4;
     }
 
@@ -317,12 +323,12 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 #if AVDT_MULTIPLEXING == TRUE
             if ((p_scb->cs.p_media_cback != NULL)
                     && (p_scb->p_media_buf != NULL)
-                    && (p_scb->media_buf_len > len)) {
+                    && (p_scb->media_buf_len > p_data->p_pkt->len)) {
                 /* media buffer enough length is assigned by application. Lets use it*/
                 memcpy(p_scb->p_media_buf, (UINT8 *)(p_data->p_pkt + 1) + p_data->p_pkt->offset,
-                       len);
+                       p_data->p_pkt->len);
                 (*p_scb->cs.p_media_cback)(avdt_scb_to_hdl(p_scb), p_scb->p_media_buf,
-                                           p_scb->media_buf_len, time_stamp, seq, m_pt, marker);
+                                           p_data->p_pkt->len, time_stamp, seq, m_pt, marker);
             }
 #endif
             goto length_error;
@@ -354,6 +360,8 @@ UINT8 *avdt_scb_hdl_report(tAVDT_SCB *p_scb, UINT8 *p, UINT16 len)
     UINT32  min_len = 0;
     AVDT_REPORT_TYPE    pt;
     tAVDT_REPORT_DATA   report;
+
+    memset(&report, 0, sizeof(report));
 
     AVDT_TRACE_DEBUG( "avdt_scb_hdl_report");
     if (p_scb->cs.p_report_cback) {
@@ -417,7 +425,7 @@ UINT8 *avdt_scb_hdl_report(tAVDT_SCB *p_scb, UINT8 *p, UINT16 len)
                     goto avdt_scb_hdl_report_exit;
                 }
                 uint8_t name_length;
-                BE_STREAM_TO_UINT8(name_length, p);\
+                BE_STREAM_TO_UINT8(name_length, p);
                 if ((name_length > len - min_len) || (name_length > AVDT_MAX_CNAME_SIZE)) {
                     result = AVDT_BAD_PARAMS;
                 } else {
@@ -643,6 +651,11 @@ void avdt_scb_hdl_pkt_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
                 pad_len =  0;
             }
             /* payload length */
+            if ((pad_len + p_payload) >= (p_scb->p_media_buf + p_scb->frag_off)) {
+                AVDT_TRACE_WARNING("length check3 p_payload:%p pad_len:%d p_media_buf:%p frag_off:%d",
+                                   p_payload, pad_len, p_scb->p_media_buf, p_scb->frag_off);
+                break;
+            }
             payload_len = (UINT32)(p_scb->p_media_buf + p_scb->frag_off - pad_len - p_payload);
 
             AVDT_TRACE_DEBUG("Received last fragment header=%d len=%d\n",
@@ -1054,10 +1067,13 @@ void avdt_scb_hdl_tc_close(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     tAVDT_CTRL          avdt_ctrl;
     UINT8               event;
     tAVDT_CCB           *p_ccb = p_scb->p_ccb;
-    BD_ADDR remote_addr;
+    BD_ADDR             remote_addr;
 
-
-    memcpy (remote_addr, p_ccb->peer_addr, BD_ADDR_LEN);
+    if (p_ccb != NULL) {
+        memcpy(remote_addr, p_ccb->peer_addr, BD_ADDR_LEN);
+    } else {
+        memset(remote_addr, 0, BD_ADDR_LEN);
+    }
 
     /* set up hdr */
     avdt_ctrl.hdr.err_code = p_scb->close_code;
@@ -1330,6 +1346,12 @@ void avdt_scb_hdl_write_req_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     /* Add RTP header if required */
     if ( !(p_data->apiwrite.opt & AVDT_DATA_OPT_NO_RTP) ) {
         ssrc = avdt_scb_gen_ssrc(p_scb);
+
+        if (p_data->apiwrite.p_buf->offset < AVDT_MEDIA_HDR_SIZE) {
+            osi_free(p_data->apiwrite.p_buf);
+            p_data->apiwrite.p_buf = NULL;
+            return;
+        }
 
         p_data->apiwrite.p_buf->len += AVDT_MEDIA_HDR_SIZE;
         p_data->apiwrite.p_buf->offset -= AVDT_MEDIA_HDR_SIZE;
@@ -1837,6 +1859,11 @@ void avdt_scb_cb_err(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     /* set error code and parameter */
     avdt_ctrl.hdr.err_code = AVDT_ERR_BAD_STATE;
     avdt_ctrl.hdr.err_param = 0;
+
+    if (p_scb->curr_evt >= (sizeof(avdt_scb_cback_evt) / sizeof(avdt_scb_cback_evt[0]))) {
+        AVDT_TRACE_ERROR("avdt_scb_cb_err curr_evt %u OOR", p_scb->curr_evt);
+        return;
+    }
 
     /* call callback, using lookup table to get callback event */
     (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb),
