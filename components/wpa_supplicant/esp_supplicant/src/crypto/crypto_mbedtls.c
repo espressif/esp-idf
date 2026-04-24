@@ -1059,9 +1059,9 @@ cleanup:
     return ret;
 }
 
-#ifdef CONFIG_TLS_INTERNAL_CLIENT
-static int pbkdf2_sha1_psa(const char *passphrase, const u8 *ssid, size_t ssid_len,
-                           int iterations, u8 *buf, size_t buflen)
+#if defined(CONFIG_TLS_INTERNAL_CLIENT) || (!defined(CONFIG_FAST_PSK) && !defined(CONFIG_FAST_PBKDF2))
+static int __maybe_unused pbkdf2_sha1_psa(const char *passphrase, const u8 *ssid, size_t ssid_len,
+                                          int iterations, u8 *buf, size_t buflen)
 {
     psa_key_derivation_operation_t op = PSA_KEY_DERIVATION_OPERATION_INIT;
     psa_status_t status;
@@ -1109,7 +1109,7 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
         return 0;
 #endif
     }
-#ifdef CONFIG_TLS_INTERNAL_CLIENT
+#if defined(CONFIG_TLS_INTERNAL_CLIENT) || (!defined(CONFIG_FAST_PSK) && !defined(CONFIG_FAST_PBKDF2))
     return pbkdf2_sha1_psa(passphrase, ssid, ssid_len, iterations, buf, buflen);
 #else
     return -1;
