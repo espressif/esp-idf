@@ -128,7 +128,7 @@ int ble_log_compressed_hex_print_internal(ble_cp_log_buffer_mgmt_t *mgmt, uint32
         } else {
             arg_type = va_arg(args, size_t);
             if (i == args_cnt - 1) {
-                ble_log_cp_push_u8(mgmt, arg_type);
+                ble_log_cp_push_u8(mgmt, arg_type << 4);
             } else {
                 size_info = arg_type << 4;
             }
@@ -280,11 +280,7 @@ int ble_log_compressed_hex_print_buf(uint8_t source, uint32_t log_index, uint8_t
         return 0;
     }
 
-<<<<<<< HEAD
-    if (buf == NULL && len != 0) {
-=======
     if (buf == NULL) {
->>>>>>> 3f2b6c97f86 (fix(ble_log): fix unaligned access and buffer safety in log compression)
         ble_log_cp_push_u8(mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_NULL_BUF));
         ble_log_cp_push_u16(mgmt, log_index);
         ble_compressed_log_output(source, mgmt->buffer, mgmt->idx);
