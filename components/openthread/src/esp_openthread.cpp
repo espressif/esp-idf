@@ -181,6 +181,7 @@ esp_err_t esp_openthread_mainloop_exit(void)
 
 esp_err_t esp_openthread_launch_mainloop(void)
 {
+    ESP_LOGI(OT_PLAT_LOG_TAG, "OpenThread enter mainloop");
     esp_openthread_mainloop_context_t mainloop;
     otInstance *instance = esp_openthread_get_instance();
     esp_err_t error = ESP_OK;
@@ -252,7 +253,7 @@ static void ot_task_worker(void *aContext)
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&(config->platform_config)));
 
-#if CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
     esp_netif_t *openthread_netif = esp_netif_new(&(config->netif_config));
     assert(openthread_netif != NULL);
     ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&(config->platform_config))));
@@ -284,7 +285,7 @@ static void ot_task_worker(void *aContext)
     esp_openthread_cli_console_command_unregister();
 #endif // CONFIG_OPENTHREAD_CLI
 
-#if CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
     // Clean up
     esp_openthread_netif_glue_deinit();
     esp_netif_destroy(openthread_netif);

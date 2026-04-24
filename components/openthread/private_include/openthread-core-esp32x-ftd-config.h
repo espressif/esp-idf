@@ -454,6 +454,21 @@
 #endif
 #define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
 
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+ *
+ * Define to 1 to enable platform NETIF support.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#error `OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE` is redefined.
+#endif
+#ifdef CONFIG_OPENTHREAD_PLATFORM_NETIF
+#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
+#endif
+#endif
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
@@ -701,16 +716,6 @@
  */
 #ifndef OPENTHREAD_CONFIG_COAP_API_ENABLE
 #define OPENTHREAD_CONFIG_COAP_API_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
- *
- * Define to 1 to enable platform NETIF support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
 #endif
 
 /**
