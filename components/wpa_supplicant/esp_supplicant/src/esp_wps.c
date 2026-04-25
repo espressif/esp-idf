@@ -552,80 +552,79 @@ _err:
     return ret;
 }
 
-int wps_enrollee_process_msg_frag(struct wpabuf **buf, int tot_len, u8 *frag_data, int frag_len, u8 flag)
+static int wps_eap_wsc_process_cont(struct wps_eap_wsc_frag_data *frag,
+                                    const u8 *buf, size_t len, u8 op_code)
 {
-    struct wps_sm *sm = gWpsSm;
-    u8 identifier;
-
-    if (!sm) {
-        return ESP_FAIL;
+    if (op_code != frag->in_op_code) {
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d in fragment "
+                   "(expected %d)", op_code, frag->in_op_code);
+        return -1;
     }
 
-    identifier = sm->current_identifier;
-
-    if (buf == NULL || frag_data == NULL) {
-        wpa_printf(MSG_ERROR, "fun:%s. line:%d, frag buf or frag data is null", __FUNCTION__, __LINE__);
-        return ESP_FAIL;
+    if (len > wpabuf_tailroom(frag->in_buf)) {
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Fragment overflow");
+        return -1;
     }
 
-    if (*buf == NULL) {
-        if (frag_len < 0 || tot_len < frag_len) {
-            wpa_printf(MSG_ERROR, "WPS: Invalid first fragment length");
-            return ESP_FAIL;
+    wpabuf_put_data(frag->in_buf, buf, len);
+    wpa_printf(MSG_DEBUG, "EAP-WSC: Received %lu bytes, waiting for %lu "
+               "bytes more", (unsigned long) len,
+               (unsigned long) wpabuf_tailroom(frag->in_buf));
+
+    return 0;
+}
+
+static int wps_eap_wsc_process_fragment(struct wps_eap_wsc_frag_data *frag,
+                                        u8 flags, u8 op_code,
+                                        u16 message_length,
+                                        const u8 *buf, size_t len)
+{
+    if (frag->in_buf == NULL && !(flags & WSC_FLAGS_LF)) {
+        wpa_printf(MSG_DEBUG, "EAP-WSC: No Message Length field in a "
+                   "fragmented packet");
+        return -1;
+    }
+
+    if (frag->in_buf == NULL) {
+        frag->in_buf = wpabuf_alloc(message_length);
+        if (frag->in_buf == NULL) {
+            wpa_printf(MSG_DEBUG, "EAP-WSC: No memory for message");
+            return -1;
         }
-
-        *buf = wpabuf_alloc(tot_len);
-        if (*buf == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-
-        wpabuf_put_data(*buf, frag_data, frag_len);
-        return wps_send_frag_ack(identifier);
+        frag->in_op_code = op_code;
+        wpabuf_put_data(frag->in_buf, buf, len);
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Received %lu bytes in first "
+                   "fragment, waiting for %lu bytes more",
+                   (unsigned long) len,
+                   (unsigned long) wpabuf_tailroom(frag->in_buf));
     }
 
-    if (flag & WPS_MSG_FLAG_LEN) {
-        wpa_printf(MSG_ERROR, "WPS: %s: Invalid fragment flag: 0x%02x", __func__, flag);
-        wpabuf_free(*buf);
-        *buf = NULL;
-        return ESP_FAIL;
-    }
-
-    if (frag_len < 0 || wpabuf_len(*buf) + frag_len > tot_len) {
-        wpa_printf(MSG_ERROR, "WPS: Invalid subsequent fragment length");
-        wpabuf_free(*buf);
-        *buf = NULL;
-        return ESP_FAIL;
-    }
-    wpabuf_put_data(*buf, frag_data, frag_len);
-
-    if (flag & WPS_MSG_FLAG_MORE) {
-        return wps_send_frag_ack(identifier);
-    }
-
-    return ESP_OK;
+    return 0;
 }
 
 int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
 {
     struct wps_sm *sm = gWpsSm;
-    static struct wpabuf *wps_buf = NULL;
+    struct wps_eap_wsc_frag_data *frag;
     struct eap_expand *expd;
-    int tlen = 0;
-    u8 *tbuf;
-    u8 flag;
-    int frag_len;
-    u16 be_tot_len = 0;
+    const u8 *pos, *end;
+    u8 flags;
+    u16 message_length = 0;
+    struct wpabuf tmpbuf;
 
     if (!sm || !res) {
         return ESP_FAIL;
     }
+
+    frag = &sm->wsc_frag;
 
     if (len < (int)(sizeof(struct eap_expand) + 1)) {
         wpa_printf(MSG_ERROR, "WPS: Truncated EAP-Expanded header");
         return ESP_FAIL;
     }
     expd = (struct eap_expand *) ubuf;
-    wpa_printf(MSG_DEBUG, "wps process mX req: len %d, tlen %d", len, tlen);
+    pos = ubuf + sizeof(struct eap_expand);
+    end = ubuf + len;
 
     if (sm->state == WAIT_START) {
         if (expd->opcode != WSC_Start) {
@@ -641,73 +640,65 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         return ESP_ERR_INVALID_STATE;
     }
 
-    flag = *(u8 *)(ubuf + sizeof(struct eap_expand));
-    if (flag & WPS_MSG_FLAG_LEN) {
-        if (len < (int)(sizeof(struct eap_expand) + 1 + 2)) {
-            wpa_printf(MSG_ERROR, "WPS: Missing total length field");
+    flags = *pos++;
+    if (flags & WSC_FLAGS_LF) {
+        if (end - pos < 2) {
+            wpa_printf(MSG_ERROR, "WPS: Message underflow");
             return ESP_FAIL;
         }
-        tbuf = ubuf + sizeof(struct eap_expand) + 1 + 2; // includes 2-byte total length
-        frag_len = len - (sizeof(struct eap_expand) + 1 + 2);
-        be_tot_len = *(u16 *)(ubuf + sizeof(struct eap_expand) + 1);
-        tlen = ((be_tot_len & 0xff) << 8) | ((be_tot_len >> 8) & 0xff);
-    } else {
-        tbuf = ubuf + sizeof(struct eap_expand) + 1;
-        frag_len = len - (sizeof(struct eap_expand) + 1);
-        tlen = frag_len;
-    }
+        message_length = WPA_GET_BE16(pos);
+        pos += 2;
 
-    if (frag_len < 0 || tlen < 0 || ((flag & WPS_MSG_FLAG_LEN) && tlen < frag_len)) {
-        wpa_printf(MSG_ERROR, "WPS: Invalid fragment sizes");
-        if (wps_buf) {
-            wpabuf_free(wps_buf);
-            wps_buf = NULL;
-        }
-        return ESP_FAIL;
-    }
-
-    if (tlen > 50000) {
-        wpa_printf(MSG_ERROR, "EAP-WSC: Invalid Message Length");
-        return ESP_FAIL;
-    }
-    if ((flag & WPS_MSG_FLAG_MORE) || wps_buf != NULL) {//frag msg
-        wpa_printf(MSG_DEBUG, "rx frag msg id:%d, flag:%d, frag_len: %d, tot_len: %d, be_tot_len:%d", sm->current_identifier, flag, frag_len, tlen, be_tot_len);
-        if (ESP_OK != wps_enrollee_process_msg_frag(&wps_buf, tlen, tbuf, frag_len, flag)) {
-            if (wps_buf) {
-                wpabuf_free(wps_buf);
-                wps_buf = NULL;
-            }
+        if (message_length < (u16)(end - pos) || message_length > 50000) {
+            wpa_printf(MSG_ERROR, "WPS: Invalid Message Length");
             return ESP_FAIL;
         }
-        if (flag & WPS_MSG_FLAG_MORE) {
-            *res = WPS_FRAGMENT;
-            return ESP_OK;
-        }
-    } else { //not frag msg
-        if (wps_buf) {//if something wrong, frag msg buf is not freed, free first
-            wpa_printf(MSG_ERROR, "something is wrong, frag buf is not freed");
-            wpabuf_free(wps_buf);
-            wps_buf = NULL;
-        }
-        wps_buf = wpabuf_alloc_copy(tbuf, tlen);
     }
 
-    if (!wps_buf) {
+    wpa_printf(MSG_DEBUG, "WPS: Received packet: Op-Code %d Flags 0x%x "
+               "Message Length %d", expd->opcode, flags, message_length);
+
+    if (frag->in_buf &&
+            wps_eap_wsc_process_cont(frag, pos, end - pos, expd->opcode) < 0) {
+        wpabuf_free(frag->in_buf);
+        frag->in_buf = NULL;
         return ESP_FAIL;
+    }
+
+    if (flags & WSC_FLAGS_MF) {
+        if (wps_eap_wsc_process_fragment(frag, flags, expd->opcode,
+                                         message_length, pos,
+                                         end - pos) < 0) {
+            wpabuf_free(frag->in_buf);
+            frag->in_buf = NULL;
+            return ESP_FAIL;
+        }
+        if (wps_send_frag_ack(sm->current_identifier) != ESP_OK) {
+            wpabuf_free(frag->in_buf);
+            frag->in_buf = NULL;
+            return ESP_FAIL;
+        }
+        *res = WPS_FRAGMENT;
+        return ESP_OK;
+    }
+
+    if (frag->in_buf == NULL) {
+        wpabuf_set(&tmpbuf, pos, end - pos);
+        frag->in_buf = &tmpbuf;
     }
 
     eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
 
-    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
+    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, frag->in_buf);
 
     if (*res == WPS_FAILURE) {
         sm->state = WPA_FAIL;
     }
 
-    if (wps_buf) {
-        wpabuf_free(wps_buf);
-        wps_buf = NULL;
+    if (frag->in_buf != &tmpbuf) {
+        wpabuf_free(frag->in_buf);
     }
+    frag->in_buf = NULL;
     return ESP_OK;
 }
 
@@ -1631,6 +1622,10 @@ wifi_station_wps_deinit(void)
     if (sm->wps) {
         wps_deinit(sm->wps);
         sm->wps = NULL;
+    }
+    if (sm->wsc_frag.in_buf) {
+        wpabuf_free(sm->wsc_frag.in_buf);
+        sm->wsc_frag.in_buf = NULL;
     }
     if (s_wps_sm_cb) {
         s_wps_sm_cb->wps_sm_notify_deauth = NULL;
