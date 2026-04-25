@@ -222,7 +222,10 @@ Kconfig 选项
 应用示例
 --------
 
-* :example:`peripherals/analog_comparator` 展示了模拟比较器的基本用法以及其他用途（如迟滞比较器和 SPWM 发生器）。
+.. list::
+
+    :SOC_ANA_CMPR_SUPPORT_AUTO_SCAN: - :example:`peripherals/analog_comparator/auto_scan` 展示了基于自动扫描功能的阈值检测（支持内部参考或外部参考）。比较器在使能后会持续扫描并实时更新输出，示例根据目标能力演示了基于中断或 ETM 的监控 GPIO 控制。
+    :SOC_ANA_CMPR_SUPPORT_ETM_SCAN: - :example:`peripherals/analog_comparator/etm_periodic_scan` 展示了如何使用 GPTimer 和 ETM 周期性触发比较器扫描，并通过比较器跨越事件驱动监控 GPIO。
 
 API 参考
 --------

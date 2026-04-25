@@ -37,6 +37,16 @@ examples/peripherals/analog_comparator/auto_scan:
     - esp_hal_ana_cmpr
     - soc
 
+examples/peripherals/analog_comparator/etm_periodic_scan:
+  disable:
+    - if: SOC_ANA_CMPR_SUPPORT_ETM_SCAN != 1
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_ana_cmpr
+    - esp_driver_gptimer
+    - esp_hal_ana_cmpr
+    - soc
+
 examples/peripherals/bitscrambler:
   disable:
     - if: SOC_BITSCRAMBLER_SUPPORTED != 1
