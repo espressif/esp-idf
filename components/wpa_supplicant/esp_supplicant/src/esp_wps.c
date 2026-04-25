@@ -911,6 +911,8 @@ int wps_finish(void)
             esp_wifi_connect();
 
             os_free(config);
+        } else {
+            esp_wifi_disconnect();
         }
         eloop_cancel_timeout(wifi_station_wps_success, NULL, NULL);
 	eloop_register_timeout(1, 0, wifi_station_wps_success, NULL, NULL);
