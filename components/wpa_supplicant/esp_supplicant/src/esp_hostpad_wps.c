@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,6 @@
 extern struct wps_sm *gWpsSm;
 extern void *s_wps_api_lock;
 extern void *s_wps_api_sem;
-extern bool s_wps_enabled;
 
 static int wps_reg_eloop_post_block(uint32_t sig, void *arg);
 
@@ -74,7 +73,9 @@ static int wifi_ap_wps_init(const esp_wps_config_t *config)
     cfg.wps = sm->wps_ctx;
 
     os_memcpy((void *)cfg.pin, config->pin, 8);
-    wps_init_cfg_pin(&cfg);
+    if (wps_init_cfg_pin(&cfg) < 0) {
+        goto _err;
+    }
     os_memcpy(cfg.wps->uuid, sm->uuid, WPS_UUID_LEN);
     if ((sm->wps = wps_init(&cfg)) == NULL) {         /* alloc wps_data */
         goto _err;
@@ -143,8 +144,8 @@ int wifi_ap_wps_deinit(void)
 
 static int wifi_ap_wps_enable_internal(const esp_wps_config_t *config)
 {
-    struct wps_sm *sm = gWpsSm;
     wifi_mode_t mode = WIFI_MODE_NULL;
+    enum wps_owner owner;
 
     if (esp_wifi_get_user_init_flag_internal() == 0) {
         wpa_printf(MSG_ERROR, "wps enable: wifi not started cannot enable wpsreg");
@@ -166,8 +167,9 @@ static int wifi_ap_wps_enable_internal(const esp_wps_config_t *config)
         return ESP_ERR_WIFI_MODE;
     }
 
-    if (s_wps_enabled) {
-        if (sm && os_memcmp(sm->identity, WSC_ID_ENROLLEE, sm->identity_len) == 0) {
+    owner = wps_get_owner();
+    if (owner != WPS_OWNER_NONE) {
+        if (owner == WPS_OWNER_ENROLLEE) {
             wpa_printf(MSG_ERROR, "wps enable: wps enrollee already enabled cannot enable wpsreg");
             return ESP_ERR_WIFI_MODE;
         } else {
@@ -199,7 +201,7 @@ static int wifi_ap_wps_enable_internal(const esp_wps_config_t *config)
     }
 
     wpa_printf(MSG_INFO, "wifi_wps_enable");
-    s_wps_enabled = true;
+    wps_set_owner(WPS_OWNER_REGISTRAR);
     return ESP_OK;
 
 _err:
@@ -222,15 +224,14 @@ int esp_wifi_ap_wps_enable(const esp_wps_config_t *config)
 
 int wifi_ap_wps_disable_internal(void)
 {
-    struct wps_sm *sm = gWpsSm;
+    enum wps_owner owner = wps_get_owner();
 
-    if (sm && os_memcmp(sm->identity, WSC_ID_ENROLLEE, sm->identity_len) == 0) {
-        return ESP_ERR_WIFI_MODE;
-    }
-
-    if (!s_wps_enabled) {
+    if (owner == WPS_OWNER_NONE) {
         wpa_printf(MSG_DEBUG, "wps disable: already disabled");
         return ESP_OK;
+    }
+    if (owner == WPS_OWNER_ENROLLEE) {
+        return ESP_ERR_WIFI_MODE;
     }
 
     wpa_printf(MSG_INFO, "wifi_wps_disable");
@@ -246,7 +247,7 @@ int wifi_ap_wps_disable_internal(void)
         goto _err;
     }
 
-    s_wps_enabled = false;
+    wps_set_owner(WPS_OWNER_NONE);
     return ESP_OK;
 
 _err:
@@ -266,6 +267,8 @@ int esp_wifi_ap_wps_disable(void)
 static int wifi_ap_wps_start_internal(const unsigned char *pin)
 {
     wifi_mode_t mode = WIFI_MODE_NULL;
+    int prev_wps_status;
+    enum wps_owner owner;
 
     esp_wifi_get_mode(&mode);
     if (mode != WIFI_MODE_AP && mode != WIFI_MODE_APSTA) {
@@ -273,10 +276,14 @@ static int wifi_ap_wps_start_internal(const unsigned char *pin)
         return ESP_ERR_WIFI_MODE;
     }
 
-    if (!s_wps_enabled) {
+    owner = wps_get_owner();
+    if (owner == WPS_OWNER_NONE) {
         wpa_printf(MSG_ERROR, "wps start: wps not enabled");
-        API_MUTEX_GIVE();
         return ESP_ERR_WIFI_WPS_SM;
+    }
+    if (owner != WPS_OWNER_REGISTRAR) {
+        wpa_printf(MSG_ERROR, "wps start: wps enrollee already enabled");
+        return ESP_ERR_WIFI_MODE;
     }
 
     if (wps_get_type() == WPS_TYPE_DISABLE ||
@@ -299,19 +306,24 @@ static int wifi_ap_wps_start_internal(const unsigned char *pin)
 
     /* TODO ideally SoftAP mode should also do a single scan in PBC mode
      * however softAP scanning is not available at the moment */
+    prev_wps_status = wps_get_status();
     if (wps_set_status(WPS_STATUS_PENDING) != ESP_OK) {
         return ESP_FAIL;
     }
     if (wps_get_type() == WPS_TYPE_PBC) {
         if (hostapd_wps_button_pushed(hostapd_get_hapd_data(), NULL) != ESP_OK) {
-            return ESP_FAIL;
+            goto _restore_status;
         }
     } else if (wps_get_type() == WPS_TYPE_PIN) {
         if (hostapd_wps_add_pin(hostapd_get_hapd_data(), pin) != ESP_OK) {
-            return ESP_FAIL;
+            goto _restore_status;
         }
     }
     return ESP_OK;
+
+_restore_status:
+    wps_set_status(prev_wps_status);
+    return ESP_FAIL;
 }
 
 int esp_wifi_ap_wps_start(const unsigned char *pin)
@@ -366,7 +378,11 @@ static int wps_reg_eloop_post_block(uint32_t sig, void *arg)
         }
     }
 
-    eloop_register_timeout(0, 0, wps_reg_eloop_handler, (void *)&sig, (void *)&param);
+    if (eloop_register_timeout(0, 0, wps_reg_eloop_handler,
+                               (void *)&sig, (void *)&param) != 0) {
+        wpa_printf(MSG_ERROR, "%s(): failed to post WPS work", __func__);
+        return ESP_FAIL;
+    }
 
     if (TRUE == os_semphr_take(s_wps_api_sem, OS_BLOCK)) {
         ret = param.ret;
