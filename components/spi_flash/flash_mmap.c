@@ -733,7 +733,7 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
 #endif
 
 #if CONFIG_SPIRAM_RODATA
-    if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_start_page_get()) {
+    if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_end_page_get()) {
         target = MMU_TARGET_PSRAM0;
         phys_offs -= rodata_flash2spiram_offset() * CONFIG_MMU_PAGE_SIZE;
     }
