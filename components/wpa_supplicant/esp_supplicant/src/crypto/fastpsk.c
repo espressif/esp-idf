@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,8 +46,12 @@
  *    - Subsequent `U` values are derived using SHA1 on the previous `U` value.
  * 4. All intermediate values are XORed together to produce the final segment of the key.
  * 5. The `esp_fast_psk` function combines two invocations of `fast_psk_f` to produce the complete 32-byte key.
- *    - The first invocation computes the first 16 bytes.
- *    - The second invocation computes the second 16 bytes.
+ *    - The first invocation computes the first 20 bytes (SHA1_OUTPUT_SZ).
+ *    - The second invocation computes the remaining 12 bytes.
+ *
+ * The ipad/opad SHA states are
+ * computed once and restored via sha_hal_write_digest() each iteration,
+ * halving the SHA block operations per iteration from 4 to 2.
  *
  * - The code uses the ESP SHA1 hardware accelerator for faster computation.
  */
@@ -55,8 +59,8 @@
 #include "fastpsk.h"
 
 #include <string.h>
-#include <sha/sha_dma.h>
-#include <hal/sha_hal.h>
+#include "sha/sha_dma.h"
+#include "hal/sha_hal.h"
 
 #ifndef PUT_UINT32_BE
 #define PUT_UINT32_BE(n, b, i)                          \
@@ -126,33 +130,12 @@ static void pad_blocks(union hmac_block *ctx, size_t len)
     PUT_UINT32_BE(bits, bytes, FAST_PSK_SHA1_BLOCKS_BUF_BYTES - 4);
 }
 
-/*
- * Performs SHA1 hash operation on two consecutive blocks.
- * Input: blocks array (two blocks of 64 bytes each), output (20-byte digest).
- */
-void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
-{
-    /* First block */
-    sha_hal_hash_block(SHA1, blocks, SHA1_BLOCK_SZ_WORDS, true);
-    /* Second block */
-    sha_hal_hash_block(SHA1, &blocks[SHA1_BLOCK_SZ_WORDS], SHA1_BLOCK_SZ_WORDS, false);
-    /* Read the final digest */
-    sha_hal_read_digest(SHA1, output);
-}
-
-/*
- * Implements the PBKDF2-HMAC-SHA1 function for WPA key derivation.
- * - password: The passphrase (up to 63 bytes).
- * - password_len: Length of the passphrase.
- * - ssid: The SSID (up to 32 bytes).
- * - ssid_len: Length of the SSID.
- * - count: The iteration counter.
- * - digest: Output buffer for the resulting digest (20 bytes).
- */
-void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, size_t ssid_len, uint32_t count, uint8_t digest[SHA1_OUTPUT_SZ])
+static void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, size_t ssid_len, uint32_t count, uint8_t digest[SHA1_OUTPUT_SZ])
 {
     struct fast_psk_context ctx_, *ctx = &ctx_;
     size_t i;
+    uint32_t ipad_state[SHA1_OUTPUT_SZ_WORDS];
+    uint32_t opad_state[SHA1_OUTPUT_SZ_WORDS];
 
     /* Clear the context */
     memset(ctx, 0, sizeof(*ctx));
@@ -177,34 +160,49 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
 
     sha1_setup();
 
-    uint32_t *pi, *po;
-    pi = ctx->inner.whole_words;
-    po = ctx->outer.whole_words;
-
-    // T1 = SHA1(K ^ ipad, S || i)
-    sha1_op(pi, ctx->outer.block[1].words);
-
-    // U1 = SHA1(K ^ opad, T1)
-    pad_blocks(&ctx->outer, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
     uint32_t *inner_blk1 = ctx->inner.block[1].words;
     uint32_t *outer_blk1 = ctx->outer.block[1].words;
     uint32_t *sum = ctx->sum;
 
-    sha1_op(po, inner_blk1);
-    /* Copy result to the sum */
+    /*
+     * Save ipad/opad SHA states once, restore each iteration.
+     * Each iteration processes only 1 data block per HMAC = 2 block ops total.
+     */
+    /* Process ipad/opad blocks once, save intermediate SHA1 states */
+    sha_hal_hash_block(SHA1, ctx->inner.block[0].words, SHA1_BLOCK_SZ_WORDS, true);
+    sha_hal_read_digest(SHA1, ipad_state);
+    sha_hal_hash_block(SHA1, ctx->outer.block[0].words, SHA1_BLOCK_SZ_WORDS, true);
+    sha_hal_read_digest(SHA1, opad_state);
+
+    // T1 = SHA1(ipad_state, S || i)
+    sha_hal_write_digest(SHA1, ipad_state);
+    sha_hal_hash_block(SHA1, inner_blk1, SHA1_BLOCK_SZ_WORDS, false);
+    sha_hal_read_digest(SHA1, outer_blk1);
+
+    // U1 = SHA1(opad_state, T1)
+    pad_blocks(&ctx->outer, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
+    sha_hal_write_digest(SHA1, opad_state);
+    sha_hal_hash_block(SHA1, outer_blk1, SHA1_BLOCK_SZ_WORDS, false);
+    sha_hal_read_digest(SHA1, inner_blk1);
     memcpy(sum, inner_blk1, SHA1_OUTPUT_SZ);
     pad_blocks(&ctx->inner, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
 
-    /* Iterate for remaining 4096 - 1 times */
+    /*
+     * Iterations 2..4096.
+     * sha_hal_read_digest() writes exactly 20 bytes (5 words) for SHA1,
+     * so the padding at bytes [20..63] in each block stays intact.
+     */
     for (i = 1; i < 4096; ++i) {
-        /* Compute Tn and Un */
-        // Tn = SHA1(K ^ ipad, Un-1)
-        sha1_op(pi, outer_blk1);
-        // Un = SHA1(K ^ opad, Tn)
-        sha1_op(po, inner_blk1);
+        // Tn = SHA1(ipad_state, Un-1)
+        sha_hal_write_digest(SHA1, ipad_state);
+        sha_hal_hash_block(SHA1, inner_blk1, SHA1_BLOCK_SZ_WORDS, false);
+        sha_hal_read_digest(SHA1, outer_blk1);
 
-        /* XOR the results to accumulate into F */
-        // F = U1 ^ U2 ^ ... Un
+        // Un = SHA1(opad_state, Tn)
+        sha_hal_write_digest(SHA1, opad_state);
+        sha_hal_hash_block(SHA1, outer_blk1, SHA1_BLOCK_SZ_WORDS, false);
+        sha_hal_read_digest(SHA1, inner_blk1);
+
         for (size_t j = 0; j < SHA1_OUTPUT_SZ_WORDS; ++j) {
             sum[j] ^= inner_blk1[j];
         }
@@ -215,7 +213,7 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
     /* Copy the final result to the output digest */
     memcpy(digest, sum, SHA1_OUTPUT_SZ);
 
-    /* Clear sensitive data */
+    /* Clear context */
     memset(ctx, 0, sizeof(*ctx));
 }
 
@@ -225,13 +223,16 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
         return -1; /* Invalid input parameters */
     }
 
-    /* Compute the first 16 bytes of the PSK */
+    /*
+     * PBKDF2 with dkLen=32 needs two 20-byte F() blocks:
+     *   output[0..19]  = F(password, ssid, 4096, 1)
+     *   output[20..31] = F(password, ssid, 4096, 2)[0..11]
+     *
+     * Compute block 2 first so its first 12 bytes can be placed at
+     * output[20..31], then block 1 overwrites output[0..19].
+     */
     fast_psk_f(password, password_len, ssid, ssid_len, 2, output);
-
-    /* Replicate the first 16 bytes to form the second half temporarily */
     memcpy(output + SHA1_OUTPUT_SZ, output, 32 - SHA1_OUTPUT_SZ);
-
-    /* Compute the second 16 bytes of the PSK */
     fast_psk_f(password, password_len, ssid, ssid_len, 1, output);
 
     return 0; /* Success */
