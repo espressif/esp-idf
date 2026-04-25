@@ -661,7 +661,6 @@ static int wps_eap_wsc_prepare_rx_buf(struct wps_sm *sm,
     }
 
     wpabuf_set(tmpbuf, buf, len);
-    frag->in_buf = tmpbuf;
     return ESP_OK;
 
 fail:
@@ -680,6 +679,7 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
     u16 message_length = 0;
     bool fragment_pending;
     struct wpabuf tmpbuf;
+    struct wpabuf *msg_buf;
 
     if (!sm || !res) {
         return ESP_FAIL;
@@ -745,16 +745,15 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
     }
 
     eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
+    msg_buf = frag->in_buf ? frag->in_buf : &tmpbuf;
 
-    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, frag->in_buf);
+    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, msg_buf);
 
     if (*res == WPS_FAILURE) {
         sm->state = WPA_FAIL;
     }
 
-    if (frag->in_buf != &tmpbuf) {
-        wpabuf_free(frag->in_buf);
-    }
+    wpabuf_free(frag->in_buf);
     frag->in_buf = NULL;
     return ESP_OK;
 }
