@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,11 +36,12 @@
 #include "mbedtls/esp_config.h"
 #include "mbedtls/sha1.h"
 
-#ifdef CONFIG_FAST_PBKDF2
-#include "fastpbkdf2.h"
+#ifdef CONFIG_FAST_PSK
 #include "fastpsk.h"
 #endif
-
+#ifdef CONFIG_FAST_PBKDF2
+#include "fastpbkdf2.h"
+#endif
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
                          const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -777,23 +778,19 @@ cleanup:
 int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
                 int iterations, u8 *buf, size_t buflen)
 {
-#ifdef CONFIG_FAST_PBKDF2
-    /* For ESP32: Using pbkdf2_hmac_sha1() because esp_fast_psk() utilizes hardware,
-     * but for ESP32, the SHA1 hardware implementation is slower than the software implementation.
-     */
-#if defined(CONFIG_IDF_TARGET_ESP32) || !defined(CONFIG_SOC_SHA_SUPPORTED)
-    fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
-                         ssid, ssid_len, iterations, buf, buflen);
-    return 0;
-#else
-    return esp_fast_psk(passphrase, os_strlen(passphrase), ssid, ssid_len, iterations, buf, buflen);
+    if (ssid_len <= 32 && os_strlen(passphrase) <= 63 &&
+            iterations == 4096 && buflen == 32) {
+#if defined(CONFIG_FAST_PSK)
+        return esp_fast_psk(passphrase, os_strlen(passphrase), ssid, ssid_len, iterations, buf, buflen);
+#elif defined(CONFIG_FAST_PBKDF2)
+        fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
+                             ssid, ssid_len, iterations, buf, buflen);
+        return 0;
 #endif
-#else
-    int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
-                                            os_strlen(passphrase), ssid,
-                                            ssid_len, iterations, buflen, buf);
-    return ret == 0 ? 0 : -1;
-#endif
+    }
+    return mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
+                                         os_strlen(passphrase), ssid,
+                                         ssid_len, iterations, buflen, buf) == 0 ? 0 : -1;
 }
 #endif /* defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA) */
 
