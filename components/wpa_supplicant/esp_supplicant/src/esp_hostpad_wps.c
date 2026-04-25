@@ -1,8 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdatomic.h>
 
 #include "utils/common.h"
 
@@ -31,7 +33,7 @@
 extern struct wps_sm *gWpsSm;
 extern void *s_wps_api_lock;
 extern void *s_wps_api_sem;
-extern bool s_wps_enabled;
+extern atomic_bool s_wps_enabled;
 
 static int wps_reg_eloop_post_block(uint32_t sig, void *arg);
 
@@ -74,7 +76,9 @@ static int wifi_ap_wps_init(const esp_wps_config_t *config)
     cfg.wps = sm->wps_ctx;
 
     os_memcpy((void *)cfg.pin, config->pin, 8);
-    wps_init_cfg_pin(&cfg);
+    if (wps_init_cfg_pin(&cfg) < 0) {
+        goto _err;
+    }
     os_memcpy(cfg.wps->uuid, sm->uuid, WPS_UUID_LEN);
     if ((sm->wps = wps_init(&cfg)) == NULL) {         /* alloc wps_data */
         goto _err;
@@ -166,7 +170,7 @@ static int wifi_ap_wps_enable_internal(const esp_wps_config_t *config)
         return ESP_ERR_WIFI_MODE;
     }
 
-    if (s_wps_enabled) {
+    if (atomic_load(&s_wps_enabled)) {
         if (sm && os_memcmp(sm->identity, WSC_ID_ENROLLEE, sm->identity_len) == 0) {
             wpa_printf(MSG_ERROR, "wps enable: wps enrollee already enabled cannot enable wpsreg");
             return ESP_ERR_WIFI_MODE;
@@ -200,7 +204,7 @@ static int wifi_ap_wps_enable_internal(const esp_wps_config_t *config)
     }
 
     wpa_printf(MSG_INFO, "wifi_wps_enable");
-    s_wps_enabled = true;
+    atomic_store(&s_wps_enabled, true);
     return ESP_OK;
 
 _err:
@@ -229,7 +233,7 @@ int wifi_ap_wps_disable_internal(void)
         return ESP_ERR_WIFI_MODE;
     }
 
-    if (!s_wps_enabled) {
+    if (!atomic_load(&s_wps_enabled)) {
         wpa_printf(MSG_DEBUG, "wps disable: already disabled");
         return ESP_OK;
     }
@@ -247,8 +251,7 @@ int wifi_ap_wps_disable_internal(void)
         goto _err;
     }
 
-
-    s_wps_enabled = false;
+    atomic_store(&s_wps_enabled, false);
     return ESP_OK;
 
 _err:
@@ -275,10 +278,8 @@ static int wifi_ap_wps_start_internal(const unsigned char *pin)
         return ESP_ERR_WIFI_MODE;
     }
 
-
-    if (!s_wps_enabled) {
+    if (!atomic_load(&s_wps_enabled)) {
         wpa_printf(MSG_ERROR, "wps start: wps not enabled");
-        API_MUTEX_GIVE();
         return ESP_ERR_WIFI_WPS_SM;
     }
 
