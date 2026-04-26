@@ -432,6 +432,7 @@ conditional_include_dict = {
 }
 
 extensions += [  # noqa: F405
+    'sphinxcontrib.mermaid',
     'sphinx_copybutton',
     'sphinxcontrib.wavedrom',
     # Note: order is important here, events must
