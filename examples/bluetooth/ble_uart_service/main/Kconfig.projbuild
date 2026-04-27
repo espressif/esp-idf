@@ -1,0 +1,26 @@
+menu "BLE UART Example"
+
+    config BLE_UART_DEVICE_NAME_PREFIX
+        string "BLE device name prefix"
+        default "BleUart"
+        help
+            The firmware advertises as `<prefix>-XXXX` where XXXX is
+            the last two bytes of the BT MAC in hex.
+
+    config BLE_UART_RX_SCRATCH_SIZE
+        int "RX scratch buffer size (bytes)"
+        range 64 16384
+        default 1024
+        help
+            Upper bound on a single RX payload delivered to
+            ble_uart_on_rx(). Covers both plain writes (MTU - 3 bytes)
+            and reassembled long writes (PREP + EXEC). Oversized writes
+            are rejected with ATT error 0x0D.
+
+            The buffer lives in BSS, so this value directly translates
+            into RAM cost. Bump it if your protocol sends larger frames
+            in one shot; with the NimBLE backend, raising past ~10 KB
+            may also require increasing
+            CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT.
+
+endmenu
