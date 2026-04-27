@@ -73,6 +73,7 @@ In another terminal, check daemon status and send a request:
 ```bash
 python main.py daemon-status
 python main.py daemon-send --op echo "hello"
+python main.py daemon-notify --op set_led --json '{"state": true}'
 ```
 
 For Daemon details, the HTTP API, and the JSONL RPC protocol, see [Quick-Start-BLE-UART-Daemon.md](docs/Quick-Start-BLE-UART-Daemon.md).
@@ -94,6 +95,7 @@ python main.py console DEVICE_ID
 python main.py daemon DEVICE_ID
 python main.py daemon-status
 python main.py daemon-send DATA
+python main.py daemon-notify DATA
 ```
 
 ### Typical Console workflow
@@ -137,6 +139,7 @@ Terminal 2 checks status and sends requests through the daemon:
 python main.py daemon-status
 python main.py daemon-send --op echo "hello"
 python main.py daemon-send --op set_led --json '{"state": true}'
+python main.py daemon-notify --op set_led --json '{"state": true}'
 ```
 
 For the HTTP API and JSONL RPC wire protocol, see [Quick-Start-BLE-UART-Daemon.md](docs/Quick-Start-BLE-UART-Daemon.md).
@@ -208,12 +211,12 @@ Main responsibilities:
 
 The Daemon component exposes BLE UART as a local HTTP service.
 
-Use it when another local tool, script, editor integration, or automation process needs request/response IPC with a BLE UART device.
+Use it when another local tool, script, editor integration, or automation process needs request/response or fire-and-forget IPC with a BLE UART device.
 
 Main responsibilities:
 
 - Keep one BLE UART connection open in a background server process.
-- Expose local HTTP endpoints for status and request/response calls.
+- Expose local HTTP endpoints for status, request/response, and fire-and-forget calls.
 - Encode requests as newline-delimited JSON messages over BLE UART.
 - Correlate device responses by request ID.
 - Provide a small JSONL RPC-style envelope as an example protocol.
@@ -230,7 +233,7 @@ By default, the daemon binds to `127.0.0.1`. Keep it on a loopback address unles
 | Console | Manual BLE UART smoke tests | Interactive TUI |
 | Daemon | Local IPC and automation | HTTP + CLI client |
 
-Use Core when your business logic lives in Python. Use Console when you only need to manually test a BLE UART endpoint. Use Daemon when multiple local processes need to share one BLE connection through a simple request/response boundary.
+Use Core when your business logic lives in Python. Use Console when you only need to manually test a BLE UART endpoint. Use Daemon when multiple local processes need to share one BLE connection through a simple request/response or notification boundary.
 
 ## Profile compatibility
 
@@ -255,9 +258,9 @@ The tool depends on:
 ## Limitations
 
 - Custom GATT UUIDs require constructing `BLEUARTProfile` in Python code.
-- Daemon mode is single-flight: it processes one `/request` at a time.
+- Daemon mode is single-flight for request/response calls: it processes one `/request` at a time. `/notify` sends without waiting for a device response.
 - Daemon mode does not automatically reconnect after a BLE disconnect; restart the daemon after the device starts advertising again.
-- Daemon `/request` limits `op` to 64 characters and JSON-encoded `data` to 4096 bytes.
+- Daemon `/request` and `/notify` limit `op` to 64 characters and JSON-encoded `data` to 4096 bytes.
 - The JSONL RPC protocol is a demonstration envelope, not a complete RPC framework.
 - Unmatched device messages are logged as unsolicited messages and are not exposed as a streaming API.
 - The daemon request framing is newline-delimited JSON; device firmware must send a newline after every JSON response.

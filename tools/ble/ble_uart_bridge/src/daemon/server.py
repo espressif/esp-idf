@@ -17,6 +17,7 @@ from .jsonl import drain_jsonl_messages
 from .jsonl import encode_jsonl_request
 from .jsonl import resolve_pending_response
 from .models import MAX_REQUEST_DATA_BYTES
+from .models import BLEUARTNotifyPayload
 from .models import BLEUARTRequestPayload
 
 
@@ -110,3 +111,18 @@ async def request(payload: BLEUARTRequestPayload) -> dict:
             app.state.pending_requests.pop(request_id, None)
 
         return {'ok': True, 'data': response}
+
+
+@app.post('/notify')
+async def notify(payload: BLEUARTNotifyPayload) -> dict:
+    if _request_data_size(payload.data) > MAX_REQUEST_DATA_BYTES:
+        raise HTTPException(status_code=413, detail=f'Request data exceeds {MAX_REQUEST_DATA_BYTES} bytes')
+
+    success = await app.state.bridge.send(
+        encode_jsonl_request('', payload.op, payload.data),
+        with_response=False,
+    )
+    if not success:
+        raise HTTPException(status_code=500, detail='Failed to send data to device')
+
+    return {'ok': True}

@@ -4,6 +4,7 @@ from .console import run_console
 from .core import run_connection_check
 from .core import run_list_devices
 from .daemon import run_daemon
+from .daemon import run_daemon_notify
 from .daemon import run_daemon_send
 from .daemon import run_daemon_status
 
@@ -12,6 +13,7 @@ __all__ = [
     'run_list_devices',
     'run_daemon',
     'run_daemon_send',
+    'run_daemon_notify',
     'run_daemon_status',
     'run_console',
 ]
