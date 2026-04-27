@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -49,8 +49,6 @@ _Static_assert((ARRAY_SIZE(tee_apm_regs_retention) == TEE_APM_RETENTION_LINK_LEN
 #define N_REGS_IOMUX_2()    (((GPIO_FUNC121_IN_SEL_CFG_REG - GPIO_FUNC0_IN_SEL_CFG_REG) / 4) + 1)
 #define N_REGS_IOMUX_3()    (SOC_GPIO_PIN_COUNT)
 #define N_REGS_IOMUX_4()    (1)
-#define N_REGS_IOMUX_5()    (1)
-#define N_REGS_IOMUX_6()    (1)
 
 const regdma_entries_config_t iomux_regs_retention[] = {
     [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), IO_MUX_GPIO0_REG,           IO_MUX_GPIO0_REG,           N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* io_mux */
@@ -58,8 +56,10 @@ const regdma_entries_config_t iomux_regs_retention[] = {
     [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x02), GPIO_FUNC0_IN_SEL_CFG_REG,  GPIO_FUNC0_IN_SEL_CFG_REG,  N_REGS_IOMUX_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x03), GPIO_PIN0_REG,              GPIO_PIN0_REG,              N_REGS_IOMUX_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x04), GPIO_STATUS_REG,            GPIO_STATUS_REG,            N_REGS_IOMUX_4(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_ENABLE_REG,            GPIO_ENABLE_REG,            N_REGS_IOMUX_5(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x06), GPIO_OUT_REG,               GPIO_OUT_REG,               N_REGS_IOMUX_6(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }
+    [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_ENABLE_REG,            GPIO_ENABLE_W1TS_REG,       1,                0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x06), GPIO_ENABLE1_REG,           GPIO_ENABLE1_W1TS_REG,      1,                0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x07), GPIO_OUT_REG,               GPIO_OUT_W1TS_REG,          1,                0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [8] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x08), GPIO_OUT1_REG,              GPIO_OUT1_W1TS_REG,         1,                0, 0), .owner = ENTRY(0) | ENTRY(2) },
 };
 _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "Inconsistent IOMUX retention link length definitions");
 
