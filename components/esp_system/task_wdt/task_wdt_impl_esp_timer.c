@@ -50,7 +50,7 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
     esp_err_t ret = esp_timer_create(&timer_args, &ctx->sw_timer);
     ESP_GOTO_ON_FALSE((ret == ESP_OK), ret, reterr, TAG, "could not start periodic timer");
 
-    /* Configure it as a periodic timer, so that we check the Tasks everytime it is triggered.
+    /* Configure it as a periodic timer, so that we check the Tasks every time it is triggered.
      * No need to start the timer here, it will be started later with `esp_task_wdt_impl_timer_restart` */
     ctx->period_ms = config->timeout_ms;
 
