@@ -14,3 +14,8 @@ class BLEUARTRequestPayload(BaseModel):
     op: str = Field('raw', min_length=1, max_length=MAX_OP_LENGTH, description='Operation name to send to BLE device')
     data: Any = Field(..., description='Request payload to send to BLE device')
     timeout: float = Field(10.0, gt=0, description='Response timeout in seconds')
+
+
+class BLEUARTNotifyPayload(BaseModel):
+    op: str = Field('raw', min_length=1, max_length=MAX_OP_LENGTH, description='Operation name to send to BLE device')
+    data: Any = Field(..., description='Notification payload to send to BLE device')
