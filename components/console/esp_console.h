@@ -54,6 +54,7 @@ typedef struct {
     BaseType_t task_core_id;       //!< repl task affinity, i.e. which core the task is pinned to
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
     size_t max_cmdline_length;     //!< maximum length of a command line. If 0, default value will be used
+    size_t max_cmdline_args;       //!< maximum number of command line arguments to parse. If 0, default value will be used
 } esp_console_repl_config_t;
 
 /**
@@ -69,6 +70,7 @@ typedef struct {
         .task_core_id = tskNO_AFFINITY,   \
         .prompt = NULL,                   \
         .max_cmdline_length = 0,          \
+        .max_cmdline_args = 0,            \
 }
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -78,7 +80,7 @@ typedef struct {
  */
 typedef struct {
     int channel;     //!< UART channel number (count from zero)
-    int baud_rate;   //!< Comunication baud rate
+    int baud_rate;   //!< Communication baud rate
     int tx_gpio_num; //!< GPIO number for TX path, -1 means using default one
     int rx_gpio_num; //!< GPIO number for RX path, -1 means using default one
 } esp_console_dev_uart_config_t;
