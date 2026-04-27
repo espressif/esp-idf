@@ -2159,7 +2159,9 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
         TEST_ASSERT(i ? (before - after) < 2 * TEST_EDMA_TRANS_LEN : (before - after) > 2 * TEST_EDMA_TRANS_LEN);
         spi_device_polling_end(dev_handle, portMAX_DELAY);
         printf("TX fail: %d, RX fail: %d\n", !!(trans_cfg.flags & SPI_TRANS_DMA_TX_FAIL), !!(trans_cfg.flags & SPI_TRANS_DMA_RX_FAIL));
+#if !CONFIG_IDF_TARGET_ESP32P4  // P4 can't reach error condition since it has powerful 16bits ddr psram
         TEST_ASSERT((!!i) == !!(trans_cfg.flags & (SPI_TRANS_DMA_TX_FAIL | SPI_TRANS_DMA_RX_FAIL)));
+#endif
         if (!i) { // data should be correct if using auto malloc
             spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, TEST_EDMA_TRANS_LEN);
         }

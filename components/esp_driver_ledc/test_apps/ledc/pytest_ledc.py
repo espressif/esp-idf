@@ -19,7 +19,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @idf_parametrize(
     'target', soc_filtered_targets('SOC_LEDC_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14398')
 def test_ledc(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(reset=True)
 
@@ -66,7 +65,6 @@ def test_ledc_psram(dut: IdfDut) -> None:
 
 
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='s3 multi device runner has no psram')
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14398')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'count, config',

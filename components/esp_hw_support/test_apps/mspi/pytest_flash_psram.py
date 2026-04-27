@@ -49,7 +49,6 @@ def test_flash4_psram4(dut: IdfDut) -> None:
 
 
 @pytest.mark.flash_120m
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14366')
 @pytest.mark.parametrize(
     'config',
     [
@@ -102,6 +101,5 @@ def test_flash_psram_120sdr_120sdr(dut: IdfDut) -> None:
     ],
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-15339')
 def test_flash_psram_generic(dut: IdfDut) -> None:
     dut.run_all_single_board_cases()

@@ -107,12 +107,6 @@ tools/test_apps/system/panic:
       temporary: true
       reason: not supported yet
 
-tools/test_apps/system/ram_loadable_app:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14370
-
 tools/test_apps/system/rtc_mem_reserve:
   enable:
     - if: IDF_TARGET in ["esp32p4"]

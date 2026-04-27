@@ -7,7 +7,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14423')
 def test_ipc_isr_riscv(dut: Dut) -> None:
     dut.expect_exact('example: Start')
     dut.expect_exact('example: in[0] = 0x1')

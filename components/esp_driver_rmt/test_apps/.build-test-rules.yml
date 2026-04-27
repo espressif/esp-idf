@@ -3,9 +3,5 @@
 components/esp_driver_rmt/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14414
   depends_components:
     - esp_driver_rmt
