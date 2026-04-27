@@ -3,6 +3,7 @@
 from src import run_connection_check
 from src import run_console
 from src import run_daemon
+from src import run_daemon_notify
 from src import run_daemon_send
 from src import run_daemon_status
 from src import run_list_devices
@@ -58,6 +59,17 @@ def daemon_send(
     port: int = 8888,
 ) -> None:
     run_daemon_send(data=data, op=op, json_payload=json_payload, timeout=timeout, host=host, port=port)
+
+
+@app.command()
+def daemon_notify(
+    data: str,
+    op: str = Option('raw', help='Operation name in the JSONL request envelope'),
+    json_payload: bool = Option(False, '--json', help='Parse DATA as JSON instead of sending it as a string'),
+    host: str = '127.0.0.1',
+    port: int = 8888,
+) -> None:
+    run_daemon_notify(data=data, op=op, json_payload=json_payload, host=host, port=port)
 
 
 def main() -> None:

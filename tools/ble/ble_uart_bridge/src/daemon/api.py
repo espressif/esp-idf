@@ -90,3 +90,27 @@ def run_daemon_send(
         raise SystemExit(1) from e
     result = response.get('data', response.get('response', ''))
     print(result if isinstance(result, str) else json.dumps(result))
+
+
+def run_daemon_notify(
+    data: str,
+    op: str = 'raw',
+    json_payload: bool = False,
+    host: str = '127.0.0.1',
+    port: int = 8888,
+) -> None:
+    try:
+        payload_data: Any = json.loads(data) if json_payload else data
+    except json.JSONDecodeError as e:
+        print(f'Invalid JSON payload: {e}')
+        raise SystemExit(1) from e
+
+    try:
+        _request_json(
+            'POST',
+            _daemon_url(host, port, '/notify'),
+            payload={'op': op, 'data': payload_data},
+        )
+    except RuntimeError as e:
+        print(e)
+        raise SystemExit(1) from e
