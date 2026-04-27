@@ -43,8 +43,8 @@ static esp_err_t s_isp_claim_processor(isp_processor_t *proc)
             s_platform.processors[i] = proc;
             proc->proc_id = i;
             PERIPH_RCC_ATOMIC() {
-                isp_ll_enable_module_clock(proc->hal.hw, true);
-                isp_ll_reset_module_clock(proc->hal.hw);
+                isp_ll_enable_module_clock(true);
+                isp_ll_reset_module_clock();
             }
             break;
         }
@@ -64,7 +64,7 @@ static esp_err_t s_isp_declaim_processor(isp_processor_t *proc)
     _lock_acquire(&s_platform.mutex);
     s_platform.processors[proc->proc_id] = NULL;
     PERIPH_RCC_ATOMIC() {
-        isp_ll_enable_module_clock(proc->hal.hw, false);
+        isp_ll_enable_module_clock(false);
     }
     _lock_release(&s_platform.mutex);
 
@@ -110,13 +110,14 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     if (out_clk_freq_hz != proc_config->clk_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32"Hz", out_clk_freq_hz);
     }
-    ;
-    isp_hal_init(&proc->hal, proc->proc_id);
+
     esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PERIPH_RCC_ATOMIC() {
-        isp_ll_select_clk_source(proc->hal.hw, clk_src);
-        isp_ll_set_clock_div(proc->hal.hw, &clk_div);
+        isp_ll_select_clk_source(clk_src);
+        isp_ll_set_clock_div(&clk_div);
     }
+
+    isp_hal_init(&proc->hal, proc->proc_id);
 
     atomic_init(&proc->isp_fsm, ISP_FSM_INIT);
     atomic_init(&proc->bf_fsm, ISP_FSM_INIT);
