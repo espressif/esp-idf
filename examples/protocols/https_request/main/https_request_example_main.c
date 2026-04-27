@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -218,6 +218,11 @@ static void https_get_request_using_specified_ciphersuites(void)
         .cacert_buf = (const unsigned char *) server_root_cert_pem_start,
         .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
         .ciphersuites_list = server_supported_ciphersuites,
+#if defined(CONFIG_EXAMPLE_SSL_PROTO_TLS1_3_CLIENT)
+        .tls_version = ESP_TLS_VER_TLS_1_3,
+#else
+        .tls_version = ESP_TLS_VER_TLS_1_2,
+#endif
     };
 
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
