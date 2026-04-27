@@ -423,12 +423,7 @@ function(__esptool_py_setup_esptool_py_args)
 
         if(NOT BOOTLOADER_BUILD)
             list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
-            # For chips that support configurable MMU page size feature
-            # If page size is configured to values other than the default "64KB" in menuconfig,
-            # then we need to pass the actual size to flash-mmu-page-size arg
-            if(NOT MMU_PAGE_SIZE STREQUAL "64KB")
-                list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
-            endif()
+            list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
         endif()
 
         if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND NOT BOOTLOADER_BUILD)
