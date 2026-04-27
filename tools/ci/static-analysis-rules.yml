@@ -8,7 +8,6 @@ ignore:
 
 skip:
   # submodules and third-party code
-  - "components/asio/asio"
   - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
   - "components/bt/controller/lib_esp32"
   - "components/bt/controller/lib_esp32c3_family"

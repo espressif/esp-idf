@@ -108,7 +108,7 @@ esp_err_t example_disconnect(void);
 /**
  * @brief Configure stdin and stdout to use blocking I/O
  *
- * This helper function is used in ASIO examples. It wraps installing the
+ * This helper function is used in some examples. It wraps installing the
  * UART driver and configuring VFS layer to use UART driver for console I/O.
  */
 esp_err_t example_configure_stdin_stdout(void);
