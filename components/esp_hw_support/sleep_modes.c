@@ -66,7 +66,6 @@
 
 #include "soc/rtc.h"
 
-#include "hal/cache_ll.h"
 #include "hal/clk_tree_ll.h"
 #if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED || SOC_SLEEP_TGWDT_STOP_WORKAROUND
 #include "hal/wdt_hal.h"
@@ -88,11 +87,11 @@
 #include "sdkconfig.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
-#include "esp_private/cache_utils.h"
 #include "esp_private/brownout.h"
 #include "esp_private/sleep_console.h"
 #include "esp_private/sleep_uart.h"
 #include "esp_private/sleep_cpu.h"
+#include "esp_private/sleep_cache.h"
 #include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_flash.h"
 #include "esp_private/sleep_usb.h"
@@ -105,7 +104,6 @@
 #endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -131,16 +129,13 @@
 #include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
-#include "esp32h2/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H21
 #include "esp32h21/rom/rtc.h"
-#include "esp32h21/rom/cache.h"
 #include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H4
 #include "esp32h4/rom/rtc.h"
-#include "esp32h4/rom/cache.h"
 #include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
@@ -586,32 +581,6 @@ static void s_do_deep_sleep_phy_callback(void)
 }
 #endif
 
-static int s_cache_suspend_cnt = 0;
-static uint32_t s_cache_state = 0;
-
-// Must be called from critical sections.
-static void FORCE_IRAM_ATTR suspend_cache(void) {
-    s_cache_suspend_cnt++;
-    if (s_cache_suspend_cnt == 1) {
-#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_IDF_TARGET_ESP32P4
-        // The implementation of P4 L2 cache suspend is to shut down MSPI AXI instead of shutting down Cache BUS.
-        // If the access to external memory hits in the cache, it will not trigger a cache error. So in order to
-        // fully check the access to external memory, writeback & invalidate is needed here.
-        Cache_WriteBack_Invalidate_All(CACHE_MAP_MASK);
-#endif
-        spi_flash_disable_cache(esp_cpu_get_core_id(), &s_cache_state);
-    }
-}
-
-// Must be called from critical sections.
-static void FORCE_IRAM_ATTR resume_cache(void) {
-    s_cache_suspend_cnt--;
-    assert(s_cache_suspend_cnt >= 0 && DRAM_STR("cache resume doesn't match suspend ops"));
-    if (s_cache_suspend_cnt == 0) {
-        spi_flash_restore_cache(esp_cpu_get_core_id(), s_cache_state);
-    }
-}
-
 #if SOC_SLEEP_TGWDT_STOP_WORKAROUND
 static uint32_t s_stopped_tgwdt_bmap = 0;
 #endif
@@ -718,16 +687,8 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
         sleep_enable_cpu_retention();
 #endif
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW && SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN && CONFIG_SPIRAM
-    /* When using SPIRAM on the ESP32-C5, we need to use Cache_WriteBack_All to protect SPIRAM data
-        because the cache powers down when we power down the CPU */
-    if(sleep_flags & PMU_SLEEP_PD_CPU) {
- #if SOC_SHARED_IDCACHE_SUPPORTED || CONFIG_IDF_TARGET_ESP32H4
-        Cache_WriteBack_All();
-#else
-        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
-#endif
-    }
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && CONFIG_SPIRAM
+    sleep_cache_safe_writeback(sleep_flags);
 #endif
 #if ADC_LL_ANA_CALI_REG_PD_WORKAROUND
         adc_hal_i2c_saradc_reg_backup();
@@ -941,7 +902,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         }
 #endif
         /* Cache Suspend 1: will wait cache idle in cache suspend */
-        suspend_cache();
+        sleep_cache_suspend();
         if (!(sleep_flags & RTC_SLEEP_PD_VDDSDIO)) {
 #if CONFIG_ESP_SLEEP_SET_FLASH_DPD
             if (sleep_flags & RTC_SLEEP_FLASH_DPD) {
@@ -1038,7 +999,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         }
 #endif
         /* Cache Resume 1: Resume cache for continue running*/
-        resume_cache();
+        sleep_cache_resume();
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED && CONFIG_SPIRAM_XIP_FROM_PSRAM
         // Code outside of esp_sleep_start_safe may be linked to FLASH, and if CONFIG_SPIRAM_XIP_FROM_PSRAM
         // is enabled, code in Flash will be copied to PSRAM for execution. We need to wait here until
@@ -1223,7 +1184,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     if (sleep_flags & RTC_SLEEP_PD_VDDSDIO) {
         /* Cache Suspend 2: If previous sleep powerdowned the flash, suspend cache here so that the
            access to flash before flash ready can be explicitly exposed. */
-        suspend_cache();
+        sleep_cache_suspend();
     }
 #endif
     // Restore CPU frequency
@@ -1372,7 +1333,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         err = ESP_ERR_SLEEP_REJECT;
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
         /* Cache Resume 2: if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION is enabled, cache has been suspended in esp_sleep_start */
-        resume_cache();
+        sleep_cache_resume();
 #endif
         ESP_EARLY_LOGE(TAG, "Deep sleep request is rejected");
     } else {
@@ -1458,7 +1419,7 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint3
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
     if (sleep_flags & RTC_SLEEP_PD_VDDSDIO) {
         /* Cache Resume 2: flash is ready now, we can resume the cache and access flash safely after */
-        resume_cache();
+        sleep_cache_resume();
     }
 #endif
 
@@ -1557,7 +1518,7 @@ esp_err_t esp_light_sleep_start(void)
     ignore_check_wakeup_triggers |= RTC_EXT1_TRIG_EN;
 #endif
     if (!(s_config.wakeup_triggers & ignore_check_wakeup_triggers)) {
-        suspend_cache();
+        sleep_cache_suspend();
     }
 #endif
 
@@ -1742,7 +1703,7 @@ esp_err_t esp_light_sleep_start(void)
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
     /* Cache Resume 0: sleep process done, resume cache for continue running */
     if (!(s_config.wakeup_triggers & ignore_check_wakeup_triggers)) {
-        resume_cache();
+        sleep_cache_resume();
     }
 #endif
 

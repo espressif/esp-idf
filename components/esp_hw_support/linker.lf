@@ -37,6 +37,7 @@ entries:
         rtc_sleep:rtc_sleep_pd (noflash)
     if IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
         rtc_sleep:rtc_sleep_pu (noflash)
+    sleep_cache (noflash)
     if SOC_PMU_SUPPORTED = y:
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
