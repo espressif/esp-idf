@@ -72,8 +72,8 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |experimental|
     * -
       - GATT Caching
       - |experimental|
@@ -93,11 +93,11 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
-      - |unsupported|
-      - |supported|
+      - |experimental|
+      - |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
@@ -105,25 +105,74 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - LE Enhanced Connection Update (Connection Subrating)
       - |unsupported|
-      - |supported|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |supported|
     * -
       - LE Channel Classification
       - |supported|
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |unsupported|
-      - |supported|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |supported|
     * -
       - Encrypted Advertising Data
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
-      - |unsupported|
-      - |developing202412|
+      - |experimental|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
+    * - .. centered:: |6.0|
+      - Channel Sounding
+      - |experimental|
+      - |experimental|
+    * -
+      - LL Extended Feature Set
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Decision-Based Advertising Filtering
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Enhancements for ISOAL
+      - |experimental|
+      - |experimental|
+    * -
+      - Monitoring Advertisers
+      - |unsupported|
+      - |experimental|
+    * -
+      - Frame Space Update
       - |unsupported|
       - |unsupported|
 
@@ -137,8 +186,6 @@ You are encouraged to consult with our `customer support team <https://www.espre
 
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
-   :class: align-center
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
    :class: align-center
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
@@ -157,3 +204,4 @@ You are encouraged to consult with our `customer support team <https://www.espre
 .. |5.2| replace:: `5.2 <https://www.bluetooth.com/specifications/specs/core-specification-5-2/>`__
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
+.. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__

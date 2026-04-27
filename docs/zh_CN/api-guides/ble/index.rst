@@ -14,6 +14,7 @@
    ble-feature-support-status
    ble-qualification
    低功耗模式介绍 <ble-low-power-mode>
+   ble-multiconnection-guide
 
 **********
 快速入门
