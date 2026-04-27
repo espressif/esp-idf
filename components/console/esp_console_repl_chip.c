@@ -72,7 +72,9 @@ static esp_err_t esp_console_new_repl_uart_legacy(const esp_console_dev_uart_con
     }
 
     // initialize console, common part
-    ret = esp_console_common_init(repl_config->max_cmdline_length, &uart_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length,
+                                  repl_config->max_cmdline_args,
+                                  &uart_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }

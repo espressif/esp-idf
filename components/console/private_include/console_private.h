@@ -41,6 +41,7 @@ typedef struct {
     const char *history_save_path;
     TaskHandle_t task_hdl;              // REPL task handle
     size_t max_cmdline_length;          // Maximum length of a command line. If 0, default value will be used.
+    size_t max_cmdline_args;            // Maximum number of command line arguments to parse. If 0, default value will be used.
 } esp_console_repl_com_t;
 
 typedef struct {
@@ -56,7 +57,7 @@ _Static_assert(offsetof(esp_console_repl_universal_t, repl_com) == 0,
 
 void esp_console_repl_task(void *args);
 
-esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com);
+esp_err_t esp_console_common_init(size_t max_cmdline_length, size_t max_cmdline_args, esp_console_repl_com_t *repl_com);
 esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com);
 esp_err_t esp_console_internal_set_event_fd(esp_console_repl_com_t *repl_com);
 esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);

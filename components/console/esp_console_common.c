@@ -169,16 +169,22 @@ __attribute__((weak)) esp_err_t esp_console_internal_set_event_fd(esp_console_re
     return ESP_OK;
 }
 
-esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com)
+esp_err_t esp_console_common_init(size_t max_cmdline_length, size_t max_cmdline_args, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
     /* Initialize the console */
     esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
     repl_com->max_cmdline_length = console_config.max_cmdline_length;
+    repl_com->max_cmdline_args = console_config.max_cmdline_args;
     /* Replace the default command line length if passed as a parameter */
     if (max_cmdline_length != 0) {
         console_config.max_cmdline_length = max_cmdline_length;
         repl_com->max_cmdline_length = max_cmdline_length;
+    }
+    /* Replace the default command line args if passed as a parameter */
+    if (max_cmdline_args != 0) {
+        console_config.max_cmdline_args = max_cmdline_args;
+        repl_com->max_cmdline_args = max_cmdline_args;
     }
 
 #if CONFIG_LOG_COLORS
@@ -288,6 +294,7 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
 
     /* initialize console, common part */
     ret = esp_console_common_init(repl_config->max_cmdline_length,
+                                  repl_config->max_cmdline_args,
                                   &universal_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
