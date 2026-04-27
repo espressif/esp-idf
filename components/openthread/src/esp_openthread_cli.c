@@ -68,15 +68,17 @@ static bool append_escaped_ot_arg(char *buffer, size_t buffer_size, const char *
     ESP_RETURN_ON_FALSE(rem_size > 0, false, OT_PLAT_LOG_TAG, "CLI command buffer is full");
 
     while (*arg) {
-        if ((*arg == ' ') || (*arg == '\t') || (*arg == '\r') || (*arg == '\n') || (*arg == '\\')) {
-            ESP_RETURN_ON_FALSE(rem_size > 1, false, OT_PLAT_LOG_TAG, "CLI command is too long");
+        bool need_escape = (*arg == ' ') || (*arg == '\t') || (*arg == '\r') || (*arg == '\n') || (*arg == '\\');
+        size_t need = need_escape ? 2 : 1;
+
+        ESP_RETURN_ON_FALSE(rem_size >= need, false, OT_PLAT_LOG_TAG, "CLI command is too long");
+
+        if (need_escape) {
             buffer[len++] = '\\';
-            rem_size--;
         }
 
-        ESP_RETURN_ON_FALSE(rem_size > 1, false, OT_PLAT_LOG_TAG, "CLI command is too long");
         buffer[len++] = *arg++;
-        rem_size--;
+        rem_size -= need;
     }
 
     buffer[len] = '\0';
