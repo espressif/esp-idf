@@ -467,6 +467,16 @@ Extending ``idf.py``
 - **From components participating in the build**: Place a file named ``idf_ext.py`` in the project root or in a component's root directory that is registered in the project's ``CMakeLists.txt``. Component extensions are discovered after the project is configured - run ``idf.py build`` or ``idf.py reconfigure`` to make newly added commands available.
 - **From Python entry points**: Any installed Python package may contribute extensions by defining an entry point in the ``idf_extension`` group. Package installation is sufficient, no project build is required.
 
+For security reasons, component extensions are loaded from trusted sources only:
+
+- ESP-IDF built-in components (under ``IDF_PATH/components``).
+- Project components (the project's own ``components/`` directory).
+- User-defined components from directories listed in ``EXTRA_COMPONENT_DIRS`` in the project's top-level ``CMakeLists.txt``.
+- Espressif components from the ESP Component Registry (``https://components.espressif.com/``). Only the ``espressif/`` namespace is trusted, not all registry components.
+- IDF-managed components downloaded to the ``IDF_TOOLS_PATH/root_managed_components/`` directory. Only the ``espressif/`` namespace is trusted.
+
+Extensions from other sources (e.g., components resolved via ``git``, local ``path``, or ``override_path``) are skipped with a warning. To load extensions from all components, set ``IDF_EXTENSION_ALLOW_UNTRUSTED=1``.
+
 .. important::
 
    Extensions must not define subcommands or options that have the same names as the core ``idf.py`` commands. Custom actions and options are checked for name collisions, overriding defaults is not possible and a warning is printed. For Python entry points, use unique identifiers as duplicate entry point names will be ignored with a warning.
