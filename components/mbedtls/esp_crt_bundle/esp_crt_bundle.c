@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -429,7 +429,10 @@ static esp_err_t esp_crt_bundle_init(const uint8_t* const x509_bundle, const siz
 }
 
 #if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
-static int esp_crt_copy_asn1(const mbedtls_asn1_named_data *src, mbedtls_asn1_named_data *dst)
+/* Reference ASN1 named data by pointing into src's buffers.
+ * The src data must outlive dst. */
+static int esp_crt_ref_asn1(const mbedtls_asn1_named_data *src,
+                             mbedtls_asn1_named_data *dst)
 {
     if (src == NULL || dst == NULL) {
         return -1;
@@ -437,21 +440,11 @@ static int esp_crt_copy_asn1(const mbedtls_asn1_named_data *src, mbedtls_asn1_na
 
     dst->oid.tag = src->oid.tag;
     dst->oid.len = src->oid.len;
-    dst->oid.p = calloc(1, src->oid.len);
-    if (dst->oid.p == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for OID");
-        return -1;
-    }
-    memcpy(dst->oid.p, src->oid.p, src->oid.len);
+    dst->oid.p = src->oid.p;
     dst->val.tag = src->val.tag;
     dst->val.len = src->val.len;
-    dst->val.p = calloc(1, src->val.len);
-    if (dst->val.p == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for value");
-        free(dst->oid.p);
-        return -1;
-    }
-    memcpy(dst->val.p, src->val.p, src->val.len);
+    dst->val.p = src->val.p;
+    dst->next_merged = src->next_merged;
     return 0;
 }
 
@@ -484,16 +477,10 @@ static int esp_crt_ca_cb_callback(void *ctx, mbedtls_x509_crt const *child, mbed
 
     const uint8_t *cert_name = esp_crt_get_name(cert);
     uint16_t cert_name_len = esp_crt_get_name_len(cert);
+    /* Point into persistent bundle data */
     new_cert->subject_raw.tag = MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE;
     new_cert->subject_raw.len = cert_name_len;
-    new_cert->subject_raw.p = calloc(1, cert_name_len);
-    if (new_cert->subject_raw.p == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for subject");
-        mbedtls_x509_crt_free(new_cert);
-        free(new_cert);
-        return MBEDTLS_ERR_X509_ALLOC_FAILED;
-    }
-    memcpy(new_cert->subject_raw.p, cert_name, cert_name_len);
+    new_cert->subject_raw.p = (unsigned char *)cert_name;
 
     const uint8_t *cert_key = esp_crt_get_key(cert);
     uint16_t cert_key_len = esp_crt_get_key_len(cert);
@@ -508,31 +495,33 @@ static int esp_crt_ca_cb_callback(void *ctx, mbedtls_x509_crt const *child, mbed
         return ret;
     }
 
-    // Loop through the child->issuer and copy the values to the new certificate
+    /* Populate parent->subject by referencing child->issuer data */
     const mbedtls_asn1_named_data *child_issuer = &child->issuer;
     mbedtls_asn1_named_data *parent_subject = &new_cert->subject;
+    if (esp_crt_ref_asn1(child_issuer, parent_subject) != 0) {
+        ESP_LOGE(TAG, "Failed to reference ASN.1 data");
+        mbedtls_x509_crt_free(new_cert);
+        free(new_cert);
+        return MBEDTLS_ERR_X509_ALLOC_FAILED;
+    }
+
+    child_issuer = child_issuer->next;
     while (child_issuer != NULL) {
-        if (esp_crt_copy_asn1(child_issuer, parent_subject) != 0) {
-            ESP_LOGE(TAG, "Failed to copy ASN.1 data");
+        parent_subject->next = calloc(1, sizeof(mbedtls_asn1_named_data));
+        if (parent_subject->next == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for subject node");
+            mbedtls_x509_crt_free(new_cert);
+            free(new_cert);
+            return MBEDTLS_ERR_X509_ALLOC_FAILED;
+        }
+        parent_subject = parent_subject->next;
+        if (esp_crt_ref_asn1(child_issuer, parent_subject) != 0) {
+            ESP_LOGE(TAG, "Failed to reference ASN.1 data");
             mbedtls_x509_crt_free(new_cert);
             free(new_cert);
             return MBEDTLS_ERR_X509_ALLOC_FAILED;
         }
         child_issuer = child_issuer->next;
-        if (child_issuer == NULL) {
-            break;
-        }
-
-        if (parent_subject->next == NULL) {
-            parent_subject->next = calloc(1, sizeof(mbedtls_asn1_named_data));
-            if (parent_subject->next == NULL) {
-                ESP_LOGE(TAG, "Failed to allocate memory for next issuer");
-                mbedtls_x509_crt_free(new_cert);
-                free(new_cert);
-                return MBEDTLS_ERR_X509_ALLOC_FAILED;
-            }
-            parent_subject = parent_subject->next;
-        }
     }
 
     // Set the parsed certificate as the candidate CA
