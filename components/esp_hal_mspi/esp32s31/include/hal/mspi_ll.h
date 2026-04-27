@@ -304,6 +304,46 @@ static inline void mspi_ll_psram_enable_axi_access(uint8_t spi_num, bool enable)
     SPIMEM2.mem_cache_fctrl.close_axi_inf_en = !enable;
 }
 
+/**
+ * @brief Hold all PSRAM pins
+ * Sets all PSRAM pins (pin_group0, dqs0, pin_group1, dqs1) to hold status
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_psram_hold_all_pins(void)
+{
+    MSPI_IOMUX.psram_pin_group.pin_group0[0].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[1].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[2].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[3].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[4].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[5].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[6].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_group0[7].reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.dqs0.reg_psram_dqs_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_clk.reg_psram_pin_hold = 1;
+    MSPI_IOMUX.psram_pin_group.pin_cs.reg_psram_pin_hold = 1;
+}
+
+/**
+ * @brief Unhold all PSRAM pins
+ * Releases hold status for all PSRAM pins (pin_group0, dqs0, pin_group1, dqs1)
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_psram_unhold_all_pins(void)
+{
+    MSPI_IOMUX.psram_pin_group.pin_group0[0].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[1].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[2].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[3].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[4].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[5].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[6].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_group0[7].reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.dqs0.reg_psram_dqs_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_clk.reg_psram_pin_hold = 0;
+    MSPI_IOMUX.psram_pin_group.pin_cs.reg_psram_pin_hold = 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

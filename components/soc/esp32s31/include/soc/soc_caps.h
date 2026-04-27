@@ -294,6 +294,7 @@
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 #define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
 
+#define SOC_PSRAM_HAS_DEDICATED_LDO               1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 #define SOC_PSRAM_MEMSPI_IS_INDEPENDENT           1
 

@@ -727,6 +727,10 @@ config SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
     bool
     default y
 
+config SOC_PSRAM_HAS_DEDICATED_LDO
+    bool
+    default y
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y

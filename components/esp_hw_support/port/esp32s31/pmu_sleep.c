@@ -16,10 +16,21 @@
 #include "soc/pmu_struct.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
+#include "hal/clk_tree_hal.h"
 #include "hal/lp_aon_hal.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
+#include "hal/mspi_ll.h"
 #include "esp_hw_log.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_impl.h"
+#include "hal/psram_ctrlr_ll.h"
+#endif
+#if !SOC_APM_SUPPORTED
+#include "hal/apm_hal.h"
+#endif
+
+#include "esp_private/rtc_clk.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
@@ -28,6 +39,7 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 
 static bool s_pmu_sleep_regdma_backup_enabled;
+static uint32_t s_mpll_freq_mhz_before_sleep = 0;
 
 void pmu_sleep_enable_regdma_backup(void)
 {
@@ -320,6 +332,16 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 
 IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
+    if (!dslp) {
+#if CONFIG_SPIRAM
+        psram_ctrlr_ll_wait_all_transaction_done();
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+        esp_psram_impl_enter_halfsleep_mode();
+#endif
+        mspi_ll_psram_hold_all_pins();
+#endif
+        s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
+    }
     lp_aon_hal_inform_wakeup_type(dslp);
 
     pmu_ll_hp_set_wakeup_enable(&PMU, wakeup_opt);
@@ -354,6 +376,26 @@ IRAM_ATTR bool pmu_sleep_finish(bool dslp)
     // Wait eFuse memory update done.
     while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
 #endif
+
+    if (!dslp) {
+        if (s_mpll_freq_mhz_before_sleep) {
+            rtc_clk_mpll_enable();
+            rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, false);
+        }
+#if CONFIG_SPIRAM
+        mspi_ll_psram_unhold_all_pins();
+#if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+        esp_psram_impl_exit_halfsleep_mode();
+#endif
+#endif
+    }
+
+#if !SOC_APM_SUPPORTED
+    apm_hal_enable_ctrl_filter_all(false);
+#else
+    ESP_STATIC_ASSERT(0, "TEE/APM retention need to be supported!");
+#endif
+
     return pmu_ll_hp_is_sleep_reject(&PMU);
 }
 

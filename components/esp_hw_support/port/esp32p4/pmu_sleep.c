@@ -422,7 +422,7 @@ SPM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
         esp_psram_impl_enter_halfsleep_mode();
 #endif
-        mspi_ll_hold_all_psram_pins();
+        mspi_ll_psram_hold_all_pins();
 #endif
         s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
         if (s_mpll_freq_mhz_before_sleep) {
@@ -519,7 +519,7 @@ SPM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 #endif
         }
 #if CONFIG_SPIRAM
-        mspi_ll_unhold_all_psram_pins();
+        mspi_ll_psram_unhold_all_pins();
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
         esp_psram_impl_exit_halfsleep_mode();
 #endif
