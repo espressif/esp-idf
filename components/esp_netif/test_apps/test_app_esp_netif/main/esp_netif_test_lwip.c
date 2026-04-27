@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -567,6 +567,8 @@ TEST(esp_netif, get_set_hostname)
  * - We create 10 netifs with prios: 0, 1, 2, 3, 4, 0, 0, ...., 0 (netifs[nr_of_netifs/2] has max_prio)
  * - We check the default netif is correct after bringing it down/up, overriding it
  * - We destroy the default netif and check again
+ * - We set and clear a manual override, then check if we are back to using auto-selection
+ * - We modify route_prio without changing the interface state, then explicitly re-evaluate the default netif
  * - We destroy the remaining netifs
  */
 TEST(esp_netif, route_priority)
@@ -615,6 +617,22 @@ TEST(esp_netif, route_priority)
     esp_netif_action_stop(netifs[max_prio_i], 0, 0, 0);
     // ...so the current default is on (max_prio-1)
     TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i - 1]), netif_default);
+
+    // override the default with a low-prio netif, then clear the override
+    // and check if the auto-selected default is restored
+    int low_prio_i = max_prio_i + 1;  // netif with route_prio == 0 that is still up
+    esp_netif_set_default_netif(netifs[low_prio_i]);
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[low_prio_i]), netif_default);
+    TEST_ESP_OK(esp_netif_set_default_netif(NULL)); // remove override
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i - 1]), netif_default);
+
+    // change route_prio at runtime: the default netif does not change until we ask for re-evaluation
+    esp_netif_set_route_prio(netifs[low_prio_i], max_prio_i + 10);
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i - 1]), netif_default);
+    // trigger default netif re-evaluation
+    TEST_ESP_OK(esp_netif_set_default_netif(NULL));
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[low_prio_i]), netif_default);
+
     // destroy one by one and check it's been removed
     for (int i=0; i < override_prio_i; ++i) {
         esp_netif_destroy(netifs[i]);
