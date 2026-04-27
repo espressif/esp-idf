@@ -101,7 +101,7 @@ static esp_err_t esp_console_new_repl_linux(const esp_console_repl_config_t *rep
     fcntl(fileno(stdin), F_SETFL, 0);
 
     // initialize console , common part
-    ret = esp_console_common_init(repl_config->max_cmdline_length, &linux_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, repl_config->max_cmdline_args, &linux_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
