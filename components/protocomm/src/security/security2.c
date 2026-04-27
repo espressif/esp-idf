@@ -148,11 +148,13 @@ static esp_err_t handle_session_command0(session_t *cur_session,
                 cur_session->salt_len, cur_session->verifier, cur_session->verifier_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set salt and verifier!");
             esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
             return ESP_FAIL;
         }
         if (esp_srp_srv_pubkey_from_salt_verifier(cur_session->srp_hd, &device_pubkey, &device_pubkey_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to device public key!");
             esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
             return ESP_FAIL;
         }
     }
@@ -162,6 +164,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
                                 &cur_session->session_key, &cur_session->session_key_len) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate device session key!");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         return ESP_FAIL;
     }
     hexdump("Session Key", cur_session->session_key, cur_session->session_key_len);
@@ -171,6 +174,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     if (!out || !out_resp) {
         ESP_LOGE(TAG, "Error allocating memory for response0");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         free(out);
         free(out_resp);
         return ESP_ERR_NO_MEM;
@@ -196,6 +200,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     if (!cur_session->username) {
         ESP_LOGE(TAG, "Failed to allocate memory!");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         free(out);
         free(out_resp);
         return ESP_ERR_NO_MEM;
