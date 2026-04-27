@@ -1153,6 +1153,15 @@ pytest_components_esp32s3_two_duts:
       artifacts: false
   tags: [ esp32s3, two_duts ]
 
+pytest_components_esp32c6_two_duts:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c6-wifi
+  needs:
+    - job: build_pytest_components_esp32c6
+      artifacts: false
+  tags: [ esp32c6, two_duts ]
+
 pytest_components_esp32c2_two_duts:
   extends:
     - .pytest_components_dir_template
