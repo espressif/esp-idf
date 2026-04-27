@@ -77,22 +77,22 @@ function(__parse_and_store_version_arg)
     cmake_parse_arguments(PROJECT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # If the VERSION keyword exists but no version string is provided then raise a warning
-    if((NOT PROJECT_VERSION
-        OR PROJECT_VERSION STREQUAL "NOTFOUND")
-        AND NOT PROJECT_VERSION STREQUAL "0")
+    if(("${PROJECT_VERSION}" STREQUAL ""
+        OR "${PROJECT_VERSION}" STREQUAL "NOTFOUND")
+        AND NOT "${PROJECT_VERSION}" STREQUAL "0")
         message(STATUS "VERSION keyword not followed by a value or was followed by a value that expanded to nothing.")
         # Default the version to 1 in this case
         set(project_ver 1)
     else()
         # Check if version is valid. cmake allows the version to be in the format <major>[.<minor>[.<patch>[.<tweak>]]]]
-        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid ${PROJECT_VERSION})
-        if(NOT version_valid AND NOT PROJECT_VERSION STREQUAL "0")
+        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid "${PROJECT_VERSION}")
+        if(NOT version_valid AND NOT "${PROJECT_VERSION}" STREQUAL "0")
             message(SEND_ERROR "Version \"${PROJECT_VERSION}\" format invalid.")
             return()
         endif()
 
         # Split the version string into major, minor, patch, and tweak components
-        string(REPLACE "." ";" version_components ${PROJECT_VERSION})
+        string(REPLACE "." ";" version_components "${PROJECT_VERSION}")
         list(GET version_components 0 PROJECT_VERSION_MAJOR)
         list(LENGTH version_components version_length)
         if(version_length GREATER 1)
@@ -733,7 +733,7 @@ macro(project project_name)
             # Check if version information was passed to project() via the VERSION argument
             set(version_keyword_present FALSE)
             foreach(arg ${ARGN})
-                if(${arg} STREQUAL "VERSION")
+                if("${arg}" STREQUAL "VERSION")
                     set(version_keyword_present TRUE)
                 endif()
             endforeach()
