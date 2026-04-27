@@ -25,10 +25,10 @@ def test_driver_twai_loopbk(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_driver_twai_loopbk_c5eco3(dut: Dut) -> None:
+def test_driver_twai_loopbk_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai', reset=True)
 
 

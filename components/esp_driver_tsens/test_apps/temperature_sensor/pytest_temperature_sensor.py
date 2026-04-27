@@ -24,7 +24,7 @@ def test_temperature_sensor_driver(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @pytest.mark.parametrize(
     'config',
     [
@@ -37,7 +37,7 @@ def test_temperature_sensor_driver(dut: Dut) -> None:
     ['esp32c5'],
     indirect=['target'],
 )
-def test_temperature_sensor_driver_esp32c5_eco3(dut: Dut) -> None:
+def test_temperature_sensor_driver_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 

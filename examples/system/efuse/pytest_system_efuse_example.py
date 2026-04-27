@@ -400,7 +400,7 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32eco3
+@pytest.mark.esp32_rev3
 @pytest.mark.parametrize(
     'config',
     [
@@ -520,7 +520,7 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32eco3
+@pytest.mark.esp32_rev3
 @pytest.mark.parametrize(
     'config',
     [
@@ -812,7 +812,7 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32eco3
+@pytest.mark.esp32_rev3
 @pytest.mark.parametrize(
     'config',
     [
@@ -912,7 +912,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [
-        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32eco3_efuses.bin")},'
+        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32_rev3_efuses.bin")},'
         'if=none,format=raw,id=efuse '
         '-global driver=nvram.esp32.efuse,property=drive,value=efuse '
         '-global driver=timer.esp32.timg,property=wdt_disable,value=true',
@@ -983,11 +983,11 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_qemu(dut: QemuDut) -> None:
 
     finally:
         # the above example test burns the efuses, and hence the efuses file which the
-        # qemu uses to emulate the efuses, "test/esp32eco3_efuses.bin", gets modified.
+        # qemu uses to emulate the efuses, "test/esp32_rev3_efuses.bin", gets modified.
         # Thus, restore the efuses file values back to the default ESP32-ECO3 efuses values.
-        with open(os.path.join(os.path.dirname(__file__), 'test', 'esp32eco3_efuses.bin'), 'wb') as efuse_file:
-            esp32eco3_efuses = '0' * 26 + '8' + '0' * 17 + '1' + '0' * 203
-            efuse_file.write(bytearray.fromhex(esp32eco3_efuses))
+        with open(os.path.join(os.path.dirname(__file__), 'test', 'esp32_rev3_efuses.bin'), 'wb') as efuse_file:
+            esp32_rev3_efuses = '0' * 26 + '8' + '0' * 17 + '1' + '0' * 203
+            efuse_file.write(bytearray.fromhex(esp32_rev3_efuses))
 
 
 def example_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
