@@ -158,6 +158,8 @@ static void uhci_receive_test(void *arg)
         }
 
         ctx->receive_size = 0;
+        ctx->p_receive_data = receive_data;
+        memset(receive_data, 0, DATA_LENGTH);
     }
 
     vQueueDelete(ctx->uhci_queue);
