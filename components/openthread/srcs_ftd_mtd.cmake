@@ -7,6 +7,7 @@
 set(src_dirs
     "src"
     "src/port"
+    "src/spinel"
     "openthread/examples/platforms/utils"
     "openthread/src/core/api"
     "openthread/src/core/common"
@@ -48,16 +49,22 @@ if(CONFIG_OPENTHREAD_RADIO_NATIVE)
     list(APPEND exclude_srcs
         "src/port/esp_openthread_radio_spinel.cpp"
         "src/port/esp_spi_spinel_interface.cpp"
-        "src/port/esp_uart_spinel_interface.cpp")
+        "src/spinel/esp_radio_spinel.cpp"
+        "src/spinel/esp_radio_spinel_uart_interface.cpp")
 elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
     list(APPEND exclude_srcs
         "src/port/esp_openthread_radio.c"
-        "src/port/esp_openthread_sleep.c")
+        "src/port/esp_openthread_sleep.c"
+        "src/spinel/esp_radio_spinel.cpp")
+    if(CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+        list(APPEND exclude_srcs "src/spinel/esp_radio_spinel_uart_interface.cpp")
+    endif()
 elseif(CONFIG_OPENTHREAD_RADIO_154_NONE)
     list(APPEND exclude_srcs
         "src/port/esp_openthread_radio_spinel.cpp"
         "src/port/esp_spi_spinel_interface.cpp"
-        "src/port/esp_uart_spinel_interface.cpp"
+        "src/spinel/esp_radio_spinel.cpp"
+        "src/spinel/esp_radio_spinel_uart_interface.cpp"
         "src/port/esp_openthread_radio.c"
         "src/port/esp_openthread_sleep.c")
 endif()
