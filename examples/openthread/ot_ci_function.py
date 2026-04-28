@@ -188,7 +188,7 @@ def getDataset(dut: IdfDut) -> str:
 
 
 def init_thread(dut: IdfDut) -> None:
-    dut.expect('OpenThread attached to netif', timeout=10)
+    dut.expect('OpenThread enter mainloop', timeout=10)
     wait(dut, 3)
     reset_thread(dut)
 
@@ -201,16 +201,16 @@ def stop_thread(dut: IdfDut) -> None:
 
 def reset_thread(dut: IdfDut) -> None:
     execute_command(dut, 'factoryreset')
-    dut.expect('OpenThread attached to netif', timeout=20)
+    dut.expect('OpenThread enter mainloop', timeout=20)
     wait(dut, 3)
     clean_buffer(dut)
 
 
 def hardreset_dut(dut: IdfDut) -> None:
     dut.serial.hard_reset()
-    dut.expect('OpenThread attached to netif', timeout=20)
+    dut.expect('OpenThread enter mainloop', timeout=20)
     execute_command(dut, 'factoryreset')
-    dut.expect('OpenThread attached to netif', timeout=20)
+    dut.expect('OpenThread enter mainloop', timeout=20)
 
 
 # get the mleid address of the thread
@@ -474,7 +474,8 @@ def check_ipmaddr(dut: IdfDut) -> bool:
 
 
 def thread_is_joined_group(dut: IdfDut) -> bool:
-    command = 'mcast join ' + thread_ipv6_group
+    should_use_mcast = dut.app.sdkconfig.get('OPENTHREAD_PLATFORM_NETIF') is True
+    command = ('mcast join ' if should_use_mcast else 'ipmaddr add ') + thread_ipv6_group
     execute_command(dut, command)
     dut.expect('Done', timeout=5)
     order = 0
