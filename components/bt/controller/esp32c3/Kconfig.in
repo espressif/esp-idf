@@ -624,6 +624,7 @@ menu "Controller debug log Options (Experimental)"
         depends on BT_CTRL_LE_LOG_EN
         int "The level of BLE log"
         range 0 5
+        default 2 if BT_LOG_CRITICAL_ONLY_CTRL
         default 1
 
     config BT_CTRL_LE_LOG_BUF1_SIZE

@@ -35,255 +35,173 @@ choice BT_SMP_CRYPTO_STACK
 
 endchoice
 
-menu "BLE Log"
+menu "BT Logs"
+    menu "Log Sources"
+        menuconfig BT_LE_CONTROLLER_LOG_ENABLED
+            depends on SOC_ESP_NIMBLE_CONTROLLER
+            bool "Enable Controller logs"
+            default n
+
+        choice BT_LE_CONTROLLER_LOG_OUTPUT_MODE
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            prompt "Controller log output mode"
+            default BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 if BLE_LOG_ENABLED
+            default BT_LE_CTRL_LEGACY_LOG_MODE_ENABLED
+
+            config BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+                depends on BLE_LOG_ENABLED
+                bool "BLE Log v2 mode"
+                help
+                    Utilize BLE Log v2 for controller log
+
+            config BT_LE_CTRL_LEGACY_LOG_MODE_ENABLED
+                depends on !BLE_LOG_ENABLED
+                bool "Legacy log mode (Deprecated)"
+        endchoice
+
+        if BT_LE_CONTROLLER_LOG_ENABLED && BT_LE_CTRL_LEGACY_LOG_MODE_ENABLED
+            config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+                bool "Enable controller link layer logs"
+                default y
+
+            config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+                bool "Enable controller HCI logs"
+                default y
+
+            config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+                bool "Controller log dump mode only"
+                default y
+                help
+                    Only operate in dump mode. Logs are cached internally only,
+                    not output asynchronously.
+
+            config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+                bool "Output controller logs to SPI bus (Experimental)"
+                depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+                select BT_BLE_LOG_SPI_OUT_ENABLED
+                default n
+                help
+                    Output ble controller logs to SPI bus
+
+            config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+                bool "Store controller logs to flash (Experimental)"
+                depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+                default n
+                help
+                    Store ble controller logs to flash memory.
+
+            config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+                int "Controller log partition size (multiples of 4K)"
+                depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+                default 65536
+                help
+                    The size of ble controller log partition shall be a multiples of 4K.
+                    The name of log partition shall be "bt_ctrl_log".
+                    The partition type shall be ESP_PARTITION_TYPE_DATA.
+                    The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
+            config BT_LE_LOG_CTRL_BUF1_SIZE
+                int "First controller log buffer size"
+                default 4096
+                help
+                    Configure the size of the first BLE controller LOG buffer.
+
+            config BT_LE_LOG_CTRL_BUF2_SIZE
+                int "Second controller log buffer size"
+                default 1024
+                help
+                    Configure the size of the second BLE controller LOG buffer.
+
+            config BT_LE_LOG_HCI_BUF_SIZE
+                int "HCI log buffer size"
+                default 4096
+                help
+                    Configure the size of the BLE HCI LOG buffer.
+        endif
+
+        config BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL
+            int "Controller log output level"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            range 0 5
+            default 2 if BT_LOG_CRITICAL_ONLY_CTRL
+            default 1
+            help
+                The output level of controller log.
+
+        config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
+            hex "Controller log module output switch"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            range 0 0xFFFFFFFF
+            default 0xFFFFFFFF
+            help
+                Bitmask to enable/disable logging for individual controller
+                modules. 0xFFFFFFFF enables all modules.
+
+        config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+            bool "Enable wrap panic handler"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
+
+        config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+            bool "Enable esp_task_wdt_isr_user_handler implementation"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+    endmenu
+
+    menuconfig BT_LOG_CRITICAL_ONLY
+        bool "Enable bandwidth-optimized log mode (critical logs only)"
+        default n
+        depends on !BT_STACK_NO_LOG
+        select BLE_LOG_ENABLED
+        select BLE_COMPRESSED_LOG_ENABLE
+        help
+            Enable bandwidth-optimized logging for the BLE Log Async Output
+            system. When enabled, only high-severity logs are captured and
+            log encoding is applied to reduce UART/SPI DMA bandwidth usage.
+
+            Each stack component below can be independently enabled.
+            Requires a DMA-backed output peripheral — configure in:
+            BLE Log Module → BLE Log peripheral choice.
+
+    if BT_LOG_CRITICAL_ONLY
+        config BT_LOG_CRITICAL_ONLY_CTRL
+            bool "Controller: bandwidth-optimized logging"
+            depends on SOC_ESP_NIMBLE_CONTROLLER || BT_CTRL_RUN_IN_FLASH_ONLY
+            select BT_LE_CONTROLLER_LOG_ENABLED if SOC_ESP_NIMBLE_CONTROLLER
+            select BT_CTRL_LE_LOG_EN if !SOC_ESP_NIMBLE_CONTROLLER
+            default y
+            help
+                Enable controller log output via the async transport with
+                a reduced output level for bandwidth optimization.
+                The controller log level defaults to 2 when active.
+
+        config BT_LOG_CRITICAL_ONLY_HOST
+            bool "Host: bandwidth-optimized logging"
+            select BLE_HOST_COMPRESSED_LOG_ENABLE if BT_BLUEDROID_ENABLED
+            default y
+            help
+                Enable host stack log encoding via the async transport.
+                For Bluedroid, the per-level compression options control
+                which severity levels are encoded — configure in:
+                Settings of BLE Log Compression → BLE Host log compression.
+
+        config BT_LOG_CRITICAL_ONLY_MESH
+            bool "Mesh: bandwidth-optimized logging"
+            depends on SOC_BLE_MESH_SUPPORTED && BLE_MESH
+            select BLE_MESH_COMPRESSED_LOG_ENABLE
+            default y
+            help
+                Enable mesh log encoding via the async transport.
+                The per-level compression options are configured in:
+                Settings of BLE Log Compression → BLE Mesh log compression.
+    endif # BT_LOG_CRITICAL_ONLY
+
     source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"
 endmenu
-
-config BT_BLE_LOG_SPI_OUT_ENABLED
-    bool "Output ble logs to SPI bus (Experimental)"
-    default n
-    help
-        Output ble logs to SPI bus
-
-config BT_BLE_LOG_SPI_OUT_UL_TASK_BUF_SIZE
-    int "SPI transaction buffer size for upper layer task logs"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default 512
-    help
-        SPI transaction buffer size for upper layer task logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_HCI_ENABLED
-    bool "Enable HCI log output to SPI"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        Enable logging of HCI packets to the SPI bus when BLE SPI log output is enabled.
-
-config BT_BLE_LOG_SPI_OUT_HCI_BUF_SIZE
-    int "SPI transaction buffer size for HCI logs"
-    depends on BT_BLE_LOG_SPI_OUT_HCI_ENABLED
-    default 1024
-    help
-        SPI transaction buffer size for HCI logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_HCI_TASK_CNT
-    int "HCI task count"
-    depends on BT_BLE_LOG_SPI_OUT_HCI_ENABLED
-    default 1
-    help
-        HCI task count
-
-config BT_BLE_LOG_SPI_OUT_HOST_ENABLED
-    bool "Enable Host log output to SPI"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        This configuration applies to the logs of both Bluedroid Host and NimBLE Host.
-        When BLE SPI log output is enabled, this option allows host logs to be transmitted via SPI.
-
-config BT_BLE_LOG_SPI_OUT_HOST_BUF_SIZE
-    int "SPI transaction buffer size for host logs"
-    depends on BT_BLE_LOG_SPI_OUT_HOST_ENABLED
-    default 1024
-    help
-        SPI transaction buffer size for host logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_HOST_TASK_CNT
-    int "Host task count"
-    depends on BT_BLE_LOG_SPI_OUT_HOST_ENABLED
-    default 2
-    help
-        Host task count.
-
-config BT_BLE_LOG_SPI_OUT_LL_ENABLED
-    bool "Enable Controller log output to SPI"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        Enable controller log output to SPI bus.
-
-config BT_BLE_LOG_SPI_OUT_LL_TASK_BUF_SIZE
-    int "SPI transaction buffer size for lower layer task logs"
-    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
-    default 1024
-    help
-        SPI transaction buffer size for lower layer task logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_LL_ISR_BUF_SIZE
-    int "SPI transaction buffer size for lower layer ISR logs"
-    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
-    default 512
-    help
-        SPI transaction buffer size for lower layer ISR logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_LL_HCI_BUF_SIZE
-    int "SPI transaction buffer size for lower layer HCI logs"
-    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
-    default 512
-    help
-        SPI transaction buffer size for upper layer HCI logs.
-        There will be 2 SPI DMA buffers with the same size
-
-config BT_BLE_LOG_SPI_OUT_MOSI_IO_NUM
-    int "GPIO number of SPI MOSI"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default 0
-    help
-        GPIO number of SPI MOSI
-
-config BT_BLE_LOG_SPI_OUT_SCLK_IO_NUM
-    int "GPIO number of SPI SCLK"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default 1
-    help
-        GPIO number of SPI SCLK
-
-config BT_BLE_LOG_SPI_OUT_CS_IO_NUM
-    int "GPIO number of SPI CS"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default 2
-    help
-        GPIO number of SPI CS
-
-config BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
-    bool "Enable ble log & logic analyzer log time sync"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default y
-    help
-        Enable ble log & logic analyzer log time sync
-
-config BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
-    int "GPIO number of SYNC IO"
-    depends on BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
-    default 3
-    help
-        GPIO number of SYNC IO
-
-config BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
-    bool "Enable periodic buffer flush out"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        Enable periodic buffer flush out
-        Not recommended when SPI receiver is unavailable
-
-config BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT
-    int "Buffer flush out period in unit of ms"
-    depends on BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
-    default 1000
-    help
-        Buffer flush out period in unit of ms
-
-config BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
-    bool "Enable LE Audio log output to SPI"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        Enable LE Audio log output to SPI
-
-config BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
-    int "SPI transaction buffer size for LE Audio logs"
-    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
-    default 1024
-    help
-        SPI transaction buffer size for LE Audio logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_LE_AUDIO_TASK_CNT
-    int "LE audio task count"
-    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
-    default 1
-    help
-        LE audio task count
-
-config BT_BLE_LOG_SPI_OUT_MESH_ENABLED
-    bool "Enable BLE mesh log output to SPI"
-    depends on BT_BLE_LOG_SPI_OUT_ENABLED
-    default n
-    help
-        Enable BLE mesh log output to SPI
-
-config BT_BLE_LOG_SPI_OUT_MESH_BUF_SIZE
-    int "SPI transaction buffer size for BLE mesh logs"
-    depends on BT_BLE_LOG_SPI_OUT_MESH_ENABLED
-    default 1024
-    help
-        SPI transaction buffer size for BLE mesh logs.
-        There will be 2 SPI DMA buffers with the same size.
-
-config BT_BLE_LOG_SPI_OUT_MESH_TASK_CNT
-    int "Mesh task count"
-    depends on BT_BLE_LOG_SPI_OUT_MESH_ENABLED
-    default 3
-    help
-        Mesh task count
-
-config BT_BLE_LOG_UHCI_OUT_ENABLED
-    bool "Output ble logs via UHCI (UART DMA) driver (Experimental)"
-    default n
-    help
-        Output ble logs via UHCI (UART DMA) driver
-        On enable, BT_BLE_LOG_UHCI_OUT_UART_PORT would be reinited with
-        BT_BLE_LOG_UHCI_OUT_UART_BAUD_RATE as new baud rate and
-        BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX as new UART Tx IO
-
-config BT_BLE_LOG_UHCI_OUT_UART_PORT
-    int "UART port connected to UHCI controller"
-    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
-    default 0
-    help
-        UART port connected to UHCI controller
-        If UART port 0 is selected, UART VFS Driver, UART ROM Driver
-        and UART Driver output would be redirected to BLE Log UHCI Out
-        to solve UART Tx FIFO multi-task access issue
-
-config BT_BLE_LOG_UHCI_OUT_LL_TASK_BUF_SIZE
-    int "UHCI transaction buffer size for lower layer task logs"
-    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
-    default 1024
-    help
-        UHCI transaction buffer size for lower layer task logs
-
-config BT_BLE_LOG_UHCI_OUT_LL_ISR_BUF_SIZE
-    int "UHCI transaction buffer size for lower layer ISR logs"
-    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
-    default 1024
-    help
-        UHCI transaction buffer size for lower layer ISR logs
-
-config BT_BLE_LOG_UHCI_OUT_LL_HCI_BUF_SIZE
-    int "UHCI transaction buffer size for lower layer HCI logs"
-    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
-    default 1024
-    help
-        UHCI transaction buffer size for lower layer HCI logs
-
-config BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
-    bool "Enable to init UART port"
-    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
-    default y
-    help
-        Enable to init UART port
-
-config BT_BLE_LOG_UHCI_OUT_UART_BAUD_RATE
-    int "Baud rate for BT_BLE_LOG_UHCI_OUT_UART_PORT"
-    depends on BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
-    default 3000000
-    help
-        Baud rate for BT_BLE_LOG_UHCI_OUT_UART_PORT
-
-config BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX
-    int "IO number for UART TX port"
-    depends on BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
-    default 0
-    help
-        IO number for UART TX port
 
 config BT_LE_USED_MEM_STATISTICS_ENABLED
     bool "Enable used memory statistics"
