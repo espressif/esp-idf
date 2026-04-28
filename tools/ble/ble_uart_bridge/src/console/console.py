@@ -3,9 +3,12 @@
 
 from __future__ import annotations
 
+# Keep annotations compatible with Python 3.9.
+# ruff: noqa: UP007
 import asyncio
 import codecs
 from enum import Enum
+from typing import Union
 
 from loguru import logger
 from rich.highlighter import Highlighter
@@ -93,8 +96,8 @@ class BLEUARTConsole(App):
     def __init__(
         self,
         device_id: str,
-        terminator: ConsoleTerminator | str = ConsoleTerminator.lf,
-        encoding: ConsoleEncoding | str = ConsoleEncoding.text,
+        terminator: Union[ConsoleTerminator, str] = ConsoleTerminator.lf,
+        encoding: Union[ConsoleEncoding, str] = ConsoleEncoding.text,
         with_response: bool = False,
     ) -> None:
         super().__init__()
@@ -109,7 +112,7 @@ class BLEUARTConsole(App):
         self._ui_ready = False
 
     @staticmethod
-    def _parse_terminator(terminator: ConsoleTerminator | str) -> bytes:
+    def _parse_terminator(terminator: Union[ConsoleTerminator, str]) -> bytes:
         try:
             return TERMINATORS[ConsoleTerminator(terminator)]
         except ValueError:
@@ -117,7 +120,7 @@ class BLEUARTConsole(App):
             raise ValueError(f'Unsupported terminator: {terminator}. Expected one of: {choices}') from None
 
     @staticmethod
-    def _parse_encoding(encoding: ConsoleEncoding | str) -> ConsoleEncoding:
+    def _parse_encoding(encoding: Union[ConsoleEncoding, str]) -> ConsoleEncoding:
         try:
             return ConsoleEncoding(encoding)
         except ValueError:

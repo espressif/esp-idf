@@ -1,8 +1,12 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+# Keep annotations compatible with Python 3.9.
+# ruff: noqa: UP007
+
 import json
 from typing import Any
+from typing import Optional
 from urllib.error import HTTPError
 from urllib.error import URLError
 from urllib.request import Request
@@ -20,7 +24,7 @@ def _daemon_url(host: str, port: int, path: str) -> str:
 def _request_json(
     method: str,
     url: str,
-    payload: dict[str, Any] | None = None,
+    payload: Optional[dict[str, Any]] = None,
     timeout: float = 10.0,
 ) -> dict[str, Any]:
     data = json.dumps(payload).encode() if payload is not None else None

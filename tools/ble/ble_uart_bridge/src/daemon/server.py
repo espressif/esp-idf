@@ -1,10 +1,14 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+# Keep annotations compatible with Python 3.9.
+# ruff: noqa: UP007
+
 import asyncio
 import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Optional
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -66,8 +70,8 @@ def _request_data_size(data: object) -> int:
 
 @app.get('/status')
 async def status() -> dict:
-    bridge: BLEUARTBridge | None = getattr(app.state, 'bridge', None)
-    pending_requests: dict | None = getattr(app.state, 'pending_requests', None)
+    bridge: Optional[BLEUARTBridge] = getattr(app.state, 'bridge', None)
+    pending_requests: Optional[dict] = getattr(app.state, 'pending_requests', None)
 
     return {
         'device_id': getattr(app.state, 'device_id', None),
