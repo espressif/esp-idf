@@ -69,7 +69,7 @@ void test_task_wdt_cpu0(void)
 }
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-#define HWSG_TASK_SIZE 1024
+#define HWSG_TASK_SIZE 2048
 __attribute__((optimize("-O0")))
 static void test_hw_stack_guard_cpu(void* arg)
 {

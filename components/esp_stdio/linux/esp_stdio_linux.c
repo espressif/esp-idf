@@ -21,9 +21,10 @@ static void disable_raw_mode(void)
     assert(tcsetattr(STDIN_FILENO, TCSAFLUSH, &s_orig_termios) == 0);
 }
 
-void linux_vfs_dev_port_deinit(linux_port_config_t *config)
+esp_err_t linux_vfs_dev_port_deinit(linux_port_config_t *config)
 {
     (void)config;
+    return ESP_OK;
 }
 
 esp_err_t linux_vfs_dev_port_init(linux_port_config_t *config)

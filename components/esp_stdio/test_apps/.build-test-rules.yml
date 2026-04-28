@@ -1,4 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+components/esp_stdio/test_apps/custom_io:
+  enable:
+    - if: IDF_TARGET == "linux"
+  depends_components:
+    - esp_stdio
+    - vfs
+
 components/esp_stdio/test_apps/stdio:
   disable:
     - if: CONFIG_NAME == "serial_jtag_only" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1

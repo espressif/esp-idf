@@ -51,8 +51,9 @@ esp_err_t usb_serial_jtag_vfs_dev_port_init(const esp_console_dev_usb_serial_jta
  * console backend.
  *
  * @param config Pointer to the USB Serial JTAG VFS device configuration.
+ * @return ESP_OK if the driver was successfully uninstalled, or an error otherwise.
  */
-void usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config);
+esp_err_t usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config);
 
 #ifdef __cplusplus
 }

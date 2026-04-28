@@ -21,8 +21,10 @@ idf_component_register(SRCS ${srcs}
                     LDFRAGMENTS "linker.lf"
                     )
 
-if(CONFIG_VFS_SUPPORT_IO AND CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC idf::vfs)
+if(CONFIG_VFS_SUPPORT_IO)
+    if(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC idf::vfs)
+    endif()
     target_sources(${COMPONENT_LIB} PRIVATE "src/usb_serial_jtag_vfs.c")
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usb_serial_jtag_vfs_include_dev_init")
 endif()

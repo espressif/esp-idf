@@ -148,7 +148,7 @@ static ssize_t vfs_null_read(__attribute__((unused)) void *ctx, int fd, void *da
     return -1;
 }
 
-static int vfs_null_pread(__attribute__((unused)) void *ctx, int fd, void *data, size_t size, off_t offset)
+static ssize_t vfs_null_pread(__attribute__((unused)) void *ctx, int fd, void *data, size_t size, off_t offset)
 {
     UNUSED(data);
     UNUSED(size);
@@ -165,7 +165,7 @@ static int vfs_null_pread(__attribute__((unused)) void *ctx, int fd, void *data,
 
 }
 
-static int vfs_null_pwrite(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size, off_t offset)
+static ssize_t vfs_null_pwrite(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size, off_t offset)
 {
     UNUSED(data);
     UNUSED(offset);

@@ -704,11 +704,12 @@ esp_err_t usb_serial_jtag_vfs_dev_port_init(const esp_console_dev_usb_serial_jta
     return ESP_OK;
 }
 
-void usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config)
+esp_err_t usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config)
 {
     (void)config;
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
+    return ESP_OK;
 }
 
 #endif
@@ -716,8 +717,7 @@ void usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_c
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 ESP_SYSTEM_INIT_FN(init_vfs_usj_sec, CORE, BIT(0), 112)
 {
-    // "/dev/seccondary_usb_serial_jtag" unfortunately is too long for vfs
-    esp_vfs_register_fs("/dev/secondary", &s_vfs_jtag, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
+    esp_vfs_register_fs("/dev/usj", &s_vfs_jtag, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
     return ESP_OK;
 }
 #endif

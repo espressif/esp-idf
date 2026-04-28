@@ -43,8 +43,9 @@ esp_err_t linux_vfs_dev_port_init(linux_port_config_t *config);
  * switching to another console interface.
  *
  * @param config Pointer to the Linux console port configuration.
+ * @return ESP_OK if the driver was successfully uninstalled, or an error otherwise.
  */
-void linux_vfs_dev_port_deinit(linux_port_config_t *config);
+esp_err_t linux_vfs_dev_port_deinit(linux_port_config_t *config);
 
 #ifdef __cplusplus
 }

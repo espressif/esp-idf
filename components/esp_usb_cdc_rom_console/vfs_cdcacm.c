@@ -547,9 +547,10 @@ esp_err_t cdcacm_vfs_dev_port_init(const esp_console_dev_usb_cdc_config_t *confi
     return ESP_OK;
 }
 
-void cdcacm_vfs_dev_port_deinit(const esp_console_dev_usb_cdc_config_t *config)
+esp_err_t cdcacm_vfs_dev_port_deinit(const esp_console_dev_usb_cdc_config_t *config)
 {
     (void)config;
+    return ESP_OK;
 }
 
 #endif

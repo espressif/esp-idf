@@ -1163,6 +1163,7 @@ void uart_vfs_dev_use_driver(int uart_num)
 }
 
 #if CONFIG_ESP_CONSOLE_UART
+
 esp_err_t uart_vfs_dev_port_init(const esp_console_dev_uart_config_t *config,
                                  esp_line_endings_t rx_mode,
                                  esp_line_endings_t tx_mode)
@@ -1218,10 +1219,11 @@ esp_err_t uart_vfs_dev_port_init(const esp_console_dev_uart_config_t *config,
     return ESP_OK;
 }
 
-void uart_vfs_dev_port_deinit(const esp_console_dev_uart_config_t *config)
+esp_err_t uart_vfs_dev_port_deinit(const esp_console_dev_uart_config_t *config)
 {
     uart_vfs_dev_use_nonblocking(config->channel);
     uart_driver_delete(config->channel);
+    return ESP_OK;
 }
 
 ESP_SYSTEM_INIT_FN(init_vfs_uart, CORE, BIT(0), 110)

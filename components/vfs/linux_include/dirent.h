@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,16 @@ typedef struct {
 
 /**
  * @brief Directory entry structure
+ *
+ * Fields match the glibc layout so that this header is binary-compatible with
+ * glibc's readdir() when CONFIG_VFS_SUPPORT_IO is disabled on Linux (in which
+ * case glibc's readdir() fills the struct, not the VFS wrapper).
  */
 struct dirent {
-    ino_t d_ino;          /*!< file number */
-    uint8_t d_type;     /*!< not defined in POSIX, but present in BSD and Linux */
+    ino_t d_ino;              /*!< file number */
+    off_t d_off;              /*!< implementation-defined offset (glibc extension) */
+    unsigned short d_reclen;  /*!< length of this record (glibc extension) */
+    uint8_t d_type;           /*!< not defined in POSIX, but present in BSD and Linux */
 #define DT_UNKNOWN  0
 #define DT_REG      1
 #define DT_DIR      2
