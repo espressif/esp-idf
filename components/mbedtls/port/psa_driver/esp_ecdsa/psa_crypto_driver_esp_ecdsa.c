@@ -186,8 +186,10 @@ static psa_status_t esp_ecdsa_get_expected_storage_size(const uint8_t *key_buffe
     switch (key_source) {
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
         case ESP_ECDSA_KEY_SOURCE_TEE:
-            const esp_ecdsa_tee_key_storage_t *tee_st =
-                (const esp_ecdsa_tee_key_storage_t *)key_buffer;
+            const esp_ecdsa_tee_key_storage_t *tee_st = (const esp_ecdsa_tee_key_storage_t *) key_buffer;
+            if (tee_st->tee_key_id_len < 2 || tee_st->tee_key_id_len > ESP_ECDSA_TEE_KEY_ID_MAX_LEN) {
+                return PSA_ERROR_DATA_INVALID;
+            }
             *expected_storage_size = sizeof(esp_ecdsa_tee_key_storage_t) + tee_st->tee_key_id_len;
             return PSA_SUCCESS;
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
