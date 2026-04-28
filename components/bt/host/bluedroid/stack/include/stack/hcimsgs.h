@@ -811,6 +811,20 @@ uint8_t btsnd_hcic_ble_get_status(void);
 void btsnd_hci_ble_set_status(UINT8 hci_status);
 #endif // ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+#define HCIC_PARAM_SIZE_ADD_MONITOR_ADV_LIST           10
+#define HCIC_PARAM_SIZE_RMV_MONITOR_ADV_LIST           7
+#define HCIC_PARAM_SIZE_CLEAR_MONITOR_ADV_LIST         0
+#define HCIC_PARAM_SIZE_READ_MONITOR_ADV_LIST_SIZE     0
+#define HCIC_PARAM_SIZE_ENABLE_MONITOR_ADV             1
+
+UINT8 btsnd_hcic_ble_add_monitor_adv_list(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout);
+UINT8 btsnd_hcic_ble_rmv_monitor_adv_list(UINT8 addr_type, BD_ADDR addr);
+UINT8 btsnd_hcic_ble_clear_monitor_adv_list(void);
+BOOLEAN btsnd_hcic_ble_read_monitor_adv_list_size(void);
+UINT8 btsnd_hcic_ble_enable_monitor_adv(UINT8 enable);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);
 

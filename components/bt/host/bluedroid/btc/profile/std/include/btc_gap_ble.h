@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,6 +140,13 @@ typedef enum {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTC_GAP_ACT_SET_HOST_FEATURE,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    BTC_GAP_BLE_ADD_MONITOR_ADV_LIST,
+    BTC_GAP_BLE_RMV_MONITOR_ADV_LIST,
+    BTC_GAP_BLE_CLEAR_MONITOR_ADV_LIST,
+    BTC_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE,
+    BTC_GAP_BLE_ENABLE_MONITOR_ADV,
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -565,6 +572,22 @@ typedef union {
         uint16_t bit_num;
         uint8_t bit_val;
     } set_host_feature_params;
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    struct add_monitor_adv_list_args {
+        uint8_t addr_type;
+        esp_bd_addr_t addr;
+        int8_t rssi_low;
+        int8_t rssi_high;
+        uint8_t timeout;
+    } add_monitor_adv_list;
+    struct rmv_monitor_adv_list_args {
+        uint8_t addr_type;
+        esp_bd_addr_t addr;
+    } rmv_monitor_adv_list;
+    struct enable_monitor_adv_args {
+        uint8_t enable;
+    } enable_monitor_adv;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {

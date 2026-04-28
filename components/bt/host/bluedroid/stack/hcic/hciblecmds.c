@@ -2973,6 +2973,87 @@ UINT8 btsnd_hcic_ble_set_host_feature(uint16_t bit_num, uint8_t bit_val)
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+UINT8 btsnd_hcic_ble_add_monitor_adv_list(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_ADD_MONITOR_ADV_LIST);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_ADD_MONITOR_ADV_LIST);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ADD_MONITOR_ADV_LIST);
+    UINT8_TO_STREAM(pp, addr_type);
+    BDADDR_TO_STREAM(pp, addr);
+    UINT8_TO_STREAM(pp, (UINT8)rssi_low);
+    UINT8_TO_STREAM(pp, (UINT8)rssi_high);
+    UINT8_TO_STREAM(pp, timeout);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_rmv_monitor_adv_list(UINT8 addr_type, BD_ADDR addr)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_RMV_MONITOR_ADV_LIST);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_RMV_MONITOR_ADV_LIST);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_RMV_MONITOR_ADV_LIST);
+    UINT8_TO_STREAM(pp, addr_type);
+    BDADDR_TO_STREAM(pp, addr);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_clear_monitor_adv_list(void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_CLEAR_MONITOR_ADV_LIST);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CLEAR_MONITOR_ADV_LIST);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CLEAR_MONITOR_ADV_LIST);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+BOOLEAN btsnd_hcic_ble_read_monitor_adv_list_size(void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_READ_MONITOR_ADV_LIST_SIZE)) == NULL) {
+        return FALSE;
+    }
+    pp = (UINT8 *)(p + 1);
+    p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_MONITOR_ADV_LIST_SIZE;
+    p->offset = 0;
+
+    UINT16_TO_STREAM(pp, HCI_BLE_READ_MONITOR_ADV_LIST_SIZE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_MONITOR_ADV_LIST_SIZE);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+
+UINT8 btsnd_hcic_ble_enable_monitor_adv(UINT8 enable)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_ENABLE_MONITOR_ADV);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_ENABLE_MONITOR_ADV);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ENABLE_MONITOR_ADV);
+    UINT8_TO_STREAM(pp, enable);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_subevents_with_data, ble_subevent_params *subevent_params)
 {

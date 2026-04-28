@@ -965,7 +965,15 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT                      68
 #define    BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT             69
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               70
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+#define    BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT                    70
+#define    BTM_BLE_5_GAP_ADD_MONITOR_ADV_COMPLETE_EVT              71
+#define    BTM_BLE_5_GAP_REMOVE_MONITOR_ADV_COMPLETE_EVT           72
+#define    BTM_BLE_5_GAP_CLEAR_MONITOR_ADV_COMPLETE_EVT            73
+#define    BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT   74
+#define    BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           75
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               76
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1201,6 +1209,19 @@ typedef struct {
     UINT16 conn_handle;
     UINT8 channel_sel_alg;
 } tBTM_BLE_CHANNEL_SEL_ALG;
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+typedef struct {
+    UINT8 addr_type;
+    BD_ADDR address;
+    UINT8 condition;
+} tBTM_BLE_MONITOR_ADV_REPORT;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT8 list_size;
+} tBTM_BLE_MONITOR_ADV_LIST_SIZE;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 typedef struct {
     UINT16 sync_handle;
@@ -1908,6 +1929,10 @@ typedef union {
     tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT          cs_subevt_result;
     tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT      cs_subevt_result_continue;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    tBTM_BLE_MONITOR_ADV_REPORT                 monitor_adv_report;
+    tBTM_BLE_MONITOR_ADV_LIST_SIZE              monitor_adv_list_size;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3046,6 +3071,14 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params);
 tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period);
 
 void BTM_BleSetPreferExtenedConnParams(BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params);
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+tBTM_STATUS BTM_BleAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout);
+tBTM_STATUS BTM_BleRemoveMonitorAdvList(UINT8 addr_type, BD_ADDR addr);
+tBTM_STATUS BTM_BleClearMonitorAdvList(void);
+tBTM_STATUS BTM_BleReadMonitorAdvListSize(void);
+tBTM_STATUS BTM_BleEnableMonitorAdv(UINT8 enable);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_DTM_TEST_EN == TRUE)
