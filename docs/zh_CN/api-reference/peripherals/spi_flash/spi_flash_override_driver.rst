@@ -239,7 +239,7 @@
 高性能 flash 实现
 ~~~~~~~~~~~~~~~~~
 
-高性能模式在高于 80 MHz 的频率下运行。请查阅 *直流电气特性* 章节，判断芯片是否支持在高于 80 MHz 的频率下工作。`高性能文件 <https://github.com/espressif/components/spi_flash/spi_flash_hpm_enable.c>`_ 中已经预定义了部分高性能模式下的行为，如果你的 flash 芯片符合指定行为，请按照 ``bootloader_flash_unlock`` 部分介绍的方法扩展列表。如果你的 flash 芯片有不同的行为，请添加新行为并覆盖 ``spi_flash_hpm_enable_list`` 行为表。
+高性能模式在高于 80 MHz 的频率下运行。请查阅 *直流电气特性* 章节，判断芯片是否支持在高于 80 MHz 的频率下工作。`高性能文件 <https://github.com/espressif/esp-idf/blob/master/components/spi_flash/spi_flash_hpm_enable.c>`_ 中已经预定义了部分高性能模式下的行为，如果你的 flash 芯片符合指定行为，请按照 ``bootloader_flash_unlock`` 部分介绍的方法扩展列表。如果你的 flash 芯片有不同的行为，请添加新行为并覆盖 ``spi_flash_hpm_enable_list`` 行为表。
 
 .. important::
 

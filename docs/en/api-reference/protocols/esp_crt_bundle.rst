@@ -63,7 +63,7 @@ Another alternative would be to download the finished list directly from the cur
 
 The common certificates bundle were made by selecting the authorities with a market share of more than 1% from w3tech's `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate>`_.
 
-These authorities were then used to pick the names of the certificates for the filter list, ``cmn_crt_authorities.csv``, from `this list <https://ccadb-public.secure.force.com/mozilla/IncludedCACertificateReportPEMCSV>`_ provided by Mozilla.
+These authorities were then used to pick the names of the certificates for the filter list, ``cmn_crt_authorities.csv``, from Mozilla's `Included CA Certificate List <https://ccadb.my.salesforce-sites.com/mozilla/IncludedRootCertificateReportCSVFormat>`_.
 
 
 Updating the Certificate Bundle

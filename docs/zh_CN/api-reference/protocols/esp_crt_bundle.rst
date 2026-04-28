@@ -63,7 +63,7 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 
 常用证书包是通过筛选出市场份额超过 1% 的授权机构来决定的，筛选数据来自 w3tech 的 `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate>`_。
 
-根据这些授权机构，从 Mozilla 提供的 `列表 <https://ccadb-public.secure.force.com/mozilla/IncludedCACertificateReportPEMCSV>`_ 的 ``cmn_crt_authorities.csv`` 中筛选证书名称。
+根据这些授权机构，从 Mozilla 提供的 `Included CA Certificate List <https://ccadb.my.salesforce-sites.com/mozilla/IncludedRootCertificateReportCSVFormat>`_ 中筛选 ``cmn_crt_authorities.csv`` 所需的证书名称。
 
 
 更新证书包

@@ -164,7 +164,7 @@ To use these arguments, pass them via the ``--build-arg`` command line option. F
         --build-arg IDF_INSTALL_TARGETS=esp32c3 \
         tools/docker
 
-.. _remote serial ports: https://docs.espressif.com/projects/esptool/en/latest/esptool/remote-serial-ports.html
+.. _remote serial ports: https://docs.espressif.com/projects/esptool/en/latest/remote-serial-ports.html
 .. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
 .. _esptool releases: https://github.com/espressif/esptool/releases
 .. _device option: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
