@@ -91,6 +91,14 @@ config SOC_ETM_SUPPORTED
     bool
     default y
 
+config SOC_PARLIO_SUPPORTED
+    bool
+    default y
+
+config SOC_PARLIO_LCD_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -868,6 +876,34 @@ config SOC_TWAI_RANGE_FILTER_NUM
     default 1
 
 config SOC_TWAI_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
+    int
+    default 16
+
+config SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
+    int
+    default 16
+
+config SOC_PARLIO_TX_CLK_SUPPORT_GATING
+    bool
+    default y
+
+config SOC_PARLIO_RX_CLK_SUPPORT_GATING
+    bool
+    default y
+
+config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_I80_LCD
     bool
     default y
 

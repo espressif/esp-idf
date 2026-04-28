@@ -45,7 +45,8 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_TWAI_FD_SUPPORTED           1
 #define SOC_ETM_SUPPORTED               1
-// #define SOC_PARLIO_SUPPORTED            1      // TODO: [ESP32S31] IDF-14711
+#define SOC_PARLIO_SUPPORTED            1
+#define SOC_PARLIO_LCD_SUPPORTED        1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1      // TODO: [ESP32S31] IDF-14788
@@ -342,6 +343,15 @@
 #define SOC_TWAI_MASK_FILTER_NUM            3U
 #define SOC_TWAI_RANGE_FILTER_NUM           1U
 #define SOC_TWAI_SUPPORT_SLEEP_RETENTION    1
+
+/*-------------------------- PARLIO CAPS --------------------------------------*/
+#define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH      16 /*!< Number of data lines of the TX unit */
+#define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH      16 /*!< Number of data lines of the RX unit */
+#define SOC_PARLIO_TX_CLK_SUPPORT_GATING       1  /*!< Support gating TX clock */
+#define SOC_PARLIO_RX_CLK_SUPPORT_GATING       1  /*!< Support gating RX clock */
+#define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1 /*!< Support loop transmission */
+#define SOC_PARLIO_SUPPORT_SLEEP_RETENTION     1  /*!< Support back up registers before sleep */
+#define SOC_PARLIO_SUPPORT_I80_LCD             1  /*!< Support to drive I80 interfaced LCD */
 
 /*-------------------------- AES CAPS ----------------------------------------*/
 #define SOC_AES_GDMA                            (1)

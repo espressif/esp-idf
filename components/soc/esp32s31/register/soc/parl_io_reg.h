@@ -83,6 +83,7 @@ extern "C" {
  *  1: bus width is 2.
  *  2: bus width is 4.
  *  3: bus width is 8.
+ *  4: bus width is 16.
  */
 #define PARL_IO_RX_BUS_WID_SEL    0x00000007U
 #define PARL_IO_RX_BUS_WID_SEL_M  (PARL_IO_RX_BUS_WID_SEL_V << PARL_IO_RX_BUS_WID_SEL_S)
@@ -159,6 +160,7 @@ extern "C" {
  *  1: bus width is 2.
  *  2: bus width is 4.
  *  3: bus width is 8.
+ *  4: bus width is 16.
  */
 #define PARL_IO_TX_BUS_WID_SEL    0x00000007U
 #define PARL_IO_TX_BUS_WID_SEL_M  (PARL_IO_TX_BUS_WID_SEL_V << PARL_IO_TX_BUS_WID_SEL_S)
