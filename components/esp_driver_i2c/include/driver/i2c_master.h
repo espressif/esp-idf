@@ -236,7 +236,7 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
 /**
  * @brief Probe I2C address, if address is correct and ACK is received, this function will return ESP_OK.
  *
- * @param[in] bus_handle I2C master device handle that created by `i2c_master_bus_add_device`.
+ * @param[in] bus_handle I2C master bus handle, created by `i2c_new_master_bus`.
  * @param[in] address I2C device address that you want to probe.
  * @param[in] xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever (Not recommended in this function).
  *
