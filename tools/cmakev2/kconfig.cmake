@@ -10,6 +10,14 @@ include(utilities)
 include(build)
 include(component)
 
+# Minimum esp-idf-kconfig version that ships the esp_menuconfig module name
+# (renamed from menuconfig in the 3.x series).
+set(ESP_MENUCONFIG_MIN_KCONFIG_VERSION "3.1.0")
+
+# Minimum esp-idf-kconfig version required for the --menuconfig kconfgen flag
+# (fused menuconfig + deprecated-options post-processing in a single invocation).
+set(MENUCONFIG_INLINE_MIN_KCONFIG_VERSION "3.9.0")
+
 #[[
     __init_kconfig()
 
@@ -816,6 +824,10 @@ endfunction()
 
     Create a menuconfig target with the name specified by the ``TARGET``
     option for an ``executable``.
+
+    When ``esp-idf-kconfig >= MENUCONFIG_INLINE_MIN_KCONFIG_VERSION``, the
+    target runs a single ``kconfgen --menuconfig`` invocation (fused UI and
+    post-processing).  Older installs fall back to the legacy three-step flow.
 #]]
 function(idf_create_menuconfig executable)
     set(options)
@@ -836,69 +848,101 @@ function(idf_create_menuconfig executable)
     idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
-    idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(target IDF_TARGET)
     idf_build_get_property(toolchain IDF_TOOLCHAIN)
     idf_build_get_property(idf_init_version __IDF_INIT_VERSION)
     idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
 
-    # Newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
-    # Order matters here, we want to use esp_menuconfig if it is available
-    execute_process(
-        COMMAND "${python}" -c "import esp_menuconfig"
-        RESULT_VARIABLE ESP_MENUCONFIG_AVAILABLE
-        OUTPUT_QUIET ERROR_QUIET
-    )
-    if(ESP_MENUCONFIG_AVAILABLE EQUAL 0)
-        set(MENUCONFIG_CMD "${python}" -m esp_menuconfig)
-    else()
-        set(MENUCONFIG_CMD "${python}" -m menuconfig)
-    endif()
-
     __create_executable_config_env_file("${executable}")
     get_target_property(config_env_dir "${executable}" CONFIG_ENV_DIR)
 
-    add_custom_target("${ARG_TARGET}"
-        # Prepare Kconfig source files
-        COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
-        --list-separator=semicolon
-        --env-file "${config_env_dir}/config.env"
-        # Generate config with current settings
-        COMMAND ${kconfgen_cmd}
-        --env "IDF_TARGET=${target}"
-        --env "IDF_TOOLCHAIN=${toolchain}"
-        --env "IDF_ENV_FPGA=${idf_env_fpga}"
-        --env "IDF_INIT_VERSION=${idf_init_version}"
-        --dont-write-deprecated
-        ${kconfgen_outputs_cmd}
-        --env-file "${config_env_dir}/config.env"
-        # Check terminal capabilities
-        COMMAND ${python} "${idf_path}/tools/check_term.py"
-        # Run menuconfig
-        COMMAND ${CMAKE_COMMAND} -E env
-        "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
-        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
-        "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
-        "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
-        "KCONFIG_CONFIG=${sdkconfig}"
-        "IDF_TARGET=${target}"
-        "IDF_TOOLCHAIN=${toolchain}"
-        "IDF_ENV_FPGA=${idf_env_fpga}"
-        "IDF_INIT_VERSION=${idf_init_version}"
-        "IDF_BUILD_V2=y"
-        ${MENUCONFIG_CMD} "${root_kconfig}"
-        # Post-menuconfig: insert deprecated options for backward compatibility
-        COMMAND ${kconfgen_cmd}
-        --env "IDF_TARGET=${target}"
-        --env "IDF_TOOLCHAIN=${toolchain}"
-        --env "IDF_ENV_FPGA=${idf_env_fpga}"
-        --env "IDF_INIT_VERSION=${idf_init_version}"
-        ${kconfgen_outputs_cmd}
-        --env-file "${config_env_dir}/config.env"
-        USES_TERMINAL
-        COMMENT "Running menuconfig..."
-    )
+    __check_python_package_min_version(
+        ${python} esp-idf-kconfig "${ESP_MENUCONFIG_MIN_KCONFIG_VERSION}" _has_esp_menuconfig)
+    if(_has_esp_menuconfig)
+        set(_menuconfig_module_args -m esp_menuconfig)
+    else()
+        set(_menuconfig_module_args -m menuconfig)
+    endif()
+
+    __check_python_package_min_version(
+        ${python} esp-idf-kconfig "${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION}" _menuconfig_inline_ok)
+
+    set(kconfig_report_verbosity "$ENV{KCONFIG_REPORT_VERBOSITY}")
+    if(NOT kconfig_report_verbosity)
+        set(kconfig_report_verbosity "default")
+    endif()
+
+    if(_menuconfig_inline_ok)
+        add_custom_target("${ARG_TARGET}"
+            COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+            --list-separator=semicolon
+            --env-file "${config_env_dir}/config.env"
+            COMMAND ${python} "${idf_path}/tools/check_term.py"
+            COMMAND ${CMAKE_COMMAND} -E env
+            "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
+            "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
+            "KCONFIG_CONFIG=${sdkconfig}"
+            "IDF_TARGET=${target}"
+            "IDF_TOOLCHAIN=${toolchain}"
+            "IDF_ENV_FPGA=${idf_env_fpga}"
+            "IDF_INIT_VERSION=${idf_init_version}"
+            "IDF_BUILD_V2=y"
+            "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+            ${kconfgen_cmd}
+            --env "IDF_TARGET=${target}"
+            --env "IDF_TOOLCHAIN=${toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            --menuconfig
+            ${kconfgen_outputs_cmd}
+            --env-file "${config_env_dir}/config.env"
+            USES_TERMINAL
+            COMMENT "Running menuconfig..."
+        )
+    else()
+        message(WARNING "esp-idf-kconfig >= ${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION} is required "
+            "for the optimised menuconfig target. Please update your Python packages by re-running the install script.")
+        add_custom_target("${ARG_TARGET}"
+            COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+            --list-separator=semicolon
+            --env-file "${config_env_dir}/config.env"
+            COMMAND ${kconfgen_cmd}
+            --env "IDF_TARGET=${target}"
+            --env "IDF_TOOLCHAIN=${toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            --env "KCONFIG_REPORT_VERBOSITY=quiet"
+            --dont-write-deprecated
+            --output config "${sdkconfig}"
+            --env-file "${config_env_dir}/config.env"
+            COMMAND ${python} "${idf_path}/tools/check_term.py"
+            COMMAND ${CMAKE_COMMAND} -E env
+            "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
+            "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
+            "KCONFIG_CONFIG=${sdkconfig}"
+            "IDF_TARGET=${target}"
+            "IDF_TOOLCHAIN=${toolchain}"
+            "IDF_ENV_FPGA=${idf_env_fpga}"
+            "IDF_INIT_VERSION=${idf_init_version}"
+            "IDF_BUILD_V2=y"
+            ${python} ${_menuconfig_module_args} "${root_kconfig}"
+            COMMAND ${kconfgen_cmd}
+            --env "IDF_TARGET=${target}"
+            --env "IDF_TOOLCHAIN=${toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            ${kconfgen_outputs_cmd}
+            --env "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+            --env-file "${config_env_dir}/config.env"
+            USES_TERMINAL
+            COMMENT "Running menuconfig..."
+        )
+    endif()
 endfunction()
 
 #[[
