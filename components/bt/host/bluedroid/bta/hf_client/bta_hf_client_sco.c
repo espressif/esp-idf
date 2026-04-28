@@ -229,7 +229,9 @@ void bta_hf_client_cback_sco(UINT8 event)
     }
 #endif
     /* call app cback */
-    (*bta_hf_client_cb.p_cback)(event, &audio_stat);
+    if (bta_hf_client_cb.p_cback != NULL) {
+        (*bta_hf_client_cb.p_cback)(event, &audio_stat);
+    }
 }
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
@@ -266,7 +268,7 @@ static void bta_hf_client_sco_read_cback (UINT16 sco_idx, BT_HDR *p_data, tBTM_S
 *******************************************************************************/
 static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
 {
-    tBTM_ESCO_PARAMS    resp;
+    tBTM_ESCO_PARAMS    resp = {0};
     UINT8               hci_status = HCI_SUCCESS;
     UINT8            index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S3;
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
@@ -281,8 +283,8 @@ static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
             index = BTA_HF_CLIENT_SCO_PARAM_IDX_CVSD;
         } else {
             if ((bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_CVSD) &&
-                 (bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
-                 (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
+                (bta_hf_client_cb.scb.features & BTA_HF_CLIENT_FEAT_ESCO_S4) &&
+                (bta_hf_client_cb.scb.peer_features & BTA_HF_CLIENT_PEER_ESCO_S4)) {
                 index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
 #if BT_HF_CLIENT_BQB_INCLUDED
                 if (s_bta_hf_client_bqb_esco_s1_flag == true) {
@@ -380,7 +382,7 @@ static void bta_hf_client_write_sco_data(BT_HDR *p_buf1, BT_HDR *p_buf2)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_hf_client_sco_data_send_cvsd(BT_HDR *p_buf, UINT8 out_pkt_len)
+static void bta_hf_client_sco_data_send_cvsd(BT_HDR *p_buf, UINT16 out_pkt_len)
 {
     if (bta_hf_client_cb.scb.p_sco_data != NULL) {
         /* the remaining data of last sending operation */
@@ -468,7 +470,7 @@ static void bta_hf_client_sco_data_send_cvsd(BT_HDR *p_buf, UINT8 out_pkt_len)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_hf_client_sco_data_send_msbc(BT_HDR *p_buf, UINT8 out_pkt_len)
+static void bta_hf_client_sco_data_send_msbc(BT_HDR *p_buf, UINT16 out_pkt_len)
 {
     if (p_buf->len == BTA_HF_CLIENT_MSBC_FRAME_SIZE && p_buf->offset >= BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_H2_HEADER_LEN) {
         /* add H2 header */
@@ -592,7 +594,7 @@ void bta_hf_client_sco_data_send(tBTA_HF_CLIENT_DATA *p_data)
         return;
     }
 
-    UINT8 out_pkt_len = bta_hf_client_cb.scb.out_pkt_len;
+    UINT16 out_pkt_len = bta_hf_client_cb.scb.out_pkt_len;
     UINT8 air_mode = bta_hf_client_cb.scb.air_mode;
 
     switch (air_mode)
@@ -768,8 +770,8 @@ static void bta_hf_client_sco_create(BOOLEAN is_orig)
     }
 
     if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_CVSD) {
-        if ((bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
-                (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
+        if ((bta_hf_client_cb.scb.features & BTA_HF_CLIENT_FEAT_ESCO_S4) &&
+            (bta_hf_client_cb.scb.peer_features & BTA_HF_CLIENT_PEER_ESCO_S4)) {
             index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
         }
     } else if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_MSBC) {

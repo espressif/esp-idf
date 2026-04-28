@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,10 @@
 #define BTA_HF_H2_HEADER_SN1_BIT_OFFSET1    14
 #define BTA_HF_H2_HEADER_SN1_BIT_OFFSET2    15
 
-#define BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)         ((*((uint16_t *)p) & BTA_HF_H2_HEADER_SYNC_WORD_MASK) == BTA_HF_H2_HEADER_SYNC_WORD)
+#define BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p) \
+    ((((UINT16)(((UINT8 *)(p))[0])) | (((UINT16)(((UINT8 *)(p))[1])) << 8)) & \
+    BTA_HF_H2_HEADER_SYNC_WORD_MASK) == \
+    BTA_HF_H2_HEADER_SYNC_WORD)
 
 #if (PLC_INCLUDED == TRUE)
 #include "sbc_plc.h"
@@ -230,7 +233,7 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_si
 
 #if (PLC_INCLUDED == TRUE)
         bta_hf_ct_plc_ptr = (bta_hf_ct_plc_t *)osi_calloc(sizeof(bta_hf_ct_plc_t));
-            if (!bta_hf_ct_plc_ptr) {
+        if (!bta_hf_ct_plc_ptr) {
             APPL_TRACE_ERROR("%s malloc fail.", __FUNCTION__);
             goto error_exit;
         }
@@ -287,12 +290,16 @@ void bta_hf_client_sco_co_close(void)
 
     if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
 #if (PLC_INCLUDED == TRUE)
+#if (HFP_DYNAMIC_MEMORY == TRUE)
+        if (bta_hf_ct_plc_ptr != NULL) {
+            sbc_plc_deinit(&(bta_hf_ct_plc.plc_state));
+            bta_hf_ct_plc.first_good_frame_found = FALSE;
+            osi_free(bta_hf_ct_plc_ptr);
+            bta_hf_ct_plc_ptr = NULL;
+        }
+#else
         sbc_plc_deinit(&(bta_hf_ct_plc.plc_state));
         bta_hf_ct_plc.first_good_frame_found = FALSE;
-
-#if (HFP_DYNAMIC_MEMORY == TRUE)
-        osi_free(bta_hf_ct_plc_ptr);
-        bta_hf_ct_plc_ptr = NULL;
 #endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
 
 #endif  ///(PLC_INCLUDED == TRUE)
@@ -430,6 +437,7 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
         case OI_OK:
             bta_hf_ct_plc.first_good_frame_found = TRUE;
             sbc_plc_good_frame(&(bta_hf_ct_plc.plc_state), (int16_t *)bta_hf_client_co_cb.decode_raw_data, bta_hf_ct_plc.sbc_plc_out);
+            break;
         case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
         case OI_CODEC_SBC_NOT_ENOUGH_BODY_DATA:
         case OI_CODEC_SBC_NOT_ENOUGH_AUDIO_DATA:
@@ -463,11 +471,11 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
             APPL_TRACE_ERROR("Frame decode error: %d", status);
             break;
     }
-#endif  ///(PLC_INCLUDED == TRUE)
 
-    if (OI_SUCCESS(status)){
+    if (OI_SUCCESS(status)) {
         btc_hf_client_incoming_data_cb_to_app((const uint8_t *)(bta_hf_ct_plc.sbc_plc_out), sbc_raw_data_size);
     }
+#endif  ///(PLC_INCLUDED == TRUE)
 }
 
 #endif

@@ -171,6 +171,9 @@ esp_err_t esp_pbac_set_phone_book2(esp_pbac_conn_hdl_t handle, const char *path)
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
+    if (handle == ESP_PBAC_INVALID_HANDLE) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
