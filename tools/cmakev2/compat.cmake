@@ -419,10 +419,14 @@ function(__init_common_components)
 
     idf_build_get_property(idf_target IDF_TARGET)
     idf_build_get_property(idf_target_arch IDF_TARGET_ARCH)
+    idf_build_get_property(explicit_requires_common __COMPONENT_REQUIRES_COMMON)
 
     # Define common components that are included as dependencies for each
     # component.
-    if("${idf_target}" STREQUAL "linux")
+    if(explicit_requires_common)
+        set(requires_common "${explicit_requires_common}")
+
+    elseif("${idf_target}" STREQUAL "linux")
         set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux
                             esp_stdio)
     else()

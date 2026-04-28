@@ -963,13 +963,17 @@ function(idf_component_include name)
         idf_die("Unsupported target type '${component_real_target_type}' in component '${component_name}'")
     endif()
 
+    idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
+
     idf_component_get_property(embed_files "${component_name}" EMBED_FILES)
     foreach(file IN LISTS embed_files)
+        get_filename_component(file "${file}" ABSOLUTE BASE_DIR "${component_dir}")
         target_add_binary_data(${COMPONENT_TARGET} "${file}" "BINARY")
     endforeach()
 
     idf_component_get_property(embed_txtfiles "${component_name}" EMBED_TXTFILES)
     foreach(file IN LISTS embed_txtfiles)
+        get_filename_component(file "${file}" ABSOLUTE BASE_DIR "${component_dir}")
         target_add_binary_data(${COMPONENT_TARGET} "${file}" "TEXT")
     endforeach()
 

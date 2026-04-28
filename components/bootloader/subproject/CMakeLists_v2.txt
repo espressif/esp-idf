@@ -1,0 +1,366 @@
+cmake_minimum_required(VERSION 3.22)
+
+# ---------------------------------------------------------------------------
+# Bootloader subproject CMakeLists (cmakev2 build system)
+#
+# This file drives the build of the ESP-IDF second-stage bootloader as a
+# standalone CMake sub-project that is invoked by the top-level build when
+# the project links against the `bootloader` component.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Extra component directories
+#
+# Users may supply custom bootloader components by placing them inside a
+# `bootloader_components/` directory at the root of their application
+# project.  If the directory exists it is appended to EXTRA_COMPONENT_DIRS
+# so that the IDF component discovery logic can find them.
+#
+# IGNORE_EXTRA_COMPONENT (list) – optional variable that names individual
+# sub-directories of `bootloader_components/` to *exclude* from the build.
+# Each entry is turned into an absolute path and collected in
+# EXTRA_COMPONENT_EXCLUDE_DIRS which is consumed by the component resolver.
+# ---------------------------------------------------------------------------
+set(PROJECT_EXTRA_COMPONENTS "${PROJECT_SOURCE_DIR}/bootloader_components")
+if(EXISTS ${PROJECT_EXTRA_COMPONENTS})
+    list(APPEND EXTRA_COMPONENT_DIRS "${PROJECT_EXTRA_COMPONENTS}")
+endif()
+
+if(IGNORE_EXTRA_COMPONENT)
+    # Prefix all entries of the list with ${PROJECT_EXTRA_COMPONENTS} absolute path
+    list(TRANSFORM IGNORE_EXTRA_COMPONENT
+         PREPEND "${PROJECT_EXTRA_COMPONENTS}/"
+         OUTPUT_VARIABLE EXTRA_COMPONENT_EXCLUDE_DIRS)
+endif()
+
+# ---------------------------------------------------------------------------
+# Include the cmakev2 IDF build framework
+# ---------------------------------------------------------------------------
+include("${IDF_PATH}/tools/cmakev2/idf.cmake")
+
+project(bootloader C CXX ASM)
+
+# ---------------------------------------------------------------------------
+# Bootloader-specific build properties set before project initialization
+# ---------------------------------------------------------------------------
+set(BOOTLOADER_BUILD 1)
+set(NON_OS_BUILD 1)
+idf_build_set_property(BOOTLOADER_BUILD "${BOOTLOADER_BUILD}")
+idf_build_set_property(NON_OS_BUILD "${NON_OS_BUILD}")
+# The bootloader subproject has a different set of components and hence
+# different Kconfig files. Do not regenerate the main project's sdkconfig.
+idf_build_set_property(GENERATE_SDKCONFIG 0)
+# Treat the bootloader subproject's own components (main/, components/) as
+# IDF components (priority 0) instead of the default project components
+# (priority 3).  The bootloader's built-in components are provided by ESP-IDF
+# and should be overridable by user-supplied components placed in the
+# application's bootloader_components/ directory, which are discovered through
+# EXTRA_COMPONENT_DIRS (priority 2).  The cmakev1 build system allowed this
+# override because it used a last-one-wins strategy.  In cmakev2 with strict
+# priority-based resolution, project_components would always win and prevent
+# the override, so we downgrade them to idf_components priority.
+idf_build_set_property(PROJECT_COMPONENTS_SOURCE "idf_components")
+# Allow lazy optional component requirements evaluation for
+# `idf_component_optional_requires`. The bootloader uses a single ESP-IDF
+# library, and since it includes `esp_common`, this ensures that not all
+# components listed in `esp_common` as optional requirements are pulled into
+# the build.
+idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
+# The bootloader uses its own compiler optimization flags
+# (CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_*) set below, not the app-level
+# CONFIG_COMPILER_OPTIMIZATION_* defaults.
+idf_build_set_property(SET_COMPILER_OPTIMIZATION NO)
+
+# Perform internal IDF project initialisation
+idf_project_init()
+
+# ---------------------------------------------------------------------------
+# Common component requirements
+# ---------------------------------------------------------------------------
+idf_build_get_property(idf_target_arch IDF_TARGET_ARCH)
+set(common_req log esp_rom esp_common esp_hw_support esp_libc ${idf_target_arch})
+idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
+
+# ---------------------------------------------------------------------------
+# Compiler options and defines specific for bootloader
+# ---------------------------------------------------------------------------
+if(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        idf_build_set_property(COMPILE_OPTIONS "-Oz" APPEND)
+    else()
+        idf_build_set_property(COMPILE_OPTIONS "-Os" APPEND)
+    endif()
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        idf_build_set_property(COMPILE_OPTIONS "-freorder-blocks" APPEND)
+        if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+            idf_build_set_property(COMPILE_OPTIONS "-mno-target-align" APPEND)
+        endif()
+    endif()
+elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG)
+    idf_build_set_property(COMPILE_OPTIONS "-Og" APPEND)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+        # Disable shrink-wrapping to reduce binary size
+        idf_build_set_property(COMPILE_OPTIONS "-fno-shrink-wrap" APPEND)
+    endif()
+elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
+    idf_build_set_property(COMPILE_OPTIONS "-O2" APPEND)
+endif()
+
+idf_build_set_property(COMPILE_DEFINITIONS "BOOTLOADER_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
+
+# ---------------------------------------------------------------------------
+# Bootloader Linker script
+# ---------------------------------------------------------------------------
+set(LD_DEFAULT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/main/ld/${IDF_TARGET}")
+if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+    idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.rev0_2.ld.in" APPEND)
+else()
+    idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.ld.in" APPEND)
+endif()
+
+# ---------------------------------------------------------------------------
+# Build the bootloader ELF
+# ---------------------------------------------------------------------------
+idf_build_executable(bootloader_elf
+                     NAME bootloader
+                     COMPONENTS main
+                     MAPFILE_TARGET bootloader_mapfile)
+
+# ---------------------------------------------------------------------------
+# Binary generation and post-build messages
+#
+# Collect tool command lists from the esptool_py component so that we can
+# assemble human-readable flash / key-management commands for the developer.
+# ---------------------------------------------------------------------------
+# Build display strings for the post-build message
+idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
+idf_component_get_property(main_args esptool_py FLASH_ARGS)
+idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+idf_component_get_property(espefuse_py_cmd esptool_py ESPEFUSEPY_CMD)
+
+# String for printing flash command
+string(REPLACE ";" " " esptoolpy_write_flash
+    "${esptool_py_cmd} --port=(PORT) --baud=(BAUD) ${main_args} write-flash ${sub_args}")
+
+string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
+string(REPLACE ";" " " espefusepy "${espefuse_py_cmd}")
+
+# ---------------------------------------------------------------------------
+# Guard: if binary generation is disabled or esptool_py is not part of the
+# build, there is no binary to produce and no flash commands to print, so we
+# stop here.
+# ---------------------------------------------------------------------------
+if(NOT CONFIG_APP_BUILD_GENERATE_BINARIES OR NOT TARGET idf::esptool_py)
+    # Binaries should not be generated; there's nothing else to do.
+    return()
+
+# ---------------------------------------------------------------------------
+# No secure boot
+#
+# Convert the ELF directly to a flat binary.  The size check target
+# (idf_check_bootloader_size) verifies that the binary fits within the
+# region reserved for the bootloader in the partition table / flash layout.
+# idf_build_generate_metadata emits a JSON metadata file consumed by the
+# top-level build and flash tooling.
+# ---------------------------------------------------------------------------
+elseif(NOT CONFIG_SECURE_BOOT)
+    # No bootloader signing is required
+    idf_build_binary(bootloader_elf
+                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/bootloader.bin"
+                     TARGET bootloader_bin
+                     ALL)
+    idf_check_bootloader_size(bootloader_bin)
+    idf_build_generate_metadata(EXECUTABLE bootloader_elf)
+
+# ---------------------------------------------------------------------------
+# Secure Boot V1
+#
+# Secure Boot V1 uses a symmetric HMAC-SHA256 key burned into eFuse.  Two
+# sub-modes are supported:
+#
+#   ONE_TIME_FLASH – the bootloader is flashed once and can never be
+#     replaced on the same device.  The developer is shown the exact
+#     esptool.py command to use for the initial flash.
+#
+#   REFLASHABLE – a symmetric key is derived from the private signing key
+#     and burned into eFuse.  Later reflashes are accepted only if the
+#     bootloader image is bundled with a digest computed using the same
+#     derived key.  This mode requires generating the derived key file
+#     (secure-bootloader-key-<N>.bin) from the project signing key, and a
+#     bootloader digest image (bootloader-reflash-digest.bin) that prepends
+#     the bootloader binary with the matching digest.
+# ---------------------------------------------------------------------------
+elseif(CONFIG_SECURE_BOOT_V1_ENABLED)
+
+    idf_build_binary(bootloader_elf
+                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/bootloader.bin"
+                     TARGET bootloader_bin
+                     ALL)
+    idf_check_bootloader_size(bootloader_bin)
+    idf_build_generate_metadata(EXECUTABLE bootloader_elf)
+
+    if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
+
+        idf_target_post_build_msg(bootloader_bin
+            "=============================================================================="
+            "Bootloader built. Secure boot enabled, so bootloader not flashed automatically."
+            "One-time flash command is:"
+            "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
+            "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
+        )
+
+    elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
+
+        # Derived key length depends on encoding: 192-bit or 256-bit (default).
+        if(CONFIG_SECURE_BOOTLOADER_KEY_ENCODING_192BIT)
+            set(key_digest_len 192)
+        else()
+            set(key_digest_len 256)
+        endif()
+
+        set(bootloader_digest_bin "${CMAKE_BINARY_DIR}/bootloader-reflash-digest.bin")
+        set(secure_bootloader_key "${CMAKE_BINARY_DIR}/secure-bootloader-key-${key_digest_len}.bin")
+
+        # Derive the symmetric eFuse key from the ECDSA signing key.
+        # The resulting binary is burned into the SECURE_BOOT_V1 eFuse block.
+        add_custom_command(OUTPUT "${secure_bootloader_key}"
+            COMMAND ${espsecure_py_cmd} digest-private-key
+                --keylen "${key_digest_len}"
+                --keyfile "${SECURE_BOOT_SIGNING_KEY}"
+                "${secure_bootloader_key}"
+            DEPENDS "${SECURE_BOOT_SIGNING_KEY}"
+            VERBATIM)
+
+        if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT EXISTS "${secure_bootloader_key}")
+            idf_die(
+                "No pre-generated key for a reflashable secure bootloader is available, "
+                "due to signing configuration."
+                "\nTo generate one, you can use this command:"
+                "\n\t${espsecurepy} generate-flash-encryption-key ${secure_bootloader_key}"
+                "\nIf a signing key is present, then instead use:"
+                "\n\t${espsecurepy} digest-private-key "
+                "--keylen (192/256) --keyfile KEYFILE "
+                "${secure_bootloader_key}")
+        endif()
+
+        # Produce the reflash-digest image: the bootloader binary prefixed
+        # with a digest computed using the derived symmetric key.
+        add_custom_command(OUTPUT "${bootloader_digest_bin}"
+            COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
+            COMMAND ${espsecure_py_cmd} digest-secure-bootloader --keyfile "${secure_bootloader_key}"
+            -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
+            DEPENDS "${secure_bootloader_key}" bootloader_bin
+            VERBATIM)
+
+        add_custom_target(bootloader_digest_bin ALL DEPENDS "${bootloader_digest_bin}")
+
+        idf_target_post_build_msg(bootloader_bin
+            "=============================================================================="
+            "Bootloader built and secure digest generated."
+            "Secure boot enabled, so bootloader not flashed automatically."
+            "Burn secure boot key to efuse using:"
+            "\t${espefusepy} burn-key secure_boot_v1 ${secure_bootloader_key}"
+            "First time flash command is:"
+            "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
+            "=============================================================================="
+            "To reflash the bootloader after initial flash:"
+            "\t${esptoolpy_write_flash} 0x0 ${bootloader_digest_bin}"
+            "=============================================================================="
+            "* After first boot, only re-flashes of this kind (with same key) will be accepted."
+            "* Not recommended to reuse the same secure boot keyfile on multiple production devices."
+        )
+    endif()
+
+# ---------------------------------------------------------------------------
+# Secure Boot V2
+#
+# Secure Boot V2 uses asymmetric signing. The bootloader ELF is first created
+# as an *unsigned* flat binary; then, depending on
+# CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES, it is either signed in-place
+# (producing bootloader.bin) or left unsigned for the developer to sign
+# externally.
+#
+# Multiple signing keys – devices with more than one eFuse key digest slot
+# (CONFIG_SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1) may have additional keys
+# appended to the signature block after the build; instructions for doing so
+# are printed in the post-build message.
+#
+# CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT – when set, the bootloader is
+# flashed automatically by the normal flash target and no extra instructions
+# are needed, so the post-build message block is skipped.
+# ---------------------------------------------------------------------------
+elseif(CONFIG_SECURE_BOOT_V2_ENABLED)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # When signing during build, produce the raw binary as
+        # bootloader-unsigned.bin and then sign it into bootloader.bin.
+        set(bootloader_unsigned_bin "bootloader-unsigned.bin")
+    else()
+        # Without build-time signing, produce the binary directly as
+        # bootloader.bin (matching v1 behavior). The user is expected
+        # to sign it externally before flashing.
+        set(bootloader_unsigned_bin "bootloader.bin")
+    endif()
+
+    idf_build_binary(bootloader_elf
+                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
+                     TARGET bootloader_unsigned_bin
+                     ALL)
+    idf_check_bootloader_size(bootloader_unsigned_bin)
+
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        if(NOT EXISTS "${SECURE_BOOT_SIGNING_KEY}")
+            idf_die(
+                "Secure Boot Signing Key Not found."
+                "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
+                "\nTo generate one, you can use this command:"
+                "\n\t${espsecurepy} generate-signing-key --version 2 your_key.pem"
+            )
+        endif()
+
+        # Sign the unsigned binary with the configured signing key and
+        # write the signed image to bootloader.bin.
+        idf_sign_binary(bootloader_unsigned_bin
+                        OUTPUT_FILE "${CMAKE_BINARY_DIR}/bootloader.bin"
+                        TARGET bootloader_signed_bin
+                        KEYFILE "${SECURE_BOOT_SIGNING_KEY}"
+                        ALL)
+        idf_check_bootloader_size(bootloader_signed_bin)
+
+        set(post_build_target bootloader_signed_bin)
+    else()
+        # Signing will be performed externally; communicate this to the user.
+        set(post_build_target bootloader_unsigned_bin)
+        idf_target_post_build_msg(bootloader_unsigned_bin
+            "Bootloader generated but not signed"
+        )
+    endif()
+
+    # Emit post-build flash instructions.  The message varies depending on
+    # whether the device has multiple eFuse key digest slots and whether the
+    # bootloader is flashed by default.
+    if(CONFIG_SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS GREATER 1
+            AND NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
+        idf_target_post_build_msg(${post_build_target}
+            "=============================================================================="
+            "Bootloader built. Secure boot enabled, so bootloader not flashed automatically."
+            "To sign the bootloader with additional private keys."
+            "\t${espsecurepy} sign-data -k secure_boot_signing_key2.pem -v 2 \
+            --append-signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
+            "Secure boot enabled, so bootloader not flashed automatically."
+            "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
+            "=============================================================================="
+        )
+    elseif(NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
+        idf_target_post_build_msg(${post_build_target}
+            "=============================================================================="
+            "Bootloader built. Secure boot enabled, so bootloader not flashed automatically."
+            "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
+            "=============================================================================="
+        )
+    endif()
+
+    idf_build_generate_metadata(EXECUTABLE bootloader_elf)
+endif()

@@ -10,7 +10,6 @@ if(BOOTLOADER_BUILD)
 
     idf_component_register(SRCS "${srcs}"
         INCLUDE_DIRS "include"
-        PRIV_INCLUDE_DIRS ${private_include_dirs}
         REQUIRES ${reqs}
         PRIV_REQUIRES ${priv_reqs})
 
@@ -22,7 +21,6 @@ elseif(esp_tee_build)
 
     idf_component_register(SRCS "${srcs}"
         INCLUDE_DIRS "include"
-        PRIV_INCLUDE_DIRS ${private_include_dirs}
         REQUIRES ${reqs}
         PRIV_REQUIRES ${priv_reqs})
 

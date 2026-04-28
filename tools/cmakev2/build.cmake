@@ -913,7 +913,8 @@ endfunction()
 
         idf_build_binary(<executable>
                          TARGET <target>
-                         OUTPUT_FILE <file>)
+                         OUTPUT_FILE <file>
+                         [ALL])
 
     *executable[in]*
 
@@ -928,6 +929,10 @@ endfunction()
 
         Output file path for storing the binary image file.
 
+    *ALL[in,opt]*
+
+        If specified, the target will be added to the default build target.
+
     Create a binary image for the specified ``executable`` target and save it
     in the file specified with the ``OUTPUT_FILE`` option. A custom target
     named ``TARGET`` will be created for the generated binary image. The path
@@ -936,7 +941,7 @@ endfunction()
     the ``TARGET``.
 #]]
 function(idf_build_binary executable)
-    set(options)
+    set(options ALL)
     set(one_value OUTPUT_FILE TARGET)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
@@ -990,8 +995,13 @@ function(idf_build_binary executable)
         COMMENT "Generating binary image '${binary_name}' from executable '${executable_name}'"
     )
 
-    # Create a custom target to generate the binary file
-    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+    # Create a custom target to generate the binary file.
+    # If ALL is specified, include the target in the default build.
+    set(all_arg)
+    if(ARG_ALL)
+        set(all_arg ALL)
+    endif()
+    add_custom_target(${ARG_TARGET} ${all_arg} DEPENDS "${ARG_OUTPUT_FILE}")
 
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom binary target, which is used by the idf_flash_binary.
@@ -1010,7 +1020,8 @@ endfunction()
         idf_sign_binary(<binary>
                         TARGET <target>
                         OUTPUT_FILE <file>
-                        [KEYFILE <file>])
+                        [KEYFILE <file>]
+                        [ALL])
 
     *binary[in]*
 
@@ -1033,6 +1044,10 @@ endfunction()
         provided, the key file specified by the
         ``CONFIG_SECURE_BOOT_SIGNING_KEY`` configuration option will be used.
 
+    *ALL[in,opt]*
+
+        If specified, the target will be added to the default build target.
+
     Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
     it in the file specified with the  `OUTPUT_FILE` option. A custom target
     named ``TARGET`` will be created for the signed binary image.  The path of
@@ -1041,7 +1056,7 @@ endfunction()
     ``TARGET``.
 #]]
 function(idf_sign_binary binary)
-    set(options)
+    set(options ALL)
     set(one_value OUTPUT_FILE TARGET KEYFILE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
@@ -1067,7 +1082,7 @@ function(idf_sign_binary binary)
     endif()
 
     if(ARG_KEYFILE)
-        set(keyfle "${ARG_KEYFILE}")
+        set(keyfile "${ARG_KEYFILE}")
     else()
         idf_build_get_property(project_dir PROJECT_DIR)
         get_filename_component(keyfile "${CONFIG_SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${project_dir}")
@@ -1097,7 +1112,13 @@ function(idf_sign_binary binary)
         VERBATIM
         COMMENT "Signing '${binary_name}' with key '${key_name}' into '${signed_binary_name}'"
     )
-    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+    # Create a custom target for the signed binary file.
+    # If ALL is specified, include the target in the default build.
+    set(all_arg)
+    if(ARG_ALL)
+        set(all_arg ALL)
+    endif()
+    add_custom_target(${ARG_TARGET} ${all_arg} DEPENDS "${ARG_OUTPUT_FILE}")
 
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom signed binary target, which is used by the idf_flash_binary.
@@ -1224,6 +1245,35 @@ function(idf_check_binary_size binary)
         DEPENDS "${binary_path}"
         BINARY_PATH "${binary_path}"
         PARTITION_TYPE app)
+    add_dependencies("${binary}" "${binary}_check_size")
+endfunction()
+
+#[[
+.. cmakev2:function:: idf_check_bootloader_size
+
+    .. code-block:: cmake
+
+        idf_check_bootloader_size(<binary>)
+
+    *binary[in]*
+
+        Binary image target to which to add a bootloader size check.  The
+        ``binary`` target is created by the :cmakev2:ref:`idf_build_binary` or
+        :cmakev2:ref:`idf_sign_binary` function.
+
+    Ensure that the bootloader binary image does not overlap the partition
+    table. The file path of the binary image should be stored in the
+    ``BINARY_PATH`` property of the ``binary`` target.
+#]]
+function(idf_check_bootloader_size binary)
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+
+    partition_table_add_check_bootloader_size_target("${binary}_check_size"
+        DEPENDS "${binary_path}"
+        BOOTLOADER_BINARY_PATH "${binary_path}")
     add_dependencies("${binary}" "${binary}_check_size")
 endfunction()
 

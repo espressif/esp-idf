@@ -684,6 +684,31 @@ function(add_prefix var prefix)
 endfunction()
 
 #[[
+    idf_target_post_build_msg(<target> <line>...)
+
+    *target[in]*
+
+        Target to attach the post-build message to.
+
+    *line[in]*
+
+        Message lines to print after the target is built.
+
+    Add a post-build step to ``<target>`` that prints the given message lines.
+    The lines are joined with newlines, written to a file at configure time,
+    and printed at build time using a single ``cmake -E cat`` command.
+#]]
+function(idf_target_post_build_msg target)
+    string(MD5 hash "${ARGN}")
+    set(msg_file "${CMAKE_CURRENT_BINARY_DIR}/_post_build_msg_${target}_${hash}.txt")
+    list(JOIN ARGN "\n" msg)
+    file(WRITE "${msg_file}" "${msg}\n")
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E cat "${msg_file}"
+        VERBATIM)
+endfunction()
+
+#[[
     fail_target(<target> <line0> [<line>...])
 
     *target[in]*
@@ -812,12 +837,7 @@ function(target_add_binary_data target embed_file embed_type)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(idf_path IDF_PATH)
 
-    # The target_add_binary_data function is also called within the
-    # idf_component_include function, which is not executed in the component
-    # directory context. Therefore, ensure that the absolute path of the
-    # embedded file is resolved relative to the component directory.
-    idf_component_get_property(component_directory "${target}" COMPONENT_DIR)
-    get_filename_component(embed_file "${embed_file}" ABSOLUTE BASE_DIR "${component_directory}")
+    get_filename_component(embed_file "${embed_file}" ABSOLUTE)
 
     get_filename_component(name "${embed_file}" NAME)
     set(embed_srcfile "${build_dir}/${name}.S")

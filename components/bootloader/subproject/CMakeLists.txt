@@ -15,6 +15,11 @@ if(NOT IDF_TARGET)
         "in by the parent build process.")
 endif()
 
+if(IDF_BUILD_V2)
+    include(CMakeLists_v2.txt)
+    return()
+endif()
+
 # A number of these components are implemented as config-only when built in the bootloader
 set(COMPONENTS
     bootloader
