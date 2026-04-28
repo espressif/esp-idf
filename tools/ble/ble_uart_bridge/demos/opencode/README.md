@@ -141,10 +141,12 @@ flowchart LR
 
 6. Start OpenCode after the daemon is running.
 
-   OpenCode loads plugins during startup. This demo checks `GET /status` once
-   while loading; if the BLE daemon is not reachable, the plugin registers no
-   event handler for that OpenCode process. Start or restart OpenCode after the
-   daemon is available.
+   OpenCode loads plugins during startup. This demo checks `GET /status` while
+   loading and during relevant session events. If the daemon is unreachable, the
+   plugin stays loaded but marks BLE forwarding as disabled and shows an OpenCode
+   TUI notification instead of printing connection errors into the TUI log. When
+   `/status` becomes reachable again, the plugin updates its state and can resume
+   forwarding.
 
    To verify the path, trigger an `edit` permission request. The BLE device
    should receive a `permission.request` JSONL message and return `once` or
@@ -242,7 +244,11 @@ permission requests can be approved once with `once` or denied with `reject`.
 - The plugin fills missing permission `type` / `title` / `metadata` fields before sending to the device.
 - Permission metadata sent to BLE is compacted to one display field (`command`, `path`, `url`, or first string field) and truncated.
 - Session status forwarding is best-effort and should not block OpenCode.
-- If the BLE daemon cannot return a permission decision, the plugin replies `reject`.
+- The plugin checks daemon `/status` to maintain a connected, degraded, or
+  disabled BLE forwarding state. State changes are reported with OpenCode TUI
+  notifications when `client.tui.showToast` is available.
+- If BLE forwarding is disabled or the BLE daemon cannot return a permission
+  decision, the plugin replies `reject`.
 
 ## Message routing
 
@@ -404,5 +410,4 @@ and truncated before crossing BLE.
 
 ## Open items
 
-- Improve plugin startup UX when the daemon health/status check fails.
 - Add an integration test with a mocked BLE daemon.

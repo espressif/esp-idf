@@ -4,7 +4,7 @@
 import { BLE_DAEMON_URL } from "./config"
 import { debugLog } from "./logging"
 import { isPermissionDecision } from "./opencode-permission-reply"
-import type { BridgeResponse, DaemonResponse } from "./types"
+import type { BridgeResponse, DaemonResponse, DaemonStatus } from "./types"
 
 /**
  * Check whether the local BLE daemon is reachable.
@@ -14,11 +14,20 @@ import type { BridgeResponse, DaemonResponse } from "./types"
  */
 export async function isDaemonAvailable(): Promise<boolean> {
   try {
-    const response = await fetch(`${BLE_DAEMON_URL}/status`)
-    return response.ok
+    await getDaemonStatus()
+    return true
   } catch {
     return false
   }
+}
+
+/** Return the daemon status payload or throw if the daemon is unreachable. */
+export async function getDaemonStatus(): Promise<DaemonStatus> {
+  const response = await fetch(`${BLE_DAEMON_URL}/status`)
+  if (!response.ok) {
+    throw new Error(`BLE daemon status failed: HTTP ${response.status}`)
+  }
+  return (await response.json()) as DaemonStatus
 }
 
 /**

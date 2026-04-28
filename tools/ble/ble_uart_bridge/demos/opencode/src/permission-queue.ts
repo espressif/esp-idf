@@ -3,7 +3,7 @@
 
 import { CONCURRENT_REJECT_MESSAGE, DECISION_TIMEOUT_SECONDS, DEFAULT_REJECT_MESSAGE } from "./config"
 import { sendRequestToBLE } from "./ble-daemon-client"
-import { appLogBestEffort, debugLog } from "./logging"
+import { appLogBestEffort, debugLog, showToastBestEffort } from "./logging"
 import { isPermissionDecision, replyToOpenCodePermission } from "./opencode-permission-reply"
 import { buildPermissionPayload, permissionRequestID } from "./permission-payload"
 import type { OpenCodePermissionClient, PermissionDecision, PermissionEventProperties, PermissionQueueItem } from "./types"
@@ -168,10 +168,15 @@ async function handlePermissionQueueItem(item: PermissionQueueItem): Promise<Per
       // reason as device-side rejects: avoid turning a denial into a hard turn
       // blocker when OpenCode can continue with later serial requests.
       decisionMessage = DEFAULT_REJECT_MESSAGE
-      console.warn("Failed to get BLE permission decision, rejecting request", error)
       await appLogBestEffort(item.client, "warn", "Failed to get BLE permission decision, rejecting request", {
         error: String(error),
       })
+      await showToastBestEffort(
+        item.client,
+        "error",
+        "OpenCode BLE UART Bridge",
+        "Failed to get a BLE permission decision. The request was rejected.",
+      )
     } finally {
       endActiveBLEPermission(item.permission)
       externallyResolvedPermissionIDs.delete(requestID)
