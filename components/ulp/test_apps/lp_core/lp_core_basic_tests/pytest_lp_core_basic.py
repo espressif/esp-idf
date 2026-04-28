@@ -50,7 +50,6 @@ def test_lp_vad(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='lp_vad')
 
 
-# TODO: Support LP I2C test for esp32p4 (IDF-9581)
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize(
@@ -60,7 +59,7 @@ def test_lp_vad(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_LP_I2C_SUPPORTED == 1'), indirect=['target'])
 def test_lp_core_multi_device(case_tester: CaseTester) -> None:
     # Run only non-UART multi-device cases (e.g. LP I2C); LP UART is covered
     # by test_lp_uart_multi_device which targets all LP_CORE_SUPPORTED chips.
@@ -88,7 +87,7 @@ def test_lp_uart_multi_device(case_tester: CaseTester) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'target',
-    soc_filtered_targets('SOC_LP_CORE_SUPPORTED == 1'),
+    soc_filtered_targets('SOC_ULP_LP_UART_SUPPORTED == 1'),
     indirect=True,
 )
 @pytest.mark.parametrize(
