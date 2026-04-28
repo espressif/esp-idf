@@ -495,8 +495,13 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 
 #ifdef CONFIG_PM_ENABLE
         if (s_wifi_modem_sleep_lock == NULL) {
-            result = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "wifi",
-                                        &s_wifi_modem_sleep_lock);
+            esp_pm_lock_type_t lock_type =
+#if SOC_MODEM_APB_CLOCK_IS_INDEPENDENT
+                ESP_PM_NO_LIGHT_SLEEP;
+#else
+                ESP_PM_APB_FREQ_MAX;
+#endif
+            result = esp_pm_lock_create(lock_type, 0, "wifi", &s_wifi_modem_sleep_lock);
             if (result != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to create pm lock (0x%x)", result);
                 goto _deinit;
@@ -572,13 +577,13 @@ esp_err_t esp_wifi_disconnect(void)
 }
 
 #ifdef CONFIG_PM_ENABLE
-void wifi_apb80m_request(void)
+void wifi_pm_sleep_lock_acquire(void)
 {
     assert(s_wifi_modem_sleep_lock);
     esp_pm_lock_acquire(s_wifi_modem_sleep_lock);
 }
 
-void wifi_apb80m_release(void)
+void wifi_pm_sleep_lock_release(void)
 {
     assert(s_wifi_modem_sleep_lock);
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
