@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "esp_event.h"
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
@@ -44,6 +45,11 @@ static void wifi_event_connected_handler(void* arg, esp_event_base_t event_base,
     s_reconnect_times = 0;
 }
 
+static void wifi_event_ap_start_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    ESP_LOGI(TAG, "WIFI_EVENT_AP_START");
+}
 
 static void ip_event_got_ip_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -60,10 +66,14 @@ static int initialize_wifi(int argc, char **argv)
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_any_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, wifi_event_disconnected_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, wifi_event_connected_handler, NULL);
+    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_START, wifi_event_ap_start_handler, NULL);
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, ip_event_got_ip_handler, NULL);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_start() );
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+    ESP_ERROR_CHECK(esp_wifi_set_band_mode(WIFI_BAND_MODE_AUTO));
+#endif
     /* always enable wifi sleep */
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
     ESP_LOGI(TAG, "initialize_wifi DONE.");
@@ -111,7 +121,7 @@ static int cmd_do_ap_set(int argc, char **argv)
         wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK; // set default auth mode
     }
     if (ap_set_args.channel->count > 0) {
-        wifi_config.sta.channel = (uint8_t)(ap_set_args.channel->ival[0]);
+        wifi_config.ap.channel = (uint8_t)(ap_set_args.channel->ival[0]);
     }
     if (ap_set_args.authmode->count > 0) {
         wifi_config.ap.authmode = ap_set_args.authmode->ival[0];
@@ -178,10 +188,10 @@ static int cmd_do_sta_connect(int argc, char **argv)
     };
 
     const char *ssid = connect_args.ssid->sval[0];
-    memcpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     const char *pass = connect_args.password->sval[0];
     if (connect_args.password->count > 0) {
-        memcpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strncpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
         wifi_config.sta.threshold.authmode = WIFI_AUTH_WEP;
     }
     if (connect_args.channel->count > 0) {
@@ -237,7 +247,7 @@ static int cmd_do_light_sleep(int argc, char **argv)
         ESP_ERROR_CHECK(esp_pm_configure(&pm_config));
         ESP_LOGI(TAG, "LIGHT_SLEEP_ENABLED,OK");
     } else {
-        ESP_LOGE(TAG, "invaild arg!");
+        ESP_LOGE(TAG, "invalid arg!");
         return 1;
     }
 
