@@ -16,6 +16,7 @@ BLE UART Bridge is a host-side utility for talking to ESP-IDF applications that 
   - [Core](#core)
   - [Console](#console)
   - [Daemon](#daemon)
+- [Demos](#demos) - example integrations built on the daemon
 - [Choosing Core, Console, or Daemon](#choosing-core-console-or-daemon)
 - [Profile compatibility](#profile-compatibility)
 - [Dependencies](#dependencies)
@@ -162,6 +163,8 @@ tools/ble/ble_uart_bridge/
 │   ├── Quick-Start-BLE-UART-Daemon.md
 │   ├── Profile-Compatibility.md
 │   └── PORTING.md
+├── demos/
+│   └── opencode/
 └── src/
     ├── core/
     ├── console/
@@ -225,6 +228,17 @@ The daemon protocol is intentionally small. It is not a full RPC framework. It d
 
 By default, the daemon binds to `127.0.0.1`. Keep it on a loopback address unless you add your own network access control, because the daemon exposes unauthenticated HTTP endpoints that can send data to the BLE device.
 
+## Demos
+
+The `demos/` directory contains example integrations that build on BLE UART
+Bridge components.
+
+- [BLE UART Bridge Demo - OpenCode Integration](demos/opencode/README.md) shows
+  how an OpenCode plugin can forward session status and permission requests to a
+  BLE device through the daemon. It also includes a firmware-side protocol
+  reference for devices, such as the planned `esp-vocat` / MiaoBan (喵伴)
+  example in `esp-iot-solution`.
+
 ## Choosing Core, Console, or Daemon
 
 | Component | Best for | Interface |
@@ -269,5 +283,6 @@ The tool depends on:
 
 - [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md)
 - [Quick-Start-BLE-UART-Daemon.md](docs/Quick-Start-BLE-UART-Daemon.md)
+- [BLE UART Bridge Demo - OpenCode Integration](demos/opencode/README.md)
 - [Profile-Compatibility.md](docs/Profile-Compatibility.md)
 - [PORTING.md](docs/PORTING.md)
