@@ -22,7 +22,8 @@ export function debugLog(message: string, data?: unknown) {
 }
 
 /**
- * Prefer OpenCode's application log API, with console fallback for older clients.
+ * Prefer OpenCode's application log API. Fall back to debug-only local logs so
+ * daemon connection failures do not pollute the OpenCode TUI.
  *
  * The partial client type means a copied demo can still run against OpenCode
  * versions that do not expose every helper method used by newer SDKs.
@@ -45,11 +46,32 @@ export async function appLog(
     return
   }
   if (level === "error") {
-    console.error(`[opencode-ble] ${message}`, extra)
+    debugLog(`error: ${message}`, extra)
   } else if (level === "warn") {
-    console.warn(`[opencode-ble] ${message}`, extra)
+    debugLog(`warn: ${message}`, extra)
   } else {
     debugLog(message, extra)
+  }
+}
+
+/** Show an OpenCode TUI toast when that API is available. */
+export async function showToastBestEffort(
+  client: OpenCodePermissionClient,
+  variant: "info" | "success" | "warning" | "error",
+  title: string,
+  message: string,
+) {
+  try {
+    await client.tui?.showToast?.({
+      body: {
+        title,
+        message,
+        variant,
+        duration: 5000,
+      },
+    })
+  } catch (error) {
+    debugLog("failed to show TUI toast", { error: String(error), title, message, variant })
   }
 }
 
@@ -68,6 +90,6 @@ export async function appLogBestEffort(
   try {
     await appLog(client, level, message, extra)
   } catch (error) {
-    console.warn(`[opencode-ble] failed to write app log: ${message}`, error)
+    debugLog(`failed to write app log: ${message}`, { error: String(error) })
   }
 }
