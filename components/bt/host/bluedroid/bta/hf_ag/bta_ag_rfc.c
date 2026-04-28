@@ -252,6 +252,10 @@ void bta_ag_setup_port(tBTA_AG_SCB *p_scb, UINT16 handle)
 {
     UINT16 i = bta_ag_scb_to_idx(p_scb) - 1;
 
+    if (i >= BTA_AG_NUM_SCB) {
+        return;
+    }
+
     /* set up data callback if using pass through mode */
     if (bta_ag_cb.parse_mode == BTA_AG_PASS_THROUGH) {
         PORT_SetDataCallback(handle, bta_ag_data_cback_tbl[i]);
@@ -273,6 +277,10 @@ void bta_ag_setup_port(tBTA_AG_SCB *p_scb, UINT16 handle)
 void bta_ag_start_servers(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK services)
 {
     int bta_ag_port_status;
+
+    if (bta_ag_scb_to_idx(p_scb) < 1 || bta_ag_scb_to_idx(p_scb) > BTA_AG_NUM_SCB) {
+        return;
+    }
 
     services >>= BTA_HSP_SERVICE_ID;
     for (int i = 0; i < BTA_AG_NUM_IDX && services != 0; i++, services >>= 1) {
@@ -353,6 +361,12 @@ BOOLEAN bta_ag_is_server_closed (tBTA_AG_SCB *p_scb)
 *******************************************************************************/
 void bta_ag_rfc_do_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
+    if (bta_ag_scb_to_idx(p_scb) < 1 || bta_ag_scb_to_idx(p_scb) > BTA_AG_NUM_SCB) {
+        APPL_TRACE_ERROR("bta_ag_rfc_do_open: EINVAL idx %u", bta_ag_scb_to_idx(p_scb));
+        bta_ag_sm_execute(p_scb, BTA_AG_RFC_CLOSE_EVT, p_data);
+        return;
+    }
+
     BTM_SetSecurityLevel(TRUE, "", bta_ag_sec_id[p_scb->conn_service],
         p_scb->cli_sec_mask, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, p_scb->peer_scn);
 
