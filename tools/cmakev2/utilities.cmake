@@ -144,6 +144,32 @@ function(deprecate_variable var)
 endfunction()
 
 #[[
+.. cmakev2:function:: __check_python_package_min_version
+
+    .. code-block:: cmake
+
+        __check_python_package_min_version(<python_exe> <package_name> <min_version> <result_var>)
+
+    Check whether a Python package is installed with at least the given version
+    via ``importlib.metadata.version``. Sets ``<result_var>`` to TRUE or FALSE
+    in the parent scope.
+#]]
+function(__check_python_package_min_version python_exe package_name min_version result_var)
+    execute_process(
+        COMMAND ${python_exe} -c
+            "from importlib.metadata import version; print(version('${package_name}'))"
+        OUTPUT_VARIABLE _ver
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _rc
+        ERROR_QUIET
+    )
+    set(${result_var} FALSE PARENT_SCOPE)
+    if(_rc EQUAL 0 AND _ver VERSION_GREATER_EQUAL "${min_version}")
+        set(${result_var} TRUE PARENT_SCOPE)
+    endif()
+endfunction()
+
+#[[
     __get_real_target(TARGET <target>
                       OUTPUT <variable>)
 
