@@ -155,3 +155,22 @@ def test_mbedtls_ds_rsa(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_mbedtls_aria(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='aria')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'cross_signed',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_mbedtls_cross_signed(dut: Dut) -> None:
+    dut.run_all_single_board_cases(
+        name=[
+            'cross-signed certificate bundle with time-date check',
+            'custom certificate bundle',
+            'certificate bundle - expired cert rejected with time-date check',
+        ]
+    )
