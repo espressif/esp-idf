@@ -9,7 +9,7 @@ This example can be taken as a skeleton of porting the LVGL library onto the `es
 
 The whole porting code is located in [i80_controller_example_main.c](main/i80_controller_example_main.c), and the UI demo code is located in [lvgl_demo_ui.c](main/lvgl_demo_ui.c).
 
-The UI will display two images (one Espressif logo and another Espressif text), which have been converted into C arrays by the [online converting tool](https://lvgl.io/tools/imageconverter), and will be compiled directly into application binary.
+The UI will display two images (one Espressif logo and another Espressif text). You can choose to load images from a [LittleFS file system](https://github.com/joltwallet/esp_littlefs) or from embedded binary data. See [Image Resource](#image-resource) for more details.
 
 This example is constructed by [IDF component manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html), all the external dependency will be handled by the CMake build system automatically. In this case, it will help download the lvgl from the [ESP Component Registry](https://components.espressif.com/component/lvgl/lvgl), with the version specified in the [manifest file](main/idf_component.yml).
 
@@ -97,10 +97,29 @@ I (638) example: Display LVGL animation
 
 ## Image Resource
 
-This example supports two ways of reading images
+This example supports two ways of loading images, which can be selected via `LCD image source from` in the menuconfig:
 
-* from the [SPIFFS file system](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/spiffs.html). This is the suggested way we use in the example. It may take a little bit longer to load the image because of the bottleneck of the SPI flash read speed, but it will save the binary size.
-* from the embedded binary (i.e., pre-decode the image into an array and pack it together with the application firmware). By this way, you can get faster image loading speed at the cost of bloating your application binary. What's worse, if you enabled the [XIP from PSRAM](https://github.com/espressif/esp-idf/tree/master/examples/system/xip_from_psram) feature, it will increase the PSRAM usage as well.
+### File System (recommended)
+
+Load images from a [LittleFS file system](https://github.com/joltwallet/esp_littlefs). This approach saves binary size, though it may have slightly slower image loading due to SPI flash read speed.
+
+When this option is selected, the build system will:
+
+1. Use a custom partition table [partitions_lvgl_example.csv](partitions_lvgl_example.csv) that includes a `storage` partition for LittleFS.
+2. Automatically generate a LittleFS image from the PNG files in [main/images/filesystem](main/images/filesystem) and flash it to the `storage` partition.
+
+At runtime, the application mounts the LittleFS partition at `/littlefs` and LVGL accesses the images via its POSIX FS interface (e.g., `S:/littlefs/esp_logo.png`, where `S` is the drive letter).
+
+The following LVGL features are enabled for file system support (see [sdkconfig.ci.image_in_fs](sdkconfig.ci.image_in_fs)):
+
+* `LV_USE_LODEPNG`: Decode PNG images at runtime.
+* `LV_USE_FS_POSIX`: Enable POSIX file system interface in LVGL.
+* `LV_FS_POSIX_LETTER`: Set to `83` (ASCII for `S`) as the drive letter.
+* `PARTITION_TABLE_CUSTOM` : Use the custom partition table.
+
+### Embedded Binary (default)
+
+Pre-decode images into C arrays (via the [online converting tool](https://lvgl.io/tools/imageconverter)) and pack them together with the application firmware. This gives faster image loading speed at the cost of a larger application binary. If you have enabled the [XIP from PSRAM](https://github.com/espressif/esp-idf/tree/master/examples/system/xip_from_psram) feature, it will also increase the PSRAM usage.
 
 ## Troubleshooting
 

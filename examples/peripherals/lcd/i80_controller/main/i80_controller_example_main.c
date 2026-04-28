@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -17,7 +17,7 @@
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_nt35510.h"
 #include "esp_lcd_panel_ops.h"
-#include "esp_spiffs.h"
+#include "esp_littlefs.h"
 #include "driver/gpio.h"
 #include "lvgl.h"
 
@@ -72,7 +72,7 @@ static const char *TAG = "example";
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 #define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
 #define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1000 / CONFIG_FREERTOS_HZ
-#define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
+#define EXAMPLE_LVGL_TASK_STACK_SIZE   (8 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 #define EXAMPLE_LVGL_DRAW_BUF_LINES    100
 
@@ -130,33 +130,31 @@ static void example_lvgl_port_task(void *arg)
 void example_init_filesystem(void)
 {
     ESP_LOGI(TAG, "Initializing filesystem");
-    esp_vfs_spiffs_conf_t conf = {
-        .base_path = "/spiffs",
+    esp_vfs_littlefs_conf_t conf = {
+        .base_path = "/littlefs",
         .partition_label = "storage",
-        .max_files = 5,
-        .format_if_mount_failed = true
+        .format_if_mount_failed = true,
+        .dont_mount = false,
     };
 
-    // Use settings defined above to initialize and mount SPIFFS filesystem.
-    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    esp_err_t ret = esp_vfs_littlefs_register(&conf);
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
         } else if (ret == ESP_ERR_NOT_FOUND) {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+            ESP_LOGE(TAG, "Failed to find LittleFS partition");
         } else {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+            ESP_LOGE(TAG, "Failed to initialize LittleFS (%s)", esp_err_to_name(ret));
         }
         return;
     }
 
     size_t total = 0, used = 0;
-    ret = esp_spiffs_info(conf.partition_label, &total, &used);
+    ret = esp_littlefs_info(conf.partition_label, &total, &used);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s). Formatting...", esp_err_to_name(ret));
-        esp_spiffs_format(conf.partition_label);
+        ESP_LOGE(TAG, "Failed to get LittleFS partition information (%s). Formatting...", esp_err_to_name(ret));
+        esp_littlefs_format(conf.partition_label);
         return;
     } else {
         ESP_LOGI(TAG, "Partition size: total: %zu, used: %zu", total, used);
