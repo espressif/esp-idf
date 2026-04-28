@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,8 +46,12 @@
  *    - Subsequent `U` values are derived using SHA1 on the previous `U` value.
  * 4. All intermediate values are XORed together to produce the final segment of the key.
  * 5. The `esp_fast_psk` function combines two invocations of `fast_psk_f` to produce the complete 32-byte key.
- *    - The first invocation computes the first 16 bytes.
- *    - The second invocation computes the second 16 bytes.
+ *    - The first invocation computes the first 20 bytes (SHA1_OUTPUT_SZ).
+ *    - The second invocation computes the remaining 12 bytes.
+ *
+ * On non-parallel-engine targets (all except ESP32), the ipad/opad SHA states are
+ * computed once and restored via esp_sha_write_digest_state() each iteration,
+ * halving the SHA block operations per iteration from 4 to 2.
  *
  * - The code uses the ESP SHA1 hardware accelerator for faster computation.
  */
@@ -140,6 +144,7 @@ static void pad_blocks(union hmac_block *ctx, size_t len)
     PUT_UINT32_BE(bits, bytes, FAST_PSK_SHA1_BLOCKS_BUF_BYTES - 4);
 }
 
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
 /*
  * Performs SHA1 hash operation on two consecutive blocks.
  * Input: blocks array (two blocks of 64 bytes each), output (20-byte digest).
@@ -158,7 +163,7 @@ static inline void write32_be(uint32_t n, uint8_t out[4])
 }
 #endif /* CONFIG_IDF_TARGET_ESP32 */
 
-void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
+static void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
 {
     esp_sha_set_mode(SHA1);
     /* First block */
@@ -174,6 +179,7 @@ void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SH
     }
 #endif /* CONFIG_IDF_TARGET_ESP32 */
 }
+#endif /* SOC_SHA_SUPPORT_PARALLEL_ENG */
 
 /*
  * Implements the PBKDF2-HMAC-SHA1 function for WPA key derivation.
@@ -184,10 +190,15 @@ void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SH
  * - count: The iteration counter.
  * - digest: Output buffer for the resulting digest (20 bytes).
  */
-void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, size_t ssid_len, uint32_t count, uint8_t digest[SHA1_OUTPUT_SZ])
+static void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, size_t ssid_len, uint32_t count, uint8_t digest[SHA1_OUTPUT_SZ])
 {
     struct fast_psk_context ctx_, *ctx = &ctx_;
     size_t i;
+
+#if !SOC_SHA_SUPPORT_PARALLEL_ENG
+    uint32_t ipad_state[SHA1_OUTPUT_SZ_WORDS];
+    uint32_t opad_state[SHA1_OUTPUT_SZ_WORDS];
+#endif
 
     /* Clear the context */
     memset(ctx, 0, sizeof(*ctx));
@@ -212,19 +223,23 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
 
     sha1_setup();
 
-    uint32_t *pi, *po;
-    pi = ctx->inner.whole_words;
-    po = ctx->outer.whole_words;
-
-    // T1 = SHA1(K ^ ipad, S || i)
-    sha1_op(pi, ctx->outer.block[1].words);
-
-    // U1 = SHA1(K ^ opad, T1)
-    pad_blocks(&ctx->outer, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
     uint32_t *inner_blk1 = ctx->inner.block[1].words;
     uint32_t *outer_blk1 = ctx->outer.block[1].words;
     uint32_t *sum = ctx->sum;
 
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+    /*
+     * Parallel engine (ESP32): no state save/restore available.
+     * Each sha1_op processes 2 blocks (ipad/opad + data) = 4 block ops per iteration.
+     */
+    uint32_t *pi = ctx->inner.whole_words;
+    uint32_t *po = ctx->outer.whole_words;
+
+    // T1 = SHA1(K ^ ipad, S || i)
+    sha1_op(pi, outer_blk1);
+
+    // U1 = SHA1(K ^ opad, T1)
+    pad_blocks(&ctx->outer, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
     sha1_op(po, inner_blk1);
     /* Copy result to the sum */
     memcpy(sum, inner_blk1, SHA1_OUTPUT_SZ);
@@ -244,13 +259,61 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
             sum[j] ^= inner_blk1[j];
         }
     }
+#else
+    /*
+     * Core engine: save ipad/opad SHA states once, restore each iteration.
+     * Each iteration processes only 1 data block per HMAC = 2 block ops total,
+     * half of the parallel engine path.
+     */
+    esp_sha_set_mode(SHA1);
+
+    /* Process ipad/opad blocks once, save intermediate SHA1 states */
+    esp_sha_block(SHA1, ctx->inner.block[0].words, true);
+    esp_sha_read_digest_state(SHA1, ipad_state);
+    esp_sha_block(SHA1, ctx->outer.block[0].words, true);
+    esp_sha_read_digest_state(SHA1, opad_state);
+
+    // T1 = SHA1(ipad_state, S || i)
+    esp_sha_write_digest_state(SHA1, ipad_state);
+    esp_sha_block(SHA1, inner_blk1, false);
+    esp_sha_read_digest_state(SHA1, outer_blk1);
+
+    // U1 = SHA1(opad_state, T1)
+    pad_blocks(&ctx->outer, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
+    esp_sha_write_digest_state(SHA1, opad_state);
+    esp_sha_block(SHA1, outer_blk1, false);
+    esp_sha_read_digest_state(SHA1, inner_blk1);
+    memcpy(sum, inner_blk1, SHA1_OUTPUT_SZ);
+    pad_blocks(&ctx->inner, SHA1_BLOCK_SZ + SHA1_OUTPUT_SZ);
+
+    /*
+     * Iterations 2..4096.
+     * esp_sha_read_digest_state writes exactly 20 bytes (5 words) for SHA1,
+     * so the padding at bytes [20..63] in each block stays intact.
+     */
+    for (i = 1; i < 4096; ++i) {
+        // Tn = SHA1(ipad_state, Un-1)
+        esp_sha_write_digest_state(SHA1, ipad_state);
+        esp_sha_block(SHA1, inner_blk1, false);
+        esp_sha_read_digest_state(SHA1, outer_blk1);
+
+        // Un = SHA1(opad_state, Tn)
+        esp_sha_write_digest_state(SHA1, opad_state);
+        esp_sha_block(SHA1, outer_blk1, false);
+        esp_sha_read_digest_state(SHA1, inner_blk1);
+
+        for (size_t j = 0; j < SHA1_OUTPUT_SZ_WORDS; ++j) {
+            sum[j] ^= inner_blk1[j];
+        }
+    }
+#endif /* SOC_SHA_SUPPORT_PARALLEL_ENG */
 
     sha1_teardown();
 
     /* Copy the final result to the output digest */
     memcpy(digest, sum, SHA1_OUTPUT_SZ);
 
-    /* Clear sensitive data */
+    /* Clear context */
     memset(ctx, 0, sizeof(*ctx));
 }
 
@@ -260,13 +323,16 @@ int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid,
         return -1; /* Invalid input parameters */
     }
 
-    /* Compute the first 16 bytes of the PSK */
+    /*
+     * PBKDF2 with dkLen=32 needs two 20-byte F() blocks:
+     *   output[0..19]  = F(password, ssid, 4096, 1)
+     *   output[20..31] = F(password, ssid, 4096, 2)[0..11]
+     *
+     * Compute block 2 first so its first 12 bytes can be placed at
+     * output[20..31], then block 1 overwrites output[0..19].
+     */
     fast_psk_f(password, password_len, ssid, ssid_len, 2, output);
-
-    /* Replicate the first 16 bytes to form the second half temporarily */
     memcpy(output + SHA1_OUTPUT_SZ, output, 32 - SHA1_OUTPUT_SZ);
-
-    /* Compute the second 16 bytes of the PSK */
     fast_psk_f(password, password_len, ssid, ssid_len, 1, output);
 
     return 0; /* Success */
