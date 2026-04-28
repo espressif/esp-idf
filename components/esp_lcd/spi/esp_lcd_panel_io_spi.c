@@ -210,7 +210,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_transaction_t *spi_trans = NULL;
     lcd_spi_trans_descriptor_t *lcd_trans = NULL;
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
-    bool send_cmd = (lcd_cmd >= 0);
+    bool send_cmd = (lcd_cmd != -1);
 
     ESP_RETURN_ON_ERROR(spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY), TAG, "acquire spi bus failed");
 
@@ -266,7 +266,7 @@ static esp_err_t panel_io_spi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     spi_transaction_t *spi_trans = NULL;
     lcd_spi_trans_descriptor_t *lcd_trans = NULL;
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
-    bool send_cmd = (lcd_cmd >= 0);
+    bool send_cmd = (lcd_cmd != -1);
 
     ESP_RETURN_ON_ERROR(spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY), TAG, "acquire spi bus failed");
 
@@ -324,7 +324,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 
     ESP_RETURN_ON_ERROR(spi_device_acquire_bus(spi_panel_io->spi_dev, portMAX_DELAY), TAG, "acquire spi bus failed");
 
-    bool send_cmd = (lcd_cmd >= 0);
+    bool send_cmd = (lcd_cmd != -1);
     if (send_cmd) {
         // before issue a polling transaction, need to wait queued transactions finished
         size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
