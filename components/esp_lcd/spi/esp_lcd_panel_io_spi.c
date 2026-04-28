@@ -64,6 +64,7 @@ typedef struct {
         unsigned int dc_param_level: 1;  // Indicates the level of DC line when transferring parameters
         unsigned int octal_mode: 1;      // Indicates whether the transmitting is enabled with octal mode (8 data lines)
         unsigned int quad_mode: 1;       // Indicates whether the transmitting is enabled with quad mode (4 data lines)
+        unsigned int psram_dma_direct: 1;// Indicates whether to use PSRAM for DMA buffer directly when color buffer is in PSRAM
     } flags;
     lcd_spi_trans_descriptor_t trans_pool[]; // Transaction pool
 } esp_lcd_panel_io_spi_t;
@@ -107,6 +108,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_panel_io->flags.dc_param_level = !io_config->flags.dc_low_on_param;
     spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
     spi_panel_io->flags.quad_mode = io_config->flags.quad_mode;
+    spi_panel_io->flags.psram_dma_direct = io_config->flags.psram_dma_direct;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
     spi_panel_io->user_ctx = io_config->user_ctx;
     spi_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
@@ -371,7 +373,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
             spi_panel_io->num_trans_inflight--;
         }
         memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-        if (color_in_psram) {
+        if (color_in_psram && spi_panel_io->flags.psram_dma_direct) {
             // When the color buffer resides in PSRAM, set the DMA PSRAM flag
             lcd_trans->base.flags |= SPI_TRANS_DMA_USE_PSRAM;
         }
