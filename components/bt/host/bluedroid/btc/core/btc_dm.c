@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,8 @@
 /******************************************************************************
 **  Constants & Macros
 ******************************************************************************/
-#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       (1 << (id))
+/* Use 1ULL to avoid UB: 1 << 32 is undefined when int is 32-bit (C11 §6.5.7) */
+#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       ((tBTA_SERVICE_MASK)(1ULL << (id)))
 
 /******************************************************************************
 **  Static variables
@@ -697,7 +698,7 @@ bt_status_t btc_dm_enable_service(tBTA_SERVICE_ID service_id)
 {
     tBTA_SERVICE_ID *p_id = &service_id;
 
-    btc_dm_cb.btc_enabled_services |= (1 << service_id);
+    btc_dm_cb.btc_enabled_services |= (tBTA_SERVICE_MASK)(1ULL << service_id);
 
     BTC_TRACE_DEBUG("%s: current services:0x%x", __FUNCTION__, btc_dm_cb.btc_enabled_services);
 
@@ -710,7 +711,7 @@ bt_status_t btc_dm_disable_service(tBTA_SERVICE_ID service_id)
 {
     tBTA_SERVICE_ID *p_id = &service_id;
 
-    btc_dm_cb.btc_enabled_services &= (tBTA_SERVICE_MASK)(~(1 << service_id));
+    btc_dm_cb.btc_enabled_services &= (tBTA_SERVICE_MASK)(~(1ULL << service_id));
 
     BTC_TRACE_DEBUG("%s: Current Services:0x%x", __FUNCTION__, btc_dm_cb.btc_enabled_services);
 
@@ -808,8 +809,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_DISABLE_EVT: {
         tBTA_SERVICE_MASK service_mask = btc_get_enabled_services_mask();
         for (int i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
-            if (service_mask &
-                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
+            if (service_mask & BTA_SERVICE_ID_TO_SERVICE_MASK(i)) {
                 btc_in_execute_service_request(i, FALSE);
             }
         }

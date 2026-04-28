@@ -86,7 +86,10 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 
     bluedroid_init_done_cb = cb;
 
-    osi_init();
+    if (osi_init() != 0) {
+        APPL_TRACE_ERROR("%s failed to initialize OS layer.\n", __func__);
+        return -1;
+    }
 
     //Enable HCI
     bte_main_enable();
@@ -235,6 +238,11 @@ void bte_main_lpm_wake_bt_device(void)
 ******************************************************************************/
 void bte_main_hci_send (BT_HDR *p_msg, UINT16 event)
 {
+    if (!p_msg) {
+        APPL_TRACE_ERROR("%s null message\n", __func__);
+        return;
+    }
+
     UINT16 sub_event = event & BT_SUB_EVT_MASK;  /* local controller ID */
 
     p_msg->event = event;

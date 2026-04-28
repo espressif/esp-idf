@@ -117,7 +117,7 @@ int hci_start_up(void)
     hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
                                         HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len);
     if (hci_host_thread == NULL) {
-        return -2;
+        goto error;
     }
 
     osi_event_bind(hci_host_env.downstream_data_ready, hci_host_thread, HCI_DOWNSTREAM_DATA_QUEUE_IDX);
@@ -135,12 +135,14 @@ error:
 void hci_shut_down(void)
 {
     hci_host_startup_flag  = false;
+
+    /* Close HAL and cleanup before freeing thread: hal->open() and osi_event_bind()
+     * stored references to hci_host_thread; they must not use it after osi_thread_free(). */
+    if (hci_host_thread != NULL) {
+        hal->close();
+        packet_fragmenter->cleanup();
+    }
     hci_layer_deinit_env();
-
-    packet_fragmenter->cleanup();
-
-    //low_power_manager->cleanup();
-    hal->close();
 
     osi_thread_free(hci_host_thread);
     hci_host_thread = NULL;
@@ -197,7 +199,7 @@ static int hci_layer_init_env(void)
         HCI_TRACE_ERROR("%s unable to create command response timer.", __func__);
         return -1;
     }
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     btsnd_hcic_ble_sync_sem_init();
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
@@ -223,9 +225,9 @@ static void hci_layer_deinit_env(void)
     osi_mutex_free(&cmd_wait_q->commands_pending_response_lock);
     osi_alarm_free(cmd_wait_q->command_response_timer);
     cmd_wait_q->command_response_timer = NULL;
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     btsnd_hcic_ble_sync_sem_deinit();
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 }
 
 static void hci_downstream_data_handler(void *arg)
@@ -443,13 +445,15 @@ static bool filter_incoming_event(BT_HDR *packet)
 {
     pkt_linked_item_t *wait_entry = NULL;
     hci_cmd_metadata_t *metadata = NULL;
-    uint8_t *stream = packet->data + packet->offset;
+    uint8_t *stream;
     uint8_t event_code;
     command_opcode_t opcode;
 
     if (packet == NULL) {
         return true;
     }
+
+    stream = packet->data + packet->offset;
 
     if (packet->len < HCI_EVENT_PREAMBLE_SIZE) {
         HCI_TRACE_WARNING("dropping too short HCI event (len=%u)", packet->len);
@@ -477,7 +481,7 @@ static bool filter_incoming_event(BT_HDR *packet)
         metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         if (metadata->command_complete_cb) {
             metadata->command_complete_cb(packet, metadata->context);
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
             BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
             if(!sync_info) {
                 HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
@@ -487,7 +491,7 @@ static bool filter_incoming_event(BT_HDR *packet)
                     sync_info->opcode = 0;
                 }
             }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
         } else if (metadata->flags_vnd & HCI_CMD_MSG_F_VND_FUTURE) {
             future_ready((future_t *)(metadata->complete_future), packet);
         }

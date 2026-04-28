@@ -52,6 +52,7 @@ esp_err_t esp_bluedroid_enable(void)
     msg.act = BTC_MAIN_ACT_ENABLE;
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
+        future_free(*future_p);
         LOG_ERROR("Bluedroid enable failed\n");
         return ESP_FAIL;
     }
@@ -163,6 +164,9 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
         return ESP_FAIL;
     }
 
@@ -172,6 +176,11 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     ret = btc_init();
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
+
         return ESP_FAIL;
     }
 
@@ -179,6 +188,12 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     *future_p = future_new();
     if (*future_p == NULL) {
         LOG_ERROR("Bluedroid Initialize Fail!");
+        btc_deinit();
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
+
         return ESP_ERR_NO_MEM;
     }
 
@@ -188,11 +203,22 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        future_free(*future_p);
+        btc_deinit();
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        btc_deinit();
+        bluedroid_config_deinit();
+#if HEAP_MEMORY_STATS
+        osi_mem_deinit();
+#endif
         return ESP_FAIL;
     }
 

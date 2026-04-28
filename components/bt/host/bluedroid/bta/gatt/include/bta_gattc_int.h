@@ -383,6 +383,10 @@ typedef UINT16 tBTA_GATTC_CIF_MASK;
 typedef UINT32 tBTA_GATTC_CIF_MASK;
 #endif
 
+/* Safe bit for client_if in cif_mask; avoids UB when client_if is 0 or > GATT_MAX_APPS */
+#define BTA_GATTC_CIF_MASK_BIT(cif) \
+    ((tBTA_GATTC_CIF_MASK)(((cif) >= 1 && (cif) <= (unsigned)GATT_MAX_APPS) ? (1U << ((cif) - 1)) : 0U))
+
 typedef struct {
     BOOLEAN                 in_use;
     BD_ADDR                 remote_bda;
@@ -456,7 +460,6 @@ extern void bta_gattc_process_enc_cmpl(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_m
 /* function within state machine */
 extern void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_open_fail(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
-extern void bta_gattc_open_error(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 
 extern void bta_gattc_cancel_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_cancel_open_ok(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
@@ -542,7 +545,7 @@ extern void bta_gattc_get_service_with_uuid(UINT16 conn_id, tBT_UUID *svc_uuid,
                                             btgatt_db_element_t **svc_db,
                                             UINT16 *count);
 
-extern void bta_gattc_get_db_with_opration(UINT16 conn_id,
+extern void bta_gattc_get_db_with_operation(UINT16 conn_id,
                                                       bt_gatt_get_db_op_t op,
                                                       UINT16 char_handle,
                                                       tBT_UUID *incl_uuid,
