@@ -9,6 +9,8 @@
  * SPDX-FileContributor: 2019-2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include "esp_err.h"
 #include "esp_log.h"
 
@@ -88,6 +90,38 @@ static const char *TAG = "cert_bundle_test";
 static volatile bool exit_flag;
 
 esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint);
+
+#if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
+/* Set system time to compile time so that MBEDTLS_HAVE_TIME_DATE checks
+ * pass without network/NTP. __DATE__ gives "Mon DD YYYY", __TIME__ gives "HH:MM:SS". */
+static void set_system_time_to_compile_time(void)
+{
+    const char *months[] = {"Jan","Feb","Mar","Apr","May","Jun",
+                            "Jul","Aug","Sep","Oct","Nov","Dec"};
+    char mon_str[4];
+    int day, year, hour, min, sec;
+
+    sscanf(__DATE__, "%3s %d %d", mon_str, &day, &year);
+    sscanf(__TIME__, "%d:%d:%d", &hour, &min, &sec);
+
+    int mon = 0;
+    for (int i = 0; i < 12; i++) {
+        if (strcmp(mon_str, months[i]) == 0) {
+            mon = i;
+            break;
+        }
+    }
+
+    struct tm t = {
+        .tm_sec = sec, .tm_min = min, .tm_hour = hour,
+        .tm_mday = day, .tm_mon = mon, .tm_year = year - 1900,
+    };
+
+    struct timeval tv = { .tv_sec = mktime(&t), .tv_usec = 0 };
+    settimeofday(&tv, NULL);
+    ESP_LOGI(TAG, "System time set to compile time: %s %s", __DATE__, __TIME__);
+}
+#endif // CONFIG_MBEDTLS_HAVE_TIME_DATE
 
 esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
@@ -302,7 +336,7 @@ void client_task(void *pvParameters)
 
     size_t available_before_handshake = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI(TAG, "Available stack before handshake: %d", available_before_handshake);
-    ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
+    ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that contains the server root certificate");
     while ( ( ret = mbedtls_ssl_handshake( &client->ssl ) ) != 0 ) {
         if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
             printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
@@ -342,6 +376,10 @@ exit:
 TEST_CASE("custom certificate bundle", "[mbedtls]")
 {
    test_case_uses_tcpip();
+
+#if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
+   set_system_time_to_compile_time();
+#endif
 
    SemaphoreHandle_t signal_sem = xSemaphoreCreateBinary();
    TEST_ASSERT_NOT_NULL(signal_sem);
@@ -567,3 +605,146 @@ TEST_CASE("custom certificate bundle init API - bound checking - Incorrect certi
     esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
 }
+
+#if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
+TEST_CASE("certificate bundle - expired cert rejected with time-date check", "[mbedtls]")
+{
+    /* With HAVE_TIME_DATE enabled, a genuinely expired certificate must still
+     * be rejected even though its issuer is in the bundle and signature is valid.
+     * correct_sig_crt_esp32_com.pem expired Feb 2025 — with system time set to
+     * compile time (2026+), the EXPIRED flag must persist after bundle verification. */
+    set_system_time_to_compile_time();
+
+    mbedtls_x509_crt crt;
+    uint32_t flags = 0;
+
+    esp_crt_bundle_attach(NULL);
+
+    mbedtls_x509_crt_init(&crt);
+    mbedtls_x509_crt_parse(&crt, correct_sig_crt_pem_start,
+                            correct_sig_crt_pem_end - correct_sig_crt_pem_start);
+
+    int ret = mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags,
+                                       esp_crt_verify_callback, NULL);
+
+    /* Verification must fail — the cert is genuinely expired */
+    TEST_ASSERT_NOT_EQUAL(0, ret);
+    /* The EXPIRED flag specifically must be set */
+    TEST_ASSERT_BITS_HIGH(MBEDTLS_X509_BADCERT_EXPIRED, flags);
+
+    mbedtls_x509_crt_free(&crt);
+    esp_crt_bundle_detach(NULL);
+}
+#endif /* CONFIG_MBEDTLS_HAVE_TIME_DATE */
+
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY) && defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
+/* Client task for cross-signed verification with time-date checking.
+ * Exercises the esp_crt_ca_cb_callback path where synthetic root certs
+ * from the bundle have no validity dates. */
+void client_task_cross_signed(void *pvParameters)
+{
+    SemaphoreHandle_t *client_signal_sem = (SemaphoreHandle_t *) pvParameters;
+    int ret = ESP_FAIL;
+
+    mbedtls_endpoint_t *client = calloc(1, sizeof(mbedtls_endpoint_t));
+    if (client == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for client");
+        vTaskSuspend(NULL);
+    }
+    esp_crt_validate_res_t res = ESP_CRT_VALIDATE_UNKNOWN;
+
+    if (client_setup(client) != ESP_OK) {
+        ESP_LOGE(TAG, "SSL client setup failed");
+        goto exit;
+    }
+
+    /* Attach bundle — this registers both esp_crt_verify_callback and
+     * esp_crt_ca_cb_callback when CROSS_SIGNED_VERIFY is enabled */
+    ret = esp_crt_bundle_attach(&client->conf);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    ret = esp_crt_bundle_set(server_cert_bundle_start,
+                             server_cert_bundle_end - server_cert_bundle_start);
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
+    if ((ret = mbedtls_net_connect(&client->client_fd, SERVER_ADDRESS,
+                                    SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
+        goto exit;
+    }
+
+    mbedtls_ssl_set_bio(&client->ssl, &client->client_fd,
+                         mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    ESP_LOGI(TAG, "Performing SSL/TLS handshake (cross-signed verify + time-date)");
+    while ((ret = mbedtls_ssl_handshake(&client->ssl)) != 0) {
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
+            ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+            ESP_LOGE(TAG, "mbedtls_ssl_handshake failed with -0x%x", -ret);
+            break;
+        }
+    }
+
+    ESP_LOGI(TAG, "Verifying peer X.509 certificate...");
+    ret = mbedtls_ssl_get_verify_result(&client->ssl);
+    res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
+
+    if (res == ESP_CRT_VALIDATE_OK) {
+        ESP_LOGI(TAG, "Certificate verification passed!");
+    } else {
+        ESP_LOGE(TAG, "Certificate verification failed! flags=0x%x", ret);
+    }
+    TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_OK, res);
+
+exit:
+    mbedtls_ssl_close_notify(&client->ssl);
+    mbedtls_ssl_session_reset(&client->ssl);
+    esp_crt_bundle_detach(&client->conf);
+    endpoint_teardown(client);
+    xSemaphoreGive(*client_signal_sem);
+    free(client);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("cross-signed certificate bundle with time-date check", "[mbedtls]")
+{
+    test_case_uses_tcpip();
+
+    /* Set system time so that certificate validity checks pass */
+    set_system_time_to_compile_time();
+
+    SemaphoreHandle_t signal_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(signal_sem);
+
+    exit_flag = false;
+    TaskHandle_t server_task_handle;
+    xTaskCreate(server_task, "server task", 8192, &signal_sem, 10,
+                &server_task_handle);
+
+    if (!xSemaphoreTake(signal_sem, SEM_TIMEOUT / portTICK_PERIOD_MS)) {
+        TEST_FAIL_MESSAGE("signal_sem not released, server start failed");
+    }
+
+    SemaphoreHandle_t client_signal_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(client_signal_sem);
+
+    TaskHandle_t client_task_handle;
+    xTaskCreate(client_task_cross_signed, "client task", 8192,
+                &client_signal_sem, 10, &client_task_handle);
+
+    if (!xSemaphoreTake(client_signal_sem, SEM_TIMEOUT / portTICK_PERIOD_MS)) {
+        TEST_FAIL_MESSAGE("client_signal_sem not released, client exit failed");
+    }
+    unity_utils_task_delete(client_task_handle);
+
+    exit_flag = true;
+
+    if (!xSemaphoreTake(signal_sem, SEM_TIMEOUT / portTICK_PERIOD_MS)) {
+        TEST_FAIL_MESSAGE("signal_sem not released, server exit failed");
+    }
+    unity_utils_task_delete(server_task_handle);
+    vSemaphoreDelete(client_signal_sem);
+    vSemaphoreDelete(signal_sem);
+}
+#endif /* CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY && CONFIG_MBEDTLS_HAVE_TIME_DATE */

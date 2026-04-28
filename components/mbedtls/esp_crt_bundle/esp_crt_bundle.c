@@ -316,8 +316,33 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt* const crt, const int de
 {
     const mbedtls_x509_crt* const child = crt;
 
-    /* It's OK for a trusted cert to have a weak signature hash alg.
-       as we already trust this certificate */
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+    /* When cross-signed verification is enabled, the CA callback provides a
+     * synthetic bundle root containing only the subject name and public key.
+     * It has no meaningful validity window, so mbedtls may set EXPIRED/FUTURE
+     * on this generated cert. Clear those flags only for this synthetic bundle
+     * root so that cross-signed verification can continue.
+     *
+     * Real certificates must keep their time-based verification result and
+     * should not proceed to additional bundle signature checks once they are
+     * marked expired or not-yet-valid. */
+    const uint32_t time_flags = *flags &
+        (MBEDTLS_X509_BADCERT_EXPIRED | MBEDTLS_X509_BADCERT_FUTURE);
+    if (time_flags && s_crt_bundle != NULL && child->raw.p == NULL &&
+        child->valid_from.year == 0 && child->valid_to.year == 0) {
+        cert_t cert = esp_crt_find_cert(child->subject_raw.p,
+                                        child->subject_raw.len);
+        if (cert != NULL) {
+            *flags &= ~(MBEDTLS_X509_BADCERT_EXPIRED |
+                         MBEDTLS_X509_BADCERT_FUTURE);
+        }
+    }
+#endif /* CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY */
+
+    /* It's OK for a trusted bundle cert to have a weak signature hash alg,
+     * as we already trust this certificate. Do not ignore EXPIRED/FUTURE here:
+     * real certificates must fail on validity checks, and only the synthetic
+     * cross-signed bundle root has those flags cleared above. */
     uint32_t flags_filtered = *flags & ~(MBEDTLS_X509_BADCERT_BAD_MD);
 
     if (flags_filtered != MBEDTLS_X509_BADCERT_NOT_TRUSTED) {
@@ -339,6 +364,10 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt* const crt, const int de
 
         if (likely(ret == 0)) {
             ESP_LOGI(TAG, "Certificate validated");
+            /* Bundle trust and signature verification succeeded. Real
+             * certificates with EXPIRED/FUTURE return earlier, and the
+             * synthetic cross-signed bundle root has those flags cleared
+             * above, so clear the remaining verification flags here. */
             *flags = 0;
             return 0;
         } else {
@@ -565,6 +594,11 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf)
     s_crt_bundle = NULL;
     if (conf) {
         mbedtls_ssl_conf_verify(conf, NULL, NULL);
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+        mbedtls_ssl_conf_ca_cb(conf, NULL, NULL);
+#else
+        mbedtls_ssl_conf_ca_chain(conf, NULL, NULL);
+#endif /* CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY */
     }
 }
 
