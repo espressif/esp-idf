@@ -134,7 +134,7 @@ void bta_ag_ci_rx_write(UINT16 handle, char *p_data, UINT16 len)
             p_buf->hdr.event = BTA_AG_CI_RX_WRITE_EVT;
             p_buf->hdr.layer_specific = handle;
             p_data_area = (char *)(p_buf+1);        /* Point to data area after header */
-            strncpy(p_data_area, p_data, len);
+            memcpy(p_data_area, p_data, len);
             p_data_area[len] = 0;
             bta_sys_sendmsg(p_buf);
         } else {
@@ -151,7 +151,7 @@ void bta_ag_ci_rx_write(UINT16 handle, char *p_data, UINT16 len)
 ** Function         bta_ag_ci_slc_ready
 **
 ** Description      This function is called to notify AG that SLC is up at
-**                  the application. This funcion is only used when the app
+**                  the application. This function is only used when the app
 **                  is running in pass-through mode.
 **
 ** Returns          void
@@ -284,6 +284,7 @@ static void bta_ag_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad
         {
             bta_hf_ct_plc.first_good_frame_found = TRUE;
             sbc_plc_good_frame(&(bta_hf_ct_plc.plc_state), (int16_t *)bta_ag_co_cb.decode_raw_data, bta_hf_ct_plc.sbc_plc_out);
+            break;
         }
 
         case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
@@ -334,7 +335,7 @@ static void bta_ag_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad
 }
 
 /*******************************************************************************
- *                       BTA AG SCO CO FUNCITONS
+ *                       BTA AG SCO CO FUNCTIONS
 ********************************************************************************/
 /*******************************************************************************
 **
@@ -525,7 +526,7 @@ uint32_t bta_ag_sco_co_out_data(UINT8 *p_buf)
             //Never run to here.
         }
     } else {
-        APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, hf_air_mode);
+        APPL_TRACE_ERROR("%s invalid air mode: %d", __FUNCTION__, hf_air_mode);
     }
     return 0;
 }
@@ -583,7 +584,7 @@ void bta_ag_sco_co_in_data(BT_HDR *p_buf, tBTM_SCO_DATA_FLAG status)
             //Never run to here.
         }
     } else {
-        APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, hf_air_mode);
+        APPL_TRACE_ERROR("%s invalid air mode: %d", __FUNCTION__, hf_air_mode);
     }
 }
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
