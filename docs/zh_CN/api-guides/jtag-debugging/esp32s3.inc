@@ -99,7 +99,7 @@
       - ESP32-S3 系列开发板的配置文件，用于通过外部连接的基于 FTDI 的探头，如 ESP-Prog，包括 ESP32-S3 目标配置和适配器配置。
     * - ``target/esp32s3.cfg``
       - ESP32-S3 目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
-    * - ``interface/ftdi/esp_usb_jtag.cfg``
+    * - ``interface/esp_usb_jtag.cfg``
       - 适用于 ESP32-S3 的 JTAG 适配器配置文件。
     * - ``interface/ftdi/esp_ftdi.cfg``
       - 适用于 ESP-Prog 的 JTAG 适配器配置文件。

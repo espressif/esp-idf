@@ -158,7 +158,7 @@
 
 .. devkit-defs
 
-.. |devkit-name| replace:: ESP32-H1
+.. |devkit-name| replace:: ESP32-H21
 .. |devkit-name-with-link| replace:: :doc:`ESP32-H21 <../../hw-reference/index>`
 
 ---
