@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include "hal/uart_types.h"
 #include "lp_core_test_app_uart.h"
@@ -29,6 +30,18 @@ extern const uint8_t lp_core_main_uart_bin_start[] asm("_binary_lp_core_test_app
 extern const uint8_t lp_core_main_uart_bin_end[]   asm("_binary_lp_core_test_app_uart_bin_end");
 
 static const char *TAG = "lp_core_uart_test";
+
+/*
+ * The LP-core binary exports shared symbols via a generated header that types
+ * blobs as uint32_t placeholders. The HP test must still walk the real layout
+ * (lp_uart_read_bounds_guard_t). Indexing through a struct pointer to
+ * &ulp_read_bounds_guard_region triggers GCC -Warray-bounds= (object size 4).
+ * Read bytes by absolute address so the compiler does not attach the wrong size.
+ */
+static __attribute__((noinline)) uint8_t lp_uart_test_read_shared_u8(uintptr_t addr)
+{
+    return *(const volatile uint8_t *)addr;
+}
 
 static void lp_core_uart_clear_buf(void)
 {
@@ -1057,13 +1070,16 @@ static void test_lp_uart_read_bytes_buffer_bounds(void)
     TEST_ASSERT_LESS_OR_EQUAL(LP_UART_READ_BOUNDS_USER_BUF_LEN, ret_val);
     TEST_ASSERT_GREATER_THAN(0, ret_val);
 
-    lp_uart_read_bounds_guard_t *region = (lp_uart_read_bounds_guard_t *)&ulp_read_bounds_guard_region;
+    const uintptr_t guard_base = (uintptr_t)(void *)&ulp_read_bounds_guard_region;
+    const size_t post_off = offsetof(lp_uart_read_bounds_guard_t, post_guard);
     for (int i = 0; i < LP_UART_READ_BOUNDS_GUARD_LEN; i++) {
-        TEST_ASSERT_EQUAL_HEX8_MESSAGE(LP_UART_READ_BOUNDS_GUARD_PATTERN, region->pre_guard[i],
+        TEST_ASSERT_EQUAL_HEX8_MESSAGE(LP_UART_READ_BOUNDS_GUARD_PATTERN,
+                                       lp_uart_test_read_shared_u8(guard_base + (uintptr_t)i),
                                        "pre-guard memory corrupted");
     }
     for (int i = 0; i < LP_UART_READ_BOUNDS_GUARD_LEN; i++) {
-        TEST_ASSERT_EQUAL_HEX8_MESSAGE(LP_UART_READ_BOUNDS_GUARD_PATTERN, region->post_guard[i],
+        TEST_ASSERT_EQUAL_HEX8_MESSAGE(LP_UART_READ_BOUNDS_GUARD_PATTERN,
+                                       lp_uart_test_read_shared_u8(guard_base + post_off + (uintptr_t)i),
                                        "post-guard memory corrupted");
     }
 
