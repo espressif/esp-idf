@@ -32,12 +32,9 @@ static esp_err_t lp_spi_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, uin
     /* Initialize LP_IO */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(pin), LP_SPI_TAG, "LP IO Init failed for GPIO %d", pin);
 
-    /* Set LP_IO direction */
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(pin, direction), LP_SPI_TAG, "LP IO Set direction failed for %d", pin);
-
-    /* Connect the LP SPI signals to the LP_IO Matrix */
-    ESP_RETURN_ON_ERROR(lp_gpio_connect_out_signal(pin, out_pad_idx, 0, 0), LP_SPI_TAG, "LP IO Matrix connect out signal failed for %d", pin);
-    ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(pin, in_pad_idx, 0), LP_SPI_TAG, "LP IO Matrix connect in signal failed for %d", pin);
+    /* Connect this LP_IO to the LP SPI pad-out and pad-in indices on the LP IO Matrix. */
+    ESP_RETURN_ON_ERROR(lp_gpio_matrix_output(pin, out_pad_idx, false, false), LP_SPI_TAG, "LP IO matrix output failed for %d", pin);
+    ESP_RETURN_ON_ERROR(lp_gpio_matrix_input(pin, in_pad_idx, false), LP_SPI_TAG, "LP IO matrix input failed for %d", pin);
 
     return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,17 +89,18 @@ static esp_err_t lp_i2c_set_pin(const lp_core_i2c_cfg_t *cfg)
     ESP_RETURN_ON_ERROR(lp_i2c_configure_io(sda_io_num, sda_pullup_en), LPI2C_TAG, "LP I2C SDA pin config failed");
 
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
+    /* On targets that do not support the LP IO Matrix: assign SDA and SCL to the LP I2C
+     * RTC IOMUX function. lp_i2c_configure_io() already initialized the pads and open-drain direction. */
     const i2c_signal_conn_t *p_i2c_pin = &i2c_periph_signal[LP_I2C_NUM_0];
-    ret = rtc_gpio_iomux_func_sel(sda_io_num, p_i2c_pin->iomux_func);
-    ret = rtc_gpio_iomux_func_sel(scl_io_num, p_i2c_pin->iomux_func);
+    ret = rtc_gpio_iomux_output(sda_io_num, p_i2c_pin->iomux_func);
+    ret = rtc_gpio_iomux_output(scl_io_num, p_i2c_pin->iomux_func);
 #else
-    /* Connect the SDA pin of the LP_I2C peripheral to the LP_IO Matrix */
-    ret = lp_gpio_connect_out_signal(sda_io_num, LP_I2C_SDA_PAD_OUT_IDX, 0, 0);
-    ret = lp_gpio_connect_in_signal(sda_io_num, LP_I2C_SDA_PAD_IN_IDX, 0);
+    /* On targets with the LP IO Matrix: route SDA and SCL to the LP I2C pad signals. */
+    ret = lp_gpio_matrix_output(sda_io_num, LP_I2C_SDA_PAD_OUT_IDX, false, false);
+    ret = lp_gpio_matrix_input(sda_io_num, LP_I2C_SDA_PAD_IN_IDX, false);
 
-    /* Connect the SCL pin of the LP_I2C peripheral to the LP_IO Matrix */
-    ret = lp_gpio_connect_out_signal(scl_io_num, LP_I2C_SCL_PAD_OUT_IDX, 0, 0);
-    ret = lp_gpio_connect_in_signal(scl_io_num, LP_I2C_SCL_PAD_IN_IDX, 0);
+    ret = lp_gpio_matrix_output(scl_io_num, LP_I2C_SCL_PAD_OUT_IDX, false, false);
+    ret = lp_gpio_matrix_input(scl_io_num, LP_I2C_SCL_PAD_IN_IDX, false);
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
 
     return ret;

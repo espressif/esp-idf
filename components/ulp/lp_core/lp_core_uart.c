@@ -94,35 +94,28 @@ static esp_err_t lp_uart_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, ui
     /* Connect pins */
     const uart_periph_sig_t *upin = &uart_periph_signal[LP_UART_PORT_NUM].pins[idx];
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
-    /* On non-matrix chips, LP UART pins are always the default IOMUX pins.
-     * Use the all-in-one rtc_gpio_iomux APIs which handle func sel and direction. */
+    /* On targets that do not support the LP IO Matrix, LP UART uses fixed pads.
+     * rtc_gpio_iomux_output / rtc_gpio_iomux_input select the UART RTC IOMUX function and direction. */
     if (direction == RTC_GPIO_MODE_OUTPUT_ONLY) {
         ret = rtc_gpio_iomux_output(pin, upin->iomux_func);
     } else {
         ret = rtc_gpio_iomux_input(pin, upin->iomux_func, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx));
     }
 #else
-    /* If the configured pin is the default LP_IO Mux pin for LP UART, then set the LP_IO MUX function */
+    /* Default LP UART pin: same RTC IOMUX path as on targets that do not support the LP IO Matrix. */
     if (upin->default_gpio == pin) {
-        /* rtc_gpio_iomux_input/output are all-in-one APIs that handle func sel,
-         * direction, and LP GPIO Matrix bypass in a single call. */
+        /* Select LP UART on this pin including direction and LP IO Matrix bypass. */
         if (direction == RTC_GPIO_MODE_OUTPUT_ONLY) {
             ret = rtc_gpio_iomux_output(pin, upin->iomux_func);
         } else {
             ret = rtc_gpio_iomux_input(pin, upin->iomux_func, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx));
         }
     } else {
-        ret = rtc_gpio_set_direction(pin, direction);
-        if (ret != ESP_OK) {
-            return ESP_FAIL;
-        }
-        /* Select FUNC1 for LP_IO Matrix */
-        ret = rtc_gpio_iomux_func_sel(pin, 1);
-        /* Connect the LP_IO to the LP UART peripheral signal */
+        /* Non-default pin: route LP UART TX/RX through the LP IO Matrix. */
         if (direction == RTC_GPIO_MODE_OUTPUT_ONLY) {
-            ret = lp_gpio_connect_out_signal(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), 0, 0);
+            ret = lp_gpio_matrix_output(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), false, false);
         } else {
-            ret = lp_gpio_connect_in_signal(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), 0);
+            ret = lp_gpio_matrix_input(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), false);
         }
     }
 #endif /* SOC_LP_GPIO_MATRIX_SUPPORTED */
