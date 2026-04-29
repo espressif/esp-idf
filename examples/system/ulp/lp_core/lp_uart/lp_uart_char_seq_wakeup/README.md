@@ -13,7 +13,7 @@ This example demonstrates how to use LP UART in specific character sequence wake
 
 ### Hardware Required
 
-To run this example, you should have an ESP based development board which supports LP UART wakeup such as the ESP32-C6 and a host machine with a serial input connection.
+To run this example, you should have an ESP based development board which supports LP UART wakeup such as the ESP32-C6 or ESP32-S31 and a host machine with a serial input connection.
 
 #### Pin Assignment:
 
@@ -24,6 +24,7 @@ To run this example, you should have an ESP based development board which suppor
 | ESP32-C6                | GPIO4  | GPIO5  |
 | ESP32-C5                | GPIO4  | GPIO5  |
 | ESP32-P4                | GPIO15 | GPIO14 |
+| ESP32-S31               | GPIO7  | GPIO6  |
 | Host machine            | Tx     | Rx     |
 
 ### Build and Flash
