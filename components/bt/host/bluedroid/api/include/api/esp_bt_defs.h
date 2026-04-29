@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -215,7 +216,12 @@ typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
 #define ESP_BLE_PRIM_ADV_INT_MIN            0x000020     /*!< Minimum advertising interval for undirected and low duty cycle directed advertising */
 #endif
 #define ESP_BLE_PRIM_ADV_INT_MAX            0xFFFFFF     /*!< Maximum advertising interval for undirected and low duty cycle directed advertising */
-#define ESP_BLE_CONN_INT_MIN                0x0006       /*!< relate to BTM_BLE_CONN_INT_MIN in stack/btm_ble_api.h */
+/* Lower bound (1.25 ms units) for host-side connection interval checks.*/
+#if defined(CONFIG_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT) && (CONFIG_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT)
+#define ESP_BLE_CONN_INT_MIN                0x0001
+#else
+#define ESP_BLE_CONN_INT_MIN                0x0006
+#endif
 #define ESP_BLE_CONN_INT_MAX                0x0C80       /*!< relate to BTM_BLE_CONN_INT_MAX in stack/btm_ble_api.h */
 #define ESP_BLE_CONN_LATENCY_MAX            499          /*!< relate to ESP_BLE_CONN_LATENCY_MAX in stack/btm_ble_api.h */
 #define ESP_BLE_CONN_SUP_TOUT_MIN           0x000A       /*!< relate to BTM_BLE_CONN_SUP_TOUT_MIN in stack/btm_ble_api.h */
@@ -232,8 +238,8 @@ typedef uint8_t esp_ble_phy_mask_t;
 typedef struct {
     uint16_t scan_interval;       /*!< Initial scan interval, in units of 0.625ms, the range is 0x0004(2.5ms) to 0xFFFF(10.24s). */
     uint16_t scan_window;         /*!< Initial scan window, in units of 0.625ms, the range is 0x0004(2.5ms) to 0xFFFF(10.24s). */
-    uint16_t interval_min;        /*!< Minimum connection interval, in units of 1.25ms, the range is 0x0006(7.5ms) to 0x0C80(4s). */
-    uint16_t interval_max;        /*!< Maximum connection interval, in units of 1.25ms, the range is 0x0006(7.5ms) to 0x0C80(4s). */
+    uint16_t interval_min;        /*!< Minimum connection interval, in units of 1.25 ms. Host validation uses ESP_BLE_CONN_INT_MIN as the lower bound; the interval the controller ultimately allows may be higher depending on its capability. Upper bound 0x0C80 (4 s). */
+    uint16_t interval_max;        /*!< Maximum connection interval, in units of 1.25 ms. Same bounds as interval_min. */
     uint16_t latency;             /*!< Connection latency, the range is 0x0000(0) to 0x01F3(499). */
     uint16_t supervision_timeout; /*!< Connection supervision timeout, in units of 10ms, the range is from 0x000A(100ms) to 0x0C80(32s). */
     uint16_t min_ce_len;          /*!< Minimum connection event length, in units of 0.625ms, setting to 0 for no preferred parameters. */

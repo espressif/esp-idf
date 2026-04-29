@@ -122,7 +122,7 @@ typedef UINT8   tBTM_BLE_SFP;
 #define BTM_BLE_SCAN_INT_MAX            0x4000
 #define BTM_BLE_SCAN_WIN_MIN            0x0004
 #define BTM_BLE_SCAN_WIN_MAX            0x4000
-#define BTM_BLE_CONN_INT_MIN            0x0006
+#define BTM_BLE_CONN_INT_MIN            BLE_CONN_INT_MIN_HW   /* host-side check limit; see BLE_CONN_INT_MIN_HW in common/bt_target.h */
 #define BTM_BLE_CONN_INT_MAX            0x0C80
 #define BTM_BLE_CONN_LATENCY_MAX        499
 #define BTM_BLE_CONN_SUP_TOUT_MIN       0x000A
