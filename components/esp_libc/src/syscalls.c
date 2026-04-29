@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,11 @@ int creat(const char *path, mode_t mode)
 int gettimeofday(struct timeval *restrict tv, void *restrict tz)
 {
     return _gettimeofday_r(__getreent(), tv, tz);
+}
+
+clock_t times(struct tms *ptms)
+{
+    return _times_r(__getreent(), ptms);
 }
 
 int unlink(const char *path)
