@@ -42,6 +42,12 @@ ESP-IDF 应用程序使用常见的计算机架构模式：由程序控制流动
 
 调用 ``malloc()`` 时，ESP-IDF ``malloc()`` 内部调用 ``heap_caps_malloc_default(size)``，使用属性 ``MALLOC_CAP_DEFAULT`` 分配内存。该属性可实现字节寻址功能，即存储空间的最小编址单位为字节。
 
+``MALLOC_CAP_DEFAULT`` 描述的是内存能力，而不是精确的分配策略。特别是，``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` 不一定遵循与 ``malloc()`` 相同的放置策略。
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    例如，当 :doc:`片外 RAM </api-guides/external-ram>` 被添加到基于能力的堆分配器后，``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` 可能返回片外 RAM，而 ``malloc()`` 是否优先或仅使用内部 RAM 则取决于具体配置。
+
 ``malloc()`` 使用基于属性的分配系统，所以使用 :cpp:func:`heap_caps_malloc` 分配的内存可以通过调用标准的 ``free()`` 函数释放。
 
 可用堆空间

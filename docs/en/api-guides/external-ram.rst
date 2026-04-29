@@ -87,11 +87,13 @@ It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next
 Add External RAM to the Capability Allocator
 --------------------------------------------
 
-Select this option by choosing ``Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`` from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Add RAM to heap_caps allocator (malloc() stays internal by default)`` from :ref:`CONFIG_SPIRAM_USE`.
 
-When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``. Since this memory is also tagged with ``MALLOC_CAP_DEFAULT``, calls such as ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` can still return PSRAM pointers.
 
-To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+To explicitly allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+
+In this mode, standard ``malloc()`` does not allocate from external RAM by default because it uses a separate default allocation policy.
 
 .. _external_ram_config_malloc:
 
