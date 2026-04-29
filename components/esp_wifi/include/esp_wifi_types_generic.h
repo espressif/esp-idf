@@ -519,7 +519,7 @@ typedef struct {
     uint8_t channel;                          /**< Channel of soft-AP. Set to 0 for auto selection (min channel: typically 1 for 2.4G, 36 for 5G). Other invalid values return ESP_ERR_INVALID_ARG. */
     wifi_auth_mode_t authmode;                /**< Auth mode of soft-AP. Do not support AUTH_WEP, AUTH_WAPI_PSK and AUTH_OWE in soft-AP mode. When the auth mode is set to WPA2_PSK, WPA2_WPA3_PSK or WPA3_PSK, the pairwise cipher will be overwritten with WIFI_CIPHER_TYPE_CCMP by default, unless explicitly set.  */
     uint8_t ssid_hidden;                      /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;                   /**< Max number of stations allowed to connect in */
+    uint8_t max_connection;                   /**< Max number of stations allowed to connect in. Please note that soft-AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM. */
     uint16_t beacon_interval;                 /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     uint8_t csa_count;                        /**< Channel Switch Announcement Count. Notify the station that the channel will switch after the csa_count beacon intervals. Default value: 3 */
     uint8_t dtim_period;                      /**< Dtim period of soft-AP. Range: 1 ~ 10. Default value: 1 */
