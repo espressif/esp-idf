@@ -1,6 +1,5 @@
 set(srcs "test_app_main.c"
-         "test_temperature_sensor.cpp"
-         "test_temperature_phy.cpp")
+         "test_temperature_sensor.cpp")
 
 if(CONFIG_SOC_TEMPERATURE_SENSOR_SUPPORT_ETM)
     list(APPEND srcs "test_temperature_etm.cpp")
