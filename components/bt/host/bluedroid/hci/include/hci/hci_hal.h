@@ -24,9 +24,7 @@
 #include "common/bt_target.h"
 #include "osi/pkt_queue.h"
 #include "stack/bt_types.h"
-#if ((BT_CONTROLLER_INCLUDED == TRUE) && SOC_ESP_NIMBLE_CONTROLLER)
-#include "os/os_mbuf.h"
-#endif
+
 typedef enum {
     DATA_TYPE_COMMAND = 1,
     DATA_TYPE_ACL     = 2,
@@ -87,11 +85,6 @@ typedef struct hci_hal_t {
 
 // Gets the correct hal implementation, as compiled for.
 const hci_hal_t *hci_hal_h4_get_interface(void);
-#if ((BT_CONTROLLER_INCLUDED == TRUE) && SOC_ESP_NIMBLE_CONTROLLER)
-int ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg);
-
-int ble_hs_rx_data(struct os_mbuf *om, void *arg);
-#endif
 
 
 #endif /* _HCI_HAL_H */
