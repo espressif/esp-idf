@@ -163,6 +163,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
     from click.shell_completion import CompletionItem
     from rich_click import Context
     from rich_click import RichHelpConfiguration
+    from rich_click import RichHelpFormatter
     from rich_click.rich_click import MAX_WIDTH
 
     class Deprecation:
@@ -349,6 +350,22 @@ def init_cli(verbose_output: list | None = None) -> Any:
             check_deprecation(ctx)
             return super().invoke(ctx)
 
+        def format_options(self, ctx: Context, formatter: RichHelpFormatter) -> None:
+            """
+            default_panels_first=True causes the
+            renderer to drop `post_default_panels` for options on non-Group
+            commands, which is exactly where the subcommand "Options" panel
+            lives -- `idf.py <subcmd> --help` would otherwise show only
+            Usage + description. Temporarily flip the flag to False while
+            rendering options.
+            """
+            prev_default_first = formatter.config.default_panels_first
+            try:
+                formatter.config.default_panels_first = False
+                super().format_options(ctx, formatter)
+            finally:
+                formatter.config.default_panels_first = prev_default_first
+
     class Argument(click.RichArgument):
         """
         Positional argument
@@ -445,15 +462,21 @@ def init_cli(verbose_output: list | None = None) -> Any:
             all_actions: dict | None = None,
             verbose_output: list | None = None,
             cli_help: str | None = None,
+            command_groups: dict[str, list[dict[str, Any]]] | None = None,
         ) -> None:
             super().__init__(
+                PROG,
                 chain=True,
                 invoke_without_command=True,
                 result_callback=self.execute_tasks,
                 no_args_is_help=True,
                 context_settings={
                     'help_option_names': ['-h', '--help'],
-                    'rich_help_config': RichHelpConfiguration(max_width=MAX_WIDTH),
+                    'rich_help_config': RichHelpConfiguration(
+                        max_width=MAX_WIDTH,
+                        command_groups=command_groups if command_groups is not None else {},
+                        default_panels_first=True,
+                    ),
                 },
                 help=cli_help,
             )
@@ -934,15 +957,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
         build_dir: str = args.build_dir
         return os.path.abspath(build_dir)
 
-    def _extract_relevant_path(path: str) -> str:
-        """
-        Returns part of the path starting from 'components' or 'managed_components'.
-        If neither is found, returns the full path.
-        """
-        for keyword in ('components', 'managed_components'):
-            # arg path is loaded from project_description.json, where paths are always defined with '/'
-            if keyword in path.split('/'):
-                return keyword + path.split(keyword, 1)[1]
+    def _path_relative_to_project(path: str, project_dir: str) -> str:
+        """If ``path`` is under ``project_dir``, return its path relative to the project; else ``path`` unchanged."""
+        path_abs = os.path.abspath(os.path.normpath(path))
+        project_abs = os.path.abspath(os.path.normpath(project_dir))
+        parent_prefix = project_abs.rstrip(os.sep) + os.sep
+        if path_abs == project_abs or path_abs.startswith(parent_prefix):
+            return _safe_relpath(path_abs, project_abs)
+
         return path
 
     # Mutable dict used as a cache keyed by lock path
@@ -1013,6 +1035,20 @@ def init_cli(verbose_output: list | None = None) -> Any:
             lock_key = comp_name.replace('__', '/', 1) if '__' in comp_name else comp_name
             return lock_key in _get_trusted_names_from_lock(lock_path)
         return False
+
+    def _build_rich_help_command_groups(
+        external_panels: list[tuple[str, list[str]]],
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Build ``command_groups`` for rich-click's ``RichHelpConfiguration``.
+        ``external_panels`` is a list of ``(title, command_names)`` from ``idf_ext.py`` extension
+        modules and from Python entry-point extensions. Those panels appear on
+        the root ``idf.py --help`` after the default Commands section.
+        """
+        panels: list[dict[str, Any]] = []
+        for title, cmds in external_panels:
+            if cmds:
+                panels.append({'name': title, 'commands': cmds})
+        return {PROG: panels} if panels else {}
 
     # That's a tiny parser that parse project-dir even before constructing
     # fully featured click parser to be sure that extensions are loaded from the right place
@@ -1113,31 +1149,44 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 else:
                     print_warning(
                         f'WARNING: Not loading component extension from untrusted source '
-                        f'"{_extract_relevant_path(comp_dir)}". '
+                        f'"{_path_relative_to_project(comp_dir, project_dir)}". '
                         'Only extensions from trusted sources are loaded. Run '
                         '"idf.py docs -sp api-guides/tools/idf-py.html#extending-idf-py" '
                         'for the list of trusted sources. Set IDF_EXTENSION_ALLOW_UNTRUSTED=1 to load all.'
                     )
 
     # Load extensions from directories that participate in the build (components and project)
+    external_help_panels: list[tuple[str, list[str]]] = []
     for ext_dir in component_idf_ext_dirs + [project_dir]:
         extension_func = load_cli_extension_from_dir(ext_dir)
         if extension_func:
             try:
-                all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+                custom_actions = extension_func(all_actions, project_dir)
+                all_actions = merge_action_lists(all_actions, custom_actions=custom_actions)
             except Exception as e:
                 print_warning(f'WARNING: Cannot load directory extension from "{ext_dir}": {e}')
             else:
+                panel_cmds = sorted(n for n in custom_actions.get('actions') or {} if n != 'fallback')
+                if panel_cmds:
+                    panel_title = (
+                        'Project' if ext_dir == project_dir else _path_relative_to_project(ext_dir, project_dir)
+                    )
+                    external_help_panels.append((panel_title, panel_cmds))
                 if ext_dir != project_dir:
-                    print(f'INFO: Loaded component extension from "{_extract_relevant_path(ext_dir)}"')
+                    print(f'INFO: Loaded component extension from "{_path_relative_to_project(ext_dir, project_dir)}"')
 
     # Load extensions from Python entry points
     entry_point_extensions = load_cli_extensions_from_entry_points()
-    for name, extension_func in entry_point_extensions:
+    for ep_name, extension_func in entry_point_extensions:
         try:
-            all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+            custom_actions = extension_func(all_actions, project_dir)
+            all_actions = merge_action_lists(all_actions, custom_actions=custom_actions)
         except Exception as e:
-            print_warning(f'WARNING: Cannot load entry point extension "{name}": {e}')
+            print_warning(f'WARNING: Cannot load entry point extension "{ep_name}": {e}')
+        else:
+            panel_cmds = sorted(n for n in (custom_actions.get('actions') or {}) if n != 'fallback')
+            if panel_cmds:
+                external_help_panels.append((ep_name, panel_cmds))
 
     cli_help = (
         'ESP-IDF CLI build management tool. '
@@ -1145,7 +1194,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
         f'Selected target: {get_target(project_dir)}'
     )
 
-    return CLI(cli_help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
+    help_command_groups = _build_rich_help_command_groups(external_help_panels)
+    return CLI(
+        cli_help=cli_help,
+        verbose_output=verbose_output,
+        all_actions=all_actions,
+        command_groups=help_command_groups,
+    )
 
 
 def main(argv: list[Any] | None = None) -> None:
