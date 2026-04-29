@@ -417,14 +417,11 @@ menu "FreeRTOS"
                 hook function in their application.
 
         config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-            # This feature is innately supported in FreeRTOS SMP, and hence not available as a config option when
-            # FreeRTOS SMP is enabled.
+            # TODO(IDF-15523): Remove this hidden compatibility option entirely.
+            # This feature is innately supported in FreeRTOS SMP, and IDF FreeRTOS always enables it.
             depends on !FREERTOS_SMP
-            bool "Check that mutex semaphore is given by owner task"
+            bool
             default y
-            help
-                If enabled, assert that when a mutex semaphore is given, the task giving the semaphore is the task
-                which is currently holding the mutex.
 
         config FREERTOS_ISR_STACKSIZE
             int "ISR stack size"
