@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "esp_adc/adc_filter.h"
 #include "test_common_adc.h"
 #include "idf_performance.h"
+#include "esp_timer.h"
 
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
 
@@ -295,6 +296,92 @@ TEST_CASE("ADC1 continuous std deviation performance, with filter", "[adc_contin
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_64, "%.2f", std);
 }
 #endif  //#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+
+/*---------------------------------------------------------------
+        ADC Continuous Sample Count Test
+---------------------------------------------------------------*/
+static void test_adc_continuous_sample_freq(uint32_t sample_freq_hz)
+{
+    adc_continuous_handle_t handle = NULL;
+    uint8_t result[256] = {0};
+    uint32_t ret_num = 0;
+    esp_err_t ret;
+    int64_t samples = 0;
+    int64_t current_us;
+    int64_t previous_us;
+    TaskHandle_t task_handle = xTaskGetCurrentTaskHandle();
+
+    printf("\n\nTesting ADC continuous with sample frequency: %"PRIu32" Hz\n", sample_freq_hz);
+
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = 1024,
+        .conv_frame_size = 256,
+    };
+    TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
+
+    adc_continuous_config_t dig_cfg = {
+        .sample_freq_hz = sample_freq_hz,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+    };
+    adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
+    adc_pattern[0].atten = ADC_ATTEN_DB_0;
+    adc_pattern[0].channel = TEST_STD_ADC1_CHANNEL0;
+    adc_pattern[0].unit = ADC_UNIT_1;
+    adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
+    dig_cfg.adc_pattern = adc_pattern;
+    dig_cfg.pattern_num = 1;
+
+    TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
+
+    adc_continuous_evt_cbs_t cbs = {
+        .on_conv_done = s_conv_done_cb,
+    };
+    TEST_ESP_OK(adc_continuous_register_event_callbacks(handle, &cbs, &task_handle));
+    TEST_ESP_OK(adc_continuous_start(handle));
+
+    for (int test_round = 0; test_round < 2; test_round++) {
+        samples = 0;
+        previous_us = esp_timer_get_time();
+
+        while (samples < sample_freq_hz) {
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+            while (1) {
+                ret = adc_continuous_read(handle, result, 256, &ret_num, 0);
+                if (ret == ESP_OK) {
+                    samples += (ret_num / SOC_ADC_DIGI_RESULT_BYTES);
+                    if (samples >= sample_freq_hz) {
+                        current_us = esp_timer_get_time();
+                        int64_t samples_per_second = samples * 1000000 / (current_us - previous_us);
+                        printf("samples = %lld, time = %lld us, samples_per_second = %lld (target: %"PRIu32" Hz)\n",
+                               samples, (current_us - previous_us), samples_per_second, sample_freq_hz);
+
+                        uint32_t tolerance = sample_freq_hz / 1000;
+                        if (test_round != 0) {
+                            //For first read, ADC is not stable, the count is not accurate, so ignore it
+                            TEST_ASSERT_INT_WITHIN(tolerance, sample_freq_hz, samples_per_second);
+                        }
+                        break;
+                    }
+                } else if (ret == ESP_ERR_TIMEOUT) {
+                    break;
+                }
+            }
+        }
+    }
+
+    TEST_ESP_OK(adc_continuous_stop(handle));
+    TEST_ESP_OK(adc_continuous_deinit(handle));
+}
+
+TEST_CASE("ADC continuous sample frequency test", "[adc_continuous][performance]")
+{
+    // Test minimum frequency
+    test_adc_continuous_sample_freq(SOC_ADC_SAMPLE_FREQ_THRES_LOW);
+    // Test maximum frequency
+    test_adc_continuous_sample_freq(SOC_ADC_SAMPLE_FREQ_THRES_HIGH);
+}
+
 #endif  //#if SOC_ADC_DMA_SUPPORTED
 
 #if CONFIG_IDF_TARGET_ESP32 ||  SOC_ADC_CALIBRATION_V1_SUPPORTED
