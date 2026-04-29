@@ -309,6 +309,7 @@ extern void ets_backup_dma_copy(uint32_t reg, uint32_t mem_addr, uint32_t num, b
 
 extern void btdm_cca_feature_enable(void);
 extern void btdm_aa_check_enhance_enable(void);
+extern void ble_min_conn_interval_enable(uint16_t min_interval);
 
 /* BLE Log module */
 #if CONFIG_BT_CTRL_LE_LOG_EN
@@ -1347,6 +1348,9 @@ static void btdm_funcs_table_ready_wrapper(void)
 #endif
 #if BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED
     btdm_aa_check_enhance_enable();
+#endif
+#if CONFIG_BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE
+    ble_min_conn_interval_enable(3); // 3 * 1.25 = 3.75ms
 #endif
 #if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
     // do nothing
