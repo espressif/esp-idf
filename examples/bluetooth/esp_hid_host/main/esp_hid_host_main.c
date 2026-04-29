@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -238,10 +238,7 @@ void app_main(void)
 
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 	/* Starting nimble task after gatts is initialized*/
-    ret = esp_nimble_enable(ble_hid_host_task);
-    if (ret) {
-        ESP_LOGE(TAG, "esp_nimble_enable failed: %d", ret);
-    }
+    nimble_port_freertos_init(ble_hid_host_task);
 
     vTaskDelay(200);
 
