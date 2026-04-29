@@ -124,6 +124,7 @@ void avct_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
         } else {
             /* TG role only - accept the connection from CT. move the channel ID to the conflict list */
             p_lcb->conflict_lcid = p_lcb->ch_lcid;
+            p_lcb->ch_flags = 0;
             AVCT_TRACE_DEBUG("avct_l2c_connect_ind_cback conflict_lcid:0x%x", p_lcb->conflict_lcid);
         }
     }
@@ -142,6 +143,7 @@ void avct_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
 
         /* transition to configuration state */
         p_lcb->ch_state = AVCT_CH_CFG;
+        p_lcb->ch_flags = 0;
 
         /* Send L2CAP config req */
         memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
@@ -183,6 +185,7 @@ void avct_l2c_connect_cfm_cback(UINT16 lcid, UINT16 result)
             if (result == L2CAP_CONN_OK) {
                 /* set channel state */
                 p_lcb->ch_state = AVCT_CH_CFG;
+                p_lcb->ch_flags = 0;
 
                 /* Send L2CAP config req */
                 memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
@@ -275,6 +278,10 @@ void avct_l2c_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
     /* look up lcb for this channel */
     if ((p_lcb = avct_lcb_by_lcid(lcid)) != NULL) {
         AVCT_TRACE_DEBUG("avct_l2c_config_ind_cback: 0x%x, ch_state: %d", lcid, p_lcb->ch_state);
+        if (p_lcb->ch_state != AVCT_CH_CFG) {
+            AVCT_TRACE_ERROR("avct_l2c_config_ind_cback: EINVAL state %d", p_lcb->ch_state);
+            return;
+        }
         /* store the mtu in tbl */
         if (p_cfg->mtu_present) {
             p_lcb->peer_mtu = p_cfg->mtu;

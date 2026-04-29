@@ -125,6 +125,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
     msg.pid = BTC_PID_A2DP;
     msg.act = BTC_AV_SINK_API_DISCONNECT_EVT;
 
+    memset(&arg, 0, sizeof(btc_av_args_t));
     /* Switch to BTC context */
     memcpy(&(arg.disconn), remote_bda, sizeof(bt_bdaddr_t));
     stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
@@ -211,6 +212,10 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl)
     if (ctrl == ESP_A2D_MEDIA_CTRL_STOP) {
         LOG_WARN("ESP_A2D_MEDIA_CTRL_STOP is deprecated, using ESP_A2D_MEDIA_CTRL_SUSPEND instead.\n");
         ctrl = ESP_A2D_MEDIA_CTRL_SUSPEND;
+    }
+
+    if (ctrl <= ESP_A2D_MEDIA_CTRL_NONE || ctrl > ESP_A2D_MEDIA_CTRL_SUSPEND) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     bt_status_t stat;
