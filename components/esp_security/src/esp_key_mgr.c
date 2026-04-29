@@ -160,7 +160,7 @@ static void esp_key_mgr_release_hardware(bool deployment_mode)
  * @param purpose Key purpose to check
  * @return true if this purpose requires a secondary deployment, false otherwise
  */
-static inline bool is_multi_stage_key_purpose(esp_key_mgr_key_purpose_t purpose)
+static inline bool multi_stage_deployment_key_purpose(esp_key_mgr_key_purpose_t purpose)
 {
     return (purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 ||
             purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1 ||
@@ -351,6 +351,7 @@ typedef struct aes_deploy {
     const esp_key_mgr_aes_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
     bool huk_deployed;
+    bool multi_stage_deployment;
 } aes_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
@@ -374,7 +375,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+    uint8_t key_recovery_info_index = config->multi_stage_deployment ? 1 : 0;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -424,7 +425,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     // Check if key deployment validation should be skipped for this purpose
     // Primary purposes in multi-stage deployments skip validation after the first stage
     // because the key is not yet completely deployed.
-    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+    if (!multi_stage_deployment_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -475,9 +476,10 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
 
     aes_deploy_config.huk_deployed = true;
 
-    if (is_multi_stage_key_purpose(aes_deploy_config.key_purpose)) {
+    if (multi_stage_deployment_key_purpose(aes_deploy_config.key_purpose)) {
         aes_deploy_config.key_purpose = get_secondary_key_purpose(aes_deploy_config.key_purpose);
         aes_deploy_config.k1_encrypted = key_config->k1_encrypted[1];
+        aes_deploy_config.multi_stage_deployment = true;
         esp_ret = key_mgr_deploy_key_aes_mode(&aes_deploy_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Key deployment in AES mode failed");
@@ -497,6 +499,7 @@ typedef struct key_recovery_config {
     esp_key_mgr_key_purpose_t key_purpose;
     esp_key_mgr_key_recovery_info_t *key_recovery_info;
     bool huk_recovered;
+    bool multi_stage_deployment;
 } key_recovery_config_t;
 
 static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
@@ -537,7 +540,7 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
 
-    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+    uint8_t key_recovery_info_index = config->multi_stage_deployment ? 1 : 0;
 
     if (!check_key_info_validity(&config->key_recovery_info->key_info[key_recovery_info_index])) {
         ESP_LOGE(TAG, "Key info not valid");
@@ -551,7 +554,7 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
     // Check if key deployment validation should be skipped for this purpose
     // Primary purposes in multi-stage deployments skip validation after the first stage
     // because the key is not yet completely deployed.
-    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+    if (!multi_stage_deployment_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGD(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -600,8 +603,9 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         goto cleanup;
     }
 
-    if (is_multi_stage_key_purpose(key_recovery_config.key_purpose)) {
+    if (multi_stage_deployment_key_purpose(key_recovery_config.key_purpose)) {
         key_recovery_config.key_purpose = get_secondary_key_purpose(key_recovery_config.key_purpose);
+        key_recovery_config.multi_stage_deployment = true;
         esp_ret = key_mgr_recover_key(&key_recovery_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover key");
@@ -637,6 +641,7 @@ typedef struct ecdh0_config {
     esp_key_mgr_key_recovery_info_t *key_info;
     uint8_t *ecdh0_key_info;
     bool huk_deployed;
+    bool multi_stage_deployment;
 } ecdh0_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
@@ -660,7 +665,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+    uint8_t key_recovery_info_index = config->multi_stage_deployment ? 1 : 0;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -698,7 +703,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     // Check if key deployment validation should be skipped for this purpose
     // Primary purposes in multi-stage deployments skip validation after the first stage
     // because the key is not yet completely deployed.
-    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+    if (!multi_stage_deployment_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -751,10 +756,11 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
 
     ecdh0_deploy_config.huk_deployed = true;
 
-    if (is_multi_stage_key_purpose(ecdh0_deploy_config.key_purpose)) {
+    if (multi_stage_deployment_key_purpose(ecdh0_deploy_config.key_purpose)) {
         ecdh0_deploy_config.key_purpose = get_secondary_key_purpose(ecdh0_deploy_config.key_purpose);
         ecdh0_deploy_config.k1_G = key_config->k1_G[1];
         ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[1];
+        ecdh0_deploy_config.multi_stage_deployment = true;
         esp_ret = key_mgr_deploy_key_ecdh0_mode(&ecdh0_deploy_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Key deployment in ECDH0 mode failed");
@@ -775,6 +781,7 @@ typedef struct random_deploy {
     const esp_key_mgr_random_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
     bool huk_deployed;
+    bool multi_stage_deployment;
 } random_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
@@ -797,7 +804,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+    uint8_t key_recovery_info_index = config->multi_stage_deployment ? 1 : 0;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -828,7 +835,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     // Check if key deployment validation should be skipped for this purpose
     // Primary purposes in multi-stage deployments skip validation after the first stage
     // because the key is not yet completely deployed.
-    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+    if (!multi_stage_deployment_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -878,8 +885,9 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
 
     random_deploy_config.huk_deployed = true;
 
-    if (is_multi_stage_key_purpose(random_deploy_config.key_purpose)) {
+    if (multi_stage_deployment_key_purpose(random_deploy_config.key_purpose)) {
         random_deploy_config.key_purpose = get_secondary_key_purpose(random_deploy_config.key_purpose);
+        random_deploy_config.multi_stage_deployment = true;
         esp_ret = key_mgr_deploy_key_random_mode(&random_deploy_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Key deployment in Random mode failed");
