@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,10 +61,19 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
  */
 static inline void _rtcio_ll_enable_io_clock(bool enable)
 {
-    LPPERI.clk_en.lp_io_ck_en = enable;
-    LP_GPIO.clock_gate.clk_en = enable;
-    while ((LPPERI.clk_en.lp_io_ck_en != enable) || (LP_GPIO.clock_gate.clk_en != enable)) {
-        ;
+    // LPPERI clock controls LP_GPIO so needs to be enabled first/disabled last
+    if (enable) {
+        LPPERI.clk_en.lp_io_ck_en = enable;
+        LP_GPIO.clock_gate.clk_en = enable;
+    } else {
+        LP_GPIO.clock_gate.clk_en = enable;
+        LPPERI.clk_en.lp_io_ck_en = enable;
+    }
+
+    if (enable) {
+        while ((LPPERI.clk_en.lp_io_ck_en != enable) || (LP_GPIO.clock_gate.clk_en != enable)) {
+            ;
+        }
     }
 }
 
