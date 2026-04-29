@@ -460,6 +460,31 @@
 #define BLE_HIGH_DUTY_ADV_INTERVAL FALSE
 #endif
 
+/* Minimum BLE connection interval (in 1.25 ms units) enforced by the Bluedroid
+ * host parameter validation.
+ *
+ *   - When host-side validation keeps the Core Spec floor: 0x0006 (7.5 ms).
+ *   - When validation is relaxed for sub-spec intervals: 0x0001 (1.25 ms) so
+ *     host-side checks no longer enforce the Core Spec minimum; whether a
+ *     smaller connection interval is allowed and the real lower limit depend
+ *     entirely on Controller capability and its own configuration (option
+ *     names differ by Controller). Whether the relaxed mode is used is
+ *     determined by how the Host is integrated with the Controller for each
+ *     product, not documented here.
+ *
+ * Note: the relaxed lower bound is 0x0001 rather than 0x0000 so that all
+ * existing `uint16_t < MIN` / `uint16_t >= MIN` range checks in the stack
+ * remain well-defined under GCC `-Wtype-limits`. Since 0 is not a valid HCI
+ * connection interval anyway, this is functionally equivalent to disabling
+ * the host-side minimum check. */
+#ifndef BLE_CONN_INT_MIN_HW
+#if (UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT == 1)
+#define BLE_CONN_INT_MIN_HW             0x0001
+#else
+#define BLE_CONN_INT_MIN_HW             0x0006
+#endif
+#endif
+
 #if (UC_BT_BLE_RPA_SUPPORTED  == TRUE)
 #define CONTROLLER_RPA_LIST_ENABLE   TRUE
 #else
