@@ -590,8 +590,9 @@ config BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE
 
 menu "Controller debug log Options (Experimental)"
     config BT_CTRL_LE_LOG_EN
-        depends on BT_CTRL_RUN_IN_FLASH_ONLY
         bool "Enable BLE debug log"
+        select BT_CTRL_RUN_IN_FLASH_ONLY
+        default y if BLE_LOG_LL_ENABLED
         default n
 
     config BT_CTRL_LE_LOG_MODE_BLE_LOG_V2

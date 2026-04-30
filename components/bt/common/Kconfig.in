@@ -162,7 +162,6 @@ menu "BT Logs"
         default n
         depends on !BT_STACK_NO_LOG
         select BLE_LOG_ENABLED
-        select BLE_COMPRESSED_LOG_ENABLE
         help
             Enable bandwidth-optimized logging for the BLE Log Async Output
             system. When enabled, only high-severity logs are captured and
@@ -175,9 +174,9 @@ menu "BT Logs"
     if BT_LOG_CRITICAL_ONLY
         config BT_LOG_CRITICAL_ONLY_CTRL
             bool "Controller: bandwidth-optimized logging"
-            depends on SOC_ESP_NIMBLE_CONTROLLER || BT_CTRL_RUN_IN_FLASH_ONLY
+            depends on SOC_ESP_NIMBLE_CONTROLLER || BLE_LOG_IS_ESP_LEGACY_CONTROLLER
             select BT_LE_CONTROLLER_LOG_ENABLED if SOC_ESP_NIMBLE_CONTROLLER
-            select BT_CTRL_LE_LOG_EN if !SOC_ESP_NIMBLE_CONTROLLER
+            select BT_CTRL_LE_LOG_EN if BLE_LOG_IS_ESP_LEGACY_CONTROLLER
             default y
             help
                 Enable controller log output via the async transport with
@@ -186,7 +185,6 @@ menu "BT Logs"
 
         config BT_LOG_CRITICAL_ONLY_HOST
             bool "Host: bandwidth-optimized logging"
-            select BLE_HOST_COMPRESSED_LOG_ENABLE if BT_BLUEDROID_ENABLED
             default y
             help
                 Enable host stack log encoding via the async transport.
