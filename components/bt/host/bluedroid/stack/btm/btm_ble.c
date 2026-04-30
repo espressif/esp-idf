@@ -578,8 +578,8 @@ void BTM_BleSetPrefConnParams (BD_ADDR bd_addr,
                     tout: %u",
                    min_conn_int, max_conn_int, slave_latency, supervision_tout);
 
-    if (BTM_BLE_ISVALID_PARAM(min_conn_int, BTM_BLE_CONN_INT_MIN, BTM_BLE_CONN_INT_MAX) &&
-            BTM_BLE_ISVALID_PARAM(max_conn_int, BTM_BLE_CONN_INT_MIN, BTM_BLE_CONN_INT_MAX) &&
+    if (BTM_BLE_ISVALID_PARAM(min_conn_int, BLE_CONN_INT_MIN_HOST_CHECK, BTM_BLE_CONN_INT_MAX) &&
+            BTM_BLE_ISVALID_PARAM(max_conn_int, BLE_CONN_INT_MIN_HOST_CHECK, BTM_BLE_CONN_INT_MAX) &&
             BTM_BLE_ISVALID_PARAM(supervision_tout, BTM_BLE_CONN_SUP_TOUT_MIN, BTM_BLE_CONN_SUP_TOUT_MAX) &&
             (slave_latency <= BTM_BLE_CONN_LATENCY_MAX || slave_latency == BTM_BLE_CONN_PARAM_UNDEF)) {
         if (p_dev_rec) {

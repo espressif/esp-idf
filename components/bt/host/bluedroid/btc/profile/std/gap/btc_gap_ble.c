@@ -1960,7 +1960,7 @@ static void btc_ble_update_conn_params(BD_ADDR bd_addr, uint16_t min_int,
         min_int = max_int;
     }
 
-    if (min_int < BTM_BLE_CONN_INT_MIN || max_int > BTM_BLE_CONN_INT_MAX) {
+    if (min_int < BLE_CONN_INT_MIN_HOST_CHECK || max_int > BTM_BLE_CONN_INT_MAX) {
         BTC_TRACE_ERROR("Invalid interval value.\n");
     }
 
