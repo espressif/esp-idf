@@ -176,7 +176,7 @@ esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ct
                        esp_tee_buf_in_ree(output, ctx->input_len));
 
     if (ctx->aad_len != 0) {
-        valid_addr = esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
+        valid_addr &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
     }
 
     if (!valid_addr) {
@@ -196,7 +196,7 @@ esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ct
                        esp_tee_buf_in_ree(output, ctx->input_len));
 
     if (ctx->aad_len != 0) {
-        valid_addr = esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
+        valid_addr &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
     }
 
     if (!valid_addr) {
