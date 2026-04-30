@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -411,6 +411,7 @@ static void btc_a2dp_sink_handle_decoder_reset(tBTC_MEDIA_SINK_CFG_UPDATE *p_msg
                                         a2dp_sink_local_param.btc_aa_snk_cb.channel_count, FALSE, FALSE);
     if (!OI_SUCCESS(status)) {
         APPL_TRACE_ERROR("OI_CODEC_SBC_DecoderReset failed with error code %d\n", status);
+        return;
     }
 
     btc_a2dp_control_set_datachnl_stat(TRUE);
@@ -521,13 +522,22 @@ static void btc_a2dp_sink_handle_decoder_reset(tBTC_MEDIA_SINK_CFG_UPDATE *p_msg
  *******************************************************************************/
 static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
 {
-    UINT8 *sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
+    UINT8 *sbc_start_frame;
     int count;
     UINT32 pcmBytes, availPcmBytes;
     OI_INT16 *pcmDataPointer = a2dp_sink_local_param.pcmData; /*Will be overwritten on next packet receipt*/
     OI_STATUS status;
-    int num_sbc_frames = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
-    UINT32 sbc_frame_len = p_msg->len - 1;
+    int num_sbc_frames;
+    UINT32 sbc_frame_len;
+
+    if (p_msg->len < 1) {
+        osi_free(p_msg);
+        return;
+    }
+
+    sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
+    num_sbc_frames = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
+    sbc_frame_len = (UINT32)p_msg->len - 1U;
     availPcmBytes = sizeof(a2dp_sink_local_param.pcmData);
 
     /* XXX: Check if the below check is correct, we are checking for peer to be sink when we are sink */
@@ -569,8 +579,6 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
         }
         availPcmBytes -= pcmBytes;
         pcmDataPointer += pcmBytes / 2;
-        p_msg->offset += (p_msg->len - 1) - sbc_frame_len;
-        p_msg->len = sbc_frame_len + 1;
     }
     if (count != num_sbc_frames || sbc_frame_len) {
         APPL_TRACE_WARNING("Potential decoding error, cnt:%d, num:%d, len:%d. Please ignore if playback is normal.",

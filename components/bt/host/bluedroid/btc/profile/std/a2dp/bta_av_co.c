@@ -309,6 +309,7 @@ void bta_av_co_audio_disc_res(tBTA_AV_HNDL hndl, UINT8 num_seps, UINT8 num_snk,
     /* Sanity check : this should never happen */
     if (p_peer->opened) {
         APPL_TRACE_ERROR("bta_av_co_audio_disc_res peer already opened");
+        return;
     }
 
     /* Copy the discovery results */
@@ -359,6 +360,7 @@ void bta_av_co_audio_cfg_res(tBTA_AV_HNDL hndl, UINT8 num_seps, UINT8 num_snk,
     /* Sanity check : this should never happen */
     if (p_peer->opened) {
         APPL_TRACE_ERROR("bta_av_co_audio_cfg_res peer already opened");
+        return;
     }
 
     /* Copy the discovery results */
@@ -402,6 +404,8 @@ void bta_av_build_src_cfg (UINT8 *p_pref_cfg, UINT8 *p_src_cap)
         APPL_TRACE_DEBUG(" Can't parse src cap ret = %d", status);
         return ;
     }
+
+    memcpy(&pref_cap, &src_cap, sizeof(tA2D_SBC_CIE));
 
     if (src_cap.samp_freq & A2D_SBC_IE_SAMP_FREQ_48) {
         pref_cap.samp_freq = A2D_SBC_IE_SAMP_FREQ_48;
@@ -751,6 +755,8 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
     /* Sanity check: should not be opened at this point */
     if (p_peer->opened) {
         APPL_TRACE_ERROR("bta_av_co_audio_setconfig peer already in use");
+        bta_av_ci_setconfig(hndl, A2D_BUSY, AVDT_ASC_CODEC, 0, NULL, FALSE, avdt_handle);
+        return;
     }
 
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
@@ -996,7 +1002,7 @@ void *bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type, UINT32 *p_len,
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
         {
             UINT8 *p;
-            if (bta_av_co_cp_is_active()) {
+            if (bta_av_co_cp_is_active() && p_buf->offset > 0) {
                 p_buf->len++;
                 p_buf->offset--;
                 p = (UINT8 *)(p_buf + 1) + p_buf->offset;

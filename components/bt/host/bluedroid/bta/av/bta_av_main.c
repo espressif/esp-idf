@@ -368,7 +368,12 @@ static tBTA_AV_SCB *bta_av_alloc_scb(tBTA_AV_CHNL chnl)
                     p_ret->hndl = (tBTA_AV_HNDL)((xx + 1) | chnl);
                     p_ret->hdi  = xx;
                     p_ret->a2d_list = list_new(NULL);
-                    bta_av_cb.p_scb[xx] = p_ret;
+                    if (p_ret->a2d_list == NULL) {
+                        osi_free(p_ret);
+                        p_ret = NULL;
+                    } else {
+                        bta_av_cb.p_scb[xx] = p_ret;
+                    }
                 }
                 break;
             }
@@ -417,13 +422,15 @@ void bta_av_conn_cback(UINT8 handle, BD_ADDR bd_addr, UINT8 event, tAVDT_CTRL *p
             p_scb = bta_av_addr_to_scb(bd_addr);
         }
         else if (AVDT_CONNECT_IND_EVT == event) {
-            APPL_TRACE_DEBUG("CONN_IND is ACP:%d\n", p_data->hdr.err_param);
+            if (p_data) {
+                APPL_TRACE_DEBUG("CONN_IND is ACP:%d\n", p_data->hdr.err_param);
+            }
         }
 
         if ((p_msg = (tBTA_AV_STR_MSG *) osi_malloc((UINT16) (sizeof(tBTA_AV_STR_MSG)))) != NULL) {
             p_msg->hdr.event = evt;
             p_msg->hdr.layer_specific = event;
-            p_msg->hdr.offset = p_data->hdr.err_param;
+            p_msg->hdr.offset = p_data ? p_data->hdr.err_param : 0;
             bdcpy(p_msg->bd_addr, bd_addr);
             if (p_scb) {
                 APPL_TRACE_DEBUG("scb hndl x%x, role x%x\n", p_scb->hndl, p_scb->role);
@@ -1264,9 +1271,9 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB *p_scb, BT_HDR *p_buf)
                     if (list_length(p_scbi->a2d_list) >  p_bta_av_cfg->audio_mqs) {
                         // Drop the oldest packet
                         bta_av_co_audio_drop(p_scbi->hndl);
-                        BT_HDR *p_buf = list_front(p_scbi->a2d_list);
-                        list_remove(p_scbi->a2d_list, p_buf);
-                        osi_free(p_buf);
+                        BT_HDR *p_buf_drop = list_front(p_scbi->a2d_list);
+                        list_remove(p_scbi->a2d_list, p_buf_drop);
+                        osi_free(p_buf_drop);
                     }
                 }
             }
@@ -1290,12 +1297,20 @@ void bta_av_sm_execute(tBTA_AV_CB *p_cb, UINT16 event, tBTA_AV_DATA *p_data)
     tBTA_AV_ST_TBL      state_table;
     UINT8               action;
 
+    if (p_cb == NULL || p_cb->state >= (sizeof(bta_av_st_tbl) / sizeof(bta_av_st_tbl[0]))) {
+        return;
+    }
+
     APPL_TRACE_EVENT("AV event=0x%x state=%d\n", event, p_cb->state);
 
     /* look up the state table for the current state */
     state_table = bta_av_st_tbl[p_cb->state];
 
     event &= 0x00FF;
+
+    if (event >= (sizeof(bta_av_st_init) / sizeof(bta_av_st_init[0]))) {
+        return;
+    }
 
     /* set next state */
     p_cb->state = state_table[event][BTA_AV_NEXT_STATE];
@@ -1329,8 +1344,10 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
 
     if (event >= first_event) {
         APPL_TRACE_VERBOSE("AV nsm event=0x%x(%s)\n", event, bta_av_evt_code(event));
-        /* non state machine events */
-        (*bta_av_nsm_act[event - BTA_AV_FIRST_NSM_EVT]) ((tBTA_AV_DATA *) p_msg);
+        if (event <= BTA_AV_LAST_NSM_EVT) {
+            /* non state machine events */
+            (*bta_av_nsm_act[event - BTA_AV_FIRST_NSM_EVT]) ((tBTA_AV_DATA *) p_msg);
+        }
     } else if (event >= BTA_AV_FIRST_SM_EVT && event <= BTA_AV_LAST_SM_EVT) {
         APPL_TRACE_VERBOSE("AV sm event=0x%x(%s)\n", event, bta_av_evt_code(event));
         /* state machine events */
