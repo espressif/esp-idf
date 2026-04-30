@@ -1918,6 +1918,52 @@ esp_err_t esp_netif_dhcps_get_clients_by_mac(esp_netif_t *esp_netif, int num, es
 #endif // CONFIG_LWIP_DHCPS
 }
 
+#if CONFIG_LWIP_IPV4 && LWIP_ARP
+static esp_err_t esp_netif_arp_get_client_by_mac_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    esp_netif_pair_mac_ip_t *mac_ip_pair = msg->data;
+    struct netif *lwip_netif = esp_netif ? esp_netif->lwip_netif : NULL;
+
+    if (lwip_netif == NULL || mac_ip_pair == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+
+    mac_ip_pair->ip.addr = 0;
+
+    for (size_t i = 0; i < ARP_TABLE_SIZE; i++) {
+        ip4_addr_t *ip_ptr = NULL;
+        struct netif *nif = NULL;
+        struct eth_addr *eth_ptr = NULL;
+
+        if (!etharp_get_entry(i, &ip_ptr, &nif, &eth_ptr)) {
+            continue;
+        }
+        if (nif != lwip_netif) {
+            continue;
+        }
+        if (memcmp(eth_ptr->addr, mac_ip_pair->mac, ETH_HWADDR_LEN) != 0) {
+            continue;
+        }
+        mac_ip_pair->ip.addr = ip_ptr->addr;
+        break;
+    }
+    return ESP_OK;
+}
+#endif /* CONFIG_LWIP_IPV4 && LWIP_ARP */
+
+esp_err_t esp_netif_arp_get_client_by_mac(esp_netif_t *esp_netif, esp_netif_pair_mac_ip_t *mac_ip_pair)
+{
+#if CONFIG_LWIP_IPV4 && LWIP_ARP
+    if (esp_netif == NULL || mac_ip_pair == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    return esp_netif_lwip_ipc_call(esp_netif_arp_get_client_by_mac_api, esp_netif, (void *)mac_ip_pair);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif /* CONFIG_LWIP_IPV4 && LWIP_ARP */
+}
+
 static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *esp_netif = msg->esp_netif;
