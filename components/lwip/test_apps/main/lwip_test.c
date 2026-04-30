@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -484,6 +484,134 @@ TEST(lwip, sntp_client_time_2048)
     test_sntp_timestamps(2048, false); // NTP timestamp MSB is cleared for time after 2036
 }
 
+/*
+ * DHCP option parser tests
+ *
+ * These exercise the bounds-checking in parse_options() by constructing raw
+ * option byte arrays and verifying correct behaviour for well-formed,
+ * truncated, and malformed inputs.
+ */
+
+#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+
+extern u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len);
+
+#define TEST_OPT_PAD           0
+#define TEST_OPT_MSG_TYPE     53
+#define TEST_OPT_REQ_IPADDR   50
+#define TEST_OPT_END         255
+#define TEST_STATE_OFFER       1
+#define TEST_STATE_ACK         3
+#define TEST_STATE_IDLE        5
+
+TEST(lwip, dhcps_parse_options_well_formed_discover)
+{
+    u8_t opts[] = {
+        TEST_OPT_MSG_TYPE, 1, 1,   /* DHCPDISCOVER */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_well_formed_request_ack)
+{
+    u8_t opts[] = {
+        TEST_OPT_MSG_TYPE, 1, 3,   /* DHCPREQUEST */
+        TEST_OPT_REQ_IPADDR, 4, 192, 168, 4, 2,  /* matches client_address */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_ACK, state);
+}
+
+TEST(lwip, dhcps_parse_options_pad_bytes_skipped)
+{
+    u8_t opts[] = {
+        TEST_OPT_PAD,
+        TEST_OPT_PAD,
+        TEST_OPT_PAD,
+        TEST_OPT_MSG_TYPE, 1, 1,   /* DHCPDISCOVER */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_truncated_length_byte)
+{
+    /* Option code at the last byte with no room for the length byte.
+     * Before the fix this would read 1 byte OOB. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_truncated_option_data)
+{
+    /* MSG_TYPE says length=1 but the data byte is outside the buffer.
+     * Before the fix this would read 1 byte OOB via optptr[2]. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE, 1 };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_oversized_length)
+{
+    /* Option declares a length far exceeding the buffer. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE, 200, 1, TEST_OPT_END };
+    u8_t state = dhcps_test_parse_options(opts, (s16_t)sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_no_end_marker)
+{
+    /* Well-formed option but no END marker — parser must stop at buffer end. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE, 1, 1 };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_empty)
+{
+    u8_t opts[] = { 0 };
+    u8_t state = dhcps_test_parse_options(opts, 0);
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_only_pads)
+{
+    u8_t opts[] = { TEST_OPT_PAD, TEST_OPT_PAD, TEST_OPT_PAD };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_unknown_option_skipped)
+{
+    /* Unknown option 99 with length 3 should be skipped, then MSG_TYPE parsed. */
+    u8_t opts[] = {
+        99, 3, 0xAA, 0xBB, 0xCC,
+        TEST_OPT_MSG_TYPE, 1, 1,   /* DHCPDISCOVER */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_req_ipaddr_truncated)
+{
+    /* REQ_IPADDR claims 4 bytes but buffer only has room for 2. */
+    u8_t opts[] = {
+        TEST_OPT_MSG_TYPE, 1, 3,
+        TEST_OPT_REQ_IPADDR, 4, 192, 168
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    /* Parser should stop before the truncated REQ_IPADDR, return based on type alone. */
+    TEST_ASSERT(state != 0);
+}
+
+#endif /* CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS */
+
 TEST_GROUP_RUNNER(lwip)
 {
     RUN_TEST_CASE(lwip, localhost_ping_test)
@@ -493,6 +621,19 @@ TEST_GROUP_RUNNER(lwip)
     RUN_TEST_CASE(lwip, sntp_client_time_2015)
     RUN_TEST_CASE(lwip, sntp_client_time_2048)
     RUN_TEST_CASE(lwip, dhcp_arp_probe_self_mac_is_ok)
+#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+    RUN_TEST_CASE(lwip, dhcps_parse_options_well_formed_discover)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_well_formed_request_ack)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_pad_bytes_skipped)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_truncated_length_byte)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_truncated_option_data)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_oversized_length)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_no_end_marker)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_empty)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_only_pads)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_unknown_option_skipped)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_req_ipaddr_truncated)
+#endif
 }
 
 void app_main(void)

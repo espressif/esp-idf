@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,7 @@
 #define DHCPNAK       6
 #define DHCPRELEASE   7
 
+#define DHCP_OPTION_PAD           0
 #define DHCP_OPTION_SUBNET_MASK   1
 #define DHCP_OPTION_HOST_NAME    12
 #define DHCP_OPTION_ROUTER        3
@@ -917,7 +918,6 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
 {
     ip4_addr_t client;
-    bool is_dhcp_parse_end = false;
     struct dhcps_state s;
 
     client.addr = *((uint32_t *) &dhcps->client_address);
@@ -932,10 +932,31 @@ static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
         DHCPS_LOG("dhcps: (s16_t)*optptr = %d\n", (s16_t)*optptr);
 #endif
 
+        if (*optptr == DHCP_OPTION_PAD) {
+            optptr++;
+            continue;
+        }
+
+        if (*optptr == DHCP_OPTION_END) {
+            break;
+        }
+
+        if (optptr + 1 >= end) {
+            break;
+        }
+
+        u8_t opt_len = optptr[1];
+
+        if (optptr + 2 + opt_len > end) {
+            break;
+        }
+
         switch ((s16_t) *optptr) {
 
             case DHCP_OPTION_MSG_TYPE:	//53
-                type = *(optptr + 2);
+                if (opt_len >= 1) {
+                    type = optptr[2];
+                }
                 break;
 
 #if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
@@ -966,31 +987,24 @@ static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
 #endif
 
             case DHCP_OPTION_REQ_IPADDR://50
-                if (memcmp((char *) &client.addr, (char *) optptr + 2, 4) == 0) {
+                if (opt_len >= 4) {
+                    if (memcmp((char *) &client.addr, (char *) optptr + 2, 4) == 0) {
 #if DHCPS_DEBUG
-                    DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR = 0 ok\n");
+                        DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR = 0 ok\n");
 #endif
-                    s.state = DHCPS_STATE_ACK;
-                } else {
+                        s.state = DHCPS_STATE_ACK;
+                    } else {
 #if DHCPS_DEBUG
-                    DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR != 0 err\n");
+                        DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR != 0 err\n");
 #endif
-                    s.state = DHCPS_STATE_NAK;
+                        s.state = DHCPS_STATE_NAK;
+                    }
                 }
 
                 break;
-
-            case DHCP_OPTION_END: {
-                is_dhcp_parse_end = true;
-            }
-            break;
         }
 
-        if (is_dhcp_parse_end) {
-            break;
-        }
-
-        optptr += optptr[1] + 2;
+        optptr += opt_len + 2;
     }
 
     switch (type) {
@@ -1712,4 +1726,18 @@ bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_
     return false;
 }
 #endif
+#ifdef CONFIG_LWIP_DHCPS_TEST_PARSE_OPTIONS
+u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len)
+{
+    dhcps_t *dhcps = dhcps_new();
+    if (dhcps == NULL) {
+        return 0;
+    }
+    IP4_ADDR(&dhcps->client_address, 192, 168, 4, 2);
+    u8_t result = parse_options(dhcps, optptr, len);
+    mem_free(dhcps);
+    return result;
+}
+#endif
+
 #endif // ESP_DHCPS
