@@ -63,7 +63,7 @@ static void ot_cli_set_read_characteristics(void)
 static bool append_escaped_ot_arg(char *buffer, size_t buffer_size, const char *arg)
 {
     size_t len      = strlen(buffer);
-    size_t rem_size = (len < buffer_size) ? (buffer_size - len) : 0;
+    size_t rem_size = (len < buffer_size) ? (buffer_size - len - 1) : 0;
 
     ESP_RETURN_ON_FALSE(rem_size > 0, false, OT_PLAT_LOG_TAG, "CLI command buffer is full");
 
