@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,11 +22,11 @@
 #define IDF_PERFORMANCE_MAX_TIME_SHA1_32KB                                      5000
 #define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    4500
 
-#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               21500
+#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              750000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               33000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              950000
-#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               90000
+#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               170000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              3000000
 
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -40,11 +40,11 @@
 #define IDF_PERFORMANCE_MAX_TIME_SHA1_32KB                                      900
 #define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    900
 
-#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               17000
+#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               36000
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              650000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               36000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              960000
-#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               70000
+#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               141000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              2850000
 
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -54,11 +54,11 @@
 #define IDF_PERFORMANCE_MAX_TIME_SHA1_32KB                                      1000
 #define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    900
 
-#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               24000
+#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              700000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
-#define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              1300000
-#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               90000
+#define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              300000
+#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               190000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              3500000
 
 #elif CONFIG_IDF_TARGET_ESP32C2
