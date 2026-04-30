@@ -65,7 +65,7 @@ Driver Concept
 Terminology
 ^^^^^^^^^^^
 
-The virtual memory pool is made up with one or multiple virtual memory regions, see below figure:
+The virtual memory pool consists of one or more virtual memory regions, as shown in the figure below:
 
 .. image:: /../_static/diagrams/mmu/mem_pool.png
     :scale: 80 %
@@ -73,7 +73,7 @@ The virtual memory pool is made up with one or multiple virtual memory regions, 
 
 
 - A virtual memory pool stands for the whole virtual address range that can be mapped to physical memory.
-- A virtual memory region is a range of virtual address with same attributes.
+- A virtual memory region is a range of virtual addresses with same attributes.
 - A virtual memory block is a piece of virtual address range that is dynamically mapped.
 - A slot is the virtual address range between two virtual memory blocks.
 - A physical memory block is a piece of physical address range that is to-be-mapped or already mapped to a virtual memory block.
@@ -125,15 +125,15 @@ You can call :cpp:func:`esp_mmu_map` to do a dynamical mapping, or :cpp:func:`es
 By default, physical memory blocks and virtual memory blocks are one-to-one mapped. This means, when calling :cpp:func:`esp_mmu_map`:
 
 * If it is the enclosed scenario, this API will return an :c:macro:`ESP_ERR_INVALID_STATE`. The ``out_ptr`` will be assigned to the start virtual memory address of the previously mapped one which encloses the to-be-mapped one.
-* If it is the identical scenario, this API will behaves exactly the same as the enclosed scenario.
+* If it is the identical scenario, this API will behave exactly the same as the enclosed scenario.
 * If it is the overlapped scenario, this API will by default return an :c:macro:`ESP_ERR_INVALID_ARG`. This means, ``esp_mmap`` driver by default does not allow mapping a physical memory address to multiple virtual memory addresses.
 
-Specially, you can use :c:macro:`ESP_MMU_MMAP_FLAG_PADDR_SHARED`. This flag stands for one-to-multiple mapping between a physical address and multiple virtual addresses:
+Specifically, you can use :c:macro:`ESP_MMU_MMAP_FLAG_PADDR_SHARED`. This flag stands for one-to-multiple mapping between a physical address and multiple virtual addresses:
 
 * If it is the overlapped scenario, this API will allocate a new virtual memory block as requested, then map to the given physical memory block.
 
 
-Mapping at a chosen virtual address
+Mapping at a Chosen Virtual Address
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :cpp:func:`esp_mmu_map_virt` maps a physical block the same way as :cpp:func:`esp_mmu_map`, but you can pass the virtual start address as ``vaddr_start``. Passing a value of ``0`` for ``vaddr_start`` will let the driver allocate any suitable free block. With a non-zero ``vaddr_start`` value, the whole range must lie in an unmapped slot for the given capabilities and target, and the address must be valid for the MMU view implied by ``caps``.
