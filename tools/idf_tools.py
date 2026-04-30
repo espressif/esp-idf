@@ -3204,15 +3204,15 @@ def action_uninstall(args: Any) -> None:
             if tool_version is None:
                 tool_version = tool_obj.get_preferred_installed_version()
             # mypy-checks
+            archive_version = None
             if tool_version is not None:
                 archive_version = tool_obj.versions[tool_version].get_download_for_platform(CURRENT_PLATFORM)
             if archive_version is not None:
                 archive_version_url = archive_version.url
+                archive = os.path.basename(archive_version_url)
+                used_archives.append(archive)
 
-            archive = os.path.basename(archive_version_url)
-            used_archives.append(archive)
-
-        downloaded_archives = os.listdir(dist_path)
+            downloaded_archives = os.listdir(dist_path)
         for archive in downloaded_archives:
             if archive not in used_archives:
                 os.remove(os.path.join(dist_path, archive))
