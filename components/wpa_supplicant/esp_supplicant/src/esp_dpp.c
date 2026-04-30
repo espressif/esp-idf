@@ -1129,7 +1129,7 @@ esp_err_t esp_supp_dpp_init(void)
         return ESP_FAIL;
     }
 
-    if (is_wps_enabled()) {
+    if (wps_get_owner() != WPS_OWNER_NONE) {
         wpa_printf(MSG_ERROR, "DPP: failed to init since WPS is enabled");
         return ESP_FAIL;
     }
