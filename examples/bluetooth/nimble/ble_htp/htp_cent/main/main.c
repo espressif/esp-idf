@@ -14,6 +14,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_htp_cent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_HTP_CENT";
 static int ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg);

@@ -14,6 +14,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_prox_cent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_PROX_CENT";
 static uint8_t link_supervision_timeout;
@@ -499,8 +502,9 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
                         event->connect.status);
+
+            ble_prox_cent_scan();
         }
-        ble_prox_cent_scan();
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
