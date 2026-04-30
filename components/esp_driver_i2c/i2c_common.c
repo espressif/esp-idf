@@ -381,10 +381,10 @@ static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
         rtc_gpio_pullup_dis(handle->sda_num);
     }
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
-    rtc_gpio_iomux_func_sel(handle->sda_num, i2c_periph_signal[port_id].iomux_func);
+    rtc_gpio_iomux_input(handle->sda_num, i2c_periph_signal[port_id].iomux_func, i2c_periph_signal[port_id].sda_in_sig);
 #else
-    lp_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
-    lp_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
+    lp_gpio_matrix_output(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
+    lp_gpio_matrix_input(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
 #endif
 
     rtc_gpio_init(handle->scl_num);
@@ -396,10 +396,10 @@ static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
         rtc_gpio_pullup_dis(handle->scl_num);
     }
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
-    rtc_gpio_iomux_func_sel(handle->scl_num, i2c_periph_signal[port_id].iomux_func);
+    rtc_gpio_iomux_input(handle->scl_num, i2c_periph_signal[port_id].iomux_func, i2c_periph_signal[port_id].scl_in_sig);
 #else
-    lp_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
-    lp_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
+    lp_gpio_matrix_output(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
+    lp_gpio_matrix_input(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
 #endif
 
     return ESP_OK;
@@ -444,8 +444,8 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
-        ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0), TAG, "failed to connect lp gpio to zero");
-        ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0), TAG, "failed to connect lp gpio to zero");
+        ESP_RETURN_ON_ERROR(lp_gpio_matrix_input(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0), TAG, "failed to connect lp gpio to zero");
+        ESP_RETURN_ON_ERROR(lp_gpio_matrix_input(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0), TAG, "failed to connect lp gpio to zero");
 #endif
     }
 #endif
