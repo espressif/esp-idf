@@ -19,6 +19,13 @@ string(SUBSTRING "${WIFI_SUPPLICANT_MD5}" 0 7 WIFI_SUPPLICANT_MD5)
 # Steal some private include directories from wpa_supplicant
 target_include_directories(${COMPONENT_LIB} PRIVATE ${esp_supplicant_dir}/esp_supplicant/src)
 target_include_directories(${COMPONENT_LIB} PRIVATE ${esp_supplicant_dir}/src)
+if(CONFIG_MBEDTLS_HARDWARE_SHA)
+    if(NOT CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_FAST_PSK)
+    else()
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_FAST_PBKDF2)
+    endif()
+endif()
 
 add_definitions(-DWIFI_SUPPLICANT_MD5=\"${WIFI_SUPPLICANT_MD5}\")
 add_definitions(-DCONFIG_WPA3_SAE)
