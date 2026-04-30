@@ -9,7 +9,6 @@
 #include "esp_types.h"
 #include "soc/soc_caps.h"
 #include "psa/crypto_driver_common.h"
-#include "hal/hmac_types.h"
 
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "esp_key_mgr.h"
