@@ -6,8 +6,9 @@ import shutil
 import sys
 import typing as t
 from datetime import datetime
-from subprocess import run
 from subprocess import STDOUT
+from subprocess import CalledProcessError
+from subprocess import run
 from time import sleep
 
 import pytest
@@ -177,12 +178,14 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
     expect('example: Mounting FAT filesystem')
 
     if not config_read_only:
-        expect_all([
-            'example: Opening file',
-            'example: File written',
-            'example: Reading file',
-            'example: Read from file: ' + "'This is written by the device'",
-        ])
+        expect_all(
+            [
+                'example: Opening file',
+                'example: File written',
+                'example: Reading file',
+                'example: Read from file: ' + "'This is written by the device'",
+            ]
+        )
 
     expect('example: Reading file')
 
@@ -199,8 +202,18 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
     dut.serial.close()
     sleep(1)
 
-    target = ParttoolTarget(dut.serial.port, 1843200)
-    target.read_partition(PartitionName('storage'), 'temp.img')
+    # Host read-flash after closing the test UART can fail at very high baud (e.g. exit code 2 on
+    # multi-Mbit reads). Use the same order of magnitude as post-stub flash programming (921600).
+    read_baud = 921600
+    for attempt in range(3):
+        try:
+            target = ParttoolTarget(dut.serial.port, read_baud)
+            target.read_partition(PartitionName('storage'), 'temp.img')
+            break
+        except CalledProcessError:
+            if attempt == 2:
+                raise
+            sleep(2)
     if config_long_names:
         run(['python', fatfs_parser_path, '--long-name-support', 'temp.img'], stderr=STDOUT)
     else:
