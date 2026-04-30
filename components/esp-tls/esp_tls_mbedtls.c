@@ -493,59 +493,37 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
 
+    /* For opaque keys (DS peripheral, hardware ECDSA), mbedtls_pk_free() does
+     * not destroy the PSA key — ownership is external. Destroy it manually
+     * before calling mbedtls_pk_free(). */
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_RSASSA_PSS) {
-        mbedtls_rsa_context *rsa = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (rsa != NULL) {
-            mbedtls_rsa_free(rsa);
-            mbedtls_free(rsa);
-            rsa = NULL;
-        }
         if (tls->clientkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
             psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+            tls->clientkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
-        tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
-
-    // Similar cleanup for server key
     if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_RSASSA_PSS) {
-        mbedtls_rsa_context *rsa = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (rsa != NULL) {
-            mbedtls_rsa_free(rsa);
-            mbedtls_free(rsa);
-            rsa = NULL;
-        }
         if (tls->serverkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
             psa_destroy_key(tls->serverkey.MBEDTLS_PRIVATE(priv_id));
+            tls->serverkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
-        tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 #endif
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-    /* In mbedtls v4.0, ECDSA keys require manual cleanup of the keypair structure */
     if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_ECDSA) {
         ESP_LOGD(TAG, "Cleaning up client key");
-        mbedtls_ecp_keypair *keypair = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (keypair != NULL) {
-            mbedtls_ecp_keypair_free(keypair);
-            mbedtls_free(keypair);
-            keypair = NULL;
+        if (tls->clientkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
+            psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+            tls->clientkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
-        psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
-        tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
-
-    // Similar cleanup for server key
     if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_ECDSA) {
-        mbedtls_ecp_keypair *keypair = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (keypair != NULL) {
-            mbedtls_ecp_keypair_free(keypair);
-            mbedtls_free(keypair);
-            keypair = NULL;
+        if (tls->serverkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
+            psa_destroy_key(tls->serverkey.MBEDTLS_PRIVATE(priv_id));
+            tls->serverkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
-        psa_destroy_key(tls->serverkey.MBEDTLS_PRIVATE(priv_id));
-        tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 #endif
 
