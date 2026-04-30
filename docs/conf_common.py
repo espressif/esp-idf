@@ -278,32 +278,22 @@ ESP32_DOCS = (
     + QEMU_DOCS
 )
 
-ESP32S2_DOCS = (
-    [
-        'hw-reference/esp32s2/**',
-        'api-guides/usb-console.rst',
-        'api-reference/peripherals/ds.rst',
-        'api-guides/RF_calibration.rst',
-        'api-guides/phy.rst',
-    ]
-    + FTDI_JTAG_DOCS
-    + USB_OTG_DFU_DOCS
-    + USB_OTG_CONSOLE_DOCS
-)
+ESP32S2_DOCS = [
+    'hw-reference/esp32s2/**',
+    'api-guides/usb-console.rst',
+    'api-reference/peripherals/ds.rst',
+    'api-guides/RF_calibration.rst',
+    'api-guides/phy.rst',
+] + FTDI_JTAG_DOCS
 
-ESP32S3_DOCS = (
-    [
-        'hw-reference/esp32s3/**',
-        'api-reference/system/ipc.rst',
-        'api-guides/flash_psram_config.rst',
-        'api-reference/peripherals/sd_pullup_requirements.rst',
-        'api-guides/RF_calibration.rst',
-        'api-guides/phy.rst',
-    ]
-    + USB_OTG_DFU_DOCS
-    + USB_OTG_CONSOLE_DOCS
-    + QEMU_DOCS
-)
+ESP32S3_DOCS = [
+    'hw-reference/esp32s3/**',
+    'api-reference/system/ipc.rst',
+    'api-guides/flash_psram_config.rst',
+    'api-reference/peripherals/sd_pullup_requirements.rst',
+    'api-guides/RF_calibration.rst',
+    'api-guides/phy.rst',
+] + QEMU_DOCS
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**', 'api-guides/RF_calibration.rst', 'api-guides/phy.rst'] + QEMU_DOCS
@@ -349,7 +339,7 @@ ESP32P4_DOCS = [
     'api-reference/system/ipc.rst',
     'api-reference/peripherals/cap_touch_sens.rst',
     'api-reference/peripherals/sd_pullup_requirements.rst',
-] + USB_OTG_DFU_DOCS
+]
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {
@@ -371,6 +361,8 @@ conditional_include_dict = {
     'SOC_SDMMC_HOST_SUPPORTED': SDMMC_DOCS,
     'SOC_SDIO_SLAVE_SUPPORTED': SDIO_SLAVE_DOCS,
     'SOC_MCPWM_SUPPORTED': MCPWM_DOCS,
+    'SOC_USB_DFU_SUPPORTED': USB_OTG_DFU_DOCS,
+    'SOC_USB_OTG_CONSOLE_SUPPORTED': USB_OTG_CONSOLE_DOCS,
     'SOC_USB_SERIAL_JTAG_SUPPORTED': USB_SERIAL_JTAG_DOCS,
     'SOC_DEDICATED_GPIO_SUPPORTED': DEDIC_GPIO_DOCS,
     'SOC_LCD_I80_SUPPORTED': I80_LCD_DOCS,
