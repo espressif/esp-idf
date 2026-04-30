@@ -39,6 +39,10 @@ extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
 #include "esp_extconn.h"
 #endif
 
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+#include "ext_coex_cmd.h"
+#endif
+
 void iperf_hook_show_wifi_stats(iperf_id_t instance_id, iperf_state_data_t *data, void *priv)
 {
     if (data->state == IPERF_STARTED) {
@@ -136,6 +140,9 @@ void app_main(void)
     iperf_cmd_set_iperf_state_handler(iperf_hook_show_wifi_stats, NULL);
     /* From ping-cmd */
     ping_cmd_register_ping();
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    register_cmd_extcoex();
+#endif
 
 
     printf("\n ==================================================\n");
