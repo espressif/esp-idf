@@ -58,6 +58,7 @@ TEST_CASE("enable external coex", "[external_coex]")
 #if !SOC_MODEM_CLOCK_IS_INDEPENDENT && !CONFIG_IDF_TARGET_ESP32C2
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
+    vTaskDelay(1);
 #endif
 
     ESP_LOGI(TAG, "test passed...");
