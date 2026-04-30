@@ -63,7 +63,8 @@ typedef u16 __bitwise be16;
 #define WIFI_FAIL                (1<<3)
 #define EMPH_STR(s) "****** "s" ******"
 
-#define MAX_IDLE_PERIOD      (5)
+//For station, max idle period is default 10 (1000TUs)
+#define MAX_IDLE_PERIOD      (10)
 #define ETHTYPE_IP            0x0800
 
 static const char* TAG = "test_bss_max_idle";
