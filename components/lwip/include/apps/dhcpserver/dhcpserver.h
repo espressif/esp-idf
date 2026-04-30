@@ -62,6 +62,7 @@ typedef enum
  * - MAX_STATION_NUM: Maximum number of clients, set to Kconfig value CONFIG_LWIP_DHCPS_MAX_STATION_NUM
  * - LWIP_HOOK_DHCPS_POST_STATE: Used to inject user code after parsing DHCP message, not defined
  *      - could be enabled in lwipopts.h or via CC_FLAGS
+ *      - parse states include DHCPS_STATE_OFFER (1), ACK (3), NAK (4), INFORM_ACK (7), etc.
  *      - basic usage of the hook to print hex representation of the entire option field is below:
  *          #define LWIP_HOOK_DHCPS_POST_STATE(msg, len, state) \
  *          ({ s16_t ret = state; if (state == DHCPS_STATE_ACK) { ESP_LOG_BUFFER_HEXDUMP("DHCPS",msg->options, 312, ESP_LOG_INFO);} ret; })
