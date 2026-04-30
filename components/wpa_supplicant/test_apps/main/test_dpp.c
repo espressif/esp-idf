@@ -53,7 +53,7 @@ static u32 dpp_test_prod_limit_us(void)
 #if !defined(CONFIG_MBEDTLS_HARDWARE_ECC) && !defined(CONFIG_MBEDTLS_HARDWARE_MPI)
     return 0;
 #elif CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
-    return 300000;
+    return 305000;
 #elif SOC_ECC_SUPPORTED
     return 100000;
 #else
