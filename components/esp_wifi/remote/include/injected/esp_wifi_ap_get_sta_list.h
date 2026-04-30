@@ -36,7 +36,8 @@ typedef struct {
 /**
  * @brief  Get IP information for stations connected to the Wi-Fi AP interface
  *
- * @note   If `CONFIG_LWIP_DHCPS` is disabled then `ip` address field will not be populated in sta list
+ * @note   If `CONFIG_LWIP_DHCPS` is disabled then DHCP lookup is skipped; IPv4 may still be filled from the lwIP ARP cache when available.
+ *         After DHCP (when enabled), any station still without an IP is resolved via ARP table on the same interface.
  *
  * @warning This API works only for the default Wi-Fi AP interface, i.e. esp-netif with key="WIFI_AP_DEF"
  *
