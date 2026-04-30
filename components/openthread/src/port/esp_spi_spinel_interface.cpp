@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include "openthread/error.h"
 #include "esp_check.h"
+#include "esp_heap_caps.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_rom_sys.h"
 #include "esp_vfs.h"
@@ -17,6 +18,7 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "hal/gpio_types.h"
+#include "soc/soc_caps.h"
 #include "ncp/ncp_spi.hpp"
 
 using ot::Spinel::SpiFrame;
@@ -26,7 +28,8 @@ namespace esp {
 namespace openthread {
 
 SpiSpinelInterface::SpiSpinelInterface(void)
-    : m_event_fd(-1)
+    : m_rx_dma_buf(nullptr)
+    , m_event_fd(-1)
     , m_receiver_frame_callback(nullptr)
     , m_receiver_frame_context(nullptr)
     , m_receive_frame_buffer(nullptr)
@@ -73,7 +76,7 @@ esp_err_t SpiSpinelInterface::Enable(const esp_openthread_spi_host_config_t &spi
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     ESP_RETURN_ON_ERROR(gpio_config(&io_conf), OT_PLAT_LOG_TAG, "fail to config spi gpio");
-    gpio_install_isr_service(0); // The gpio isr service may has been installed.
+    gpio_install_isr_service(0);
     ESP_RETURN_ON_ERROR(gpio_isr_handler_add(spi_config.intr_pin, GpioIntrHandler, this), OT_PLAT_LOG_TAG,
                         "fail to add gpio isr handler");
     m_has_pending_device_frame = false;
@@ -81,6 +84,9 @@ esp_err_t SpiSpinelInterface::Enable(const esp_openthread_spi_host_config_t &spi
     m_pending_data_len = 0;
 
     ESP_RETURN_ON_FALSE(m_event_fd >= 0, ESP_FAIL, OT_PLAT_LOG_TAG, "fail to get event fd");
+
+    m_rx_dma_buf = (uint8_t *)heap_caps_malloc(kSPIFrameSize, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    ESP_RETURN_ON_FALSE(m_rx_dma_buf != nullptr, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "fail to alloc SPI RX DMA buffer");
 
     ESP_LOGI(OT_PLAT_LOG_TAG, "spinel SPI interface initialization completed");
 
@@ -105,6 +111,8 @@ esp_err_t SpiSpinelInterface::Disable(void)
         ESP_RETURN_ON_ERROR(spi_bus_free(m_spi_config.host_device), OT_PLAT_LOG_TAG, "fail to free spi bus");
         gpio_uninstall_isr_service();
     }
+    heap_caps_free(m_rx_dma_buf);
+    m_rx_dma_buf = nullptr;
     return ESP_OK;
 }
 
@@ -115,8 +123,7 @@ otError SpiSpinelInterface::SendFrame(const uint8_t *frame, uint16_t length)
                         "send frame is too long");
 
     memcpy(&m_tx_buffer[kSPIFrameHeaderSize], frame, length);
-    uint16_t rx_data_size =
-        length < kSmallPacketSize ? kSmallPacketSize : length; // We'll use tx_size to receive small packets piggybacked
+    uint16_t rx_data_size = length < kSmallPacketSize ? kSmallPacketSize : length;
     if (ConductSPITransaction(false, length, rx_data_size) == ESP_OK) {
         return OT_ERROR_NONE;
     } else {
@@ -152,9 +159,12 @@ esp_err_t SpiSpinelInterface::ConductSPITransaction(bool reset, uint16_t tx_data
     transaction.length = data_size * CHAR_BIT;
     transaction.rxlength = (rx_data_size + kSPIFrameHeaderSize) * CHAR_BIT;
     transaction.tx_buffer = m_tx_buffer;
-    transaction.rx_buffer = rx_buffer;
+    // Use aligned DMA buffer: MultiFrameBuffer's internal array is not
+    // cache-line-aligned, causing stale D-cache reads after DMA completes.
+    transaction.rx_buffer = m_rx_dma_buf;
 
     ESP_RETURN_ON_ERROR(spi_device_polling_transmit(m_device, &transaction), OT_PLAT_LOG_TAG, "SPI transaction failed");
+    memcpy(rx_buffer, m_rx_dma_buf, data_size);
     SpiFrame rx_frame(rx_buffer);
 
     if (!rx_frame.IsValid() || rx_frame.GetHeaderAcceptLen() > kSPIFrameSize ||
@@ -162,17 +172,14 @@ esp_err_t SpiSpinelInterface::ConductSPITransaction(bool reset, uint16_t tx_data
         vTaskDelay(pdMS_TO_TICKS(15));
         ESP_RETURN_ON_ERROR(spi_device_polling_transmit(m_device, &transaction), OT_PLAT_LOG_TAG,
                             "fail to retry SPI invalid transaction");
+        memcpy(rx_buffer, m_rx_dma_buf, data_size);
     }
 
-    if (rx_frame.IsResetFlagSet()) {
-        ESP_LOGW(OT_PLAT_LOG_TAG, "RCP Reset");
-        m_receive_frame_buffer->DiscardFrame();
-        return ESP_OK;
-    }
     if (rx_frame.GetHeaderDataLen() == 0 && rx_frame.GetHeaderAcceptLen() == 0) {
         vTaskDelay(pdMS_TO_TICKS(15));
         ESP_RETURN_ON_ERROR(spi_device_polling_transmit(m_device, &transaction), OT_PLAT_LOG_TAG,
                             "fail to retry SPI empty transaction");
+        memcpy(rx_buffer, m_rx_dma_buf, data_size);
     }
 
     if (rx_frame.GetHeaderDataLen() > 0 && rx_frame.GetHeaderDataLen() < tx_frame.GetHeaderAcceptLen()) {
@@ -267,7 +274,20 @@ otError SpiSpinelInterface::HardwareReset(void)
 {
     if (mRcpFailureHandler) {
         mRcpFailureHandler();
-        ConductSPITransaction(true, 0, 0); // clear
+        ConductSPITransaction(true, 0, 0);
+        // Drain stale GPIO interrupt events accumulated before reset, otherwise
+        // WaitForFrame() would fire immediately on a stale event and fail.
+        uint64_t event;
+        struct timeval zero_timeout = {0, 0};
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(m_event_fd, &read_fds);
+        if (select(m_event_fd + 1, &read_fds, NULL, NULL, &zero_timeout) > 0 &&
+            FD_ISSET(m_event_fd, &read_fds)) {
+            read(m_event_fd, &event, sizeof(event));
+        }
+        m_pending_data_len = 0;
+
     }
     return OT_ERROR_NONE;
 }
