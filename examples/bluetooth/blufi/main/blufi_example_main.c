@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -312,8 +312,9 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
     switch (event) {
     case ESP_BLUFI_EVENT_INIT_FINISH:
         BLUFI_INFO("BLUFI init finish\n");
-
+#if SOC_MPI_SUPPORTED
         esp_blufi_adv_start();
+#endif
         break;
     case ESP_BLUFI_EVENT_DEINIT_FINISH:
         BLUFI_INFO("BLUFI deinit finish\n");
@@ -336,7 +337,11 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         BLUFI_INFO("BLUFI ble disconnect\n");
         ble_is_connected = false;
         blufi_security_deinit();
+#if !SOC_MPI_SUPPORTED
+        blufi_dh_pregen_start_with_cb(esp_blufi_adv_start);
+#else
         esp_blufi_adv_start();
+#endif
         break;
     case ESP_BLUFI_EVENT_SET_WIFI_OPMODE:
         BLUFI_INFO("BLUFI Set WIFI opmode %d\n", param->wifi_mode.op_mode);
@@ -530,6 +535,12 @@ void app_main(void)
         BLUFI_ERROR("%s initialise failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
+
+#if !SOC_MPI_SUPPORTED
+    blufi_dh_pregen_start();
+    blufi_dh_pregen_wait();
+    esp_blufi_adv_start();
+#endif
 
     BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
 }
