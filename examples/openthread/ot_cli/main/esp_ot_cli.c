@@ -39,6 +39,10 @@
 #include "esp_ot_cli_extension.h"
 #endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+#include "ext_coex_cmd.h"
+#endif
+
 #define TAG "ot_esp_cli"
 
 void app_main(void)
@@ -61,6 +65,9 @@ void app_main(void)
 #if CONFIG_OPENTHREAD_CLI
     ot_console_start();
     ot_register_external_commands();
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    register_cmd_extcoex();
+#endif
 #endif
 
     static esp_openthread_config_t config = {
