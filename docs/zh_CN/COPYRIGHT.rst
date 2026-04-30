@@ -57,6 +57,8 @@
 
 * :component:`BLE Audio <bt/esp_ble_audio>` 改编自 Zephyr 项目，版权归 2017-2018 英特尔公司所有，并根据 Apache License 2.0 进行许可。
 
+* :component:`BLE ISO <bt/esp_ble_iso>` 改编自 Zephyr 项目，版权归 2017-2018 英特尔公司所有，并根据 Apache License 2.0 进行许可。
+
 * `mynewt-nimble`_，版权归 2015-2018 Apache 软件基金会所有，根据 :component_file:`LICENSE 文件 <bt/host/nimble/nimble/LICENSE>` 中描述的 Apache License 2.0 进行许可。
 
 * `TLSF 分配器 <https://github.com/espressif/tlsf>`_，版权归 2006-2016 Matthew Conte 所有，并根据三条款 BSD 许可证进行许可。
