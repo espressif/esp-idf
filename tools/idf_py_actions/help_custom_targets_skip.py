@@ -67,9 +67,13 @@ IDF_PY_HELP_SKIP_TARGETS = frozenset(
         'mbedcrypto',
         'mbedtls',
         'mbedx509',
-        'p256m',
+        'p256-m',
         'rebuild_cache',
         'tfpsacrypto',
+        'extras',
+        'platform',
+        'pqcp',
+        'utilities',
     }
 )
 

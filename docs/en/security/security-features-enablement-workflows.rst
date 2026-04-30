@@ -448,13 +448,9 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
             espsecure generate-signing-key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
 
-        .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
-
-           The scheme in the above command can be changed to ``ecdsa192`` to generate ecdsa192 private key.
-
         .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-           The scheme in the above command can be changed to ``ecdsa384`` or ``ecdsa192`` to generate ecdsa384 or ecdsa192 private key.
+           The scheme in the above command can be changed to ``ecdsa384`` to generate an ecdsa384 private key.
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 

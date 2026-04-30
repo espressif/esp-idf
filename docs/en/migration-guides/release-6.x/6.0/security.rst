@@ -164,3 +164,11 @@ The following deprecated functions have been removed:
     ---------------------
 
     - When NVS encryption is enabled on SoCs with the HMAC peripheral that have flash encryption enabled, the HMAC-based NVS encryption scheme is now selected as default instead of the flash encryption-based scheme. If your application previously used the flash encryption-based scheme, you need to manually configure the NVS encryption scheme to flash encryption from HMAC through ``menuconfig`` or your project's ``sdkconfig`` (i.e., setting ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC=y``).
+
+Mbed TLS v4.1 migration
+-----------------------
+
+Bootloader Support
+~~~~~~~~~~~~~~~~~~
+
+- Starting with Mbed TLS 4.1, legacy NISTP192 support has been removed.

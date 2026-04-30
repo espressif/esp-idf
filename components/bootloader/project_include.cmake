@@ -43,7 +43,6 @@ if(CONFIG_SECURE_SIGNED_APPS)
             set(bootloader_binary_files
                 ${bootloader_binary_files}
                 "${BOOTLOADER_BUILD_DIR}/bootloader-reflash-digest.bin"
-                "${BOOTLOADER_BUILD_DIR}/secure-bootloader-key-192.bin"
                 "${BOOTLOADER_BUILD_DIR}/secure-bootloader-key-256.bin"
                 )
         endif()
@@ -66,9 +65,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
                     "\tidf.py secure-generate-signing-key ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
             else()
-                if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS)
-                    set(scheme "ecdsa192")
-                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
+                if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
                     set(scheme "ecdsa256")
                 elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS)
                     set(scheme "ecdsa384")

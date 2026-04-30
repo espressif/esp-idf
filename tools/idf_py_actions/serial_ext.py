@@ -850,7 +850,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 'help': (
                     'Generate a private key for signing secure boot images as per the secure boot version.'
                     ' Key file is generated in PEM format, Secure Boot V1 - ECDSA NIST256p private key.'
-                    ' Secure Boot V2 - RSA 3072, ECDSA NIST384p, ECDSA NIST256p, ECDSA NIST192p private key.'
+                    ' Secure Boot V2 - RSA 3072, ECDSA NIST384p, ECDSA NIST256p private key.'
                 ),
                 'options': [
                     {
@@ -862,7 +862,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     {
                         'names': ['--scheme', '-s'],
                         'help': ('Scheme of secure boot signing.'),
-                        'type': click.Choice(['rsa3072', 'ecdsa192', 'ecdsa256', 'ecdsa384']),
+                        'type': click.Choice(['rsa3072', 'ecdsa256', 'ecdsa384']),
                     },
                 ],
                 'arguments': [

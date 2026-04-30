@@ -7,7 +7,7 @@
 
 {IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS 或 ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256 或 ECDSA-192", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-384、ECDSA-256 或 ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256", esp32c5="RSA-3072、ECDSA-384、ECDSA-256"}
 
 {IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
 
@@ -75,9 +75,7 @@
 
 2. 二级引导加载程序加载特定应用程序镜像，并验证应用程序的 {IDF_TARGET_SBV2_SCHEME} 签名。若验证通过，则执行应用程序镜像。
 
-.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
 
-    默认情况下，{IDF_TARGET_NAME} 禁用 ECDSA-P192 曲线。如果提供的安全启动签名密钥使用的是 ECDSA-P192 曲线，为配置安全启动，系统将尝试启用 ECDSA-P192 曲线模式。然而，如果该曲线模式已被锁定，则无法启用 ECDSA-P192。在这种情况下，无法使用 ECDSA-P192 密钥配置安全启动。用户必须改为提供基于 ECDSA-P256 曲线或基于 RSA 的签名密钥。
 
 优势
 ----
@@ -254,7 +252,7 @@
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
-    .. list-table:: ECDSA-256 / ECDSA-192 签名块的内容
+    .. list-table:: ECDSA-256 签名块的内容
         :widths: 10 10 40
         :header-rows: 1
 
@@ -275,7 +273,7 @@
           - 仅针对镜像内容的 SHA-256 哈希值，不包括签名块。
         * - 36
           - 1
-          - 曲线 ID。1 代表 NIST192p 曲线，2 代表 NIST256p 曲线。
+          - 曲线 ID。2 代表 NIST256p 曲线。
         * - 37
           - 64
           - ECDSA 公钥：32 字节的 X 坐标，后跟 32 字节的 Y 坐标。
@@ -530,9 +528,7 @@ Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像
 
 - 一旦启用安全启动，就无法再对 eFuse 密钥进行读保护，这可以避免攻击者对存储公共密钥摘要的 eFuse 块进行读保护，进而导致系统无法验证和处理签名，系统服务无法正常运行。有关读保护密钥的更多信息，请参阅下方详细说明。
 
-.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
 
-    启用安全启动后，ECDSA 曲线模式将锁定为写保护状态。因此，如果启用前未将曲线模式设置为使用 ECDSA-P192 密钥，那么之后将无法再配置或使用 ECDSA_DS 外设中的 ECDSA-P192 曲线。
 
 烧录读保护密钥
 ~~~~~~~~~~~~~~
@@ -581,11 +577,11 @@ Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像
 
   .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-    传递 ``--version 2 --scheme ecdsa384``、 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
+    传递 ``--version 2 --scheme ecdsa384`` 或 ``--version 2 --scheme ecdsa256`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
 
   .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
-    传递 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
+    传递 ``--version 2 --scheme ecdsa256`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
 
 签名密钥的强度取决于 (a) 系统的随机数源和 (b) 所用算法的正确性。对于生产设备，建议从具有高质量熵源的系统生成签名密钥，并使用最佳的可用 {IDF_TARGET_SBV2_SCHEME} 密钥生成工具。
 
@@ -600,12 +596,6 @@ Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像
       openssl genrsa -out my_secure_boot_signing_key.pem 3072
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
-
-    生成 ECC NIST192p 曲线密钥
-
-    .. code-block::
-
-        openssl ecparam -name prime192v1 -genkey -noout -out my_secure_boot_signing_key.pem
 
     生成 ECC NIST256p 曲线密钥
 
@@ -728,7 +718,7 @@ Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像
 
       .. note::
 
-        如果 Secure Boot v2 配置为使用 ECDSA P-384 签名方案，则所有用于签名的密钥必须为 ECDSA-P384 密钥。不支持与 P-384 同时使用其他椭圆曲线（例如 P-192 或 P-256）密钥，否则在启动过程中会导致签名验证失败。
+        如果 Secure Boot v2 配置为使用 ECDSA P-384 签名方案，则所有用于签名的密钥必须为 ECDSA-P384 密钥。不支持与 P-384 同时使用其他椭圆曲线（例如 P-256）密钥，否则在启动过程中会导致签名验证失败。
 
     .. _secure-boot-v2-key-revocation:
 

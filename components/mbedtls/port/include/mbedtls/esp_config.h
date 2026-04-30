@@ -277,7 +277,7 @@
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECC
 #ifdef CONFIG_MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
-    /* Use hardware accelerator for SECP192R1 and SECP256R1 curves,
+    /* Use hardware accelerator for SECP256R1 curves,
      * software implementation for rest of the curves
      */
     #define MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK
@@ -525,7 +525,6 @@
 #endif
 
 /**
- * \def MBEDTLS_ECP_DP_SECP192R1_ENABLED
  *
  * MBEDTLS_ECP_XXXX_ENABLED: Enables specific curves within the Elliptic Curve
  * module.  By default all supported curves are enabled.
@@ -542,11 +541,6 @@
 #define PSA_WANT_ECC_SECP_R1_384 1
 #else
 #undef PSA_WANT_ECC_SECP_R1_384
-#endif
-#ifdef CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
-#define PSA_WANT_ECC_SECP_R1_192 1
-#else
-#undef PSA_WANT_ECC_SECP_R1_192
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED
 #define PSA_WANT_ECC_SECP_R1_521 1
