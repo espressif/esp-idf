@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,9 +20,14 @@ bool esp_openthread_lock_acquire(TickType_t block_ticks)
 {
     ESP_RETURN_ON_FALSE(s_openthread_mutex && s_openthread_task_mutex, false, OT_PLAT_LOG_TAG,
             "Failed to acquire the lock because the mutex is not ready");
-    BaseType_t ret = xSemaphoreTakeRecursive(s_openthread_mutex, block_ticks) &&
-        xSemaphoreTakeRecursive(s_openthread_task_mutex, block_ticks);
-    return (ret == pdTRUE);
+    if (xSemaphoreTakeRecursive(s_openthread_mutex, block_ticks) != pdTRUE) {
+        return false;
+    }
+    if (xSemaphoreTakeRecursive(s_openthread_task_mutex, block_ticks) != pdTRUE) {
+        xSemaphoreGiveRecursive(s_openthread_mutex);
+        return false;
+    }
+    return true;
 }
 
 void esp_openthread_lock_release(void)
@@ -61,6 +66,7 @@ esp_err_t esp_openthread_lock_init(void)
     s_openthread_mutex = xSemaphoreCreateRecursiveMutex();
     s_openthread_task_mutex = xSemaphoreCreateRecursiveMutex();
     if (s_openthread_mutex == NULL || s_openthread_task_mutex == NULL) {
+        esp_openthread_lock_deinit();
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;

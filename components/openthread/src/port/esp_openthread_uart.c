@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,8 @@
 #endif
 
 static int s_uart_port;
-static int s_uart_fd;
+static int s_uart_fd = -1;
+static bool s_uart_driver_installed = false;
 static uint8_t s_uart_buffer[ESP_OPENTHREAD_UART_BUFFER_SIZE];
 static const char *uart_workflow = "uart";
 
@@ -89,6 +90,7 @@ esp_err_t esp_openthread_uart_init_port(const esp_openthread_uart_config_t *conf
         OT_PLAT_LOG_TAG, "uart_set_pin failed");
     ESP_RETURN_ON_ERROR(uart_driver_install(config->port, ESP_OPENTHREAD_UART_BUFFER_SIZE, 0, 0, NULL, 0),
                         OT_PLAT_LOG_TAG, "uart_driver_install failed");
+    s_uart_driver_installed = true;
     uart_vfs_dev_use_driver(config->port);
     return ESP_OK;
 }
@@ -173,7 +175,10 @@ void esp_openthread_uart_deinit()
         close(s_uart_fd);
         s_uart_fd = -1;
     }
-    uart_driver_delete(s_uart_port);
+    if (s_uart_driver_installed) {
+        uart_driver_delete(s_uart_port);
+        s_uart_driver_installed = false;
+    }
     esp_openthread_platform_workflow_unregister(uart_workflow);
 }
 
