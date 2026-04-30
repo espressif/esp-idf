@@ -1,18 +1,24 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+import os
+
 from rich_click import Context
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import ensure_build_directory
-from idf_py_actions.tools import is_target_supported
+from idf_py_actions.tools import get_sdkconfig_value
 from idf_py_actions.tools import run_target
+
+SOC_USB_DFU_SUPPORTED = 'CONFIG_SOC_USB_DFU_SUPPORTED'
+
+
+def _soc_usb_dfu_supported(project_path: str) -> bool:
+    return bool(get_sdkconfig_value(os.path.join(project_path, 'sdkconfig'), SOC_USB_DFU_SUPPORTED) == 'y')
 
 
 def action_extensions(base_actions: dict, project_path: str) -> dict:
-    SUPPORTED_TARGETS = ['esp32s2', 'esp32s3', 'esp32p4']
-
     def dfu_target(target_name: str, ctx: Context, args: PropertyDict, part_size: str) -> None:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, {'ESP_DFU_PART_SIZE': part_size} if part_size else {})
@@ -71,4 +77,4 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         }
     }
 
-    return dfu_actions if is_target_supported(project_path, SUPPORTED_TARGETS) else {}
+    return dfu_actions if _soc_usb_dfu_supported(project_path) else {}

@@ -21,7 +21,7 @@ On {IDF_TARGET_NAME}, ESP-IDF provides implementations of VFS drivers for I/O ov
 
     - UART
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - USB Serial/JTAG
-    :esp32s2 or esp32s3: - USB CDC (using USB_OTG peripheral)
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - USB CDC (using USB_OTG peripheral)
     - "Null" (no output)
 
 Standard I/O is not limited to these options, though. See below on enabling custom destinations for standard I/O.
@@ -35,7 +35,7 @@ Built-in implementations of standard I/O can be selected using several Kconfig o
 
     - :ref:`CONFIG_ESP_CONSOLE_UART_DEFAULT<CONFIG_ESP_CONSOLE_UART_DEFAULT>` — Enables UART with default options (pin numbers, baud rate) for standard I/O.
     - :ref:`CONFIG_ESP_CONSOLE_UART_CUSTOM<CONFIG_ESP_CONSOLE_UART_CUSTOM>` — Enables UART for standard I/O, with TX/RX pin numbers and baud rate configurable via Kconfig.
-    :esp32s2 or esp32s3: - :ref:`CONFIG_ESP_CONSOLE_USB_CDC<CONFIG_ESP_CONSOLE_USB_CDC>` — Enables USB CDC (using USB_OTG peripheral) for standard I/O. See :doc:`usb-otg-console` for details about hardware connections required.
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_CDC<CONFIG_ESP_CONSOLE_USB_CDC>` — Enables USB CDC (using USB_OTG peripheral) for standard I/O. See :doc:`usb-otg-console` for details about hardware connections required.
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG>` — Enables USB Serial/JTAG for standard I/O. See :doc:`usb-serial-jtag-console` for details about hardware connections required.
     - :ref:`CONFIG_ESP_CONSOLE_NONE<CONFIG_ESP_CONSOLE_NONE>` — Disables standard I/O. If this option is selected, ``stdin``, ``stdout``, and ``stderr`` will be mapped to ``/dev/null`` and won't produce any output or generate any input.
 
@@ -102,7 +102,7 @@ When the interrupt-driven driver is installed, it is also possible to enable/dis
 
     When the interrupt-driven driver is installed, it is also possible to enable/disable non-blocking behavior using ``fcntl`` function with ``O_NONBLOCK`` flag.
 
-.. only:: esp32s2 or esp32s3
+.. only:: SOC_USB_OTG_CONSOLE_SUPPORTED
 
     USB CDC (using USB_OTG peripheral)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -132,7 +132,7 @@ It is also possible to configure line ending conversion for the specific VFS dri
 
     - For UART: :cpp:func:`uart_vfs_dev_port_set_rx_line_endings` and :cpp:func:`uart_vfs_dev_port_set_tx_line_endings`
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - For USB Serial/JTAG: :cpp:func:`usb_serial_jtag_vfs_set_rx_line_endings` and :cpp:func:`usb_serial_jtag_vfs_set_tx_line_endings`
-    :esp32s2 or esp32s3: - For USB CDC (using USB_OTG peripheral): :cpp:func:`esp_vfs_dev_cdcacm_set_rx_line_endings` and :cpp:func:`esp_vfs_dev_cdcacm_set_tx_line_endings`
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - For USB CDC (using USB_OTG peripheral): :cpp:func:`esp_vfs_dev_cdcacm_set_rx_line_endings` and :cpp:func:`esp_vfs_dev_cdcacm_set_tx_line_endings`
 
 Buffering
 ---------

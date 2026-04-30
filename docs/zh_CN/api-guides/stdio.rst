@@ -21,7 +21,7 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
     - UART
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - USB Serial/JTAG
-    :esp32s2 or esp32s3: - USB CDC（使用 USB_OTG 外设）
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - USB CDC（使用 USB_OTG 外设）
     - "Null"（无输出）
 
 不过，标准 I/O 并不限于这些选项。请参见下文，了解如何为标准 I/O 启用自定义目标。
@@ -35,7 +35,7 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
     - :ref:`CONFIG_ESP_CONSOLE_UART_DEFAULT<CONFIG_ESP_CONSOLE_UART_DEFAULT>` — 启用 UART 用于标准 I/O，保持默认选项项（管脚号、波特率）。
     - :ref:`CONFIG_ESP_CONSOLE_UART_CUSTOM<CONFIG_ESP_CONSOLE_UART_CUSTOM>` — 启用 UART 用于标准 I/O，通过 Kconfig 配置 TX/RX 管脚号和波特率。
-    :esp32s2 or esp32s3: - :ref:`CONFIG_ESP_CONSOLE_USB_CDC<CONFIG_ESP_CONSOLE_USB_CDC>` — 启用 USB CDC（使用 USB_OTG 外设）用于标准 I/O。硬件连接要求请参见 :doc:`usb-otg-console`。
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_CDC<CONFIG_ESP_CONSOLE_USB_CDC>` — 启用 USB CDC（使用 USB_OTG 外设）用于标准 I/O。硬件连接要求请参见 :doc:`usb-otg-console`。
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG>` — 启用 USB Serial/JTAG 用于标准 I/O。硬件连接要求请参见 :doc:`usb-serial-jtag-console`。
     - :ref:`CONFIG_ESP_CONSOLE_NONE<CONFIG_ESP_CONSOLE_NONE>` — 禁用标准 I/O。选择此选项时， ``stdin``、 ``stdout`` 和 ``stderr`` 将映射到 ``/dev/null``，不会产生输出或输入。
 
@@ -102,7 +102,7 @@ UART
 
     安装中断驱动后，也可使用带有 ``O_NONBLOCK`` 标志的 ``fcntl`` 函数启用/禁用非阻塞行为。
 
-.. only:: esp32s2 or esp32s3
+.. only:: SOC_USB_OTG_CONSOLE_SUPPORTED
 
     USB CDC（使用 USB_OTG 外设）
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -132,7 +132,7 @@ UART
 
     - 对于 UART：:cpp:func:`uart_vfs_dev_port_set_rx_line_endings` 和 :cpp:func:`uart_vfs_dev_port_set_tx_line_endings`
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - 对于 USB Serial/JTAG：:cpp:func:`usb_serial_jtag_vfs_set_rx_line_endings` 和 :cpp:func:`usb_serial_jtag_vfs_set_tx_line_endings`
-    :esp32s2 or esp32s3: - 对于 USB CDC（使用 USB_OTG 外设）：:cpp:func:`esp_vfs_dev_cdcacm_set_rx_line_endings` 和 :cpp:func:`esp_vfs_dev_cdcacm_set_tx_line_endings`
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - 对于 USB CDC（使用 USB_OTG 外设）：:cpp:func:`esp_vfs_dev_cdcacm_set_rx_line_endings` 和 :cpp:func:`esp_vfs_dev_cdcacm_set_tx_line_endings`
 
 缓冲
 -----
