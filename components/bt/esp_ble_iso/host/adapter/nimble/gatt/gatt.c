@@ -27,6 +27,8 @@
 #include "nimble/hs_error.h"
 #include "common/app/gatt.h"
 
+LOG_MODULE_REGISTER(ISO_NGAT, CONFIG_BT_ISO_LOG_LEVEL);
+
 void bt_le_nimble_gatt_post_event(void *param)
 {
     struct bt_le_gatt_event_param *qev;

@@ -29,6 +29,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_MICS, CONFIG_BT_ISO_LOG_LEVEL);
+
 #define INC_AICS_CHR_COUNT  (6 + 1)
 
 #define INC_AICS_CHR_FLAGS_STATE \

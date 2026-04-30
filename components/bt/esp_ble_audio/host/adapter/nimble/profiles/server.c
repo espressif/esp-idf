@@ -25,6 +25,8 @@
 
 #include "common/host.h"
 
+LOG_MODULE_REGISTER(LEA_GSRV, CONFIG_BT_ISO_LOG_LEVEL);
+
 static ssize_t gatts_read_cb(void *arg, uint16_t offset, const void *data, uint16_t len)
 {
     struct os_mbuf *om;

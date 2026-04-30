@@ -22,6 +22,8 @@
 
 #include "common/host.h"
 
+LOG_MODULE_REGISTER(ISO_GATT, CONFIG_BT_ISO_LOG_LEVEL);
+
 static sys_slist_t gatt_db = SYS_SLIST_STATIC_INIT(&gatt_db);
 
 static struct gattc_sub subscriptions[CONFIG_BT_MAX_CONN];

@@ -16,8 +16,6 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
-
 struct bt_gatt_ots_pool_item {
     sys_dnode_t dnode;
     struct bt_gatt_ots_object val;

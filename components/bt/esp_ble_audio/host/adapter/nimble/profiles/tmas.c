@@ -27,6 +27,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_TMAS, CONFIG_BT_ISO_LOG_LEVEL);
+
 static const struct ble_gatt_svc_def gatt_svc_tmas[] = {
     {
         /* Telephony and Media Audio Service */

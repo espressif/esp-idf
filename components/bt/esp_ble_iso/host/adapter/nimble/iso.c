@@ -21,6 +21,8 @@
 
 #include "nimble/hs_error.h"
 
+LOG_MODULE_REGISTER(ISO_NISO, CONFIG_BT_ISO_LOG_LEVEL);
+
 extern int ble_hs_iso_evt_rx_cb_set(void *cb);
 #if CONFIG_BT_ISO_RX
 extern int ble_hs_iso_pkt_rx_cb_set(ble_hs_iso_pkt_rx_fn cb);

@@ -18,6 +18,8 @@
 
 #include "common/host.h"
 
+LOG_MODULE_REGISTER(ISO_ADV, CONFIG_BT_ISO_LOG_LEVEL);
+
 static struct bt_le_ext_adv ext_adv_pool[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 
 static struct bt_le_ext_adv *ext_adv_find(uint8_t adv_handle)

@@ -23,6 +23,8 @@
 #include "common/task.h"
 #include "common/app/gap.h"
 
+LOG_MODULE_REGISTER(ISO_SHIM, CONFIG_BT_ISO_LOG_LEVEL);
+
 #ifdef CONFIG_BT_NIMBLE_ISO_STD_FLOW_CTRL
 #define ISO_STD_FLOW_CTRL       true
 #else /* CONFIG_BT_NIMBLE_ISO_STD_FLOW_CTRL */

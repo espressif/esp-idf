@@ -18,6 +18,8 @@
 #include "common/host.h"
 #include "common/app/gatt.h"
 
+LOG_MODULE_REGISTER(ISO_AGAT, CONFIG_BT_ISO_LOG_LEVEL);
+
 static bt_le_gatt_app_cb gatt_app_cb;
 
 int bt_le_gatt_app_cb_register(bt_le_gatt_app_cb cb)

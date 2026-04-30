@@ -21,6 +21,8 @@
 #include "common/host.h"
 #include "common/app/gap.h"
 
+LOG_MODULE_REGISTER(ISO_CONN, CONFIG_BT_ISO_LOG_LEVEL);
+
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 
 extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];

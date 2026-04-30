@@ -20,6 +20,8 @@
 #include "common/host.h"
 #include "common/app/gap.h"
 
+LOG_MODULE_REGISTER(ISO_L2CAP, CONFIG_BT_ISO_LOG_LEVEL);
+
 #define L2CAP_LE_MIN_MTU                23
 #define L2CAP_ECRED_MIN_MTU             64
 

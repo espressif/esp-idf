@@ -25,6 +25,8 @@
 
 #include "nimble/hs_error.h"
 
+LOG_MODULE_REGISTER(ISO_NGAP, CONFIG_BT_ISO_LOG_LEVEL);
+
 /* Map a NimBLE connection's security state to Zephyr bt_security_t.
  *
  * To reach L3/L4 the app must configure NimBLE for authenticated pairing:

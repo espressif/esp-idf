@@ -29,6 +29,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_HAS, CONFIG_BT_ISO_LOG_LEVEL);
+
 static const ble_uuid16_t has_uuid_features = BLE_UUID16_INIT(BT_UUID_HAS_HEARING_AID_FEATURES_VAL);
 static const ble_uuid16_t has_uuid_control_point = BLE_UUID16_INIT(BT_UUID_HAS_PRESET_CONTROL_POINT_VAL);
 static const ble_uuid16_t has_uuid_preset_index = BLE_UUID16_INIT(BT_UUID_HAS_ACTIVE_PRESET_INDEX_VAL);

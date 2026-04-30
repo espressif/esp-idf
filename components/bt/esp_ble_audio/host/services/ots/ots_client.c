@@ -26,9 +26,9 @@
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
 
-#define LOG_LEVEL CONFIG_BT_OTS_CLIENT_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_otc);
+
+LOG_MODULE_REGISTER(LEA_OTC, CONFIG_BT_ISO_LOG_LEVEL);
 
 /* TODO: KConfig options */
 #define OTS_CLIENT_INST_COUNT     1
@@ -1653,12 +1653,14 @@ static int decode_record(struct net_buf_simple *buf,
 
     rec->metadata.id = net_buf_simple_pull_le48(buf);
 
-    if (IS_ENABLED(CONFIG_BT_OTS_CLIENT_LOG_LEVEL_DBG)) {
+#if (CONFIG_BT_ISO_LOG_LEVEL >= BT_ISO_LOG_DEBUG)
+    {
         char t[BT_OTS_OBJ_ID_STR_LEN];
 
         (void)bt_ots_obj_id_to_str(rec->metadata.id, t, sizeof(t));
         LOG_DBG("Object ID 0x%s", t);
     }
+#endif
 
     if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
         LOG_WRN("incorrect DirListing record, reclen %u too short, "

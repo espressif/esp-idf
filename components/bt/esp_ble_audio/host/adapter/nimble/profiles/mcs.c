@@ -34,6 +34,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_MCS, CONFIG_BT_ISO_LOG_LEVEL);
+
 #if CONFIG_BT_OTS
 #define INC_OTS_CHR_COUNT   8   /* - OTS Feature (M)
                                  * - Object Name (M)

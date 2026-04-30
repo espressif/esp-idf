@@ -7,6 +7,7 @@
 #ifndef HOST_COMMON_INIT_H_
 #define HOST_COMMON_INIT_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "sdkconfig.h"
@@ -56,6 +57,11 @@ int bt_le_vcp_vol_rend_init(void);
 int bt_le_micp_mic_dev_init(void);
 
 int bt_le_audio_start(void *info);
+
+void ble_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...);
+
+void ble_audio_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx,
+                                      const uint8_t *buf, size_t len);
 
 #ifdef __cplusplus
 }

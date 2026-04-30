@@ -17,14 +17,7 @@
 
 #include <zephyr/logging/log.h>
 
-/* This l2cap is the only OTS-file in use for OTC.
- * If only OTC is used, the OTS log module must be registered here.
- */
-#if defined(CONFIG_BT_OTS)
-LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
-#elif defined(CONFIG_BT_OTS_CLIENT)
-LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_CLIENT_LOG_LEVEL);
-#endif
+LOG_MODULE_REGISTER(LEA_OTS, CONFIG_BT_ISO_LOG_LEVEL);
 
 /* According to Bluetooth specification Assigned Numbers that are used in the
  * Logical Link Control for protocol/service multiplexers.

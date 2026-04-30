@@ -15,6 +15,8 @@
 #include "common/app/gap.h"
 #include "common/app/gatt.h"
 
+LOG_MODULE_REGISTER(ISO_HOST, CONFIG_BT_ISO_LOG_LEVEL);
+
 static struct k_mutex host_mutex;
 
 #define TIMEOUT_MS  (5000 / portTICK_PERIOD_MS) /* 5s */

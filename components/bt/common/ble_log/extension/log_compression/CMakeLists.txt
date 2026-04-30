@@ -15,6 +15,16 @@ set(HOST_LOG_INDEX_HEADER "\"\"")
 set(BLE_HOST_TAGS "")
 set(BLE_HOST_TAGS_PRESERVE "")
 
+# default config value for ble iso module
+# (esp_ble_iso owns the unified LOG_* family; consumers like esp_ble_audio
+# and future HID-over-ISO compile under the same BLE_ISO module so that all
+# share one iso_log_index.h and one log-id counter — no per-consumer
+# bookkeeping, no redefinition risk.)
+set(BLE_ISO_CODE_PATH "")
+set(BLE_ISO_LOG_INDEX_HEADER "\"\"")
+set(BLE_ISO_TAGS "")
+set(BLE_ISO_TAGS_PRESERVE "")
+
 if(CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE)
     list(APPEND LOG_COMPRESSED_MODULE "BLE_MESH")
 
@@ -29,6 +39,26 @@ if(CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE)
         file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_MESH_LOG_INDEX_HEADER}" "")
     endif()
     list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH ${BLE_MESH_CODE_PATH})
+endif()
+
+if(CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE)
+    list(APPEND LOG_COMPRESSED_MODULE "BLE_ISO")
+
+    # esp_ble_audio sources share the same LOG_* macro family from
+    # esp_ble_iso/include/zephyr/logging/log.h; compile them under the
+    # single BLE_ISO module so they all hit one iso_log_index.h with one
+    # monotonic log-id counter. Future ISO consumers (e.g. HID-over-ISO)
+    # extend this list the same way — no per-consumer index header or
+    # Kconfig toggle.
+    set(BLE_ISO_CODE_PATH "esp_ble_iso" "esp_ble_audio")
+    set(BLE_ISO_LOG_INDEX_HEADER "iso_log_index.h")
+    set(BLE_ISO_LOG_SCRIPT_PATH
+        "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/ble_iso/make_iso_log_macro.py")
+    include(${CMAKE_CURRENT_LIST_DIR}/cmake/ble_iso_log_tags.cmake)
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_ISO_LOG_INDEX_HEADER}")
+        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_ISO_LOG_INDEX_HEADER}" "")
+    endif()
+    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH ${BLE_ISO_CODE_PATH})
 endif()
 
 if(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_BLUEDROID_ENABLED)
@@ -127,6 +157,12 @@ if(LOG_COMPRESSED_MODULE)
             file(WRITE "${CMAKE_BINARY_DIR}/ble_log/module_info.yml")
         endif()
         set(YML_IN  "${BT_ROOT_PATH}/common/ble_log/extension/log_compression/scripts/configs/module_info.yml.in")
+
+        # BLE_ISO has multiple code paths; rewrite CMake list ";" → YAML ", "
+        # into a sibling variable so BLE_ISO_CODE_PATH itself stays a CMake
+        # list usable by any later code that wants to iterate or append.
+        string(REPLACE ";" ", " BLE_ISO_CODE_PATH_YAML "${BLE_ISO_CODE_PATH}")
+
         configure_file(${YML_IN} ${CONFIG_FILE_PATH} @ONLY)
 
         string(REPLACE ";" "|" MODULE_CODE_PATH "${LOG_COMPRESSED_MODULE_CODE_PATH}")

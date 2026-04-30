@@ -32,6 +32,8 @@
 
 #include "esp_random.h"
 
+LOG_MODULE_REGISTER(ISO_CRYPTO, CONFIG_BT_ISO_LOG_LEVEL);
+
 int bt_rand(void *buf, size_t len)
 {
     if (buf == NULL || len == 0) {
