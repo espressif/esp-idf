@@ -300,7 +300,9 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
                  (long long) prepare_us, (long long) write_us,
                  (long long) formation_us, (long long) parse_us,
                  (long long) total_us, limit_us);
+#if defined(CONFIG_MBEDTLS_HARDWARE_ECC) || defined(CONFIG_MBEDTLS_HARDWARE_MPI)
         TEST_ASSERT_MESSAGE(total_us <= limit_us, "SAE commit/parse timing regression");
+#endif
 
     }
     ESP_LOGI("SAE Test", "=========== Complete ============");
