@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,6 +189,25 @@ static struct wpa2_rx_param * wpa2_rxq_dequeue(void)
     return param;
 }
 
+static bool wpa2_rxq_remove(struct wpa2_rx_param *target)
+{
+    struct wpa2_rx_param *param;
+    bool removed = false;
+
+    DATA_MUTEX_TAKE();
+    STAILQ_FOREACH(param, &s_wpa2_rxq, bqentry) {
+        if (param == target) {
+            STAILQ_REMOVE(&s_wpa2_rxq, param, wpa2_rx_param, bqentry);
+            STAILQ_NEXT(param, bqentry) = NULL;
+            removed = true;
+            break;
+        }
+    }
+    DATA_MUTEX_GIVE();
+
+    return removed;
+}
+
 static void wpa2_rxq_deinit(void)
 {
     struct wpa2_rx_param *param = NULL;
@@ -289,6 +308,11 @@ int wpa2_post(uint32_t sig, uint32_t par)
     evt.sig = sig;
     evt.par = par;
     if (os_queue_send(s_wpa2_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
+        DATA_MUTEX_TAKE();
+        if (sm->wpa2_sig_cnt[sig]) {
+            sm->wpa2_sig_cnt[sig]--;
+        }
+        DATA_MUTEX_GIVE();
         wpa_printf(MSG_ERROR, "EAP: Q S E");
         return ESP_FAIL;
     }
@@ -484,7 +508,12 @@ static int eap_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
         memcpy(param->sa, src_addr, WPA_ADDR_LEN);
 
         wpa2_rxq_enqueue(param);
-        return wpa2_post(SIG_WPA2_RX, 0);
+        int ret = wpa2_post(SIG_WPA2_RX, 0);
+        if (ret != ESP_OK && wpa2_rxq_remove(param)) {
+            os_free(param->buf);
+            os_free(param);
+        }
+        return ret;
     }
 #else
 
@@ -1167,7 +1196,7 @@ esp_err_t esp_eap_client_set_new_password(const unsigned char *new_password, int
     }
 
     os_memcpy(g_wpa_new_password, new_password, len);
-    g_wpa_password_len = len;
+    g_wpa_new_password_len = len;
     eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
