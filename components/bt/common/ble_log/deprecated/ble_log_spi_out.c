@@ -677,6 +677,7 @@ static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb)
     }
 }
 
+#if SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED || SPI_OUT_HCI_ENABLED || SPI_OUT_LE_AUDIO_ENABLED
 static void spi_out_update_task_mapping(int idx, void *ptr)
 {
     // It is a must to clear task handle after task deletion
@@ -684,7 +685,6 @@ static void spi_out_update_task_mapping(int idx, void *ptr)
     entry->task_handle = NULL;
 }
 
-#if SPI_OUT_HOST_ENABLED || SPI_OUT_MESH_ENABLED || SPI_OUT_HCI_ENABLED || SPI_OUT_LE_AUDIO_ENABLED
 static bool spi_out_get_task_mapping(task_map_t *map, size_t num,
                                      spi_out_log_cb_t **log_cb, uint8_t **str_buf)
 {

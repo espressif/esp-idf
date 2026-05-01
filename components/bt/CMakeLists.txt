@@ -869,7 +869,6 @@ if(CONFIG_BT_ENABLED)
                 "host/nimble/nimble/porting/nimble/src/nimble_port.c"
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
                 "host/nimble/port/src/nvs_port.c"
-                "host/nimble/port/src/esp_nimble_mem.c"
             )
 
             list(APPEND include_dirs
@@ -982,8 +981,6 @@ set(bt_priv_requires
     esp_driver_uart
     vfs
     esp_ringbuf
-    esp_driver_spi
-    esp_driver_gpio
     esp_gdbstub
     esp_security
 )
@@ -1018,7 +1015,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                       REQUIRES esp_timer esp_wifi
+                       REQUIRES esp_timer esp_wifi esp_driver_spi esp_driver_gpio
                        PRIV_REQUIRES "${bt_priv_requires}"
                        LDFRAGMENTS "${ldscripts}")
 
