@@ -12,7 +12,6 @@
 #include "mem_api.h"
 #include "bt_osi_mem.h"
 #include "esp_err.h"
-#include "esp_nimble_mem.h"
 
 #if CONFIG_BT_NIMBLE_ENABLED
 #include "syscfg/syscfg.h"
@@ -122,10 +121,12 @@ ble_os_msys_ensure_ctx(void)
         return 0;
     }
 
-    os_msys_ctx = nimble_platform_mem_calloc(1, sizeof(*os_msys_ctx));
+    os_msys_ctx = bt_osi_mem_malloc(sizeof(*os_msys_ctx));
     if(!os_msys_ctx) {
         return -1;
     }
+
+    memset(os_msys_ctx, 0, sizeof(*os_msys_ctx));
 
     return 0;
 }
@@ -230,9 +231,9 @@ os_msys_buf_alloc(void)
 #if CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 #if OS_MSYS_1_BLOCK_COUNT > 0
         if (!os_msys_ctx->init_1_data) {
-            os_msys_ctx->init_1_data = nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_1_MEMPOOL_SIZE));
+            os_msys_ctx->init_1_data = bt_osi_mem_malloc((sizeof(os_membuf_t) * SYSINIT_MSYS_1_MEMPOOL_SIZE));
             if(!os_msys_ctx->init_1_data){
-                nimble_platform_mem_free(os_msys_ctx);
+                bt_osi_mem_free(os_msys_ctx);
                 os_msys_ctx = NULL;
                 return ESP_FAIL;
             }
@@ -241,13 +242,13 @@ os_msys_buf_alloc(void)
 
 #if OS_MSYS_2_BLOCK_COUNT > 0
       if (!os_msys_ctx->init_2_data) {
-          os_msys_ctx->init_2_data = nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_2_MEMPOOL_SIZE));
+          os_msys_ctx->init_2_data = bt_osi_mem_malloc((sizeof(os_membuf_t) * SYSINIT_MSYS_2_MEMPOOL_SIZE));
           if(!os_msys_ctx->init_2_data) {
 #if OS_MSYS_1_BLOCK_COUNT > 0
-              nimble_platform_mem_free(os_msys_ctx->init_1_data);
+              bt_osi_mem_free(os_msys_ctx->init_1_data);
               os_msys_ctx->init_1_data = NULL;
 #endif
-              nimble_platform_mem_free(os_msys_ctx);
+              bt_osi_mem_free(os_msys_ctx);
               os_msys_ctx = NULL;
               return ESP_FAIL;
           }
@@ -256,17 +257,17 @@ os_msys_buf_alloc(void)
 #endif
 #else
 #if OS_MSYS_1_BLOCK_COUNT > 0
-    os_msys_init_1_data = (os_membuf_t *)nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_1_MEMPOOL_SIZE));
+    os_msys_init_1_data = (os_membuf_t *)bt_osi_mem_malloc((sizeof(os_membuf_t) * SYSINIT_MSYS_1_MEMPOOL_SIZE));
     if (!os_msys_init_1_data) {
         return ESP_ERR_NO_MEM;
     }
 #endif
 
 #if OS_MSYS_2_BLOCK_COUNT > 0
-    os_msys_init_2_data = (os_membuf_t *)nimble_platform_mem_calloc(1, (sizeof(os_membuf_t) * SYSINIT_MSYS_2_MEMPOOL_SIZE));
+    os_msys_init_2_data = (os_membuf_t *)bt_osi_mem_malloc((sizeof(os_membuf_t) * SYSINIT_MSYS_2_MEMPOOL_SIZE));
     if (!os_msys_init_2_data) {
 #if OS_MSYS_1_BLOCK_COUNT > 0
-       nimble_platform_mem_free(os_msys_init_1_data);
+       bt_osi_mem_free(os_msys_init_1_data);
        os_msys_init_1_data = NULL;
 #endif
         return ESP_ERR_NO_MEM;
@@ -284,32 +285,32 @@ os_msys_buf_free(void)
     if (os_msys_ctx) {
 #if OS_MSYS_1_BLOCK_COUNT > 0
         if (os_msys_ctx->init_1_data) {
-            nimble_platform_mem_free(os_msys_ctx->init_1_data);
+            bt_osi_mem_free(os_msys_ctx->init_1_data);
             os_msys_ctx->init_1_data = NULL;
         }
         os_mempool_unregister(&os_msys_ctx->init_1_mempool);
 #endif
 #if OS_MSYS_2_BLOCK_COUNT > 0
         if (os_msys_ctx->init_2_data) {
-            nimble_platform_mem_free(os_msys_ctx->init_2_data);
+            bt_osi_mem_free(os_msys_ctx->init_2_data);
             os_msys_ctx->init_2_data = NULL;
         }
         os_mempool_unregister(&os_msys_ctx->init_2_mempool);
 #endif
-        nimble_platform_mem_free(os_msys_ctx);
+        bt_osi_mem_free(os_msys_ctx);
         os_msys_ctx = NULL;
     }
 
 #else
 #if OS_MSYS_1_BLOCK_COUNT > 0
 
-    nimble_platform_mem_free(os_msys_init_1_data);
+    bt_osi_mem_free(os_msys_init_1_data);
     os_msys_init_1_data = NULL;
     os_mempool_unregister(&os_msys_init_1_mempool);
 #endif
 
 #if OS_MSYS_2_BLOCK_COUNT > 0
-    nimble_platform_mem_free(os_msys_init_2_data);
+    bt_osi_mem_free(os_msys_init_2_data);
     os_msys_init_2_data = NULL;
     os_mempool_unregister(&os_msys_init_1_mempool);
 #endif
