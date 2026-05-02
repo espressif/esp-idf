@@ -230,6 +230,11 @@ def test_idf_py_help_without_build_dir_has_no_cmake_custom_targets_section(idf_p
     assert 'CMake Custom Targets' not in ret.stdout
 
 
+@pytest.mark.buildv2_skip(
+    'cmakev2 generates per-project phony targets (${PROJECT_NAME}_binary, _check_size, _mapfile, .map, '
+    'ldgen_libraries.in_library_${PROJECT_NAME}) that the static allowlist in '
+    'tools/idf_py_actions/help_custom_targets_skip.py was designed around v1 hard-coded names.'
+)
 @pytest.mark.usefixtures('test_app_copy')
 def test_idf_py_help_after_configure_with_no_custom_targets_has_no_section(idf_py: IdfPyFunc) -> None:
     """After configure, if the project defines no custom targets, `idf.py --help` must not show the section."""
@@ -238,6 +243,11 @@ def test_idf_py_help_after_configure_with_no_custom_targets_has_no_section(idf_p
     assert 'CMake Custom Targets' not in ret.stdout
 
 
+@pytest.mark.buildv2_skip(
+    'cmakev2 generates per-project phony targets (${PROJECT_NAME}_binary, _check_size, _mapfile, .map, '
+    'ldgen_libraries.in_library_${PROJECT_NAME}) that the static allowlist in '
+    'tools/idf_py_actions/help_custom_targets_skip.py was designed around v1 hard-coded names.'
+)
 @pytest.mark.usefixtures('test_app_copy')
 def test_idf_py_help_lists_cmake_custom_targets_after_configure(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     """After configure, project-only phony targets should appear under CMake Custom Targets in idf.py --help."""
