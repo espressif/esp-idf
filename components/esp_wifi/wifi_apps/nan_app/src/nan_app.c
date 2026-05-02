@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,9 @@
 #define NDP_ACCEPTED        BIT5
 #define NDP_TERMINATED      BIT6
 #define NDP_REJECTED        BIT7
+
+/* NAN Caps */
+#define NAN_CAPS_NDPE_ATTR  BIT3
 
 /* Macros */
 #define MACADDR_LEN             6
@@ -73,6 +76,7 @@ struct peer_svc_info {
     uint8_t own_svc_id;                                 /**< Identifier for own service  */
     uint8_t type;                                       /**< Service type (Publish/Subscribe) */
     uint8_t peer_nmi[MACADDR_LEN];                      /**< Peer's NAN Management Interface address */
+    uint32_t device_caps;
 };
 
 struct own_svc_info {
@@ -90,6 +94,7 @@ struct ndl_info {
     uint8_t peer_nmi[MACADDR_LEN];                      /**< Peer's NAN Management Interface address */
     uint8_t publisher_id;                               /**< Publisher's service identifier */
     uint8_t own_role;                                   /**< Own role (Publisher/Subscriber) */
+    uint32_t device_caps;                                /**< Peer's Device Capabilities from NDP Indication/Confirm */
 };
 
 typedef struct {
@@ -208,7 +213,7 @@ static struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_
     return p_peer_svc;
 }
 
-static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
+static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[], uint32_t device_caps)
 {
     struct own_svc_info *p_own_svc;
     struct peer_svc_info *p_peer_svc;
@@ -227,7 +232,7 @@ static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t
     p_peer_svc->own_svc_id = own_svc_id;
     p_peer_svc->type = (p_own_svc->type == ESP_NAN_SUBSCRIBE) ? ESP_NAN_PUBLISH : ESP_NAN_SUBSCRIBE;
     MACADDR_COPY(p_peer_svc->peer_nmi, peer_nmi);
-
+    p_peer_svc->device_caps = device_caps;
     if (p_own_svc->num_peer_records < NAN_MAX_PEERS_RECORD) {
         SLIST_INSERT_HEAD(&(p_own_svc->peer_list), p_peer_svc, next);
         p_own_svc->num_peer_records++;
@@ -337,7 +342,7 @@ static bool ndl_limit_reached(void)
     return true;
 }
 
-static void nan_record_new_ndl(uint8_t ndp_id, uint8_t publish_id, uint8_t peer_nmi[], uint8_t own_role)
+static void nan_record_new_ndl(uint8_t ndp_id, uint8_t publish_id, uint8_t peer_nmi[], uint8_t own_role, uint32_t device_caps)
 {
     struct ndl_info *ndl = NULL;
 
@@ -351,6 +356,7 @@ static void nan_record_new_ndl(uint8_t ndp_id, uint8_t publish_id, uint8_t peer_
         return;
     }
     ndl->ndp_id = ndp_id;
+    ndl->device_caps = device_caps;
     if (peer_nmi) {
         MACADDR_COPY(ndl->peer_nmi, peer_nmi);
     }
@@ -449,21 +455,36 @@ static void nan_app_post_event(int32_t event_id, void* event_data, size_t event_
     g_wifi_osi_funcs._event_post(WIFI_EVENT, event_id, event_data, event_data_size, OSI_FUNCS_TIME_BLOCKING);
 }
 
-void nan_app_service_match_cb(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6], uint16_t capab,
-                              uint8_t ssi_ver, uint8_t *ssi, uint16_t ssi_len)
+void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info)
 {
-    NAN_DATA_LOCK();
-    struct peer_svc_info *peer_info = nan_find_peer_svc(sub_id, 0, pub_mac);
+    if (!peer_info) {
+        return;
+    }
+    uint8_t pub_id = peer_info->peer_svc_id;
+    uint8_t *pub_mac = peer_info->peer_mac;
+    uint16_t capab = peer_info->sdea;
+    uint8_t ssi_ver = peer_info->ssi_ver;
+    uint8_t *ssi = peer_info->ssi;
+    uint16_t ssi_len = peer_info->ssi_len;
+    uint32_t device_caps = peer_info->device_caps;
 
-    if (peer_info && peer_info->svc_id != pub_id) {
+    NAN_DATA_LOCK();
+    struct peer_svc_info *p_peer_svc = nan_find_peer_svc(sub_id, 0, pub_mac);
+
+    if (p_peer_svc) {
         struct ndl_info *ndl = nan_find_ndl(0, pub_mac);
 
-        peer_info->svc_id = pub_id;
-        if (ndl) {
+        p_peer_svc->device_caps = device_caps;
+        if (p_peer_svc->svc_id != pub_id) {
+            p_peer_svc->svc_id = pub_id;
+            if (ndl) {
+                ndl->publisher_id = pub_id;
+            }
+        } else if (ndl) {
             ndl->publisher_id = pub_id;
         }
     } else {
-        nan_record_peer_svc(sub_id, pub_id, pub_mac);
+        nan_record_peer_svc(sub_id, pub_id, pub_mac, device_caps);
     }
     NAN_DATA_UNLOCK();
 
@@ -481,6 +502,7 @@ void nan_app_service_match_cb(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6]
     evt->fsd_reqd = (capab & NAN_SDEA_CTRL_FSD_REQD) ? 1 : 0;
     evt->fsd_gas = (capab & NAN_SDEA_CTRL_FSD_GAS) ? 1 : 0;
     evt->datapath_reqd = (capab & NAN_SDEA_CTRL_DATAPATH_REQD) ? 1 : 0;
+    evt->ndpe_support = (device_caps & NAN_CAPS_NDPE_ATTR) ? 1 : 0;
     evt->ssi_version = ssi_ver;
     if (ssi && ssi_len) {
         if (ssi_ver) {
@@ -498,11 +520,23 @@ void nan_app_service_match_cb(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6]
     os_free(evt);
 }
 
-void nan_app_replied_cb(uint8_t pub_id, uint8_t sub_id, uint8_t sub_nmi[6], uint8_t *ssi, uint16_t ssi_len)
+void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
 {
+    if (!peer_info) {
+        return;
+    }
+    uint8_t sub_id = peer_info->peer_svc_id;
+    uint8_t *sub_nmi = peer_info->peer_mac;
+    uint8_t *ssi = peer_info->ssi;
+    uint16_t ssi_len = peer_info->ssi_len;
+    uint32_t device_caps = peer_info->device_caps;
+
     NAN_DATA_LOCK();
-    if (!nan_find_peer_svc(pub_id, sub_id, sub_nmi)) {
-        nan_record_peer_svc(pub_id, sub_id, sub_nmi);
+    struct peer_svc_info *p_peer_svc = nan_find_peer_svc(pub_id, sub_id, sub_nmi);
+    if (p_peer_svc) {
+        p_peer_svc->device_caps = device_caps;
+    } else {
+        nan_record_peer_svc(pub_id, sub_id, sub_nmi, device_caps);
     }
     NAN_DATA_UNLOCK();
 
@@ -524,15 +558,27 @@ void nan_app_replied_cb(uint8_t pub_id, uint8_t sub_id, uint8_t sub_nmi[6], uint
         ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);
     }
 
-    nan_app_post_event(WIFI_EVENT_NAN_REPLIED, evt, sizeof(wifi_event_nan_replied_t));
+    nan_app_post_event(WIFI_EVENT_NAN_REPLIED, evt, evt_data_len);
     os_free(evt);
 }
 
-void nan_app_receive_cb(uint8_t svc_id, uint8_t peer_svc_id, uint8_t peer_mac[6], uint8_t *ssi, uint16_t ssi_len)
+void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info)
 {
+    if (!peer_info) {
+        return;
+    }
+    uint8_t peer_svc_id = peer_info->peer_svc_id;
+    uint8_t *peer_mac = peer_info->peer_mac;
+    uint8_t *ssi = peer_info->ssi;
+    uint16_t ssi_len = peer_info->ssi_len;
+    uint32_t device_caps = peer_info->device_caps;
+
     NAN_DATA_LOCK();
-    if (!nan_find_peer_svc(svc_id, peer_svc_id, peer_mac)) {
-        nan_record_peer_svc(svc_id, peer_svc_id, peer_mac);
+    struct peer_svc_info *p_peer_svc = nan_find_peer_svc(svc_id, peer_svc_id, peer_mac);
+    if (p_peer_svc) {
+        p_peer_svc->device_caps = device_caps;
+    } else {
+        nan_record_peer_svc(svc_id, peer_svc_id, peer_mac, device_caps);
     }
     NAN_DATA_UNLOCK();
 
@@ -557,9 +603,18 @@ void nan_app_receive_cb(uint8_t svc_id, uint8_t peer_svc_id, uint8_t peer_mac[6]
     os_free(evt);
 }
 
-void nan_app_ndp_indication_cb(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[6], uint8_t peer_ndi[6],
-                               uint8_t *ssi, uint16_t ssi_len)
+void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps)
 {
+    if (!peer_info) {
+        return;
+    }
+    uint8_t ndp_id = peer_info->ndp_id;
+    uint8_t *peer_nmi = peer_info->peer_nmi;
+    uint8_t *peer_ndi = peer_info->peer_ndi;
+    uint8_t *ssi = peer_info->ssi;
+    uint16_t ssi_len = peer_info->ssi_len;
+    bool ndp_resp_needed = false;
+
     NAN_DATA_LOCK();
     struct own_svc_info *p_own_svc = nan_find_own_svc(pub_id);
 
@@ -568,25 +623,46 @@ void nan_app_ndp_indication_cb(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[
         NAN_DATA_UNLOCK();
         return;
     }
+    ndp_resp_needed = p_own_svc->ndp_resp_needed;
     if (ndl_limit_reached()) {
         ESP_LOGE(TAG, "NDP limit reached");
         NAN_DATA_UNLOCK();
         return;
     }
 
-    nan_record_new_ndl(ndp_id, pub_id, peer_nmi, ESP_WIFI_NDP_ROLE_RESPONDER);
+    if (!nan_find_peer_svc(pub_id, 0, peer_nmi)) {
+        nan_record_peer_svc(pub_id, 0, peer_nmi, device_caps);
+    }
 
     if (p_own_svc->ndp_resp_needed) {
+        nan_record_new_ndl(ndp_id, pub_id, peer_nmi, ESP_WIFI_NDP_ROLE_RESPONDER, device_caps);
         ESP_LOGI(TAG, "NDP Req from "MACSTR" [NDP Id: %d], Accept OR Deny using NDP command",
                  MAC2STR(peer_nmi), ndp_id);
         s_nan_ctx.event |= NDP_INDICATION;
     } else {
+        uint8_t own_bssid[6];
+        ip_addr_t own_ipv6 = {0};
+
         wifi_nan_datapath_resp_t ndp_resp = {0};
         ndp_resp.accept = true;
         ndp_resp.ndp_id = ndp_id;
         MACADDR_COPY(ndp_resp.peer_mac, peer_nmi);
 
-        esp_nan_internal_datapath_resp(&ndp_resp);
+        if (device_caps & NAN_CAPS_NDPE_ATTR) {
+            esp_err_t err = esp_wifi_get_mac(WIFI_IF_NAN, own_bssid);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Cannot get own BSSID!");
+                ndp_resp.accept = false;
+            } else {
+                esp_wifi_nan_get_ipv6_linklocal_from_mac(&own_ipv6.u_addr.ip6, own_bssid);
+            }
+        }
+
+        if (ndp_resp.accept) {
+            nan_record_new_ndl(ndp_id, pub_id, peer_nmi, ESP_WIFI_NDP_ROLE_RESPONDER, device_caps);
+        }
+
+        esp_nan_internal_datapath_resp(&ndp_resp, (uint8_t *)&own_ipv6.u_addr.ip6.addr[2] );
     }
     NAN_DATA_UNLOCK();
 
@@ -594,6 +670,21 @@ void nan_app_ndp_indication_cb(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[
     wifi_event_ndp_indication_t *evt = (wifi_event_ndp_indication_t *)os_zalloc(evt_data_len);
     if (!evt) {
         ESP_LOGE(TAG, "Failed to allocate for event");
+        if (ndp_resp_needed) {
+            uint8_t ipv6_identifier[8] = {0};
+            wifi_nan_datapath_resp_t ndp_resp = {0};
+
+            ndp_resp.accept = false;
+            ndp_resp.ndp_id = ndp_id;
+            MACADDR_COPY(ndp_resp.peer_mac, peer_nmi);
+
+            NAN_DATA_LOCK();
+            nan_reset_ndl(ndp_id, false);
+            s_nan_ctx.event &= ~NDP_INDICATION;
+            NAN_DATA_UNLOCK();
+
+            esp_nan_internal_datapath_resp(&ndp_resp, ipv6_identifier);
+        }
         return;
     }
 
@@ -611,9 +702,17 @@ void nan_app_ndp_indication_cb(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[
     os_free(evt);
 }
 
-void nan_app_ndp_confirm_cb(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6], uint8_t peer_ndi[6],
-                            uint8_t own_ndi[6], uint8_t *ssi, uint16_t ssi_len)
+void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer_info,
+                            uint8_t own_ndi[6], uint8_t ipv6_identifier[8])
 {
+    if (!peer_info) {
+        return;
+    }
+    uint8_t ndp_id = peer_info->ndp_id;
+    uint8_t *peer_nmi = peer_info->peer_nmi;
+    uint8_t *peer_ndi = peer_info->peer_ndi;
+    uint8_t *ssi = peer_info->ssi;
+    uint16_t ssi_len = peer_info->ssi_len;
     NAN_DATA_LOCK();
     struct ndl_info *ndl = nan_find_ndl(ndp_id, peer_nmi);
     if (!ndl) {
@@ -643,6 +742,7 @@ void nan_app_ndp_confirm_cb(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6],
         goto done;
     }
 
+
     size_t evt_data_len = sizeof(wifi_event_ndp_confirm_t) + ssi_len;
     wifi_event_ndp_confirm_t *evt = (wifi_event_ndp_confirm_t *)os_zalloc(evt_data_len);
     if (!evt) {
@@ -660,6 +760,15 @@ void nan_app_ndp_confirm_cb(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6],
     MACADDR_COPY(evt->peer_nmi, peer_nmi);
     MACADDR_COPY(evt->peer_ndi, peer_ndi);
     MACADDR_COPY(evt->own_ndi, own_ndi);
+
+    if (IS_ZERO_NAN_ADDR_ID(ipv6_identifier)) {
+        ip6_addr_t linklocal;
+        esp_wifi_nan_get_ipv6_linklocal_from_mac(&linklocal, peer_ndi);
+        memcpy(evt->ipv6_identifier, &linklocal.addr[2], NAN_IPV6_ADDR_ID_LEN);
+    } else {
+        memcpy(evt->ipv6_identifier, ipv6_identifier, NAN_IPV6_ADDR_ID_LEN);
+    }
+
     if (ssi && ssi_len) {
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
@@ -670,11 +779,14 @@ void nan_app_ndp_confirm_cb(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6],
     esp_netif_create_ip6_linklocal(s_nan_ctx.nan_netif);
     NAN_DATA_UNLOCK();
 
-    ip_addr_t target_addr = {0};
-    esp_wifi_nan_get_ipv6_linklocal_from_mac(&target_addr.u_addr.ip6, peer_ndi);
-    target_addr.type = IPADDR_TYPE_V6;
+    ip6_addr_t peer_ip6 = {0};
+    peer_ip6.addr[0] = PP_HTONL(0xfe800000);
+    peer_ip6.addr[1] = 0;
+    memcpy(&peer_ip6.addr[2], evt->ipv6_identifier, 8);
+
     ESP_LOGI(TAG, "NDP confirmed with Peer "MACSTR" [NDP ID - %d, Peer IPv6 - %s]",
-             MAC2STR(peer_nmi), ndp_id, inet6_ntoa(*ip_2_ip6(&target_addr)));
+             MAC2STR(peer_nmi), ndp_id, inet6_ntoa(peer_ip6));
+
     os_event_group_set_bits(nan_event_group, NDP_ACCEPTED);
 
     nan_app_post_event(WIFI_EVENT_NDP_CONFIRM, evt, evt_data_len);
@@ -1187,7 +1299,8 @@ done:
 uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
 {
     uint8_t ndp_id = 0;
-
+    uint8_t own_bssid[6];
+    ip_addr_t own_ipv6 = {0};
     NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc(0, req->pub_id, req->peer_mac);
 
@@ -1195,6 +1308,17 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
         ESP_LOGE(TAG, "Cannot send NDP Req, peer not found!");
         goto fail;
     }
+
+    if (p_peer_svc->device_caps & NAN_CAPS_NDPE_ATTR) {
+        esp_err_t err = esp_wifi_get_mac(WIFI_IF_NAN, own_bssid);
+
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Cannot get own BSSID!");
+            goto fail;
+        }
+        esp_wifi_nan_get_ipv6_linklocal_from_mac(&own_ipv6.u_addr.ip6, own_bssid);
+    }
+
     if (req->pub_id == 0)
         req->pub_id = p_peer_svc->svc_id;
 
@@ -1212,12 +1336,12 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
     }
 
     os_event_group_clear_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED);
-    if (esp_nan_internal_datapath_req(req, &ndp_id) != ESP_OK) {
+    if (esp_nan_internal_datapath_req(req, &ndp_id,(uint8_t *)&own_ipv6.u_addr.ip6.addr[2]) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initiate NDP req");
         goto fail;
     }
 
-    nan_record_new_ndl(ndp_id, req->pub_id, req->peer_mac, ESP_WIFI_NDP_ROLE_INITIATOR);
+    nan_record_new_ndl(ndp_id, req->pub_id, req->peer_mac, ESP_WIFI_NDP_ROLE_INITIATOR, p_peer_svc->device_caps);
     NAN_DATA_UNLOCK();
 
     ESP_LOGD(TAG, "Requested NDP with "MACSTR" [NDP ID - %d]", MAC2STR(req->peer_mac), ndp_id);
@@ -1243,6 +1367,8 @@ esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp)
 {
     NAN_DATA_LOCK();
     struct ndl_info *ndl = nan_find_ndl(resp->ndp_id, NULL);
+    uint8_t own_bssid[6];
+    ip_addr_t own_ipv6 = {0};
 
     if (!ndl) {
         ESP_LOGE(TAG, "No NDL with ndp id %d", resp->ndp_id);
@@ -1257,7 +1383,16 @@ esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp)
         MACADDR_COPY(resp->peer_mac, ndl->peer_nmi);
     }
 
-    if (esp_nan_internal_datapath_resp(resp) == ESP_OK) {
+        if (ndl->device_caps & NAN_CAPS_NDPE_ATTR) {
+            esp_err_t err = esp_wifi_get_mac(WIFI_IF_NAN, own_bssid);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Cannot get own BSSID!");
+                goto fail;
+            }
+            esp_wifi_nan_get_ipv6_linklocal_from_mac(&own_ipv6.u_addr.ip6, own_bssid);
+        }
+
+    if (esp_nan_internal_datapath_resp(resp, (uint8_t *)&own_ipv6.u_addr.ip6.addr[2]) == ESP_OK) {
         s_nan_ctx.event &= ~NDP_INDICATION;
         NAN_DATA_UNLOCK();
         return ESP_OK;

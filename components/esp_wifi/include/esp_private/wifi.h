@@ -39,15 +39,34 @@ typedef struct {
     void *storage;        /**< storage for FreeRTOS queue */
 } wifi_static_queue_t;
 
+/* NAN Peer info parsed from SDF */
+struct nan_cb_peer_info {
+    uint8_t peer_mac[6];                                    /**< Peer NMI / interface MAC */
+    uint8_t peer_svc_id;                                    /**< Peer's service instance ID */
+    uint16_t sdea;                                          /**< SDEA control field bits */
+    uint32_t device_caps;                                   /**< NAN device capabilities */
+    uint8_t ssi_ver;                                        /**< SSI version (service_match) */
+    uint8_t *ssi;                                           /**< Service-specific information */
+    uint16_t ssi_len;                                       /**< SSI length in bytes */
+    nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
+};
+
+/* NDP Peer info parsed from NAF */
+struct ndp_cb_peer_info {
+    uint8_t ndp_id;
+    uint8_t peer_nmi[6];
+    uint8_t peer_ndi[6];
+    uint8_t *ssi;
+    uint16_t ssi_len;
+};
+
 struct nan_sync_callbacks {
-    void (* service_match)(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6], uint16_t capab,
-                           uint8_t ssi_ver, uint8_t *ssi, uint16_t ssi_len);
-    void (* replied)(uint8_t pub_id, uint8_t sub_id, uint8_t pub_mac[6], uint8_t *ssi, uint16_t ssi_len);
-    void (* receive)(uint8_t svc_id, uint8_t peer_svc_id, uint8_t peer_mac[6], uint8_t *ssi, uint16_t ssi_len);
-    void (* ndp_indication)(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[6], uint8_t peer_ndi[6],
-                            uint8_t *ssi, uint16_t ssi_len);
-    void (* ndp_confirm)(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6], uint8_t peer_ndi[6],
-                         uint8_t own_ndi[6], uint8_t *ssi, uint16_t ssi_len);
+    void (* service_match)(uint8_t sub_id, struct nan_cb_peer_info *peer_info);
+    void (* replied)(uint8_t pub_id, struct nan_cb_peer_info *peer_info);
+    void (* receive)(uint8_t svc_id, struct nan_cb_peer_info *peer_info);
+    void (* ndp_indication)(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps);
+    void (* ndp_confirm)(uint8_t status, struct ndp_cb_peer_info *peer_info,
+                         uint8_t own_ndi[6], uint8_t ipv6_identifier[8]);
     void (* ndp_terminated)(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[6]);
     void (* action_txdone)(uint32_t context, bool tx_status);
 };
@@ -741,13 +760,15 @@ esp_err_t esp_nan_internal_send_followup(const wifi_nan_followup_params_t *fup_p
   *
   * @attention  This API should be called after WIFI_EVENT_NAN_SVC_MATCH event is received.
   *
-  * @param      req  NAN Datapath Request parameters.
+  * @param[in]      req  NAN Datapath Request parameters.
+  * @param[out]     ndp_id  Pointer to the NDP ID in the NAN Datapath Request.
+  * @param[in]      ipv6_identifier IPV6 Address Identifier to be sent in the NDPE attribute.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *ndp_id);
+esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *ndp_id, uint8_t ipv6_identifier[8]);
 
 /**
   * @brief      Send Datapath Response to accept or reject the received request
@@ -755,12 +776,13 @@ esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *n
   * @attention  This API should be called on the Publisher after receiving WIFI_EVENT_NDP_INDICATION event.
   *
   * @param      resp  NAN Datapath Response parameters.
+  * @param      ipv6_identifier IPV6 Address Identifier to be sent in the NDPE attribute.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp);
+esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp, uint8_t ipv6_identifier[8]);
 
 /**
   * @brief      End NAN Datapath that is active

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@ extern "C" {
     .master_pref = 2, \
     .scan_time = 3, \
     .warm_up_sec = 5, \
+    .disable_random_mac = false, \
 };
 
 #define NDP_STATUS_ACCEPTED     1
@@ -29,6 +30,20 @@ extern "C" {
 #define NAN_MAX_PEERS_RECORD    15
 #define ESP_NAN_PUBLISH         2
 #define ESP_NAN_SUBSCRIBE       1
+#define NAN_IPV6_ADDR_ID_LEN    8
+
+#define IS_ZERO_NAN_ADDR_ID(a)   (!((a)[0] | (a)[1] | (a)[2] | (a)[3] | \
+                              (a)[4] | (a)[5] | (a)[6] | (a)[7]))
+
+#define ESP_NAN_SET_IPV6_LINKLOCAL_FROM_IDENTIFIER(_target_addr, _identifier) \
+    do {                                                                       \
+        (_target_addr).type = IPADDR_TYPE_V6;                                  \
+        (_target_addr).u_addr.ip6.addr[0] = htonl(0xFE800000);                 \
+        (_target_addr).u_addr.ip6.addr[1] = 0;                                 \
+        memcpy(&(_target_addr).u_addr.ip6.addr[2],                             \
+               (_identifier),                                                   \
+               NAN_IPV6_ADDR_ID_LEN);                                            \
+    } while (0)
 
 /** Parameters of a peer service record */
 struct nan_peer_record {
