@@ -31,6 +31,10 @@ typedef struct {
         unsigned int dc_low_on_data: 1;  /*!< If this flag is enabled, DC line = 0 means transfer data, DC line = 1 means transfer command; vice versa */
         unsigned int disable_control_phase: 1; /*!< If this flag is enabled, the control phase isn't used */
     } flags; /*!< Extra flags to fine-tune the I2C device */
+    int transaction_timeout_ms; /*!< Timeout in milliseconds for each I2C transaction.
+                                     0 means use the default (200 ms).
+                                     Set to -1 to wait indefinitely (portMAX_DELAY).
+                                     Must not exceed 10000. */
 } esp_lcd_panel_io_i2c_config_t;
 
 /**

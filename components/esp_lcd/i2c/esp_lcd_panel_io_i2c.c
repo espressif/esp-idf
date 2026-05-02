@@ -29,6 +29,9 @@ static const char *TAG = "lcd_panel.io.i2c";
 #define CONTROL_PHASE_LENGTH  (1)
 #define CMD_LENGTH            (4)
 
+/** Default I2C transaction timeout when the caller leaves transaction_timeout_ms = 0. */
+#define LCD_I2C_DEFAULT_TIMEOUT_MS  200
+
 static esp_err_t panel_io_i2c_del(esp_lcd_panel_io_t *io);
 static esp_err_t panel_io_i2c_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void *param, size_t param_size);
 static esp_err_t panel_io_i2c_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
@@ -45,6 +48,7 @@ typedef struct {
     uint32_t control_phase_cmd;  // control byte when transferring command
     uint32_t control_phase_data; // control byte when transferring data
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
+    int transaction_timeout_ms; // I2C transaction timeout in ms (0 = default, -1 = portMAX_DELAY)
     void *user_ctx;             // User's private data, passed directly to callback on_color_trans_done()
 } lcd_panel_io_i2c_t;
 
@@ -68,6 +72,23 @@ esp_err_t esp_lcd_new_panel_io_i2c(i2c_master_bus_handle_t bus, const esp_lcd_pa
         .scl_speed_hz = io_config->scl_speed_hz,
     };
     ESP_GOTO_ON_ERROR(i2c_master_bus_add_device(bus, &i2c_lcd_cfg, &i2c_handle), err, TAG, "i2c add device fail");
+
+    i2c_panel_io->transaction_timeout_ms = io_config->transaction_timeout_ms;
+
+    // Check transaction_timeout_ms is within valid range
+    if (io_config->transaction_timeout_ms > 10000) {
+        ESP_LOGW(TAG, "transaction_timeout_ms is set to %d, which exceeds the maximum value 10000. Set to maximum value.", io_config->transaction_timeout_ms);
+        i2c_panel_io->transaction_timeout_ms = 10000;
+    } else if (io_config->transaction_timeout_ms == 0) {
+        ESP_LOGW(TAG, "transaction_timeout_ms is set to 0, which means use default timeout. Set to default value %d ms.", LCD_I2C_DEFAULT_TIMEOUT_MS);
+        i2c_panel_io->transaction_timeout_ms = LCD_I2C_DEFAULT_TIMEOUT_MS;
+    } else if (io_config->transaction_timeout_ms == -1) {
+        ESP_LOGW(TAG, "transaction_timeout_ms is set to -1, which means wait indefinitely. Ensure this is intended.");
+        i2c_panel_io->transaction_timeout_ms = portMAX_DELAY;
+    } else {
+        ESP_LOGE(TAG, "transaction_timeout_ms is set to %d, which is invalid. It should be either 0 (use default) or -1 (wait indefinitely).", io_config->transaction_timeout_ms);
+        i2c_panel_io->transaction_timeout_ms = LCD_I2C_DEFAULT_TIMEOUT_MS;
+    }
 
     i2c_panel_io->i2c_handle = i2c_handle;
     i2c_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
@@ -142,9 +163,9 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
             write_size += cmds_size;
         }
 
-        ESP_GOTO_ON_ERROR(i2c_master_transmit_receive(i2c_panel_io->i2c_handle, write_buffer, write_size, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
+        ESP_GOTO_ON_ERROR(i2c_master_transmit_receive(i2c_panel_io->i2c_handle, write_buffer, write_size, buffer, buffer_size, i2c_panel_io->transaction_timeout_ms), err, TAG, "i2c transaction failed");
     } else {
-        ESP_GOTO_ON_ERROR(i2c_master_receive(i2c_panel_io->i2c_handle, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
+        ESP_GOTO_ON_ERROR(i2c_master_receive(i2c_panel_io->i2c_handle, buffer, buffer_size, i2c_panel_io->transaction_timeout_ms), err, TAG, "i2c transaction failed");
     }
 
     return ESP_OK;
@@ -190,7 +211,7 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
         {.write_buffer = lcd_buffer, .buffer_size = lcd_buffer_size},
     };
 
-    ESP_GOTO_ON_ERROR(i2c_master_multi_buffer_transmit(i2c_panel_io->i2c_handle, lcd_i2c_buffer, sizeof(lcd_i2c_buffer) / sizeof(i2c_master_transmit_multi_buffer_info_t), -1), err, TAG, "i2c transaction failed");
+    ESP_GOTO_ON_ERROR(i2c_master_multi_buffer_transmit(i2c_panel_io->i2c_handle, lcd_i2c_buffer, sizeof(lcd_i2c_buffer) / sizeof(i2c_master_transmit_multi_buffer_info_t), i2c_panel_io->transaction_timeout_ms), err, TAG, "i2c transaction failed");
     if (!is_param) {
         // trans done callback
         if (i2c_panel_io->on_color_trans_done) {
