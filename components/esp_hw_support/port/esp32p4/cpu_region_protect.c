@@ -36,7 +36,7 @@
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_UP(addr, align)  ((addr) & ~((align) - 1))
+#define ALIGN_UP(addr, align)  (((addr) + (align) - 1) & ~((align) - 1))
 
 static void esp_cpu_configure_invalid_regions(void)
 {
@@ -153,6 +153,17 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
     __attribute__((unused)) const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
+    PMP_ENTRY_CFG_RESET(11);
+    PMP_ENTRY_CFG_RESET(12);
+    PMP_ENTRY_CFG_RESET(13);
+    PMP_ENTRY_CFG_RESET(14);
+    PMP_ENTRY_CFG_RESET(15);
+    PMP_ENTRY_CFG_RESET(16);
+    PMP_ENTRY_CFG_RESET(17);
+    PMP_ENTRY_CFG_RESET(18);
+    PMP_ENTRY_CFG_RESET(19);
+    PMP_ENTRY_CFG_RESET(23);
+
     // 6. I_EXTRAM / D_EXTRAM (SPIRAM)
 #if CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
 
@@ -231,8 +242,8 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_RESET_AND_ENTRY_SET(28, pmpaddr28, PMP_NAPOT | CONDITIONAL_RWX);
     _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
 
-    PMP_ENTRY_SET(29, SOC_LP_PERIPH_LOW, NONE);
-    PMP_ENTRY_SET(30, SOC_LP_PERIPH_HIGH, PMP_TOR | CONDITIONAL_RW);
+    PMP_RESET_AND_ENTRY_SET(29, SOC_LP_PERIPH_LOW, NONE);
+    PMP_RESET_AND_ENTRY_SET(30, SOC_LP_PERIPH_HIGH, PMP_TOR | CONDITIONAL_RW);
 #endif
 }
 #else

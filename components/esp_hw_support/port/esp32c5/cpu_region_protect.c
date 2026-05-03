@@ -29,7 +29,7 @@
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_UP(addr, align)  ((addr) & ~((align) - 1))
+#define ALIGN_UP(addr, align)  (((addr) + (align) - 1) & ~((align) - 1))
 
 static void esp_cpu_configure_invalid_regions(void)
 {
